@@ -1,7 +1,9 @@
 ﻿import { computeRgbHexString } from '@flighthq/color/contract';
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl/contract';
-import { resolveGlShader } from '@flighthq/render-gl/contract';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
+import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -18,6 +20,7 @@ import type {
   Scene2DRenderer,
   GlRenderState,
   GlRichTextOverlay,
+  Raster2DSurface,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -29,24 +32,28 @@ import type {
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
-let _offscreenCanvas: HTMLCanvasElement | null = null;
-let _offscreenCtx: CanvasRenderingContext2D | null = null;
-let _webglTextInputOverlay: GlRichTextOverlay | null = null;
-
-// Per-node GPU texture this rich text rasterizes into. Held on the node's RendererData (not a
-// module-level map keyed by render proxy) so destroyGlRichTextData can free it on teardown.
+// The raster surface belongs to the render node rather than the module. Its Image identity is the
+// GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 interface GlRichTextData {
-  texture: WebGLTexture | null;
+  surface: Raster2DSurface | null;
 }
 
 export function createGlRichTextData(_state: GlRenderState, _source: Renderable): RendererData {
-  return { texture: null } as unknown as RendererData;
+  return { surface: null } as unknown as RendererData;
 }
 
-// Frees the GPU texture this rich text node owns when it is torn down via disposeScene2DRender.
+// Remove the GPU realization while its Image key is still valid, then return the raster allocation to
+// the provider that created it. A node that never rasterized owns neither resource.
 export function destroyGlRichTextData(state: GlRenderState, data: RendererData): void {
-  const { texture } = data as unknown as GlRichTextData;
-  if (texture !== null) state.gl.deleteTexture(texture);
+  const { surface } = data as unknown as GlRichTextData;
+  if (surface === null) return;
+  const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const entry = cache.get(surface.image);
+  if (entry !== undefined) {
+    state.gl.deleteTexture(entry.texture);
+    cache.delete(surface.image);
+  }
+  destroyRaster2DSurface(surface);
 }
 
 export function drawGlRichText(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -72,14 +79,22 @@ export function drawGlRichTextWithOverlay(
   const content = getRichTextContent(richTextRuntime);
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
+  if (renderProxy.rendererData === null) return;
+  const richTextData = renderProxy.rendererData as unknown as GlRichTextData;
+  const surface = acquireGlRichTextRasterSurface(richTextData);
+  if (surface === null) return;
 
-  const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges);
+  const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, surface.context);
   const fieldW = Math.ceil(computeTextBoundsWidth(data, result));
   const fieldH = Math.ceil(computeTextBoundsHeight(data, result));
   if (fieldW <= 0 || fieldH <= 0) return;
 
   const pixelRatio = state.pixelRatio;
-  const offCtx = getOffscreenCanvas(fieldW, fieldH, pixelRatio);
+  const pw = Math.ceil(fieldW * pixelRatio);
+  const ph = Math.ceil(fieldH * pixelRatio);
+  if (surface.width !== pw) surface.width = pw;
+  if (surface.height !== ph) surface.height = ph;
+  const offCtx = surface.context;
   offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, fieldW, fieldH);
 
@@ -98,18 +113,11 @@ export function drawGlRichTextWithOverlay(
     drawRichTextToCanvas(offCtx, source, result, fieldW, fieldH, content.text);
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
+  invalidateImageResource(surface.image);
 
   const shader = resolveGlShader(state, renderProxy);
   useGlProgram(state, shader);
-
-  if (renderProxy.rendererData === null) return;
-  const richTextData = renderProxy.rendererData as unknown as GlRichTextData;
-  let texture = richTextData.texture;
-  if (texture === null) {
-    texture = createGlTexture(state);
-    richTextData.texture = texture;
-  }
-  updateGlTexture(state, texture, _offscreenCanvas!);
+  bindGlImageResourceTexture(state, surface.image, null, null, true);
 
   shader.bind(state.gl, state, renderProxy);
 
@@ -189,10 +197,10 @@ function layoutRichText(
   richTextRuntime: RichTextRuntime,
   text: string,
   formatRanges: Parameters<typeof computeTextLayout>[1]['formatRanges'],
+  context: CanvasRenderingContext2D,
 ): ReturnType<typeof getTextLayoutResult> {
   const data = source.data;
   const measure = (value: string, format: TextFormat): number => {
-    const context = getOffscreenCanvas(1, 1);
     context.font = computeTextFormatFontString(format);
     return context.measureText(value).width;
   };
@@ -211,14 +219,11 @@ function layoutRichText(
   return result;
 }
 
-function getOffscreenCanvas(width: number, height: number, pixelRatio: number = 1): CanvasRenderingContext2D {
-  if (!_offscreenCanvas) {
-    _offscreenCanvas = document.createElement('canvas');
-    _offscreenCtx = _offscreenCanvas.getContext('2d')!;
-  }
-  const pw = Math.ceil(width * pixelRatio);
-  const ph = Math.ceil(height * pixelRatio);
-  if (_offscreenCanvas.width !== pw) _offscreenCanvas.width = pw;
-  if (_offscreenCanvas.height !== ph) _offscreenCanvas.height = ph;
-  return _offscreenCtx!;
+function acquireGlRichTextRasterSurface(data: GlRichTextData): Raster2DSurface | null {
+  if (data.surface !== null) return data.surface;
+  const surface = createRaster2DSurface(1, 1);
+  if (surface !== null) data.surface = surface;
+  return surface;
 }
+
+let _webglTextInputOverlay: GlRichTextOverlay | null = null;

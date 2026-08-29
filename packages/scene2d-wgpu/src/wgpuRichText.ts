@@ -1,10 +1,8 @@
 import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contract';
-import { createWgpuTextureEntry, drawWgpuQuad, updateWgpuTextureEntry } from '@flighthq/render-wgpu/contract';
-import {
-  getWgpuRenderStateRuntime,
-  resolveWgpuApplyBlendMode,
-  retireWgpuTexture,
-} from '@flighthq/render-wgpu/contract';
+import { invalidateImageResource } from '@flighthq/image/contract';
+import { bindWgpuImageResourceTexture, drawWgpuQuad } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, resolveWgpuApplyBlendMode } from '@flighthq/render-wgpu/contract';
+import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -19,6 +17,7 @@ import {
 } from '@flighthq/textlayout/contract';
 import type {
   Scene2DRenderer,
+  Raster2DSurface,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -29,33 +28,35 @@ import type {
   TextLabelRuntime,
   WgpuRenderState,
   WgpuRichTextOverlay,
-  WgpuTextureEntry,
 } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 
-let _offscreenCanvas: HTMLCanvasElement | null = null;
-let _offscreenCtx: CanvasRenderingContext2D | null = null;
-let _webgpuTextInputOverlay: WgpuRichTextOverlay | null = null;
-
-// Per-node GPU texture entry this rich text rasterizes into. Held on the node's RendererData (not a
-// module-level map keyed by render proxy) so destroyWgpuRichTextData can free it on teardown.
+// The raster surface belongs to the render node rather than the module. Its Image identity is the
+// GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 interface WgpuRichTextData {
-  entry: WgpuTextureEntry | null;
-  w: number;
-  h: number;
+  surface: Raster2DSurface | null;
 }
 
 export function createWgpuRichTextData(_state: RenderState, _source: Renderable): RendererData {
-  return createWgpuRendererData<WgpuRichTextData>({ entry: null, h: 0, w: 0 });
+  return createWgpuRendererData<WgpuRichTextData>({ surface: null });
 }
 
-// Destroys the GPU texture this rich text node owns when it is torn down via disposeScene2DRender.
-export function destroyWgpuRichTextData(_state: RenderState, data: RendererData): void {
+// Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to
+// the provider that created it. A node that never rasterized owns neither resource.
+export function destroyWgpuRichTextData(state: WgpuRenderState, data: RendererData): void {
   const richData = getWgpuRendererData<WgpuRichTextData>(data);
   if (richData === null) return;
-  richData.entry?.texture.destroy();
+  const { surface } = richData;
+  if (surface === null) return;
+  const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const entry = cache.get(surface.image);
+  if (entry !== undefined) {
+    entry.texture.destroy();
+    cache.delete(surface.image);
+  }
+  destroyRaster2DSurface(surface);
 }
 
 export function drawWgpuRichText(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -84,8 +85,12 @@ export function drawWgpuRichTextWithOverlay(
   const content = getRichTextContent(richTextRuntime);
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
+  const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
+  if (richData === null) return;
+  const surface = acquireWgpuRichTextRasterSurface(richData);
+  if (surface === null) return;
 
-  const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state);
+  const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state, surface.context);
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const pixelRatio = state.pixelRatio;
   const maxLogical = Math.floor(maxTexDim / pixelRatio);
@@ -93,7 +98,11 @@ export function drawWgpuRichTextWithOverlay(
   const fieldH = Math.min(Math.ceil(computeTextBoundsHeight(data, result)), maxLogical);
   if (fieldW <= 0 || fieldH <= 0) return;
 
-  const offCtx = getOffscreenCanvas(fieldW, fieldH, pixelRatio);
+  const pw = Math.ceil(fieldW * pixelRatio);
+  const ph = Math.ceil(fieldH * pixelRatio);
+  if (surface.width !== pw) surface.width = pw;
+  if (surface.height !== ph) surface.height = ph;
+  const offCtx = surface.context;
   offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, fieldW, fieldH);
 
@@ -112,27 +121,11 @@ export function drawWgpuRichTextWithOverlay(
     drawRichTextToCanvas(offCtx, source, result, fieldW, fieldH, content.text);
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
+  invalidateImageResource(surface.image);
 
   resolveWgpuApplyBlendMode(state)?.(state, renderProxy.blendMode);
-
-  const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
-  if (richData === null) return;
-  const pw = _offscreenCanvas!.width;
-  const ph = _offscreenCanvas!.height;
-  let entry = richData.entry;
-  if (entry === null || richData.w !== pw || richData.h !== ph) {
-    const nextEntry = createWgpuTextureEntry(state, pw, ph, _offscreenCanvas!);
-    if (nextEntry === null) return;
-    // Retired rather than destroyed: this runs inside a draw, so a bind group recorded earlier in the
-    // frame may still reference the outgoing texture, and the frame's submit has not happened yet.
-    if (entry !== null) retireWgpuTexture(state, entry.texture);
-    entry = nextEntry;
-    richData.entry = nextEntry;
-    richData.w = pw;
-    richData.h = ph;
-  } else {
-    updateWgpuTextureEntry(state, entry, _offscreenCanvas!);
-  }
+  const entry = bindWgpuImageResourceTexture(state, surface.image, false, true);
+  if (entry === null) return;
 
   // Anchor the field box for autoSize 'right'/'center' so the rendered quad lines up with the local
   // bounds (computeRichTextLocalBoundsRectangle applies the same offset). Zero for 'none'/'left'.
@@ -205,31 +198,19 @@ function drawRichTextToCanvas(
   context.restore();
 }
 
-function getOffscreenCanvas(width: number, height: number, pixelRatio: number = 1): CanvasRenderingContext2D {
-  if (!_offscreenCanvas) {
-    _offscreenCanvas = document.createElement('canvas');
-    _offscreenCtx = _offscreenCanvas.getContext('2d')!;
-  }
-  const pw = Math.ceil(width * pixelRatio);
-  const ph = Math.ceil(height * pixelRatio);
-  if (_offscreenCanvas.width !== pw) _offscreenCanvas.width = pw;
-  if (_offscreenCanvas.height !== ph) _offscreenCanvas.height = ph;
-  return _offscreenCtx!;
-}
-
 function layoutRichText(
   source: RichText,
   richTextRuntime: RichTextRuntime,
   text: string,
   formatRanges: Parameters<typeof computeTextLayout>[1]['formatRanges'],
   state: WgpuRenderState,
+  context: CanvasRenderingContext2D,
 ): ReturnType<typeof getTextLayoutResult> {
   const data = source.data;
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const maxLogical = Math.floor(maxTexDim / state.pixelRatio);
 
   const measure = (value: string, format: TextFormat): number => {
-    const context = getOffscreenCanvas(1, 1);
     context.font = computeTextFormatFontString(format);
     return context.measureText(value).width;
   };
@@ -247,3 +228,12 @@ function layoutRichText(
   });
   return result;
 }
+
+function acquireWgpuRichTextRasterSurface(data: WgpuRichTextData): Raster2DSurface | null {
+  if (data.surface !== null) return data.surface;
+  const surface = createRaster2DSurface(1, 1);
+  if (surface !== null) data.surface = surface;
+  return surface;
+}
+
+let _webgpuTextInputOverlay: WgpuRichTextOverlay | null = null;

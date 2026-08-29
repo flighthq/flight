@@ -1,7 +1,8 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
-import type { RenderProxy2D, TextLabel } from '@flighthq/types/contract';
+import type { Raster2DSurface, RenderProxy2D, TextLabel } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
@@ -37,12 +38,37 @@ vi.mock('@flighthq/textlayout/contract', async (importOriginal) => {
 
 import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
 
-function makeTextData() {
+function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
   const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, image: createImageResource(canvas), lastHash: '', logW: 0, logH: 0 };
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d')!;
+  return {
+    get width() {
+      return canvas.width;
+    },
+    set width(value) {
+      canvas.width = value;
+    },
+    get height() {
+      return canvas.height;
+    },
+    set height(value) {
+      canvas.height = value;
+    },
+    context,
+    image: createImageResource(canvas),
+  };
+}
+
+function makeTextData() {
+  return {
+    surface: createTestRaster2DSurface(1, 1),
+    lastContentId: -1,
+    lastPixelRatio: 0,
+    logW: 0,
+    logH: 0,
+  };
 }
 
 function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
@@ -62,6 +88,21 @@ function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
+function installTestRaster2DSurfaceProvider(
+  destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
+): void {
+  setRaster2DSurfaceProvider({
+    createRaster2DSurface(width, height) {
+      return createTestRaster2DSurface(width, height);
+    },
+    destroyRaster2DSurface,
+  });
+}
+
+afterEach(() => {
+  resetRaster2DSurfaceProviderForTest();
+});
+
 describe('defaultGlTextLabelRenderer', () => {
   it('declares BatchFormat.Quad', () => {
     expect(defaultGlTextLabelRenderer.format).toBe(BatchFormat.Quad);
@@ -74,9 +115,55 @@ describe('defaultGlTextLabelRenderer', () => {
   it('has a submit function pointing to drawGlTextLabel', () => {
     expect(defaultGlTextLabelRenderer.submit).toBe(drawGlTextLabel);
   });
+
+  it('removes the GPU cache entry before returning the node surface to its creator', () => {
+    const order: string[] = [];
+    const { state, gl } = createGlState();
+    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    installTestRaster2DSurfaceProvider((surface) => {
+      order.push('surface');
+      expect(cache.has(surface.image)).toBe(false);
+    });
+    registerGlStandardMaterial(state);
+    const data = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
+    drawGlTextLabel(state, makeTextProxy('owned', data));
+    const surface = (data as unknown as { surface: Raster2DSurface }).surface;
+    const entry = cache.get(surface.image)!;
+    vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
+      if (texture === entry.texture) order.push('texture');
+    });
+
+    defaultGlTextLabelRenderer.destroyData!(state, data);
+
+    expect(cache.has(surface.image)).toBe(false);
+    expect(order).toEqual(['texture', 'surface']);
+  });
 });
 
 describe('drawGlTextLabel', () => {
+  it('keeps different text nodes on distinct surfaces and GPU textures in one frame', () => {
+    installTestRaster2DSurfaceProvider();
+    const { state } = createGlState();
+    registerGlStandardMaterial(state);
+    const firstData = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
+    const secondData = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
+
+    drawGlTextLabel(state, makeTextProxy('first', firstData));
+    drawGlTextLabel(state, makeTextProxy('second', secondData));
+
+    const firstSurface = (firstData as unknown as { surface: Raster2DSurface }).surface;
+    const secondSurface = (secondData as unknown as { surface: Raster2DSurface }).surface;
+    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const firstImage = firstSurface.image;
+    expect(firstSurface).not.toBe(secondSurface);
+    expect(firstSurface.image).not.toBe(secondSurface.image);
+    expect(cache.get(firstSurface.image)?.texture).not.toBe(cache.get(secondSurface.image)?.texture);
+
+    drawGlTextLabel(state, makeTextProxy('first', firstData));
+    expect((firstData as unknown as { surface: Raster2DSurface }).surface).toBe(firstSurface);
+    expect(firstSurface.image).toBe(firstImage);
+  });
+
   it('returns early without writing to batch when text is empty', () => {
     const { state } = createGlState();
     registerGlStandardMaterial(state);
@@ -111,7 +198,7 @@ describe('drawGlTextLabel', () => {
     const proxy = makeTextProxy('hello', data);
     (proxy.source as TextLabel).data.textFormat = { color: 0xff000080 };
     const styles: Array<string | CanvasGradient | CanvasPattern> = [];
-    vi.spyOn(data.ctx, 'fillText').mockImplementation(() => styles.push(data.ctx.fillStyle));
+    vi.spyOn(data.surface.context, 'fillText').mockImplementation(() => styles.push(data.surface.context.fillStyle));
 
     drawGlTextLabel(state, proxy);
 
@@ -134,9 +221,9 @@ describe('drawGlTextLabel', () => {
     drawGlTextLabel(state, proxy);
     // Rasterization bumps the canvas resource's version (invalidateImageResource); a skipped raster leaves
     // it untouched. First draw rasterizes (version → 1); the repeat is skipped.
-    const rasterized = data.image.version;
+    const rasterized = data.surface.image.version;
     drawGlTextLabel(state, proxy);
-    expect(data.image.version).toBe(rasterized);
+    expect(data.surface.image.version).toBe(rasterized);
   });
 
   it('re-rasterizes when the content version is bumped', () => {
@@ -145,10 +232,10 @@ describe('drawGlTextLabel', () => {
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
-    const rasterized = data.image.version;
+    const rasterized = data.surface.image.version;
     setTextLabelString(proxy.source as TextLabel, 'world');
     drawGlTextLabel(state, proxy);
-    expect(data.image.version).toBeGreaterThan(rasterized);
+    expect(data.surface.image.version).toBeGreaterThan(rasterized);
   });
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
@@ -157,10 +244,10 @@ describe('drawGlTextLabel', () => {
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
-    const rasterized = data.image.version;
+    const rasterized = data.surface.image.version;
     proxy.alpha = 0.5;
     drawGlTextLabel(state, proxy);
     // Alpha is applied per-instance in the batch; the expensive raster (and its version bump) is untouched.
-    expect(data.image.version).toBe(rasterized);
+    expect(data.surface.image.version).toBe(rasterized);
   });
 });
