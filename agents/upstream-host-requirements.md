@@ -1030,3 +1030,58 @@ convenience over it. Here the throwing function is a duplicate, not a wrapper.
 Superficially identical cases, opposite rulings, decided by one checkable fact: **does a non-throwing
 way to ask the same question already exist, and does this function delegate to it?** Check that
 before applying either precedent.
+
+---
+
+# H13 — scratch surfaces are PER-NODE; the slice is an allocator substitution and nothing else — 2026-08-29
+
+Raised by applying [H10](#h10) before removal: an allocator-only swap can green P5 while aliasing
+image identity or leaking cache lifetime. The question was whether RichText may retain one
+module-shared `Raster2DSurface` with per-node GPU textures, or whether each rendererData must own a
+stable surface.
+
+**The code already answers it, and the answer is per-node.**
+
+## What the identity is built on
+
+`createGlTextLabelData` is the renderer's per-node `createData`. It allocates a fresh canvas per
+node and wraps it as a per-node `Image` (`createImageResource(canvas)`). Everything downstream keys
+on that `Image` identity:
+
+- the GPU texture cache is `runtime.textureSourcePremultipliedTextureCache`, a map **from that
+  `Image`** to its texture;
+- `destroyData` retires and deletes **that node's** entry from it;
+- `invalidateImageResource(textData.image)` bumps the version the batch's version-aware cache reads
+  to decide whether to re-upload.
+
+## Why a module-shared surface breaks it, invisibly
+
+GPU upload is deferred — it happens inside `bindGlImageResourceTexture` during submit, not at
+rasterize time. So with one shared surface:
+
+- if all nodes share one `Image`, there is **one** cache entry for every text node, and they all
+  present whatever was rasterized last;
+- if per-node `Image`s wrap one shared surface, each upload reads the surface's *current* contents,
+  so submit order decides what each node shows;
+- `destroyData` for any one node deletes a cache entry other live nodes still depend on.
+
+**And P5 goes green regardless**, because the `document.createElement` is gone either way. Exactly
+the [H10](#h10) failure: the count falls, every gate passes, and the render is wrong.
+
+## Ruling
+
+Each RichText / TextLabel / Scale9 rendererData owns a **stable per-node `Raster2DSurface`**, and its
+`Image` identity remains the GPU cache key. `destroyData` continues to retire that node's entry, and
+now also destroys the surface per [Ruling B](#h8) — natively the surface is a non-GC resource.
+
+**The slice substitutes the allocator and changes nothing else.** `document.createElement('canvas')`
+becomes a provider-supplied `Raster2DSurface`. Ownership, identity, caching, invalidation, and
+teardown all stay exactly as they are. A module-shared surface is not an allocator swap; it is a
+lifetime and identity change wearing one's clothes.
+
+## The test that discriminates
+
+Render **two text nodes with different content in the same frame and assert they present different
+textures.** That fails under any shared-surface variant and passes under per-node. Write it before
+the migration — it is the cheap falsifier for the whole class, and it generalises unchanged to
+rich-text and scale9.
