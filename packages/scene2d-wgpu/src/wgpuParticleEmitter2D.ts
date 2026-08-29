@@ -8,7 +8,13 @@ import {
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
-import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import type {
+  ParticleEmitter2D,
+  RenderProxy2D,
+  SpriteRenderer,
+  WgpuParticleResources,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
@@ -88,22 +94,11 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 }
 `;
 
-interface WgpuParticleResources {
-  // Per color-attachment format, since a render pipeline bakes its target format (rgba16float inside an
-  // HDR effect target vs the canvas format). The layout/module are format-independent and shared.
-  pipelines: Map<GPUTextureFormat, GPURenderPipeline>;
-  pipelineLayout: GPUPipelineLayout;
-  module: GPUShaderModule;
-  instanceBindGroupLayout: GPUBindGroupLayout;
-}
-
-const _particleResources = new WeakMap<GPUDevice, WgpuParticleResources>();
-
 function ensureParticleResources(state: WgpuRenderState): WgpuParticleResources {
-  const existing = _particleResources.get(state.device);
+  const runtime = getWgpuRenderStateRuntime(state);
+  const existing = runtime.particleResources;
   if (existing !== undefined) return existing;
 
-  const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
   const { uniformBindGroupLayout, textureBindGroupLayout } = runtime;
 
@@ -129,7 +124,7 @@ function ensureParticleResources(state: WgpuRenderState): WgpuParticleResources 
     module,
     instanceBindGroupLayout,
   };
-  _particleResources.set(device, resources);
+  runtime.particleResources = resources;
   return resources;
 }
 

@@ -82,7 +82,7 @@ fn quadBaseVertex(vi : u32, ii : u32) -> BaseVertex {
 
 export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBatchResources {
   const runtime = getWgpuRenderStateRuntime(state);
-  const existing = _quadBatchResources.get(state.device);
+  const existing = runtime.quadBatchResources;
   if (existing !== undefined) return existing;
 
   const { device } = state;
@@ -118,11 +118,9 @@ export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBa
     materialPipelineLayout,
     pipelines: new WeakMap(),
   };
-  _quadBatchResources.set(device, resources);
+  runtime.quadBatchResources = resources;
   return resources;
 }
-
-const _quadBatchResources = new WeakMap<GPUDevice, WgpuQuadBatchResources>();
 
 export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);

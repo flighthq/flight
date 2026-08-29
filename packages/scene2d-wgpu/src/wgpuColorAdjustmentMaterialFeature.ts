@@ -267,32 +267,35 @@ function fillWgpuQuadBatchWriterUniformColorMatrix(
 // and applies `color * mult + offset` in unpremultiplied space. Reused verbatim from the former
 // color-adjustment material so premultiplied-alpha handling is unchanged.
 function getWgpuQuadBatchWriterColorScaleBiasModule(state: WgpuRenderState): GPUShaderModule {
-  const cached = _colorScaleBiasModules.get(state.device);
+  const runtime = getWgpuRenderStateRuntime(state);
+  const cached = runtime.colorScaleBiasModule;
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
     code: getWgpuQuadBatchPreludeWGSL() + COLOR_SCALE_BIAS_WGSL,
   });
-  _colorScaleBiasModules.set(state.device, module);
+  runtime.colorScaleBiasModule = module;
   return module;
 }
 
 function getWgpuQuadBatchWriterPackedTintModule(state: WgpuRenderState): GPUShaderModule {
-  const cached = _packedTintModules.get(state.device);
+  const runtime = getWgpuRenderStateRuntime(state);
+  const cached = runtime.packedTintModule;
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
     code: getWgpuQuadBatchPreludeWGSL() + PACKED_TINT_WGSL,
   });
-  _packedTintModules.set(state.device, module);
+  runtime.packedTintModule = module;
   return module;
 }
 
 function getWgpuQuadBatchWriterColorMatrixModule(state: WgpuRenderState): GPUShaderModule {
-  const cached = _colorMatrixModules.get(state.device);
+  const runtime = getWgpuRenderStateRuntime(state);
+  const cached = runtime.colorMatrixModule;
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
     code: getWgpuQuadBatchPreludeWGSL() + COLOR_MATRIX_WGSL,
   });
-  _colorMatrixModules.set(state.device, module);
+  runtime.colorMatrixModule = module;
   return module;
 }
 
@@ -566,12 +569,12 @@ function ensureWgpuShapeMeshColorScaleBiasPipeline(
   state: WgpuRenderState,
   blendMode: RenderProxy2D['blendMode'],
 ): WgpuShapeMeshPipeline {
-  let cache = _shapeMeshColorScaleBiasPipelines.get(state.device);
+  const runtime = getWgpuRenderStateRuntime(state);
+  let cache = runtime.shapeMeshColorScaleBiasPipelines;
   if (cache === undefined) {
     cache = new Map();
-    _shapeMeshColorScaleBiasPipelines.set(state.device, cache);
+    runtime.shapeMeshColorScaleBiasPipelines = cache;
   }
-  const runtime = getWgpuRenderStateRuntime(state);
   const format = runtime.currentColorFormat ?? state.format;
   const key = `${format}|${blendMode ?? 'null'}`;
   const existing = cache.get(key);
@@ -632,7 +635,6 @@ struct ShapeMeshUniforms {
 }
 `;
 
-const _shapeMeshColorScaleBiasPipelines = new WeakMap<GPUDevice, Map<string, WgpuShapeMeshPipeline>>();
 const _shapeMeshColorScaleBiasUniformScratch = new Float32Array(24);
 
 const COLOR_SCALE_BIAS_WGSL = /* wgsl */ `
@@ -747,10 +749,6 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
   return color;
 }
 `;
-
-const _colorScaleBiasModules = new WeakMap<GPUDevice, GPUShaderModule>();
-const _packedTintModules = new WeakMap<GPUDevice, GPUShaderModule>();
-const _colorMatrixModules = new WeakMap<GPUDevice, GPUShaderModule>();
 
 const wgpuColorAdjustmentMaterialFeature: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: WGPU_COLOR_ADJUSTMENT_FRAGMENT_CHUNK,

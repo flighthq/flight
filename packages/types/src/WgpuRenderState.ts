@@ -19,6 +19,8 @@ import type { WgpuPresentationSurface } from './WgpuHost';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
+import type { WgpuParticleResources } from './WgpuParticleResources';
+import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
 import type { WgpuRenderEffectRunner } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
@@ -236,6 +238,15 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // realization of lazily uploaded MeshGeometry data, keyed by the geometry entity (parallel to
   // MeshGeometryRuntime.webgpuData; scene-wgpu owns and casts the concrete value shape).
   sceneMeshUploadCache?: WeakMap<object, object> | null;
+
+  standardMaterialModule?: GPUShaderModule;
+  colorScaleBiasModule?: GPUShaderModule;
+  packedTintModule?: GPUShaderModule;
+  colorMatrixModule?: GPUShaderModule;
+  shapeMeshColorScaleBiasPipelines?: Map<string, WgpuShapeMeshPipeline>;
+
+  particleResources?: WgpuParticleResources;
+  quadBatchResources?: WgpuQuadBatchResources;
 
   // Frame state: command encoder and current render pass
   commandEncoder: GPUCommandEncoder | null;
