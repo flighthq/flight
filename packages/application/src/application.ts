@@ -5,6 +5,7 @@ import type {
   ApplicationStepOptions,
   ApplicationWindow,
   BackendExplanation,
+  HasAppExitSubscription,
   LoopBackend,
 } from '@flighthq/types/contract';
 
@@ -19,12 +20,13 @@ const kPaused = Symbol();
 
 // -- Application entity --
 
-export function attachApplicationExit(app: Application): void {
+export function attachApplicationExit(host: HasAppExitSubscription, app: Application): void {
   const observers = getApplicationObservers(app);
   observers.get(kExit)?.();
   const handler = () => emitSignal(app.onExit);
-  window.addEventListener('beforeunload', handler);
-  observers.set(kExit, () => window.removeEventListener('beforeunload', handler));
+  const exit = host.app.exit;
+  exit.subscribe(handler);
+  observers.set(kExit, () => exit.unsubscribe(handler));
 }
 
 // Wires window onDeactivate → pauseApplicationLoop and onActivate → resumeApplicationLoop so the

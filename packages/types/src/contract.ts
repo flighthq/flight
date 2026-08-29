@@ -324,6 +324,7 @@ export * from './HitTestResult';
 export * from './HtmlView';
 export * from './Host';
 export * from './HostImageSource';
+export * from './ApplicationExitBackend';
 export * from './FileDialogBackend';
 export * from './FullscreenBackend';
 export * from './MessageDialogBackend';

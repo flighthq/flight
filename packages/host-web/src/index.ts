@@ -1,4 +1,5 @@
 export { enableHostWeb } from './enableHostWeb';
+export { webApplicationExitBackend } from './webApplicationExit';
 export { enableHostWebAccessibility } from './webAccessibility';
 export { enableHostWebApp } from './webApp';
 export { enableHostWebAudio } from './webAudio';

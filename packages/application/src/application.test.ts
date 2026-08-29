@@ -1,5 +1,5 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { LoopBackend } from '@flighthq/types/contract';
+import type { ApplicationExitBackend, LoopBackend } from '@flighthq/types/contract';
 
 import {
   attachApplicationExit,
@@ -54,32 +54,69 @@ function makeManualLoopBackend(): LoopBackend & { tick: (time: number) => void; 
   };
 }
 
+type RecordingApplicationExitBackend = ApplicationExitBackend & {
+  readonly calls: string[];
+  emit(): void;
+};
+
+type ExitTestHost = { readonly app: { readonly exit: RecordingApplicationExitBackend } };
+
+function createExitTestHost(): ExitTestHost {
+  const calls: string[] = [];
+  const listeners = new Set<() => void>();
+  return {
+    app: {
+      exit: {
+        calls,
+        emit() {
+          for (const listener of listeners) listener();
+        },
+        subscribe(listener) {
+          calls.push('subscribe');
+          listeners.add(listener);
+        },
+        unsubscribe(listener) {
+          calls.push('unsubscribe');
+          listeners.delete(listener);
+        },
+      },
+    },
+  };
+}
+
 afterEach(() => resetLoopBackendForTest());
 
 describe('attachApplicationExit', () => {
-  it('emits onExit on beforeunload', () => {
+  it('emits onExit through the host subscription', () => {
+    const host = createExitTestHost();
     const app = createApplication();
     let called = false;
     connectSignal(app.onExit, () => {
       called = true;
     });
 
-    attachApplicationExit(app);
-    window.dispatchEvent(new Event('beforeunload'));
+    attachApplicationExit(host, app);
+    host.app.exit.emit();
 
     expect(called).toBe(true);
+    expect(host.app.exit.calls).toEqual(['subscribe']);
   });
 
-  it('replaces a previous exit listener when called again', () => {
+  it('unsubscribes the prior host before replacing the exit listener', () => {
+    const first = createExitTestHost();
+    const second = createExitTestHost();
     const app = createApplication();
     let count = 0;
     connectSignal(app.onExit, () => count++);
 
-    attachApplicationExit(app);
-    attachApplicationExit(app);
-    window.dispatchEvent(new Event('beforeunload'));
+    attachApplicationExit(first, app);
+    attachApplicationExit(second, app);
+    first.app.exit.emit();
+    second.app.exit.emit();
 
     expect(count).toBe(1);
+    expect(first.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
+    expect(second.app.exit.calls).toEqual(['subscribe']);
   });
 });
 
@@ -116,6 +153,7 @@ describe('attachApplicationLifecycle', () => {
 
 describe('createApplication', () => {
   it('returns signals with no side effects', () => {
+    const host = createExitTestHost();
     const app = createApplication();
     expect(app.onUpdate).toBeDefined();
     expect(app.onRender).toBeDefined();
@@ -125,7 +163,7 @@ describe('createApplication', () => {
     connectSignal(app.onExit, () => {
       exitCalled = true;
     });
-    window.dispatchEvent(new Event('beforeunload'));
+    host.app.exit.emit();
     expect(exitCalled).toBe(false);
   });
 
@@ -174,23 +212,26 @@ describe('createWebLoopBackend', () => {
 
 describe('detachApplicationExit', () => {
   it('removes the listener', () => {
+    const host = createExitTestHost();
     const app = createApplication();
     let called = false;
     connectSignal(app.onExit, () => {
       called = true;
     });
 
-    attachApplicationExit(app);
+    attachApplicationExit(host, app);
     detachApplicationExit(app);
-    window.dispatchEvent(new Event('beforeunload'));
+    host.app.exit.emit();
 
     expect(called).toBe(false);
+    expect(host.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
   });
 });
 
 describe('disposeApplication', () => {
   it('stops loop, removes exit listener, and sets isRunning false', () => {
     const backend = makeManualLoopBackend();
+    const host = createExitTestHost();
     setLoopBackend(backend);
 
     const app = createApplication();
@@ -200,13 +241,14 @@ describe('disposeApplication', () => {
     });
 
     startApplicationLoop(app);
-    attachApplicationExit(app);
+    attachApplicationExit(host, app);
     expect(app.isRunning).toBe(true);
     disposeApplication(app);
 
     expect(app.isRunning).toBe(false);
-    window.dispatchEvent(new Event('beforeunload'));
+    host.app.exit.emit();
     expect(exitCalled).toBe(false);
+    expect(host.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
   });
 });
 
