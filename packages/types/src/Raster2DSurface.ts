@@ -13,4 +13,7 @@ export interface Raster2DSurface {
 
 export interface Raster2DSurfaceProvider {
   createRaster2DSurface(width: number, height: number): Raster2DSurface | null;
+  // Called by @flighthq/render's destroyRaster2DSurface routing, which preserves the creator identity
+  // across process-global provider changes. Consumers destroy through that free function, not directly.
+  destroyRaster2DSurface(surface: Raster2DSurface): void;
 }

@@ -11,11 +11,14 @@ import {
   getWgpuShapeData,
 } from './wgpuShapeData';
 
+const destroySurface = vi.fn();
+
 beforeAll(() => {
   installWgpuMock();
 });
 
 beforeEach(() => {
+  destroySurface.mockReset();
   setRaster2DSurfaceProvider({
     createRaster2DSurface(width, height) {
       const canvas = document.createElement('canvas');
@@ -39,6 +42,7 @@ beforeEach(() => {
         image: createImageResource(canvas),
       };
     },
+    destroyRaster2DSurface: destroySurface,
   });
 });
 
@@ -105,27 +109,48 @@ describe('destroyWgpuShapeData', () => {
     const state = await createWgpuRenderStateForTest();
     const data = createWgpuShapeData(state, {} as never);
     expect(() => destroyWgpuShapeData(state, data)).not.toThrow();
+    expect(destroySurface).not.toHaveBeenCalled();
   });
 
-  it('destroys the cached GPU texture keyed on the raster surface, and the mesh buffers', async () => {
+  it('destroys the cached GPU texture before the raster surface, then frees the mesh buffers', async () => {
     const state = await createWgpuRenderStateForTest();
     const data = createWgpuShapeData(state, {} as never);
     const shapeData = getWgpuShapeData(data)!;
     const surface = acquireWgpuShapeRasterSurface(shapeData)!;
-    const destroy = vi.fn();
-    getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache.set(surface.image, {
+    const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const order: string[] = [];
+    const destroy = vi.fn(() => order.push('texture'));
+    cache.set(surface.image, {
       texture: { destroy },
     } as never);
-    const bufferDestroy = vi.fn();
+    destroySurface.mockImplementation((destroyed) => {
+      expect(cache.has(destroyed.image)).toBe(false);
+      order.push('surface');
+    });
+    const bufferDestroy = vi.fn(() => order.push('buffer'));
     shapeData.meshBuffers.vertexBuffers.push({ destroy: bufferDestroy } as never);
     shapeData.meshBuffers.colorScaleBiasUniformBuffers.push({ destroy: bufferDestroy } as never);
 
     destroyWgpuShapeData(state, data);
 
-    expect(destroy).toHaveBeenCalled();
-    expect(bufferDestroy).toHaveBeenCalled();
+    expect(destroy).toHaveBeenCalledOnce();
+    expect(destroySurface).toHaveBeenCalledWith(surface);
+    expect(bufferDestroy).toHaveBeenCalledTimes(2);
+    expect(cache.has(surface.image)).toBe(false);
+    expect(order).toEqual(['texture', 'surface', 'buffer', 'buffer']);
     expect(shapeData.meshBuffers.vertexBuffers).toHaveLength(0);
     expect(shapeData.meshBuffers.colorScaleBiasUniformBuffers).toHaveLength(0);
+  });
+
+  it('destroys a raster surface even when it never acquired a GPU cache entry', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const data = createWgpuShapeData(state, {} as never);
+    const shapeData = getWgpuShapeData(data)!;
+    const surface = acquireWgpuShapeRasterSurface(shapeData)!;
+
+    destroyWgpuShapeData(state, data);
+
+    expect(destroySurface).toHaveBeenCalledWith(surface);
   });
 });
 

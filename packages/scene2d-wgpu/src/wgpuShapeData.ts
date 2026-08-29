@@ -1,5 +1,5 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createRaster2DSurface } from '@flighthq/render/contract';
+import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import type {
   Raster2DSurface,
   Renderable,
@@ -47,9 +47,9 @@ export function createWgpuShapeData(_state: RenderState, _source: Renderable): R
   });
 }
 
-// Destroy the GPU texture the batch uploaded for this shape's raster surface, plus the mesh path's per-shape
-// vertex/index/uniform buffers, when the shape is torn down. A shape that only ever tessellated has no
-// surface and so no texture to free.
+// Destroy the GPU texture the batch uploaded for this shape's raster surface and remove its cache key before
+// destroying the provider-owned surface. Then free the mesh path's per-shape buffers. A shape that only ever
+// tessellated owns mesh state but no raster resources.
 export function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const shapeData = getWgpuShapeData(data);
@@ -61,6 +61,7 @@ export function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData)
       entry.texture.destroy();
       runtime.textureSourcePremultipliedTextureCache.delete(surface.image);
     }
+    destroyRaster2DSurface(surface);
   }
   const b = shapeData.meshBuffers;
   for (const buffer of b.vertexBuffers) buffer.destroy();
