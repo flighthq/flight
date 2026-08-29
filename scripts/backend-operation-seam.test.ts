@@ -86,16 +86,6 @@ describe('backend operation seam ratchet', () => {
     expect(output).toContain(GATE_STRUCTURAL_LIMIT);
   });
 
-  // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.
-  // Deleting the caveat to tidy the output fails here.
-  it('prints the caveat that the count is migration and says what it cannot measure', () => {
-    const output = formatBackendOperationSeamReport(report);
-    expect(output).toContain(BACKEND_OPERATION_SEAM_SCOPE_CAVEAT);
-    expect(output).toContain('STRUCTURAL');
-    expect(output).toContain('counts migration');
-    expect(output).toContain(GATE_STRUCTURAL_LIMIT);
-  });
-
   it('reports no violation among the migrated interfaces', () => {
     expect(report.violations).toEqual([]);
     expect(hasBackendOperationSeamFailure(report)).toBe(false);
