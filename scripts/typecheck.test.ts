@@ -1,9 +1,16 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { runTypechecks, typecheckProjects, typeDeclarationsProject } from './typecheck-core';
+import {
+  createTsconfigMatcher,
+  readToolsCoverage,
+  readTsconfigPatterns,
+  runTypechecks,
+  typecheckProjects,
+  typeDeclarationsProject,
+} from './typecheck-core';
 import type { TypecheckProject, TypecheckResult } from './typecheck-core';
 import { workspacePackages } from './workspaces';
 
@@ -67,35 +74,9 @@ function result(project: Readonly<TypecheckProject>, passed: boolean): Typecheck
 describe('ordinary typecheck coverage', () => {
   it('keeps every workspace package that has source inside the ordinary project, and names any it drops', () => {
     const root = resolve(__dirname, '..');
-    // `tsconfig.json` carries `//` comments, so strip them before parsing rather than pulling in a JSONC
-    // dependency for one read.
-    const raw = readFileSync(join(root, 'tsconfig.json'), 'utf-8')
-      .split('\n')
-      .map((line) => (/^\s*\/\//.test(line) ? '' : line.replace(/\s+\/\/.*$/, '')))
-      .join('\n');
-    const config = JSON.parse(raw) as { exclude?: string[]; include?: string[] };
-    const include = config.include ?? [];
-    const exclude = config.exclude ?? [];
-    expect(include.length).toBeGreaterThan(0);
-
-    // Minimal glob→RegExp for the two shapes tsconfig uses here: `**/` spanning directories and `*`
-    // within a segment. The two-step token swap keeps `**` from being eaten by the single-`*` rule.
-    const toRegExp = (pattern: string): RegExp => {
-      const escaped = pattern
-        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-        .replace(/\*\*\//g, '<globstar-slash>')
-        .replace(/\*\*/g, '<globstar>')
-        .replace(/\*/g, '[^/]*')
-        .replace(/<globstar-slash>/g, '(?:.*/)?')
-        .replace(/<globstar>/g, '.*');
-      return new RegExp(`^${escaped}$`);
-    };
-    const includeRe = include.map(toRegExp);
-    const excludeRe = exclude.map((pattern) => toRegExp(pattern.endsWith('/**') ? pattern : `${pattern}/**`));
-    const coversPath = (relative: string): boolean =>
-      includeRe.some((re) => re.test(relative)) &&
-      !excludeRe.some((re) => re.test(relative)) &&
-      !exclude.some((pattern) => relative === pattern || relative.startsWith(`${pattern}/`));
+    const patterns = readTsconfigPatterns(join(root, 'tsconfig.json'));
+    expect(patterns.include.length).toBeGreaterThan(0);
+    const coversPath = createTsconfigMatcher(patterns);
 
     // Population: packages that actually carry source, derived from disk. A package with no `src/*.ts`
     // cannot be covered by anything, and demanding it would fail for something that is not a coverage loss.
@@ -117,5 +98,48 @@ describe('ordinary typecheck coverage', () => {
       .sort();
 
     expect(missing, `ordinary typecheck no longer covers: ${missing.join(', ')}`).toEqual([]);
+  });
+});
+
+// ★ THE TWO PROJECTS MUST NOT LEAVE A GAP BETWEEN THEM. The ordinary project excludes host-probe's
+// target-specific files; `tools/host-probe/tsconfig.json` is the opt-in project that covers them where the
+// toolchains exist. Nothing structural ties those two lists together, so a file can fall out of one without
+// falling into the other and be typechecked by nothing, on any machine — silently, because the gate it left
+// is the one that got greener.
+//
+// Coverage is deliberately NOT equality. The opt-in project also covers the host-agnostic files the ordinary
+// gate already checks, and forcing the two sets to match would mean narrowing the opt-in `include` to buy no
+// checking at all. Containment is the property that matters.
+//
+// `npm run typecheck:host-probe` calibrates this model against real `tsc` output where the toolchains are
+// installed; see the note in `typecheck-host-probe.ts` for why the guard itself cannot ask `tsc`.
+describe('tools typecheck coverage', () => {
+  it('covers every host-probe file the ordinary project excludes, and names any it drops', () => {
+    const coverage = readToolsCoverage(resolve(__dirname, '..'));
+
+    // Guard the guard, twice. A matcher bug that matched nothing would leave both populations empty and
+    // pass by comparing one empty set against another.
+    expect(coverage.sources.length).toBeGreaterThan(20);
+    expect(coverage.excludedFromOrdinary.length).toBeGreaterThan(0);
+
+    expect(
+      coverage.uncoveredHostProbe,
+      `excluded from the ordinary project and not covered by the opt-in project: ${coverage.uncoveredHostProbe.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it('leaves no file under tools/ that neither project covers', () => {
+    const coverage = readToolsCoverage(resolve(__dirname, '..'));
+
+    expect(coverage.ordinary.length).toBeGreaterThan(0);
+    expect(coverage.optIn.length).toBeGreaterThan(0);
+
+    // Wider than the containment check on purpose: today the only excluded files are host-probe's, so the
+    // two agree. An exclusion added tomorrow for `tools/review` or `tools/capture` — neither of which has an
+    // opt-in project to catch it — fails here and stays invisible to the check above.
+    expect(
+      coverage.uncoveredTools,
+      `typechecked by neither the ordinary nor the opt-in project: ${coverage.uncoveredTools.join(', ')}`,
+    ).toEqual([]);
   });
 });

@@ -28,7 +28,8 @@
     "test:e2e:capacitor:ios": "tsx scripts/buildCapacitorApp.ts ios && cross-env HOST_PROBE_CAPACITOR_PLATFORM=ios wdio run wdio.capacitor.conf.ts",
     "test:e2e:electron": "tsx scripts/testElectron.ts",
     "test:e2e:tauri": "npm run build:tauri && wdio run wdio.tauri.conf.ts",
-    "test:e2e:web": "tsx scripts/testWeb.ts"
+    "test:e2e:web": "tsx scripts/testWeb.ts",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",
