@@ -39,6 +39,13 @@ export function createVideoTexture(source: VideoResource, opts?: Readonly<Partia
   });
 }
 
+// Detaches the borrowed video Image source without destroying the underlying VideoResource. Leaves
+// the Texture entity invalid — subsequent advance/ready calls return sentinel values.
+export function destroyVideoTexture(texture: TextureLike): void {
+  texture.source = null;
+  texture.version = INITIAL_VIDEO_VERSION;
+}
+
 // Returns the decoded frame height, or -1 while the borrowed host element is absent/unready.
 export function getVideoTextureHeight(texture: Readonly<TextureLike>): number {
   const element = getVideoElement(texture);

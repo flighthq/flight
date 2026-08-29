@@ -1,6 +1,7 @@
 import { createVideoResource } from '@flighthq/video/contract';
 
 import {
+  destroyVideoChannel,
   getVideoChannelCurrentTime,
   getVideoChannelDuration,
   getVideoChannelHeight,
@@ -14,6 +15,79 @@ import {
   setVideoChannelPlaybackRate,
   stopVideoChannel,
 } from './videoChannel';
+
+describe('destroyVideoChannel', () => {
+  it('nulls source and sets state to stopped', () => {
+    const element = createMockVideoElement();
+    const resource = createVideoResource(element);
+    const channel = playVideoResource(resource)!;
+    expect(channel.source).toBe(resource);
+    destroyVideoChannel(channel);
+    expect(channel.source).toBeNull();
+    expect(channel.state).toBe('stopped');
+    expect(channel.currentTime).toBe(0);
+  });
+
+  it('removes the ended listener from the element', () => {
+    const element = createMockVideoElement();
+    const resource = createVideoResource(element);
+    const channel = playVideoResource(resource)!;
+    const listenersBefore = element.listenerCount('ended');
+    expect(listenersBefore).toBe(1);
+    destroyVideoChannel(channel);
+    expect(element.listenerCount('ended')).toBe(0);
+  });
+
+  it('pauses the element', () => {
+    const element = createMockVideoElement();
+    const resource = createVideoResource(element);
+    const channel = playVideoResource(resource)!;
+    expect(element.paused).toBe(false);
+    destroyVideoChannel(channel);
+    expect(element.paused).toBe(true);
+  });
+
+  it('is idempotent', () => {
+    const element = createMockVideoElement();
+    const resource = createVideoResource(element);
+    const channel = playVideoResource(resource)!;
+    destroyVideoChannel(channel);
+    destroyVideoChannel(channel);
+    expect(channel.source).toBeNull();
+    expect(channel.state).toBe('stopped');
+  });
+
+  it('does not destroy the borrowed video resource', () => {
+    const element = createMockVideoElement();
+    const resource = createVideoResource(element);
+    const channel = playVideoResource(resource)!;
+    destroyVideoChannel(channel);
+    expect(resource.element).toBe(element);
+    expect(resource.ownsElement).toBe(false);
+  });
+
+  it('does not stop MediaStream tracks', () => {
+    const track = { stop: vi.fn(), kind: 'video', enabled: true } as unknown as MediaStreamTrack;
+    const stream = { getTracks: () => [track] } as unknown as MediaStream;
+    const element = createMockVideoElement();
+    (element as unknown as Record<string, unknown>).srcObject = stream;
+    const resource = createVideoResource(element);
+    const channel = playVideoResource(resource)!;
+    destroyVideoChannel(channel);
+    expect(track.stop).not.toHaveBeenCalled();
+  });
+
+  it('survives destroying the resource first then the channel', () => {
+    const element = createMockVideoElement();
+    const resource = createVideoResource(element, true);
+    const channel = playVideoResource(resource)!;
+    resource.element = null;
+    resource.ownsElement = false;
+    destroyVideoChannel(channel);
+    expect(channel.source).toBeNull();
+    expect(channel.state).toBe('stopped');
+  });
+});
 
 describe('getVideoChannelCurrentTime', () => {
   it('returns stored currentTime when not playing', () => {
@@ -44,7 +118,7 @@ describe('getVideoChannelHeight', () => {
   it('returns 0 when element is null', () => {
     const channel = playVideoResource(createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
-    channel!.source = { element: null, objectUrl: null };
+    channel!.source = { element: null, objectUrl: null, ownsElement: false };
     expect(getVideoChannelHeight(channel!)).toBe(0);
   });
 });
@@ -60,7 +134,7 @@ describe('getVideoChannelWidth', () => {
   it('returns 0 when element is null', () => {
     const channel = playVideoResource(createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
-    channel!.source = { element: null, objectUrl: null };
+    channel!.source = { element: null, objectUrl: null, ownsElement: false };
     expect(getVideoChannelWidth(channel!)).toBe(0);
   });
 });
@@ -183,6 +257,10 @@ class MockVideoElement {
       type,
       list.filter((h) => h !== handler),
     );
+  }
+
+  listenerCount(type: string): number {
+    return this._listeners.get(type)?.length ?? 0;
   }
 
   pause(): void {
