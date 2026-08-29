@@ -16,7 +16,7 @@ import {
   createVector3,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderState,
+  createWgpuRenderStateFromCanvasElement,
   endWgpuRenderEffectPipeline,
   getBitmapPixel,
   prepareScene3DRender,
@@ -42,7 +42,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
-export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101018ff });
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, { pixelRatio, backgroundColor: 0x101018ff });
 registerWgpuImageTextureResolver(state);
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 1,

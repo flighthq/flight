@@ -13,6 +13,7 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuHostAcquisition,
+  WgpuHostAcquisitionOptions,
   WgpuHostBackend,
   WgpuPresentationSurface,
   WgpuRenderOptions,
@@ -63,6 +64,22 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   copyRenderStateRegistrations(target, source);
 }
 
+// Acquires host handles the CALLER owns. Ownership is `caller`, so Flight never releases these: the caller
+// ends their life with `releaseWgpuAcquisition`, and a state built on them leaves them intact when it is
+// destroyed. Returns `null` rather than throwing, because "this environment has no WebGPU" is an expected
+// outcome and not a programmer error.
+export async function createWgpuAcquisitionFromCanvasElement(
+  canvas: HTMLCanvasElement,
+  options: Readonly<WgpuHostAcquisitionOptions> = {},
+): Promise<WgpuHostAcquisition | null> {
+  try {
+    const acquired = await getWgpuHostBackend().acquire(canvas, options);
+    return { ...acquired, ownership: 'caller' };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Creates a second render pipeline over `screenState`'s GPUDevice.
  *
@@ -99,27 +116,46 @@ export function createWgpuOffscreenRenderState(screenState: WgpuRenderState): Wg
   return state;
 }
 
-export async function createWgpuRenderState(
-  canvas: HTMLCanvasElement,
+// Synchronous: with the handles already in hand there is nothing left to await. Everything asynchronous
+// lives in acquisition.
+export function createWgpuRenderState(
+  acquisition: Readonly<WgpuHostAcquisition>,
   options: WgpuRenderOptions = {},
-): Promise<WgpuRenderState> {
+): WgpuRenderState {
   const hostBackend = getWgpuHostBackend();
-  const acquisition =
-    options.acquisition ??
-    (await hostBackend.acquire(canvas, {
-      format: options.format,
-      powerPreference: options.powerPreference,
-    }));
   try {
-    return initializeWgpuRenderState(canvas, options, acquisition, hostBackend);
+    return initializeWgpuRenderState(options, acquisition, hostBackend);
   } catch (error) {
-    hostBackend.release(acquisition);
+    // ★ NEVER release what the caller owns, not even while unwinding a failure. This is the path where
+    // borrowed handles were previously destroyed on the way out, and it was safe only because the shipped
+    // backend happened to check. The policy belongs here, where it holds for every backend.
+    if (acquisition.ownership !== 'caller') hostBackend.release(acquisition);
     throw error;
   }
 }
 
-function initializeWgpuRenderState(
+// The canvas convenience: acquire, then build. The handles are `flight`-owned, so destroying the state
+// releases them — the behavior every existing caller had when it passed a canvas.
+export async function createWgpuRenderStateFromCanvasElement(
   canvas: HTMLCanvasElement,
+  options: Readonly<WgpuRenderOptions & WgpuHostAcquisitionOptions> = {},
+): Promise<WgpuRenderState> {
+  const acquisition = await getWgpuHostBackend().acquire(canvas, {
+    format: options.format,
+    powerPreference: options.powerPreference,
+  });
+  return createWgpuRenderState(acquisition, options);
+}
+
+// Allocates the package-private GPU runtime for a WgpuRenderState. createWgpuRenderState attaches
+// one to each state under EntityRuntimeKey and populates its fields; getWgpuRenderStateRuntime reads
+// it back. The render path writes the returned object every frame, so the return is intentionally
+// mutable (not Readonly).
+export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
+  return createWgpuRenderStateRuntimeInternal(sharedRuntime, null, null);
+}
+
+function initializeWgpuRenderState(
   options: Readonly<WgpuRenderOptions>,
   acquisition: Readonly<WgpuHostAcquisition>,
   hostBackend: WgpuHostBackend,
@@ -261,12 +297,38 @@ function initializeWgpuRenderState(
   return state;
 }
 
-// Allocates the package-private GPU runtime for a WgpuRenderState. createWgpuRenderState attaches
-// one to each state under EntityRuntimeKey and populates its fields; getWgpuRenderStateRuntime reads
-// it back. The render path writes the returned object every frame, so the return is intentionally
-// mutable (not Readonly).
-export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
-  return createWgpuRenderStateRuntimeInternal(sharedRuntime, null, null);
+// Destroys the GPU buffers and textures createWgpuRenderState (and the lazy quad-batch writer/particle
+// paths) allocated on `state`: the uniform buffer, particle instance buffer, depth-stencil texture,
+// and every quad-batch writer pool slot's instance/material buffers. Call when the render state is no
+// longer needed.
+//
+// GC-managed Wgpu objects with no destroy() (pipelines, bind groups, layouts, samplers, shader
+// modules, texture views) are not touched. textureCache is a WeakMap and cannot be enumerated; its
+// entries' textures are freed per-node by the dispose* paths. The shared device tier routes its
+// acquisition through the originating host backend when its last state is destroyed.
+export function destroyWgpuRenderState(state: WgpuRenderState): void {
+  if (_destroyedStates.has(state)) return;
+  _destroyedStates.add(state);
+  const runtime = getWgpuRenderStateRuntime(state);
+  destroyRenderState(state);
+  runtime.uniformBuffer?.destroy();
+  runtime.particleInstanceBuffer?.destroy();
+  runtime.depthStencilTexture?.destroy();
+  runtime.surfaceAntialiasTexture?.destroy();
+  for (const slot of runtime.quadBatchWriterBufferPool) {
+    slot.instanceBuffer?.destroy();
+    slot.materialBuffer?.destroy();
+  }
+  const deviceRuntime = getWgpuDeviceRuntime(runtime);
+  deviceRuntime.references--;
+  if (
+    deviceRuntime.references === 0 &&
+    deviceRuntime.acquisition !== null &&
+    deviceRuntime.hostBackend !== null &&
+    deviceRuntime.acquisition.ownership !== 'caller'
+  ) {
+    deviceRuntime.hostBackend.release(deviceRuntime.acquisition);
+  }
 }
 
 function createWgpuRenderStateRuntimeWithHost(
@@ -324,35 +386,6 @@ function createWgpuRenderStateRuntimeInternal(
     });
   }
   return runtime;
-}
-
-// Destroys the GPU buffers and textures createWgpuRenderState (and the lazy quad-batch writer/particle
-// paths) allocated on `state`: the uniform buffer, particle instance buffer, depth-stencil texture,
-// and every quad-batch writer pool slot's instance/material buffers. Call when the render state is no
-// longer needed.
-//
-// GC-managed Wgpu objects with no destroy() (pipelines, bind groups, layouts, samplers, shader
-// modules, texture views) are not touched. textureCache is a WeakMap and cannot be enumerated; its
-// entries' textures are freed per-node by the dispose* paths. The shared device tier routes its
-// acquisition through the originating host backend when its last state is destroyed.
-export function destroyWgpuRenderState(state: WgpuRenderState): void {
-  if (_destroyedStates.has(state)) return;
-  _destroyedStates.add(state);
-  const runtime = getWgpuRenderStateRuntime(state);
-  destroyRenderState(state);
-  runtime.uniformBuffer?.destroy();
-  runtime.particleInstanceBuffer?.destroy();
-  runtime.depthStencilTexture?.destroy();
-  runtime.surfaceAntialiasTexture?.destroy();
-  for (const slot of runtime.quadBatchWriterBufferPool) {
-    slot.instanceBuffer?.destroy();
-    slot.materialBuffer?.destroy();
-  }
-  const deviceRuntime = getWgpuDeviceRuntime(runtime);
-  deviceRuntime.references--;
-  if (deviceRuntime.references === 0 && deviceRuntime.acquisition !== null && deviceRuntime.hostBackend !== null) {
-    deviceRuntime.hostBackend.release(deviceRuntime.acquisition);
-  }
 }
 
 export function getWgpuColorAdjustmentMaterialFeature(
@@ -425,6 +458,11 @@ export function getWgpuSampler(
 
 export function isWgpuSupported(): boolean {
   return getWgpuHostBackend().isSupported();
+}
+
+// The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
+export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition>): void {
+  getWgpuHostBackend().release(acquisition);
 }
 
 // Small-integer codes for the sampler-cache numeric key (see getWgpuSampler). Module-level so the key

@@ -1,7 +1,7 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   createWgpuCanvasElement,
-  createWgpuRenderState,
+  createWgpuRenderStateFromCanvasElement,
   enableFlightDiagnostics,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuTextLabelRenderer,
@@ -21,7 +21,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderState(canvas, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, {
   pixelRatio,
   backgroundColor: 0x0a0a14ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',

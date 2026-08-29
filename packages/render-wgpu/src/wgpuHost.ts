@@ -42,8 +42,10 @@ export function createWebWgpuHostBackend(): WgpuHostBackend {
       return getWebWgpu() !== null;
     },
 
+    // Unconditional teardown. Ownership policy is NOT decided here: Flight never calls this for a
+    // caller-owned acquisition, and `releaseWgpuAcquisition` calls it because the caller asked. A backend
+    // that re-checked ownership would silently make the caller's own release verb a no-op.
     release(acquisition): void {
-      if (acquisition.ownership === 'caller') return;
       acquisition.context.unconfigure();
       acquisition.device.destroy();
     },
