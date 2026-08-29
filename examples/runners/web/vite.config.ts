@@ -47,6 +47,9 @@ function entryWithLogCapture(name: string, render: string): string {
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
     `setLogSink(createConsoleCaptureSink());`,
   ];
+  if (render === 'canvas' || render === 'webgl') {
+    lines.push(`import { enableHostWebBitmapReadback } from '@flighthq/host-web';`, `enableHostWebBitmapReadback();`);
+  }
   if (render === 'webgl') {
     lines.push(`import { enableHostWebGlRenderSurface } from '@flighthq/host-web';`, `enableHostWebGlRenderSurface();`);
   }
