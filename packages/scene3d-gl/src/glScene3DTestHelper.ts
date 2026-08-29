@@ -349,10 +349,10 @@ export function makeGlScene3DState(gl?: FakeGl2): { state: GlRenderState; gl: Fa
 
   const runtime = createGlRenderStateRuntime();
   Object.assign(runtime, {
-    currentBlendMode: null,
+    currentBlendSignature: null,
     currentFramebuffer: null,
-    currentProgram: null,
-    currentTexture: null,
+    currentShader: null,
+    currentTextureRealization: null,
     renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
     textureSourcePremultipliedTextureCache: new WeakMap(),

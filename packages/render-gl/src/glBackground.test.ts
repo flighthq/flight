@@ -1,5 +1,4 @@
 import { srgbChannelToLinear } from '@flighthq/color/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import { renderGlBackground } from './glBackground';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -39,12 +38,12 @@ describe('renderGlBackground', () => {
     expect(gl.viewport).toHaveBeenLastCalledWith(10, 20, 30, 40);
   });
 
-  it('resets currentBlendMode to null', () => {
+  it('invalidates currentBlendSignature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentBlendMode = BlendMode.Add;
+    runtime.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
     renderGlBackground(state);
-    expect(runtime.currentBlendMode).toBeNull();
+    expect(runtime.currentBlendSignature).toBeNull();
   });
 
   it('passes fractional RGBA values through unchanged', () => {

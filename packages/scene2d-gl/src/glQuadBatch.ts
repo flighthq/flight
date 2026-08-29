@@ -43,7 +43,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const texture = atlas.texture;
   const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (glTexture === null) return;
-  const straightAlpha = runtime.currentTextureStraightAlpha;
+  const straightAlpha = runtime.currentTextureRealization!.straightAlpha;
   const nodeMaterialData = quadBatch.materialData;
   // Per-quad color adjustments, overriding the node-level tint for the quads that carry one.
   const perQuadColorScaleBias = data.materialData;

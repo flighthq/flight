@@ -21,11 +21,11 @@ import type {
   RenderEffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
-import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
-import { isBlendModeSupported, registerGlBlendMode } from './glDraw';
+import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw';
 import { registerGlMaterialRenderer } from './glMaterialRegistry';
 import {
   copyGlRenderStateRegistrations,
@@ -38,6 +38,7 @@ import {
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
 } from './glRenderState';
+import { ensureDefaultGlBitmapShader } from './glShader';
 import { makeGL } from './glTestHelper';
 import { registerGlTextureResolver } from './glTextureResolver';
 
@@ -249,8 +250,8 @@ describe('createGlOffscreenRenderState', () => {
     expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')?.runner).toBe(effectRunner);
     expect(getPaddingResolver(offscreen, 'acme.Effect')).toBe(paddingResolver);
 
-    screenRuntime.currentProgram = {} as WebGLProgram;
-    expect(offscreenRuntime.currentProgram).toBe(screenRuntime.currentProgram);
+    screenRuntime.currentShader = { locations: null, program: {} as WebGLProgram };
+    expect(offscreenRuntime.currentShader).toBe(screenRuntime.currentShader);
   });
 
   it('requires explicit re-copy for registrations added after derivation', () => {
@@ -311,22 +312,22 @@ describe('createGlRenderState', () => {
     expect(state.gl).toBe(gl);
   });
 
-  it('initializes runtime currentBlendMode to null', () => {
+  it('initializes runtime currentBlendSignature to null', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).currentBlendMode).toBeNull();
+    expect(getGlRenderStateRuntime(state).currentBlendSignature).toBeNull();
   });
 
-  it('initializes runtime currentProgram to null', () => {
+  it('initializes runtime currentShader to null', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).currentProgram).toBeNull();
+    expect(getGlRenderStateRuntime(state).currentShader).toBeNull();
   });
 
-  it('initializes runtime currentTexture to null', () => {
+  it('initializes runtime currentTextureRealization to null', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).currentTexture).toBeNull();
+    expect(getGlRenderStateRuntime(state).currentTextureRealization).toBeNull();
   });
 
   it('enables blending during initialization', () => {
@@ -467,6 +468,28 @@ describe('createGlRenderStateRuntime', () => {
 });
 
 describe('destroyGlRenderState', () => {
+  it('does not delete the caller-owned bitmap shader that was bound last', () => {
+    const { gl } = makeContext();
+    const owner = createGlRenderState(gl);
+    const owned = ensureDefaultGlBitmapShader(owner);
+    const callerProgram = { callerOwned: true } as unknown as WebGLProgram;
+    const shader = {
+      bind: vi.fn(),
+      locations: { ...owned.locations, program: callerProgram },
+      program: callerProgram,
+    };
+    const deleteProgram = vi.spyOn(gl, 'deleteProgram');
+    useGlProgram(owner, shader);
+
+    destroyGlRenderState(owner);
+    const nextOwner = createGlRenderState(gl);
+    useGlProgram(nextOwner, shader);
+
+    expect(deleteProgram).toHaveBeenCalledWith(owned.program);
+    expect(deleteProgram).not.toHaveBeenCalledWith(callerProgram);
+    expect(gl.useProgram).toHaveBeenLastCalledWith(shader.program);
+  });
+
   it('deletes buffers on destroy even when no shader was compiled', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl);
@@ -582,20 +605,20 @@ describe('invalidateGlRenderStateCache', () => {
 
     // Simulate a full frame of render-gl activity plus a sibling renderer (scene-gl) binding raw GL
     // state the cache never observed: the cache now points at bindings that are no longer current.
-    runtime.currentProgram = {} as WebGLProgram;
-    runtime.currentTexture = {} as WebGLTexture;
+    runtime.currentShader = { locations: null, program: {} as WebGLProgram };
+    runtime.currentTextureRealization = { straightAlpha: true, texture: {} as WebGLTexture };
     runtime.currentFramebuffer = {} as WebGLFramebuffer;
-    runtime.currentBlendMode = BlendMode.Add;
+    runtime.currentBlendSignature = { dst: gl.ONE, equation: gl.FUNC_ADD, src: gl.ONE };
     runtime.currentMaskDepth = 3;
     runtime.currentScissorRect = { x: 0, y: 0, width: 1, height: 1 };
     runtime.renderTargetViewport = { height: 4, width: 4, x: 0, y: 0 };
 
     invalidateGlRenderStateCache(state);
 
-    expect(runtime.currentProgram).toBeNull();
-    expect(runtime.currentTexture).toBeNull();
+    expect(runtime.currentShader).toBeNull();
+    expect(runtime.currentTextureRealization).toBeNull();
     expect(runtime.currentFramebuffer).toBeNull();
-    expect(runtime.currentBlendMode).toBeNull();
+    expect(runtime.currentBlendSignature).toBeNull();
     expect(runtime.currentMaskDepth).toBe(0);
     expect(runtime.currentScissorRect).toBeNull();
     expect(runtime.renderTargetViewport).toBeNull();

@@ -1,11 +1,10 @@
 import type {
-  BlendMode as BlendModeType,
+  GlBlendSignature,
   GlRenderStateRuntime,
   GlRenderTarget,
   GlScissorRect,
   GlViewportRect,
 } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { popGlRenderState, pushGlRenderState, withGlRenderState } from './glRenderStateBracket';
@@ -18,7 +17,7 @@ type TestGlState = {
   blendDstRgb: number;
   blendEquationAlpha: number;
   blendEquationRgb: number;
-  blendMode: BlendModeType | null;
+  blendSignature: GlBlendSignature | null;
   blendSrcAlpha: number;
   blendSrcRgb: number;
   cullFace: boolean;
@@ -56,7 +55,7 @@ const OUTER_STATE: TestGlState = {
   blendDstRgb: 0x0303,
   blendEquationAlpha: 0x8006,
   blendEquationRgb: 0x8006,
-  blendMode: BlendMode.Add,
+  blendSignature: { dst: 0x0303, equation: 0x8006, src: 1 },
   blendSrcAlpha: 1,
   blendSrcRgb: 1,
   cullFace: false,
@@ -87,7 +86,7 @@ const MIDDLE_STATE: TestGlState = {
   blendDstRgb: 0,
   blendEquationAlpha: 0x800b,
   blendEquationRgb: 0x800b,
-  blendMode: BlendMode.Multiply,
+  blendSignature: { dst: 0, equation: 0x800b, src: 1 },
   blendSrcAlpha: 1,
   blendSrcRgb: 1,
   cullFace: true,
@@ -114,7 +113,7 @@ const MIDDLE_STATE: TestGlState = {
 const INNER_STATE: TestGlState = {
   ...OUTER_STATE,
   activeTexture: 0x84c3,
-  blendMode: BlendMode.Screen,
+  blendSignature: { dst: 0x0303, equation: 0x8006, src: 1 },
   currentRenderTarget: { name: 'inner-target' } as unknown as GlRenderTarget,
   framebuffer: { name: 'inner-framebuffer' } as unknown as WebGLFramebuffer,
   program: { name: 'inner-program' } as unknown as WebGLProgram,
@@ -281,13 +280,13 @@ function applyTestGlState(fixture: StatefulGl, values: Readonly<TestGlState>): v
   setCapability(gl, gl.SCISSOR_TEST, values.scissorTest);
   gl.scissor(values.scissorBox[0], values.scissorBox[1], values.scissorBox[2], values.scissorBox[3]);
   gl.viewport(values.viewport[0], values.viewport[1], values.viewport[2], values.viewport[3]);
-  runtime.currentBlendMode = values.blendMode;
+  runtime.currentBlendSignature = values.blendSignature;
   runtime.currentFramebuffer = values.framebuffer;
   runtime.currentRenderTarget = values.currentRenderTarget;
-  runtime.currentProgram = values.program;
+  runtime.currentShader = values.program === null ? null : { locations: null, program: values.program };
   runtime.currentScissorRect = values.scissorRect;
-  runtime.currentTexture = values.texture;
-  runtime.currentTextureStraightAlpha = values.straightAlpha;
+  runtime.currentTextureRealization =
+    values.texture === null ? null : { straightAlpha: values.straightAlpha, texture: values.texture };
   runtime.renderTargetViewport = values.renderTargetViewport;
 }
 
@@ -481,13 +480,13 @@ function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>)
   expect(gl.isEnabled(gl.SCISSOR_TEST)).toBe(expected.scissorTest);
   expect(parameters.get(gl.SCISSOR_BOX)).toEqual(expected.scissorBox);
   expect(parameters.get(gl.VIEWPORT)).toEqual(expected.viewport);
-  expect(runtime.currentBlendMode).toBe(expected.blendMode);
+  expect(runtime.currentBlendSignature).toEqual(expected.blendSignature);
   expect(runtime.currentFramebuffer).toBe(expected.framebuffer);
   expect(runtime.currentRenderTarget).toBe(expected.currentRenderTarget);
-  expect(runtime.currentProgram).toBe(expected.program);
+  expect(runtime.currentShader?.program ?? null).toBe(expected.program);
   expect(runtime.currentScissorRect).toBe(expected.scissorRect);
-  expect(runtime.currentTexture).toBe(expected.texture);
-  expect(runtime.currentTextureStraightAlpha).toBe(expected.straightAlpha);
+  expect(runtime.currentTextureRealization?.texture ?? null).toBe(expected.texture);
+  expect(runtime.currentTextureRealization?.straightAlpha ?? false).toBe(expected.straightAlpha);
   expect(runtime.renderTargetViewport).toBe(expected.renderTargetViewport);
 }
 

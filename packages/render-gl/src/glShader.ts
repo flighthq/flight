@@ -109,7 +109,6 @@ export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShade
   const shaderLoc = compileDefaultGlProgram(state.gl);
   const shader = createDefaultGlBitmapShader(shaderLoc, runtime.matrixArray);
   runtime.defaultBitmapShader = shader;
-  runtime.shaderLoc = shaderLoc;
   return shader;
 }
 

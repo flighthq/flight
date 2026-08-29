@@ -15,7 +15,7 @@ import type {
   ResolvedRenderTargetDescriptor,
 } from '@flighthq/types/contract';
 
-import { drawGlQuad, useGlProgram } from './glDraw';
+import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader';
 
@@ -78,8 +78,7 @@ export function createGlRenderTarget(
   allocateGlRenderTargetStorage(state, target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  runtime.currentTexture = null;
+  bindGlTextureRealization(state, null);
   return target;
 }
 
@@ -128,22 +127,22 @@ export function drawGlRenderTargetResult(
   state.applyBlendMode?.(state, renderProxy.blendMode);
 
   const gl = state.gl;
-  const { shaderLoc, matrixArray } = runtime;
-  gl.bindTexture(gl.TEXTURE_2D, target.texture);
-  runtime.currentTexture = target.texture;
+  const { matrixArray } = runtime;
+  const locations = runtime.currentShader!.locations!;
+  bindGlTextureRealization(state, { straightAlpha: false, texture: target.texture });
 
   const quadTransform = acquireMatrix();
   multiplyMatrix(quadTransform, renderProxy.transform2D, transform);
-  setGlAttributes(gl, shaderLoc!);
+  setGlAttributes(gl, locations);
   setGlMatrixFromTransform(
     gl,
-    shaderLoc!,
+    locations,
     matrixArray,
     quadTransform,
     runtime.renderTargetViewport?.width ?? gl.drawingBufferWidth,
     runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight,
   );
-  setGlBaseUniforms(gl, shaderLoc!, renderProxy);
+  setGlBaseUniforms(gl, locations, renderProxy);
   releaseMatrix(quadTransform);
 
   drawGlQuad(state, 0, 0, target.width, target.height, 0, 1, 1, 0);
@@ -202,8 +201,7 @@ export function resizeGlRenderTarget(
   // creation contract by restoring the caller's tracked framebuffer before returning; otherwise a
   // pooled resize leaves physical GL state and the binding mirror disagreeing.
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  runtime.currentTexture = null;
+  bindGlTextureRealization(state, null);
 }
 
 /**
@@ -249,7 +247,7 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
       gl.enable(gl.SCISSOR_TEST);
       gl.scissor(scissor.x, scissor.y, scissor.width, scissor.height);
     }
-    runtime.currentTexture = null;
+    runtime.currentTextureRealization = null;
   }
   // Flush so the resolved texels are visible to the next sample of `target.texture`. The blit→sample
   // dependency is implicit in conformant GL, but some drivers (notably headless SwiftShader) sample a

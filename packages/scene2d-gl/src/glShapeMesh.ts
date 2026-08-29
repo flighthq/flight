@@ -19,7 +19,7 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 // Draws the shape's tessellated fill meshes through `binding`. Flushes the quad-batch writer first (these go
 // through a separate program), honors the node blend mode and alpha, and is gated by any active clip
-// stencil (GL state set by the clip hooks is left untouched). Records the program as currentProgram so
+// stencil (GL state set by the clip hooks is left untouched). Records the program as currentShader so
 // the next content draw re-binds its own program (same hazard the clip path guards against). Uploads
 // premultiplied color per mesh for the standard ONE / ONE_MINUS_SRC_ALPHA blend. `onProgramBound` runs
 // after the program and matrix are set but before the draw loop, so a caller can upload extra uniforms
@@ -37,7 +37,7 @@ export function drawGlShapeMeshBatch(
 
   const gl = state.gl;
   gl.useProgram(binding.program);
-  runtime.currentProgram = binding.program;
+  runtime.currentShader = { locations: null, program: binding.program };
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
   gl.uniformMatrix3fv(binding.matrixLocation, false, shapeMeshMatrix(state, renderProxy));

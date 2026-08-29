@@ -15,7 +15,7 @@ import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTexture';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
-import type { GlTextureResolver } from './GlTextureResolver';
+import type { GlTextureRealization, GlTextureResolver } from './GlTextureResolver';
 import type { GlVelocityWriter } from './GlVelocityWriter';
 import type { Image } from './Image';
 import type { Material } from './Material';
@@ -73,6 +73,22 @@ export interface GlBlendRealization {
   readonly equation?: GlBlendEquation;
 }
 
+// Numeric WebGL state resolved from a semantic blend mode. Null in the runtime is reserved for an
+// invalid shadow; normal blending is a real signature and can never collide with invalidation.
+export interface GlBlendSignature {
+  readonly dst: number;
+  readonly equation: number;
+  readonly src: number;
+}
+
+// The physically bound program and the bitmap locations that are valid for it. Programs such as
+// fullscreen, clip, and mesh shaders carry null locations. This binding fact is deliberately not an
+// ownership record: merely binding a caller-provided program never makes render-gl responsible for it.
+export interface GlBoundShader {
+  readonly locations: GlShaderLocations | null;
+  readonly program: WebGLProgram;
+}
+
 export type GlBlendFactor = 'DST_COLOR' | 'ONE' | 'ONE_MINUS_SRC_ALPHA' | 'ONE_MINUS_SRC_COLOR' | 'ZERO';
 
 export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MIN';
@@ -118,14 +134,11 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Opt-in dev guard: called where a draw path is about to TRUST a cached binding slot and skip the
   // rebind. Null in production, so the check costs nothing and the message lives in the guard module.
   bindingCacheGuard: ((state: GlRenderState, expectedProgram: WebGLProgram) => void) | null;
-  // Active GPU bindings tracked to avoid redundant state changes. Internal — formerly public on the
-  // GlRenderState entity.
-  currentBlendMode: BlendMode | null;
-  currentProgram: WebGLProgram | null;
-  currentTexture: WebGLTexture | null;
-  // Whether the currently bound display texture stores straight RGB in compressed blocks. Built-in
-  // 2D shaders premultiply its sample before ONE/ONE_MINUS_SRC_ALPHA blending.
-  currentTextureStraightAlpha: boolean;
+  // Atomic context binding shadows. Null always means invalid/untracked; a valid normal blend, bound
+  // program, or bound texture is represented by a complete record.
+  currentBlendSignature: GlBlendSignature | null;
+  currentShader: GlBoundShader | null;
+  currentTextureRealization: GlTextureRealization | null;
   // Optional owner-installed seam that drains queued draws before render-gl hands the context to a
   // foreign renderer. scene2d-gl installs its quad-batch writer flush lazily when a batch is first prepared;
   // render-gl reaches it only through this contract slot and therefore does not depend on scene2d-gl.
@@ -217,7 +230,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
    * its origin. Null means the full canvas.
    */
   renderTargetViewport: GlViewportRect | null;
-  shaderLoc: GlShaderLocations | null;
   // Raw-element texture cache: a canvas/video/image element uploaded directly (video frames, canvas-backed
   // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;

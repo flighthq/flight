@@ -61,11 +61,11 @@ describe('drawGlScene3D', () => {
     // without the post-draw invalidation the stale program would survive and the effect-pipeline
     // present pass would set uniforms against a program that is no longer bound (INVALID_OPERATION).
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentProgram = {} as WebGLProgram;
+    runtime.currentShader = { locations: null, program: {} as WebGLProgram };
 
     drawGlScene3D(state, scene, makeCamera(), LIGHTS);
 
-    expect(runtime.currentProgram).toBeNull();
+    expect(runtime.currentShader).toBeNull();
   });
 
   it("declares the bound render target 'linear' (scene materials output linear HDR)", () => {

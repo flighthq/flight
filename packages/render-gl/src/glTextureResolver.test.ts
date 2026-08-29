@@ -219,8 +219,10 @@ describe('registerGlTextureResolver', () => {
     const { state: a } = createGlState();
     const { state: b } = createGlState();
     const sourceKind = 'acme.generated';
-    const first = vi.fn(() => ({ first: true }) as unknown as WebGLTexture);
-    const second = vi.fn(() => ({ second: true }) as unknown as WebGLTexture);
+    const firstTexture = { first: true } as unknown as WebGLTexture;
+    const secondTexture = { second: true } as unknown as WebGLTexture;
+    const first = vi.fn(() => ({ straightAlpha: false, texture: firstTexture }));
+    const second = vi.fn(() => ({ straightAlpha: false, texture: secondTexture }));
     const source = textureSource(sourceKind);
     const texture = textureWithImage(source);
 
@@ -229,7 +231,7 @@ describe('registerGlTextureResolver', () => {
     expect(resolveGlTexture(b, texture)).toBeNull();
 
     registerGlTextureResolver(a, sourceKind, second);
-    expect(resolveGlTexture(a, texture)).toEqual({ second: true });
+    expect(resolveGlTexture(a, texture)).toBe(secondTexture);
     expect(getGlRenderStateRuntime(a).registries.textureResolvers.entries.size).toBe(1);
 
     registerGlTextureResolver(a, sourceKind, null);
@@ -239,9 +241,11 @@ describe('registerGlTextureResolver', () => {
   it('uses one exact keyed lookup and does not fall through to another kind', () => {
     const { state } = createGlState();
     const image = textureSource('acme.specific');
-    registerGlTextureResolver(state, 'image', () => ({ kind: 'image' }) as unknown as WebGLTexture);
-    registerGlTextureResolver(state, 'acme.specific', () => ({ kind: 'specific' }) as unknown as WebGLTexture);
-    expect(resolveGlTexture(state, textureWithImage(image))).toEqual({ kind: 'specific' });
+    const imageTexture = { kind: 'image' } as unknown as WebGLTexture;
+    const specificTexture = { kind: 'specific' } as unknown as WebGLTexture;
+    registerGlTextureResolver(state, 'image', () => ({ straightAlpha: false, texture: imageTexture }));
+    registerGlTextureResolver(state, 'acme.specific', () => ({ straightAlpha: false, texture: specificTexture }));
+    expect(resolveGlTexture(state, textureWithImage(image))).toBe(specificTexture);
   });
 });
 

@@ -115,17 +115,15 @@ export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}
 
   const runtime = createGlRenderStateRuntime();
   state[EntityRuntimeKey] = runtime;
-  runtime.currentBlendMode = null;
+  runtime.currentBlendSignature = null;
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;
-  runtime.currentProgram = null;
+  runtime.currentShader = null;
   runtime.currentScissorRect = null;
-  runtime.currentTexture = null;
-  runtime.currentTextureStraightAlpha = false;
+  runtime.currentTextureRealization = null;
   runtime.flushPendingDraws = null;
   runtime.renderTargetViewport = null;
   runtime.defaultBitmapShader = null;
-  runtime.shaderLoc = null;
   runtime.quadBatchWriterBlendMode = null;
   runtime.quadBatchWriterMaterial = null;
   runtime.quadBatchWriterMaterialRenderer = null;
@@ -228,9 +226,9 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (contextRuntime.references !== 0) return;
   const gl = state.gl;
 
-  // Dedupe: several shader wrappers (e.g. defaultBitmapShader) share shaderLoc.program.
+  // Dedupe: several owned shader wrappers may share a program. The current binding is intentionally
+  // absent from this ledger: binding a caller-owned shader never transfers allocation ownership.
   const programs = new Set<WebGLProgram>();
-  if (runtime.shaderLoc) programs.add(runtime.shaderLoc.program);
   if (runtime.defaultBitmapShader) programs.add(runtime.defaultBitmapShader.program);
   if (runtime.particleShader) programs.add(runtime.particleShader.program);
   if (runtime.quadBatchShader) programs.add(runtime.quadBatchShader.program);
@@ -286,13 +284,12 @@ export function getGlRenderStateRuntime(state: GlRenderState): GlRenderStateRunt
 // renderer must call this before returning control to render-gl.
 export function invalidateGlRenderStateCache(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.currentBlendMode = null;
+  runtime.currentBlendSignature = null;
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;
-  runtime.currentProgram = null;
+  runtime.currentShader = null;
   runtime.currentScissorRect = null;
-  runtime.currentTexture = null;
-  runtime.currentTextureStraightAlpha = false;
+  runtime.currentTextureRealization = null;
   runtime.renderTargetViewport = null;
 }
 
@@ -339,10 +336,9 @@ function getGlContextRuntime(runtime: GlRenderStateRuntime): GlContextRuntime {
 // Pass-local framebuffer/viewport/clip fields stay state-local because glRenderPass owns their exact
 // dormant restore points on its per-context stack.
 const GL_CONTEXT_RUNTIME_KEYS = [
-  'currentBlendMode',
-  'currentProgram',
-  'currentTexture',
-  'currentTextureStraightAlpha',
+  'currentBlendSignature',
+  'currentShader',
+  'currentTextureRealization',
   'particleShader',
   'particleCornerBuffer',
   'particleInstanceBuffer',
@@ -355,7 +351,6 @@ const GL_CONTEXT_RUNTIME_KEYS = [
   'shapeMeshColorScaleBiasShader',
   'shapeMeshColorMatrixShader',
   'sceneMeshUploadCache',
-  'shaderLoc',
   'textureCache',
   'textureSourcePremultipliedTextureCache',
   'textureSourcePremultipliedSrgbTextureCache',

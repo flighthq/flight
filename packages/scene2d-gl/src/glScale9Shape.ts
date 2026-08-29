@@ -137,13 +137,14 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
   const gl = state.gl;
   bindGlImageResourceTexture(state, surface.image, null, null, true);
 
-  const { shaderLoc, matrixArray } = runtime;
-  setGlBaseUniforms(gl, shaderLoc!, renderProxy);
+  const { matrixArray } = runtime;
+  const locations = runtime.currentShader!.locations!;
+  setGlBaseUniforms(gl, locations, renderProxy);
 
   const t = renderProxy.transform2D;
   setStrippedGlMatrixFromValues(
     gl,
-    shaderLoc!,
+    locations,
     matrixArray,
     t,
     source.scaleX,

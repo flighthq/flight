@@ -1,4 +1,5 @@
 import { applyGlSamplerState } from '@flighthq/render-gl/contract';
+import { bindGlTextureRealization } from '@flighthq/render-gl/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-gl/contract';
@@ -178,9 +179,7 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.quadBatchWriterInstanceData, 0, count * QUAD_BATCH_INSTANCE_FLOATS);
 
   state.applyBlendMode?.(state, blendMode);
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  runtime.currentTexture = texture;
-  runtime.currentTextureStraightAlpha = straightAlpha;
+  bindGlTextureRealization(state, { straightAlpha, texture });
   applyGlSamplerState(state, runtime, texture, sampler, smoothing);
 
   // The color-adjustment fold is opt-in (registerGlColorAdjustmentMaterialFeature): when installed it selects and binds
@@ -341,14 +340,14 @@ export function setGlQuadBatchWorldAndTexture(
   gl.uniformMatrix3fv(locWorldMatrix, false, m);
   gl.uniform1i(locTexture, 0);
   if (locStraightTextureAlpha !== undefined) {
-    gl.uniform1i(locStraightTextureAlpha, runtime.currentTextureStraightAlpha ? 1 : 0);
+    gl.uniform1i(locStraightTextureAlpha, runtime.currentTextureRealization?.straightAlpha === true ? 1 : 0);
   }
 }
 
 export function useGlQuadBatchProgram(state: GlRenderState, program: WebGLProgram): void {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.currentProgram !== program) {
+  if (runtime.currentShader?.program !== program) {
     state.gl.useProgram(program);
-    runtime.currentProgram = program;
   }
+  runtime.currentShader = { locations: null, program };
 }

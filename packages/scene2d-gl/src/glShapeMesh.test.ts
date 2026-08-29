@@ -73,13 +73,13 @@ describe('drawGlShapeMeshes', () => {
     expect(gl.drawElements).toHaveBeenCalledWith(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, 0);
   });
 
-  it('records the mesh program as currentProgram so content draws re-bind', () => {
+  it('records the mesh program as currentShader so content draws re-bind', () => {
     const { state } = createGlState();
-    expect(getGlRenderStateRuntime(state).currentProgram).toBeNull();
+    expect(getGlRenderStateRuntime(state).currentShader).toBeNull();
 
     drawGlShapeMeshes(state, makeProxy(), [TRIANGLE]);
 
-    expect(getGlRenderStateRuntime(state).currentProgram).not.toBeNull();
+    expect(getGlRenderStateRuntime(state).currentShader).not.toBeNull();
   });
 
   it('uploads premultiplied color (color * alpha) for the standard blend', () => {

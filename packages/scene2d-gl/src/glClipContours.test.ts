@@ -86,16 +86,16 @@ describe('pushGlClipContours', () => {
     expect(getGlRenderStateRuntime(state).currentMaskDepth).toBe(1);
   });
 
-  it('syncs state.currentProgram to the clip program so content draws re-bind their own program', () => {
+  it('syncs state.currentShader to the clip program so content draws re-bind their own program', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    expect(runtime.currentProgram).toBeNull();
+    expect(runtime.currentShader).toBeNull();
 
     pushGlClipContours(state, SQUARE, 'nonZero', createMatrix());
 
     // The clip binds its own position-only program; recording it forces the next content draw to detect
     // the change and re-bind, instead of setting its uniforms against the clip program.
-    expect(runtime.currentProgram).not.toBeNull();
+    expect(runtime.currentShader).not.toBeNull();
   });
 
   it('re-enables color writes after stencilling so gated content is drawn', () => {
