@@ -3,10 +3,11 @@
 // complete versioned verification handshake only when tool-capture is driving the page.
 
 import type {
+  Bitmap,
   CanvasRenderState,
   DomRenderState,
   GlRenderState,
-  Bitmap,
+  WgpuPresentationSurface,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 
@@ -138,9 +139,13 @@ function createFunctionalTarget(options: Readonly<CapturePageTargetOptions>, sca
   const state = options.state;
   const canvas = 'canvas' in state ? state.canvas : null;
   const element = 'element' in state ? state.element : null;
+  // A WGPU state carries no canvas — it sizes from its presentation surface — so this fallback has to read
+  // the surface too, or a webgpu target with no explicit width silently falls through to zero.
+  const surface = 'surface' in state ? (state.surface as WgpuPresentationSurface) : null;
   const gl = options.renderer === 'webgl' ? (state as GlRenderState).gl : null;
-  const width = options.width ?? gl?.drawingBufferWidth ?? canvas?.width ?? element?.clientWidth ?? 0;
-  const height = options.height ?? gl?.drawingBufferHeight ?? canvas?.height ?? element?.clientHeight ?? 0;
+  const width = options.width ?? gl?.drawingBufferWidth ?? canvas?.width ?? surface?.width ?? element?.clientWidth ?? 0;
+  const height =
+    options.height ?? gl?.drawingBufferHeight ?? canvas?.height ?? surface?.height ?? element?.clientHeight ?? 0;
   const render = (): void => {};
   if (options.renderer === 'dom') return { kind: 'dom', state: state as DomRenderState, width, height, scale, render };
   if (options.renderer === 'webgl')
