@@ -142,6 +142,18 @@ describe('createGlContextState', () => {
     const { gl } = makeContext();
     expect(createGlContextState(gl)).not.toBe(createGlContextState(gl));
   });
+
+  it('returns a state that shares the context tier across derived render states', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const stateA = createGlRenderStateFromContextState(contextState);
+    const stateB = createGlRenderStateFromContextState(contextState);
+    const runtimeA = getGlRenderStateRuntime(stateA);
+    const runtimeB = getGlRenderStateRuntime(stateB);
+
+    runtimeA.currentShader = { locations: null, program: {} as WebGLProgram };
+    expect(runtimeB.currentShader).toBe(runtimeA.currentShader);
+  });
 });
 
 describe('createGlOffscreenRenderState', () => {
@@ -424,6 +436,19 @@ describe('createGlRenderStateFromContextState', () => {
 
     getGlRenderStateRuntime(first).currentBlendSignature = { dst: 1, equation: 2, src: 3 };
     expect(getGlRenderStateRuntime(second).currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
+  });
+
+  it('builds a render state whose context tier is shared with siblings from the same context state', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const stateA = createGlRenderStateFromContextState(contextState);
+    const stateB = createGlRenderStateFromContextState(contextState);
+    expect(stateA.gl).toBe(gl);
+    expect(stateB.gl).toBe(gl);
+    const runtimeA = getGlRenderStateRuntime(stateA);
+    const runtimeB = getGlRenderStateRuntime(stateB);
+    runtimeA.currentBlendSignature = { dst: 7, equation: 8, src: 9 };
+    expect(runtimeB.currentBlendSignature).toEqual({ dst: 7, equation: 8, src: 9 });
   });
 });
 
@@ -715,6 +740,19 @@ describe('invalidateGlRenderStateCache', () => {
     expect(runtime.currentMaskDepth).toBe(0);
     expect(runtime.currentScissorRect).toBeNull();
     expect(runtime.renderTargetViewport).toBeNull();
+  });
+});
+
+describe('registerGlContextTeardown', () => {
+  it('pushes a callback that fires on context teardown', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const state = createGlRenderStateFromContextState(contextState);
+    const teardown = vi.fn();
+    registerGlContextTeardown(state, teardown);
+    destroyGlRenderState(state);
+    expect(teardown).toHaveBeenCalledOnce();
+    expect(teardown).toHaveBeenCalledWith(gl);
   });
 });
 import { createEntity } from '@flighthq/entity/contract';

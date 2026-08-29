@@ -169,6 +169,15 @@ describe('createWgpuDeviceState', () => {
     const device = {} as GPUDevice;
     expect(createWgpuDeviceState(device)).not.toBe(createWgpuDeviceState(device));
   });
+
+  it('returns a state that shares the device tier across derived runtimes', () => {
+    const device = {} as GPUDevice;
+    const deviceState = createWgpuDeviceState(device);
+    const runtimeA = createWgpuRenderStateRuntime(deviceState);
+    const runtimeB = createWgpuRenderStateRuntime(deviceState);
+    runtimeA.standardMaterialModule = {} as GPUShaderModule;
+    expect(runtimeB.standardMaterialModule).toBe(runtimeA.standardMaterialModule);
+  });
 });
 
 describe('createWgpuOffscreenRenderState', () => {
@@ -813,6 +822,17 @@ describe('isWgpuSupported', () => {
     } finally {
       installWgpuMock();
     }
+  });
+});
+
+describe('registerWgpuDeviceTeardown', () => {
+  it('pushes a callback that fires on device teardown', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const teardown = vi.fn();
+    registerWgpuDeviceTeardown(state, teardown);
+    destroyWgpuRenderState(state);
+    expect(teardown).toHaveBeenCalledOnce();
+    expect(teardown).toHaveBeenCalledWith(state.device);
   });
 });
 
