@@ -95,6 +95,10 @@ const missingDomTargetPage = `<!doctype html><script>
   window.__ftProvideDomRenderPixels = () => {};
 </script>`;
 
+const pageErrorBeforeVerificationPage = `<!doctype html>
+  <div id="ft-error"></div>
+  <script>throw new Error('primary page setup failed');</script>`;
+
 // Non-DOM controls publish a blue verifier image and repaint the live canvas green afterwards. Their
 // canonical screenshots must remain the verifier image, pinning the existing source-selection behavior.
 const rasterVerificationPage = (render: string): string => `<!doctype html>
@@ -125,6 +129,7 @@ const pages: Record<string, string> = {
   '/rive-import': domVerificationPage(800, 480, 'valid'),
   '/swf-mirrored-placement': domVerificationPage(640, 300, 'valid'),
   '/dom-missing-readback': missingDomTargetPage,
+  '/dom-page-error-before-verification': pageErrorBeforeVerificationPage,
   '/dom-failed-readback': domVerificationPage(80, 48, 'failed'),
   '/dom-malformed-readback': domVerificationPage(80, 48, 'malformed-pass'),
   '/dom-observe': domVerificationPage(80, 48, 'valid'),
@@ -342,6 +347,19 @@ describe('captureEntry browser contract', () => {
     expect(captured.callbackFingerprints).toEqual([]);
     expect(existsSync(captured.screenshotPath)).toBe(false);
     expect(captured.baselineAfter).toBe(captured.baselineBefore);
+  }, 30_000);
+
+  it('preserves the primary page exception when DOM verification never starts', async () => {
+    const captured = await captureFixture({ name: 'dom-page-error-before-verification', renderer: 'dom' });
+    expect(captured.status).toMatchObject({
+      state: 'error',
+      error: expect.stringContaining('primary page setup failed'),
+      hash: null,
+      baselineHash: null,
+      changed: null,
+    });
+    expect(captured.callbackFingerprints).toEqual([]);
+    expect(existsSync(captured.screenshotPath)).toBe(false);
   }, 30_000);
 
   it('fails closed when the DOM element screenshot rejects', async () => {
