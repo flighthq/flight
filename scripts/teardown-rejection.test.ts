@@ -56,6 +56,38 @@ const FIXTURE = [
   '}',
 ].join('\n');
 
+// ★ THE ADOPTION FIXTURE. Every row was verified against Node's `unhandledRejection` hook before it was
+// written here, because the two rules that matter most are the opposite of what they look like: a sibling
+// `onErr` does not cover a rejection RETURNED from its own `onOk`, and `.finally` adopts but never handles.
+// `f10` is the positive control — without a row that must be EXCLUDED, every other row here passes under an
+// implementation that changed nothing at all.
+const ADOPTION_FIXTURE = [
+  'export function makeAdoptionBackend() {',
+  '  return {',
+  '    async destroy() {',
+  '      try { p.then((m) => f1()); } catch { /* F1 adopted but nothing downstream handles it */ }',
+  '      try { p.catch(() => f2()); } catch { /* F2 the handler IS this link, so nothing follows it */ }',
+  '      try { p.then((m) => { f3(); }).catch(h); } catch { /* F3 discarded, never adopted */ }',
+  '      try { p.then((m) => { if (x) return f4a(); f4b(); }).catch(h); } catch { /* F4 decided per path */ }',
+  '      try { p.then((m) => () => f5()).catch(h); } catch { /* F5 returns a function; f5 never ran */ }',
+  '      try { p.then((m) => void f6()).catch(h); } catch { /* F6 void discards the promise */ }',
+  '      try { p.then((m) => [f7()]).catch(h); } catch { /* F7 an array is a new value */ }',
+  '      try { p.then((m) => f8(), (e) => {}); } catch { /* F8 the sibling handler is not downstream */ }',
+  '      try { p.then((m) => f9()).finally(done); } catch { /* F9 finally never handles */ }',
+  '      try { p.then((m) => f10()).catch(h); } catch { /* F10 POSITIVE CONTROL — must be excluded */ }',
+  '      try { p.finally(() => f11()).catch(h); } catch { /* F11 finally adopts, .catch handles */ }',
+  '      try { const c = p.then((m) => f12()); c.catch(h); } catch { /* F12 split chain stays flagged */ }',
+  '      try { Promise.all([f13()]).catch(h); } catch { /* F13 combinator stays flagged */ }',
+  '      try { p.then((m) => (x ? f14() : g)).catch(h); } catch { /* both ternary branches are tail */ }',
+  '      try { p.then((m) => x && f15()).catch(h); } catch { /* right operand is tail */ }',
+  '      try { p.then((m) => { return f16(); }).catch(h); } catch { /* explicit return is tail */ }',
+  '      try { await p.then((m) => f17()); } catch { /* the whole chain is awaited */ }',
+  '      try { p.then((m) => (0, f18())).catch(h); } catch { /* last of a sequence is tail */ }',
+  '    },',
+  '  };',
+  '}',
+].join('\n');
+
 // Same teardown shape but assertSyncVoid is weakened — missing the IsAny guard. The scanner must NOT
 // recognize it, so the wrapped call remains a candidate.
 const WEAKENED_FIXTURE = [
@@ -111,6 +143,72 @@ describe('formatTeardownRejectionReport', () => {
     const text = formatTeardownRejectionReport(createTeardownRejectionReport([fixturePath]));
     expect(text).toContain('asserted empty across all packages');
     expect(text).toContain('structural sync-void proof');
+  });
+});
+
+describe('promise adoption in chain callbacks', () => {
+  // Only the `f*` callees, so the chain links themselves (`p.then`, `p.catch`) stay out of the comparison
+  // — several rows deliberately have no downstream handler, which makes the link a candidate too.
+  const flaggedRows = (): string[] =>
+    scanTeardownRejections(adoptionFixturePath)
+      .candidates.map((candidate) => candidate.callee)
+      .filter((callee) => /^f\d/.test(callee))
+      .sort();
+
+  it('flags exactly the tail calls no strictly-later link covers', () => {
+    expect(flaggedRows()).toEqual(['f1', 'f12', 'f13', 'f2', 'f3', 'f4b', 'f5', 'f6', 'f7', 'f8', 'f9']);
+  });
+
+  // ★ THE POSITIVE CONTROL. Every other assertion in this block is satisfied by a scanner that excludes
+  // nothing, which is precisely the state this slice replaced. This one fails unless adoption is real.
+  it('F10: excludes a tail call a strictly-later .catch covers', () => {
+    expect(flaggedRows()).not.toContain('f10');
+  });
+
+  it('F1: still flags a tail call when nothing downstream handles it', () => {
+    expect(flaggedRows()).toContain('f1');
+  });
+
+  it('F2: still flags a tail call inside the .catch that is itself the last link', () => {
+    expect(flaggedRows()).toContain('f2');
+  });
+
+  it('F3: still flags a call discarded in a block body, however handled the chain is', () => {
+    expect(flaggedRows()).toContain('f3');
+  });
+
+  it('F4: decides per return path, not per callback', () => {
+    expect(flaggedRows()).toContain('f4b');
+    expect(flaggedRows()).not.toContain('f4a');
+  });
+
+  it('F5: still flags a call inside a returned function, which never ran', () => {
+    expect(flaggedRows()).toContain('f5');
+  });
+
+  it('F6 and F7: still flag void and array positions, which drop the promise', () => {
+    expect(flaggedRows()).toContain('f6');
+    expect(flaggedRows()).toContain('f7');
+  });
+
+  // The sibling `onErr` guards the RECEIVER's rejection, never the one its own `onOk` returns — so the
+  // search for a handler has to start strictly after the link, not at it.
+  it('F8: still flags a tail call whose only handler is its own sibling then argument', () => {
+    expect(flaggedRows()).toContain('f8');
+  });
+
+  it('F9 and F11: finally adopts but never handles', () => {
+    expect(flaggedRows()).toContain('f9');
+    expect(flaggedRows()).not.toContain('f11');
+  });
+
+  it('F12 and F13: split chains and combinator forms stay flagged, since adoption is read lexically', () => {
+    expect(flaggedRows()).toContain('f12');
+    expect(flaggedRows()).toContain('f13');
+  });
+
+  it('excludes the tail-transparent forms: ternary, logical, explicit return, awaited chain, sequence', () => {
+    for (const excluded of ['f14', 'f15', 'f16', 'f17', 'f18']) expect(flaggedRows()).not.toContain(excluded);
   });
 });
 
@@ -372,6 +470,7 @@ const COMPILE_FIXTURE = [
 const ROOT = resolve(__dirname, '..');
 const fixturePath = writeFixture(FIXTURE, 'TeardownFixture.ts');
 const weakenedFixturePath = writeFixture(WEAKENED_FIXTURE, 'WeakenedFixture.ts');
+const adoptionFixturePath = writeFixture(ADOPTION_FIXTURE, 'AdoptionFixture.ts');
 
 function livePackageSources(): string[] {
   const files: string[] = [];
