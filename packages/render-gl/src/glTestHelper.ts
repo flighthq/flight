@@ -3,7 +3,7 @@ import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contra
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 
-import { createGlRenderStateRuntime } from './glRenderState';
+import { createGlContextState, createGlRenderStateRuntime } from './glRenderState';
 
 export function createGlState(options?: { allowSmoothing?: boolean; backgroundColorRgba?: number[] }): {
   state: GlRenderState;
@@ -29,7 +29,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
 
   // Runtime (package-private GPU) fields live on the runtime object stored under EntityRuntimeKey,
   // mirroring what createGlRenderState does in production.
-  const runtime = createGlRenderStateRuntime();
+  const runtime = createGlRenderStateRuntime(createGlContextState(gl));
   Object.assign(runtime, {
     currentBlendSignature: null,
     currentFramebuffer: null,

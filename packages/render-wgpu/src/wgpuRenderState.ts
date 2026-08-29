@@ -12,6 +12,7 @@ import type {
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+  WgpuDeviceState,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
   WgpuHostBackend,
@@ -78,6 +79,12 @@ export async function createWgpuAcquisitionFromCanvasElement(
   } catch {
     return null;
   }
+}
+
+export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
+  const deviceRuntime: WgpuDeviceRuntime = { device, fields: {}, references: 0 };
+  _deviceStateToRuntime.set(deviceRuntime as WgpuDeviceState, deviceRuntime);
+  return deviceRuntime as WgpuDeviceState;
 }
 
 /**
@@ -147,12 +154,14 @@ export async function createWgpuRenderStateFromCanvasElement(
   return createWgpuRenderState(acquisition, options);
 }
 
-// Allocates the package-private GPU runtime for a WgpuRenderState. createWgpuRenderState attaches
-// one to each state under EntityRuntimeKey and populates its fields; getWgpuRenderStateRuntime reads
-// it back. The render path writes the returned object every frame, so the return is intentionally
-// mutable (not Readonly).
-export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
-  return createWgpuRenderStateRuntimeInternal(sharedRuntime, null, null);
+export function createWgpuRenderStateRuntime(
+  deviceStateOrSharedRuntime: WgpuDeviceState | WgpuRenderStateRuntime,
+): WgpuRenderStateRuntime {
+  const existingDeviceRuntime = _deviceStateToRuntime.get(deviceStateOrSharedRuntime as WgpuDeviceState);
+  if (existingDeviceRuntime !== undefined) {
+    return createWgpuRenderStateRuntimeInternal(undefined, null, null, existingDeviceRuntime);
+  }
+  return createWgpuRenderStateRuntimeInternal(deviceStateOrSharedRuntime as WgpuRenderStateRuntime, null, null);
 }
 
 function initializeWgpuRenderState(
@@ -321,13 +330,12 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   }
   const deviceRuntime = getWgpuDeviceRuntime(runtime);
   deviceRuntime.references--;
-  if (
-    deviceRuntime.references === 0 &&
-    deviceRuntime.acquisition !== null &&
-    deviceRuntime.hostBackend !== null &&
-    deviceRuntime.acquisition.ownership !== 'caller'
-  ) {
-    deviceRuntime.hostBackend.release(deviceRuntime.acquisition);
+  const ownership = _acquisitionByStateRuntime.get(runtime);
+  if (ownership !== undefined) {
+    ownership.references--;
+    if (ownership.references === 0 && ownership.acquisition.ownership !== 'caller') {
+      ownership.hostBackend.release(ownership.acquisition);
+    }
   }
 }
 
@@ -342,6 +350,7 @@ function createWgpuRenderStateRuntimeInternal(
   sharedRuntime: WgpuRenderStateRuntime | undefined,
   acquisition: Readonly<WgpuHostAcquisition> | null = null,
   hostBackend: WgpuHostBackend | null = null,
+  existingDeviceRuntime?: WgpuDeviceRuntime,
 ): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.applyBlendModeParent = null;
@@ -369,10 +378,24 @@ function createWgpuRenderStateRuntimeInternal(
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
     velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
   };
-  const deviceRuntime =
-    sharedRuntime === undefined
-      ? { acquisition, fields: {}, hostBackend, references: 0 }
-      : getWgpuDeviceRuntime(sharedRuntime);
+  let deviceRuntime: WgpuDeviceRuntime;
+  if (sharedRuntime !== undefined) {
+    deviceRuntime = getWgpuDeviceRuntime(sharedRuntime);
+    const parentOwnership = _acquisitionByStateRuntime.get(sharedRuntime);
+    if (parentOwnership !== undefined) {
+      parentOwnership.references++;
+      _acquisitionByStateRuntime.set(runtime, parentOwnership);
+    }
+  } else if (acquisition !== null) {
+    deviceRuntime = { device: acquisition.device, fields: {}, references: 0 };
+    if (hostBackend !== null) {
+      _acquisitionByStateRuntime.set(runtime, { acquisition, hostBackend, references: 1 });
+    }
+  } else if (existingDeviceRuntime !== undefined) {
+    deviceRuntime = existingDeviceRuntime;
+  } else {
+    throw new Error('WgpuRenderState runtime requires a device state, shared runtime, or acquisition');
+  }
   deviceRuntime.references++;
   _deviceRuntimeByStateRuntime.set(runtime, deviceRuntime);
   for (const key of WGPU_DEVICE_RUNTIME_KEYS) {
@@ -540,9 +563,13 @@ function initializeOffscreenWgpuRuntime(
 
 type WgpuDeviceRuntimeKey = (typeof WGPU_DEVICE_RUNTIME_KEYS)[number];
 type WgpuDeviceRuntime = {
-  acquisition: Readonly<WgpuHostAcquisition> | null;
+  device: GPUDevice;
   fields: Partial<Pick<WgpuRenderStateRuntime, WgpuDeviceRuntimeKey>>;
-  hostBackend: WgpuHostBackend | null;
+  references: number;
+};
+type WgpuAcquisitionOwnership = {
+  acquisition: Readonly<WgpuHostAcquisition>;
+  hostBackend: WgpuHostBackend;
   references: number;
 };
 
@@ -574,7 +601,9 @@ const WGPU_DEVICE_RUNTIME_KEYS = [
   'sceneMeshUploadCache',
 ] as const satisfies ReadonlyArray<keyof WgpuRenderStateRuntime>;
 
+const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();
 const _deviceRuntimeByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuDeviceRuntime>();
+const _deviceStateToRuntime = new WeakMap<WgpuDeviceState, WgpuDeviceRuntime>();
 const _destroyedStates = new WeakSet<WgpuRenderState>();
 
 // Resolve the blend hook at the draw seam rather than hiding derived-state delegation behind an

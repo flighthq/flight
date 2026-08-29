@@ -87,6 +87,7 @@ vi.mock('./wgpuNode2D', async (importOriginal) => {
 
 import {
   beginWgpuFrame,
+  createWgpuDeviceState,
   createWgpuRenderStateRuntime,
   destroyWgpuRenderTarget,
   drawWgpuRenderTargetResult,
@@ -112,8 +113,9 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 function fakeScreen(options = {}): WgpuRenderState {
   const state = createRenderState(options) as unknown as WgpuRenderState;
-  (state as any).device = {} as GPUDevice;
-  state[EntityRuntimeKey] = createWgpuRenderStateRuntime();
+  const device = {} as GPUDevice;
+  (state as any).device = device;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState(device));
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.commandEncoder = null;
   runtime.currentBlendMode = null;

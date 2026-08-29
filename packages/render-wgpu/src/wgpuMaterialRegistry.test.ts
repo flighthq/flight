@@ -8,15 +8,16 @@ import {
   registerWgpuMaterialRenderer,
   resolveWgpuMaterialRenderer,
 } from './wgpuMaterialRegistry';
-import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { createWgpuDeviceState, createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 const TestKind = 'TestMaterial';
 const testRenderer: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: () => ({}) as GPUShaderModule };
 
 function makeState(): WgpuRenderState {
   // `device` is what the guard's message table dispatches on to name the wgpu registrar.
-  const state = { device: {} } as WgpuRenderState;
-  state[EntityRuntimeKey] = createWgpuRenderStateRuntime();
+  const device = {} as GPUDevice;
+  const state = { device } as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState(device));
   return state;
 }
 

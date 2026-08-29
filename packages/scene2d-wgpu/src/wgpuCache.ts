@@ -61,7 +61,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
 
   // Attach the cache runtime before copying renderers: copyAllRenderersFromRenderState replaces the
   // runtime's renderer-table snapshot, so the backend runtime must already be installed.
-  const cacheRuntime = createWgpuRenderStateRuntime();
+  const cacheRuntime = createWgpuRenderStateRuntime(screenRuntime);
   cacheState[EntityRuntimeKey] = cacheRuntime;
 
   copyAllRenderersFromRenderState(cacheState, screenState);

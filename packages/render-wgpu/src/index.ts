@@ -10,6 +10,7 @@ export {
   createWgpuRenderSurface,
   createWgpuOffscreenRenderState,
   createWgpuAcquisitionFromCanvasElement,
+  createWgpuDeviceState,
   createWgpuRenderState,
   createWgpuRenderStateFromCanvasElement,
   releaseWgpuAcquisition,

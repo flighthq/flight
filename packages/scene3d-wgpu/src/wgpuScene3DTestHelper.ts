@@ -1,4 +1,4 @@
-import { createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createWgpuDeviceState, createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -159,7 +159,7 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
     surface: { height: canvas.height, width: canvas.width },
   });
 
-  const runtime = createWgpuRenderStateRuntime();
+  const runtime = createWgpuRenderStateRuntime(createWgpuDeviceState(device as GPUDevice));
   Object.assign(runtime, {
     commandEncoder,
     currentBlendMode: null,
