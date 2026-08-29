@@ -413,6 +413,32 @@ const P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS = {
   total: 16,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
+const P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 4,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 11,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Bitmap encoding scratch canvas creation routed through the selected bitmap encode backend',
+  total: 15,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
+const P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 4,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 10,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Bitmap encoding ImageData construction routed through the selected bitmap encode backend',
+  total: 14,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
 export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   P5_HOST_BYPASS_S09_V4_PROGRESS,
@@ -423,6 +449,8 @@ export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS,
   P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS,
   P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS,
+  P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS,
+  P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
@@ -762,6 +790,20 @@ export function p5BitmapDrawTransferRepairFailures(report: Readonly<P5HostBypass
     : [`S09 must remove the bitmapDraw global ImageData transfer; found [${remaining.join(', ')}]`];
 }
 
+export function p5BitmapEncodeRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
+  const remaining = report.p5
+    .filter(
+      (site) =>
+        site.kind === 'scratch-surface' &&
+        site.file === 'packages/bitmap/src/bitmapEncode.ts' &&
+        site.functionName === 'encodeBitmap',
+    )
+    .map((site) => `${site.file}:${site.functionName}:${site.expression}`);
+  return remaining.length === 0
+    ? []
+    : [`Bitmap encoding must leave no portable scratch construction; found [${remaining.join(', ')}]`];
+}
+
 export function p5VideoCapabilityRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
   const failures: string[] = [];
   const target = report.p5.filter(
@@ -1067,6 +1109,17 @@ export function p5BitmapDrawTransferProgressFailures(history: readonly P5HostByp
     : ['S09 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason'];
 }
 
+export function p5BitmapEncodeProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
+  const canvas = history[11];
+  const imageData = history[12];
+  return canvas !== undefined &&
+    imageData !== undefined &&
+    p5HostBypassV4BudgetEvidenceMatches(canvas, P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS) &&
+    p5HostBypassV4BudgetEvidenceMatches(imageData, P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS)
+    ? []
+    : ['Bitmap encode taxonomy v4 progress checkpoints no longer pin the exact totals, categories, and reasons'];
+}
+
 export function p5VideoCapabilityProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
   const entry = history[5];
   return entry !== undefined && p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_S10_V4_PROGRESS)
@@ -1288,6 +1341,7 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ...p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY),
     ...p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
     ...p5BitmapDrawTransferProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...p5BitmapEncodeProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
     ...p5VideoCapabilityProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
     ...p5HostBypassDetectorProvenanceHistoryFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY),
     ...p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE),
@@ -1301,6 +1355,7 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ...p5WgpuRenderSurfaceConsumerFailures(process.cwd()),
     ...p5WgpuRenderSurfaceRepairFailures(report),
     ...p5BitmapDrawTransferRepairFailures(report),
+    ...p5BitmapEncodeRepairFailures(report),
     ...p5VideoCapabilityRepairFailures(report),
     ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
     ...p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET),

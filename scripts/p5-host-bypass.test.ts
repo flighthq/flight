@@ -9,6 +9,8 @@ import {
   createP5HostBypassReport,
   deriveP5InputIngressListenerOperations,
   formatP5HostBypassReport,
+  p5BitmapEncodeProgressFailures,
+  p5BitmapEncodeRepairFailures,
   p5BitmapDrawTransferProgressFailures,
   p5BitmapDrawTransferRepairFailures,
   p5GlExampleRunnerOwnershipFailures,
@@ -55,6 +57,17 @@ function scanRestoredBitmapDrawTransfer() {
   );
 }
 
+function scanRestoredBitmapEncode(expression: 'canvas' | 'image-data') {
+  return scanP5HostBypassSource(
+    'packages/bitmap/src/bitmapEncode.ts',
+    expression === 'canvas'
+      ? `export function encodeBitmap() { return document.createElement('canvas'); }`
+      : `export function encodeBitmap(width: number, height: number) {
+           return new globalThis.ImageData(width, height);
+         }`,
+  );
+}
+
 describe('P5 host-bypass derived gate', () => {
   it('derives the live population without a source-file roster and enforces the ratchet', () => {
     const report = scanP5HostBypasses(ROOT);
@@ -62,7 +75,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=16 direct-dom=4 input-ingress=0 frame-scheduling=0 scratch-surface=12 render-surface=0 webgpu-acquisition=0',
+      'P5 outstanding=14 direct-dom=4 input-ingress=0 frame-scheduling=0 scratch-surface=10 render-surface=0 webgpu-acquisition=0',
     );
     expect(p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
@@ -229,7 +242,7 @@ describe('P5 host-bypass derived gate', () => {
       'S09 must remove the bitmapDraw global ImageData transfer; found [packages/bitmap/src/bitmapDraw.ts:drawBitmap]',
     );
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain(
-      'scratch-surface: found 13, budget 12',
+      'scratch-surface: found 11, budget 10',
     );
   }, 30_000);
 
@@ -241,14 +254,14 @@ describe('P5 host-bypass derived gate', () => {
       ...clean.excluded,
       ...scanRestoredBitmapDrawTransfer(),
     ]);
-    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(12);
+    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(10);
     expect(p5HostBypassCurrentBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(p5BitmapDrawTransferRepairFailures(mutated)).toContain(
       'S09 must remove the bitmapDraw global ImageData transfer; found [packages/bitmap/src/bitmapDraw.ts:drawBitmap]',
     );
   }, 30_000);
 
-  it('mutation-proves an extra removal fails the exact live-current assertion at total 15', () => {
+  it('mutation-proves an extra removal fails the exact live-current assertion at total 13', () => {
     const clean = scanP5HostBypasses(ROOT);
     const otherScratch = clean.p5.find((site) => site.kind === 'scratch-surface')!;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
@@ -258,9 +271,44 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5BitmapDrawTransferRepairFailures(mutated)).toEqual([]);
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(p5HostBypassCurrentBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([
-      'P5 current scratch-surface: found 11, expected 12',
-      'P5 current outstanding: found 15, expected 16',
+      'P5 current scratch-surface: found 9, expected 10',
+      'P5 current outstanding: found 13, expected 14',
     ]);
+  }, 30_000);
+
+  it('pins both bitmapEncode scratch targets absent independently of the lowered ratchet', () => {
+    const report = scanP5HostBypasses(ROOT);
+    expect(p5BitmapEncodeRepairFailures(report)).toEqual([]);
+  }, 30_000);
+
+  it.each([
+    ['canvas', "document.createElement('canvas')"],
+    ['image-data', 'new globalThis.ImageData(width, height)'],
+  ] as const)(
+    'mutation-proves restoring the bitmapEncode %s target',
+    (target, expression) => {
+      const clean = scanP5HostBypasses(ROOT);
+      const restored = scanRestoredBitmapEncode(target);
+      const mutated = createP5HostBypassReport(clean.scannedFiles, [...clean.p5, ...clean.excluded, ...restored]);
+      expect(p5BitmapEncodeRepairFailures(mutated)).toContain(
+        `Bitmap encoding must leave no portable scratch construction; found [packages/bitmap/src/bitmapEncode.ts:encodeBitmap:${expression}]`,
+      );
+    },
+    30_000,
+  );
+
+  it('mutation-proves same-count removal elsewhere cannot substitute for either bitmapEncode target', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    const otherScratch = clean.p5.filter((site) => site.kind === 'scratch-surface').slice(0, 2);
+    const mutated = createP5HostBypassReport(clean.scannedFiles, [
+      ...clean.p5.filter((site) => !otherScratch.includes(site)),
+      ...clean.excluded,
+      ...scanRestoredBitmapEncode('canvas'),
+      ...scanRestoredBitmapEncode('image-data'),
+    ]);
+    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(10);
+    expect(p5HostBypassCurrentBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([]);
+    expect(p5BitmapEncodeRepairFailures(mutated)).not.toEqual([]);
   }, 30_000);
 
   it('pins the video capability target absent and both exact resource survivors present', () => {
@@ -599,8 +647,33 @@ describe('P5 host-bypass derived gate', () => {
         reason: 'Image-resource capture composed through the existing image-source readback primitive',
         total: 16,
       },
+      {
+        budget: {
+          'direct-dom': 4,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 11,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Bitmap encoding scratch canvas creation routed through the selected bitmap encode backend',
+        total: 15,
+      },
+      {
+        budget: {
+          'direct-dom': 4,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 10,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Bitmap encoding ImageData construction routed through the selected bitmap encode backend',
+        total: 14,
+      },
     ]);
     expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
+    expect(p5BitmapEncodeProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
     expect(p5BitmapDrawTransferProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
     expect(p5VideoCapabilityProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
   });
@@ -614,6 +687,17 @@ describe('P5 host-bypass derived gate', () => {
     ];
     expect(p5HostBypassV4ProgressHistoryFailures(mutated)).toContain(
       'P5 taxonomy v4 progress history[3] must repair exactly one site; found 26 -> 24',
+    );
+  });
+
+  it('mutation-proves either bitmapEncode checkpoint cannot be omitted or merged', () => {
+    const omittedCanvas = [
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, 11),
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(12),
+    ];
+    expect(p5BitmapEncodeProgressFailures(omittedCanvas)).not.toEqual([]);
+    expect(p5HostBypassV4ProgressHistoryFailures(omittedCanvas)).toContain(
+      'P5 taxonomy v4 progress history[11] must repair exactly one site; found 16 -> 14',
     );
   });
 
@@ -969,9 +1053,9 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredBridge,
     ]);
     expect(restoredBridge).toHaveLength(2);
-    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(14);
+    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(12);
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain(
-      'scratch-surface: found 14, budget 12',
+      'scratch-surface: found 12, budget 10',
     );
   }, 30_000);
 
