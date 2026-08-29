@@ -2,6 +2,8 @@ import { createEntity } from '@flighthq/entity/contract';
 import type { Image, Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
+import { resolveBitmapReadback } from './bitmapReadbackResolver';
+
 /**
  * Reads a host-backed Image into a newly allocated, CPU-readable Bitmap. Returns `null` when the
  * readback cannot complete — call `explainBitmapReadback` with `(resource.source, resource.width,
@@ -42,40 +44,9 @@ export function createBitmapFromCanvas(
  * For a Gl/Wgpu source, draw before the browser composites the frame away (in tests, enable the
  * context's preserveDrawingBuffer, or read immediately after rendering).
  *
- * Returns `null` when the pixels cannot be read rather than letting a platform exception escape. A
- * cross-origin source taints the scratch canvas and the platform refuses to return its pixels — that
- * is an expected outcome of loading someone else's image, not a programmer error, so it takes the
- * sentinel the diagnostics conventions reserve for expected failure. Call `explainBitmapReadback`
- * with the same arguments for the reason; it re-derives it without allocating a bitmap.
+ * Returns `null` for the expected failures named by `explainBitmapReadback`. Faults during a selected
+ * backend's full read or Bitmap allocation propagate instead of being mislabeled as source refusal.
  */
 export function createBitmapFromImageSource(source: CanvasImageSource, width: number, height: number): Bitmap | null {
-  if (width <= 0 || height <= 0) return null;
-  if (typeof document === 'undefined') return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (ctx === null) return null;
-  let raw: ImageData;
-  try {
-    ctx.drawImage(source, 0, 0);
-    raw = ctx.getImageData(0, 0, width, height);
-  } catch {
-    // A tainted canvas throws SecurityError from getImageData; a source the platform cannot draw
-    // throws from drawImage. Both mean "no pixels for you", which is the sentinel's job to say.
-    return null;
-  }
-  // Annotated rather than returned inline: with a `Bitmap | null` return the object literal loses the
-  // contextual typing that narrows its string fields to Bitmap's literal types.
-  const bitmap: Bitmap = createEntity({
-    alphaType: 'straight',
-    gamut: raw.colorSpace as 'srgb' | 'display-p3',
-    data: raw.data,
-    format: 'rgba8unorm',
-    height,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width,
-  });
-  return bitmap;
+  return resolveBitmapReadback(source, width, height, 'bitmap').bitmap;
 }

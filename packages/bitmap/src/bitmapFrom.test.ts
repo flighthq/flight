@@ -1,33 +1,39 @@
 import { createImageResource } from '@flighthq/image/contract';
+import type { BitmapReadbackBackend } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
-import { createBitmapFromCanvas, captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
+import { captureBitmapFromImageResource, createBitmapFromCanvas, createBitmapFromImageSource } from './bitmapFrom';
+import { resetBitmapReadbackBackendForTest, setBitmapReadbackBackend } from './bitmapReadbackBackend';
+
+afterEach(() => {
+  resetBitmapReadbackBackendForTest();
+});
 
 describe('captureBitmapFromImageResource', () => {
-  it('reads a host-backed resource into CPU pixels via createBitmapFromImageSource', () => {
+  it('passes the resource source and dimensions through the selected readback backend', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 3;
     canvas.height = 2;
-    const bitmap = captureBitmapFromImageResource(createImageResource(canvas));
-    expect(bitmap).not.toBeNull();
-    expect(bitmap!.width).toBe(3);
-    expect(bitmap!.height).toBe(2);
-    expect(bitmap!.data).toHaveLength(3 * 2 * 4);
+    const bitmap = createBitmap(3, 2);
+    const readBitmap = vi.fn(() => ({ bitmap, reason: 'ok' as const }));
+    setBitmapReadbackBackend({ readBitmap });
+
+    expect(captureBitmapFromImageResource(createImageResource(canvas))).toBe(bitmap);
+    expect(readBitmap).toHaveBeenCalledOnce();
+    expect(readBitmap).toHaveBeenCalledWith(canvas, 3, 2, 'bitmap');
   });
 
-  it('returns null for an unreadable source rather than throwing', () => {
-    const spy = vi.spyOn(CanvasRenderingContext2D.prototype, 'getImageData').mockImplementation(() => {
-      throw new DOMException('Tainted canvases may not be exported.', 'SecurityError');
-    });
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 4;
-      canvas.height = 4;
-      expect(captureBitmapFromImageResource(createImageResource(canvas))).toBeNull();
-    } finally {
-      spy.mockRestore();
-    }
+  it('returns null for an expected backend refusal', () => {
+    const backend: BitmapReadbackBackend = {
+      readBitmap: vi.fn(() => ({ bitmap: null, reason: 'tainted-source' as const })),
+    };
+    setBitmapReadbackBackend(backend);
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+
+    expect(captureBitmapFromImageResource(createImageResource(canvas))).toBeNull();
   });
 });
 
@@ -72,41 +78,17 @@ describe('createBitmapFromCanvas', () => {
 });
 
 describe('createBitmapFromImageSource', () => {
-  it('captures a canvas image source at the given device size', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 8;
-    canvas.height = 4;
-    const bitmap = createBitmapFromImageSource(canvas, 8, 4);
-    expect(bitmap).not.toBeNull();
-    expect(bitmap!.width).toBe(8);
-    expect(bitmap!.height).toBe(4);
-    expect(bitmap!.data.length).toBe(8 * 4 * 4);
+  it('returns the exact Bitmap from the selected backend outcome', () => {
+    const expected = createBitmap(8, 4);
+    const backend: BitmapReadbackBackend = {
+      readBitmap: vi.fn(() => ({ bitmap: expected, reason: 'ok' as const })),
+    };
+    setBitmapReadbackBackend(backend);
+
+    expect(createBitmapFromImageSource(document.createElement('canvas'), 8, 4)).toBe(expected);
   });
 
-  it('returns null rather than letting a tainted source throw', () => {
-    // A cross-origin draw taints the scratch canvas and the platform refuses its pixels with a
-    // SecurityError from getImageData. jsdom does not model tainting, so the throw is staged on
-    // getImageData directly — which is the exact call and the exact exception the sentinel exists to
-    // stop escaping to a caller who only asked for a bitmap.
-    const canvas = document.createElement('canvas');
-    canvas.width = 8;
-    canvas.height = 4;
-    const spy = vi.spyOn(CanvasRenderingContext2D.prototype, 'getImageData').mockImplementation(() => {
-      throw new DOMException('Tainted canvases may not be exported.', 'SecurityError');
-    });
-    try {
-      expect(() => createBitmapFromImageSource(canvas, 8, 4)).not.toThrow();
-      expect(createBitmapFromImageSource(canvas, 8, 4)).toBeNull();
-    } finally {
-      spy.mockRestore();
-    }
-  });
-
-  it('returns null for an empty capture rather than allocating a zero-pixel bitmap', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 8;
-    canvas.height = 4;
-    expect(createBitmapFromImageSource(canvas, 0, 4)).toBeNull();
-    expect(createBitmapFromImageSource(canvas, 8, -1)).toBeNull();
+  it('returns null when no backend is installed', () => {
+    expect(createBitmapFromImageSource(document.createElement('canvas'), 8, 4)).toBeNull();
   });
 });

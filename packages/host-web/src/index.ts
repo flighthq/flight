@@ -4,6 +4,7 @@ export { enableHostWebApp } from './webApp';
 export { enableHostWebAudio } from './webAudio';
 export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebBitmapEncode } from './webBitmapEncode';
+export { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
 export { enableHostWebClipboard } from './webClipboard';
 export { enableHostWebConnectivity } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';
