@@ -1,5 +1,10 @@
 import { parseGlb, parseGltf } from '@flighthq/scene3d-formats/contract';
-import type { GltfDocument, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type {
+  GltfDocument,
+  GltfScene3DDocumentLoadOptions,
+  Scene3DDocument,
+  Scene3DDocumentLoadOptions,
+} from '@flighthq/types/contract';
 
 import {
   getScene3DDocumentBasePathFromUrl,
@@ -12,11 +17,14 @@ import {
 // resources on your own schedule. Returns null on transport failure and never touches rendering/GPU state.
 export async function loadScene3DDocumentFromGlbUrl(
   url: string,
-  options?: Readonly<Scene3DDocumentLoadOptions>,
+  options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
   const bytes = await loadScene3DDocumentBytesFromUrl(url, options);
   if (bytes === null) return null;
-  return parseGlb(bytes, undefined, { basePath: getScene3DDocumentBasePathFromUrl(url) });
+  return parseGlb(bytes, options?.diagnostics, {
+    basePath: getScene3DDocumentBasePathFromUrl(url),
+    extensionHandlers: options?.extensionHandlers,
+  });
 }
 
 // Fetches a glTF file from a URL and parses it into a format-neutral Scene3DDocument. The JSON `.gltf` form is
@@ -25,7 +33,7 @@ export async function loadScene3DDocumentFromGlbUrl(
 // load images explicitly. Returns null if the main source or required geometry closure cannot be acquired.
 export async function loadScene3DDocumentFromGltfUrl(
   url: string,
-  options?: Readonly<Scene3DDocumentLoadOptions>,
+  options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
   const source = await loadScene3DDocumentTextFromUrl(url, options);
   if (source === null) return null;
@@ -41,7 +49,11 @@ export async function loadScene3DDocumentFromGltfUrl(
   const basePath = getScene3DDocumentBasePathFromUrl(url);
   const externalBuffers = await loadGltfExternalBuffers(gltf, basePath, options);
   if (externalBuffers === null) return null;
-  return parseGltf(gltf, undefined, { basePath, externalBuffers });
+  return parseGltf(gltf, options?.diagnostics, {
+    basePath,
+    extensionHandlers: options?.extensionHandlers,
+    externalBuffers,
+  });
 }
 
 async function loadGltfExternalBuffers(

@@ -1,6 +1,6 @@
 import type * as NetModule from '@flighthq/net/contract';
 import type * as Scene3DFormatsModule from '@flighthq/scene3d-formats/contract';
-import type { NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type { GltfExtensionHandler, ImportDiagnostic, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } from './gltfLoad';
@@ -52,13 +52,17 @@ afterEach(() => {
 describe('loadScene3DDocumentFromGlbUrl', () => {
   it('fetches bytes, carries the source base path, and returns a CPU document', async () => {
     const document = emptyDocument();
+    const diagnostics: ImportDiagnostic[] = [];
+    const extensionHandlers: GltfExtensionHandler[] = [{ apply() {}, kind: 'KHR_lights_punctual' }];
     mocks.parseGlb.mockReturnValue(document);
     mocks.sendNetRequest.mockResolvedValue(response(new Uint8Array([1, 2, 3]).buffer));
 
-    const loaded = await loadScene3DDocumentFromGlbUrl('models/ship.glb');
+    const loaded = await loadScene3DDocumentFromGlbUrl('models/ship.glb', { diagnostics, extensionHandlers });
 
     expect(Array.from(mocks.parseGlb.mock.calls[0][0])).toEqual([1, 2, 3]);
-    expect(mocks.parseGlb.mock.calls[0][2]).toEqual({ basePath: 'models' });
+    expect(mocks.parseGlb.mock.calls[0][1]).toBe(diagnostics);
+    expect(mocks.parseGlb.mock.calls[0][2]).toEqual({ basePath: 'models', extensionHandlers });
+    expect(mocks.parseGlb.mock.calls[0][2]?.extensionHandlers).toBe(extensionHandlers);
     expect(loaded).toBe(document);
   });
 
@@ -80,6 +84,8 @@ describe('loadScene3DDocumentFromGlbUrl', () => {
 describe('loadScene3DDocumentFromGltfUrl', () => {
   it('fetches external geometry buffers and supplies the image base path to parsing', async () => {
     const document = emptyDocument();
+    const diagnostics: ImportDiagnostic[] = [];
+    const extensionHandlers: GltfExtensionHandler[] = [{ apply() {}, kind: 'KHR_lights_punctual' }];
     mocks.parseGltf.mockReturnValue(document);
     const requested: string[] = [];
     mocks.sendNetRequest.mockImplementation(async (request) => {
@@ -89,13 +95,16 @@ describe('loadScene3DDocumentFromGltfUrl', () => {
         : response(new Uint8Array([8, 9]).buffer);
     });
 
-    const loaded = await loadScene3DDocumentFromGltfUrl('models/ship.gltf');
+    const loaded = await loadScene3DDocumentFromGltfUrl('models/ship.gltf', { diagnostics, extensionHandlers });
 
     expect(requested).toEqual(['models/ship.gltf', 'models/mesh.bin']);
+    expect(mocks.parseGltf.mock.calls[0][1]).toBe(diagnostics);
     expect(mocks.parseGltf.mock.calls[0][2]).toEqual({
       basePath: 'models',
+      extensionHandlers,
       externalBuffers: { 'mesh.bin': new Uint8Array([8, 9]) },
     });
+    expect(mocks.parseGltf.mock.calls[0][2]?.extensionHandlers).toBe(extensionHandlers);
     expect(loaded).toBe(document);
   });
 
