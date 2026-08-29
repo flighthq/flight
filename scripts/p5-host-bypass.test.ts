@@ -80,7 +80,7 @@ function scanRestoredShapeRasterSurface(
 
 function findV4ProgressIndex(reason: string): number {
   const index = P5_HOST_BYPASS_V4_PROGRESS_HISTORY.findIndex((entry) => entry.reason === reason);
-  expect(index).toBeGreaterThanOrEqual(0);
+  expect(index, `no v4 checkpoint carries the reason ${reason}`).toBeGreaterThanOrEqual(0);
   return index;
 }
 
@@ -787,14 +787,15 @@ describe('P5 host-bypass derived gate', () => {
     const s09Index = findV4ProgressIndex(
       'Bitmap drawing allocates its pixel-transfer buffer through the caller-owned 2D context',
     );
-    const s09 = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[s09Index];
+    const s09 = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[s09Index]!;
+    const prior = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[s09Index - 1]!;
     const mutated = [
       ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, s09Index),
-      { ...s09, budget: { ...s09.budget, 'direct-dom': 11 }, total: 24 },
+      { ...s09, budget: { ...s09.budget, 'direct-dom': 11 }, total: s09.total - 1 },
       ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(s09Index + 1),
     ];
     expect(p5HostBypassV4ProgressHistoryFailures(mutated)).toContain(
-      `P5 taxonomy v4 progress history[${s09Index}] declares 1 repaired site(s) but moves 26 -> 24`,
+      `P5 taxonomy v4 progress history[${s09Index}] declares 1 repaired site(s) but moves ${prior.total} -> ${s09.total - 1}`,
     );
   });
 
@@ -866,14 +867,17 @@ describe('P5 host-bypass derived gate', () => {
   });
 
   it('mutation-proves S09 cannot rewrite the accepted S08 checkpoint', () => {
-    const s08 = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[2];
+    const s08Index = findV4ProgressIndex(
+      'WGPU root-surface creation routed through the selected WGPU render-surface provider',
+    );
+    const s08 = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[s08Index]!;
     const mutated = [
-      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, 2),
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, s08Index),
       { ...s08, reason: 'mutation: rewrite accepted S08 evidence' },
-      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(3),
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(s08Index + 1),
     ];
     expect(p5HostBypassV4ProgressHistoryFailures(mutated)).toContain(
-      'P5 taxonomy v4 progress history[2] rewrites immutable accepted checkpoint',
+      `P5 taxonomy v4 progress history[${s08Index}] rewrites immutable accepted checkpoint`,
     );
   });
 
