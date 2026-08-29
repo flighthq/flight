@@ -145,7 +145,11 @@ describe('capability-arrival source gate', () => {
       'examples:video/webgl:VideoCapability:arrival',
       'examples:video/webgpu:VideoCapability:arrival',
     ]);
-  }, 30_000);
+    // A timeout here is a hang detector, not a performance budget: this mutation rewrites the video app
+    // and re-analyzes every arrival route, so its wall time tracks whatever else the suite is running.
+    // Sized for headroom over the observed tail rather than close to it, so ordinary contention cannot
+    // redden it while a genuinely wedged run still terminates.
+  }, 120_000);
 
   it('reddens the functional generated-entry owner when its aggregate is removed', async () => {
     const { controls, failures } = await analyze('functional-aggregate');
