@@ -1,8 +1,8 @@
 import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
+import { applyGlBlendMode } from './glDraw';
 import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';
-import { ensureDefaultGlBitmapShader } from './glShader';
 
 // The substrate-level fullscreen-pass primitive: draw a clip-space quad through a fragment shader,
 // reading N input textures and writing to a target (or the canvas). Filter and effect recipes draw
@@ -30,8 +30,8 @@ export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget
   runtime.renderTargetViewport = { height: target.height, width: target.width, x: 0, y: 0 };
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  runtime.currentTexture = null;
-  runtime.currentBlendMode = null;
+  runtime.currentTextureRealization = null;
+  runtime.currentBlendSignature = null;
 }
 
 export function compileGlFullscreenProgram(gl: GlContext, fragmentSource: string): GlFullscreenProgram {
@@ -69,10 +69,10 @@ export function drawGlFullscreenPass(
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
 
-  if (runtime.currentProgram !== program.program) {
+  if (runtime.currentShader?.program !== program.program) {
     gl.useProgram(program.program);
-    runtime.currentProgram = program.program;
   }
+  runtime.currentShader = { locations: null, program: program.program };
 
   const destFramebuffer = dest?.framebuffer ?? null;
   if (runtime.currentFramebuffer !== destFramebuffer) {
@@ -90,18 +90,16 @@ export function drawGlFullscreenPass(
     if (program.textures[i]) gl.uniform1i(program.textures[i], i);
   }
   gl.activeTexture(gl.TEXTURE0);
-  runtime.currentTexture = null;
+  runtime.currentTextureRealization = null;
 
-  gl.blendEquation(gl.FUNC_ADD);
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  runtime.currentBlendMode = null;
+  runtime.currentBlendSignature = null;
+  applyGlBlendMode(state, null);
 
   setUniforms(gl, program);
   drawGlFullscreenQuad(state, program);
 
-  gl.blendEquation(gl.FUNC_ADD);
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  runtime.currentBlendMode = null;
+  runtime.currentBlendSignature = null;
+  applyGlBlendMode(state, null);
 
   // Unbind the sampled inputs. A fullscreen pass frequently reads a render target's own texture and
   // presents it; leaving that texture bound lets the NEXT draw that renders back into that target form
@@ -162,8 +160,6 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   // Restore the default VAO so a later mesh draw that forgets to bind its own VAO cannot accidentally
   // inherit the quad's attribute state, and so nothing observes our dedicated VAO as "current".
   gl.bindVertexArray(null);
-
-  runtime.shaderLoc = ensureDefaultGlBitmapShader(state).locations;
 }
 
 // Per-context dedicated VAO for the fullscreen quad. Isolates the quad's buffer/attribute bindings so a fullscreen pass never mutates a

@@ -35,12 +35,11 @@ type SavedGlRenderState = {
   stencilValueMask: number;
   stencilWriteMask: number;
   currentFramebuffer: WebGLFramebuffer | null;
-  currentBlendMode: GlRenderStateRuntime['currentBlendMode'];
+  currentBlendSignature: GlRenderStateRuntime['currentBlendSignature'];
   currentRenderTarget: GlRenderStateRuntime['currentRenderTarget'];
-  currentProgram: GlRenderStateRuntime['currentProgram'];
+  currentShader: GlRenderStateRuntime['currentShader'];
   currentScissorRect: GlRenderStateRuntime['currentScissorRect'];
-  currentTexture: GlRenderStateRuntime['currentTexture'];
-  currentTextureStraightAlpha: boolean;
+  currentTextureRealization: GlRenderStateRuntime['currentTextureRealization'];
   depthFunc: number;
   depthMask: boolean;
   depthTest: boolean;
@@ -119,12 +118,11 @@ export function popGlRenderState(state: GlRenderState): void {
 
   const runtime = getGlRenderStateRuntime(state);
   runtime.currentFramebuffer = saved.currentFramebuffer;
-  runtime.currentProgram = saved.currentProgram;
+  runtime.currentShader = saved.currentShader;
   runtime.currentRenderTarget = saved.currentRenderTarget;
-  runtime.currentTexture = saved.currentTexture;
-  runtime.currentBlendMode = saved.currentBlendMode;
+  runtime.currentTextureRealization = saved.currentTextureRealization;
+  runtime.currentBlendSignature = saved.currentBlendSignature;
   runtime.currentScissorRect = saved.currentScissorRect;
-  runtime.currentTextureStraightAlpha = saved.currentTextureStraightAlpha;
   runtime.renderTargetViewport = saved.renderTargetViewport;
 }
 
@@ -179,12 +177,11 @@ export function pushGlRenderState(state: GlRenderState): void {
     stencilValueMask: gl.getParameter(gl.STENCIL_VALUE_MASK) as number,
     stencilWriteMask: gl.getParameter(gl.STENCIL_WRITEMASK) as number,
     currentFramebuffer: runtime.currentFramebuffer,
-    currentBlendMode: runtime.currentBlendMode,
+    currentBlendSignature: runtime.currentBlendSignature,
     currentRenderTarget: runtime.currentRenderTarget,
-    currentProgram: runtime.currentProgram,
+    currentShader: runtime.currentShader,
     currentScissorRect: runtime.currentScissorRect,
-    currentTexture: runtime.currentTexture,
-    currentTextureStraightAlpha: runtime.currentTextureStraightAlpha,
+    currentTextureRealization: runtime.currentTextureRealization,
     depthFunc: gl.getParameter(gl.DEPTH_FUNC) as number,
     depthMask: gl.getParameter(gl.DEPTH_WRITEMASK) as boolean,
     depthTest: gl.isEnabled(gl.DEPTH_TEST),

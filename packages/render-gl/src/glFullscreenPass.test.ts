@@ -1,5 +1,4 @@
 import type { GlRenderTarget } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget, compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -83,13 +82,13 @@ describe('clearGlRenderTarget', () => {
   it('invalidates cached texture and blend-mode bindings', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTexture = {} as WebGLTexture;
-    runtime.currentBlendMode = BlendMode.Add;
+    runtime.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
+    runtime.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
 
     clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer));
 
-    expect(runtime.currentTexture).toBeNull();
-    expect(runtime.currentBlendMode).toBeNull();
+    expect(runtime.currentTextureRealization).toBeNull();
+    expect(runtime.currentBlendSignature).toBeNull();
   });
 
   it('skips rebinding when the target framebuffer is already current', () => {
@@ -198,7 +197,11 @@ describe('drawGlFullscreenPass', () => {
 
     expect(blendSpy).toHaveBeenCalledWith(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     expect(blendEquationSpy).toHaveBeenCalledWith(gl.FUNC_ADD);
-    expect(getGlRenderStateRuntime(state).currentBlendMode).toBeNull();
+    expect(getGlRenderStateRuntime(state).currentBlendSignature).toEqual({
+      dst: gl.ONE_MINUS_SRC_ALPHA,
+      equation: gl.FUNC_ADD,
+      src: gl.ONE,
+    });
   });
 
   it('restores normal blending when setUniforms overrides the blend function', () => {
@@ -214,6 +217,10 @@ describe('drawGlFullscreenPass', () => {
     expect(blendSpy).toHaveBeenCalledWith(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);
     expect(blendSpy).toHaveBeenLastCalledWith(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     expect(blendEquationSpy).toHaveBeenLastCalledWith(gl.FUNC_ADD);
-    expect(getGlRenderStateRuntime(state).currentBlendMode).toBeNull();
+    expect(getGlRenderStateRuntime(state).currentBlendSignature).toEqual({
+      dst: gl.ONE_MINUS_SRC_ALPHA,
+      equation: gl.FUNC_ADD,
+      src: gl.ONE,
+    });
   });
 });

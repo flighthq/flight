@@ -24,7 +24,7 @@ const READY_TEXTURE = {
 
 function makeTextureReadyState() {
   const { state } = makeGlScene3DState();
-  registerGlTextureResolver(state, 'test.ready', () => ({}) as WebGLTexture);
+  registerGlTextureResolver(state, 'test.ready', () => ({ straightAlpha: false, texture: {} as WebGLTexture }));
   return state;
 }
 

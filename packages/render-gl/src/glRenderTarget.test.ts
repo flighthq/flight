@@ -71,12 +71,12 @@ describe('createGlRenderTarget', () => {
     expect(vi.mocked(gl.createTexture)).toHaveBeenCalled();
   });
 
-  it('resets currentTexture to null after creation', () => {
+  it('resets currentTextureRealization to null after creation', () => {
     const { state } = makeState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTexture = {} as WebGLTexture;
+    runtime.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
     createGlRenderTarget(state, { width: 32, height: 32 });
-    expect(runtime.currentTexture).toBeNull();
+    expect(runtime.currentTextureRealization).toBeNull();
   });
 
   it("defaults colorSpace to 'srgb' when the descriptor omits it", () => {

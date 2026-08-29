@@ -157,7 +157,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   ensureGlQuadBatchShader(state);
 
   const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
-  const straightAlpha = runtime.currentTextureStraightAlpha;
+  const straightAlpha = runtime.currentTextureRealization!.straightAlpha;
   const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,

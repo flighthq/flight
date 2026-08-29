@@ -6,8 +6,10 @@ import type {
   CompressedImage,
   GlBitmapShader,
   GlBlendRealization,
+  GlBlendSignature,
   GlRenderState,
   GlRenderStateRuntime,
+  GlTextureRealization,
   TextureSource,
   TextureColorSpace,
   Image,
@@ -24,19 +26,31 @@ import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload';
 import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
 
 // Applies the blend mode's registered fixed-function realization to the GL context, skipping the
-// work when the mode is unchanged. A mode with no registered realization (an unregistered vendor
+// work only when its resolved numeric signature is unchanged. A mode with no registered realization (an unregistered vendor
 // mode, or a built-in with no fixed-function equivalent such as Overlay) degrades to normal
 // premultiplied compositing. Register realizations with registerGlBlendMode /
 // registerDefaultGlBlendModes before drawing.
 export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | null): void {
   const runtime = getGlRenderStateRuntime(state);
-  if (blendMode === runtime.currentBlendMode) return;
-  runtime.currentBlendMode = blendMode;
   const gl = state.gl;
   const entry = blendMode !== null ? runtime.registries.blendRealizations.entries.get(blendMode) : null;
   const realization = entry?.state === RegistryEntryState.Bound ? entry.value : NORMAL_BLEND;
-  gl.blendEquation(gl[realization.equation ?? 'FUNC_ADD']);
-  gl.blendFunc(gl[realization.src], gl[realization.dst]);
+  const signature: GlBlendSignature = {
+    dst: gl[realization.dst],
+    equation: gl[realization.equation ?? 'FUNC_ADD'],
+    src: gl[realization.src],
+  };
+  const current = runtime.currentBlendSignature;
+  if (
+    current !== null &&
+    current.dst === signature.dst &&
+    current.equation === signature.equation &&
+    current.src === signature.src
+  )
+    return;
+  gl.blendEquation(signature.equation);
+  gl.blendFunc(signature.src, signature.dst);
+  runtime.currentBlendSignature = signature;
 }
 
 // Applies a sampler's wrap, filtering, anisotropy, and mip chain to the currently-bound TEXTURE_2D.
@@ -162,6 +176,50 @@ export function bindGlImageResourceTexture(
   );
 }
 
+// Binds (uploading + caching on first use) the GL texture for an image source and applies the given
+// sampler's full sampling state — wrap, min/mag filter, anisotropy, and a generated mip chain — to
+// the bound texture. Sampler state is re-applied on every bind, not baked at creation, because the GL
+// texture is cached by image source alone: one image reused by two materials with different samplers
+// (e.g. a map bound as both normal and metallic-roughness with different sampling) shares one GL
+// texture, so its sampling must follow the current draw rather than whoever uploaded it first. WebGL2
+// allows REPEAT and mipmaps on NPOT textures, so no power-of-two constraint applies. Callers without a
+// sampler (2D bitmap/text/sprite) get the historical default: the state's allowSmoothing filter,
+// clamp-to-edge, and no mip chain. See applyGlSamplerState.
+export function bindGlTexture(
+  state: GlRenderState,
+  imageSource: CanvasImageSource,
+  sampler?: Readonly<SamplerLike> | null,
+): WebGLTexture {
+  const runtime = getGlRenderStateRuntime(state);
+  const gl = state.gl;
+  const textureCache = runtime.textureCache;
+  let texture = textureCache.get(imageSource);
+  if (!texture) {
+    texture = gl.createTexture()!;
+    bindGlTextureRealization(state, { straightAlpha: false, texture });
+    // Both image and canvas sources present straight (un-premultiplied) alpha to texImage2D, so
+    // premultiply on upload to match the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend used
+    // everywhere — uploaded images, canvas-backed shapes/text, and render-target composites. (A
+    // straight-alpha texture under premultiplied blend blows RGB out to full, turning a 40%-white
+    // shape opaque white.) Mirrors updateGlTexture, which already premultiplies canvas uploads.
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource as TexImageSource);
+    textureCache.set(imageSource, texture);
+  } else {
+    // Always rebind on a cache hit: the binding tracker is unit-blind and records the last
+    // texture bound to whatever unit was active THEN, but callers change the active unit between binds
+    // (a material binds its maps to units 0..4 via gl.activeTexture). Binding one image source to two
+    // units — e.g. a map reused as both normal and metallic-roughness — would otherwise leave the
+    // second unit unbound. A rebind is one cheap GL call; the quad-batch writer binds once per batch, so the
+    // dropped skip costs nothing meaningful.
+    bindGlTextureRealization(state, { straightAlpha: false, texture });
+  }
+  // texture is the active TEXTURE_2D binding in every path above; apply this draw's sampler state here
+  // so a cache hit picks it up instead of the first uploader's.
+  applyGlSamplerState(state, runtime, texture, sampler ?? null);
+  return texture;
+}
+
 function bindGlTextureSourceTexture(
   state: GlRenderState,
   image: Readonly<TextureSource>,
@@ -186,9 +244,7 @@ function bindGlTextureSourceTexture(
     entry = { texture: gl.createTexture()!, version: -1 };
     cache.set(image, entry);
   }
-  gl.bindTexture(gl.TEXTURE_2D, entry.texture);
-  runtime.currentTexture = entry.texture;
-  runtime.currentTextureStraightAlpha = straightAlpha;
+  bindGlTextureRealization(state, { straightAlpha, texture: entry.texture });
   if (entry.version !== image.version) {
     upload(state, image, premultiply, colorSpace);
     entry.version = image.version;
@@ -197,52 +253,15 @@ function bindGlTextureSourceTexture(
   return entry.texture;
 }
 
-// Binds (uploading + caching on first use) the GL texture for an image source and applies the given
-// sampler's full sampling state — wrap, min/mag filter, anisotropy, and a generated mip chain — to
-// the bound texture. Sampler state is re-applied on every bind, not baked at creation, because the GL
-// texture is cached by image source alone: one image reused by two materials with different samplers
-// (e.g. a map bound as both normal and metallic-roughness with different sampling) shares one GL
-// texture, so its sampling must follow the current draw rather than whoever uploaded it first. WebGL2
-// allows REPEAT and mipmaps on NPOT textures, so no power-of-two constraint applies. Callers without a
-// sampler (2D bitmap/text/sprite) get the historical default: the state's allowSmoothing filter,
-// clamp-to-edge, and no mip chain. See applyGlSamplerState.
-export function bindGlTexture(
+// The single writer for the texture binding shadow. A handle and its alpha interpretation are
+// published together, so no caller can leave one half describing a prior binding.
+export function bindGlTextureRealization(
   state: GlRenderState,
-  imageSource: CanvasImageSource,
-  sampler?: Readonly<SamplerLike> | null,
-): WebGLTexture {
-  const runtime = getGlRenderStateRuntime(state);
-  const gl = state.gl;
-  const textureCache = runtime.textureCache;
-  let texture = textureCache.get(imageSource);
-  if (!texture) {
-    texture = gl.createTexture()!;
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    // Both image and canvas sources present straight (un-premultiplied) alpha to texImage2D, so
-    // premultiply on upload to match the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend used
-    // everywhere — uploaded images, canvas-backed shapes/text, and render-target composites. (A
-    // straight-alpha texture under premultiplied blend blows RGB out to full, turning a 40%-white
-    // shape opaque white.) Mirrors updateGlTexture, which already premultiplies canvas uploads.
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource as TexImageSource);
-    textureCache.set(imageSource, texture);
-    runtime.currentTexture = texture;
-    runtime.currentTextureStraightAlpha = false;
-  } else {
-    // Always rebind on a cache hit, never skip on runtime.currentTexture. That tracker is the last
-    // texture bound to whatever unit was active THEN, but callers change the active unit between binds
-    // (a material binds its maps to units 0..4 via gl.activeTexture). Binding one image source to two
-    // units — e.g. a map reused as both normal and metallic-roughness — would otherwise leave the
-    // second unit unbound. A rebind is one cheap GL call; the quad-batch writer binds once per batch, so the
-    // dropped skip costs nothing meaningful.
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    runtime.currentTexture = texture;
-    runtime.currentTextureStraightAlpha = false;
-  }
-  // texture is the active TEXTURE_2D binding in every path above; apply this draw's sampler state here
-  // so a cache hit picks it up instead of the first uploader's.
-  applyGlSamplerState(state, runtime, texture, sampler ?? null);
-  return texture;
+  realization: Readonly<GlTextureRealization> | null,
+): WebGLTexture | null {
+  state.gl.bindTexture(state.gl.TEXTURE_2D, realization?.texture ?? null);
+  getGlRenderStateRuntime(state).currentTextureRealization = realization;
+  return realization?.texture ?? null;
 }
 
 // Binds the GL texture for a video-backed Texture and re-uploads the source element's current frame
@@ -270,9 +289,7 @@ export function bindGlVideoTexture(
     entry = { texture: gl.createTexture()!, uploadedVersion: -1 };
     cache.set(image, entry);
   }
-  gl.bindTexture(gl.TEXTURE_2D, entry.texture);
-  runtime.currentTexture = entry.texture;
-  runtime.currentTextureStraightAlpha = false;
+  bindGlTextureRealization(state, { straightAlpha: false, texture: entry.texture });
   // Straight-alpha element under premultiplied blend would blow out RGB; match the bitmap/element path.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
   entry.uploadedVersion = uploadGlTextureVideoFrame(
@@ -286,17 +303,14 @@ export function bindGlVideoTexture(
 }
 
 export function createGlTexture(state: GlRenderState): WebGLTexture {
-  const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const filter = state.allowSmoothing ? gl.LINEAR : gl.NEAREST;
   const texture = gl.createTexture()!;
-  gl.bindTexture(gl.TEXTURE_2D, texture);
+  bindGlTextureRealization(state, { straightAlpha: false, texture });
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  runtime.currentTexture = texture;
-  runtime.currentTextureStraightAlpha = false;
   return texture;
 }
 
@@ -313,7 +327,8 @@ export function drawGlQuad(
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const { quadVertexData, quadVertexBuffer, quadIndexBuffer, shaderLoc } = runtime;
+  const { quadVertexData, quadVertexBuffer, quadIndexBuffer } = runtime;
+  const locations = runtime.currentShader?.locations;
   const v = quadVertexData;
   v[0] = x0;
   v[1] = y0;
@@ -334,7 +349,7 @@ export function drawGlQuad(
   gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
-  setGlAttributes(gl, shaderLoc!);
+  setGlAttributes(gl, locations!);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 
@@ -386,7 +401,7 @@ export function setGlQuadMatrixFromOffset(
   const runtime = getGlRenderStateRuntime(state);
   setGlMatrixFromValues(
     state.gl,
-    runtime.shaderLoc!,
+    runtime.currentShader!.locations!,
     runtime.matrixArray,
     a,
     b,
@@ -402,11 +417,9 @@ export function setGlQuadMatrixFromOffset(
 export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, canvas: HTMLCanvasElement): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  // Always rebind before uploading — runtime.currentTexture is unit-blind (see bindGlTexture), so a
+  // Always rebind before uploading — the binding shadow is unit-blind (see bindGlTexture), so a
   // skip could upload into whatever is bound on the currently-active unit instead of `texture`.
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  runtime.currentTexture = texture;
-  runtime.currentTextureStraightAlpha = false;
+  bindGlTextureRealization(state, { straightAlpha: false, texture });
   // Browsers pass canvas pixel data to Gl as straight (unmultiplied) alpha.
   // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
@@ -514,13 +527,13 @@ type GlTextureSourceUpload = (
 export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): void {
   const runtime = getGlRenderStateRuntime(state);
   const resolved = shader ?? ensureDefaultGlBitmapShader(state);
-  runtime.shaderLoc = resolved.locations;
   const program = resolved.program;
-  if (runtime.currentProgram !== program) {
+  if (runtime.currentShader?.program !== program) {
     state.gl.useProgram(program);
-    runtime.currentProgram = program;
+    runtime.currentShader = { locations: resolved.locations, program };
     return;
   }
+  runtime.currentShader = { locations: resolved.locations, program };
   // The skip below is the cache being trusted: render-gl believes this program is already bound. That
   // is only sound while render-gl is the sole writer of GL state on the context, which is exactly the
   // integration contract invalidateGlRenderStateCache exists to restore. The guard verifies it; without

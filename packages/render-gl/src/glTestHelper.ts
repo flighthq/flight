@@ -31,13 +31,12 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
   // mirroring what createGlRenderState does in production.
   const runtime = createGlRenderStateRuntime();
   Object.assign(runtime, {
-    currentBlendMode: null,
+    currentBlendSignature: null,
     currentFramebuffer: null,
     currentMaskDepth: 0,
-    currentProgram: null,
+    currentShader: { locations: shaderLoc, program: shaderLoc.program },
     currentScissorRect: null,
-    currentTexture: null,
-    currentTextureStraightAlpha: false,
+    currentTextureRealization: null,
     flushPendingDraws: null,
     renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
@@ -45,7 +44,6 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
     textureSourceStraightTextureCache: new WeakMap(),
     textureSourceStraightSrgbTextureCache: new WeakMap(),
-    shaderLoc,
     defaultBitmapShader: { locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() },
     quadVertexBuffer: {} as WebGLBuffer,
     quadIndexBuffer: {} as WebGLBuffer,

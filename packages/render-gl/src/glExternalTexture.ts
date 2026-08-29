@@ -4,12 +4,13 @@ import type {
   CreateExternalTextureOptions,
   ExternalTexture,
   GlRenderState,
+  GlTextureRealization,
   Texture,
   TextureLike,
 } from '@flighthq/types/contract';
 import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
-import { applyGlSamplerState } from './glDraw';
+import { applyGlSamplerState, bindGlTextureRealization } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { registerGlTextureResolver } from './glTextureResolver';
 
@@ -41,15 +42,15 @@ export function disposeExternalGlTexture(state: GlRenderState, texture: Readonly
   return source === null ? false : (getGlRenderStateRuntime(state).glExternalTextureCache?.delete(source) ?? false);
 }
 
-function resolveExternalGlTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
+function resolveExternalGlTexture(state: GlRenderState, texture: Readonly<TextureLike>): GlTextureRealization | null {
   const source = getExternalTextureSource(texture);
   if (source === null) return null;
   const runtime = getGlRenderStateRuntime(state);
   const handle = runtime.glExternalTextureCache?.get(source);
   if (handle === undefined) return null;
-  state.gl.bindTexture(state.gl.TEXTURE_2D, handle);
+  bindGlTextureRealization(state, { straightAlpha: false, texture: handle });
   applyGlSamplerState(state, runtime, handle, texture.sampler);
-  return handle;
+  return { straightAlpha: false, texture: handle };
 }
 
 function getExternalTextureSource(texture: Readonly<TextureLike>): ExternalTexture | null {

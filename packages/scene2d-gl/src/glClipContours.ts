@@ -19,7 +19,7 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 // clip when ANDing is needed (documented in popGlClipContours).
 //
 // Verified via the `mask` functional capture (canvas/dom/webgl agree). The clip program must keep
-// state.currentProgram in sync (see pushGlClipContours) so content draws re-bind their own program.
+// state.currentShader in sync (see pushGlClipContours) so content draws re-bind their own program.
 
 // Position-only program: transform contour points (clip-local) by the node world transform, then by the
 // backend's pixels->clip projection. Fragment writes nothing — color is masked off; only stencil moves.
@@ -73,10 +73,10 @@ export function pushGlClipContours(
   ensureClipProgram(state);
   const program = clipProgramFor(state);
   gl.useProgram(program.program);
-  // Content draws skip gl.useProgram when state.currentProgram already matches their program. Record the
+  // Content draws skip gl.useProgram when state.currentShader already matches their program. Record the
   // clip program here so the next content draw detects the change and re-binds — otherwise it would set
   // its uniforms against the clip program (INVALID_OPERATION: location not from the associated program).
-  runtime.currentProgram = program.program;
+  runtime.currentShader = { locations: null, program: program.program };
   uploadClipUniforms(state, program, worldTransform);
 
   // PHASE 1 — accumulate the polygon's winding into the stencil with color writes off. Non-zero uses

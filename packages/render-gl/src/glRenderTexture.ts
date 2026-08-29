@@ -9,7 +9,7 @@ import type {
   TextureColorSpace,
 } from '@flighthq/types/contract';
 
-import { applyGlSamplerState } from './glDraw';
+import { applyGlSamplerState, bindGlTextureRealization } from './glDraw';
 import { clearGlRenderTarget } from './glFullscreenPass';
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -27,18 +27,13 @@ export function bindGlRenderTexture(
   const entry = getEntry(state, renderTexture);
   if (entry === undefined || entry.status !== 'ready') {
     notifyGuard(state, renderTexture);
-    state.gl.bindTexture(state.gl.TEXTURE_2D, null);
-    const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTexture = null;
-    runtime.currentTextureStraightAlpha = false;
+    bindGlTextureRealization(state, null);
     return null;
   }
 
   const texture = entry.target.texture;
   const runtime = getGlRenderStateRuntime(state);
-  state.gl.bindTexture(state.gl.TEXTURE_2D, texture);
-  runtime.currentTexture = texture;
-  runtime.currentTextureStraightAlpha = false;
+  bindGlTextureRealization(state, { straightAlpha: false, texture });
   applyGlSamplerState(state, runtime, texture, sampler ?? renderTexture.sampler);
   return texture;
 }

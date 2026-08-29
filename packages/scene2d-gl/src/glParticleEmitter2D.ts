@@ -207,10 +207,10 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData, 0, drawCount * INSTANCE_FLOATS);
 
   // Activate particle shader program.
-  if (runtime.currentProgram !== shader.program) {
+  if (runtime.currentShader?.program !== shader.program) {
     gl.useProgram(shader.program);
-    runtime.currentProgram = shader.program;
   }
+  runtime.currentShader = { locations: null, program: shader.program };
 
   // Compute and upload the emitter node → clip-space world matrix.
   // In world-space mode particle positions ARE already in world (pixel) space,
@@ -241,7 +241,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   }
   gl.uniformMatrix3fv(shader.locWorldMatrix, false, m);
   gl.uniform1i(shader.locTexture, 0);
-  gl.uniform1i(shader.locStraightTextureAlpha, runtime.currentTextureStraightAlpha ? 1 : 0);
+  gl.uniform1i(shader.locStraightTextureAlpha, runtime.currentTextureRealization?.straightAlpha === true ? 1 : 0);
 
   // Per-vertex: corner buffer.
   gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleCornerBuffer!);

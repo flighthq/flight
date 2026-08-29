@@ -226,7 +226,7 @@ function clearGlRenderPass(
     gl.clearBufferfi(gl.DEPTH_STENCIL, 0, target.clearDepth, 0);
   }
 
-  getGlRenderStateRuntime(state).currentBlendMode = null;
+  getGlRenderStateRuntime(state).currentBlendSignature = null;
 }
 
 function isGlColorAttachmentPreserved(preserve: boolean | ReadonlyArray<boolean>, index: number): boolean {
@@ -273,10 +273,9 @@ function captureGlPassState(state: GlRenderState): SavedGlPassState {
 }
 
 function invalidateGlPassBindingCache(runtime: ReturnType<typeof getGlRenderStateRuntime>): void {
-  runtime.currentBlendMode = null;
-  runtime.currentProgram = null;
-  runtime.currentTexture = null;
-  runtime.currentTextureStraightAlpha = false;
+  runtime.currentBlendSignature = null;
+  runtime.currentShader = null;
+  runtime.currentTextureRealization = null;
 }
 
 function restoreGlPassState(state: GlRenderState, saved: Readonly<SavedGlPassState>): void {

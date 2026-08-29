@@ -27,7 +27,7 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   if (materialRenderer === null) return;
   const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (glTexture === null) return;
-  const straightAlpha = runtime.currentTextureStraightAlpha;
+  const straightAlpha = runtime.currentTextureRealization!.straightAlpha;
   ensureGlQuadBatchShader(state);
 
   let u0 = texture.uvOffset.x;

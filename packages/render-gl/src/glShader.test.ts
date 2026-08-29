@@ -157,19 +157,16 @@ describe('ensureDefaultGlBitmapShader', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     runtime.defaultBitmapShader = null;
-    runtime.shaderLoc = null;
     const shader = ensureDefaultGlBitmapShader(state);
     expect(shader).toBeDefined();
     expect(shader.program).toBeDefined();
     expect(runtime.defaultBitmapShader).toBe(shader);
-    expect(runtime.shaderLoc).not.toBeNull();
   });
 
   it('returns the cached shader on subsequent calls', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     runtime.defaultBitmapShader = null;
-    runtime.shaderLoc = null;
     const first = ensureDefaultGlBitmapShader(state);
     const second = ensureDefaultGlBitmapShader(state);
     expect(second).toBe(first);

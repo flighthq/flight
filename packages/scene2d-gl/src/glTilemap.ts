@@ -38,7 +38,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const texture = atlas.texture;
   const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (glTexture === null) return;
-  const straightAlpha = runtime.currentTextureStraightAlpha;
+  const straightAlpha = runtime.currentTextureRealization!.straightAlpha;
   const nodeMaterialData = tilemapNode.materialData;
   // Per-tile color adjustments, overriding the node-level tint for the tiles that carry one.
   const perTileColorScaleBias = source.data.materialData;
