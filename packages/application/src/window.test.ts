@@ -40,7 +40,6 @@ import {
   flashWindowFrame,
   focusWindow,
   getWindowBounds,
-  getWindowDisplay,
   hideWindow,
   lockApplicationPointer,
   maximizeWindow,
@@ -953,13 +952,6 @@ describe('getWindowBounds', () => {
     expect(getWindowBounds(host, createApplicationWindow(), out)).toBe(out);
     expect(out.width).toBe(3);
     expect(host.window.calls).toEqual(['getBounds']);
-  });
-});
-
-describe('getWindowDisplay', () => {
-  it('returns -1 on web (no multi-monitor API)', () => {
-    const win = createApplicationWindow();
-    expect(getWindowDisplay(win)).toBe(-1);
   });
 });
 

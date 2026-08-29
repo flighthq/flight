@@ -365,14 +365,6 @@ export function getWindowBounds(
   return host.window.getBounds(win as ApplicationWindow, out);
 }
 
-// Returns the index of the display (screen) the window is currently on, or -1 if unknown.
-// This is a seam: on web it always returns -1 (no multi-monitor API); native backends
-// (host-electron, host-winit) resolve the display via @flighthq/screen and return the index.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getWindowDisplay(win: Readonly<ApplicationWindow>): number {
-  return -1;
-}
-
 // Hides the window without closing it.
 export function hideWindow(host: WindowOperationHost<'hide'>, win: ApplicationWindow): void {
   if (!win.visible) return;
