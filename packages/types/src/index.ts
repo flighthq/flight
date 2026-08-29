@@ -506,6 +506,7 @@ export * from './RenderEffect';
 export * from './RenderEffectPadding';
 export * from './RenderEffectInput';
 export * from './RenderRegistrySignals';
+export * from './Raster2DSurface';
 export * from './RequirementFacet';
 export * from './Requirement';
 export * from './Renderer';

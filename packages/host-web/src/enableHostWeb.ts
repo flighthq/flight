@@ -19,6 +19,7 @@ import { enableHostWebMediaSession } from './webMediasession';
 import { enableHostWebNotification } from './webNotification';
 import { enableHostWebPermission } from './webPermissions';
 import { enableHostWebPlatform } from './webPlatform';
+import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
 import { enableHostWebScreen } from './webScreen';
 import { enableHostWebSensors } from './webSensors';
 import { enableHostWebShare } from './webShare';
@@ -48,6 +49,7 @@ export function enableHostWeb(): void {
   enableHostWebNotification();
   enableHostWebPermission();
   enableHostWebPlatform();
+  enableHostWebRaster2DSurface();
   enableHostWebScreen();
   enableHostWebSensors();
   enableHostWebShare();

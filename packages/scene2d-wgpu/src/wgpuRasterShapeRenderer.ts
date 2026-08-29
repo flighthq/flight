@@ -54,24 +54,25 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
   const version = getNodeLocalContentRevision(source);
   const pixelRatio = state.pixelRatio;
   const surface = acquireWgpuShapeRasterSurface(shapeData);
+  if (surface === null) return;
   if (
     version !== shapeData.lastContentId ||
     w !== shapeData.lastW ||
     h !== shapeData.lastH ||
     pixelRatio !== shapeData.lastPixelRatio
   ) {
-    // Reassigning either canvas dimension resets its 2D context even when the value is unchanged.
+    // Reassigning either surface dimension may reset its 2D context even when the value is unchanged.
     // Animated shapes invalidate their commands every frame, so resize only when their bounds change.
     const pw = Math.ceil(w * pixelRatio);
     const ph = Math.ceil(h * pixelRatio);
-    if (surface.canvas.width !== pw) surface.canvas.width = pw;
-    if (surface.canvas.height !== ph) surface.canvas.height = ph;
-    const ctx = surface.ctx;
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
-    ctx.clearRect(bounds.x, bounds.y, w, h);
-    rasterizer(ctx, commands, state);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    // Re-read the canvas dimensions and bump the resource version so the batch's version-aware cache
+    if (surface.width !== pw) surface.width = pw;
+    if (surface.height !== ph) surface.height = ph;
+    const { context } = surface;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    context.clearRect(bounds.x, bounds.y, w, h);
+    rasterizer(context, commands, state);
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    // Re-read the surface dimensions and bump the resource version so the batch's version-aware cache
     // re-uploads (recreating the GPU texture, which covers a size change too).
     invalidateImageResource(surface.image);
     shapeData.lastContentId = version;

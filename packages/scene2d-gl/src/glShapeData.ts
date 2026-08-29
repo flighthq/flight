@@ -1,28 +1,22 @@
-import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createRaster2DSurface } from '@flighthq/render/contract';
 import type {
   GlRenderState,
-  GlShapeRasterSurface,
   GlShapeRendererData,
+  Raster2DSurface,
   Renderable,
   RendererData,
 } from '@flighthq/types/contract';
 
-// Allocates the rasterization surface on first use. The canvas wrapped as an Image (its `source`) is
-// what lets the shared quad-batch writer treat a canvas-backed shape uniformly with bitmaps and atlases;
-// re-rendering the canvas bumps the resource's version (invalidateImageResource), which the batch's
-// version-aware cache uses to re-upload.
-export function acquireGlShapeRasterSurface(data: GlShapeRendererData): GlShapeRasterSurface {
+// Allocates the rasterization surface on first use. Its uploadable Image lets the shared quad-batch
+// writer treat a rasterized shape uniformly with bitmaps and atlases; re-rendering the backing store
+// bumps the resource's version (invalidateImageResource), which the batch's version-aware cache uses
+// to re-upload.
+export function acquireGlShapeRasterSurface(data: GlShapeRendererData): Raster2DSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const surface: GlShapeRasterSurface = {
-    canvas,
-    ctx: canvas.getContext('2d')!,
-    image: createImageResource(canvas),
-  };
+  const surface = createRaster2DSurface(1, 1);
+  if (surface === null) return null;
   data.surface = surface;
   return surface;
 }
@@ -41,7 +35,7 @@ export function createGlShapeData(_state: GlRenderState, _source: Renderable): R
   });
 }
 
-// The batch uploads this shape's canvas-backed resource into the shared cache; free that GPU texture when
+// The batch uploads this shape's raster resource into the shared cache; free that GPU texture when
 // the shape is torn down so it does not leak past the resource it was keyed on. A shape that only ever
 // tessellated has no surface and so no texture to free.
 export function destroyGlShapeData(state: GlRenderState, data: RendererData): void {

@@ -1,4 +1,6 @@
+import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import type { GlShapeRendererData } from '@flighthq/types/contract';
 
 import {
@@ -14,6 +16,37 @@ function emptyData(): GlShapeRendererData {
   return { surface: null, lastContentId: -1, lastPixelRatio: 0, lastW: 0, lastH: 0, meshVersion: -1, meshes: null };
 }
 
+beforeEach(() => {
+  setRaster2DSurfaceProvider({
+    createRaster2DSurface(width, height) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d')!;
+      return {
+        get width() {
+          return canvas.width;
+        },
+        set width(value) {
+          canvas.width = value;
+        },
+        get height() {
+          return canvas.height;
+        },
+        set height(value) {
+          canvas.height = value;
+        },
+        context,
+        image: createImageResource(canvas),
+      };
+    },
+  });
+});
+
+afterEach(() => {
+  resetRaster2DSurfaceProviderForTest();
+});
+
 describe('acquireGlShapeRasterSurface', () => {
   it('allocates once and returns the same surface thereafter', () => {
     const data = emptyData();
@@ -23,8 +56,16 @@ describe('acquireGlShapeRasterSurface', () => {
   });
 
   it('wraps the canvas as an Image so the quad batch treats it like any other texture source', () => {
-    const surface = acquireGlShapeRasterSurface(emptyData());
-    expect(surface.image.source).toBe(surface.canvas);
+    const surface = acquireGlShapeRasterSurface(emptyData())!;
+    expect(surface.image.source).toBe(surface.context.canvas);
+    expect('canvas' in surface).toBe(false);
+  });
+
+  it('preserves expected absence without caching it when no provider is installed', () => {
+    resetRaster2DSurfaceProviderForTest();
+    const data = emptyData();
+    expect(acquireGlShapeRasterSurface(data)).toBeNull();
+    expect(data.surface).toBeNull();
   });
 });
 
@@ -48,7 +89,7 @@ describe('destroyGlShapeData', () => {
   it('frees the cached GPU texture keyed on the raster surface', () => {
     const { state, gl } = createGlState();
     const data = emptyData();
-    const surface = acquireGlShapeRasterSurface(data);
+    const surface = acquireGlShapeRasterSurface(data)!;
     const texture = {} as WebGLTexture;
     getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache.set(surface.image, { texture } as never);
 

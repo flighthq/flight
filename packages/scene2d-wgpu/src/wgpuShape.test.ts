@@ -3,6 +3,7 @@ import type * as FlightNodeModule from '@flighthq/node/contract';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -40,6 +41,37 @@ import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 const noopRasterizer = (): void => {};
 
 beforeAll(() => installWgpuMock());
+
+beforeEach(() => {
+  setRaster2DSurfaceProvider({
+    createRaster2DSurface(width, height) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d')!;
+      return {
+        get width() {
+          return canvas.width;
+        },
+        set width(value) {
+          canvas.width = value;
+        },
+        get height() {
+          return canvas.height;
+        },
+        set height(value) {
+          canvas.height = value;
+        },
+        context,
+        image: createImageResource(canvas),
+      };
+    },
+  });
+});
+
+afterEach(() => {
+  resetRaster2DSurfaceProviderForTest();
+});
 
 // Mirrors createWgpuShapeData: the rasterization surface is absent until a shape actually needs one,
 // so a scene drawn entirely through the mesh path carries no canvases.
@@ -191,13 +223,13 @@ describe('drawWgpuShape', () => {
 
     drawWgpuShape(state, proxy);
     // The first draw rasterized, so the surface exists by now — it is allocated on demand, not with the node.
-    const canvas = (rendererData as unknown as { surface: { canvas: HTMLCanvasElement } }).surface.canvas;
-    let canvasWidth = canvas.width;
-    let canvasHeight = canvas.height;
-    const setWidth = vi.fn((value: number) => (canvasWidth = value));
-    const setHeight = vi.fn((value: number) => (canvasHeight = value));
-    Object.defineProperty(canvas, 'width', { configurable: true, get: () => canvasWidth, set: setWidth });
-    Object.defineProperty(canvas, 'height', { configurable: true, get: () => canvasHeight, set: setHeight });
+    const surface = (rendererData as unknown as { surface: { width: number; height: number } }).surface;
+    let surfaceWidth = surface.width;
+    let surfaceHeight = surface.height;
+    const setWidth = vi.fn((value: number) => (surfaceWidth = value));
+    const setHeight = vi.fn((value: number) => (surfaceHeight = value));
+    Object.defineProperty(surface, 'width', { configurable: true, get: () => surfaceWidth, set: setWidth });
+    Object.defineProperty(surface, 'height', { configurable: true, get: () => surfaceHeight, set: setHeight });
     (proxy.source as unknown as { data: { version: number } }).data.version = 2;
     drawWgpuShape(state, proxy);
 

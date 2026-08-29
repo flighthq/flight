@@ -1,11 +1,15 @@
 import { hasBitmapEncodeHostBackend, resetBitmapEncodeBackendForTest } from '@flighthq/bitmap/contract';
+import { explainRaster2DSurfaceProvider, resetRaster2DSurfaceProviderForTest } from '@flighthq/render/contract';
 import { hasVideoCapabilityHostBackend, resetVideoCapabilityBackendForTest } from '@flighthq/video/contract';
 
 import { enableHostWeb } from './enableHostWeb';
+import { resetHostWebRaster2DSurfaceForTest } from './webRaster2DSurface';
 
 afterEach(() => {
   resetBitmapEncodeBackendForTest();
   resetVideoCapabilityBackendForTest();
+  resetHostWebRaster2DSurfaceForTest();
+  resetRaster2DSurfaceProviderForTest();
 });
 
 describe('enableHostWeb', () => {
@@ -13,6 +17,7 @@ describe('enableHostWeb', () => {
     expect(() => enableHostWeb()).not.toThrow();
     expect(hasBitmapEncodeHostBackend()).toBe(true);
     expect(hasVideoCapabilityHostBackend()).toBe(true);
+    expect(explainRaster2DSurfaceProvider().layer).toBe('host');
   });
 
   it('is idempotent', () => {
