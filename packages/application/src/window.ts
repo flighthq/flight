@@ -5,7 +5,13 @@ import type {
   HasUiFullscreen,
   HasUiFullscreenSubscription,
   HasWindowAttach,
+  HasWindowCloseSubscription,
+  HasWindowMoveSubscription,
   HasWindowOpen,
+  HasWindowOrientationSubscription,
+  HasWindowPointerLockExit,
+  HasWindowResizeSubscription,
+  HasWindowVisibilitySubscription,
   Matrix,
   NativeWindowHandle,
   RenderState,
@@ -13,6 +19,7 @@ import type {
   WindowBackend,
   WindowBounds,
   WindowOptions,
+  WindowResizeTargetHandle,
 } from '@flighthq/types/contract';
 
 const kClose = Symbol();
@@ -43,27 +50,21 @@ export function attachWindow(
   return attached;
 }
 
-// Wires the browser's beforeunload/pagehide to the window's close signals: beforeunload emits
-// onCloseRequest and, if a listener vetoes (cancelSignal), prompts the user via the native unload
-// dialog; pagehide emits onClose once the page is actually going away. Idempotent.
-export function attachWindowClose(win: ApplicationWindow): void {
+// Wires the host's close-request and terminal-close sources to the window's signals. A vetoed
+// request is reported back to the host so it can keep the native window alive. Idempotent.
+export function attachWindowClose(host: HasWindowCloseSubscription, win: ApplicationWindow): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kClose)?.();
-  if (typeof window === 'undefined') return;
-  const onBeforeUnload = (e: BeforeUnloadEvent) => {
-    emitSignal(win.onCloseRequest);
-    if (win.onCloseRequest.data?.cancelled === true) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  };
-  const onPageHide = () => notifyWindowClosed(win);
-  window.addEventListener('beforeunload', onBeforeUnload);
-  window.addEventListener('pagehide', onPageHide);
-  observers.set(kClose, () => {
-    window.removeEventListener('beforeunload', onBeforeUnload);
-    window.removeEventListener('pagehide', onPageHide);
-  });
+  observers.set(
+    kClose,
+    host.window.subscribeClose(
+      () => {
+        emitSignal(win.onCloseRequest);
+        return win.onCloseRequest.data?.cancelled === true;
+      },
+      () => notifyWindowClosed(win),
+    ),
+  );
 }
 
 export function attachWindowDropFile(win: ApplicationWindow, element: HTMLElement): void {
@@ -108,38 +109,29 @@ export function attachWindowFullscreen(host: HasUiFullscreenSubscription, win: A
   observers.set(kFullscreen, () => host.ui.fullscreen.unsubscribe(handler));
 }
 
-// Wires OS/screen-originated window-move events to win.onMove. On web this is best-effort via
-// the window 'resize' event (which fires on page-move too in some browsers) — browsers do not
-// expose a reliable 'move' event on the page window. No-op in non-browser environments.
-export function attachWindowMove(win: ApplicationWindow): void {
+// Wires host-originated window movement to the entity and its onMove signal.
+export function attachWindowMove(host: HasWindowMoveSubscription, win: ApplicationWindow): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kMove)?.();
-  if (typeof window === 'undefined') return;
-  const handler = (): void => {
-    // Read back the real screen position from the browser and update the entity if it changed.
-    if (typeof window.screenX === 'number' && typeof window.screenY === 'number') {
-      const x = window.screenX;
-      const y = window.screenY;
+  observers.set(
+    kMove,
+    host.window.subscribeMove((x, y) => {
       if (win.x !== x || win.y !== y) {
         win.x = x;
         win.y = y;
         emitSignal(win.onMove);
       }
-    }
-  };
-  // Both 'resize' and a polling listener on 'pointermove' are imperfect; 'resize' fires more
-  // reliably across browsers as a proxy for page layout change that includes moves.
-  window.addEventListener('resize', handler);
-  observers.set(kMove, () => window.removeEventListener('resize', handler));
+    }),
+  );
 }
 
-export function attachWindowOrientation(win: ApplicationWindow): void {
+export function attachWindowOrientation(host: HasWindowOrientationSubscription, win: ApplicationWindow): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kOrientation)?.();
-  if (!screen.orientation) return;
-  const handler = () => emitSignal(win.onOrientationChanged);
-  screen.orientation.addEventListener('change', handler);
-  observers.set(kOrientation, () => screen.orientation.removeEventListener('change', handler));
+  observers.set(
+    kOrientation,
+    host.window.subscribeOrientation(() => emitSignal(win.onOrientationChanged)),
+  );
 }
 
 export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCanvasElement): void {
@@ -177,33 +169,33 @@ export function attachWindowRenderState(win: ApplicationWindow, state: RenderSta
   observers.set(kRenderState, () => disconnectSignal(win.onResize, apply));
 }
 
-export function attachWindowResize(win: ApplicationWindow, element: HTMLElement): void {
+export function attachWindowResize(
+  host: HasWindowResizeSubscription,
+  win: ApplicationWindow,
+  target: WindowResizeTargetHandle,
+): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kResize)?.();
-  const observer = new ResizeObserver((entries) => {
-    for (const entry of entries) {
-      win.width = Math.round(entry.contentRect.width);
-      win.height = Math.round(entry.contentRect.height);
-      win.devicePixelRatio = window.devicePixelRatio || 1;
+  observers.set(
+    kResize,
+    host.window.subscribeResize(target, (width, height, devicePixelRatio) => {
+      win.width = width;
+      win.height = height;
+      win.devicePixelRatio = devicePixelRatio;
       emitSignal(win.onResize);
-    }
-  });
-  observer.observe(element);
-  observers.set(kResize, () => observer.disconnect());
+    }),
+  );
 }
 
-export function attachWindowVisibility(win: ApplicationWindow): void {
+export function attachWindowVisibility(host: HasWindowVisibilitySubscription, win: ApplicationWindow): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kVisibility)?.();
-  const handler = () => {
-    if (document.hidden) {
-      emitSignal(win.onDeactivate);
-    } else {
-      emitSignal(win.onActivate);
-    }
-  };
-  document.addEventListener('visibilitychange', handler);
-  observers.set(kVisibility, () => document.removeEventListener('visibilitychange', handler));
+  observers.set(
+    kVisibility,
+    host.window.subscribeVisibility((visible) => {
+      emitSignal(visible ? win.onActivate : win.onDeactivate);
+    }),
+  );
 }
 
 // Centers the window on its current display via the backend.
@@ -347,13 +339,9 @@ export function exitApplicationFullscreen(host: HasUiFullscreen): Promise<boolea
   return host.ui.fullscreen.exit();
 }
 
-// Releases the Pointer Lock on the document, restoring cursor movement.
-export function exitApplicationPointerLock(): Promise<void> {
-  if (typeof document === 'undefined' || typeof document.exitPointerLock !== 'function') {
-    return Promise.resolve();
-  }
-  document.exitPointerLock();
-  return Promise.resolve();
+// Releases the host's active Pointer Lock, restoring cursor movement.
+export function exitApplicationPointerLock(host: HasWindowPointerLockExit): Promise<void> {
+  return host.window.exitPointerLock();
 }
 
 // Briefly flashes the window frame to attract attention. Native hosts may implement it via the

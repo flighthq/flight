@@ -6,9 +6,26 @@ import type {
   NativeWindowHandle,
   WindowAttachmentOwnership,
   WindowBackend,
+  WindowResizeTargetHandle,
 } from '@flighthq/types/contract';
 
-export const webWindowBackend: WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> = {
+type WebWindowBackend = WindowBackend &
+  Required<
+    Pick<
+      WindowBackend,
+      | 'attach'
+      | 'close'
+      | 'exitPointerLock'
+      | 'open'
+      | 'subscribeClose'
+      | 'subscribeMove'
+      | 'subscribeOrientation'
+      | 'subscribeResize'
+      | 'subscribeVisibility'
+    >
+  >;
+
+export const webWindowBackend: WebWindowBackend = {
   attach(win, handle, ownership) {
     if (!isWebWindow(handle)) return false;
     return attachWebWindow(win, handle, ownership);
@@ -27,6 +44,11 @@ export const webWindowBackend: WindowBackend & Required<Pick<WindowBackend, 'att
   },
   close(win) {
     detachWebWindow(win, true);
+  },
+  exitPointerLock() {
+    if (typeof document === 'undefined' || typeof document.exitPointerLock !== 'function') return Promise.resolve();
+    document.exitPointerLock();
+    return Promise.resolve();
   },
   focus(win) {
     const handle = getWebWindowHandle(win);
@@ -86,6 +108,60 @@ export const webWindowBackend: WindowBackend & Required<Pick<WindowBackend, 'att
     const document = getWebWindowHandle(win)?.document;
     if (document !== undefined) document.title = title;
   },
+  subscribeClose(onCloseRequest, onClose) {
+    if (typeof window === 'undefined') return noop;
+    const pageWindow = window;
+    const onBeforeUnload = (event: BeforeUnloadEvent): void => {
+      if (!onCloseRequest()) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    pageWindow.addEventListener('beforeunload', onBeforeUnload);
+    pageWindow.addEventListener('pagehide', onClose);
+    return trackWebWindowSubscription(() => {
+      pageWindow.removeEventListener('beforeunload', onBeforeUnload);
+      pageWindow.removeEventListener('pagehide', onClose);
+    });
+  },
+  subscribeMove(listener) {
+    if (typeof window === 'undefined') return noop;
+    const pageWindow = window;
+    const handler = (): void => {
+      if (typeof pageWindow.screenX === 'number' && typeof pageWindow.screenY === 'number') {
+        listener(pageWindow.screenX, pageWindow.screenY);
+      }
+    };
+    pageWindow.addEventListener('resize', handler);
+    return trackWebWindowSubscription(() => pageWindow.removeEventListener('resize', handler));
+  },
+  subscribeOrientation(listener) {
+    if (typeof screen === 'undefined' || screen.orientation === undefined) return noop;
+    const orientation = screen.orientation;
+    orientation.addEventListener('change', listener);
+    return trackWebWindowSubscription(() => orientation.removeEventListener('change', listener));
+  },
+  subscribeResize(target, listener) {
+    const element = _windowResizeTargets.get(target);
+    if (element === undefined || typeof ResizeObserver === 'undefined') return noop;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        listener(
+          Math.round(entry.contentRect.width),
+          Math.round(entry.contentRect.height),
+          typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1,
+        );
+      }
+    });
+    observer.observe(element);
+    return trackWebWindowSubscription(() => observer.disconnect());
+  },
+  subscribeVisibility(listener) {
+    if (typeof document === 'undefined') return noop;
+    const pageDocument = document;
+    const handler = (): void => listener(!pageDocument.hidden);
+    pageDocument.addEventListener('visibilitychange', handler);
+    return trackWebWindowSubscription(() => pageDocument.removeEventListener('visibilitychange', handler));
+  },
 };
 
 export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> =
@@ -130,12 +206,21 @@ export function createWebFullscreenTargetHandle(element: Element): FullscreenTar
   return target;
 }
 
+export function createWebWindowResizeTargetHandle(element: Element): WindowResizeTargetHandle {
+  const target: WindowResizeTargetHandle = { __brand: 'WindowResizeTargetHandle' };
+  _windowResizeTargets.set(target, element);
+  return target;
+}
+
 export function resetWebWindowBackendForTest(): void {
   for (const handler of _fullscreenListeners.values()) {
     if (typeof document !== 'undefined') document.removeEventListener('fullscreenchange', handler);
   }
   _fullscreenListeners.clear();
+  for (const cleanup of [..._windowSubscriptionCleanups]) cleanup();
+  _windowSubscriptionCleanups.clear();
   _fullscreenTargets = new WeakMap();
+  _windowResizeTargets = new WeakMap();
   _handles = new WeakMap();
   _records = new WeakMap();
 }
@@ -144,6 +229,8 @@ let _handles = new WeakMap<Window, ApplicationWindow>();
 let _records = new WeakMap<ApplicationWindow, WebWindowRecord>();
 const _fullscreenListeners = new Map<(fullscreen: boolean) => void, () => void>();
 let _fullscreenTargets = new WeakMap<FullscreenTargetHandle, Element>();
+const _windowSubscriptionCleanups = new Set<() => void>();
+let _windowResizeTargets = new WeakMap<WindowResizeTargetHandle, Element>();
 
 interface WebWindowRecord {
   readonly cleanup: () => void;
@@ -196,4 +283,18 @@ function isWebWindow(handle: NativeWindowHandle): handle is Window {
     typeof candidate.close === 'function' &&
     typeof candidate.removeEventListener === 'function'
   );
+}
+
+function noop(): void {}
+
+function trackWebWindowSubscription(cleanup: () => void): () => void {
+  let active = true;
+  const trackedCleanup = (): void => {
+    if (!active) return;
+    active = false;
+    _windowSubscriptionCleanups.delete(trackedCleanup);
+    cleanup();
+  };
+  _windowSubscriptionCleanups.add(trackedCleanup);
+  return trackedCleanup;
 }

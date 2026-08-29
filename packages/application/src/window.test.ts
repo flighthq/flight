@@ -5,6 +5,7 @@ import type {
   Matrix,
   RenderState,
   WindowBackend,
+  WindowResizeTargetHandle,
 } from '@flighthq/types/contract';
 
 import {
@@ -70,7 +71,15 @@ import {
   showWindow,
 } from './window';
 
-type RecordingWindowBackend = Required<WindowBackend> & { readonly calls: string[] };
+type RecordingWindowBackend = Required<WindowBackend> & {
+  readonly calls: string[];
+  emitCloseRequest(): boolean;
+  emitClosed(): void;
+  emitMove(x: number, y: number): void;
+  emitOrientation(): void;
+  emitResize(width: number, height: number, devicePixelRatio: number): void;
+  emitVisibility(visible: boolean): void;
+};
 
 type RecordingFullscreenBackend = Required<FullscreenBackend> & {
   readonly calls: string[];
@@ -87,9 +96,39 @@ function makeRenderState(): RenderState {
 }
 
 function recordingWindowBackend(): RecordingWindowBackend {
+  const closeSubscriptions = new Set<{
+    readonly onClose: () => void;
+    readonly onCloseRequest: () => boolean;
+  }>();
+  const moveListeners = new Set<(x: number, y: number) => void>();
+  const orientationListeners = new Set<() => void>();
+  const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
+  const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
   return {
     calls,
+    emitCloseRequest() {
+      let cancelled = false;
+      for (const subscription of closeSubscriptions) {
+        if (subscription.onCloseRequest()) cancelled = true;
+      }
+      return cancelled;
+    },
+    emitClosed() {
+      for (const subscription of closeSubscriptions) subscription.onClose();
+    },
+    emitMove(x, y) {
+      for (const listener of moveListeners) listener(x, y);
+    },
+    emitOrientation() {
+      for (const listener of orientationListeners) listener();
+    },
+    emitResize(width, height, devicePixelRatio) {
+      for (const listener of resizeListeners) listener(width, height, devicePixelRatio);
+    },
+    emitVisibility(visible) {
+      for (const listener of visibilityListeners) listener(visible);
+    },
     attach(_win, _handle, ownership) {
       calls.push(`attach:${ownership}`);
       return true;
@@ -184,7 +223,35 @@ function recordingWindowBackend(): RecordingWindowBackend {
     setHasShadow(_win, hasShadow) {
       calls.push(`setHasShadow:${hasShadow}`);
     },
+    subscribeClose(onCloseRequest, onClose) {
+      const subscription = { onClose, onCloseRequest };
+      closeSubscriptions.add(subscription);
+      return () => closeSubscriptions.delete(subscription);
+    },
+    subscribeMove(listener) {
+      moveListeners.add(listener);
+      return () => moveListeners.delete(listener);
+    },
+    subscribeOrientation(listener) {
+      orientationListeners.add(listener);
+      return () => orientationListeners.delete(listener);
+    },
+    subscribeResize(_target, listener) {
+      resizeListeners.add(listener);
+      return () => resizeListeners.delete(listener);
+    },
+    subscribeVisibility(listener) {
+      visibilityListeners.add(listener);
+      return () => visibilityListeners.delete(listener);
+    },
+    async exitPointerLock() {
+      calls.push('exitPointerLock');
+    },
   };
+}
+
+function createWindowResizeTarget(): WindowResizeTargetHandle {
+  return { __brand: 'WindowResizeTargetHandle' };
 }
 
 function recordingFullscreenBackend(): RecordingFullscreenBackend {
@@ -308,25 +375,27 @@ describe('attachWindow', () => {
 });
 
 describe('attachWindowClose', () => {
-  it('emits onClose on pagehide', () => {
+  it('emits onClose when the host reports a terminal close', () => {
     const win = createApplicationWindow();
     let closed = false;
     connectSignal(win.onClose, () => {
       closed = true;
     });
-    attachWindowClose(win);
-    window.dispatchEvent(new Event('pagehide'));
+    attachWindowClose(host, win);
+    host.window.emitClosed();
     expect(closed).toBe(true);
   });
 
-  it('emits onCloseRequest on beforeunload', () => {
+  it('emits onCloseRequest and reports whether it was cancelled to the host', () => {
     const win = createApplicationWindow();
     let requested = false;
     connectSignal(win.onCloseRequest, () => {
       requested = true;
+      cancelSignal(win.onCloseRequest);
     });
-    attachWindowClose(win);
-    window.dispatchEvent(new Event('beforeunload'));
+    attachWindowClose(host, win);
+
+    expect(host.window.emitCloseRequest()).toBe(true);
     expect(requested).toBe(true);
   });
 });
@@ -393,7 +462,7 @@ describe('attachWindowFullscreen', () => {
 });
 
 describe('attachWindowMove', () => {
-  it('emits onMove and updates position when screenX/screenY changes', () => {
+  it('emits onMove and updates position when the host position changes', () => {
     const win = createApplicationWindow();
     win.x = 0;
     win.y = 0;
@@ -402,15 +471,12 @@ describe('attachWindowMove', () => {
       moved = true;
     });
 
-    vi.stubGlobal('screenX', 100);
-    vi.stubGlobal('screenY', 200);
-    attachWindowMove(win);
-    window.dispatchEvent(new Event('resize'));
+    attachWindowMove(host, win);
+    host.window.emitMove(100, 200);
 
     expect(moved).toBe(true);
     expect(win.x).toBe(100);
     expect(win.y).toBe(200);
-    vi.unstubAllGlobals();
   });
 
   it('does not emit onMove when position has not changed', () => {
@@ -422,13 +488,10 @@ describe('attachWindowMove', () => {
       moved = true;
     });
 
-    vi.stubGlobal('screenX', 50);
-    vi.stubGlobal('screenY', 50);
-    attachWindowMove(win);
-    window.dispatchEvent(new Event('resize'));
+    attachWindowMove(host, win);
+    host.window.emitMove(50, 50);
 
     expect(moved).toBe(false);
-    vi.unstubAllGlobals();
   });
 });
 
@@ -440,19 +503,8 @@ describe('attachWindowOrientation', () => {
       called = true;
     });
 
-    let capturedHandler: (() => void) | null = null;
-    Object.defineProperty(screen, 'orientation', {
-      value: {
-        addEventListener: (_: string, fn: () => void) => {
-          capturedHandler = fn;
-        },
-        removeEventListener: vi.fn(),
-      },
-      configurable: true,
-    });
-
-    attachWindowOrientation(win);
-    capturedHandler!();
+    attachWindowOrientation(host, win);
+    host.window.emitOrientation();
     expect(called).toBe(true);
   });
 });
@@ -515,37 +567,15 @@ describe('attachWindowRenderState', () => {
 });
 
 describe('attachWindowResize', () => {
-  let resizeCallback: ResizeObserverCallback;
-  let disconnectFn: ReturnType<typeof vi.fn>;
-
-  beforeEach(() => {
-    disconnectFn = vi.fn();
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor(cb: ResizeObserverCallback) {
-          resizeCallback = cb;
-        }
-        observe() {}
-        disconnect = disconnectFn;
-      },
-    );
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('emits onResize and updates dimensions', () => {
-    vi.stubGlobal('devicePixelRatio', 2);
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onResize, () => {
       called = true;
     });
 
-    attachWindowResize(win, document.createElement('div'));
-    resizeCallback([{ contentRect: { width: 1280, height: 720 } } as ResizeObserverEntry], {} as ResizeObserver);
+    attachWindowResize(host, win, createWindowResizeTarget());
+    host.window.emitResize(1280, 720, 2);
 
     expect(called).toBe(true);
     expect(win.width).toBe(1280);
@@ -555,9 +585,15 @@ describe('attachWindowResize', () => {
 
   it('replaces a previous observer when called again', () => {
     const win = createApplicationWindow();
-    attachWindowResize(win, document.createElement('div'));
-    attachWindowResize(win, document.createElement('div'));
-    expect(disconnectFn).toHaveBeenCalledTimes(1);
+    let resized = 0;
+    connectSignal(win.onResize, () => resized++);
+    attachWindowResize(host, win, createWindowResizeTarget());
+    attachWindowResize(host, win, createWindowResizeTarget());
+
+    host.window.emitResize(320, 240, 1);
+    expect(resized).toBe(1);
+    expect(win.width).toBe(320);
+    expect(win.height).toBe(240);
   });
 });
 
@@ -569,10 +605,8 @@ describe('attachWindowVisibility', () => {
       called = true;
     });
 
-    attachWindowVisibility(win);
-    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
-    document.dispatchEvent(new Event('visibilitychange'));
-    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    attachWindowVisibility(host, win);
+    host.window.emitVisibility(false);
 
     expect(called).toBe(true);
   });
@@ -584,9 +618,8 @@ describe('attachWindowVisibility', () => {
       called = true;
     });
 
-    attachWindowVisibility(win);
-    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
-    document.dispatchEvent(new Event('visibilitychange'));
+    attachWindowVisibility(host, win);
+    host.window.emitVisibility(true);
 
     expect(called).toBe(true);
   });
@@ -711,9 +744,9 @@ describe('detachWindowClose', () => {
     connectSignal(win.onClose, () => {
       closed = true;
     });
-    attachWindowClose(win);
+    attachWindowClose(host, win);
     detachWindowClose(win);
-    window.dispatchEvent(new Event('pagehide'));
+    host.window.emitClosed();
     expect(closed).toBe(false);
   });
 });
@@ -776,29 +809,26 @@ describe('detachWindowMove', () => {
       moved = true;
     });
 
-    vi.stubGlobal('screenX', 100);
-    vi.stubGlobal('screenY', 100);
-    attachWindowMove(win);
+    attachWindowMove(host, win);
     detachWindowMove(win);
-    window.dispatchEvent(new Event('resize'));
+    host.window.emitMove(100, 100);
 
     expect(moved).toBe(false);
-    vi.unstubAllGlobals();
   });
 });
 
 describe('detachWindowOrientation', () => {
   it('removes the listener', () => {
-    const removeListener = vi.fn();
-    Object.defineProperty(screen, 'orientation', {
-      value: { addEventListener: vi.fn(), removeEventListener: removeListener },
-      configurable: true,
-    });
-
     const win = createApplicationWindow();
-    attachWindowOrientation(win);
+    let called = false;
+    connectSignal(win.onOrientationChanged, () => {
+      called = true;
+    });
+    attachWindowOrientation(host, win);
     detachWindowOrientation(win);
-    expect(removeListener).toHaveBeenCalled();
+    host.window.emitOrientation();
+
+    expect(called).toBe(false);
   });
 });
 
@@ -835,22 +865,13 @@ describe('detachWindowRenderState', () => {
 
 describe('detachWindowResize', () => {
   it('disconnects the observer', () => {
-    const disconnectFn = vi.fn();
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor() {}
-        observe() {}
-        disconnect = disconnectFn;
-      },
-    );
-
     const win = createApplicationWindow();
-    attachWindowResize(win, document.createElement('div'));
+    attachWindowResize(host, win, createWindowResizeTarget());
     detachWindowResize(win);
+    host.window.emitResize(640, 480, 2);
 
-    expect(disconnectFn).toHaveBeenCalled();
-    vi.unstubAllGlobals();
+    expect(win.width).toBe(0);
+    expect(win.height).toBe(0);
   });
 });
 
@@ -862,11 +883,9 @@ describe('detachWindowVisibility', () => {
       called = true;
     });
 
-    attachWindowVisibility(win);
+    attachWindowVisibility(host, win);
     detachWindowVisibility(win);
-    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
-    document.dispatchEvent(new Event('visibilitychange'));
-    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    host.window.emitVisibility(false);
 
     expect(called).toBe(false);
   });
@@ -874,23 +893,14 @@ describe('detachWindowVisibility', () => {
 
 describe('disposeApplicationWindow', () => {
   it('runs all teardown so attached observers stop firing', () => {
-    const disconnectFn = vi.fn();
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor() {}
-        observe() {}
-        disconnect = disconnectFn;
-      },
-    );
-
     const win = createApplicationWindow();
-    attachWindowResize(win, document.createElement('div'));
+    attachWindowResize(host, win, createWindowResizeTarget());
     attachWindowFullscreen(host, win);
 
     disposeApplicationWindow(win);
 
-    expect(disconnectFn).toHaveBeenCalled();
+    host.window.emitResize(640, 480, 2);
+    expect(win.width).toBe(0);
     let called = false;
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
@@ -898,8 +908,6 @@ describe('disposeApplicationWindow', () => {
     host.ui.fullscreen.emit(true);
     expect(called).toBe(false);
     expect(host.ui.fullscreen.calls).toEqual(['subscribe', 'unsubscribe']);
-
-    vi.unstubAllGlobals();
   });
 });
 
@@ -911,11 +919,9 @@ describe('exitApplicationFullscreen', () => {
 });
 
 describe('exitApplicationPointerLock', () => {
-  it('calls document.exitPointerLock when available', async () => {
-    const mock = vi.fn();
-    Object.defineProperty(document, 'exitPointerLock', { value: mock, configurable: true });
-    await exitApplicationPointerLock();
-    expect(mock).toHaveBeenCalled();
+  it('delegates to the host capability', async () => {
+    await exitApplicationPointerLock(host);
+    expect(host.window.calls).toEqual(['exitPointerLock']);
   });
 });
 

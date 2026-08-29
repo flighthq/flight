@@ -356,6 +356,30 @@ export interface HasWindowAttach {
   readonly window: WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close'>>;
 }
 
+export interface HasWindowCloseSubscription {
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'subscribeClose'>>;
+}
+
+export interface HasWindowMoveSubscription {
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'subscribeMove'>>;
+}
+
 export interface HasWindowOpen {
   readonly window: WindowBackend & Required<Pick<WindowBackend, 'close' | 'open'>>;
+}
+
+export interface HasWindowOrientationSubscription {
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'subscribeOrientation'>>;
+}
+
+export interface HasWindowPointerLockExit {
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'exitPointerLock'>>;
+}
+
+export interface HasWindowResizeSubscription {
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'subscribeResize'>>;
+}
+
+export interface HasWindowVisibilitySubscription {
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'subscribeVisibility'>>;
 }
