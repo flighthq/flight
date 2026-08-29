@@ -12,6 +12,7 @@ import type {
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlContext,
+  GlContextState,
   GlRenderOptions,
   GlRenderState,
   GlRenderStateRuntime,
@@ -54,6 +55,12 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   copyRenderStateRegistrations(target, source);
 }
 
+export function createGlContextState(gl: GlContext): GlContextState {
+  const contextRuntime: GlContextRuntime = { fields: {}, gl, references: 0, teardowns: [] };
+  _contextStateToRuntime.set(contextRuntime as GlContextState, contextRuntime);
+  return contextRuntime as GlContextState;
+}
+
 /**
  * Creates a second render pipeline over `screenState`'s WebGL context.
  *
@@ -79,7 +86,7 @@ export function createGlOffscreenRenderState(screenState: GlRenderState): GlRend
   (state as { gl: GlContext }).gl = screenState.gl;
 
   const screenRuntime = getGlRenderStateRuntime(screenState);
-  const runtime = createGlRenderStateRuntime(screenRuntime);
+  const runtime = createGlRenderStateRuntime(undefined, screenRuntime);
   state[EntityRuntimeKey] = runtime;
   initializeOffscreenGlRuntime(runtime, screenRuntime);
   copyAllRenderersFromRenderState(state, screenState);
@@ -88,6 +95,14 @@ export function createGlOffscreenRenderState(screenState: GlRenderState): GlRend
 }
 
 export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}): GlRenderState {
+  return createGlRenderStateFromContextState(createGlContextState(gl), options);
+}
+
+export function createGlRenderStateFromContextState(
+  contextState: Readonly<GlContextState>,
+  options: GlRenderOptions = {},
+): GlRenderState {
+  const gl = contextState.gl;
   const matrixArray = new Float32Array(9);
 
   // Static index buffer [0, 1, 2, 0, 2, 3]
@@ -113,7 +128,7 @@ export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
-  const runtime = createGlRenderStateRuntime();
+  const runtime = createGlRenderStateRuntime(contextState);
   state[EntityRuntimeKey] = runtime;
   runtime.currentBlendSignature = null;
   runtime.currentFramebuffer = null;
@@ -158,14 +173,25 @@ export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}
   return state;
 }
 
-// Allocates the package-private GPU runtime for a GlRenderState. createGlRenderState attaches
-// one to each state under EntityRuntimeKey and populates its fields; getGlRenderStateRuntime reads
-// it back. The render path writes the returned object every frame, so the return is intentionally
-// mutable (not Readonly).
-export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime): GlRenderStateRuntime {
+export function createGlRenderStateRuntime(
+  contextState?: Readonly<GlContextState>,
+  sharedRuntime?: GlRenderStateRuntime,
+): GlRenderStateRuntime {
   const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
-  const contextRuntime =
-    sharedRuntime === undefined ? { fields: {}, references: 0 } : getGlContextRuntime(sharedRuntime);
+  let contextRuntime: GlContextRuntime;
+  if (sharedRuntime !== undefined) {
+    contextRuntime = getGlContextRuntime(sharedRuntime);
+  } else if (contextState !== undefined) {
+    const fromMap = _contextStateToRuntime.get(contextState);
+    if (fromMap !== undefined) {
+      contextRuntime = fromMap;
+    } else {
+      contextRuntime = { fields: {}, gl: contextState.gl, references: 0, teardowns: [] };
+      _contextStateToRuntime.set(contextState, contextRuntime);
+    }
+  } else {
+    contextRuntime = { fields: {}, gl: null as unknown as GlContext, references: 0, teardowns: [] };
+  }
   contextRuntime.references++;
   _contextRuntimeByStateRuntime.set(runtime, contextRuntime);
   for (const key of GL_CONTEXT_RUNTIME_KEYS) {
@@ -224,7 +250,9 @@ export function destroyGlRenderState(state: GlRenderState): void {
   const contextRuntime = getGlContextRuntime(runtime);
   contextRuntime.references--;
   if (contextRuntime.references !== 0) return;
-  const gl = state.gl;
+  const gl = contextRuntime.gl;
+  for (const teardown of contextRuntime.teardowns) teardown(gl);
+  contextRuntime.teardowns.length = 0;
 
   // Dedupe: several owned shader wrappers may share a program. The current binding is intentionally
   // absent from this ledger: binding a caller-owned shader never transfers allocation ownership.
@@ -322,7 +350,9 @@ function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRunti
 type GlContextRuntimeKey = (typeof GL_CONTEXT_RUNTIME_KEYS)[number];
 type GlContextRuntime = {
   fields: Partial<Pick<GlRenderStateRuntime, GlContextRuntimeKey>>;
+  gl: GlContext;
   references: number;
+  teardowns: Array<(gl: GlContext) => void>;
 };
 
 function getGlContextRuntime(runtime: GlRenderStateRuntime): GlContextRuntime {
@@ -371,4 +401,5 @@ const GL_CONTEXT_RUNTIME_KEYS = [
 ] as const satisfies ReadonlyArray<keyof GlRenderStateRuntime>;
 
 const _contextRuntimeByStateRuntime = new WeakMap<GlRenderStateRuntime, GlContextRuntime>();
+const _contextStateToRuntime = new WeakMap<GlContextState, GlContextRuntime>();
 const _destroyedStates = new WeakSet<GlRenderState>();

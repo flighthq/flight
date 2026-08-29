@@ -29,8 +29,10 @@ import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDra
 import { registerGlMaterialRenderer } from './glMaterialRegistry';
 import {
   copyGlRenderStateRegistrations,
+  createGlContextState,
   createGlOffscreenRenderState,
   createGlRenderState,
+  createGlRenderStateFromContextState,
   createGlRenderStateRuntime,
   destroyGlRenderState,
   getGlColorAdjustmentMaterialFeature,
@@ -377,6 +379,31 @@ describe('createGlRenderState', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl, { roundPixels: true });
     expect(state.roundPixels).toBe(true);
+  });
+  it('shares the context tier when two states are built from the same GlContextState', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const stateA = createGlRenderStateFromContextState(contextState);
+    const stateB = createGlRenderStateFromContextState(contextState);
+    const runtimeA = getGlRenderStateRuntime(stateA);
+    const runtimeB = getGlRenderStateRuntime(stateB);
+
+    runtimeA.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
+    expect(runtimeB.currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
+
+    runtimeB.currentBlendSignature = { dst: 4, equation: 5, src: 6 };
+    expect(runtimeA.currentBlendSignature).toEqual({ dst: 4, equation: 5, src: 6 });
+  });
+
+  it('keeps separate context tiers when two states are built from the same raw GL', () => {
+    const { gl } = makeContext();
+    const stateA = createGlRenderState(gl);
+    const stateB = createGlRenderState(gl);
+    const runtimeA = getGlRenderStateRuntime(stateA);
+    const runtimeB = getGlRenderStateRuntime(stateB);
+
+    runtimeA.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
+    expect(runtimeB.currentBlendSignature).toBeNull();
   });
 });
 

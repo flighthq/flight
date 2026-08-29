@@ -40,6 +40,7 @@ import {
   createWgpuRenderState,
   createWgpuRenderStateFromCanvasElement,
   releaseWgpuAcquisition,
+  createWgpuDeviceState,
   createWgpuRenderStateRuntime,
   destroyWgpuRenderState,
   getWgpuColorAdjustmentMaterialFeature,
@@ -509,7 +510,7 @@ describe('createWgpuRenderStateFromCanvasElement', () => {
 
 describe('createWgpuRenderStateRuntime', () => {
   it('returns a runtime with the base binding slot and empty named registration tables', () => {
-    const runtime = createWgpuRenderStateRuntime();
+    const runtime = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.customMaterialShaders).toMatchObject({
       onMiss: 'Unregistered',
