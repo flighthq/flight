@@ -93,9 +93,10 @@ const EXPECTED_AGGREGATE = [
   'Webcam',
 ] as const;
 
-// These are deliberately not part of enableHostWeb(): applications opt into shell/window chrome and
-// renderer surfaces explicitly. Keeping the names here turns a newly added web enabler into a reviewable
-// registry change instead of silently treating it as either aggregate or excluded.
+// These are deliberately not part of enableHostWeb(): applications opt into application services,
+// shell chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
+// enabler into a reviewable registry change instead of silently treating it as either aggregate or
+// excluded.
 const EXPECTED_EXCLUDED = [
   'App',
   'Menu',
@@ -103,7 +104,6 @@ const EXPECTED_EXCLUDED = [
   'Protocol',
   'Shell',
   'StatusBar',
-  'Window',
   'GlRenderSurface',
   'WgpuRenderSurface',
 ] as const;

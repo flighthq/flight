@@ -18,7 +18,9 @@ import type {
 // changes. `getBounds` cannot read Tauri's async position/size synchronously, so it reports the entity's
 // mirrored fields. Scope: this is the single current window (the browser-page-window analogue); creating
 // additional OS windows is a `WebviewWindow`-label concern left to the host and not modeled here.
-export function createTauriWindowBackend(tauri: TauriApi): WindowBackend {
+export function createTauriWindowBackend(
+  tauri: TauriApi,
+): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> {
   const windowModule = tauri.window;
   const handles = new WeakMap<TauriWindow, ApplicationWindow>();
   const windows = new WeakMap<ApplicationWindow, TauriWindowRecord>();

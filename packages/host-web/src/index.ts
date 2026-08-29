@@ -36,5 +36,6 @@ export { enableHostWebStatusBar } from './webStatusbar';
 export { enableHostWebStorage } from './webStorage';
 export { enableHostWebVideoCapability } from './webVideoCapability';
 export { enableHostWebWebcam } from './webWebcam';
-export { enableHostWebWindow } from './webWindow';
+export { webHost } from './webHost';
+export { createWebFullscreenTargetHandle, webFullscreenBackend, webWindowBackend } from './webWindow';
 export { createWebWgpuRenderSurfaceProvider, enableHostWebWgpuRenderSurface } from './webWgpuRenderSurface';

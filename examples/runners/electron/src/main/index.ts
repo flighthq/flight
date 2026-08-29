@@ -116,11 +116,11 @@ void app.whenReady().then(() => {
     // Electron's NativeImage parameter is nominally richer than Flight's dependency-free handle.
     Tray: electron.Tray as ElectronApi['Tray'],
   };
-  registerElectronBackends(electronApi);
+  const host = registerElectronBackends(electronApi);
   installIpcBridge();
 
   mainWindow = createApplicationWindow();
-  openWindow(mainWindow, {
+  openWindow(host, mainWindow, {
     title: process.env['FLIGHT_ELECTRON_TITLE'] ?? 'Flight Electron Harness',
     width: 1024,
     height: 720,
@@ -131,7 +131,7 @@ void app.whenReady().then(() => {
 
   app.on('activate', () => {
     if (mainWindow !== null && getElectronBrowserWindow(mainWindow) === null) {
-      openWindow(mainWindow, {
+      openWindow(host, mainWindow, {
         title: process.env['FLIGHT_ELECTRON_TITLE'] ?? 'Flight Electron Harness',
         width: 1024,
         height: 720,

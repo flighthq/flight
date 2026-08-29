@@ -1,9 +1,4 @@
-import {
-  createApplicationWindow,
-  openWindow,
-  resetWindowBackendForTest,
-  setWindowBackend,
-} from '@flighthq/application/contract';
+import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 
@@ -100,8 +95,6 @@ function fakeTauri() {
 function methods(state: FakeWindowState): string[] {
   return state.calls.map((c) => c.method);
 }
-
-afterEach(() => resetWindowBackendForTest());
 
 describe('createTauriWindowBackend', () => {
   it('adapter-roster axis: publishes exactly 24 P1 operations and omits the four false members', () => {
@@ -255,9 +248,8 @@ describe('createTauriWindowBackend', () => {
   it('center-owner axis: lets application perform exactly one post-open center command', () => {
     const { tauri, state } = fakeTauri();
     const backend = createTauriWindowBackend(tauri);
-    setWindowBackend(backend);
 
-    expect(openWindow(createApplicationWindow(), { center: true })).toBe(true);
+    expect(openWindow({ window: backend }, createApplicationWindow(), { center: true })).toBe(true);
 
     expect(methods(state).filter((method) => method === 'center')).toHaveLength(1);
   });

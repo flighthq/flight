@@ -43,8 +43,8 @@ function installElectronProbe(): HostProbeInstallResult {
     // Electron's NativeImage parameter is nominally richer than Flight's dependency-free handle.
     Tray: electron.Tray as ElectronApi['Tray'],
   };
-  registerElectronBackends(api, { storageFileName: 'flight-host-probe-storage.json' });
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends());
+  const host = registerElectronBackends(api, { storageFileName: 'flight-host-probe-storage.json' });
+  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host.window));
   const results: HostProbeResult[] = [];
 
   const appName = getAppName();
@@ -66,7 +66,12 @@ function installElectronProbe(): HostProbeInstallResult {
   });
 
   const probeWindow = createApplicationWindow();
-  const opened = openWindow(probeWindow, { height: 120, title: 'Flight Host Probe Child', visible: false, width: 160 });
+  const opened = openWindow(host, probeWindow, {
+    height: 120,
+    title: 'Flight Host Probe Child',
+    visible: false,
+    width: 160,
+  });
   const browserWindow = getElectronBrowserWindow(probeWindow);
   results.push({
     detail:
@@ -77,7 +82,7 @@ function installElectronProbe(): HostProbeInstallResult {
     kind: 'runtime',
     status: opened && browserWindow !== null ? 'pass' : 'fail',
   });
-  closeWindow(probeWindow);
+  closeWindow(host, probeWindow);
 
   return { changedCapabilities, results };
 }

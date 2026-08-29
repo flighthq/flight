@@ -1,6 +1,6 @@
 import { getLoopBackend } from '@flighthq/application/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
-import { createWebCursorBackend, enableHostWebGlyphRasterizer, enableHostWebLoop } from '@flighthq/host-web';
+import { createWebCursorBackend, enableHostWebGlyphRasterizer, enableHostWebLoop, webHost } from '@flighthq/host-web';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';
@@ -10,7 +10,7 @@ export async function installWebHostProbe(before: HostProbeBackendSnapshot): Pro
   enableHostWebGlyphRasterizer();
   enableHostWebLoop();
   const results = await Promise.all([probeWebCursor(), probeWebGlyphRasterizer(), probeWebLoop()]);
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends());
+  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(webHost.window));
   if (results[0]?.status === 'pass') changedCapabilities.push('cursor');
   return { changedCapabilities, results };
 }

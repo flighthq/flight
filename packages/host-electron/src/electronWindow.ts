@@ -15,7 +15,9 @@ import type {
 // user-driven state changes (minimize, move, focus, …) flow through the same signals the command
 // functions emit. Other methods look up the BrowserWindow and no-op when it is absent (already closed
 // or never opened). Risky native calls are wrapped so a destroyed window cannot throw across the seam.
-export function createElectronWindowBackend(electron: ElectronApi): WindowBackend {
+export function createElectronWindowBackend(
+  electron: ElectronApi,
+): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> {
   return {
     attach(win, handle, ownership) {
       if (!isElectronBrowserWindow(handle)) return false;
