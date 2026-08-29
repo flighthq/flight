@@ -1,5 +1,4 @@
 import { setAppBackend } from '@flighthq/app/contract';
-import { setClipboardBackend } from '@flighthq/clipboard/contract';
 import { setConnectivityBackend } from '@flighthq/connectivity/contract';
 import { setDeviceBackend } from '@flighthq/device/contract';
 import { createEntity } from '@flighthq/entity/contract';
@@ -10,6 +9,9 @@ import { setShareBackend } from '@flighthq/share/contract';
 import { setStatusBarBackend } from '@flighthq/statusbar/contract';
 import type {
   CapacitorApi,
+  EntityRuntimeKey,
+  HasClipboardImage,
+  HasClipboardText,
   HasDialogMessage,
   HasDialogPrompt,
   HasInputHaptics,
@@ -34,12 +36,9 @@ import { createCapacitorNotificationCapabilities } from './capacitorNotification
 import { createCapacitorShareBackend } from './capacitorShare';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 
-// The explicit Capacitor host. Dialog, haptics, and notification are claimed; every other capability
-// still installs through its package-local seam and is NOT represented here, so an empty group means
-// "not yet migrated", never "Capacitor cannot do this".
-export function capacitorHost(
-  capacitor: CapacitorApi,
-): Host &
+type CapacitorHost = Host &
+  HasClipboardImage &
+  HasClipboardText &
   HasDialogMessage &
   HasDialogPrompt &
   HasInputHaptics &
@@ -47,10 +46,17 @@ export function capacitorHost(
   HasNotificationClick &
   HasNotificationDelivery &
   HasNotificationPendingList &
-  HasNotificationScheduling {
+  HasNotificationScheduling;
+
+// The explicit Capacitor host. Clipboard, dialog, haptics, and notification are claimed; every other capability
+// still installs through its package-local seam and is NOT represented here, so an empty group means
+// "not yet migrated", never "Capacitor cannot do this".
+export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
+  const clipboard = createCapacitorClipboardBackend(capacitor);
   return createEntity({
     accessibility: {},
     app: {},
+    clipboard: { image: clipboard, text: clipboard },
     dialog: {
       message: createCapacitorMessageDialogBackend(capacitor),
       prompt: createCapacitorPromptDialogBackend(capacitor),
@@ -67,7 +73,7 @@ export function capacitorHost(
     // Every WindowBackend member is optional, so {} is the honest claim: a Capacitor app runs in a
     // webview and provides no native window operations of its own.
     window: {},
-  });
+  } satisfies Omit<CapacitorHost, typeof EntityRuntimeKey>);
 }
 
 // Installs every still-ambient Capacitor host backend in one call and returns the explicit host. Run
@@ -78,26 +84,11 @@ export function capacitorHost(
 //   // …import the other plugins…
 //   registerCapacitorBackends({ app: App, clipboard: Clipboard, /* … */ statusBar: StatusBar });
 //
-// Pass the returned host to dialog, haptics, and notification operations. The other covered mobile
-// seams resolve to their Capacitor implementations instead of the web defaults. Seams outside Capacitor's mobile model
-// (window, menu, tray, shortcut, updater, protocol, ipc, power, screen, net) are intentionally left
-// registered to their web defaults — a Capacitor app runs in a webview, so those defaults keep working.
-// Storage is deliberately not adapted: `StorageBackend` is synchronous but `@capacitor/preferences` is
-// async (an unbridgeable mismatch), so localStorage remains the storage backend. Each remaining
-// set*Backend(null) reverts one package-local capability to web.
-export function registerCapacitorBackends(
-  capacitor: CapacitorApi,
-): Host &
-  HasDialogMessage &
-  HasDialogPrompt &
-  HasInputHaptics &
-  HasNotificationAction &
-  HasNotificationClick &
-  HasNotificationDelivery &
-  HasNotificationPendingList &
-  HasNotificationScheduling {
+// Pass the returned host to clipboard, dialog, haptics, and notification operations. The other mobile seams remain
+// package-local registrations. Storage is deliberately not adapted because its synchronous contract
+// cannot express Capacitor Preferences' asynchronous API.
+export function registerCapacitorBackends(capacitor: CapacitorApi): CapacitorHost {
   setAppBackend(createCapacitorAppBackend(capacitor));
-  setClipboardBackend(createCapacitorClipboardBackend(capacitor));
   setConnectivityBackend(createCapacitorConnectivityBackend(capacitor));
   setDeviceBackend(createCapacitorDeviceBackend(capacitor));
   setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));

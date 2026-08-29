@@ -1,4 +1,5 @@
 import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronClipboardBackend } from './electronClipboard';
 
@@ -50,6 +51,7 @@ function fakeElectron(): ElectronApi {
 describe('createElectronClipboardBackend', () => {
   it('round-trips text through the Electron clipboard', async () => {
     const backend = createElectronClipboardBackend(fakeElectron());
+    expect(EntityRuntimeKey in backend).toBe(true);
     expect(await backend.writeText('hi')).toBe(true);
     expect(await backend.readText()).toBe('hi');
     expect(await backend.hasText()).toBe(true);

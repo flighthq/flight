@@ -1,9 +1,8 @@
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 
-import type { ElectronApi } from '@flighthq/host-electron';
 import { getElectronBrowserWindow, registerElectronBackends } from '@flighthq/host-electron';
-import type { ApplicationWindow, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
+import type { ApplicationWindow, ElectronApi, HasClipboardText, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
 import {
   createApplicationWindow,
   createMenuItemTemplate,
@@ -57,8 +56,8 @@ function loadRenderer(win: ApplicationWindow): void {
 // registerElectronBackends, is now serviced by Electron.
 function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): void {
   ipcMain.handle('flight:openFileDialog', () => showOpenFileDialog(host, { title: 'Pick a file' }));
-  ipcMain.handle('flight:readClipboard', () => readClipboardText());
-  ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) => writeClipboardText(String(text)));
+  ipcMain.handle('flight:readClipboard', () => readClipboardText(host));
+  ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) => writeClipboardText(host, String(text)));
   ipcMain.handle('flight:notify', (_event: unknown, body: unknown) =>
     showNotification(host, { title: 'Flight Harness', body: String(body) }),
   );
@@ -66,7 +65,7 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
 
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves
 // the Electron backends are wired.
-function runOsIntegrationDemo(): void {
+function runOsIntegrationDemo(host: HasClipboardText): void {
   console.log('[harness] app:', getAppName(), getAppVersion(), getAppLocale()); // eslint-disable-line
 
   const screens: ScreenInfo[] = [];
@@ -91,8 +90,8 @@ function runOsIntegrationDemo(): void {
   registerGlobalShortcut('CommandOrControl+Shift+F', () => console.log('[harness] global shortcut fired')); // eslint-disable-line
 
   void (async () => {
-    await writeClipboardText('Hello from Flight via Electron');
-    console.log('[harness] clipboard round-trip:', await readClipboardText()); // eslint-disable-line
+    await writeClipboardText(host, 'Hello from Flight via Electron');
+    console.log('[harness] clipboard round-trip:', await readClipboardText(host)); // eslint-disable-line
   })();
 
   try {
@@ -127,7 +126,7 @@ void app.whenReady().then(() => {
   });
   loadRenderer(mainWindow);
 
-  runOsIntegrationDemo();
+  runOsIntegrationDemo(host);
 
   app.on('activate', () => {
     if (mainWindow !== null && getElectronBrowserWindow(mainWindow) === null) {

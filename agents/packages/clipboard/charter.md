@@ -3,7 +3,7 @@ package: '@flighthq/clipboard'
 role: package
 crate: flighthq-clipboard
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-08-29
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -15,11 +15,22 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-System clipboard transport across data flavors — plain text, HTML, RTF, image, bookmark/URL, files, and arbitrary MIME formats — behind a swappable `ClipboardBackend`. The package follows the suite's command-capability shape (`getClipboardBackend` / `setClipboardBackend` / `createWebClipboardBackend`) and additionally carries an event surface via the `ClipboardWatch` change-event entity (`createClipboardWatch` / `attachClipboardWatch` / `detachClipboardWatch` / `disposeClipboardWatch`), implementing the suite's event-entity pattern. The generic MIME format seam (`readClipboardFormat` / `writeClipboardFormat` / `hasClipboardFormat` / `getClipboardFormats`) is the floor; named-flavor functions are convenience over it. Clipboard owns the pasteboard transport — moving flavored data in and out of the system clipboard. It does not own the data types it carries (pixel buffers belong to `@flighthq/bitmap`). Drag-and-drop is a separate capability.
+System clipboard transport across five provider-derived slots on the explicit top-level `Host.clipboard`
+group: text/clear, image data URLs, HTML/RTF/arbitrary formats and items, bookmarks, and change events.
+Every free operation takes the narrow `HasClipboard*` trait it needs. The Web implementation is the
+importable `webClipboardBackend` const in `@flighthq/host-web`; Electron provides text, image, formats,
+and bookmarks; Capacitor provides text and image; Tauri provides text. File-list and change-count
+operations are absent because no shipped provider implements them. `ClipboardWatch` retains the
+create/attach/detach/dispose signal lifecycle, with attach requiring a change provider that supplies
+both subscribe and unsubscribe. Clipboard owns pasteboard transport, not the data types it carries;
+drag-and-drop remains a separate capability.
 
 ## Decisions
 
 - **[2026-07-02] Fix `ClipboardFormat` constant usage.** The `ClipboardFormat` constants are defined in `@flighthq/types` but the implementation uses hardcoded MIME strings instead of referencing them. Fix to use the defined constants throughout.
+- **[2026-08-29] Derive slots from provider coverage.** Promote clipboard to a top-level Host group
+  because its text, image, formats, bookmark, and change operations have distinct provider vectors;
+  remove ambient backend resolution and unsupported sentinel methods.
 
 ## Open directions
 

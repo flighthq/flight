@@ -15,7 +15,6 @@
     { "path": "../application" },
     { "path": "../audio" },
     { "path": "../bitmap" },
-    { "path": "../clipboard" },
     { "path": "../connectivity" },
     { "path": "../device" },
     { "path": "../dialog" },

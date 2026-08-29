@@ -1,5 +1,5 @@
 import { setAppBackend } from '@flighthq/app/contract';
-import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
+import { readClipboardText } from '@flighthq/clipboard/contract';
 import { explainMenuReplacementGuarantee, hasMenuReplacementGuarantee, setMenuBackend } from '@flighthq/menu/contract';
 import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
 import { setShellBackend } from '@flighthq/shell/contract';
@@ -7,6 +7,7 @@ import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerTauriBackends } from './tauriRegister';
 
@@ -46,7 +47,6 @@ function fakeTauri(): TauriApi {
 afterEach(() => {
   setPlatformBackend(null);
   setAppBackend(null);
-  setClipboardBackend(null);
   setMenuBackend(null);
   setTrayBackend(null);
   setShortcutBackend(null);
@@ -60,9 +60,10 @@ describe('registerTauriBackends', () => {
     expect(host.dialog.file.openFile).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
+    expect(Object.keys(host.clipboard)).toEqual(['text']);
     expect(host.window.open).toBeTypeOf('function');
     expect(getPlatformName()).toBe('linux');
-    expect(await readClipboardText()).toBe('TAURI-TEXT');
+    expect(await readClipboardText(host)).toBe('TAURI-TEXT');
   });
 
   it('selects the Tauri menu identity with both native replacement guarantees unsupported', () => {

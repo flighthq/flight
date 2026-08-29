@@ -1,4 +1,5 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
 
@@ -30,6 +31,7 @@ describe('createCapacitorClipboardBackend', () => {
   it('round-trips text through the Capacitor clipboard', async () => {
     const { capacitor, calls } = fakeCapacitor();
     const backend = createCapacitorClipboardBackend(capacitor);
+    expect(EntityRuntimeKey in backend).toBe(true);
     expect(await backend.writeText('hi')).toBe(true);
     expect(await backend.readText()).toBe('hi');
     expect(await backend.hasText()).toBe(true);
@@ -45,16 +47,6 @@ describe('createCapacitorClipboardBackend', () => {
     // An image on the clipboard is not text.
     expect(await backend.readText()).toBe('');
     expect(await backend.hasText()).toBe(false);
-  });
-
-  it('reports sentinels for unsupported flavors', async () => {
-    const backend = createCapacitorClipboardBackend(fakeCapacitor().capacitor);
-    expect(await backend.readHtml()).toBe('');
-    expect(await backend.writeHtml('<b/>')).toBe(false);
-    expect(await backend.readBookmark()).toBeNull();
-    expect(await backend.getFormats()).toEqual([]);
-    expect(await backend.readFiles()).toEqual([]);
-    expect(backend.getChangeCount()).toBe(-1);
   });
 
   it('resolves sentinels when the clipboard read throws', async () => {

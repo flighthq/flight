@@ -1,4 +1,5 @@
 import type { TauriApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createTauriClipboardBackend } from './tauriClipboard';
 
@@ -28,6 +29,7 @@ describe('createTauriClipboardBackend', () => {
   it('round-trips text through the Tauri clipboard', async () => {
     const { tauri, calls } = fakeTauri();
     const backend = createTauriClipboardBackend(tauri);
+    expect(EntityRuntimeKey in backend).toBe(true);
     expect(await backend.writeText('hi')).toBe(true);
     expect(await backend.readText()).toBe('hi');
     expect(await backend.hasText()).toBe(true);
@@ -42,17 +44,6 @@ describe('createTauriClipboardBackend', () => {
     expect(await backend.clear()).toBe(true);
     expect(calls).toContain('clear');
     expect(await backend.hasText()).toBe(false);
-  });
-
-  it('reports sentinels for unsupported flavors', async () => {
-    const backend = createTauriClipboardBackend(fakeTauri().tauri);
-    expect(await backend.readHtml()).toBe('');
-    expect(await backend.writeHtml('<b/>')).toBe(false);
-    expect(await backend.readImage()).toBe('');
-    expect(await backend.readBookmark()).toBeNull();
-    expect(await backend.getFormats()).toEqual([]);
-    expect(await backend.readFiles()).toEqual([]);
-    expect(backend.getChangeCount()).toBe(-1);
   });
 
   it('resolves sentinels when the clipboard read throws', async () => {
