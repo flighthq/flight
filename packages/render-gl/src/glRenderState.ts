@@ -298,6 +298,18 @@ export function getGlRenderStateRuntime(state: GlRenderState): GlRenderStateRunt
   return state[EntityRuntimeKey] as GlRenderStateRuntime;
 }
 
+export function invalidateGlRenderStateCache(state: GlRenderState): void {
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.currentBlendMode = null;
+  runtime.currentFramebuffer = null;
+  runtime.currentMaskDepth = 0;
+  runtime.currentProgram = null;
+  runtime.currentScissorRect = null;
+  runtime.currentTexture = null;
+  runtime.currentTextureStraightAlpha = false;
+  runtime.renderTargetViewport = null;
+}
+
 // Discards render-gl's cached GL binding state (bound program, texture, framebuffer, blend mode,
 // scissor, viewport) so the next render-gl draw re-binds everything from scratch. render-gl's draw
 // paths skip redundant `useProgram`/`bindTexture`/`bindFramebuffer` calls by trusting these cached
@@ -310,15 +322,10 @@ export function getGlRenderStateRuntime(state: GlRenderState): GlRenderStateRunt
 // e.g. setting a uniform against a program that is not the one actually bound, which GL rejects with
 // `INVALID_OPERATION: uniform...: location is not from the associated program`. Any such guest
 // renderer must call this before returning control to render-gl.
-export function invalidateGlRenderStateCache(state: GlRenderState): void {
+export function registerGlContextTeardown(state: GlRenderState, teardown: (gl: GlContext) => void): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.currentBlendSignature = null;
-  runtime.currentFramebuffer = null;
-  runtime.currentMaskDepth = 0;
-  runtime.currentShader = null;
-  runtime.currentScissorRect = null;
-  runtime.currentTextureRealization = null;
-  runtime.renderTargetViewport = null;
+  const contextRuntime = getGlContextRuntime(runtime);
+  contextRuntime.teardowns.push(teardown);
 }
 
 function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRuntime: GlRenderStateRuntime): void {

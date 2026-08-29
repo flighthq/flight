@@ -488,6 +488,12 @@ export function isWgpuSupported(): boolean {
   return getWgpuHostBackend().isSupported();
 }
 
+export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (device: GPUDevice) => void): void {
+  const runtime = getWgpuRenderStateRuntime(state);
+  const deviceRuntime = getWgpuDeviceRuntime(runtime);
+  deviceRuntime.teardowns.push(teardown);
+}
+
 // The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
 export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition>): void {
   getWgpuHostBackend().release(acquisition);
