@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
-import type { Image, Matrix3Like, Texture, TextureLike, VideoResource } from '@flighthq/types/contract';
+import type { Image, Matrix3Like, Texture, Texture2D, TextureLike, VideoResource } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './texture';
@@ -29,7 +29,7 @@ export function copyVideoTexture(out: TextureLike, source: Readonly<TextureLike>
 // Wraps a VideoResource's borrowed host element in an Image source and returns the same
 // universal Texture type used by still images and render targets. The all-ones initial revision
 // preserves the former first advanceVideoTexture result of 0 after u32 wrap.
-export function createVideoTexture(source: VideoResource, opts?: Readonly<Partial<TextureLike>>): Texture {
+export function createVideoTexture(source: VideoResource, opts?: Readonly<Partial<TextureLike>>): Texture2D {
   const image = createVideoImageResource(source);
   return createTexture({
     ...opts,
@@ -41,7 +41,7 @@ export function createVideoTexture(source: VideoResource, opts?: Readonly<Partia
 
 // Detaches the borrowed video Image source without destroying the underlying VideoResource. Leaves
 // the Texture entity invalid — subsequent advance/ready calls return sentinel values.
-export function destroyVideoTexture(texture: TextureLike): void {
+export function destroyVideoTexture(texture: Texture2D): void {
   texture.source = null;
   texture.version = INITIAL_VIDEO_VERSION;
 }

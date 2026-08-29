@@ -335,6 +335,12 @@ class MockVideoElement {
   }
 }
 
-function createMockVideoElement(duration = 10, videoHeight = 0, videoWidth = 0): HTMLVideoElement {
-  return new MockVideoElement(duration, videoHeight, videoWidth) as unknown as HTMLVideoElement;
+function createMockVideoElement(
+  duration = 10,
+  videoHeight = 0,
+  videoWidth = 0,
+): HTMLVideoElement & { listenerCount(type: string): number } {
+  return new MockVideoElement(duration, videoHeight, videoWidth) as unknown as HTMLVideoElement & {
+    listenerCount(type: string): number;
+  };
 }
