@@ -7,6 +7,11 @@ import { gzipSync } from 'zlib';
 
 const ROOT = resolve(__dirname, '../../..');
 const EVIDENCE_DIR = resolve(__dirname, '../evidence');
+// Each assertion triggers at most one real Vite/Rollup bundle. Those cold builds measured 3.0-14.8s
+// across idle and loaded runs and passed 10/10 under a 30s budget, so Vitest's generic 5s unit-test
+// deadline is below the observed cost of producing the evidence. Keep the larger budget on this suite
+// only: the assertions still inspect the same module graphs and exact raw/gzip byte counts.
+const EVIDENCE_TEST_TIMEOUT_MS = 30_000;
 
 interface CapabilityEntry {
   readonly fixture: string;
@@ -96,7 +101,7 @@ function hasCapabilityModule(modules: readonly string[], pattern: string): boole
   return sourceModules(modules).some((m) => m.includes(pattern));
 }
 
-describe('evidence: tree-shaking isolation', () => {
+describe('evidence: tree-shaking isolation', { timeout: EVIDENCE_TEST_TIMEOUT_MS }, () => {
   const results = new Map<string, FixtureResult>();
 
   async function getFixture(name: string): Promise<FixtureResult> {
