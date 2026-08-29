@@ -11,9 +11,51 @@ export interface ClipboardWriteItem {
   data: string;
 }
 
-// System clipboard seam. Free functions in @flighthq/clipboard delegate to the active ClipboardBackend
-// (web default or a native host's). Read operations resolve to '' / false when the host denies or lacks
-// access rather than throwing — clipboard access is an expected-failure surface, not a programmer error.
+// Bookmark transport is a distinct capability because only native hosts with a bookmark pasteboard
+// format can provide it.
+export interface ClipboardBookmarkBackend {
+  readBookmark(): Promise<ClipboardBookmark | null>;
+  writeBookmark(title: string, url: string): Promise<boolean>;
+}
+
+// Clipboard change delivery is optional at the method level so a consumer trait can make the
+// subscribe/unsubscribe teardown obligation explicit as one eligibility edge.
+export interface ClipboardChangeBackend {
+  subscribe?(callback: () => void): void;
+  unsubscribe?(callback: () => void): void;
+}
+
+// Rich and arbitrary flavored clipboard transport. HTML and RTF share this slot with the generic
+// format/item operations because provider coverage varies as one unit.
+export interface ClipboardFormatsBackend {
+  getFormats(): Promise<readonly string[]>;
+  hasFormat(format: string): Promise<boolean>;
+  readFormat(format: string): Promise<string>;
+  readHtml(): Promise<string>;
+  readItems(formats: readonly string[]): Promise<Readonly<Record<string, string>>>;
+  readRTF(): Promise<string>;
+  writeFormat(format: string, data: string): Promise<boolean>;
+  writeHtml(html: string): Promise<boolean>;
+  writeItems(items: readonly Readonly<ClipboardWriteItem>[]): Promise<boolean>;
+  writeRTF(rtf: string): Promise<boolean>;
+}
+
+// Image clipboard transport uses data URLs at Flight's host boundary.
+export interface ClipboardImageBackend {
+  hasImage(): Promise<boolean>;
+  readImage(): Promise<string>;
+  writeImage(dataUrl: string): Promise<boolean>;
+}
+
+// Plain-text transport and clearing vary together across every shipped provider.
+export interface ClipboardTextBackend {
+  clear(): Promise<boolean>;
+  hasText(): Promise<boolean>;
+  readText(): Promise<string>;
+  writeText(text: string): Promise<boolean>;
+}
+
+// Aggregate seam used by the pre-Host clipboard surface.
 export interface ClipboardBackend {
   readText(): Promise<string>;
   writeText(text: string): Promise<boolean>;

@@ -8,7 +8,13 @@ import type { AudioDeviceBackend } from './AudioDeviceBackend';
 import type { BidiClassBackend } from './Bidi';
 import type { BitmapEncodeBackend } from './BitmapEncodeBackend';
 import type { BitmapReadbackBackend } from './BitmapReadbackBackend';
-import type { ClipboardBackend } from './Clipboard';
+import type {
+  ClipboardBookmarkBackend,
+  ClipboardChangeBackend,
+  ClipboardFormatsBackend,
+  ClipboardImageBackend,
+  ClipboardTextBackend,
+} from './Clipboard';
 import type { ConnectivityBackend } from './Connectivity';
 import type { DeviceBackend } from './Device';
 import type { Entity } from './Entity';
@@ -68,6 +74,7 @@ import type { WgpuHostBackend } from './WgpuHost';
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
   readonly app: HostAppCapabilities;
+  readonly clipboard: HostClipboardCapabilities;
   readonly dialog: HostDialogCapabilities;
   readonly graphics: HostGraphicsCapabilities;
   readonly input: HostInputCapabilities;
@@ -95,6 +102,14 @@ export interface HostAppCapabilities {
   readonly shortcut?: ShortcutBackend;
   readonly updater?: UpdaterBackend;
   readonly visibility?: ApplicationVisibilityBackend;
+}
+
+export interface HostClipboardCapabilities {
+  readonly bookmark?: ClipboardBookmarkBackend;
+  readonly change?: ClipboardChangeBackend;
+  readonly formats?: ClipboardFormatsBackend;
+  readonly image?: ClipboardImageBackend;
+  readonly text?: ClipboardTextBackend;
 }
 
 export interface HostDialogCapabilities {
@@ -170,7 +185,6 @@ export interface HostTextCapabilities {
 }
 
 export interface HostUiCapabilities {
-  readonly clipboard?: ClipboardBackend;
   readonly fullscreen?: FullscreenBackend;
   readonly menu?: MenuBackend;
   readonly share?: ShareBackend;
@@ -217,6 +231,28 @@ export interface HasAppUpdater {
 
 export interface HasAppVisibilityQuery {
   readonly app: { readonly visibility: ApplicationVisibilityBackend };
+}
+
+export interface HasClipboardBookmark {
+  readonly clipboard: { readonly bookmark: ClipboardBookmarkBackend };
+}
+
+export interface HasClipboardChange {
+  readonly clipboard: {
+    readonly change: Required<Pick<ClipboardChangeBackend, 'subscribe' | 'unsubscribe'>>;
+  };
+}
+
+export interface HasClipboardFormats {
+  readonly clipboard: { readonly formats: ClipboardFormatsBackend };
+}
+
+export interface HasClipboardImage {
+  readonly clipboard: { readonly image: ClipboardImageBackend };
+}
+
+export interface HasClipboardText {
+  readonly clipboard: { readonly text: ClipboardTextBackend };
 }
 
 export interface HasDialogFile {
@@ -397,10 +433,6 @@ export interface HasTextSegmenter {
 
 export interface HasTextShaper {
   readonly text: { readonly shaper: TextShaperBackend };
-}
-
-export interface HasUiClipboard {
-  readonly ui: { readonly clipboard: ClipboardBackend };
 }
 
 export interface HasUiFullscreen {
