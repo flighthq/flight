@@ -476,6 +476,10 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         verification = verificationResult.verification;
         domScreenshot = verificationResult.domScreenshot;
         if (verification?.state === 'failed') throw new Error(verification.error ?? 'render verification failed');
+        if (verification === null) {
+          const pageError = findCapturePageError(logs);
+          throw new Error(pageError ?? 'render verifier did not reach a terminal state');
+        }
         if (backend === 'dom' && !observe && (!verificationResult.domReadbackProvided || domScreenshot === null)) {
           throw new Error(
             verificationResult.domReadbackProvided
@@ -484,7 +488,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
                   '(registered DOM target or readback bridge unavailable)',
           );
         }
-        if (verification?.state !== 'passed') throw new Error('render verifier did not reach a terminal state');
+        if (verification.state !== 'passed') throw new Error('render verifier did not reach a terminal state');
         // Held rather than published here: the fingerprint's provenance is not knowable yet, and a
         // fingerprint published without it is a value its consumer can only store unstamped.
         verifiedFingerprint = verification.fingerprint;
@@ -962,6 +966,15 @@ function rendererBackend(renderer: string): string {
 
 function isCaptureReadPixelsWarning(text: string): boolean {
   return text.includes('GPU stall due to ReadPixels');
+}
+
+function findCapturePageError(logs: readonly unknown[]): string | null {
+  for (const log of logs) {
+    if (log === null || typeof log !== 'object') continue;
+    const entry = log as { level?: unknown; data?: { msg?: unknown } };
+    if (entry.level === 'pageerror' && typeof entry.data?.msg === 'string') return entry.data.msg;
+  }
+  return null;
 }
 
 interface VerificationResult {

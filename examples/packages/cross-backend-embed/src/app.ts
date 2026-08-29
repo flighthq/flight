@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
   createGlContextFromCanvasElement,
   addNodeChild,
@@ -36,6 +37,7 @@ const INSTANCE_COUNT = 24;
 
 // The producer is a complete WebGL renderer with its own scene, pixels, and cadence. Its canvas is
 // deliberately not appended here: the DOM consumer owns placement and HtmlView will mount it.
+enableHostWebGlRenderSurface();
 const producerCanvas = createGlCanvasElement(PRODUCER_WIDTH, PRODUCER_HEIGHT);
 const producerState = createGlRenderState(
   createGlContextFromCanvasElement(producerCanvas, {

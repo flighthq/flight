@@ -64,7 +64,10 @@ function discoverTests(): FunctionalScene3D[] {
 function entryModule(name: string, backend: string): string {
   const scenePath = functionalScene3DFile(scenesDir, name, backend);
   return [
+    `import { enableHostWebBitmapReadback, enableHostWebImage } from '@flighthq/host-web';`,
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
+    `enableHostWebBitmapReadback();`,
+    `enableHostWebImage();`,
     `setLogSink(createConsoleCaptureSink());`,
     `window.__ftBackend = ${JSON.stringify(backend)};`,
     `const { failCaptureTargetVerification, verifyCaptureTarget } = await import('@ft/capture');`,
