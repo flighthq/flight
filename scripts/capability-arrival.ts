@@ -20,6 +20,14 @@ export interface CapabilityArrivalOptions {
   readonly root?: string;
   /** Test seam: mutate the exact source emitted by a runner's Vite plugin. */
   readonly transformGeneratedEntry?: (entry: Readonly<GeneratedEntry>) => string;
+  /** Test seam: mutate an in-repo source without changing the working tree. */
+  readonly transformSource?: (source: Readonly<RepositorySource>) => string;
+}
+
+export interface RepositorySource {
+  /** POSIX-style path relative to the repository root. */
+  readonly path: string;
+  readonly source: string;
 }
 
 export interface CapabilityArrivalFailure {
@@ -198,6 +206,8 @@ class SemanticGraph {
         for (const capability of byName?.get(node.text) ?? []) facts.capabilities.add(capability.label);
       }
 
+      // Deliberately visit every static branch. Capture mode can mask a capability with a fabricated
+      // resource while the interactive branch still reaches the host (the video example is the proof).
       ts.forEachChild(node, visit);
     };
 
@@ -534,7 +544,7 @@ function listTsFiles(directory: string): string[] {
   return result;
 }
 
-function createProgram(root: string): ts.Program {
+function createProgram(root: string, transformSource?: CapabilityArrivalOptions['transformSource']): ts.Program {
   const configPath = join(root, 'tsconfig.json');
   const config = ts.readConfigFile(configPath, ts.sys.readFile);
   if (config.error !== undefined) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
@@ -545,7 +555,19 @@ function createProgram(root: string): ts.Program {
   for (const directory of [join(root, 'functional/scenes'), join(root, 'tools/harness')]) {
     for (const path of listTsFiles(directory)) roots.add(resolve(path));
   }
-  return ts.createProgram({ options: parsed.options, rootNames: [...roots] });
+  if (transformSource === undefined) return ts.createProgram({ options: parsed.options, rootNames: [...roots] });
+
+  const host = ts.createCompilerHost(parsed.options, true);
+  const getSourceFile = host.getSourceFile.bind(host);
+  host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
+    const sourceFile = getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
+    if (sourceFile === undefined || !isWithin(fileName, root)) return sourceFile;
+    const path = relative(root, resolve(fileName)).split(sep).join('/');
+    const source = transformSource({ path, source: sourceFile.text });
+    if (source === sourceFile.text) return sourceFile;
+    return ts.createSourceFile(fileName, source, languageVersion, true);
+  };
+  return ts.createProgram({ host, options: parsed.options, rootNames: [...roots] });
 }
 
 async function runnerPlugin(root: string, suite: ArrivalSuite): Promise<Record<string, unknown>> {
@@ -689,7 +711,11 @@ export async function capabilityArrivalFailures(
 ): Promise<CapabilityArrivalFailure[]> {
   const root = resolve(options.root ?? join(import.meta.dirname, '..'));
   const context = await analysisContext(root);
-  const { discovered, graph, registry } = context;
+  const { discovered, registry } = context;
+  const graph =
+    options.transformSource === undefined
+      ? context.graph
+      : new SemanticGraph(createProgram(root, options.transformSource), registry);
   const failures = [...registry.failures, ...discovered.failures];
   if (failures.some((failure) => failure.kind === 'registry' || failure.kind === 'population')) return failures;
 
