@@ -1,6 +1,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
 import { REGISTRY_ISOLATED_TEST_FILES } from './scripts/registryIsolatedTests.js';
+import { workspacePackages } from './scripts/workspaces.js';
 import baseConfig from './vitest.config.base.js';
 
 // One master config for the fast run: unit tests share a single jsdom environment per
@@ -32,7 +33,11 @@ import baseConfig from './vitest.config.base.js';
 //
 // The tier list is machine-checked by `npm run mocks:check`, in both directions.
 const COMMON_EXCLUDE = ['**/.claude/**', '**/node_modules/**'];
+// Root projects do not load a package's standalone config. Route host-probe separately so its root
+// run can carry the same workspace-source aliases as the package run rather than reading package dist.
+const HOST_PROBE_TEST_FILES = ['tools/host-probe/src/**/*.test.ts'];
 const TEST_RUN_COVERAGE_FILE = 'scripts/testRunCoverage.test.ts';
+const alias = Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, `${pkg.dir}/src`]));
 // `tool-capture` is ROUTED to its own project rather than excluded from the run. It needs the node
 // environment and serial files — its browser contracts launch Chromium against the host GPU, and
 // sharing that across workers has produced valid contexts whose framebuffers read back empty — so it
@@ -94,13 +99,24 @@ export default mergeConfig(
           test: {
             name: 'shared',
             isolate: false,
-            include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts', 'tools/host-probe/src/**/*.test.ts'],
+            include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
             exclude: [
               ...COMMON_EXCLUDE,
               ...TOOL_CAPTURE_TEST_FILES,
               ...REGISTRY_ISOLATED_TEST_FILES,
               TEST_RUN_COVERAGE_FILE,
             ],
+            sequence: { groupOrder: 0 },
+          },
+        },
+        {
+          extends: true,
+          resolve: { alias },
+          test: {
+            name: 'host-probe',
+            isolate: true,
+            include: [...HOST_PROBE_TEST_FILES],
+            exclude: [...COMMON_EXCLUDE],
             sequence: { groupOrder: 0 },
           },
         },
