@@ -1085,3 +1085,54 @@ Render **two text nodes with different content in the same frame and assert they
 textures.** That fails under any shared-surface variant and passes under per-node. Write it before
 the migration — it is the cheap falsifier for the whole class, and it generalises unchanged to
 rich-text and scale9.
+
+---
+
+# H14 — `destroyRaster2DSurface` is a free function, and the creator frees it — 2026-08-29
+
+Two builders hit the same gap independently, which is evidence of a real API hole rather than a
+preference. As landed, `Raster2DSurface` is `{ width, height, context, image }` and its provider
+exposes only `createRaster2DSurface`. Nothing can free a surface.
+
+## Option B, and not A
+
+**A free function `destroyRaster2DSurface(surface)`**, with a matching `destroyRaster2DSurface` on
+`Raster2DSurfaceProvider` so a native provider frees its own resource.
+
+A surface-carried destroy is a method or a per-instance closure. AGENTS.md is explicit — free
+functions over classes, *functions, not methods, as the default unit*, and portability to C/C++
+idioms. A closure per surface also allocates and does not lower cleanly.
+
+## The creator frees it, never the installed provider
+
+A surface must be destroyed by **the provider that created it**, not by whichever provider is
+installed at teardown. Providers are swappable (custom > host > sentinel, plus `set*Provider`), and
+surfaces allocated by an outgoing provider are still live when it is replaced. Freeing those through
+the replacement is wrong on web and is a cross-allocator free natively.
+
+How the association is stored is an implementation choice — but it must not be a method on the
+surface and must not be a per-surface closure. A module-level `WeakMap<Raster2DSurface,
+Raster2DSurfaceProvider>` in `@flighthq/render`, populated at allocation, is the obvious web form and
+lowers to a handle→owner table in the port.
+
+`destroyRaster2DSurface` must be **idempotent**: destroying twice is a no-op, not a fault. Double
+teardown is the classic lifetime bug and [H8-C](#h8-c) already found one in this codebase.
+
+## Ordering inside `destroyData`
+
+**Retire the node's GPU cache entry first, then destroy the surface.** The texture uploads *from* the
+surface; freeing the surface first leaves the upload path pointing at released memory natively. The
+order is part of the contract, not an implementation detail.
+
+## The landed Shape paths are retrofitted in the same revision
+
+Not deferred. The GL and WGPU Shape rendererData already delete GPU cache entries and never destroy
+surfaces — a leak that exists today, invisible on web because GC hides it, real on a native provider.
+Shipping text and scale9 with teardown while Shape lacks it would leave **two lifetime contracts
+inside one subsystem**, which is the divergence this ruling exists to prevent.
+
+## Sequencing
+
+The foundation revision plus the Shape retrofit is **its own small slice, landed first** — owned by
+builder4, which authored both the foundation and the Shape pair. Text and scale9 then proceed in
+parallel against a settled API rather than serialising behind each other.
