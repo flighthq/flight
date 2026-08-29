@@ -5,24 +5,29 @@ import { createBitmap } from './bitmap';
 import { createBitmapFromCanvas, captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
 
 describe('captureBitmapFromImageResource', () => {
-  it('reads a host-backed resource into CPU pixels', () => {
+  it('reads a host-backed resource into CPU pixels via createBitmapFromImageSource', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 3;
     canvas.height = 2;
     const bitmap = captureBitmapFromImageResource(createImageResource(canvas));
-    expect(bitmap.width).toBe(3);
-    expect(bitmap.height).toBe(2);
-    expect(bitmap.data).toHaveLength(3 * 2 * 4);
+    expect(bitmap).not.toBeNull();
+    expect(bitmap!.width).toBe(3);
+    expect(bitmap!.height).toBe(2);
+    expect(bitmap!.data).toHaveLength(3 * 2 * 4);
   });
 
-  it('returns Bitmap matching the resource dimensions', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 4;
-    canvas.height = 4;
-    const resource = createImageResource(canvas);
-    const data = captureBitmapFromImageResource(resource);
-    expect(data.width).toBe(4);
-    expect(data.height).toBe(4);
+  it('returns null for an unreadable source rather than throwing', () => {
+    const spy = vi.spyOn(CanvasRenderingContext2D.prototype, 'getImageData').mockImplementation(() => {
+      throw new DOMException('Tainted canvases may not be exported.', 'SecurityError');
+    });
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 4;
+      canvas.height = 4;
+      expect(captureBitmapFromImageResource(createImageResource(canvas))).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

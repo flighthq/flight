@@ -400,6 +400,19 @@ const P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS = {
   total: 17,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
+const P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 4,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 12,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Image-resource capture composed through the existing image-source readback primitive',
+  total: 16,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
 export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   P5_HOST_BYPASS_S09_V4_PROGRESS,
@@ -409,6 +422,7 @@ export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   P5_HOST_BYPASS_S10_FONT_ADD_V4_PROGRESS,
   P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS,
   P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS,
+  P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [

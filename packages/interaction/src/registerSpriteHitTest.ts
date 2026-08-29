@@ -45,12 +45,7 @@ function bitmapForImage(image: TextureSource): Bitmap | null {
   const resource = image as Image;
   const cached = bitmapCache.get(resource);
   if (cached !== undefined) return cached;
-  let bitmap: Bitmap | null = null;
-  try {
-    bitmap = captureBitmapFromImageResource(resource);
-  } catch {
-    bitmap = null;
-  }
+  const bitmap = captureBitmapFromImageResource(resource);
   // Cache only successes so an image that is not yet readable is retried later.
   if (bitmap !== null) bitmapCache.set(resource, bitmap);
   return bitmap;
