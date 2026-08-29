@@ -81,6 +81,7 @@ describe('bindGlUnlitSurface', () => {
     const videoMap = createVideoTexture({
       element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
       objectUrl: null,
+      ownsElement: false,
     });
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);
@@ -102,6 +103,7 @@ describe('bindGlUnlitSurface', () => {
     const videoMap = createVideoTexture({
       element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
       objectUrl: null,
+      ownsElement: false,
     });
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);

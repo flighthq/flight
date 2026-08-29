@@ -64,6 +64,7 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
     material.baseColorMap = createVideoTexture({
       element,
       objectUrl: null,
+      ownsElement: false,
     });
     advanceVideoTexture(material.baseColorMap);
     registerWgpuImageTextureResolver(state);

@@ -42,6 +42,7 @@ describe('bindWgpuUnlitVideoSurface', () => {
     const video = createVideoTexture({
       element,
       objectUrl: null,
+      ownsElement: false,
     });
     advanceVideoTexture(video);
     registerWgpuImageTextureResolver(state);

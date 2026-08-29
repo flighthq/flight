@@ -63,6 +63,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
     material.baseColorMap = createVideoTexture({
       element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
       objectUrl: null,
+      ownsElement: false,
     });
     material.baseColorMap.sampler.mipmaps = false;
     advanceVideoTexture(material.baseColorMap);
