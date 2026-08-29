@@ -22,7 +22,7 @@ eight: already-implemented `LogTransportBackend` plus the seven named below. Sin
 state is therefore five declared and exercised hooks (`AccessibilityBackend`, `LogTransportBackend`,
 `MediaSessionBackend`, `MenuBackend`, and `PowerBackend`) with three still owed.
 
-The live tree has since added eight interfaces. `AudioBackend` is a pure `canPlayType` query and
+The live tree has since added four interfaces. `AudioBackend` is a pure `canPlayType` query and
 joins the GC/bounded bucket. `WgpuHostBackend` and `InputIngressBackend` own acquisition- or
 registration-scoped brackets, so they join the entity/keyed/caller-owned bucket. `AudioDeviceBackend`
 landed after this record first anticipated it, and its shape settles it: every resource it makes is
@@ -30,15 +30,7 @@ handle-keyed with its own teardown (`createDevice`/`destroyDevice`, `createBuffe
 `createSource`/`destroySource`) and it declares no zero-argument teardown, so it joins the
 entity/keyed/caller-owned bucket by the same rule that places `TrayBackend.destroy(id)` there.
 
-Four further interfaces arrived after the 46-total reconciliation. `BitmapEncodeBackend` exposes
-`encodeBitmap` (a bounded per-call encoding) and a readonly `supportedFormats`; no retained handle.
-`BitmapReadbackBackend` exposes `readBitmap` returning a bounded outcome; no retained handle.
-`FontLoadingBackend` exposes `addFontFace`, `checkFontFace`, `loadFontFaces`, and `whenReady` — font
-faces are loaded once and persist for the page lifetime with no remove/destroy bracket.
-`VideoCapabilityBackend` exposes `canPlayType` (a pure query) and an optional `createVideoElement`
-returning a borrowed `HostImageSource`. All four join the GC/pure/bounded bucket.
-
-Therefore the live total is 50 and the live partition is `1 + 7 + 22 + 20 = 50`. None of the
+Therefore the live total is 46 and the live partition is `1 + 7 + 22 + 16 = 46`. None of the
 post-audit rows changes the whole-owner population, which remains eight — so 8 − 5 = three still owed.
 
 ### Provenance of the live figures
@@ -47,12 +39,12 @@ These numbers are re-derived, not carried forward. The `42` above is the frozen 
 is deliberately never updated; the figures in this section track the live tree and move with it.
 
 - **command** — `npx vitest run scripts/backend-lifecycle.test.ts` (`scripts/backend-lifecycle-core.ts`)
-- **tree** — `ce080570c0764897e9e55b1c8eb0c3bbac582f96`, clean
+- **tree** — `bd6f4a8768d290641bd8eb33c9ce8b44094f2d83`, clean
 - **scope** — every exported `*Backend` interface in `packages/types/src/*.ts`, plus every exported
   `set*Backend` body and top-level function body in `packages/*/src/*.ts`; `*.test.ts` excluded
 - **counting predicate** — one unit = one interface; *owning* = declares a **zero-parameter**
   `destroy`/`dispose` in method or property syntax, so a per-object teardown taking an id is excluded
-- **live output** — `5 of 50 backends declare a whole-backend teardown hook, 45 declare none`, followed
+- **live output** — `5 of 46 backends declare a whole-backend teardown hook, 41 declare none`, followed
   by the scope caveat the gate now prints on every run:
   `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by its set*Backend;
   measures neither test depth nor audited behavior, so it cannot say whether destroy releases what a
@@ -375,8 +367,8 @@ It does not advance the lifecycle floor. All three steps are invisible to that g
 `Power` as wired, which is the point of the scope caveat the gate now prints. The floor should move only
 when a row's *behavior* is verified, and verifying behavior is what these mutation tests are for.
 
-The census partition (`5 + 45 = 50`) counts a different thing from the bucket partition
-(`1 + 7 + 22 + 20 = 50`) above it: the census asks only whether a zero-argument hook is *declared*,
+The census partition (`5 + 41 = 46`) counts a different thing from the bucket partition
+(`1 + 7 + 22 + 16 = 46`) above it: the census asks only whether a zero-argument hook is *declared*,
 while the buckets record which lifetime *should* own cleanup. They agree on the denominator and on
 nothing else, which is the point — the gate cannot supply the semantic column.
 
@@ -531,25 +523,16 @@ not retain a freeable external object or unbracketed host mutation beyond the li
 | 14 | `TextShaperBackend` | Per-call measurement/shaping with GC-managed font/cache objects and no external handle contract. |
 | 15 | `WebcamBackend` | Bounded picker/capture promises returning data URLs, not a retained camera stream. |
 
-Post-audit row 16: `AudioBackend` exposes only `canPlayType(mimeType): boolean`; it joins this bucket.
-It has no audio device, decoded buffer, source, stream, or playback ownership.
+Post-audit row: `AudioBackend` exposes only `canPlayType(mimeType): boolean`; it joins this bucket as
+row 16. It has no audio device, decoded buffer, source, stream, or playback ownership.
 `AudioDeviceBackend` — anticipated here as a separate contract — has since landed, and is classified
 from its actual lifetime shape in the entity/keyed bucket rather than this one, because it does own
 resources; they are simply handle-keyed rather than whole-backend.
 
-Post-audit rows 17–20 arrived after the 46-total reconciliation:
-
-| # | Backend | Evidence |
-| ---: | --- | --- |
-| 17 | `BitmapEncodeBackend` | `encodeBitmap` is a bounded per-call encoding; readonly `supportedFormats` is a pure query. No retained handle. |
-| 18 | `BitmapReadbackBackend` | `readBitmap` returns a bounded outcome. No retained handle. |
-| 19 | `FontLoadingBackend` | `addFontFace`, `checkFontFace`, `loadFontFaces`, `whenReady` — font faces are loaded once and persist for the page lifetime with no remove/destroy bracket. |
-| 20 | `VideoCapabilityBackend` | `canPlayType` is a pure query; optional `createVideoElement` returns a borrowed `HostImageSource`. No retained handle. |
-
 Post-audit `WgpuHostBackend` and `InputIngressBackend` join the entity/keyed bucket as rows 20–21,
-and `AudioDeviceBackend` as row 22. The four new GC rows (17–20) and the three entity/keyed rows
-move the live denominator from 43 to 50 and this bucket from 15 to 20. The structural lifecycle
-census should therefore report five whole-backend hooks among 50 interfaces.
+and `AudioDeviceBackend` as row 22. They move the live denominator from 43 to 46 and that bucket from
+19 to 22 without changing the whole-owner population. The structural lifecycle census should
+therefore report five whole-backend hooks among 46 interfaces.
 
 ## Review checklist for the remaining slices
 
@@ -562,36 +545,3 @@ For an entity/keyed row marked owed, tests must create the resource under provid
 global provider with B, then clean up through the public API and prove that A—not B—received the
 resource-specific teardown. That is the smallest test that distinguishes a cleanup-shaped method
 from correct ownership provenance.
-
-## Live host-web addendum: the 29-call `enableHostWeb()` master function
-
-This section is **separate from the frozen lifecycle audit above**. It documents the host-web
-installation surface — which capabilities `enableHostWeb()` installs and which it omits — as a live
-reference for the backend lifecycle census.
-
-`enableHostWeb()` in `packages/host-web/src/enableHostWeb.ts` calls 29 individual `enableHostWeb*()`
-functions. Each call installs a web-backed implementation for one `*Backend` interface via the
-corresponding `set*Backend`. The 29 capabilities installed by the master function:
-
-Accessibility, Audio, AudioDevice, BitmapEncode, BitmapReadback, Clipboard, Connectivity, Device,
-Dialog, FileSystem, FontLoading, Geolocation, GlyphRasterizer, Haptics, Image, SoftKeyboard,
-Lifecycle, Loop, MediaSession, Notification, Permission, Platform, Raster2DSurface, Screen, Sensors,
-Share, Storage, VideoCapability, Webcam.
-
-**9 enablers deliberately omitted** from the master function (38 total individual enablers exist):
-
-| Enabler | Reason for omission |
-| --- | --- |
-| `enableHostWebApp` | Application-level identity/version; opt-in per deployment. |
-| `enableHostWebGlRenderSurface` | WebGL render surface; installed by `application-gl`, not by the host layer. |
-| `enableHostWebMenu` | Menu bar; not universally applicable on web. |
-| `enableHostWebPower` | Battery API; limited browser support and permission gated. |
-| `enableHostWebProtocol` | Custom protocol handler registration; deployment-specific. |
-| `enableHostWebShell` | Shell open/launch commands; security gated on web. |
-| `enableHostWebStatusBar` | Mobile status bar; Capacitor/native concern. |
-| `enableHostWebWindow` | Window management; installed by `application`, not by the host layer. |
-| `enableHostWebWgpuRenderSurface` | WebGPU render surface; installed by the render backend, not by the host layer. |
-
-The master function is the default entry point for web applications. Callers that need only a subset
-call individual enablers directly. Callers that need an omitted capability install it explicitly
-alongside `enableHostWeb()`.
