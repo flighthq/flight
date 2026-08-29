@@ -6,7 +6,6 @@ import { getDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
-import { getHapticsBackend } from '@flighthq/haptics/contract';
 import { getIpcBackend } from '@flighthq/ipc/contract';
 import { getSoftKeyboardBackend } from '@flighthq/keyboard/contract';
 import { getMenuBackend } from '@flighthq/menu/contract';
@@ -29,7 +28,7 @@ import type { HostProbeCapability } from './expectations';
 export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unknown>>;
 
 export function captureHostProbeBackends(
-  host: Partial<Pick<Host, 'dialog' | 'window'>> = {},
+  host: Partial<Pick<Host, 'dialog' | 'input' | 'window'>> = {},
 ): HostProbeBackendSnapshot {
   return {
     app: getAppBackend(),
@@ -41,7 +40,7 @@ export function captureHostProbeBackends(
     filesystem: getFileSystemBackend(),
     geolocation: getGeolocationBackend(),
     'glyph-rasterizer': getGlyphRasterizerBackend(),
-    haptics: getHapticsBackend(),
+    haptics: host.input?.haptics ?? null,
     ipc: getIpcBackend(),
     loop: getLoopBackend(),
     menu: getMenuBackend(),

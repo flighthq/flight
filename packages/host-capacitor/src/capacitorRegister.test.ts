@@ -4,14 +4,13 @@ import { getConnectivityBackend, setConnectivityBackend } from '@flighthq/connec
 import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
-import { getHapticsBackend, setHapticsBackend } from '@flighthq/haptics/contract';
 import { getSoftKeyboardBackend, setSoftKeyboardBackend } from '@flighthq/keyboard/contract';
 import { getNotificationBackend, setNotificationBackend } from '@flighthq/notification/contract';
 import { getShareBackend, setShareBackend } from '@flighthq/share/contract';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { registerCapacitorBackends } from './capacitorRegister';
+import { capacitorHost, registerCapacitorBackends } from './capacitorRegister';
 
 // A fake Capacitor API broad enough that every createCapacitor*Backend constructs without touching
 // missing members. Backends close over `capacitor` and only call in when their methods run (plus the
@@ -73,11 +72,38 @@ afterEach(() => {
   setDeviceBackend(null);
   setFileSystemBackend(null);
   setGeolocationBackend(null);
-  setHapticsBackend(null);
   setNotificationBackend(null);
   setShareBackend(null);
   setSoftKeyboardBackend(null);
   setStatusBarBackend(null);
+});
+
+describe('capacitorHost', () => {
+  it('exposes the real Capacitor haptics provider', () => {
+    const host = capacitorHost(fakeCapacitor());
+    expect(host.input.haptics).toBeDefined();
+    expect(typeof host.input.haptics?.vibrate).toBe('function');
+  });
+
+  // An empty group means "not yet migrated off its package-local seam", NEVER "Capacitor cannot do
+  // this". Claiming a capability here that still installs ambiently would make the host lie about what
+  // selecting it actually gets you.
+  it('claims only what has migrated, leaving unmigrated groups empty', () => {
+    const host = capacitorHost(fakeCapacitor());
+    // Migrated: dialog and input are claimed with real Capacitor providers.
+    expect(host.dialog.message).toBeDefined();
+    expect(host.input.haptics).toBeDefined();
+    // Still installing through package-local seams, so the host must NOT claim them.
+    expect(host.storage).toEqual({});
+    expect(host.system).toEqual({});
+    expect(host.media).toEqual({});
+  });
+
+  // Every WindowBackend member is optional, so {} is the honest claim for a webview app with no native
+  // window operations of its own.
+  it('claims no native window operations', () => {
+    expect(capacitorHost(fakeCapacitor()).window).toEqual({});
+  });
 });
 
 describe('registerCapacitorBackends', () => {
@@ -90,11 +116,19 @@ describe('registerCapacitorBackends', () => {
     expect(getDeviceBackend()).not.toBeNull();
     expect(getFileSystemBackend()).not.toBeNull();
     expect(getGeolocationBackend()).not.toBeNull();
-    expect(getHapticsBackend()).not.toBeNull();
     expect(getNotificationBackend()).not.toBeNull();
     expect(getShareBackend()).not.toBeNull();
     expect(getSoftKeyboardBackend()).not.toBeNull();
     expect(getStatusBarBackend()).not.toBeNull();
+  });
+
+  // Haptics has migrated off the ambient seam: registerCapacitorBackends now RETURNS a Host carrying the
+  // real Capacitor provider, so the capability is proven by what the host exposes rather than by what a
+  // module-scoped variable happens to hold.
+  it('returns a host exposing the real Capacitor haptics capability', () => {
+    const host = registerCapacitorBackends(fakeCapacitor());
+    expect(host.input.haptics).toBeDefined();
+    expect(typeof host.input.haptics?.vibrate).toBe('function');
   });
 
   it('routes a capability call through to the Capacitor backend', async () => {

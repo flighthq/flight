@@ -1,6 +1,7 @@
 import type { Host } from '@flighthq/types/contract';
 
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
+import { webHapticsBackend } from './webHaptics';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
@@ -15,7 +16,7 @@ export const webHost = {
     prompt: webPromptDialogBackend,
   },
   graphics: {},
-  input: {},
+  input: { haptics: webHapticsBackend },
   media: {},
   net: {},
   storage: {},

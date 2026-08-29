@@ -10,7 +10,6 @@ import { enableHostWebFileSystem } from './webFilesystem';
 import { enableHostWebFontLoading } from './webFontLoading';
 import { enableHostWebGeolocation } from './webGeolocation';
 import { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
-import { enableHostWebHaptics } from './webHaptics';
 import { enableHostWebImage } from './webImage';
 import { enableHostWebSoftKeyboard } from './webKeyboard';
 import { enableHostWebLifecycle } from './webLifecycle';
@@ -40,7 +39,6 @@ export function enableHostWeb(): void {
   enableHostWebFontLoading();
   enableHostWebGeolocation();
   enableHostWebGlyphRasterizer();
-  enableHostWebHaptics();
   enableHostWebImage();
   enableHostWebSoftKeyboard();
   enableHostWebLifecycle();
