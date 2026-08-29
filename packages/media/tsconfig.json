@@ -19,6 +19,9 @@
       "path": "../signals"
     },
     {
+      "path": "../texture"
+    },
+    {
       "path": "../types"
     },
     {

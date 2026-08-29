@@ -45,6 +45,7 @@
     "@flighthq/video": "*"
   },
   "devDependencies": {
+    "@flighthq/texture": "*",
     "typescript": "^5.3.0"
   },
   "description": "Audio and video playback channels",
