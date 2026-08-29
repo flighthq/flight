@@ -5,7 +5,7 @@ import {
   createCanvasShapeRasterizer,
   createMatrix,
   createWgpuCanvasElement,
-  createWgpuRenderState,
+  createWgpuRenderStateFromCanvasElement,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
@@ -58,7 +58,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const canvas = createWgpuCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = await createWgpuRenderState(canvas, {
+  const state = await createWgpuRenderStateFromCanvasElement(canvas, {
     pixelRatio,
     backgroundColor: options.background,
     sceneGraphSyncPolicy: options.syncPolicy,

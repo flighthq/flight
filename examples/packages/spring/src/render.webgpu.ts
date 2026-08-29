@@ -4,7 +4,7 @@ import {
   createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
   createWgpuCanvasElement,
-  createWgpuRenderState,
+  createWgpuRenderStateFromCanvasElement,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
   defaultWgpuShapeRenderer,
@@ -26,7 +26,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(600, 400, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderState(canvas, {
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, {
   pixelRatio,
   backgroundColor: 0xf5f5f5ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',

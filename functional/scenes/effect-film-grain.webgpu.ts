@@ -22,7 +22,7 @@ import {
   getBitmapPixelRgb,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderState,
+  createWgpuRenderStateFromCanvasElement,
   registerWgpuFilmGrainEffect,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
@@ -50,7 +50,7 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x808080ff });
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, { pixelRatio, backgroundColor: 0x808080ff });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuFilmGrainEffect(state);

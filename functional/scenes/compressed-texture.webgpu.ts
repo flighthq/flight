@@ -8,7 +8,7 @@ import {
   createPixelArtSampler,
   createTexture,
   createWgpuCanvasElement,
-  createWgpuRenderState,
+  createWgpuRenderStateFromCanvasElement,
   getBitmapPixelRgb,
   SpriteKind,
   defaultWgpuScene2DRenderer,
@@ -61,7 +61,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
-export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x000000ff });
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, { pixelRatio, backgroundColor: 0x000000ff });
 if (!state.device.features.has('texture-compression-bc')) {
   throw new Error('[compressed-texture] native BC support is required for this WebGPU proof');
 }

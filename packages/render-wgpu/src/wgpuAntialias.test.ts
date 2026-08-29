@@ -8,7 +8,7 @@ import {
   getWgpuSurfaceRenderScale,
 } from './wgpuAntialias';
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
-import { createWgpuRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { createWgpuRenderStateFromCanvasElement, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { setWgpuRenderPassScissorRect } from './wgpuScissor';
 import { enableWgpuFrameCapture } from './wgpuSurface';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -166,7 +166,7 @@ describe('WgpuRenderOptions.antialias', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;
-    const state = await createWgpuRenderState(canvas, { antialias: true });
+    const state = await createWgpuRenderStateFromCanvasElement(canvas, { antialias: true });
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const first = runtime.surfaceAntialiasTexture!;

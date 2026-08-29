@@ -13,7 +13,7 @@ import {
   createSharpenEffect,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
-  createWgpuRenderState,
+  createWgpuRenderStateFromCanvasElement,
   defaultWgpuShapeRenderer,
   registerWgpuSharpenEffect,
   endWgpuRenderEffectPipeline,
@@ -46,7 +46,7 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuSharpenEffect(state);

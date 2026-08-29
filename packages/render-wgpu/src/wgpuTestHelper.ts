@@ -1,6 +1,6 @@
 import type { WgpuRenderOptions, WgpuRenderState } from '@flighthq/types/contract';
 
-import { createWgpuRenderState } from './wgpuRenderState';
+import { createWgpuRenderStateFromCanvasElement } from './wgpuRenderState';
 
 // Wgpu flag constants are only type-level in @webgpu/types; install runtime values for JSDOM.
 function installWgpuConstants(): void {
@@ -284,7 +284,7 @@ export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = 
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 600;
-  return createWgpuRenderState(canvas, options);
+  return createWgpuRenderStateFromCanvasElement(canvas, options);
 }
 
 export function installWgpuMock(): void {
