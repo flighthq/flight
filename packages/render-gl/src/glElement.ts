@@ -14,6 +14,10 @@ export function createGlRenderSurface(width: number, height: number, pixelRatio:
   return _provider?.createRenderSurface(width, height, pixelRatio) ?? null;
 }
 
+export function explainGlRenderSurfaceAbsence(): { reason: 'provider-not-installed' } | null {
+  return _provider === null ? { reason: 'provider-not-installed' } : null;
+}
+
 export function getGlRenderSurfaceProvider(): Readonly<GlRenderSurfaceProvider> | null {
   return _provider;
 }

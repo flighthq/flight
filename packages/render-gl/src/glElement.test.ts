@@ -1,6 +1,7 @@
 import {
   createGlCanvasElement,
   createGlRenderSurface,
+  explainGlRenderSurfaceAbsence,
   getGlRenderSurfaceProvider,
   resetGlRenderSurfaceProviderForTest,
   setGlRenderSurfaceProvider,
@@ -96,6 +97,21 @@ describe('createGlRenderSurface', () => {
       setGlRenderSurfaceProvider({ createRenderSurface: () => null });
       expect(createGlRenderSurface(100, 200)).toBeNull();
     });
+  });
+});
+
+describe('explainGlRenderSurfaceAbsence', () => {
+  afterEach(() => {
+    resetGlRenderSurfaceProviderForTest();
+  });
+
+  it('reports provider omission as a plain reason', () => {
+    expect(explainGlRenderSurfaceAbsence()).toEqual({ reason: 'provider-not-installed' });
+  });
+
+  it('returns null whenever a provider is installed, including one that refuses a surface', () => {
+    setGlRenderSurfaceProvider({ createRenderSurface: () => null });
+    expect(explainGlRenderSurfaceAbsence()).toBeNull();
   });
 });
 

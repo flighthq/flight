@@ -24,6 +24,7 @@ export {
   enableGlTextureResolverGuards,
   enableGlBlendModeSupport,
   endGlRenderPass,
+  explainGlRenderSurfaceAbsence,
   explainGlRenderTarget,
   explainGlRenderTexture,
   explainGlTextureResolution,
