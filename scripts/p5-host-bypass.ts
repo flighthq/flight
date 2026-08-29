@@ -1057,10 +1057,6 @@ export function p5HostBypassCurrentBudgetFailures(
   return failures;
 }
 
-export function p5BitmapReadbackCurrentFailures(report: Readonly<P5HostBypassReport>): string[] {
-  return p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BITMAP_READBACK_V4_PROGRESS.budget);
-}
-
 export function p5Scale9RasterSurfaceCurrentFailures(report: Readonly<P5HostBypassReport>): string[] {
   return p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_SCALE9_RASTER_SURFACE_V4_PROGRESS.budget);
 }
