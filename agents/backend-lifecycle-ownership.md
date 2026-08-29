@@ -63,7 +63,7 @@ it is hand-derived and is a floor, not an oracle.
 | `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse and destroy behavior are assertion-backed |
 | `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
 | `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on each exact `navigator.mediaSession` identity it published to | releases only lanes still carrying that backend's provenance token; metadata and playback state additionally require the exact published value; explicit clears relinquish ownership; failed releases remain retryable | **closed.** A superseding backend or external publisher remains intact, shared-session lanes are released independently, and a session-identity change cannot redirect cleanup |
-| `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | `destroyMenuBackend` clears both slots first, then releases every distinct unretained backend once; Electron clears the select listener and calls `Menu.setApplicationMenu(null)`; Tauri clears the listener only; web is a no-op | **partial closure / under-release:** capability teardown is now reachable, re-entrant-safe, alias-safe and assertion-backed. Tauri native-menu cleanup remains owed pending an observable async teardown contract |
+| `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | `destroyMenuBackend` clears both slots first, then releases every distinct unretained backend once; Electron clears the select listener and calls `Menu.setApplicationMenu(null)`; Tauri clears JS-owned state only (listener + guard flag) — the native menu stays until the replacement backend installs its own; web is a no-op | **closed.** Capability teardown is reachable, re-entrant-safe, alias-safe and assertion-backed. Tauri's JS-only teardown is the settled design: its async menu API cannot clear the native menu synchronously, and a fire-and-forget clear races with the replacement backend's install |
 | `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel; detaches each retained `(sentinel, handler)` pair by identity; resets the four cached readings | **closed.** All three findings were remediated in order — teardown made reachable (`destroyPowerBackend`), then the release completed. This row is behaviorally assertion-backed; see *Behavioral completeness* below |
 
 Battery, resume and freeze listeners are *not* mismatches: each is returned as an unsubscribe thunk and
@@ -71,7 +71,7 @@ is caller-owned, which is the correct bracket.
 
 #### Behavioral completeness, recorded here because no gate can hold it
 
-The structural lifecycle gate stays at **5 of 46** and must not move for this. It counts a declared
+The structural lifecycle gate stays at **5 of 50** and must not move for this. It counts a declared
 teardown named by its setter; it cannot observe whether that teardown releases what the backend owns,
 which is exactly what the scope caveat it prints says. Advancing that number to reward behavioral work
 would make it assert something it does not check — the failure this record exists to prevent.
@@ -242,13 +242,13 @@ of the process, recoverable only through the test-only `resetHostWeb*ForTest()`.
 query (`hasPowerHostBackend`, `hasMediaSessionHostBackend`, `hasAccessibilityHostBackend`,
 `hasMenuHostBackend`) and the host enables ask instead of remembering; their `_enabled` variables are
 gone. Restoring the latch fails the re-enable test in all four. Menu's host teardown is now reachable;
-its separate native Tauri release mismatch remains.
+Tauri's JS-only teardown is the settled design (native menu stays until replaced).
 
 ### Remediation design for the Power host slot and the irreversible enable
 
 Historical design record — Power has completed all three steps without moving the structural lifecycle
-floor. Menu has completed the slot-derived latch and reachable-teardown steps; its Tauri backend remains
-JS-only until an observable async native teardown contract exists.
+floor. Menu has completed all three steps. Tauri's JS-only teardown is the settled design: its async menu
+API cannot clear the native menu synchronously, and a fire-and-forget clear races with replacement.
 
 #### The ordering constraint, which is the whole point
 
@@ -413,7 +413,7 @@ zero-argument `destroy`/`dispose` members in both method and callable-property s
 parameterised teardown, and checks that the corresponding `set*Backend` body references the hook.
 `scripts/backend-lifecycle.test.ts` asserts `enforced + noTeardownHook === total` and holds two
 separate lists: an immutable `HISTORICAL_BASELINE` (the three names and total of 43 recorded when the
-gate was established, never updated, so growth shows as signed deltas such as `+3 new seams,
+gate was established, never updated, so growth shows as signed deltas such as `+7 new seams,
 +2 newly enforced`) and the current ratchet of every backend that has landed a hook, which gates the
 full present set and must never shrink.
 
@@ -530,9 +530,9 @@ from its actual lifetime shape in the entity/keyed bucket rather than this one, 
 resources; they are simply handle-keyed rather than whole-backend.
 
 Post-audit `WgpuHostBackend` and `InputIngressBackend` join the entity/keyed bucket as rows 20–21,
-and `AudioDeviceBackend` as row 22. They move the live denominator from 43 to 46 and that bucket from
-19 to 22 without changing the whole-owner population. The structural lifecycle census should
-therefore report five whole-backend hooks among 46 interfaces.
+and `AudioDeviceBackend` as row 22. The four new GC rows (17–20) and the three entity/keyed rows
+move the live denominator from 43 to 50 and this bucket from 16 to 20. The structural lifecycle
+census should therefore report five whole-backend hooks among 50 interfaces.
 
 ## Review checklist for the remaining slices
 
