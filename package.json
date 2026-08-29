@@ -215,6 +215,7 @@
     "type-home": "tsx ./scripts/type-home-progress.ts",
     "type-home:check": "tsx ./scripts/type-home-progress.ts --gate",
     "typecheck": "tsx ./scripts/typecheck.ts",
+    "typecheck:host-probe": "npm run typecheck --workspace=@flighthq/tool-host-probe && tsx ./scripts/typecheck-host-probe.ts",
     "unchecked": "tsx ./scripts/unchecked.ts",
     "unchecked:json": "tsx ./scripts/unchecked.ts --json",
     "untested": "tsx ./scripts/untested.ts",
