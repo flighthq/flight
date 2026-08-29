@@ -71,6 +71,7 @@
     "catalog:check": "tsx ./scripts/catalog.ts --check",
     "check": "tsx ./scripts/check.ts",
     "check:append-only-ledgers": "tsx ./scripts/check-append-only-ledgers.ts",
+    "check:capability-arrival": "tsx ./scripts/capability-arrival.ts",
     "check:data-cast-colour": "tsx ./scripts/check-data-cast-colour.ts",
     "check:degree-constants": "tsx ./scripts/check-degree-constants.ts",
     "check:documented-commands": "tsx ./scripts/check-documented-commands.ts --check",

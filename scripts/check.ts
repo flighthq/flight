@@ -109,6 +109,7 @@ if (!scoped) {
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
   add('functional-antialiasing:check', 'tsx', ['scripts/check-functional-antialiasing.ts', '--check']);
   add('degree-constants:check', 'tsx', ['scripts/check-degree-constants.ts']);
+  add('capability-arrival:check', 'tsx', ['scripts/capability-arrival.ts']);
   // P5 only: the scanner explicitly partitions fetch/socket/EventSource/WebSocket/XHR/Request/Image
   // syntax to P3's independent transport gate, so neither ratchet can make the other's claim.
   add('p5-host-bypasses:check', 'tsx', ['scripts/p5-host-bypass.ts']);
