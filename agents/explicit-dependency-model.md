@@ -152,27 +152,51 @@ After: `webHost` is a const object with all web backends. Functions take the hos
 - `_hostConflict` implementations — no conflict possible; the host is a value, not a mutable singleton
 - Host observation functions — no mutation to observe
 
-### 2. Renderer registries as explicit values
+### 2. Pipeline: immutable render configuration
 
-Today: `registerRenderer(state, SpriteKind, renderer)` mutates the render state's internal registry. If you forget to register, the node kind silently doesn't render. `prepareScene2DRender` must be called before drawing or transforms are stale — nothing enforces this.
+Today: ~10 `register*` calls mutate the render state after construction — renderers, texture resolvers, materials, blend modes, shape rasterizer, shape commands, stroke tessellator, shaders. If you forget one, the affected node kind silently doesn't render. A typical 2D GL example makes 10 registration calls; a full 3D app makes more. The current render state mixes immutable configuration (what renders what) with mutable per-frame state (current framebuffer, scissor stack, traversal position).
 
-After: you build a registry from const renderer objects and pass it when constructing render state.
+After: immutable configuration becomes a **pipeline** — a const object carrying all registries. Mutable per-frame state stays on the render state. The render state references a pipeline and a context state.
 
 ```typescript
-import { spriteRenderer, shapeRenderer, textRenderer } from '@flighthq/scene2d-gl';
+import { scene2dGlPipeline } from '@flighthq/scene2d-gl';
 
-const renderers = createRendererRegistry([
-  [SpriteKind, spriteRenderer],
-  [ShapeKind, shapeRenderer],
-  [TextKind, textRenderer],
-]);
-
-const state = createGlRenderState(glContext, { renderers, textureResolver });
+const glContext = createGlContextState(gl);
+const state = createGlRenderState(glContext, scene2dGlPipeline);
 ```
 
-**Texture resolution belongs on the render state, not individual renderers.** It is shared GPU infrastructure — every renderer that consumes textures (sprite, tilemap, quadbatch, mesh) needs the same resolver backed by the same GPU texture cache. Putting it on individual renderers would force the user to thread the same resolver to every texture-consuming renderer, with duplicate GPU uploads if they passed different instances. The render state is the "I hold the GPU context and everything needed to draw" object; texture resolution sits at that level alongside the GL/WGPU context.
+`scene2dGlPipeline` is a const carrying: node renderers (Sprite, Shape, TextLabel, RichText, DisplayObject, RenderCache, QuadBatch, TileMap, ParticleEmitter, BitmapText), texture resolvers (Bitmap, Image, CompressedImage, RenderTexture), standard material renderer, blend mode realizations, shape rasterizer, shape commands, stroke tessellator, default bitmap shader. The same pattern applies per backend and dimension: `scene2dCanvasPipeline`, `scene2dWgpuPipeline`, `scene3dGlPipeline`, `scene3dWgpuPipeline`.
 
-**The prepare pass should be implicit in the render call** rather than a separate step the user must remember. A function that silently produces wrong output without a prerequisite call is a footgun.
+A user who wants less builds a manual pipeline — same type, same mechanism:
+
+```typescript
+const pipeline = createGlPipeline({
+  renderers: createRendererRegistry([
+    [SpriteKind, spriteRenderer],
+  ]),
+  textureResolvers: createTextureResolverRegistry([
+    [BitmapSourceKind, bitmapTextureResolver],
+  ]),
+  blendRealizations: standardBlendRealizations,
+  defaultBitmapShader: bitmapShader,
+});
+
+const state = createGlRenderState(glContext, pipeline);
+```
+
+A 3D pipeline extends a 2D pipeline via spread:
+
+```typescript
+const scene3dGlPipeline = createGlPipeline({
+  ...scene2dGlPipeline,
+  meshMaterialRenderers: [...],
+  pbrExtensions: [...],
+});
+```
+
+**Texture resolution belongs on the pipeline, not individual renderers.** It is shared GPU infrastructure — every renderer that consumes textures (sprite, tilemap, quadbatch, mesh) needs the same resolver backed by the same GPU texture cache. Putting it on individual renderers would force the user to thread the same resolver to every texture-consuming renderer, with duplicate GPU uploads if they passed different instances.
+
+**The prepare pass stays separate from the render call.** It propagates transforms, alpha, visibility, and materials from the scene graph into render proxies. Keeping it explicit allows: (1) inserting a 3D skinning deform pass between scene updates and prepare, (2) preparing once when rendering the same scene to multiple targets, (3) skipping prepare on static scenes. A dev-mode guard warns when render is called without a preceding prepare — making the mistake impossible to miss, not impossible to make.
 
 ### 3. Format parsers with explicit feature registries
 
@@ -216,17 +240,21 @@ const gl = limeWindow.glContext;  // no acquisition capability needed
 const glContext = createGlContextState(gl);  // same code on every platform
 ```
 
-**3. Render state — per-pipeline.** Renderer registry, traversal state, clip/scissor stacks, blend mode application. References the context state explicitly. Multiple render states can share one context state (separate registries, shared shader/texture cache).
+**3. Pipeline — immutable configuration.** What renders what: renderer registry, texture resolvers, material renderers, blend realizations, shape rasterizer, shaders. Built once as a const, potentially shared across render states. See [section 2](#2-pipeline-immutable-render-configuration) for the full registry inventory.
+
+**4. Render state — mutable per-frame.** Current framebuffer, scissor stack, traversal position, flush state. Lean. References a context state and a pipeline.
 
 ```typescript
-const state1 = createGlRenderState(glContext, { renderers: scene2dRenderers });
-const state2 = createGlRenderState(glContext, { renderers: uiRenderers });
+const glContext = createGlContextState(gl);
+const state1 = createGlRenderState(glContext, scene2dGlPipeline);
+const state2 = createGlRenderState(glContext, scene3dGlPipeline);
 // Both share glContext's shader cache, texture cache, binding shadow — visibly
+// Each has its own pipeline (different renderers) and its own mutable frame state
 ```
 
-The test for whether something belongs to a layer: "does a new host have to define this, or change how this works?" Acquisition: yes — host feature. Context state: no — generic. Render state: no — generic. A new host implements one small capability (give me a GL context / give me a WGPU device), and everything above is Flight's code.
+The test for whether something belongs to a layer: "does a new host have to define this, or change how this works?" Acquisition: yes — host feature. Context state: no — generic. Pipeline: no — generic. Render state: no — generic. A new host implements one small capability (give me a GL context / give me a WGPU device), and everything above is Flight's code.
 
-The WGPU parallel is identical: `acquireWgpuDevice` (host capability) → `createWgpuDeviceState(device, format)` (context state: pipeline cache, layouts, samplers, texture upload cache) → `createWgpuRenderState(wgpuDevice, { renderers })` (per-pipeline).
+The WGPU parallel is identical: `acquireWgpuDevice` (host capability) → `createWgpuDeviceState(device, format)` (context state: pipeline cache, layouts, samplers, texture upload cache) → `createWgpuRenderState(wgpuDevice, scene2dWgpuPipeline)` (mutable per-frame + immutable pipeline).
 
 ## Other subsystems affected
 
@@ -240,14 +268,15 @@ The same pattern (ambient global state → explicit value argument) applies to:
 
 ## The convenience layer
 
-The explicit path is precise but verbose. Convenience consts and functions are essential:
+The explicit path is precise but verbose. Convenience consts are essential:
 
 - `webHost` — const, full web host with all backends
-- `fullSwfParserConfig` — const, all tag parsers and decompressors
-- `scene2dGlRenderers` — const, all standard 2D GL renderers
-- `createFullScene2DGlPipeline(glContext)` — factory (needs the context), renderers + texture resolver + standard configuration
+- `fullSwfParserConfig` — const, all SWF tag parsers and decompressors
+- `scene2dGlPipeline` — const, all standard 2D GL renderers, resolvers, materials, blend modes, shape infrastructure, shaders
+- `scene3dGlPipeline` — const, all 3D GL renderers, mesh materials, PBR, extends the 2D pipeline
+- `scene2dCanvasPipeline`, `scene2dWgpuPipeline`, `scene3dWgpuPipeline` — per-backend equivalents
 
-These are **discoverable shortcuts to the explicit path**, not a different API. The convenience returns the same type as the manual assembly. A user starts with the convenience, then replaces it with manual assembly when they want to optimize — and the types guide them because the shape is identical.
+These are **discoverable shortcuts to the explicit path**, not a different API. Each const is the same type as a manual assembly. A user starts with the convenience, then replaces it with manual assembly when they want to optimize — and the types guide them because the shape is identical. No tiers (core/standard/full) — one const per backend per dimension. `explain()` covers "am I paying for too much?"
 
 ## Module-scoped scratch state
 
@@ -296,5 +325,6 @@ The explicit dependency model eliminates the "unsupported" sentinel — a missin
 
 ## Open design
 
-- **Context state field inventory** — the current `GL_CONTEXT_RUNTIME_KEYS` (36 fields) and `WGPU_DEVICE_RUNTIME_KEYS` need auditing to confirm each field is correctly placed in the context tier vs the render-state tier. Some fields that are currently context-shared may belong per-state, and vice versa.
-- **Offscreen render state creation** — `createGlOffscreenRenderState` currently derives from a screen state and shares its context runtime. Under the explicit model, it takes the same `GlContextState` as the primary state — sharing is structural, not derived.
+- **Context state field inventory** — the current `GL_CONTEXT_RUNTIME_KEYS` (36 fields) and `WGPU_DEVICE_RUNTIME_KEYS` need auditing to confirm each field is correctly placed in the context tier vs the pipeline tier vs the render-state tier. Some fields that are currently context-shared may belong on the pipeline (immutable config) or per-state (mutable per-frame).
+- **Offscreen render state creation** — `createGlOffscreenRenderState` currently derives from a screen state and shares its context runtime. Under the explicit model, it takes the same `GlContextState` and pipeline as the primary state — sharing is structural, not derived.
+- **Pipeline mutability** — pipelines are described as immutable consts, but some registrations currently happen after render state creation (e.g., registering a renderer for a node kind loaded at runtime). The pipeline may need a controlled mutation path or a rebuild-and-swap mechanism for late registration.
