@@ -9,7 +9,19 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 // assert the GL it drove, and returns plausible objects for the create*/getUniformLocation/get*
 // queries the renderer makes. It is not a renderer — it does not produce pixels — but it lets the
 // CPU-side bind/draw/cache logic run to completion under jsdom.
-export interface FakeGl2 extends GlContext {
+export interface FakeGl2
+  extends
+    GlContext,
+    Pick<
+      WebGL2RenderingContext,
+      | 'drawArraysInstanced'
+      | 'getError'
+      | 'INVALID_ENUM'
+      | 'INVALID_OPERATION'
+      | 'INVALID_VALUE'
+      | 'NO_ERROR'
+      | 'SRC_ALPHA'
+    > {
   calls: { name: string; args: unknown[] }[];
 }
 

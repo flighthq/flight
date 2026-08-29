@@ -27,6 +27,7 @@ import {
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
+  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -60,11 +61,15 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
-  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  pixelRatio,
-  backgroundColor: 0x000000ff,
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
+  {
+    pixelRatio,
+    backgroundColor: 0x000000ff,
+  },
+);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 registerGlBlendEffect(state);
@@ -85,8 +90,8 @@ const BACKDROP_KEY = 'scene';
 // the module rather than released. Cleared to opaque black so the "backdrop-only" quadrant reads as black.
 function renderBackdrop(root: Node2D): GlRenderTarget {
   const target = createGlRenderTarget(state, {
-    width: state.canvas.width,
-    height: state.canvas.height,
+    width: canvas.width,
+    height: canvas.height,
     format: 'rgba8',
     clearColors: [0x000000ff],
   });

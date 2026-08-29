@@ -8,6 +8,7 @@ import {
   createGlRenderTarget,
   endGlRenderPass,
   presentGlRenderTarget,
+  createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
@@ -33,11 +34,15 @@ export const minCoverage = 0;
 enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
-const state = createGlRenderState(canvas, {
-  antialias: false,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  pixelRatio: scale,
-});
+const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    antialias: false,
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  }),
+  {
+    pixelRatio: scale,
+  },
+);
 const screenTarget = createGlRenderTarget(state, {
   clearColors: [0x18b33aff],
   height: canvas.height,

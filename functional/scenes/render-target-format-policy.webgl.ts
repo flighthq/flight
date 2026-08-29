@@ -9,6 +9,7 @@ import {
   explainGlRenderTarget,
   isGlRenderTargetFormatSupported,
   presentGlRenderTarget,
+  createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -32,14 +33,18 @@ export const minCoverage = 0;
 enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
-const state = createGlRenderState(canvas, {
-  antialias: false,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  // RGBA32F renderability and linear filtering are distinct GL capabilities. This scene negotiates
-  // color-renderable storage only, so sample with the universally valid nearest filter.
-  imageSmoothingEnabled: false,
-  pixelRatio: scale,
-});
+const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    antialias: false,
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  }),
+  {
+    // RGBA32F renderability and linear filtering are distinct GL capabilities. This scene negotiates
+    // color-renderable storage only, so sample with the universally valid nearest filter.
+    imageSmoothingEnabled: false,
+    pixelRatio: scale,
+  },
+);
 const descriptor = {
   clearColors: [0x21c45aff],
   colorSpace: 'srgb' as const,

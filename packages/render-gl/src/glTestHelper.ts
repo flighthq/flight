@@ -1,5 +1,5 @@
 import { createRenderState } from '@flighthq/render/contract';
-import type { GlContext, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 
@@ -7,7 +7,7 @@ import { createGlRenderStateRuntime } from './glRenderState';
 
 export function createGlState(options?: { allowSmoothing?: boolean; backgroundColorRgba?: number[] }): {
   state: GlRenderState;
-  gl: GlContext;
+  gl: WebGL2RenderingContext;
   canvas: HTMLCanvasElement;
   shaderLoc: GlShaderLocations;
 } {
@@ -70,9 +70,9 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
 // makeGL returns a fresh isolated mock for unit tests that call GL functions
 // directly (e.g. shader math tests) and need a clean call-count slate.
 // Relies on the jsdom webgl2Mock setup file patching HTMLCanvasElement.getContext.
-export function makeGL(width = 200, height = 100): GlContext {
+export function makeGL(width = 200, height = 100): WebGL2RenderingContext {
   const canvas = document.createElement('canvas');
-  const gl = canvas.getContext('webgl2') as GlContext;
+  const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
   Object.defineProperties(gl, {
     drawingBufferHeight: { configurable: true, value: height },
     drawingBufferWidth: { configurable: true, value: width },

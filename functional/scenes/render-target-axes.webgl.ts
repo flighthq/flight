@@ -11,6 +11,7 @@ import {
   presentGlRenderTarget,
   releaseGlRenderTarget,
   resizeGlRenderTarget,
+  createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -33,11 +34,15 @@ export const minCoverage = 0;
 enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
-const state = createGlRenderState(canvas, {
-  antialias: false,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  pixelRatio: scale,
-});
+const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    antialias: false,
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  }),
+  {
+    pixelRatio: scale,
+  },
+);
 const pool = createGlRenderTargetPool();
 const initialWidth = canvas.width >> 1;
 const initialHeight = canvas.height >> 1;

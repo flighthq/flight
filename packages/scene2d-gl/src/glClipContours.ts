@@ -119,7 +119,7 @@ interface ClipProgram {
   projectionLocation: WebGLUniformLocation | null;
 }
 
-const clipPrograms = new WeakMap<WebGLRenderingContext, ClipProgram>();
+const clipPrograms = new WeakMap<GlContext, ClipProgram>();
 
 function clipProgramFor(state: GlRenderState): ClipProgram {
   return clipPrograms.get(state.gl)!;
