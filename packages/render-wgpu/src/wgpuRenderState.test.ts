@@ -574,6 +574,28 @@ describe('createWgpuRenderStateRuntime', () => {
     });
     expect(runtime.registries.velocityWriters.entries.size).toBe(0);
   });
+
+  it('shares the device tier when two runtimes are built from the same WgpuDeviceState', () => {
+    const deviceState = createWgpuDeviceState({} as GPUDevice);
+    const runtimeA = createWgpuRenderStateRuntime(deviceState);
+    const runtimeB = createWgpuRenderStateRuntime(deviceState);
+
+    const sampler = {} as GPUSampler;
+    runtimeA.linearSampler = sampler;
+    expect(runtimeB.linearSampler).toBe(sampler);
+
+    const sampler2 = {} as GPUSampler;
+    runtimeB.linearSampler = sampler2;
+    expect(runtimeA.linearSampler).toBe(sampler2);
+  });
+
+  it('keeps separate device tiers when two runtimes are built from different WgpuDeviceStates', () => {
+    const runtimeA = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
+    const runtimeB = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
+
+    runtimeA.linearSampler = {} as GPUSampler;
+    expect(runtimeB.linearSampler).toBeUndefined();
+  });
 });
 
 describe('destroyWgpuRenderState', () => {
@@ -607,6 +629,20 @@ describe('destroyWgpuRenderState', () => {
   it('does not throw on a fresh state with no lazily-created buffers', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(() => destroyWgpuRenderState(state)).not.toThrow();
+  });
+
+  it('shares the device tier across screen and offscreen states', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(state);
+    const runtime = getWgpuRenderStateRuntime(state);
+    const offscreenRuntime = getWgpuRenderStateRuntime(offscreen);
+
+    const sampler = {} as GPUSampler;
+    runtime.linearSampler = sampler;
+    expect(offscreenRuntime.linearSampler).toBe(sampler);
+
+    destroyWgpuRenderState(offscreen);
+    destroyWgpuRenderState(state);
   });
 });
 
