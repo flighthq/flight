@@ -1,13 +1,12 @@
+import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
-import {
-  createWgpuTextureEntry,
-  drawWgpuQuadWithTransform,
-  updateWgpuTextureEntry,
-} from '@flighthq/render-wgpu/contract';
-import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
+import { bindWgpuImageResourceTexture, drawWgpuQuadWithTransform } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
   RenderProxy2D,
+  Raster2DSurface,
   RenderState,
   Renderable,
   RendererData,
@@ -15,7 +14,6 @@ import type {
   Scene2DRenderer,
   ShapeCommandToken,
   WgpuRenderState,
-  WgpuTextureEntry,
 } from '@flighthq/types/contract';
 import { RenderRegistry, Scale9ShapeKind } from '@flighthq/types/contract';
 
@@ -25,45 +23,52 @@ import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
 import { drawWgpuShape } from './wgpuShape';
 import { getWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 
-// Scale9 rasterizes its remapped shape commands to a 2D canvas at the scaled size, uploads that as a
-// per-node GPU texture, and draws a quad with the scale stripped from the transform (the size is
-// already baked into the texture). Mirrors the Gl Scale9 renderer; the canvas rasterization and
-// command remapping are shared with it via scene2d-canvas.
+// Scale9 rasterizes its remapped shape commands into a per-node 2D surface at the scaled size, uploads
+// that surface's stable Image through the shared texture cache, and draws a quad with the scale stripped
+// from the transform (the size is already baked into the texture). Mirrors the Gl Scale9 renderer.
 interface WgpuScale9ShapeData {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
   lastH: number;
   lastScaleX: number;
   lastScaleY: number;
   lastContentId: number;
   lastPixelRatio: number;
   lastW: number;
-  entry: WgpuTextureEntry | null;
+  surface: Raster2DSurface | null;
+}
+
+export function acquireWgpuScale9ShapeRasterSurface(data: WgpuScale9ShapeData): Raster2DSurface | null {
+  const existing = data.surface;
+  if (existing !== null) return existing;
+  const surface = createRaster2DSurface(1, 1);
+  if (surface === null) return null;
+  data.surface = surface;
+  return surface;
 }
 
 export function createWgpuScale9ShapeData(_state: RenderState, _source: Renderable): RendererData {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d')!;
   return createWgpuRendererData<WgpuScale9ShapeData>({
-    canvas,
-    ctx,
     lastH: 0,
     lastScaleX: -1,
     lastScaleY: -1,
     lastContentId: -1,
     lastPixelRatio: 0,
     lastW: 0,
-    entry: null,
+    surface: null,
   });
 }
 
-// Scale9 owns its texture directly (created lazily on first draw), so destroy it on teardown.
-export function destroyWgpuScale9ShapeData(_state: RenderState, data: RendererData): void {
-  const shapeData = getWgpuRendererData<WgpuScale9ShapeData>(data);
-  if (shapeData === null) return;
-  shapeData.entry?.texture.destroy();
+// Remove the Image-keyed GPU entry before returning this per-node surface to the provider that created it.
+export function destroyWgpuScale9ShapeData(state: WgpuRenderState, data: RendererData): void {
+  const shapeData = getWgpuScale9ShapeData(data);
+  if (shapeData === null || shapeData.surface === null) return;
+  const { surface } = shapeData;
+  const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const entry = cache.get(surface.image);
+  if (entry !== undefined) {
+    entry.texture.destroy();
+    cache.delete(surface.image);
+  }
+  destroyRaster2DSurface(surface);
 }
 
 export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -92,12 +97,14 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     return;
   }
 
-  const shapeData = getWgpuRendererData<WgpuScale9ShapeData>(renderProxy.rendererData);
+  const shapeData = getWgpuScale9ShapeData(renderProxy.rendererData);
   const pixelRatio = state.pixelRatio;
   if (shapeData === null) return;
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
+  const surface = acquireWgpuScale9ShapeRasterSurface(shapeData);
+  if (surface === null) return;
 
   if (
     version !== shapeData.lastContentId ||
@@ -109,32 +116,15 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   ) {
     const pw = Math.ceil(w * pixelRatio);
     const ph = Math.ceil(h * pixelRatio);
-    shapeData.canvas.width = pw;
-    shapeData.canvas.height = ph;
-    const ctx = shapeData.ctx;
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
-    ctx.clearRect(bounds.x, bounds.y, w, h);
+    if (surface.width !== pw) surface.width = pw;
+    if (surface.height !== ph) surface.height = ph;
+    const { context } = surface;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    context.clearRect(bounds.x, bounds.y, w, h);
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-    rasterizer(ctx, _remappedCommands, state);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-    // GPU textures are fixed-size: recreate the entry when the device-pixel size changes — which a
-    // pixelRatio change does even at a fixed field size — otherwise reupload into the existing entry.
-    if (
-      shapeData.entry === null ||
-      shapeData.lastW !== w ||
-      shapeData.lastH !== h ||
-      shapeData.lastPixelRatio !== pixelRatio
-    ) {
-      const nextEntry = createWgpuTextureEntry(state, pw, ph, shapeData.canvas);
-      if (nextEntry === null) return;
-      // Retired rather than destroyed: this runs inside a draw, so a bind group recorded earlier in the
-      // frame may still reference the outgoing texture, and the frame's submit has not happened yet.
-      if (shapeData.entry !== null) retireWgpuTexture(state, shapeData.entry.texture);
-      shapeData.entry = nextEntry;
-    } else {
-      updateWgpuTextureEntry(state, shapeData.entry, shapeData.canvas);
-    }
+    rasterizer(context, _remappedCommands, state);
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    invalidateImageResource(surface.image);
 
     shapeData.lastH = h;
     shapeData.lastScaleX = source.scaleX;
@@ -144,7 +134,8 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     shapeData.lastW = w;
   }
 
-  if (shapeData.entry === null) return;
+  const entry = bindWgpuImageResourceTexture(state, surface.image, false, true);
+  if (entry === null) return;
 
   // Strip the node scale from the transform: the texture is already rasterized at the scaled size, so
   // the quad must be drawn at unit scale (only the non-scale parts of the transform apply).
@@ -153,20 +144,7 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   const b = source.scaleX !== 0 ? t.b / source.scaleX : t.b;
   const c = source.scaleY !== 0 ? t.c / source.scaleY : t.c;
   const d = source.scaleY !== 0 ? t.d / source.scaleY : t.d;
-  drawWgpuQuadWithTransform(
-    state,
-    renderProxy,
-    { a, b, c, d, tx: t.tx, ty: t.ty },
-    shapeData.entry,
-    0,
-    0,
-    w,
-    h,
-    0,
-    0,
-    1,
-    1,
-  );
+  drawWgpuQuadWithTransform(state, renderProxy, { a, b, c, d, tx: t.tx, ty: t.ty }, entry, 0, 0, w, h, 0, 0, 1, 1);
 }
 
 export function drawWgpuScale9ShapeMask(state: WgpuRenderState, data: RenderProxy2D): void {
@@ -178,5 +156,9 @@ export const defaultWgpuScale9ShapeRenderer: Scene2DRenderer = {
   destroyData: destroyWgpuScale9ShapeData,
   submit: drawWgpuScale9Shape,
 };
+
+export function getWgpuScale9ShapeData(data: RendererData): WgpuScale9ShapeData | null {
+  return getWgpuRendererData<WgpuScale9ShapeData>(data);
+}
 
 const _remappedCommands: ShapeCommandToken[] = [];
