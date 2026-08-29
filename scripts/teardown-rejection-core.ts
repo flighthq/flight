@@ -121,9 +121,9 @@ export function formatTeardownRejectionReport(report: Readonly<TeardownRejection
       {
         command: 'npx vitest run scripts/teardown-rejection.test.ts (scripts/teardown-rejection-core.ts)',
         counting:
-          'one unit = one call expression lexically inside a try block inside a destroy/dispose/destroy*/release* body, neither awaited, nor part of a chain ending in .catch/.then(_, _), nor in lexical tail position of a chain callback whose rejection a strictly-later link handles — counted whatever else happens to its value, since assigning or returning the promise out of the try leaves the guard equally unable to catch; a candidate is NOT a claim that the callee returns a promise, which is not syntactically decidable and is settled by reading the API',
+          'one unit = one call expression lexically inside a try block inside a destroy/dispose/destroy*/release* body, neither awaited nor part of a chain ending in .catch/.then(_, _) — counted whatever happens to its value, since assigning or returning the promise leaves the guard equally unable to catch; a candidate is NOT a claim that the callee returns a promise, which is not syntactically decidable and is settled by reading the API',
         scope:
-          'every non-test .ts under packages/*/src, walked from the parsed AST; awaited calls, calls carrying their own rejection handler, and tail-position calls adopted into a chain that is handled strictly later are excluded by construction, not by roster; a callback passed by reference, a chain split across statements, and combinator forms such as Promise.all stay flagged because adoption is only read lexically',
+          'every non-test .ts under packages/*/src, walked from the parsed AST; awaited calls and calls carrying their own rejection handler are excluded by construction, not by roster',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -146,16 +146,6 @@ export function formatTeardownRejectionReport(report: Readonly<TeardownRejection
 // `request()` too rather than reporting it.
 function collectHandledCalls(block: Readonly<Node>, hasValidHelper: boolean): Set<number> {
   const handled = new Set<number>();
-  const awaited = new Set<number>();
-  walk(block, (node) => {
-    if (node.type !== 'AwaitExpression') return;
-    const argument = (node as unknown as { argument?: { type?: string; start?: number } }).argument;
-    if (argument?.type === 'CallExpression' && argument.start !== undefined) awaited.add(argument.start);
-  });
-  walk(block, (node) => {
-    if (node.type !== 'CallExpression') return;
-    collectAdoptedCalls(node, awaited, handled);
-  });
   walk(block, (node) => {
     if (node.type === 'AwaitExpression') {
       const argument = (node as unknown as { argument?: { type?: string; start?: number } }).argument;
@@ -186,135 +176,6 @@ function collectHandledCalls(block: Readonly<Node>, hasValidHelper: boolean): Se
     }
   });
   return handled;
-}
-
-// ★ PROMISE ADOPTION. A callback that RETURNS a promise has that promise adopted by the one its link
-// produces, so the rejection surfaces further down the same chain: in
-// `p.then((m) => m.close()).catch(…)` the trailing `.catch` really does cover `m.close()`, and flagging it
-// reports a defect that cannot happen. Verified against Node's `unhandledRejection` hook rather than
-// reasoned about, because two of the rules below are the opposite of what they look like.
-//
-// Handled requires BOTH halves, and each is load-bearing on its own:
-//
-//   1. the call is in lexical TAIL position of the callback — `(m) => m.close()` or an explicit `return`.
-//      `(m) => { m.close(); }` discards the promise and stays uncatchable.
-//   2. a link STRICTLY AFTER that callback's own link handles rejection, or the whole chain is awaited.
-//      `p.then((m) => m.close())` with nothing downstream is still an escaping rejection.
-//
-// Two traps, both confirmed by execution. `.then(onOk, onErr)` does NOT cover a rejection returned from its
-// own `onOk` — the sibling handler guards the RECEIVER, so the search must start strictly after the link,
-// never at it. And `.finally` adopts but never handles, so it must not end the search.
-//
-// Only the tail call itself is marked, never its receiver chain: in `(m) => foo().bar()` a rejection from
-// `foo()` has no handler attached to it at all, and marking the chain would hide exactly the defect this
-// gate exists to find.
-function collectAdoptedCalls(node: Readonly<Node>, awaited: ReadonlySet<number>, handled: Set<number>): void {
-  const links = chainLinks(node);
-  const outermost = links[0] as { start?: number } | undefined;
-  const chainAwaited = outermost?.start !== undefined && awaited.has(outermost.start);
-  for (let index = 0; index < links.length; index++) {
-    const downstreamHandles = links.slice(0, index).some((link) => handlesRejection(link));
-    if (!downstreamHandles && !chainAwaited) continue;
-    const args = (links[index] as unknown as { arguments?: unknown[] }).arguments ?? [];
-    for (const argument of args) {
-      for (const call of tailPositionCalls(argument)) handled.add(call);
-    }
-  }
-}
-
-// The call links of one member chain, outermost first: `a().b().c()` → [c, b, a]. Anything that is not a
-// call (a bare identifier receiver) ends the chain.
-function chainLinks(node: Readonly<Node>): { type: string; start?: number }[] {
-  const links: { type: string; start?: number }[] = [];
-  let current: unknown = node;
-  while (current !== null && typeof current === 'object') {
-    const record = current as { type?: string; start?: number; callee?: unknown };
-    if (record.type !== 'CallExpression') break;
-    links.push(record as { type: string; start?: number });
-    const callee = record.callee as { type?: string; object?: unknown } | undefined;
-    if (callee?.type !== 'MemberExpression') break;
-    current = callee.object;
-  }
-  return links;
-}
-
-// Start offsets of the calls a function argument would RETURN, and so hand to the enclosing chain.
-function tailPositionCalls(argument: unknown): number[] {
-  const fn = argument as { type?: string; body?: unknown } | null;
-  if (fn === null || (fn.type !== 'ArrowFunctionExpression' && fn.type !== 'FunctionExpression')) return [];
-  const found: number[] = [];
-  const body = fn.body as { type?: string } | undefined;
-  if (body?.type === 'BlockStatement') {
-    for (const returned of returnedExpressions(body)) collectTailCalls(returned, found);
-  } else {
-    collectTailCalls(fn.body, found);
-  }
-  return found;
-}
-
-// Every `return` argument lexically inside this body, WITHOUT descending into a nested function — a
-// returned arrow is a function, not a promise, and nothing inside it has run.
-function returnedExpressions(body: Readonly<{ type?: string }>): unknown[] {
-  const found: unknown[] = [];
-  const stack: unknown[] = [body];
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (current === null || typeof current !== 'object') continue;
-    if (Array.isArray(current)) {
-      stack.push(...current);
-      continue;
-    }
-    const record = current as Record<string, unknown>;
-    const type = record.type;
-    if (type === 'ArrowFunctionExpression' || type === 'FunctionExpression' || type === 'FunctionDeclaration') {
-      continue;
-    }
-    if (type === 'ReturnStatement') {
-      if (record.argument !== null && record.argument !== undefined) found.push(record.argument);
-      continue;
-    }
-    for (const key in record) {
-      if (key === 'type' || key === 'start' || key === 'end') continue;
-      const value = record[key];
-      if (value !== null && typeof value === 'object') stack.push(value);
-    }
-  }
-  return found;
-}
-
-// Descends only through forms that pass a value through unchanged, so the promise really is the one the
-// callback returns. `void x`, array and object literals are all deliberately absent: each produces a NEW
-// value, the promise is dropped, and its rejection escapes — all three verified by execution.
-function collectTailCalls(expression: unknown, found: number[]): void {
-  const node = expression as { type?: string; start?: number } | null;
-  if (node === null || typeof node !== 'object') return;
-  const record = node as unknown as Record<string, unknown>;
-  switch (node.type) {
-    case 'CallExpression':
-      if (node.start !== undefined) found.push(node.start);
-      return;
-    case 'ParenthesizedExpression':
-    case 'TSAsExpression':
-    case 'TSNonNullExpression':
-    case 'TSSatisfiesExpression':
-    case 'AwaitExpression':
-      collectTailCalls(record.expression ?? record.argument, found);
-      return;
-    case 'ConditionalExpression':
-      collectTailCalls(record.consequent, found);
-      collectTailCalls(record.alternate, found);
-      return;
-    case 'LogicalExpression':
-      collectTailCalls(record.right, found);
-      return;
-    case 'SequenceExpression': {
-      const expressions = record.expressions as unknown[] | undefined;
-      if (expressions !== undefined && expressions.length > 0) collectTailCalls(expressions.at(-1), found);
-      return;
-    }
-    default:
-      return;
-  }
 }
 
 // True when this call is itself a rejection handler: `.catch(…)`, or `.then(onOk, onErr)`.
