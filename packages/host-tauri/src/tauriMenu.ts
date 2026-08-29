@@ -28,20 +28,12 @@ export function createTauriMenuBackend(tauri: TauriApi): MenuBackend {
       },
     ],
     // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
-    // The best-effort clear can race with a replacement backend's setApplicationMenu, so it does not lift
-    // either unsupported replacement guarantee declared above.
+    // A fire-and-forget async clear races with the replacement backend's setApplicationMenu, so destroy
+    // releases JS-owned state only and preserves last-known-good (the native menu stays until replaced).
     destroy() {
       if (destroyed) return;
       destroyed = true;
       selectListener = null;
-      try {
-        void (async () => {
-          const emptyMenu = await menuModule.Menu.new({ items: [] });
-          await emptyMenu.setAsAppMenu();
-        })().catch(() => {});
-      } catch {
-        /* menu module unavailable — no native menu to clear */
-      }
     },
     setApplicationMenu(items) {
       void (async () => {
