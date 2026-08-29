@@ -1271,3 +1271,55 @@ members beyond width/height** — that last one pins the minimal contract agains
 is how a two-member interface becomes a canvas again one field at a time.
 
 Canvas2D `canvas` fields are unrelated and unchanged.
+
+---
+
+# H18 — moving a capability behind an installer moves the failure to whoever forgot to install it — 2026-08-29
+
+The first production-visible consequence of the P5 sweep, and the clearest instance of [H10](#h10)
+yet: the census reached zero, every gate was green, and **68 example renders reported blank**.
+
+**The frames were never blank.** Canvas and WebGL surfaces and scratch transfers all contained
+nonzero pixels. What failed was the *verification* step — `readingBack`, which runs before
+`captureEntry` — because `createBitmapFromImageSource` now routes through `BitmapReadbackBackend`
+and the harness never calls `enableHostWebBitmapReadback()`. The resolver reported
+`backend-not-installed`; a null readback was reported as "no readable render bitmap"; and that
+message reads as a rendering failure. Installing only that one enabler flips the representative
+reruns to pass.
+
+So P5 did not break rendering. It relocated a hard dependency from `document` — always present — to
+an installer that something has to call, and the thing that had to call it was never updated.
+
+## The rule
+
+**Every capability moved behind an installer acquires a new failure mode: nobody installed it.** The
+census cannot see that, because it counts the removal, not the arrival. A slice is not complete when
+the site count falls; it is complete when every consumer that reached the old global reaches the new
+provider.
+
+Derive the consumers of the *old* global — including tools, harnesses, examples and functional
+scenes, which are outside the packages the census walks — and confirm each one installs what it now
+needs.
+
+## Where the installer belongs, which differs by consumer
+
+- **Harnesses and tools** (`tool-capture`, host-probe) should call the aggregate `enableHostWeb()`.
+  They are outside the `@flighthq/sdk` barrel and are not tree-shaken, so the aggregate costs them
+  nothing and cannot go stale as capabilities are added — which is exactly the failure above.
+- **Examples** install explicitly, per capability. They are documentation of real application usage,
+  and the verbosity is deliberate.
+
+## Evidence discipline this exposed
+
+A prior full-sweep green of 500/500/0 was **not** valid evidence: it ran in a clone carrying unmerged
+baseline updates. A sweep is evidence only on the exact published base. The same rule already applied
+to the teardown scanner, for the same reason — a green from a tree nobody will merge certifies
+nothing.
+
+## Recorded against myself
+
+I falsified this exact hypothesis early and told the fleet not to re-tread it. I grepped
+`tool-capture` for readback calls, found raw `ctx.getImageData`, and concluded H15 was not in the
+path. It is — in the **verification** stage, which I never looked at. A partial view of a pipeline
+produced a confident exclusion, and an exclusion is more dangerous than a wrong lead because it
+removes ground from the search instead of adding it.
