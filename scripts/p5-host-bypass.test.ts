@@ -11,7 +11,6 @@ import {
   formatP5HostBypassReport,
   p5BitmapEncodeProgressFailures,
   p5BitmapEncodeRepairFailures,
-  p5BitmapReadbackCurrentFailures,
   p5BitmapReadbackProgressFailures,
   p5BitmapReadbackRepairFailures,
   p5BitmapDrawTransferProgressFailures,
