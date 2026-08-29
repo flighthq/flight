@@ -97,11 +97,11 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 // multiple windows.
 export interface WindowBackend {
   // Attaches an existing native window. Optional because absence is the structural declaration that a
-  // backend cannot adopt host-created windows; attachWindow resolves custom → host by that presence.
-  // A provider is eligible only when it also provides close, which owns the resulting release obligation.
+  // backend cannot adopt host-created windows. A host passed to attachWindow must also provide close,
+  // which owns the resulting release obligation.
   attach?(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
-  // A provider is eligible to open only when it also provides close. Successful opens follow the canonical
-  // origin-pinned doctrine in agents/backend-lifecycle-ownership.md; absence returns false from openWindow.
+  // A host passed to openWindow must also provide close. Successful opens follow the canonical
+  // origin-pinned doctrine in agents/backend-lifecycle-ownership.md; an unsuccessful open returns false.
   open?(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
   // Releases one entity-keyed window attachment. Implementations must be idempotent: delete their native
   // identity record and remove the exact listeners installed for that record before requesting native
@@ -111,7 +111,6 @@ export interface WindowBackend {
   setTitle?(win: ApplicationWindow, title: string): void;
   setPosition?(win: ApplicationWindow, x: number, y: number): void;
   setSize?(win: ApplicationWindow, width: number, height: number): void;
-  // Optional because getWindowBounds owns the honest entity-mirror fallback when no provider exists.
   getBounds?(win: ApplicationWindow, out: WindowBounds): WindowBounds;
   minimize?(win: ApplicationWindow): void;
   maximize?(win: ApplicationWindow): void;
@@ -142,7 +141,3 @@ export interface WindowBackend {
   // Shows or hides the native drop shadow around the window. macOS / native only; web omits it.
   setHasShadow?(win: ApplicationWindow, hasShadow: boolean): void;
 }
-
-// The P1 per-operation availability population. Existing-window attachment is the separately ruled P4
-// path and has its own ownership-bearing public function rather than participating in the generic query.
-export type WindowOperation = Exclude<keyof WindowBackend, 'attach'>;

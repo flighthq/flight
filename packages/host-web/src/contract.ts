@@ -16,6 +16,7 @@ export * from './webGeolocation';
 export * from './webGlRenderSurface';
 export * from './webGlyphRasterizer';
 export * from './webHaptics';
+export * from './webHost';
 export * from './webImage';
 export * from './webKeyboard';
 export * from './webLifecycle';

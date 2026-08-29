@@ -50,7 +50,8 @@ afterEach(() => {
 
 describe('registerElectronBackends', () => {
   it('routes capability seams to the Electron backends without throwing', async () => {
-    registerElectronBackends(fakeElectron());
+    const host = registerElectronBackends(fakeElectron());
+    expect(host.window.open).toBeTypeOf('function');
     expect(getAppName()).toBe('ElectronApp');
     expect(await readClipboardText()).toBe('ELECTRON-TEXT');
   });

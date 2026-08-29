@@ -353,9 +353,9 @@ export interface HasUiTray {
 }
 
 export interface HasWindowAttach {
-  readonly window: Required<Pick<WindowBackend, 'attach' | 'close'>>;
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close'>>;
 }
 
 export interface HasWindowOpen {
-  readonly window: Required<Pick<WindowBackend, 'close' | 'open'>>;
+  readonly window: WindowBackend & Required<Pick<WindowBackend, 'close' | 'open'>>;
 }

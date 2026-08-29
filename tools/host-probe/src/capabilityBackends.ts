@@ -1,5 +1,5 @@
 import { getAppBackend } from '@flighthq/app/contract';
-import { getLoopBackend, getWindowBackend } from '@flighthq/application/contract';
+import { getLoopBackend } from '@flighthq/application/contract';
 import { getClipboardBackend } from '@flighthq/clipboard/contract';
 import { getConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend } from '@flighthq/device/contract';
@@ -28,7 +28,7 @@ import type { HostProbeCapability } from './expectations';
 
 export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unknown>>;
 
-export function captureHostProbeBackends(): HostProbeBackendSnapshot {
+export function captureHostProbeBackends(windowBackend: unknown = null): HostProbeBackendSnapshot {
   return {
     app: getAppBackend(),
     clipboard: getClipboardBackend(),
@@ -56,7 +56,7 @@ export function captureHostProbeBackends(): HostProbeBackendSnapshot {
     storage: getStorageBackend(),
     tray: getTrayBackend(),
     updater: getUpdaterBackend(),
-    window: getWindowBackend(),
+    window: windowBackend,
   };
 }
 

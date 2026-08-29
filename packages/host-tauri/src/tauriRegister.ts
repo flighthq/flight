@@ -1,5 +1,4 @@
 import { setAppBackend } from '@flighthq/app/contract';
-import { setWindowBackend } from '@flighthq/application/contract';
 import { setClipboardBackend } from '@flighthq/clipboard/contract';
 import { setDialogBackend } from '@flighthq/dialog/contract';
 import { setMenuBackend } from '@flighthq/menu/contract';
@@ -8,7 +7,7 @@ import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
-import type { TauriApi } from '@flighthq/types/contract';
+import type { HasWindowAttach, HasWindowOpen, Host, TauriApi } from '@flighthq/types/contract';
 
 import { createTauriAppBackend } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
@@ -21,21 +20,21 @@ import { createTauriShortcutBackend } from './tauriShortcut';
 import { createTauriTrayBackend } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
 
-// Installs every Tauri host backend into its capability package in one call. Run this once at app
-// startup, passing an object that aggregates the Tauri v2 JS API modules and plugins the seams use:
+// Builds the explicit Tauri host and installs capabilities that have not yet migrated from their
+// package-local seams. Run this once at app startup, passing an object that aggregates the Tauri v2 JS
+// API modules and plugins the seams use:
 //
 //   import * as app from '@tauri-apps/api/app';
 //   // …import the other modules/plugins…
 //   registerTauriBackends({ app, window, menu, tray, clipboard, dialog, notification, opener, os, globalShortcut, process });
 //
-// After this, the covered platform/app/window seams resolve to their Tauri implementations instead of
-// the web defaults. Seams Tauri does not cover here (storage, protocol, updater, ipc, power, screen)
-// are intentionally left registered to their web defaults — a Tauri app runs in a webview, so those
-// defaults (e.g. localStorage) keep working. Each set*Backend(null) reverts one capability to web.
-export function registerTauriBackends(tauri: TauriApi): void {
+// Pass the returned host to window operations. Unmigrated seams Tauri does not cover here (storage,
+// protocol, updater, ipc, power, screen) retain their web defaults because a Tauri app runs in a
+// webview; each set*Backend(null) still reverts one of those package-local capabilities to web.
+export function registerTauriBackends(tauri: TauriApi): Host & HasWindowAttach & HasWindowOpen {
+  const window = createTauriWindowBackend(tauri);
   setPlatformBackend(createTauriPlatformBackend(tauri));
   setAppBackend(createTauriAppBackend(tauri));
-  setWindowBackend(createTauriWindowBackend(tauri));
   setDialogBackend(createTauriDialogBackend(tauri));
   setClipboardBackend(createTauriClipboardBackend(tauri));
   setMenuBackend(createTauriMenuBackend(tauri));
@@ -43,4 +42,18 @@ export function registerTauriBackends(tauri: TauriApi): void {
   setShortcutBackend(createTauriShortcutBackend(tauri));
   setNotificationBackend(createTauriNotificationBackend(tauri));
   setShellBackend(createTauriShellBackend(tauri));
+  return {
+    accessibility: {},
+    app: {},
+    dialog: {},
+    graphics: {},
+    input: {},
+    media: {},
+    net: {},
+    storage: {},
+    system: {},
+    text: {},
+    ui: {},
+    window,
+  };
 }

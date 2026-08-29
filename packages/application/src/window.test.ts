@@ -1,5 +1,11 @@
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Matrix, RenderState, WindowBackend, WindowOperation } from '@flighthq/types/contract';
+import type {
+  FullscreenBackend,
+  FullscreenTargetHandle,
+  Matrix,
+  RenderState,
+  WindowBackend,
+} from '@flighthq/types/contract';
 
 import {
   attachWindow,
@@ -30,30 +36,22 @@ import {
   disposeApplicationWindow,
   exitApplicationFullscreen,
   exitApplicationPointerLock,
-  explainWindowBackend,
-  explainWindowOperation,
   flashWindowFrame,
   focusWindow,
-  getWindowBackend,
   getWindowBounds,
   getWindowDisplay,
-  hasWindowOperation,
   hideWindow,
-  installWindowHostBackend,
   lockApplicationPointer,
   maximizeWindow,
   minimizeWindow,
   notifyWindowClosed,
-  observeWindowHostResult,
   openWindow,
   prepareElementForInput,
   requestApplicationFullscreen,
   requestWindowAttention,
   requestWindowClose,
-  resetWindowBackendForTest,
   restoreWindow,
   setWindowAlwaysOnTop,
-  setWindowBackend,
   setWindowContentProtection,
   setWindowFullscreen,
   setWindowHasShadow,
@@ -72,95 +70,23 @@ import {
   showWindow,
 } from './window';
 
-type WindowOperationClass = 'B' | 'C' | 'manual';
+type RecordingWindowBackend = Required<WindowBackend> & { readonly calls: string[] };
 
-const WINDOW_OPERATION_CLASSES = {
-  center: 'B',
-  close: 'manual',
-  flashWindowFrame: 'B',
-  focus: 'B',
-  getBounds: 'C',
-  hide: 'B',
-  maximize: 'B',
-  minimize: 'B',
-  open: 'manual',
-  requestAttention: 'B',
-  restore: 'B',
-  setAlwaysOnTop: 'B',
-  setContentProtection: 'B',
-  setFullscreen: 'B',
-  setHasShadow: 'B',
-  setIcon: 'B',
-  setMaximumSize: 'B',
-  setMenuBarVisible: 'B',
-  setMinimumSize: 'B',
-  setOpacity: 'B',
-  setParent: 'B',
-  setPosition: 'B',
-  setProgress: 'B',
-  setResizable: 'B',
-  setSize: 'B',
-  setSkipTaskbar: 'B',
-  setTitle: 'B',
-  show: 'B',
-} as const satisfies Record<WindowOperation, WindowOperationClass>;
+type RecordingFullscreenBackend = Required<FullscreenBackend> & {
+  readonly calls: string[];
+  emit(fullscreen: boolean): void;
+};
 
-type WindowBOperation = {
-  [Operation in WindowOperation]: (typeof WINDOW_OPERATION_CLASSES)[Operation] extends 'B' ? Operation : never;
-}[WindowOperation];
-
-const WINDOW_B_OPERATION_CALLS = {
-  center: (win) => centerWindow(win),
-  flashWindowFrame: (win) => flashWindowFrame(win),
-  focus: (win) => focusWindow(win),
-  hide: (win) => hideWindow(win),
-  maximize: (win) => maximizeWindow(win),
-  minimize: (win) => minimizeWindow(win),
-  requestAttention: (win) => requestWindowAttention(win, true),
-  restore: (win) => {
-    win.minimized = true;
-    restoreWindow(win);
-  },
-  setAlwaysOnTop: (win) => setWindowAlwaysOnTop(win, true),
-  setContentProtection: (win) => setWindowContentProtection(win, true),
-  setFullscreen: (win) => setWindowFullscreen(win, true),
-  setHasShadow: (win) => setWindowHasShadow(win, true),
-  setIcon: (win) => setWindowIcon(win, 'icon.png'),
-  setMaximumSize: (win) => setWindowMaximumSize(win, 1920, 1080),
-  setMenuBarVisible: (win) => setWindowMenuBarVisible(win, false),
-  setMinimumSize: (win) => setWindowMinimumSize(win, 320, 240),
-  setOpacity: (win) => setWindowOpacity(win, 0.5),
-  setParent: (win) => setWindowParent(win, null),
-  setPosition: (win) => setWindowPosition(win, 10, 20),
-  setProgress: (win) => setWindowProgress(win, 0.5),
-  setResizable: (win) => setWindowResizable(win, false),
-  setSize: (win) => setWindowSize(win, 640, 480),
-  setSkipTaskbar: (win) => setWindowSkipTaskbar(win, true),
-  setTitle: (win) => setWindowTitle(win, 'Flight'),
-  show: (win) => {
-    win.visible = false;
-    showWindow(win);
-  },
-} satisfies Record<WindowBOperation, (win: ReturnType<typeof createApplicationWindow>) => void>;
-
-const WINDOW_OPERATION_CALLS = {
-  ...WINDOW_B_OPERATION_CALLS,
-  close: (win) => {
-    closeWindow(win);
-  },
-  getBounds: (win) => {
-    getWindowBounds(win, { x: 0, y: 0, width: 0, height: 0 });
-  },
-  open: (win) => {
-    openWindow(win);
-  },
-} satisfies Record<WindowOperation, (win: ReturnType<typeof createApplicationWindow>) => void>;
+type TestHost = {
+  readonly ui: { readonly fullscreen: RecordingFullscreenBackend };
+  readonly window: RecordingWindowBackend;
+};
 
 function makeRenderState(): RenderState {
   return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
 }
 
-function recordingWindowBackend(): WindowBackend & { calls: string[] } {
+function recordingWindowBackend(): RecordingWindowBackend {
   const calls: string[] = [];
   return {
     calls,
@@ -261,28 +187,42 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
   };
 }
 
-function recordingWindowOperationBackend(operation: WindowOperation): ReturnType<typeof recordingWindowBackend> {
-  const backend = recordingWindowBackend();
-  delete backend.attach;
-  for (const candidate of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
-    if (candidate === operation || (operation === 'open' && candidate === 'close')) continue;
-    delete backend[candidate];
-  }
-  return backend;
+function recordingFullscreenBackend(): RecordingFullscreenBackend {
+  const callbacks = new Set<(fullscreen: boolean) => void>();
+  const calls: string[] = [];
+  return {
+    calls,
+    emit(fullscreen) {
+      for (const callback of callbacks) callback(fullscreen);
+    },
+    async exit() {
+      calls.push('exit');
+      return true;
+    },
+    async request() {
+      calls.push('request');
+      return true;
+    },
+    subscribe(callback) {
+      calls.push('subscribe');
+      callbacks.add(callback);
+    },
+    unsubscribe(callback) {
+      calls.push('unsubscribe');
+      callbacks.delete(callback);
+    },
+  };
 }
 
-function wasWindowOperationRecorded(
-  backend: ReturnType<typeof recordingWindowBackend>,
-  operation: WindowOperation,
-): boolean {
-  return backend.calls.some((call) => call === operation || call.startsWith(`${operation}:`));
+function createTestHost(windowBackend: RecordingWindowBackend = recordingWindowBackend()): TestHost {
+  return { ui: { fullscreen: recordingFullscreenBackend() }, window: windowBackend };
 }
 
-function partialWindowBackend(operations: Partial<WindowBackend> = {}): WindowBackend {
-  return { ...operations };
-}
+let host: TestHost;
 
-afterEach(() => resetWindowBackendForTest());
+beforeEach(() => {
+  host = createTestHost();
+});
 
 describe('attachWindow', () => {
   it('attaches an existing handle without creating an Application and preserves identity', () => {
@@ -292,15 +232,15 @@ describe('attachWindow', () => {
       seen.push({ handle, win });
       return true;
     };
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     const handle = { id: 41 };
 
-    expect(attachWindow(win, handle, 'host')).toBe(true);
+    expect(attachWindow(host, win, handle, 'host')).toBe(true);
     expect(seen).toEqual([{ handle, win }]);
   });
 
-  it('uses one process-global backend for two independently attached windows', () => {
+  it('uses one explicit host for two independently attached windows', () => {
     const backend = recordingWindowBackend();
     const attached: unknown[] = [];
     const closed: unknown[] = [];
@@ -309,99 +249,61 @@ describe('attachWindow', () => {
       return true;
     };
     backend.close = (win) => closed.push(win);
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const first = createApplicationWindow();
     const second = createApplicationWindow();
 
-    expect(attachWindow(first, { id: 1 }, 'host')).toBe(true);
-    expect(attachWindow(second, { id: 2 }, 'flight')).toBe(true);
+    expect(attachWindow(host, first, { id: 1 }, 'host')).toBe(true);
+    expect(attachWindow(host, second, { id: 2 }, 'flight')).toBe(true);
     expect(attached).toEqual([first, second]);
-    expect(closeWindow(first)).toBe(true);
-    expect(closeWindow(first)).toBe(true);
+    expect(closeWindow(host, first)).toBe(true);
+    expect(closeWindow(host, first)).toBe(true);
     expect(closed).toEqual([first]);
   });
 
   it('emits one terminal close when a synchronous native callback and closeWindow converge', () => {
     const backend = recordingWindowBackend();
     backend.close = (win) => notifyWindowClosed(win);
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let closed = 0;
     let forwarded = 0;
     connectSignal(win.onClose, () => closed++);
     connectSignal(win.onFullscreenChanged, () => forwarded++);
-    expect(attachWindow(win, { id: 1 }, 'flight')).toBe(true);
-    attachWindowFullscreen(win);
+    expect(attachWindow(host, win, { id: 1 }, 'flight')).toBe(true);
+    attachWindowFullscreen(host, win);
 
-    expect(closeWindow(win)).toBe(true);
+    expect(closeWindow(host, win)).toBe(true);
     notifyWindowClosed(win);
-    document.dispatchEvent(new Event('fullscreenchange'));
+    host.ui.fullscreen.emit(true);
     expect(closed).toBe(1);
     expect(forwarded).toBe(0);
   });
 
   it('clears terminal state after the same window successfully reattaches', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
-    expect(closeWindow(win)).toBe(true);
-    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
-    expect(closeWindow(win)).toBe(true);
+    expect(attachWindow(host, win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(host, win)).toBe(true);
+    expect(attachWindow(host, win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(host, win)).toBe(true);
     expect(closed).toBe(2);
   });
 
-  it('falls through structurally to host attach and routes close back to the attaching layer', () => {
-    const custom = recordingWindowBackend();
-    const host = recordingWindowBackend();
-    delete custom.attach;
-    installWindowHostBackend(host);
-    setWindowBackend(custom);
+  it('pins close to the host that attached the window', () => {
+    const origin = createTestHost();
+    const active = createTestHost();
     const win = createApplicationWindow();
 
-    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
-    expect(host.calls).toContain('attach:host');
-    expect(closeWindow(win)).toBe(true);
-    expect(host.calls).toContain('close');
-    expect(custom.calls).not.toContain('close');
-  });
+    expect(attachWindow(origin, win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(active, win)).toBe(true);
 
-  it('lifecycle-pair axis: skips an orphan custom attach and pins the complete host pair', () => {
-    const calls: string[] = [];
-    const custom: WindowBackend = {
-      attach() {
-        calls.push('custom:attach');
-        return true;
-      },
-    };
-    const host: WindowBackend = {
-      attach() {
-        calls.push('host:attach');
-        return true;
-      },
-      close() {
-        calls.push('host:close');
-      },
-    };
-    installWindowHostBackend(host);
-    setWindowBackend(custom);
-    const win = createApplicationWindow();
-
-    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
-    expect(closeWindow(win)).toBe(true);
-
-    expect(calls).toEqual(['host:attach', 'host:close']);
-  });
-
-  it('returns false when neither custom nor host structurally provides attach', () => {
-    const backend = recordingWindowBackend();
-    delete backend.attach;
-    setWindowBackend(backend);
-
-    expect(attachWindow(createApplicationWindow(), { id: 1 }, 'host')).toBe(false);
+    expect(origin.window.calls).toEqual(['attach:host', 'close']);
+    expect(active.window.calls).toEqual([]);
   });
 });
 
@@ -476,15 +378,17 @@ describe('attachWindowFocus', () => {
 });
 
 describe('attachWindowFullscreen', () => {
-  it('emits onFullscreenChanged', () => {
+  it('mirrors subscribed fullscreen state and emits onFullscreenChanged', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
     });
-    attachWindowFullscreen(win);
-    document.dispatchEvent(new Event('fullscreenchange'));
+    attachWindowFullscreen(host, win);
+    host.ui.fullscreen.emit(true);
+    expect(win.fullscreen).toBe(true);
     expect(called).toBe(true);
+    expect(host.ui.fullscreen.calls).toEqual(['subscribe']);
   });
 });
 
@@ -691,8 +595,8 @@ describe('attachWindowVisibility', () => {
 describe('centerWindow', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
-    centerWindow(createApplicationWindow());
+    host = createTestHost(backend);
+    centerWindow(host, createApplicationWindow());
     expect(backend.calls).toContain('center');
   });
 });
@@ -700,35 +604,36 @@ describe('centerWindow', () => {
 describe('closeWindow', () => {
   it('closes and emits onClose when not vetoed', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let closed = false;
     connectSignal(win.onClose, () => {
       closed = true;
     });
-    expect(closeWindow(win)).toBe(true);
+    expect(closeWindow(host, win)).toBe(true);
     expect(backend.calls).toContain('close');
     expect(closed).toBe(true);
   });
 
   it('aborts and returns false when a listener vetoes', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     connectSignal(win.onCloseRequest, () => cancelSignal(win.onCloseRequest));
-    expect(closeWindow(win)).toBe(false);
+    expect(closeWindow(host, win)).toBe(false);
     expect(backend.calls).not.toContain('close');
   });
 
-  it('manual-absence axis: closes terminal state safely when no provider exists', () => {
+  it('closes terminal state once when called repeatedly', () => {
     const win = createApplicationWindow();
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(closeWindow(win)).toBe(true);
-    expect(closeWindow(win)).toBe(true);
+    expect(closeWindow(host, win)).toBe(true);
+    expect(closeWindow(host, win)).toBe(true);
 
     expect(closed).toBe(1);
+    expect(host.window.calls).toEqual(['close']);
   });
 });
 
@@ -787,7 +692,7 @@ describe('createApplicationWindow', () => {
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
     });
-    document.dispatchEvent(new Event('fullscreenchange'));
+    host.ui.fullscreen.emit(true);
     expect(called).toBe(false);
   });
 
@@ -854,10 +759,11 @@ describe('detachWindowFullscreen', () => {
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
     });
-    attachWindowFullscreen(win);
+    attachWindowFullscreen(host, win);
     detachWindowFullscreen(win);
-    document.dispatchEvent(new Event('fullscreenchange'));
+    host.ui.fullscreen.emit(true);
     expect(called).toBe(false);
+    expect(host.ui.fullscreen.calls).toEqual(['subscribe', 'unsubscribe']);
   });
 });
 
@@ -980,7 +886,7 @@ describe('disposeApplicationWindow', () => {
 
     const win = createApplicationWindow();
     attachWindowResize(win, document.createElement('div'));
-    attachWindowFullscreen(win);
+    attachWindowFullscreen(host, win);
 
     disposeApplicationWindow(win);
 
@@ -989,19 +895,18 @@ describe('disposeApplicationWindow', () => {
     connectSignal(win.onFullscreenChanged, () => {
       called = true;
     });
-    document.dispatchEvent(new Event('fullscreenchange'));
+    host.ui.fullscreen.emit(true);
     expect(called).toBe(false);
+    expect(host.ui.fullscreen.calls).toEqual(['subscribe', 'unsubscribe']);
 
     vi.unstubAllGlobals();
   });
 });
 
 describe('exitApplicationFullscreen', () => {
-  it('calls document.exitFullscreen', async () => {
-    const mock = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(document, 'exitFullscreen', { value: mock, configurable: true });
-    await exitApplicationFullscreen();
-    expect(mock).toHaveBeenCalled();
+  it('delegates to the fullscreen capability', async () => {
+    await expect(exitApplicationFullscreen(host)).resolves.toBe(true);
+    expect(host.ui.fullscreen.calls).toEqual(['exit']);
   });
 });
 
@@ -1014,87 +919,12 @@ describe('exitApplicationPointerLock', () => {
   });
 });
 
-describe('explainWindowBackend', () => {
-  it('reports host-not-enabled when no backend is installed', () => {
-    const explanation = explainWindowBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setWindowBackend(recordingWindowBackend());
-    const explanation = explainWindowBackend();
-    expect(explanation.layer).toBe('custom');
-  });
-});
-
-describe('explainWindowOperation', () => {
-  it('full-matrix sentinel axis: reports all 28 operations absent without counting the empty sentinel', () => {
-    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
-      expect(explainWindowOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
-      expect(hasWindowOperation(operation)).toBe(false);
-    }
-  });
-
-  it('full-matrix host axis: reports and dispatches every host operation through the same resolution', () => {
-    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
-      resetWindowBackendForTest();
-      const host = recordingWindowOperationBackend(operation);
-      installWindowHostBackend(host);
-
-      expect(explainWindowOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
-      expect(hasWindowOperation(operation)).toBe(true);
-      WINDOW_OPERATION_CALLS[operation](createApplicationWindow());
-      expect(wasWindowOperationRecorded(host, operation)).toBe(true);
-    }
-  });
-
-  it('full-matrix precedence axis: reports and dispatches custom before the same host operation', () => {
-    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
-      resetWindowBackendForTest();
-      const custom = recordingWindowOperationBackend(operation);
-      const host = recordingWindowOperationBackend(operation);
-      installWindowHostBackend(host);
-      setWindowBackend(custom);
-
-      expect(explainWindowOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
-      expect(hasWindowOperation(operation)).toBe(true);
-      WINDOW_OPERATION_CALLS[operation](createApplicationWindow());
-      expect(wasWindowOperationRecorded(custom, operation)).toBe(true);
-      expect(wasWindowOperationRecorded(host, operation)).toBe(false);
-    }
-  });
-
-  it('full-matrix fallback axis: an empty custom layer reports and dispatches every host operation', () => {
-    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
-      resetWindowBackendForTest();
-      const host = recordingWindowOperationBackend(operation);
-      installWindowHostBackend(host);
-      setWindowBackend({});
-
-      expect(explainWindowOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
-      expect(hasWindowOperation(operation)).toBe(true);
-      WINDOW_OPERATION_CALLS[operation](createApplicationWindow());
-      expect(wasWindowOperationRecorded(host, operation)).toBe(true);
-    }
-  });
-
-  it('open-pair axis: reports the complete host opener when custom open has no close', () => {
-    const host = recordingWindowOperationBackend('open');
-    installWindowHostBackend(host);
-    setWindowBackend({ open: () => true });
-
-    expect(explainWindowOperation('open')).toEqual({ implemented: true, layer: 'host', operation: 'open' });
-    expect(hasWindowOperation('open')).toBe(true);
-  });
-});
-
 describe('flashWindowFrame', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    flashWindowFrame(win);
+    flashWindowFrame(host, win);
     expect(backend.calls).toContain('flashWindowFrame');
   });
 });
@@ -1102,66 +932,21 @@ describe('flashWindowFrame', () => {
 describe('focusWindow', () => {
   it('marks focused and delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    focusWindow(win);
+    focusWindow(host, win);
     expect(win.focused).toBe(true);
     expect(backend.calls).toContain('focus');
   });
 });
 
-describe('getWindowBackend', () => {
-  it('falls back to a sentinel backend', () => {
-    expect(getWindowBackend()).not.toBeNull();
-  });
-
-  it('returns the custom backend when set', () => {
-    const backend = recordingWindowBackend();
-    setWindowBackend(backend);
-    expect(getWindowBackend()).toBe(backend);
-  });
-});
-
 describe('getWindowBounds', () => {
   it('fills the out bounds from the backend', () => {
-    setWindowBackend(recordingWindowBackend());
+    host = createTestHost();
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    expect(getWindowBounds(createApplicationWindow(), out)).toBe(out);
+    expect(getWindowBounds(host, createApplicationWindow(), out)).toBe(out);
     expect(out.width).toBe(3);
-  });
-
-  it('C-fallback axis: overwrites every stale out field from the entity mirror and returns the same object', () => {
-    const win = createApplicationWindow();
-    win.x = 10;
-    win.y = 20;
-    win.width = 640;
-    win.height = 480;
-    const out = { x: -1, y: -2, width: -3, height: -4 };
-
-    expect(getWindowBounds(win, out)).toBe(out);
-    expect(out).toEqual({ x: 10, y: 20, width: 640, height: 480 });
-  });
-
-  it('C-dispatch axis: falls through an uncovered custom backend to the host implementation', () => {
-    const calls: string[] = [];
-    installWindowHostBackend(
-      partialWindowBackend({
-        getBounds(_win, out) {
-          calls.push('host');
-          out.x = 1;
-          out.y = 2;
-          out.width = 3;
-          out.height = 4;
-          return out;
-        },
-      }),
-    );
-    setWindowBackend(partialWindowBackend());
-    const out = { x: 0, y: 0, width: 0, height: 0 };
-
-    expect(getWindowBounds(createApplicationWindow(), out)).toBe(out);
-    expect(calls).toEqual(['host']);
-    expect(out).toEqual({ x: 1, y: 2, width: 3, height: 4 });
+    expect(host.window.calls).toEqual(['getBounds']);
   });
 });
 
@@ -1172,41 +957,14 @@ describe('getWindowDisplay', () => {
   });
 });
 
-describe('hasWindowOperation', () => {
-  it('derives availability from explainWindowOperation for every operation', () => {
-    installWindowHostBackend(recordingWindowOperationBackend('setTitle'));
-
-    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
-      expect(hasWindowOperation(operation)).toBe(explainWindowOperation(operation).implemented);
-    }
-  });
-});
-
 describe('hideWindow', () => {
   it('marks not visible and delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    hideWindow(win);
+    hideWindow(host, win);
     expect(win.visible).toBe(false);
     expect(backend.calls).toContain('hide');
-  });
-});
-
-describe('installWindowHostBackend', () => {
-  it('installs the host backend on first call', () => {
-    const backend = recordingWindowBackend();
-    installWindowHostBackend(backend);
-    expect(getWindowBackend()).toBe(backend);
-  });
-
-  it('ignores a second different backend and sets conflict', () => {
-    const first = recordingWindowBackend();
-    const second = recordingWindowBackend();
-    installWindowHostBackend(first);
-    installWindowHostBackend(second);
-    expect(getWindowBackend()).toBe(first);
-    expect(explainWindowBackend().conflict).toBe(true);
   });
 });
 
@@ -1230,12 +988,12 @@ describe('lockApplicationPointer', () => {
 describe('maximizeWindow', () => {
   it('sets maximized and emits onMaximize once', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let count = 0;
     connectSignal(win.onMaximize, () => count++);
-    maximizeWindow(win);
-    maximizeWindow(win);
+    maximizeWindow(host, win);
+    maximizeWindow(host, win);
     expect(win.maximized).toBe(true);
     expect(count).toBe(1);
     expect(backend.calls).toContain('maximize');
@@ -1245,13 +1003,13 @@ describe('maximizeWindow', () => {
 describe('minimizeWindow', () => {
   it('sets minimized and emits onMinimize', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onMinimize, () => {
       called = true;
     });
-    minimizeWindow(win);
+    minimizeWindow(host, win);
     expect(win.minimized).toBe(true);
     expect(called).toBe(true);
   });
@@ -1263,15 +1021,15 @@ describe('notifyWindowClosed', () => {
     const order: string[] = [];
     let forwarded = 0;
     connectSignal(win.onFullscreenChanged, () => forwarded++);
-    attachWindowFullscreen(win);
+    attachWindowFullscreen(host, win);
     connectSignal(win.onClose, () => {
       order.push('close');
-      document.dispatchEvent(new Event('fullscreenchange'));
+      host.ui.fullscreen.emit(true);
       order.push(`observer:${forwarded}`);
     });
 
     notifyWindowClosed(win);
-    document.dispatchEvent(new Event('fullscreenchange'));
+    host.ui.fullscreen.emit(true);
     notifyWindowClosed(win);
 
     expect(order).toEqual(['close', 'observer:1']);
@@ -1282,41 +1040,25 @@ describe('notifyWindowClosed', () => {
     const win = createApplicationWindow();
     let forwarded = 0;
     connectSignal(win.onFullscreenChanged, () => forwarded++);
-    attachWindowFullscreen(win);
+    attachWindowFullscreen(host, win);
     connectSignal(win.onClose, () => {
       throw new Error('close listener failed');
     });
 
     expect(() => notifyWindowClosed(win)).toThrow('close listener failed');
-    document.dispatchEvent(new Event('fullscreenchange'));
+    host.ui.fullscreen.emit(true);
     expect(() => notifyWindowClosed(win)).not.toThrow();
 
     expect(forwarded).toBe(0);
   });
 });
 
-describe('observeWindowHostResult', () => {
-  it('records the operation and viability', () => {
-    installWindowHostBackend(recordingWindowBackend());
-    observeWindowHostResult('setTitle', true);
-    const explanation = explainWindowBackend();
-    expect(explanation.operation).toBe('setTitle');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records runtime-api-unavailable on failure', () => {
-    installWindowHostBackend(recordingWindowBackend());
-    observeWindowHostResult('setPosition', false);
-    expect(explainWindowBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
 describe('openWindow', () => {
   it('applies options to the entity and delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    expect(openWindow(win, { title: 'Game', width: 640, height: 480, alwaysOnTop: true })).toBe(true);
+    expect(openWindow(host, win, { title: 'Game', width: 640, height: 480, alwaysOnTop: true })).toBe(true);
     expect(win.title).toBe('Game');
     expect(win.width).toBe(640);
     expect(win.alwaysOnTop).toBe(true);
@@ -1325,117 +1067,68 @@ describe('openWindow', () => {
 
   it('centers the window after open when center option is true', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    openWindow(win, { title: 'Centered', center: true });
+    openWindow(host, win, { title: 'Centered', center: true });
     expect(backend.calls.filter((call) => call === 'center')).toHaveLength(1);
   });
 
   it('does not center when center option is not set', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    openWindow(win, { title: 'Normal' });
+    openWindow(host, win, { title: 'Normal' });
     expect(backend.calls).not.toContain('center');
   });
 
   it('re-arms terminal close and observer disposal after a successful reopen', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let closed = 0;
     let forwarded = 0;
     connectSignal(win.onClose, () => closed++);
     connectSignal(win.onFullscreenChanged, () => forwarded++);
 
-    expect(openWindow(win)).toBe(true);
-    attachWindowFullscreen(win);
-    expect(closeWindow(win)).toBe(true);
-    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(openWindow(host, win)).toBe(true);
+    attachWindowFullscreen(host, win);
+    expect(closeWindow(host, win)).toBe(true);
+    host.ui.fullscreen.emit(true);
     expect(forwarded).toBe(0);
 
-    expect(openWindow(win)).toBe(true);
-    attachWindowFullscreen(win);
-    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(openWindow(host, win)).toBe(true);
+    attachWindowFullscreen(host, win);
+    host.ui.fullscreen.emit(true);
     expect(forwarded).toBe(1);
-    expect(closeWindow(win)).toBe(true);
-    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(closeWindow(host, win)).toBe(true);
+    host.ui.fullscreen.emit(true);
 
     expect(closed).toBe(2);
     expect(forwarded).toBe(1);
   });
 
-  it('lifecycle-pair axis: skips an orphan custom opener and pins the complete host pair', () => {
+  it('releases through the origin host after a different host becomes active', () => {
     const calls: string[] = [];
-    const custom: WindowBackend = {
-      open() {
-        calls.push('custom:open');
-        return true;
-      },
+    const origin = createTestHost();
+    origin.window.close = () => {
+      calls.push('origin:close');
     };
-    const host: WindowBackend = {
-      close() {
-        calls.push('host:close');
-      },
-      open() {
-        calls.push('host:open');
-        return true;
-      },
+    origin.window.open = () => {
+      calls.push('origin:open');
+      return true;
     };
-    installWindowHostBackend(host);
-    setWindowBackend(custom);
-    const win = createApplicationWindow();
-
-    expect(openWindow(win)).toBe(true);
-    expect(closeWindow(win)).toBe(true);
-
-    expect(calls).toEqual(['host:open', 'host:close']);
-  });
-
-  it('manual-absence axis: returns false without calling an orphan opener', () => {
-    const calls: string[] = [];
-    setWindowBackend({
-      open() {
-        calls.push('open');
-        return true;
-      },
-    });
-
-    expect(openWindow(createApplicationWindow())).toBe(false);
-    expect(calls).toEqual([]);
-  });
-
-  it('lifecycle-ledger mutation axis: A-open/B-active releases through A, never current B', () => {
-    const calls: string[] = [];
-    const providerA: WindowBackend = {
-      close() {
-        calls.push('A:close');
-      },
-      open() {
-        calls.push('A:open');
-        return true;
-      },
+    const active = createTestHost();
+    active.window.close = () => {
+      calls.push('active:close');
     };
-    const providerB: WindowBackend = {
-      close() {
-        calls.push('B:close');
-      },
-      open() {
-        calls.push('B:open');
-        return true;
-      },
-    };
-    setWindowBackend(providerA);
     const win = createApplicationWindow();
     let closed = 0;
     connectSignal(win.onClose, () => closed++);
 
-    expect(openWindow(win)).toBe(true);
-    setWindowBackend(providerB);
-    expect(closeWindow(win)).toBe(true);
+    expect(openWindow(origin, win)).toBe(true);
+    expect(closeWindow(active, win)).toBe(true);
 
-    // Mutation proof for the canonical doctrine in agents/backend-lifecycle-ownership.md.
-    expect(calls).toEqual(['A:open', 'A:close']);
+    expect(calls).toEqual(['origin:open', 'origin:close']);
     expect(closed).toBe(1);
   });
 });
@@ -1462,27 +1155,25 @@ describe('prepareElementForInput', () => {
 });
 
 describe('requestApplicationFullscreen', () => {
-  it('calls requestFullscreen on the element', async () => {
-    const element = document.createElement('div');
-    const mock = vi.fn().mockResolvedValue(undefined);
-    element.requestFullscreen = mock;
-    await requestApplicationFullscreen(element);
-    expect(mock).toHaveBeenCalled();
+  it('passes the opaque target to the fullscreen capability', async () => {
+    const target: FullscreenTargetHandle = { __brand: 'FullscreenTargetHandle' };
+    await expect(requestApplicationFullscreen(host, target)).resolves.toBe(true);
+    expect(host.ui.fullscreen.calls).toEqual(['request']);
   });
 });
 
 describe('requestWindowAttention', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
-    requestWindowAttention(createApplicationWindow(), true);
+    host = createTestHost(backend);
+    requestWindowAttention(host, createApplicationWindow(), true);
     expect(backend.calls).toContain('requestAttention:true');
   });
 });
 
 describe('requestWindowClose', () => {
   it('returns true when not vetoed', () => {
-    setWindowBackend(recordingWindowBackend());
+    host = createTestHost();
     expect(requestWindowClose(createApplicationWindow())).toBe(true);
   });
 
@@ -1493,26 +1184,17 @@ describe('requestWindowClose', () => {
   });
 });
 
-describe('resetWindowBackendForTest', () => {
-  it('clears all backend slots', () => {
-    installWindowHostBackend(recordingWindowBackend());
-    setWindowBackend(recordingWindowBackend());
-    resetWindowBackendForTest();
-    expect(explainWindowBackend().layer).toBe('host-not-enabled');
-  });
-});
-
 describe('restoreWindow', () => {
   it('clears minimized/maximized and emits onRestore', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    maximizeWindow(win);
+    maximizeWindow(host, win);
     let restored = false;
     connectSignal(win.onRestore, () => {
       restored = true;
     });
-    restoreWindow(win);
+    restoreWindow(host, win);
     expect(win.maximized).toBe(false);
     expect(restored).toBe(true);
     expect(backend.calls).toContain('restore');
@@ -1522,28 +1204,20 @@ describe('restoreWindow', () => {
 describe('setWindowAlwaysOnTop', () => {
   it('sets state and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowAlwaysOnTop(win, true);
+    setWindowAlwaysOnTop(host, win, true);
     expect(win.alwaysOnTop).toBe(true);
     expect(backend.calls).toContain('setAlwaysOnTop:true');
-  });
-});
-
-describe('setWindowBackend', () => {
-  it('clears back to the sentinel when passed null', () => {
-    setWindowBackend(recordingWindowBackend());
-    setWindowBackend(null);
-    expect(getWindowBackend()).not.toBeNull();
   });
 });
 
 describe('setWindowContentProtection', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowContentProtection(win, true);
+    setWindowContentProtection(host, win, true);
     expect(backend.calls).toContain('setContentProtection:true');
   });
 });
@@ -1551,12 +1225,12 @@ describe('setWindowContentProtection', () => {
 describe('setWindowFullscreen', () => {
   it('sets state and emits onFullscreenChanged once', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let count = 0;
     connectSignal(win.onFullscreenChanged, () => count++);
-    setWindowFullscreen(win, true);
-    setWindowFullscreen(win, true);
+    setWindowFullscreen(host, win, true);
+    setWindowFullscreen(host, win, true);
     expect(win.fullscreen).toBe(true);
     expect(count).toBe(1);
   });
@@ -1565,9 +1239,9 @@ describe('setWindowFullscreen', () => {
 describe('setWindowHasShadow', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowHasShadow(win, false);
+    setWindowHasShadow(host, win, false);
     expect(backend.calls).toContain('setHasShadow:false');
   });
 });
@@ -1575,9 +1249,9 @@ describe('setWindowHasShadow', () => {
 describe('setWindowIcon', () => {
   it('sets the icon and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowIcon(win, 'icon.png');
+    setWindowIcon(host, win, 'icon.png');
     expect(win.icon).toBe('icon.png');
     expect(backend.calls).toContain('setIcon:icon.png');
   });
@@ -1586,9 +1260,9 @@ describe('setWindowIcon', () => {
 describe('setWindowMaximumSize', () => {
   it('sets constraints and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowMaximumSize(win, 1920, 1080);
+    setWindowMaximumSize(host, win, 1920, 1080);
     expect(win.maxWidth).toBe(1920);
     expect(win.maxHeight).toBe(1080);
     expect(backend.calls).toContain('setMaximumSize:1920,1080');
@@ -1598,8 +1272,8 @@ describe('setWindowMaximumSize', () => {
 describe('setWindowMenuBarVisible', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
-    setWindowMenuBarVisible(createApplicationWindow(), false);
+    host = createTestHost(backend);
+    setWindowMenuBarVisible(host, createApplicationWindow(), false);
     expect(backend.calls).toContain('setMenuBarVisible:false');
   });
 });
@@ -1607,9 +1281,9 @@ describe('setWindowMenuBarVisible', () => {
 describe('setWindowMinimumSize', () => {
   it('sets constraints and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowMinimumSize(win, 320, 240);
+    setWindowMinimumSize(host, win, 320, 240);
     expect(win.minWidth).toBe(320);
     expect(win.minHeight).toBe(240);
   });
@@ -1618,9 +1292,9 @@ describe('setWindowMinimumSize', () => {
 describe('setWindowOpacity', () => {
   it('sets opacity and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowOpacity(win, 0.5);
+    setWindowOpacity(host, win, 0.5);
     expect(win.opacity).toBe(0.5);
     expect(backend.calls).toContain('setOpacity:0.5');
   });
@@ -1629,8 +1303,8 @@ describe('setWindowOpacity', () => {
 describe('setWindowParent', () => {
   it('delegates to the backend with null', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
-    setWindowParent(createApplicationWindow(), null);
+    host = createTestHost(backend);
+    setWindowParent(host, createApplicationWindow(), null);
     expect(backend.calls).toContain('setParent:null');
   });
 });
@@ -1638,13 +1312,13 @@ describe('setWindowParent', () => {
 describe('setWindowPosition', () => {
   it('sets position and emits onMove', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let moved = false;
     connectSignal(win.onMove, () => {
       moved = true;
     });
-    setWindowPosition(win, 100, 50);
+    setWindowPosition(host, win, 100, 50);
     expect(win.x).toBe(100);
     expect(win.y).toBe(50);
     expect(moved).toBe(true);
@@ -1654,8 +1328,8 @@ describe('setWindowPosition', () => {
 describe('setWindowProgress', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
-    setWindowProgress(createApplicationWindow(), 0.25);
+    host = createTestHost(backend);
+    setWindowProgress(host, createApplicationWindow(), 0.25);
     expect(backend.calls).toContain('setProgress:0.25');
   });
 });
@@ -1663,9 +1337,9 @@ describe('setWindowProgress', () => {
 describe('setWindowResizable', () => {
   it('sets state and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowResizable(win, false);
+    setWindowResizable(host, win, false);
     expect(win.resizable).toBe(false);
     expect(backend.calls).toContain('setResizable:false');
   });
@@ -1674,13 +1348,13 @@ describe('setWindowResizable', () => {
 describe('setWindowSize', () => {
   it('sets size and emits onResize', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
     let resized = false;
     connectSignal(win.onResize, () => {
       resized = true;
     });
-    setWindowSize(win, 800, 600);
+    setWindowSize(host, win, 800, 600);
     expect(win.width).toBe(800);
     expect(win.height).toBe(600);
     expect(resized).toBe(true);
@@ -1690,9 +1364,9 @@ describe('setWindowSize', () => {
 describe('setWindowSkipTaskbar', () => {
   it('sets state and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowSkipTaskbar(win, true);
+    setWindowSkipTaskbar(host, win, true);
     expect(win.skipTaskbar).toBe(true);
     expect(backend.calls).toContain('setSkipTaskbar:true');
   });
@@ -1701,9 +1375,9 @@ describe('setWindowSkipTaskbar', () => {
 describe('setWindowTitle', () => {
   it('sets the title and delegates', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    setWindowTitle(win, 'My App');
+    setWindowTitle(host, win, 'My App');
     expect(win.title).toBe('My App');
     expect(backend.calls).toContain('setTitle:My App');
   });
@@ -1712,128 +1386,11 @@ describe('setWindowTitle', () => {
 describe('showWindow', () => {
   it('marks visible and delegates to the backend', () => {
     const backend = recordingWindowBackend();
-    setWindowBackend(backend);
+    host = createTestHost(backend);
     const win = createApplicationWindow();
-    hideWindow(win);
-    showWindow(win);
+    hideWindow(host, win);
+    showWindow(host, win);
     expect(win.visible).toBe(true);
     expect(backend.calls).toContain('show');
-  });
-});
-
-describe('WindowBackend B-class migration axes', () => {
-  it('classification-population axis: derives the exact 28-operation 25/1/2 partition without attach', () => {
-    const counts: Record<WindowOperationClass, number> = { B: 0, C: 0, manual: 0 };
-    for (const classification of Object.values(WINDOW_OPERATION_CLASSES)) counts[classification]++;
-
-    expect(Object.keys(WINDOW_OPERATION_CLASSES)).toHaveLength(28);
-    expect(WINDOW_OPERATION_CLASSES).not.toHaveProperty('attach');
-    expect(counts).toEqual({ B: 25, C: 1, manual: 2 });
-  });
-
-  it('sentinel-exclusion axis: publishes no B member and every absent B command remains safe', () => {
-    expect(Object.keys(getWindowBackend()).sort()).toEqual([]);
-
-    for (const invoke of Object.values(WINDOW_B_OPERATION_CALLS)) {
-      expect(() => invoke(createApplicationWindow())).not.toThrow();
-    }
-  });
-
-  it('precedence axis: a custom B member wins over the same host member', () => {
-    const calls: string[] = [];
-    installWindowHostBackend(
-      partialWindowBackend({
-        setTitle() {
-          calls.push('host');
-        },
-      }),
-    );
-    setWindowBackend(
-      partialWindowBackend({
-        setTitle() {
-          calls.push('custom');
-        },
-      }),
-    );
-
-    setWindowTitle(createApplicationWindow(), 'Flight');
-
-    expect(calls).toEqual(['custom']);
-  });
-
-  it('dispatch-alignment axis: an uncovered custom B member falls through to the host member', () => {
-    const calls: string[] = [];
-    installWindowHostBackend(
-      partialWindowBackend({
-        setProgress() {
-          calls.push('host:setProgress');
-        },
-      }),
-    );
-    setWindowBackend(
-      partialWindowBackend({
-        setTitle() {
-          calls.push('custom:setTitle');
-        },
-      }),
-    );
-    const win = createApplicationWindow();
-
-    setWindowTitle(win, 'Flight');
-    setWindowProgress(win, 0.5);
-
-    expect(calls).toEqual(['custom:setTitle', 'host:setProgress']);
-  });
-
-  it('core-state axis: absent B providers preserve capability-owned state and signal changes', () => {
-    const win = createApplicationWindow();
-    const signals = { fullscreen: 0, maximize: 0, minimize: 0, move: 0, resize: 0, restore: 0 };
-    connectSignal(win.onFullscreenChanged, () => signals.fullscreen++);
-    connectSignal(win.onMaximize, () => signals.maximize++);
-    connectSignal(win.onMinimize, () => signals.minimize++);
-    connectSignal(win.onMove, () => signals.move++);
-    connectSignal(win.onResize, () => signals.resize++);
-    connectSignal(win.onRestore, () => signals.restore++);
-
-    focusWindow(win);
-    hideWindow(win);
-    maximizeWindow(win);
-    minimizeWindow(win);
-    restoreWindow(win);
-    setWindowAlwaysOnTop(win, true);
-    setWindowFullscreen(win, true);
-    setWindowIcon(win, 'icon.png');
-    setWindowMaximumSize(win, 1920, 1080);
-    setWindowMinimumSize(win, 320, 240);
-    setWindowOpacity(win, 0.5);
-    setWindowPosition(win, 10, 20);
-    setWindowResizable(win, false);
-    setWindowSize(win, 640, 480);
-    setWindowSkipTaskbar(win, true);
-    setWindowTitle(win, 'Flight');
-    showWindow(win);
-
-    expect(win).toMatchObject({
-      alwaysOnTop: true,
-      focused: true,
-      fullscreen: true,
-      height: 480,
-      icon: 'icon.png',
-      maxHeight: 1080,
-      maximized: false,
-      maxWidth: 1920,
-      minHeight: 240,
-      minimized: false,
-      minWidth: 320,
-      opacity: 0.5,
-      resizable: false,
-      skipTaskbar: true,
-      title: 'Flight',
-      visible: true,
-      width: 640,
-      x: 10,
-      y: 20,
-    });
-    expect(signals).toEqual({ fullscreen: 1, maximize: 1, minimize: 1, move: 1, resize: 1, restore: 1 });
   });
 });

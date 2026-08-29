@@ -1,5 +1,4 @@
 import { setAppBackend } from '@flighthq/app/contract';
-import { setWindowBackend } from '@flighthq/application/contract';
 import { setClipboardBackend } from '@flighthq/clipboard/contract';
 import { setDialogBackend } from '@flighthq/dialog/contract';
 import { setIpcBackend } from '@flighthq/ipc/contract';
@@ -13,7 +12,13 @@ import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setStorageBackend } from '@flighthq/storage/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
-import type { ElectronApi, ElectronBackendOptions } from '@flighthq/types/contract';
+import type {
+  ElectronApi,
+  ElectronBackendOptions,
+  HasWindowAttach,
+  HasWindowOpen,
+  Host,
+} from '@flighthq/types/contract';
 import { setUpdaterBackend } from '@flighthq/updater/contract';
 
 import { createElectronAppBackend } from './electronApp';
@@ -33,22 +38,24 @@ import { createElectronTrayBackend } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
 
-// Installs every Electron host backend into its capability package in one call. Run this once in the
-// Electron main process, passing the `electron` module plus the real node:fs module (needed for the
-// storage backend):
+// Builds the explicit Electron host and installs capabilities that have not yet migrated from their
+// package-local seams. Run this once in the Electron main process, passing the `electron` module plus
+// the real node:fs module (needed for the storage backend):
 //
 //   import * as electron from 'electron';
 //   import * as fs from 'node:fs';
 //   const electronApi: ElectronApi = { ...electron, fs, Tray: electron.Tray as ElectronApi['Tray'] };
 //   registerElectronBackends(electronApi);
 //
-// After this, the platform/app/window seams resolve to their Electron implementations instead of the
-// web defaults. Each set*Backend(null) (per package) reverts to the web default; there is no bulk
-// unregister because backends are independent — clear the ones you replaced.
-export function registerElectronBackends(electron: ElectronApi, options: Readonly<ElectronBackendOptions> = {}): void {
+// Pass the returned host to window operations. The remaining set*Backend(null) package seams revert
+// independently; there is no bulk unregister because those backends are independent.
+export function registerElectronBackends(
+  electron: ElectronApi,
+  options: Readonly<ElectronBackendOptions> = {},
+): Host & HasWindowAttach & HasWindowOpen {
+  const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
-  setWindowBackend(createElectronWindowBackend(electron));
   setDialogBackend(createElectronDialogBackend(electron));
   setClipboardBackend(createElectronClipboardBackend(electron));
   setMenuBackend(createElectronMenuBackend(electron));
@@ -62,4 +69,18 @@ export function registerElectronBackends(electron: ElectronApi, options: Readonl
   setProtocolBackend(createElectronProtocolBackend(electron));
   setUpdaterBackend(createElectronUpdaterBackend(electron));
   setIpcBackend(createElectronIpcBackend(electron));
+  return {
+    accessibility: {},
+    app: {},
+    dialog: {},
+    graphics: {},
+    input: {},
+    media: {},
+    net: {},
+    storage: {},
+    system: {},
+    text: {},
+    ui: {},
+    window,
+  };
 }
