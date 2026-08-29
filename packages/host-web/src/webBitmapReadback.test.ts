@@ -6,11 +6,20 @@ import {
 } from '@flighthq/bitmap/contract';
 import { vi } from 'vitest';
 
-import { enableHostWebBitmapReadback } from './webBitmapReadback';
+import { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
 
 afterEach(() => {
   resetBitmapReadbackBackendForTest();
   vi.restoreAllMocks();
+});
+
+describe('createWebBitmapReadbackBackend', () => {
+  it('creates an explicit readback operation without touching the DOM', () => {
+    const createElement = vi.spyOn(document, 'createElement');
+
+    expect(createWebBitmapReadbackBackend().readBitmap).toEqual(expect.any(Function));
+    expect(createElement).not.toHaveBeenCalled();
+  });
 });
 
 describe('enableHostWebBitmapReadback', () => {
