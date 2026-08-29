@@ -30,7 +30,7 @@ describe('backend replacement lifetime census', () => {
   // ★ THE HISTORICAL BASELINE is IMMUTABLE — it records the population and enforced set at the moment the
   // gate was established. A baseline that moves with the thing it measures measures nothing. The total stays
   // at 43, the three original names stay as they were, and growth since then is visible as signed deltas:
-  // baseline 43 / current 46 → "+3 new seams", baseline 3 enforced / current 5 → "+2 newly enforced".
+  // baseline 43 / current 50 → "+7 new seams", baseline 3 enforced / current 5 → "+2 newly enforced".
   // NEVER update this to absorb subsequent slices — that erases history.
   const HISTORICAL_BASELINE: BackendLifecycleFloor = {
     enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'],
