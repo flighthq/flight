@@ -39,6 +39,7 @@ import {
   getGlColorAdjustmentMaterialFeatureGuard,
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
+  registerGlContextTeardown,
 } from './glRenderState';
 import { ensureDefaultGlBitmapShader } from './glShader';
 import { makeGL } from './glTestHelper';
@@ -571,6 +572,34 @@ describe('destroyGlRenderState', () => {
     const state = createGlRenderState(gl);
     destroyGlRenderState(state);
     expect(() => destroyGlRenderState(state)).not.toThrow();
+  });
+
+  it('invokes registered teardown callbacks when the last reference is destroyed', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const stateA = createGlRenderStateFromContextState(contextState);
+    const stateB = createGlRenderStateFromContextState(contextState);
+    const teardown = vi.fn();
+    registerGlContextTeardown(stateA, teardown);
+
+    destroyGlRenderState(stateA);
+    expect(teardown).not.toHaveBeenCalled();
+
+    destroyGlRenderState(stateB);
+    expect(teardown).toHaveBeenCalledOnce();
+    expect(teardown).toHaveBeenCalledWith(gl);
+  });
+
+  it('does not invoke teardowns when references remain', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const stateA = createGlRenderStateFromContextState(contextState);
+    createGlRenderStateFromContextState(contextState);
+    const teardown = vi.fn();
+    registerGlContextTeardown(stateA, teardown);
+
+    destroyGlRenderState(stateA);
+    expect(teardown).not.toHaveBeenCalled();
   });
 });
 

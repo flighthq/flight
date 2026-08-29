@@ -48,6 +48,7 @@ import {
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   isWgpuSupported,
+  registerWgpuDeviceTeardown,
   resolveWgpuApplyBlendMode,
 } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -650,6 +651,30 @@ describe('destroyWgpuRenderState', () => {
 
     destroyWgpuRenderState(offscreen);
     destroyWgpuRenderState(state);
+  });
+
+  it('invokes registered teardown callbacks when the last reference is destroyed', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(state);
+    const teardown = vi.fn();
+    registerWgpuDeviceTeardown(state, teardown);
+
+    destroyWgpuRenderState(state);
+    expect(teardown).not.toHaveBeenCalled();
+
+    destroyWgpuRenderState(offscreen);
+    expect(teardown).toHaveBeenCalledOnce();
+    expect(teardown).toHaveBeenCalledWith(state.device);
+  });
+
+  it('does not invoke teardowns when references remain', async () => {
+    const state = await createWgpuRenderStateForTest();
+    createWgpuOffscreenRenderState(state);
+    const teardown = vi.fn();
+    registerWgpuDeviceTeardown(state, teardown);
+
+    destroyWgpuRenderState(state);
+    expect(teardown).not.toHaveBeenCalled();
   });
 });
 
