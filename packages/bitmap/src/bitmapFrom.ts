@@ -3,26 +3,12 @@ import type { Image, Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 /**
- * Reads a host-backed Image into a newly allocated, CPU-readable Bitmap. The readback draws
- * through a detached canvas; callers that need both representations should retain both objects.
+ * Reads a host-backed Image into a newly allocated, CPU-readable Bitmap. Returns `null` when the
+ * readback cannot complete — call `explainBitmapReadback` with `(resource.source, resource.width,
+ * resource.height)` for the reason.
  */
-export function captureBitmapFromImageResource(resource: Readonly<Image>): Bitmap {
-  const canvas = document.createElement('canvas');
-  canvas.width = resource.width;
-  canvas.height = resource.height;
-  const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(resource.source, 0, 0);
-  const raw = ctx.getImageData(0, 0, resource.width, resource.height);
-  return createEntity({
-    alphaType: 'straight',
-    gamut: raw.colorSpace as 'srgb' | 'display-p3',
-    data: raw.data,
-    format: 'rgba8unorm',
-    height: resource.height,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width: resource.width,
-  });
+export function captureBitmapFromImageResource(resource: Readonly<Image>): Bitmap | null {
+  return createBitmapFromImageSource(resource.source, resource.width, resource.height);
 }
 
 export function createBitmapFromCanvas(
