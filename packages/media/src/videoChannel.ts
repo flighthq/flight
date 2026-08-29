@@ -1,6 +1,21 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/types/contract';
 
+export function destroyVideoChannel(channel: VideoChannel): void {
+  const element = getVideoElement(channel.source);
+  if (element !== null) {
+    const runtime = videoChannelRuntimes.get(element);
+    if (runtime !== undefined) {
+      element.removeEventListener('ended', runtime.onEnded);
+      videoChannelRuntimes.delete(element);
+    }
+    element.pause();
+  }
+  channel.source = null;
+  channel.state = 'stopped';
+  channel.currentTime = 0;
+}
+
 export function getVideoChannelCurrentTime(channel: VideoChannel): number {
   const element = getVideoElement(channel.source);
   if (element === null || channel.state !== 'playing') return channel.currentTime;
@@ -112,8 +127,8 @@ interface VideoChannelRuntime {
 
 const videoChannelRuntimes = new WeakMap<HTMLVideoElement, VideoChannelRuntime>();
 
-function getVideoElement(resource: Readonly<VideoResource>): HTMLVideoElement | null {
-  return resource.element as HTMLVideoElement | null;
+function getVideoElement(resource: Readonly<VideoResource> | null): HTMLVideoElement | null {
+  return (resource?.element as HTMLVideoElement | null) ?? null;
 }
 
 function clamp(value: number, min: number, max: number): number {

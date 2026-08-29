@@ -5,6 +5,7 @@ export {
   createAudioMixer,
   destroyAudioChannel,
   destroyAudioMixer,
+  destroyVideoChannel,
   explainAudioDeviceBackend,
   explainAudioDeviceOperation,
   fadeAudioBusGain,

@@ -9,7 +9,7 @@ export interface VideoChannel {
   length: number;
   loops: number;
   playbackRate: number;
-  source: VideoResource;
+  source: VideoResource | null;
   state: VideoChannelState;
   onComplete: Signal<() => void>;
 }

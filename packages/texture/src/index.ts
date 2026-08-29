@@ -18,6 +18,7 @@ export {
   createTexture2D,
   createTilingSampler,
   createVideoTexture,
+  destroyVideoTexture,
   equalsCubeTexture,
   equalsSampler,
   equalsTexture,
