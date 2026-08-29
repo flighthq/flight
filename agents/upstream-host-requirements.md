@@ -1187,3 +1187,32 @@ Builder3's set is right — empty, absent backend, terminal custom failure over 
 success — asserting `bitmap` iff `readable` and the exact reason. Add one case: **a source large
 enough that a full read would be wasteful must still explain in constant work**, which pins the
 one-pixel probe against a later "simplification" that reintroduces the full read.
+
+---
+
+# H16 — a finding that names an artifact must cite where it is — 2026-08-29
+
+Second occurrence, so it is a pattern rather than an incident.
+
+- The flight-hx review asserted HostLime "already passes Lime's context to `createGlRenderState`".
+  No path, call site, test, or diff accompanied it. It was recorded as fact and used to **rate** the
+  GL seam as *cleanup, not blocking* — see [H6](#h6), re-rated *unestablished*.
+- The S10 audit reported that an "accepted 15-row browser matrix" was not being used. Searching the
+  tree, the full history (`git log --all -S`), and the filesystem returns nothing. The search was
+  validated against known positives first, so the empty result is a true zero, not a wrong pattern.
+  **The matrix never existed.**
+
+Both were plausible, both were written by careful people, and both generated real work — the second
+one blocked a builder who correctly refused to invent the missing artifact.
+
+**Rule.** A finding that names an artifact — a matrix, a call site, a prior decision, a consumer
+behaviour — must cite where that artifact is. A finding that cannot be traced to one is **closed as
+unfounded**, not carried forward as debt.
+
+The asymmetry that makes this worth enforcing: an unfounded finding is indistinguishable from a real
+one until someone tries to act on it, and by then it has already been budgeted, assigned, and used to
+justify a priority. Carrying it costs more than dropping it, because it arrives wearing the
+authority of everything filed beside it.
+
+Corollary for anyone acting on a finding: **refusing to invent a missing artifact is correct
+behaviour, not an obstruction.** Say it is absent and escalate.
