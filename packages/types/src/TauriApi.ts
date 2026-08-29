@@ -58,7 +58,7 @@ export interface TauriProcessPlugin {
 
 // `@tauri-apps/plugin-clipboard-manager` — the async system clipboard. Only text + clear are modeled;
 // Tauri's image flavor crosses as an `Image` object (not a data URL) and it has no HTML/RTF/bookmark
-// read, so those ClipboardBackend methods report their sentinels.
+// read, so the Tauri host exposes only the text clipboard capability vector.
 export interface TauriClipboardManager {
   clear(): Promise<void>;
   readText(): Promise<string>;

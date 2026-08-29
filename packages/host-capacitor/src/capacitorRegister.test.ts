@@ -1,5 +1,5 @@
 import { getAppBackend, setAppBackend } from '@flighthq/app/contract';
-import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
+import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getConnectivityBackend, setConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
@@ -9,6 +9,7 @@ import { getShareBackend, setShareBackend } from '@flighthq/share/contract';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { capacitorHost, registerCapacitorBackends } from './capacitorRegister';
 
@@ -67,7 +68,6 @@ function fakeCapacitor(): CapacitorApi {
 
 afterEach(() => {
   setAppBackend(null);
-  setClipboardBackend(null);
   setConnectivityBackend(null);
   setDeviceBackend(null);
   setFileSystemBackend(null);
@@ -90,7 +90,8 @@ describe('capacitorHost', () => {
   // selecting it actually gets you.
   it('claims only what has migrated, leaving unmigrated groups empty', () => {
     const host = capacitorHost(fakeCapacitor());
-    // Migrated: dialog, input, and notification are claimed with real Capacitor providers.
+    // Migrated: clipboard, dialog, input, and notification are claimed with real Capacitor providers.
+    expect(host.clipboard.text).toBeDefined();
     expect(host.dialog.message).toBeDefined();
     expect(host.input.haptics).toBeDefined();
     expect(host.notification.delivery).toBeDefined();
@@ -113,6 +114,8 @@ describe('registerCapacitorBackends', () => {
     expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.dialog.prompt.prompt).toBeTypeOf('function');
+    expect(Object.keys(host.clipboard).sort()).toEqual(['image', 'text']);
+    expect(host.clipboard.text.readText).toBeTypeOf('function');
     expect(getAppBackend()).not.toBeNull();
     expect(getConnectivityBackend()).not.toBeNull();
     expect(getDeviceBackend()).not.toBeNull();
@@ -135,7 +138,7 @@ describe('registerCapacitorBackends', () => {
   });
 
   it('routes a capability call through to the Capacitor backend', async () => {
-    registerCapacitorBackends(fakeCapacitor());
-    expect(await readClipboardText()).toBe('CAP-TEXT');
+    const host = registerCapacitorBackends(fakeCapacitor());
+    expect(await readClipboardText(host)).toBe('CAP-TEXT');
   });
 });

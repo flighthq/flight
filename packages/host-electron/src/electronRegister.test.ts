@@ -1,8 +1,9 @@
 import { getAppName, setAppBackend } from '@flighthq/app/contract';
-import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
+import { readClipboardText } from '@flighthq/clipboard/contract';
 import { setStorageBackend } from '@flighthq/storage/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerElectronBackends } from './electronRegister';
 
@@ -44,7 +45,6 @@ function fakeElectron(): ElectronApi {
 }
 
 afterEach(() => {
-  setClipboardBackend(null);
   setAppBackend(null);
   setStorageBackend(null);
 });
@@ -57,8 +57,9 @@ describe('registerElectronBackends', () => {
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.close.closeNotification).toBeTypeOf('function');
+    expect(Object.keys(host.clipboard).sort()).toEqual(['bookmark', 'formats', 'image', 'text']);
     expect(host.window.open).toBeTypeOf('function');
     expect(getAppName()).toBe('ElectronApp');
-    expect(await readClipboardText()).toBe('ELECTRON-TEXT');
+    expect(await readClipboardText(host)).toBe('ELECTRON-TEXT');
   });
 });

@@ -1,36 +1,29 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  BackendExplanation,
-  ClipboardBackend,
   ClipboardBookmark,
   ClipboardWatch,
   ClipboardWriteItem,
+  HasClipboardBookmark,
+  HasClipboardChange,
+  HasClipboardFormats,
+  HasClipboardImage,
+  HasClipboardText,
 } from '@flighthq/types/contract';
-import { ClipboardFormatBookmark, ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
+import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
 
-// Attaches `watch` to the active backend's change subscription. Emits watch.onChange on each
-// clipboard change. Idempotent: a prior subscription is torn down first.
-// Pair with detachClipboardWatch / disposeClipboardWatch.
-export function attachClipboardWatch(watch: ClipboardWatch): void {
+// Attaches watch to the explicitly supplied host's clipboard change subscription. Attaching the
+// same watch again first releases its prior subscription, even when the new host is different.
+export function attachClipboardWatch(host: HasClipboardChange, watch: ClipboardWatch): void {
   detachClipboardWatch(watch);
-  const listener = () => {
-    emitSignal(watch.onChange);
-  };
-  let unsubscribe = getClipboardBackend().subscribeClipboardChange(listener);
-  const entry: ClipboardWatchSubscription = {
-    listener,
-    detach: () => unsubscribe(),
-    rebind: (backend) => {
-      unsubscribe();
-      unsubscribe = backend.subscribeClipboardChange(listener);
-    },
-  };
-  _watchSubscriptions.set(watch, entry);
+  const change = host.clipboard.change;
+  const callback = () => emitSignal(watch.onChange);
+  change.subscribe(callback);
+  _watchSubscriptions.set(watch, { callback, change });
 }
 
 // Clears the system clipboard. Returns false when the host denies access. Sentinel, not throw.
-export function clearClipboard(): Promise<boolean> {
-  return getClipboardBackend().clear();
+export function clearClipboard(host: HasClipboardText): Promise<boolean> {
+  return host.clipboard.text.clear();
 }
 
 // Allocates a ClipboardWatch event entity with an inert signal.
@@ -39,507 +32,138 @@ export function createClipboardWatch(): ClipboardWatch {
   return { onChange: createSignal() };
 }
 
-// Builds the default web backend over navigator.clipboard. Reads return '' / false / [] when the API
-// is absent (non-secure context, jsdom) or the user denies permission.
-export function createWebClipboardBackend(): ClipboardBackend {
-  // Converts image data URLs through the browser fetch implementation as part of this web backend;
-  // ordinary formats need no transport and become a Blob directly.
-  async function blobFromFormatData(format: string, data: string): Promise<Blob> {
-    if (format.startsWith('image/') && data.startsWith('data:')) {
-      const response = await fetch(data);
-      return response.blob();
-    }
-    return new Blob([data], { type: format });
-  }
-
-  return {
-    async readFormat(format) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.read !== 'function') return '';
-      try {
-        const items = await cb.read();
-        for (const item of items) {
-          if (item.types.includes(format)) {
-            const blob = await item.getType(format);
-            if (format.startsWith('image/')) return readBlobAsDataUrl(blob);
-            return blob.text();
-          }
-        }
-      } catch {
-        return '';
-      }
-      return '';
-    },
-    async writeFormat(format, data) {
-      const cb = getWritableWebClipboard();
-      if (cb === null) return false;
-      try {
-        const blob = await blobFromFormatData(format, data);
-        await cb.write([new ClipboardItem({ [format]: blob })]);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    async hasFormat(format) {
-      const formats = await this.getFormats();
-      return formats.includes(format);
-    },
-    async getFormats() {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.read !== 'function') return [];
-      try {
-        const items = await cb.read();
-        const out: string[] = [];
-        for (const item of items) {
-          for (const t of item.types) {
-            if (!out.includes(t)) out.push(t);
-          }
-        }
-        return out;
-      } catch {
-        return [];
-      }
-    },
-    async writeItems(items) {
-      const cb = getWritableWebClipboard();
-      if (cb === null) return false;
-      try {
-        const entry: Record<string, Blob> = {};
-        for (const item of items) {
-          entry[item.format] = await blobFromFormatData(item.format, item.data);
-        }
-        await cb.write([new ClipboardItem(entry)]);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    async readItems(formats) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.read !== 'function') return {};
-      try {
-        const clipItems = await cb.read();
-        const result: Record<string, string> = {};
-        for (const clipItem of clipItems) {
-          for (const format of formats) {
-            if (clipItem.types.includes(format) && !(format in result)) {
-              const blob = await clipItem.getType(format);
-              result[format] = format.startsWith('image/') ? await readBlobAsDataUrl(blob) : await blob.text();
-            }
-          }
-        }
-        return result;
-      } catch {
-        return {};
-      }
-    },
-    async readText() {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.readText !== 'function') return '';
-      try {
-        return await cb.readText();
-      } catch {
-        return '';
-      }
-    },
-    async writeText(text) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.writeText !== 'function') return false;
-      try {
-        await cb.writeText(text);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    async readHtml() {
-      return this.readFormat(ClipboardFormatHtml);
-    },
-    async writeHtml(html) {
-      return this.writeFormat(ClipboardFormatHtml, html);
-    },
-    async hasText() {
-      return (await this.readText()).length > 0;
-    },
-    async readImage() {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.read !== 'function') return '';
-      try {
-        const items = await cb.read();
-        for (const item of items) {
-          const type = item.types.find((t) => t.startsWith('image/'));
-          if (type !== undefined) {
-            const blob = await item.getType(type);
-            return readBlobAsDataUrl(blob);
-          }
-        }
-      } catch {
-        return '';
-      }
-      return '';
-    },
-    async writeImage(dataUrl) {
-      const cb = getWritableWebClipboard();
-      if (cb === null) return false;
-      try {
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        await cb.write([new ClipboardItem({ [blob.type]: blob })]);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    async hasImage() {
-      return (await this.readImage()).length > 0;
-    },
-    async readRTF() {
-      return this.readFormat(ClipboardFormatRtf);
-    },
-    async writeRTF(rtf) {
-      return this.writeFormat(ClipboardFormatRtf, rtf);
-    },
-    // The web platform exposes no clipboard bookmark format; a native host is required to read one.
-    async readBookmark() {
-      return null;
-    },
-    // The web platform exposes no clipboard bookmark format; a native host is required to write one.
-    async writeBookmark() {
-      return false;
-    },
-    // The web platform exposes no file-path clipboard format; a native host is required.
-    async readFiles() {
-      return [];
-    },
-    // The web platform exposes no file-path clipboard format; a native host is required.
-    async writeFiles() {
-      return false;
-    },
-    async clear() {
-      return this.writeText('');
-    },
-    getChangeCount() {
-      return -1;
-    },
-    subscribeClipboardChange(listener) {
-      if (typeof window === 'undefined') return () => {};
-      // Use the experimental 'clipboardchange' event where present; fall back to no-op.
-      if ('onclipboardchange' in window) {
-        const handler = () => listener();
-        window.addEventListener('clipboardchange' as keyof WindowEventMap, handler as EventListener);
-        return () => window.removeEventListener('clipboardchange' as keyof WindowEventMap, handler as EventListener);
-      }
-      return () => {};
-    },
-  };
-}
-
-// Stops delivery to `watch` and forgets its subscription. Safe to call when not attached.
+// Stops delivery to watch and forgets its subscription. Safe to call when not attached.
 export function detachClipboardWatch(watch: ClipboardWatch): void {
-  const unsubscribe = _watchSubscriptions.get(watch);
-  if (unsubscribe !== undefined) {
-    unsubscribe.detach();
+  const subscription = _watchSubscriptions.get(watch);
+  if (subscription !== undefined) {
+    subscription.change.unsubscribe(subscription.callback);
     _watchSubscriptions.delete(watch);
   }
 }
 
-// Detaches `watch`'s backend subscription and releases it for garbage collection.
+// Detaches watch's backend subscription and releases it for garbage collection.
 // The signal remains plain GC-managed memory afterward.
 export function disposeClipboardWatch(watch: ClipboardWatch): void {
   detachClipboardWatch(watch);
 }
 
-export function explainClipboardBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
-}
-
-// The active clipboard backend. Precedence: custom > host > sentinel.
-export function getClipboardBackend(): ClipboardBackend {
-  return _custom ?? _host ?? _sentinel;
-}
-
-// Returns a monotonically increasing count from the active backend, or -1 if unsupported.
-export function getClipboardChangeCount(): number {
-  return getClipboardBackend().getChangeCount();
-}
-
 // Returns the list of MIME/format strings currently on the clipboard. [] sentinel on access denied.
-export function getClipboardFormats(): Promise<readonly string[]> {
-  return getClipboardBackend().getFormats();
+export function getClipboardFormats(host: HasClipboardFormats): Promise<readonly string[]> {
+  return host.clipboard.formats.getFormats();
 }
 
 // True when the clipboard currently holds a bookmark. Returns false when access is denied.
-export function hasClipboardBookmark(): Promise<boolean> {
-  return getClipboardBackend().hasFormat(ClipboardFormatBookmark);
+export async function hasClipboardBookmark(host: HasClipboardBookmark): Promise<boolean> {
+  return (await host.clipboard.bookmark.readBookmark()) !== null;
 }
 
 // True when the given MIME/format string is currently present on the clipboard.
-export function hasClipboardFormat(format: string): Promise<boolean> {
-  return getClipboardBackend().hasFormat(format);
+export function hasClipboardFormat(host: HasClipboardFormats, format: string): Promise<boolean> {
+  return host.clipboard.formats.hasFormat(format);
 }
 
 // True when the clipboard currently holds HTML content. Returns false when access is denied.
-export function hasClipboardHtml(): Promise<boolean> {
-  return getClipboardBackend().hasFormat(ClipboardFormatHtml);
+export function hasClipboardHtml(host: HasClipboardFormats): Promise<boolean> {
+  return host.clipboard.formats.hasFormat(ClipboardFormatHtml);
 }
 
 // True when the clipboard currently holds an image. Returns false when access is denied.
-export function hasClipboardImage(): Promise<boolean> {
-  return getClipboardBackend().hasImage();
+export function hasClipboardImage(host: HasClipboardImage): Promise<boolean> {
+  return host.clipboard.image.hasImage();
 }
 
 // True when the clipboard currently holds RTF content. Returns false when access is denied.
-export function hasClipboardRTF(): Promise<boolean> {
-  return getClipboardBackend().hasFormat(ClipboardFormatRtf);
+export function hasClipboardRTF(host: HasClipboardFormats): Promise<boolean> {
+  return host.clipboard.formats.hasFormat(ClipboardFormatRtf);
 }
 
 // True when the clipboard currently holds non-empty text. Returns false when access is denied.
-export function hasClipboardText(): Promise<boolean> {
-  return getClipboardBackend().hasText();
-}
-
-export function installClipboardHostBackend(backend: ClipboardBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  const previous = getClipboardBackend();
-  _host = backend;
-  rebindClipboardWatches(previous, getClipboardBackend());
-}
-
-export function observeClipboardHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
+export function hasClipboardText(host: HasClipboardText): Promise<boolean> {
+  return host.clipboard.text.hasText();
 }
 
 // Reads multiple formats in one round-trip; missing formats are omitted from the result.
-export function readClipboard(formats: readonly string[]): Promise<Readonly<Record<string, string>>> {
-  return getClipboardBackend().readItems(formats);
+export function readClipboard(
+  host: HasClipboardFormats,
+  formats: readonly string[],
+): Promise<Readonly<Record<string, string>>> {
+  return host.clipboard.formats.readItems(formats);
 }
 
 // Reads a bookmark (title + URL) from the clipboard, or null when none is present or access is denied.
-export function readClipboardBookmark(): Promise<ClipboardBookmark | null> {
-  return getClipboardBackend().readBookmark();
-}
-
-// Reads the file paths currently on the clipboard. Returns [] when none are present or on web.
-export function readClipboardFiles(): Promise<readonly string[]> {
-  return getClipboardBackend().readFiles();
+export function readClipboardBookmark(host: HasClipboardBookmark): Promise<ClipboardBookmark | null> {
+  return host.clipboard.bookmark.readBookmark();
 }
 
 // Reads an arbitrary MIME/format flavor as a string; returns '' when absent or access is denied.
-export function readClipboardFormat(format: string): Promise<string> {
-  return getClipboardBackend().readFormat(format);
+export function readClipboardFormat(host: HasClipboardFormats, format: string): Promise<string> {
+  return host.clipboard.formats.readFormat(format);
 }
 
 // Reads HTML from the clipboard, or '' when none is present or access is denied.
-export function readClipboardHtml(): Promise<string> {
-  return getClipboardBackend().readHtml();
+export function readClipboardHtml(host: HasClipboardFormats): Promise<string> {
+  return host.clipboard.formats.readHtml();
 }
 
 // Reads an image from the clipboard as a data URL, or '' when none is present or access is denied.
-export function readClipboardImage(): Promise<string> {
-  return getClipboardBackend().readImage();
+export function readClipboardImage(host: HasClipboardImage): Promise<string> {
+  return host.clipboard.image.readImage();
 }
 
-// Reads RTF (Rich Text Format) markup from the clipboard, or '' when none is present or access is denied.
-export function readClipboardRTF(): Promise<string> {
-  return getClipboardBackend().readRTF();
+// Reads RTF markup from the clipboard, or '' when none is present or access is denied.
+export function readClipboardRTF(host: HasClipboardFormats): Promise<string> {
+  return host.clipboard.formats.readRTF();
 }
 
 // Reads plain text from the clipboard, or '' when empty or access is denied.
-export function readClipboardText(): Promise<string> {
-  return getClipboardBackend().readText();
-}
-
-export function resetClipboardBackendForTest(): void {
-  const previous = getClipboardBackend();
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-  rebindClipboardWatches(previous, getClipboardBackend());
-}
-
-// Installs a custom clipboard backend; pass null to clear the custom override.
-export function setClipboardBackend(backend: ClipboardBackend | null): void {
-  const previous = getClipboardBackend();
-  _custom = backend;
-  rebindClipboardWatches(previous, getClipboardBackend());
+export function readClipboardText(host: HasClipboardText): Promise<string> {
+  return host.clipboard.text.readText();
 }
 
 // Writes multiple formats atomically so a paste target picks its best representation.
-export function writeClipboard(items: readonly Readonly<ClipboardWriteItem>[]): Promise<boolean> {
-  return getClipboardBackend().writeItems(items);
+export function writeClipboard(
+  host: HasClipboardFormats,
+  items: readonly Readonly<ClipboardWriteItem>[],
+): Promise<boolean> {
+  return host.clipboard.formats.writeItems(items);
 }
 
 // Writes a bookmark (title + URL) to the clipboard. Returns false when the host denies access.
-export function writeClipboardBookmark(title: string, url: string): Promise<boolean> {
-  return getClipboardBackend().writeBookmark(title, url);
-}
-
-// Writes file paths to the clipboard. Returns false when the host denies access or on web.
-export function writeClipboardFiles(paths: readonly string[]): Promise<boolean> {
-  return getClipboardBackend().writeFiles(paths);
+export function writeClipboardBookmark(host: HasClipboardBookmark, title: string, url: string): Promise<boolean> {
+  return host.clipboard.bookmark.writeBookmark(title, url);
 }
 
 // Writes an arbitrary MIME/format flavor. Returns false when the host denies access.
-export function writeClipboardFormat(format: string, data: string): Promise<boolean> {
-  return getClipboardBackend().writeFormat(format, data);
+export function writeClipboardFormat(host: HasClipboardFormats, format: string, data: string): Promise<boolean> {
+  return host.clipboard.formats.writeFormat(format, data);
 }
 
 // Writes HTML to the clipboard. Returns false when the host denies access.
-export function writeClipboardHtml(html: string): Promise<boolean> {
-  return getClipboardBackend().writeHtml(html);
+export function writeClipboardHtml(host: HasClipboardFormats, html: string): Promise<boolean> {
+  return host.clipboard.formats.writeHtml(html);
 }
 
 // Writes an image (given as a data URL) to the clipboard. Returns false when the host denies access.
-export function writeClipboardImage(dataUrl: string): Promise<boolean> {
-  return getClipboardBackend().writeImage(dataUrl);
+export function writeClipboardImage(host: HasClipboardImage, dataUrl: string): Promise<boolean> {
+  return host.clipboard.image.writeImage(dataUrl);
 }
 
-// Writes RTF (Rich Text Format) markup to the clipboard. Returns false when the host denies access.
-export function writeClipboardRTF(rtf: string): Promise<boolean> {
-  return getClipboardBackend().writeRTF(rtf);
+// Writes RTF markup to the clipboard. Returns false when the host denies access.
+export function writeClipboardRTF(host: HasClipboardFormats, rtf: string): Promise<boolean> {
+  return host.clipboard.formats.writeRTF(rtf);
 }
 
 // Writes plain text to the clipboard. Returns false when the host denies access.
-export function writeClipboardText(text: string): Promise<boolean> {
-  return getClipboardBackend().writeText(text);
+export function writeClipboardText(host: HasClipboardText, text: string): Promise<boolean> {
+  return host.clipboard.text.writeText(text);
 }
 
-const _sentinel: ClipboardBackend = {
-  async clear() {
-    return false;
-  },
-  getChangeCount() {
-    return -1;
-  },
-  async getFormats() {
-    return [];
-  },
-  async hasFormat() {
-    return false;
-  },
-  async hasImage() {
-    return false;
-  },
-  async hasText() {
-    return false;
-  },
-  async readBookmark() {
-    return null;
-  },
-  async readFiles() {
-    return [];
-  },
-  async readFormat() {
-    return '';
-  },
-  async readHtml() {
-    return '';
-  },
-  async readImage() {
-    return '';
-  },
-  async readItems() {
-    return {};
-  },
-  async readRTF() {
-    return '';
-  },
-  async readText() {
-    return '';
-  },
-  subscribeClipboardChange() {
-    return () => {};
-  },
-  async writeBookmark() {
-    return false;
-  },
-  async writeFiles() {
-    return false;
-  },
-  async writeFormat() {
-    return false;
-  },
-  async writeHtml() {
-    return false;
-  },
-  async writeImage() {
-    return false;
-  },
-  async writeItems() {
-    return false;
-  },
-  async writeRTF() {
-    return false;
-  },
-  async writeText() {
-    return false;
-  },
-};
-let _custom: ClipboardBackend | null = null;
-let _host: ClipboardBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
-
-// This is intentionally an enumerable Map rather than a WeakMap: active watches must rebind
-// across provider swaps. Callers must explicitly detach/dispose watches to release registry roots.
-type ClipboardWatchSubscription = {
-  listener: () => void;
-  detach: () => void;
-  rebind: (backend: ClipboardBackend) => void;
-};
-const _watchSubscriptions = new Map<ClipboardWatch, ClipboardWatchSubscription>();
-
-function rebindClipboardWatches(previous: ClipboardBackend, next: ClipboardBackend): void {
-  if (previous === next) return;
-  for (const subscription of _watchSubscriptions.values()) subscription.rebind(next);
-}
-
-function getWebClipboard(): Clipboard | null {
-  if (typeof navigator === 'undefined') return null;
-  return navigator.clipboard ?? null;
-}
-
-// The web clipboard when ClipboardItem writes are possible, or null. Centralizes the shared
-// write-path guard so every write/writeItems/writeImage caller folds to one null check.
-function getWritableWebClipboard(): Clipboard | null {
-  const cb = getWebClipboard();
-  if (cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined') return null;
-  return cb;
-}
-
-// Reads a Blob into a data URL via FileReader, resolving '' when reading fails.
-function readBlobAsDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve) => {
-    if (typeof FileReader === 'undefined') {
-      resolve('');
-      return;
-    }
-    try {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-      reader.onerror = () => resolve('');
-      reader.readAsDataURL(blob);
-    } catch {
-      resolve('');
-    }
-  });
-}
+// Active watches are deliberate registry roots until detach/dispose; enumeration is unnecessary now
+// that provider selection is explicit and subscriptions never rebind through an ambient backend swap.
+const _watchSubscriptions = new Map<
+  ClipboardWatch,
+  {
+    readonly callback: () => void;
+    readonly change: HasClipboardChange['clipboard']['change'];
+  }
+>();

@@ -78,7 +78,7 @@ export interface CapacitorAppInfo {
 
 // `@capacitor/clipboard` — the async system clipboard. `read` returns `{ value, type }`, where an image
 // crosses as a data-URL value with an `image/*` type. Text and (data-URL) image round-trip; the other
-// ClipboardBackend flavors (HTML/RTF/bookmark/files/formats/change-count) have no Capacitor call.
+// Clipboard capability vectors outside text and image have no Capacitor call.
 export interface CapacitorClipboardPlugin {
   read(): Promise<CapacitorClipboardReadResult>;
   write(options: Readonly<CapacitorClipboardWriteOptions>): Promise<void>;

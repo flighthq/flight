@@ -1,5 +1,4 @@
 import { getAppBackend } from '@flighthq/app/contract';
-import { getClipboardBackend } from '@flighthq/clipboard/contract';
 import { getConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend } from '@flighthq/filesystem/contract';
@@ -26,11 +25,11 @@ import type { HostProbeCapability } from './expectations';
 export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unknown>>;
 
 export function captureHostProbeBackends(
-  host: Partial<Pick<Host, 'app' | 'dialog' | 'input' | 'notification' | 'window'>> = {},
+  host: Partial<Pick<Host, 'app' | 'clipboard' | 'dialog' | 'input' | 'notification' | 'window'>> = {},
 ): HostProbeBackendSnapshot {
   return {
     app: getAppBackend(),
-    clipboard: getClipboardBackend(),
+    clipboard: host.clipboard?.text ?? null,
     connectivity: getConnectivityBackend(),
     cursor: null,
     device: getDeviceBackend(),

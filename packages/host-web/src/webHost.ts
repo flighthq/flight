@@ -1,8 +1,9 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { webNotificationCapabilities } from '@flighthq/notification/contract';
-import type { Host } from '@flighthq/types/contract';
+import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 
 import { webApplicationExitBackend } from './webApplicationExit';
+import { webClipboardBackend } from './webClipboard';
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 import { webHapticsBackend } from './webHaptics';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
@@ -17,6 +18,12 @@ export const webHost = createEntity({
     exit: webApplicationExitBackend,
     loop: webLoopBackend,
     visibility: webApplicationVisibilityBackend,
+  },
+  clipboard: {
+    change: webClipboardBackend,
+    formats: webClipboardBackend,
+    image: webClipboardBackend,
+    text: webClipboardBackend,
   },
   dialog: {
     file: webFileDialogBackend,
@@ -33,4 +40,4 @@ export const webHost = createEntity({
   text: {},
   ui: { fullscreen: webFullscreenBackend },
   window: webWindowBackend,
-} as const) satisfies Host;
+} as const satisfies Omit<Host, typeof EntityRuntimeKey>);

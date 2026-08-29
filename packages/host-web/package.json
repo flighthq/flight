@@ -43,7 +43,6 @@
     "@flighthq/application": "*",
     "@flighthq/audio": "*",
     "@flighthq/bitmap": "*",
-    "@flighthq/clipboard": "*",
     "@flighthq/connectivity": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",

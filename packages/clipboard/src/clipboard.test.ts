@@ -1,21 +1,32 @@
-import type { ClipboardBackend, ClipboardBookmark } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  ClipboardBookmark,
+  ClipboardBookmarkBackend,
+  ClipboardChangeBackend,
+  ClipboardFormatsBackend,
+  ClipboardImageBackend,
+  ClipboardTextBackend,
+  HasClipboardBookmark,
+  HasClipboardChange,
+  HasClipboardFormats,
+  HasClipboardImage,
+  HasClipboardText,
+} from '@flighthq/types/contract';
 import {
   ClipboardFormatBookmark,
   ClipboardFormatHtml,
   ClipboardFormatImage,
   ClipboardFormatRtf,
   ClipboardFormatText,
+  EntityRuntimeKey,
 } from '@flighthq/types/contract';
 
 import {
   attachClipboardWatch,
   clearClipboard,
   createClipboardWatch,
-  createWebClipboardBackend,
   detachClipboardWatch,
   disposeClipboardWatch,
-  getClipboardBackend,
-  getClipboardChangeCount,
   getClipboardFormats,
   hasClipboardBookmark,
   hasClipboardFormat,
@@ -25,77 +36,306 @@ import {
   hasClipboardText,
   readClipboard,
   readClipboardBookmark,
-  readClipboardFiles,
   readClipboardFormat,
   readClipboardHtml,
   readClipboardImage,
   readClipboardRTF,
   readClipboardText,
-  setClipboardBackend,
   writeClipboard,
   writeClipboardBookmark,
-  writeClipboardFiles,
   writeClipboardFormat,
   writeClipboardHtml,
   writeClipboardImage,
   writeClipboardRTF,
   writeClipboardText,
-  explainClipboardBackend,
-  installClipboardHostBackend,
-  observeClipboardHostResult,
-  resetClipboardBackendForTest,
 } from './clipboard';
 
-function fakeBackend(): ClipboardBackend & {
-  text: string;
+describe('attachClipboardWatch', () => {
+  it('is exported', () => expect(attachClipboardWatch).toBeTypeOf('function'));
+});
+
+describe('clearClipboard', () => {
+  it('is exported', () => expect(clearClipboard).toBeTypeOf('function'));
+});
+
+describe('clipboard', () => {
+  it('routes each operation through its supplied clipboard capability slot', async () => {
+    const backend = fakeBackend();
+    const host = hostFor(backend);
+    expect(EntityRuntimeKey in backend).toBe(true);
+
+    expect(
+      await writeClipboard(host, [
+        { format: ClipboardFormatText, data: 'multi-text' },
+        { format: ClipboardFormatHtml, data: '<b>multi</b>' },
+      ]),
+    ).toBe(true);
+    expect(await writeClipboardText(host, 'plain')).toBe(true);
+    expect(await writeClipboardHtml(host, '<b>html</b>')).toBe(true);
+    expect(await writeClipboardImage(host, 'data:image/png;base64,AAAA')).toBe(true);
+    expect(await writeClipboardRTF(host, '{\\rtf1 rich}')).toBe(true);
+    expect(await writeClipboardBookmark(host, 'Flight', 'https://example.com')).toBe(true);
+    expect(await writeClipboardFormat(host, 'application/x-flight', 'custom')).toBe(true);
+
+    expect(await readClipboardText(host)).toBe('plain');
+    expect(await readClipboardHtml(host)).toBe('<b>html</b>');
+    expect(await readClipboardImage(host)).toBe('data:image/png;base64,AAAA');
+    expect(await readClipboardRTF(host)).toBe('{\\rtf1 rich}');
+    expect(await readClipboardBookmark(host)).toEqual({ title: 'Flight', url: 'https://example.com' });
+    expect(await readClipboardFormat(host, 'application/x-flight')).toBe('custom');
+    expect(await readClipboard(host, [ClipboardFormatText, 'application/x-flight', 'missing'])).toEqual({
+      [ClipboardFormatText]: 'plain',
+      'application/x-flight': 'custom',
+    });
+
+    expect(await hasClipboardText(host)).toBe(true);
+    expect(await hasClipboardHtml(host)).toBe(true);
+    expect(await hasClipboardImage(host)).toBe(true);
+    expect(await hasClipboardRTF(host)).toBe(true);
+    expect(await hasClipboardBookmark(host)).toBe(true);
+    expect(await hasClipboardFormat(host, 'application/x-flight')).toBe(true);
+    expect(await getClipboardFormats(host)).toEqual(
+      expect.arrayContaining([
+        ClipboardFormatText,
+        ClipboardFormatHtml,
+        ClipboardFormatImage,
+        ClipboardFormatRtf,
+        ClipboardFormatBookmark,
+        'application/x-flight',
+      ]),
+    );
+
+    expect(await clearClipboard(host)).toBe(true);
+    expect(await readClipboardText(host)).toBe('');
+    expect(await getClipboardFormats(host)).toEqual([]);
+  });
+
+  it('never consults another host when two clipboard providers coexist', async () => {
+    const first = hostFor(fakeBackend());
+    const second = hostFor(fakeBackend());
+
+    await writeClipboardText(first, 'first');
+    await writeClipboardText(second, 'second');
+
+    expect(await readClipboardText(first)).toBe('first');
+    expect(await readClipboardText(second)).toBe('second');
+  });
+});
+
+describe('ClipboardWatch', () => {
+  it('pins the subscription to the supplied host until explicitly attached elsewhere', () => {
+    const firstBackend = fakeBackend();
+    const secondBackend = fakeBackend();
+    const watch = createClipboardWatch();
+    let changes = 0;
+    watch.onChange.emit = () => {
+      changes++;
+    };
+
+    attachClipboardWatch(hostFor(firstBackend), watch);
+    expect(firstBackend.listeners.size).toBe(1);
+    firstBackend.listeners.forEach((listener) => listener());
+    expect(changes).toBe(1);
+
+    attachClipboardWatch(hostFor(secondBackend), watch);
+    expect(firstBackend.listeners.size).toBe(0);
+    expect(secondBackend.listeners.size).toBe(1);
+    firstBackend.listeners.forEach((listener) => listener());
+    secondBackend.listeners.forEach((listener) => listener());
+    expect(changes).toBe(2);
+
+    detachClipboardWatch(watch);
+    expect(secondBackend.listeners.size).toBe(0);
+    expect(() => detachClipboardWatch(watch)).not.toThrow();
+  });
+
+  it('is idempotent per watch and dispose releases the active subscription', () => {
+    const backend = fakeBackend();
+    const host = hostFor(backend);
+    const watch = createClipboardWatch();
+
+    attachClipboardWatch(host, watch);
+    attachClipboardWatch(host, watch);
+    expect(backend.listeners.size).toBe(1);
+
+    disposeClipboardWatch(watch);
+    expect(backend.listeners.size).toBe(0);
+  });
+});
+
+describe('createClipboardWatch', () => {
+  it('is exported', () => expect(createClipboardWatch).toBeTypeOf('function'));
+});
+
+describe('detachClipboardWatch', () => {
+  it('is exported', () => expect(detachClipboardWatch).toBeTypeOf('function'));
+});
+
+describe('disposeClipboardWatch', () => {
+  it('is exported', () => expect(disposeClipboardWatch).toBeTypeOf('function'));
+});
+
+describe('getClipboardFormats', () => {
+  it('is exported', () => expect(getClipboardFormats).toBeTypeOf('function'));
+});
+
+describe('hasClipboardBookmark', () => {
+  it('is exported', () => expect(hasClipboardBookmark).toBeTypeOf('function'));
+});
+
+describe('hasClipboardFormat', () => {
+  it('is exported', () => expect(hasClipboardFormat).toBeTypeOf('function'));
+});
+
+describe('hasClipboardHtml', () => {
+  it('is exported', () => expect(hasClipboardHtml).toBeTypeOf('function'));
+});
+
+describe('hasClipboardImage', () => {
+  it('is exported', () => expect(hasClipboardImage).toBeTypeOf('function'));
+});
+
+describe('hasClipboardRTF', () => {
+  it('is exported', () => expect(hasClipboardRTF).toBeTypeOf('function'));
+});
+
+describe('hasClipboardText', () => {
+  it('is exported', () => expect(hasClipboardText).toBeTypeOf('function'));
+});
+
+describe('readClipboard', () => {
+  it('is exported', () => expect(readClipboard).toBeTypeOf('function'));
+});
+
+describe('readClipboardBookmark', () => {
+  it('is exported', () => expect(readClipboardBookmark).toBeTypeOf('function'));
+});
+
+describe('readClipboardFormat', () => {
+  it('is exported', () => expect(readClipboardFormat).toBeTypeOf('function'));
+});
+
+describe('readClipboardHtml', () => {
+  it('is exported', () => expect(readClipboardHtml).toBeTypeOf('function'));
+});
+
+describe('readClipboardImage', () => {
+  it('is exported', () => expect(readClipboardImage).toBeTypeOf('function'));
+});
+
+describe('readClipboardRTF', () => {
+  it('is exported', () => expect(readClipboardRTF).toBeTypeOf('function'));
+});
+
+describe('readClipboardText', () => {
+  it('is exported', () => expect(readClipboardText).toBeTypeOf('function'));
+});
+
+describe('writeClipboard', () => {
+  it('is exported', () => expect(writeClipboard).toBeTypeOf('function'));
+});
+
+describe('writeClipboardBookmark', () => {
+  it('is exported', () => expect(writeClipboardBookmark).toBeTypeOf('function'));
+});
+
+describe('writeClipboardFormat', () => {
+  it('is exported', () => expect(writeClipboardFormat).toBeTypeOf('function'));
+});
+
+describe('writeClipboardHtml', () => {
+  it('is exported', () => expect(writeClipboardHtml).toBeTypeOf('function'));
+});
+
+describe('writeClipboardImage', () => {
+  it('is exported', () => expect(writeClipboardImage).toBeTypeOf('function'));
+});
+
+interface FakeClipboardBackend
+  extends
+    ClipboardBookmarkBackend,
+    Required<Pick<ClipboardChangeBackend, 'subscribe' | 'unsubscribe'>>,
+    ClipboardFormatsBackend,
+    ClipboardImageBackend,
+    ClipboardTextBackend {
+  bookmark: ClipboardBookmark | null;
+  formats: Record<string, string>;
   html: string;
   image: string;
+  readonly listeners: Set<() => void>;
   rtf: string;
-  bookmark: ClipboardBookmark | null;
-  files: string[];
-  formats: Record<string, string>;
-  changeCount: number;
-} {
+  text: string;
+}
+
+type FakeClipboardHost = HasClipboardBookmark &
+  HasClipboardChange &
+  HasClipboardFormats &
+  HasClipboardImage &
+  HasClipboardText;
+
+function hostFor(clipboard: FakeClipboardBackend): FakeClipboardHost {
   return {
-    text: '',
+    clipboard: {
+      bookmark: clipboard,
+      change: clipboard,
+      formats: clipboard,
+      image: clipboard,
+      text: clipboard,
+    },
+  };
+}
+
+function fakeBackend(): FakeClipboardBackend {
+  return createEntity({
+    bookmark: null,
+    formats: {},
     html: '',
     image: '',
+    listeners: new Set(),
     rtf: '',
-    bookmark: null,
-    files: [],
-    formats: {},
-    changeCount: 0,
+    text: '',
+    async clear() {
+      this.bookmark = null;
+      this.formats = {};
+      this.html = '';
+      this.image = '';
+      this.rtf = '';
+      this.text = '';
+      return true;
+    },
+    async getFormats() {
+      const formats = Object.keys(this.formats);
+      if (this.text.length > 0) formats.push(ClipboardFormatText);
+      if (this.html.length > 0) formats.push(ClipboardFormatHtml);
+      if (this.image.length > 0) formats.push(ClipboardFormatImage);
+      if (this.rtf.length > 0) formats.push(ClipboardFormatRtf);
+      if (this.bookmark !== null) formats.push(ClipboardFormatBookmark);
+      return [...new Set(formats)];
+    },
+    async hasFormat(format) {
+      return (await this.getFormats()).includes(format);
+    },
+    async hasImage() {
+      return this.image.length > 0;
+    },
+    async hasText() {
+      return this.text.length > 0;
+    },
+    async readBookmark() {
+      return this.bookmark;
+    },
     async readFormat(format) {
       if (format === ClipboardFormatText) return this.text;
       if (format === ClipboardFormatHtml) return this.html;
+      if (format === ClipboardFormatImage) return this.image;
       if (format === ClipboardFormatRtf) return this.rtf;
       return this.formats[format] ?? '';
     },
-    async writeFormat(format, data) {
-      if (format === ClipboardFormatText) this.text = data;
-      else if (format === ClipboardFormatHtml) this.html = data;
-      else if (format === ClipboardFormatRtf) this.rtf = data;
-      else this.formats[format] = data;
-      this.changeCount++;
-      return true;
+    async readHtml() {
+      return this.html;
     },
-    async hasFormat(format) {
-      const data = await this.readFormat(format);
-      return data.length > 0;
-    },
-    async getFormats() {
-      const out: string[] = [];
-      if (this.text.length > 0) out.push(ClipboardFormatText);
-      if (this.html.length > 0) out.push(ClipboardFormatHtml);
-      if (this.rtf.length > 0) out.push(ClipboardFormatRtf);
-      if (this.image.length > 0) out.push(ClipboardFormatImage);
-      if (this.bookmark !== null) out.push(ClipboardFormatBookmark);
-      for (const k of Object.keys(this.formats)) out.push(k);
-      return out;
-    },
-    async writeItems(items) {
-      for (const item of items) await this.writeFormat(item.format, item.data);
-      return true;
+    async readImage() {
+      return this.image;
     },
     async readItems(formats) {
       const result: Record<string, string> = {};
@@ -105,646 +345,57 @@ function fakeBackend(): ClipboardBackend & {
       }
       return result;
     },
-    async readText() {
-      return this.text;
-    },
-    async writeText(text) {
-      this.text = text;
-      this.changeCount++;
-      return true;
-    },
-    async readHtml() {
-      return this.html;
-    },
-    async writeHtml(html) {
-      this.html = html;
-      this.changeCount++;
-      return true;
-    },
-    async hasText() {
-      return this.text.length > 0;
-    },
-    async readImage() {
-      return this.image;
-    },
-    async writeImage(dataUrl) {
-      this.image = dataUrl;
-      this.changeCount++;
-      return true;
-    },
-    async hasImage() {
-      return this.image.length > 0;
-    },
     async readRTF() {
       return this.rtf;
     },
-    async writeRTF(rtf) {
-      this.rtf = rtf;
-      this.changeCount++;
-      return true;
+    async readText() {
+      return this.text;
     },
-    async readBookmark() {
-      return this.bookmark;
+    subscribe(callback) {
+      this.listeners.add(callback);
+    },
+    unsubscribe(callback) {
+      this.listeners.delete(callback);
     },
     async writeBookmark(title, url) {
       this.bookmark = { title, url };
-      this.changeCount++;
       return true;
     },
-    async readFiles() {
-      return [...this.files];
-    },
-    async writeFiles(paths) {
-      this.files = [...paths];
-      this.changeCount++;
+    async writeFormat(format, data) {
+      if (format === ClipboardFormatText) this.text = data;
+      else if (format === ClipboardFormatHtml) this.html = data;
+      else if (format === ClipboardFormatImage) this.image = data;
+      else if (format === ClipboardFormatRtf) this.rtf = data;
+      else this.formats[format] = data;
       return true;
     },
-    async clear() {
-      this.text = '';
-      this.html = '';
-      this.image = '';
-      this.rtf = '';
-      this.bookmark = null;
-      this.files = [];
-      this.formats = {};
-      this.changeCount++;
+    async writeHtml(html) {
+      this.html = html;
       return true;
     },
-    getChangeCount() {
-      return this.changeCount;
+    async writeImage(dataUrl) {
+      this.image = dataUrl;
+      return true;
     },
-    subscribeClipboardChange(listener) {
-      const listeners = (this as unknown as { _listeners: Array<() => void> })._listeners;
-      if (!listeners) (this as unknown as { _listeners: Array<() => void> })._listeners = [];
-      (this as unknown as { _listeners: Array<() => void> })._listeners.push(listener);
-      return () => {
-        const idx = (this as unknown as { _listeners: Array<() => void> })._listeners.indexOf(listener);
-        if (idx >= 0) (this as unknown as { _listeners: Array<() => void> })._listeners.splice(idx, 1);
-      };
+    async writeItems(items) {
+      for (const item of items) await this.writeFormat(item.format, item.data);
+      return true;
     },
-  };
+    async writeRTF(rtf) {
+      this.rtf = rtf;
+      return true;
+    },
+    async writeText(text) {
+      this.text = text;
+      return true;
+    },
+  } satisfies Omit<FakeClipboardBackend, typeof EntityRuntimeKey>);
 }
 
-afterEach(() => setClipboardBackend(null));
-
-describe('attachClipboardWatch', () => {
-  it('rebinds the original watch across distinct provider swaps', () => {
-    const oldBackend = fakeBackend() as ClipboardBackend & { _listeners?: Array<() => void> };
-    const newBackend = fakeBackend() as ClipboardBackend & { _listeners?: Array<() => void> };
-    setClipboardBackend(oldBackend);
-    const watch = createClipboardWatch();
-    let calls = 0;
-    watch.onChange.emit = () => {
-      calls += 1;
-    };
-    attachClipboardWatch(watch);
-    const fire = (backend: typeof oldBackend) => backend._listeners?.slice().forEach((listener) => listener());
-    expect(oldBackend._listeners).toHaveLength(1);
-    setClipboardBackend(newBackend);
-    expect(oldBackend._listeners).toHaveLength(0);
-    expect(newBackend._listeners).toHaveLength(1);
-    fire(newBackend);
-    fire(oldBackend);
-    expect(calls).toBe(1);
-    setClipboardBackend(newBackend);
-    fire(newBackend);
-    expect(calls).toBe(2);
-    setClipboardBackend(null);
-    expect(newBackend._listeners).toHaveLength(0);
-    setClipboardBackend(oldBackend);
-    expect(oldBackend._listeners).toHaveLength(1);
-    fire(oldBackend);
-    expect(calls).toBe(3);
-    detachClipboardWatch(watch);
-    expect(oldBackend._listeners).toHaveLength(0);
-    fire(oldBackend);
-    expect(calls).toBe(3);
-  });
-
-  it('emits onChange when the backend notifies', () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    const watch = createClipboardWatch();
-    let count = 0;
-    watch.onChange.emit = () => {
-      count++;
-    };
-    attachClipboardWatch(watch);
-    // Simulate backend notification by calling all subscribed listeners
-    const listeners = (backend as unknown as { _listeners: Array<() => void> })._listeners;
-    expect(listeners.length).toBeGreaterThan(0);
-    listeners.forEach((l) => l());
-    expect(count).toBeGreaterThan(0);
-    disposeClipboardWatch(watch);
-  });
-
-  it('is idempotent — attaching twice only has one active subscription', () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    const watch = createClipboardWatch();
-    attachClipboardWatch(watch);
-    attachClipboardWatch(watch);
-    const listeners = (backend as unknown as { _listeners: Array<() => void> })._listeners ?? [];
-    expect(listeners.length).toBe(1);
-    disposeClipboardWatch(watch);
-  });
-});
-
-describe('clearClipboard', () => {
-  it('clears via the active backend', async () => {
-    const backend = fakeBackend();
-    backend.text = 'x';
-    setClipboardBackend(backend);
-    expect(await clearClipboard()).toBe(true);
-    expect(backend.text).toBe('');
-  });
-});
-
-describe('createClipboardWatch', () => {
-  it('returns an entity with an onChange signal', () => {
-    const watch = createClipboardWatch();
-    expect(watch.onChange).toBeDefined();
-  });
-});
-
-describe('createWebClipboardBackend', () => {
-  it('returns a backend whose reads yield strings without throwing', async () => {
-    const backend = createWebClipboardBackend();
-    expect(typeof (await backend.readText())).toBe('string');
-    expect(typeof (await backend.readHtml())).toBe('string');
-    expect(typeof (await backend.readFormat(ClipboardFormatText))).toBe('string');
-  });
-
-  it('getFormats returns an array without throwing', async () => {
-    const backend = createWebClipboardBackend();
-    const formats = await backend.getFormats();
-    expect(Array.isArray(formats)).toBe(true);
-  });
-
-  it('getChangeCount returns -1 (unsupported on web)', () => {
-    const backend = createWebClipboardBackend();
-    expect(backend.getChangeCount()).toBe(-1);
-  });
-
-  it('subscribeClipboardChange returns a function without throwing', () => {
-    const backend = createWebClipboardBackend();
-    const unsub = backend.subscribeClipboardChange(() => {});
-    expect(typeof unsub).toBe('function');
-    unsub();
-  });
-
-  it('ignores a nonstandard clipboardchange property when probing event support', () => {
-    const originalWindow = window;
-    const fakeWindow = Object.assign(new EventTarget(), { clipboardchange: null }) as unknown as Window;
-    vi.stubGlobal('window', fakeWindow);
-    try {
-      let changeCount = 0;
-      const backend = createWebClipboardBackend();
-      const unsubscribe = backend.subscribeClipboardChange(() => changeCount++);
-      fakeWindow.dispatchEvent(new Event('clipboardchange'));
-      expect(changeCount).toBe(0);
-      unsubscribe();
-    } finally {
-      vi.stubGlobal('window', originalWindow);
-    }
-  });
-});
-
-describe('detachClipboardWatch', () => {
-  it('stops delivery after detach', () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    const watch = createClipboardWatch();
-    let count = 0;
-    watch.onChange.emit = () => {
-      count++;
-    };
-    attachClipboardWatch(watch);
-    detachClipboardWatch(watch);
-    const listeners = (backend as unknown as { _listeners: Array<() => void> })._listeners ?? [];
-    expect(listeners.length).toBe(0);
-    expect(count).toBe(0);
-  });
-
-  it('is safe to call when not attached', () => {
-    const watch = createClipboardWatch();
-    expect(() => detachClipboardWatch(watch)).not.toThrow();
-  });
-});
-
-describe('disposeClipboardWatch', () => {
-  it('detaches and does not throw', () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    const watch = createClipboardWatch();
-    attachClipboardWatch(watch);
-    expect(() => disposeClipboardWatch(watch)).not.toThrow();
-    const listeners = (backend as unknown as { _listeners: Array<() => void> })._listeners ?? [];
-    expect(listeners.length).toBe(0);
-  });
-});
-
-describe('explainClipboardBackend', () => {
-  afterEach(() => resetClipboardBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetClipboardBackendForTest();
-    const explanation = explainClipboardBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setClipboardBackend(fakeBackend());
-    expect(explainClipboardBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installClipboardHostBackend(fakeBackend());
-    expect(explainClipboardBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installClipboardHostBackend(fakeBackend());
-    installClipboardHostBackend(fakeBackend());
-    expect(explainClipboardBackend().conflict).toBe(true);
-  });
-});
-
-describe('getClipboardBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getClipboardBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(getClipboardBackend()).toBe(backend);
-  });
-});
-
-describe('getClipboardChangeCount', () => {
-  it('reflects the backend change count', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    const before = getClipboardChangeCount();
-    await writeClipboardText('x');
-    expect(getClipboardChangeCount()).toBe(before + 1);
-  });
-
-  it('returns -1 from the web backend', () => {
-    expect(createWebClipboardBackend().getChangeCount()).toBe(-1);
-  });
-});
-
-describe('getClipboardFormats', () => {
-  it('returns the active formats from the backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await getClipboardFormats()).toEqual([]);
-    await writeClipboardText('hi');
-    const formats = await getClipboardFormats();
-    expect(formats).toContain(ClipboardFormatText);
-  });
-
-  it('returns [] from the web backend without throwing', async () => {
-    const formats = await createWebClipboardBackend().getFormats();
-    expect(Array.isArray(formats)).toBe(true);
-  });
-});
-
-describe('hasClipboardBookmark', () => {
-  it('returns false when no bookmark is present', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await hasClipboardBookmark()).toBe(false);
-  });
-
-  it('returns true after a bookmark is written by the backend', async () => {
-    const backend = fakeBackend();
-    // Simulate a backend that puts ClipboardFormatBookmark in formats when a bookmark is written
-    backend.formats[ClipboardFormatBookmark] = 'https://example.com\nFlight';
-    setClipboardBackend(backend);
-    expect(await hasClipboardBookmark()).toBe(true);
-  });
-});
-
-describe('hasClipboardFormat', () => {
-  it('reflects whether a format is present', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await hasClipboardFormat(ClipboardFormatText)).toBe(false);
-    await writeClipboardText('x');
-    expect(await hasClipboardFormat(ClipboardFormatText)).toBe(true);
-  });
-});
-
-describe('hasClipboardHtml', () => {
-  it('reflects backend state', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await hasClipboardHtml()).toBe(false);
-    await writeClipboardHtml('<b>x</b>');
-    expect(await hasClipboardHtml()).toBe(true);
-  });
-});
-
-describe('hasClipboardImage', () => {
-  it('reflects backend state', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await hasClipboardImage()).toBe(false);
-    await writeClipboardImage('data:image/png;base64,AAAA');
-    expect(await hasClipboardImage()).toBe(true);
-  });
-
-  it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().hasImage()).toBe(false);
-  });
-});
-
-describe('hasClipboardRTF', () => {
-  it('reflects backend state', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await hasClipboardRTF()).toBe(false);
-    await writeClipboardRTF('{\\rtf1 hi}');
-    expect(await hasClipboardRTF()).toBe(true);
-  });
-});
-
-describe('hasClipboardText', () => {
-  it('reflects backend state', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await hasClipboardText()).toBe(false);
-    await writeClipboardText('hi');
-    expect(await hasClipboardText()).toBe(true);
-  });
-});
-
-describe('installClipboardHostBackend', () => {
-  afterEach(() => resetClipboardBackendForTest());
-
-  it('installs a host backend that getClipboardBackend returns', () => {
-    const backend = fakeBackend();
-    installClipboardHostBackend(backend);
-    expect(getClipboardBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installClipboardHostBackend(first);
-    installClipboardHostBackend(second);
-    expect(getClipboardBackend()).toBe(first);
-    expect(explainClipboardBackend().conflict).toBe(true);
-  });
-});
-
-describe('observeClipboardHostResult', () => {
-  afterEach(() => resetClipboardBackendForTest());
-
-  it('records a successful observation', () => {
-    installClipboardHostBackend(fakeBackend());
-    observeClipboardHostResult('clear', true);
-    const explanation = explainClipboardBackend();
-    expect(explanation.operation).toBe('clear');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installClipboardHostBackend(fakeBackend());
-    observeClipboardHostResult('clear', false);
-    expect(explainClipboardBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-describe('readClipboard', () => {
-  it('reads multiple formats in one call', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    await writeClipboardText('hello');
-    await writeClipboardHtml('<b>hello</b>');
-    const result = await readClipboard([ClipboardFormatText, ClipboardFormatHtml]);
-    expect(result[ClipboardFormatText]).toBe('hello');
-    expect(result[ClipboardFormatHtml]).toBe('<b>hello</b>');
-  });
-
-  it('omits formats that are not present', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    await writeClipboardText('hi');
-    const result = await readClipboard([ClipboardFormatText, ClipboardFormatRtf]);
-    expect(result[ClipboardFormatText]).toBe('hi');
-    expect(result[ClipboardFormatRtf]).toBeUndefined();
-  });
-
-  it('returns {} from the web backend without throwing', async () => {
-    const result = await createWebClipboardBackend().readItems([ClipboardFormatText]);
-    expect(typeof result).toBe('object');
-  });
-});
-
-describe('readClipboardBookmark', () => {
-  it('round-trips through the backend', async () => {
-    setClipboardBackend(fakeBackend());
-    await writeClipboardBookmark('Flight', 'https://example.com');
-    expect(await readClipboardBookmark()).toEqual({ title: 'Flight', url: 'https://example.com' });
-  });
-
-  it('returns the null sentinel from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().readBookmark()).toBeNull();
-  });
-});
-
-describe('readClipboardFiles', () => {
-  it('round-trips file paths through the backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    await writeClipboardFiles(['/a/b.txt', '/c/d.txt']);
-    expect(await readClipboardFiles()).toEqual(['/a/b.txt', '/c/d.txt']);
-  });
-
-  it('returns [] from the web backend without throwing', async () => {
-    const files = await createWebClipboardBackend().readFiles();
-    expect(Array.isArray(files)).toBe(true);
-    expect(files.length).toBe(0);
-  });
-});
-
-describe('readClipboardFormat', () => {
-  it('round-trips an arbitrary format through the backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    await writeClipboardFormat('application/x-custom', 'mydata');
-    expect(await readClipboardFormat('application/x-custom')).toBe('mydata');
-  });
-
-  it('returns the empty-string sentinel from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().readFormat('application/x-custom')).toBe('');
-  });
-});
-
-describe('readClipboardHtml', () => {
-  it('round-trips through the backend', async () => {
-    setClipboardBackend(fakeBackend());
-    await writeClipboardHtml('<b>x</b>');
-    expect(await readClipboardHtml()).toBe('<b>x</b>');
-  });
-});
-
-describe('readClipboardImage', () => {
-  it('round-trips through the backend', async () => {
-    setClipboardBackend(fakeBackend());
-    await writeClipboardImage('data:image/png;base64,BBBB');
-    expect(await readClipboardImage()).toBe('data:image/png;base64,BBBB');
-  });
-
-  it('returns the empty-string sentinel from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().readImage()).toBe('');
-  });
-});
-
-describe('readClipboardRTF', () => {
-  it('round-trips through the backend', async () => {
-    setClipboardBackend(fakeBackend());
-    await writeClipboardRTF('{\\rtf1 hi}');
-    expect(await readClipboardRTF()).toBe('{\\rtf1 hi}');
-  });
-
-  it('returns the empty-string sentinel from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().readRTF()).toBe('');
-  });
-});
-
-describe('readClipboardText', () => {
-  it('round-trips through the backend', async () => {
-    setClipboardBackend(fakeBackend());
-    await writeClipboardText('hello');
-    expect(await readClipboardText()).toBe('hello');
-  });
-});
-
-describe('resetClipboardBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setClipboardBackend(fakeBackend());
-    installClipboardHostBackend(fakeBackend());
-    observeClipboardHostResult('clear', true);
-    resetClipboardBackendForTest();
-    expect(explainClipboardBackend().layer).toBe('host-not-enabled');
-    expect(explainClipboardBackend().conflict).toBe(false);
-    expect(explainClipboardBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('setClipboardBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setClipboardBackend(fakeBackend());
-    setClipboardBackend(null);
-    expect(getClipboardBackend()).not.toBeNull();
-  });
-});
-
-describe('writeClipboard', () => {
-  it('writes multiple formats atomically', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(
-      await writeClipboard([
-        { format: ClipboardFormatText, data: 'hello' },
-        { format: ClipboardFormatHtml, data: '<b>hello</b>' },
-      ]),
-    ).toBe(true);
-    expect(backend.text).toBe('hello');
-    expect(backend.html).toBe('<b>hello</b>');
-  });
-
-  it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().writeItems([{ format: ClipboardFormatText, data: 'x' }])).toBe(false);
-  });
-});
-
-describe('writeClipboardBookmark', () => {
-  it('writes via the active backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await writeClipboardBookmark('Flight', 'https://example.com')).toBe(true);
-    expect(backend.bookmark).toEqual({ title: 'Flight', url: 'https://example.com' });
-  });
-
-  it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().writeBookmark('Flight', 'https://example.com')).toBe(false);
-  });
-});
-
-describe('writeClipboardFiles', () => {
-  it('writes file paths via the active backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await writeClipboardFiles(['/a/b.txt'])).toBe(true);
-    expect(backend.files).toEqual(['/a/b.txt']);
-  });
-
-  it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().writeFiles(['/a.txt'])).toBe(false);
-  });
-});
-
-describe('writeClipboardFormat', () => {
-  it('writes an arbitrary format via the active backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await writeClipboardFormat('application/x-custom', 'data')).toBe(true);
-    expect(backend.formats['application/x-custom']).toBe('data');
-  });
-
-  it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().writeFormat('application/x-custom', 'data')).toBe(false);
-  });
-});
-
-describe('writeClipboardHtml', () => {
-  it('writes via the active backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await writeClipboardHtml('<i>y</i>')).toBe(true);
-    expect(backend.html).toBe('<i>y</i>');
-  });
-});
-
-describe('writeClipboardImage', () => {
-  it('writes via the active backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await writeClipboardImage('data:image/png;base64,CCCC')).toBe(true);
-    expect(backend.image).toBe('data:image/png;base64,CCCC');
-  });
-
-  it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().writeImage('data:image/png;base64,DDDD')).toBe(false);
-  });
-});
-
 describe('writeClipboardRTF', () => {
-  it('writes via the active backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await writeClipboardRTF('{\\rtf1 z}')).toBe(true);
-    expect(backend.rtf).toBe('{\\rtf1 z}');
-  });
-
-  it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().writeRTF('{\\rtf1 z}')).toBe(false);
-  });
+  it('is exported', () => expect(writeClipboardRTF).toBeTypeOf('function'));
 });
 
 describe('writeClipboardText', () => {
-  it('writes via the active backend', async () => {
-    const backend = fakeBackend();
-    setClipboardBackend(backend);
-    expect(await writeClipboardText('z')).toBe(true);
-    expect(backend.text).toBe('z');
-  });
+  it('is exported', () => expect(writeClipboardText).toBeTypeOf('function'));
 });

@@ -47,7 +47,7 @@ These commands start the matching Vite tool, wait for its local URL, then launch
 
 ## Architecture notes / known gaps
 
-- **Two processes.** `host-electron` runs in **main** (where `BrowserWindow`/`Menu`/`Tray`/`dialog` live). The scene renders in the **renderer**. They meet over IPC. A future renderer-side helper could auto-bridge the capability packages so renderer code calls `readClipboardText()` directly; today that wiring is explicit (preload + `ipcMain.handle`).
+- **Two processes.** `host-electron` runs in **main** (where `BrowserWindow`/`Menu`/`Tray`/`dialog` live). The scene renders in the **renderer**. They meet over IPC. A future renderer-side helper could auto-bridge the capability packages so renderer code calls `readClipboardText(host)` directly; today that wiring is explicit (preload + `ipcMain.handle`).
 - **Tray needs an icon asset.** `createTrayIcon` is wrapped in `try/catch` — Electron's `Tray` requires a valid image; bundle one to make the tray appear.
 - **`@flighthq/ipc`** main-side `send`/`invoke` are intentionally no-ops; this harness uses Electron's `ipcMain.handle` directly for the bridge.
 - **Examples and Rust/Wasm are exercised end-to-end.** `npm run examples:electron` loads the web runner, including its generated Rust/Wasm cells, in the Electron renderer process.

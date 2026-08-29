@@ -1,11 +1,26 @@
-import type { ClipboardBackend, ClipboardBookmark, ElectronApi, ElectronClipboardData } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  ClipboardBookmark,
+  ClipboardBookmarkBackend,
+  ClipboardFormatsBackend,
+  ClipboardImageBackend,
+  ClipboardTextBackend,
+  ElectronApi,
+  ElectronClipboardData,
+  EntityRuntimeKey,
+} from '@flighthq/types/contract';
 
-// Maps Flight's ClipboardBackend onto Electron's synchronous clipboard module, adapting to the
-// async Promise contract. Images cross the seam as data URLs (Flight's convention), converted via
-// nativeImage. Reads resolve to sentinels ('' / null / false) on failure rather than throwing.
-export function createElectronClipboardBackend(electron: ElectronApi): ClipboardBackend {
+type ElectronClipboardBackend = ClipboardBookmarkBackend &
+  ClipboardFormatsBackend &
+  ClipboardImageBackend &
+  ClipboardTextBackend;
+
+// Maps Flight's clipboard capabilities onto Electron's synchronous clipboard module, adapting to
+// the async Promise contracts. Images cross the seam as data URLs (Flight's convention), converted
+// via nativeImage. Reads resolve to sentinels ('' / null / false) on failure rather than throwing.
+export function createElectronClipboardBackend(electron: ElectronApi): ElectronClipboardBackend {
   const cb = electron.clipboard;
-  return {
+  return createEntity({
     async readText() {
       try {
         return cb.readText();
@@ -151,22 +166,6 @@ export function createElectronClipboardBackend(electron: ElectronApi): Clipboard
         return false;
       }
     },
-    async readFiles() {
-      // Electron's clipboard has no first-class file-list flavor; report none.
-      return [];
-    },
-    async writeFiles() {
-      // Electron's clipboard has no first-class file-list flavor; report unsupported.
-      return false;
-    },
-    getChangeCount() {
-      // Electron does not expose a clipboard change counter; -1 sentinel per the contract.
-      return -1;
-    },
-    subscribeClipboardChange() {
-      // Electron emits no clipboard-change event; inert unsubscribe.
-      return () => {};
-    },
     async clear() {
       try {
         cb.clear();
@@ -175,7 +174,7 @@ export function createElectronClipboardBackend(electron: ElectronApi): Clipboard
         return false;
       }
     },
-  };
+  } satisfies Omit<ElectronClipboardBackend, typeof EntityRuntimeKey>);
 }
 
 // Maps a MIME/flavor string to the keyed field Electron's clipboard.write accepts. Unknown flavors

@@ -3,7 +3,6 @@ import { enableHostWebAudio } from './webAudio';
 import { enableHostWebAudioDevice } from './webAudioDevice';
 import { enableHostWebBitmapEncode } from './webBitmapEncode';
 import { enableHostWebBitmapReadback } from './webBitmapReadback';
-import { enableHostWebClipboard } from './webClipboard';
 import { enableHostWebConnectivity } from './webConnectivity';
 import { enableHostWebDevice } from './webDevice';
 import { enableHostWebFileSystem } from './webFilesystem';
@@ -30,7 +29,6 @@ export function enableHostWeb(): void {
   enableHostWebAudioDevice();
   enableHostWebBitmapEncode();
   enableHostWebBitmapReadback();
-  enableHostWebClipboard();
   enableHostWebConnectivity();
   enableHostWebDevice();
   enableHostWebFileSystem();

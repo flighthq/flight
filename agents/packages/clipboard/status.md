@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/clipboard'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-29
+by: builder4
 ---
 
 # clipboard — Status
@@ -14,21 +14,16 @@ by: principal
 Every item was re-checked against `packages/clipboard/src/`, `packages/types/src/Clipboard*.ts`, and
 the one native backend on 2026-08-08. Most of the old log checked out closed; what survives is below.
 
-- **No backend in the tree ever delivers a change event, so `ClipboardWatch` never fires.** The web
-  backend subscribes only when the nonstandard `'onclipboardchange' in window` probe passes
-  (`clipboard.ts:200-207`) and otherwise returns an inert unsubscribe; `createElectronClipboardBackend`
-  returns an inert unsubscribe unconditionally (`host-electron/src/electronClipboard.ts:166`). Both
-  `getChangeCount` implementations return `-1` (`clipboard.ts:197`,
-  `electronClipboard.ts:162`). `attachClipboardWatch` is therefore untested against a real emitter.
+- **Change events remain an experimental Web-only surface.** `webClipboardBackend` exposes the static
+  change capability but delivers only when the runtime supports `onclipboardchange`; the distinct-
+  provider lifecycle is covered with observable listener sets, while a stable real-browser emitter is
+  still unavailable.
 - **The Electron atomic write silently misroutes two of the six canonical formats.** `formatKey`
   (`electronClipboard.ts:183-188`) recognizes `text/html`, `text/rtf`, and the bare string
   `'bookmark'`, and falls through to `'text'` for everything else — including
   `ClipboardFormatBookmark` (`'text/x-moz-url'`) and `ClipboardFormatImage` (`'image/png'`), the exact
   strings `hasClipboardBookmark` and the format constants hand callers. A
   bookmark or image item in a `writeClipboard` batch lands as plain text with no sentinel.
-- **`has*` is missing the files flavor.** `readClipboardFiles` / `writeClipboardFiles` exist
-  (`clipboard.ts:285`, `:330`) with no `hasClipboardFiles`, breaking the otherwise complete
-  read/write/has triple that text, HTML, RTF, image, and bookmark all have.
 - **`RTF` is cased against the rest of the SDK.** `hasClipboardRTF` / `readClipboardRTF` /
   `writeClipboardRTF` (`clipboard.ts:265`, `:305`, `:350`) shout the acronym while the constant it
   routes through is `ClipboardFormatRtf` (`types/src/ClipboardFormat.ts:4`). Pre-release, one of the
@@ -49,6 +44,9 @@ the one native backend on 2026-08-08. Most of the old log checked out closed; wh
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-29** — Replaced ambient `ClipboardBackend` resolution with explicit top-level Host slots
+  derived from provider coverage; removed the Web enabler and the zero-provider files/change-count
+  surface, and migrated Web/Electron/Tauri/Capacitor assemblers and consumers.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 "concern" that Electron's
   `writeItems` loops per format and that `ElectronClipboard` lacks `write()` is **false**:
   `electronClipboard.ts:144-149` builds one `ElectronClipboardData` and calls `cb.write(data)` once.

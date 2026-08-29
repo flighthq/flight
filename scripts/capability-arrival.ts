@@ -67,7 +67,6 @@ const EXPECTED_AGGREGATE = [
   'AudioDevice',
   'BitmapEncode',
   'BitmapReadback',
-  'Clipboard',
   'Connectivity',
   'Device',
   'FileSystem',
