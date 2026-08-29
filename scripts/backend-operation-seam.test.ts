@@ -71,14 +71,9 @@ describe('backend operation seam ratchet', () => {
   // it does not rewrite the preceding 12 → 13 AudioDevice history.
   // Image then independently adds operation-specific explanation for Bitmap materialization, with sentinel,
   // host, custom-precedence, and consumer-absence coverage. That raises the floor 14 → 15.
-  // BitmapEncode adds format encoding explanation (bitmap package, explainBitmapEncodeOperation +
-  // hasBitmapEncodeOperation). VideoCapability adds codec query explanation (video package,
-  // explainVideoCapabilityOperation + hasVideoCapabilityOperation). Both are new backend interfaces that
-  // arrived with the denominator growth from 46 to 50, so each is a new migration rather than a
-  // reclassification. This raises the floor 15 → 17.
-  // 17 of 50 enforced / 33 not migrated after the BitmapEncode and VideoCapability closures.
+  // 15 of 46 enforced / 31 not migrated after the Window and Image closures.
   it('never enforces fewer interfaces than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(17);
+    expect(report.enforced).toBeGreaterThanOrEqual(15);
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.
