@@ -495,6 +495,24 @@ describe('createGlRenderStateRuntime', () => {
 });
 
 describe('destroyGlRenderState', () => {
+  it('runs registered context teardown once after the final shared owner is destroyed', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const first = createGlRenderStateFromContextState(contextState);
+    const second = createGlRenderStateFromContextState(contextState);
+    const teardown = vi.fn();
+    const ledger = contextState as unknown as { teardowns: Array<(context: typeof gl) => void> };
+    ledger.teardowns.push(teardown);
+
+    destroyGlRenderState(first);
+    expect(teardown).not.toHaveBeenCalled();
+
+    destroyGlRenderState(second);
+    expect(teardown).toHaveBeenCalledOnce();
+    expect(teardown).toHaveBeenCalledWith(gl);
+    expect(ledger.teardowns).toHaveLength(0);
+  });
+
   it('does not delete the caller-owned bitmap shader that was bound last', () => {
     const { gl } = makeContext();
     const owner = createGlRenderState(gl);
