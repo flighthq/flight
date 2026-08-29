@@ -1,4 +1,8 @@
-import { resetVideoCapabilityBackendForTest, setVideoCapabilityBackend } from './videoFormat';
+import {
+  installVideoCapabilityHostBackend,
+  resetVideoCapabilityBackendForTest,
+  setVideoCapabilityBackend,
+} from './videoFormat';
 import {
   createVideoResourceFromMediaStream,
   loadVideoResourceFromBlob,
@@ -6,17 +10,19 @@ import {
   loadVideoResourceFromUrls,
 } from './videoResourceFrom';
 
-// Capture every <video> the loaders create so tests can drive its media events synchronously.
+// Capture every <video> the backend creates so tests can drive its media events synchronously.
 let created: HTMLVideoElement[];
 
 beforeEach(() => {
   created = [];
-  const original = document.createElement.bind(document);
-  vi.spyOn(document, 'createElement').mockImplementation(((tag: string, options?: ElementCreationOptions) => {
-    const element = original(tag, options);
-    if (tag === 'video') created.push(element as HTMLVideoElement);
-    return element;
-  }) as typeof document.createElement);
+  installVideoCapabilityHostBackend({
+    canPlayType: () => false,
+    createVideoElement() {
+      const element = document.createElement('video');
+      created.push(element);
+      return element;
+    },
+  });
 });
 
 afterEach(() => {
@@ -29,11 +35,19 @@ function lastVideo(): HTMLVideoElement {
 }
 
 describe('createVideoResourceFromMediaStream', () => {
-  it('wraps a MediaStream by assigning it to srcObject', () => {
+  it('wraps a MediaStream by assigning it to srcObject and marks the element as owned', () => {
     const stream = {} as MediaStream;
     const resource = createVideoResourceFromMediaStream(stream);
-    expect(resource.element).not.toBeNull();
-    expect((resource.element as HTMLVideoElement).srcObject).toBe(stream);
+    expect(resource).not.toBeNull();
+    expect(resource!.element).not.toBeNull();
+    expect((resource!.element as HTMLVideoElement).srcObject).toBe(stream);
+    expect(resource!.ownsElement).toBe(true);
+  });
+
+  it('returns null when the backend cannot create a video element', () => {
+    resetVideoCapabilityBackendForTest();
+    const resource = createVideoResourceFromMediaStream({} as MediaStream);
+    expect(resource).toBeNull();
   });
 });
 
@@ -48,6 +62,7 @@ describe('loadVideoResourceFromBlob', () => {
     lastVideo().dispatchEvent(new Event('canplay'));
     const resource = await promise;
     expect(resource.objectUrl).toBe('blob:mock');
+    expect(resource.ownsElement).toBe(true);
     expect(revokeSpy).not.toHaveBeenCalled();
   });
 
@@ -99,6 +114,12 @@ describe('loadVideoResourceFromUrl', () => {
     element.dispatchEvent(new Event('canplay'));
     const resource = await promise;
     expect(resource.element).toBe(element);
+    expect(resource.ownsElement).toBe(true);
+  });
+
+  it('rejects when the backend cannot create a video element', async () => {
+    resetVideoCapabilityBackendForTest();
+    await expect(loadVideoResourceFromUrl('test.mp4')).rejects.toThrow('No video element backend available');
   });
 
   it('applies crossOrigin, muted, and preload from options', async () => {
@@ -187,7 +208,14 @@ describe('loadVideoResourceFromUrls', () => {
   });
 
   it('loads the first playable source', async () => {
-    setVideoCapabilityBackend({ canPlayType: () => true });
+    setVideoCapabilityBackend({
+      canPlayType: () => true,
+      createVideoElement() {
+        const element = document.createElement('video');
+        created.push(element);
+        return element;
+      },
+    });
     const promise = loadVideoResourceFromUrls([{ url: 'clip.mp4' }]);
     const element = lastVideo();
     element.dispatchEvent(new Event('canplay'));

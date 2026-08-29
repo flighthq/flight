@@ -154,6 +154,9 @@ const _sentinel: VideoCapabilityBackend = {
   canPlayType(): boolean {
     return false;
   },
+  createVideoElement() {
+    return null;
+  },
 };
 
 let _custom: VideoCapabilityBackend | null = null;

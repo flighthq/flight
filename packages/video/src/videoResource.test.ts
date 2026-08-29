@@ -1,5 +1,6 @@
 import {
   createVideoResource,
+  destroyVideoResource,
   disposeVideoResource,
   getVideoResourceDuration,
   getVideoResourceHeight,
@@ -19,12 +20,135 @@ describe('createVideoResource', () => {
   it('returns a resource with null element when called with no arguments', () => {
     const resource = createVideoResource();
     expect(resource.element).toBeNull();
+    expect(resource.ownsElement).toBe(false);
   });
 
-  it('stores the provided video element', () => {
+  it('stores the provided video element as borrowed by default', () => {
     const element = document.createElement('video');
     const resource = createVideoResource(element);
     expect(resource.element).toBe(element);
+    expect(resource.ownsElement).toBe(false);
+  });
+
+  it('marks element as owned when explicitly requested', () => {
+    const element = document.createElement('video');
+    const resource = createVideoResource(element, undefined, true);
+    expect(resource.element).toBe(element);
+    expect(resource.ownsElement).toBe(true);
+  });
+});
+
+describe('destroyVideoResource', () => {
+  it('releases an owned element by detaching src and reloading to free the decoder', () => {
+    const removeAttribute = vi.fn();
+    const load = vi.fn();
+    const element = { removeAttribute, load, srcObject: null } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element, undefined, true);
+
+    destroyVideoResource(resource);
+
+    expect(removeAttribute).toHaveBeenCalledWith('src');
+    expect(load).toHaveBeenCalledOnce();
+    expect(resource.element).toBeNull();
+    expect(resource.ownsElement).toBe(false);
+  });
+
+  it('does not release a borrowed element — the caller manages its lifecycle', () => {
+    const removeAttribute = vi.fn();
+    const load = vi.fn();
+    const element = { removeAttribute, load, srcObject: null } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element);
+
+    destroyVideoResource(resource);
+
+    expect(removeAttribute).not.toHaveBeenCalled();
+    expect(load).not.toHaveBeenCalled();
+    expect(resource.element).toBeNull();
+    expect(resource.ownsElement).toBe(false);
+  });
+
+  it('clears srcObject on an owned MediaStream element without stopping caller-owned tracks', () => {
+    const track = { stop: vi.fn() } as unknown as MediaStreamTrack;
+    const stream = { getTracks: () => [track] } as unknown as MediaStream;
+    const element = {
+      removeAttribute: vi.fn(),
+      load: vi.fn(),
+      srcObject: stream,
+    } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element, undefined, true);
+
+    destroyVideoResource(resource);
+
+    expect(element.srcObject).toBeNull();
+    expect(track.stop).not.toHaveBeenCalled();
+  });
+
+  it('does not touch srcObject on a borrowed element', () => {
+    const stream = {} as MediaStream;
+    const element = {
+      removeAttribute: vi.fn(),
+      load: vi.fn(),
+      srcObject: stream,
+    } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element);
+
+    destroyVideoResource(resource);
+
+    expect(element.srcObject).toBe(stream);
+  });
+
+  it('revokes an owned object URL after the element has released its src', () => {
+    const order: string[] = [];
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => void order.push('revoke'));
+    const element = {
+      removeAttribute: vi.fn(() => void order.push('removeAttribute')),
+      load: vi.fn(() => void order.push('load')),
+      srcObject: null,
+    } as unknown as HTMLVideoElement;
+
+    destroyVideoResource(createVideoResource(element, 'blob:owned', true));
+
+    expect(order).toEqual(['removeAttribute', 'load', 'revoke']);
+  });
+
+  it('revokes an object URL even when the element is borrowed', () => {
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const element = { srcObject: null } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element, 'blob:owned');
+
+    destroyVideoResource(resource);
+
+    expect(revokeSpy).toHaveBeenCalledWith('blob:owned');
+    expect(resource.objectUrl).toBeNull();
+  });
+
+  it('is idempotent — a second destruction is a no-op', () => {
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const element = {
+      removeAttribute: vi.fn(),
+      load: vi.fn(),
+      srcObject: null,
+    } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element, 'blob:owned', true);
+
+    destroyVideoResource(resource);
+    destroyVideoResource(resource);
+
+    expect(element.removeAttribute).toHaveBeenCalledTimes(1);
+    expect(revokeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('nulls the element so VideoChannel queries degrade to sentinels', () => {
+    const element = {
+      removeAttribute: vi.fn(),
+      load: vi.fn(),
+      srcObject: null,
+    } as unknown as HTMLVideoElement;
+    const resource = createVideoResource(element, undefined, true);
+
+    destroyVideoResource(resource);
+
+    expect(resource.element).toBeNull();
   });
 });
 
@@ -40,6 +164,7 @@ describe('disposeVideoResource', () => {
     expect(removeAttribute).toHaveBeenCalledWith('src');
     expect(load).toHaveBeenCalledOnce();
     expect(resource.element).toBeNull();
+    expect(resource.ownsElement).toBe(false);
   });
 
   it('is a no-op on an already element-less resource', () => {
