@@ -997,7 +997,7 @@ export function p5HostBypassCurrentBudgetFailures(
 }
 
 export function p5ShapeRasterSurfaceCurrentFailures(report: Readonly<P5HostBypassReport>): string[] {
-  return p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS.budget);
+  return p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET);
 }
 
 export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypassBudgetEvidence[]): string[] {
