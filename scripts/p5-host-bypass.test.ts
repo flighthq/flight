@@ -111,7 +111,7 @@ describe('P5 host-bypass derived gate', () => {
     expect(countP5HostBypasses(report)['render-surface']).toBe(0);
     expect(formatted).toContain('28 (-5 fixed)');
     expect(formatted).toContain(
-      '14 (-2 fixed) direct-dom=4 input-ingress=0 frame-scheduling=0 scratch-surface=10 render-surface=0 webgpu-acquisition=0 — GL and WGPU shape raster scratch surfaces routed through the shared Raster2DSurfaceProvider',
+      '10 (-2 fixed) direct-dom=2 input-ingress=0 frame-scheduling=0 scratch-surface=8 render-surface=0 webgpu-acquisition=0 — GL and WGPU shape raster scratch surfaces routed through the shared Raster2DSurfaceProvider',
     );
     expect(formatted).toContain('DETECTS hand-written floor (not an exhaustive ceiling):');
     expect(formatted).toContain('ZERO category zero means none found by current detectors, not that no bypasses exist');
@@ -915,7 +915,7 @@ describe('P5 host-bypass derived gate', () => {
         ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(h8Index + 1),
       ];
       expect(p5HostBypassV4ProgressHistoryFailures(mutated)).toContain(
-        `P5 taxonomy v4 progress history[${h8Index}] declares ${repairedSites} repaired site(s) but moves 16 -> 14`,
+        `P5 taxonomy v4 progress history[${h8Index}] declares ${repairedSites} repaired site(s) but moves 12 -> 10`,
       );
       expect(p5ShapeRasterSurfaceProgressFailures(mutated)).toContain(
         'H8 shape-raster taxonomy v4 progress checkpoint no longer pins the exact total, categories, repair count, and reason',
