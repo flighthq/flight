@@ -767,6 +767,10 @@
     },
     {
       "packageName": "render-gl",
+      "registrar": "registerGlContextTeardown"
+    },
+    {
+      "packageName": "render-gl",
       "registrar": "registerGlImageTextureResolver"
     },
     {
@@ -812,6 +816,10 @@
     {
       "packageName": "render-wgpu",
       "registrar": "registerWgpuCompressedTextureUpload"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuDeviceTeardown"
     },
     {
       "packageName": "render-wgpu",
