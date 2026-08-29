@@ -1,4 +1,10 @@
-import { createVideoResource } from '@flighthq/video/contract';
+import {
+  createVideoTexture,
+  destroyVideoTexture,
+  getTextureSource,
+  getVideoTextureWidth,
+} from '@flighthq/texture/contract';
+import { createVideoResource, destroyVideoResource } from '@flighthq/video/contract';
 
 import {
   destroyVideoChannel,
@@ -77,15 +83,61 @@ describe('destroyVideoChannel', () => {
     expect(track.stop).not.toHaveBeenCalled();
   });
 
-  it('survives destroying the resource first then the channel', () => {
+  it('removes listener even when destroyVideoResource runs first', () => {
     const element = createMockVideoElement();
-    const resource = createVideoResource(element, true);
+    const resource = createVideoResource(element, undefined, true);
     const channel = playVideoResource(resource)!;
-    resource.element = null;
-    resource.ownsElement = false;
+    expect(element.listenerCount('ended')).toBe(1);
+    destroyVideoResource(resource);
+    expect(resource.element).toBeNull();
     destroyVideoChannel(channel);
+    expect(element.listenerCount('ended')).toBe(0);
     expect(channel.source).toBeNull();
     expect(channel.state).toBe('stopped');
+  });
+
+  it('combined resource+channel+texture teardown: resource first', () => {
+    const track = { stop: vi.fn(), kind: 'video', enabled: true } as unknown as MediaStreamTrack;
+    const stream = { getTracks: () => [track] } as unknown as MediaStream;
+    const element = createMockVideoElement(10, 240, 320);
+    (element as unknown as Record<string, unknown>).srcObject = stream;
+    (element as unknown as Record<string, unknown>).readyState = 4;
+    const resource = createVideoResource(element, undefined, true);
+    const channel = playVideoResource(resource)!;
+    const texture = createVideoTexture(resource);
+    expect(element.listenerCount('ended')).toBe(1);
+    expect(getVideoTextureWidth(texture)).toBe(320);
+    destroyVideoResource(resource);
+    destroyVideoTexture(texture);
+    destroyVideoChannel(channel);
+    expect(resource.element).toBeNull();
+    expect(channel.source).toBeNull();
+    expect(element.listenerCount('ended')).toBe(0);
+    expect(element.paused).toBe(true);
+    expect(getTextureSource(texture)).toBeNull();
+    expect(getVideoTextureWidth(texture)).toBe(-1);
+    expect(track.stop).not.toHaveBeenCalled();
+  });
+
+  it('combined resource+channel+texture teardown: channel first', () => {
+    const track = { stop: vi.fn(), kind: 'video', enabled: true } as unknown as MediaStreamTrack;
+    const stream = { getTracks: () => [track] } as unknown as MediaStream;
+    const element = createMockVideoElement(10, 240, 320);
+    (element as unknown as Record<string, unknown>).srcObject = stream;
+    (element as unknown as Record<string, unknown>).readyState = 4;
+    const resource = createVideoResource(element, undefined, true);
+    const channel = playVideoResource(resource)!;
+    const texture = createVideoTexture(resource);
+    destroyVideoChannel(channel);
+    destroyVideoTexture(texture);
+    destroyVideoResource(resource);
+    expect(channel.source).toBeNull();
+    expect(element.listenerCount('ended')).toBe(0);
+    expect(element.paused).toBe(true);
+    expect(resource.element).toBeNull();
+    expect(getTextureSource(texture)).toBeNull();
+    expect(getVideoTextureWidth(texture)).toBe(-1);
+    expect(track.stop).not.toHaveBeenCalled();
   });
 });
 
@@ -234,9 +286,11 @@ class MockVideoElement {
   loop = false;
   paused = false;
   playbackRate = 1;
+  srcObject: MediaStream | null = null;
   videoHeight: number;
   videoWidth: number;
   volume = 1;
+  private _attrs = new Map<string, string>();
   private _listeners = new Map<string, (() => void)[]>();
 
   constructor(duration = 10, videoHeight = 0, videoWidth = 0) {
@@ -251,16 +305,12 @@ class MockVideoElement {
     this._listeners.set(type, list);
   }
 
-  removeEventListener(type: string, handler: () => void): void {
-    const list = this._listeners.get(type) ?? [];
-    this._listeners.set(
-      type,
-      list.filter((h) => h !== handler),
-    );
-  }
-
   listenerCount(type: string): number {
     return this._listeners.get(type)?.length ?? 0;
+  }
+
+  load(): void {
+    // no-op — satisfies destroyVideoResource's decoder-release call
   }
 
   pause(): void {
@@ -270,6 +320,18 @@ class MockVideoElement {
   play(): Promise<void> {
     this.paused = false;
     return Promise.resolve();
+  }
+
+  removeAttribute(name: string): void {
+    this._attrs.delete(name);
+  }
+
+  removeEventListener(type: string, handler: () => void): void {
+    const list = this._listeners.get(type) ?? [];
+    this._listeners.set(
+      type,
+      list.filter((h) => h !== handler),
+    );
   }
 }
 
