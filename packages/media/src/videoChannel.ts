@@ -2,7 +2,7 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/types/contract';
 
 export function destroyVideoChannel(channel: VideoChannel): void {
-  const element = getVideoElement(channel.source);
+  const element = channelElements.get(channel) ?? getVideoElement(channel.source);
   if (element !== null) {
     const runtime = videoChannelRuntimes.get(element);
     if (runtime !== undefined) {
@@ -10,6 +10,7 @@ export function destroyVideoChannel(channel: VideoChannel): void {
       videoChannelRuntimes.delete(element);
     }
     element.pause();
+    channelElements.delete(channel);
   }
   channel.source = null;
   channel.state = 'stopped';
@@ -71,6 +72,7 @@ export function playVideoResource(source: VideoResource, options?: Readonly<Vide
 
   const onEnded = () => completeVideoChannel(channel);
   videoChannelRuntimes.set(element, { loopsRemaining: channel.loops, onEnded });
+  channelElements.set(channel, element);
 
   element.currentTime = channel.currentTime / 1000;
   element.volume = channel.gain;
@@ -125,6 +127,9 @@ interface VideoChannelRuntime {
   onEnded: () => void;
 }
 
+// Records the element at creation so destroyVideoChannel can reach it even after
+// destroyVideoResource nulls resource.element.
+const channelElements = new WeakMap<VideoChannel, HTMLVideoElement>();
 const videoChannelRuntimes = new WeakMap<HTMLVideoElement, VideoChannelRuntime>();
 
 function getVideoElement(resource: Readonly<VideoResource> | null): HTMLVideoElement | null {
