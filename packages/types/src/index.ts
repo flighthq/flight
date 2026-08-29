@@ -320,6 +320,7 @@ export * from './HtmlView';
 export * from './Host';
 export * from './HostImageSource';
 export * from './FileDialogBackend';
+export * from './FullscreenBackend';
 export * from './MessageDialogBackend';
 export * from './PromptDialogBackend';
 export * from './TextureSource';

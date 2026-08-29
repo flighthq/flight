@@ -12,6 +12,7 @@ import type { DeviceBackend } from './Device';
 import type { FileDialogBackend } from './FileDialogBackend';
 import type { FileSystemBackend } from './FileSystem';
 import type { FontLoadingBackend } from './FontLoadingBackend';
+import type { FullscreenBackend } from './FullscreenBackend';
 import type { GeolocationBackend } from './Geolocation';
 import type { GlyphRasterizerBackend } from './GlyphSource';
 import type { HapticsBackend } from './Haptics';
@@ -138,6 +139,7 @@ export interface HostTextCapabilities {
 
 export interface HostUiCapabilities {
   readonly clipboard?: ClipboardBackend;
+  readonly fullscreen?: FullscreenBackend;
   readonly menu?: MenuBackend;
   readonly notification?: NotificationBackend;
   readonly share?: ShareBackend;
@@ -316,6 +318,14 @@ export interface HasTextShaper {
 
 export interface HasUiClipboard {
   readonly ui: { readonly clipboard: ClipboardBackend };
+}
+
+export interface HasUiFullscreen {
+  readonly ui: { readonly fullscreen: FullscreenBackend };
+}
+
+export interface HasUiFullscreenSubscription {
+  readonly ui: { readonly fullscreen: Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> };
 }
 
 export interface HasUiMenu {
