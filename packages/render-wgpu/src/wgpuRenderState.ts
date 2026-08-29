@@ -605,6 +605,13 @@ const WGPU_DEVICE_RUNTIME_KEYS = [
   'wgpuExternalTextureCache',
   'wgpuRenderTextureCache',
   'sceneMeshUploadCache',
+  'standardMaterialModule',
+  'colorScaleBiasModule',
+  'packedTintModule',
+  'colorMatrixModule',
+  'shapeMeshColorScaleBiasPipelines',
+  'particleResources',
+  'quadBatchResources',
 ] as const satisfies ReadonlyArray<keyof WgpuRenderStateRuntime>;
 
 const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();

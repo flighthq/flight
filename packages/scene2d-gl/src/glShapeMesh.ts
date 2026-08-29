@@ -88,10 +88,11 @@ export function drawGlShapeMeshes(
 // The lean flat-color mesh binding for `state`, compiled once per context. The base path and the fold's
 // tinted draw (which borrows these shared vertex/index buffers) resolve it here.
 export function ensureGlShapeMeshProgram(state: GlRenderState): GlShapeMeshBinding {
-  const gl = state.gl;
-  const existing = shapeMeshPrograms.get(gl);
+  const runtime = getGlRenderStateRuntime(state);
+  const existing = runtime.shapeMeshBinding;
   if (existing !== undefined) return existing;
 
+  const gl = state.gl;
   const program = compileShapeMeshProgram(gl);
   const created: GlShapeMeshBinding = {
     program,
@@ -101,7 +102,7 @@ export function ensureGlShapeMeshProgram(state: GlRenderState): GlShapeMeshBindi
     matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
     colorLocation: gl.getUniformLocation(program, 'u_color'),
   };
-  shapeMeshPrograms.set(gl, created);
+  runtime.shapeMeshBinding = created;
   return created;
 }
 
@@ -119,8 +120,6 @@ precision mediump float;
 uniform vec4 u_color;
 void main() { gl_FragColor = u_color; }
 `;
-
-const shapeMeshPrograms = new WeakMap<GlContext, GlShapeMeshBinding>();
 
 function compileShapeMeshProgram(gl: GlContext): WebGLProgram {
   return createGlProgram(gl, VERTEX_SOURCE, FRAGMENT_SOURCE, 'Shape-mesh');

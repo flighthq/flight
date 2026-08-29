@@ -842,6 +842,7 @@ export * from './WgpuDeviceState';
 export * from './WgpuRenderState';
 export * from './WgpuRenderTexture';
 export * from './WgpuTextureResolver';
+export * from './WgpuParticleResources';
 export * from './WgpuQuadBatchResources';
 export * from './WgpuRichTextOverlay';
 export * from './WgpuShapeMesh';

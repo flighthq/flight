@@ -15,6 +15,7 @@ import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTexture';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
+import type { GlShapeMeshBinding } from './GlShapeMeshBinding';
 import type { GlTextureRealization, GlTextureResolver } from './GlTextureResolver';
 import type { GlVelocityWriter } from './GlVelocityWriter';
 import type { Image } from './Image';
@@ -157,6 +158,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   colorMatrixInstancedShader?: GlColorScaleBiasInstancedShader;
   colorTintInstancedShader?: GlColorScaleBiasInstancedShader;
   uniformColorScaleBiasShader?: GlUniformColorScaleBiasShader;
+  shapeMeshBinding?: GlShapeMeshBinding;
   shapeMeshColorScaleBiasShader?: GlShapeMeshColorScaleBiasShader;
   shapeMeshColorMatrixShader?: GlShapeMeshColorScaleBiasShader;
   // The 3D material dispatch policy lives in registries.meshMaterialRenderers, separate from the 2D

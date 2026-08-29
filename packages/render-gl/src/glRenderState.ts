@@ -378,6 +378,7 @@ const GL_CONTEXT_RUNTIME_KEYS = [
   'colorMatrixInstancedShader',
   'colorTintInstancedShader',
   'uniformColorScaleBiasShader',
+  'shapeMeshBinding',
   'shapeMeshColorScaleBiasShader',
   'shapeMeshColorMatrixShader',
   'sceneMeshUploadCache',

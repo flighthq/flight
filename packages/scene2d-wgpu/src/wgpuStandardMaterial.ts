@@ -1,4 +1,4 @@
-import { registerWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, registerWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import type { WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
@@ -16,12 +16,13 @@ export function registerWgpuStandardMaterial(state: WgpuRenderState): void {
 export const standardWgpuMaterialRenderer: WgpuMaterialRenderer = {
   instanceFloatCount: 0,
   getShaderModule(state: WgpuRenderState): GPUShaderModule {
-    const cached = _modules.get(state.device);
+    const runtime = getWgpuRenderStateRuntime(state);
+    const cached = runtime.standardMaterialModule;
     if (cached !== undefined) return cached;
     const module = state.device.createShaderModule({
       code: getWgpuQuadBatchPreludeWGSL() + STANDARD_MATERIAL_WGSL,
     });
-    _modules.set(state.device, module);
+    runtime.standardMaterialModule = module;
     return module;
   },
 };
@@ -49,5 +50,3 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
   return color * clamp(in.alpha, 0.0, 1.0);
 }
 `;
-
-const _modules = new WeakMap<GPUDevice, GPUShaderModule>();
