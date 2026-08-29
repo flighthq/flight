@@ -2,6 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import type { WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { resolveWgpuSmoothingBindGroup } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   getWgpuRenderTargetSupersampleScale,
@@ -49,12 +50,12 @@ describe('beginWgpuRenderPass', () => {
 });
 
 describe('createWgpuRenderTarget', () => {
-  it('returns a target with texture, view, bind group, and depth-stencil', async () => {
+  it('returns a target with texture, view, binding cache, and depth-stencil', async () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuRenderTarget(state, 256, 256);
     expect(target.texture).toBeDefined();
     expect(target.view).toBeDefined();
-    expect(target.bindGroup).toBeDefined();
+    expect(target.bindings).toBeDefined();
     expect(target.depthStencilTexture).toBeDefined();
     expect(target.width).toBe(256);
     expect(target.height).toBe(256);
@@ -200,24 +201,27 @@ describe('resizeWgpuRenderTarget', () => {
     const target = createWgpuRenderTarget(state, 64, 64);
     const texture = target.texture;
     const depthStencilTexture = target.depthStencilTexture;
-    const bindGroup = target.bindGroup;
+    const sampler = getWgpuRenderStateRuntime(state).linearSampler;
+    const bindGroup = resolveWgpuSmoothingBindGroup(state, target, true);
 
     resizeWgpuRenderTarget(state, target, 64, 64);
 
     expect(target.texture).toBe(texture);
     expect(target.depthStencilTexture).toBe(depthStencilTexture);
-    expect(target.bindGroup).toBe(bindGroup);
+    // The view survived, so its cached bindings must survive with it.
+    expect(target.bindings.get(sampler)).toBe(bindGroup);
   });
 
-  it('updates width, height, and bind group', async () => {
+  it('updates width, height, and drops bindings that referenced the old view', async () => {
     const state = await createWgpuRenderStateForTest();
     const target = createWgpuRenderTarget(state, 64, 64);
-    const previousBindGroup = target.bindGroup;
+    const previousBindGroup = resolveWgpuSmoothingBindGroup(state, target, true);
     resizeWgpuRenderTarget(state, target, 200, 150);
     expect(target.width).toBe(200);
     expect(target.height).toBe(150);
-    expect(target.bindGroup).toBeDefined();
-    expect(target.bindGroup).not.toBe(previousBindGroup);
+    // Reallocation replaces the view, so every binding over the old one is dropped and rebuilt.
+    expect(target.bindings.size).toBe(0);
+    expect(resolveWgpuSmoothingBindGroup(state, target, true)).not.toBe(previousBindGroup);
   });
 
   it('reallocates when the effective sample count changes', async () => {

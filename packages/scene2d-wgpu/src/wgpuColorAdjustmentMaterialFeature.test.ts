@@ -119,7 +119,8 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = {
-      bindGroup: {} as GPUBindGroup,
+      bindings: new Map(),
+      mipLevelCount: 1,
       texture: {} as GPUTexture,
       view: {} as GPUTextureView,
     };

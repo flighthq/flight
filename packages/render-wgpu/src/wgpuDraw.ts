@@ -83,7 +83,14 @@ function bindWgpuTextureSourceTexture(
       ? runtime.textureSourceStraightSrgbTextureCache
       : runtime.textureSourceStraightTextureCache;
   const cached = cache.get(image);
-  if (cached !== undefined && cached.version === image.version) return cached;
+  // Mip allocation is part of the identity, not a sampling preference. WebGPU fixes mipLevelCount at
+  // creation, so a cached level-0-only realization cannot serve a request that needs a chain however it
+  // is sampled — without this arm the FIRST caller's `generateMips` silently decided for every later
+  // sharer of the source, and a minified draw sampled a texture that has no lower levels.
+  const wantsMips = generateMips && getWgpuRenderStateRuntime(state).mipmapGenerator != null;
+  if (cached !== undefined && cached.version === image.version && cached.mipLevelCount > 1 === wantsMips) {
+    return cached;
+  }
 
   const built = upload(state, image, generateMips, premultiply, colorSpace);
   if (built === null) return cached ?? null;
@@ -95,10 +102,9 @@ function bindWgpuTextureSourceTexture(
     retireWgpuTexture(state, cached.texture);
     cached.texture = built.texture;
     cached.view = built.view;
-    cached.bindGroup = built.bindGroup;
-    // The per-smoothing variants referenced the old view; drop them so they rebuild against the new one.
-    cached.bindGroupLinear = undefined;
-    cached.bindGroupNearest = undefined;
+    cached.mipLevelCount = built.mipLevelCount;
+    // Every cached bind group referenced the old view; drop them all so they rebuild against the new one.
+    cached.bindings.clear();
     cached.straightAlpha = built.straightAlpha;
     cached.version = image.version;
     return cached;
@@ -108,14 +114,16 @@ function bindWgpuTextureSourceTexture(
   return entry;
 }
 
-// Uploads (and caches per image source) the GPU texture for an image, returning its texture, full view,
-// and a 2D bind group. With generateMips the texture is allocated with a full mip chain and its lower
-// levels are rendered via runtime.mipmapGenerator (installed by registerWgpuMipmapGeneration); left false
-// it is a single-level texture. Passing true without registering allocates the levels but leaves them
-// uninitialized — the sampler reads zeros/garbage below level 0. Because WebGPU fixes mipLevelCount at
-// creation and the cache is keyed by source, the first caller decides whether a shared image gets a chain.
+// Uploads (and caches per raw element) the GPU texture for an image source, returning the allocated
+// resource. With generateMips the texture is allocated with a full mip chain whose lower levels are
+// rendered via runtime.mipmapGenerator (installed by registerWgpuMipmapGeneration); left false it is a
+// single-level texture. Passing true without registering leaves the extra levels uninitialized, which
+// runtime.mipmapDegradedGuard reports.
 //
-// No in-tree caller passes generateMips today; resolveWgpuTexture does not expose the parameter.
+// Mip allocation is part of this cache's identity too, for the same reason as the TextureSource caches:
+// WebGPU fixes mipLevelCount at creation, so a cached level-0-only realization cannot serve a request
+// that needs a chain. Nothing in-tree passes generateMips through here today (resolveWgpuTexture does not
+// expose it), but a cache that is only correct while a parameter goes unused is a trap, not an invariant.
 export function bindWgpuTexture(
   state: WgpuRenderState,
   imageSource: CanvasImageSource,
@@ -123,10 +131,10 @@ export function bindWgpuTexture(
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
   const cached = runtime.textureCache.get(imageSource);
-  if (cached !== undefined) return cached;
+  const wantsMips = generateMips && runtime.mipmapGenerator != null;
+  if (cached !== undefined && cached.mipLevelCount > 1 === wantsMips) return cached;
 
   const { device } = state;
-  const { textureBindGroupLayout } = runtime;
 
   // Determine pixel dimensions from the image source type
   let width = 1;
@@ -188,34 +196,30 @@ export function bindWgpuTexture(
   if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, 'rgba8unorm');
 
   const view = texture.createView();
-  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
 
-  const bindGroup = device.createBindGroup({
-    layout: textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
-
-  const entry: WgpuTextureEntry = { texture, view, bindGroup };
+  // No bind group is built here on purpose. Binding a sampler at upload time would capture whatever
+  // `state.allowSmoothing` happened to be for the FIRST caller into an entry every later sharer reuses;
+  // the sampler is chosen per draw instead, in resolveWgpuSmoothingBindGroup.
+  const entry: WgpuTextureEntry = { bindings: new Map(), mipLevelCount, texture, view };
   runtime.textureCache.set(imageSource, entry);
   return entry;
 }
 
-function buildWgpuSmoothingBindGroup(
-  state: WgpuRenderState,
-  runtime: WgpuRenderStateRuntime,
-  view: GPUTextureView,
-  sampler: GPUSampler,
-): GPUBindGroup {
-  return state.device.createBindGroup({
-    layout: runtime.textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
+// The sampler the state's CURRENT draw policy selects. Read per draw and never stored on a resource:
+// `allowSmoothing` is mutable and shared, so a value captured at upload time goes stale silently.
+function getWgpuDrawPolicySampler(state: WgpuRenderState, runtime: WgpuRenderStateRuntime): GPUSampler {
+  return state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
+}
+
+// The group(1) bind group for this entry's view sampled with `sampler`, built once per sampler and
+// memoized on the entry. Every bind group over a cached texture goes through here, so no draw policy
+// can reach a resource's identity.
+function resolveWgpuTextureBinding(state: WgpuRenderState, entry: WgpuTextureEntry, sampler: GPUSampler): GPUBindGroup {
+  const cached = entry.bindings.get(sampler);
+  if (cached !== undefined) return cached;
+  const bindGroup = buildWgpuTextureBindGroup(state, entry.view, sampler);
+  entry.bindings.set(sampler, bindGroup);
+  return bindGroup;
 }
 
 // Dynamic host-video upload. The texture is cached by Image source and copied only when its
@@ -247,8 +251,9 @@ export function bindWgpuVideoTexture(
     });
     const view = texture.createView();
     entry = {
-      bindGroup: buildWgpuTextureBindGroup(state, view, sampler),
+      bindings: new Map(),
       height,
+      mipLevelCount: 1,
       sampler,
       texture,
       uploadedVersion: -1,
@@ -257,8 +262,9 @@ export function bindWgpuVideoTexture(
     };
     cache.set(image!, entry);
   } else if (entry.sampler !== sampler) {
+    // Video carries its own resolved sampler rather than following the global policy, so record the
+    // change; the bind group for it is resolved on demand from the shared per-sampler cache.
     entry.sampler = sampler;
-    entry.bindGroup = buildWgpuTextureBindGroup(state, entry.view, sampler);
   }
 
   if (entry.uploadedVersion !== image!.version) {
@@ -275,27 +281,13 @@ export function bindWgpuVideoTexture(
   return entry;
 }
 
-export function buildWgpuRenderTargetBindGroup(state: WgpuRenderState, view: GPUTextureView): GPUBindGroup {
-  const runtime = getWgpuRenderStateRuntime(state);
-  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
-  return state.device.createBindGroup({
-    layout: runtime.textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
-}
-
 export function createWgpuTextureEntry(
   state: WgpuRenderState,
   width: number,
   height: number,
   canvas: HTMLCanvasElement,
 ): WgpuTextureEntry | null {
-  const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
-  const { textureBindGroupLayout } = runtime;
   const w = Math.max(1, width);
   const h = Math.max(1, height);
   if (!isWgpuExternalImageSourceReady(canvas, w, h)) return null;
@@ -319,17 +311,8 @@ export function createWgpuTextureEntry(
   }
 
   const view = texture.createView();
-  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
 
-  const bindGroup = device.createBindGroup({
-    layout: textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
-
-  return { texture, view, bindGroup };
+  return { bindings: new Map(), mipLevelCount: 1, texture, view };
 }
 
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
@@ -398,7 +381,7 @@ export function drawWgpuQuad(
     v1,
     textureEntry.straightAlpha === true,
   );
-  submitWgpuQuadDraw(state, uniformOffset, textureEntry.bindGroup);
+  submitWgpuQuadDraw(state, uniformOffset, resolveWgpuSmoothingBindGroup(state, textureEntry, null));
 }
 
 export function drawWgpuQuadWithTransform(
@@ -432,7 +415,7 @@ export function drawWgpuQuadWithTransform(
     v1,
     textureEntry.straightAlpha === true,
   );
-  submitWgpuQuadDraw(state, uniformOffset, textureEntry.bindGroup);
+  submitWgpuQuadDraw(state, uniformOffset, resolveWgpuSmoothingBindGroup(state, textureEntry, null));
 }
 
 export function enableWgpuBlendModeSupport(state: WgpuRenderState): void {
@@ -446,22 +429,27 @@ export function getWgpuRenderProxyColorScaleBias(renderProxy: Readonly<RenderPro
 }
 
 // The group(1) bind group a 2D bitmap should sample through for a per-bitmap `smoothing` preference:
-// `null` returns the entry's default bind group (the global `state.allowSmoothing` sampler, for
-// sprites/text/shapes); `true`/`false` returns a lazily-built variant over the entry's view bound with the
-// LINEAR/NEAREST sampler, so a smoothed and an unsmoothed bitmap sharing one texture each sample with their
-// own filter. The variants cache on the entry and are cleared when the texture re-uploads. Mirrors the gl
-// `smoothingOverride` on `bindGlImageResourceTexture`.
+// `null` follows the state's current `allowSmoothing` policy (sprites/text/shapes), `true`/`false`
+// overrides it with the LINEAR/NEAREST sampler, so a smoothed and an unsmoothed bitmap sharing one
+// texture each sample with their own filter. All three arms resolve through the same per-sampler
+// binding cache. Mirrors the gl `smoothingOverride` on `bindGlImageResourceTexture`.
+//
+// The `null` arm re-reads the policy on every call rather than returning a group captured at upload:
+// `allowSmoothing` is mutable and the entry is shared, so a captured group let whichever caller
+// realized the texture first decide how everyone else sampled it.
 export function resolveWgpuSmoothingBindGroup(
   state: WgpuRenderState,
   entry: WgpuTextureEntry,
   smoothing: boolean | null,
 ): GPUBindGroup {
-  if (smoothing === null) return entry.bindGroup;
   const runtime = getWgpuRenderStateRuntime(state);
-  if (smoothing) {
-    return (entry.bindGroupLinear ??= buildWgpuSmoothingBindGroup(state, runtime, entry.view, runtime.linearSampler));
-  }
-  return (entry.bindGroupNearest ??= buildWgpuSmoothingBindGroup(state, runtime, entry.view, runtime.nearestSampler));
+  const sampler =
+    smoothing === null
+      ? (entry.sampler ?? getWgpuDrawPolicySampler(state, runtime))
+      : smoothing
+        ? runtime.linearSampler
+        : runtime.nearestSampler;
+  return resolveWgpuTextureBinding(state, entry, sampler);
 }
 
 export function submitWgpuQuadDraw(
@@ -562,15 +550,7 @@ function uploadWgpuBitmapEntry(
   device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
   if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
-  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
-  const bindGroup = device.createBindGroup({
-    layout: runtime.textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
-  return { texture, view, bindGroup };
+  return { bindings: new Map(), mipLevelCount, texture, view };
 }
 
 function uploadWgpuCompressedImageEntry(
@@ -627,15 +607,7 @@ function uploadWgpuImageResourceEntry(
   }
   if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
-  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
-  const bindGroup = device.createBindGroup({
-    layout: runtime.textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
-  return { texture, view, bindGroup };
+  return { bindings: new Map(), mipLevelCount, texture, view };
 }
 
 type WgpuTextureSourceUpload = (

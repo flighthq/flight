@@ -53,7 +53,8 @@ vi.mock('@flighthq/render-wgpu/contract', async (importOriginal) => {
     setWgpuRenderTransform2D: vi.fn(),
     createWgpuRenderTarget: vi.fn(
       (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
-        bindGroup: {} as GPUBindGroup,
+        bindings: new Map(),
+        mipLevelCount: 1,
         colorSpace: 'srgb',
         depthStencilTexture: {} as GPUTexture,
         depthStencilView: {} as GPUTextureView,

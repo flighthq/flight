@@ -18,7 +18,6 @@ import {
   bindWgpuImageResourceTexture,
   bindWgpuTexture,
   bindWgpuVideoTexture,
-  buildWgpuRenderTargetBindGroup,
   createWgpuTextureEntry,
   drawWgpuQuad,
   drawWgpuQuadWithTransform,
@@ -127,6 +126,52 @@ describe('bindWgpuBitmapTexture', () => {
     // This guards a hazard with no reproduction of its own — without the test there is nothing to stop
     // the deferral being read as pointless indirection and reverted.
     expect(getWgpuRenderStateRuntime(state).retiredTextures).toContain(outgoing);
+  });
+});
+
+describe('bindWgpuBitmapTexture mip allocation identity', () => {
+  // ★ FALSIFIER, defect 6 arm A — mip allocation is part of a resource's identity, not a sampling
+  // preference. WebGPU fixes mipLevelCount at creation, so a level-0-only realization can never serve a
+  // request that needs a chain. Before the complete upload key, the second call here returned the FIRST
+  // caller's single-level texture and the mipmapped request silently sampled a texture with no lower
+  // levels. Dropping the mipLevelCount arm from the cache check fails here.
+  //
+  // This asserts on the ALLOCATION rather than on rendered pixels, which is what makes it immune to the
+  // three maskers that keep bitmap-perbitmap-smoothing.webgpu.ts green: it registers the mipmap
+  // generator itself rather than relying on the harness, and it never samples, so neither magnification
+  // nor a sampler-specific bind group can hide the wrong allocation.
+  it('does not hand a no-mip realization to a request that asks for mips', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuMipmapGeneration(state);
+    const image = bitmap(4, 1);
+
+    const withoutMips = bindWgpuBitmapTexture(state, image, false);
+    expect(withoutMips.mipLevelCount).toBe(1);
+
+    const withMips = bindWgpuBitmapTexture(state, image, true);
+    expect(withMips.mipLevelCount).toBeGreaterThan(1);
+  });
+
+  // The raw-element cache (bindWgpuTexture) carries the same identity rule. Nothing in-tree passes
+  // generateMips through it today, so this is the test that keeps it true rather than accidentally true.
+  it('applies the same mip identity rule to the raw-element cache', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuMipmapGeneration(state);
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+
+    expect(requireTextureEntry(bindWgpuTexture(state, canvas, false)).mipLevelCount).toBe(1);
+    expect(requireTextureEntry(bindWgpuTexture(state, canvas, true)).mipLevelCount).toBeGreaterThan(1);
+  });
+
+  it('reuses one realization when the mip request matches', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuMipmapGeneration(state);
+    const image = bitmap(4, 1);
+
+    const first = bindWgpuBitmapTexture(state, image, true);
+    expect(bindWgpuBitmapTexture(state, image, true)).toBe(first);
   });
 });
 
@@ -353,15 +398,6 @@ describe('bindWgpuVideoTexture', () => {
   });
 });
 
-describe('buildWgpuRenderTargetBindGroup', () => {
-  it('returns a bind group for a view', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const fakeView = {} as GPUTextureView;
-    const bindGroup = buildWgpuRenderTargetBindGroup(state, fakeView);
-    expect(bindGroup).toBeDefined();
-  });
-});
-
 describe('createWgpuTextureEntry', () => {
   it('creates a texture entry from a canvas', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -370,7 +406,7 @@ describe('createWgpuTextureEntry', () => {
     canvas.height = 4;
     const entry = requireTextureEntry(createWgpuTextureEntry(state, 4, 4, canvas));
     expect(entry.texture).toBeDefined();
-    expect(entry.bindGroup).toBeDefined();
+    expect(entry.bindings).toBeDefined();
   });
 });
 
@@ -434,21 +470,61 @@ describe('getWgpuRenderProxyColorScaleBias', () => {
 });
 
 describe('resolveWgpuSmoothingBindGroup', () => {
-  it('returns the default bind group for a null smoothing (no variant built)', async () => {
+  it('follows the state smoothing policy for a null smoothing', async () => {
     const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
     const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
-    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindGroup);
-    expect(entry.bindGroupLinear).toBeUndefined();
-    expect(entry.bindGroupNearest).toBeUndefined();
+
+    state.allowSmoothing = true;
+    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindings.get(runtime.linearSampler));
+  });
+
+  // ★ FALSIFIER, defect 6 arm B — a cached bind group must not carry the creating state's smoothing.
+  // The entry is realized under one policy and drawn under the other with NO per-bitmap override. Before
+  // the resource/binding split the null arm returned a bind group captured at upload time, so this
+  // returned the LINEAR group after the policy flipped to nearest: whichever caller realized a shared
+  // texture first silently decided how every later sharer sampled it. Deleting the re-read to "cache the
+  // default group" fails here.
+  it('rebuilds for the current policy when allowSmoothing changes after the texture was realized', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+
+    state.allowSmoothing = true;
+    const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
+    const smoothed = resolveWgpuSmoothingBindGroup(state, entry, null);
+
+    state.allowSmoothing = false;
+    const unsmoothed = resolveWgpuSmoothingBindGroup(state, entry, null);
+
+    expect(unsmoothed).not.toBe(smoothed);
+    expect(unsmoothed).toBe(entry.bindings.get(runtime.nearestSampler));
+    // Flipping back returns the first group rather than building a third — the policy selects a binding,
+    // it does not mint one per draw.
+    state.allowSmoothing = true;
+    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(smoothed);
+  });
+
+  it('lets a source-owned sampler override the policy, and an explicit override beat both', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
+
+    // External/video sources fix their own filtering; the global policy must not override it.
+    entry.sampler = runtime.nearestSampler;
+    state.allowSmoothing = true;
+    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindings.get(runtime.nearestSampler));
+    // A per-bitmap override still wins, as it always did.
+    expect(resolveWgpuSmoothingBindGroup(state, entry, true)).toBe(entry.bindings.get(runtime.linearSampler));
   });
 
   it('builds and caches distinct LINEAR and NEAREST variants for true/false', async () => {
     const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
     const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
     const createBindGroup = vi.spyOn(state.device, 'createBindGroup');
 
     resolveWgpuSmoothingBindGroup(state, entry, true);
-    expect(entry.bindGroupLinear).toBeDefined();
+    expect(entry.bindings.get(runtime.linearSampler)).toBeDefined();
     expect(createBindGroup).toHaveBeenCalledTimes(1);
 
     // Second smoothed bind reuses the cached variant — no new bind group.
@@ -457,7 +533,7 @@ describe('resolveWgpuSmoothingBindGroup', () => {
 
     // The unsmoothed variant is a separate cached bind group.
     resolveWgpuSmoothingBindGroup(state, entry, false);
-    expect(entry.bindGroupNearest).toBeDefined();
+    expect(entry.bindings.get(runtime.nearestSampler)).toBeDefined();
     expect(createBindGroup).toHaveBeenCalledTimes(2);
   });
 
@@ -467,11 +543,10 @@ describe('resolveWgpuSmoothingBindGroup', () => {
     const entry = bindWgpuBitmapTexture(state, image);
     resolveWgpuSmoothingBindGroup(state, entry, true);
     resolveWgpuSmoothingBindGroup(state, entry, false);
-    expect(entry.bindGroupLinear).toBeDefined();
+    expect(entry.bindings.size).toBe(2);
     image.version = 2;
     bindWgpuBitmapTexture(state, image);
-    expect(entry.bindGroupLinear).toBeUndefined();
-    expect(entry.bindGroupNearest).toBeUndefined();
+    expect(entry.bindings.size).toBe(0);
   });
 });
 
@@ -483,7 +558,7 @@ describe('submitWgpuQuadDraw', () => {
     canvas.width = 4;
     canvas.height = 4;
     const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
-    expect(() => submitWgpuQuadDraw(state, 0, entry.bindGroup)).not.toThrow();
+    expect(() => submitWgpuQuadDraw(state, 0, resolveWgpuSmoothingBindGroup(state, entry, null))).not.toThrow();
     submitWgpuRenderPass(state);
   });
 
@@ -493,7 +568,7 @@ describe('submitWgpuQuadDraw', () => {
     canvas.width = 4;
     canvas.height = 4;
     const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
-    expect(() => submitWgpuQuadDraw(state, 0, entry.bindGroup)).not.toThrow();
+    expect(() => submitWgpuQuadDraw(state, 0, resolveWgpuSmoothingBindGroup(state, entry, null))).not.toThrow();
   });
 });
 

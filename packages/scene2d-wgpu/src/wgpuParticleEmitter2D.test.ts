@@ -65,7 +65,8 @@ describe('drawWgpuParticleEmitter2D', () => {
           });
           const view = texture.createView();
           return {
-            bindGroup: state.device.createBindGroup({ layout: runtime.textureBindGroupLayout, entries: [] }),
+            bindings: new Map(),
+            mipLevelCount: 1,
             straightAlpha: true,
             texture,
             view,
