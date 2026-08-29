@@ -82,7 +82,7 @@ export async function createWgpuAcquisitionFromCanvasElement(
 }
 
 export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
-  const deviceRuntime: WgpuDeviceRuntime = { device, fields: {}, references: 0 };
+  const deviceRuntime: WgpuDeviceRuntime = { device, fields: {}, references: 0, teardowns: [] };
   _deviceStateToRuntime.set(deviceRuntime as WgpuDeviceState, deviceRuntime);
   return deviceRuntime as WgpuDeviceState;
 }
@@ -330,6 +330,11 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   }
   const deviceRuntime = getWgpuDeviceRuntime(runtime);
   deviceRuntime.references--;
+  if (deviceRuntime.references === 0) {
+    const device = deviceRuntime.device;
+    for (const teardown of deviceRuntime.teardowns) teardown(device);
+    deviceRuntime.teardowns.length = 0;
+  }
   const ownership = _acquisitionByStateRuntime.get(runtime);
   if (ownership !== undefined) {
     ownership.references--;
@@ -387,7 +392,7 @@ function createWgpuRenderStateRuntimeInternal(
       _acquisitionByStateRuntime.set(runtime, parentOwnership);
     }
   } else if (acquisition !== null) {
-    deviceRuntime = { device: acquisition.device, fields: {}, references: 0 };
+    deviceRuntime = { device: acquisition.device, fields: {}, references: 0, teardowns: [] };
     if (hostBackend !== null) {
       _acquisitionByStateRuntime.set(runtime, { acquisition, hostBackend, references: 1 });
     }
@@ -566,6 +571,7 @@ type WgpuDeviceRuntime = {
   device: GPUDevice;
   fields: Partial<Pick<WgpuRenderStateRuntime, WgpuDeviceRuntimeKey>>;
   references: number;
+  teardowns: Array<(device: GPUDevice) => void>;
 };
 type WgpuAcquisitionOwnership = {
   acquisition: Readonly<WgpuHostAcquisition>;
