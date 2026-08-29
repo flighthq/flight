@@ -20,8 +20,6 @@ export interface CapabilityArrivalOptions {
   readonly root?: string;
   /** Test seam: mutate the exact source emitted by a runner's Vite plugin. */
   readonly transformGeneratedEntry?: (entry: Readonly<GeneratedEntry>) => string;
-  /** Test seam: model removal of an installation reached through an application's source graph. */
-  readonly omitInstallation?: (entry: Readonly<GeneratedEntry>, capability: string) => boolean;
 }
 
 export interface CapabilityArrivalFailure {
@@ -718,12 +716,6 @@ export async function capabilityArrivalFailures(
     const reached = graph.reachable(roots, excludedRendererFiles(root, page));
     const generated = sourceInstallations(generatedSource, registry, page.suite === 'functional');
     const installed = new Set([...generated.values, ...reached.installations]);
-    if (options.omitInstallation !== undefined) {
-      const entry = { consumer: page.consumer, renderer: page.renderer, source: generatedSource, suite: page.suite };
-      for (const capability of installed) {
-        if (options.omitInstallation(entry, capability)) installed.delete(capability);
-      }
-    }
 
     // The generated verifier's renderer discriminator is runtime data, so a path-insensitive call graph
     // would charge every page for every verification branch. Its source only reaches the host Bitmap
