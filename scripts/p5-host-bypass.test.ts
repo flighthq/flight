@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   countP5HostBypasses,
@@ -116,8 +116,12 @@ function findV4ProgressIndex(reason: string): number {
 }
 
 describe('P5 host-bypass derived gate', () => {
+  beforeAll(() => {
+    cleanP5HostBypassReport = scanP5HostBypasses(ROOT);
+  }, 60_000);
+
   it('derives the live population without a source-file roster and enforces the ratchet', () => {
-    const report = scanP5HostBypasses(ROOT);
+    const report = cleanP5HostBypassReport;
     const formatted = formatP5HostBypassReport(report);
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
@@ -262,7 +266,7 @@ describe('P5 host-bypass derived gate', () => {
   });
 
   it('pins zero remaining render-surface sites after S08', () => {
-    const report = scanP5HostBypasses(ROOT);
+    const report = cleanP5HostBypassReport;
     expect(p5WgpuRenderSurfaceRepairFailures(report)).toEqual([]);
     const restored = scanP5HostBypassSource(
       'packages/render-wgpu/src/wgpuElement.ts',
@@ -275,7 +279,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves restoring the portable GL DOM factory exceeds the v4 render ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const restored = scanP5HostBypassSource(
       'packages/render-gl/src/glElement.ts',
       `export function createGlCanvasElement() { return document.createElement('canvas'); }`,
@@ -286,7 +290,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves restoring the portable WGPU DOM factory exceeds the v4 render ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const restored = scanP5HostBypassSource(
       'packages/render-wgpu/src/wgpuElement.ts',
       `export function createWgpuCanvasElement() { return document.createElement('canvas'); }`,
@@ -297,7 +301,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('pins the S09 bitmapDraw target absent independently of the lowered scratch ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     expect(p5BitmapDrawTransferRepairFailures(clean)).toEqual([]);
     const restored = scanRestoredBitmapDrawTransfer();
     const mutated = createP5HostBypassReport(clean.scannedFiles, [...clean.p5, ...clean.excluded, ...restored]);
@@ -308,7 +312,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves restoring the S09 target exceeds the exact zero floor', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
       ...clean.p5,
       ...clean.excluded,
@@ -325,7 +329,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves an unrelated restoration fails the exact live-current assertion at total 1', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
       ...clean.p5,
       ...clean.excluded,
@@ -342,7 +346,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('pins both H8 shape-raster targets absent independently of the lowered scratch ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     expect(p5ShapeRasterSurfaceRepairFailures(clean)).toEqual([]);
     for (const [file, functionName] of [
       ['packages/scene2d-gl/src/glShapeData.ts', 'acquireGlShapeRasterSurface'],
@@ -360,7 +364,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves restoring an H8 target exceeds the exact zero floor', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
       ...clean.p5,
       ...clean.excluded,
@@ -373,7 +377,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('pins both Scale9 raster targets absent independently of the lowered scratch ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     expect(p5Scale9RasterSurfaceRepairFailures(clean)).toEqual([]);
     for (const [file, functionName] of [
       ['packages/scene2d-gl/src/glScale9Shape.ts', 'createGlScale9ShapeData'],
@@ -391,7 +395,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves restoring a Scale9 target exceeds the exact zero floor', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
       ...clean.p5,
       ...clean.excluded,
@@ -404,7 +408,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('pins all four H13 text-raster targets absent independently of the zero scratch ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     expect(p5TextRasterSurfaceRepairFailures(clean)).toEqual([]);
     for (const [file, functionName] of [
       ['packages/scene2d-gl/src/glRichText.ts', 'getOffscreenCanvas'],
@@ -424,7 +428,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('pins both H15 bitmap-readback targets absent independently of the lowered scratch ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     expect(p5BitmapReadbackRepairFailures(clean)).toEqual([]);
     for (const [file, functionName] of [
       ['packages/bitmap/src/bitmapFrom.ts', 'createBitmapFromImageSource'],
@@ -442,7 +446,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves restoring either H15 target exceeds the exact zero floor', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     for (const [file, functionName] of [
       ['packages/bitmap/src/bitmapFrom.ts', 'createBitmapFromImageSource'],
       ['packages/bitmap/src/explainBitmapReadback.ts', 'explainBitmapReadback'],
@@ -460,7 +464,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('pins both bitmapEncode scratch targets absent independently of the lowered ratchet', () => {
-    const report = scanP5HostBypasses(ROOT);
+    const report = cleanP5HostBypassReport;
     expect(p5BitmapEncodeRepairFailures(report)).toEqual([]);
   }, 30_000);
 
@@ -470,7 +474,7 @@ describe('P5 host-bypass derived gate', () => {
   ] as const)(
     'mutation-proves restoring the bitmapEncode %s target',
     (target, expression) => {
-      const clean = scanP5HostBypasses(ROOT);
+      const clean = cleanP5HostBypassReport;
       const restored = scanRestoredBitmapEncode(target);
       const mutated = createP5HostBypassReport(clean.scannedFiles, [...clean.p5, ...clean.excluded, ...restored]);
       expect(p5BitmapEncodeRepairFailures(mutated)).toContain(
@@ -481,7 +485,7 @@ describe('P5 host-bypass derived gate', () => {
   );
 
   it('mutation-proves restoring both bitmapEncode targets exceeds the exact zero floor', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
       ...clean.p5,
       ...clean.excluded,
@@ -494,12 +498,12 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('pins the video capability target absent and both resource sites routed through backend', () => {
-    const report = scanP5HostBypasses(ROOT);
+    const report = cleanP5HostBypassReport;
     expect(p5VideoCapabilityRepairFailures(report)).toEqual([]);
   }, 30_000);
 
   it('mutation-proves restoring the video capability DOM target fails its named predicate', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const restored = scanP5HostBypassSource(
       'packages/video/src/videoFormat.ts',
       `export function canPlayVideoType() { return document.createElement('video'); }`,
@@ -511,7 +515,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves restoring a videoResourceFrom DOM site fails the H8-C repair predicate', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const restored = scanP5HostBypassSource(
       'packages/video/src/videoResourceFrom.ts',
       `export function createVideoResourceFromMediaStream() { return document.createElement('video'); }`,
@@ -992,7 +996,7 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassV4ProgressHistoryFailures(omitted)).toContain(
       `P5 taxonomy v4 progress history[${s09Index}] declares 3 repaired site(s) but moves 26 -> 22`,
     );
-    const report = scanP5HostBypasses(ROOT);
+    const report = cleanP5HostBypassReport;
     expect(p5HostBypassCurrentBudgetFailures(report, omitted.at(-1)!.budget)).toEqual([]);
   }, 30_000);
 
@@ -1329,7 +1333,7 @@ describe('P5 host-bypass derived gate', () => {
   });
 
   it('derives an exact one-to-one input listener registration/removal name pairing', () => {
-    const operations = deriveP5InputIngressListenerOperations(scanP5HostBypasses(ROOT));
+    const operations = deriveP5InputIngressListenerOperations(cleanP5HostBypassReport);
     const expectedNames = [
       'beforeinput',
       'compositionupdate',
@@ -1431,7 +1435,7 @@ describe('P5 host-bypass derived gate', () => {
   });
 
   it('mutation-proves that restoring the portable geolocation probe exceeds the lowered direct-DOM ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const restoredProbe = scanP5HostBypassSource(
       'packages/geolocation/src/restoredGeolocationProbe.ts',
       `export function isGeolocationAvailable() {
@@ -1451,7 +1455,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const restoredBridge = scanP5HostBypassSource(
       'packages/image/src/restoredBitmapMaterialization.ts',
       `export function createImageResourceFromBitmap(bitmap: { width: number; height: number }) {
@@ -1471,7 +1475,7 @@ describe('P5 host-bypass derived gate', () => {
   }, 30_000);
 
   it('mutation-proves that restoring Shortcut DOM platform detection exceeds the lowered direct-DOM ratchet', () => {
-    const clean = scanP5HostBypasses(ROOT);
+    const clean = cleanP5HostBypassReport;
     const restoredProbe = scanP5HostBypassSource(
       'packages/shortcut/src/restoredPlatformProbe.ts',
       `export function isMacOS() {
@@ -1583,3 +1587,5 @@ describe('createEmptyP5HostBypassReport', () => {
     expect(empty.p5).toEqual([]);
   });
 });
+
+let cleanP5HostBypassReport: ReturnType<typeof scanP5HostBypasses>;
