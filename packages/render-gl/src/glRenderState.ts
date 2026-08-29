@@ -79,7 +79,7 @@ export function createGlOffscreenRenderState(screenState: GlRenderState): GlRend
   (state as { gl: GlContext }).gl = screenState.gl;
 
   const screenRuntime = getGlRenderStateRuntime(screenState);
-  const runtime = createGlRenderStateRuntime(screenRuntime);
+  const runtime = createGlRenderStateRuntime(undefined, screenRuntime);
   state[EntityRuntimeKey] = runtime;
   initializeOffscreenGlRuntime(runtime, screenRuntime);
   copyAllRenderersFromRenderState(state, screenState);
@@ -113,7 +113,7 @@ export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
-  const runtime = createGlRenderStateRuntime();
+  const runtime = createGlRenderStateRuntime(gl);
   state[EntityRuntimeKey] = runtime;
   runtime.currentBlendMode = null;
   runtime.currentFramebuffer = null;
@@ -164,10 +164,29 @@ export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}
 // one to each state under EntityRuntimeKey and populates its fields; getGlRenderStateRuntime reads
 // it back. The render path writes the returned object every frame, so the return is intentionally
 // mutable (not Readonly).
-export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime): GlRenderStateRuntime {
+//
+// The context tier is keyed by the GL context identity (not by lineage), so two top-level states
+// from the same WebGL context share binding shadows and GPU resources. Offscreen/cache states pass
+// sharedRuntime to join an existing tier through lineage.
+export function createGlRenderStateRuntime(
+  contextKey?: GlContext,
+  sharedRuntime?: GlRenderStateRuntime,
+): GlRenderStateRuntime {
   const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
-  const contextRuntime =
-    sharedRuntime === undefined ? { fields: {}, references: 0 } : getGlContextRuntime(sharedRuntime);
+  let contextRuntime: GlContextRuntime;
+  if (sharedRuntime !== undefined) {
+    contextRuntime = getGlContextRuntime(sharedRuntime);
+  } else if (contextKey !== undefined) {
+    const existing = _contextRuntimeByGl.get(contextKey);
+    if (existing !== undefined) {
+      contextRuntime = existing;
+    } else {
+      contextRuntime = { fields: {}, references: 0, teardowns: [] };
+      _contextRuntimeByGl.set(contextKey, contextRuntime);
+    }
+  } else {
+    contextRuntime = { fields: {}, references: 0, teardowns: [] };
+  }
   contextRuntime.references++;
   _contextRuntimeByStateRuntime.set(runtime, contextRuntime);
   for (const key of GL_CONTEXT_RUNTIME_KEYS) {
@@ -326,6 +345,7 @@ type GlContextRuntimeKey = (typeof GL_CONTEXT_RUNTIME_KEYS)[number];
 type GlContextRuntime = {
   fields: Partial<Pick<GlRenderStateRuntime, GlContextRuntimeKey>>;
   references: number;
+  teardowns: Array<(gl: GlContext) => void>;
 };
 
 function getGlContextRuntime(runtime: GlRenderStateRuntime): GlContextRuntime {
@@ -375,5 +395,6 @@ const GL_CONTEXT_RUNTIME_KEYS = [
   'quadBatchWriterColorScaleBiasBuffer',
 ] as const satisfies ReadonlyArray<keyof GlRenderStateRuntime>;
 
+const _contextRuntimeByGl = new WeakMap<GlContext, GlContextRuntime>();
 const _contextRuntimeByStateRuntime = new WeakMap<GlRenderStateRuntime, GlContextRuntime>();
 const _destroyedStates = new WeakSet<GlRenderState>();

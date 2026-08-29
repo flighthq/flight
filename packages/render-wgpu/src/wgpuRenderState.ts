@@ -321,13 +321,12 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   }
   const deviceRuntime = getWgpuDeviceRuntime(runtime);
   deviceRuntime.references--;
-  if (
-    deviceRuntime.references === 0 &&
-    deviceRuntime.acquisition !== null &&
-    deviceRuntime.hostBackend !== null &&
-    deviceRuntime.acquisition.ownership !== 'caller'
-  ) {
-    deviceRuntime.hostBackend.release(deviceRuntime.acquisition);
+  const ownership = _acquisitionByStateRuntime.get(runtime);
+  if (ownership !== undefined) {
+    ownership.references--;
+    if (ownership.references === 0 && ownership.acquisition.ownership !== 'caller') {
+      ownership.hostBackend.release(ownership.acquisition);
+    }
   }
 }
 
@@ -369,10 +368,28 @@ function createWgpuRenderStateRuntimeInternal(
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
     velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
   };
-  const deviceRuntime =
-    sharedRuntime === undefined
-      ? { acquisition, fields: {}, hostBackend, references: 0 }
-      : getWgpuDeviceRuntime(sharedRuntime);
+  let deviceRuntime: WgpuDeviceRuntime;
+  if (sharedRuntime !== undefined) {
+    deviceRuntime = getWgpuDeviceRuntime(sharedRuntime);
+    const parentOwnership = _acquisitionByStateRuntime.get(sharedRuntime);
+    if (parentOwnership !== undefined) {
+      parentOwnership.references++;
+      _acquisitionByStateRuntime.set(runtime, parentOwnership);
+    }
+  } else if (acquisition !== null) {
+    const existing = _deviceRuntimeByDevice.get(acquisition.device);
+    if (existing !== undefined) {
+      deviceRuntime = existing;
+    } else {
+      deviceRuntime = { fields: {}, references: 0 };
+      _deviceRuntimeByDevice.set(acquisition.device, deviceRuntime);
+    }
+    if (hostBackend !== null) {
+      _acquisitionByStateRuntime.set(runtime, { acquisition, hostBackend, references: 1 });
+    }
+  } else {
+    deviceRuntime = { fields: {}, references: 0 };
+  }
   deviceRuntime.references++;
   _deviceRuntimeByStateRuntime.set(runtime, deviceRuntime);
   for (const key of WGPU_DEVICE_RUNTIME_KEYS) {
@@ -540,9 +557,12 @@ function initializeOffscreenWgpuRuntime(
 
 type WgpuDeviceRuntimeKey = (typeof WGPU_DEVICE_RUNTIME_KEYS)[number];
 type WgpuDeviceRuntime = {
-  acquisition: Readonly<WgpuHostAcquisition> | null;
   fields: Partial<Pick<WgpuRenderStateRuntime, WgpuDeviceRuntimeKey>>;
-  hostBackend: WgpuHostBackend | null;
+  references: number;
+};
+type WgpuAcquisitionOwnership = {
+  acquisition: Readonly<WgpuHostAcquisition>;
+  hostBackend: WgpuHostBackend;
   references: number;
 };
 
@@ -574,6 +594,8 @@ const WGPU_DEVICE_RUNTIME_KEYS = [
   'sceneMeshUploadCache',
 ] as const satisfies ReadonlyArray<keyof WgpuRenderStateRuntime>;
 
+const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();
+const _deviceRuntimeByDevice = new WeakMap<GPUDevice, WgpuDeviceRuntime>();
 const _deviceRuntimeByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuDeviceRuntime>();
 const _destroyedStates = new WeakSet<WgpuRenderState>();
 
