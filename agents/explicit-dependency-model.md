@@ -105,9 +105,12 @@ interface AudioCapabilities {
 interface DialogCapabilities {
   file?: FileDialogBackend;
   message?: MessageDialogBackend;
-  color?: ColorPickerBackend;
+  prompt?: PromptDialogBackend;   // split from message; see First inventories
 }
 
+// WITHDRAWN — window's real granularity is per-operation, not three slots.
+// See First inventories. Kept here only to show what the two-level sketch
+// originally proposed and why guessing level two is banned by R7.
 interface WindowCapabilities {
   management?: WindowManagementBackend;
   fullscreen?: WindowFullscreenBackend;
@@ -349,6 +352,20 @@ _Manager's section, 2026-08-29. The model above is principal's and is now settle
 
 **R6 — Behavioural severity floor, unchanged.** Precedence errors, sentinels that throw, wrong provider resolution, teardown leaks, and gate blindness block a slice. Roster prose, manifest wording, and doc drift become follow-ups against the landed slice rather than blocking it.
 
+**R7 — A capability slot is whatever unit the domain's provider coverage actually varies by.** Derived per domain, never a hand-picked noun. Two-level nesting holds; *guessing* what populates level two does not. This was ruled after the first two domain inventories disagreed about what a "group" even is — see [First inventories](#first-inventories-what-they-changed). A domain that has not been inventoried ships its group **empty** rather than guessed: an empty group is honest and forward-compatible, a guessed one is a group that lies, and both worked examples would have been wrong.
+
+### First inventories — what they changed
+
+Two domain inventories (`window`, `dialog`) and the GL/WGPU context inventory landed 2026-08-29 and each overturned something this record proposed. All three are ruled; none is open.
+
+**`WindowCapabilities { management?, fullscreen?, appearance? }` is withdrawn.** `packages/types/src/ApplicationWindow.ts` already carries `WindowBackend` as ~30 individually optional methods, under an explicit doctrine that a host declares support by providing the method rather than publishing a false implementation, plus cross-operation eligibility (`attach` and `open` are each eligible only when `close` is also provided, which owns the release obligation). The three-slot split is *coarser* than what exists: it elevates one method of thirty to group status, bundles unrelated powers (`setContentProtection` is a privacy power, `setHasShadow` is cosmetic), and cannot express an edge *between* operations at all. Window's second level is its operation set plus those edges. **The eligibility edge becomes a strict improvement under this model:** what is a runtime doctrine today becomes a compile-time constraint, since `HasWindowOpen` requires both `open` and `close`.
+
+**`dialog.color` / `ColorPickerBackend` is withdrawn — on non-existence, not on any conflict.** No colour-picker capability exists in any package source, in the `dialog` package's surface, or in any host runtime (Electron, Tauri, Capacitor). It is a slot invented for a capability that exists nowhere. It is *not* withdrawn because of `gui-architecture.md`'s "ColorPicker — NO, a composition" ruling: that governs an in-app GUI **controller** built from sliders and a text input, while `dialog.color` would be an OS-native chooser. Different layers, no contradiction — recorded because a ruling resting on a bad premise gets reopened on that premise. Groups are forward-compatible; add it if a host ever ships one.
+
+**`dialog` is `{ file?, message?, prompt? }` — `prompt` splits out.** Electron's `prompt()` is `Promise.resolve(null)` under the comment "Electron has no native text-input dialog"; Tauri is identical; Capacitor implements it; web uses `window.prompt`. Two of four hosts structurally cannot do it. Leaving `prompt` inside `message` means a *present* `dialog.message` with one permanently lying operation — this model's central failure mode, reproduced inside the new structure on day one. `null` currently means both "user cancelled" (a legitimate domain outcome that keeps its sentinel) and "this platform has none" (an absent capability, which must become a type error).
+
+**The type spine does not lift the current context fields.** The GL/WGPU inventory classified 34 GL and 17 WGPU members (the 36 this record originally claimed is wrong) and found **no** pipeline-tier or render-state-tier members in either array — not because everything is context-tier, but because the pipeline and render-state members already sit outside those arrays. The residue is that many legitimate context resources are flattened without owner, key, or teardown primitives. Hence slice `B-primitives` below.
+
 ### Strand B — the graphics stack. Runs first; it already has two beachheads.
 
 H7 (`GlContext` as the missing primitive, the user's own ruling) and H17 (WGPU acquisition-first, synchronous construction) were commissioned before this model existed and turn out to *be* its layer 1→2. They are not parallel work to reconcile; they are the first two slices, already paid for.
@@ -357,8 +374,9 @@ Slices are listed with their real dependencies, not as a numbered march — two 
 
 - **B-ship — release H17.** No dependency. Complete and verified at builder2, paused only by the wind-down this commissioning ends.
 - **B-inventory — the context-state field inventory.** No dependency, read-only, and it is an **input to the type spine, not a consumer of it** — the classification is what tells you what `GlContextState` has in it. Derive the roster from `packages/render-gl/src/glRenderState.ts` (34 entries) and its WGPU counterpart, print the members, and classify each across context tier / pipeline tier / render-state tier.
-- **B-types — the type spine.** Depends on B-inventory. `GlContextState`, `WgpuDeviceState`, `GlPipeline` / `WgpuPipeline` / `CanvasPipeline`, the registry types, `HasGlAcquisition` / `HasWgpuAcquisition`. Types only, no implementation. Gates everything below.
-- **B-context — `createGlContextState`.** Depends on B-types. Implements B-inventory's classification and deletes the `Object.defineProperty` + `WeakMap` indirection in `glRenderState.ts` in favour of a visible object. The deletion is the proof the classification was right.
+- **B-primitives — extract what the context tier is missing.** Depends on B-inventory, gates B-types. Six primitives, none of which exists today: a realized blend signature (not a semantic label), an atomic texture realization carrying its straight-alpha companion, a bound-shader record split from the ownership ledger, owner-keyed context-resource substates with registered teardown, the WGPU texture resource-versus-binding split with a complete realization key, and true context/device mesh-upload cache references. **Nothing types until these exist.**
+- **B-types — the type spine.** Depends on B-primitives. `GlContextState`, `WgpuDeviceState`, `GlPipeline` / `WgpuPipeline` / `CanvasPipeline`, the registry types, `HasGlAcquisition` / `HasWgpuAcquisition`. Types only, no implementation. Gates everything below.
+- **B-context — `createGlContextState`.** Depends on B-types. **Standing constraint: the context object must BE the sharing identity.** Today the hidden sharing identity is a derivation *lineage* — two independent `createGlRenderState(gl)` calls over one `gl` get different binding shadows and caches — so recreating lineage-based sharing would carry the bug forward into the new structure. Implements B-inventory's classification and deletes the `Object.defineProperty` + `WeakMap` indirection in `glRenderState.ts` in favour of a visible object. The deletion is the proof the classification was right.
 - **B-pipeline — `createGlPipeline` + `scene2dGlPipeline`.** Depends on B-types. Sliced **by registry family**, never big-bang: renderers, then texture resolvers, then blend realizations, then shape infrastructure, then shaders. Each family is its own commit under R3.
 - **B-offscreen — offscreen render state** takes context + pipeline structurally. Depends on B-context.
 - **B-backends — the remaining pipeline consts:** `scene2dCanvasPipeline`, `scene2dWgpuPipeline`, then `scene3dGlPipeline` / `scene3dWgpuPipeline` via spread. Depends on B-pipeline.
