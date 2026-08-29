@@ -1,5 +1,6 @@
 import type { Host } from '@flighthq/types/contract';
 
+import { webApplicationExitBackend } from './webApplicationExit';
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 import { webHapticsBackend } from './webHaptics';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
@@ -9,7 +10,7 @@ import { webFullscreenBackend, webWindowBackend } from './webWindow';
 // still live behind the legacy registration path.
 export const webHost = {
   accessibility: {},
-  app: {},
+  app: { exit: webApplicationExitBackend },
   dialog: {
     file: webFileDialogBackend,
     message: webMessageDialogBackend,

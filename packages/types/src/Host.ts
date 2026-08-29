@@ -1,5 +1,6 @@
 import type { AccessibilityBackend } from './Accessibility';
 import type { AppBackend } from './App';
+import type { ApplicationExitBackend } from './ApplicationExitBackend';
 import type { WindowBackend } from './ApplicationWindow';
 import type { AudioBackend } from './AudioBackend';
 import type { AudioDeviceBackend } from './AudioDeviceBackend';
@@ -70,6 +71,7 @@ export interface HostAccessibilityCapabilities {
 }
 
 export interface HostAppCapabilities {
+  readonly exit?: ApplicationExitBackend;
   readonly identity?: AppBackend;
   readonly ipc?: IpcBackend;
   readonly logTransport?: LogTransportBackend;
@@ -150,6 +152,10 @@ export interface HostUiCapabilities {
 
 export interface HasAccessibilityProvider {
   readonly accessibility: { readonly provider: AccessibilityBackend };
+}
+
+export interface HasAppExitSubscription {
+  readonly app: { readonly exit: ApplicationExitBackend };
 }
 
 export interface HasAppIdentity {
