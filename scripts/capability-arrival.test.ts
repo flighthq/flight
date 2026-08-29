@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import type { CapabilityArrivalFailure, GeneratedEntry } from './capability-arrival';
@@ -5,37 +8,77 @@ import { capabilityArrivalFailures } from './capability-arrival';
 
 type Removal = 'bitmap-readback' | 'functional-aggregate' | 'gl-surface' | 'video' | 'wgpu-surface';
 
-function fixedEntry(entry: Readonly<GeneratedEntry>, removal?: Removal): string {
-  const setup: string[] = [];
-  if (entry.suite === 'functional') {
-    setup.push(`import { enableHostWeb } from '@flighthq/host-web';`, 'enableHostWeb();');
-  } else {
-    if (entry.renderer === 'canvas' || entry.renderer === 'webgl') {
-      setup.push(`import { enableHostWebBitmapReadback } from '@flighthq/host-web';`, 'enableHostWebBitmapReadback();');
-    }
-    if (entry.consumer.startsWith('examples:video/')) {
-      setup.push(
-        `import { enableHostWebVideoCapability } from '@flighthq/host-web';`,
-        'enableHostWebVideoCapability();',
-      );
-    }
-  }
+const ROOT = resolve(import.meta.dirname, '..');
+const VIDEO_APP = 'examples/packages/video/src/app.ts';
 
-  let source = `${setup.join('\n')}\n${entry.source}`;
-  if (removal === 'bitmap-readback') source = source.replace('enableHostWebBitmapReadback();', '');
-  if (removal === 'video') source = source.replace('enableHostWebVideoCapability();', '');
-  if (removal === 'functional-aggregate') source = source.replace('enableHostWeb();', '');
+interface RemovalControl {
+  readonly after: number;
+  readonly before: number;
+  readonly specimen: string;
+}
+
+interface AnalysisResult {
+  readonly controls: readonly RemovalControl[];
+  readonly failures: readonly CapabilityArrivalFailure[];
+}
+
+function occurrenceCount(source: string, occurrence: string): number {
+  return source.split(occurrence).length - 1;
+}
+
+function removeRequiredOccurrence(
+  source: string,
+  occurrence: string,
+  specimen: string,
+  controls: RemovalControl[],
+): string {
+  const before = occurrenceCount(source, occurrence);
+  if (before !== 1) throw new Error(`${specimen} must contain exactly one "${occurrence}"; found ${before}`);
+  const result = source.replace(occurrence, '');
+  const after = occurrenceCount(result, occurrence);
+  if (after !== 0) throw new Error(`${specimen} mutation left ${after} ${occurrence} occurrence(s)`);
+  controls.push({ after, before, specimen });
+  return result;
+}
+
+function mutateGeneratedEntry(
+  entry: Readonly<GeneratedEntry>,
+  removal: Removal | undefined,
+  controls: RemovalControl[],
+): string {
+  let source = entry.source;
+  if (
+    removal === 'bitmap-readback' &&
+    entry.suite === 'examples' &&
+    (entry.renderer === 'canvas' || entry.renderer === 'webgl')
+  ) {
+    source = removeRequiredOccurrence(source, 'enableHostWebBitmapReadback();', entry.consumer, controls);
+  }
+  if (removal === 'functional-aggregate' && entry.suite === 'functional') {
+    source = removeRequiredOccurrence(source, 'enableHostWeb();', entry.consumer, controls);
+  }
   if (removal === 'gl-surface' && entry.consumer === 'examples:shapes/webgl') {
-    source = source.replace('enableHostWebGlRenderSurface();', '');
+    source = removeRequiredOccurrence(source, 'enableHostWebGlRenderSurface();', entry.consumer, controls);
   }
   if (removal === 'wgpu-surface' && entry.consumer === 'examples:shapes/webgpu') {
-    source = source.replace('enableHostWebWgpuRenderSurface();', '');
+    source = removeRequiredOccurrence(source, 'enableHostWebWgpuRenderSurface();', entry.consumer, controls);
   }
   return source;
 }
 
-async function analyze(removal?: Removal): Promise<CapabilityArrivalFailure[]> {
-  return capabilityArrivalFailures({ transformGeneratedEntry: (entry) => fixedEntry(entry, removal) });
+async function analyze(removal?: Removal): Promise<AnalysisResult> {
+  const controls: RemovalControl[] = [];
+  const failures = await capabilityArrivalFailures({
+    transformGeneratedEntry: (entry) => mutateGeneratedEntry(entry, removal, controls),
+    transformSource:
+      removal === 'video'
+        ? ({ path, source }) =>
+            path === VIDEO_APP
+              ? removeRequiredOccurrence(source, 'enableHostWebVideoCapability();', path, controls)
+              : source
+        : undefined,
+  });
+  return { controls, failures };
 }
 
 function arrivalNames(failures: readonly CapabilityArrivalFailure[]): string[] {
@@ -46,7 +89,9 @@ describe('capability-arrival source gate', () => {
   let baseline: CapabilityArrivalFailure[];
 
   beforeAll(async () => {
-    baseline = await analyze();
+    const result = await analyze();
+    expect(result.controls).toEqual([]);
+    baseline = [...result.failures];
   }, 60_000);
 
   it('accepts the complete source-derived registry, exact 632-cell population, and repaired entries', () => {
@@ -55,9 +100,20 @@ describe('capability-arrival source gate', () => {
     expect(baseline).toEqual([]);
   });
 
-  it('reddens every Canvas/WebGL example when BitmapReadback is removed from the generated entry', async () => {
-    const failures = await analyze('bitmap-readback');
+  it('refuses a mutation when its real specimen is absent or duplicated', () => {
+    expect(() => removeRequiredOccurrence('unrelated();', 'enableHostWeb();', 'missing', [])).toThrow(
+      'missing must contain exactly one "enableHostWeb();"; found 0',
+    );
+    expect(() =>
+      removeRequiredOccurrence('enableHostWeb(); enableHostWeb();', 'enableHostWeb();', 'duplicate', []),
+    ).toThrow('duplicate must contain exactly one "enableHostWeb();"; found 2');
+  });
 
+  it('reddens every Canvas/WebGL example when BitmapReadback is removed from the generated entry', async () => {
+    const { controls, failures } = await analyze('bitmap-readback');
+
+    expect(controls).toHaveLength(68);
+    expect(new Set(controls.map(({ after, before }) => `${before}->${after}`))).toEqual(new Set(['1->0']));
     expect(failures).toHaveLength(68);
     expect(new Set(failures.map((failure) => failure.capability))).toEqual(new Set(['BitmapReadback']));
     expect(arrivalNames(failures)).toContain('examples:shapes/canvas:BitmapReadback:arrival');
@@ -65,28 +121,55 @@ describe('capability-arrival source gate', () => {
   });
 
   it('reddens all four interactive video routes when VideoCapability is removed', async () => {
-    const failures = await analyze('video');
+    const evidenceControls: RemovalControl[] = [];
+    const mutatedApp = removeRequiredOccurrence(
+      readFileSync(join(ROOT, VIDEO_APP), 'utf8'),
+      'enableHostWebVideoCapability();',
+      VIDEO_APP,
+      evidenceControls,
+    );
+    const { controls, failures } = await analyze('video');
 
+    // Capture still uses its three canvas-backed fake resources and never loads a video. The only
+    // removed statement is in the else branch, so these failures prove static interactive reachability.
+    expect(mutatedApp).toContain(
+      'setVideoSources(createCaptureVideoResource(), createCaptureVideoResource(), createCaptureVideoResource());',
+    );
+    expect(mutatedApp).toContain('loadVideoResourceFromBlob(blob, opts)');
+    expect(mutatedApp).not.toContain('enableHostWebVideoCapability();');
+    expect(evidenceControls).toEqual([{ after: 0, before: 1, specimen: VIDEO_APP }]);
+    expect(controls).toEqual([{ after: 0, before: 1, specimen: VIDEO_APP }]);
     expect(arrivalNames(failures)).toEqual([
       'examples:video/dom:VideoCapability:arrival',
       'examples:video/canvas:VideoCapability:arrival',
       'examples:video/webgl:VideoCapability:arrival',
       'examples:video/webgpu:VideoCapability:arrival',
     ]);
-  });
+  }, 30_000);
 
   it('reddens the functional generated-entry owner when its aggregate is removed', async () => {
-    const failures = await analyze('functional-aggregate');
+    const { controls, failures } = await analyze('functional-aggregate');
+    const names = arrivalNames(failures);
+    const policy = failures.find((failure) => failure.kind === 'policy');
 
-    expect(arrivalNames(failures)).toEqual(['functional generated-entry template:enableHostWeb aggregate:policy']);
-    expect(failures[0]?.message).toContain('absent from 500 cells');
+    expect(controls).toHaveLength(500);
+    expect(new Set(controls.map(({ after, before }) => `${before}->${after}`))).toEqual(new Set(['1->0']));
+    expect(names).toContain('functional generated-entry template:enableHostWeb aggregate:policy');
+    expect(names).toContain('functional:application-render-view/webgl:BitmapReadback:arrival');
+    expect(policy?.message).toContain('absent from 500 cells');
   });
 
   it('reddens a named GL page when its explicit surface arrival is removed', async () => {
-    expect(arrivalNames(await analyze('gl-surface'))).toContain('examples:shapes/webgl:GlRenderSurface:arrival');
+    const { controls, failures } = await analyze('gl-surface');
+
+    expect(controls).toEqual([{ after: 0, before: 1, specimen: 'examples:shapes/webgl' }]);
+    expect(arrivalNames(failures)).toContain('examples:shapes/webgl:GlRenderSurface:arrival');
   });
 
   it('reddens a named WGPU page when its explicit surface arrival is removed', async () => {
-    expect(arrivalNames(await analyze('wgpu-surface'))).toContain('examples:shapes/webgpu:WgpuRenderSurface:arrival');
+    const { controls, failures } = await analyze('wgpu-surface');
+
+    expect(controls).toEqual([{ after: 0, before: 1, specimen: 'examples:shapes/webgpu' }]);
+    expect(arrivalNames(failures)).toContain('examples:shapes/webgpu:WgpuRenderSurface:arrival');
   });
 });
