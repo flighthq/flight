@@ -52,8 +52,8 @@ export interface GlScene3DDrawEntry {
   worldMatrix: object;
 }
 
-// scene-gl's per-GlRenderState private state: the shared mesh-material program cache (keyed by family +
-// define key) and the per-state geometry GPU-upload cache. These
+// scene-gl's per-GlRenderState private state: the mesh-material program cache (keyed by family +
+// define key) and a reference to the context-owned geometry GPU-upload cache. These
 // are scene-gl-owned, distinct from the 2D renderer's material-renderer table/texture cache — a material
 // kind is either 2D or 3D, never both. Dispatch policy lives in
 // GlRenderStateRuntime.registries.meshMaterialRenderers; the upload cache is surfaced through the

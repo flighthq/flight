@@ -63,14 +63,14 @@ export interface MeshGeometry extends Entity {
   vertices: Float32Array<ArrayBuffer>;
 }
 
-// Opaque per-render-state GPU upload of a MeshGeometry for the Gl2 backend (VAO + buffers +
+// Opaque per-context GPU upload of a MeshGeometry for the Gl2 backend (VAO + buffers +
 // uploaded `version`). Branded so the header names the slot without leaking the GL types;
 // scene-gl owns and casts the concrete shape. Null until the geometry is first uploaded.
 export interface MeshGeometryGlData {
   readonly __meshGeometryGlData: unique symbol;
 }
 
-// Opaque per-render-state GPU upload of a MeshGeometry for the Wgpu backend (vertex/index
+// Opaque per-device GPU upload of a MeshGeometry for the Wgpu backend (vertex/index
 // GPUBuffers + uploaded `version`). Branded; scene-wgpu owns and casts the concrete shape.
 // Null until the geometry is first uploaded.
 export interface MeshGeometryWgpuData {

@@ -5,9 +5,11 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   GlScene3DRuntime,
+  GlMeshUpload,
   GlRenderState,
   GlRenderStateRuntime,
   GlSkinPaletteTexture,
+  MeshGeometry,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -100,6 +102,13 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
   const stateRuntime = state[EntityRuntimeKey] as GlRenderStateRuntime;
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
+    // The runtime accessor routes this slot to the context tier. A derived state must retain the map
+    // already installed by its primary instead of replacing it with a state-local upload identity.
+    let uploadCache = stateRuntime.sceneMeshUploadCache as WeakMap<MeshGeometry, GlMeshUpload> | null | undefined;
+    if (uploadCache == null) {
+      uploadCache = new WeakMap();
+      stateRuntime.sceneMeshUploadCache = uploadCache as unknown as WeakMap<object, object>;
+    }
     scene = {
       activeBlendedRun: false,
       activeColorAdjustmentRun: false,
@@ -122,12 +131,9 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
       skinNormalPalette: null,
       skinPalette: null,
       time: 0,
-      uploadCache: new WeakMap(),
+      uploadCache,
     };
     sceneRuntimes.set(state, scene);
-    // Surface the upload cache through the header's opaque runtime slot so other code (and a future
-    // destroy path) can find it by name without importing scene-gl internals.
-    stateRuntime.sceneMeshUploadCache = scene.uploadCache as unknown as WeakMap<object, object>;
   }
   return scene;
 }

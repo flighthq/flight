@@ -9,6 +9,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
+import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
@@ -35,6 +36,26 @@ const LIGHTS: Scene3DLightsLike = {
 };
 
 describe('drawWgpuScene3D', () => {
+  it('uploads one shared geometry once across a primary and derived state on the same device', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    registerWgpuStandardPbrMaterial(state);
+    const derived = createWgpuOffscreenRenderState(state);
+    const stateRuntime = getWgpuRenderStateRuntime(state);
+    const derivedRuntime = getWgpuRenderStateRuntime(derived);
+    derivedRuntime.commandEncoder = stateRuntime.commandEncoder;
+    derivedRuntime.renderPass = stateRuntime.renderPass;
+
+    const geometry = createBoxMeshGeometry();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, createMesh(geometry, [createStandardPbrMaterial()]));
+    const meshBuffersBefore = countMeshBuffers(fake.calls);
+
+    drawWgpuScene3D(state, scene, makeCamera(), LIGHTS);
+    drawWgpuScene3D(derived, scene, makeCamera(), LIGHTS);
+
+    expect(countMeshBuffers(fake.calls)).toBe(meshBuffersBefore + 2);
+  });
+
   it('draws each visible mesh subset with its registered material renderer', () => {
     const { fake, state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);
@@ -279,4 +300,12 @@ function makeParticleEmitter2D(count: number): ParticleEmitter3D {
     data.ids[i] = 0;
   }
   return emitter;
+}
+
+function countMeshBuffers(calls: readonly { name: string; args: readonly unknown[] }[]): number {
+  return calls.filter((call) => {
+    if (call.name !== 'createBuffer') return false;
+    const usage = (call.args[0] as GPUBufferDescriptor).usage;
+    return (usage & (GPUBufferUsage.VERTEX | GPUBufferUsage.INDEX)) !== 0;
+  }).length;
 }

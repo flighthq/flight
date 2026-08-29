@@ -1,4 +1,9 @@
-import type { WgpuScene3DRuntime, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
+import type {
+  WgpuMeshUpload,
+  WgpuScene3DRuntime,
+  WgpuRenderState,
+  WgpuRenderStateRuntime,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
@@ -9,6 +14,13 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
   const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
+    // The runtime accessor routes this slot to the device tier. A derived state must retain the map
+    // already installed by its primary instead of replacing it with a state-local upload identity.
+    let uploadCache = stateRuntime.sceneMeshUploadCache as WeakMap<object, WgpuMeshUpload> | null | undefined;
+    if (uploadCache == null) {
+      uploadCache = new WeakMap();
+      stateRuntime.sceneMeshUploadCache = uploadCache as unknown as WeakMap<object, object>;
+    }
     scene = {
       activeBlendMode: null,
       activeBlendedRun: false,
@@ -80,12 +92,9 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       skinPaletteTexture: null,
       skinPaletteView: null,
       skinningAdapter: null,
-      uploadCache: new WeakMap(),
+      uploadCache,
     };
     sceneRuntimes.set(state, scene);
-    // Surface the upload cache through the header's opaque runtime slot so other code (and a future
-    // destroy path) can find it by name without importing scene-wgpu internals.
-    stateRuntime.sceneMeshUploadCache = scene.uploadCache;
   }
   return scene;
 }
