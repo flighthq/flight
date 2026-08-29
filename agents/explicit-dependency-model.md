@@ -2,7 +2,7 @@
 
 _2026-08-29. Architecture record — replacing ambient state with explicit, value-based dependency threading across the SDK._
 
-**Status: unratified.** Read before working on host backends, renderer registration, format parsers, codec registries, or any subsystem that currently uses module-scoped global state.
+**Status: RATIFIED 2026-08-29 by the user, and commissioned as the active build.** Read before working on host backends, renderer registration, format parsers, codec registries, or any subsystem that currently uses module-scoped global state. The model below is settled and may be built on. What is *not* settled is sequencing and scope-per-slice — those are in [Commissioning](#commissioning) at the foot of this record, which is manager's, not principal's, and is the part that changes as the program runs.
 
 ## Three principles
 
@@ -325,6 +325,54 @@ The explicit dependency model eliminates the "unsupported" sentinel — a missin
 
 ## Open design
 
-- **Context state field inventory** — the current `GL_CONTEXT_RUNTIME_KEYS` (36 fields) and `WGPU_DEVICE_RUNTIME_KEYS` need auditing to confirm each field is correctly placed in the context tier vs the pipeline tier vs the render-state tier. Some fields that are currently context-shared may belong on the pipeline (immutable config) or per-state (mutable per-frame).
-- **Offscreen render state creation** — `createGlOffscreenRenderState` currently derives from a screen state and shares its context runtime. Under the explicit model, it takes the same `GlContextState` and pipeline as the primary state — sharing is structural, not derived.
-- **Pipeline mutability** — pipelines are described as immutable consts, but some registrations currently happen after render state creation (e.g., registering a renderer for a node kind loaded at runtime). The pipeline may need a controlled mutation path or a rebuild-and-swap mechanism for late registration.
+All three items that stood here are now dispositioned — none blocks code.
+
+- **Context state field inventory** — became slice **B2**. Do not cite this record's field count: the array in `packages/render-gl/src/glRenderState.ts` holds **34** entries, not 36, and `WGPU_DEVICE_RUNTIME_KEYS` must be counted the same way. Derive the roster and print its members; the classification (context tier / pipeline tier / render-state tier) is the slice's actual product.
+- **Offscreen render state creation** — became slice **B4**. Sharing is structural: `createGlOffscreenRenderState` takes the same `GlContextState` and pipeline as the primary state rather than deriving from it.
+- **Pipeline mutability** — **RULED, see [Commissioning](#commissioning) R2.** Pipelines are immutable; late registration is rebuild-and-swap, not a mutation path.
+
+## Commissioning
+
+_Manager's section, 2026-08-29. The model above is principal's and is now settled. This section is sequencing, scope, and standing rulings; it is rewritten as the program runs and carries no design authority over the model itself._
+
+### Standing rulings — do not re-litigate these
+
+**R1 — Types first, in `@flighthq/types`, before any implementation.** `Host`, the capability-group interfaces, every `Has*` trait, `GlContextState`, `WgpuDeviceState`, the pipeline and registry types: all of them are exported types and therefore live in `@flighthq/types`, split across its `.` and `/contract` lanes. No implementation package defines any of them inline. This is not a style preference — the header *is* the design surface for this model, because the whole point is that a signature tells you what a function needs.
+
+**R2 — Pipelines are immutable. Late registration is rebuild-and-swap.** `createGlPipeline({ ...scene2dGlPipeline, renderers: … })` produces a new pipeline; a render state is pointed at it. There is no `registerIntoPipeline` and no controlled mutation path. A mutation path would reintroduce precisely the ambient mutable state this model exists to delete, and the spread idiom is already the record's own mechanism for 3D-extends-2D — one mechanism, used twice, is better than two. If a real use case proves rebuild-and-swap insufficient, escalate it; do not invent a mutator to get unblocked.
+
+**R3 — No parallel API era.** Flight is pre-release with no compat obligations. A slice removes the old mechanism *and* migrates its call sites in the same commit. `set*Backend` does not survive alongside `Host` as a deprecated path, and a pipeline does not ship beside a still-working `registerRenderer`. Definition of done, mirroring the rule already in force for P5 slices: **site removal + call-site migration + guard/ledger update in one commit.**
+
+**R4 — The `explain()` cost-reporting layer is deferred, not cancelled — and it is a guard module.** Per the diagnostics inversion rule, unused-registration reporting is separately importable (`enable*Guards` shape, emitting through `@flighthq/log`), never inline in core. Same for the dev-mode prepare guard the model calls for. Both are scheduled after the first registry family exists to report on; a guard with nothing to observe cannot be tested.
+
+**R5 — Derive every roster; never cite a count from this record.** The numbers in the model are illustrative and at least two are already wrong against the tree: 34 context keys, not 36; and "a typical 2D GL example makes 10 registration calls" describes one example, while the render packages export ~100 `register*` functions and the repo exports 322. Every slice derives its own roster from the tree, prints the members, and states where it looked. A total is unfalsifiable in isolation.
+
+**R6 — Behavioural severity floor, unchanged.** Precedence errors, sentinels that throw, wrong provider resolution, teardown leaks, and gate blindness block a slice. Roster prose, manifest wording, and doc drift become follow-ups against the landed slice rather than blocking it.
+
+### Strand B — the graphics stack. Runs first; it already has two beachheads.
+
+H7 (`GlContext` as the missing primitive, the user's own ruling) and H17 (WGPU acquisition-first, synchronous construction) were commissioned before this model existed and turn out to *be* its layer 1→2. They are not parallel work to reconcile; they are the first two slices, already paid for.
+
+- **B0 — type spine.** `GlContextState`, `WgpuDeviceState`, `GlPipeline` / `WgpuPipeline` / `CanvasPipeline`, the registry types, `HasGlAcquisition` / `HasWgpuAcquisition`. Types only, no implementation. Gates B2 onward.
+- **B1 — release H17.** Complete and verified at builder2, paused only by the wind-down that this commissioning ends. Ship it.
+- **B2 — `createGlContextState`, and the field inventory that defines it.** Deletes the `Object.defineProperty` + `WeakMap` indirection in `glRenderState.ts` in favour of a visible object. The classification of all 34 keys across the three tiers is the product; the deletion is the proof.
+- **B3 — `createGlPipeline` + `scene2dGlPipeline`.** Sliced **by registry family**, never big-bang: renderers, then texture resolvers, then blend realizations, then shape infrastructure, then shaders. Each family is its own commit under R3.
+- **B4 — offscreen render state** takes context + pipeline structurally.
+- **B5 — the remaining pipeline consts:** `scene2dCanvasPipeline`, `scene2dWgpuPipeline`, then `scene3dGlPipeline` / `scene3dWgpuPipeline` via spread.
+
+### Strand A — Host. Starts as soon as A0 lands; runs concurrently with B.
+
+A and B touch disjoint packages (`host-*` and the capability packages vs `render-*`), so they do not serialize. A is the larger census — 48 `set*Backend`, 48 `get*Backend`, 43 `install*HostBackend`, 38 `_hostConflict`, 39 `enableHostWeb*`, all verified against the tree on 2026-08-29 — but it is also the more mechanical, and it parallelizes cleanly one capability domain per builder.
+
+- **A0 — type spine:** `Host`, the ~10–12 capability groups, every `Has*` trait. Types only. Gates everything else in the strand.
+- **A1 — one domain, end to end**, as the pattern-setter: const backend, capability group, trait, all call sites migrated, old `set*`/`get*`/`install*`/`_hostConflict` deleted. Pick a domain with more than one capability so the group structure is actually exercised — `dialog` or `window`, not `clipboard`.
+- **A2…An — the remaining domains**, one per builder, against the pattern A1 establishes.
+
+### Strand C — parsers, codecs, and the remaining ambient registries. Last.
+
+SWF parser config, image codecs, the `@flighthq/compression` decompressor registry, the loader's ambient net/codec reach, the globally-installed canvas text shaper. C waits for B3 to settle what a registry type looks like, so it inherits that shape instead of inventing a second one.
+
+### Not in this program
+
+- **Scene-document.** It is its own commissioned build with its own record. This model's "scene-document materialization" bullet is a consequence to apply *when* that reader is written, not a reason to reopen it here.
+- **Effects and adjustments.** `effect-recipe-model` is unratified; nothing here builds on it.
