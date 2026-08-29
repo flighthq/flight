@@ -36,8 +36,10 @@ import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import {
   copyWgpuRenderStateRegistrations,
   createWgpuOffscreenRenderState,
+  createWgpuAcquisitionFromCanvasElement,
   createWgpuRenderState,
   createWgpuRenderStateFromCanvasElement,
+  releaseWgpuAcquisition,
   createWgpuRenderStateRuntime,
   destroyWgpuRenderState,
   getWgpuColorAdjustmentMaterialFeature,
@@ -131,6 +133,32 @@ describe('copyWgpuRenderStateRegistrations', () => {
     expect(getWgpuRenderStateRuntime(screen).registries.compressedTextureUpload.entry?.state).toBe(
       RegistryEntryState.Bound,
     );
+  });
+});
+
+describe('createWgpuAcquisitionFromCanvasElement', () => {
+  it('hands back handles the CALLER owns, so no state teardown can release them', async () => {
+    const acquisition = await createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'));
+
+    expect(acquisition).not.toBeNull();
+    expect(acquisition!.ownership).toBe('caller');
+    expect(acquisition!.surface).toBeDefined();
+    releaseWgpuAcquisition(acquisition!);
+  });
+
+  // ★ NULL, NOT THROW. "This environment cannot give me WebGPU" is an expected outcome, not API misuse, so
+  // it reports through the return value like every other expected failure in this SDK.
+  it('returns null when the host cannot acquire, rather than rejecting', async () => {
+    setWgpuHostBackend({
+      acquire: vi.fn(async () => {
+        throw new Error('no adapter');
+      }),
+      isSupported: vi.fn(() => false),
+      release: vi.fn(),
+    });
+
+    await expect(createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'))).resolves.toBeNull();
+    setWgpuHostBackend(null);
   });
 });
 
@@ -442,6 +470,43 @@ describe('createWgpuRenderState', () => {
   });
 });
 
+describe('createWgpuRenderStateFromCanvasElement', () => {
+  it('acquires flight-owned handles and releases them when the state is destroyed', async () => {
+    const owner = await createWgpuRenderStateForTest();
+    const acquisition = { ...ownerAcquisition(owner), ownership: 'flight' } as const;
+    const released: Readonly<WgpuHostAcquisition>[] = [];
+    setWgpuHostBackend({
+      acquire: vi.fn(async () => acquisition),
+      isSupported: vi.fn(() => true),
+      release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
+    });
+
+    const state = await createWgpuRenderStateFromCanvasElement(document.createElement('canvas'));
+    destroyWgpuRenderState(state);
+
+    expect(released).toEqual([acquisition]);
+    setWgpuHostBackend(null);
+    destroyWgpuRenderState(owner);
+  });
+
+  it('forwards the acquisition options, which the render options no longer carry', async () => {
+    const owner = await createWgpuRenderStateForTest();
+    const acquire = vi.fn(async () => ({ ...ownerAcquisition(owner), ownership: 'flight' }) as const);
+    setWgpuHostBackend({ acquire, isSupported: vi.fn(() => true), release: vi.fn() });
+    const canvas = document.createElement('canvas');
+
+    const state = await createWgpuRenderStateFromCanvasElement(canvas, {
+      format: 'rgba8unorm',
+      powerPreference: 'low-power',
+    });
+
+    expect(acquire).toHaveBeenCalledWith(canvas, { format: 'rgba8unorm', powerPreference: 'low-power' });
+    destroyWgpuRenderState(state);
+    setWgpuHostBackend(null);
+    destroyWgpuRenderState(owner);
+  });
+});
+
 describe('createWgpuRenderStateRuntime', () => {
   it('returns a runtime with the base binding slot and empty named registration tables', () => {
     const runtime = createWgpuRenderStateRuntime();
@@ -682,6 +747,31 @@ describe('isWgpuSupported', () => {
   });
 });
 
+describe('releaseWgpuAcquisition', () => {
+  // Unconditional on purpose: this is the CALLER asking. Flight's own paths refuse to release caller-owned
+  // handles, so if this verb deferred to the same policy the caller would have no way to end their life.
+  it('releases caller-owned handles, which Flight itself never does', async () => {
+    const owner = await createWgpuRenderStateForTest();
+    const acquisition = { ...ownerAcquisition(owner), ownership: 'caller' } as const;
+    const released: Readonly<WgpuHostAcquisition>[] = [];
+    setWgpuHostBackend({
+      acquire: vi.fn(async () => acquisition),
+      isSupported: vi.fn(() => true),
+      release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
+    });
+
+    releaseWgpuAcquisition(acquisition);
+
+    expect(released).toEqual([acquisition]);
+    setWgpuHostBackend(null);
+    destroyWgpuRenderState(owner);
+  });
+});
+
+function ownerAcquisition(owner: WgpuRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
+  return { context: owner.context, device: owner.device, format: owner.format, surface: owner.surface };
+}
+
 describe('resolveWgpuApplyBlendMode', () => {
   it('returns a hook installed directly on the state', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -840,7 +930,3 @@ describe('WgpuPresentationSurface', () => {
     expect(surface.height).toBe(64);
   });
 });
-
-function ownerAcquisition(owner: WgpuRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
-  return { context: owner.context, device: owner.device, format: owner.format, surface: owner.surface };
-}
