@@ -33,6 +33,7 @@ import {
   renderGlScene2D,
   renderGlVelocity,
   setGlRenderEffectVelocityTexture,
+  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -51,11 +52,15 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
-  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  pixelRatio,
-  backgroundColor: 0x101014ff,
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
+  {
+    pixelRatio,
+    backgroundColor: 0x101014ff,
+  },
+);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 registerGlMotionBlurEffect(state);

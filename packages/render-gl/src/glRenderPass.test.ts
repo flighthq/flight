@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlRenderTarget, Viewport } from '@flighthq/types/contract';
+import type { GlContext, GlRenderTarget, Viewport } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
 import { createGlOffscreenRenderState } from './glRenderState';
@@ -183,7 +183,7 @@ describe('beginGlRenderPass', () => {
     const innerFixture = createGlState();
     const { gl, state: outerState } = outerFixture;
     const innerState = innerFixture.state;
-    (innerState as { gl: WebGL2RenderingContext }).gl = gl;
+    (innerState as { gl: GlContext }).gl = gl;
     const outer = makeTarget({ width: 64, height: 48 });
     const inner = makeTarget({ width: 32, height: 24 });
 
@@ -202,7 +202,7 @@ describe('beginGlRenderPass', () => {
     const innerFixture = createGlState();
     const { gl, state: outerState } = outerFixture;
     const innerState = innerFixture.state;
-    (innerState as { gl: WebGL2RenderingContext }).gl = gl;
+    (innerState as { gl: GlContext }).gl = gl;
     const target = makeTarget({ width: 64, height: 48 });
 
     beginGlRenderPass(outerState, target);

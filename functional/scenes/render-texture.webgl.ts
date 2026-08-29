@@ -27,6 +27,7 @@ import {
   renderGlBackground,
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
+  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -47,11 +48,15 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
-export const state = createGlRenderState(canvas, {
-  backgroundColor: 0x080b12ff,
-  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  pixelRatio,
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
+  {
+    backgroundColor: 0x080b12ff,
+    pixelRatio,
+  },
+);
 export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;

@@ -137,7 +137,7 @@ describe('analyzeFunctionalAntialiasing', () => {
   it('treats a final multisample GL target as AA when context AA is off', () => {
     writeScene(
       'multisample.webgl.ts',
-      "declareAntialiasingPolicy('aa'); createGlRenderState(canvas, { antialias: false }); " +
+      "declareAntialiasingPolicy('aa'); createGlContextFromCanvasElement(canvas, { antialias: false }); " +
         'createGlRenderEffectPipeline(state, { sampleCount: 4 });',
     );
 
@@ -150,7 +150,7 @@ describe('analyzeFunctionalAntialiasing', () => {
   it('treats an explicitly single-sampled GL path as no-AA', () => {
     writeScene(
       'single.webgl.ts',
-      "declareAntialiasingPolicy('no-aa'); createGlRenderState(canvas, { contextAttributes: { antialias: false } }); " +
+      "declareAntialiasingPolicy('no-aa'); createGlContextFromCanvasElement(canvas, { contextAttributes: { antialias: false } }); " +
         'createGlRenderEffectPipeline(state, { sampleCount: 1 });',
     );
 
@@ -162,7 +162,7 @@ describe('analyzeFunctionalAntialiasing', () => {
   it('reports a dynamic effective GL setting as unknown without hard-gating it yet', () => {
     writeScene(
       'dynamic.webgl.ts',
-      "declareAntialiasingPolicy('aa'); createGlRenderState(canvas, { antialias: enabled });",
+      "declareAntialiasingPolicy('aa'); createGlContextFromCanvasElement(canvas, { antialias: enabled });",
     );
 
     const report = analyzeFunctionalAntialiasing(root, []);

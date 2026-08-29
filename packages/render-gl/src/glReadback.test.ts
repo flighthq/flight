@@ -52,7 +52,7 @@ describe('readGlRenderTargetPixels', () => {
   it('returns false when the framebuffer is incomplete', () => {
     const { state } = createGlState();
     const target = makeTarget();
-    vi.spyOn(state.gl, 'checkFramebufferStatus').mockReturnValue(state.gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT ?? 36054);
+    vi.spyOn(state.gl, 'checkFramebufferStatus').mockReturnValue(36054);
     const out = new Uint8Array(16);
     expect(readGlRenderTargetPixels(state, target, 0, 0, 1, 1, out)).toBe(false);
   });

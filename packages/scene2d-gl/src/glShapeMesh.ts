@@ -120,7 +120,7 @@ uniform vec4 u_color;
 void main() { gl_FragColor = u_color; }
 `;
 
-const shapeMeshPrograms = new WeakMap<WebGLRenderingContext, GlShapeMeshBinding>();
+const shapeMeshPrograms = new WeakMap<GlContext, GlShapeMeshBinding>();
 
 function compileShapeMeshProgram(gl: GlContext): WebGLProgram {
   return createGlProgram(gl, VERTEX_SOURCE, FRAGMENT_SOURCE, 'Shape-mesh');

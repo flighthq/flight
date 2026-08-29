@@ -324,7 +324,7 @@ function getEffectivePolicy(
       // declared every backend-agnostic source `aa` without reading it at all. Both together meant the
       // census reported the harness default as fact for 12 scenes that had explicitly overridden it.
       if (
-        callName === 'createGlRenderState' ||
+        callName === 'createGlContextFromCanvasElement' ||
         callName === 'createGlApplicationRenderView' ||
         callName === 'createFunctionalTarget'
       ) {

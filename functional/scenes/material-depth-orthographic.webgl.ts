@@ -21,6 +21,7 @@ import {
   registerGlDepthMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
+  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -50,11 +51,15 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
-  backgroundColor: 0x081020ff,
-  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  pixelRatio,
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
+  {
+    backgroundColor: 0x081020ff,
+    pixelRatio,
+  },
+);
 registerGlDepthMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

@@ -20,6 +20,7 @@ import {
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
+  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -44,11 +45,15 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
-  pixelRatio,
-  backgroundColor: BACKGROUND_COLOR,
-  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, {
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+  }),
+  {
+    pixelRatio,
+    backgroundColor: BACKGROUND_COLOR,
+  },
+);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 

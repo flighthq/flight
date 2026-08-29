@@ -23,6 +23,7 @@ import {
   registerGlUnlitMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
+  createGlContextFromCanvasElement,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -36,11 +37,13 @@ const pixelRatio = window.devicePixelRatio || 1;
 enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
-export const state = createGlRenderState(canvas, {
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  pixelRatio,
-  backgroundColor: 0x000000ff,
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  {
+    pixelRatio,
+    backgroundColor: 0x000000ff,
+  },
+);
 registerStandardGlTextureResolvers(state);
 registerGlUnlitMaterial(state);
 export const scale = pixelRatio;
