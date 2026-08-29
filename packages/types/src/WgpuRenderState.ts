@@ -417,21 +417,41 @@ export interface WgpuQuadBatchWriterBufferSlot {
   materialCapacity: number;
 }
 
-// An uploaded GPU texture and its derived view + bind group, cached per image source in the
-// WgpuRenderState runtime's textureCache.
-export interface WgpuTextureEntry {
-  bindGroup: GPUBindGroup;
-  // Lazily-built group(1) bind group variants for per-bitmap smoothing (2D path): the linear-sampler and
-  // nearest-sampler forms over this entry's `view`, so a NEAREST bitmap and a LINEAR one sharing a texture
-  // each sample with their own filter without rebuilding the whole entry. Cleared when the texture/view is
-  // re-uploaded (version bump). Absent for callers that pass no smoothing override (they use `bindGroup`).
-  bindGroupLinear?: GPUBindGroup;
-  bindGroupNearest?: GPUBindGroup;
+// What was ALLOCATED on the GPU, as distinct from how it will be sampled. Every field here is an
+// allocation axis fixed at `createTexture` time, so two requests differing in any of them are different
+// resources and must not share one realization. `mipLevelCount` is the axis that makes this a type
+// rather than a comment: WebGPU fixes it at creation, so a level-0-only texture can never serve a
+// minified draw no matter which sampler is bound to it — the allocation, not the binding, is wrong.
+// A resource is therefore only reusable for a request whose complete upload key matches it.
+export interface WgpuTextureResource {
+  mipLevelCount: number;
   // True when sampled RGB is straight-alpha and the 2D display shader must premultiply it before
   // applying color adjustments/blending. Native compressed blocks cannot be premultiplied in place.
   straightAlpha?: boolean;
   texture: GPUTexture;
   view: GPUTextureView;
+}
+
+// The group(1) bind groups over one resource's `view`, one per sampler, keyed by sampler identity.
+//
+// Which sampler a draw uses is a DRAW POLICY — the state's `allowSmoothing`, or a per-bitmap
+// `smoothing` override — and is never part of the resource's identity. Keeping the pair here rather
+// than as a field on the resource is the whole point: a bind group captured INTO a shared cached
+// resource makes the first caller's policy decide how every later sharer samples it.
+//
+// Layout is deliberately NOT a key axis. Every 2D-path bind group over these views is built against
+// the single `textureBindGroupLayout` on the runtime, so a layout dimension would never vary and
+// would be machinery with no second value to hold.
+export type WgpuTextureBindings = Map<GPUSampler, GPUBindGroup>;
+
+// An uploaded GPU texture, cached per image source in the WgpuRenderState runtime's textureCache: an
+// allocated resource plus the per-sampler bind groups derived from it.
+export interface WgpuTextureEntry extends WgpuTextureResource {
+  bindings: WgpuTextureBindings;
+  // A sampler fixed by the SOURCE rather than by the draw — external and video textures carry their
+  // own filtering, which the global `allowSmoothing` policy must not override. Absent means "follow the
+  // policy". An explicit per-bitmap smoothing override still wins over both, as it always did.
+  sampler?: GPUSampler;
 }
 
 // A WgpuTextureEntry cached per TextureSource, carrying the uploaded content `version`.

@@ -27,7 +27,8 @@ function makeMaterial(): Material {
 
 function makeTexture(): WgpuTextureEntry {
   return {
-    bindGroup: {} as GPUBindGroup,
+    bindings: new Map(),
+    mipLevelCount: 1,
     texture: {} as GPUTexture,
     view: {} as GPUTextureView,
   };

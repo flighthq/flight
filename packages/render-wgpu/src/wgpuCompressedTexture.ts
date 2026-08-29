@@ -172,14 +172,14 @@ function uploadWgpuCompressedImage(
   const view = texture.createView();
   const runtime = getWgpuRenderStateRuntime(state);
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
-  const bindGroup = state.device.createBindGroup({
-    layout: runtime.textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
-  return { bindGroup, straightAlpha: native, texture, view };
+  return {
+    bindings: new Map(),
+    mipLevelCount: container.mipLevels,
+    sampler,
+    straightAlpha: native,
+    texture,
+    view,
+  };
 }
 
 function premultiplyRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {

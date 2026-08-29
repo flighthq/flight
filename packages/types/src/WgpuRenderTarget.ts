@@ -1,11 +1,16 @@
 import type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget';
+import type { WgpuTextureBindings } from './WgpuRenderState';
 
 export interface WgpuRenderTarget extends RenderTargetDimensions {
-  bindGroup: GPUBindGroup;
+  // Per-sampler bind groups over `view`, same contract as WgpuTextureEntry: which sampler a draw uses is
+  // a draw policy re-read per draw, never captured into the target when it is allocated or resized.
+  bindings: WgpuTextureBindings;
   // Declared color space of the target's content. A producer stamps linear 3D radiance as 'linear';
   // the final present reads this and applies the single linear-to-sRGB encode.
   colorSpace: RenderTargetColorSpace;
   depthStencilTexture: GPUTexture;
+  // Render targets are always allocated single-level; declared so a target satisfies WgpuTextureResource.
+  mipLevelCount: number;
   depthStencilView: GPUTextureView;
   // The color texture's GPU format. Defaults to the canvas format; an HDR effect target uses
   // 'rgba16float'. The pool matches reusable targets on this so an 8-bit and an HDR target never alias.

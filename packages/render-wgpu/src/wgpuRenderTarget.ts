@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
-import { buildWgpuRenderTargetBindGroup, drawWgpuQuadWithTransform } from './wgpuDraw';
+import { drawWgpuQuadWithTransform } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 function beginWgpuRenderPassEncoder(
@@ -125,7 +125,6 @@ export function createWgpuRenderTarget(
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
   });
   const view = texture.createView();
-  const bindGroup = buildWgpuRenderTargetBindGroup(state, view);
 
   const depthStencilTexture = device.createTexture({
     size: [w, h, 1],
@@ -135,7 +134,8 @@ export function createWgpuRenderTarget(
   const depthStencilView = depthStencilTexture.createView();
 
   return {
-    bindGroup,
+    bindings: new Map(),
+    mipLevelCount: 1,
     colorSpace,
     texture,
     view,
@@ -197,7 +197,7 @@ export function drawWgpuRenderTargetResult(
     state,
     renderProxy as never,
     composedTransform,
-    { texture: target.texture, view: target.view, bindGroup: target.bindGroup },
+    { bindings: target.bindings, mipLevelCount: target.mipLevelCount, texture: target.texture, view: target.view },
     0,
     0,
     target.width,
@@ -300,7 +300,8 @@ export function resizeWgpuRenderTarget(
   });
   target.texture = newTexture;
   target.view = newTexture.createView();
-  target.bindGroup = buildWgpuRenderTargetBindGroup(state, target.view);
+  // Every cached bind group referenced the old view; drop them so they rebuild against the new one.
+  target.bindings.clear();
 
   const newDepth = device.createTexture({
     size: [w, h, 1],
