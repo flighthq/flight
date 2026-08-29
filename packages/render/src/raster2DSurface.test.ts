@@ -2,6 +2,7 @@ import type { Raster2DSurface } from '@flighthq/types/contract';
 
 import {
   createRaster2DSurface,
+  destroyRaster2DSurface,
   explainRaster2DSurfaceProvider,
   getRaster2DSurfaceProvider,
   hasRaster2DSurfaceHostProvider,
@@ -18,7 +19,7 @@ describe('createRaster2DSurface', () => {
   it('passes exact dimensions through the selected provider and preserves its result', () => {
     const surface = {} as Raster2DSurface;
     const createSurface = vi.fn(() => surface);
-    setRaster2DSurfaceProvider({ createRaster2DSurface: createSurface });
+    setRaster2DSurfaceProvider({ createRaster2DSurface: createSurface, destroyRaster2DSurface() {} });
 
     expect(createRaster2DSurface(30, 40)).toBe(surface);
     expect(createSurface).toHaveBeenCalledOnce();
@@ -26,8 +27,49 @@ describe('createRaster2DSurface', () => {
   });
 
   it('preserves provider refusal as expected absence', () => {
-    setRaster2DSurfaceProvider({ createRaster2DSurface: () => null });
+    setRaster2DSurfaceProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
     expect(createRaster2DSurface(10, 20)).toBeNull();
+  });
+});
+
+describe('destroyRaster2DSurface', () => {
+  it('routes each surface to its creator after the selected provider changes', () => {
+    const firstSurface = {} as Raster2DSurface;
+    const secondSurface = {} as Raster2DSurface;
+    const firstDestroy = vi.fn();
+    const secondDestroy = vi.fn();
+    setRaster2DSurfaceProvider({
+      createRaster2DSurface: () => firstSurface,
+      destroyRaster2DSurface: firstDestroy,
+    });
+    expect(createRaster2DSurface(10, 20)).toBe(firstSurface);
+
+    setRaster2DSurfaceProvider({
+      createRaster2DSurface: () => secondSurface,
+      destroyRaster2DSurface: secondDestroy,
+    });
+    expect(createRaster2DSurface(30, 40)).toBe(secondSurface);
+
+    destroyRaster2DSurface(firstSurface);
+    destroyRaster2DSurface(secondSurface);
+
+    expect(firstDestroy).toHaveBeenCalledExactlyOnceWith(firstSurface);
+    expect(secondDestroy).toHaveBeenCalledExactlyOnceWith(secondSurface);
+  });
+
+  it('is a no-op after the creator has destroyed the surface once', () => {
+    const surface = {} as Raster2DSurface;
+    const destroySurface = vi.fn();
+    setRaster2DSurfaceProvider({
+      createRaster2DSurface: () => surface,
+      destroyRaster2DSurface: destroySurface,
+    });
+    expect(createRaster2DSurface(10, 20)).toBe(surface);
+
+    destroyRaster2DSurface(surface);
+    destroyRaster2DSurface(surface);
+
+    expect(destroySurface).toHaveBeenCalledOnce();
   });
 });
 
@@ -42,8 +84,8 @@ describe('explainRaster2DSurfaceProvider', () => {
   });
 
   it('reports a competing host installation without replacing the first host', () => {
-    const first = { createRaster2DSurface: () => null };
-    const second = { createRaster2DSurface: () => null };
+    const first = { createRaster2DSurface: () => null, destroyRaster2DSurface() {} };
+    const second = { createRaster2DSurface: () => null, destroyRaster2DSurface() {} };
     installRaster2DSurfaceHostProvider(first);
     installRaster2DSurfaceHostProvider(second);
 
@@ -59,8 +101,8 @@ describe('getRaster2DSurfaceProvider', () => {
   });
 
   it('selects a custom provider over the host provider', () => {
-    const host = { createRaster2DSurface: () => null };
-    const custom = { createRaster2DSurface: () => null };
+    const host = { createRaster2DSurface: () => null, destroyRaster2DSurface() {} };
+    const custom = { createRaster2DSurface: () => null, destroyRaster2DSurface() {} };
     installRaster2DSurfaceHostProvider(host);
     setRaster2DSurfaceProvider(custom);
 
@@ -70,18 +112,18 @@ describe('getRaster2DSurfaceProvider', () => {
 
 describe('hasRaster2DSurfaceHostProvider', () => {
   it('reports only the host slot', () => {
-    setRaster2DSurfaceProvider({ createRaster2DSurface: () => null });
+    setRaster2DSurfaceProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
     expect(hasRaster2DSurfaceHostProvider()).toBe(false);
-    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null });
+    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
     expect(hasRaster2DSurfaceHostProvider()).toBe(true);
   });
 });
 
 describe('installRaster2DSurfaceHostProvider', () => {
   it('keeps the first host provider', () => {
-    const first = { createRaster2DSurface: () => null };
+    const first = { createRaster2DSurface: () => null, destroyRaster2DSurface() {} };
     installRaster2DSurfaceHostProvider(first);
-    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null });
+    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
 
     expect(getRaster2DSurfaceProvider()).toBe(first);
   });
@@ -89,9 +131,9 @@ describe('installRaster2DSurfaceHostProvider', () => {
 
 describe('resetRaster2DSurfaceProviderForTest', () => {
   it('clears custom, host, and conflict state', () => {
-    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null });
-    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null });
-    setRaster2DSurfaceProvider({ createRaster2DSurface: () => null });
+    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
+    installRaster2DSurfaceHostProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
+    setRaster2DSurfaceProvider({ createRaster2DSurface: () => null, destroyRaster2DSurface() {} });
 
     resetRaster2DSurfaceProviderForTest();
 
@@ -104,9 +146,9 @@ describe('setRaster2DSurfaceProvider', () => {
   it('reveals the host provider again when custom is cleared', () => {
     const hostSurface = { width: 1 } as Raster2DSurface;
     const customSurface = { width: 2 } as Raster2DSurface;
-    const host = { createRaster2DSurface: () => hostSurface };
+    const host = { createRaster2DSurface: () => hostSurface, destroyRaster2DSurface() {} };
     installRaster2DSurfaceHostProvider(host);
-    setRaster2DSurfaceProvider({ createRaster2DSurface: () => customSurface });
+    setRaster2DSurfaceProvider({ createRaster2DSurface: () => customSurface, destroyRaster2DSurface() {} });
 
     expect(createRaster2DSurface(1, 1)).toBe(customSurface);
     setRaster2DSurfaceProvider(null);

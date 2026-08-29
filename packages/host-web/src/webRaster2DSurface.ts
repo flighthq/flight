@@ -27,6 +27,10 @@ export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
         image: createImageResource(canvas),
       };
     },
+    destroyRaster2DSurface(surface) {
+      surface.width = 0;
+      surface.height = 0;
+    },
   };
 }
 

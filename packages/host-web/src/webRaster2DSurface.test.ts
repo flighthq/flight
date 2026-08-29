@@ -16,6 +16,18 @@ afterEach(() => {
 });
 
 describe('createWebRaster2DSurfaceProvider', () => {
+  it('destroys the private canvas backing store through the shared provider contract', () => {
+    const provider = createWebRaster2DSurfaceProvider();
+    const surface = provider.createRaster2DSurface(100, 200)!;
+
+    provider.destroyRaster2DSurface(surface);
+
+    expect(surface.width).toBe(0);
+    expect(surface.height).toBe(0);
+    expect((surface.image.source as HTMLCanvasElement).width).toBe(0);
+    expect((surface.image.source as HTMLCanvasElement).height).toBe(0);
+  });
+
   it('keeps its HTML canvas private while exposing the exact shared surface contract', () => {
     const surface = createWebRaster2DSurfaceProvider().createRaster2DSurface(100, 200)!;
 

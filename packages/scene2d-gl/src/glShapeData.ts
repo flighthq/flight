@@ -1,5 +1,5 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createRaster2DSurface } from '@flighthq/render/contract';
+import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import type {
   GlRenderState,
   GlShapeRendererData,
@@ -35,9 +35,9 @@ export function createGlShapeData(_state: GlRenderState, _source: Renderable): R
   });
 }
 
-// The batch uploads this shape's raster resource into the shared cache; free that GPU texture when
-// the shape is torn down so it does not leak past the resource it was keyed on. A shape that only ever
-// tessellated has no surface and so no texture to free.
+// The batch uploads this shape's raster resource into the shared cache. Teardown deletes that GPU texture
+// and removes its key before destroying the provider-owned surface; a native provider may hold a non-GC
+// raster allocation beneath it. A shape that only ever tessellated owns neither resource.
 export function destroyGlShapeData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
   const surface = getGlShapeData(data).surface;
@@ -47,6 +47,7 @@ export function destroyGlShapeData(state: GlRenderState, data: RendererData): vo
     state.gl.deleteTexture(entry.texture);
     runtime.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
+  destroyRaster2DSurface(surface);
 }
 
 // RendererData is opaque by design, so the two casts that reinterpret it live here as a named pair

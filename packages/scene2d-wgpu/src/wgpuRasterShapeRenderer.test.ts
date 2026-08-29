@@ -54,6 +54,7 @@ beforeEach(() => {
         image: createImageResource(canvas),
       };
     },
+    destroyRaster2DSurface() {},
   });
 });
 

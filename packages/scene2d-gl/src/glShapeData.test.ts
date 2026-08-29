@@ -12,11 +12,14 @@ import {
 } from './glShapeData';
 import { createGlState } from './glTestHelper';
 
+const destroySurface = vi.fn();
+
 function emptyData(): GlShapeRendererData {
   return { surface: null, lastContentId: -1, lastPixelRatio: 0, lastW: 0, lastH: 0, meshVersion: -1, meshes: null };
 }
 
 beforeEach(() => {
+  destroySurface.mockReset();
   setRaster2DSurfaceProvider({
     createRaster2DSurface(width, height) {
       const canvas = document.createElement('canvas');
@@ -40,6 +43,7 @@ beforeEach(() => {
         image: createImageResource(canvas),
       };
     },
+    destroyRaster2DSurface: destroySurface,
   });
 });
 
@@ -84,19 +88,39 @@ describe('destroyGlShapeData', () => {
     const { state, gl } = createGlState();
     destroyGlShapeData(state, toGlShapeRendererData(emptyData()));
     expect(gl.deleteTexture).not.toHaveBeenCalled();
+    expect(destroySurface).not.toHaveBeenCalled();
   });
 
-  it('frees the cached GPU texture keyed on the raster surface', () => {
+  it('frees the cached GPU texture before destroying the raster surface', () => {
     const { state, gl } = createGlState();
     const data = emptyData();
     const surface = acquireGlShapeRasterSurface(data)!;
     const texture = {} as WebGLTexture;
-    getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache.set(surface.image, { texture } as never);
+    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    cache.set(surface.image, { texture } as never);
+    const order: string[] = [];
+    vi.mocked(gl.deleteTexture).mockImplementation(() => order.push('texture'));
+    destroySurface.mockImplementation((destroyed) => {
+      expect(cache.has(destroyed.image)).toBe(false);
+      order.push('surface');
+    });
 
     destroyGlShapeData(state, toGlShapeRendererData(data));
 
     expect(gl.deleteTexture).toHaveBeenCalledWith(texture);
-    expect(getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache.has(surface.image)).toBe(false);
+    expect(cache.has(surface.image)).toBe(false);
+    expect(destroySurface).toHaveBeenCalledWith(surface);
+    expect(order).toEqual(['texture', 'surface']);
+  });
+
+  it('destroys a raster surface even when it never acquired a GPU cache entry', () => {
+    const { state } = createGlState();
+    const data = emptyData();
+    const surface = acquireGlShapeRasterSurface(data)!;
+
+    destroyGlShapeData(state, toGlShapeRendererData(data));
+
+    expect(destroySurface).toHaveBeenCalledWith(surface);
   });
 });
 
