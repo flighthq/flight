@@ -1,14 +1,15 @@
 import type { VideoResource, VideoResourceLoadOptions, VideoResourceUrl } from '@flighthq/types/contract';
 
-import { selectVideoResourceUrl } from './videoFormat';
+import { getVideoCapabilityBackend, selectVideoResourceUrl } from './videoFormat';
 import { createVideoResource, disposeVideoResource } from './videoResource';
 
 // Wraps a live MediaStream (camera, screen capture, canvas.captureStream) as a video resource by
-// assigning it to element.srcObject. Pure DOM, no load — the stream feeds frames as they arrive.
-export function createVideoResourceFromMediaStream(stream: MediaStream): VideoResource {
-  const element = document.createElement('video');
+// assigning it to element.srcObject. Returns null when the backend cannot create a video element.
+export function createVideoResourceFromMediaStream(stream: MediaStream): VideoResource | null {
+  const element = (getVideoCapabilityBackend().createVideoElement?.() ?? null) as HTMLVideoElement | null;
+  if (element === null) return null;
   element.srcObject = stream;
-  return createVideoResource(element);
+  return createVideoResource(element, undefined, true);
 }
 
 // Loads from a Blob by wrapping it in an object URL, which the returned resource then owns: pass it to
@@ -42,8 +43,9 @@ export function loadVideoResourceFromUrl(
   signal?: AbortSignal,
 ): Promise<VideoResource> {
   if (signal?.aborted) return Promise.reject(signal.reason);
+  const element = (getVideoCapabilityBackend().createVideoElement?.() ?? null) as HTMLVideoElement | null;
+  if (element === null) return Promise.reject(new Error('No video element backend available'));
   return new Promise((resolve, reject) => {
-    const element = document.createElement('video');
     element.preload = (options?.preload ?? 'auto') as HTMLMediaElement['preload'];
     // crossOrigin must be set before assigning src so the fetched frames stay untainted for GPU upload.
     if (options?.crossOrigin !== undefined) element.crossOrigin = options.crossOrigin;
@@ -53,7 +55,7 @@ export function loadVideoResourceFromUrl(
 
     const onReady = (): void => {
       cleanup();
-      resolve(createVideoResource(element));
+      resolve(createVideoResource(element, undefined, true));
     };
 
     // Both rejection paths abandon an element this function created, so both owe it the same decoder

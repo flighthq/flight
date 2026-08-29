@@ -22,5 +22,12 @@ function createWebVideoCapabilityBackend(): VideoCapabilityBackend {
         return false;
       }
     },
+    createVideoElement() {
+      try {
+        return document.createElement('video');
+      } catch {
+        return null;
+      }
+    },
   };
 }

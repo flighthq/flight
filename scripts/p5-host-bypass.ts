@@ -488,6 +488,19 @@ const P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS = {
   total: 10,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
+const P5_HOST_BYPASS_H8C_VIDEO_ELEMENT_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 0,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 8,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Video element creation routed through VideoCapabilityBackend.createVideoElement',
+  repairedSites: 2,
+  total: 8,
+} as const satisfies P5HostBypassV4BudgetEvidence;
 export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   P5_HOST_BYPASS_S09_V4_PROGRESS,
@@ -502,6 +515,7 @@ export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS,
   P5_HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS,
   P5_HOST_BYPASS_SHAPE_RASTER_SURFACE_V4_PROGRESS,
+  P5_HOST_BYPASS_H8C_VIDEO_ELEMENT_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
@@ -888,33 +902,17 @@ export function p5VideoCapabilityRepairFailures(report: Readonly<P5HostBypassRep
     );
   }
 
-  const survivors = [
-    {
-      expression: "document.createElement('video')",
-      file: 'packages/video/src/videoResourceFrom.ts',
-      functionName: 'createVideoResourceFromMediaStream',
-      kind: 'direct-dom',
-    },
-    {
-      expression: "document.createElement('video')",
-      file: 'packages/video/src/videoResourceFrom.ts',
-      functionName: 'loadVideoResourceFromUrl',
-      kind: 'direct-dom',
-    },
-  ] as const;
-  const missing = survivors.filter(
-    (survivor) =>
-      !report.p5.some(
-        (site) =>
-          site.kind === survivor.kind &&
-          site.file === survivor.file &&
-          site.functionName === survivor.functionName &&
-          site.expression === survivor.expression,
-      ),
+  // H8-C repaired both videoResourceFrom sites by routing through VideoCapabilityBackend.
+  // Verify the repair holds: these sites must NOT reappear as direct-dom.
+  const repaired = report.p5.filter(
+    (site) =>
+      site.kind === 'direct-dom' &&
+      site.file === 'packages/video/src/videoResourceFrom.ts' &&
+      site.expression === "document.createElement('video')",
   );
-  if (missing.length > 0) {
+  if (repaired.length > 0) {
     failures.push(
-      `S10 must preserve both videoResourceFrom DOM resource sites; missing [${missing
+      `H8-C must keep videoResourceFrom routed through the backend; found [${repaired
         .map((site) => `${site.file}:${site.functionName}`)
         .join(', ')}]`,
     );
