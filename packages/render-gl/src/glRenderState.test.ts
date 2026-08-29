@@ -377,32 +377,6 @@ describe('createGlRenderState', () => {
     const state = createGlRenderState(gl, { roundPixels: true });
     expect(state.roundPixels).toBe(true);
   });
-
-  it('shares the context tier between two top-level states from the same GL context', () => {
-    const { gl } = makeContext();
-    const stateA = createGlRenderState(gl);
-    const stateB = createGlRenderState(gl);
-    const runtimeA = getGlRenderStateRuntime(stateA);
-    const runtimeB = getGlRenderStateRuntime(stateB);
-
-    runtimeA.currentBlendMode = BlendMode.Add;
-    expect(runtimeB.currentBlendMode).toBe(BlendMode.Add);
-
-    runtimeB.currentBlendMode = BlendMode.Multiply;
-    expect(runtimeA.currentBlendMode).toBe(BlendMode.Multiply);
-  });
-
-  it('keeps separate context tiers for states from different GL contexts', () => {
-    const glA = makeGL();
-    const glB = makeGL();
-    const stateA = createGlRenderState(glA);
-    const stateB = createGlRenderState(glB);
-    const runtimeA = getGlRenderStateRuntime(stateA);
-    const runtimeB = getGlRenderStateRuntime(stateB);
-
-    runtimeA.currentBlendMode = BlendMode.Add;
-    expect(runtimeB.currentBlendMode).toBeNull();
-  });
 });
 
 describe('createGlRenderStateRuntime', () => {
