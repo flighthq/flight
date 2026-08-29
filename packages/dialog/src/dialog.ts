@@ -17,54 +17,64 @@ import type {
 
 // Browser implementations are stateless const objects. Host assemblers may import only the slots they
 // advertise. File pickers fall back to <input type=file>, whose handles cannot expose host paths.
-export const webFileDialogBackend: FileDialogBackend = {
-  openDirectory(options) {
-    return openWebDirectoryDialog(options);
-  },
-  openFile(options) {
-    return openWebFileDialog(options);
-  },
-  async saveFile(options) {
-    return saveWebFile(options);
-  },
-};
+export const webFileDialogBackend = createWebFileDialogBackend();
+export const webMessageDialogBackend = createWebMessageDialogBackend();
+export const webPromptDialogBackend = createWebPromptDialogBackend();
 
-export const webMessageDialogBackend: MessageDialogBackend = {
-  async confirm(options) {
-    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
-    try {
-      // Coerce to a strict boolean: a real browser returns boolean, but jsdom can return undefined.
-      return window.confirm(options.message) === true;
-    } catch {
-      return false;
-    }
-  },
-  async message(options) {
-    // The web platform has no multi-button/checkbox message box; alert() shows the text only and
-    // always yields button 0. Native hosts honor buttons, checkboxLabel, defaultId, and cancelId.
-    const checkboxChecked = options.checkboxChecked ?? false;
-    if (typeof window === 'undefined' || typeof window.alert !== 'function') {
-      return { buttonIndex: 0, cancelled: false, checkboxChecked };
-    }
-    try {
-      window.alert(options.message);
-    } catch {
-      return { buttonIndex: 0, cancelled: false, checkboxChecked };
-    }
-    return { buttonIndex: 0, cancelled: false, checkboxChecked };
-  },
-};
+function createWebFileDialogBackend(): FileDialogBackend {
+  return {
+    openDirectory(options) {
+      return openWebDirectoryDialog(options);
+    },
+    openFile(options) {
+      return openWebFileDialog(options);
+    },
+    async saveFile(options) {
+      return saveWebFile(options);
+    },
+  };
+}
 
-export const webPromptDialogBackend: PromptDialogBackend = {
-  async prompt(options) {
-    if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
-    try {
-      return window.prompt(options.message, options.defaultValue ?? '');
-    } catch {
-      return null;
-    }
-  },
-};
+function createWebMessageDialogBackend(): MessageDialogBackend {
+  return {
+    async confirm(options) {
+      if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
+      try {
+        // Coerce to a strict boolean: a real browser returns boolean, but jsdom can return undefined.
+        return window.confirm(options.message) === true;
+      } catch {
+        return false;
+      }
+    },
+    async message(options) {
+      // The web platform has no multi-button/checkbox message box; alert() shows the text only and
+      // always yields button 0. Native hosts honor buttons, checkboxLabel, defaultId, and cancelId.
+      const checkboxChecked = options.checkboxChecked ?? false;
+      if (typeof window === 'undefined' || typeof window.alert !== 'function') {
+        return { buttonIndex: 0, cancelled: false, checkboxChecked };
+      }
+      try {
+        window.alert(options.message);
+      } catch {
+        return { buttonIndex: 0, cancelled: false, checkboxChecked };
+      }
+      return { buttonIndex: 0, cancelled: false, checkboxChecked };
+    },
+  };
+}
+
+function createWebPromptDialogBackend(): PromptDialogBackend {
+  return {
+    async prompt(options) {
+      if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
+      try {
+        return window.prompt(options.message, options.defaultValue ?? '');
+      } catch {
+        return null;
+      }
+    },
+  };
+}
 
 // Retrieves the underlying web FileSystemDirectoryHandle stashed for a dialog directory handle, if any.
 // Used by @flighthq/filesystem or other I/O cells to traverse and read the directory natively.
