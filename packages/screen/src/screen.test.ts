@@ -1050,6 +1050,61 @@ describe('resetScreenBackendForTest', () => {
 // and the caller falls back to exactly what the old inline `typeof navigator === 'undefined'` guard
 // produced — `'prompt'` for the query, a no-op unsubscribe for the subscription. These pin that
 // equivalence, and that a backend which throws is normalised rather than propagated.
+// ★ THE BLIND SPOT builder5 FOUND. Every existing screen test passed with an ambient-navigator fallback
+// mutation restored — because none of them ever asserted that the NO-BACKEND path leaves `navigator`
+// alone. "Returns 'prompt'" is satisfied both by the seam falling back correctly and by a smuggled
+// direct read that happens to answer 'prompt'; only counting the calls separates them.
+//
+// So this stubs a WORKING `navigator.permissions.query`, installs no backend, and asserts the answer is
+// the fallback AND that the ambient API was never consulted. A restored fallback fails here loudly.
+describe('screen permission with no backend installed and an ambient Permissions API', () => {
+  afterEach(() => resetScreenBackendForTest());
+
+  function withAmbientPermissions<T>(run: (calls: { count: number }) => T): T {
+    const calls = { count: 0 };
+    const original = (navigator as { permissions?: unknown }).permissions;
+    (navigator as { permissions?: unknown }).permissions = {
+      query: () => {
+        calls.count++;
+        return Promise.resolve({
+          state: 'granted',
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        });
+      },
+    };
+    try {
+      return run(calls);
+    } finally {
+      if (original === undefined) delete (navigator as { permissions?: unknown }).permissions;
+      else (navigator as { permissions?: unknown }).permissions = original;
+    }
+  }
+
+  it('getScreenDetailPermission returns prompt without calling the ambient query', async () => {
+    resetScreenBackendForTest();
+    const state = await withAmbientPermissions(async (calls) => {
+      const result = await getScreenDetailPermission();
+      // 'granted' here would mean the ambient API answered — the exact smuggled read this guards.
+      expect(calls.count).toBe(0);
+      return result;
+    });
+    expect(state).toBe('prompt');
+  });
+
+  it('onScreenDetailPermissionChange returns a no-op without calling the ambient query', () => {
+    resetScreenBackendForTest();
+    withAmbientPermissions((calls) => {
+      const received: string[] = [];
+      const unsubscribe = onScreenDetailPermissionChange((s) => received.push(s));
+      expect(calls.count).toBe(0);
+      expect(received).toEqual([]);
+      expect(typeof unsubscribe).toBe('function');
+      expect(() => unsubscribe()).not.toThrow();
+    });
+  });
+});
+
 describe('screen window-management permission seam', () => {
   function backendWithout(): ScreenBackend {
     return createWebScreenBackend();
