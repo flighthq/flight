@@ -14,6 +14,7 @@ import type {
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuHostAcquisition,
   WgpuHostBackend,
+  WgpuPresentationSurface,
   WgpuRenderOptions,
   WgpuRenderState,
   WgpuRenderStateRuntime,
@@ -83,7 +84,7 @@ export function createWgpuOffscreenRenderState(screenState: WgpuRenderState): Wg
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
   }) as WgpuRenderState;
   state.applyBlendMode = null;
-  (state as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
+  (state as { surface: WgpuPresentationSurface }).surface = screenState.surface;
   (state as { context: GPUCanvasContext }).context = screenState.context;
   (state as { device: GPUDevice }).device = screenState.device;
   (state as { format: GPUTextureFormat }).format = screenState.format;
@@ -179,7 +180,7 @@ function initializeWgpuRenderState(
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.applyBlendMode = null;
-  (state as { canvas: HTMLCanvasElement }).canvas = canvas;
+  (state as { surface: WgpuPresentationSurface }).surface = acquisition.surface;
   (state as { context: GPUCanvasContext }).context = context;
   (state as { device: GPUDevice }).device = device;
   (state as { format: GPUTextureFormat }).format = format;

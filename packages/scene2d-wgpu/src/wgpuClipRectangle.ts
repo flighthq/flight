@@ -15,7 +15,7 @@ export function popWgpuClipRectangle(state: WgpuRenderState): void {
   if (pass === null) return;
 
   if (previous === null) {
-    const viewport = runtime.renderTargetViewport ?? state.canvas;
+    const viewport = runtime.renderTargetViewport ?? state.surface;
     setWgpuRenderPassScissorRect(state, pass, 0, 0, viewport.width, viewport.height);
   } else if (previous.width <= 0 || previous.height <= 0) {
     // Empty intersection stored during push — maintain degenerate scissor until fully popped.
@@ -65,7 +65,7 @@ function computeWgpuScissorRect(
   const x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.surface;
   const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2, x3)));
   const maxX = Math.min(viewport.width, Math.ceil(Math.max(x0, x1, x2, x3)));
   const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2, y3)));

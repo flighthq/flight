@@ -55,7 +55,7 @@ function createHarness(): { recorded: Recorded; state: WgpuRenderState } {
   };
   let nextBindGroup = 0;
   const state = {
-    canvas: { height: 64, width: 64 },
+    surface: { height: 64, width: 64 },
     device: {
       createBindGroup: vi.fn(() => ({ id: `bindGroup-${nextBindGroup++}` })),
       createBindGroupLayout: vi.fn((descriptor: unknown) => ({ descriptor })),

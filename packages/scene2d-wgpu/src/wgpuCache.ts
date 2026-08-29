@@ -24,12 +24,13 @@ import {
   registerRenderCacheRenderer,
 } from '@flighthq/render/contract';
 import type {
-  Node2D,
-  Scene2DRenderer,
   Matrix,
+  Node2D,
   RenderCache,
   RenderCacheRefreshOptions,
   RenderProxy2D,
+  Scene2DRenderer,
+  WgpuPresentationSurface,
   WgpuRenderState,
   WgpuRenderTarget,
 } from '@flighthq/types/contract';
@@ -69,7 +70,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   // created. The draw seam resolves this explicit parent unless the cache installs a local hook.
   cacheState.applyBlendMode = null;
   cacheRuntime.applyBlendModeParent = screenState;
-  (cacheState as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
+  (cacheState as { surface: WgpuPresentationSurface }).surface = screenState.surface;
   (cacheState as { context: GPUCanvasContext }).context = screenState.context;
   (cacheState as { device: GPUDevice }).device = screenState.device;
   (cacheState as { format: GPUTextureFormat }).format = screenState.format;

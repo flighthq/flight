@@ -69,10 +69,10 @@ export function renderWgpuBackground(state: WgpuRenderState): void {
   // explicitly. The common path still creates and resets the frame here.
   beginWgpuFrame(state);
 
-  const canvas = state.canvas;
+  const surface = state.surface;
   const context = state.context;
-  const width = canvas.width;
-  const height = canvas.height;
+  const width = surface.width;
+  const height = surface.height;
 
   // With frame capture on, render into an offscreen COPY_SRC texture instead of the swapchain: software/
   // headless adapters never present the swapchain and its texture reads back as zeros, so the readable

@@ -22,8 +22,8 @@ export function acquireWgpuFrameCaptureTexture(state: Readonly<WgpuRenderState>)
   const runtime = getWgpuRenderStateRuntime(state);
   if (!runtime.frameCaptureEnabled) return null;
 
-  const width = Math.max(1, state.canvas.width);
-  const height = Math.max(1, state.canvas.height);
+  const width = Math.max(1, state.surface.width);
+  const height = Math.max(1, state.surface.height);
   const existing = runtime.frameCaptureTexture;
   if (existing !== null && existing !== undefined && existing.width === width && existing.height === height) {
     return existing;

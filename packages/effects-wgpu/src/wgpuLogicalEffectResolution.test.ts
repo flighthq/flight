@@ -59,7 +59,7 @@ type ApplyEffect = (
   dest: Readonly<WgpuRenderTarget>,
 ) => void;
 
-const state = { canvas: { height: 600, width: 800 } } as WgpuRenderState;
+const state = { surface: { height: 600, width: 800 } } as WgpuRenderState;
 const nativeTarget = { height: 600, sampleCount: 1, view: {}, width: 800 } as unknown as WgpuRenderTarget;
 // Pool scratch targets preserve supersampled dimensions but have sampleCount 1; this is the discriminator
 // that prevents a tempting sampleCount-derived implementation from silently returning the wrong scale.

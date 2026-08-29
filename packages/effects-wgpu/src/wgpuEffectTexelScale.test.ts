@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getWgpuEffectLogicalResolution, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
 
 describe('getWgpuEffectLogicalResolution', () => {
-  const state = { canvas: { width: 800, height: 600 } };
+  const state = { surface: { width: 800, height: 600 } };
 
   it('preserves native target dimensions', () => {
     expect(

@@ -51,8 +51,8 @@ export function beginWgpuRenderEffectPipeline(
   pipeline: WgpuRenderEffectPipeline,
   colorSpace: RenderTargetColorSpace = 'srgb',
 ): void {
-  const w = state.canvas.width;
-  const h = state.canvas.height;
+  const w = state.surface.width;
+  const h = state.surface.height;
   const format = pipeline.options.format === 'rgba16f' ? 'rgba16float' : state.format;
 
   if (pipeline.sceneTarget === null) {

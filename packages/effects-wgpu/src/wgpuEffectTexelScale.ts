@@ -10,7 +10,7 @@ export function getWgpuEffectLogicalResolution(
   state: Readonly<WgpuRenderState>,
   target: Readonly<WgpuRenderTarget>,
 ): WgpuEffectLogicalResolution {
-  const texelsPerLogicalPixel = getWgpuRenderTargetTexelScale(target.width, state.canvas.width);
+  const texelsPerLogicalPixel = getWgpuRenderTargetTexelScale(target.width, state.surface.width);
   return {
     height: target.height / texelsPerLogicalPixel,
     texelsPerLogicalPixel,

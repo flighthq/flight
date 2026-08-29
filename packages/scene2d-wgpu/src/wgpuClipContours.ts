@@ -102,7 +102,7 @@ export function pushWgpuClipContours(
 
 function createClipContourUniformBuffer(state: WgpuRenderState, t: Readonly<Matrix>): GPUBuffer {
   const runtime = getWgpuRenderStateRuntime(state);
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.surface;
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
   // Column-major mat3x3f = projection · worldTransform, mapping clip-local points to clip space exactly

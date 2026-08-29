@@ -21,9 +21,11 @@ import type {
   RenderState,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+  WgpuPresentationSurface,
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
+import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
 import { beginWgpuFrame } from './wgpuBackground';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
@@ -205,7 +207,7 @@ describe('createWgpuOffscreenRenderState', () => {
     const offscreenRuntime = getWgpuRenderStateRuntime(offscreen);
 
     expect(offscreen.device).toBe(screen.device);
-    expect(offscreen.canvas).toBe(screen.canvas);
+    expect(offscreen.surface).toBe(screen.surface);
     expect(offscreenRuntime.pipelineCache).toBe(screenRuntime.pipelineCache);
     expect(offscreenRuntime.textureCache).toBe(screenRuntime.textureCache);
     expect(offscreenRuntime.wgpuRenderTextureCache).toBe(screenRuntime.wgpuRenderTextureCache);
@@ -343,6 +345,7 @@ describe('createWgpuRenderState', () => {
       device: owner.device,
       format: owner.format,
       ownership: 'caller',
+      surface: owner.surface,
     } as const;
     let contextUsable = true;
     let deviceUsable = true;
@@ -416,9 +419,14 @@ describe('createWgpuRenderState', () => {
     expect(runtime.uniformOffset).toBe(0);
   });
 
-  it('stores the canvas', async () => {
+  // C5: the state exposes the surface as SIZE ONLY. Asserting `instanceof HTMLCanvasElement` here would
+  // re-impose the DOM dependency the surface type exists to remove — that the web backend's surface happens
+  // to be a canvas is a property of that backend, pinned in wgpuHost.test.ts, not of the state contract.
+  it('exposes the presentation surface as live size, carrying no DOM member', async () => {
     const state = await createWgpuRenderStateForTest();
-    expect(state.canvas).toBeInstanceOf(HTMLCanvasElement);
+    expect(typeof state.surface.width).toBe('number');
+    expect(typeof state.surface.height).toBe('number');
+    expect(Object.keys(state.surface as object).filter((key) => key !== 'width' && key !== 'height')).toEqual([]);
   });
 
   it('starts with null renderPass and commandEncoder', async () => {
@@ -675,5 +683,57 @@ describe('resolveWgpuApplyBlendMode', () => {
     const hook = vi.fn();
     state.applyBlendMode = hook;
     expect(resolveWgpuApplyBlendMode(state)).toBe(hook);
+  });
+});
+
+// ★ THE PRESENTATION-SURFACE CONTRACT. `WgpuPresentationSurface` exists so the WGPU path can size itself
+// without an `HTMLCanvasElement`, and its whole risk is a provider that captures the size once. A snapshot
+// would satisfy every construction-time assertion in this repo and fail only on a resize, so liveness is
+// tested here through a NON-DOM provider whose values change behind getters — which also proves the second
+// half of the contract, that nothing on the path reads a DOM member.
+describe('WgpuPresentationSurface', () => {
+  it('C1/C2: drives every size consumer from a live, non-DOM, size-only provider', async () => {
+    const owner = await createWgpuRenderStateForTest();
+    let width = 800;
+    let height = 600;
+    const surface: WgpuPresentationSurface = {
+      get height() {
+        return height;
+      },
+      get width() {
+        return width;
+      },
+    };
+    const acquisition = {
+      context: owner.context,
+      device: owner.device,
+      format: owner.format,
+      ownership: 'caller',
+      surface,
+    } as const;
+    const canvas = document.createElement('canvas');
+
+    const state = await createWgpuRenderState(canvas, { acquisition });
+    expect(getWgpuSurfaceRenderExtent(state)).toEqual({ width: 800, height: 600 });
+
+    width = 320;
+    height = 240;
+
+    // Every consumer re-reads: a captured `{ width, height }` would still answer 800x600 here.
+    expect(state.surface.width).toBe(320);
+    expect(state.surface.height).toBe(240);
+    expect(getWgpuSurfaceRenderExtent(state)).toEqual({ width: 320, height: 240 });
+
+    destroyWgpuRenderState(state);
+    destroyWgpuRenderState(owner);
+  });
+
+  it('C4: accepts an HTMLCanvasElement structurally, so the web path needs no wrapper', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 64;
+    const surface: WgpuPresentationSurface = canvas;
+    expect(surface.width).toBe(128);
+    expect(surface.height).toBe(64);
   });
 });
