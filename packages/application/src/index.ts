@@ -43,7 +43,6 @@ export {
   getApplicationMainWindow,
   getApplicationWindows,
   getWindowBounds,
-  getWindowDisplay,
   hideWindow,
   isApplicationRunning,
   lockApplicationPointer,
