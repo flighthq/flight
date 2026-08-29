@@ -5,5 +5,33 @@
     "noEmit": true,
     "types": ["node", "vite/client", "vitest/globals", "@webgpu/types"]
   },
-  "include": ["./**/*.ts", "../*.ts"]
+  "include": ["./**/*.ts", "../*.ts"],
+  // ★ HOST-PROBE'S TARGET-SPECIFIC FILES ONLY. Each entry below imports a native host toolchain —
+  // Capacitor, Tauri, Electron, WebdriverIO, electron-vite — that is optional for everyone who is not
+  // building that target. Sweeping them into the ordinary gate made its colour track INSTALL
+  // COMPLETENESS rather than the code: red in a clone that installed fewer workspace packages, green in
+  // one that installed more, which is why the "known" diagnostic count drifted between machines.
+  //
+  // The cut is the toolchain-dependent import closure, not the directory. `src/hosts/*` import the SDKs;
+  // `src/host.ts` dynamically imports all three, and `src/main.ts` imports it — so excluding the adapters
+  // alone would leave them in the program, because `exclude` only stops root discovery and never removes
+  // a file some included file imports.
+  //
+  // Everything host-agnostic STAYS in the ordinary gate: `report`, `expectations`, `capabilityBackends`,
+  // `nativeApplicationBuild`, `renderProbe`, `contract` and their tests all typecheck with no optional
+  // dependency present. host-probe keeps its own tsconfig for checking the excluded targets where the
+  // toolchain exists.
+  "exclude": [
+    "node_modules",
+    "host-probe/capacitor.config.ts",
+    "host-probe/vite.electron.config.ts",
+    "host-probe/wdio.capacitor.conf.ts",
+    "host-probe/wdio.tauri.conf.ts",
+    "host-probe/electron/**/*.ts",
+    "host-probe/scripts/**/*.ts",
+    "host-probe/test/**/*.ts",
+    "host-probe/src/hosts/**/*.ts",
+    "host-probe/src/host.ts",
+    "host-probe/src/main.ts"
+  ]
 }
