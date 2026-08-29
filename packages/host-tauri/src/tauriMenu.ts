@@ -35,9 +35,10 @@ export function createTauriMenuBackend(tauri: TauriApi): MenuBackend {
       destroyed = true;
       selectListener = null;
       try {
-        void menuModule.Menu.new({ items: [] })
-          .then((emptyMenu) => emptyMenu.setAsAppMenu())
-          .catch(() => {});
+        void (async () => {
+          const emptyMenu = await menuModule.Menu.new({ items: [] });
+          await emptyMenu.setAsAppMenu();
+        })().catch(() => {});
       } catch {
         /* menu module unavailable — no native menu to clear */
       }
