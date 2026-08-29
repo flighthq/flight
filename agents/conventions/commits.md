@@ -192,3 +192,11 @@ Two questions, in order:
 2. **Which crate, package, or area?** → the **scope**.
 
 If you find yourself wanting `rust:`, `wasm:`, `script:`, or `tool:` as the type, you answered question 2 in question 1's slot. Move it into the scope: `chore(scripts):`, `feat(tools/<name>):`, `feat(rust/<crate>):`.
+
+## A relayed parcel is a claim, not an inventory
+
+A parcel note that names N commits is prose written by the sender; nothing in the mechanism compares it against what the parcel physically carries. A three-commit slice was relayed and arrived as two — the author had verified all three present by content in its own tree and was right, and the loss happened downstream at a relay hop. It was caught only because the receiver's focused gate ran 9 tests where 10 were accepted; had the dropped commit been docs-only, as two of the three were, nothing would have noticed and the note would still have said three.
+
+- **The receiver verifies content before integrating**, never the count in the prose.
+- **Carry a distinctive-phrase list through every relay hop** — one greppable phrase per commit, in the note body. It makes a relayed parcel checkable in seconds at any hop without reconstructing provenance or resolving SHAs that do not exist in the receiver's clone.
+- **A test count is a weak instrument**: it catches only a commit that happens to carry a test. Treat it as the alarm, never as the diagnosis — the content check is what confirms and repairs.
