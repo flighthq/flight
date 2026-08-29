@@ -42,6 +42,8 @@ remain a separate future arc gated on the planned `serialize` package.
 
 ## Decisions
 
+_Append-only, dated, blessed rulings. None recorded yet._
+
 - 2026-08-28 — Ratified `FlightDocument` as the versioned multi-scene container; its `scenes` tuple may
   mix 2D and 3D entries, while `defaultScene` selects the initial entry.
 - 2026-08-28 — Empty scenes and invalid `defaultScene` are named refusals, never fallback behavior;
