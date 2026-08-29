@@ -327,8 +327,8 @@ The explicit dependency model eliminates the "unsupported" sentinel — a missin
 
 All three items that stood here are now dispositioned — none blocks code.
 
-- **Context state field inventory** — became slice **B2**. Do not cite this record's field count: the array in `packages/render-gl/src/glRenderState.ts` holds **34** entries, not 36, and `WGPU_DEVICE_RUNTIME_KEYS` must be counted the same way. Derive the roster and print its members; the classification (context tier / pipeline tier / render-state tier) is the slice's actual product.
-- **Offscreen render state creation** — became slice **B4**. Sharing is structural: `createGlOffscreenRenderState` takes the same `GlContextState` and pipeline as the primary state rather than deriving from it.
+- **Context state field inventory** — became slice **B-inventory**, and it runs FIRST in strand B, ahead of the type spine. Do not cite this record's field count: the array in `packages/render-gl/src/glRenderState.ts` holds **34** entries, not 36, and `WGPU_DEVICE_RUNTIME_KEYS` must be counted the same way. Derive the roster and print its members; the classification (context tier / pipeline tier / render-state tier) is the slice's actual product.
+- **Offscreen render state creation** — became slice **B-offscreen**. Sharing is structural: `createGlOffscreenRenderState` takes the same `GlContextState` and pipeline as the primary state rather than deriving from it.
 - **Pipeline mutability** — **RULED, see [Commissioning](#commissioning) R2.** Pipelines are immutable; late registration is rebuild-and-swap, not a mutation path.
 
 ## Commissioning
@@ -353,24 +353,27 @@ _Manager's section, 2026-08-29. The model above is principal's and is now settle
 
 H7 (`GlContext` as the missing primitive, the user's own ruling) and H17 (WGPU acquisition-first, synchronous construction) were commissioned before this model existed and turn out to *be* its layer 1→2. They are not parallel work to reconcile; they are the first two slices, already paid for.
 
-- **B0 — type spine.** `GlContextState`, `WgpuDeviceState`, `GlPipeline` / `WgpuPipeline` / `CanvasPipeline`, the registry types, `HasGlAcquisition` / `HasWgpuAcquisition`. Types only, no implementation. Gates B2 onward.
-- **B1 — release H17.** Complete and verified at builder2, paused only by the wind-down that this commissioning ends. Ship it.
-- **B2 — `createGlContextState`, and the field inventory that defines it.** Deletes the `Object.defineProperty` + `WeakMap` indirection in `glRenderState.ts` in favour of a visible object. The classification of all 34 keys across the three tiers is the product; the deletion is the proof.
-- **B3 — `createGlPipeline` + `scene2dGlPipeline`.** Sliced **by registry family**, never big-bang: renderers, then texture resolvers, then blend realizations, then shape infrastructure, then shaders. Each family is its own commit under R3.
-- **B4 — offscreen render state** takes context + pipeline structurally.
-- **B5 — the remaining pipeline consts:** `scene2dCanvasPipeline`, `scene2dWgpuPipeline`, then `scene3dGlPipeline` / `scene3dWgpuPipeline` via spread.
+Slices are listed with their real dependencies, not as a numbered march — two of them are unblocked today.
 
-### Strand A — Host. Starts as soon as A0 lands; runs concurrently with B.
+- **B-ship — release H17.** No dependency. Complete and verified at builder2, paused only by the wind-down this commissioning ends.
+- **B-inventory — the context-state field inventory.** No dependency, read-only, and it is an **input to the type spine, not a consumer of it** — the classification is what tells you what `GlContextState` has in it. Derive the roster from `packages/render-gl/src/glRenderState.ts` (34 entries) and its WGPU counterpart, print the members, and classify each across context tier / pipeline tier / render-state tier.
+- **B-types — the type spine.** Depends on B-inventory. `GlContextState`, `WgpuDeviceState`, `GlPipeline` / `WgpuPipeline` / `CanvasPipeline`, the registry types, `HasGlAcquisition` / `HasWgpuAcquisition`. Types only, no implementation. Gates everything below.
+- **B-context — `createGlContextState`.** Depends on B-types. Implements B-inventory's classification and deletes the `Object.defineProperty` + `WeakMap` indirection in `glRenderState.ts` in favour of a visible object. The deletion is the proof the classification was right.
+- **B-pipeline — `createGlPipeline` + `scene2dGlPipeline`.** Depends on B-types. Sliced **by registry family**, never big-bang: renderers, then texture resolvers, then blend realizations, then shape infrastructure, then shaders. Each family is its own commit under R3.
+- **B-offscreen — offscreen render state** takes context + pipeline structurally. Depends on B-context.
+- **B-backends — the remaining pipeline consts:** `scene2dCanvasPipeline`, `scene2dWgpuPipeline`, then `scene3dGlPipeline` / `scene3dWgpuPipeline` via spread. Depends on B-pipeline.
+
+### Strand A — Host. Starts as soon as its type spine lands; runs concurrently with B.
 
 A and B touch disjoint packages (`host-*` and the capability packages vs `render-*`), so they do not serialize. A is the larger census — 48 `set*Backend`, 48 `get*Backend`, 43 `install*HostBackend`, 38 `_hostConflict`, 39 `enableHostWeb*`, all verified against the tree on 2026-08-29 — but it is also the more mechanical, and it parallelizes cleanly one capability domain per builder.
 
-- **A0 — type spine:** `Host`, the ~10–12 capability groups, every `Has*` trait. Types only. Gates everything else in the strand.
-- **A1 — one domain, end to end**, as the pattern-setter: const backend, capability group, trait, all call sites migrated, old `set*`/`get*`/`install*`/`_hostConflict` deleted. Pick a domain with more than one capability so the group structure is actually exercised — `dialog` or `window`, not `clipboard`.
-- **A2…An — the remaining domains**, one per builder, against the pattern A1 establishes.
+- **A-types — type spine:** `Host`, the ~10–12 capability groups, every `Has*` trait. Types only. Gates everything else in the strand.
+- **A-pattern — one domain, end to end**, as the pattern-setter: const backend, capability group, trait, all call sites migrated, old `set*`/`get*`/`install*`/`_hostConflict` deleted. Pick a domain with more than one capability so the group structure is actually exercised — `dialog` or `window`, not `clipboard`.
+- **A-domains — the remaining domains**, one per builder, against the pattern A-pattern establishes.
 
 ### Strand C — parsers, codecs, and the remaining ambient registries. Last.
 
-SWF parser config, image codecs, the `@flighthq/compression` decompressor registry, the loader's ambient net/codec reach, the globally-installed canvas text shaper. C waits for B3 to settle what a registry type looks like, so it inherits that shape instead of inventing a second one.
+SWF parser config, image codecs, the `@flighthq/compression` decompressor registry, the loader's ambient net/codec reach, the globally-installed canvas text shaper. C waits for B-pipeline to settle what a registry type looks like, so it inherits that shape instead of inventing a second one.
 
 ### Not in this program
 
