@@ -15,7 +15,7 @@ export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFont
 export { enableHostWebGeolocation } from './webGeolocation';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
-export { enableHostWebHaptics } from './webHaptics';
+export { webHapticsBackend } from './webHaptics';
 export { enableHostWebImage } from './webImage';
 export { enableHostWebSoftKeyboard } from './webKeyboard';
 export { enableHostWebLifecycle } from './webLifecycle';

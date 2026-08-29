@@ -74,7 +74,6 @@ const EXPECTED_AGGREGATE = [
   'FontLoading',
   'Geolocation',
   'GlyphRasterizer',
-  'Haptics',
   'Image',
   'SoftKeyboard',
   'Lifecycle',

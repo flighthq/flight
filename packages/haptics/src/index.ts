@@ -1,5 +1,4 @@
 export {
-  explainHapticsBackend,
   cancelDeviceVibration,
   getHapticsCapabilities,
   isHapticsSupported,
