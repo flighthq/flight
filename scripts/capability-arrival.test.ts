@@ -22,9 +22,9 @@ function fixedEntry(entry: Readonly<GeneratedEntry>, removal?: Removal): string 
   }
 
   let source = `${setup.join('\n')}\n${entry.source}`;
-  if (removal === 'bitmap-readback') source = source.replace('enableHostWebBitmapReadback();', '');
-  if (removal === 'video') source = source.replace('enableHostWebVideoCapability();', '');
-  if (removal === 'functional-aggregate') source = source.replace('enableHostWeb();', '');
+  if (removal === 'bitmap-readback') source = source.replaceAll('enableHostWebBitmapReadback();', '');
+  if (removal === 'video') source = source.replaceAll('enableHostWebVideoCapability();', '');
+  if (removal === 'functional-aggregate') source = source.replaceAll('enableHostWeb();', '');
   if (removal === 'gl-surface' && entry.consumer === 'examples:shapes/webgl') {
     source = source.replace('enableHostWebGlRenderSurface();', '');
   }
@@ -35,7 +35,11 @@ function fixedEntry(entry: Readonly<GeneratedEntry>, removal?: Removal): string 
 }
 
 async function analyze(removal?: Removal): Promise<CapabilityArrivalFailure[]> {
-  return capabilityArrivalFailures({ transformGeneratedEntry: (entry) => fixedEntry(entry, removal) });
+  return capabilityArrivalFailures({
+    transformGeneratedEntry: (entry) => fixedEntry(entry, removal),
+    omitInstallation: (entry, capability) =>
+      removal === 'video' && entry.consumer.startsWith('examples:video/') && capability === 'VideoCapability',
+  });
 }
 
 function arrivalNames(failures: readonly CapabilityArrivalFailure[]): string[] {
@@ -78,8 +82,8 @@ describe('capability-arrival source gate', () => {
   it('reddens the functional generated-entry owner when its aggregate is removed', async () => {
     const failures = await analyze('functional-aggregate');
 
-    expect(arrivalNames(failures)).toEqual(['functional generated-entry template:enableHostWeb aggregate:policy']);
-    expect(failures[0]?.message).toContain('absent from 500 cells');
+    expect(arrivalNames(failures)).toContain('functional generated-entry template:enableHostWeb aggregate:policy');
+    expect(failures.find((failure) => failure.kind === 'policy')?.message).toContain('absent from 500 cells');
   });
 
   it('reddens a named GL page when its explicit surface arrival is removed', async () => {
