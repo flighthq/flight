@@ -1,6 +1,8 @@
 import type { EasingFunction } from './EasingFunction';
 import type { Entity, Kind } from './Entity';
+import type { GltfExtensionHandler } from './GltfExtension';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
+import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { Material } from './Material';
 import type { PbrExtension } from './PbrExtension';
 import type { ResourceLoader } from './ResourceLoader';
@@ -76,6 +78,13 @@ export interface Scene3DDocumentLoadProgress {
 export interface Scene3DDocumentLoadOptions {
   progress?: Signal<(progress: Readonly<Scene3DDocumentLoadProgress>) => void>;
   signal?: AbortSignal;
+}
+
+// glTF URL acquisition plus the caller-owned synchronous parser opt-ins. Diagnostics report unsupported
+// required extensions, while an unhandled extension named only in `extensionsUsed` remains silent.
+export interface GltfScene3DDocumentLoadOptions extends Scene3DDocumentLoadOptions {
+  diagnostics?: ImportDiagnostic[];
+  extensionHandlers?: readonly GltfExtensionHandler[];
 }
 
 export interface Scene3DResourceLoadProgress {

@@ -76,10 +76,39 @@ describe('GltfPunctualLightsExtensionHandler', () => {
     const source: GltfDocument = {
       asset: { version: '2.0' },
       extensions: { KHR_lights_punctual: { lights: [{ type: 'point' }] } },
+      extensionsRequired: ['KHR_lights_punctual'],
       nodes: [{ extensions: { KHR_lights_punctual: { light: 0 } } }],
       scenes: [{ nodes: [0] }],
     };
-    expect(parseGltf(source).lights).toEqual([]);
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(source, diagnostics);
+
+    expect(document.lights).toEqual([]);
+    expect(findLightDiagnostic(diagnostics, 'gltf.unsupported-required-extension')).toEqual({
+      detail: { count: 1, firstExtension: 'KHR_lights_punctual' },
+      kind: 'gltf.unsupported-required-extension',
+      origin: 'buildGltfDocument',
+      severity: ImportDiagnosticSeverity.Skip,
+    });
+  });
+
+  it('loads an unhandled optional extension without claiming that it was skipped', () => {
+    const source: GltfDocument = {
+      asset: { version: '2.0' },
+      extensions: { KHR_lights_punctual: { lights: [{ type: 'point' }] } },
+      extensionsUsed: ['KHR_lights_punctual'],
+      nodes: [{ extensions: { KHR_lights_punctual: { light: 0 } } }],
+      scenes: [{ nodes: [0] }],
+    };
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(source, diagnostics);
+
+    // The caller can see a successfully built core document with no realized lights, but the parser's
+    // established contract exposes no diagnostic for an extension named only in extensionsUsed.
+    expect(document.nodes).toHaveLength(1);
+    expect(document.scenes).toHaveLength(1);
+    expect(document.lights).toEqual([]);
+    expect(diagnostics).toEqual([]);
   });
 
   it('drops and reports gltf.light-missing for a node referencing a missing light', () => {
