@@ -1,12 +1,15 @@
-﻿import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl/contract';
+﻿import { invalidateImageResource } from '@flighthq/image/contract';
+import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
+import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/contract';
+import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
   GlContext,
   GlRenderState,
   MatrixLike,
+  Raster2DSurface,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -22,42 +25,49 @@ import { drawGlShape } from './glShape';
 import { getGlShapeRasterizer } from './glShapeRasterizer';
 
 interface GlScale9ShapeData {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
   lastH: number;
   lastScaleX: number;
   lastScaleY: number;
   lastContentId: number;
   lastPixelRatio: number;
   lastW: number;
-  texture: WebGLTexture;
+  surface: Raster2DSurface | null;
 }
 
 const _remappedCommands: ShapeCommandToken[] = [];
 
-export function createGlScale9ShapeData(state: GlRenderState, _source: Renderable): RendererData | null {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d')!;
-  const texture = createGlTexture(state);
-  return {
-    canvas,
-    ctx,
+export function acquireGlScale9ShapeRasterSurface(data: GlScale9ShapeData): Raster2DSurface | null {
+  const existing = data.surface;
+  if (existing !== null) return existing;
+  const surface = createRaster2DSurface(1, 1);
+  if (surface === null) return null;
+  data.surface = surface;
+  return surface;
+}
+
+export function createGlScale9ShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
+  return toGlScale9ShapeData({
     lastH: 0,
     lastScaleX: -1,
     lastScaleY: -1,
     lastContentId: -1,
     lastPixelRatio: 0,
     lastW: 0,
-    texture,
-  } as unknown as RendererData;
+    surface: null,
+  });
 }
 
-// Scale9 owns its texture directly (allocated in createData), so free it on teardown.
+// Remove the Image-keyed GPU entry before returning this per-node surface to the provider that created it.
 export function destroyGlScale9ShapeData(state: GlRenderState, data: RendererData): void {
-  const { texture } = data as unknown as GlScale9ShapeData;
-  state.gl.deleteTexture(texture);
+  const { surface } = getGlScale9ShapeData(data);
+  if (surface === null) return;
+  const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const entry = cache.get(surface.image);
+  if (entry !== undefined) {
+    state.gl.deleteTexture(entry.texture);
+    cache.delete(surface.image);
+  }
+  destroyRaster2DSurface(surface);
 }
 
 export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -84,11 +94,13 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
     return;
   }
 
-  const shapeData = renderProxy.rendererData as unknown as GlScale9ShapeData;
+  const shapeData = getGlScale9ShapeData(renderProxy.rendererData);
   const pixelRatio = state.pixelRatio;
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
+  const surface = acquireGlScale9ShapeRasterSurface(shapeData);
+  if (surface === null) return;
   // Sized in device pixels with the replay pre-scaled to match, exactly as glTextLabel and glRichText
   // treat their offscreen canvases. The quad below stays in local units and samples the whole texture,
   // so a denser raster is only sharper — no geometry moves with it.
@@ -101,15 +113,17 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
     source.scaleY !== shapeData.lastScaleY ||
     pixelRatio !== shapeData.lastPixelRatio
   ) {
-    shapeData.canvas.width = Math.ceil(w * pixelRatio);
-    shapeData.canvas.height = Math.ceil(h * pixelRatio);
-    const ctx = shapeData.ctx;
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
-    ctx.clearRect(bounds.x, bounds.y, w, h);
+    const pw = Math.ceil(w * pixelRatio);
+    const ph = Math.ceil(h * pixelRatio);
+    if (surface.width !== pw) surface.width = pw;
+    if (surface.height !== ph) surface.height = ph;
+    const { context } = surface;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    context.clearRect(bounds.x, bounds.y, w, h);
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-    rasterizer(ctx, _remappedCommands, state);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    updateGlTexture(state, shapeData.texture, shapeData.canvas);
+    rasterizer(context, _remappedCommands, state);
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    invalidateImageResource(surface.image);
     shapeData.lastH = h;
     shapeData.lastScaleX = source.scaleX;
     shapeData.lastScaleY = source.scaleY;
@@ -121,10 +135,7 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
   useGlProgram(state);
 
   const gl = state.gl;
-  if (runtime.currentTexture !== shapeData.texture) {
-    gl.bindTexture(gl.TEXTURE_2D, shapeData.texture);
-    runtime.currentTexture = shapeData.texture;
-  }
+  bindGlImageResourceTexture(state, surface.image, null, null, true);
 
   const { shaderLoc, matrixArray } = runtime;
   setGlBaseUniforms(gl, shaderLoc!, renderProxy);
@@ -153,6 +164,14 @@ export const defaultGlScale9ShapeRenderer: Scene2DRenderer = {
   destroyData: destroyGlScale9ShapeData,
   submit: drawGlScale9Shape,
 };
+
+export function getGlScale9ShapeData(data: RendererData): GlScale9ShapeData {
+  return data as unknown as GlScale9ShapeData;
+}
+
+function toGlScale9ShapeData(data: GlScale9ShapeData): RendererData {
+  return data as unknown as RendererData;
+}
 
 function setStrippedGlMatrixFromValues(
   gl: GlContext,
