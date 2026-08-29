@@ -106,15 +106,3 @@ export interface MessageDialogResult {
   cancelled: boolean;
   checkboxChecked: boolean;
 }
-
-// Native file/message dialog seam. Free functions in @flighthq/dialog delegate to the active backend
-// (web default or a native host's). Resolves to sentinels ([] / null / 0 / false) on cancel or when the
-// host lacks the surface, rather than throwing — dialog dismissal is an expected outcome, not an error.
-export interface DialogBackend {
-  confirm(options: Readonly<MessageDialogOptions>): Promise<boolean>;
-  message(options: Readonly<MessageDialogOptions>): Promise<MessageDialogResult>;
-  openDirectory(options: Readonly<OpenDirectoryDialogOptions>): Promise<FileDialogHandle[]>;
-  openFile(options: Readonly<OpenFileDialogOptions>): Promise<FileDialogHandle[]>;
-  prompt(options: Readonly<PromptDialogOptions>): Promise<string | null>;
-  saveFile(options: Readonly<SaveFileDialogOptions>): Promise<FileDialogHandle | null>;
-}
