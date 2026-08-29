@@ -326,6 +326,7 @@ export * from './TextureSource';
 export * from './ImageChannel';
 export * from './BitmapEncodeBackend';
 export * from './BitmapEncodeFailureExplanation';
+export * from './BitmapReadbackBackend';
 export * from './ImageDecodeOptions';
 export * from './ImageDecoder';
 export * from './ImageDecodeFailureExplanation';
