@@ -51,21 +51,22 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
   // a state that changes it must re-rasterize at the new density.
   const pixelRatio = state.pixelRatio;
   const surface = acquireGlShapeRasterSurface(shapeData);
+  if (surface === null) return;
   if (
     version !== shapeData.lastContentId ||
     w !== shapeData.lastW ||
     h !== shapeData.lastH ||
     pixelRatio !== shapeData.lastPixelRatio
   ) {
-    const { canvas, ctx } = surface;
-    canvas.width = Math.ceil(w * pixelRatio);
-    canvas.height = Math.ceil(h * pixelRatio);
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
-    ctx.clearRect(bounds.x, bounds.y, w, h);
-    rasterizer(ctx, commands, state);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    // Re-reads the canvas dimensions and bumps the resource version so the batch's version-aware cache
-    // re-uploads from the updated canvas.
+    surface.width = Math.ceil(w * pixelRatio);
+    surface.height = Math.ceil(h * pixelRatio);
+    const { context } = surface;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    context.clearRect(bounds.x, bounds.y, w, h);
+    rasterizer(context, commands, state);
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    // Re-reads the surface dimensions and bumps the resource version so the batch's version-aware cache
+    // re-uploads from the updated backing store.
     invalidateImageResource(surface.image);
     shapeData.lastContentId = version;
     shapeData.lastPixelRatio = pixelRatio;

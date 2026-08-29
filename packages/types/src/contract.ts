@@ -525,6 +525,7 @@ export * from './RenderProxy2D';
 export * from './RenderProxyAdapter';
 export * from './RenderProxyResolver';
 export * from './RenderQueue';
+export * from './Raster2DSurface';
 export * from './RenderState';
 export * from './RenderProxyVisitor';
 export * from './RenderStateStats';

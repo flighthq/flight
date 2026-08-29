@@ -1,29 +1,24 @@
-import { createImageResource } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createRaster2DSurface } from '@flighthq/render/contract';
 import type {
+  Raster2DSurface,
   Renderable,
   RendererData,
   RenderState,
   WgpuRenderState,
-  WgpuShapeRasterSurface,
   WgpuShapeRendererData,
 } from '@flighthq/types/contract';
 
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 
 // Allocates the rasterization surface on first use, matching scene2d-gl. A shape whose fills all
-// tessellate never touches this, so a scene drawn entirely through the mesh path carries no canvases.
-export function acquireWgpuShapeRasterSurface(data: WgpuShapeRendererData): WgpuShapeRasterSurface {
+// tessellate never touches this, so a scene drawn entirely through the mesh path carries no raster
+// surface.
+export function acquireWgpuShapeRasterSurface(data: WgpuShapeRendererData): Raster2DSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const surface: WgpuShapeRasterSurface = {
-    canvas,
-    ctx: canvas.getContext('2d')!,
-    image: createImageResource(canvas),
-  };
+  const surface = createRaster2DSurface(1, 1);
+  if (surface === null) return null;
   data.surface = surface;
   return surface;
 }
@@ -52,7 +47,7 @@ export function createWgpuShapeData(_state: RenderState, _source: Renderable): R
   });
 }
 
-// Destroy the GPU texture the batch uploaded for this shape's canvas, plus the mesh path's per-shape
+// Destroy the GPU texture the batch uploaded for this shape's raster surface, plus the mesh path's per-shape
 // vertex/index/uniform buffers, when the shape is torn down. A shape that only ever tessellated has no
 // surface and so no texture to free.
 export function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void {

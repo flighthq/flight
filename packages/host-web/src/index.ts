@@ -26,6 +26,7 @@ export { enableHostWebPermission } from './webPermissions';
 export { enableHostWebPlatform } from './webPlatform';
 export { enableHostWebPower } from './webPower';
 export { enableHostWebProtocol } from './webProtocol';
+export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from './webRaster2DSurface';
 export { enableHostWebScreen } from './webScreen';
 export { enableHostWebSensors } from './webSensors';
 export { enableHostWebShare } from './webShare';

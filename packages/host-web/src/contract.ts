@@ -26,6 +26,7 @@ export * from './webPermissions';
 export * from './webPlatform';
 export * from './webPower';
 export * from './webProtocol';
+export * from './webRaster2DSurface';
 export * from './webScreen';
 export * from './webSensors';
 export * from './webShare';

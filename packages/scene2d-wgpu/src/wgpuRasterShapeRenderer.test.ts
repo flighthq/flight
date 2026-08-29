@@ -1,7 +1,13 @@
+import { createImageResource } from '@flighthq/image/contract';
 import type * as FlightNodeModule from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock, renderWgpuBackground } from '@flighthq/render-wgpu/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import {
+  enableRenderRegistryGuards,
+  explainRenderRegistryMisses,
+  resetRaster2DSurfaceProviderForTest,
+  setRaster2DSurfaceProvider,
+} from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
@@ -23,6 +29,37 @@ import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
 beforeAll(() => installWgpuMock());
+
+beforeEach(() => {
+  setRaster2DSurfaceProvider({
+    createRaster2DSurface(width, height) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d')!;
+      return {
+        get width() {
+          return canvas.width;
+        },
+        set width(value) {
+          canvas.width = value;
+        },
+        get height() {
+          return canvas.height;
+        },
+        set height(value) {
+          canvas.height = value;
+        },
+        context,
+        image: createImageResource(canvas),
+      };
+    },
+  });
+});
+
+afterEach(() => {
+  resetRaster2DSurfaceProviderForTest();
+});
 
 function makeShapeData() {
   return {
@@ -134,6 +171,21 @@ describe('drawWgpuRasterShape', () => {
       kind: 'Shape',
       registry: RenderRegistry.ShapeRasterizer,
     });
+  });
+
+  it('preserves expected surface absence without rasterizing or writing a batch', async () => {
+    resetRaster2DSurfaceProviderForTest();
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    registerWgpuStandardMaterial(state);
+    getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
+    const rasterizer = vi.fn();
+    registerWgpuShapeRasterizer(state, rasterizer);
+
+    drawWgpuRasterShape(state, makeShapeProxy({ commands: solidShape().data.commands, version: 1 }));
+
+    expect(rasterizer).not.toHaveBeenCalled();
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('does nothing without a render pass, for an empty command list, or with absent renderer data', async () => {

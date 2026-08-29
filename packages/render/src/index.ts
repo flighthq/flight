@@ -1,5 +1,6 @@
 export {
   areColorAdjustmentsEnabled,
+  createRaster2DSurface,
   disableSceneRenderGuards,
   enableColorAdjustments,
   enableSceneRenderGuards,
@@ -8,6 +9,7 @@ export {
   disposeScene2DRender,
   enableRenderRegistryGuards,
   enableRenderRegistrySignals,
+  explainRaster2DSurfaceProvider,
   explainRenderRegistryMisses,
   packScene3DLightBlock,
   prepareScene2DRender,

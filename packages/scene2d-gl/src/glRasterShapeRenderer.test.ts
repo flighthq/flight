@@ -1,5 +1,12 @@
+import { createImageResource } from '@flighthq/image/contract';
 import type * as FlightNodeModule from '@flighthq/node/contract';
-import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import {
+  enableRenderRegistryGuards,
+  explainRenderRegistryMisses,
+  resetRaster2DSurfaceProviderForTest,
+  setRaster2DSurfaceProvider,
+} from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
@@ -15,6 +22,37 @@ vi.mock('@flighthq/node/contract', async (importOriginal) => ({
   getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
     source?.data?.version ?? 0,
 }));
+
+beforeEach(() => {
+  setRaster2DSurfaceProvider({
+    createRaster2DSurface(width, height) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d')!;
+      return {
+        get width() {
+          return canvas.width;
+        },
+        set width(value) {
+          canvas.width = value;
+        },
+        get height() {
+          return canvas.height;
+        },
+        set height(value) {
+          canvas.height = value;
+        },
+        context,
+        image: createImageResource(canvas),
+      };
+    },
+  });
+});
+
+afterEach(() => {
+  resetRaster2DSurfaceProviderForTest();
+});
 
 import { defaultGlRasterShapeRenderer, drawGlRasterShape } from './glRasterShapeRenderer';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
@@ -93,6 +131,19 @@ describe('drawGlRasterShape', () => {
       kind: 'Shape',
       registry: RenderRegistry.ShapeRasterizer,
     });
+  });
+
+  it('preserves expected surface absence without rasterizing or writing a batch', () => {
+    resetRaster2DSurfaceProviderForTest();
+    const { state } = createGlState();
+    registerGlStandardMaterial(state);
+    const rasterizer = vi.fn();
+    registerGlShapeRasterizer(state, rasterizer);
+
+    drawGlRasterShape(state, makeShapeNode({ commands: solidShape().data.commands, version: 1 }));
+
+    expect(rasterizer).not.toHaveBeenCalled();
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('does nothing for an empty command list or absent renderer data', () => {

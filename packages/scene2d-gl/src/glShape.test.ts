@@ -1,6 +1,7 @@
 import { createImageResource } from '@flighthq/image/contract';
 import type * as FlightNodeModule from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -31,6 +32,37 @@ vi.mock('@flighthq/node/contract', async (importOriginal) => ({
   getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
     source?.data?.version ?? 0,
 }));
+
+beforeEach(() => {
+  setRaster2DSurfaceProvider({
+    createRaster2DSurface(width, height) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d')!;
+      return {
+        get width() {
+          return canvas.width;
+        },
+        set width(value) {
+          canvas.width = value;
+        },
+        get height() {
+          return canvas.height;
+        },
+        set height(value) {
+          canvas.height = value;
+        },
+        context,
+        image: createImageResource(canvas),
+      };
+    },
+  });
+});
+
+afterEach(() => {
+  resetRaster2DSurfaceProviderForTest();
+});
 
 import { defaultGlMorphShapeRenderer, defaultGlShapeRenderer, drawGlShape } from './glShape';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
