@@ -1136,3 +1136,54 @@ inside one subsystem**, which is the divergence this ruling exists to prevent.
 The foundation revision plus the Shape retrofit is **its own small slice, landed first** — owned by
 builder4, which authored both the foundation and the Shape pair. Text and scale9 then proceed in
 parallel against a settled API rather than serialising behind each other.
+
+---
+
+# H15 — share the resolver, keep the one-pixel probe — 2026-08-29
+
+Builder3's shared-outcome design is accepted: one `BitmapReadbackBackend.readBitmap` behind a private
+resolver, constructor returns `outcome.bitmap`, explainer derives from the same outcome. That is the
+structural fix [H10](#h10) asked for — the explainer can no longer go stale, because it is no longer
+a second implementation of the decision.
+
+The offered trade — *full read for parity, or one-pixel probe with an explicitly weakened
+no-divergence guarantee* — is a **false choice**, and neither branch should be taken.
+
+## No reason in the vocabulary requires a full read
+
+`BitmapReadbackBlockReason` is `empty-size | no-canvas | ok | tainted-source`, plus the new
+`backend-not-installed`:
+
+| reason | what settles it |
+|---|---|
+| `empty-size` | arithmetic on width/height — no read |
+| `backend-not-installed` | registry lookup — no read |
+| `no-canvas` | can a context be obtained — no read |
+| `tainted-source` | a draw plus a read — **one pixel is provably enough**; taint is a property of the canvas after the draw, not of how much was read |
+| `ok` | the residual |
+
+So the probe size is an implementation detail of taint detection, **not a second decision path**.
+Parity comes from sharing the resolver, which the design already does. Making the explainer allocate
+a full `Bitmap` to report `readable: true` buys nothing and makes a diagnostic cost proportional to
+image size — paid on exactly the path a caller reaches for when something is already wrong.
+
+**Ruling: share the resolver; the explainer keeps the one-pixel probe and allocates no `Bitmap`.**
+
+## State the boundary precisely rather than "weakening no-divergence"
+
+The explainer is authoritative over the **expected-failure vocabulary**. It does not predict *faults*
+— a large allocation failing under memory pressure is a fault, and per the `encodeBitmap` ruling
+faults propagate rather than becoming `null`. So the explainer answering `ok` while a subsequent
+full read throws is **not** a divergence: the two answer different questions, and only one of them
+is about expected failure.
+
+Record that in the explainer's header, replacing the current "duplicates the constructor's failure
+conditions by design" note — which the shared resolver makes obsolete. A vague "no-divergence is
+weakened here" would leave the next reader unable to tell which divergences matter.
+
+## Falsifier
+
+Builder3's set is right — empty, absent backend, terminal custom failure over host success, and
+success — asserting `bitmap` iff `readable` and the exact reason. Add one case: **a source large
+enough that a full read would be wasteful must still explain in constant work**, which pins the
+one-pixel probe against a later "simplification" that reintroduces the full read.
