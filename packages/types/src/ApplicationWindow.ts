@@ -89,6 +89,10 @@ export type NativeWindowHandle = unknown;
 // Flight on close but left alive; Flight-owned windows are closed by the backend after detachment.
 export type WindowAttachmentOwnership = 'host' | 'flight';
 
+// Provider-bound identity for the element whose content box drives attachWindowResize. The web host
+// maps this opaque value to an Element; neutral application and native-host contracts never name DOM.
+export type WindowResizeTargetHandle = { readonly __brand: 'WindowResizeTargetHandle' };
+
 // Control seam for windowing: a host backend the window command functions delegate to. The web
 // backend covers what a browser page-window can do (title, fullscreen, focus, popup move/resize);
 // a native host (Electron/Tauri/C++) maps each ApplicationWindow to a real OS window. Operations whose
@@ -140,4 +144,21 @@ export interface WindowBackend {
   flashWindowFrame?(win: ApplicationWindow): void;
   // Shows or hides the native drop shadow around the window. macOS / native only; web omits it.
   setHasShadow?(win: ApplicationWindow, hasShadow: boolean): void;
+  // Registers the host's close-request and terminal-close sources. onCloseRequest returns true when
+  // the request was cancelled. The returned function removes exactly this subscription.
+  subscribeClose?(onCloseRequest: () => boolean, onClose: () => void): () => void;
+  // Registers host-originated movement and reports the new logical screen coordinates.
+  subscribeMove?(listener: (x: number, y: number) => void): () => void;
+  // Registers a host-originated orientation change notification.
+  subscribeOrientation?(listener: () => void): () => void;
+  // Registers content-box changes for a provider-bound target and reports logical dimensions plus
+  // the device-pixel ratio used to size the backing store.
+  subscribeResize?(
+    target: WindowResizeTargetHandle,
+    listener: (width: number, height: number, devicePixelRatio: number) => void,
+  ): () => void;
+  // Registers activation visibility changes; true means active/visible.
+  subscribeVisibility?(listener: (visible: boolean) => void): () => void;
+  // Releases the host's active pointer lock. Request remains element-targeted and explicit.
+  exitPointerLock?(): Promise<void>;
 }
