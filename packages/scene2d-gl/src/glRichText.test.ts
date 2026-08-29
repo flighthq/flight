@@ -1,7 +1,9 @@
-﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+﻿import { createImageResource } from '@flighthq/image/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
-import type { RendererData, RenderProxy2D, RichText } from '@flighthq/types/contract';
+import type { Raster2DSurface, RendererData, RenderProxy2D, RichText } from '@flighthq/types/contract';
 
 import {
   createGlRichTextData,
@@ -13,22 +15,60 @@ import {
 } from './glRichText';
 import { createGlState } from './glTestHelper';
 
-function makeRichTextNode(): RenderProxy2D {
+function makeRichTextNode(rendererData: unknown = { surface: createTestRaster2DSurface(1, 1) }): RenderProxy2D {
   const richText = createRichText();
   return {
     source: richText,
     blendMode: 0,
     alpha: 1,
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
-    rendererData: { texture: null },
+    rendererData,
   } as unknown as RenderProxy2D;
 }
 
+function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d')!;
+  return {
+    get width() {
+      return canvas.width;
+    },
+    set width(value) {
+      canvas.width = value;
+    },
+    get height() {
+      return canvas.height;
+    },
+    set height(value) {
+      canvas.height = value;
+    },
+    context,
+    image: createImageResource(canvas),
+  };
+}
+
+function installTestRaster2DSurfaceProvider(
+  destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
+): void {
+  setRaster2DSurfaceProvider({
+    createRaster2DSurface(width, height) {
+      return createTestRaster2DSurface(width, height);
+    },
+    destroyRaster2DSurface,
+  });
+}
+
+afterEach(() => {
+  resetRaster2DSurfaceProviderForTest();
+});
+
 describe('createGlRichTextData', () => {
-  it('allocates per-node data with no texture yet', () => {
+  it('starts without a raster surface until the node first draws', () => {
     const { state } = createGlState();
-    const data = createGlRichTextData(state, createRichText()) as unknown as { texture: WebGLTexture | null };
-    expect(data.texture).toBeNull();
+    const data = createGlRichTextData(state, createRichText()) as unknown as { surface: Raster2DSurface | null };
+    expect(data.surface).toBeNull();
   });
 });
 
@@ -43,23 +83,66 @@ describe('defaultGlRichTextRenderer', () => {
 });
 
 describe('destroyGlRichTextData', () => {
-  it('deletes the GPU texture the node owns', () => {
+  it('removes the GPU cache entry before returning the node surface to its creator', () => {
+    const order: string[] = [];
     const { state, gl } = createGlState();
-    const texture = gl.createTexture();
-    const deleteSpy = vi.spyOn(gl, 'deleteTexture');
-    destroyGlRichTextData(state, { texture } as unknown as RendererData);
-    expect(deleteSpy).toHaveBeenCalledWith(texture);
+    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    installTestRaster2DSurfaceProvider((surface) => {
+      order.push('surface');
+      expect(cache.has(surface.image)).toBe(false);
+    });
+    const data = createGlRichTextData(state, createRichText());
+    const proxy = makeRichTextNode(data);
+    (proxy.source as RichText).data.text = 'owned';
+    drawGlRichText(state, proxy);
+    const surface = (data as unknown as { surface: Raster2DSurface }).surface;
+    const entry = cache.get(surface.image)!;
+    vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
+      if (texture === entry.texture) order.push('texture');
+    });
+
+    destroyGlRichTextData(state, data);
+
+    expect(cache.has(surface.image)).toBe(false);
+    expect(order).toEqual(['texture', 'surface']);
   });
 
-  it('is a no-op when no texture was allocated', () => {
+  it('is a no-op when no surface was allocated', () => {
     const { state, gl } = createGlState();
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
-    destroyGlRichTextData(state, { texture: null } as unknown as RendererData);
+    destroyGlRichTextData(state, { surface: null } as unknown as RendererData);
     expect(deleteSpy).not.toHaveBeenCalled();
   });
 });
 
 describe('drawGlRichText', () => {
+  it('keeps different text nodes on distinct surfaces and GPU textures in one frame', () => {
+    installTestRaster2DSurfaceProvider();
+    const { state } = createGlState();
+    const firstData = createGlRichTextData(state, createRichText());
+    const secondData = createGlRichTextData(state, createRichText());
+    const first = makeRichTextNode(firstData);
+    const second = makeRichTextNode(secondData);
+    (first.source as RichText).data.text = 'first';
+    (second.source as RichText).data.text = 'second';
+
+    drawGlRichText(state, first);
+    drawGlRichText(state, second);
+
+    const firstOwned = firstData as unknown as { surface: Raster2DSurface };
+    const secondOwned = secondData as unknown as { surface: Raster2DSurface };
+    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const firstSurface = firstOwned.surface;
+    const firstImage = firstSurface.image;
+    expect(firstOwned.surface).not.toBe(secondOwned.surface);
+    expect(firstOwned.surface.image).not.toBe(secondOwned.surface.image);
+    expect(cache.get(firstOwned.surface.image)?.texture).not.toBe(cache.get(secondOwned.surface.image)?.texture);
+
+    drawGlRichText(state, first);
+    expect(firstOwned.surface).toBe(firstSurface);
+    expect(firstOwned.surface.image).toBe(firstImage);
+  });
+
   it('binds the active bitmap shader when drawing rich text', () => {
     const { state } = createGlState();
     const renderProxy = makeRichTextNode();
