@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { getStoragePersistence, requestStoragePersistence } from './storage';
+import { getStoragePersistence, requestStoragePersistence } from './storagePersistence';
 
 describe('getStoragePersistence', () => {
   it.each([
