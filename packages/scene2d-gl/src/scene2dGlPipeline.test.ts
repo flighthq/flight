@@ -1,4 +1,5 @@
-import { getGlPipelineRegistries } from '@flighthq/render-gl/contract';
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { createEmptyGlRegistries, createGlPipeline, getGlPipelineRegistries } from '@flighthq/render-gl/contract';
 import {
   BitmapTextKind,
   BitmapTextureSourceKind,
@@ -21,7 +22,22 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
+import { defaultGlSpriteRenderer } from './glSprite';
 import { scene2dGlPipeline } from './scene2dGlPipeline';
+
+describe('manual single-capability pipeline', () => {
+  it('carries only the explicitly registered Sprite renderer', () => {
+    const pipeline = createGlPipeline({
+      ...createEmptyGlRegistries(),
+      renderers: withRegistryTableEntry(createEmptyGlRegistries().renderers, SpriteKind, defaultGlSpriteRenderer),
+    });
+    const registries = getGlPipelineRegistries(pipeline);
+    expect(registries.renderers.entries.size).toBe(1);
+    expect(registries.renderers.entries.has(SpriteKind)).toBe(true);
+    expect(registries.blendRealizations.entries.size).toBe(0);
+    expect(registries.textureResolvers.entries.size).toBe(0);
+  });
+});
 
 describe('scene2dGlPipeline', () => {
   it('is an Entity with EntityRuntimeKey', () => {
