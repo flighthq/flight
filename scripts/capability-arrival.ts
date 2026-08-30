@@ -82,7 +82,6 @@ const EXPECTED_AGGREGATE = [
   'Raster2DSurface',
   'Screen',
   'Sensors',
-  'Share',
   'Storage',
   'VideoCapability',
   'Webcam',

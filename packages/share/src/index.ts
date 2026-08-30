@@ -1,12 +1,11 @@
 export {
-  explainShareBackend,
   attachShareSignals,
   canShareContent,
+  canShareFiles,
   detachShareSignals,
   disposeShareSignals,
   enableShareSignals,
   hasShareContentFields,
-  isShareAvailable,
   shareContent,
   shareContentWithResult,
   shareFiles,

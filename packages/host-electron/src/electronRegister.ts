@@ -115,6 +115,7 @@ export function registerElectronBackends(
     menu,
     net: {},
     notification,
+    share: {},
     storage: {},
     system: {},
     text: {},

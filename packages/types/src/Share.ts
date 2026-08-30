@@ -1,27 +1,19 @@
+import type { Entity } from './Entity';
 import type { ShareFile } from './ShareFile';
 
-// Share seam. Free functions in @flighthq/share delegate to the active ShareBackend (web default over
-// navigator.share, or a native host's). share resolves to false when the host denies, cancels, or
-// lacks the capability rather than throwing — sharing is an expected-failure surface, not a
-// programmer error.
+// Content and file sharing are separate capability slots. A content payload requires at least one
+// declared vector, while the runtime probe below the slot rejects empty strings. File sharing has a
+// non-empty file tuple and exists only on providers that can actually carry Flight's data-URL files.
+export type ShareContent =
+  | { readonly text?: string; readonly title: string; readonly url?: string }
+  | { readonly text: string; readonly title?: string; readonly url?: string }
+  | { readonly text?: string; readonly title?: string; readonly url: string };
 
-export interface ShareContent {
-  title?: string;
-  text?: string;
-  url?: string;
-  // Portable file descriptors (data URL + MIME + name); converted to platform files at the backend
-  // boundary (the web backend converts each to a DOM File for navigator.share). Readonly because a
-  // payload handed to the share sheet is never written back through — the backend reads it and maps
-  // it to host types.
-  files?: readonly ShareFile[];
-}
-
-// Presentation hints for the share sheet. All optional; backends ignore the ones they cannot honor.
-export interface ShareOptions {
-  // Title shown on the share chooser (Android chooser title).
-  chooserTitle?: string;
-  // Activity/app identifiers to omit from the share sheet (iOS UIActivityType exclusions).
-  excludedActivityTypes?: string[];
+export interface ShareFilesContent {
+  readonly files: readonly [ShareFile, ...ShareFile[]];
+  readonly text?: string;
+  readonly title?: string;
+  readonly url?: string;
 }
 
 // Outcome of a share sheet invocation. completed is true when the user finished sharing;
@@ -33,14 +25,28 @@ export interface ShareResult {
   dismissed: boolean;
 }
 
-export interface ShareBackend {
-  // True when the platform can share at all (capability-level probe, independent of content).
-  isAvailable(): boolean;
-  canShare(content: Readonly<ShareContent>): boolean;
-  // Opens the share sheet; resolves false when the host denies, the user cancels, or sharing is
-  // unavailable.
-  share(content: Readonly<ShareContent>, options?: Readonly<ShareOptions>): Promise<boolean>;
-  // Opens the share sheet and resolves a full ShareResult describing completion and the chosen
-  // activity.
-  shareWithResult(content: Readonly<ShareContent>, options?: Readonly<ShareOptions>): Promise<ShareResult>;
+export interface ShareContentBackend extends Entity {
+  canShareContent(content: Readonly<ShareContent>): boolean;
+  shareContent(content: Readonly<ShareContent>): Promise<boolean>;
+  shareContentWithResult(content: Readonly<ShareContent>): Promise<ShareResult>;
+}
+
+export interface ShareFilesBackend extends Entity {
+  canShareContent(content: Readonly<ShareFilesContent>): boolean;
+  shareContent(content: Readonly<ShareFilesContent>): Promise<boolean>;
+  shareContentWithResult(content: Readonly<ShareFilesContent>): Promise<ShareResult>;
+}
+
+// Capacitor alone understands a chooser title. Keeping the parameter on the concrete provider type
+// prevents the portable Host slot (and the Web provider) from accepting a provider-specific hint.
+export interface CapacitorShareContentOptions {
+  readonly chooserTitle?: string;
+}
+
+export interface CapacitorShareContentBackend extends ShareContentBackend {
+  shareContent(content: Readonly<ShareContent>, options?: Readonly<CapacitorShareContentOptions>): Promise<boolean>;
+  shareContentWithResult(
+    content: Readonly<ShareContent>,
+    options?: Readonly<CapacitorShareContentOptions>,
+  ): Promise<ShareResult>;
 }

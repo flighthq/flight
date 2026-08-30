@@ -172,7 +172,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 26 | protocol | createWebProtocolBackend | 3/7 | **none** | — | 70.0% false. |
 | 27 | screen | createWebScreenBackend | 5/0 | **host-web** | DOM+window | Window.screen/ScreenDetails |
 | 28 | sensors | createWebSensorsBackend | 17/4 | **host-web** | window | Generic Sensor API, devicemotion/deviceorientation |
-| 29 | share | createWebShareBackend | 4/0 | **host-web** | nav | navigator.canShare/share |
+| 29 | share | webShareContentBackend / webShareFilesBackend | 3/0 + 3/0 | **host-web** | nav | navigator.canShare/share |
 | 30 | shell | createWebShellBackend | 1/8 | **none** | — | 88.9% false. |
 | 31 | shortcut | createWebShortcutBackend | 0/7 | **none** | — | ALL sentinel. |
 | 32 | socket | createWebSocketBackend | 1/0 | **ambient** | — | WHATWG WebSocket. Stays inline, unchanged. |
@@ -353,7 +353,6 @@ export function enableHostWeb(): void {
   enableHostWebPlatform();
   enableHostWebScreen();
   enableHostWebSensors();
-  enableHostWebShare();
   enableHostWebStorage();
   enableHostWebWebcam();
 }

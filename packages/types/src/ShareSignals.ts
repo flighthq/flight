@@ -1,8 +1,9 @@
+import type { Entity } from './Entity';
 import type { ShareResult } from './Share';
 import type { Signal } from './Signal';
 
 // Share result event entity. Enable delivery with attachShareSignals; the signals stay inert until
 // then. onShareResult carries the full ShareResult emitted by shareContentWithResult calls.
-export interface ShareSignals {
+export interface ShareSignals extends Entity {
   onShareResult: Signal<(result: Readonly<ShareResult>) => void>;
 }

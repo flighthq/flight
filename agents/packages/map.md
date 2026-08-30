@@ -150,7 +150,10 @@ Host/OS integration so applications need no escape hatch out of the SDK. Each ca
 - `@flighthq/screen`: display enumeration, work area, scale factor.
 - `@flighthq/storage`: synchronous persistent key/value (web backend over localStorage).
 - `@flighthq/device`: static device/OS identity — model, manufacturer, OS, memory, safe-area insets. Battery is _not_ here; it is a live concern owned by `@flighthq/power`.
-- `@flighthq/share`: system share-sheet invocation over a swappable web/native `ShareBackend`: title/text/URL and portable data-URL files, content/capability probes, boolean and detailed-result calls, presentation options, and opt-in result signals. The web backend maps files to DOM `File`; the Capacitor adapter realizes mobile title/text/URL sharing and activity results but cannot yet carry data-URL files through its file-URI API.
+- `@flighthq/share`: explicit system share-sheet invocation through top-level content/files Host slots,
+  payload validation, boolean and detailed-result calls, and core-owned opt-in result signals. Web
+  realizes title/text/URL plus portable data-URL files; Capacitor realizes title/text/URL and exposes
+  its chooser title only on the concrete provider extension.
 - `@flighthq/haptics`: vibration and impact/notification/selection feedback.
 - `@flighthq/geolocation`: current position and position watches.
 - `@flighthq/webcam`: take photo / pick image.

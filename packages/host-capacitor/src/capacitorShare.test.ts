@@ -1,21 +1,13 @@
-import type { CapacitorApi } from '@flighthq/types/contract';
+import type { CapacitorApi, ShareContentBackend } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorShareBackend } from './capacitorShare';
+import { createCapacitorShareContentBackend } from './capacitorShare';
 
-const flush = async () => {
-  await Promise.resolve();
-  await Promise.resolve();
-};
-
-function fakeCapacitor(canShare = true, shareImpl?: () => Promise<{ activityType?: string }>) {
-  const shared: Array<{ title?: string; text?: string; url?: string }> = [];
+function fakeCapacitor(shareImpl?: () => Promise<{ activityType?: string }>) {
+  const shared: Array<{ dialogTitle?: string; title?: string; text?: string; url?: string }> = [];
   const capacitor = {
     share: {
-      async canShare() {
-        return { value: canShare };
-      },
-      async share(options: { title?: string; text?: string; url?: string }) {
+      async share(options: { dialogTitle?: string; title?: string; text?: string; url?: string }) {
         shared.push(options);
         return shareImpl ? await shareImpl() : { activityType: 'com.apple.UIKit.activity.Mail' };
       },
@@ -24,51 +16,54 @@ function fakeCapacitor(canShare = true, shareImpl?: () => Promise<{ activityType
   return { capacitor, shared };
 }
 
-describe('createCapacitorShareBackend', () => {
+describe('createCapacitorShareContentBackend', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorShareBackend(fakeCapacitor().capacitor)).toBe(true);
+    expect(EntityRuntimeKey in createCapacitorShareContentBackend(fakeCapacitor().capacitor)).toBe(true);
   });
 
-  it('reports availability from the prefetch cache once it resolves', async () => {
-    const backend = createCapacitorShareBackend(fakeCapacitor(true).capacitor);
-    // Reads false until the construction-time canShare prefetch settles.
-    expect(backend.isAvailable()).toBe(false);
-    await flush();
-    expect(backend.isAvailable()).toBe(true);
-    expect(backend.canShare({ text: 'x' })).toBe(true);
+  it('validates meaningful payloads synchronously without an availability cache', () => {
+    const backend = createCapacitorShareContentBackend(fakeCapacitor().capacitor);
+    expect(backend.canShareContent({ text: 'ready now' })).toBe(true);
+    expect(backend.canShareContent({ text: '' })).toBe(false);
   });
 
-  it('shares title/text/url content', async () => {
+  it('shares title, text, and URL content', async () => {
     const { capacitor, shared } = fakeCapacitor();
-    const backend = createCapacitorShareBackend(capacitor);
-    expect(await backend.share({ title: 'T', url: 'https://flight.dev' })).toBe(true);
+    const backend = createCapacitorShareContentBackend(capacitor);
+    expect(await backend.shareContent({ title: 'T', url: 'https://flight.dev' })).toBe(true);
     expect(shared[0]).toMatchObject({ title: 'T', url: 'https://flight.dev' });
   });
 
-  it('maps a completed share to a ShareResult with the activity type', async () => {
-    const backend = createCapacitorShareBackend(fakeCapacitor().capacitor);
-    expect(await backend.shareWithResult({ text: 'x' })).toEqual({
-      completed: true,
+  it('keeps chooserTitle on only the concrete Capacitor provider type', async () => {
+    const { capacitor, shared } = fakeCapacitor();
+    const backend = createCapacitorShareContentBackend(capacitor);
+    expect(await backend.shareContent({ text: 'x' }, { chooserTitle: 'Choose an app' })).toBe(true);
+    expect(shared[0]?.dialogTitle).toBe('Choose an app');
+    const portable: ShareContentBackend = backend;
+    // @ts-expect-error the portable content slot has no Capacitor chooser parameter
+    expect(await portable.shareContent({ text: 'x' }, { chooserTitle: 'Choose an app' })).toBe(true);
+  });
+
+  it('maps a completed share to a detailed result with the activity type', async () => {
+    const backend = createCapacitorShareContentBackend(fakeCapacitor().capacitor);
+    expect(await backend.shareContentWithResult({ text: 'x' })).toEqual({
       activityType: 'com.apple.UIKit.activity.Mail',
+      completed: true,
       dismissed: false,
     });
   });
 
-  it('reports a dismissed ShareResult when the user cancels', async () => {
-    const backend = createCapacitorShareBackend(
-      fakeCapacitor(true, async () => {
+  it('reports rejected commands as platform outcomes', async () => {
+    const backend = createCapacitorShareContentBackend(
+      fakeCapacitor(async () => {
         throw new Error('cancelled');
       }).capacitor,
     );
-    expect(await backend.shareWithResult({ text: 'x' })).toEqual({
-      completed: false,
+    expect(await backend.shareContent({ text: 'x' })).toBe(false);
+    expect(await backend.shareContentWithResult({ text: 'x' })).toEqual({
       activityType: null,
+      completed: false,
       dismissed: true,
     });
-  });
-
-  it('refuses content with no shareable text', async () => {
-    const backend = createCapacitorShareBackend(fakeCapacitor().capacitor);
-    expect(await backend.share({})).toBe(false);
   });
 });

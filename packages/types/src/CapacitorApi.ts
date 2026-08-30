@@ -380,11 +380,9 @@ export interface CapacitorConnectionStatus {
   connectionType: string;
 }
 
-// `@capacitor/share` — the native share sheet. `share` is async; the sync ShareBackend availability
-// probes (isAvailable/canShare) read a boolean prefetched from `canShare` at construction. `files` are
-// platform file URIs.
+// `@capacitor/share` — the native share sheet. Flight's provider supports the portable title, text,
+// and URL vectors; chooserTitle maps to dialogTitle on this provider alone.
 export interface CapacitorSharePlugin {
-  canShare(): Promise<CapacitorShareCanResult>;
   share(options: Readonly<CapacitorShareOptions>): Promise<CapacitorShareResult>;
 }
 
@@ -394,10 +392,6 @@ export interface CapacitorShareOptions {
   text?: string;
   title?: string;
   url?: string;
-}
-
-export interface CapacitorShareCanResult {
-  value: boolean;
 }
 
 export interface CapacitorShareResult {

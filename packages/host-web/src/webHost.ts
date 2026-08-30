@@ -16,6 +16,7 @@ import {
 } from './webInputTarget';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
@@ -51,6 +52,7 @@ export const webHost = createEntity({
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},
   notification: webNotificationCapabilities,
+  share: { content: webShareContentBackend, files: webShareFilesBackend },
   storage: {},
   system: {},
   text: {},

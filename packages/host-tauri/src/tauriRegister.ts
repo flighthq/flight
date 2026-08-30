@@ -77,6 +77,7 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     menu,
     net: {},
     notification,
+    share: {},
     storage: {},
     system: {},
     text: {},

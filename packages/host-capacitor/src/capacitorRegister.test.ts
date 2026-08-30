@@ -5,7 +5,6 @@ import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getSoftKeyboardBackend, setSoftKeyboardBackend } from '@flighthq/keyboard/contract';
-import { getShareBackend, setShareBackend } from '@flighthq/share/contract';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
@@ -14,7 +13,7 @@ import { capacitorHost, registerCapacitorBackends } from './capacitorRegister';
 
 // A fake Capacitor API broad enough that every createCapacitor*Backend constructs without touching
 // missing members. Backends close over `capacitor` and only call in when their methods run (plus the
-// app/device/share/statusbar/connectivity prefetches), so a thin fake proves registration
+// app/device/statusbar/connectivity prefetches), so a thin fake proves registration
 // routes the seams to the Capacitor backends.
 function fakeCapacitor(): CapacitorApi {
   const asyncNoop = async () => {};
@@ -60,7 +59,7 @@ function fakeCapacitor(): CapacitorApi {
       addListener: asyncListener,
     },
     network: { getStatus: async () => ({ connected: true, connectionType: 'wifi' }), addListener: asyncListener },
-    share: { canShare: async () => ({ value: true }), share: async () => ({}) },
+    share: { share: async () => ({}) },
     statusBar: { getInfo: async () => ({ visible: true, style: 'Default' }) },
   } as unknown as CapacitorApi;
 }
@@ -71,7 +70,6 @@ afterEach(() => {
   setDeviceBackend(null);
   setFileSystemBackend(null);
   setGeolocationBackend(null);
-  setShareBackend(null);
   setSoftKeyboardBackend(null);
   setStatusBarBackend(null);
 });
@@ -94,6 +92,7 @@ describe('capacitorHost', () => {
     expect(host.dialog.message).toBeDefined();
     expect(host.input.haptics).toBeDefined();
     expect(host.notification.delivery).toBeDefined();
+    expect(host.share.content).toBeDefined();
     // Still installing through package-local seams, so the host must NOT claim them.
     expect(host.storage).toEqual({});
     expect(host.system).toEqual({});
@@ -122,7 +121,7 @@ describe('registerCapacitorBackends', () => {
     expect(getGeolocationBackend()).not.toBeNull();
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.scheduling.scheduleNotification).toBeTypeOf('function');
-    expect(getShareBackend()).not.toBeNull();
+    expect(host.share.content.canShareContent({ text: 'ready' })).toBe(true);
     expect(getSoftKeyboardBackend()).not.toBeNull();
     expect(getStatusBarBackend()).not.toBeNull();
   });

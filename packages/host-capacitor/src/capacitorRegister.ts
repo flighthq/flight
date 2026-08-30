@@ -5,10 +5,10 @@ import { createEntity } from '@flighthq/entity/contract';
 import { setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { setGeolocationBackend } from '@flighthq/geolocation/contract';
 import { setSoftKeyboardBackend } from '@flighthq/keyboard/contract';
-import { setShareBackend } from '@flighthq/share/contract';
 import { setStatusBarBackend } from '@flighthq/statusbar/contract';
 import type {
   CapacitorApi,
+  CapacitorShareContentBackend,
   EntityRuntimeKey,
   HasClipboardImage,
   HasClipboardText,
@@ -32,7 +32,7 @@ import { createCapacitorGeolocationBackend } from './capacitorGeolocation';
 import { createCapacitorHapticsBackend } from './capacitorHaptics';
 import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
 import { createCapacitorNotificationCapabilities } from './capacitorNotification';
-import { createCapacitorShareBackend } from './capacitorShare';
+import { createCapacitorShareContentBackend } from './capacitorShare';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 
 type CapacitorHost = Host &
@@ -44,9 +44,9 @@ type CapacitorHost = Host &
   HasNotificationAction &
   HasNotificationClick &
   HasNotificationDelivery &
-  HasNotificationScheduling;
+  HasNotificationScheduling & { readonly share: { readonly content: CapacitorShareContentBackend } };
 
-// The explicit Capacitor host. Clipboard, dialog, haptics, and notification are claimed; every other capability
+// The explicit Capacitor host. Clipboard, dialog, haptics, notification, and content sharing are claimed; every other capability
 // still installs through its package-local seam and is NOT represented here, so an empty group means
 // "not yet migrated", never "Capacitor cannot do this".
 export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
@@ -67,6 +67,7 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     menu: {},
     net: {},
     notification: createCapacitorNotificationCapabilities(capacitor),
+    share: { content: createCapacitorShareContentBackend(capacitor) },
     storage: {},
     system: {},
     text: {},
@@ -94,7 +95,6 @@ export function registerCapacitorBackends(capacitor: CapacitorApi): CapacitorHos
   setDeviceBackend(createCapacitorDeviceBackend(capacitor));
   setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));
   setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));
-  setShareBackend(createCapacitorShareBackend(capacitor));
   setSoftKeyboardBackend(createCapacitorKeyboardBackend(capacitor));
   setStatusBarBackend(createCapacitorStatusBarBackend(capacitor));
   return capacitorHost(capacitor);

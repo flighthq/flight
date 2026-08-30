@@ -64,7 +64,7 @@ import type { PromptDialogBackend } from './PromptDialogBackend';
 import type { ProtocolBackend } from './Protocol';
 import type { ScreenBackend } from './Screen';
 import type { SensorsBackend } from './Sensors';
-import type { ShareBackend } from './Share';
+import type { ShareContentBackend, ShareFilesBackend } from './Share';
 import type { ShellBackend } from './Shell';
 import type { ShortcutBackend } from './Shortcut';
 import type { SocketBackend } from './Socket';
@@ -89,6 +89,7 @@ export interface Host extends Entity {
   readonly menu: HostMenuCapabilities;
   readonly net: HostNetCapabilities;
   readonly notification: HostNotificationCapabilities;
+  readonly share: HostShareCapabilities;
   readonly storage: HostStorageCapabilities;
   readonly system: HostSystemCapabilities;
   readonly text: HostTextCapabilities;
@@ -184,6 +185,13 @@ export interface HostNotificationCapabilities {
   readonly update?: NotificationUpdateBackend;
 }
 
+// Share is top-level because content and Flight data-URL files have different provider coverage.
+// Omission is capability absence; providers never install a stub that merely answers false.
+export interface HostShareCapabilities {
+  readonly content?: ShareContentBackend;
+  readonly files?: ShareFilesBackend;
+}
+
 export interface HostStorageCapabilities {
   readonly fileSystem?: FileSystemBackend;
   readonly local?: StorageBackend;
@@ -210,7 +218,6 @@ export interface HostTextCapabilities {
 
 export interface HostUiCapabilities {
   readonly fullscreen?: FullscreenBackend;
-  readonly share?: ShareBackend;
   readonly shell?: ShellBackend;
   readonly statusBar?: StatusBarBackend;
   readonly tray?: TrayBackend;
@@ -502,8 +509,12 @@ export interface HasMenuSelect {
   readonly menu: { readonly select: MenuSelectBackend };
 }
 
-export interface HasUiShare {
-  readonly ui: { readonly share: ShareBackend };
+export interface HasShareContent {
+  readonly share: { readonly content: ShareContentBackend };
+}
+
+export interface HasShareFiles {
+  readonly share: { readonly files: ShareFilesBackend };
 }
 
 export interface HasUiShell {

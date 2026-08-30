@@ -15,9 +15,18 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Invoking the system share sheet — handing a content payload (title, text, url, files) to the OS/browser share UI and reporting the outcome. A Web-Share-Level-2-shaped command capability with flat free functions (`shareContent`, `shareText`, `shareUrl`, `canShareContent`, `isShareAvailable`, `hasShareContentFields`) over a swappable `ShareBackend`, plus an opt-in `onShareResult` signals seam for async completion fan-out. The package only invokes the platform share UI with a payload it is given — it does not produce that payload. `ShareFile` is a portable data-URL descriptor, not a DOM `File`; conversion to host-native types happens inside the backend.
+Invoking the system share sheet through explicit top-level `Host.share.content` and
+`Host.share.files` slots. Content carries title/text/URL; files use portable data-URL descriptors and
+are converted to host-native objects at the provider boundary. Core free functions require a Host
+trait, and the opt-in `onShareResult` signal is emitted by the detailed core command rather than a
+host. The package invokes the platform UI with a caller-provided payload; it does not produce payloads.
 
 ## Decisions
+
+- **[2026-08-29] Share capability presence is structural and provider vectors stay honest.** Content
+  is available on Web and Capacitor; portable files are Web-only. Both are optional slots beneath the
+  required top-level Share group. Payload validation occurs inside present slots, provider/runtime
+  failures are outcomes, and the Capacitor chooser hint is absent from the portable contract.
 
 - **[2026-07-02] Remove dead `_signalSubscriptions` map.** `detachShareSignals` tears down a per-signals unsubscribe map that the web backend never populates — dead code kept "for pattern consistency." Remove per the pre-release "remove it when it's wrong" rule. *(Done; the surviving vestige — a `Map<ShareSignals, true>` standing in for a set — was collapsed 2026-07-30.)*
 
