@@ -9,7 +9,6 @@ import { getShareBackend, setShareBackend } from '@flighthq/share/contract';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { capacitorHost, registerCapacitorBackends } from './capacitorRegister';
 

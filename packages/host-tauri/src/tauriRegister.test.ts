@@ -7,7 +7,6 @@ import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerTauriBackends } from './tauriRegister';
 
