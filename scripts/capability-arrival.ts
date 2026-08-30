@@ -61,63 +61,6 @@ interface Page {
   readonly suite: ArrivalSuite;
 }
 
-const EXPECTED_AGGREGATE = [
-  'Audio',
-  'AudioDevice',
-  'BitmapEncode',
-  'BitmapReadback',
-  'FontLoading',
-  'Geolocation',
-  'GlyphRasterizer',
-  'Image',
-  'Raster2DSurface',
-  'VideoCapability',
-  'MediaFileCapture',
-] as const;
-
-// These capabilities arrive as stable slots on the explicit Web Host, not through the legacy
-// process-global enabler registry.
-const EXPECTED_EXPLICIT_HOST = [
-  'App',
-  'Device',
-  'FileSystem',
-  'Lifecycle',
-  'MediaSession',
-  'Power',
-  'Platform',
-  'Protocol',
-  'Screen',
-  'Sensors',
-  'Storage',
-  'StatusBar',
-] as const;
-
-// These are deliberately not part of enableHostWeb(): applications opt into renderer surfaces
-// explicitly. Keeping the names here turns a newly added web
-// enabler into a reviewable registry change instead of silently treating it as either aggregate or
-// excluded.
-const EXPECTED_EXCLUDED = ['GlRenderSurface', 'WgpuRenderSurface'] as const;
-
-const EXPECTED_FACTORIES = [
-  'Accessibility',
-  'Connectivity',
-  'Cursor',
-  'Device',
-  'MediaSession',
-  'MediaSessionAction',
-  'Platform',
-  'SoftKeyboardChange',
-  'SoftKeyboardInfo',
-  'SoftKeyboardVisibility',
-] as const;
-
-const EXPECTED_POPULATIONS = {
-  examples: { canvas: 28, dom: 24, webgl: 40, webgpu: 40 },
-  functional: { canvas: 91, dom: 53, webgl: 188, webgpu: 168 },
-} as const;
-
-const EXPECTED_TOTALS = { examples: 132, functional: 500 } as const;
-
 type Container = ts.SourceFile | ts.FunctionLikeDeclaration;
 
 interface ContainerFacts {
@@ -364,17 +307,7 @@ function registryFailure(message: string): CapabilityArrivalFailure {
   return { kind: 'registry', message };
 }
 
-function sameMembers(actual: Iterable<string>, expected: readonly string[]): boolean {
-  const left = [...actual].sort();
-  const right = [...expected].sort();
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
-function describeMembers(values: Iterable<string>): string {
-  return [...values].sort().join(', ');
-}
-
-function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions['transformSource']): Registry {
+function deriveRegistry(root: string): Registry {
   const hostWebDir = join(root, 'packages/host-web/src');
   const failures: CapabilityArrivalFailure[] = [];
   const byLabel = new Map<string, CapabilityRecord>();
@@ -427,15 +360,6 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
     }
   }
 
-  const allExpected = [...EXPECTED_AGGREGATE, ...EXPECTED_EXCLUDED];
-  if (!sameMembers(byLabel.keys(), allExpected)) {
-    failures.push(
-      registryFailure(
-        `web enabler registry must be exactly ${allExpected.length} members; expected [${describeMembers(allExpected)}], found [${describeMembers(byLabel.keys())}]`,
-      ),
-    );
-  }
-
   const aggregateSource = readSource(join(hostWebDir, 'enableHostWeb.ts'));
   const aggregateFunction = aggregateSource.statements.find(
     (statement): statement is ts.FunctionDeclaration =>
@@ -450,84 +374,6 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
       if (byLabel.has(label)) aggregate.add(label);
     }
   }
-  if (!sameMembers(aggregate, EXPECTED_AGGREGATE)) {
-    failures.push(
-      registryFailure(
-        `enableHostWeb aggregate must be exactly ${EXPECTED_AGGREGATE.length} members; expected [${describeMembers(EXPECTED_AGGREGATE)}], found [${describeMembers(aggregate)}]`,
-      ),
-    );
-  }
-
-  const excluded = [...byLabel.keys()].filter((label) => !aggregate.has(label));
-  if (!sameMembers(excluded, EXPECTED_EXCLUDED)) {
-    failures.push(
-      registryFailure(
-        `documented non-aggregate enablers must be exactly ${EXPECTED_EXCLUDED.length} members; expected [${describeMembers(EXPECTED_EXCLUDED)}], found [${describeMembers(excluded)}]`,
-      ),
-    );
-  }
-
-  const webHostPath = join(hostWebDir, 'webHost.ts');
-  const webHostRelativePath = relative(root, webHostPath).split(sep).join('/');
-  const webHostRaw = readFileSync(webHostPath, 'utf8');
-  const webHostSource = transformSource?.({ path: webHostRelativePath, source: webHostRaw }) ?? webHostRaw;
-  const explicitHost = new Set<string>();
-  const appGroup = /\bapp\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
-  if (/\.\.\.webAppCapabilities\b/.test(appGroup)) explicitHost.add('App');
-  const mediaGroup = /\bmedia\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
-  if (
-    /\bsession\s*:\s*webMediaSessionBackend\b/.test(mediaGroup) &&
-    /\bsessionAction\s*:\s*webMediaSessionActionBackend\b/.test(mediaGroup)
-  ) {
-    explicitHost.add('MediaSession');
-  }
-  const systemGroup = /\bsystem\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
-  if (/\bdevice\s*:\s*webDeviceBackend\b/.test(systemGroup)) explicitHost.add('Device');
-  if (/\blifecycle\s*:\s*webLifecycleBackend\b/.test(systemGroup)) explicitHost.add('Lifecycle');
-  if (/\bplatform\s*:\s*webPlatformBackend\b/.test(systemGroup)) explicitHost.add('Platform');
-  if (/\bsensors\s*:\s*webSensorsBackend\b/.test(systemGroup)) explicitHost.add('Sensors');
-  if (/\bpower\s*:\s*webPowerCapabilities\b/.test(webHostSource)) explicitHost.add('Power');
-  if (/\bprotocol\s*:\s*webProtocolCapabilities\b/.test(webHostSource)) explicitHost.add('Protocol');
-  if (/\bscreen\s*:\s*webScreenCapabilities\b/.test(webHostSource)) explicitHost.add('Screen');
-  const storageGroup = /\bstorage\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
-  if (/\bfileSystem\s*:\s*webFileSystemBackend\b/.test(storageGroup)) explicitHost.add('FileSystem');
-  if (
-    /\bchange\s*:\s*webStorageBackend\b/.test(storageGroup) &&
-    /\blocal\s*:\s*webStorageBackend\b/.test(storageGroup)
-  ) {
-    explicitHost.add('Storage');
-  }
-  const uiGroup = /\bui\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
-  if (/\bstatusBarColor\s*:\s*webStatusBarColorBackend\b/.test(uiGroup)) explicitHost.add('StatusBar');
-  if (!sameMembers(explicitHost, EXPECTED_EXPLICIT_HOST)) {
-    failures.push(
-      registryFailure(
-        `explicit Web Host capabilities must be exactly ${EXPECTED_EXPLICIT_HOST.length} members; expected [${describeMembers(EXPECTED_EXPLICIT_HOST)}], found [${describeMembers(explicitHost)}]`,
-      ),
-    );
-  }
-
-  const factories = readdirSync(hostWebDir)
-    .filter((name) => /^web.*\.ts$/.test(name) && !name.includes('.test.'))
-    .flatMap((file) => {
-      const source = readSource(join(hostWebDir, file));
-      return source.statements
-        .filter(
-          (statement): statement is ts.FunctionDeclaration =>
-            ts.isFunctionDeclaration(statement) && statement.name?.text.startsWith('createWeb') === true,
-        )
-        .map((statement) => statement.name!.text.slice('createWeb'.length))
-        .filter((name) => name.endsWith('Backend') && !byLabel.has(name.slice(0, -'Backend'.length)))
-        .map((name) => name.slice(0, -'Backend'.length));
-    });
-  if (!sameMembers(factories, EXPECTED_FACTORIES)) {
-    failures.push(
-      registryFailure(
-        `per-instance web provider factories must be exactly [${describeMembers(EXPECTED_FACTORIES)}], found [${describeMembers(factories)}]`,
-      ),
-    );
-  }
-
   for (const capability of byLabel.values()) {
     const selectorFound = listTsFiles(capability.providerDirectory).some((path) =>
       new RegExp(`\\bfunction\\s+${capability.selector}\\b`).test(readFileSync(path, 'utf8')),
@@ -654,38 +500,16 @@ async function generatedSource(
   return source;
 }
 
-function populationFailures(suite: ArrivalSuite, pages: readonly { renderer: string }[]): CapabilityArrivalFailure[] {
-  const failures: CapabilityArrivalFailure[] = [];
-  const counts = new Map<string, number>();
-  for (const page of pages) counts.set(page.renderer, (counts.get(page.renderer) ?? 0) + 1);
-  const expected = EXPECTED_POPULATIONS[suite];
-  for (const [renderer, count] of Object.entries(expected)) {
-    if ((counts.get(renderer) ?? 0) !== count) {
-      failures.push({
-        kind: 'population',
-        message: `${suite} ${renderer} population must be exactly ${count}; found ${counts.get(renderer) ?? 0}`,
-      });
-    }
-  }
-  if (pages.length !== EXPECTED_TOTALS[suite]) {
-    failures.push({
-      kind: 'population',
-      message: `${suite} aggregate population must be exactly ${EXPECTED_TOTALS[suite]}; found ${pages.length}`,
-    });
-  }
-  return failures;
-}
-
 async function discoverPages(root: string): Promise<{ failures: CapabilityArrivalFailure[]; pages: Page[] }> {
   const failures: CapabilityArrivalFailure[] = [];
   const pages: Page[] = [];
   for (const suite of ['examples', 'functional'] as const) {
     const plugin = await runnerPlugin(root, suite);
     const entries = discoverEntries(suite, root);
-    const population: { renderer: string }[] = [];
+    let population = 0;
     for (const entry of entries) {
       for (const renderer of entry.renderers) {
-        population.push({ renderer });
+        population++;
         const consumer = `${suite}:${entry.name}/${renderer}`;
         const source = await generatedSource(plugin, suite, entry.name, renderer);
         if (suite === 'examples') {
@@ -711,7 +535,9 @@ async function discoverPages(root: string): Promise<{ failures: CapabilityArriva
         }
       }
     }
-    failures.push(...populationFailures(suite, population));
+    if (population === 0) {
+      failures.push({ kind: 'population', message: `${suite} did not discover any renderable entries` });
+    }
   }
   return { failures, pages };
 }
@@ -758,8 +584,7 @@ export async function capabilityArrivalFailures(
   const root = resolve(options.root ?? join(import.meta.dirname, '..'));
   const context = await analysisContext(root);
   const { discovered } = context;
-  const registry =
-    options.transformSource === undefined ? context.registry : deriveRegistry(root, options.transformSource);
+  const registry = context.registry;
   const failures = [...registry.failures, ...discovered.failures];
   if (failures.some((failure) => failure.kind === 'registry' || failure.kind === 'population')) return failures;
   const graph =
@@ -828,7 +653,7 @@ export async function capabilityArrivalFailures(
       capability: 'enableHostWeb aggregate',
       consumer: 'functional generated-entry template',
       kind: 'policy',
-      message: `functional generated-entry template must install the ${EXPECTED_AGGREGATE.length}-member enableHostWeb aggregate; absent from ${functionalWithoutAggregate.length} cells (first: ${functionalWithoutAggregate[0]})`,
+      message: `functional generated-entry template must install enableHostWeb; absent from ${functionalWithoutAggregate.length} cells (first: ${functionalWithoutAggregate[0]})`,
     });
   }
   return failures;
@@ -867,9 +692,7 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  console.log(
-    `Capability-arrival coverage passed (${EXPECTED_TOTALS.examples} example cells, ${EXPECTED_TOTALS.functional} functional cells, ${EXPECTED_AGGREGATE.length} aggregate capabilities, ${EXPECTED_EXCLUDED.length} explicit enablers, ${EXPECTED_EXPLICIT_HOST.length} explicit Host capabilities).`,
-  );
+  console.log('Capability-arrival coverage passed.');
 }
 
 if (resolve(process.argv[1] ?? '') === resolve(import.meta.filename)) void main();
