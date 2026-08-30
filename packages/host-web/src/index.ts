@@ -10,7 +10,7 @@ export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } fr
 export { webClipboardBackend } from './webClipboard';
 export { createWebConnectivityBackend, webConnectivityBackend } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';
-export { enableHostWebDevice } from './webDevice';
+export { createWebDeviceBackend, enableWebSafeAreaInsets, webDeviceBackend } from './webDevice';
 export {
   webDirectoryOpenDialogBackend,
   webFileOpenDialogBackend,
@@ -53,7 +53,7 @@ export {
   createWebServiceWorkerNotificationCapabilities,
   notifyWebServiceWorkerNotificationEvent,
 } from './webServiceWorkerNotification';
-export { enableHostWebPlatform } from './webPlatform';
+export { createWebPlatformBackend, webPlatformBackend } from './webPlatform';
 export { webPowerCapabilities } from './webPower';
 export { createWebProtocolCapabilities } from './webProtocol';
 export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from './webRaster2DSurface';

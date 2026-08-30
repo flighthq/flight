@@ -1,10 +1,10 @@
 export {
-  explainPlatformBackend,
   comparePlatformVersions,
   getPlatformEngine,
   getPlatformInfo,
   getPlatformKind,
   getPlatformName,
+  getPlatformRuntime,
   isPlatformDesktop,
   isPlatformMobile,
   isPlatformNative,

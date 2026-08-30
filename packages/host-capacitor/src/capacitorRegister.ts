@@ -1,4 +1,3 @@
-import { setDeviceBackend } from '@flighthq/device/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { setGeolocationBackend } from '@flighthq/geolocation/contract';
@@ -131,7 +130,7 @@ export function capacitorHost<Profile extends MobileOsProfile>(
     // Capacitor exposes none of Shell's six native command capabilities.
     shell: {},
     storage: {},
-    system: {},
+    system: { device: createCapacitorDeviceBackend(capacitor) },
     text: {},
     tray: {},
     ui: {},
@@ -158,7 +157,6 @@ export function registerCapacitorBackends<Profile extends MobileOsProfile>(
   capacitor: CapacitorApi,
   profile: Profile,
 ): CapacitorHost<Profile> {
-  setDeviceBackend(createCapacitorDeviceBackend(capacitor));
   setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));
   setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));
   setStatusBarBackend(createCapacitorStatusBarBackend(capacitor));

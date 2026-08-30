@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { setPlatformBackend } from '@flighthq/platform/contract';
 import type {
   DesktopOsProfile,
   ElectronApi,
@@ -155,7 +154,6 @@ export function registerElectronBackends(
   const updater = createElectronUpdaterBackend(electron, options.updaterFeedUrl);
   const shell = makeElectronShellCapabilities(electron, options.platform);
   const window = createElectronWindowBackend(electron);
-  setPlatformBackend(createElectronPlatformBackend(electron));
   return createEntity({
     accessibility: {},
     app,
@@ -182,7 +180,7 @@ export function registerElectronBackends(
     share: {},
     shell,
     storage: { local: storage },
-    system: {},
+    system: { platform: createElectronPlatformBackend(electron) },
     text: {},
     tray: createElectronTrayCapabilities(electron, options.platform),
     ui: {},

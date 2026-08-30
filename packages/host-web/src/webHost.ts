@@ -6,6 +6,7 @@ import { createWebAppCapabilities } from './webApp';
 import { webApplicationExitBackend } from './webApplicationExit';
 import { webClipboardBackend } from './webClipboard';
 import { webConnectivityBackend } from './webConnectivity';
+import { webDeviceBackend } from './webDevice';
 import {
   webDirectoryOpenDialogBackend,
   webFileOpenDialogBackend,
@@ -31,6 +32,7 @@ import { webLifecycleBackend } from './webLifecycle';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import { webPlatformBackend } from './webPlatform';
 import { webPowerCapabilities } from './webPower';
 import { createWebProtocolCapabilities } from './webProtocol';
 import { webScreenCapabilities } from './webScreen';
@@ -125,7 +127,12 @@ export const webHost = createEntity({
     persistenceQuery: webStoragePersistenceCapabilities.persistenceQuery,
     persistenceRequest: webStoragePersistenceCapabilities.persistenceRequest,
   },
-  system: { lifecycle: webLifecycleBackend, sensors: webSensorsBackend },
+  system: {
+    device: webDeviceBackend,
+    lifecycle: webLifecycleBackend,
+    platform: webPlatformBackend,
+    sensors: webSensorsBackend,
+  },
   text: {},
   tray: {},
   ui: { fullscreen: webFullscreenBackend },

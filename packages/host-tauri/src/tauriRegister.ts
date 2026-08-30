@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { setPlatformBackend } from '@flighthq/platform/contract';
 import type {
   DesktopOsProfile,
   EntityRuntimeKey,
@@ -94,7 +93,6 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
   const menu = createTauriMenuBackends(tauri);
   const shell = makeTauriShellCapabilities(tauri);
   const window = createTauriWindowBackend(tauri);
-  setPlatformBackend(createTauriPlatformBackend(tauri));
   return createEntity({
     accessibility: {},
     app,
@@ -120,7 +118,7 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
     share: {},
     shell,
     storage: {},
-    system: {},
+    system: { platform: createTauriPlatformBackend(tauri) },
     text: {},
     tray: createTauriTrayCapabilities(tauri, profile),
     ui: {},

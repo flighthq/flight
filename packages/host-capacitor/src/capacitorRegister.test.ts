@@ -1,5 +1,4 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
@@ -62,7 +61,6 @@ function fakeCapacitor(): CapacitorApi {
 }
 
 afterEach(() => {
-  setDeviceBackend(null);
   setFileSystemBackend(null);
   setGeolocationBackend(null);
   setStatusBarBackend(null);
@@ -105,7 +103,7 @@ describe('capacitorHost', () => {
     expect(host.share.content).toBeDefined();
     // Still installing through package-local seams, so the host must NOT claim them.
     expect(host.storage).toEqual({});
-    expect(host.system).toEqual({});
+    expect(host.system.device).toBeDefined();
     expect(host.media).toEqual({});
     expect(host.shortcut).toEqual({});
     expect(host.updater).toEqual({});
@@ -135,7 +133,7 @@ describe('registerCapacitorBackends', () => {
     expect(host.protocol.open.subscribe).toBeTypeOf('function');
     expect(host.connectivity.status.getStatus).toBeTypeOf('function');
     expect(host.connectivity.change.subscribe).toBeTypeOf('function');
-    expect(getDeviceBackend()).not.toBeNull();
+    expect(host.system.device).toBeDefined();
     expect(getFileSystemBackend()).not.toBeNull();
     expect(getGeolocationBackend()).not.toBeNull();
     expect(host.notification.delivery.notify).toBeTypeOf('function');

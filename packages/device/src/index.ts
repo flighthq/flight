@@ -1,6 +1,8 @@
 export {
-  enableWebSafeAreaInsets,
-  explainDeviceBackend,
+  createDeviceCapabilities,
+  createDeviceDisplayMetrics,
+  createDeviceInfo,
+  createSafeAreaInsets,
   getDeviceCapabilities,
   getDeviceDisplayMetrics,
   getDeviceId,
