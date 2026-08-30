@@ -151,3 +151,45 @@ describe('message and prompt dialogs', () => {
     expect(webPromptDialogBackend.prompt({ message: 'name?' })).toBeInstanceOf(Promise);
   });
 });
+
+describe('showConfirmDialog', () => {
+  it('returns the selected provider confirmation', async () => {
+    await expect(showConfirmDialog(fakeHost(), { message: 'sure?' })).resolves.toBe(true);
+  });
+});
+
+describe('showErrorBox', () => {
+  it('dispatches an error acknowledgement', async () => {
+    await expect(showErrorBox(fakeHost(), 'Error', 'failed')).resolves.toBeUndefined();
+  });
+});
+
+describe('showErrorDialog', () => {
+  it('returns the message result', async () => {
+    await expect(showErrorDialog(fakeHost(), { message: 'failed' })).resolves.toMatchObject({ buttonIndex: 2 });
+  });
+});
+
+describe('showInfoDialog', () => {
+  it('returns the message result', async () => {
+    await expect(showInfoDialog(fakeHost(), { message: 'info' })).resolves.toMatchObject({ buttonIndex: 2 });
+  });
+});
+
+describe('showMessageDialog', () => {
+  it('returns the message result', async () => {
+    await expect(showMessageDialog(fakeHost(), { message: 'message' })).resolves.toMatchObject({ buttonIndex: 2 });
+  });
+});
+
+describe('showPromptDialog', () => {
+  it('returns the provider text', async () => {
+    await expect(showPromptDialog(fakeHost(), { message: 'name?' })).resolves.toBe('typed');
+  });
+});
+
+describe('showWarningDialog', () => {
+  it('returns the message result', async () => {
+    await expect(showWarningDialog(fakeHost(), { message: 'warning' })).resolves.toMatchObject({ buttonIndex: 2 });
+  });
+});

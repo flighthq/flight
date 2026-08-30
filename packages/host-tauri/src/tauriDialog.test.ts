@@ -44,6 +44,24 @@ function fakeTauri(openResult: string | string[] | null | Error, saveResult: str
   return { tauri, calls };
 }
 
+describe('createTauriDirectoryOpenDialogBackend', () => {
+  it('creates an Entity provider', () => {
+    expect(EntityRuntimeKey in createTauriDirectoryOpenDialogBackend(fakeTauri(null, null).tauri)).toBe(true);
+  });
+});
+
+describe('createTauriFileOpenDialogBackend', () => {
+  it('creates an Entity provider', () => {
+    expect(EntityRuntimeKey in createTauriFileOpenDialogBackend(fakeTauri(null, null).tauri)).toBe(true);
+  });
+});
+
+describe('createTauriFileSaveDialogBackend', () => {
+  it('creates an Entity provider', () => {
+    expect(EntityRuntimeKey in createTauriFileSaveDialogBackend(fakeTauri(null, null).tauri)).toBe(true);
+  });
+});
+
 describe('createTauriMessageDialogBackend', () => {
   it('maps message to an acknowledgement result and confirm to a boolean', async () => {
     const { tauri, calls } = fakeTauri(null, null);
