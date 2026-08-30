@@ -107,6 +107,7 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
     ipc: {},
     media: {},
     menu,
+    midi: {},
     net: {},
     // No power provider: Tauri exposes no battery, idle, session-lock, thermal or keep-awake
     // API through the seams this host wires. The group is empty rather than stubbed.

@@ -99,6 +99,8 @@ export const webHost = createEntity({
     sessionAction: webMediaSessionActionBackend,
   },
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
+  // MIDI access may prompt and enumerate hardware, so only the injected profile factories claim it.
+  midi: {},
   net: {},
   power: webPowerCapabilities,
   // Notification construction is execution-context-specific (page vs Service Worker) and requires an
