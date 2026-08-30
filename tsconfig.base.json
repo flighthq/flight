@@ -56,6 +56,8 @@
       "@flighthq/shortcut/*": ["./packages/shortcut/src/*"],
       "@flighthq/menu": ["./packages/menu/src/index.ts"],
       "@flighthq/menu/*": ["./packages/menu/src/*"],
+      "@flighthq/midi": ["./packages/midi/src/index.ts"],
+      "@flighthq/midi/*": ["./packages/midi/src/*"],
       "@flighthq/tray": ["./packages/tray/src/index.ts"],
       "@flighthq/tray/*": ["./packages/tray/src/*"],
       "@flighthq/debug": ["./packages/debug/src/index.ts"],

@@ -137,6 +137,27 @@ describe('requestPermission', () => {
     expect(getPersistence).not.toHaveBeenCalled();
   });
 
+  it('makes MIDI query-only here and never acquires access from either owner', async () => {
+    const midi: object = {};
+    Object.defineProperty(midi, 'permission', {
+      get() {
+        throw new Error('a MIDI request-only decision queried permission');
+      },
+    });
+    Object.defineProperty(midi, 'access', {
+      get() {
+        throw new Error('Permissions acquired explicit MIDI access');
+      },
+    });
+    const requestMIDIAccess = vi.fn();
+    vi.stubGlobal('navigator', { requestMIDIAccess });
+
+    await expect(requestPermission(hostWithMidiGroup(midi), 'midi')).resolves.toEqual({
+      reason: 'no-request-route',
+    });
+    expect(requestMIDIAccess).not.toHaveBeenCalled();
+  });
+
   it('requires an explicit Host at the caller boundary', () => {
     expect(ambientPermissionRequestMustNotCompile).toBeTypeOf('function');
   });
@@ -198,6 +219,7 @@ function notificationHost(permission: object | null): Host {
     input: {},
     media: {},
     menu: {},
+    midi: {},
     net: {},
     notification: permission === null ? {} : { permission },
     share: {},
@@ -208,4 +230,8 @@ function notificationHost(permission: object | null): Host {
     ui: {},
     window: {},
   } as unknown as Host;
+}
+
+function hostWithMidiGroup(midi: object): Host {
+  return { ...notificationHost(null), midi } as Host;
 }
