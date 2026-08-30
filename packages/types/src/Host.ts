@@ -43,7 +43,6 @@ import type {
   NotificationCloseBackend,
   NotificationDeliveryBackend,
   NotificationDismissBackend,
-  NotificationPendingListBackend,
   NotificationReplyBackend,
   NotificationSchedulingBackend,
   NotificationShowBackend,
@@ -153,7 +152,6 @@ export interface HostNotificationCapabilities {
   readonly close?: NotificationCloseBackend;
   readonly delivery?: NotificationDeliveryBackend;
   readonly dismiss?: NotificationDismissBackend;
-  readonly pendingList?: NotificationPendingListBackend;
   readonly reply?: NotificationReplyBackend;
   readonly scheduling?: NotificationSchedulingBackend;
   readonly show?: NotificationShowBackend;
@@ -353,10 +351,6 @@ export interface HasNotificationDelivery {
 
 export interface HasNotificationDismiss {
   readonly notification: { readonly dismiss: NotificationDismissBackend };
-}
-
-export interface HasNotificationPendingList {
-  readonly notification: { readonly pendingList: NotificationPendingListBackend };
 }
 
 export interface HasNotificationReply {

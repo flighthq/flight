@@ -18,7 +18,6 @@ import type {
   HasNotificationAction,
   HasNotificationClick,
   HasNotificationDelivery,
-  HasNotificationPendingList,
   HasNotificationScheduling,
   Host,
 } from '@flighthq/types/contract';
@@ -45,7 +44,6 @@ type CapacitorHost = Host &
   HasNotificationAction &
   HasNotificationClick &
   HasNotificationDelivery &
-  HasNotificationPendingList &
   HasNotificationScheduling;
 
 // The explicit Capacitor host. Clipboard, dialog, haptics, and notification are claimed; every other capability
