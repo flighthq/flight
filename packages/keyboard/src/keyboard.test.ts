@@ -8,6 +8,7 @@ import type {
   HasSoftKeyboardScrollAssist,
   HasSoftKeyboardStyle,
   HasSoftKeyboardVisibility,
+  SoftKeyboardChangeSubscription,
   SoftKeyboardInfo,
   SoftKeyboardSetterResult,
   SoftKeyboardVisibilityResult,
@@ -49,9 +50,9 @@ function fakeInfoBackend(
 
 function fakeChangeBackend(willSucceed = true): OmitRuntime<HasSoftKeyboardChange['input']['softKeyboardChange']> {
   return {
-    async subscribe(listener: () => void): Promise<(() => void) | null> {
-      if (!willSucceed) return null;
-      return () => {};
+    async subscribe(): Promise<SoftKeyboardChangeSubscription> {
+      if (!willSucceed) return { result: 'acquisition-failed', unsubscribe: null };
+      return { result: 'ok', unsubscribe: () => {} };
     },
   };
 }
@@ -148,9 +149,9 @@ describe('attachSoftKeyboard', () => {
     const host = {
       input: {
         softKeyboardChange: {
-          async subscribe(l: () => void): Promise<(() => void) | null> {
+          async subscribe(l: () => void): Promise<SoftKeyboardChangeSubscription> {
             listener = l;
-            return () => {};
+            return { result: 'ok', unsubscribe: () => {} };
           },
         },
         softKeyboardInfo: {
@@ -183,9 +184,9 @@ describe('attachSoftKeyboard', () => {
     const host = {
       input: {
         softKeyboardChange: {
-          async subscribe(l: () => void): Promise<(() => void) | null> {
+          async subscribe(l: () => void): Promise<SoftKeyboardChangeSubscription> {
             listener = l;
-            return () => {};
+            return { result: 'ok', unsubscribe: () => {} };
           },
         },
         softKeyboardInfo: {
@@ -218,9 +219,9 @@ describe('attachSoftKeyboard', () => {
     const host = {
       input: {
         softKeyboardChange: {
-          async subscribe(l: () => void): Promise<(() => void) | null> {
+          async subscribe(l: () => void): Promise<SoftKeyboardChangeSubscription> {
             listener = l;
-            return () => {};
+            return { result: 'ok', unsubscribe: () => {} };
           },
         },
         softKeyboardInfo: {

@@ -38,8 +38,13 @@ export interface SoftKeyboardInfoBackend extends Entity {
   getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo;
 }
 
+export interface SoftKeyboardChangeSubscription {
+  readonly result: SoftKeyboardAttachResult;
+  readonly unsubscribe: (() => void) | null;
+}
+
 export interface SoftKeyboardChangeBackend extends Entity {
-  subscribe(listener: () => void): Promise<(() => void) | null>;
+  subscribe(listener: () => void): Promise<SoftKeyboardChangeSubscription>;
 }
 
 export interface SoftKeyboardVisibilityBackend extends Entity {

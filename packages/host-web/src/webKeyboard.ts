@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
   SoftKeyboardChangeBackend,
+  SoftKeyboardChangeSubscription,
   SoftKeyboardInfo,
   SoftKeyboardInfoBackend,
   SoftKeyboardVisibilityBackend,
@@ -13,20 +14,23 @@ type OmitRuntime<T> = Omit<T, typeof EntityRuntimeKey>;
 
 export function createWebSoftKeyboardChangeBackend(): SoftKeyboardChangeBackend & Entity {
   return createEntity({
-    async subscribe(listener: () => void): Promise<(() => void) | null> {
-      if (typeof window === 'undefined') return null;
+    async subscribe(listener: () => void): Promise<SoftKeyboardChangeSubscription> {
+      if (typeof window === 'undefined') return { result: 'acquisition-failed', unsubscribe: null };
       const virtualKeyboard = getVirtualKeyboard();
       if (virtualKeyboard !== null) {
         virtualKeyboard.addEventListener('geometrychange', listener);
-        return () => virtualKeyboard.removeEventListener('geometrychange', listener);
+        return { result: 'ok', unsubscribe: () => virtualKeyboard.removeEventListener('geometrychange', listener) };
       }
       const viewport = window.visualViewport;
-      if (viewport === undefined || viewport === null) return null;
+      if (viewport === undefined || viewport === null) return { result: 'acquisition-failed', unsubscribe: null };
       viewport.addEventListener('resize', listener);
       viewport.addEventListener('scroll', listener);
-      return () => {
-        viewport.removeEventListener('resize', listener);
-        viewport.removeEventListener('scroll', listener);
+      return {
+        result: 'ok',
+        unsubscribe: () => {
+          viewport.removeEventListener('resize', listener);
+          viewport.removeEventListener('scroll', listener);
+        },
       };
     },
   } satisfies OmitRuntime<SoftKeyboardChangeBackend>);

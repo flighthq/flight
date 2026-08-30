@@ -43,10 +43,10 @@ function blankInfo(): SoftKeyboardInfo {
 }
 
 describe('createWebSoftKeyboardChangeBackend', () => {
-  it('subscribe returns a cleanup function', async () => {
-    const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
-    if (cleanup !== null) {
-      expect(() => cleanup()).not.toThrow();
+  it('subscribe returns ok with an unsubscribe function', async () => {
+    const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
+    if (subscription.result === 'ok') {
+      expect(() => subscription.unsubscribe!()).not.toThrow();
     }
   });
 
@@ -64,23 +64,25 @@ describe('createWebSoftKeyboardChangeBackend', () => {
     const restore = stubVisualViewport(viewport as unknown as VisualViewport);
     try {
       let fires = 0;
-      const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
+      const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
+      expect(subscription.result).toBe('ok');
       expect(events.has('resize')).toBe(true);
       expect(events.has('scroll')).toBe(true);
       events.get('resize')!();
       expect(fires).toBe(1);
-      cleanup!();
+      subscription.unsubscribe!();
       expect(events.size).toBe(0);
     } finally {
       restore();
     }
   });
 
-  it('subscribe returns null when visualViewport is absent', async () => {
+  it('subscribe returns acquisition-failed when visualViewport is absent', async () => {
     const restore = stubVisualViewport(null);
     try {
-      const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
-      expect(cleanup).toBeNull();
+      const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
+      expect(subscription.result).toBe('acquisition-failed');
+      expect(subscription.unsubscribe).toBeNull();
     } finally {
       restore();
     }
@@ -101,11 +103,12 @@ describe('createWebSoftKeyboardChangeBackend', () => {
     });
     try {
       let fires = 0;
-      const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
+      const subscription = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
+      expect(subscription.result).toBe('ok');
       expect(events.has('geometrychange')).toBe(true);
       events.get('geometrychange')!();
       expect(fires).toBe(1);
-      cleanup!();
+      subscription.unsubscribe!();
       expect(events.has('geometrychange')).toBe(false);
     } finally {
       restore();

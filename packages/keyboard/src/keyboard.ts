@@ -26,7 +26,7 @@ export async function attachSoftKeyboard(
   const change = host.input.softKeyboardChange;
   const info = host.input.softKeyboardInfo;
   let prevHeight = info.getInfo(_scratch).height;
-  const unsubscribe = await change.subscribe(() => {
+  const subscription = await change.subscribe(() => {
     const nowInfo = info.getInfo(_scratch);
     const nowHeight = nowInfo.height;
     const wasVisible = prevHeight > 0;
@@ -42,8 +42,8 @@ export async function attachSoftKeyboard(
       emitSignal(keyboard.onResize, nowHeight);
     }
   });
-  if (unsubscribe === null) return 'acquisition-failed';
-  _subscriptions.set(keyboard, unsubscribe);
+  if (subscription.result !== 'ok') return subscription.result;
+  _subscriptions.set(keyboard, subscription.unsubscribe!);
   return 'ok';
 }
 

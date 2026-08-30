@@ -164,7 +164,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 13 | image | createWebImageBackend | 1/0 | **host-web** | DOM | new Image(), HTMLImageElement.decode/src |
 | 14 | interaction | createWebCursorBackend | 1/0 | **host-web** | DOM | HTMLElement.style.cursor |
 | 15 | ipc | createWebIpcBackend | 0/4 | **none** | — | ALL sentinel. |
-| 16 | keyboard | createWebSoftKeyboardBackend | 4/0 | **host-web** | DOM+window+nav | navigator.virtualKeyboard, Window.visualViewport |
+| 16 | keyboard | createWebSoftKeyboard{Info,Change,Visibility}Backend | 3 factories / 0S | **host-web** (per-instance, direct witness) | DOM+window+nav | navigator.virtualKeyboard, Window.visualViewport. _v3 rewrite: single `createWebSoftKeyboardBackend` replaced by three decomposed factories; no global singleton enabler; not in `enableHostWeb()` umbrella._ |
 | 17 | lifecycle | createWebLifecycleBackend | 4/0 | **host-web** | DOM+window | document visibility, page lifecycle events |
 | 18 | log | — (no factory existed) | 0/0 | **zero-provider** | — | Corrected 2026-08-30: `LogTransport` is injected directly into `createFileLogSink`; no Host/Web capability exists. |
 | 19 | mediasession | createWebMediaSessionBackend / createWebMediaSessionActionBackend | 2 slots | **host-web** | nav | Explicit `webHost.media.session` commands and `.sessionAction` events over navigator.mediaSession / MediaMetadata |
@@ -322,21 +322,26 @@ When a legacy required interface makes a sentinel unavoidable, that sentinel bel
 
 ### Capability classification: global-singleton vs per-instance
 
-23 web implementations. 22 are **global singletons** with no-arg enablers; 1 is **per-instance**.
+23 web implementations. 21 are **global singletons** with no-arg enablers; 2 are **per-instance**.
 
 | Category | Count | Pattern | Enabler signature |
 |----------|-------|---------|-------------------|
-| Global singleton | 22 | `enableHostWeb*()` no-arg, installs one global backend | `enableHostWebClipboard()` |
-| Per-instance | 1 (Cursor) | Factory takes a caller-owned resource, returns a backend | `createWebCursorBackend(element)` |
+| Global singleton | 21 | `enableHostWeb*()` no-arg, installs one global backend | `enableHostWebClipboard()` |
+| Per-instance | 2 (Cursor, Keyboard) | Factory takes a caller-owned resource, returns a backend | `createWebCursorBackend(element)`, `createWebSoftKeyboard*Backend()` |
 
 Cursor requires an `HTMLElement` owned by the caller (per-`InteractionManager`). A global slot cannot hold it — each interaction manager has its own element. Cursor is a **public factory in host-web's app lane**, not an enabler and not in the umbrella.
+
+Keyboard (since v3 direct witness dispatch) decomposes into seven `SoftKeyboard*Backend` Entity
+interfaces; consumers pass the exact `Has*` witness. There is no global slot or enabler. Web supplies
+`Info`, `Change`, and `Visibility`; Capacitor supplies those plus `ResizeModeWrite`, `Style`,
+`AccessoryBar`, and `ScrollAssist`.
 
 Accessibility has graduated from this ambient global-singleton classification. `webHost` publishes the stable Entity `webAccessibilityBackend` at `accessibility.provider`, and `createWebAccessibilityBackend(container?)` remains the fresh/borrowed-root factory. There is no Accessibility enabler or resolver slot: every command takes the selected Host provider explicitly, and `destroyAccessibility(host)` is the required final-release path owned by whoever constructed or shared that provider.
 
 ### enableHostWeb() membership
 
 `enableHostWeb()` composes the 19 remaining ambient global-singleton enablers. Cursor is excluded
-(per-instance); Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell are excluded because
+(per-instance); Keyboard is excluded because it uses direct witness factories; Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell are excluded because
 they are stable explicit `webHost` slots.
 
 ```typescript
@@ -351,7 +356,6 @@ export function enableHostWeb(): void {
   enableHostWebGeolocation();
   enableHostWebGlyphRasterizer();
   enableHostWebImage();
-  enableHostWebSoftKeyboard();
   enableHostWebLifecycle();
   enableHostWebPermission();
   enableHostWebPlatform();
@@ -364,7 +368,7 @@ export function enableHostWeb(): void {
 ```
 
 Not included: Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell (explicit `webHost`
-slots), Cursor (per-instance factory, not an enabler), ipc, shortcut, tray, updater (all-sentinel), Log
+slots), Cursor and Keyboard (per-instance/direct-witness factories, not enablers), ipc, shortcut, tray, updater (all-sentinel), Log
 (zero-provider; absent from Host),
 app, application-window, menu, power, protocol, statusbar (strict-majority no-op), net, socket,
 textsegment (ambient-language, inline).
