@@ -62,7 +62,6 @@ interface Page {
 }
 
 const EXPECTED_AGGREGATE = [
-  'Accessibility',
   'Audio',
   'AudioDevice',
   'BitmapEncode',
@@ -101,7 +100,7 @@ const EXPECTED_EXCLUDED = [
   'WgpuRenderSurface',
 ] as const;
 
-const EXPECTED_FACTORIES = ['Cursor'] as const;
+const EXPECTED_FACTORIES = ['Accessibility', 'Cursor'] as const;
 
 const EXPECTED_POPULATIONS = {
   examples: { canvas: 28, dom: 24, webgl: 40, webgpu: 40 },

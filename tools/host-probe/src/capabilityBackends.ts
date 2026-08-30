@@ -23,10 +23,23 @@ export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unkn
 
 export function captureHostProbeBackends(
   host: Partial<
-    Pick<Host, 'app' | 'clipboard' | 'dialog' | 'input' | 'menu' | 'notification' | 'screen' | 'share' | 'window'>
+    Pick<
+      Host,
+      | 'accessibility'
+      | 'app'
+      | 'clipboard'
+      | 'dialog'
+      | 'input'
+      | 'menu'
+      | 'notification'
+      | 'screen'
+      | 'share'
+      | 'window'
+    >
   > = {},
 ): HostProbeBackendSnapshot {
   return {
+    accessibility: host.accessibility?.provider ?? null,
     app: getAppBackend(),
     clipboard: host.clipboard?.text ?? null,
     connectivity: getConnectivityBackend(),

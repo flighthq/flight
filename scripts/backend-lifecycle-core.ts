@@ -3,35 +3,42 @@ import type { Node } from 'oxc-parser';
 import { formatGateProvenance, GATE_STRUCTURAL_LIMIT, readGateTreeState } from './gate-provenance';
 import { getParsedOxcSource } from './oxc-source';
 
-// The backend-replacement lifetime census.
+// The backend-provider lifetime census.
 //
-// P4 requires that replacing or removing a process-global backend must not leak what the outgoing one
-// held. The census derives, at build time, which backends CAN leak and whether their setter frees them.
+// P4 requires that releasing a provider must not leak what it held. The census derives, at build time,
+// which backends declare a whole-provider teardown and whether an owning lifecycle path reaches it.
 //
-// ★ THE EXCLUSION IS DERIVED, AND IT IS MOST OF THE POPULATION. A setter can only leak a resource its
-// backend owns, and ownership is observable: the interface declares a NO-ARGUMENT teardown member
+// ★ THE EXCLUSION IS DERIVED, AND IT IS MOST OF THE POPULATION. A lifecycle path can only leak a
+// resource its backend owns, and ownership is observable: the interface declares a NO-ARGUMENT teardown member
 // (`destroy()` / `dispose()`). A per-object teardown — `TrayBackend.destroy(id)`,
 // `WindowBackend.close(win)`, `NotificationCloseBackend.closeNotification(id)` — frees one item, not the
-// backend, so a setter has nothing to call for it and is correctly excluded. Counting those as
+// backend, so a final owner has nothing to call for it and is correctly excluded. Counting those as
 // violations would report 39 leaks where there is nothing to free.
 //
-// So the gate starts green and ratchets: it enforces only interfaces that have a whole-backend teardown
-// hook, and reports how many do not yet have one. Adding a hook opts that backend in automatically.
+// Most ambient seams are owned by set*Backend replacement. Explicit Host slots instead have a
+// destroyThing(host: HasThingProvider) owner: the Host's constructor/sharer decides the final release.
+// Those are separate, derived lanes so an explicit provider is never disguised as an ambient setter.
+
+export interface BackendLifecycleOwner {
+  body: string;
+  name: string;
+}
 
 export interface BackendLifecycleEntry {
-  // The setter that installs this backend, or null when none was found.
-  setter: string | null;
   interfaceName: string;
+  // The lifecycle path that owns final release, or null when none was found.
+  owner: string | null;
+  ownerKind: 'explicit-host-destroy' | 'explicit-host-slot' | 'setter' | null;
   // The no-argument teardown member the interface declares, or null when it owns nothing to free.
   teardown: string | null;
-  // True when the setter's body references the teardown, so replacement cannot leak.
+  // True when the owner's body reaches the teardown, directly or through one helper.
   tearsDown: boolean;
 }
 
 export interface BackendLifecycleViolation {
   detail: string;
   interfaceName: string;
-  rule: 'setter-missing' | 'replacement-leaks';
+  rule: 'owner-missing' | 'teardown-unwired';
 }
 
 export interface BackendLifecycleDelta {
@@ -94,39 +101,86 @@ export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[])
   return teardowns;
 }
 
-// Assembles the report. `setterBodies` maps a setter name to its source text, so "does the setter free the
-// outgoing backend" is answered from the code rather than from a declaration about it.
+// Explicit Host-provider lifecycle owners, keyed by the backend interface they release.
+//
+// A function is admitted only when all three pieces agree structurally:
+//   destroyThing(host: HasThingProvider) -> ThingBackend.
+// This keeps an unrelated destroyThing helper from satisfying the lane, and makes the first-parameter
+// Host trait part of the proof rather than a naming convention described only in prose.
+export function collectExplicitHostDestroyOwners(
+  sourceFiles: readonly string[],
+): ReadonlyMap<string, BackendLifecycleOwner> {
+  const owners = new Map<string, BackendLifecycleOwner>();
+  for (const sourceFile of sourceFiles) {
+    const { program, text } = getParsedOxcSource(sourceFile);
+    for (const statement of program.body) {
+      if (statement.type !== 'ExportNamedDeclaration') continue;
+      const declaration = statement.declaration;
+      if (declaration === null || declaration.type !== 'FunctionDeclaration') continue;
+      if (declaration.id === null || declaration.body === null) continue;
+      const name = declaration.id.name;
+      if (!name.startsWith('destroy') || name.endsWith('Backend')) continue;
+      const stem = name.slice('destroy'.length);
+      if (stem.length === 0) continue;
+      const parameter = declaration.params[0];
+      if (parameter?.type !== 'Identifier') continue;
+      const annotation = parameter.typeAnnotation?.typeAnnotation;
+      if (annotation?.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') continue;
+      if (annotation.typeName.name !== `Has${stem}Provider`) continue;
+      owners.set(`${stem}Backend`, {
+        body: text.slice(declaration.body.start + 1, declaration.body.end - 1),
+        name,
+      });
+    }
+  }
+  return owners;
+}
+
+// Assembles the report. Ambient setters and explicit Host-provider destroy functions are supplied in
+// distinct maps, so the report can state which ownership model it actually verified.
 export function createBackendLifecycleReport(
   interfaceNames: readonly string[],
   teardowns: ReadonlyMap<string, string>,
   setterBodies: ReadonlyMap<string, string>,
   helperBodies: ReadonlyMap<string, string> = new Map(),
+  explicitHostOwners: ReadonlyMap<string, BackendLifecycleOwner> = new Map(),
   explicitHostSlots: ReadonlyMap<string, string> = new Map(),
 ): BackendLifecycleReport {
   const entries: BackendLifecycleEntry[] = [];
   const violations: BackendLifecycleViolation[] = [];
   for (const interfaceName of interfaceNames) {
     const teardown = teardowns.get(interfaceName) ?? null;
-    const setter = findSetterName(interfaceName, setterBodies) ?? explicitHostSlots.get(interfaceName) ?? null;
-    const body = setter === null ? null : (setterBodies.get(setter) ?? null);
+    const setter = findSetterName(interfaceName, setterBodies);
+    const explicitHostOwner = explicitHostOwners.get(interfaceName) ?? null;
+    const explicitHostSlot = explicitHostSlots.get(interfaceName) ?? null;
+    const owner = explicitHostOwner?.name ?? explicitHostSlot ?? setter;
+    const ownerKind =
+      explicitHostOwner !== null
+        ? 'explicit-host-destroy'
+        : explicitHostSlot !== null
+          ? 'explicit-host-slot'
+          : setter === null
+            ? null
+            : 'setter';
+    const body = explicitHostOwner?.body ?? (setter === null ? null : (setterBodies.get(setter) ?? null));
     const tearsDown =
-      explicitHostSlots.has(interfaceName) ||
+      explicitHostSlot !== null ||
       (body !== null && teardown !== null && reachesTeardown(body, teardown, helperBodies));
-    entries.push({ interfaceName, setter, teardown, tearsDown });
+    entries.push({ interfaceName, owner, ownerKind, teardown, tearsDown });
     if (teardown === null) continue;
-    if (setter === null) {
+    if (owner === null) {
       violations.push({
-        detail: `${interfaceName} declares ${teardown}() but no set*Backend installs it`,
+        detail: `${interfaceName} declares ${teardown}() but no set*Backend or destroyThing(host: HasThingProvider) owns final release`,
         interfaceName,
-        rule: 'setter-missing',
+        rule: 'owner-missing',
       });
       continue;
     }
     if (!tearsDown) {
       violations.push({
-        detail: `${setter} replaces the backend without calling ${teardown}, so the outgoing one leaks`,
+        detail: `${owner} owns final release without calling ${teardown}, so the provider leaks`,
         interfaceName,
-        rule: 'replacement-leaks',
+        rule: 'teardown-unwired',
       });
     }
   }
@@ -186,15 +240,15 @@ export function formatBackendLifecycleReport(
       {
         command: 'npx vitest run scripts/backend-lifecycle.test.ts (scripts/backend-lifecycle-core.ts)',
         counting:
-          'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND either its set*Backend body names that member or an explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
+          'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND an ambient set*Backend, explicit destroyThing(host: HasThingProvider), or explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
-          'every exported *Backend interface in packages/types/src/*.ts, plus every exported set*Backend body and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
+          'every exported *Backend interface in packages/types/src/*.ts, plus every exported ambient set*Backend, explicit destroyThing(host: HasThingProvider), and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
       },
       readGateTreeState(process.cwd()),
     ),
   );
   // ★ "declare a whole-backend teardown hook", NOT "own a freeable resource". The gate reads
-  // DECLARATIONS: an interface member and a `set*Backend` body that names it. It cannot see whether
+  // DECLARATIONS: an interface member and an ambient-setter or explicit-Host owner that names it. It cannot see whether
   // `destroy()` releases what the backend actually holds, and the audit in
   // `agents/backend-lifecycle-ownership.md` found live rows where it does not — a counted backend whose
   // host-installed instance has no reachable teardown at all, and counted rows that release state they
@@ -210,7 +264,7 @@ export function formatBackendLifecycleReport(
   lines.push(BACKEND_LIFECYCLE_SCOPE_CAVEAT);
   for (const entry of report.entries.filter((candidate) => candidate.teardown !== null)) {
     lines.push(
-      `  ${entry.tearsDown ? 'wired   ' : 'UNWIRED '} ${entry.interfaceName.padEnd(24)} ${entry.setter ?? '(no setter)'} → ${entry.teardown}()`,
+      `  ${entry.tearsDown ? 'wired   ' : 'UNWIRED '} ${entry.interfaceName.padEnd(24)} ${entry.owner ?? '(no owner)'} [${entry.ownerKind ?? 'none'}] → ${entry.teardown}()`,
     );
   }
   for (const violation of report.violations) lines.push(`  VIOLATION ${violation.rule}: ${violation.detail}`);
@@ -219,14 +273,14 @@ export function formatBackendLifecycleReport(
 
 // ★ THE SCOPE CAVEAT, printed on every run and asserted by the tests so it cannot be quietly dropped.
 //
-// This gate answers one question — is a whole-backend teardown DECLARED and NAMED by its setter — and
+// This gate answers one question — is a whole-backend teardown DECLARED and NAMED by its lifecycle owner — and
 // the number it prints is routinely read as "N backends clean up correctly", which it has never meant.
 // The audit in `agents/backend-lifecycle-ownership.md` measured the gap on the live tree: rows this gate
 // counts include one whose host-installed instance has no reachable teardown at all, and ones whose
 // destroy releases host state they never acquired. Both are invisible here, by construction.
 //
 // It rides in the output rather than in a doc because the output is what gets pasted into reports.
-export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose owned by a setter or explicit Host slot; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether destroy releases what a backend owns. See agents/backend-lifecycle-ownership.md`;
+export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by an ambient setter or explicit Host-provider destroy owner, or owned by an explicit Host slot; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether destroy releases what a backend owns. See agents/backend-lifecycle-ownership.md`;
 
 export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.noTeardownHook !== report.total;
@@ -304,9 +358,9 @@ export function compareFloorToReport(
   };
 }
 
-// Whether the setter frees the outgoing backend, directly or through a helper it calls.
+// Whether the lifecycle owner frees the provider, directly or through a helper it calls.
 //
-// ★ One hop matters, and a text match on the setter alone is not enough. A setter that delegates to a
+// ★ One hop matters, and a text match on the owner alone is not enough. A setter that delegates to a
 // `release*Backends(previous)` helper — which is what correct layered ownership looks like, because
 // "destroy whatever is no longer referenced by any slot" does not fit inline — contains no `destroy`
 // token at all. Matching only the setter body reported those setters as LEAKING while they were the two

@@ -38,7 +38,6 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/accessibility": "*",
     "@flighthq/app": "*",
     "@flighthq/application": "*",
     "@flighthq/audio": "*",

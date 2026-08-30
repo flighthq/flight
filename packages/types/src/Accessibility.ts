@@ -1,12 +1,9 @@
+import type { Entity } from './Entity';
 import type { Rectangle } from './Rectangle';
 
-// Assistive-technology (ARIA) bridge seam — the Flight home for exposing a canvas/game UI's
-// semantics (roles, labels, states, focus) to screen readers, which otherwise see only an opaque
-// <canvas>. Free functions in @flighthq/accessibility delegate to the active AccessibilityBackend
-// (a visually-hidden ARIA DOM overlay on web, native accessibility APIs on native hosts). The
-// backend HOLDS the mirrored node tree; the app issues node/focus/announce commands. This is a
-// command capability, sentinels not throws — a missing/unfocusable target is `false`, and with no
-// DOM present every method is a no-op rather than an error.
+// Assistive-technology bridge seam — the Flight home for exposing a canvas/game UI's semantics
+// (roles, labels, states, focus) to screen readers, which otherwise see only an opaque surface. The
+// backend holds the mirrored node tree; callers pass the Host that owns it to every command.
 
 // An ARIA role. Open union: the well-known roles plus any string, so a vendor or native host can use
 // a custom (vendor-prefixed) role. The `(string & {})` arm preserves autocomplete for the known
@@ -73,24 +70,21 @@ export interface AccessibilityNode {
   states?: Readonly<AccessibilityState>;
 }
 
-// The assistive-technology seam realized by the web default (createWebAccessibilityBackend) and by
-// native hosts. The backend owns the mirrored node tree; @flighthq/accessibility's free functions
-// dispatch every command through it. `setFocus` returns whether focus moved; the others are
-// commands. Implementations return sentinels (no-op, `false`) rather than throwing.
-export interface AccessibilityBackend {
-  setNode(node: Readonly<AccessibilityNode>): void;
-  removeNode(id: string): void;
-  clear(): void;
-  setFocus(id: string): boolean;
-  announce(message: string, liveness: AccessibilityLiveness): void;
-  // Frees the DOM the backend owns: the published element tree, the live regions, and — when the backend
-  // created it rather than being handed one — the overlay container itself.
-  //
-  // ★ Distinct from `clear()`, which empties the tree but LEAVES the container in the document. Replacing
-  // a backend after only clearing it leaks an orphaned hidden container per replacement, and the elements
-  // held in its strong maps with it.
-  destroy?(): void;
-}
+export type AccessibilityOperationBlockReason = 'destroyed' | 'focus-not-moved' | 'no-dom' | 'node-not-found';
 
-// Every operation name on the backend, DERIVED from the interface rather than listed.
-export type AccessibilityOperation = keyof AccessibilityBackend;
+// Plain result data from a selected provider. The reason is the sole discriminant: operation-specific
+// signatures below exclude reasons an operation cannot produce.
+export type AccessibilityOperationOutcome<
+  BlockReason extends AccessibilityOperationBlockReason = AccessibilityOperationBlockReason,
+> = { readonly reason: 'ok' } | { readonly reason: BlockReason };
+
+// The assistive-technology command provider. It is an Entity because it owns the mirrored tree and
+// provider lifecycle. destroy is terminal and idempotent; later operations report `destroyed`.
+export interface AccessibilityBackend extends Entity {
+  announce(message: string, liveness: AccessibilityLiveness): AccessibilityOperationOutcome<'destroyed' | 'no-dom'>;
+  clear(): AccessibilityOperationOutcome<'destroyed' | 'no-dom'>;
+  destroy(): void;
+  removeNode(id: string): AccessibilityOperationOutcome<'destroyed' | 'no-dom' | 'node-not-found'>;
+  setFocus(id: string): AccessibilityOperationOutcome<'destroyed' | 'focus-not-moved' | 'no-dom' | 'node-not-found'>;
+  setNode(node: Readonly<AccessibilityNode>): AccessibilityOperationOutcome<'destroyed' | 'no-dom'>;
+}

@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import { webNotificationCapabilities } from '@flighthq/notification/contract';
 import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 
+import { webAccessibilityBackend } from './webAccessibility';
 import { webApplicationExitBackend } from './webApplicationExit';
 import { webClipboardBackend } from './webClipboard';
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
@@ -24,7 +25,7 @@ import { webFullscreenBackend, webWindowBackend } from './webWindow';
 // groups are intentional: they preserve Host's stable two-level shape without claiming providers that
 // still live behind the legacy registration path.
 export const webHost = createEntity({
-  accessibility: {},
+  accessibility: { provider: webAccessibilityBackend },
   app: {
     exit: webApplicationExitBackend,
     loop: webLoopBackend,
