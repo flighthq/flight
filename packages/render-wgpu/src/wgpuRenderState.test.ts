@@ -26,7 +26,7 @@ import type {
   WgpuPresentationSurface,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
 import { beginWgpuFrame } from './wgpuBackground';
@@ -168,6 +168,15 @@ describe('createWgpuDeviceState', () => {
   it('allocates distinct owners for repeated calls with the same raw device', () => {
     const device = {} as GPUDevice;
     expect(createWgpuDeviceState(device)).not.toBe(createWgpuDeviceState(device));
+  });
+
+  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without createEntity', () => {
+    const device = {} as GPUDevice;
+    const literal = { device };
+    expect(EntityRuntimeKey in literal).toBe(false);
+
+    const entity = createWgpuDeviceState(device);
+    expect(EntityRuntimeKey in entity).toBe(true);
   });
 
   it('returns a state that shares the device tier across derived runtimes', () => {
