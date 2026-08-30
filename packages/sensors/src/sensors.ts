@@ -1,6 +1,6 @@
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendExplanation } from '@flighthq/types/contract';
+import type { HasSystemSensors } from '@flighthq/types/contract';
 import type {
   AmbientLightReading,
   MotionReading,
@@ -20,9 +20,9 @@ import type {
 //
 // Readings passed to signal listeners are scratch-reused objects. Listeners must not retain a
 // reference to a reading across callback boundaries — copy the values if they need to outlive the call.
-export function attachSensors(sensors: Sensors): void {
+export function attachSensors(host: HasSystemSensors, sensors: Sensors): void {
   detachSensors(sensors);
-  const backend = getSensorsBackend();
+  const backend = host.system.sensors;
 
   const unsubscribeMotion = backend.subscribeMotion((acceleration, rotationRate) => {
     emitSignal(sensors.onAccelerometer, acceleration);
@@ -577,120 +577,70 @@ export function disposeSensors(sensors: Sensors): void {
   detachSensors(sensors);
 }
 
-export function explainSensorsBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
-}
-
-// The active sensors backend. Precedence: custom > host > sentinel.
-export function getSensorsBackend(): SensorsBackend {
-  return _custom ?? _host ?? _sentinel;
-}
-
 // Queries the current permission state for the given sensor without triggering a permission prompt.
 // Returns 'unsupported' when the device has no such sensor.
 export function getSensorsPermissionState(
+  host: HasSystemSensors,
   sensor?: 'motion' | 'orientation' | 'magnetometer',
 ): Promise<SensorsPermissionState> {
-  return getSensorsBackend().getPermissionState(sensor);
+  return host.system.sensors.getPermissionState(sensor);
 }
 
 // True if the accelerometer (including gravity) is available on this device.
-export function hasAccelerometer(): boolean {
-  return getSensorsBackend().isMotionSupported();
+export function hasAccelerometer(host: HasSystemSensors): boolean {
+  return host.system.sensors.isMotionSupported();
 }
 
 // True if ambient light sensing is available on this device/platform.
-export function hasAmbientLightSensor(): boolean {
-  return getSensorsBackend().isAmbientLightSupported();
+export function hasAmbientLightSensor(host: HasSystemSensors): boolean {
+  return host.system.sensors.isAmbientLightSupported();
 }
 
 // True if barometric pressure sensing is available.
-export function hasBarometer(): boolean {
-  return getSensorsBackend().isBarometerSupported();
+export function hasBarometer(host: HasSystemSensors): boolean {
+  return host.system.sensors.isBarometerSupported();
 }
 
 // True if the gravity vector sensor (or derivation) is available on this device.
-export function hasGravitySensor(): boolean {
-  return getSensorsBackend().isGravitySupported();
+export function hasGravitySensor(host: HasSystemSensors): boolean {
+  return host.system.sensors.isGravitySupported();
 }
 
 // True if the gyroscope (rotation rate) sensor is available.
-export function hasGyroscope(): boolean {
-  return getSensorsBackend().isGyroscopeSupported();
+export function hasGyroscope(host: HasSystemSensors): boolean {
+  return host.system.sensors.isGyroscopeSupported();
 }
 
 // True if the linear acceleration (gravity-removed) sensor is available.
-export function hasLinearAccelerationSensor(): boolean {
-  return getSensorsBackend().isLinearAccelerationSupported();
+export function hasLinearAccelerationSensor(host: HasSystemSensors): boolean {
+  return host.system.sensors.isLinearAccelerationSupported();
 }
 
 // True if the magnetometer sensor is available.
-export function hasMagnetometer(): boolean {
-  return getSensorsBackend().isMagnetometerSupported();
+export function hasMagnetometer(host: HasSystemSensors): boolean {
+  return host.system.sensors.isMagnetometerSupported();
 }
 
 // True if the device orientation sensor is available.
-export function hasOrientationSensor(): boolean {
-  return getSensorsBackend().isOrientationSupported();
+export function hasOrientationSensor(host: HasSystemSensors): boolean {
+  return host.system.sensors.isOrientationSupported();
 }
 
 // True if a proximity sensor is available.
-export function hasProximitySensor(): boolean {
-  return getSensorsBackend().isProximitySupported();
-}
-
-export function installSensorsHostBackend(backend: SensorsBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  _host = backend;
+export function hasProximitySensor(host: HasSystemSensors): boolean {
+  return host.system.sensors.isProximitySupported();
 }
 
 // True if any motion sensors (accelerometer or gyroscope) are available on this device.
-export function isSensorsSupported(): boolean {
-  return getSensorsBackend().isMotionSupported();
-}
-
-export function observeSensorsHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
+export function isSensorsSupported(host: HasSystemSensors): boolean {
+  return host.system.sensors.isMotionSupported();
 }
 
 // Requests sensor permission where the host gates it (iOS); resolves true when granted or ungated.
-export function requestSensorsPermission(): Promise<boolean> {
-  return getSensorsBackend().requestPermission();
+export function requestSensorsPermission(host: HasSystemSensors): Promise<boolean> {
+  return host.system.sensors.requestPermission();
 }
 
-export function resetSensorsBackendForTest(): void {
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-}
-
-// Installs a custom sensors backend; pass null to clear.
-export function setSensorsBackend(backend: SensorsBackend | null): void {
-  _custom = backend;
-}
-
-let _custom: SensorsBackend | null = null;
-let _host: SensorsBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _subscriptions = new WeakMap<Sensors, () => void>();
 const _absoluteOrientation: OrientationReading = createOrientationReading();
 const _ambientLight: AmbientLightReading = createAmbientLightReading();
@@ -701,74 +651,6 @@ const _motionAcceleration: MotionReading = createMotionReading();
 const _motionRotationRate: RotationRateReading = createRotationRateReading();
 const _orientation: OrientationReading = createOrientationReading();
 const _quaternionReading: QuaternionReading = createQuaternionReading();
-
-const _noopUnsubscribe = () => {};
-
-const _sentinel: SensorsBackend = {
-  getPermissionState(): Promise<SensorsPermissionState> {
-    return Promise.resolve('unsupported');
-  },
-  isAmbientLightSupported(): boolean {
-    return false;
-  },
-  isBarometerSupported(): boolean {
-    return false;
-  },
-  isGravitySupported(): boolean {
-    return false;
-  },
-  isGyroscopeSupported(): boolean {
-    return false;
-  },
-  isLinearAccelerationSupported(): boolean {
-    return false;
-  },
-  isMagnetometerSupported(): boolean {
-    return false;
-  },
-  isMotionSupported(): boolean {
-    return false;
-  },
-  isOrientationSupported(): boolean {
-    return false;
-  },
-  isProximitySupported(): boolean {
-    return false;
-  },
-  requestPermission(): Promise<boolean> {
-    return Promise.resolve(false);
-  },
-  subscribeAbsoluteOrientation(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeAmbientLight(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeBarometer(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeGravity(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeLinearAcceleration(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeMagnetometer(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeMotion(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeOrientation(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeProximity(): () => void {
-    return _noopUnsubscribe;
-  },
-  subscribeQuaternion(): () => void {
-    return _noopUnsubscribe;
-  },
-};
 
 interface WebMotionVector {
   x?: number | null;

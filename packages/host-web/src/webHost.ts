@@ -34,6 +34,7 @@ import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 import { webPowerCapabilities } from './webPower';
 import { createWebProtocolCapabilities } from './webProtocol';
 import { webScreenCapabilities } from './webScreen';
+import { webSensorsBackend } from './webSensors';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webShellExternalBackend } from './webShell';
 import { webStorageBackend } from './webStorage';
@@ -124,7 +125,7 @@ export const webHost = createEntity({
     persistenceQuery: webStoragePersistenceCapabilities.persistenceQuery,
     persistenceRequest: webStoragePersistenceCapabilities.persistenceRequest,
   },
-  system: { lifecycle: webLifecycleBackend },
+  system: { lifecycle: webLifecycleBackend, sensors: webSensorsBackend },
   text: {},
   tray: {},
   ui: { fullscreen: webFullscreenBackend },

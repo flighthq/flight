@@ -58,7 +58,6 @@ export { webPowerCapabilities } from './webPower';
 export { createWebProtocolCapabilities } from './webProtocol';
 export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from './webRaster2DSurface';
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';
-export { enableHostWebSensors } from './webSensors';
 export { webShareContentBackend, webShareFilesBackend } from './webShare';
 export { webShellExternalBackend } from './webShell';
 export { enableHostWebStatusBar } from './webStatusbar';
