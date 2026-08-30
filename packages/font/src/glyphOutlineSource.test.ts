@@ -1,10 +1,17 @@
 import { appendPathClose, appendPathLineTo, appendPathMoveTo } from '@flighthq/path/contract';
 import type { GlyphOutlineSource, Path } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createGlyphRasterizerBackendFromGlyphOutlineSource } from './glyphOutlineSource';
 
 describe('createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource())).toBe(
+      true,
+    );
+  });
+
   it('maps codepoints to glyph indices and rasterizes design-unit outlines at the requested em size', () => {
     const backend = createGlyphRasterizerBackendFromGlyphOutlineSource(createTestGlyphOutlineSource());
     const raster = backend.rasterize(0x41, { fontFamily: 'embedded', fontSize: 20 });

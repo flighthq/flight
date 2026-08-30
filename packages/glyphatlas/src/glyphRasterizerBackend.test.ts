@@ -1,4 +1,5 @@
 import type { GlyphRasterizedBitmap, GlyphRasterizerBackend, GlyphRasterizerOperation } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, deriveGlyphMetricsFromFontSize } from './glyphAtlas';
@@ -37,6 +38,10 @@ function taggedBackend(advance: number): GlyphRasterizerBackend {
 }
 
 describe('createStubGlyphRasterizerBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createStubGlyphRasterizerBackend()).toBe(true);
+  });
+
   it('emits a non-blank opaque-white box for any codepoint without a font or canvas', () => {
     const backend = createStubGlyphRasterizerBackend();
     const bitmap = backend.rasterize(65, { fontFamily: 'missing-font', fontSize: 20 })!;
