@@ -326,15 +326,14 @@ When a legacy required interface makes a sentinel unavoidable, that sentinel bel
 
 Cursor requires an `HTMLElement` owned by the caller (per-`InteractionManager`). A global slot cannot hold it — each interaction manager has its own element. Cursor is a **public factory in host-web's app lane**, not an enabler and not in the umbrella.
 
-Accessibility is a global singleton (umbrella membership = 22). Its `enableHostWebAccessibility()` is a no-arg enabler that installs the global accessibility backend. The factory `createWebAccessibilityBackend(container?)` with optional container is contract-only. Design C lifecycle (optional `dispose` + transition cleanup, sticky-latch fix) is approved but deferred from Stage 1 — the current accessibility enabler does not have dispose behavior; the migration requires 2 commits and is tracked separately.
+Accessibility has graduated from this ambient global-singleton classification. `webHost` publishes the stable Entity `webAccessibilityBackend` at `accessibility.provider`, and `createWebAccessibilityBackend(container?)` remains the fresh/borrowed-root factory. There is no Accessibility enabler or resolver slot: every command takes the selected Host provider explicitly, and `destroyAccessibility(host)` is the required final-release path owned by whoever constructed or shared that provider.
 
 ### enableHostWeb() membership
 
-`enableHostWeb()` composes the 22 global-singleton enablers. Cursor is excluded (per-instance).
+At the original census, `enableHostWeb()` composed 22 global-singleton enablers and excluded Cursor. Accessibility is now also excluded because its provider is constructed directly into `webHost`.
 
 ```typescript
 export function enableHostWeb(): void {
-  enableHostWebAccessibility();
   enableHostWebClipboard();
   enableHostWebConnectivity();
   enableHostWebDevice();
@@ -392,7 +391,7 @@ Seven of the 38 factories allocate closure state — mutable variables captured 
 | protocol | `_registeredSchemes` | string array |
 | updater | `_config`, `_channel` | config object (UpdaterConfig: 3 booleans), string |
 
-Closure state spans primitives, Maps, Sets, arrays, config objects, and retained DOM/object references. All are passive allocation — no listener registration, no timer, no I/O at construction. Construction being passive does not settle transition ownership: MediaSession handlers and Accessibility DOM remain externally live after their provider is shadowed, so the outgoing layer must dispose its own externally observable state.
+Closure state spans primitives, Maps, Sets, arrays, config objects, and retained DOM/object references. All are passive allocation — no listener registration, no timer, no I/O at construction. Construction being passive does not settle lifetime ownership. Accessibility no longer has a shadow transition: each explicit provider owns its DOM and required idempotent `destroy()` removes it; the constructor/sharer owns the final `destroyAccessibility(host)` call.
 
 ### Provider-transition lifetime rule
 
@@ -400,7 +399,7 @@ The deciding line is lifetime, not who happens to own an object:
 
 - **Unbounded relationships rebind.** Scope is structural: any unbounded subscription or watch returning an unsubscribe thunk rebinds, including notification, storage, filesystem watch, clipboard, sensors, screen, lifecycle, connectivity, keyboard, and geolocation. This list is illustrative, not exhaustive. On provider swap, detach from the old provider first, then attach the same caller handler to the new provider. The registry must remove entries on unsubscribe and be empty after the last unsubscribe; the old provider must not emit after the move.
 - **Bounded pending operations finish where they started.** A picker, share request, file read, or similar one-shot operation cannot coherently transfer mid-flight. It may complete on the originating provider, but must settle and release its resources. This is a bounded exception to shadow-inertness, not permission for an old provider to remain live indefinitely.
-- **Caller-held provider resources survive where transfer is impossible.** Shadow-inertness may be excepted when the caller knowingly holds and controls the surviving resource. Filesystem watches are ordinary unbounded relationships and rebind when a provider supports them. A stream-acquisition promise is bounded and completes on its originating provider; once resolved, the provider-specific stream remains open there until its caller closes or aborts it. It must not be transferred or force-closed on a provider swap, because doing so can destroy caller data. This differs from an unowned Accessibility DOM tree, which remains externally observable without a caller-held handle and must be disposed when shadowed.
+- **Caller-held provider resources survive where transfer is impossible.** Shadow-inertness may be excepted when the caller knowingly holds and controls the surviving resource. Filesystem watches are ordinary unbounded relationships and rebind when a provider supports them. A stream-acquisition promise is bounded and completes on its originating provider; once resolved, the provider-specific stream remains open there until its caller closes or aborts it. It must not be transferred or force-closed on a provider swap, because doing so can destroy caller data. Accessibility now expresses its different ownership directly: the selected Host provider owns its DOM until the constructor/sharer invokes final teardown.
 
 The required transition test is observable: subscribe, swap, emit from the new provider and observe the original handler; then emit from the old provider and observe nothing. The old provider's listener count must return to zero after the swap. Attach-new-before-detach-old is forbidden because it creates a double-delivery window.
 

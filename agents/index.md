@@ -60,6 +60,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
 - [effect-pass UV origin](effect-uv-origin-architecture.md) — the GL/WGPU positional-UV sweep and the proposed sampler-local normalization seam.
 - [host-web architecture](host-web-architecture.md) — extracting web backends into `@flighthq/host-web`; the 38-row census, precedence model, and types spine.
+- [host-web document-absence outcomes](host-web-no-dom-outcomes.md) — the post-Accessibility R17 census of nine provider operations whose no-DOM outcome remains silent.
 - [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
 - [physics3d solver abstraction](physics3d-solver-abstraction.md) — **ratified 2026-08-20.** sequential impulses first; the four data-model obligations that keep XPBD possible, and why a `SolverBackend` interface is not one of them.

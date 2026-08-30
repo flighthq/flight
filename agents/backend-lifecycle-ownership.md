@@ -41,12 +41,14 @@ is deliberately never updated; the figures in this section track the live tree a
 - **command** — `npx vitest run scripts/backend-lifecycle.test.ts` (`scripts/backend-lifecycle-core.ts`)
 - **tree** — `bd6f4a8768d290641bd8eb33c9ce8b44094f2d83`, clean
 - **scope** — every exported `*Backend` interface in `packages/types/src/*.ts`, plus every exported
-  `set*Backend` body and top-level function body in `packages/*/src/*.ts`; `*.test.ts` excluded
+  ambient `set*Backend`, explicit `destroyThing(host: HasThingProvider)`, and top-level function body
+  in `packages/*/src/*.ts`; `*.test.ts` excluded
 - **counting predicate** — one unit = one interface; *owning* = declares a **zero-parameter**
   `destroy`/`dispose` in method or property syntax, so a per-object teardown taking an id is excluded
 - **live output** — `5 of 46 backends declare a whole-backend teardown hook, 41 declare none`, followed
   by the scope caveat the gate now prints on every run:
-  `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by its set*Backend;
+  `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by an ambient setter or
+  explicit Host-provider destroy owner;
   measures neither test depth nor audited behavior, so it cannot say whether destroy releases what a
   backend owns`
 
@@ -60,7 +62,7 @@ it is hand-derived and is a floor, not an oracle.
 
 | row | owns | destroy releases | mismatch |
 | --- | --- | --- | --- |
-| `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse and destroy behavior are assertion-backed |
+| `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** The Entity provider is selected explicitly through `HasAccessibilityProvider`; `destroyAccessibility(host)` reaches its required final teardown. Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse, distinct-provider isolation, idempotence, and anti-resurrection are assertion-backed |
 | `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
 | `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on each exact `navigator.mediaSession` identity it published to | releases only lanes still carrying that backend's provenance token; metadata and playback state additionally require the exact published value; explicit clears relinquish ownership; failed releases remain retryable | **closed.** A superseding backend or external publisher remains intact, shared-session lanes are released independently, and a session-identity change cannot redirect cleanup |
 | `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | `destroyMenuBackend` clears both slots first, then releases every distinct unretained backend once; Electron clears the select listener and calls `Menu.setApplicationMenu(null)`; Tauri clears JS-owned state only (listener + guard flag) — the native menu stays until the replacement backend installs its own; web is a no-op | **closed.** Capability teardown is reachable, re-entrant-safe, alias-safe and assertion-backed. Tauri's JS-only teardown is the settled design: its async menu API cannot clear the native menu synchronously, and a fire-and-forget clear races with the replacement backend's install |
@@ -335,7 +337,7 @@ signal that this instrument is not worth its weight yet.
 
 #### A systemic defect the row-by-row reading did not surface — FIXED
 
-`enableHostWeb*()` latched a module-level `_enabled` flag that **no `destroy()` reset**, while
+Historical ambient finding: `enableHostWeb*()` latched a module-level `_enabled` flag that **no `destroy()` reset**, while
 `destroyAccessibilityBackend`/`destroyMediaSessionBackend` did clear the host slot. Together they made
 teardown irreversible. Measured, not read — probing the tree with `explain*Operation().layer`:
 
@@ -348,11 +350,11 @@ enableHostWebAccessibility()  → sentinel     ← expected host
 `MediaSession` probed identically: after teardown the capability was stuck on the sentinel for the life
 of the process, recoverable only through the test-only `resetHostWeb*ForTest()`.
 
-**Closed for Power, MediaSession, Accessibility and Menu.** Each capability now exports a host-slot
-query (`hasPowerHostBackend`, `hasMediaSessionHostBackend`, `hasAccessibilityHostBackend`,
-`hasMenuHostBackend`) and the host enables ask instead of remembering; their `_enabled` variables are
-gone. Restoring the latch fails the re-enable test in all four. Menu's host teardown is now reachable;
-Tauri's JS-only teardown is the settled design (native menu stays until replaced).
+**Closed for Power, MediaSession, Accessibility and Menu.** Accessibility closed by deleting the
+ambient installer/resolver/latch model entirely: `webHost.accessibility.provider` is stable, commands
+select a Host explicitly, and the final owner calls `destroyAccessibility(host)`. The other rows retain
+their own current host-slot remedies. Menu's host teardown is now reachable; Tauri's JS-only teardown is
+the settled design (native menu stays until replaced).
 
 ### Remediation design for the Power host slot and the irreversible enable
 
@@ -544,6 +546,15 @@ removing the async clear; the scanner and its detection threshold are unchanged.
 
 ## Whole-backend owners
 
+### Explicit Host-provider owner: AccessibilityBackend
+
+The pre-migration census found no general Host shutdown member and zero production exported
+`destroy*`/`dispose*` functions taking `Host` or a `Has*` trait. Accessibility therefore establishes
+the explicit-provider lane: `destroyAccessibility(host: HasAccessibilityProvider): void` calls the
+required provider `destroy()`. Whoever constructs or shares a provider owns the single final call. The
+structural lifecycle gate derives this owner from the matching function name and first-parameter Host
+trait, separately from ambient setter replacement.
+
 ### Existing owner: LogTransportBackend
 
 `LogTransportBackend` may retain a file descriptor, socket, or native writer. Its optional
@@ -560,7 +571,7 @@ category; its subsequently landed hook is recorded in the row itself.
 
 | Backend | Evidence for whole ownership | Required or current teardown |
 | --- | --- | --- |
-| `AccessibilityBackend` | `createWebAccessibilityBackend` retains mirrored DOM nodes, live regions, and sometimes an owned root appended to `document.body`. | **Landed hook:** web `destroy()` clears mirrored nodes and live regions, removes only a backend-created root, empties but preserves a caller-supplied container, and cannot lazily recreate a root afterward. Custom/host slots release only objects no longer referenced by either slot and deduplicate aliased final removal. |
+| `AccessibilityBackend` | `createWebAccessibilityBackend` retains mirrored DOM nodes, live regions, and sometimes an owned root appended to `document.body`. | **Landed hook:** required web `destroy()` clears mirrored nodes and live regions, removes only a backend-created root, empties but preserves a caller-supplied container, and cannot lazily recreate a root afterward. The explicit Host lane derives `destroyAccessibility(host: HasAccessibilityProvider)` as its final owner; shared-provider callers decide the single final call. |
 | `AppBackend` | A backend can hold the process single-instance lock and start dock/attention requests; its event thunks alone do not release those host resources. | **Owed:** each implementation tracks locks and request ids it acquired; `destroy?()` releases its lock, cancels outstanding attention/bounce ids, and detaches any instance-owned host state. Durable user configuration such as login-at-startup is not rolled back merely because an adapter is replaced. |
 | `MediaSessionBackend` | Metadata, playback state, scrubber state, and action handlers remain installed on the OS `mediaSession` singleton after the adapter reference is dropped. | **Landed hook:** web `destroy()` clears its registered action set, metadata, playback state, and position state. `setMediaSessionBackend` covers custom-slot replacement/removal. The two-slot final-loss/alias cases remain evidence still to add: `destroyMediaSessionBackend` currently clears both slots after invoking only the active object, and a host object aliased into the custom slot can be destroyed while the host slot still retains it. |
 | `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Landed hook:** `destroy?()` on the interface; `setMenuBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron clears the select listener and calls `Menu.setApplicationMenu(null)` to remove the native menu. Tauri clears JS-owned state only (select listener, idempotency flag); the native app menu cannot be cleared synchronously because Tauri's menu API is entirely async, so destroy preserves last-known-good (native menu stays until replaced by the next `setApplicationMenu`). Web is a no-op (holds no state — `setApplicationMenu` returns false). |
@@ -569,8 +580,9 @@ category; its subsequently landed hook is recorded in the row itself.
 | `ShortcutBackend` | Successful registrations install OS-global callbacks and the Electron backend retains their accelerator set. They survive loss of the adapter reference. | **Owed:** `destroy?()` calls the implementation's `unregisterAll()` and clears its owned registry. Async hosts must observe/reject teardown failures without leaving an unhandled promise. |
 
 The landed `AccessibilityBackend` and `MediaSessionBackend` hooks raise the structural gate to three
-owners, but the layered-slot caveat above is why “gate enforced” and “all lifecycle cases proven” are
-recorded separately.
+owners. Accessibility is now proved through the explicit Host-provider owner lane rather than a setter;
+the structural/behavioral caveat above still keeps “gate enforced” distinct from “all lifecycle cases
+proven.”
 
 ## Entity, key, rebind, or caller-owned lifetimes
 
