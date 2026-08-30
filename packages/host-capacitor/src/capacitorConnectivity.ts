@@ -1,54 +1,118 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
-  ConnectivityBackend,
-  ConnectivityConnectionType,
-  ConnectivityStatus,
   CapacitorApi,
   CapacitorConnectionStatus,
   CapacitorPluginListenerHandle,
-  Entity,
+  ConnectivityChangeBackend,
+  ConnectivityConnectionType,
+  ConnectivityStatus,
+  ConnectivityStatusBackend,
+  EntityRuntimeKey,
 } from '@flighthq/types/contract';
 
-// Maps Flight's ConnectivityBackend onto Capacitor's `@capacitor/network`. ConnectivityBackend.getStatus
-// is a synchronous snapshot, whereas Capacitor's getStatus is async, so the adapter keeps a local mirror:
-// it prefetches the status once and subscribes internally to `networkStatusChange` to keep the mirror
-// current, then fills the caller's `out` from it (reporting the offline/unknown default until the first
-// probe resolves). The public `subscribe` registers the caller's listener behind the same event. Capacitor
-// reports only connectivity + a coarse type, so downlink/rtt and the other fine-grained fields report
-// their -1 / '' sentinels; `metered` is derived (cellular or offline-save has no signal here).
-export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): ConnectivityBackend & Entity {
+type CapacitorConnectivityBackend = ConnectivityStatusBackend & ConnectivityChangeBackend;
+
+// Capacitor's async getStatus cannot truthfully fill a synchronous snapshot during construction, so
+// the mirror starts UNKNOWN (`online: null`) rather than making an unmeasured offline claim. One native
+// listener owns the mirror and fans out to every core entity; per-entity unsubscribe only leaves that
+// local subscriber set. Provider destroy owns the one native handle.
+export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): CapacitorConnectivityBackend {
   const network = capacitor.network;
-  // Local mirror of the last known status, filled into the caller's `out` on getStatus.
-  let mirror: CapacitorConnectionStatus = { connected: false, connectionType: 'unknown' };
+  const subscribers = new Set<() => void>();
+  const mirror = unknownStatus();
+  let destroyed = false;
+  let nativeChangeObserved = false;
+  let handle: CapacitorPluginListenerHandle | null = null;
+  let handleRemoved = false;
+
+  const removeHandle = () => {
+    if (handle === null || handleRemoved) return;
+    handleRemoved = true;
+    void handle.remove().catch(() => {});
+  };
+  const notify = () => {
+    for (const listener of [...subscribers]) listener();
+  };
+  const update = (status: CapacitorConnectionStatus) => {
+    mirror.online = status.connected;
+    mirror.type = toConnectionType(status.connectionType);
+    mirror.metered = mirror.type === 'cellular';
+  };
+
+  // Register the event source before starting the initial query. If an event wins the race, its newer
+  // state must not be overwritten by a late getStatus result captured before that event.
+  network
+    .addListener('networkStatusChange', (status) => {
+      if (destroyed) return;
+      nativeChangeObserved = true;
+      update(status);
+      notify();
+    })
+    .then((resolved) => {
+      handle = resolved;
+      if (destroyed) removeHandle();
+    })
+    .catch(() => {});
+
   network
     .getStatus()
     .then((status) => {
-      mirror = status;
+      if (destroyed || nativeChangeObserved) return;
+      update(status);
+      // Initial readiness is a real unknown→measured transition. Subscribers must see it so core can
+      // emit online/offline truthfully instead of retaining its pre-ready baseline forever.
+      notify();
     })
     .catch(() => {
-      /* leave the offline/unknown default */
+      // Failure leaves the status unknown. Unknown means wait; it is not an offline observation.
     });
-  network
-    .addListener('networkStatusChange', (status) => {
-      mirror = status;
-    })
-    .catch(() => {});
+
   return createEntity({
-    getStatus(out: ConnectivityStatus): ConnectivityStatus {
-      out.online = mirror.connected;
-      out.type = toConnectionType(mirror.connectionType);
-      out.downlink = -1;
-      out.downlinkMax = -1;
-      out.effectiveType = '';
-      out.rtt = -1;
-      out.saveData = false;
-      out.metered = out.type === 'cellular';
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      subscribers.clear();
+      removeHandle();
+    },
+    getStatus(out) {
+      copyStatus(out, mirror);
       return out;
     },
     subscribe(listener) {
-      return toUnsubscribe(network.addListener('networkStatusChange', () => listener()));
+      if (destroyed) return null;
+      subscribers.add(listener);
+      let active = true;
+      return () => {
+        if (!active) return;
+        active = false;
+        subscribers.delete(listener);
+      };
     },
-  } satisfies ConnectivityBackend);
+  } satisfies Omit<CapacitorConnectivityBackend, typeof EntityRuntimeKey>);
+}
+
+function copyStatus(out: ConnectivityStatus, source: Readonly<ConnectivityStatus>): void {
+  out.online = source.online;
+  out.type = source.type;
+  out.downlink = source.downlink;
+  out.downlinkMax = source.downlinkMax;
+  out.effectiveType = source.effectiveType;
+  out.rtt = source.rtt;
+  out.saveData = source.saveData;
+  out.metered = source.metered;
+}
+
+function unknownStatus(): ConnectivityStatus {
+  return {
+    downlink: -1,
+    downlinkMax: -1,
+    effectiveType: '',
+    metered: false,
+    online: null,
+    rtt: -1,
+    saveData: false,
+    type: 'unknown',
+  };
 }
 
 function toConnectionType(connectionType: string): ConnectivityConnectionType {
@@ -56,21 +120,4 @@ function toConnectionType(connectionType: string): ConnectivityConnectionType {
   if (connectionType === 'cellular') return 'cellular';
   if (connectionType === 'none') return 'none';
   return 'unknown';
-}
-
-// Bridges Capacitor's Promise<PluginListenerHandle> to Flight's synchronous unsubscribe: fire the
-// registration, adopt the handle when it resolves, and remove it (immediately if already resolved).
-function toUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {
-  let removed = false;
-  let handle: CapacitorPluginListenerHandle | null = null;
-  handlePromise
-    .then((resolved) => {
-      handle = resolved;
-      if (removed) handle.remove().catch(() => {});
-    })
-    .catch(() => {});
-  return () => {
-    removed = true;
-    if (handle !== null) handle.remove().catch(() => {});
-  };
 }

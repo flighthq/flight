@@ -8,7 +8,17 @@ describe('createHostProbeProviderResults', () => {
   it('passes required changes and marks unclaimed providers unsupported', () => {
     const results = createHostProbeProviderResults(
       'web',
-      new Set(['accessibility', 'cursor', 'dialog', 'glyph-rasterizer', 'loop', 'screen', 'share', 'window']),
+      new Set([
+        'accessibility',
+        'connectivity',
+        'cursor',
+        'dialog',
+        'glyph-rasterizer',
+        'loop',
+        'screen',
+        'share',
+        'window',
+      ]),
     );
     expect(results).toHaveLength(HostProbeCapabilities.length);
     expect(results.find((result) => result.id === 'provider.loop')?.status).toBe('pass');
@@ -31,6 +41,6 @@ describe('getRequiredHostProbeCapabilities', () => {
     expect(getRequiredHostProbeCapabilities('electron').size).toBe(16);
     expect(getRequiredHostProbeCapabilities('tauri').size).toBe(10);
     expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(12);
-    expect(getRequiredHostProbeCapabilities('web').size).toBe(8);
+    expect(getRequiredHostProbeCapabilities('web').size).toBe(9);
   });
 });

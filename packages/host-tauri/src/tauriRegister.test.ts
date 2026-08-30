@@ -58,6 +58,7 @@ describe('registerTauriBackends', () => {
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(Object.keys(host.clipboard)).toEqual(['text']);
+    expect(host.connectivity).toEqual({});
     expect(host.window.open).toBeTypeOf('function');
     expect(getPlatformName()).toBe('linux');
     expect(await readClipboardText(host)).toBe('TAURI-TEXT');

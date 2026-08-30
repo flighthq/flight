@@ -43,6 +43,7 @@ describe('backend provider lifetime census', () => {
   // delta display shows progression (+2 newly enforced) while enforcement gates the full current set.
   const REQUIRED_ENFORCED_NAMES: readonly string[] = [
     'AccessibilityBackend',
+    'ConnectivityChangeBackend',
     'LogTransportBackend',
     'MediaSessionBackend',
     'MenuApplicationBackend',
@@ -87,6 +88,7 @@ describe('backend provider lifetime census', () => {
 
   it('includes the whole-backend teardowns that exist', () => {
     expect(teardowns.get('AccessibilityBackend')).toBe('destroy');
+    expect(teardowns.get('ConnectivityChangeBackend')).toBe('destroy');
     expect(teardowns.get('LogTransportBackend')).toBe('destroy');
     expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
   });
@@ -99,6 +101,16 @@ describe('backend provider lifetime census', () => {
       tearsDown: true,
     });
     expect(collectSetterBodies().has('setAccessibilityBackend')).toBe(false);
+  });
+
+  it('recognizes Connectivity explicit Host release without reintroducing an ambient setter', () => {
+    const connectivity = report.entries.find((entry) => entry.interfaceName === 'ConnectivityChangeBackend');
+    expect(connectivity).toMatchObject({
+      owner: 'destroyConnectivity',
+      ownerKind: 'explicit-host-destroy',
+      tearsDown: true,
+    });
+    expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('ConnectivityChangeBackend');
   });
 
   // ★ WHY WIDENING THE PARSER LEFT THE LIVE COUNT WHERE IT WAS — stated executably, because a number
@@ -178,6 +190,7 @@ describe('backend provider lifetime census', () => {
   it('pins the required enforced names to the current teardown-bearing backends', () => {
     expect(REQUIRED_ENFORCED_NAMES).toEqual([
       'AccessibilityBackend',
+      'ConnectivityChangeBackend',
       'LogTransportBackend',
       'MediaSessionBackend',
       'MenuApplicationBackend',

@@ -42,7 +42,6 @@
     "@flighthq/application": "*",
     "@flighthq/audio": "*",
     "@flighthq/bitmap": "*",
-    "@flighthq/connectivity": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
     "@flighthq/entity": "*",
@@ -79,6 +78,6 @@
     "@flighthq/signals": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Web host backend: installs browser-specific implementations of Flight capability seams (Canvas glyph rasterizer, DOM cursor)",
+  "description": "Explicit Web Host providers plus compatibility enablers for unmigrated browser capability seams",
   "sideEffects": false
 }

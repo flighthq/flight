@@ -1,68 +1,133 @@
-import type { ConnectivityStatus, CapacitorApi, CapacitorConnectionStatus } from '@flighthq/types/contract';
+import type { CapacitorApi, CapacitorConnectionStatus, ConnectivityStatus } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorConnectivityBackend } from './capacitorConnectivity';
 
-const flush = async () => {
+async function flush(): Promise<void> {
   await Promise.resolve();
   await Promise.resolve();
-};
+}
 
-function emptyStatus(): ConnectivityStatus {
+function status(): ConnectivityStatus {
   return {
-    online: false,
-    type: 'unknown',
     downlink: 0,
     downlinkMax: 0,
-    effectiveType: 'x',
+    effectiveType: 'stale',
+    metered: true,
+    online: false,
     rtt: 0,
     saveData: true,
-    metered: false,
+    type: 'cellular',
   };
 }
 
-function fakeCapacitor(initial: CapacitorConnectionStatus = { connected: true, connectionType: 'wifi' }) {
-  const listeners: Array<(status: CapacitorConnectionStatus) => void> = [];
+function fakeCapacitor() {
+  let nativeListener: ((value: CapacitorConnectionStatus) => void) | null = null;
+  let resolveInitial!: (value: CapacitorConnectionStatus) => void;
+  let resolveHandle!: (value: { remove(): Promise<void> }) => void;
+  let addListenerCalls = 0;
+  let removals = 0;
+  const initial = new Promise<CapacitorConnectionStatus>((resolve) => {
+    resolveInitial = resolve;
+  });
+  const handle = new Promise<{ remove(): Promise<void> }>((resolve) => {
+    resolveHandle = resolve;
+  });
   const capacitor = {
     network: {
-      async getStatus() {
-        return initial;
+      addListener(_event: string, listener: (value: CapacitorConnectionStatus) => void) {
+        addListenerCalls++;
+        nativeListener = listener;
+        return handle;
       },
-      async addListener(_eventName: string, listener: (status: CapacitorConnectionStatus) => void) {
-        listeners.push(listener);
-        return { async remove() {} };
+      getStatus() {
+        return initial;
       },
     },
   } as unknown as CapacitorApi;
-  return { capacitor, fire: (status: CapacitorConnectionStatus) => listeners.forEach((l) => l(status)) };
+  return {
+    addListenerCalls: () => addListenerCalls,
+    capacitor,
+    fire(value: CapacitorConnectionStatus) {
+      nativeListener?.(value);
+    },
+    removals: () => removals,
+    resolveHandle() {
+      resolveHandle({
+        async remove() {
+          removals++;
+        },
+      });
+    },
+    resolveInitial,
+  };
 }
 
 describe('createCapacitorConnectivityBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorConnectivityBackend(fakeCapacitor().capacitor)).toBe(true);
+  it('returns one Entity and reports unknown before the async status is ready', () => {
+    const fake = fakeCapacitor();
+    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    expect(EntityRuntimeKey in backend).toBe(true);
+    expect(backend.getStatus(status())).toEqual({
+      downlink: -1,
+      downlinkMax: -1,
+      effectiveType: '',
+      metered: false,
+      online: null,
+      rtt: -1,
+      saveData: false,
+      type: 'unknown',
+    });
   });
 
-  it('fills the out snapshot from the prefetched status', async () => {
-    const backend = createCapacitorConnectivityBackend(fakeCapacitor().capacitor);
-    await flush();
-    const status = backend.getStatus(emptyStatus());
-    expect(status.online).toBe(true);
-    expect(status.type).toBe('wifi');
-    expect(status.downlink).toBe(-1);
-    expect(status.metered).toBe(false);
+  it('uses one native listener for any number of local subscribers', () => {
+    const fake = fakeCapacitor();
+    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    let a = 0;
+    let b = 0;
+    const releaseA = backend.subscribe(() => a++);
+    backend.subscribe(() => b++);
+    expect(fake.addListenerCalls()).toBe(1);
+    fake.fire({ connected: true, connectionType: 'wifi' });
+    expect([a, b]).toEqual([1, 1]);
+    releaseA?.();
+    fake.fire({ connected: false, connectionType: 'none' });
+    expect([a, b]).toEqual([1, 2]);
   });
 
-  it('reflects a networkStatusChange in the mirror and to subscribers', async () => {
-    const { capacitor, fire } = fakeCapacitor();
-    const backend = createCapacitorConnectivityBackend(capacitor);
-    await flush();
+  it('notifies subscribers when the initial unknown status becomes measured', async () => {
+    const fake = fakeCapacitor();
+    const backend = createCapacitorConnectivityBackend(fake.capacitor);
     let changes = 0;
     backend.subscribe(() => changes++);
+    fake.resolveInitial({ connected: true, connectionType: 'wifi' });
     await flush();
-    fire({ connected: true, connectionType: 'cellular' });
     expect(changes).toBe(1);
-    const status = backend.getStatus(emptyStatus());
-    expect(status.type).toBe('cellular');
-    expect(status.metered).toBe(true);
+    expect(backend.getStatus(status())).toMatchObject({ online: true, type: 'wifi' });
+  });
+
+  it('does not let a late initial query overwrite a newer native event', async () => {
+    const fake = fakeCapacitor();
+    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    fake.fire({ connected: false, connectionType: 'none' });
+    fake.resolveInitial({ connected: true, connectionType: 'wifi' });
+    await flush();
+    expect(backend.getStatus(status())).toMatchObject({ online: false, type: 'none' });
+  });
+
+  it('destroy-before-handle-resolution removes the exact handle once and clears fanout', async () => {
+    const fake = fakeCapacitor();
+    const backend = createCapacitorConnectivityBackend(fake.capacitor);
+    let changes = 0;
+    backend.subscribe(() => changes++);
+    backend.destroy();
+    backend.destroy();
+    expect(backend.subscribe(() => {})).toBeNull();
+    fake.fire({ connected: true, connectionType: 'wifi' });
+    expect(changes).toBe(0);
+    expect(fake.removals()).toBe(0);
+    fake.resolveHandle();
+    await flush();
+    expect(fake.removals()).toBe(1);
   });
 });

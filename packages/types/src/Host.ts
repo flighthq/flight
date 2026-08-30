@@ -22,7 +22,11 @@ import type {
   ClipboardImageBackend,
   ClipboardTextBackend,
 } from './Clipboard';
-import type { ConnectivityBackend } from './Connectivity';
+import type {
+  ConnectivityChangeBackend,
+  ConnectivityReachabilityBackend,
+  ConnectivityStatusBackend,
+} from './Connectivity';
 import type { DeviceBackend } from './Device';
 import type { Entity } from './Entity';
 import type { FileDialogBackend } from './FileDialogBackend';
@@ -87,6 +91,7 @@ export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
   readonly app: HostAppCapabilities;
   readonly clipboard: HostClipboardCapabilities;
+  readonly connectivity: HostConnectivityCapabilities;
   readonly dialog: HostDialogCapabilities;
   readonly graphics: HostGraphicsCapabilities;
   readonly input: HostInputCapabilities;
@@ -125,6 +130,11 @@ export interface HostClipboardCapabilities {
   readonly formats?: ClipboardFormatsBackend;
   readonly image?: ClipboardImageBackend;
   readonly text?: ClipboardTextBackend;
+}
+export interface HostConnectivityCapabilities {
+  readonly change?: ConnectivityChangeBackend;
+  readonly reachability?: ConnectivityReachabilityBackend;
+  readonly status?: ConnectivityStatusBackend;
 }
 
 export interface HostDialogCapabilities {
@@ -173,7 +183,6 @@ export interface HostMenuCapabilities {
 }
 
 export interface HostNetCapabilities {
-  readonly connectivity?: ConnectivityBackend;
   readonly http?: NetBackend;
   readonly socket?: SocketBackend;
 }
@@ -296,6 +305,15 @@ export interface HasClipboardImage {
 export interface HasClipboardText {
   readonly clipboard: { readonly text: ClipboardTextBackend };
 }
+export interface HasConnectivityChange {
+  readonly connectivity: { readonly change: ConnectivityChangeBackend };
+}
+export interface HasConnectivityReachability {
+  readonly connectivity: { readonly reachability: ConnectivityReachabilityBackend };
+}
+export interface HasConnectivityStatus {
+  readonly connectivity: { readonly status: ConnectivityStatusBackend };
+}
 
 export interface HasDialogFile {
   readonly dialog: { readonly file: FileDialogBackend };
@@ -383,10 +401,6 @@ export interface HasMediaVideo {
 
 export interface HasMediaWebcam {
   readonly media: { readonly webcam: WebcamBackend };
-}
-
-export interface HasNetConnectivity {
-  readonly net: { readonly connectivity: ConnectivityBackend };
 }
 
 export interface HasNetHttp {

@@ -111,6 +111,7 @@ export function registerElectronBackends(
     accessibility: {},
     app: {},
     clipboard: { bookmark: clipboard, formats: clipboard, image: clipboard, text: clipboard },
+    connectivity: {},
     dialog,
     graphics: {},
     input: {},

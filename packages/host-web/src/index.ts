@@ -7,7 +7,7 @@ export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
 export { webClipboardBackend } from './webClipboard';
-export { enableHostWebConnectivity } from './webConnectivity';
+export { createWebConnectivityBackend, webConnectivityBackend } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';
 export { enableHostWebDevice } from './webDevice';
 export { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';

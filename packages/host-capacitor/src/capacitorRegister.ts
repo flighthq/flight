@@ -1,5 +1,4 @@
 import { setAppBackend } from '@flighthq/app/contract';
-import { setConnectivityBackend } from '@flighthq/connectivity/contract';
 import { setDeviceBackend } from '@flighthq/device/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setFileSystemBackend } from '@flighthq/filesystem/contract';
@@ -10,6 +9,8 @@ import type {
   CapacitorApi,
   CapacitorShareContentBackend,
   EntityRuntimeKey,
+  HasConnectivityChange,
+  HasConnectivityStatus,
   HasClipboardImage,
   HasClipboardText,
   HasDialogMessage,
@@ -38,6 +39,8 @@ import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 type CapacitorHost = Host &
   HasClipboardImage &
   HasClipboardText &
+  HasConnectivityChange &
+  HasConnectivityStatus &
   HasDialogMessage &
   HasDialogPrompt &
   HasInputHaptics &
@@ -51,10 +54,12 @@ type CapacitorHost = Host &
 // "not yet migrated", never "Capacitor cannot do this".
 export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
   const clipboard = createCapacitorClipboardBackend(capacitor);
+  const connectivity = createCapacitorConnectivityBackend(capacitor);
   return createEntity({
     accessibility: {},
     app: {},
     clipboard: { image: clipboard, text: clipboard },
+    connectivity: { change: connectivity, status: connectivity },
     dialog: {
       message: createCapacitorMessageDialogBackend(capacitor),
       prompt: createCapacitorPromptDialogBackend(capacitor),
@@ -92,7 +97,6 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
 // cannot express Capacitor Preferences' asynchronous API.
 export function registerCapacitorBackends(capacitor: CapacitorApi): CapacitorHost {
   setAppBackend(createCapacitorAppBackend(capacitor));
-  setConnectivityBackend(createCapacitorConnectivityBackend(capacitor));
   setDeviceBackend(createCapacitorDeviceBackend(capacitor));
   setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));
   setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));

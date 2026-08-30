@@ -70,6 +70,7 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     accessibility: {},
     app: {},
     clipboard: { text: clipboard },
+    connectivity: {},
     dialog,
     graphics: {},
     input: {},

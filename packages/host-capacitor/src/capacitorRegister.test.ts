@@ -1,6 +1,5 @@
 import { getAppBackend, setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { getConnectivityBackend, setConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
@@ -66,7 +65,6 @@ function fakeCapacitor(): CapacitorApi {
 
 afterEach(() => {
   setAppBackend(null);
-  setConnectivityBackend(null);
   setDeviceBackend(null);
   setFileSystemBackend(null);
   setGeolocationBackend(null);
@@ -89,6 +87,9 @@ describe('capacitorHost', () => {
     const host = capacitorHost(fakeCapacitor());
     // Migrated: clipboard, dialog, input, and notification are claimed with real Capacitor providers.
     expect(host.clipboard.text).toBeDefined();
+    expect(host.connectivity.status).toBeDefined();
+    expect(host.connectivity.change).toBe(host.connectivity.status);
+    expect(host.connectivity.reachability).toBeUndefined();
     expect(host.dialog.message).toBeDefined();
     expect(host.input.haptics).toBeDefined();
     expect(host.notification.delivery).toBeDefined();
@@ -115,7 +116,8 @@ describe('registerCapacitorBackends', () => {
     expect(Object.keys(host.clipboard).sort()).toEqual(['image', 'text']);
     expect(host.clipboard.text.readText).toBeTypeOf('function');
     expect(getAppBackend()).not.toBeNull();
-    expect(getConnectivityBackend()).not.toBeNull();
+    expect(host.connectivity.status.getStatus).toBeTypeOf('function');
+    expect(host.connectivity.change.subscribe).toBeTypeOf('function');
     expect(getDeviceBackend()).not.toBeNull();
     expect(getFileSystemBackend()).not.toBeNull();
     expect(getGeolocationBackend()).not.toBeNull();
