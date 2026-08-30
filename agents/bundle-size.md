@@ -144,7 +144,9 @@ tools/size/fixtures/
   full-2d-gl/            ← scene2dGlPipeline — the whole-store 2D cost
   manual-pipeline/       ← manual createGlPipeline with one renderer
   host-web-full/         ← webHost — the whole-store host cost
-  host-web-net-only/     ← webNetBackend alone
+  host-web-window-only/  ← webWindowBackend alone
+  scene2d-gl-pipeline/   ← scene2dGlPipeline — the whole-store 2D pipeline cost
+  scene2d-gl-pipeline-sprite/ ← manual pipeline with one renderer
   effects-gl/            ← sprite + one effect runner
   ...
 ```
@@ -186,6 +188,20 @@ A fixture is missing if a registry family has no dedicated measurement — no fi
 ### Transition
 
 The existing 7 fixtures stay as-is. New fixtures are added as the explicit dependency model lands — each new const (`scene2dGlPipeline`, `webHost`, manual pipeline variants) gets a size fixture on arrival. Example-derived measurements remain in the baseline as a secondary signal but are no longer the primary cost surface. Examples are free to import `@flighthq/sdk`, `webHost`, and other convenience consts for clarity without distorting the size story.
+
+## Paired comparisons — aggregate vs single-capability
+
+Each whole-store const has a single-capability counterpart fixture. The pair answers: does tree-shaking exclude unused registrations? A substantially smaller counterpart means yes; close numbers mean one renderer or family drags the rest.
+
+| Pair | Aggregate | Counterpart | Delta | % smaller | Ratio |
+| --- | --- | --- | --- | --- | --- |
+| **Pipeline** (`scene2d-gl-pipeline:webgl` / `scene2d-gl-pipeline-sprite:webgl`) | 43,217 B | 14,271 B | 28,946 B | 67.0% | 3.03× |
+| **webHost** (`host-web-full:canvas` / `host-web-window-only:canvas`) | 12,811 B | 3,391 B | 9,420 B | 73.5% | 3.78× |
+
+Both unminified tree-shaken gzip. The pipeline pair was measured at tree `99091faf5`; the webHost
+aggregate reflects the later Accessibility R3 baseline at `6b6238e9e`.
+
+**Interpretation (fixed):** sprite-only is ~67% smaller than the full pipeline — tree-shaking works and the aggregate measures the honest whole store. The webHost pair shows the same pattern at ~74% smaller. A ratio above 2× is the healthy signal; a ratio near 1× would mean a single capability drags most of the aggregate, which is a decomposition defect.
 
 ## The discipline these numbers protect
 
