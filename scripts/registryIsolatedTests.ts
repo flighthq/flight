@@ -119,7 +119,6 @@ export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
   { path: 'packages/glyphatlas/src/enableGlyphAtlasGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/log/src/log.test.ts', reason: 'process-global-registry' },
   { path: 'packages/node/src/enableNodeGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/permissions/src/enablePermissionGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/physics3d/src/explainPhysics3DCollision.test.ts', reason: 'process-global-registry' },
   { path: 'packages/render-gl/src/enableGlRenderStateGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/render-wgpu/src/wgpuHost.test.ts', reason: 'process-global-registry' },

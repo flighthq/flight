@@ -1,7 +1,7 @@
 ---
 package: "@flighthq/permissions"
-updated: 2026-08-30
-by: builder5
+updated: null
+by: null
 ---
 
 # permissions — Status Log
@@ -11,8 +11,20 @@ by: builder5
 
 <!-- newest entry on top -->
 
-- **2026-08-30** — Notification R5/R6 assigns native notification permission exclusively to
-  `Host.notification.permission`. The generic `'notifications'` path must delegate there; direct
-  `Notification.permission`/`Notification.requestPermission` fallback code in the legacy Permissions backend
-  is deletion/migration debt for the Permissions slice, not a second blessed native seam. Notification
-  permission success is distinct from delivery acceptance and display success.
+## 2026-08-30 — Explicit-Host facade and seven-row ownership ledger
+
+- Replaced the ambient `PermissionBackend` era with explicit `Host` query/request projection and
+  deleted `system.permissions`, `HasSystemPermissions`, resolver/mutator/sentinel/observer/explain,
+  guard, and host-web enabler paths.
+- Ratified Notification's sole seam as `Host.notification.permission`; method-tight projection keeps
+  owner decisions and operational failure distinct, and the permanent cross-domain test rejects any
+  second native Notification owner.
+- Added owner-captured ordered/repeated batches, bounded media/wake-lock cleanup, and exact query vs
+  prompt plus cleanup-failure vs denial type/test boundaries.
+- Added the exact media/geolocation/persistence/MIDI/wake-lock/clipboard/push native-holdings ledger,
+  future-domain labels, monotonic drain history, and direct-native-site audit.
+- Updated this package's charter/assessment/review, package map/catalog, shared lifecycle ownership,
+  and host-web architecture. Notification records remain with that owner; this package cites its sole
+  seam without duplicating the owner's record.
+- Deferred only the row-by-row holding drain. Clipboard and push remain query-only; no generic
+  subscription, guessed request aggregate, owner map, or slot map was introduced.

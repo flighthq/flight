@@ -69,7 +69,6 @@ import type {
   NotificationSchedulingBackend,
 } from './Notification';
 import type { PathBooleanBackend } from './PathBooleanBackend';
-import type { PermissionBackend } from './Permission';
 import type { PlatformBackend } from './Platform';
 import type {
   PowerBatteryHealthBackend,
@@ -312,7 +311,6 @@ export interface HostSystemCapabilities {
   readonly device?: DeviceBackend;
   readonly geolocation?: GeolocationBackend;
   readonly lifecycle?: LifecycleBackend;
-  readonly permissions?: PermissionBackend;
   readonly platform?: PlatformBackend;
   readonly sensors?: SensorsBackend;
 }
@@ -664,10 +662,6 @@ export interface HasSystemGeolocation {
 
 export interface HasSystemLifecycle {
   readonly system: { readonly lifecycle: LifecycleBackend };
-}
-
-export interface HasSystemPermissions {
-  readonly system: { readonly permissions: PermissionBackend };
 }
 
 export interface HasSystemPlatform {

@@ -73,7 +73,6 @@ const EXPECTED_AGGREGATE = [
   'GlyphRasterizer',
   'Image',
   'Lifecycle',
-  'Permission',
   'Platform',
   'Raster2DSurface',
   'Sensors',

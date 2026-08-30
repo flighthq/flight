@@ -26,7 +26,6 @@ export * from './webLoop';
 export * from './webMediasession';
 export * from './webMenu';
 export * from './webNotification';
-export * from './webPermissions';
 export * from './webPlatform';
 export * from './webPower';
 export * from './webProtocol';

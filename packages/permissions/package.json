@@ -38,12 +38,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/log": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "OS-permission query/request over a swappable web/native backend (Permissions API + per-permission web triggers by default)",
+  "description": "Explicit-Host permission query/request facade over capability-owned permission seams",
   "sideEffects": false
 }

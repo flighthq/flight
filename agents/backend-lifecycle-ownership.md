@@ -693,7 +693,7 @@ not retain a freeable external object or unbracketed host mutation beyond the li
 | 5 | `HapticsBackend` | Current web and Capacitor effects are bounded and expose explicit `cancel()`. Web ignores waveform repetition and Capacitor omits waveform. If a future provider honors `repeat >= 0`, that provider acquires a teardown obligation and this row must be reclassified. |
 | 6 | `NetBackend` | One-shot request promise bracketed by response consumption and `AbortSignal`; no connection registry. |
 | 7 | `PathBooleanBackend` | Pure contour operation over caller-owned arrays. |
-| 8 | `PermissionBackend` | One-shot query/request promises returning snapshots. |
+| 8 | Permissions facade/projector | Explicit-Host query/request delegates to capability owners. Notification is owned solely by `Host.notification.permission`; media-track and wake-lock prompt acquisitions are bounded by attempt-all cleanup in `finally`, with cleanup failure reported separately from denial. The seven-row interim native-holdings ledger names every future claiming domain. No replacement backend, subscription, owner map, or slot map exists. |
 | 9 | `PlatformBackend` | Snapshot query into caller-owned output. |
 | 10 | `ShareContentBackend` / `ShareFilesBackend` | Entity-composed providers with one bounded share-sheet promise per call and no retained host resource. |
 | 11 | `ShellBeepBackend` / `ShellExternalBackend` / `ShellPathOpenBackend` / `ShellPathRevealBackend` / `ShellShortcutLinkBackend` / `ShellTrashBackend` | Entity providers expose only bounded commands and no returned live handle; all six deliberately contribute zero whole-provider teardown rows. |
@@ -836,6 +836,12 @@ Three lifecycle consequences follow:
 
 Ownership remains independent: loss releases nothing, while `destroyWgpuRenderState` still decrements
 device-tier and acquisition references. A lost device is released by whoever owns it.
+
+### 2026-08-30 Permissions facade/projector append
+
+The historical `PermissionBackend` row records the removed ambient population. Permissions now owns no provider lifecycle: every public operation receives an explicit `Host`, and Notification delegates exclusively to the capability-owned `Host.notification.permission` seam. Ordered/repeated batches capture each resolved owner once before work, so provider changes cannot split one batch.
+
+Seven interim native holdings remain visible in a structural ledger: media, geolocation, persistence, MIDI, wake lock, clipboard, and push. Media-track and wake-lock acquisitions are bounded calls whose releases run attempt-all in `finally`; a post-grant cleanup failure is an operational failure rather than denial. Each row names the domain that must claim it and drains in the same slice. No generic subscription, replacement backend, owner map, or slot map exists to create an unearned lifecycle.
 
 ## Review checklist for the remaining slices
 

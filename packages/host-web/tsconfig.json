@@ -27,7 +27,6 @@
     { "path": "../media" },
     { "path": "../menu" },
     { "path": "../notification" },
-    { "path": "../permissions" },
     { "path": "../platform" },
     { "path": "../power" },
     { "path": "../protocol" },
