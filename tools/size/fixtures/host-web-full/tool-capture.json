@@ -1,0 +1,12 @@
+{
+  "subject": "host-web-full-size-fixture",
+  "entries": [
+    {
+      "name": "host-web-full",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
