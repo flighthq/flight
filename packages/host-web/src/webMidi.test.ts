@@ -215,12 +215,12 @@ function requiredMidiFunction(name: string): (...args: any[]) => any {
   const value: unknown = Reflect.get(midi, name);
   expect(value, `${name} export`).toBeTypeOf('function');
   if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
-  return value;
+  return value as (...args: any[]) => any;
 }
 
 function requiredWebFunction(name: string): (...args: any[]) => any {
   const value: unknown = Reflect.get(webMidi, name);
   expect(value, `${name} export`).toBeTypeOf('function');
   if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
-  return value;
+  return value as (...args: any[]) => any;
 }

@@ -48,6 +48,7 @@ export {
   webMediaSessionBackend,
 } from './webMediasession';
 export { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+export { createWebMidiAccessCapabilities, createWebMidiPermissionAccessCapabilities } from './webMidi';
 export { createWebPageNotificationCapabilities } from './webNotification';
 export {
   createWebServiceWorkerNotificationCapabilities,
