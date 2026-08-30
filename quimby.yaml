@@ -27,7 +27,7 @@ roles:
     agents:
       read: true
       write: true
-      write_paths: ["agents/**"]
+      write_paths: ['agents/**']
     instructions: |
       You are the user-facing layer and the authority for approved work.
 
@@ -51,7 +51,7 @@ roles:
     agents:
       read: true
       write: true
-      write_paths: ["agents/**/status.md"]
+      write_paths: ['agents/**/status.md']
     instructions: |
       You are the escalation and exception-handling layer for execution.
 
