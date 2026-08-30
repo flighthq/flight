@@ -268,34 +268,34 @@ function fillWgpuQuadBatchWriterUniformColorMatrix(
 // color-adjustment material so premultiplied-alpha handling is unchanged.
 function getWgpuQuadBatchWriterColorScaleBiasModule(state: WgpuRenderState): GPUShaderModule {
   const runtime = getWgpuRenderStateRuntime(state);
-  const cached = runtime.colorScaleBiasModule;
+  const cached = runtime.context.colorScaleBiasModule;
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
     code: getWgpuQuadBatchPreludeWGSL() + COLOR_SCALE_BIAS_WGSL,
   });
-  runtime.colorScaleBiasModule = module;
+  runtime.context.colorScaleBiasModule = module;
   return module;
 }
 
 function getWgpuQuadBatchWriterPackedTintModule(state: WgpuRenderState): GPUShaderModule {
   const runtime = getWgpuRenderStateRuntime(state);
-  const cached = runtime.packedTintModule;
+  const cached = runtime.context.packedTintModule;
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
     code: getWgpuQuadBatchPreludeWGSL() + PACKED_TINT_WGSL,
   });
-  runtime.packedTintModule = module;
+  runtime.context.packedTintModule = module;
   return module;
 }
 
 function getWgpuQuadBatchWriterColorMatrixModule(state: WgpuRenderState): GPUShaderModule {
   const runtime = getWgpuRenderStateRuntime(state);
-  const cached = runtime.colorMatrixModule;
+  const cached = runtime.context.colorMatrixModule;
   if (cached !== undefined) return cached;
   const module = state.device.createShaderModule({
     code: getWgpuQuadBatchPreludeWGSL() + COLOR_MATRIX_WGSL,
   });
-  runtime.colorMatrixModule = module;
+  runtime.context.colorMatrixModule = module;
   return module;
 }
 
@@ -570,10 +570,10 @@ function ensureWgpuShapeMeshColorScaleBiasPipeline(
   blendMode: RenderProxy2D['blendMode'],
 ): WgpuShapeMeshPipeline {
   const runtime = getWgpuRenderStateRuntime(state);
-  let cache = runtime.shapeMeshColorScaleBiasPipelines;
+  let cache = runtime.context.shapeMeshColorScaleBiasPipelines;
   if (cache === undefined) {
     cache = new Map();
-    runtime.shapeMeshColorScaleBiasPipelines = cache;
+    runtime.context.shapeMeshColorScaleBiasPipelines = cache;
   }
   const format = runtime.currentColorFormat ?? state.format;
   const key = `${format}|${blendMode ?? 'null'}`;

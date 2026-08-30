@@ -1,5 +1,5 @@
-import type { GlShapeMeshBinding } from './GlShapeMeshBinding';
 import type { GlShapeMeshColorScaleBiasShader } from './GlRenderState';
+import type { GlShapeMeshBinding } from './GlShapeMeshBinding';
 
 export interface GlShapeMeshResources {
   binding: GlShapeMeshBinding;

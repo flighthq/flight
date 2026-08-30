@@ -96,11 +96,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 
 function ensureParticleResources(state: WgpuRenderState): WgpuParticleResources {
   const runtime = getWgpuRenderStateRuntime(state);
-  const existing = runtime.particleResources;
+  const ctx = runtime.context;
+  const existing = ctx.particleResources;
   if (existing !== undefined) return existing;
 
   const { device } = state;
-  const { uniformBindGroupLayout, textureBindGroupLayout } = runtime;
+  const { uniformBindGroupLayout, textureBindGroupLayout } = ctx;
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -124,7 +125,7 @@ function ensureParticleResources(state: WgpuRenderState): WgpuParticleResources 
     module,
     instanceBindGroupLayout,
   };
-  runtime.particleResources = resources;
+  ctx.particleResources = resources;
   return resources;
 }
 
@@ -200,7 +201,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   const textureEntry = resolveWgpuTexture(state, atlas.texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (textureEntry === null) return;
   const textureBindGroup = state.device.createBindGroup({
-    layout: runtime.textureBindGroupLayout,
+    layout: runtime.context.textureBindGroupLayout,
     entries: [
       { binding: 0, resource: textureEntry.view },
       {

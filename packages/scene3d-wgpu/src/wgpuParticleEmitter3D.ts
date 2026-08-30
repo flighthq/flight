@@ -380,7 +380,7 @@ function drawParticleEmitter3DNode(
                   : undefined,
                 atlasTexture.sampler.anisotropy,
               )
-            : runtime.linearSampler,
+            : runtime.context.linearSampler,
       },
     ],
   });

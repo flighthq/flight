@@ -60,10 +60,10 @@ function destroyWgpuTextLabelData(state: WgpuRenderState, data: RendererData): v
   if (textLabelData === null) return;
   const { surface } = textLabelData;
   if (surface === null) return;
-  const entry = runtime.textureSourcePremultipliedTextureCache.get(surface.image);
+  const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
   if (entry !== undefined) {
     entry.texture.destroy();
-    runtime.textureSourcePremultipliedTextureCache.delete(surface.image);
+    runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
   destroyRaster2DSurface(surface);
 }

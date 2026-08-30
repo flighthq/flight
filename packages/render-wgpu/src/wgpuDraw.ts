@@ -77,11 +77,11 @@ function bindWgpuTextureSourceTexture(
   const runtime = getWgpuRenderStateRuntime(state);
   const cache = premultiply
     ? colorSpace === 'srgb'
-      ? runtime.textureSourcePremultipliedSrgbTextureCache
-      : runtime.textureSourcePremultipliedTextureCache
+      ? runtime.context.textureSourcePremultipliedSrgbTextureCache
+      : runtime.context.textureSourcePremultipliedTextureCache
     : colorSpace === 'srgb'
-      ? runtime.textureSourceStraightSrgbTextureCache
-      : runtime.textureSourceStraightTextureCache;
+      ? runtime.context.textureSourceStraightSrgbTextureCache
+      : runtime.context.textureSourceStraightTextureCache;
   const cached = cache.get(image);
   // Mip allocation is part of the identity, not a sampling preference. WebGPU fixes mipLevelCount at
   // creation, so a cached level-0-only realization cannot serve a request that needs a chain however it
@@ -130,7 +130,7 @@ export function bindWgpuTexture(
   generateMips = false,
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
-  const cached = runtime.textureCache.get(imageSource);
+  const cached = runtime.context.textureCache.get(imageSource);
   const wantsMips = generateMips && runtime.mipmapGenerator != null;
   if (cached !== undefined && cached.mipLevelCount > 1 === wantsMips) return cached;
 
@@ -201,14 +201,14 @@ export function bindWgpuTexture(
   // `state.allowSmoothing` happened to be for the FIRST caller into an entry every later sharer reuses;
   // the sampler is chosen per draw instead, in resolveWgpuSmoothingBindGroup.
   const entry: WgpuTextureEntry = { bindings: new Map(), mipLevelCount, texture, view };
-  runtime.textureCache.set(imageSource, entry);
+  runtime.context.textureCache.set(imageSource, entry);
   return entry;
 }
 
 // The sampler the state's CURRENT draw policy selects. Read per draw and never stored on a resource:
 // `allowSmoothing` is mutable and shared, so a value captured at upload time goes stale silently.
 function getWgpuDrawPolicySampler(state: WgpuRenderState, runtime: WgpuRenderStateRuntime): GPUSampler {
-  return state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
+  return state.allowSmoothing ? runtime.context.linearSampler : runtime.context.nearestSampler;
 }
 
 // The group(1) bind group for this entry's view sampled with `sampler`, built once per sampler and
@@ -236,8 +236,8 @@ export function bindWgpuVideoTexture(
   const runtime = getWgpuRenderStateRuntime(state);
   const cache =
     videoTexture.colorSpace === 'srgb'
-      ? (runtime.videoSrgbTextureCache ??= new WeakMap())
-      : (runtime.videoTextureCache ??= new WeakMap());
+      ? (runtime.context.videoSrgbTextureCache ??= new WeakMap())
+      : (runtime.context.videoTextureCache ??= new WeakMap());
   const width = element.videoWidth;
   const height = element.videoHeight;
   const sampler = getWgpuVideoSampler(state, videoTexture);
@@ -320,7 +320,7 @@ export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Re
   if (image == null) return false;
   const runtime = getWgpuRenderStateRuntime(state);
   let destroyed = false;
-  for (const cache of [runtime.videoTextureCache, runtime.videoSrgbTextureCache]) {
+  for (const cache of [runtime.context.videoTextureCache, runtime.context.videoSrgbTextureCache]) {
     const entry = cache?.get(image);
     if (entry === undefined) continue;
     entry.texture.destroy();
@@ -332,7 +332,7 @@ export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Re
 
 function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
   return state.device.createBindGroup({
-    layout: getWgpuRenderStateRuntime(state).textureBindGroupLayout,
+    layout: getWgpuRenderStateRuntime(state).context.textureBindGroupLayout,
     entries: [
       { binding: 0, resource: view },
       { binding: 1, resource: sampler },
@@ -447,8 +447,8 @@ export function resolveWgpuSmoothingBindGroup(
     smoothing === null
       ? (entry.sampler ?? getWgpuDrawPolicySampler(state, runtime))
       : smoothing
-        ? runtime.linearSampler
-        : runtime.nearestSampler;
+        ? runtime.context.linearSampler
+        : runtime.context.nearestSampler;
   return resolveWgpuTextureBinding(state, entry, sampler);
 }
 

@@ -227,7 +227,8 @@ export function getWgpuPipeline(
   // inside an HDR effect target vs the canvas format).
   const format = runtime.currentColorFormat ?? state.format;
   const key = `${blendMode ?? 'null'}-${stencilMode}-${format}`;
-  const cached = runtime.pipelineCache.get(key);
+  const ctx = runtime.context;
+  const cached = ctx.pipelineCache.get(key);
   if (cached !== undefined) return cached;
 
   const blend = getWgpuBlendState(blendMode);
@@ -237,7 +238,7 @@ export function getWgpuPipeline(
   const { device } = state;
   const shaderSrc = isMaskWrite ? MASK_FRAGMENT_SRC : BITMAP_SHADER_SRC;
   const module = device.createShaderModule({ code: shaderSrc });
-  const layout = createWgpuPipelineLayout(device, runtime.uniformBindGroupLayout, runtime.textureBindGroupLayout);
+  const layout = createWgpuPipelineLayout(device, ctx.uniformBindGroupLayout, ctx.textureBindGroupLayout);
 
   const pipeline = device.createRenderPipeline({
     layout,
@@ -265,7 +266,7 @@ export function getWgpuPipeline(
     primitive: { topology: 'triangle-list' },
   });
 
-  runtime.pipelineCache.set(key, pipeline);
+  ctx.pipelineCache.set(key, pipeline);
   return pipeline;
 }
 

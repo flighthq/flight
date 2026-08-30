@@ -17,12 +17,12 @@ export const standardWgpuMaterialRenderer: WgpuMaterialRenderer = {
   instanceFloatCount: 0,
   getShaderModule(state: WgpuRenderState): GPUShaderModule {
     const runtime = getWgpuRenderStateRuntime(state);
-    const cached = runtime.standardMaterialModule;
+    const cached = runtime.context.standardMaterialModule;
     if (cached !== undefined) return cached;
     const module = state.device.createShaderModule({
       code: getWgpuQuadBatchPreludeWGSL() + STANDARD_MATERIAL_WGSL,
     });
-    runtime.standardMaterialModule = module;
+    runtime.context.standardMaterialModule = module;
     return module;
   },
 };

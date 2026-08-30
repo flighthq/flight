@@ -56,10 +56,10 @@ export function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData)
   if (shapeData === null) return;
   const surface = shapeData.surface;
   if (surface !== null) {
-    const entry = runtime.textureSourcePremultipliedTextureCache.get(surface.image);
+    const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
     if (entry !== undefined) {
       entry.texture.destroy();
-      runtime.textureSourcePremultipliedTextureCache.delete(surface.image);
+      runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
     }
     destroyRaster2DSurface(surface);
   }
