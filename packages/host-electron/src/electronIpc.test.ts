@@ -1,4 +1,4 @@
-import type { ElectronApi } from '@flighthq/types/contract';
+import type { ElectronApi, Entity } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronIpcMessageBackend } from './electronIpc';
@@ -23,8 +23,9 @@ function fakeElectron(): {
 }
 
 describe('createElectronIpcMessageBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronIpcMessageBackend(fakeElectron().electron)).toBe(true);
+  it('returns an Entity in both runtime and type', () => {
+    const backend: Entity = createElectronIpcMessageBackend(fakeElectron().electron);
+    expect(EntityRuntimeKey in backend).toBe(true);
   });
 
   it('delivers a renderer message with its arguments, dropping the event object', () => {

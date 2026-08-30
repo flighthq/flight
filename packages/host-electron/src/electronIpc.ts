@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, IpcMessageBackend } from '@flighthq/types/contract';
+import type { ElectronApi, EntityWithoutRuntime, IpcMessageBackend } from '@flighthq/types/contract';
 
 // The Electron main-process IPC provider. It offers exactly what ipcMain can really do from this side:
 // receive messages a renderer sent. The previous backend also declared `send` (a documented no-op) and
@@ -10,7 +10,7 @@ import type { ElectronApi, IpcMessageBackend } from '@flighthq/types/contract';
 // pair, so each is a distinct capability with its own provider rather than a method hung here.
 export function createElectronIpcMessageBackend(electron: ElectronApi): IpcMessageBackend {
   const ipcMain = electron.ipcMain;
-  return createEntity<IpcMessageBackend>({
+  return createEntity<EntityWithoutRuntime<IpcMessageBackend>>({
     // The per-subscription cleanup owns everything this call acquired — which is why the slot declares
     // no provider-level destroy: ipcMain itself is the caller's, not this backend's, to tear down.
     subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void {

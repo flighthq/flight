@@ -42,8 +42,9 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/entity": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Inter-process messaging (send, invoke, per-channel subscribe) over a swappable web/native backend",
+  "description": "Inter-process message reception over an explicit host capability",
   "sideEffects": false
 }

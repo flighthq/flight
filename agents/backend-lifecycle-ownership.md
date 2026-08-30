@@ -808,6 +808,17 @@ whole-provider teardown numerator unchanged at 10.
 | `DirectoryOpenDialogBackend` | One awaited picker call. Web requests read mode and returns no legacy directory surrogate when the platform API is absent. | **Owned by call.** No directory bridge or invented teardown survives. |
 | `FileSaveDialogBackend` | One awaited picker call. The returned handle runtime can create a writable per filesystem operation; that operation closes on success and aborts best-effort on failure. | **Owned by filesystem operation.** The provider and handle retain no open writable, so neither earns a destroy/dispose hook. |
 
+### 2026-08-30 — IPC declares no whole-provider teardown
+
+`IpcMessageBackend` has no `destroy`. Its Electron provider acquires no whole-provider resource:
+`subscribe` registers one `ipcMain` listener and its returned cleanup removes exactly that listener,
+while `ipcMain` belongs to the caller that supplied Electron. IPC therefore contributes no lifecycle
+obligation. The provider exposes `subscribe` alone; adding teardown later requires a real resource to
+justify it.
+
+The removed aggregate `IpcBackend` also leaves the operation-seam subject population. That is a removed
+subject, not permission to drop a surviving interface's seam.
+
 ## Review checklist for the remaining slices
 
 For each of the three missing whole-backend hooks, tests must cover replacement with a different

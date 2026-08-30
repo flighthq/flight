@@ -178,7 +178,10 @@ Application/process layer (host shell integration beyond a single window):
 - `@flighthq/app`: application identity (name/version/locale), control (quit/relaunch/focus), single-instance lock + `onSecondInstance`, the canonical app badge (`setAppBadgeCount`) + dock badge/menu/bounce, and app events (`onActivate`, `onOpenFile`).
 - `@flighthq/protocol`: custom URI-scheme / deep-link registration plus an `onOpenURL` handler entity.
 - `@flighthq/updater` (event): auto-update lifecycle — checking/available/progress/downloaded/error signals plus check/download/quit-and-install commands.
-- `@flighthq/ipc`: inter-process messaging — `sendIpcMessage`, `invokeIpc`, `onIpcMessage` over a host channel backend (for split-process hosts like Electron main↔renderer).
+- `@flighthq/ipc`: inter-process message reception — `onIpcMessage` / `onceIpcMessage` over
+  `host.ipc.message`, Electron-only, behind exact `HasIpcMessage`. A channel is a plain string. Send,
+  targeted send, invoke, and handle are platform-supported but unbuilt and are not members of this slot;
+  each would be its own capability with its own provider. Web, Tauri, and Capacitor ship an empty `ipc` group.
 
 Inbound host events are delivered through explicit event slots and Entity attachment — for example `attachScreenSignals(host, signals)` binds `Host.screen.change`. Other domains still expose their existing subscription surfaces while awaiting their own migration slices. The window backend delivers OS-originated changes by mutating the `ApplicationWindow` and emitting its signals directly (it owns the `win`↔OS-window mapping from `openWindow`); native window backends additionally implement icon/opacity/progress/attention/skip-taskbar/menu-bar/parent controls.
 

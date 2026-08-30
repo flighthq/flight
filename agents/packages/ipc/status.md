@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/ipc'
-updated: 2026-08-08
+updated: 2026-08-30
 by: principal
 ---
 
@@ -11,41 +11,30 @@ by: principal
 
 ## Open
 
-Every item was re-checked against `packages/ipc/src/`, `packages/types/src/Ipc.ts`, and the `host-*`
-packages on 2026-08-08. A file:line here is a claim about this tree, not about a session.
+Every item below was re-checked against `packages/ipc/src/`, `packages/types/src/Ipc.ts`, and the
+`host-*` packages on 2026-08-30 after the R3 reduction.
 
-- **The duplex-port tier is a type with no implementation.** `IpcPort` (`types/src/IpcPort.ts:10`)
-  documents `openIpcPort` / `postIpcPortMessage` / `onIpcPortMessage` / `destroyIpcPort`; none of the
-  four exists anywhere in `packages/`, and `IpcBackend` (`types/src/Ipc.ts:14-26`) has no `openPort`.
-- **`IpcTransferable` / `sendIpcMessageWithTransfer` do not exist** — no type, no function, no
-  transfer-list path. Zero-copy transfer scope is undecided, so the type is unwritten, not just
-  unimplemented.
-- **`IpcError` / `IpcErrorCode` have no producer and no consumer.** The plain-data error type is
-  defined (`types/src/IpcError.ts:2`, `:9`) but nothing constructs it: `invokeIpc` surfaces whatever
-  the backend rejects with, and the only Flight-authored rejection is `IpcTimeoutError`
-  (`ipc.ts:122`).
-- **Capability flags are declared but never read.** `getCapabilities` is optional on the backend
-  (`types/src/Ipc.ts:25`) and the web default answers all-false (`ipc.ts:64-66`), yet every branch in
-  the package tests method presence instead: `onIpcInvoke` checks `typeof backend.handle`
-  (`ipc.ts:154`) and `sendIpcMessageTo` optional-chains `sendTo` (`ipc.ts:240`). Which of the two is
-  canonical is unruled, and a backend can contradict itself with no seam noticing.
-- **`reply` is structurally inert.** `onIpcMessageEvent` hardcodes `senderId: -1` (`ipc.ts:195`), and
-  `reply` early-returns on that sentinel (`ipc.ts:198`), so it never sends even against a
-  `sendTo`-capable backend. It unblocks only when a backend surfaces real sender identity, which
-  needs a richer event than `IpcMessageEvent` (`types/src/Ipc.ts:36-41`) carries.
-- **The one native backend is main-side only and mostly inert.** `createElectronIpcBackend`
-  (`host-electron/src/electronIpc.ts:6`) implements `subscribe` over `ipcMain` but no-ops `send` and
-  resolves `invoke` to `undefined`, and supplies none of `handle` / `sendTo` / `getCapabilities`.
-  Neither `host-tauri` nor `host-capacitor` has an IPC backend at all, so no Silver arm is realized
-  against a real host and the renderer-vs-main split is still undesigned.
-- **`enableIpcSignals` is a permanent module singleton.** `_ipcSignals` (`ipc.ts:43`) is never
-  cleared — there is no reset seam — so once enabled the group lives for the module's lifetime and
-  test isolation needs a fresh module import.
+- **One provider, and no second opinion.** `host.ipc.message` is Electron-only. Web, Tauri, and
+  Capacitor ship `ipc: {}` with a comment naming why. A single provider means the seam has never been
+  cross-checked against a disagreeing implementation.
+- **Four platform operations are unbuilt and deliberately not members of this slot.** Electron
+  supports main-to-renderer send, targeted send, invoke, and handle. Each needs a specific
+  `webContents` target or a request/response pair, so each is a distinct capability with its own
+  provider rather than a method hung on `message`.
+
+Resolved by the R3 slice: the unimplemented duplex-port tier, channel wrapper, aggregate `IpcBackend`,
+capability/target/event/error families, ambient resolver, sentinel, diagnostics, signals, and fabricated
+operations were deleted. There is no runtime arm that can answer for a provider that is not present.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — R3 reduced IPC to the one capability a host provides: top-level
+  `Host.ipc.message`, Electron-only, behind exact `HasIpcMessage`. `IpcMessageBackend` extends `Entity`
+  and its constructor composes `createEntity`; `onceIpcMessage` handles synchronous delivery during
+  subscription acquisition. Per-subscription cleanup owns the acquired listener, so the provider has
+  no whole-provider destroy.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped as **false**: the parked
   "doc comment on `IpcMessageEvent.reply` stating it is inert until a backend supplies `senderId`" —
   that comment is present at `types/src/Ipc.ts:34-35`. Also dropped the Rust-crate and score

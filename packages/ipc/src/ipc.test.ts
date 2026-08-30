@@ -1,4 +1,5 @@
-import type { HasIpcMessage } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { EntityWithoutRuntime, HasIpcMessage, IpcMessageBackend } from '@flighthq/types/contract';
 
 import { onIpcMessage, onceIpcMessage } from './ipc';
 
@@ -14,14 +15,14 @@ function messageHost(): HasIpcMessage & {
       for (const listener of [...(channels.get(channel) ?? [])]) listener(args);
     },
     ipc: {
-      message: {
+      message: createEntity<EntityWithoutRuntime<IpcMessageBackend>>({
         subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void {
           const set = channels.get(channel) ?? new Set();
           channels.set(channel, set);
           set.add(listener);
           return () => set.delete(listener);
         },
-      },
+      }),
     },
     subscriberCount(channel: string): number {
       return channels.get(channel)?.size ?? 0;
@@ -51,14 +52,21 @@ describe('onceIpcMessage', () => {
     expect(count).toBe(0);
   });
 
-  it('is idempotent — releasing after delivery does not throw or double-release', () => {
-    const host = messageHost();
+  it('releases exactly once across repeated stop calls', () => {
+    let releases = 0;
+    const host: HasIpcMessage = {
+      ipc: {
+        message: createEntity<EntityWithoutRuntime<IpcMessageBackend>>({
+          subscribe(): () => void {
+            return () => releases++;
+          },
+        }),
+      },
+    };
     const stop = onceIpcMessage(host, 'ping', () => {});
-    host.deliver('ping');
-    expect(() => {
-      stop();
-      stop();
-    }).not.toThrow();
+    stop();
+    stop();
+    expect(releases).toBe(1);
   });
 
   // ★ ACQUISITION RACE: a provider that delivers synchronously DURING subscribe returns its unsubscribe
@@ -68,12 +76,12 @@ describe('onceIpcMessage', () => {
     let released = false;
     const host: HasIpcMessage = {
       ipc: {
-        message: {
+        message: createEntity<EntityWithoutRuntime<IpcMessageBackend>>({
           subscribe(_channel, listener): () => void {
             listener([42]);
             return () => (released = true);
           },
-        },
+        }),
       },
     };
     const seen: (readonly unknown[])[] = [];
