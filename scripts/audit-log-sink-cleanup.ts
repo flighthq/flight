@@ -365,7 +365,8 @@ function formatReport(registrations: readonly LogSinkRegistration[]): string {
       `| \`${group.path}\` | ${group.lines.join(', ')} | ${group.lines.length} | \`${group.classification}\` | ${cleanupDescriptions[group.classification]} |`,
     );
   }
-  return `${lines.join('\n')}\n`;
+  lines.push('');
+  return lines.join('\n');
 }
 
 function groupRegistrations(registrations: readonly LogSinkRegistration[]): RegistrationGroup[] {
