@@ -1,5 +1,5 @@
 import { createHost } from '@flighthq/entity/contract';
-import type { Host } from '@flighthq/types/contract';
+import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 
 import { webAccessibilityBackend } from './webAccessibility';
 import { createWebAppCapabilities } from './webApp';
@@ -65,7 +65,7 @@ const webProtocolCapabilities = createWebProtocolCapabilities();
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
 // groups are intentional: they preserve Host's stable two-level shape without claiming providers that
 // still live behind the legacy registration path.
-export const webHost: Host = createHost({
+export const webHost = createHost({
   accessibility: { provider: webAccessibilityBackend },
   app: {
     ...webAppCapabilities,
@@ -143,4 +143,4 @@ export const webHost: Host = createHost({
   ui: { fullscreen: webFullscreenBackend, statusBarColor: webStatusBarColorBackend },
   updater: {},
   window: webWindowBackend,
-});
+} as const satisfies Omit<Host, typeof EntityRuntimeKey>);
