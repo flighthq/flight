@@ -249,7 +249,6 @@
     "@flighthq/physics3d-abi createPhysics3DAbiJointBuffer",
     "@flighthq/physics3d-abi createPhysics3DAbiQueryBuffer",
     "@flighthq/physics3d-abi createPhysics3DAbiWorld",
-    "@flighthq/power createPower",
     "@flighthq/protocol createProtocolHandler",
     "@flighthq/protocol createProtocolUrl",
     "@flighthq/registry createKeyedTable",
