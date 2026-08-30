@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/color": "*",
+    "@flighthq/entity": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
@@ -58,7 +59,6 @@
   "devDependencies": {
     "@flighthq/bitmap": "*",
     "@flighthq/bitmaptext": "*",
-    "@flighthq/entity": "*",
     "@flighthq/path": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",

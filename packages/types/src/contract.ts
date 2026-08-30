@@ -121,6 +121,7 @@ export * from './CameraMotionBlurEffect';
 export * from './CameraShake';
 export * from './CanvasMaterialRenderer';
 export * from './CanvasMaterialState';
+export * from './CanvasPipeline';
 export * from './CanvasRenderEffectPipeline';
 export * from './CanvasRenderEffectSupport';
 export * from './CanvasRenderOptions';
