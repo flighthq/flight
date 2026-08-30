@@ -23,10 +23,9 @@ export function createWebProtocolCapabilities(): WebProtocolCapabilities {
       },
       register: (scheme: string) => {
         if (typeof navigator === 'undefined' || typeof location === 'undefined') return false;
-        const registerProtocolHandler = Reflect.get(navigator, 'registerProtocolHandler');
-        if (typeof registerProtocolHandler !== 'function') return false;
+        if (typeof navigator.registerProtocolHandler !== 'function') return false;
         try {
-          Reflect.apply(registerProtocolHandler, navigator, [scheme, location.origin + '/?url=%s']);
+          navigator.registerProtocolHandler(scheme, location.origin + '/?url=%s');
           if (!registeredSchemes.includes(scheme)) registeredSchemes.push(scheme);
           return true;
         } catch {
