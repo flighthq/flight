@@ -44,6 +44,24 @@ function fakeElectron(overrides: {
   return { electron, calls };
 }
 
+describe('createElectronDirectoryOpenDialogBackend', () => {
+  it('creates an Entity provider', () => {
+    expect(EntityRuntimeKey in createElectronDirectoryOpenDialogBackend(fakeElectron({}).electron)).toBe(true);
+  });
+});
+
+describe('createElectronFileOpenDialogBackend', () => {
+  it('creates an Entity provider', () => {
+    expect(EntityRuntimeKey in createElectronFileOpenDialogBackend(fakeElectron({}).electron)).toBe(true);
+  });
+});
+
+describe('createElectronFileSaveDialogBackend', () => {
+  it('creates an Entity provider', () => {
+    expect(EntityRuntimeKey in createElectronFileSaveDialogBackend(fakeElectron({}).electron)).toBe(true);
+  });
+});
+
 describe('createElectronMessageDialogBackend', () => {
   it('maps message results to button index, cancelled, and checkbox state', async () => {
     const { electron, calls } = fakeElectron({ message: { response: 2, checkboxChecked: true } });
