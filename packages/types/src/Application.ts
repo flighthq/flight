@@ -1,7 +1,8 @@
 import type { ApplicationWindow } from './ApplicationWindow';
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
-export interface Application {
+export interface Application extends Entity {
   // Milliseconds elapsed since the previous frame, clamped to the loop's maxDeltaTime.
   deltaTime: number;
   // Total elapsed time in seconds since the loop started.
