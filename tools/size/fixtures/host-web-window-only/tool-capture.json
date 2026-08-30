@@ -1,0 +1,12 @@
+{
+  "subject": "host-web-window-only-size-fixture",
+  "entries": [
+    {
+      "name": "host-web-window-only",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
