@@ -10,6 +10,7 @@ export * from '@flighthq/ipc';
 export * from '@flighthq/keyboard';
 export * from '@flighthq/lifecycle';
 export * from '@flighthq/menu';
+export * from '@flighthq/midi';
 export * from '@flighthq/net';
 export * from '@flighthq/notification';
 export * from '@flighthq/permissions';

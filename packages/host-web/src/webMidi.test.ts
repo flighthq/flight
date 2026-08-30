@@ -89,6 +89,8 @@ describe('createWebMidiAccessCapabilities', () => {
     bytes[1] = 1;
     expect([...messages[0].data]).toEqual([0x90, 60, 127]);
     expect(messages[0].timestamp).toBe(8.5);
+    native.input.dispatch('midimessage', { data: new Uint8Array([0xf0, 1, 0xf7]), timeStamp: 9 });
+    expect(messages).toHaveLength(1);
 
     await requiredMidiFunction('detachMidiAccessStateSubscription')(accessSubscription);
     await requiredMidiFunction('detachMidiPortStateSubscription')(stateSubscription);

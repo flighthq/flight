@@ -115,6 +115,27 @@ describe('detachMidiAccessStateSubscription', () => {
     await expect(detach(subscription)).resolves.toEqual({ reason: 'not-attached' });
     expect(release).toHaveBeenCalledTimes(2);
   });
+
+  it('invalidates an in-flight attach and waits for its exact release', async () => {
+    const settle: { current: ((value: unknown) => void) | null } = { current: null };
+    const release = vi.fn(async () => ({ reason: 'ok' }));
+    const access = createAccess(
+      () =>
+        new Promise((resolve) => {
+          settle.current = resolve;
+        }),
+    );
+    const subscription = requiredFunction('createMidiAccessStateSubscription')();
+    const attaching = requiredFunction('attachMidiAccessStateSubscription')(access, subscription);
+    const detaching = requiredFunction('detachMidiAccessStateSubscription')(subscription);
+    settle.current?.({ attachment: createEntity({ release }), reason: 'ok' });
+    await expect(attaching).resolves.toEqual({ reason: 'ok' });
+    await expect(detaching).resolves.toEqual({ reason: 'ok' });
+    expect(release).toHaveBeenCalledOnce();
+    await expect(requiredFunction('detachMidiAccessStateSubscription')(subscription)).resolves.toEqual({
+      reason: 'not-attached',
+    });
+  });
 });
 
 describe('detachMidiInputMessageSubscription', () => {

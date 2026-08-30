@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -76,6 +77,43 @@ describe('disposeMidiPort', () => {
     await expect(openMidiPort(borrowed)).resolves.toEqual({ reason: 'already-open' });
     await expect(disposeMidiPort(borrowed)).resolves.toEqual({ reason: 'ok' });
     expect(borrowedClose).not.toHaveBeenCalled();
+  });
+
+  it('attempts every attached subscription and owned close, then retries only failed releases', async () => {
+    const stateRelease = vi
+      .fn()
+      .mockResolvedValueOnce({ reason: 'operation-failed' })
+      .mockResolvedValueOnce({ reason: 'ok' });
+    const messageRelease = vi
+      .fn()
+      .mockResolvedValueOnce({ reason: 'operation-failed' })
+      .mockResolvedValueOnce({ reason: 'ok' });
+    const connection = { value: 'closed' };
+    const close = vi.fn(async () => {
+      connection.value = 'closed';
+    });
+    const input = createInputPort({
+      attachMessage: async () => ({ attachment: createEntity({ release: messageRelease }), reason: 'ok' }),
+      attachStateChange: async () => ({ attachment: createEntity({ release: stateRelease }), reason: 'ok' }),
+      close,
+      connection,
+    });
+    const messageSubscription = requiredFunction('createMidiInputMessageSubscription')();
+    const stateSubscription = requiredFunction('createMidiPortStateSubscription')();
+    await requiredFunction('attachMidiInputMessageSubscription')(input, messageSubscription);
+    await requiredFunction('attachMidiPortStateSubscription')(input, stateSubscription);
+    await requiredFunction('openMidiPort')(input);
+
+    const disposeMidiPort = requiredFunction('disposeMidiPort');
+    await expect(disposeMidiPort(input)).resolves.toEqual({
+      failures: [{ operation: 'state-subscription-release' }, { operation: 'message-subscription-release' }],
+      reason: 'operation-failed',
+    });
+    expect(close).toHaveBeenCalledOnce();
+    await expect(disposeMidiPort(input)).resolves.toEqual({ reason: 'ok' });
+    expect(close).toHaveBeenCalledOnce();
+    expect(stateRelease).toHaveBeenCalledTimes(2);
+    expect(messageRelease).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -156,6 +194,8 @@ interface MutableValue {
 }
 
 interface PortOverrides {
+  attachMessage?: (listener: (data: Uint8Array, timestamp: number) => void) => Promise<unknown>;
+  attachStateChange?: (listener: () => void) => Promise<unknown>;
   close?: () => Promise<void>;
   connection?: MutableValue;
   open?: () => Promise<void>;
@@ -169,8 +209,8 @@ function createInputPort(overrides: Readonly<PortOverrides> = {}): Record<string
   return requiredFunction('createMidiInputPortResource')(
     { id: 'shared-id', manufacturer: 'Flight', name: 'Input', version: '1' },
     {
-      attachMessage: vi.fn(),
-      attachStateChange: vi.fn(),
+      attachMessage: overrides.attachMessage ?? vi.fn(),
+      attachStateChange: overrides.attachStateChange ?? vi.fn(),
       close:
         overrides.close ??
         (async () => {

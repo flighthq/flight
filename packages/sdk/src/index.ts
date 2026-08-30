@@ -66,6 +66,7 @@ export * from '@flighthq/math';
 export * from '@flighthq/media';
 export * from '@flighthq/mediasession';
 export * from '@flighthq/menu';
+export * from '@flighthq/midi';
 export * from '@flighthq/mesh';
 export * from '@flighthq/motionpath';
 export * from '@flighthq/movieclip';
