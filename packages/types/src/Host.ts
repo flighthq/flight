@@ -1,5 +1,29 @@
 import type { AccessibilityBackend } from './Accessibility';
-import type { AppBackend } from './App';
+import type {
+  AppActivateBackend,
+  AppActivationPolicyBackend,
+  AppAllWindowsClosedBackend,
+  AppBadgeBackend,
+  AppDockBackend,
+  AppFocusBackend,
+  AppLocaleBackend,
+  AppLoginItemBackend,
+  AppNameBackend,
+  AppNameWriteBackend,
+  AppOpenFileBackend,
+  AppPathBackend,
+  AppQuitBackend,
+  AppQuitRequestBackend,
+  AppReadyBackend,
+  AppRecentDocumentsBackend,
+  AppRelaunchBackend,
+  AppSecondInstanceBackend,
+  AppSingleInstanceBackend,
+  AppUserModelIdBackend,
+  AppVersionBackend,
+  AppVisibilityCommandBackend,
+  AppVisibilityQueryBackend,
+} from './App';
 import type { ApplicationExitBackend } from './ApplicationExitBackend';
 import type { ApplicationVisibilityBackend } from './ApplicationVisibilityBackend';
 import type { WindowBackend } from './ApplicationWindow';
@@ -83,7 +107,14 @@ import type {
   PowerThermalBackend,
 } from './Power';
 import type { PromptDialogBackend } from './PromptDialogBackend';
-import type { ProtocolBackend } from './Protocol';
+import type {
+  ProtocolDefaultBackend,
+  ProtocolLaunchBackend,
+  ProtocolOpenBackend,
+  ProtocolRegistrationBackend,
+  ProtocolRegistrationQueryBackend,
+  ProtocolUnregistrationBackend,
+} from './Protocol';
 import type {
   ScreenChangeBackend,
   ScreenDetailsBackend,
@@ -146,6 +177,7 @@ export interface Host extends Entity {
   readonly midi: HostMidiCapabilities;
   readonly net: HostNetCapabilities;
   readonly power: HostPowerCapabilities;
+  readonly protocol: HostProtocolCapabilities;
   readonly notification: HostNotificationCapabilities;
   readonly screen: HostScreenCapabilities;
   readonly share: HostShareCapabilities;
@@ -165,11 +197,41 @@ export interface HostAccessibilityCapabilities {
 }
 
 export interface HostAppCapabilities {
+  readonly activate?: AppActivateBackend;
+  readonly activationPolicy?: AppActivationPolicyBackend;
+  readonly allWindowsClosed?: AppAllWindowsClosedBackend;
+  readonly badge?: AppBadgeBackend;
+  readonly dock?: AppDockBackend;
   readonly exit?: ApplicationExitBackend;
-  readonly identity?: AppBackend;
+  readonly focus?: AppFocusBackend;
+  readonly locale?: AppLocaleBackend;
+  readonly loginItem?: AppLoginItemBackend;
   readonly loop?: LoopBackend;
-  readonly protocol?: ProtocolBackend;
+  readonly name?: AppNameBackend;
+  readonly nameWrite?: AppNameWriteBackend;
+  readonly openFile?: AppOpenFileBackend;
+  readonly path?: AppPathBackend;
+  readonly processVisibility?: AppVisibilityCommandBackend;
+  readonly processVisibilityQuery?: AppVisibilityQueryBackend;
+  readonly quit?: AppQuitBackend;
+  readonly quitRequest?: AppQuitRequestBackend;
+  readonly ready?: AppReadyBackend;
+  readonly recentDocuments?: AppRecentDocumentsBackend;
+  readonly relaunch?: AppRelaunchBackend;
+  readonly secondInstance?: AppSecondInstanceBackend;
+  readonly singleInstance?: AppSingleInstanceBackend;
+  readonly userModelId?: AppUserModelIdBackend;
+  readonly version?: AppVersionBackend;
   readonly visibility?: ApplicationVisibilityBackend;
+}
+
+export interface HostProtocolCapabilities {
+  readonly default?: ProtocolDefaultBackend;
+  readonly launch?: ProtocolLaunchBackend;
+  readonly open?: ProtocolOpenBackend;
+  readonly registration?: ProtocolRegistrationBackend;
+  readonly registrationQuery?: ProtocolRegistrationQueryBackend;
+  readonly unregistration?: ProtocolUnregistrationBackend;
 }
 
 export interface HostClipboardCapabilities {
@@ -374,16 +436,124 @@ export interface HasAppExitSubscription {
   readonly app: { readonly exit: ApplicationExitBackend };
 }
 
-export interface HasAppIdentity {
-  readonly app: { readonly identity: AppBackend };
+export interface HasAppActivate {
+  readonly app: { readonly activate: AppActivateBackend };
+}
+
+export interface HasAppActivationPolicy {
+  readonly app: { readonly activationPolicy: AppActivationPolicyBackend };
+}
+
+export interface HasAppAllWindowsClosed {
+  readonly app: { readonly allWindowsClosed: AppAllWindowsClosedBackend };
+}
+
+export interface HasAppBadge {
+  readonly app: { readonly badge: AppBadgeBackend };
+}
+
+export interface HasAppDock {
+  readonly app: { readonly dock: AppDockBackend };
+}
+
+export interface HasAppFocus {
+  readonly app: { readonly focus: AppFocusBackend };
+}
+
+export interface HasAppLocale {
+  readonly app: { readonly locale: AppLocaleBackend };
+}
+
+export interface HasAppLoginItem {
+  readonly app: { readonly loginItem: AppLoginItemBackend };
+}
+
+export interface HasAppName {
+  readonly app: { readonly name: AppNameBackend };
+}
+
+export interface HasAppNameWrite {
+  readonly app: { readonly nameWrite: AppNameWriteBackend };
+}
+
+export interface HasAppOpenFile {
+  readonly app: { readonly openFile: AppOpenFileBackend };
+}
+
+export interface HasAppPath {
+  readonly app: { readonly path: AppPathBackend };
+}
+
+export interface HasAppProcessVisibility {
+  readonly app: { readonly processVisibility: AppVisibilityCommandBackend };
+}
+
+export interface HasAppProcessVisibilityQuery {
+  readonly app: { readonly processVisibilityQuery: AppVisibilityQueryBackend };
+}
+
+export interface HasAppQuit {
+  readonly app: { readonly quit: AppQuitBackend };
+}
+
+export interface HasAppQuitRequest {
+  readonly app: { readonly quitRequest: AppQuitRequestBackend };
+}
+
+export interface HasAppReady {
+  readonly app: { readonly ready: AppReadyBackend };
+}
+
+export interface HasAppRecentDocuments {
+  readonly app: { readonly recentDocuments: AppRecentDocumentsBackend };
+}
+
+export interface HasAppRelaunch {
+  readonly app: { readonly relaunch: AppRelaunchBackend };
+}
+
+export interface HasAppSecondInstance {
+  readonly app: { readonly secondInstance: AppSecondInstanceBackend };
+}
+
+export interface HasAppSingleInstance {
+  readonly app: { readonly singleInstance: AppSingleInstanceBackend };
+}
+
+export interface HasAppUserModelId {
+  readonly app: { readonly userModelId: AppUserModelIdBackend };
+}
+
+export interface HasAppVersion {
+  readonly app: { readonly version: AppVersionBackend };
+}
+
+export interface HasProtocolDefault {
+  readonly protocol: { readonly default: ProtocolDefaultBackend };
+}
+
+export interface HasProtocolLaunch {
+  readonly protocol: { readonly launch: ProtocolLaunchBackend };
+}
+
+export interface HasProtocolOpen {
+  readonly protocol: { readonly open: ProtocolOpenBackend };
+}
+
+export interface HasProtocolRegistration {
+  readonly protocol: { readonly registration: ProtocolRegistrationBackend };
+}
+
+export interface HasProtocolRegistrationQuery {
+  readonly protocol: { readonly registrationQuery: ProtocolRegistrationQueryBackend };
+}
+
+export interface HasProtocolUnregistration {
+  readonly protocol: { readonly unregistration: ProtocolUnregistrationBackend };
 }
 
 export interface HasAppLoop {
   readonly app: { readonly loop: LoopBackend };
-}
-
-export interface HasAppProtocol {
-  readonly app: { readonly protocol: ProtocolBackend };
 }
 
 export interface HasUpdaterCommand {

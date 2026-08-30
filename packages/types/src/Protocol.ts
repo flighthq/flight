@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // A deep-link URL decomposed into its parts. query values are percent-decoded; an absent query
@@ -10,25 +11,33 @@ export interface ParsedProtocolUrl {
 }
 
 // Deep-link event entity. Enable delivery with attachProtocolHandler; the signal stays inert until then.
-export interface ProtocolHandler {
+export interface ProtocolHandler extends Entity {
   onOpenUrl: Signal<(url: string) => void>;
 }
 
-// Event and control seam for custom URI scheme registration and deep-link delivery. The web backend
-// wraps navigator.registerProtocolHandler; a native host registers schemes and drives the callback.
-export interface ProtocolBackend {
-  register(scheme: string): boolean;
-  unregister(scheme: string): boolean;
-  isRegistered(scheme: string): boolean;
-  // Lists the custom URI schemes this app has registered; [] where the host cannot enumerate them.
-  getRegisteredSchemes(): readonly string[];
-  setAsDefault(scheme: string): boolean;
+export interface ProtocolDefaultBackend extends Entity {
   isDefault(scheme: string): boolean;
   removeAsDefault(scheme: string): boolean;
-  // The cold-start launch URL the app was opened with, or null when not launched via a deep link.
+  setAsDefault(scheme: string): boolean;
+}
+
+export interface ProtocolLaunchBackend extends Entity {
   getLaunchUrl(): string | null;
-  // Drains URLs buffered before the first attach (pre-attach burst), emptying the buffer.
-  drainPendingUrls(): readonly string[];
-  // Registers a listener invoked when a deep-link URL is opened; returns an unsubscribe function.
+}
+
+export interface ProtocolOpenBackend extends Entity {
   subscribe(listener: (url: string) => void): () => void;
+}
+
+export interface ProtocolRegistrationBackend extends Entity {
+  getRegisteredSchemes(): readonly string[];
+  register(scheme: string): boolean;
+}
+
+export interface ProtocolRegistrationQueryBackend extends Entity {
+  isRegistered(scheme: string): boolean;
+}
+
+export interface ProtocolUnregistrationBackend extends Entity {
+  unregister(scheme: string): boolean;
 }
