@@ -3,7 +3,7 @@
 // the user cancels, or the capability is absent rather than throwing — image capture is an
 // expected-failure surface, not a programmer error.
 
-export type WebcamSource = 'camera' | 'photos' | 'prompt';
+export type WebcamSource = 'camera' | 'photos';
 
 export interface WebcamCaptureOptions {
   source?: WebcamSource;
@@ -29,5 +29,4 @@ export interface WebcamVideo {
 export interface WebcamBackend {
   capture(options: Readonly<WebcamCaptureOptions>): Promise<WebcamPhoto | null>;
   captureVideo(options: Readonly<WebcamCaptureOptions>): Promise<WebcamVideo | null>;
-  requestPermission(): Promise<boolean>;
 }

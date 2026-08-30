@@ -4,7 +4,6 @@ import {
   createWebWebcamBackend,
   getWebcamBackend,
   recordWebcamVideo,
-  requestWebcamPermission,
   selectWebcamImage,
   setWebcamBackend,
   takeWebcamPhoto,
@@ -24,9 +23,6 @@ function fakeBackend(): WebcamBackend & { lastOptions: WebcamCaptureOptions | nu
     async captureVideo(options) {
       this.lastOptions = { ...options };
       return { dataUrl: 'data:video/mp4;base64,xx', duration: 0, format: 'video/mp4' };
-    },
-    async requestPermission() {
-      return true;
     },
   };
 }
@@ -152,17 +148,6 @@ describe('recordWebcamVideo', () => {
   it('returns a Promise from the web backend without throwing', () => {
     const backend = createWebWebcamBackend();
     expect(backend.captureVideo({}) instanceof Promise).toBe(true);
-  });
-});
-
-describe('requestWebcamPermission', () => {
-  it('delegates to the active backend', async () => {
-    setWebcamBackend(fakeBackend());
-    expect(await requestWebcamPermission()).toBe(true);
-  });
-
-  it('returns a boolean from the web backend without throwing', async () => {
-    expect(typeof (await requestWebcamPermission())).toBe('boolean');
   });
 });
 

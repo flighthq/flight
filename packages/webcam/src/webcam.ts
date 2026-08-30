@@ -93,26 +93,6 @@ export function createWebWebcamBackend(): WebcamBackend {
         }
       });
     },
-    async requestPermission() {
-      if (typeof navigator === 'undefined') {
-        observeWebcamHostResult('requestPermission', false);
-        return false;
-      }
-      try {
-        const permissions = navigator.permissions;
-        if (permissions === undefined || typeof permissions.query !== 'function') {
-          observeWebcamHostResult('requestPermission', false);
-          return false;
-        }
-        const status = await permissions.query({ name: 'camera' as PermissionName });
-        const granted = status.state === 'granted';
-        observeWebcamHostResult('requestPermission', granted);
-        return granted;
-      } catch {
-        observeWebcamHostResult('requestPermission', false);
-        return false;
-      }
-    },
   };
 }
 
@@ -155,11 +135,6 @@ export function recordWebcamVideo(options?: Readonly<WebcamCaptureOptions>): Pro
   return getWebcamBackend().captureVideo({ ...options, source: 'camera' });
 }
 
-// Requests camera access permission. Resolves false when denied or when the host cannot prompt.
-export function requestWebcamPermission(): Promise<boolean> {
-  return getWebcamBackend().requestPermission();
-}
-
 export function resetWebcamBackendForTest(): void {
   _custom = null;
   _host = null;
@@ -192,8 +167,5 @@ const _sentinel: WebcamBackend = {
   },
   async captureVideo() {
     return null;
-  },
-  async requestPermission() {
-    return false;
   },
 };
