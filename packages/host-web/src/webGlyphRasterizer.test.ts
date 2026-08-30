@@ -4,6 +4,7 @@ import {
   installGlyphRasterizerHostBackend,
   resetGlyphRasterizerBackendForTest,
 } from '@flighthq/glyphatlas/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -19,6 +20,10 @@ describe('createWebGlyphRasterizerBackend', () => {
     const backend = createWebGlyphRasterizerBackend();
     expect(backend.rasterize).toBeTypeOf('function');
     expect(backend.measureMetrics).toBeTypeOf('function');
+  });
+
+  it('constructs an identity-bearing provider Entity', () => {
+    expect(EntityRuntimeKey in createWebGlyphRasterizerBackend()).toBe(true);
   });
 
   it('rasterize returns null and observes failure when no canvas context is available', () => {

@@ -1,13 +1,15 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { installGlyphRasterizerHostBackend, observeGlyphRasterizerHostResult } from '@flighthq/glyphatlas/contract';
 import type {
+  Entity,
   GlyphMetrics,
   GlyphRasterizedBitmap,
   GlyphRasterizeOptions,
   GlyphRasterizerBackend,
 } from '@flighthq/types/contract';
 
-export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend {
-  return {
+export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
+  return createEntity({
     measureMetrics(options): GlyphMetrics | null {
       const context = _acquireGlyphRasterContext();
       if (context === null) {
@@ -35,7 +37,7 @@ export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend {
       observeGlyphRasterizerHostResult('rasterize', true);
       return _rasterizeGlyphOnContext(context, codepoint, options);
     },
-  };
+  });
 }
 
 export function enableHostWebGlyphRasterizer(): void {
