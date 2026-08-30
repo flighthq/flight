@@ -1,6 +1,8 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorPluginListenerHandle,
+  Entity,
   SoftKeyboardBackend,
   SoftKeyboardInfo,
   SoftKeyboardResizeMode,
@@ -19,7 +21,7 @@ import {
 // listener behind the will-show/will-hide events, mapping them to Flight's 'will' phase + transition.
 // setResizeMode/setStyle/setAccessoryBarVisible/setScrollAssistEnabled map to their Capacitor setters;
 // the corresponding getters have no Capacitor call and are omitted (they are optional on the seam).
-export function createCapacitorKeyboardBackend(capacitor: CapacitorApi): SoftKeyboardBackend {
+export function createCapacitorKeyboardBackend(capacitor: CapacitorApi): SoftKeyboardBackend & Entity {
   const keyboard = capacitor.keyboard;
   // Local mirror kept current by internal listeners, filled into the caller's `out` on getInfo.
   let mirrorVisible = false;
@@ -36,7 +38,7 @@ export function createCapacitorKeyboardBackend(capacitor: CapacitorApi): SoftKey
       mirrorHeight = 0;
     })
     .catch(() => {});
-  return {
+  return createEntity({
     getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
       out.visible = mirrorVisible;
       out.height = mirrorHeight;
@@ -77,7 +79,7 @@ export function createCapacitorKeyboardBackend(capacitor: CapacitorApi): SoftKey
         unsubHide();
       };
     },
-  };
+  } satisfies SoftKeyboardBackend);
 }
 
 // Flight resize mode ('None' | 'Body') → Capacitor KeyboardResize ('none' | 'body').

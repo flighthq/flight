@@ -1,4 +1,5 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorShareBackend } from './capacitorShare';
 
@@ -24,6 +25,10 @@ function fakeCapacitor(canShare = true, shareImpl?: () => Promise<{ activityType
 }
 
 describe('createCapacitorShareBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorShareBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('reports availability from the prefetch cache once it resolves', async () => {
     const backend = createCapacitorShareBackend(fakeCapacitor(true).capacitor);
     // Reads false until the construction-time canShare prefetch settles.

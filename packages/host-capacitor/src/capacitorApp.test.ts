@@ -1,4 +1,5 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorAppBackend } from './capacitorApp';
 
@@ -35,6 +36,10 @@ function fakeCapacitor() {
 }
 
 describe('createCapacitorAppBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorAppBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('serves name and version from the prefetch cache once it resolves', async () => {
     const backend = createCapacitorAppBackend(fakeCapacitor().capacitor);
     // The sync getters read '' until the construction-time prefetch settles.

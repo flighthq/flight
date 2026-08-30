@@ -1,5 +1,5 @@
 import type { CapacitorApi, SoftKeyboardInfo } from '@flighthq/types/contract';
-import { SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
 
 import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
 
@@ -48,6 +48,10 @@ function blankInfo(): SoftKeyboardInfo {
 }
 
 describe('createCapacitorKeyboardBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorKeyboardBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('maps show/hide and setters onto the plugin', () => {
     const { capacitor, calls } = fakeCapacitor();
     const backend = createCapacitorKeyboardBackend(capacitor);

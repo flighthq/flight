@@ -1,4 +1,5 @@
 import type { ConnectivityStatus, CapacitorApi, CapacitorConnectionStatus } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorConnectivityBackend } from './capacitorConnectivity';
 
@@ -37,6 +38,10 @@ function fakeCapacitor(initial: CapacitorConnectionStatus = { connected: true, c
 }
 
 describe('createCapacitorConnectivityBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorConnectivityBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('fills the out snapshot from the prefetched status', async () => {
     const backend = createCapacitorConnectivityBackend(fakeCapacitor().capacitor);
     await flush();

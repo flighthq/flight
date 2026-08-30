@@ -1,4 +1,5 @@
-import type { ShareBackend, ShareContent, CapacitorApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CapacitorApi, Entity, ShareBackend, ShareContent } from '@flighthq/types/contract';
 
 // Maps Flight's ShareBackend onto Capacitor's `@capacitor/share`. `share`/`shareWithResult` are async
 // and map directly; a user cancel rejects, resolving false / a dismissed ShareResult rather than
@@ -7,7 +8,7 @@ import type { ShareBackend, ShareContent, CapacitorApi } from '@flighthq/types/c
 // the sync probes read it — reporting false until that first probe resolves. Portable ShareFile
 // descriptors carry data URLs, which Capacitor's file-URI `files` field cannot accept, so only
 // title/text/url cross; a content that is only files reports canShare false.
-export function createCapacitorShareBackend(capacitor: CapacitorApi): ShareBackend {
+export function createCapacitorShareBackend(capacitor: CapacitorApi): ShareBackend & Entity {
   const share = capacitor.share;
   // Sync availability probes over async Capacitor: prefetch canShare once and cache the boolean.
   let cachedAvailable = false;
@@ -19,7 +20,7 @@ export function createCapacitorShareBackend(capacitor: CapacitorApi): ShareBacke
     .catch(() => {
       /* leave false */
     });
-  return {
+  return createEntity({
     isAvailable() {
       return cachedAvailable;
     },
@@ -55,7 +56,7 @@ export function createCapacitorShareBackend(capacitor: CapacitorApi): ShareBacke
         return { completed: false, activityType: null, dismissed: true };
       }
     },
-  };
+  } satisfies ShareBackend);
 }
 
 // Capacitor's share sheet needs at least one of title/text/url; data-URL files are not expressible.

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   ConnectivityBackend,
   ConnectivityConnectionType,
@@ -5,6 +6,7 @@ import type {
   CapacitorApi,
   CapacitorConnectionStatus,
   CapacitorPluginListenerHandle,
+  Entity,
 } from '@flighthq/types/contract';
 
 // Maps Flight's ConnectivityBackend onto Capacitor's `@capacitor/network`. ConnectivityBackend.getStatus
@@ -14,7 +16,7 @@ import type {
 // probe resolves). The public `subscribe` registers the caller's listener behind the same event. Capacitor
 // reports only connectivity + a coarse type, so downlink/rtt and the other fine-grained fields report
 // their -1 / '' sentinels; `metered` is derived (cellular or offline-save has no signal here).
-export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): ConnectivityBackend {
+export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): ConnectivityBackend & Entity {
   const network = capacitor.network;
   // Local mirror of the last known status, filled into the caller's `out` on getStatus.
   let mirror: CapacitorConnectionStatus = { connected: false, connectionType: 'unknown' };
@@ -31,7 +33,7 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Con
       mirror = status;
     })
     .catch(() => {});
-  return {
+  return createEntity({
     getStatus(out: ConnectivityStatus): ConnectivityStatus {
       out.online = mirror.connected;
       out.type = toConnectionType(mirror.connectionType);
@@ -46,7 +48,7 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Con
     subscribe(listener) {
       return toUnsubscribe(network.addListener('networkStatusChange', () => listener()));
     },
-  };
+  } satisfies ConnectivityBackend);
 }
 
 function toConnectionType(connectionType: string): ConnectivityConnectionType {
