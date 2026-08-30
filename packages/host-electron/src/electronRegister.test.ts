@@ -3,7 +3,6 @@ import { readClipboardText } from '@flighthq/clipboard/contract';
 import { setStorageBackend } from '@flighthq/storage/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerElectronBackends } from './electronRegister';
 

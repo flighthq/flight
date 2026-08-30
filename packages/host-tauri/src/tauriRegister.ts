@@ -28,14 +28,13 @@ import { createTauriShortcutBackend } from './tauriShortcut';
 import { createTauriTrayBackend } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
 
-type TauriHost =
-  & Host
-  & HasClipboardText
-  & HasDialogFile
-  & HasDialogMessage
-  & HasNotificationDelivery
-  & HasWindowAttach
-  & HasWindowOpen;
+type TauriHost = Host &
+  HasClipboardText &
+  HasDialogFile &
+  HasDialogMessage &
+  HasNotificationDelivery &
+  HasWindowAttach &
+  HasWindowOpen;
 
 // Builds the explicit Tauri host and installs capabilities that have not yet migrated from their
 // package-local seams. Run this once at app startup, passing an object that aggregates the Tauri v2 JS
