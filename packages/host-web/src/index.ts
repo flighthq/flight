@@ -47,6 +47,11 @@ export {
   webMediaSessionBackend,
 } from './webMediasession';
 export { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+export { createWebPageNotificationCapabilities } from './webNotification';
+export {
+  createWebServiceWorkerNotificationCapabilities,
+  notifyWebServiceWorkerNotificationEvent,
+} from './webServiceWorkerNotification';
 export { enableHostWebPermission } from './webPermissions';
 export { enableHostWebPlatform } from './webPlatform';
 export { webPowerCapabilities } from './webPower';

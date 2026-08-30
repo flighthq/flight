@@ -10,6 +10,8 @@ import type {
   HasDialogFileSave,
   HasDialogMessage,
   HasNotificationDelivery,
+  HasNotificationLifecycle,
+  HasNotificationPermission,
   HasShellExternal,
   HasShellPathOpen,
   HasShellPathReveal,
@@ -52,6 +54,8 @@ type TauriHost<Profile extends DesktopOsProfile> = Host & {
   HasMenuPopup &
   HasMenuSelect &
   HasNotificationDelivery &
+  HasNotificationLifecycle &
+  HasNotificationPermission &
   HasShellExternal &
   HasShellPathOpen &
   HasShellPathReveal &

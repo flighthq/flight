@@ -16,7 +16,8 @@ import { getParsedOxcSource } from './oxc-source';
 // violations would report 39 leaks where there is nothing to free.
 //
 // Most ambient seams are owned by set*Backend replacement. Explicit Host slots instead have a
-// destroyThing(host: HasThingProvider) owner: the Host's constructor/sharer decides the final release.
+// destroyThing(host: HasThingProvider) or destroyThingCapabilities(host: HasThingLifecycle) owner: the
+// Host's constructor/sharer decides the final release.
 // Those are separate, derived lanes so an explicit provider is never disguised as an ambient setter.
 
 export interface BackendLifecycleOwner {
@@ -75,7 +76,14 @@ export interface BackendLifecycleReport {
 // factory + the real producer). The producer must genuinely compute a new field, so it SHOULD appear;
 // the fixtures should not, and now do not.
 export function createEmptyBackendLifecycleReport(): BackendLifecycleReport {
-  return { enforced: 0, enforcedNames: [], entries: [], noTeardownHook: 0, total: 0, violations: [] };
+  return {
+    enforced: 0,
+    enforcedNames: [],
+    entries: [],
+    noTeardownHook: 0,
+    total: 0,
+    violations: [],
+  };
 }
 
 // Interfaces that own something to free, keyed by name, with the teardown member's name.
@@ -104,8 +112,9 @@ export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[])
 // Explicit Host-provider lifecycle owners, keyed by the backend interface they release.
 //
 // A function is admitted only when all three pieces agree structurally:
-//   destroyThing(host: HasThingProvider) -> ThingBackend, or
-//   destroyThing(host: HasThingFacet) -> ThingFacetBackend.
+//   destroyThing(host: HasThingProvider) -> ThingBackend,
+//   destroyThing(host: HasThingFacet) -> ThingFacetBackend, or
+//   destroyThingCapabilities(host: HasThingLifecycle) -> ThingLifecycleBackend.
 // This keeps an unrelated destroyThing helper from satisfying the lane, and makes the first-parameter
 // Host trait part of the proof rather than a naming convention described only in prose.
 export function collectExplicitHostDestroyOwners(
@@ -121,18 +130,13 @@ export function collectExplicitHostDestroyOwners(
       if (declaration.id === null || declaration.body === null) continue;
       const name = declaration.id.name;
       if (!name.startsWith('destroy') || name.endsWith('Backend')) continue;
-      const stem = name.slice('destroy'.length);
-      if (stem.length === 0) continue;
       // Oxc's declaration.params element type is narrower than its runtime Identifier nodes.
       const parameter = declaration.params[0] as Node | undefined;
       if (parameter?.type !== 'Identifier') continue;
       const annotation = parameter.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') continue;
-      const hostTrait = annotation.typeName.name;
-      if (!hostTrait.startsWith(`Has${stem}`)) continue;
-      const facet = hostTrait.slice(`Has${stem}`.length);
-      if (facet.length === 0) continue;
-      const interfaceName = facet === 'Provider' ? `${stem}Backend` : `${stem}${facet}Backend`;
+      const interfaceName = explicitHostDestroyBackendName(name, annotation.typeName.name);
+      if (interfaceName === null) continue;
       owners.set(interfaceName, {
         body: text.slice(declaration.body.start + 1, declaration.body.end - 1),
         name,
@@ -176,7 +180,7 @@ export function createBackendLifecycleReport(
     if (teardown === null) continue;
     if (owner === null) {
       violations.push({
-        detail: `${interfaceName} declares ${teardown}() but no set*Backend or destroyThing(host: HasThingProvider) owns final release`,
+        detail: `${interfaceName} declares ${teardown}() but no set*Backend or structurally matched Host destroy owner owns final release`,
         interfaceName,
         rule: 'owner-missing',
       });
@@ -247,9 +251,9 @@ export function formatBackendLifecycleReport(
       {
         command: 'npx vitest run scripts/backend-lifecycle.test.ts (scripts/backend-lifecycle-core.ts)',
         counting:
-          'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND an ambient set*Backend, explicit destroyThing(host: HasThingProvider), or explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
+          'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND an ambient set*Backend, structurally matched explicit Host destroy owner, or explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
-          'every exported *Backend interface in packages/types/src/*.ts, plus every exported ambient set*Backend, explicit destroyThing(host: HasThingProvider), and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
+          'every exported *Backend interface in packages/types/src/*.ts, plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -291,6 +295,20 @@ export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence 
 
 export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.noTeardownHook !== report.total;
+}
+
+function explicitHostDestroyBackendName(functionName: string, traitName: string): string | null {
+  const stem = functionName.slice('destroy'.length);
+  if (stem.length === 0) return null;
+  if (traitName === `Has${stem}Provider`) return `${stem}Backend`;
+  if (stem.endsWith('Capabilities')) {
+    const capabilityStem = stem.slice(0, -'Capabilities'.length);
+    if (capabilityStem.length > 0 && traitName === `Has${capabilityStem}Lifecycle`)
+      return `${capabilityStem}LifecycleBackend`;
+  }
+  if (!traitName.startsWith(`Has${stem}`)) return null;
+  const facet = traitName.slice(`Has${stem}`.length);
+  return facet.length === 0 ? null : `${stem}${facet}Backend`;
 }
 
 // `MediaSessionBackend` → `setMediaSessionBackend`. Derived from the interface name rather than mapped,

@@ -1,19 +1,40 @@
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
-import { createWebCursorBackend, enableHostWebGlyphRasterizer, webHost } from '@flighthq/host-web';
+import {
+  createWebCursorBackend,
+  createWebPageNotificationCapabilities,
+  enableHostWebGlyphRasterizer,
+  webHost,
+} from '@flighthq/host-web';
+import type { WebPageNotificationApi } from '@flighthq/types/contract';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';
 import type { HostProbeInstallResult, HostProbeResult } from '#host-probe/contract';
+import { createHostProbeNotificationProfileResult } from '#host-probe/expectations';
 
 export async function installWebHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
   enableHostWebGlyphRasterizer();
+  const notification = createWebPageNotificationCapabilities({
+    Notification: globalThis.Notification as unknown as WebPageNotificationApi['Notification'],
+  });
   const results = await Promise.all([
     probeWebAccessibility(),
     probeWebCursor(),
     probeWebGlyphRasterizer(),
     probeWebLoop(),
   ]);
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(webHost));
+  results.push(
+    createHostProbeNotificationProfileResult('web', notification, [
+      'click',
+      'close',
+      'delivery',
+      'dismiss',
+      'lifecycle',
+      'permission',
+      'received',
+    ]),
+  );
+  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends({ ...webHost, notification }));
   if (results[0]?.status === 'pass') changedCapabilities.push('cursor');
   return { changedCapabilities, results };
 }
@@ -46,7 +67,10 @@ async function probeWebCursor(): Promise<HostProbeResult> {
 }
 
 async function probeWebGlyphRasterizer(): Promise<HostProbeResult> {
-  const rasterized = getGlyphRasterizerBackend().rasterize(65, { fontFamily: 'sans-serif', fontSize: 18 });
+  const rasterized = getGlyphRasterizerBackend().rasterize(65, {
+    fontFamily: 'sans-serif',
+    fontSize: 18,
+  });
   return {
     detail:
       rasterized === null ? 'Glyph rasterizer returned no pixels for A' : `${rasterized.width}x${rasterized.height}`,

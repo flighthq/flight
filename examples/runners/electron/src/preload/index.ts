@@ -10,7 +10,12 @@ const flightHarness = {
   openFileDialog: (): Promise<string[]> => ipcRenderer.invoke('flight:openFileDialog'),
   readClipboard: (): Promise<string> => ipcRenderer.invoke('flight:readClipboard'),
   writeClipboard: (text: string): Promise<boolean> => ipcRenderer.invoke('flight:writeClipboard', text),
-  notify: (body: string): Promise<boolean> => ipcRenderer.invoke('flight:notify', body),
+  notify: (
+    body: string,
+  ): Promise<
+    | { reason: 'accepted' | 'operation-failed' | 'permission-denied' }
+    | { fields: readonly string[]; reason: 'invalid-request' }
+  > => ipcRenderer.invoke('flight:notify', body),
 };
 
 export type FlightHarnessApi = typeof flightHarness;

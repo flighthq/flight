@@ -17,6 +17,7 @@ import type { CapacitorApi } from '@flighthq/types/contract';
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';
 import type { HostProbeInstallResult } from '#host-probe/contract';
+import { createHostProbeNotificationProfileResult } from '#host-probe/expectations';
 
 export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
   const capacitorApi: CapacitorApi = {
@@ -44,6 +45,14 @@ export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot
   return {
     changedCapabilities,
     results: [
+      createHostProbeNotificationProfileResult('capacitor', host.notification, [
+        'action',
+        'click',
+        'delivery',
+        'lifecycle',
+        'permission',
+        'scheduling',
+      ]),
       {
         detail: name.length > 0 ? `${name} ${version}`.trim() : 'Capacitor app identity did not resolve',
         id: 'runtime.app-identity',

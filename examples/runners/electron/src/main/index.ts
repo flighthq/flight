@@ -66,9 +66,13 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
   });
   ipcMain.handle('flight:readClipboard', () => readClipboardText(host));
   ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) => writeClipboardText(host, String(text)));
-  ipcMain.handle('flight:notify', (_event: unknown, body: unknown) =>
-    showNotification(host, { title: 'Flight Harness', body: String(body) }),
-  );
+  ipcMain.handle('flight:notify', async (_event: unknown, body: unknown) => {
+    const outcome = await showNotification(host, {
+      title: 'Flight Harness',
+      body: String(body),
+    });
+    return outcome.reason === 'accepted' ? { reason: 'accepted' as const } : outcome;
+  });
 }
 
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves

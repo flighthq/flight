@@ -10,6 +10,7 @@ import electron from 'electron';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeInstallResult, HostProbeResult } from '#host-probe/contract';
+import { createHostProbeNotificationProfileResult } from '#host-probe/expectations';
 
 const { app, BrowserWindow, ipcMain } = electron;
 let mainWindow: InstanceType<typeof BrowserWindow> | null = null;
@@ -29,7 +30,9 @@ function createProbeWindow(): void {
   mainWindow.once('ready-to-show', () => mainWindow?.show());
   const devUrl = process.env['ELECTRON_RENDERER_URL'];
   if (devUrl === undefined) {
-    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'), { query: { host: 'electron' } });
+    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+      query: { host: 'electron' },
+    });
   } else {
     void mainWindow.loadURL(`${devUrl}?host=electron`);
   }
@@ -43,12 +46,21 @@ function installElectronProbe(): HostProbeInstallResult {
     // Electron's NativeImage parameter is nominally richer than Flight's dependency-free handle.
     Tray: electron.Tray as ElectronApi['Tray'],
   };
+  const platform = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux';
   const host = registerElectronBackends(api, {
-    platform: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux',
+    platform,
     storageFileName: 'flight-host-probe-storage.json',
   });
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
-  const results: HostProbeResult[] = [];
+  const results: HostProbeResult[] = [
+    createHostProbeNotificationProfileResult(
+      'electron',
+      host.notification,
+      platform === 'macos'
+        ? ['action', 'click', 'close', 'delivery', 'dismiss', 'lifecycle', 'received', 'reply']
+        : ['click', 'close', 'delivery', 'dismiss', 'lifecycle', 'received'],
+    ),
+  ];
 
   const appName = getAppName();
   const appVersion = getAppVersion();

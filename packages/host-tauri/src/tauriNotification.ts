@@ -1,38 +1,81 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { HostNotificationCapabilities, NotificationPermission, TauriApi } from '@flighthq/types/contract';
+import { createNotificationResource } from '@flighthq/notification/contract';
+import type {
+  NotificationRequest,
+  NotificationRequestField,
+  TauriApi,
+  TauriNotificationCapabilities,
+} from '@flighthq/types/contract';
 
-// Tauri's notification plugin exposes delivery and asynchronous permission queries, but returns no
-// display handle and exposes no close, update, scheduling, enumeration, or event feed through this
-// facade. The host therefore declares delivery alone.
-export function createTauriNotificationCapabilities(tauri: TauriApi) {
+export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotificationCapabilities {
   const notification = tauri.notification;
-  let nextId = 0;
+  let destroyed = false;
+  let nextId = 1;
+
   return createEntity({
     delivery: {
-      async getPermission(): Promise<NotificationPermission> {
-        try {
-          return (await notification.isPermissionGranted()) ? 'granted' : 'default';
-        } catch {
-          return 'denied';
-        }
-      },
       async notify(request) {
-        const id = request.id ?? `notification-${nextId++}`;
+        if (destroyed) return { reason: 'operation-failed' };
+        const invalid = getTauriInvalidNotificationRequestFields(request);
+        if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
+        let granted: boolean;
         try {
-          notification.sendNotification({ body: request.body, icon: request.icon, title: request.title });
-          return id;
+          granted = await notification.isPermissionGranted();
         } catch {
-          return null;
+          return { reason: 'operation-failed' };
+        }
+        if (!granted) return { reason: 'permission-denied' };
+        const id = request.id ?? `tauri-notification-${nextId++}`;
+        try {
+          notification.sendNotification({
+            body: request.body,
+            icon: request.icon,
+            title: request.title,
+          });
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        return {
+          notification: createNotificationResource(id, request.title),
+          reason: 'accepted',
+        };
+      },
+    },
+    lifecycle: {
+      async destroy() {
+        if (destroyed) return { reason: 'already-destroyed' };
+        destroyed = true;
+        return { reason: 'ok' };
+      },
+    },
+    permission: {
+      async getPermission() {
+        try {
+          return {
+            permission: (await notification.isPermissionGranted()) ? 'granted' : 'default',
+            reason: 'ok',
+          };
+        } catch {
+          return { reason: 'operation-failed' };
         }
       },
-      async requestPermission(): Promise<NotificationPermission> {
+      async requestPermission() {
         try {
           const permission = await notification.requestPermission();
-          return permission === 'granted' ? 'granted' : permission === 'denied' ? 'denied' : 'default';
+          return {
+            reason: permission === 'default' ? 'dismissed' : permission,
+          };
         } catch {
-          return 'denied';
+          return { reason: 'operation-failed' };
         }
       },
     },
-  } as const satisfies HostNotificationCapabilities);
+  });
+}
+
+function getTauriInvalidNotificationRequestFields(request: Readonly<NotificationRequest>): NotificationRequestField[] {
+  const allowed = new Set<NotificationRequestField>(['body', 'icon', 'id', 'title']);
+  return (Object.keys(request) as NotificationRequestField[]).filter(
+    (field) => request[field] !== undefined && !allowed.has(field),
+  );
 }

@@ -1,7 +1,7 @@
 ---
 package: "@flighthq/permissions"
-updated: null
-by: null
+updated: 2026-08-30
+by: builder5
 ---
 
 # permissions — Status Log
@@ -10,3 +10,9 @@ by: null
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+- **2026-08-30** — Notification R5/R6 assigns native notification permission exclusively to
+  `Host.notification.permission`. The generic `'notifications'` path must delegate there; direct
+  `Notification.permission`/`Notification.requestPermission` fallback code in the legacy Permissions backend
+  is deletion/migration debt for the Permissions slice, not a second blessed native seam. Notification
+  permission success is distinct from delivery acceptance and display success.

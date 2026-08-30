@@ -1,114 +1,225 @@
 import { createEntity } from '@flighthq/entity/contract';
+import {
+  bindScheduledNotificationCancel,
+  createNotificationResource,
+  createScheduledNotificationResource,
+} from '@flighthq/notification/contract';
 import type {
   CapacitorApi,
+  CapacitorLocalNotificationAction,
   CapacitorLocalNotificationSchema,
-  CapacitorPluginListenerHandle,
-  HostNotificationCapabilities,
-  NotificationPermission,
+  CapacitorNotificationCapabilities,
+  Notification,
+  NotificationEventAttachment,
+  NotificationEventBackendAttachOutcome,
+  NotificationLifecycleFailure,
+  NotificationLifecycleOutcome,
+  NotificationRequest,
+  NotificationRequestField,
   NotificationSchedule,
+  ScheduledNotification,
 } from '@flighthq/types/contract';
 
-// Capacitor local notifications truthfully cover delivery, scheduling/cancellation, click, and action.
-// Numeric plugin ids are kept behind the capability object and mapped to Flight's string ids.
-export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi) {
+export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
   const notifications = capacitor.localNotifications;
-  const actionSubscriptions = new Map<(id: string, actionId: string) => void, () => void>();
-  const clickSubscriptions = new Map<(id: string) => void, () => void>();
-  const idByNumber = new Map<number, string>();
+  const notificationByNumber = new Map<number, Notification>();
+  const scheduledByNumber = new Map<number, ScheduledNotification>();
+  const numberByScheduled = new WeakMap<ScheduledNotification, number>();
+  const liveAttachments = new Map<NotificationEventAttachment, string>();
+  let destroyed = false;
+  let destroyCompleted = false;
+  let nextAttachmentId = 1;
   let nextNumericId = 1;
+
+  function getNotification(number: number): Notification {
+    let notification = notificationByNumber.get(number);
+    if (notification === undefined) {
+      notification = createNotificationResource(`capacitor-notification-${number}`, '');
+      notificationByNumber.set(number, notification);
+    }
+    return notification;
+  }
+
+  function trackScheduled(number: number, scheduled: ScheduledNotification): void {
+    scheduledByNumber.set(number, scheduled);
+    numberByScheduled.set(scheduled, number);
+    bindScheduledNotificationCancel(scheduled, () => cancelOne(scheduled));
+  }
+
+  async function cancelOne(scheduled: ScheduledNotification) {
+    const number = numberByScheduled.get(scheduled);
+    if (number === undefined || scheduledByNumber.get(number) !== scheduled) {
+      return { reason: 'already-cancelled' } as const;
+    }
+    try {
+      await notifications.cancel({ notifications: [{ id: number }] });
+    } catch {
+      return { reason: 'operation-failed' } as const;
+    }
+    scheduledByNumber.delete(number);
+    numberByScheduled.delete(scheduled);
+    return { reason: 'ok' } as const;
+  }
+
+  async function cancelAll(): Promise<NotificationLifecycleOutcome> {
+    const failures: NotificationLifecycleFailure[] = [];
+    for (const scheduled of [...scheduledByNumber.values()]) {
+      const outcome = await cancelOne(scheduled);
+      if (outcome.reason === 'operation-failed') failures.push({ id: scheduled.id, operation: 'cancel' });
+    }
+    return failures.length === 0 ? { reason: 'ok' } : { failures, reason: 'operation-failed' };
+  }
+
+  async function attachEvent(
+    listener: (action: Readonly<CapacitorLocalNotificationAction>) => void,
+  ): Promise<NotificationEventBackendAttachOutcome> {
+    if (destroyed) return { reason: 'operation-failed', releaseFailed: false };
+    let handle;
+    try {
+      handle = await notifications.addListener('localNotificationActionPerformed', listener);
+    } catch {
+      return { reason: 'operation-failed', releaseFailed: false };
+    }
+    let released = false;
+    const attachment: NotificationEventAttachment = {
+      async release() {
+        if (released) return { reason: 'ok' };
+        try {
+          await handle.remove();
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        released = true;
+        liveAttachments.delete(attachment);
+        return { reason: 'ok' };
+      },
+    };
+    liveAttachments.set(attachment, `subscription-${nextAttachmentId++}`);
+    return { attachment, reason: 'ok' };
+  }
 
   return createEntity({
     action: {
-      subscribe(listener: (id: string, actionId: string) => void) {
-        removeSubscription(actionSubscriptions, listener);
-        const unsubscribe = toUnsubscribe(
-          notifications.addListener('localNotificationActionPerformed', (action) => {
-            listener(idByNumber.get(action.notification.id) ?? String(action.notification.id), action.actionId);
-          }),
-        );
-        actionSubscriptions.set(listener, unsubscribe);
-      },
-      unsubscribe(listener: (id: string, actionId: string) => void) {
-        removeSubscription(actionSubscriptions, listener);
+      attach(listener) {
+        return attachEvent((action) => listener(getNotification(action.notification.id), action.actionId));
       },
     },
     click: {
-      subscribe(listener: (id: string) => void) {
-        removeSubscription(clickSubscriptions, listener);
-        const unsubscribe = toUnsubscribe(
-          notifications.addListener('localNotificationActionPerformed', (action) => {
-            if (action.actionId === 'tap')
-              listener(idByNumber.get(action.notification.id) ?? String(action.notification.id));
-          }),
-        );
-        clickSubscriptions.set(listener, unsubscribe);
-      },
-      unsubscribe(listener: (id: string) => void) {
-        removeSubscription(clickSubscriptions, listener);
+      attach(listener) {
+        return attachEvent((action) => {
+          if (action.actionId === 'tap') listener(getNotification(action.notification.id));
+        });
       },
     },
     delivery: {
-      async getPermission(): Promise<NotificationPermission> {
-        try {
-          return toNotificationPermission((await notifications.checkPermissions()).display);
-        } catch {
-          return 'denied';
-        }
-      },
       async notify(request) {
-        const numericId = nextNumericId++;
-        const stringId = request.id ?? `notification-${numericId}`;
-        idByNumber.set(numericId, stringId);
+        if (destroyed) return { reason: 'operation-failed' };
+        const invalid = getCapacitorInvalidNotificationRequestFields(request);
+        if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
+        let permission;
         try {
-          await notifications.schedule({
-            notifications: [{ body: request.body, id: numericId, title: request.title }],
-          });
-          return stringId;
+          permission = (await notifications.checkPermissions()).display;
         } catch {
-          idByNumber.delete(numericId);
-          return null;
+          return { reason: 'operation-failed' };
+        }
+        if (permission !== 'granted') return { reason: 'permission-denied' };
+        const number = nextNumericId++;
+        let result;
+        try {
+          result = await notifications.schedule({
+            notifications: [{ body: request.body, id: number, title: request.title }],
+          });
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        if (!result.notifications.some((entry) => entry.id === number)) return { reason: 'operation-failed' };
+        const notification = createNotificationResource(
+          request.id ?? `capacitor-notification-${number}`,
+          request.title,
+        );
+        notificationByNumber.set(number, notification);
+        return { notification, reason: 'accepted' };
+      },
+    },
+    lifecycle: {
+      async destroy() {
+        if (destroyCompleted) return { reason: 'already-destroyed' };
+        destroyed = true;
+        const failures: NotificationLifecycleFailure[] = [];
+        const cancellation = await cancelAll();
+        if (cancellation.reason === 'operation-failed') failures.push(...cancellation.failures);
+        for (const [attachment, id] of [...liveAttachments]) {
+          const outcome = await attachment.release();
+          if (outcome.reason === 'operation-failed') failures.push({ id, operation: 'release' });
+        }
+        if (failures.length > 0) return { failures, reason: 'operation-failed' };
+        notificationByNumber.clear();
+        destroyCompleted = true;
+        return { reason: 'ok' };
+      },
+    },
+    permission: {
+      async getPermission() {
+        try {
+          return {
+            permission: toNotificationPermission((await notifications.checkPermissions()).display),
+            reason: 'ok',
+          };
+        } catch {
+          return { reason: 'operation-failed' };
         }
       },
-      async requestPermission(): Promise<NotificationPermission> {
+      async requestPermission() {
         try {
-          return toNotificationPermission((await notifications.requestPermissions()).display);
+          const permission = toNotificationPermission((await notifications.requestPermissions()).display);
+          return {
+            reason: permission === 'default' ? 'dismissed' : permission,
+          };
         } catch {
-          return 'denied';
+          return { reason: 'operation-failed' };
         }
       },
     },
     scheduling: {
-      async cancelScheduledNotification(id: string) {
-        const numericId = findNumericId(idByNumber, id);
-        if (numericId === null) return;
-        await notifications.cancel({ notifications: [{ id: numericId }] });
-        idByNumber.delete(numericId);
-      },
+      cancelAllScheduledNotifications: cancelAll,
       async getPendingNotifications() {
+        let pending;
         try {
-          const pending = await notifications.getPending();
-          return pending.notifications.map((schema) => {
-            const id = idByNumber.get(schema.id) ?? String(schema.id);
-            return {
-              id,
-              request: { body: schema.body, id, title: schema.title },
-              schedule: {
-                at: schema.schedule?.at?.getTime() ?? 0,
-                repeat: toNotificationRepeat(schema.schedule?.every),
-              },
-            };
-          });
+          pending = await notifications.getPending();
         } catch {
-          return [];
+          return { reason: 'operation-failed' };
         }
+        const values = pending.notifications.map((schema) => {
+          let scheduled = scheduledByNumber.get(schema.id);
+          if (scheduled === undefined) {
+            const id = `capacitor-scheduled-notification-${schema.id}`;
+            const request = { body: schema.body, id, title: schema.title };
+            const schedule = {
+              at: schema.schedule?.at?.getTime() ?? 0,
+              repeat: toNotificationRepeat(schema.schedule?.every),
+            };
+            scheduled = createScheduledNotificationResource(id, request, schedule);
+            trackScheduled(schema.id, scheduled);
+          }
+          return scheduled;
+        });
+        return { notifications: values, reason: 'ok' };
       },
       async scheduleNotification(request, schedule) {
-        const numericId = nextNumericId++;
-        const stringId = request.id ?? `notification-${numericId}`;
-        idByNumber.set(numericId, stringId);
+        if (destroyed) return { reason: 'operation-failed' };
+        const invalid = getCapacitorInvalidScheduleFields(request, schedule);
+        if (invalid.length > 0) return { fields: invalid, reason: 'invalid-schedule' };
+        let permission;
+        try {
+          permission = (await notifications.checkPermissions()).display;
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        if (permission !== 'granted') return { reason: 'permission-denied' };
+        const number = nextNumericId++;
         const schema: CapacitorLocalNotificationSchema = {
           body: request.body,
-          id: numericId,
+          id: number,
           schedule: {
             at: new Date(schedule.at),
             every: schedule.repeat,
@@ -116,30 +227,48 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
           },
           title: request.title,
         };
+        let result;
         try {
-          await notifications.schedule({ notifications: [schema] });
-          return stringId;
+          result = await notifications.schedule({ notifications: [schema] });
         } catch {
-          idByNumber.delete(numericId);
-          return null;
+          return { reason: 'operation-failed' };
         }
+        if (!result.notifications.some((entry) => entry.id === number)) return { reason: 'operation-failed' };
+        const scheduled = createScheduledNotificationResource(
+          request.id ?? `capacitor-scheduled-notification-${number}`,
+          request,
+          schedule,
+        );
+        trackScheduled(number, scheduled);
+        return { precision: 'inexact', reason: 'scheduled', scheduled };
       },
     },
-  } as const satisfies HostNotificationCapabilities);
+  });
 }
 
-function findNumericId(idByNumber: ReadonlyMap<number, string>, stringId: string): number | null {
-  for (const [numericId, mapped] of idByNumber) {
-    if (mapped === stringId) return numericId;
-  }
-  const parsed = Number(stringId);
-  return Number.isNaN(parsed) ? null : parsed;
+function getCapacitorInvalidNotificationRequestFields(
+  request: Readonly<NotificationRequest>,
+): NotificationRequestField[] {
+  const allowed = new Set<NotificationRequestField>(['body', 'id', 'title']);
+  return (Object.keys(request) as NotificationRequestField[]).filter(
+    (field) => request[field] !== undefined && !allowed.has(field),
+  );
 }
 
-function toNotificationPermission(display: string): NotificationPermission {
-  if (display === 'granted') return 'granted';
-  if (display === 'denied') return 'denied';
-  return 'default';
+function getCapacitorInvalidScheduleFields(
+  request: Readonly<NotificationRequest>,
+  schedule: Readonly<NotificationSchedule>,
+): Array<NotificationRequestField | 'at' | 'repeat'> {
+  const fields: Array<NotificationRequestField | 'at' | 'repeat'> =
+    getCapacitorInvalidNotificationRequestFields(request);
+  if (!Number.isFinite(schedule.at)) fields.push('at');
+  return fields;
+}
+
+function toNotificationPermission(display: string) {
+  if (display === 'granted') return 'granted' as const;
+  if (display === 'denied') return 'denied' as const;
+  return 'default' as const;
 }
 
 function toNotificationRepeat(value: string | undefined): NotificationSchedule['repeat'] {
@@ -154,28 +283,4 @@ function toNotificationRepeat(value: string | undefined): NotificationSchedule['
     default:
       return undefined;
   }
-}
-
-function removeSubscription<TListener>(subscriptions: Map<TListener, () => void>, listener: TListener): void {
-  const unsubscribe = subscriptions.get(listener);
-  if (unsubscribe === undefined) return;
-  subscriptions.delete(listener);
-  unsubscribe();
-}
-
-// Bridges Capacitor's Promise<PluginListenerHandle> to the synchronous event-slot pair. If unsubscribe
-// wins the registration race, the native handle is removed as soon as it resolves.
-function toUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {
-  let removed = false;
-  let handle: CapacitorPluginListenerHandle | null = null;
-  handlePromise
-    .then((resolved) => {
-      handle = resolved;
-      if (removed) handle.remove().catch(() => {});
-    })
-    .catch(() => {});
-  return () => {
-    removed = true;
-    if (handle !== null) handle.remove().catch(() => {});
-  };
 }

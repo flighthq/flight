@@ -60,6 +60,7 @@ describe('backend provider lifetime census', () => {
     'MediaSessionActionBackend',
     'MediaSessionBackend',
     'MenuApplicationBackend',
+    'NotificationLifecycleBackend',
     'PowerKeepAwakeBackend',
     'ScreenQueryBackend',
     'ShortcutTriggerBackend',
@@ -107,6 +108,7 @@ describe('backend provider lifetime census', () => {
     expect(teardowns.get('AccessibilityBackend')).toBe('destroy');
     expect(teardowns.get('ConnectivityChangeBackend')).toBe('destroy');
     expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
+    expect(teardowns.get('NotificationLifecycleBackend')).toBe('destroy');
     expect(teardowns.get('StorageChangeBackend')).toBe('destroy');
   });
 
@@ -118,6 +120,12 @@ describe('backend provider lifetime census', () => {
       tearsDown: true,
     });
     expect(collectSetterBodies().has('setAccessibilityBackend')).toBe(false);
+    const notification = report.entries.find((entry) => entry.interfaceName === 'NotificationLifecycleBackend');
+    expect(notification).toMatchObject({
+      owner: 'destroyNotificationCapabilities',
+      ownerKind: 'explicit-host-destroy',
+      tearsDown: true,
+    });
   });
 
   it('recognizes Connectivity explicit Host release without reintroducing an ambient setter', () => {
@@ -253,6 +261,7 @@ describe('backend provider lifetime census', () => {
       'MediaSessionActionBackend',
       'MediaSessionBackend',
       'MenuApplicationBackend',
+      'NotificationLifecycleBackend',
       'PowerKeepAwakeBackend',
       'ScreenQueryBackend',
       'ShortcutTriggerBackend',
@@ -264,6 +273,7 @@ describe('backend provider lifetime census', () => {
   it('shows progression in the live delta when slices land beyond the historical baseline', () => {
     const delta = compareFloorToReport(HISTORICAL_BASELINE, report, RETIRED_HISTORICAL_NAMES);
     expect(delta.enforcedGained).toContain('MenuApplicationBackend');
+    expect(delta.enforcedGained).toContain('NotificationLifecycleBackend');
     expect(delta.enforcedGained).toContain('PowerKeepAwakeBackend');
     expect(delta.enforcedGained).toContain('ScreenQueryBackend');
     expect(delta.enforcedLost).toEqual([]);
@@ -284,6 +294,12 @@ describe('backend provider lifetime census', () => {
     const withoutPower = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'PowerKeepAwakeBackend');
     expect(withoutPower).not.toContain('PowerKeepAwakeBackend');
     expect(withoutPower.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
+  });
+
+  it('would fail if NotificationLifecycleBackend were removed from the required set but still enforced', () => {
+    const withoutNotification = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'NotificationLifecycleBackend');
+    expect(withoutNotification).not.toContain('NotificationLifecycleBackend');
+    expect(withoutNotification.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
   });
 
   it('would lose progression visibility if historical baseline absorbed Menu and Power', () => {
@@ -333,23 +349,27 @@ describe('collectWholeBackendTeardowns member syntax', () => {
 });
 
 describe('explicit Host-provider lifecycle owners', () => {
-  it('derives destroyThing(host: HasThingProvider) and rejects names without the matching Host trait', () => {
+  it('derives provider and capability owners and rejects names without the matching Host trait', () => {
     const fixture = join(mkdtempSync(join(tmpdir(), 'backend-lifecycle-host-')), 'ExplicitHostOwnerFixture.ts');
     writeFileSync(
       fixture,
       [
         'interface HasWidgetProvider { widget: { provider: { destroy(): void } } }',
         'interface HasOtherProvider { other: { provider: { destroy(): void } } }',
+        'interface HasNoticeLifecycle { notice: { lifecycle: { destroy(): void } } }',
         'export function destroyWidget(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
+        'export function destroyNoticeCapabilities(host: HasNoticeLifecycle): void { host.notice.lifecycle.destroy(); }',
         'export function destroyMismatched(host: HasOtherProvider): void { host.other.provider.destroy(); }',
+        'export function destroyWrongCapabilities(host: HasOtherProvider): void { host.other.provider.destroy(); }',
         'export function destroyWidgetBackend(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
       ].join('\n'),
       'utf-8',
     );
 
     const owners = collectExplicitHostDestroyOwners([fixture]);
-    expect([...owners.keys()]).toEqual(['WidgetBackend']);
+    expect([...owners.keys()]).toEqual(['WidgetBackend', 'NoticeLifecycleBackend']);
     expect(owners.get('WidgetBackend')?.name).toBe('destroyWidget');
+    expect(owners.get('NoticeLifecycleBackend')?.name).toBe('destroyNoticeCapabilities');
 
     const report = createBackendLifecycleReport(
       ['WidgetBackend'],
@@ -454,7 +474,12 @@ describe('compareBackendLifecycleReports', () => {
 
 describe('formatBackendLifecycleDelta', () => {
   it('reports zero regressions when nothing changed', () => {
-    const delta: BackendLifecycleDelta = { enforcedGained: [], enforcedLost: [], seamsAdded: [], seamsRemoved: [] };
+    const delta: BackendLifecycleDelta = {
+      enforcedGained: [],
+      enforcedLost: [],
+      seamsAdded: [],
+      seamsRemoved: [],
+    };
     expect(formatBackendLifecycleDelta(delta)).toBe('0 regressions');
   });
 
@@ -491,7 +516,10 @@ describe('formatBackendLifecycleDelta', () => {
 
 describe('compareFloorToReport', () => {
   it('preserves an explicitly retired enforced name in history without reporting a regression', () => {
-    const floor: BackendLifecycleFloor = { enforcedNames: ['LogTransportBackend'], total: 1 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['LogTransportBackend'],
+      total: 1,
+    };
     const report = createEmptyBackendLifecycleReport();
 
     const delta = compareFloorToReport(floor, report, ['LogTransportBackend']);
@@ -501,15 +529,36 @@ describe('compareFloorToReport', () => {
   });
 
   it('reports denominator shrinkage as removed seams, not a regression', () => {
-    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 5 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['ABackend'],
+      total: 5,
+    };
     const report: BackendLifecycleReport = {
       ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        {
+          interfaceName: 'ABackend',
+          owner: null,
+          ownerKind: null,
+          teardown: 'destroy',
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'BBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'CBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
       ],
       noTeardownHook: 2,
       total: 3,
@@ -523,15 +572,36 @@ describe('compareFloorToReport', () => {
   });
 
   it('reports numerator loss at unchanged denominator as a regression', () => {
-    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend', 'BBackend'], total: 3 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['ABackend', 'BBackend'],
+      total: 3,
+    };
     const report: BackendLifecycleReport = {
       ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        {
+          interfaceName: 'ABackend',
+          owner: null,
+          ownerKind: null,
+          teardown: 'destroy',
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'BBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'CBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
       ],
       noTeardownHook: 2,
       total: 3,
@@ -544,15 +614,36 @@ describe('compareFloorToReport', () => {
   });
 
   it('keeps removed seams distinct from lost enforced owners', () => {
-    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend', 'BBackend'], total: 5 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['ABackend', 'BBackend'],
+      total: 5,
+    };
     const report: BackendLifecycleReport = {
       ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'DBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        {
+          interfaceName: 'ABackend',
+          owner: null,
+          ownerKind: null,
+          teardown: 'destroy',
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'CBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'DBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
       ],
       noTeardownHook: 2,
       total: 3,
@@ -593,17 +684,50 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'DBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'EBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        {
+          interfaceName: 'ABackend',
+          owner: null,
+          ownerKind: null,
+          teardown: 'destroy',
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'BBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'CBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'DBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'EBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
       ],
       noTeardownHook: 4,
       total: 5,
       violations: [],
     };
-    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 3 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['ABackend'],
+      total: 3,
+    };
     const output = formatBackendLifecycleReport(report, floor);
     expect(output).toContain('(+2 new seams, 0 regressions)');
   });
@@ -614,14 +738,29 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 0,
       enforcedNames: [],
       entries: [
-        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        {
+          interfaceName: 'ABackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'BBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
       ],
       noTeardownHook: 2,
       total: 2,
       violations: [],
     };
-    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 2 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['ABackend'],
+      total: 2,
+    };
     const output = formatBackendLifecycleReport(report, floor);
     expect(output).toContain('(1 regression)');
   });
@@ -632,15 +771,36 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        {
+          interfaceName: 'ABackend',
+          owner: null,
+          ownerKind: null,
+          teardown: 'destroy',
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'BBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'CBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
       ],
       noTeardownHook: 2,
       total: 3,
       violations: [],
     };
-    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 5 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['ABackend'],
+      total: 5,
+    };
     const output = formatBackendLifecycleReport(report, floor);
     expect(output).toContain('(-2 removed, 0 regressions)');
   });
@@ -651,14 +811,29 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 0,
       enforcedNames: [],
       entries: [
-        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        {
+          interfaceName: 'BBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
+        {
+          interfaceName: 'CBackend',
+          owner: null,
+          ownerKind: null,
+          teardown: null,
+          tearsDown: false,
+        },
       ],
       noTeardownHook: 2,
       total: 2,
       violations: [],
     };
-    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 4 };
+    const floor: BackendLifecycleFloor = {
+      enforcedNames: ['ABackend'],
+      total: 4,
+    };
     const output = formatBackendLifecycleReport(report, floor);
     expect(output).toContain('(-2 removed, 1 regression)');
   });
@@ -668,7 +843,15 @@ describe('formatBackendLifecycleReport with floor', () => {
       ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
-      entries: [{ interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false }],
+      entries: [
+        {
+          interfaceName: 'ABackend',
+          owner: null,
+          ownerKind: null,
+          teardown: 'destroy',
+          tearsDown: false,
+        },
+      ],
       noTeardownHook: 0,
       total: 1,
       violations: [],
@@ -708,7 +891,13 @@ describe('backend-lifecycle gate wiring', () => {
   // ★ The gate PASSES today, executed through the same runner `npm run check` uses.
   it('passes when run through the standard gate runner', async () => {
     const [result] = await runGates(
-      [{ args: ['scripts/backend-lifecycle.ts'], command: 'tsx', label: 'lifecycle' }],
+      [
+        {
+          args: ['scripts/backend-lifecycle.ts'],
+          command: 'tsx',
+          label: 'lifecycle',
+        },
+      ],
       1,
     );
     expect(result?.passed).toBe(true);
@@ -732,7 +921,16 @@ describe('backend-lifecycle gate wiring', () => {
       ].join('\n'),
       'utf-8',
     );
-    const [result] = await runGates([{ args: [join(dir, 'gate.ts')], command: 'tsx', label: 'lifecycle-red' }], 1);
+    const [result] = await runGates(
+      [
+        {
+          args: [join(dir, 'gate.ts')],
+          command: 'tsx',
+          label: 'lifecycle-red',
+        },
+      ],
+      1,
+    );
     expect(result?.passed).toBe(false);
     expect(result?.code).toBe(1);
   }, 120_000);

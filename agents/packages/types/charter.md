@@ -69,9 +69,16 @@ Where it ends: types declares contracts; it does not contain constructors, valid
 
   **Why:** The TS design avoids allocating a payload object for every emit — the slot function's arguments _are_ the payload. The Rust design avoids `dyn Fn` trait complexity with heterogeneous argument lists — a single `&T` payload is idiomatic. Both achieve the same zero-cost goal through different language idioms. Forcing one shape onto the other would degrade the natural side for no user benefit.
 
-- **[2026-07-02] Notification identity model is `id`, not `tag`.** The notification seam should key consistently on `id` — a host-assigned identifier returned by `notify`. `updateNotification(id, ...)`, `cancelNotification(id)`, and subscriber callbacks deliver `id`. The current `tag`-based vocabulary in `NotificationRequest` and subscribers is a seam inconsistency: the implementation already mints an `id`, but the types layer hasn't been lifted to match. **Resolves assessment "Notification id/tag seam gap."**
+- **[2026-08-30] Notification identity is an Entity; `tag` is provider grouping metadata.** Delivery and
+  scheduling return stable `Notification` and `ScheduledNotification` Entities. Callers pass those resources
+  to close/cancel, so a public string can never be rerouted to a replacement provider. `id` remains diagnostic
+  Flight identity and `tag` remains optional platform grouping/replacement metadata; neither is the native
+  handle. The header exposes eleven independently optional Host traits and named outcomes, while provider-
+  private native keys stay out of `@flighthq/types`.
 
-  **Why:** `id` is the natural identity word — "I want to update notification X" thinks in `id`, not `tag`. `tag` reads as HTML or categorization, not identity. The implementation already has the `id` model; the types should match.
+  **Why:** resource identity must carry origin provenance and lifetime without exposing a platform key. A
+  string-only operation cannot distinguish two providers that both returned `"1"`; a stable Entity plus a
+  private origin binding can.
 
 ## Open directions
 

@@ -1,3 +1,5 @@
+import type { HostNotificationCapabilities } from '@flighthq/types/contract';
+
 import type { HostProbeHost, HostProbeResult } from './contract';
 
 export const HostProbeCapabilities = [
@@ -15,7 +17,17 @@ export const HostProbeCapabilities = [
   'ipc',
   'loop',
   'menu',
-  'notification',
+  'notification.action',
+  'notification.activeList',
+  'notification.click',
+  'notification.close',
+  'notification.delivery',
+  'notification.dismiss',
+  'notification.lifecycle',
+  'notification.permission',
+  'notification.received',
+  'notification.reply',
+  'notification.scheduling',
   'platform',
   'power',
   'protocol',
@@ -43,7 +55,12 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'filesystem',
     'geolocation',
     'haptics',
-    'notification',
+    'notification.action',
+    'notification.click',
+    'notification.delivery',
+    'notification.lifecycle',
+    'notification.permission',
+    'notification.scheduling',
     'share',
     'soft-keyboard',
     'statusbar',
@@ -54,7 +71,12 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'dialog',
     'ipc',
     'menu',
-    'notification',
+    'notification.click',
+    'notification.close',
+    'notification.delivery',
+    'notification.dismiss',
+    'notification.lifecycle',
+    'notification.received',
     'platform',
     'power',
     'protocol',
@@ -71,7 +93,9 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'clipboard',
     'dialog',
     'menu',
-    'notification',
+    'notification.delivery',
+    'notification.lifecycle',
+    'notification.permission',
     'platform',
     'shell',
     'shortcut',
@@ -85,6 +109,13 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'dialog',
     'glyph-rasterizer',
     'loop',
+    'notification.click',
+    'notification.close',
+    'notification.delivery',
+    'notification.dismiss',
+    'notification.lifecycle',
+    'notification.permission',
+    'notification.received',
     'power',
     'screen',
     'share',
@@ -94,11 +125,16 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
   ]),
 };
 
+const optionalCapabilities: Readonly<Partial<Record<HostProbeHost, ReadonlySet<HostProbeCapability>>>> = {
+  electron: new Set(['notification.action', 'notification.reply']),
+};
+
 export function createHostProbeProviderResults(
   host: HostProbeHost,
   changedCapabilities: ReadonlySet<string>,
 ): HostProbeResult[] {
   const required = requiredCapabilities[host];
+  const optional = optionalCapabilities[host] ?? new Set<HostProbeCapability>();
   return HostProbeCapabilities.map((capability): HostProbeResult => {
     const changed = changedCapabilities.has(capability);
     const expected = required.has(capability);
@@ -118,6 +154,14 @@ export function createHostProbeProviderResults(
         status: 'fail',
       };
     }
+    if (optional.has(capability) && changed) {
+      return {
+        detail: `${host} installed an optional ${capability} provider`,
+        id: `provider.${capability}`,
+        kind: 'provider',
+        status: 'pass',
+      };
+    }
     if (changed) {
       return {
         detail: `${host} unexpectedly replaced the unsupported ${capability} provider`,
@@ -133,6 +177,25 @@ export function createHostProbeProviderResults(
       status: 'unsupported',
     };
   });
+}
+
+export function createHostProbeNotificationProfileResult(
+  host: HostProbeHost,
+  notification: Readonly<Partial<Record<keyof HostNotificationCapabilities, unknown>>>,
+  expected: readonly (keyof HostNotificationCapabilities)[],
+): HostProbeResult {
+  const actual = Object.keys(notification).sort();
+  const sortedExpected = [...expected].sort();
+  const exact =
+    actual.length === sortedExpected.length && actual.every((value, index) => value === sortedExpected[index]);
+  return {
+    detail: exact
+      ? `${host} notification profile is exactly ${actual.join(', ')}`
+      : `${host} notification profile is ${actual.join(', ')}; expected ${sortedExpected.join(', ')}`,
+    id: 'runtime.notification-profile',
+    kind: 'runtime',
+    status: exact ? 'pass' : 'fail',
+  };
 }
 
 export function getRequiredHostProbeCapabilities(host: HostProbeHost): ReadonlySet<HostProbeCapability> {

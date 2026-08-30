@@ -11,6 +11,8 @@ by: builder3
 
 <!-- newest entry on top -->
 
+- **2026-08-30** — Notification is exactly action/click/delivery/lifecycle/permission/scheduling. Native numeric ids remain private, duplicate public ids do not collide, event attachment/release is awaited and observable, and lifecycle retries only failed cancellations/releases.
+
 - **2026-08-30** — The returned Host now carries an exact empty `shortcut: {}` group. This is the
   structural declaration that Capacitor supplies neither global-shortcut query nor trigger
   registration; no web or sentinel provider is substituted.

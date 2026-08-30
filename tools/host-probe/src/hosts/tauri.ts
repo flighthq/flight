@@ -18,6 +18,7 @@ import '@wdio/tauri-plugin';
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';
 import type { HostProbeInstallResult } from '#host-probe/contract';
+import { createHostProbeNotificationProfileResult } from '#host-probe/expectations';
 
 export async function installTauriHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
   const tauriApi: TauriApi = {
@@ -44,6 +45,7 @@ export async function installTauriHostProbe(before: HostProbeBackendSnapshot): P
   return {
     changedCapabilities,
     results: [
+      createHostProbeNotificationProfileResult('tauri', host.notification, ['delivery', 'lifecycle', 'permission']),
       {
         detail: name.length > 0 ? `${name} ${version}`.trim() : 'Tauri app identity did not resolve',
         id: 'runtime.app-identity',

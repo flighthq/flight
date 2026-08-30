@@ -62,10 +62,11 @@ import type {
   NotificationCloseBackend,
   NotificationDeliveryBackend,
   NotificationDismissBackend,
+  NotificationLifecycleBackend,
+  NotificationPermissionBackend,
+  NotificationReceivedBackend,
   NotificationReplyBackend,
   NotificationSchedulingBackend,
-  NotificationShowBackend,
-  NotificationUpdateBackend,
 } from './Notification';
 import type { PathBooleanBackend } from './PathBooleanBackend';
 import type { PermissionBackend } from './Permission';
@@ -248,10 +249,11 @@ export interface HostNotificationCapabilities {
   readonly close?: NotificationCloseBackend;
   readonly delivery?: NotificationDeliveryBackend;
   readonly dismiss?: NotificationDismissBackend;
+  readonly lifecycle?: NotificationLifecycleBackend;
+  readonly permission?: NotificationPermissionBackend;
+  readonly received?: NotificationReceivedBackend;
   readonly reply?: NotificationReplyBackend;
   readonly scheduling?: NotificationSchedulingBackend;
-  readonly show?: NotificationShowBackend;
-  readonly update?: NotificationUpdateBackend;
 }
 
 // Share is top-level because content and Flight data-URL files have different provider coverage.
@@ -413,7 +415,9 @@ export interface HasConnectivityChange {
   readonly connectivity: { readonly change: ConnectivityChangeBackend };
 }
 export interface HasConnectivityReachability {
-  readonly connectivity: { readonly reachability: ConnectivityReachabilityBackend };
+  readonly connectivity: {
+    readonly reachability: ConnectivityReachabilityBackend;
+  };
 }
 export interface HasConnectivityStatus {
   readonly connectivity: { readonly status: ConnectivityStatusBackend };
@@ -491,7 +495,9 @@ export interface HasInputTargetPreparation {
 }
 
 export interface HasSoftKeyboardAccessoryBar {
-  readonly input: { readonly softKeyboardAccessoryBar: SoftKeyboardAccessoryBarBackend };
+  readonly input: {
+    readonly softKeyboardAccessoryBar: SoftKeyboardAccessoryBarBackend;
+  };
 }
 
 export interface HasSoftKeyboardChange {
@@ -503,11 +509,15 @@ export interface HasSoftKeyboardInfo {
 }
 
 export interface HasSoftKeyboardResizeModeWrite {
-  readonly input: { readonly softKeyboardResizeModeWrite: SoftKeyboardResizeModeWriteBackend };
+  readonly input: {
+    readonly softKeyboardResizeModeWrite: SoftKeyboardResizeModeWriteBackend;
+  };
 }
 
 export interface HasSoftKeyboardScrollAssist {
-  readonly input: { readonly softKeyboardScrollAssist: SoftKeyboardScrollAssistBackend };
+  readonly input: {
+    readonly softKeyboardScrollAssist: SoftKeyboardScrollAssistBackend;
+  };
 }
 
 export interface HasSoftKeyboardStyle {
@@ -515,7 +525,9 @@ export interface HasSoftKeyboardStyle {
 }
 
 export interface HasSoftKeyboardVisibility {
-  readonly input: { readonly softKeyboardVisibility: SoftKeyboardVisibilityBackend };
+  readonly input: {
+    readonly softKeyboardVisibility: SoftKeyboardVisibilityBackend;
+  };
 }
 
 export interface HasIpcMessage {
@@ -578,20 +590,24 @@ export interface HasNotificationDismiss {
   readonly notification: { readonly dismiss: NotificationDismissBackend };
 }
 
+export interface HasNotificationLifecycle {
+  readonly notification: { readonly lifecycle: NotificationLifecycleBackend };
+}
+
+export interface HasNotificationPermission {
+  readonly notification: { readonly permission: NotificationPermissionBackend };
+}
+
+export interface HasNotificationReceived {
+  readonly notification: { readonly received: NotificationReceivedBackend };
+}
+
 export interface HasNotificationReply {
   readonly notification: { readonly reply: NotificationReplyBackend };
 }
 
 export interface HasNotificationScheduling {
   readonly notification: { readonly scheduling: NotificationSchedulingBackend };
-}
-
-export interface HasNotificationShow {
-  readonly notification: { readonly show: NotificationShowBackend };
-}
-
-export interface HasNotificationUpdate {
-  readonly notification: { readonly update: NotificationUpdateBackend };
 }
 
 export interface HasStorageFileSystem {
@@ -703,7 +719,9 @@ export interface HasUiFullscreen {
 }
 
 export interface HasUiFullscreenSubscription {
-  readonly ui: { readonly fullscreen: Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> };
+  readonly ui: {
+    readonly fullscreen: Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>>;
+  };
 }
 
 export interface HasMenuApplication {
@@ -807,7 +825,9 @@ export interface HasTrayInteractionEvents {
 }
 
 export interface HasTrayMenuSelectionEvents {
-  readonly tray: { readonly menuSelectionEvents: TrayMenuSelectionEventsBackend };
+  readonly tray: {
+    readonly menuSelectionEvents: TrayMenuSelectionEventsBackend;
+  };
 }
 
 export interface HasTrayBalloonEvents {

@@ -35,6 +35,8 @@ coverage lives in [`seam-audit.md`](seam-audit.md); this section carries only wh
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Notification now claims the exact common six-trait profile and adds action/reply only for injected macOS. It has no permission trait. Delivery publishes only after native `show`; returned Entities pin close to their native object; lifecycle close/destroy attempts all and retries only failures.
+
 - **2026-08-30** — Shortcut now publishes independent query and trigger Entities on the returned
   Host. Registration/unregistration is awaited, refusal stays distinct from a provider fault, opaque
   tokens retain exact native ownership, and provider destroy attempts every distinct accelerator while

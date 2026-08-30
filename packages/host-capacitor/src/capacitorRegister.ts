@@ -18,6 +18,8 @@ import type {
   HasNotificationAction,
   HasNotificationClick,
   HasNotificationDelivery,
+  HasNotificationLifecycle,
+  HasNotificationPermission,
   HasNotificationScheduling,
   HasSoftKeyboardAccessoryBar,
   HasSoftKeyboardChange,
@@ -61,6 +63,8 @@ type CapacitorHost = Host &
   HasNotificationAction &
   HasNotificationClick &
   HasNotificationDelivery &
+  HasNotificationLifecycle &
+  HasNotificationPermission &
   HasNotificationScheduling &
   HasSoftKeyboardAccessoryBar &
   HasSoftKeyboardChange &
@@ -68,7 +72,9 @@ type CapacitorHost = Host &
   HasSoftKeyboardResizeModeWrite &
   HasSoftKeyboardScrollAssist &
   HasSoftKeyboardStyle &
-  HasSoftKeyboardVisibility & { readonly share: { readonly content: CapacitorShareContentBackend } };
+  HasSoftKeyboardVisibility & {
+    readonly share: { readonly content: CapacitorShareContentBackend };
+  };
 
 // The explicit Capacitor host. Clipboard, dialog, haptics, notification, and content sharing are claimed; every other capability
 // still installs through its package-local seam and is NOT represented here, so an empty group means

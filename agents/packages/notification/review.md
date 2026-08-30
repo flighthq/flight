@@ -1,70 +1,59 @@
 ---
 package: '@flighthq/notification'
 status: solid
-score: 72
-updated: 2026-07-13
+score: 90
+updated: 2026-08-30
 ingested:
-  - packages/notification/src (live)
-  - packages/types/src/Notification.ts (live)
-  - host-electron/src/electronNotification.ts
-  - charter.md
-  - status.md
-  - prior review (2026-06-25 merge-gate)
+  - packages/notification/src
+  - packages/types/src/Notification.ts
+  - packages/types/src/Host.ts
+  - packages/host-web/src/webNotification.ts
+  - packages/host-web/src/webServiceWorkerNotification.ts
+  - packages/host-electron/src/electronNotification.ts
+  - packages/host-tauri/src/tauriNotification.ts
+  - packages/host-capacitor/src/capacitorNotification.ts
 ---
 
 # notification — Review
 
-Evidence: the **live worktree** `packages/notification/src/` (source + tests), `packages/types/src/Notification.ts`, and `packages/host-electron/src/electronNotification.ts`.
-
-**Supersedes the 2026-06-25 merge-gate review.** That review's `status: solid / score: 40` pairing was a deliberate split: 40 was a *merge-gate* score for integration `b2824e3d8`, whose head did not typecheck because the rich `@flighthq/types` header was dropped in the merge; "solid" was its judgment of the worker's package on its own terms. **The blocker is resolved in the live tree**: `packages/types/src/Notification.ts` now contains the full header — `NotificationRequest` (17 fields), `NotificationAction`, `NotificationChannel`, `NotificationPermission`, `NotificationCapabilities`, `NotificationSchedule`, `ScheduledNotification`, and the 18-method `NotificationBackend` — and `notification.ts`'s imports all resolve. This review re-scores the compiling live package on the AAA depth rubric; the contradictory front matter is resolved to `solid / 72`.
-
 ## Verdict
 
-`solid` — 72/100. This is one of the deeper platform-suite packages: a full 18-method backend seam covering permission (tri-state read + request), show-with-identity, update, close/closeAll, local scheduling with repeat cadence + cancel + pending introspection, capabilities feature-detection, launch-notification, and five lifecycle subscriptions (show/click/dismiss/action/reply) — with **two real web backends** (basic `Notification` API and a Service Worker variant that actually delivers action buttons, plus the `notifyServiceWorkerBackendAction` page-side forwarding helper) and an Electron backend implementing the same seam. Sentinels throughout (`''`, `'denied'`, `[]`, `null`, `false`), every DOM touch guarded. What keeps it out of the 80s: the ~95% duplicated backend factories (a charter-blessed extraction, still undone), the channel methods living off-header behind structural casts, a thin `NotificationChannel` (`{id, name}` — no importance/sound/description, so Android-class hosts can't express real channels), no priority/importance or progress vocabulary on `NotificationRequest`, and the lossy `getActiveNotifications` cast. Textbook shape, not yet textbook-complete vocabulary.
+`solid — 90/100`. The live tree at implementation commit `e98ebed82` is a types-first, explicit-dependency
+notification domain. Eleven top-level traits represent actual coverage rather than one monolithic backend.
+All public operations return named outcomes, all delivered/scheduled identities are stable Entity resources,
+and all per-item operations are pinned to their origin provider. The previous id-rerouting, fake scheduling,
+silent field loss, false permission, and swallowed-error failure classes are structurally absent.
 
-## Present capabilities (verified against live source)
+## Verified surface
 
-- **Seam.** `NotificationBackend` (types) with 18 methods; `getNotificationBackend` lazily creates the web default; `setNotificationBackend(backend | null)` swaps/reverts.
-- **Free-function surface — 25 exports**: `showNotification`, `updateNotification`, `closeNotification`, `closeAllNotifications`, `scheduleNotification`, `cancelScheduledNotification`, `getPendingNotifications`, `getActiveNotifications`, `getLaunchNotification`, `getNotificationPermission`, `requestNotificationPermission`, `isNotificationSupported`, `getNotificationCapabilities`, `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels`, `onNotificationShow`/`Click`/`Dismiss`/`Action`/`Reply`, `notifyServiceWorkerBackendAction`, the two backend factories, `getNotificationBackend`/`setNotificationBackend`.
-- **Request vocabulary.** `NotificationRequest`: title, id, body, icon, badge, tag, silent, actions (with per-action icon), dir, image, lang, renotify, requireInteraction, timestamp, vibrate, data.
-- **Basic web backend** (`createWebNotificationBackend`): live id→Notification map + id→request registry (so `updateNotification` can close-and-reopen with merged fields), per-instance onshow/onclick/onclose wiring, best-effort `setTimeout` scheduler with repeat, honest capabilities (`actions: false`, `listActive: false`).
-- **Service-worker backend** (`createServiceWorkerNotificationBackend`): `registration.showNotification` with actions/image, `getNotifications`-based close/listActive, internal `_dispatch*` hooks fed by `notifyServiceWorkerBackendAction` for click/action/reply forwarding from the SW thread, documented SW-side wiring snippet.
-- **Electron backend** (`electronNotification.ts`): implements the seam — notify with id registry, capabilities, permission mapped to supported/unsupported; `scheduleNotification`/`updateNotification` honestly report unsupported.
-- **Tests.** 66 tests / 26 `describe` blocks, colocated, alphabetized, mirroring the 25 exports.
+- The root exports 31 user operations: five subscription create/attach/detach/dispose families, delivery,
+  close-all, stable-resource close/cancel, active/pending enumeration, permission query/request, scheduling,
+  and lifecycle destroy. Contract-only resource/binding helpers let providers create and pin Entities without
+  exporting native keys.
+- Profiles are exact: Web page 7 traits; Web Service Worker 8; Electron common 6 and macOS 8; Tauri 3;
+  Capacitor 6. Tests assert key equality, not mere presence. Unsupported fields return `invalid-request` or
+  `invalid-schedule` with the rejected field names.
+- Delivery is an acquisition. Web page publishes only after native construction; SW after awaited
+  `showNotification`; Electron after `show`; Capacitor after validated native ids; Tauri after the plugin call.
+- Lifecycle is composite, terminal, idempotent, attempt-all, and retry-only. Event attach/release outcomes retain
+  both failure dimensions. Subscription disposal clears its Signal and cannot be revived.
+- Web providers require injected facades and are split by page versus Service Worker context. Request `data`
+  is passed unchanged. SW events are explicit caller-fed native events, not synthetic reply/show behavior.
+- `Host.notification.permission` is the only notification-native permission owner. Electron correctly lacks it;
+  Tauri/Capacitor/Web expose it. Tray is untouched.
 
-## Gaps
+## Remaining limits
 
-- **Backend duplication (charter Decision 2026-07-02, still open).** The two web factories each re-declare the five listener `Set`s, `_fire`, `_generateId`, and the entire `setTimeout` scheduler (~230 lines each, ~95% shared). The blessed extraction — one listener-registry + one scheduler primitive, backends as thin wrappers — has not happened.
-- **Channels are off-header.** `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels` reach the backend through `getNotificationBackend() as NotificationBackend & {…}` structural casts (`notification.ts` lines 37–40, 532–535, 564–567) instead of seam methods; `NotificationCapabilities.channels` exists but the seam cannot actually be implemented against the header. The legacy-cast pattern the codebase map says not to extend.
-- **`NotificationChannel` is a stub vocabulary.** `{id, name}` only — real channel models (Android) carry importance, sound, vibration, description, grouping. A native host cannot express what the type omits.
-- **No priority/importance/urgency on `NotificationRequest`**, and no progress/ongoing vocabulary — `updateNotification`'s comment advertises "progress bars" the request type cannot express (charter Open direction 3).
-- **Lossy `getActiveNotifications`.** The SW backend returns `{title, tag}` objects typed as full `Readonly<NotificationRequest>` (line 161 vs the `Promise<ReadonlyArray<Readonly<NotificationRequest>>>` header) — the type over-promises (charter Open direction 2).
-- **Monkey-patched SW dispatch.** `_dispatchAction/Click/Dismiss/Reply` bolted onto the backend via cast (`SwBackendInternal`, lines 262–286) and read back via cast in `notifyServiceWorkerBackendAction` — works, but is the internal-cast pattern, not a designed seam.
-- **Inert reply surface on both included backends** (`subscribeReply` never fires except via SW forwarding with a `text-input` action; the basic backend never fires action or reply) — charter Open direction 1's inert-infrastructure question stands.
-- **No Rust `flighthq-notification` crate** (conformance-map gap, charter-tracked).
+- Real OS prompt and delivery behavior needs the interactive/device host-probe lanes; unit tests use dependency-
+  injected facades deliberately.
+- The request vocabulary does not yet express provisional authorization, progress, grouping, or ongoing
+  delivery. Those remain absent until a derived provider slice justifies them.
+- No Rust crate exists in this repository.
 
-## Charter contradictions
+## Contract fit
 
-None. The charter's "What it is" accurately describes the live surface (including "channels" — though the seam realizes them off-header, which the charter's Open directions don't yet name explicitly). The Decision's extraction remains valid and undone.
-
-## Contract & docs fit
-
-- Types-first: the full header now lives in `@flighthq/types`, `import type` only. ✔ (the June defect was an integration artifact, now healed)
-- Sentinels-not-throws: consistent (`''`, `'denied'`, `[]`, `null`, `false`); every browser-API touch try/catch-guarded. ✔
-- `sideEffects: false`, lazy backend, `_backend` at file bottom, single root export. ✔
-- Exports alphabetized; tests mirror exports. ✔
-- **Suite-pattern note:** notification uses `on*(listener) → unsubscribe` wrappers rather than the platform-suite "event capability = signal entity with `create*`/`attach*`/`detach*`/`dispose*`" shape, and has no `enable*Signals` group. Several suite packages share this drift (shortcut has a `ShortcutSignals` type; menu has `enableMenuSignals`); the suite-wide event-shape convention is inconsistently realized — a suite-level direction question, not a notification defect.
-- Style nit (from the prior review, still present): `// ----` divider comments in `notification.ts`/`notification.test.ts` (e.g. line 11) violate the no-structural-divider rule.
-
-## Structural-fork fit
-
-- **Fork D (backend seam):** textbook.
-- **Fork C:** `_repeatMs` closed `switch` over fixed calendar units — legitimate closed system.
-- **Subject triad:** stays a thin subject; native delivery via `host-*`. No premature neighbors.
-
-## Candidate open directions
-
-1. **Channels on the seam** — promote `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels` to optional `NotificationBackend` methods (or a capability-gated sub-seam) and enrich `NotificationChannel` toward the canonical Android vocabulary. Header change → design decision.
-2. **Request vocabulary completion** — `priority`/`importance`, progress/ongoing (charter Open direction 3), grouping/thread id.
-3. **Inert-infrastructure policy** (charter Open direction 1) and **lossy active-notification type** (Open direction 2) still await rulings.
-4. **Suite event-shape convention** — signal entity vs `on*` unsubscribe-return; notification should follow whatever the suite-wide ruling is.
+- Types live in `@flighthq/types`; implementation packages own behavior. ✔
+- No ambient backend getter/setter, default Host fallback, or parallel legacy surface. ✔
+- Missing capability is a type-level absent trait; denial/failure is a named runtime outcome. ✔
+- Event eligibility includes async acquisition and release; provider teardown owns every acquired resource. ✔
+- Export-named tests and structural absence checks protect the deleted surface. ✔

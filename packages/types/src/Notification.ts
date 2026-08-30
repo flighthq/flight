@@ -1,151 +1,331 @@
-// A desktop/system notification request. Named NotificationRequest to avoid colliding with the lib.dom
-// global `NotificationOptions`.
+import type { Entity } from './Entity';
+import type { Signal } from './Signal';
+
 export interface NotificationAction {
   id: string;
   title: string;
-  // Optional icon URL shown on the action button (native/SW providers only).
   icon?: string;
 }
 
 export interface NotificationRequest {
   title: string;
-  // Stable caller-supplied id. When omitted the provider generates one and returns it on the handle.
   id?: string;
   body?: string;
   icon?: string;
-  // Small monochrome badge shown in some platforms' status bars.
   badge?: string;
   tag?: string;
   silent?: boolean;
   actions?: NotificationAction[];
-  // Text direction for the notification body.
   dir?: 'auto' | 'ltr' | 'rtl';
-  // Large image displayed in the notification body.
   image?: string;
-  // BCP 47 language tag for the notification text.
   lang?: string;
-  // When true, re-showing a notification with the same tag re-alerts the user.
   renotify?: boolean;
-  // When true, the notification stays visible until the user interacts with it.
   requireInteraction?: boolean;
-  // Delivery/creation timestamp in epoch milliseconds.
   timestamp?: number;
-  // Vibration pattern in milliseconds (on/off durations).
   vibrate?: ReadonlyArray<number>;
-  // Opaque caller payload echoed back through the notification lifecycle.
   data?: unknown;
 }
 
-// Tri-state notification permission, mirroring the web Notification API: 'default' (not yet asked),
-// 'granted', or 'denied'. Permission reads are async because native providers expose async probes.
+export type NotificationRequestField = keyof NotificationRequest;
 export type NotificationPermission = 'default' | 'granted' | 'denied';
 
-// A delivery schedule for a local notification: an absolute fire time plus an optional repeat cadence.
 export interface NotificationSchedule {
-  // Absolute fire time in epoch milliseconds.
   at: number;
-  // Repeat cadence; omit for a one-shot schedule.
   repeat?: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
 }
 
-// Public identity for one displayed notification. APIs create a fresh handle object and retain the
-// originating provider out-of-band, so equal provider-local strings from different hosts cannot redirect
-// close or update operations.
-export interface NotificationHandle {
+// Application-notification identity is an Entity. `id` is caller-facing diagnostic identity only;
+// each provider keeps its native key in private state keyed by this object.
+export interface Notification extends Entity {
   readonly id: string;
-}
-
-// Truthful summary returned by providers that can enumerate displayed notifications. It deliberately
-// contains only fields every declared active-list provider can recover from the platform.
-export interface ActiveNotification extends NotificationHandle {
   readonly tag: string;
   readonly title: string;
 }
 
-export interface ScheduledNotificationHandle {
+export interface ScheduledNotification extends Entity {
   readonly id: string;
-}
-
-// A locally-scheduled (not yet delivered) notification. This is also a cancellable public handle;
-// getPendingNotifications pins each returned object to the scheduling provider that enumerated it.
-export interface ScheduledNotification extends ScheduledNotificationHandle {
   readonly request: Readonly<NotificationRequest>;
   readonly schedule: Readonly<NotificationSchedule>;
 }
 
+export type NotificationPermissionQueryOutcome =
+  | { readonly permission: NotificationPermission; readonly reason: 'ok' }
+  | { readonly reason: 'operation-failed' };
+
+export type NotificationPermissionRequestOutcome = {
+  readonly reason: 'denied' | 'dismissed' | 'granted' | 'operation-failed';
+};
+
+export type NotificationDeliveryOutcome =
+  | { readonly notification: Notification; readonly reason: 'accepted' }
+  | {
+      readonly fields: ReadonlyArray<NotificationRequestField>;
+      readonly reason: 'invalid-request';
+    }
+  | { readonly reason: 'operation-failed' | 'permission-denied' };
+
+export type NotificationScheduleOutcome =
+  | {
+      readonly precision: 'exact' | 'inexact';
+      readonly reason: 'scheduled';
+      readonly scheduled: ScheduledNotification;
+    }
+  | {
+      readonly fields: ReadonlyArray<NotificationRequestField | 'at' | 'repeat'>;
+      readonly reason: 'invalid-schedule';
+    }
+  | { readonly reason: 'operation-failed' | 'permission-denied' };
+
+export type NotificationCloseOutcome = {
+  readonly reason: 'already-closed' | 'ok' | 'operation-failed';
+};
+export type NotificationCancelOutcome = {
+  readonly reason: 'already-cancelled' | 'ok' | 'operation-failed';
+};
+
+export type NotificationActiveListOutcome =
+  | {
+      readonly notifications: ReadonlyArray<Notification>;
+      readonly reason: 'ok';
+    }
+  | { readonly reason: 'operation-failed' };
+
+export type NotificationPendingListOutcome =
+  | {
+      readonly notifications: ReadonlyArray<ScheduledNotification>;
+      readonly reason: 'ok';
+    }
+  | { readonly reason: 'operation-failed' };
+
+export interface NotificationLifecycleFailure {
+  readonly id: string;
+  readonly operation: 'cancel' | 'close' | 'release';
+}
+
+export type NotificationLifecycleOutcome =
+  | { readonly reason: 'already-destroyed' | 'ok' }
+  | {
+      readonly failures: ReadonlyArray<Readonly<NotificationLifecycleFailure>>;
+      readonly reason: 'operation-failed';
+    };
+
+export type NotificationEventReleaseOutcome = {
+  readonly reason: 'ok' | 'operation-failed';
+};
+
+export interface NotificationEventAttachment {
+  release(): Promise<NotificationEventReleaseOutcome>;
+}
+
+export type NotificationEventBackendAttachOutcome =
+  | { readonly attachment: NotificationEventAttachment; readonly reason: 'ok' }
+  | { readonly reason: 'operation-failed'; readonly releaseFailed: boolean };
+
+export type NotificationSubscriptionAttachOutcome =
+  | { readonly reason: 'ok' }
+  | {
+      readonly attachFailed: boolean;
+      readonly reason: 'operation-failed';
+      readonly releaseFailed: boolean;
+    };
+
+export type NotificationSubscriptionDetachOutcome =
+  | { readonly reason: 'not-attached' | 'ok' }
+  | { readonly reason: 'operation-failed'; readonly releaseFailed: true };
+
+export type NotificationSubscriptionDisposeOutcome =
+  | { readonly reason: 'already-disposed' | 'ok' }
+  | {
+      readonly attachFailed: boolean;
+      readonly reason: 'operation-failed';
+      readonly releaseFailed: boolean;
+    };
+
+export interface NotificationActionSubscription extends Entity {
+  readonly onNotificationAction: Signal<(notification: Readonly<Notification>, actionId: string) => void>;
+}
+
+export interface NotificationClickSubscription extends Entity {
+  readonly onNotificationClick: Signal<(notification: Readonly<Notification>) => void>;
+}
+
+export interface NotificationDismissSubscription extends Entity {
+  readonly onNotificationDismiss: Signal<(notification: Readonly<Notification>) => void>;
+}
+
+export interface NotificationReplySubscription extends Entity {
+  readonly onNotificationReply: Signal<(notification: Readonly<Notification>, actionId: string, text: string) => void>;
+}
+
+export interface NotificationReceivedSubscription extends Entity {
+  readonly onNotificationReceived: Signal<(notification: Readonly<Notification>) => void>;
+}
+
+export interface NotificationPermissionBackend {
+  getPermission(): Promise<NotificationPermissionQueryOutcome>;
+  requestPermission(): Promise<NotificationPermissionRequestOutcome>;
+}
+
 export interface NotificationDeliveryBackend {
-  // Shows a notification; resolves to its provider-local id, or null when permission is not granted or
-  // the runtime API rejects the request.
-  notify(request: Readonly<NotificationRequest>): Promise<string | null>;
-  getPermission(): Promise<NotificationPermission>;
-  requestPermission(): Promise<NotificationPermission>;
+  notify(request: Readonly<NotificationRequest>): Promise<NotificationDeliveryOutcome>;
 }
 
 export interface NotificationSchedulingBackend {
-  cancelScheduledNotification(id: string): Promise<void>;
-  getPendingNotifications(): Promise<ReadonlyArray<Readonly<ScheduledNotification>>>;
+  cancelAllScheduledNotifications(): Promise<NotificationLifecycleOutcome>;
+  getPendingNotifications(): Promise<NotificationPendingListOutcome>;
   scheduleNotification(
     request: Readonly<NotificationRequest>,
     schedule: Readonly<NotificationSchedule>,
-  ): Promise<string | null>;
+  ): Promise<NotificationScheduleOutcome>;
 }
 
 export interface NotificationCloseBackend {
-  closeNotification(id: string): Promise<void>;
-  closeAllNotifications(): Promise<void>;
-}
-
-export interface NotificationUpdateBackend {
-  updateNotification(id: string, partial: Readonly<Partial<NotificationRequest>>): Promise<boolean>;
+  closeAllNotifications(): Promise<NotificationLifecycleOutcome>;
 }
 
 export interface NotificationActiveListBackend {
-  getActiveNotifications(): Promise<ReadonlyArray<Readonly<ActiveNotification>>>;
-}
-
-export interface NotificationClickBackend {
-  subscribe(listener: (id: string) => void): void;
-  unsubscribe(listener: (id: string) => void): void;
+  getActiveNotifications(): Promise<NotificationActiveListOutcome>;
 }
 
 export interface NotificationActionBackend {
-  subscribe(listener: (id: string, actionId: string) => void): void;
-  unsubscribe(listener: (id: string, actionId: string) => void): void;
+  attach(
+    listener: (notification: Readonly<Notification>, actionId: string) => void,
+  ): Promise<NotificationEventBackendAttachOutcome>;
+}
+
+export interface NotificationClickBackend {
+  attach(listener: (notification: Readonly<Notification>) => void): Promise<NotificationEventBackendAttachOutcome>;
 }
 
 export interface NotificationDismissBackend {
-  subscribe(listener: (id: string) => void): void;
-  unsubscribe(listener: (id: string) => void): void;
+  attach(listener: (notification: Readonly<Notification>) => void): Promise<NotificationEventBackendAttachOutcome>;
 }
 
 export interface NotificationReplyBackend {
-  subscribe(listener: (id: string, actionId: string, text: string) => void): void;
-  unsubscribe(listener: (id: string, actionId: string, text: string) => void): void;
+  attach(
+    listener: (notification: Readonly<Notification>, actionId: string, text: string) => void,
+  ): Promise<NotificationEventBackendAttachOutcome>;
 }
 
-export interface NotificationShowBackend {
-  subscribe(listener: (id: string) => void): void;
-  unsubscribe(listener: (id: string) => void): void;
+export interface NotificationReceivedBackend {
+  attach(listener: (notification: Readonly<Notification>) => void): Promise<NotificationEventBackendAttachOutcome>;
 }
 
-export type ServiceWorkerNotificationCapabilities = Readonly<{
-  action: NotificationActionBackend;
-  activeList: NotificationActiveListBackend;
-  click: NotificationClickBackend;
-  close: NotificationCloseBackend;
-  delivery: NotificationDeliveryBackend;
-  dismiss: NotificationDismissBackend;
-  reply: NotificationReplyBackend;
-  scheduling: NotificationSchedulingBackend;
-  show: NotificationShowBackend;
-}>;
+export interface NotificationLifecycleBackend {
+  destroy(): Promise<NotificationLifecycleOutcome>;
+}
 
-export type WebNotificationCapabilities = Readonly<{
-  click: NotificationClickBackend;
-  close: NotificationCloseBackend;
-  delivery: NotificationDeliveryBackend;
-  dismiss: NotificationDismissBackend;
-  scheduling: NotificationSchedulingBackend;
-  show: NotificationShowBackend;
-  update: NotificationUpdateBackend;
-}>;
+export type WebPageNotificationCapabilities = Entity &
+  Readonly<{
+    click: NotificationClickBackend;
+    close: NotificationCloseBackend;
+    delivery: NotificationDeliveryBackend;
+    dismiss: NotificationDismissBackend;
+    lifecycle: NotificationLifecycleBackend;
+    permission: NotificationPermissionBackend;
+    received: NotificationReceivedBackend;
+  }>;
+
+export type WebServiceWorkerNotificationCapabilities = Entity &
+  Readonly<{
+    action: NotificationActionBackend;
+    activeList: NotificationActiveListBackend;
+    click: NotificationClickBackend;
+    close: NotificationCloseBackend;
+    delivery: NotificationDeliveryBackend;
+    dismiss: NotificationDismissBackend;
+    lifecycle: NotificationLifecycleBackend;
+    permission: NotificationPermissionBackend;
+  }>;
+
+export type ElectronNotificationCapabilities = Entity &
+  Readonly<{
+    click: NotificationClickBackend;
+    close: NotificationCloseBackend;
+    delivery: NotificationDeliveryBackend;
+    dismiss: NotificationDismissBackend;
+    lifecycle: NotificationLifecycleBackend;
+    received: NotificationReceivedBackend;
+  }>;
+
+export type ElectronMacosNotificationCapabilities = ElectronNotificationCapabilities &
+  Readonly<{
+    action: NotificationActionBackend;
+    reply: NotificationReplyBackend;
+  }>;
+
+export type TauriNotificationCapabilities = Entity &
+  Readonly<{
+    delivery: NotificationDeliveryBackend;
+    lifecycle: NotificationLifecycleBackend;
+    permission: NotificationPermissionBackend;
+  }>;
+
+export type CapacitorNotificationCapabilities = Entity &
+  Readonly<{
+    action: NotificationActionBackend;
+    click: NotificationClickBackend;
+    delivery: NotificationDeliveryBackend;
+    lifecycle: NotificationLifecycleBackend;
+    permission: NotificationPermissionBackend;
+    scheduling: NotificationSchedulingBackend;
+  }>;
+
+export interface WebNotificationOptions {
+  actions?: ReadonlyArray<Readonly<{ action: string; icon?: string; title: string }>>;
+  badge?: string;
+  body?: string;
+  data?: unknown;
+  dir?: 'auto' | 'ltr' | 'rtl';
+  icon?: string;
+  image?: string;
+  lang?: string;
+  renotify?: boolean;
+  requireInteraction?: boolean;
+  silent?: boolean;
+  tag?: string;
+  timestamp?: number;
+  vibrate?: ReadonlyArray<number>;
+}
+
+export interface WebPageNotificationInstance {
+  close(): void;
+  onclick: (() => void) | null;
+  onclose: (() => void) | null;
+  onerror: (() => void) | null;
+  onshow: (() => void) | null;
+}
+
+export interface WebPageNotificationApi {
+  readonly Notification: {
+    new (title: string, options?: Readonly<WebNotificationOptions>): WebPageNotificationInstance;
+    readonly permission: NotificationPermission;
+    requestPermission(): Promise<NotificationPermission>;
+  };
+}
+
+export interface WebServiceWorkerNotificationInstance {
+  readonly data?: unknown;
+  readonly tag: string;
+  readonly title: string;
+  close(): void;
+}
+
+export interface WebServiceWorkerNotificationRegistration {
+  getNotifications(filter?: Readonly<{ tag?: string }>): Promise<ReadonlyArray<WebServiceWorkerNotificationInstance>>;
+  showNotification(title: string, options?: Readonly<WebNotificationOptions>): Promise<void>;
+}
+
+export interface WebServiceWorkerNotificationApi {
+  readonly permission: {
+    getPermission(): NotificationPermission;
+    requestPermission(): Promise<NotificationPermission>;
+  };
+  readonly registration: WebServiceWorkerNotificationRegistration;
+}
+
+export interface WebServiceWorkerNotificationEvent {
+  readonly actionId?: string;
+  readonly notificationTag: string;
+  readonly type: 'notificationclick' | 'notificationclose';
+}
