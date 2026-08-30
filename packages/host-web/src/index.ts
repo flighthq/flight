@@ -30,7 +30,12 @@ export {
 export { enableHostWebSoftKeyboard } from './webKeyboard';
 export { enableHostWebLifecycle } from './webLifecycle';
 export { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
-export { enableHostWebMediaSession } from './webMediasession';
+export {
+  createWebMediaSessionActionBackend,
+  createWebMediaSessionBackend,
+  webMediaSessionActionBackend,
+  webMediaSessionBackend,
+} from './webMediasession';
 export { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 export { enableHostWebPermission } from './webPermissions';
 export { enableHostWebPlatform } from './webPlatform';

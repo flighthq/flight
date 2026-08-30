@@ -53,6 +53,7 @@ afterEach(() => {
 describe('registerTauriBackends', () => {
   it('routes capability seams to the Tauri backends without throwing', async () => {
     const host = registerTauriBackends(fakeTauri());
+    expect(host.media).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.file.openFile).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');

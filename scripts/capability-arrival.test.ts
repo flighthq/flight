@@ -6,10 +6,17 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { CapabilityArrivalFailure, GeneratedEntry } from './capability-arrival';
 import { capabilityArrivalFailures } from './capability-arrival';
 
-type Removal = 'bitmap-readback' | 'functional-aggregate' | 'gl-surface' | 'video' | 'wgpu-surface';
+type Removal =
+  | 'bitmap-readback'
+  | 'functional-aggregate'
+  | 'gl-surface'
+  | 'media-session-host'
+  | 'video'
+  | 'wgpu-surface';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const VIDEO_APP = 'examples/packages/video/src/app.ts';
+const WEB_HOST = 'packages/host-web/src/webHost.ts';
 
 interface RemovalControl {
   readonly after: number;
@@ -71,11 +78,16 @@ async function analyze(removal?: Removal): Promise<AnalysisResult> {
   const failures = await capabilityArrivalFailures({
     transformGeneratedEntry: (entry) => mutateGeneratedEntry(entry, removal, controls),
     transformSource:
-      removal === 'video'
-        ? ({ path, source }) =>
-            path === VIDEO_APP
-              ? removeRequiredOccurrence(source, 'enableHostWebVideoCapability();', path, controls)
-              : source
+      removal === 'video' || removal === 'media-session-host'
+        ? ({ path, source }) => {
+            if (removal === 'video' && path === VIDEO_APP) {
+              return removeRequiredOccurrence(source, 'enableHostWebVideoCapability();', path, controls);
+            }
+            if (removal === 'media-session-host' && path === WEB_HOST) {
+              return removeRequiredOccurrence(source, 'sessionAction: webMediaSessionActionBackend', path, controls);
+            }
+            return source;
+          }
         : undefined,
   });
   return { controls, failures };
@@ -175,5 +187,17 @@ describe('capability-arrival source gate', () => {
 
     expect(controls).toEqual([{ after: 0, before: 1, specimen: 'examples:shapes/webgpu' }]);
     expect(arrivalNames(failures)).toContain('examples:shapes/webgpu:WgpuRenderSurface:arrival');
+  });
+
+  it('reddens when the explicit Web Host loses half of the MediaSession shape', async () => {
+    const { controls, failures } = await analyze('media-session-host');
+
+    expect(controls).toEqual([{ after: 0, before: 1, specimen: WEB_HOST }]);
+    expect(failures).toEqual([
+      expect.objectContaining({
+        kind: 'registry',
+        message: expect.stringContaining('expected [MediaSession, Screen], found [Screen]'),
+      }),
+    ]);
   });
 });
