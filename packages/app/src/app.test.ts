@@ -1,22 +1,25 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
-import type { AppBackend, AppLoginItem, AppLoginItemLike, MenuItemTemplate } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   addAppRecentDocument,
   attachApp,
+  attachAppActivate,
+  attachAppAllWindowsClosed,
+  attachAppOpenFile,
+  attachAppQuitRequest,
+  attachAppReady,
+  attachAppSecondInstance,
   bounceAppDock,
   cancelAppAttention,
   cancelAppDockBounce,
   clearAppRecentDocuments,
   createApp,
-  createAppLoginItem,
   detachApp,
   disposeApp,
-  explainAppBackend,
   focusApp,
-  getAppBackend,
-  getAppCommandLine,
-  getAppCommandLineSwitch,
   getAppDirectoryPath,
   getAppExecutablePath,
   getAppLocale,
@@ -26,20 +29,15 @@ import {
   getAppPreferredSystemLanguages,
   getAppSystemLocale,
   getAppVersion,
-  hasAppCommandLineSwitch,
   hasAppSingleInstanceLock,
   hideApp,
-  installAppHostBackend,
   isAppHidden,
   quitApp,
   relaunchApp,
   releaseAppSingleInstanceLock,
   requestAppAttention,
   requestAppSingleInstanceLock,
-  observeAppHostResult,
-  resetAppBackendForTest,
   setAppActivationPolicy,
-  setAppBackend,
   setAppBadgeCount,
   setAppDockBadge,
   setAppDockMenu,
@@ -49,791 +47,364 @@ import {
   showApp,
 } from './app';
 
-function fakeBackend(): AppBackend & {
-  activationPolicy: string;
-  badge: string;
-  badgeCount: number;
-  bounceId: number;
-  cancelledAttention: number;
-  cancelledBounce: number;
-  commandLine: string[];
-  dockMenuItems: number;
-  focused: boolean;
-  hidden: boolean;
-  lastRecentDocument: string;
-  loginItem: AppLoginItem;
-  lock: boolean;
-  name: string;
-  preferredLanguages: string[];
-  recentDocumentsCleared: boolean;
-  systemLocale: string;
-  userModelId: string;
-  fireActivate: () => void;
-  fireAllWindowsClosed: () => void;
-  fireOpenFile: (path: string) => void;
-  fireQuitRequest: (cancel?: () => void) => void;
-  fireReady: () => void;
-  fireSecondInstance: (argv: readonly string[]) => void;
-} {
-  let activate: (() => void) | null = null;
-  let allWindowsClosed: (() => void) | null = null;
-  let openFile: ((path: string) => void) | null = null;
-  let quitRequest: ((cancel: () => void) => void) | null = null;
-  let ready: (() => void) | null = null;
-  let secondInstance: ((argv: readonly string[]) => void) | null = null;
-  return {
-    activationPolicy: '',
-    badge: '',
-    badgeCount: -1,
-    bounceId: -1,
-    cancelledAttention: -1,
-    cancelledBounce: -1,
-    commandLine: [],
-    dockMenuItems: -1,
-    focused: false,
-    hidden: false,
-    lastRecentDocument: '',
-    loginItem: { args: [], openAsHidden: false, openAtLogin: false, path: '' },
-    lock: false,
-    name: 'TestApp',
-    preferredLanguages: ['en-US', 'fr-FR'],
-    recentDocumentsCleared: false,
-    systemLocale: 'en_US',
-    userModelId: '',
-    addRecentDocument(path) {
-      this.lastRecentDocument = path;
-    },
-    bounceDock() {
-      this.bounceId = 7;
-      return 7;
-    },
-    cancelAttention(id) {
-      this.cancelledAttention = id;
-    },
-    cancelDockBounce(id) {
-      this.cancelledBounce = id;
-    },
-    clearRecentDocuments() {
-      this.recentDocumentsCleared = true;
-    },
-    focus() {
-      this.focused = true;
-    },
-    getAppDirectoryPath() {
-      return '/test/app/userData';
-    },
-    getAppPath() {
-      return '/test/app';
-    },
-    getCommandLine() {
-      return this.commandLine;
-    },
-    getExecutablePath() {
-      return '/test/app/bin';
-    },
-    getLocale() {
-      return 'en-US';
-    },
-    getPreferredSystemLanguages() {
-      return this.preferredLanguages;
-    },
-    getSystemLocale() {
-      return this.systemLocale;
-    },
-    getLoginItem() {
-      return this.loginItem;
-    },
-    getName() {
-      return this.name;
-    },
-    getVersion() {
-      return '1.2.3';
-    },
-    hasSingleInstanceLock() {
-      return this.lock;
-    },
-    hideApp() {
-      this.hidden = true;
-      return true;
-    },
-    isAppHidden() {
-      return this.hidden;
-    },
-    quit() {},
-    relaunch() {},
-    releaseSingleInstanceLock() {
-      this.lock = false;
-    },
-    requestAttention() {
-      return 42;
-    },
-    requestSingleInstanceLock() {
-      this.lock = true;
-      return true;
-    },
-    setActivationPolicy(policy) {
-      this.activationPolicy = policy;
-    },
-    setBadgeCount(count) {
-      this.badgeCount = count;
-      return true;
-    },
-    setDockBadge(text) {
-      this.badge = text;
-    },
-    setDockMenu(items) {
-      this.dockMenuItems = items.length;
-    },
-    setLoginItem(settings) {
-      this.loginItem = { ...this.loginItem, ...settings };
-      return true;
-    },
-    setName(n) {
-      this.name = n;
-      return true;
-    },
-    setUserModelId(id) {
-      this.userModelId = id;
-      return true;
-    },
-    showApp() {
-      this.hidden = false;
-      return true;
-    },
-    subscribeActivate(l) {
-      activate = l;
-      return () => {
-        activate = null;
-      };
-    },
-    subscribeAllWindowsClosed(l) {
-      allWindowsClosed = l;
-      return () => {
-        allWindowsClosed = null;
-      };
-    },
-    subscribeOpenFile(l) {
-      openFile = l;
-      return () => {
-        openFile = null;
-      };
-    },
-    subscribeQuitRequest(l) {
-      quitRequest = l;
-      return () => {
-        quitRequest = null;
-      };
-    },
-    subscribeReady(l) {
-      ready = l;
-      return () => {
-        ready = null;
-      };
-    },
-    subscribeSecondInstance(l) {
-      secondInstance = l;
-      return () => {
-        secondInstance = null;
-      };
-    },
-    fireActivate() {
-      activate?.();
-    },
-    fireAllWindowsClosed() {
-      allWindowsClosed?.();
-    },
-    fireOpenFile(path) {
-      openFile?.(path);
-    },
-    fireQuitRequest(cancel?: () => void) {
-      quitRequest?.(cancel ?? (() => {}));
-    },
-    fireReady() {
-      ready?.();
-    },
-    fireSecondInstance(argv) {
-      secondInstance?.(argv);
+function createFixture() {
+  const calls: string[] = [];
+  const listeners = {
+    activate: null as null | (() => void),
+    allWindowsClosed: null as null | (() => void),
+    openFile: null as null | ((path: string) => void),
+    quitRequest: null as null | ((cancelHost: () => void) => void),
+    ready: null as null | (() => void),
+    secondInstance: null as null | ((argv: readonly string[]) => void),
+  };
+  const unsubscribes = {
+    activate: vi.fn(),
+    allWindowsClosed: vi.fn(),
+    openFile: vi.fn(),
+    quitRequest: vi.fn(),
+    ready: vi.fn(),
+    secondInstance: vi.fn(),
+  };
+  const subscribe = <Key extends keyof typeof listeners>(key: Key) =>
+    createEntity({
+      subscribe(listener: NonNullable<(typeof listeners)[Key]>) {
+        listeners[key] = listener;
+        return unsubscribes[key];
+      },
+    });
+  const host = {
+    app: {
+      activate: subscribe('activate'),
+      activationPolicy: createEntity({ setActivationPolicy: (policy: string) => calls.push(`policy:${policy}`) }),
+      allWindowsClosed: subscribe('allWindowsClosed'),
+      badge: createEntity({ setBadgeCount: (count: number) => (calls.push(`badge:${count}`), true) }),
+      dock: createEntity({
+        bounceDock: () => 17,
+        cancelAttention: (id: number) => calls.push(`cancelAttention:${id}`),
+        cancelDockBounce: (id: number) => calls.push(`cancelBounce:${id}`),
+        requestAttention: (critical: boolean) => (calls.push(`attention:${critical}`), 19),
+        setDockBadge: (text: string) => calls.push(`dockBadge:${text}`),
+        setDockMenu: (items: readonly unknown[]) => calls.push(`dockMenu:${items.length}`),
+      }),
+      focus: createEntity({ focus: () => calls.push('focus') }),
+      hiddenQuery: createEntity({ isAppHidden: () => true }),
+      hide: createEntity({ hideApp: () => calls.push('hide') }),
+      locale: createEntity({
+        getLocale: () => 'en-GB',
+        getPreferredSystemLanguages: () => ['en-GB', 'fr'],
+        getSystemLocale: () => 'en-US',
+      }),
+      loginItem: createEntity({
+        getLoginItem: () => ({ args: ['--start'], openAsHidden: true, openAtLogin: true, path: '/app' }),
+        setLoginItem: () => calls.push('loginItem'),
+      }),
+      name: createEntity({ getName: () => 'Flight' }),
+      nameWrite: createEntity({ setName: (name: string) => calls.push(`name:${name}`) }),
+      openFile: subscribe('openFile'),
+      path: createEntity({
+        getAppDirectoryPath: (kind: string) => `/app/${kind}`,
+        getAppPath: () => '/app',
+        getExecutablePath: () => '/app/flight',
+      }),
+      quit: createEntity({ quit: () => calls.push('quit') }),
+      quitRequest: subscribe('quitRequest'),
+      ready: subscribe('ready'),
+      recentDocuments: createEntity({
+        addRecentDocument: (path: string) => calls.push(`recent:${path}`),
+        clearRecentDocuments: () => calls.push('clearRecent'),
+      }),
+      relaunch: createEntity({ relaunch: () => calls.push('relaunch') }),
+      secondInstance: subscribe('secondInstance'),
+      show: createEntity({ showApp: () => calls.push('show') }),
+      singleInstance: createEntity({
+        hasSingleInstanceLock: () => true,
+        releaseSingleInstanceLock: () => calls.push('releaseLock'),
+        requestSingleInstanceLock: () => true,
+      }),
+      userModelId: createEntity({ setUserModelId: (id: string) => calls.push(`userModel:${id}`) }),
+      version: createEntity({ getVersion: () => '1.2.3' }),
     },
   };
+  return { calls, host, listeners, unsubscribes };
 }
 
-afterEach(() => resetAppBackendForTest());
-
 describe('addAppRecentDocument', () => {
-  it('forwards the path to the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    addAppRecentDocument('/home/user/file.txt');
-    expect(backend.lastRecentDocument).toBe('/home/user/file.txt');
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    addAppRecentDocument(host, '/tmp/a');
+    expect(calls).toContain('recent:/tmp/a');
   });
 });
 
 describe('attachApp', () => {
-  it('wires activate, all-windows-closed, open-file, quit-request, ready, and second-instance subscriptions', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
+  it('attaches all six event providers and replaces a prior attachment', () => {
+    const first = createFixture();
+    const second = createFixture();
     const app = createApp();
-    let activations = 0;
-    let allWindowsClosedCount = 0;
-    let openedPath = '';
-    let readyCount = 0;
-    let argv: readonly string[] = [];
-    connectSignal(app.onActivate, () => activations++);
-    connectSignal(app.onAllWindowsClosed, () => allWindowsClosedCount++);
-    connectSignal(app.onOpenFile, (path) => (openedPath = path));
-    connectSignal(app.onReady, () => readyCount++);
-    connectSignal(app.onSecondInstance, (a) => (argv = a));
-    attachApp(app);
-    backend.fireActivate();
-    backend.fireAllWindowsClosed();
-    backend.fireOpenFile('/tmp/file.txt');
-    backend.fireReady();
-    backend.fireSecondInstance(['--flag']);
-    expect(activations).toBe(1);
-    expect(allWindowsClosedCount).toBe(1);
-    expect(openedPath).toBe('/tmp/file.txt');
-    expect(readyCount).toBe(1);
-    expect(argv).toEqual(['--flag']);
+    attachApp(first.host, app);
+    attachApp(second.host, app);
+    expect(Object.values(first.unsubscribes).every((unsubscribe) => unsubscribe.mock.calls.length === 1)).toBe(true);
   });
+});
 
-  it('is idempotent — tears down the prior subscription before re-attaching', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
+describe('attachAppActivate', () => {
+  it('forwards activation', () => {
+    const { host, listeners } = createFixture();
     const app = createApp();
-    let activations = 0;
-    connectSignal(app.onActivate, () => activations++);
-    attachApp(app);
-    attachApp(app);
-    backend.fireActivate();
-    expect(activations).toBe(1);
+    const receive = vi.fn();
+    connectSignal(app.onActivate, receive);
+    attachAppActivate(host, app);
+    listeners.activate?.();
+    expect(receive).toHaveBeenCalledOnce();
   });
+});
 
-  it('quits when onQuitRequest is not cancelled', () => {
-    let quits = 0;
-    const backend = fakeBackend();
-    backend.quit = () => {
-      quits++;
-    };
-    setAppBackend(backend);
+describe('attachAppAllWindowsClosed', () => {
+  it('forwards all-windows-closed', () => {
+    const { host, listeners } = createFixture();
     const app = createApp();
-    attachApp(app);
-    backend.fireQuitRequest();
-    expect(quits).toBe(1);
+    const receive = vi.fn();
+    connectSignal(app.onAllWindowsClosed, receive);
+    attachAppAllWindowsClosed(host, app);
+    listeners.allWindowsClosed?.();
+    expect(receive).toHaveBeenCalledOnce();
   });
+});
 
-  it('does not quit when onQuitRequest is cancelled', () => {
-    let quits = 0;
-    const backend = fakeBackend();
-    backend.quit = () => {
-      quits++;
-    };
-    setAppBackend(backend);
+describe('attachAppOpenFile', () => {
+  it('forwards the opened path', () => {
+    const { host, listeners } = createFixture();
     const app = createApp();
+    const receive = vi.fn();
+    connectSignal(app.onOpenFile, receive);
+    attachAppOpenFile(host, app);
+    listeners.openFile?.('/tmp/a.txt');
+    expect(receive).toHaveBeenCalledExactlyOnceWith('/tmp/a.txt');
+  });
+});
+
+describe('attachAppQuitRequest', () => {
+  it('translates signal cancellation to the native veto callback', () => {
+    const { host, listeners } = createFixture();
+    const app = createApp();
+    const cancelHost = vi.fn();
     connectSignal(app.onQuitRequest, () => cancelSignal(app.onQuitRequest));
-    attachApp(app);
-    backend.fireQuitRequest();
-    expect(quits).toBe(0);
+    attachAppQuitRequest(host, app);
+    listeners.quitRequest?.(cancelHost);
+    expect(cancelHost).toHaveBeenCalledOnce();
   });
+});
 
-  it('calls the host cancel callback when onQuitRequest is vetoed', () => {
-    let hostCancelled = false;
-    const backend = fakeBackend();
-    setAppBackend(backend);
+describe('attachAppReady', () => {
+  it('forwards ready', () => {
+    const { host, listeners } = createFixture();
     const app = createApp();
-    connectSignal(app.onQuitRequest, () => cancelSignal(app.onQuitRequest));
-    attachApp(app);
-    backend.fireQuitRequest(() => {
-      hostCancelled = true;
-    });
-    expect(hostCancelled).toBe(true);
+    const receive = vi.fn();
+    connectSignal(app.onReady, receive);
+    attachAppReady(host, app);
+    listeners.ready?.();
+    expect(receive).toHaveBeenCalledOnce();
+  });
+});
+
+describe('attachAppSecondInstance', () => {
+  it('forwards argv', () => {
+    const { host, listeners } = createFixture();
+    const app = createApp();
+    const receive = vi.fn();
+    connectSignal(app.onSecondInstance, receive);
+    attachAppSecondInstance(host, app);
+    listeners.secondInstance?.(['--open']);
+    expect(receive).toHaveBeenCalledExactlyOnceWith(['--open']);
   });
 });
 
 describe('bounceAppDock', () => {
-  it('returns the backend bounce id', () => {
-    setAppBackend(fakeBackend());
-    expect(bounceAppDock()).toBe(7);
-  });
+  it('returns the provider id', () => expect(bounceAppDock(createFixture().host)).toBe(17));
 });
 
 describe('cancelAppAttention', () => {
-  it('forwards the id to the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    cancelAppAttention(42);
-    expect(backend.cancelledAttention).toBe(42);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    cancelAppAttention(host, 3);
+    expect(calls).toContain('cancelAttention:3');
   });
 });
 
 describe('cancelAppDockBounce', () => {
-  it('forwards the id to the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    cancelAppDockBounce(7);
-    expect(backend.cancelledBounce).toBe(7);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    cancelAppDockBounce(host, 4);
+    expect(calls).toContain('cancelBounce:4');
   });
 });
-
 describe('clearAppRecentDocuments', () => {
-  it('clears via the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    clearAppRecentDocuments();
-    expect(backend.recentDocumentsCleared).toBe(true);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    clearAppRecentDocuments(host);
+    expect(calls).toContain('clearRecent');
   });
 });
-
 describe('createApp', () => {
-  it('creates an entity with six signals', () => {
+  it('creates an Entity carrying all application signals', () => {
     const app = createApp();
-    expect(app.onActivate).toBeDefined();
-    expect(app.onAllWindowsClosed).toBeDefined();
-    expect(app.onOpenFile).toBeDefined();
-    expect(app.onQuitRequest).toBeDefined();
-    expect(app.onReady).toBeDefined();
-    expect(app.onSecondInstance).toBeDefined();
+    expect(EntityRuntimeKey in app).toBe(true);
+    expect(app).toMatchObject({
+      onActivate: expect.any(Object),
+      onAllWindowsClosed: expect.any(Object),
+      onOpenFile: expect.any(Object),
+      onQuitRequest: expect.any(Object),
+      onReady: expect.any(Object),
+      onSecondInstance: expect.any(Object),
+    });
   });
 });
-
-describe('createAppLoginItem', () => {
-  it('returns a default login item', () => {
-    const item = createAppLoginItem();
-    expect(item.openAtLogin).toBe(false);
-    expect(item.openAsHidden).toBe(false);
-    expect(item.args).toEqual([]);
-    expect(item.path).toBe('');
-  });
-});
-
 describe('detachApp', () => {
-  it('stops further delivery', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
+  it('unsubscribes every attached provider', () => {
+    const { host, unsubscribes } = createFixture();
     const app = createApp();
-    let activations = 0;
-    connectSignal(app.onActivate, () => activations++);
-    attachApp(app);
+    attachApp(host, app);
     detachApp(app);
-    backend.fireActivate();
-    expect(activations).toBe(0);
-  });
-
-  it('is safe to call when not attached', () => {
-    expect(() => detachApp(createApp())).not.toThrow();
+    expect(Object.values(unsubscribes).every((unsubscribe) => unsubscribe.mock.calls.length === 1)).toBe(true);
   });
 });
-
 describe('disposeApp', () => {
-  it('detaches the subscription', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
+  it('detaches providers and clears signal listeners', () => {
+    const { host, listeners, unsubscribes } = createFixture();
     const app = createApp();
-    attachApp(app);
-    expect(() => disposeApp(app)).not.toThrow();
+    const receive = vi.fn();
+    connectSignal(app.onReady, receive);
+    attachApp(host, app);
+    disposeApp(app);
+    listeners.ready?.();
+    expect(unsubscribes.ready).toHaveBeenCalledOnce();
+    expect(receive).not.toHaveBeenCalled();
   });
 });
-
-describe('explainAppBackend', () => {
-  afterEach(() => resetAppBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetAppBackendForTest();
-    const explanation = explainAppBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setAppBackend(fakeBackend());
-    expect(explainAppBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installAppHostBackend(fakeBackend());
-    expect(explainAppBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installAppHostBackend(fakeBackend());
-    installAppHostBackend(fakeBackend());
-    expect(explainAppBackend().conflict).toBe(true);
-  });
-});
-
 describe('focusApp', () => {
-  it('focuses through the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    focusApp();
-    expect(backend.focused).toBe(true);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    focusApp(host);
+    expect(calls).toContain('focus');
   });
 });
-
-describe('getAppBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getAppBackend()).not.toBeNull();
-  });
-});
-
-describe('getAppBackend (sentinel)', () => {
-  it('reads identity values without throwing', () => {
-    const backend = getAppBackend();
-    expect(typeof backend.getName()).toBe('string');
-    expect(typeof backend.getVersion()).toBe('string');
-    expect(typeof backend.getLocale()).toBe('string');
-    expect(backend.requestSingleInstanceLock()).toBe(false);
-    expect(backend.hasSingleInstanceLock()).toBe(false);
-    expect(backend.bounceDock()).toBe(-1);
-    expect(backend.subscribeActivate(() => {})).toBeInstanceOf(Function);
-  });
-
-  it('returns sentinel values for unavailable APIs', () => {
-    const backend = getAppBackend();
-    expect(backend.getAppPath()).toBe('');
-    expect(backend.getExecutablePath()).toBe('');
-    expect(backend.getCommandLine()).toEqual([]);
-    expect(backend.getLoginItem().openAtLogin).toBe(false);
-    expect(backend.hideApp()).toBe(false);
-    expect(backend.isAppHidden()).toBe(false);
-    expect(backend.requestAttention(false)).toBe(-1);
-    expect(backend.setLoginItem({})).toBe(false);
-    expect(backend.setName('X')).toBe(false);
-    expect(backend.setUserModelId('X')).toBe(false);
-    expect(backend.showApp()).toBe(false);
-  });
-
-  it('returns preferred system languages and system locale', () => {
-    const backend = getAppBackend();
-    expect(Array.isArray(backend.getPreferredSystemLanguages())).toBe(true);
-    expect(typeof backend.getSystemLocale()).toBe('string');
-  });
-});
-
-describe('getAppCommandLine', () => {
-  it('returns the command line from the backend', () => {
-    const backend = fakeBackend();
-    backend.commandLine = ['--flag', '--key=val'];
-    setAppBackend(backend);
-    expect(getAppCommandLine()).toEqual(['--flag', '--key=val']);
-  });
-});
-
-describe('getAppCommandLineSwitch', () => {
-  it('returns empty string for a bare flag', () => {
-    const backend = fakeBackend();
-    backend.commandLine = ['--debug'];
-    setAppBackend(backend);
-    expect(getAppCommandLineSwitch('debug')).toBe('');
-  });
-
-  it('returns the value for a key=value switch', () => {
-    const backend = fakeBackend();
-    backend.commandLine = ['--port=3000'];
-    setAppBackend(backend);
-    expect(getAppCommandLineSwitch('port')).toBe('3000');
-  });
-
-  it('returns null when the switch is absent', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppCommandLineSwitch('missing')).toBeNull();
-  });
-});
-
 describe('getAppDirectoryPath', () => {
-  it('returns the path from the backend', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppDirectoryPath('userData')).toBe('/test/app/userData');
-  });
+  it('returns the selected directory', () =>
+    expect(getAppDirectoryPath(createFixture().host, 'logs')).toBe('/app/logs'));
 });
-
 describe('getAppExecutablePath', () => {
-  it('returns the executable path from the backend', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppExecutablePath()).toBe('/test/app/bin');
-  });
+  it('returns the executable path', () => expect(getAppExecutablePath(createFixture().host)).toBe('/app/flight'));
 });
-
 describe('getAppLocale', () => {
-  it('reads the backend locale', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppLocale()).toBe('en-US');
-  });
+  it('returns locale', () => expect(getAppLocale(createFixture().host)).toBe('en-GB'));
 });
-
 describe('getAppLoginItem', () => {
-  it('returns the login item from the backend', () => {
-    const backend = fakeBackend();
-    backend.loginItem = { args: ['--hidden'], openAsHidden: true, openAtLogin: true, path: '/app' };
-    setAppBackend(backend);
-    const item = getAppLoginItem();
-    expect(item.openAtLogin).toBe(true);
-    expect(item.openAsHidden).toBe(true);
-  });
+  it('returns settings', () => expect(getAppLoginItem(createFixture().host).openAtLogin).toBe(true));
 });
-
 describe('getAppName', () => {
-  it('reads the backend name', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppName()).toBe('TestApp');
-  });
+  it('returns name', () => expect(getAppName(createFixture().host)).toBe('Flight'));
 });
-
 describe('getAppPath', () => {
-  it('returns the app path from the backend', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppPath()).toBe('/test/app');
-  });
+  it('returns app path', () => expect(getAppPath(createFixture().host)).toBe('/app'));
 });
-
 describe('getAppPreferredSystemLanguages', () => {
-  it('returns the preferred system languages from the backend', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppPreferredSystemLanguages()).toEqual(['en-US', 'fr-FR']);
-  });
+  it('returns languages', () => expect(getAppPreferredSystemLanguages(createFixture().host)).toEqual(['en-GB', 'fr']));
 });
-
 describe('getAppSystemLocale', () => {
-  it('returns the system locale from the backend', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppSystemLocale()).toBe('en_US');
-  });
+  it('returns system locale', () => expect(getAppSystemLocale(createFixture().host)).toBe('en-US'));
 });
-
 describe('getAppVersion', () => {
-  it('reads the backend version', () => {
-    setAppBackend(fakeBackend());
-    expect(getAppVersion()).toBe('1.2.3');
-  });
+  it('returns version', () => expect(getAppVersion(createFixture().host)).toBe('1.2.3'));
 });
-
-describe('hasAppCommandLineSwitch', () => {
-  it('returns true when the switch is present', () => {
-    const backend = fakeBackend();
-    backend.commandLine = ['--debug'];
-    setAppBackend(backend);
-    expect(hasAppCommandLineSwitch('debug')).toBe(true);
-  });
-
-  it('returns false when the switch is absent', () => {
-    setAppBackend(fakeBackend());
-    expect(hasAppCommandLineSwitch('missing')).toBe(false);
-  });
-});
-
 describe('hasAppSingleInstanceLock', () => {
-  it('reflects the backend lock state', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    expect(hasAppSingleInstanceLock()).toBe(false);
-    requestAppSingleInstanceLock();
-    expect(hasAppSingleInstanceLock()).toBe(true);
-  });
+  it('returns the provider fact', () => expect(hasAppSingleInstanceLock(createFixture().host)).toBe(true));
 });
-
 describe('hideApp', () => {
-  it('hides the app and returns true from the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    expect(hideApp()).toBe(true);
-    expect(backend.hidden).toBe(true);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    hideApp(host);
+    expect(calls).toContain('hide');
   });
 });
-
-describe('installAppHostBackend', () => {
-  afterEach(() => resetAppBackendForTest());
-
-  it('installs a host backend that getAppBackend returns', () => {
-    const backend = fakeBackend();
-    installAppHostBackend(backend);
-    expect(getAppBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installAppHostBackend(first);
-    installAppHostBackend(second);
-    expect(getAppBackend()).toBe(first);
-    expect(explainAppBackend().conflict).toBe(true);
-  });
-});
-
 describe('isAppHidden', () => {
-  it('reflects the backend hidden state', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    expect(isAppHidden()).toBe(false);
-    hideApp();
-    expect(isAppHidden()).toBe(true);
-  });
+  it('returns the provider fact', () => expect(isAppHidden(createFixture().host)).toBe(true));
 });
-
-describe('observeAppHostResult', () => {
-  afterEach(() => resetAppBackendForTest());
-
-  it('records a successful observation', () => {
-    installAppHostBackend(fakeBackend());
-    observeAppHostResult('focus', true);
-    const explanation = explainAppBackend();
-    expect(explanation.operation).toBe('focus');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installAppHostBackend(fakeBackend());
-    observeAppHostResult('focus', false);
-    expect(explainAppBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
 describe('quitApp', () => {
-  it('quits without throwing', () => {
-    setAppBackend(fakeBackend());
-    expect(() => quitApp()).not.toThrow();
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    quitApp(host);
+    expect(calls).toContain('quit');
   });
 });
-
 describe('relaunchApp', () => {
-  it('relaunches without throwing', () => {
-    setAppBackend(fakeBackend());
-    expect(() => relaunchApp()).not.toThrow();
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    relaunchApp(host);
+    expect(calls).toContain('relaunch');
   });
 });
-
 describe('releaseAppSingleInstanceLock', () => {
-  it('releases the lock', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    requestAppSingleInstanceLock();
-    releaseAppSingleInstanceLock();
-    expect(backend.lock).toBe(false);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    releaseAppSingleInstanceLock(host);
+    expect(calls).toContain('releaseLock');
   });
 });
-
 describe('requestAppAttention', () => {
-  it('returns the attention id from the backend', () => {
-    setAppBackend(fakeBackend());
-    expect(requestAppAttention(true)).toBe(42);
-  });
+  it('returns the provider id', () => expect(requestAppAttention(createFixture().host, true)).toBe(19));
 });
-
 describe('requestAppSingleInstanceLock', () => {
-  it('acquires the lock', () => {
-    setAppBackend(fakeBackend());
-    expect(requestAppSingleInstanceLock()).toBe(true);
-  });
+  it('returns the provider outcome', () => expect(requestAppSingleInstanceLock(createFixture().host)).toBe(true));
 });
-
-describe('resetAppBackendForTest', () => {
-  it('clears all backend slots', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    installAppHostBackend(fakeBackend());
-    observeAppHostResult('focus', true);
-    resetAppBackendForTest();
-    expect(getAppBackend()).not.toBe(backend);
-    expect(explainAppBackend().layer).toBe('host-not-enabled');
-    expect(explainAppBackend().conflict).toBe(false);
-    expect(explainAppBackend().viability).toBe('unobserved');
-  });
-});
-
 describe('setAppActivationPolicy', () => {
-  it('forwards the policy to the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    setAppActivationPolicy('accessory');
-    expect(backend.activationPolicy).toBe('accessory');
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    setAppActivationPolicy(host, 'accessory');
+    expect(calls).toContain('policy:accessory');
   });
 });
-
-describe('setAppBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setAppBackend(fakeBackend());
-    setAppBackend(null);
-    expect(getAppBackend()).not.toBeNull();
-  });
-});
-
 describe('setAppBadgeCount', () => {
-  it('forwards the count to the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    expect(setAppBadgeCount(5)).toBe(true);
-    expect(backend.badgeCount).toBe(5);
-  });
-
-  it('returns a boolean from the web backend without throwing', () => {
-    expect(typeof setAppBadgeCount(2)).toBe('boolean');
-  });
+  it('returns the provider outcome', () => expect(setAppBadgeCount(createFixture().host, 7)).toBe(true));
 });
-
 describe('setAppDockBadge', () => {
-  it('forwards the badge text to the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    setAppDockBadge('3');
-    expect(backend.badge).toBe('3');
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    setAppDockBadge(host, 'x');
+    expect(calls).toContain('dockBadge:x');
   });
 });
-
 describe('setAppDockMenu', () => {
-  it('forwards the menu items to the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    const items: readonly MenuItemTemplate[] = [{ id: 'new', label: 'New' }];
-    setAppDockMenu(items);
-    expect(backend.dockMenuItems).toBe(1);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    setAppDockMenu(host, []);
+    expect(calls).toContain('dockMenu:0');
   });
 });
-
 describe('setAppLoginItem', () => {
-  it('updates the login item and returns true when supported', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    const settings: Readonly<AppLoginItemLike> = { openAtLogin: true, openAsHidden: false };
-    expect(setAppLoginItem(settings)).toBe(true);
-    expect(backend.loginItem.openAtLogin).toBe(true);
-  });
-
-  it('returns false on the web backend', () => {
-    expect(setAppLoginItem({ openAtLogin: true })).toBe(false);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    setAppLoginItem(host, { openAtLogin: true });
+    expect(calls).toContain('loginItem');
   });
 });
-
 describe('setAppName', () => {
-  it('updates the name via the backend and returns true', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    expect(setAppName('MyApp')).toBe(true);
-    expect(backend.name).toBe('MyApp');
-  });
-
-  it('returns false on the web backend', () => {
-    expect(setAppName('X')).toBe(false);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    setAppName(host, 'Renamed');
+    expect(calls).toContain('name:Renamed');
   });
 });
-
 describe('setAppUserModelId', () => {
-  it('forwards the ID to the backend and returns true', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    expect(setAppUserModelId('com.example.app')).toBe(true);
-    expect(backend.userModelId).toBe('com.example.app');
-  });
-
-  it('returns false on the web backend', () => {
-    expect(setAppUserModelId('X')).toBe(false);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    setAppUserModelId(host, 'flight.app');
+    expect(calls).toContain('userModel:flight.app');
   });
 });
-
 describe('showApp', () => {
-  it('shows the app and returns true from the backend', () => {
-    const backend = fakeBackend();
-    setAppBackend(backend);
-    hideApp();
-    expect(showApp()).toBe(true);
-    expect(backend.hidden).toBe(false);
+  it('delegates', () => {
+    const { host, calls } = createFixture();
+    showApp(host);
+    expect(calls).toContain('show');
   });
 });

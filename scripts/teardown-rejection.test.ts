@@ -259,7 +259,7 @@ describe('isTeardownFunctionName', () => {
   });
 
   // ★ `release` is an ordinary operation verb in this SDK, so a bare `release*` arm swept in plain API
-  // methods. `releaseSingleInstanceLock` is an `AppBackend` operation present in all four hosts, and
+  // methods. `releaseSingleInstanceLock` is an app capability operation present in all four hosts, and
   // counting it inflated the teardown denominator by functions that tear nothing down.
   it('rejects ordinary release* operations, which tear nothing down', () => {
     expect(isTeardownFunctionName('releaseSingleInstanceLock')).toBe(false);

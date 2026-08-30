@@ -1,5 +1,6 @@
 import { App } from '@capacitor/app';
 import { Clipboard } from '@capacitor/clipboard';
+import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { Dialog } from '@capacitor/dialog';
 import { Filesystem } from '@capacitor/filesystem';
@@ -12,7 +13,7 @@ import { Share } from '@capacitor/share';
 import { StatusBar } from '@capacitor/status-bar';
 import { getAppName, getAppVersion } from '@flighthq/app/contract';
 import { registerCapacitorBackends } from '@flighthq/host-capacitor';
-import type { CapacitorApi } from '@flighthq/types/contract';
+import type { CapacitorApi, MobileOsProfile } from '@flighthq/types/contract';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';
@@ -37,11 +38,11 @@ export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot
     share: Share,
     statusBar: StatusBar,
   };
-  const host = registerCapacitorBackends(capacitorApi);
+  const host = registerCapacitorBackends(capacitorApi, mobileOsProfile(Capacitor.getPlatform()));
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
-  await waitFor(() => getAppName().length > 0);
-  const name = getAppName();
-  const version = getAppVersion();
+  await waitFor(() => getAppName(host).length > 0);
+  const name = getAppName(host);
+  const version = getAppVersion(host);
   return {
     changedCapabilities,
     results: [
@@ -67,6 +68,11 @@ export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot
       },
     ],
   };
+}
+
+function mobileOsProfile(platform: string): MobileOsProfile {
+  if (platform === 'android' || platform === 'ios') return platform;
+  throw new Error(`Capacitor host probe requires android or ios, received ${platform}`);
 }
 
 async function waitFor(predicate: () => boolean): Promise<void> {

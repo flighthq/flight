@@ -1,152 +1,80 @@
-import { installAppHostBackend, observeAppHostResult } from '@flighthq/app/contract';
-import type { AppBackend } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { HostAppCapabilities } from '@flighthq/types/contract';
 
-export function enableHostWebApp(): void {
-  if (_enabled) return;
-  _enabled = true;
-  const _noop = (): (() => void) => () => {};
-  const backend: AppBackend = {
-    addRecentDocument() {},
-    bounceDock() {
-      return -1;
-    },
-    cancelAttention() {},
-    cancelDockBounce() {},
-    clearRecentDocuments() {},
-    focus() {
-      if (typeof window !== 'undefined') {
+type WebAppCapabilities = Required<
+  Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>
+>;
+
+export function createWebAppCapabilities(): WebAppCapabilities {
+  return {
+    badge: createEntity({
+      setBadgeCount: (count: number) => {
+        if (typeof navigator === 'undefined') return false;
+        const setAppBadge = Reflect.get(navigator, 'setAppBadge');
+        if (typeof setAppBadge !== 'function') return false;
+        try {
+          Reflect.apply(setAppBadge, navigator, [count]);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+    }),
+    focus: createEntity({
+      focus: () => {
         try {
           window.focus();
-          observeAppHostResult('focus', true);
+        } catch {}
+      },
+    }),
+    locale: createEntity({
+      getLocale: () => {
+        return typeof navigator === 'undefined' ? '' : (navigator.language ?? '');
+      },
+      getPreferredSystemLanguages: () => {
+        return typeof navigator === 'undefined' || !Array.isArray(navigator.languages) ? [] : navigator.languages;
+      },
+      getSystemLocale: () => {
+        try {
+          return typeof Intl === 'undefined' ? '' : new Intl.DateTimeFormat().resolvedOptions().locale;
         } catch {
-          observeAppHostResult('focus', false);
+          return '';
         }
-      }
-    },
-    getAppDirectoryPath() {
-      return '';
-    },
-    getAppPath() {
-      return '';
-    },
-    getCommandLine() {
-      return [];
-    },
-    getExecutablePath() {
-      return '';
-    },
-    getLocale() {
-      if (typeof navigator !== 'undefined') {
-        observeAppHostResult('getLocale', true);
-        return navigator.language ?? '';
-      }
-      return '';
-    },
-    getLoginItem() {
-      return { args: [], openAsHidden: false, openAtLogin: false, path: '' };
-    },
-    getName() {
-      if (typeof document !== 'undefined') {
-        observeAppHostResult('getName', true);
-        return document.title;
-      }
-      return '';
-    },
-    getPreferredSystemLanguages() {
-      if (typeof navigator !== 'undefined' && Array.isArray(navigator.languages)) {
-        observeAppHostResult('getPreferredSystemLanguages', true);
-        return navigator.languages as readonly string[];
-      }
-      return [];
-    },
-    getSystemLocale() {
-      try {
-        return typeof Intl !== 'undefined' ? new Intl.DateTimeFormat().resolvedOptions().locale : '';
-      } catch {
-        return '';
-      }
-    },
-    getVersion() {
-      return '';
-    },
-    hasSingleInstanceLock() {
-      return true;
-    },
-    hideApp() {
-      return false;
-    },
-    isAppHidden() {
-      return false;
-    },
-    quit() {
-      if (typeof window !== 'undefined') {
+      },
+    }),
+    name: createEntity({
+      getName: () => {
+        return typeof document === 'undefined' ? '' : document.title;
+      },
+    }),
+    quit: createEntity({
+      quit: () => {
         try {
           window.close();
-          observeAppHostResult('quit', true);
-        } catch {
-          observeAppHostResult('quit', false);
+        } catch {}
+      },
+    }),
+    ready: createEntity({
+      subscribe: (listener: () => void) => {
+        if (typeof document !== 'undefined' && document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', listener, { once: true });
+          return () => document.removeEventListener('DOMContentLoaded', listener);
         }
-      }
-    },
-    relaunch() {
-      if (typeof location !== 'undefined') {
+        let active = true;
+        queueMicrotask(() => {
+          if (active) listener();
+        });
+        return () => {
+          active = false;
+        };
+      },
+    }),
+    relaunch: createEntity({
+      relaunch: () => {
         try {
           location.reload();
-          observeAppHostResult('relaunch', true);
-        } catch {
-          observeAppHostResult('relaunch', false);
-        }
-      }
-    },
-    releaseSingleInstanceLock() {},
-    requestAttention() {
-      return -1;
-    },
-    requestSingleInstanceLock() {
-      return true;
-    },
-    setActivationPolicy() {},
-    setBadgeCount(count) {
-      if (typeof navigator === 'undefined' || !('setAppBadge' in navigator)) return false;
-      try {
-        (navigator as Navigator & { setAppBadge(count?: number): Promise<void> }).setAppBadge(count);
-        observeAppHostResult('setBadgeCount', true);
-        return true;
-      } catch {
-        observeAppHostResult('setBadgeCount', false);
-        return false;
-      }
-    },
-    setDockBadge() {},
-    setDockMenu() {},
-    setLoginItem() {
-      return false;
-    },
-    setName() {
-      return false;
-    },
-    setUserModelId() {
-      return false;
-    },
-    showApp() {
-      return false;
-    },
-    subscribeActivate: _noop,
-    subscribeAllWindowsClosed: _noop,
-    subscribeOpenFile: _noop,
-    subscribeQuitRequest: _noop,
-    subscribeReady(listener) {
-      void Promise.resolve().then(() => listener());
-      observeAppHostResult('subscribeReady', true);
-      return () => {};
-    },
-    subscribeSecondInstance: _noop,
+        } catch {}
+      },
+    }),
   };
-  installAppHostBackend(backend);
 }
-
-export function resetHostWebAppForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;

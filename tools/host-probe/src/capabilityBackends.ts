@@ -1,10 +1,8 @@
-import { getAppBackend } from '@flighthq/app/contract';
 import { getDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
 import { getPlatformBackend } from '@flighthq/platform/contract';
-import { getProtocolBackend } from '@flighthq/protocol/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
 import type { Host } from '@flighthq/types/contract';
 
@@ -26,6 +24,7 @@ export function captureHostProbeBackends(
       | 'menu'
       | 'notification'
       | 'power'
+      | 'protocol'
       | 'screen'
       | 'share'
       | 'shell'
@@ -39,7 +38,7 @@ export function captureHostProbeBackends(
 ): HostProbeBackendSnapshot {
   return {
     accessibility: host.accessibility?.provider ?? null,
-    app: getAppBackend(),
+    app: firstProvidedSlot(host.app),
     clipboard: host.clipboard?.text ?? null,
     connectivity: host.connectivity?.status ?? null,
     cursor: null,
@@ -65,7 +64,7 @@ export function captureHostProbeBackends(
     'notification.scheduling': host.notification?.scheduling ?? null,
     platform: getPlatformBackend(),
     power: firstProvidedSlot(host.power),
-    protocol: getProtocolBackend(),
+    protocol: firstProvidedSlot(host.protocol),
     screen: host.screen?.query ?? null,
     share: host.share?.content ?? host.share?.files ?? null,
     shell:

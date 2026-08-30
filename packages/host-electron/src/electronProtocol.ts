@@ -1,55 +1,46 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, Entity, ProtocolBackend } from '@flighthq/types/contract';
+import type { ElectronApi, HostProtocolCapabilities } from '@flighthq/types/contract';
 
-// Maps Flight's ProtocolBackend onto Electron's `app` protocol-client methods. Deep links arrive via
-// the 'open-url' event (macOs); the subscribe wrapper adapts Electron's (event, url) argument shape to
-// Flight's (url) listener and returns an unsubscribe that removes that exact handler.
-export function createElectronProtocolBackend(electron: ElectronApi): ProtocolBackend & Entity {
+export type ElectronProtocolCapabilities = Required<
+  Pick<HostProtocolCapabilities, 'default' | 'open' | 'registration' | 'registrationQuery' | 'unregistration'>
+>;
+
+export function createElectronProtocolCapabilities(electron: ElectronApi): ElectronProtocolCapabilities {
   const app = electron.app;
-  // Electron exposes no scheme enumeration, so the seam tracks what it has registered.
   const registered = new Set<string>();
-  return createEntity({
-    register(scheme) {
-      const ok = app.setAsDefaultProtocolClient(scheme);
-      if (ok) registered.add(scheme);
-      return ok;
+  const registration = createEntity({
+    getRegisteredSchemes: () => [...registered],
+    register: (scheme: string) => {
+      const succeeded = app.setAsDefaultProtocolClient(scheme);
+      if (succeeded) registered.add(scheme);
+      return succeeded;
     },
-    unregister(scheme) {
-      const ok = app.removeAsDefaultProtocolClient(scheme);
-      registered.delete(scheme);
-      return ok;
-    },
-    isRegistered(scheme) {
-      return app.isDefaultProtocolClient(scheme);
-    },
-    getRegisteredSchemes() {
-      return [...registered];
-    },
-    setAsDefault(scheme) {
-      const ok = app.setAsDefaultProtocolClient(scheme);
-      if (ok) registered.add(scheme);
-      return ok;
-    },
-    isDefault(scheme) {
-      return app.isDefaultProtocolClient(scheme);
-    },
-    removeAsDefault(scheme) {
-      return app.removeAsDefaultProtocolClient(scheme);
-    },
-    getLaunchUrl() {
-      // Electron delivers the cold-start deep link via the 'open-url'/'second-instance' events rather
-      // than a queryable launch URL; report none.
-      return null;
-    },
-    drainPendingUrls() {
-      // No pre-attach buffer in this seam — deep links arrive live via the 'open-url' event.
-      return [];
-    },
-    subscribe(listener) {
-      // Electron passes (event, url); Flight wants just the url.
-      const handler = (...args: unknown[]): void => listener(String(args[1] ?? ''));
-      app.on('open-url', handler);
-      return () => app.removeListener('open-url', handler);
-    },
-  } satisfies ProtocolBackend);
+  });
+  return {
+    default: createEntity({
+      isDefault: (scheme: string) => app.isDefaultProtocolClient(scheme),
+      removeAsDefault: (scheme: string) => app.removeAsDefaultProtocolClient(scheme),
+      setAsDefault: (scheme: string) => {
+        const succeeded = app.setAsDefaultProtocolClient(scheme);
+        if (succeeded) registered.add(scheme);
+        return succeeded;
+      },
+    }),
+    open: createEntity({
+      subscribe: (listener: (url: string) => void) => {
+        const handler = (...args: unknown[]): void => listener(String(args[1] ?? ''));
+        app.on('open-url', handler);
+        return () => app.removeListener('open-url', handler);
+      },
+    }),
+    registration,
+    registrationQuery: createEntity({ isRegistered: (scheme: string) => app.isDefaultProtocolClient(scheme) }),
+    unregistration: createEntity({
+      unregister: (scheme: string) => {
+        const succeeded = app.removeAsDefaultProtocolClient(scheme);
+        if (succeeded) registered.delete(scheme);
+        return succeeded;
+      },
+    }),
+  };
 }

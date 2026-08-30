@@ -54,7 +54,7 @@ export interface CapacitorPluginListenerHandle {
 }
 
 // `@capacitor/app` — application identity/control (Android exit/minimize) and lifecycle/url events. All
-// async; the sync AppBackend name/version getters are served from a value prefetched at construction.
+// async; the sync app name/version capabilities are served from values prefetched at construction.
 export interface CapacitorAppPlugin {
   addListener(
     eventName: 'appStateChange',

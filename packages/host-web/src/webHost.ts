@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 
 import { webAccessibilityBackend } from './webAccessibility';
+import { createWebAppCapabilities } from './webApp';
 import { webApplicationExitBackend } from './webApplicationExit';
 import { webClipboardBackend } from './webClipboard';
 import { webConnectivityBackend } from './webConnectivity';
@@ -30,6 +31,7 @@ import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 import { webPowerCapabilities } from './webPower';
+import { createWebProtocolCapabilities } from './webProtocol';
 import { webScreenCapabilities } from './webScreen';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webShellExternalBackend } from './webShell';
@@ -49,6 +51,8 @@ const webStoragePersistenceCapabilities = createWebWindowStoragePersistenceCapab
     return navigator.storage.persisted();
   },
 });
+const webAppCapabilities = createWebAppCapabilities();
+const webProtocolCapabilities = createWebProtocolCapabilities();
 
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
 // groups are intentional: they preserve Host's stable two-level shape without claiming providers that
@@ -56,6 +60,7 @@ const webStoragePersistenceCapabilities = createWebWindowStoragePersistenceCapab
 export const webHost = createEntity({
   accessibility: { provider: webAccessibilityBackend },
   app: {
+    ...webAppCapabilities,
     exit: webApplicationExitBackend,
     loop: webLoopBackend,
     visibility: webApplicationVisibilityBackend,
@@ -103,6 +108,7 @@ export const webHost = createEntity({
   midi: {},
   net: {},
   power: webPowerCapabilities,
+  protocol: webProtocolCapabilities,
   // Notification construction is execution-context-specific (page vs Service Worker) and requires an
   // injected API. Compose one of the exported notification factories into a Host deliberately.
   notification: {},

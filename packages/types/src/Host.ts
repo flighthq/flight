@@ -6,6 +6,7 @@ import type {
   AppBadgeBackend,
   AppDockBackend,
   AppFocusBackend,
+  AppHideBackend,
   AppLocaleBackend,
   AppLoginItemBackend,
   AppNameBackend,
@@ -21,7 +22,7 @@ import type {
   AppSingleInstanceBackend,
   AppUserModelIdBackend,
   AppVersionBackend,
-  AppVisibilityCommandBackend,
+  AppShowBackend,
   AppVisibilityQueryBackend,
 } from './App';
 import type { ApplicationExitBackend } from './ApplicationExitBackend';
@@ -204,6 +205,7 @@ export interface HostAppCapabilities {
   readonly dock?: AppDockBackend;
   readonly exit?: ApplicationExitBackend;
   readonly focus?: AppFocusBackend;
+  readonly hide?: AppHideBackend;
   readonly locale?: AppLocaleBackend;
   readonly loginItem?: AppLoginItemBackend;
   readonly loop?: LoopBackend;
@@ -211,14 +213,14 @@ export interface HostAppCapabilities {
   readonly nameWrite?: AppNameWriteBackend;
   readonly openFile?: AppOpenFileBackend;
   readonly path?: AppPathBackend;
-  readonly processVisibility?: AppVisibilityCommandBackend;
-  readonly processVisibilityQuery?: AppVisibilityQueryBackend;
+  readonly hiddenQuery?: AppVisibilityQueryBackend;
   readonly quit?: AppQuitBackend;
   readonly quitRequest?: AppQuitRequestBackend;
   readonly ready?: AppReadyBackend;
   readonly recentDocuments?: AppRecentDocumentsBackend;
   readonly relaunch?: AppRelaunchBackend;
   readonly secondInstance?: AppSecondInstanceBackend;
+  readonly show?: AppShowBackend;
   readonly singleInstance?: AppSingleInstanceBackend;
   readonly userModelId?: AppUserModelIdBackend;
   readonly version?: AppVersionBackend;
@@ -484,12 +486,12 @@ export interface HasAppPath {
   readonly app: { readonly path: AppPathBackend };
 }
 
-export interface HasAppProcessVisibility {
-  readonly app: { readonly processVisibility: AppVisibilityCommandBackend };
+export interface HasAppHide {
+  readonly app: { readonly hide: AppHideBackend };
 }
 
-export interface HasAppProcessVisibilityQuery {
-  readonly app: { readonly processVisibilityQuery: AppVisibilityQueryBackend };
+export interface HasAppHiddenQuery {
+  readonly app: { readonly hiddenQuery: AppVisibilityQueryBackend };
 }
 
 export interface HasAppQuit {
@@ -514,6 +516,10 @@ export interface HasAppRelaunch {
 
 export interface HasAppSecondInstance {
   readonly app: { readonly secondInstance: AppSecondInstanceBackend };
+}
+
+export interface HasAppShow {
+  readonly app: { readonly show: AppShowBackend };
 }
 
 export interface HasAppSingleInstance {

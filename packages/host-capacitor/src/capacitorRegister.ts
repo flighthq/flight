@@ -1,4 +1,3 @@
-import { setAppBackend } from '@flighthq/app/contract';
 import { setDeviceBackend } from '@flighthq/device/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setFileSystemBackend } from '@flighthq/filesystem/contract';
@@ -29,9 +28,11 @@ import type {
   HasSoftKeyboardStyle,
   HasSoftKeyboardVisibility,
   Host,
+  MobileOsProfile,
 } from '@flighthq/types/contract';
 
-import { createCapacitorAppBackend } from './capacitorApp';
+import { createCapacitorAppCapabilities } from './capacitorApp';
+import type { CapacitorAppCapabilitiesFor } from './capacitorApp';
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
 import { createCapacitorConnectivityBackend } from './capacitorConnectivity';
 import { createCapacitorDeviceBackend } from './capacitorDevice';
@@ -49,10 +50,12 @@ import {
   createCapacitorSoftKeyboardVisibilityBackend,
 } from './capacitorKeyboard';
 import { createCapacitorNotificationCapabilities } from './capacitorNotification';
+import { createCapacitorProtocolCapabilities } from './capacitorProtocol';
+import type { CapacitorProtocolCapabilities } from './capacitorProtocol';
 import { createCapacitorShareContentBackend } from './capacitorShare';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 
-type CapacitorHost = Host &
+type CapacitorHost<Profile extends MobileOsProfile> = Host &
   HasClipboardImage &
   HasClipboardText &
   HasConnectivityChange &
@@ -73,18 +76,24 @@ type CapacitorHost = Host &
   HasSoftKeyboardScrollAssist &
   HasSoftKeyboardStyle &
   HasSoftKeyboardVisibility & {
+    readonly app: CapacitorAppCapabilitiesFor<Profile>;
+    readonly protocol: CapacitorProtocolCapabilities;
     readonly share: { readonly content: CapacitorShareContentBackend };
   };
 
 // The explicit Capacitor host. Clipboard, dialog, haptics, notification, and content sharing are claimed; every other capability
 // still installs through its package-local seam and is NOT represented here, so an empty group means
 // "not yet migrated", never "Capacitor cannot do this".
-export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
+export function capacitorHost<Profile extends MobileOsProfile>(
+  capacitor: CapacitorApi,
+  profile: Profile,
+): CapacitorHost<Profile> {
+  const app = createCapacitorAppCapabilities(capacitor, profile);
   const clipboard = createCapacitorClipboardBackend(capacitor);
   const connectivity = createCapacitorConnectivityBackend(capacitor);
   return createEntity({
     accessibility: {},
-    app: {},
+    app,
     clipboard: { image: clipboard, text: clipboard },
     connectivity: { change: connectivity, status: connectivity },
     dialog: {
@@ -113,6 +122,7 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     // No power provider: Capacitor exposes no battery, idle, session-lock, thermal or keep-awake
     // API through the seams this host wires. The group is empty rather than stubbed.
     power: {},
+    protocol: createCapacitorProtocolCapabilities(capacitor),
     notification: createCapacitorNotificationCapabilities(capacitor),
     // The supported Capacitor plugin set exposes no OS-global shortcut provider.
     shortcut: {},
@@ -130,7 +140,7 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     // Every WindowBackend member is optional, so {} is the honest claim: a Capacitor app runs in a
     // webview and provides no native window operations of its own.
     window: {},
-  } satisfies Omit<CapacitorHost, typeof EntityRuntimeKey>);
+  } satisfies Omit<CapacitorHost<Profile>, typeof EntityRuntimeKey>);
 }
 
 // Installs every still-ambient Capacitor host backend in one call and returns the explicit host. Run
@@ -144,11 +154,13 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
 // Pass the returned host to clipboard, dialog, haptics, and notification operations. The other mobile seams remain
 // package-local registrations. Storage is deliberately not adapted because its synchronous contract
 // cannot express Capacitor Preferences' asynchronous API.
-export function registerCapacitorBackends(capacitor: CapacitorApi): CapacitorHost {
-  setAppBackend(createCapacitorAppBackend(capacitor));
+export function registerCapacitorBackends<Profile extends MobileOsProfile>(
+  capacitor: CapacitorApi,
+  profile: Profile,
+): CapacitorHost<Profile> {
   setDeviceBackend(createCapacitorDeviceBackend(capacitor));
   setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));
   setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));
   setStatusBarBackend(createCapacitorStatusBarBackend(capacitor));
-  return capacitorHost(capacitor);
+  return capacitorHost(capacitor, profile);
 }

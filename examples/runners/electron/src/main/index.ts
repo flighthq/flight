@@ -78,13 +78,13 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves
 // the Electron backends are wired.
 async function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>): Promise<void> {
-  console.log('[harness] app:', getAppName(), getAppVersion(), getAppLocale()); // eslint-disable-line
+  console.log('[harness] app:', getAppName(host), getAppVersion(host), getAppLocale(host)); // eslint-disable-line
 
   const screens: ScreenInfo[] = [];
   getScreens(host, screens);
   console.log('[harness] screens:', screens.length); // eslint-disable-line
 
-  setAppBadgeCount(3);
+  if (host.app.badge !== undefined) setAppBadgeCount({ app: { badge: host.app.badge } }, 3);
 
   const menu: readonly MenuItemTemplate[] = [
     createMenuItemTemplate({

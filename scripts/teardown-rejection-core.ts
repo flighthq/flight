@@ -44,7 +44,7 @@ export interface TeardownRejectionReport {
 //
 // ★ THE `release*` ARM IS DELIBERATELY NARROW. `release` is an ordinary operation verb in this SDK — the
 // reserved pool/cache bracket — so matching every `release*` swept in plain API methods:
-// `releaseSingleInstanceLock` is an `AppBackend` operation, present in all four hosts, and counting it
+// `releaseSingleInstanceLock` is an app capability operation, present in all four hosts, and counting it
 // inflated the teardown denominator with functions that tear nothing down. Only the backend-release
 // helpers such as `releaseHostBackends` are teardown paths.
 export function isTeardownFunctionName(name: string): boolean {
