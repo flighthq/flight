@@ -42,10 +42,10 @@ export function destroyGlShapeData(state: GlRenderState, data: RendererData): vo
   const runtime = getGlRenderStateRuntime(state);
   const surface = getGlShapeData(data).surface;
   if (surface === null) return;
-  const entry = runtime.textureSourcePremultipliedTextureCache.get(surface.image);
+  const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
-    runtime.textureSourcePremultipliedTextureCache.delete(surface.image);
+    runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
   destroyRaster2DSurface(surface);
 }

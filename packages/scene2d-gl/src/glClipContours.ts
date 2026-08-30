@@ -76,7 +76,7 @@ export function pushGlClipContours(
   // Content draws skip gl.useProgram when state.currentShader already matches their program. Record the
   // clip program here so the next content draw detects the change and re-binds — otherwise it would set
   // its uniforms against the clip program (INVALID_OPERATION: location not from the associated program).
-  runtime.currentShader = { locations: null, program: program.program };
+  runtime.context.currentShader = { locations: null, program: program.program };
   uploadClipUniforms(state, program, worldTransform);
 
   // PHASE 1 — accumulate the polygon's winding into the stencil with color writes off. Non-zero uses

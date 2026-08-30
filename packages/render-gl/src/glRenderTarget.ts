@@ -128,7 +128,7 @@ export function drawGlRenderTargetResult(
 
   const gl = state.gl;
   const { matrixArray } = runtime;
-  const locations = runtime.currentShader!.locations!;
+  const locations = runtime.context.currentShader!.locations!;
   bindGlTextureRealization(state, { straightAlpha: false, texture: target.texture });
 
   const quadTransform = acquireMatrix();
@@ -247,7 +247,7 @@ export function resolveGlRenderTarget(state: GlRenderState, target: GlRenderTarg
       gl.enable(gl.SCISSOR_TEST);
       gl.scissor(scissor.x, scissor.y, scissor.width, scissor.height);
     }
-    runtime.currentTextureRealization = null;
+    runtime.context.currentTextureRealization = null;
   }
   // Flush so the resolved texels are visible to the next sample of `target.texture`. The blit→sample
   // dependency is implicit in conformant GL, but some drivers (notably headless SwiftShader) sample a

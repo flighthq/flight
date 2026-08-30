@@ -32,7 +32,7 @@ export function createExternalGlTexture(
     source,
   });
   const runtime = getGlRenderStateRuntime(state);
-  (runtime.glExternalTextureCache ??= new WeakMap()).set(source, handle);
+  (runtime.context.glExternalTextureCache ??= new WeakMap()).set(source, handle);
   registerGlTextureResolver(state, ExternalTextureSourceKind, resolveExternalGlTexture);
   return texture;
 }
@@ -46,7 +46,7 @@ function resolveExternalGlTexture(state: GlRenderState, texture: Readonly<Textur
   const source = getExternalTextureSource(texture);
   if (source === null) return null;
   const runtime = getGlRenderStateRuntime(state);
-  const handle = runtime.glExternalTextureCache?.get(source);
+  const handle = runtime.context.glExternalTextureCache?.get(source);
   if (handle === undefined) return null;
   bindGlTextureRealization(state, { straightAlpha: false, texture: handle });
   applyGlSamplerState(state, runtime, handle, texture.sampler);

@@ -99,23 +99,26 @@ function compileParticleShader(gl: GlContext): GlParticleShader {
 
 function ensureParticleShader(state: GlRenderState): GlParticleShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.particleShader) return runtime.particleShader;
+  if (runtime.context.particleResources) return runtime.context.particleResources.shader;
 
   const gl = state.gl;
-  runtime.particleShader = compileParticleShader(gl);
+  const shader = compileParticleShader(gl);
 
   // Static corner buffer: (0,0),(1,0),(1,1),(0,1)
   const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
   const cornerBuf = gl.createBuffer()!;
   gl.bindBuffer(gl.ARRAY_BUFFER, cornerBuf);
   gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
-  runtime.particleCornerBuffer = cornerBuf;
 
   // Dynamic instance buffer — starts empty, grows as needed
-  runtime.particleInstanceBuffer = gl.createBuffer()!;
+  runtime.context.particleResources = {
+    cornerBuffer: cornerBuf,
+    instanceBuffer: gl.createBuffer()!,
+    shader,
+  };
   runtime.particleInstanceData = new Float32Array(0);
 
-  return runtime.particleShader;
+  return shader;
 }
 
 function ensureInstanceCapacity(state: GlRenderState, count: number): void {
@@ -127,7 +130,7 @@ function ensureInstanceCapacity(state: GlRenderState, count: number): void {
   const newSize = Math.max(needed, (runtime.particleInstanceData?.length ?? 0) * 2);
   runtime.particleInstanceData = new Float32Array(newSize);
   // Resize GPU buffer to match.
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.particleResources!.instanceBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
 }
 
@@ -203,14 +206,14 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   if (drawCount === 0) return;
 
   // Upload instance data.
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.particleResources!.instanceBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData, 0, drawCount * INSTANCE_FLOATS);
 
   // Activate particle shader program.
-  if (runtime.currentShader?.program !== shader.program) {
+  if (runtime.context.currentShader?.program !== shader.program) {
     gl.useProgram(shader.program);
   }
-  runtime.currentShader = { locations: null, program: shader.program };
+  runtime.context.currentShader = { locations: null, program: shader.program };
 
   // Compute and upload the emitter node → clip-space world matrix.
   // In world-space mode particle positions ARE already in world (pixel) space,
@@ -241,16 +244,16 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   }
   gl.uniformMatrix3fv(shader.locWorldMatrix, false, m);
   gl.uniform1i(shader.locTexture, 0);
-  gl.uniform1i(shader.locStraightTextureAlpha, runtime.currentTextureRealization?.straightAlpha === true ? 1 : 0);
+  gl.uniform1i(shader.locStraightTextureAlpha, runtime.context.currentTextureRealization?.straightAlpha === true ? 1 : 0);
 
   // Per-vertex: corner buffer.
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleCornerBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.particleResources!.cornerBuffer);
   gl.enableVertexAttribArray(shader.locCorner);
   gl.vertexAttribPointer(shader.locCorner, 2, gl.FLOAT, false, 8, 0);
   gl.vertexAttribDivisor(shader.locCorner, 0);
 
   // Per-instance: instance buffer.
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.particleInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.particleResources!.instanceBuffer);
 
   gl.enableVertexAttribArray(shader.locPos);
   gl.vertexAttribPointer(shader.locPos, 2, gl.FLOAT, false, INSTANCE_STRIDE, 0);
@@ -277,7 +280,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   gl.vertexAttribDivisor(shader.locSize, 1);
 
   // Single draw call for all particles.
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.quadIndexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.context.quadIndexBuffer);
   gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, drawCount);
 
   // Reset divisors so other renderers are not affected.

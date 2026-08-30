@@ -37,7 +37,7 @@ export function drawGlShapeMeshBatch(
 
   const gl = state.gl;
   gl.useProgram(binding.program);
-  runtime.currentShader = { locations: null, program: binding.program };
+  runtime.context.currentShader = { locations: null, program: binding.program };
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
   gl.uniformMatrix3fv(binding.matrixLocation, false, shapeMeshMatrix(state, renderProxy));
@@ -89,12 +89,12 @@ export function drawGlShapeMeshes(
 // tinted draw (which borrows these shared vertex/index buffers) resolve it here.
 export function ensureGlShapeMeshProgram(state: GlRenderState): GlShapeMeshBinding {
   const runtime = getGlRenderStateRuntime(state);
-  const existing = runtime.shapeMeshBinding;
-  if (existing !== undefined) return existing;
+  const resources = runtime.context.shapeMeshResources;
+  if (resources) return resources.binding;
 
   const gl = state.gl;
   const program = compileShapeMeshProgram(gl);
-  const created: GlShapeMeshBinding = {
+  const binding: GlShapeMeshBinding = {
     program,
     vertexBuffer: gl.createBuffer()!,
     indexBuffer: gl.createBuffer()!,
@@ -102,8 +102,8 @@ export function ensureGlShapeMeshProgram(state: GlRenderState): GlShapeMeshBindi
     matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
     colorLocation: gl.getUniformLocation(program, 'u_color'),
   };
-  runtime.shapeMeshBinding = created;
-  return created;
+  runtime.context.shapeMeshResources = { binding, colorMatrixShader: null, colorScaleBiasShader: null };
+  return binding;
 }
 
 const VERTEX_SOURCE = `

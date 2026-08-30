@@ -118,10 +118,10 @@ export function popGlRenderState(state: GlRenderState): void {
 
   const runtime = getGlRenderStateRuntime(state);
   runtime.currentFramebuffer = saved.currentFramebuffer;
-  runtime.currentShader = saved.currentShader;
+  runtime.context.currentShader = saved.currentShader;
   runtime.currentRenderTarget = saved.currentRenderTarget;
-  runtime.currentTextureRealization = saved.currentTextureRealization;
-  runtime.currentBlendSignature = saved.currentBlendSignature;
+  runtime.context.currentTextureRealization = saved.currentTextureRealization;
+  runtime.context.currentBlendSignature = saved.currentBlendSignature;
   runtime.currentScissorRect = saved.currentScissorRect;
   runtime.renderTargetViewport = saved.renderTargetViewport;
 }
@@ -177,11 +177,11 @@ export function pushGlRenderState(state: GlRenderState): void {
     stencilValueMask: gl.getParameter(gl.STENCIL_VALUE_MASK) as number,
     stencilWriteMask: gl.getParameter(gl.STENCIL_WRITEMASK) as number,
     currentFramebuffer: runtime.currentFramebuffer,
-    currentBlendSignature: runtime.currentBlendSignature,
+    currentBlendSignature: runtime.context.currentBlendSignature,
     currentRenderTarget: runtime.currentRenderTarget,
-    currentShader: runtime.currentShader,
+    currentShader: runtime.context.currentShader,
     currentScissorRect: runtime.currentScissorRect,
-    currentTextureRealization: runtime.currentTextureRealization,
+    currentTextureRealization: runtime.context.currentTextureRealization,
     depthFunc: gl.getParameter(gl.DEPTH_FUNC) as number,
     depthMask: gl.getParameter(gl.DEPTH_WRITEMASK) as boolean,
     depthTest: gl.isEnabled(gl.DEPTH_TEST),
