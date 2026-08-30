@@ -45,41 +45,15 @@ function fakeElectron(overrides: {
 }
 
 describe('createElectronDirectoryOpenDialogBackend', () => {
-  it('creates an Entity provider', () => {
-    expect(EntityRuntimeKey in createElectronDirectoryOpenDialogBackend(fakeElectron({}).electron)).toBe(true);
+  it('uses a method-tight single-directory operation', async () => {
+    const { electron, calls } = fakeElectron({ open: { canceled: false, filePaths: ['/docs'] } });
+    const result = await createElectronDirectoryOpenDialogBackend(electron).open();
+    expect(calls.openOptions).toEqual({ properties: ['openDirectory'] });
+    expect(result.outcome === 'selected' ? result.handle.path : null).toBe('/docs');
   });
 });
 
 describe('createElectronFileOpenDialogBackend', () => {
-  it('creates an Entity provider', () => {
-    expect(EntityRuntimeKey in createElectronFileOpenDialogBackend(fakeElectron({}).electron)).toBe(true);
-  });
-});
-
-describe('createElectronFileSaveDialogBackend', () => {
-  it('creates an Entity provider', () => {
-    expect(EntityRuntimeKey in createElectronFileSaveDialogBackend(fakeElectron({}).electron)).toBe(true);
-  });
-});
-
-describe('createElectronMessageDialogBackend', () => {
-  it('maps message results to button index, cancelled, and checkbox state', async () => {
-    const { electron, calls } = fakeElectron({ message: { response: 2, checkboxChecked: true } });
-    const result = await createElectronMessageDialogBackend(electron).message({ message: 'hi', kind: 'warning' });
-    expect(result).toEqual({ buttonIndex: 2, cancelled: false, checkboxChecked: true });
-    expect(calls.messageOptions?.type).toBe('warning');
-  });
-
-  it('confirm returns true only when the OK button is chosen', async () => {
-    const yes = fakeElectron({ message: { response: 0, checkboxChecked: false } });
-    expect(await createElectronMessageDialogBackend(yes.electron).confirm({ message: 'ok?' })).toBe(true);
-    const no = fakeElectron({ message: { response: 1, checkboxChecked: false } });
-    expect(await createElectronMessageDialogBackend(no.electron).confirm({ message: 'ok?' })).toBe(false);
-    expect(no.calls.messageOptions?.buttons).toEqual(['OK', 'Cancel']);
-  });
-});
-
-describe('Electron file dialog providers', () => {
   it('exposes independent Entity providers', () => {
     const electron = fakeElectron({}).electron;
     const providers = [
@@ -142,5 +116,31 @@ describe('Electron file dialog providers', () => {
     expect((await createElectronDirectoryOpenDialogBackend(electron).open()).outcome).toBe('runtime-unavailable');
     expect((await createElectronFileOpenDialogBackend(electron).open({})).outcome).toBe('runtime-unavailable');
     expect((await createElectronFileSaveDialogBackend(electron).save({})).outcome).toBe('runtime-unavailable');
+  });
+});
+
+describe('createElectronFileSaveDialogBackend', () => {
+  it('maps the common default name and returns one selected handle', async () => {
+    const { electron, calls } = fakeElectron({ save: { canceled: false, filePath: '/saved.txt' } });
+    const result = await createElectronFileSaveDialogBackend(electron).save({ defaultName: 'suggested.txt' });
+    expect(calls.saveOptions?.defaultPath).toBe('suggested.txt');
+    expect(result.outcome === 'selected' ? result.handle.path : null).toBe('/saved.txt');
+  });
+});
+
+describe('createElectronMessageDialogBackend', () => {
+  it('maps message results to button index, cancelled, and checkbox state', async () => {
+    const { electron, calls } = fakeElectron({ message: { response: 2, checkboxChecked: true } });
+    const result = await createElectronMessageDialogBackend(electron).message({ message: 'hi', kind: 'warning' });
+    expect(result).toEqual({ buttonIndex: 2, cancelled: false, checkboxChecked: true });
+    expect(calls.messageOptions?.type).toBe('warning');
+  });
+
+  it('confirm returns true only when the OK button is chosen', async () => {
+    const yes = fakeElectron({ message: { response: 0, checkboxChecked: false } });
+    expect(await createElectronMessageDialogBackend(yes.electron).confirm({ message: 'ok?' })).toBe(true);
+    const no = fakeElectron({ message: { response: 1, checkboxChecked: false } });
+    expect(await createElectronMessageDialogBackend(no.electron).confirm({ message: 'ok?' })).toBe(false);
+    expect(no.calls.messageOptions?.buttons).toEqual(['OK', 'Cancel']);
   });
 });
