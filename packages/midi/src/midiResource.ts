@@ -13,7 +13,7 @@ import type {
   MidiPortStateSubscription,
 } from '@flighthq/types/contract';
 
-export interface MidiAccessResourceState {
+interface MidiAccessResourceState {
   disposeCompleted: boolean;
   disposePending: Promise<MidiAccessDisposeOutcome> | null;
   disposed: boolean;
@@ -30,18 +30,18 @@ interface MidiPortResourceStateBase {
   stateSubscriptions: Set<MidiPortStateSubscription>;
 }
 
-export interface MidiInputPortResourceState extends MidiPortResourceStateBase {
+interface MidiInputPortResourceState extends MidiPortResourceStateBase {
   kind: 'input';
   messageSubscriptions: Set<MidiInputMessageSubscription>;
   operations: MidiInputPortResourceOperations;
 }
 
-export interface MidiOutputPortResourceState extends MidiPortResourceStateBase {
+interface MidiOutputPortResourceState extends MidiPortResourceStateBase {
   kind: 'output';
   operations: MidiOutputPortResourceOperations;
 }
 
-export type MidiPortResourceState = MidiInputPortResourceState | MidiOutputPortResourceState;
+type MidiPortResourceState = MidiInputPortResourceState | MidiOutputPortResourceState;
 
 const accessStates = new WeakMap<MidiAccess, MidiAccessResourceState>();
 const portStates = new WeakMap<MidiPort, MidiPortResourceState>();
