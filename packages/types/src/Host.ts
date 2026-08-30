@@ -62,7 +62,12 @@ import type { PlatformBackend } from './Platform';
 import type { PowerBackend } from './Power';
 import type { PromptDialogBackend } from './PromptDialogBackend';
 import type { ProtocolBackend } from './Protocol';
-import type { ScreenBackend } from './Screen';
+import type {
+  ScreenChangeBackend,
+  ScreenDetailsBackend,
+  ScreenPermissionChangeBackend,
+  ScreenQueryBackend,
+} from './Screen';
 import type { SensorsBackend } from './Sensors';
 import type { ShareContentBackend, ShareFilesBackend } from './Share';
 import type { ShellBackend } from './Shell';
@@ -89,6 +94,7 @@ export interface Host extends Entity {
   readonly menu: HostMenuCapabilities;
   readonly net: HostNetCapabilities;
   readonly notification: HostNotificationCapabilities;
+  readonly screen: HostScreenCapabilities;
   readonly share: HostShareCapabilities;
   readonly storage: HostStorageCapabilities;
   readonly system: HostSystemCapabilities;
@@ -192,6 +198,13 @@ export interface HostShareCapabilities {
   readonly files?: ShareFilesBackend;
 }
 
+export interface HostScreenCapabilities {
+  readonly change?: ScreenChangeBackend;
+  readonly details?: ScreenDetailsBackend;
+  readonly permissionChange?: ScreenPermissionChangeBackend;
+  readonly query?: ScreenQueryBackend;
+}
+
 export interface HostStorageCapabilities {
   readonly fileSystem?: FileSystemBackend;
   readonly local?: StorageBackend;
@@ -204,7 +217,6 @@ export interface HostSystemCapabilities {
   readonly permissions?: PermissionBackend;
   readonly platform?: PlatformBackend;
   readonly power?: PowerBackend;
-  readonly screen?: ScreenBackend;
   readonly sensors?: SensorsBackend;
 }
 
@@ -457,8 +469,20 @@ export interface HasSystemPower {
   readonly system: { readonly power: PowerBackend };
 }
 
-export interface HasSystemScreen {
-  readonly system: { readonly screen: ScreenBackend };
+export interface HasScreenChange {
+  readonly screen: { readonly change: ScreenChangeBackend };
+}
+
+export interface HasScreenDetails {
+  readonly screen: { readonly details: ScreenDetailsBackend };
+}
+
+export interface HasScreenPermissionChange {
+  readonly screen: { readonly permissionChange: ScreenPermissionChangeBackend };
+}
+
+export interface HasScreenQuery {
+  readonly screen: { readonly query: ScreenQueryBackend };
 }
 
 export interface HasSystemSensors {
