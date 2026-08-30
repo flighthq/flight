@@ -82,11 +82,12 @@ fn quadBaseVertex(vi : u32, ii : u32) -> BaseVertex {
 
 export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBatchResources {
   const runtime = getWgpuRenderStateRuntime(state);
-  const existing = runtime.quadBatchResources;
+  const ctx = runtime.context;
+  const existing = ctx.quadBatchResources;
   if (existing !== undefined) return existing;
 
   const { device } = state;
-  const { uniformBindGroupLayout, textureBindGroupLayout } = runtime;
+  const { uniformBindGroupLayout, textureBindGroupLayout } = ctx;
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }],
@@ -118,7 +119,7 @@ export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBa
     materialPipelineLayout,
     pipelines: new WeakMap(),
   };
-  runtime.quadBatchResources = resources;
+  ctx.quadBatchResources = resources;
   return resources;
 }
 
@@ -411,7 +412,7 @@ function createWgpuTextureSamplerBindGroup(
         : 'linear'
       : undefined;
   return state.device.createBindGroup({
-    layout: getWgpuRenderStateRuntime(state).textureBindGroupLayout,
+    layout: getWgpuRenderStateRuntime(state).context.textureBindGroupLayout,
     entries: [
       { binding: 0, resource: view },
       {

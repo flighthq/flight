@@ -359,7 +359,10 @@ function bindGlQuadBatchWriterPackedTint(state: GlRenderState): void {
   gl.vertexAttribDivisor(7, 1);
 }
 
-function ensureGlColorAdjustmentResources(state: GlRenderState, runtime: GlRenderStateRuntime): GlColorAdjustmentResources {
+function ensureGlColorAdjustmentResources(
+  state: GlRenderState,
+  runtime: GlRenderStateRuntime,
+): GlColorAdjustmentResources {
   const gl = state.gl;
 
   const scaleBiasProgram = createGlProgram(

@@ -75,18 +75,12 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   (cacheState as { device: GPUDevice }).device = screenState.device;
   (cacheState as { format: GPUTextureFormat }).format = screenState.format;
 
-  cacheRuntime.uniformBindGroupLayout = screenRuntime.uniformBindGroupLayout;
-  cacheRuntime.textureBindGroupLayout = screenRuntime.textureBindGroupLayout;
   cacheRuntime.uniformBuffer = screenRuntime.uniformBuffer;
   cacheRuntime.uniformData = screenRuntime.uniformData;
   cacheRuntime.uniformDataU32 = screenRuntime.uniformDataU32;
   cacheRuntime.uniformStride = screenRuntime.uniformStride;
   cacheRuntime.uniformBindGroup = screenRuntime.uniformBindGroup;
   cacheRuntime.matrixArray = screenRuntime.matrixArray;
-  cacheRuntime.pipelineCache = screenRuntime.pipelineCache;
-  cacheRuntime.linearSampler = screenRuntime.linearSampler;
-  cacheRuntime.nearestSampler = screenRuntime.nearestSampler;
-  cacheRuntime.textureCache = screenRuntime.textureCache;
   cacheRuntime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
   cacheRuntime.particleInstanceBuffer = screenRuntime.particleInstanceBuffer;
   cacheRuntime.particleInstanceData = screenRuntime.particleInstanceData;

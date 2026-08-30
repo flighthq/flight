@@ -34,7 +34,7 @@ export function createExternalWgpuTexture(
   // The external source fixes its own filtering, so the entry carries the sampler and the draw policy
   // does not override it. Bind groups are built per sampler on demand rather than captured here.
   const sampler = getExternalWgpuSampler(state, texture);
-  (getWgpuRenderStateRuntime(state).wgpuExternalTextureCache ??= new WeakMap()).set(source, {
+  (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache ??= new WeakMap()).set(source, {
     bindings: new Map(),
     mipLevelCount: 1,
     sampler,
@@ -47,7 +47,9 @@ export function createExternalWgpuTexture(
 
 export function disposeExternalWgpuTexture(state: WgpuRenderState, texture: Readonly<Texture>): boolean {
   const source = getExternalTextureSource(texture);
-  return source === null ? false : (getWgpuRenderStateRuntime(state).wgpuExternalTextureCache?.delete(source) ?? false);
+  return source === null
+    ? false
+    : (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache?.delete(source) ?? false);
 }
 
 function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Texture>): GPUSampler {
@@ -66,7 +68,9 @@ function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Textur
 
 function resolveExternalWgpuTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {
   const source = getExternalTextureSource(texture);
-  return source === null ? null : (getWgpuRenderStateRuntime(state).wgpuExternalTextureCache?.get(source) ?? null);
+  return source === null
+    ? null
+    : (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache?.get(source) ?? null);
 }
 
 function getExternalTextureSource(texture: Readonly<TextureLike>): ExternalTexture | null {

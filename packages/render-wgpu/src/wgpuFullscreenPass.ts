@@ -87,7 +87,7 @@ export function drawWgpuFullscreenPass(
     const input = inputs[i];
     const layout = wgpuPipeline.textureBindGroupLayouts[i];
     if (layout === undefined) continue;
-    const sampler = state.allowSmoothing ? runtime2.linearSampler : runtime2.nearestSampler;
+    const sampler = state.allowSmoothing ? runtime2.context.linearSampler : runtime2.context.nearestSampler;
     const bindGroup = state.device.createBindGroup({
       layout,
       entries: [

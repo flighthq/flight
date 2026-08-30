@@ -50,7 +50,7 @@ export function destroyWgpuRichTextData(state: WgpuRenderState, data: RendererDa
   if (richData === null) return;
   const { surface } = richData;
   if (surface === null) return;
-  const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
   const entry = cache.get(surface.image);
   if (entry !== undefined) {
     entry.texture.destroy();

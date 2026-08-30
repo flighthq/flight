@@ -4,9 +4,9 @@ import type { RenderTexture } from './RenderTexture';
 import type { TextureSource } from './TextureSource';
 import type { WgpuParticleResources } from './WgpuParticleResources';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
-import type { WgpuRenderTextureEntry } from './WgpuRenderTexture';
 import type { WgpuShapeMeshPipeline } from './WgpuRenderState';
 import type { WgpuTextureEntry, WgpuTextureSourceTextureEntry, WgpuVideoTextureEntry } from './WgpuRenderState';
+import type { WgpuRenderTextureEntry } from './WgpuRenderTexture';
 
 export interface WgpuDeviceRuntime {
   readonly device: GPUDevice;

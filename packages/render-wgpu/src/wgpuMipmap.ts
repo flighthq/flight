@@ -29,7 +29,7 @@ export function generateWgpuMipmaps(
       layout,
       entries: [
         { binding: 0, resource: srcView },
-        { binding: 1, resource: runtime.linearSampler },
+        { binding: 1, resource: runtime.context.linearSampler },
       ],
     });
     const pass = encoder.beginRenderPass({
@@ -62,7 +62,7 @@ function ensureWgpuMipmapPipeline(
   format: GPUTextureFormat,
 ): { bindGroupLayout: GPUBindGroupLayout; pipeline: GPURenderPipeline } {
   const runtime = getWgpuRenderStateRuntime(state);
-  const cached = runtime.mipmapPipelineCache.get(format);
+  const cached = runtime.context.mipmapPipelineCache.get(format);
   if (cached !== undefined) return cached;
   const { device } = state;
   const bindGroupLayout = device.createBindGroupLayout({
@@ -79,7 +79,7 @@ function ensureWgpuMipmapPipeline(
     primitive: { topology: 'triangle-list' },
   });
   const result = { bindGroupLayout, pipeline };
-  runtime.mipmapPipelineCache.set(format, result);
+  runtime.context.mipmapPipelineCache.set(format, result);
   return result;
 }
 

@@ -41,7 +41,7 @@ export function bindWgpuDebugSurface(
       layout: pipeline.materialBindGroupLayout,
       entries: [
         { binding: 0, resource: { buffer } },
-        { binding: 1, resource: stateRuntime.linearSampler },
+        { binding: 1, resource: stateRuntime.context.linearSampler },
         { binding: 2, resource: ensureWgpuPlaceholderTextureView(state) },
       ],
     });

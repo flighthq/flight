@@ -62,7 +62,7 @@ export function destroyWgpuScale9ShapeData(state: WgpuRenderState, data: Rendere
   const shapeData = getWgpuScale9ShapeData(data);
   if (shapeData === null || shapeData.surface === null) return;
   const { surface } = shapeData;
-  const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
   const entry = cache.get(surface.image);
   if (entry !== undefined) {
     entry.texture.destroy();

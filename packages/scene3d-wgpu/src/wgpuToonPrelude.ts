@@ -45,7 +45,7 @@ export function bindWgpuToonSurface(
       layout: pipeline.materialBindGroupLayout,
       entries: [
         { binding: 0, resource: { buffer } },
-        { binding: 1, resource: stateRuntime.linearSampler },
+        { binding: 1, resource: stateRuntime.context.linearSampler },
         { binding: 2, resource: placeholder },
         { binding: 3, resource: placeholder },
       ],

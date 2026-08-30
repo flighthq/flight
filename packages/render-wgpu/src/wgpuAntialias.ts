@@ -52,7 +52,7 @@ export function acquireWgpuSurfaceAntialiasView(
     layout: runtime.surfaceAntialiasResolveBindGroupLayout!,
     entries: [
       { binding: 0, resource: view },
-      { binding: 1, resource: runtime.linearSampler },
+      { binding: 1, resource: runtime.context.linearSampler },
     ],
   });
   return view;

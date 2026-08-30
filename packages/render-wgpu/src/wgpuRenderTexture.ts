@@ -32,10 +32,10 @@ export function bindWgpuRenderTexture(
 
 export function destroyWgpuRenderTexture(state: WgpuRenderState, renderTexture: Readonly<RenderTexture>): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const entry = runtime.wgpuRenderTextureCache?.get(renderTexture);
+  const entry = runtime.context.wgpuRenderTextureCache?.get(renderTexture);
   if (entry === undefined) return;
   destroyWgpuRenderTarget(state, entry.target);
-  runtime.wgpuRenderTextureCache!.delete(renderTexture);
+  runtime.context.wgpuRenderTextureCache!.delete(renderTexture);
 }
 
 export function explainWgpuRenderTexture(
@@ -133,7 +133,7 @@ function ensureWgpuRenderTextureEntry(
   const format = getWgpuRenderTextureFormat(state, requested.format);
   const colorSpace = descriptor.colorSpace ?? renderTexture.colorSpace;
   const runtime = getWgpuRenderStateRuntime(state);
-  const entries = (runtime.wgpuRenderTextureCache ??= new WeakMap());
+  const entries = (runtime.context.wgpuRenderTextureCache ??= new WeakMap());
   let entry = entries.get(renderTexture);
   if (entry === undefined) {
     const target = createWgpuRenderTarget(
@@ -174,7 +174,7 @@ function getWgpuRenderTextureEntry(
   state: WgpuRenderState,
   renderTexture: Readonly<RenderTexture>,
 ): WgpuRenderTextureEntry | undefined {
-  return getWgpuRenderStateRuntime(state).wgpuRenderTextureCache?.get(renderTexture);
+  return getWgpuRenderStateRuntime(state).context.wgpuRenderTextureCache?.get(renderTexture);
 }
 
 function getWgpuRenderTextureFormat(state: WgpuRenderState, format: RenderTargetFormat | undefined): GPUTextureFormat {
