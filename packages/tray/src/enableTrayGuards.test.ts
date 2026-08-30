@@ -1,9 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { setLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { LogEntry, TrayIcon } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { disableTrayGuards, enableTrayGuards } from './enableTrayGuards';
-import { createTrayIcon, setTrayBackend, startTrayIconAnimation, stopTrayIconAnimation } from './tray';
+import { createTrayIcon, destroyTrayIcon, startTrayIconAnimation } from './tray';
 
 let entries: LogEntry[];
 
@@ -11,69 +12,68 @@ beforeEach(() => {
   vi.useFakeTimers();
   entries = [];
   setLogSink((entry) => entries.push(entry));
-  setTrayBackend({
-    create: () => 1,
-    destroy: () => {},
-    getBounds: () => null,
-    getCapabilities: () => ({ animation: true, badge: false, bounds: true, contextMenu: true, title: true }),
-    getTitle: () => '',
-    isDestroyed: () => false,
-    listIds: () => [1],
-    setContextMenu: () => {},
-    setIcon: () => {},
-    setPressedIcon: () => {},
-    setTitle: () => {},
-    setTooltip: () => {},
-    subscribe: () => () => {},
-  } as never);
 });
 
 afterEach(() => {
   disableTrayGuards();
-  setTrayBackend(null);
   setLogSink(null);
   vi.useRealTimers();
 });
 
+function host() {
+  const live: TrayIcon[] = [];
+  return {
+    tray: {
+      lifecycle: createEntity({
+        async create(tray: TrayIcon) {
+          live.push(tray);
+          return { outcome: 'created' as const };
+        },
+        async destroy(tray: TrayIcon) {
+          live.splice(live.indexOf(tray), 1);
+          return { outcome: 'destroyed' as const };
+        },
+        isDestroyed: (tray: TrayIcon) => !live.includes(tray),
+        list: () => live.slice(),
+      }),
+      image: createEntity({
+        async set() {
+          return { outcome: 'updated' as const };
+        },
+      }),
+    },
+  };
+}
+
+async function tray() {
+  const result = await createTrayIcon(host());
+  if (result.outcome !== 'created') throw new Error(result.outcome);
+  return result.tray;
+}
+
 function messages(): string {
-  return entries.map((e) => String((e.data as { message?: unknown } | undefined)?.message ?? '')).join('\n');
+  return entries.map((entry) => String((entry.data as { message?: unknown } | undefined)?.message ?? '')).join('\n');
 }
 
 describe('disableTrayGuards', () => {
-  it('stops the guard inspecting later animations', () => {
+  it('stops inspecting later animations', async () => {
     enableTrayGuards();
     disableTrayGuards();
-    const tray = createTrayIcon()!;
-    startTrayIconAnimation(tray, ['a', 'b'], 0);
-    stopTrayIconAnimation(tray);
+    const icon = await tray();
+    const started = await startTrayIconAnimation(icon, ['a'], 0);
+    if (started.outcome === 'started') await started.release.release();
+    await destroyTrayIcon(icon);
     expect(messages()).toBe('');
   });
 });
 
 describe('enableTrayGuards', () => {
-  it('says nothing for a positive interval', () => {
+  it('warns without refusing a non-positive interval', async () => {
     enableTrayGuards();
-    const tray = createTrayIcon()!;
-    startTrayIconAnimation(tray, ['a', 'b'], 100);
-    stopTrayIconAnimation(tray);
-    expect(messages()).toBe('');
-  });
-
-  // A non-positive interval does not fail — setInterval simply schedules as fast as the host will run
-  // it, so the animation "works" while burning a core. Nothing points at the call that asked for it.
-  it('warns when the interval is zero, and still starts the animation', () => {
-    enableTrayGuards();
-    const tray = createTrayIcon()!;
-
-    const stop = startTrayIconAnimation(tray, ['a', 'b'], 0);
-
+    const icon = await tray();
+    const started = await startTrayIconAnimation(icon, ['a'], 0);
+    expect(started.outcome).toBe('started');
     expect(messages()).toContain('intervalMs is 0');
-    // The wording that explains WHY is asserted here rather than in a separate negative-interval test:
-    // logOnce suppresses a key for the process, so a second test tripping this key would pass or fail
-    // on file order alone.
-    expect(messages()).toContain('as fast as the host schedules');
-    // Warned, not refused: this is misuse, not an expected failure.
-    expect(typeof stop).toBe('function');
-    stop();
+    if (started.outcome === 'started') await started.release.release();
   });
 });

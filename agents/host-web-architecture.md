@@ -702,6 +702,14 @@ Two prerequisite commits are now on base, completing the documentation reconcili
 
 Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine implementations: 22 global-singleton enablers + 1 per-instance factory (Cursor). Cursor excluded from `enableHostWeb()` umbrella (umbrella membership = 22). 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions settled in section 6). Precedence: custom > host > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent (second call allocates nothing, preserves provider identity). Distinct second host does not last-write-win: the original is preserved and `conflict` reports the rejected install independently. explain* separates installed layer, last observed runtime reachability, observing operation, and conflict. Viability is observed by real operations, never probed at enable time and never inferred from operation success. Unbounded relationships rebind across provider transitions; bounded pending operations complete where they started. Bundle acceptance fixtures required.
 
+## 19. Tray explicit-dependency reconciliation (2026-08-30)
+
+The earlier inventory correctly classified Web Tray as having no implementation, but its sentinel
+conclusion predates the explicit Host model. `webHost.tray` and Capacitor's group are now required and
+exactly empty, with no sentinel factory or ambient resolver. Native Tray coverage is Host × injected
+desktop profile; the 15 command, query, lifecycle, and backend-emitted event facets remain separate,
+and unsupported operations are structurally absent.
+
 Log is no longer one of those sentinel rows: its zero-provider Host/ambient seam is deleted, and
 `createFileLogSink` receives an owned `LogTransport` Entity directly.
 

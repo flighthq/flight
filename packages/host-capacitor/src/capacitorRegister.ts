@@ -116,6 +116,7 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     storage: {},
     system: {},
     text: {},
+    tray: {},
     ui: {},
     // The supported Capacitor plugin set has no Squirrel-compatible updater transaction.
     updater: {},

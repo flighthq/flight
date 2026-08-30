@@ -6,7 +6,6 @@ import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
 import { getPlatformBackend } from '@flighthq/platform/contract';
 import { getProtocolBackend } from '@flighthq/protocol/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
-import { getTrayBackend } from '@flighthq/tray/contract';
 import type { Host } from '@flighthq/types/contract';
 
 import type { HostProbeCapability } from './expectations';
@@ -32,6 +31,7 @@ export function captureHostProbeBackends(
       | 'shell'
       | 'shortcut'
       | 'storage'
+      | 'tray'
       | 'updater'
       | 'window'
     >
@@ -78,7 +78,7 @@ export function captureHostProbeBackends(
       null,
     statusbar: getStatusBarBackend(),
     storage: host.storage?.local ?? null,
-    tray: getTrayBackend(),
+    tray: firstProvidedSlot(host.tray),
     updater: host.updater?.command ?? null,
     window: host.window ?? null,
   };

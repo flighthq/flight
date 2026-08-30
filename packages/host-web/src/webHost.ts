@@ -91,6 +91,7 @@ export const webHost = createEntity({
   storage: { change: webStorageBackend, local: webStorageBackend },
   system: {},
   text: {},
+  tray: {},
   ui: { fullscreen: webFullscreenBackend },
   updater: {},
   window: webWindowBackend,

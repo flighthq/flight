@@ -2,8 +2,8 @@ import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
-import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
+  DesktopOsProfile,
   ElectronApi,
   ElectronBackendOptions,
   EntityRuntimeKey,
@@ -59,12 +59,14 @@ import { createElectronScreenCapabilities } from './electronScreen';
 import { makeElectronShellCapabilities } from './electronShell';
 import { createElectronShortcutQueryBackend, createElectronShortcutTriggerBackend } from './electronShortcut';
 import { createElectronStorageBackend } from './electronStorage';
-import { createElectronTrayBackend } from './electronTray';
+import { createElectronTrayCapabilities } from './electronTray';
+import type { ElectronTrayCapabilitiesFor } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
 
-type ElectronHost = Host &
-  HasClipboardBookmark &
+type ElectronHost<Profile extends DesktopOsProfile> = Host & {
+  readonly tray: ElectronTrayCapabilitiesFor<Profile>;
+} & HasClipboardBookmark &
   HasClipboardFormats &
   HasClipboardImage &
   HasClipboardText &
@@ -107,10 +109,10 @@ type ElectronHost = Host &
 //
 // Pass the returned host to clipboard, window, dialog, notification, and storage operations. Remaining
 // ambient package seams revert independently; there is no bulk unregister for those independent backends.
-export function registerElectronBackends(
+export function registerElectronBackends<Profile extends DesktopOsProfile>(
   electron: ElectronApi,
-  options: Readonly<ElectronBackendOptions>,
-): ElectronHost {
+  options: Readonly<ElectronBackendOptions> & { readonly platform: Profile },
+): ElectronHost<Profile> {
   const clipboard = createElectronClipboardBackend(electron);
   const dialog = {
     directoryOpen: createElectronDirectoryOpenDialogBackend(electron),
@@ -131,7 +133,6 @@ export function registerElectronBackends(
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
-  setTrayBackend(createElectronTrayBackend(electron));
   setProtocolBackend(createElectronProtocolBackend(electron));
   return createEntity({
     accessibility: {},
@@ -154,8 +155,9 @@ export function registerElectronBackends(
     storage: { local: storage },
     system: {},
     text: {},
+    tray: createElectronTrayCapabilities(electron, options.platform),
     ui: {},
     updater: { command: updater },
     window,
-  } satisfies Omit<ElectronHost, typeof EntityRuntimeKey>);
+  } satisfies Omit<ElectronHost<Profile>, typeof EntityRuntimeKey>);
 }

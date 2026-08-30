@@ -16,7 +16,7 @@
 //     app, clipboard, dialog, notification, opener, os, globalShortcut, process,
 //     menu: menu as TauriApi['menu'], tray: tray as TauriApi['tray'], window: window as TauriApi['window'],
 //   };
-//   registerTauriBackends(tauriApi);
+//   registerTauriBackends(tauriApi, 'macos');
 //
 // Typing it here (rather than importing `@tauri-apps/*`) keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Tauri surface the seams require, which is the real
@@ -206,6 +206,7 @@ export interface TauriMenuItemHandle {
 }
 
 export interface TauriMenu {
+  close(): Promise<void>;
   popup(at?: Readonly<TauriPhysicalPositionLike>): Promise<void>;
   setAsAppMenu(): Promise<unknown>;
 }
@@ -224,6 +225,7 @@ export interface TauriTrayIconFactory {
 export interface TauriTrayIconOptions {
   action?: (event: Readonly<TauriTrayIconEvent>) => void;
   icon?: string;
+  iconAsTemplate?: boolean;
   menu?: TauriMenu;
   title?: string;
   tooltip?: string;
@@ -232,13 +234,20 @@ export interface TauriTrayIconOptions {
 // Tray pointer event. `type` is Tauri's discriminant ('Click' | 'DoubleClick' | 'Enter' | …); `button`
 // distinguishes left/right on a click.
 export interface TauriTrayIconEvent {
+  buttonState?: string;
   button?: string;
+  position?: TauriPhysicalPositionLike;
+  rect?: {
+    position: TauriPhysicalPositionLike;
+    size: TauriLogicalSizeLike;
+  };
   type: string;
 }
 
 export interface TauriTrayIcon {
   close(): Promise<void>;
   setIcon(icon: string | null): Promise<void>;
+  setIconAsTemplate(isTemplate: boolean): Promise<void>;
   setMenu(menu: TauriMenu | null): Promise<void>;
   setTitle(title: string | null): Promise<void>;
   setTooltip(tooltip: string | null): Promise<void>;

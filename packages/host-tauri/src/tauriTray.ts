@@ -1,159 +1,301 @@
 import { createEntity } from '@flighthq/entity/contract';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  DesktopOsProfile,
+  HostTrayCapabilities,
   MenuItemTemplate,
-  TrayBackend,
-  TrayEventData,
-  TrayEventType,
+  Signal,
   TauriApi,
+  TauriMenu,
   TauriMenuItemHandle,
   TauriTrayIcon,
   TauriTrayIconEvent,
+  TauriTrayIconOptions,
+  TrayIcon,
+  TrayIconOptions,
+  TrayInteractionEvent,
+  TrayMenuSelectionEvent,
 } from '@flighthq/types/contract';
 
-// Maps Flight's TrayBackend onto Tauri's `@tauri-apps/api/tray`. Tauri's `TrayIcon.new` is async, while
-// TrayBackend.create is synchronous and must return a numeric id now — so create allocates the id
-// immediately, records it, and adopts the resolved `TrayIcon` handle when the async build settles;
-// method calls before the handle lands (setIcon/setTitle/…) queue nothing and simply no-op on the not-
-// yet-ready record, matching the "no-op when absent" pattern. Click/double-click are delivered through
-// the Tauri tray `action` callback and forwarded as TrayEventData to the single subscribed listener.
-// Tauri exposes no Windows balloon, no tray bounds, and no template/pressed-icon distinction here, so
-// those methods report the contract sentinels (null / no-op). Icons cross as string paths.
-export function createTauriTrayBackend(tauri: TauriApi): TrayBackend {
-  const trayModule = tauri.tray;
-  const menuModule = tauri.menu;
-  const trays = new Map<number, TrayRecord>();
-  let nextId = 0;
-  // The single tray event listener, owned by this backend and set via subscribe.
-  let eventListener: ((event: Readonly<TrayEventData>) => void) | null = null;
-  const emit = (id: number, type: TrayEventType): void => {
-    eventListener?.({
-      altKey: false,
-      bounds: null,
-      ctrlKey: false,
-      dropFiles: null,
-      dropText: null,
-      id,
-      metaKey: false,
-      position: null,
-      shiftKey: false,
-      type,
-    });
-  };
-  return createEntity({
-    create(options) {
-      const id = nextId++;
-      const record: TrayRecord = { icon: null, title: options.title ?? '', tooltip: options.tooltip ?? '' };
-      trays.set(id, record);
-      trayModule.TrayIcon.new({
+type TauriCommonTrayCapabilities = Required<
+  Pick<HostTrayCapabilities, 'image' | 'lifecycle' | 'menu' | 'menuSelectionEvents'>
+>;
+type TauriLinuxTrayCapabilities = TauriCommonTrayCapabilities & Required<Pick<HostTrayCapabilities, 'title'>>;
+type TauriMacosTrayCapabilities = TauriCommonTrayCapabilities &
+  Required<Pick<HostTrayCapabilities, 'interactionEvents' | 'templateImage' | 'title' | 'tooltip'>>;
+type TauriWindowsTrayCapabilities = TauriCommonTrayCapabilities &
+  Required<Pick<HostTrayCapabilities, 'interactionEvents' | 'tooltip'>>;
+
+export type TauriTrayCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
+  ? TauriMacosTrayCapabilities
+  : Profile extends 'windows'
+    ? TauriWindowsTrayCapabilities
+    : TauriLinuxTrayCapabilities;
+
+interface TrayRecord {
+  destroying: boolean;
+  icon: TauriTrayIcon;
+  interactionEvents: Signal<(event: Readonly<TrayInteractionEvent>) => void>;
+  menuGeneration: number;
+  menus: TauriMenu[];
+  menuSelectionEvents: Signal<(event: Readonly<TrayMenuSelectionEvent>) => void>;
+  nativePending: boolean;
+  pendingMenuOperations: Set<Promise<void>>;
+  title: string;
+  tooltip: string;
+}
+
+export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
+  tauri: TauriApi,
+  profile: Profile,
+): TauriTrayCapabilitiesFor<Profile> {
+  const records = new Map<TrayIcon, TrayRecord>();
+
+  const lifecycle = createEntity({
+    async create(tray: TrayIcon, options: Readonly<TrayIconOptions>) {
+      if (options.signal?.aborted) return { outcome: 'cancelled' as const };
+      const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
+      const menuSelectionEvents = createSignal<(event: Readonly<TrayMenuSelectionEvent>) => void>();
+      const nativeOptions: TauriTrayIconOptions = {
+        action: (event) => emitInteraction(interactionEvents, event),
         icon: options.icon,
-        title: options.title,
-        tooltip: options.tooltip,
-        action: (event) => {
-          const type = toTrayEventType(event);
-          if (type !== null) emit(id, type);
-        },
-      })
-        .then((icon) => {
-          record.icon = icon;
-        })
-        .catch(() => {
-          /* tray creation failed — the record stays iconless and its methods no-op */
-        });
-      return id;
-    },
-    destroy(id) {
-      const record = trays.get(id);
-      if (!record) return;
-      record.icon?.close().catch(() => {});
-      trays.delete(id);
-    },
-    displayBalloon() {
-      // Tauri has no Windows balloon API; no-op.
-    },
-    removeBalloon() {
-      // No balloon to remove.
-    },
-    getBounds() {
-      // Tauri does not report tray icon bounds; null sentinel.
-      return null;
-    },
-    getCapabilities() {
-      return { balloon: false, bounds: false, clickEvents: true, dropFiles: false, pressedIcon: false, title: true };
-    },
-    getTitle(id) {
-      return trays.get(id)?.title ?? '';
-    },
-    getTooltip(id) {
-      return trays.get(id)?.tooltip ?? '';
-    },
-    isDestroyed(id) {
-      return !trays.has(id);
-    },
-    listIds() {
-      return [...trays.keys()];
-    },
-    popUpContextMenu(id) {
-      // Tauri shows the tray menu on click via setMenu; it has no imperative popup here. No-op.
-      void id;
-    },
-    setContextMenu(id, items) {
-      const record = trays.get(id);
-      if (!record) return;
-      void (async () => {
-        const built = await buildTrayItems(menuModule, items);
-        const menu = await menuModule.Menu.new({ items: built });
-        await record.icon?.setMenu(menu);
-      })().catch(() => {});
-    },
-    setIcon(id, icon) {
-      trays
-        .get(id)
-        ?.icon?.setIcon(icon)
-        .catch(() => {});
-    },
-    setIgnoreDoubleClickEvents() {
-      // Tauri has no double-click-ignore toggle; no-op.
-    },
-    setPressedIcon() {
-      // Tauri has no distinct pressed-state icon; no-op.
-    },
-    setTemplate() {
-      // Template-ness is set on the icon at creation in Tauri, not toggled here; no-op.
-    },
-    setTitle(id, title) {
-      const record = trays.get(id);
-      if (!record) return;
-      record.title = title;
-      record.icon?.setTitle(title).catch(() => {});
-    },
-    setTooltip(id, tooltip) {
-      const record = trays.get(id);
-      if (!record) return;
-      record.tooltip = tooltip;
-      record.icon?.setTooltip(tooltip).catch(() => {});
-    },
-    subscribe(listener) {
-      eventListener = listener;
-      return () => {
-        if (eventListener === listener) eventListener = null;
       };
+      if (profile === 'linux' || profile === 'macos') nativeOptions.title = options.title;
+      if (profile === 'windows' || profile === 'macos') nativeOptions.tooltip = options.tooltip;
+      if (profile === 'macos') nativeOptions.iconAsTemplate = options.iconTemplate;
+      let icon: TauriTrayIcon;
+      try {
+        icon = await tauri.tray.TrayIcon.new(nativeOptions);
+      } catch (error) {
+        return { error, outcome: 'tray-create-failed' as const };
+      }
+      if (options.signal?.aborted) {
+        try {
+          await icon.close();
+          return { outcome: 'cancelled' as const };
+        } catch (error) {
+          return { error, outcome: 'tray-create-failed' as const };
+        }
+      }
+      records.set(tray, {
+        destroying: false,
+        icon,
+        interactionEvents,
+        menuGeneration: 0,
+        menus: [],
+        menuSelectionEvents,
+        nativePending: true,
+        pendingMenuOperations: new Set(),
+        title: options.title ?? '',
+        tooltip: options.tooltip ?? '',
+      });
+      return { outcome: 'created' as const };
     },
+    async destroy(tray: TrayIcon) {
+      const record = records.get(tray);
+      if (record === undefined) return { outcome: 'destroyed' as const };
+      record.destroying = true;
+      record.menuGeneration++;
+      await Promise.all([...record.pendingMenuOperations]);
+      const failures: Array<{ error?: unknown; step: 'native-resource' }> = [];
+      for (let index = record.menus.length - 1; index >= 0; index--) {
+        let closed = false;
+        try {
+          await record.menus[index]!.close();
+          closed = true;
+        } catch (error) {
+          failures.push({ error, step: 'native-resource' });
+        }
+        if (closed) record.menus.splice(index, 1);
+      }
+      if (record.nativePending) {
+        try {
+          await record.icon.close();
+          record.nativePending = false;
+        } catch (error) {
+          failures.push({ error, step: 'native-resource' });
+        }
+      }
+      if (failures.length > 0) return { failures, outcome: 'tray-destroy-failed' as const };
+      records.delete(tray);
+      return { outcome: 'destroyed' as const };
+    },
+    isDestroyed: (tray: TrayIcon) => records.get(tray)?.destroying ?? true,
+    list: () => [...records.entries()].filter(([, record]) => !record.destroying).map(([tray]) => tray),
+  });
+
+  const image = createEntity({
+    async set(tray: TrayIcon, icon: string) {
+      return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
+    },
+  });
+
+  const menu = createEntity({
+    async set(tray: TrayIcon, items: readonly MenuItemTemplate[]) {
+      const record = activeRecord(records, tray);
+      if (record === null) return { outcome: 'tray-destroyed' as const };
+      let finishOperation!: () => void;
+      const pendingOperation = new Promise<void>((resolve) => {
+        finishOperation = resolve;
+      });
+      record.pendingMenuOperations.add(pendingOperation);
+      try {
+        const generation = ++record.menuGeneration;
+        let built: TauriMenu;
+        try {
+          const handles = await buildTrayItems(tauri.menu, items, (id) =>
+            emitSignal(record.menuSelectionEvents, { id }),
+          );
+          built = await tauri.menu.Menu.new({ items: handles });
+        } catch (error) {
+          return { error, outcome: 'menu-build-failed' as const };
+        }
+        if (record.destroying || generation !== record.menuGeneration) {
+          await closeStaleMenu(record, built);
+          return record.destroying
+            ? ({ outcome: 'tray-destroyed' as const } as const)
+            : ({
+                error: new Error('A newer Tray menu superseded this build'),
+                outcome: 'menu-install-failed' as const,
+              } as const);
+        }
+        try {
+          await record.icon.setMenu(built);
+        } catch (error) {
+          await closeStaleMenu(record, built);
+          return { error, outcome: 'menu-install-failed' as const };
+        }
+        if (record.destroying || generation !== record.menuGeneration) {
+          await closeStaleMenu(record, built);
+          return record.destroying
+            ? ({ outcome: 'tray-destroyed' as const } as const)
+            : ({
+                error: new Error('A newer Tray menu superseded this install'),
+                outcome: 'menu-install-failed' as const,
+              } as const);
+        }
+        const previous = record.menus.slice();
+        record.menus.push(built);
+        const failures: unknown[] = [];
+        for (const oldMenu of previous) {
+          try {
+            await oldMenu.close();
+            record.menus.splice(record.menus.indexOf(oldMenu), 1);
+          } catch (error) {
+            failures.push(error);
+          }
+        }
+        return failures.length === 0
+          ? ({ outcome: 'updated' as const } as const)
+          : ({ error: failures, outcome: 'menu-install-failed' as const } as const);
+      } finally {
+        record.pendingMenuOperations.delete(pendingOperation);
+        finishOperation();
+      }
+    },
+  });
+
+  const common = {
+    image,
+    lifecycle,
+    menu,
+    menuSelectionEvents: createEntity({
+      getSignal: (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null,
+    }),
+  };
+
+  const title = createEntity({
+    async get(tray: TrayIcon) {
+      const record = activeRecord(records, tray);
+      return record === null
+        ? ({ outcome: 'tray-destroyed' as const } as const)
+        : ({ outcome: 'available' as const, title: record.title } as const);
+    },
+    async set(tray: TrayIcon, value: string) {
+      const result = await update(records, tray, 'title-update-failed', async (record) => record.icon.setTitle(value));
+      if (result.outcome === 'updated') records.get(tray)!.title = value;
+      return result;
+    },
+  });
+
+  if (profile === 'linux') return { ...common, title } as unknown as TauriTrayCapabilitiesFor<Profile>;
+
+  const interactionEvents = createEntity({
+    getSignal: (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null,
+  });
+  const tooltip = createEntity({
+    async get(tray: TrayIcon) {
+      const record = activeRecord(records, tray);
+      return record === null
+        ? ({ outcome: 'tray-destroyed' as const } as const)
+        : ({ outcome: 'available' as const, tooltip: record.tooltip } as const);
+    },
+    async set(tray: TrayIcon, value: string) {
+      const result = await update(records, tray, 'tooltip-update-failed', async (record) =>
+        record.icon.setTooltip(value),
+      );
+      if (result.outcome === 'updated') records.get(tray)!.tooltip = value;
+      return result;
+    },
+  });
+
+  if (profile === 'windows') {
+    return { ...common, interactionEvents, tooltip } as unknown as TauriTrayCapabilitiesFor<Profile>;
+  }
+  return {
+    ...common,
+    interactionEvents,
+    templateImage: createEntity({
+      async set(tray: TrayIcon, isTemplate: boolean) {
+        return update(records, tray, 'template-image-update-failed', async (record) =>
+          record.icon.setIconAsTemplate(isTemplate),
+        );
+      },
+    }),
+    title,
+    tooltip,
+  } as unknown as TauriTrayCapabilitiesFor<Profile>;
+}
+
+function activeRecord(records: ReadonlyMap<TrayIcon, TrayRecord>, tray: TrayIcon): TrayRecord | null {
+  const record = records.get(tray);
+  return record !== undefined && !record.destroying ? record : null;
+}
+
+function emitInteraction(
+  signal: Signal<(event: Readonly<TrayInteractionEvent>) => void>,
+  event: Readonly<TauriTrayIconEvent>,
+): void {
+  const type = toInteractionType(event);
+  if (type === null) return;
+  emitSignal(signal, {
+    altKey: false,
+    bounds: event.rect
+      ? {
+          height: event.rect.size.height,
+          width: event.rect.size.width,
+          x: event.rect.position.x,
+          y: event.rect.position.y,
+        }
+      : null,
+    ctrlKey: false,
+    metaKey: false,
+    position: event.position ? { x: event.position.x, y: event.position.y } : null,
+    shiftKey: false,
+    type,
   });
 }
 
-// Maps a Tauri tray pointer event onto Flight's TrayEventType, or null for events with no Flight
-// equivalent (enter/leave/move). A right-button click reports 'rightClick'.
-function toTrayEventType(event: Readonly<TauriTrayIconEvent>): TrayEventType | null {
+function toInteractionType(event: Readonly<TauriTrayIconEvent>): TrayInteractionEvent['type'] | null {
   if (event.type === 'DoubleClick') return 'doubleClick';
   if (event.type === 'Click') return event.button === 'Right' ? 'rightClick' : 'click';
   return null;
 }
 
-// Builds Tauri tray-menu item handles from Flight templates. Tray-menu selection is delivered through
-// the menu backend's listener, so these items carry no action callback (mirroring the electron seam).
 async function buildTrayItems(
   menuModule: TauriApi['menu'],
   items: readonly MenuItemTemplate[],
+  onSelect: (id: string) => void,
 ): Promise<TauriMenuItemHandle[]> {
   const built: TauriMenuItemHandle[] = [];
   for (const item of items) {
@@ -162,22 +304,52 @@ async function buildTrayItems(
     } else if (item.submenu) {
       built.push(
         await menuModule.Submenu.new({
-          text: item.label,
           enabled: item.enabled,
-          items: await buildTrayItems(menuModule, item.submenu),
+          items: await buildTrayItems(menuModule, item.submenu, onSelect),
+          text: item.label,
         }),
       );
     } else {
-      built.push(await menuModule.MenuItem.new({ id: item.id, text: item.label, enabled: item.enabled }));
+      built.push(
+        await menuModule.MenuItem.new({
+          accelerator: item.accelerator,
+          action: item.id === undefined ? undefined : () => onSelect(item.id!),
+          enabled: item.enabled,
+          id: item.id,
+          text: item.label,
+        }),
+      );
     }
   }
   return built;
 }
 
-// Per-tray bookkeeping: the resolved Tauri tray icon (null until the async build lands) plus the
-// title/tooltip Tauri does not expose for read-back.
-interface TrayRecord {
-  icon: TauriTrayIcon | null;
-  title: string;
-  tooltip: string;
+async function closeStaleMenu(record: TrayRecord, menu: TauriMenu): Promise<void> {
+  try {
+    await menu.close();
+  } catch {
+    record.menus.push(menu);
+  }
+}
+
+async function update<
+  Failure extends
+    | 'image-update-failed'
+    | 'template-image-update-failed'
+    | 'title-update-failed'
+    | 'tooltip-update-failed',
+>(
+  records: ReadonlyMap<TrayIcon, TrayRecord>,
+  tray: TrayIcon,
+  failure: Failure,
+  operation: (record: TrayRecord) => Promise<void>,
+) {
+  const record = activeRecord(records, tray);
+  if (record === null) return { outcome: 'tray-destroyed' as const };
+  try {
+    await operation(record);
+    return { outcome: 'updated' as const };
+  } catch (error) {
+    return { error, outcome: failure };
+  }
 }

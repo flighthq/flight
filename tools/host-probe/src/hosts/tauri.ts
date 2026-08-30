@@ -1,7 +1,7 @@
 import { getAppName, getAppVersion } from '@flighthq/app/contract';
 import { registerTauriBackends } from '@flighthq/host-tauri';
 import { getPlatformName } from '@flighthq/platform/contract';
-import type { TauriApi } from '@flighthq/types/contract';
+import type { DesktopOsProfile, TauriApi } from '@flighthq/types/contract';
 import * as app from '@tauri-apps/api/app';
 import * as menu from '@tauri-apps/api/menu';
 import * as tray from '@tauri-apps/api/tray';
@@ -35,7 +35,7 @@ export async function installTauriHostProbe(before: HostProbeBackendSnapshot): P
     tray: tray as TauriApi['tray'],
     window: window as TauriApi['window'],
   };
-  const host = registerTauriBackends(tauriApi);
+  const host = registerTauriBackends(tauriApi, desktopOsProfile(os.platform()));
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
   await waitFor(() => getAppName().length > 0);
   const name = getAppName();
@@ -58,6 +58,12 @@ export async function installTauriHostProbe(before: HostProbeBackendSnapshot): P
       },
     ],
   };
+}
+
+function desktopOsProfile(platform: string): DesktopOsProfile {
+  if (platform === 'macos') return 'macos';
+  if (platform === 'windows') return 'windows';
+  return 'linux';
 }
 
 async function waitFor(predicate: () => boolean): Promise<void> {
