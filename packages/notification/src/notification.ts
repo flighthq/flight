@@ -8,7 +8,6 @@ import type {
   HasNotificationClose,
   HasNotificationDelivery,
   HasNotificationDismiss,
-  HasNotificationPendingList,
   HasNotificationReply,
   HasNotificationScheduling,
   HasNotificationShow,
@@ -178,6 +177,9 @@ export function createServiceWorkerNotificationCapabilities(
       clearTimeout(entry.timeout);
       scheduled.delete(id);
     },
+    async getPendingNotifications() {
+      return Array.from(scheduled.values()).map((entry) => entry.entry);
+    },
     async scheduleNotification(request, schedule) {
       const id = request.id ?? generateId();
       const delay = Math.max(0, schedule.at - Date.now());
@@ -239,11 +241,6 @@ export function createServiceWorkerNotificationCapabilities(
       },
       unsubscribe(listener) {
         dismissListeners.delete(listener);
-      },
-    },
-    pendingList: {
-      async getPendingNotifications() {
-        return Array.from(scheduled.values()).map((entry) => entry.entry);
       },
     },
     reply: {
@@ -398,17 +395,15 @@ export function createWebNotificationCapabilities(): WebNotificationCapabilities
         dismissListeners.delete(listener);
       },
     },
-    pendingList: {
-      async getPendingNotifications() {
-        return Array.from(scheduled.values()).map((entry) => entry.entry);
-      },
-    },
     scheduling: {
       async cancelScheduledNotification(id) {
         const entry = scheduled.get(id);
         if (entry === undefined) return;
         clearTimeout(entry.timeout);
         scheduled.delete(id);
+      },
+      async getPendingNotifications() {
+        return Array.from(scheduled.values()).map((entry) => entry.entry);
       },
       async scheduleNotification(request, schedule) {
         const id = request.id ?? generateId();
@@ -466,12 +461,13 @@ export function getNotificationPermission(host: HasNotificationDelivery): Promis
 }
 
 export async function getPendingNotifications(
-  host: HasNotificationPendingList & NotificationHost,
+  host: HasNotificationScheduling & NotificationHost,
 ): Promise<ReadonlyArray<Readonly<ScheduledNotification>>> {
-  const pending = await host.notification.pendingList.getPendingNotifications();
+  const backend = host.notification.scheduling;
+  const pending = await backend.getPendingNotifications();
   return pending.map((entry) => {
     const handle: ScheduledNotification = { id: entry.id, request: entry.request, schedule: entry.schedule };
-    if (host.notification.scheduling !== undefined) _scheduleOwners.set(handle, host.notification.scheduling);
+    _scheduleOwners.set(handle, backend);
     return handle;
   });
 }

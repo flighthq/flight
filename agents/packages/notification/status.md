@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/notification'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-29
+by: builder5
 ---
 
 # notification — Status
@@ -37,6 +37,9 @@ Every item was re-checked against `packages/notification/src/` (and `packages/ty
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-29** — Pending enumeration folded into `NotificationSchedulingBackend` beside schedule
+  and cancel across Web, Service Worker, and Capacitor providers; the standalone pending-list slot
+  and trait were deleted, while enumerated handles remain pinned to their originating scheduler.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped as **false**: "`@flighthq/host-electron`
   notification coverage — still deferred" — `packages/host-electron/src/electronNotification.ts`
   implements the full backend (actions mapped back from Electron's index at `:37-41`, click, dismiss,

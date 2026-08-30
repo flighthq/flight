@@ -77,7 +77,13 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
         }
       },
     },
-    pendingList: {
+    scheduling: {
+      async cancelScheduledNotification(id: string) {
+        const numericId = findNumericId(idByNumber, id);
+        if (numericId === null) return;
+        await notifications.cancel({ notifications: [{ id: numericId }] });
+        idByNumber.delete(numericId);
+      },
       async getPendingNotifications() {
         try {
           const pending = await notifications.getPending();
@@ -95,14 +101,6 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
         } catch {
           return [];
         }
-      },
-    },
-    scheduling: {
-      async cancelScheduledNotification(id: string) {
-        const numericId = findNumericId(idByNumber, id);
-        if (numericId === null) return;
-        await notifications.cancel({ notifications: [{ id: numericId }] });
-        idByNumber.delete(numericId);
       },
       async scheduleNotification(request, schedule) {
         const numericId = nextNumericId++;

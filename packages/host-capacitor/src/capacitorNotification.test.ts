@@ -53,7 +53,7 @@ describe('createCapacitorNotificationCapabilities', () => {
   it('declares exactly delivery, scheduling, click, and action', () => {
     const capabilities = createCapacitorNotificationCapabilities(fakeCapacitor().capacitor);
     expect(EntityRuntimeKey in capabilities).toBe(true);
-    expect(Object.keys(capabilities).sort()).toEqual(['action', 'click', 'delivery', 'pendingList', 'scheduling']);
+    expect(Object.keys(capabilities).sort()).toEqual(['action', 'click', 'delivery', 'scheduling']);
   });
 
   it('schedules an immediate notification and returns the caller id', async () => {
@@ -75,7 +75,7 @@ describe('createCapacitorNotificationCapabilities', () => {
     const capabilities = createCapacitorNotificationCapabilities(capacitor);
     const at = Date.now() + 1000;
     await capabilities.scheduling.scheduleNotification({ id: 'later', title: 'Later' }, { at, repeat: 'week' });
-    const pending = await capabilities.pendingList.getPendingNotifications();
+    const pending = await capabilities.scheduling.getPendingNotifications();
     expect(pending[0]).toMatchObject({ id: 'later', schedule: { at, repeat: 'week' } });
     await capabilities.scheduling.cancelScheduledNotification('later');
     expect(cancelled).toEqual([1]);

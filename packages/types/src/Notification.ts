@@ -82,15 +82,12 @@ export interface NotificationDeliveryBackend {
 }
 
 export interface NotificationSchedulingBackend {
+  cancelScheduledNotification(id: string): Promise<void>;
+  getPendingNotifications(): Promise<ReadonlyArray<Readonly<ScheduledNotification>>>;
   scheduleNotification(
     request: Readonly<NotificationRequest>,
     schedule: Readonly<NotificationSchedule>,
   ): Promise<string | null>;
-  cancelScheduledNotification(id: string): Promise<void>;
-}
-
-export interface NotificationPendingListBackend {
-  getPendingNotifications(): Promise<ReadonlyArray<Readonly<ScheduledNotification>>>;
 }
 
 export interface NotificationCloseBackend {
@@ -138,7 +135,6 @@ export type ServiceWorkerNotificationCapabilities = Readonly<{
   close: NotificationCloseBackend;
   delivery: NotificationDeliveryBackend;
   dismiss: NotificationDismissBackend;
-  pendingList: NotificationPendingListBackend;
   reply: NotificationReplyBackend;
   scheduling: NotificationSchedulingBackend;
   show: NotificationShowBackend;
@@ -149,7 +145,6 @@ export type WebNotificationCapabilities = Readonly<{
   close: NotificationCloseBackend;
   delivery: NotificationDeliveryBackend;
   dismiss: NotificationDismissBackend;
-  pendingList: NotificationPendingListBackend;
   scheduling: NotificationSchedulingBackend;
   show: NotificationShowBackend;
   update: NotificationUpdateBackend;

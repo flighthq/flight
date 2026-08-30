@@ -2,7 +2,6 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostNotificationCapabilities,
   NotificationCloseBackend,
-  NotificationPendingListBackend,
   NotificationSchedulingBackend,
   NotificationUpdateBackend,
 } from '@flighthq/types/contract';
@@ -103,7 +102,6 @@ describe('basic web notification capabilities', () => {
       'close',
       'delivery',
       'dismiss',
-      'pendingList',
       'scheduling',
       'show',
       'update',
@@ -188,6 +186,9 @@ describe('explicit notification operations', () => {
       async cancelScheduledNotification(id) {
         cancelled.push(id);
       },
+      async getPendingNotifications() {
+        return [];
+      },
       async scheduleNotification() {
         return 'same-id';
       },
@@ -209,24 +210,25 @@ describe('explicit notification operations', () => {
       async cancelScheduledNotification(id) {
         cancelled.push(id);
       },
-      async scheduleNotification() {
-        return null;
-      },
-    };
-    const pendingList: NotificationPendingListBackend = {
       async getPendingNotifications() {
         return [{ id: 'listed', request: { title: 'Later' }, schedule: { at: 1 } }];
+      },
+      async scheduleNotification() {
+        return null;
       },
     };
     const fallback: NotificationSchedulingBackend = {
       async cancelScheduledNotification() {
         throw new Error('wrong provider');
       },
+      async getPendingNotifications() {
+        return [];
+      },
       async scheduleNotification() {
         return null;
       },
     };
-    const [pending] = await getPendingNotifications(host({ pendingList, scheduling: owner }));
+    const [pending] = await getPendingNotifications(host({ scheduling: owner }));
     await cancelScheduledNotification(host({ scheduling: fallback }), pending!);
     expect(cancelled).toEqual(['listed']);
   });
@@ -313,7 +315,6 @@ describe('service-worker notification capabilities', () => {
       'close',
       'delivery',
       'dismiss',
-      'pendingList',
       'reply',
       'scheduling',
       'show',
@@ -392,8 +393,8 @@ describe('service-worker notification capabilities', () => {
       { at: Date.now() + 60_000 },
     );
     expect(id).toBe('scheduled');
-    expect(await capabilities.pendingList.getPendingNotifications()).toHaveLength(1);
+    expect(await capabilities.scheduling.getPendingNotifications()).toHaveLength(1);
     await capabilities.scheduling.cancelScheduledNotification('scheduled');
-    expect(await capabilities.pendingList.getPendingNotifications()).toEqual([]);
+    expect(await capabilities.scheduling.getPendingNotifications()).toEqual([]);
   });
 });
