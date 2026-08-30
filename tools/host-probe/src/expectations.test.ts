@@ -8,7 +8,7 @@ describe('createHostProbeProviderResults', () => {
   it('passes required changes and marks unclaimed providers unsupported', () => {
     const results = createHostProbeProviderResults(
       'web',
-      new Set(['cursor', 'dialog', 'glyph-rasterizer', 'loop', 'screen', 'window']),
+      new Set(['cursor', 'dialog', 'glyph-rasterizer', 'loop', 'screen', 'share', 'window']),
     );
     expect(results).toHaveLength(HostProbeCapabilities.length);
     expect(results.find((result) => result.id === 'provider.loop')?.status).toBe('pass');
