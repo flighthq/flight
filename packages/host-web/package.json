@@ -64,6 +64,7 @@
     "@flighthq/render-wgpu": "*",
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
+    "@flighthq/socket": "*",
     "@flighthq/share": "*",
     "@flighthq/statusbar": "*",
     "@flighthq/storage": "*",
