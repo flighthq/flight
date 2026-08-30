@@ -1,92 +1,119 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
-  BackendExplanation,
-  NotificationBackend,
-  NotificationCapabilities,
-  NotificationChannel,
+  ActiveNotification,
+  Entity,
+  HasNotificationAction,
+  HasNotificationActiveList,
+  HasNotificationClick,
+  HasNotificationClose,
+  HasNotificationDelivery,
+  HasNotificationDismiss,
+  HasNotificationPendingList,
+  HasNotificationReply,
+  HasNotificationScheduling,
+  HasNotificationShow,
+  HasNotificationUpdate,
+  HostNotificationCapabilities,
+  NotificationCloseBackend,
+  NotificationDeliveryBackend,
+  NotificationHandle,
   NotificationPermission,
   NotificationRequest,
   NotificationSchedule,
+  NotificationSchedulingBackend,
+  NotificationUpdateBackend,
   ScheduledNotification,
+  ScheduledNotificationHandle,
+  ServiceWorkerNotificationCapabilities,
+  WebNotificationCapabilities,
 } from '@flighthq/types/contract';
 
-// The service-worker backend accepts this minimal interface so the package does not need to
-// depend on @types/service-worker-api or lib.webworker. A native ServiceWorkerRegistration
-// satisfies it automatically.
+interface ServiceWorkerNotificationLike {
+  readonly data?: unknown;
+  readonly tag: string;
+  readonly title: string;
+  close(): void;
+}
+
+// The service-worker provider accepts this minimal interface so the package does not need to depend on
+// @types/service-worker-api or lib.webworker. A native ServiceWorkerRegistration satisfies it.
 interface ServiceWorkerRegistrationLike {
   showNotification(title: string, options?: NotificationOptions): Promise<void>;
-  getNotifications(filter?: { tag?: string }): Promise<ReadonlyArray<{ title: string; close(): void; tag: string }>>;
+  getNotifications(filter?: { tag?: string }): Promise<ReadonlyArray<ServiceWorkerNotificationLike>>;
 }
 
-// Cancels a pending scheduled notification by id. No-ops when the id is unknown.
-export function cancelScheduledNotification(id: string): void {
-  getNotificationBackend().cancelScheduledNotification(id);
+interface ServiceWorkerNotificationDispatch {
+  action(notificationId: string, actionId: string): void;
+  click(notificationId: string): void;
+  dismiss(notificationId: string): void;
+  reply(notificationId: string, actionId: string, text: string): void;
 }
 
-// Dismisses all currently-shown notifications.
-export function closeAllNotifications(): void {
-  getNotificationBackend().closeAllNotifications();
+const _serviceWorkerDispatch = new WeakMap<ServiceWorkerNotificationCapabilities, ServiceWorkerNotificationDispatch>();
+
+export async function cancelScheduledNotification(
+  host: HasNotificationScheduling,
+  handle: ScheduledNotificationHandle,
+): Promise<void> {
+  if (_cancelledSchedules.has(handle)) return;
+  const backend = _scheduleOwners.get(handle) ?? host.notification.scheduling;
+  await backend.cancelScheduledNotification(handle.id);
+  _scheduleOwners.delete(handle);
+  _cancelledSchedules.add(handle);
 }
 
-// Dismisses the notification with the given id. No-ops when the id is unknown or already dismissed.
-export function closeNotification(id: string): void {
-  getNotificationBackend().closeNotification(id);
+export function closeAllNotifications(host: HasNotificationClose): Promise<void> {
+  return host.notification.close.closeAllNotifications();
 }
 
-// Creates or updates a notification channel. No-ops on backends without channel support.
-export function createNotificationChannel(channel: Readonly<NotificationChannel>): void {
-  const backend = getNotificationBackend() as NotificationBackend & {
-    createNotificationChannel?: (channel: Readonly<NotificationChannel>) => void;
-  };
-  backend.createNotificationChannel?.(channel);
+export async function closeNotification(host: HasNotificationClose, handle: NotificationHandle): Promise<void> {
+  if (_closedNotifications.has(handle)) return;
+  const backend = _notificationOwners.get(handle)?.close ?? host.notification.close;
+  await backend.closeNotification(handle.id);
+  _notificationOwners.delete(handle);
+  _closedNotifications.add(handle);
 }
 
-// Builds a web backend backed by the Service Worker Notifications API. Unlike the basic web
-// backend, this variant can deliver action-button activations because it uses
-// `registration.showNotification`, which triggers the SW `notificationclick` event globally.
-//
-// The caller must supply an active ServiceWorkerRegistration (e.g. from
-// `navigator.serviceWorker.ready`). The backend uses `registration.showNotification` and
-// `registration.getNotifications` to manage notification identity and lifecycle.
-//
-// Action delivery requires a service worker that forwards `notificationclick` messages back to the
-// page. Wire the SW side like this:
-//
-//   self.addEventListener('notificationclick', (event) => {
-//     event.notification.close();
-//     const { notificationId, actionId } = event.notification.data ?? {};
-//     if (event.source) event.source.postMessage({ type: 'notificationclick', notificationId, actionId });
-//   });
-//
-// Then call `notifyServiceWorkerBackendAction(backend, event.data)` in the page's message handler.
-// This two-step wiring is necessary because SW events fire in the worker thread, not the page.
-export function createServiceWorkerNotificationBackend(
+type NotificationHost = { readonly notification: HostNotificationCapabilities };
+type NotificationOwner = Readonly<{
+  close?: NotificationCloseBackend;
+  update?: NotificationUpdateBackend;
+}>;
+
+const _notificationOwners = new WeakMap<NotificationHandle, NotificationOwner>();
+const _closedNotifications = new WeakSet<NotificationHandle>();
+const _scheduleOwners = new WeakMap<ScheduledNotificationHandle, NotificationSchedulingBackend>();
+const _cancelledSchedules = new WeakSet<ScheduledNotificationHandle>();
+
+// Builds a web provider backed by the Service Worker Notifications API. Action, click, dismiss, and
+// reply events originate in the worker; forward them through notifyServiceWorkerNotificationEvent.
+// Update is deliberately absent: the platform cannot recover the complete original request needed by
+// the contract's merge semantics. Active-list summaries contain only the id/title/tag data it can prove.
+export function createServiceWorkerNotificationCapabilities(
   registration: ServiceWorkerRegistrationLike,
-): NotificationBackend {
-  let _idCounter = 0;
-  const _clickListeners = new Set<(id: string) => void>();
-  const _actionListeners = new Set<(id: string, actionId: string) => void>();
-  const _dismissListeners = new Set<(id: string) => void>();
-  const _replyListeners = new Set<(id: string, actionId: string, text: string) => void>();
-  const _showListeners = new Set<(id: string) => void>();
-  const _scheduled = new Map<string, { timeout: ReturnType<typeof setTimeout>; entry: ScheduledNotification }>();
+): ServiceWorkerNotificationCapabilities & Entity {
+  let idCounter = 0;
+  const actionListeners = new Set<(id: string, actionId: string) => void>();
+  const clickListeners = new Set<(id: string) => void>();
+  const dismissListeners = new Set<(id: string) => void>();
+  const replyListeners = new Set<(id: string, actionId: string, text: string) => void>();
+  const showListeners = new Set<(id: string) => void>();
+  const scheduled = new Map<string, { timeout: ReturnType<typeof setTimeout>; entry: ScheduledNotification }>();
 
-  function _generateId(): string {
-    _idCounter += 1;
-    return `sw-notif-${_idCounter}`;
+  function generateId(): string {
+    idCounter += 1;
+    return `sw-notif-${idCounter}`;
   }
 
-  function _fire<T>(listeners: Set<(arg: T) => void>, arg: T): void {
-    for (const fn of listeners) fn(arg);
-  }
-
-  async function _show(request: Readonly<NotificationRequest>): Promise<string> {
-    if (typeof Notification === 'undefined') return '';
+  async function notify(request: Readonly<NotificationRequest>): Promise<string | null> {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return null;
     try {
-      if (Notification.permission !== 'granted') return '';
-      const id = request.id ?? _generateId();
+      const id = request.id ?? generateId();
       await registration.showNotification(request.title, {
-        body: request.body,
+        actions: request.actions?.map((action) => ({ action: action.id, icon: action.icon, title: action.title })),
         badge: request.badge,
+        body: request.body,
+        data: { ...(request.data as object | null), notificationId: id },
         dir: request.dir,
         icon: request.icon,
         image: request.image,
@@ -97,89 +124,44 @@ export function createServiceWorkerNotificationBackend(
         tag: request.tag ?? id,
         timestamp: request.timestamp,
         vibrate: request.vibrate ? [...request.vibrate] : undefined,
-        // Store the Flight id in data so SW click handlers can forward it back.
-        data: { ...(request.data as object | null), notificationId: id },
-        actions: request.actions?.map((a) => ({ action: a.id, title: a.title, icon: a.icon })),
       } as NotificationOptions);
-      _fire(_showListeners, id);
+      for (const listener of showListeners) listener(id);
       return id;
     } catch {
-      return '';
+      return null;
     }
   }
 
-  const backend: NotificationBackend = {
-    cancelScheduledNotification(id) {
-      const entry = _scheduled.get(id);
-      if (entry !== undefined) {
-        clearTimeout(entry.timeout);
-        _scheduled.delete(id);
-      }
-    },
-
+  const close: NotificationCloseBackend = {
     async closeAllNotifications() {
       try {
         const notifications = await registration.getNotifications();
-        for (const n of notifications) {
-          n.close();
+        for (const notification of notifications) {
+          if (getServiceWorkerNotificationId(notification) !== null) notification.close();
         }
       } catch {
-        // Guarded.
+        // A provider rejection leaves the platform's current notifications unchanged.
       }
     },
-
     async closeNotification(id) {
       try {
-        const notifications = await registration.getNotifications({ tag: id });
-        for (const n of notifications) {
-          n.close();
+        const notifications = await registration.getNotifications();
+        for (const notification of notifications) {
+          if (getServiceWorkerNotificationId(notification) === id) notification.close();
         }
       } catch {
-        // Guarded.
+        // A provider rejection leaves the platform's current notifications unchanged.
       }
     },
+  };
 
-    getCapabilities(): NotificationCapabilities {
-      return {
-        actions: true,
-        channels: false,
-        coldStart: false,
-        image: true,
-        listActive: true,
-        scheduling: true,
-        textReply: false,
-      };
-    },
-
-    async getLaunchNotification() {
-      return null;
-    },
-
-    async getActiveNotifications() {
-      try {
-        const notifications = await registration.getNotifications();
-        return notifications.map((n) => ({ title: n.title, tag: n.tag }));
-      } catch {
-        return [];
-      }
-    },
-
-    async getPendingNotifications() {
-      return Array.from(_scheduled.values()).map((e) => e.entry);
-    },
-
-    getPermission(): NotificationPermission {
+  const delivery: NotificationDeliveryBackend = {
+    async getPermission() {
       if (typeof Notification === 'undefined') return 'denied';
       return Notification.permission as NotificationPermission;
     },
-
-    isSupported() {
-      return typeof Notification !== 'undefined' && 'serviceWorker' in navigator;
-    },
-
-    notify: _show,
-
-    async requestPermission(): Promise<NotificationPermission> {
+    notify,
+    async requestPermission() {
       if (typeof Notification === 'undefined' || typeof Notification.requestPermission !== 'function') return 'denied';
       try {
         return (await Notification.requestPermission()) as NotificationPermission;
@@ -187,145 +169,143 @@ export function createServiceWorkerNotificationBackend(
         return 'denied';
       }
     },
+  };
 
+  const scheduling: NotificationSchedulingBackend = {
+    async cancelScheduledNotification(id) {
+      const entry = scheduled.get(id);
+      if (entry === undefined) return;
+      clearTimeout(entry.timeout);
+      scheduled.delete(id);
+    },
     async scheduleNotification(request, schedule) {
-      const id = request.id ?? _generateId();
+      const id = request.id ?? generateId();
       const delay = Math.max(0, schedule.at - Date.now());
       const entry: ScheduledNotification = { id, request, schedule };
-
-      const fireAndReschedule = () => {
-        _scheduled.delete(id);
-        void _show({ ...request, id });
-        if (schedule.repeat !== undefined) {
-          const ms = _repeatMs(schedule.repeat);
-          const timeout = setTimeout(fireAndReschedule, ms);
-          _scheduled.set(id, {
-            timeout,
-            entry: { id, request, schedule: { ...schedule, at: Date.now() + ms } },
-          });
-        }
+      const fireAndReschedule = (): void => {
+        scheduled.delete(id);
+        void notify({ ...request, id });
+        if (schedule.repeat === undefined) return;
+        const milliseconds = repeatMilliseconds(schedule.repeat);
+        const timeout = setTimeout(fireAndReschedule, milliseconds);
+        scheduled.set(id, {
+          entry: { id, request, schedule: { ...schedule, at: Date.now() + milliseconds } },
+          timeout,
+        });
       };
-
       const timeout = setTimeout(fireAndReschedule, delay);
-      _scheduled.set(id, { timeout, entry });
+      scheduled.set(id, { entry, timeout });
       return id;
     },
-
-    subscribeAction(listener) {
-      _actionListeners.add(listener);
-      return () => {
-        _actionListeners.delete(listener);
-      };
-    },
-
-    subscribeClick(listener) {
-      _clickListeners.add(listener);
-      return () => {
-        _clickListeners.delete(listener);
-      };
-    },
-
-    subscribeDismiss(listener) {
-      _dismissListeners.add(listener);
-      return () => {
-        _dismissListeners.delete(listener);
-      };
-    },
-
-    subscribeReply(listener) {
-      _replyListeners.add(listener);
-      return () => {
-        _replyListeners.delete(listener);
-      };
-    },
-
-    subscribeShow(listener) {
-      _showListeners.add(listener);
-      return () => {
-        _showListeners.delete(listener);
-      };
-    },
-
-    async updateNotification(id, partial) {
-      // Close existing and re-show with merged fields.
-      await backend.closeNotification(id);
-      // Merge the partial on top; since we don't retain the original request in the SW backend
-      // (the SW doesn't expose it), callers must include at least a title in partial or this
-      // cannot reconstruct the notification.
-      const merged: NotificationRequest = { ...(partial as NotificationRequest), id };
-      if (merged.title === undefined) return false;
-      await _show(merged);
-      return true;
-    },
   };
 
-  type SwBackendInternal = NotificationBackend & {
-    _dispatchAction: (notificationId: string, actionId: string) => void;
-    _dispatchClick: (notificationId: string) => void;
-    _dispatchDismiss: (notificationId: string) => void;
-    _dispatchReply: (notificationId: string, actionId: string, text: string) => void;
-  };
+  const capabilities = createEntity({
+    action: {
+      subscribe(listener) {
+        actionListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        actionListeners.delete(listener);
+      },
+    },
+    activeList: {
+      async getActiveNotifications() {
+        try {
+          const notifications = await registration.getNotifications();
+          const active: ActiveNotification[] = [];
+          for (const notification of notifications) {
+            const id = getServiceWorkerNotificationId(notification);
+            if (id !== null) active.push({ id, tag: notification.tag, title: notification.title });
+          }
+          return active;
+        } catch {
+          return [];
+        }
+      },
+    },
+    click: {
+      subscribe(listener) {
+        clickListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        clickListeners.delete(listener);
+      },
+    },
+    close,
+    delivery,
+    dismiss: {
+      subscribe(listener) {
+        dismissListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        dismissListeners.delete(listener);
+      },
+    },
+    pendingList: {
+      async getPendingNotifications() {
+        return Array.from(scheduled.values()).map((entry) => entry.entry);
+      },
+    },
+    reply: {
+      subscribe(listener) {
+        replyListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        replyListeners.delete(listener);
+      },
+    },
+    scheduling,
+    show: {
+      subscribe(listener) {
+        showListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        showListeners.delete(listener);
+      },
+    },
+  } as const satisfies ServiceWorkerNotificationCapabilities);
 
-  // Exposes internal dispatch hooks so page-side message handlers can forward SW events.
-  // Use notifyServiceWorkerBackendAction() rather than calling these directly.
-  const internal = backend as SwBackendInternal;
-  internal._dispatchAction = (notificationId, actionId) => {
-    // Action button tap: deliver to both action listeners (id + actionId) and click listeners (id).
-    for (const fn of _actionListeners) fn(notificationId, actionId);
-    _fire(_clickListeners, notificationId);
-  };
-  internal._dispatchClick = (notificationId) => {
-    _fire(_clickListeners, notificationId);
-  };
-  internal._dispatchDismiss = (notificationId) => {
-    _fire(_dismissListeners, notificationId);
-  };
-  internal._dispatchReply = (notificationId, actionId, text) => {
-    // Inline-reply submission (a `text-input` action): deliver the reply text to reply listeners.
-    for (const fn of _replyListeners) fn(notificationId, actionId, text);
-  };
-
-  return backend;
+  _serviceWorkerDispatch.set(capabilities, {
+    action(notificationId, actionId) {
+      for (const listener of actionListeners) listener(notificationId, actionId);
+      for (const listener of clickListeners) listener(notificationId);
+    },
+    click(notificationId) {
+      for (const listener of clickListeners) listener(notificationId);
+    },
+    dismiss(notificationId) {
+      for (const listener of dismissListeners) listener(notificationId);
+    },
+    reply(notificationId, actionId, text) {
+      for (const listener of replyListeners) listener(notificationId, actionId, text);
+    },
+  });
+  return capabilities;
 }
 
-// Builds the default web backend over the global Notification API. Every touch is guarded for hosts
-// where Notification is absent (jsdom, non-secure contexts) and wrapped in try/catch; notify and
-// requestPermission resolve to '' / 'default' when unsupported or denied rather than throwing.
-// Per-instance onclick is wired so clicks are actually delivered; action buttons require the
-// service-worker backend variant and never fire on this basic backend.
-export function createWebNotificationBackend(): NotificationBackend {
-  // Live map of id → Notification instance so we can close them and wire onclick.
-  const _live = new Map<string, InstanceType<typeof Notification>>();
-  // Live request registry: id → the original request, needed to merge partial updates.
-  const _requests = new Map<string, Readonly<NotificationRequest>>();
-  const _clickListeners = new Set<(id: string) => void>();
-  const _actionListeners = new Set<(id: string, actionId: string) => void>();
-  const _dismissListeners = new Set<(id: string) => void>();
-  const _replyListeners = new Set<(id: string, actionId: string, text: string) => void>();
-  const _showListeners = new Set<(id: string) => void>();
+// Builds the standard page Notification API provider. It owns live Notification instances and
+// best-effort page-lifetime schedule timers, so callers that need isolation may construct a fresh value.
+export function createWebNotificationCapabilities(): WebNotificationCapabilities & Entity {
+  const live = new Map<string, InstanceType<typeof Notification>>();
+  const requests = new Map<string, Readonly<NotificationRequest>>();
+  const clickListeners = new Set<(id: string) => void>();
+  const dismissListeners = new Set<(id: string) => void>();
+  const showListeners = new Set<(id: string) => void>();
+  const scheduled = new Map<string, { timeout: ReturnType<typeof setTimeout>; entry: ScheduledNotification }>();
+  let idCounter = 0;
 
-  // Scheduled-notification registry (best-effort setTimeout — cleared on page reload).
-  const _scheduled = new Map<string, { timeout: ReturnType<typeof setTimeout>; entry: ScheduledNotification }>();
-  let _idCounter = 0;
-
-  function _generateId(): string {
-    _idCounter += 1;
-    return `web-notif-${_idCounter}`;
+  function generateId(): string {
+    idCounter += 1;
+    return `web-notif-${idCounter}`;
   }
 
-  function _fire<T>(listeners: Set<(arg: T) => void>, arg: T): void {
-    for (const fn of listeners) fn(arg);
-  }
-
-  // Extracted as a closure function so scheduleNotification can call it without a `this` reference.
-  async function _notify(request: Readonly<NotificationRequest>): Promise<string> {
-    if (typeof Notification === 'undefined') return '';
+  async function notify(request: Readonly<NotificationRequest>): Promise<string | null> {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return null;
     try {
-      if (Notification.permission !== 'granted') return '';
-      const id = request.id ?? _generateId();
-      const n = new Notification(request.title, {
-        body: request.body,
+      const id = request.id ?? generateId();
+      const notification = new Notification(request.title, {
         badge: request.badge,
+        body: request.body,
         data: request.data,
         dir: request.dir,
         icon: request.icon,
@@ -338,385 +318,273 @@ export function createWebNotificationBackend(): NotificationBackend {
         timestamp: request.timestamp,
         vibrate: request.vibrate ? [...request.vibrate] : undefined,
       } as NotificationOptions);
-
-      _live.set(id, n);
-      _requests.set(id, request);
-
-      n.onshow = () => {
-        _fire(_showListeners, id);
+      live.set(id, notification);
+      requests.set(id, request);
+      notification.onshow = () => {
+        for (const listener of showListeners) listener(id);
       };
-      n.onclick = () => {
-        _fire(_clickListeners, id);
+      notification.onclick = () => {
+        for (const listener of clickListeners) listener(id);
       };
-      n.onclose = () => {
-        _live.delete(id);
-        _requests.delete(id);
-        _fire(_dismissListeners, id);
+      notification.onclose = () => {
+        if (live.get(id) === notification) {
+          live.delete(id);
+          requests.delete(id);
+        }
+        for (const listener of dismissListeners) listener(id);
       };
-      n.onerror = () => {
-        _live.delete(id);
-        _requests.delete(id);
+      notification.onerror = () => {
+        if (live.get(id) === notification) {
+          live.delete(id);
+          requests.delete(id);
+        }
       };
-
       return id;
     } catch {
-      return '';
+      return null;
     }
   }
 
-  return {
-    cancelScheduledNotification(id) {
-      const entry = _scheduled.get(id);
-      if (entry !== undefined) {
+  function closeOne(id: string): void {
+    const notification = live.get(id);
+    if (notification === undefined) return;
+    live.delete(id);
+    requests.delete(id);
+    try {
+      notification.close();
+    } catch {
+      // Some browsers reject programmatic close; the provider no longer treats the instance as live.
+    }
+  }
+
+  return createEntity({
+    click: {
+      subscribe(listener) {
+        clickListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        clickListeners.delete(listener);
+      },
+    },
+    close: {
+      async closeAllNotifications() {
+        for (const id of [...live.keys()]) closeOne(id);
+      },
+      async closeNotification(id) {
+        closeOne(id);
+      },
+    },
+    delivery: {
+      async getPermission() {
+        if (typeof Notification === 'undefined') return 'denied';
+        return Notification.permission as NotificationPermission;
+      },
+      notify,
+      async requestPermission() {
+        if (typeof Notification === 'undefined' || typeof Notification.requestPermission !== 'function')
+          return 'denied';
+        try {
+          return (await Notification.requestPermission()) as NotificationPermission;
+        } catch {
+          return 'denied';
+        }
+      },
+    },
+    dismiss: {
+      subscribe(listener) {
+        dismissListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        dismissListeners.delete(listener);
+      },
+    },
+    pendingList: {
+      async getPendingNotifications() {
+        return Array.from(scheduled.values()).map((entry) => entry.entry);
+      },
+    },
+    scheduling: {
+      async cancelScheduledNotification(id) {
+        const entry = scheduled.get(id);
+        if (entry === undefined) return;
         clearTimeout(entry.timeout);
-        _scheduled.delete(id);
-      }
-    },
-
-    closeAllNotifications() {
-      for (const [id, n] of _live) {
-        try {
-          n.close();
-        } catch {
-          // Guarded — some browsers disallow closing programmatically.
-        }
-        _live.delete(id);
-        _requests.delete(id);
-      }
-    },
-
-    closeNotification(id) {
-      const n = _live.get(id);
-      if (n !== undefined) {
-        try {
-          n.close();
-        } catch {
-          // Guarded.
-        }
-        _live.delete(id);
-        _requests.delete(id);
-      }
-    },
-
-    getCapabilities(): NotificationCapabilities {
-      return {
-        actions: false,
-        channels: false,
-        coldStart: false,
-        image: false,
-        listActive: false,
-        scheduling: true,
-        textReply: false,
-      };
-    },
-
-    async getLaunchNotification() {
-      // Web pages are not launched from a notification; always null.
-      return null;
-    },
-
-    async getActiveNotifications() {
-      return [];
-    },
-
-    async getPendingNotifications() {
-      return Array.from(_scheduled.values()).map((e) => e.entry);
-    },
-
-    getPermission(): NotificationPermission {
-      if (typeof Notification === 'undefined') return 'denied';
-      const p = Notification.permission as NotificationPermission;
-      // The web API uses 'default' / 'granted' / 'denied' — same union values.
-      return p;
-    },
-
-    isSupported() {
-      return typeof Notification !== 'undefined';
-    },
-
-    notify: _notify,
-
-    async requestPermission(): Promise<NotificationPermission> {
-      if (typeof Notification === 'undefined' || typeof Notification.requestPermission !== 'function') return 'denied';
-      try {
-        const result = (await Notification.requestPermission()) as NotificationPermission;
-        return result;
-      } catch {
-        return 'denied';
-      }
-    },
-
-    async scheduleNotification(request, schedule) {
-      const id = request.id ?? _generateId();
-      const delay = Math.max(0, schedule.at - Date.now());
-      const entry: ScheduledNotification = { id, request, schedule };
-
-      const fireAndReschedule = () => {
-        _scheduled.delete(id);
-        void _notify({ ...request, id });
-        if (schedule.repeat !== undefined) {
-          const ms = _repeatMs(schedule.repeat);
-          const timeout = setTimeout(fireAndReschedule, ms);
-          _scheduled.set(id, {
+        scheduled.delete(id);
+      },
+      async scheduleNotification(request, schedule) {
+        const id = request.id ?? generateId();
+        const delay = Math.max(0, schedule.at - Date.now());
+        const entry: ScheduledNotification = { id, request, schedule };
+        const fireAndReschedule = (): void => {
+          scheduled.delete(id);
+          void notify({ ...request, id });
+          if (schedule.repeat === undefined) return;
+          const milliseconds = repeatMilliseconds(schedule.repeat);
+          const timeout = setTimeout(fireAndReschedule, milliseconds);
+          scheduled.set(id, {
+            entry: { id, request, schedule: { ...schedule, at: Date.now() + milliseconds } },
             timeout,
-            entry: { id, request, schedule: { ...schedule, at: Date.now() + ms } },
           });
-        }
-      };
-
-      const timeout = setTimeout(fireAndReschedule, delay);
-      _scheduled.set(id, { timeout, entry });
-      return id;
+        };
+        const timeout = setTimeout(fireAndReschedule, delay);
+        scheduled.set(id, { entry, timeout });
+        return id;
+      },
     },
-
-    subscribeAction(listener) {
-      // Web notifications have no global action feed — action buttons require the Service Worker
-      // Notifications API. A native host (Electron/Tauri) or the SW backend is required.
-      _actionListeners.add(listener);
-      return () => {
-        _actionListeners.delete(listener);
-      };
+    show: {
+      subscribe(listener) {
+        showListeners.add(listener);
+      },
+      unsubscribe(listener) {
+        showListeners.delete(listener);
+      },
     },
-
-    subscribeClick(listener) {
-      _clickListeners.add(listener);
-      return () => {
-        _clickListeners.delete(listener);
-      };
+    update: {
+      async updateNotification(id, partial) {
+        const existing = live.get(id);
+        const request = requests.get(id);
+        if (existing === undefined || request === undefined) return false;
+        closeOne(id);
+        return (await notify({ ...request, ...partial, id })) !== null;
+      },
     },
-
-    subscribeDismiss(listener) {
-      _dismissListeners.add(listener);
-      return () => {
-        _dismissListeners.delete(listener);
-      };
-    },
-
-    subscribeReply(listener) {
-      // Inline reply requires the SW backend; this basic backend never fires it.
-      _replyListeners.add(listener);
-      return () => {
-        _replyListeners.delete(listener);
-      };
-    },
-
-    subscribeShow(listener) {
-      _showListeners.add(listener);
-      return () => {
-        _showListeners.delete(listener);
-      };
-    },
-
-    async updateNotification(id, partial) {
-      // The basic Notification API has no update mechanism. Simulate by closing and re-opening.
-      const existing = _live.get(id);
-      const originalRequest = _requests.get(id);
-      if (existing === undefined || originalRequest === undefined) return false;
-      try {
-        existing.close();
-        _live.delete(id);
-        _requests.delete(id);
-      } catch {
-        // Guarded — some browsers disallow closing programmatically.
-      }
-      // Merge the partial fields into the original request, preserving the stable id.
-      const merged: NotificationRequest = { ...originalRequest, ...partial, id };
-      await _notify(merged);
-      return true;
-    },
-  };
+  } as const satisfies WebNotificationCapabilities);
 }
 
-// Deletes the notification channel with the given id. No-ops on backends without channel support.
-export function deleteNotificationChannel(id: string): void {
-  const backend = getNotificationBackend() as NotificationBackend & {
-    deleteNotificationChannel?: (id: string) => void;
-  };
-  backend.deleteNotificationChannel?.(id);
+export async function getActiveNotifications(
+  host: HasNotificationActiveList & NotificationHost,
+): Promise<ReadonlyArray<Readonly<ActiveNotification>>> {
+  const active = await host.notification.activeList.getActiveNotifications();
+  return active.map((entry) => {
+    const handle: ActiveNotification = { id: entry.id, tag: entry.tag, title: entry.title };
+    _notificationOwners.set(handle, { close: host.notification.close, update: host.notification.update });
+    return handle;
+  });
 }
 
-export function explainNotificationBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+export function getNotificationPermission(host: HasNotificationDelivery): Promise<NotificationPermission> {
+  return host.notification.delivery.getPermission();
 }
 
-// Returns all currently-displayed notifications. Returns an empty array on backends that do not
-// support active-notification introspection.
-export function getActiveNotifications(): Promise<ReadonlyArray<Readonly<NotificationRequest>>> {
-  return getNotificationBackend().getActiveNotifications();
+export async function getPendingNotifications(
+  host: HasNotificationPendingList & NotificationHost,
+): Promise<ReadonlyArray<Readonly<ScheduledNotification>>> {
+  const pending = await host.notification.pendingList.getPendingNotifications();
+  return pending.map((entry) => {
+    const handle: ScheduledNotification = { id: entry.id, request: entry.request, schedule: entry.schedule };
+    if (host.notification.scheduling !== undefined) _scheduleOwners.set(handle, host.notification.scheduling);
+    return handle;
+  });
 }
 
-// Returns the notification the app was launched from, or null when the app was not launched via
-// a notification tap. On web this always returns null.
-export function getLaunchNotification(): Promise<Readonly<NotificationRequest> | null> {
-  return getNotificationBackend().getLaunchNotification();
-}
-
-export function getNotificationBackend(): NotificationBackend {
-  return _custom ?? _host ?? _sentinel;
-}
-
-// Returns a plain-data record of what the active backend supports.
-export function getNotificationCapabilities(): NotificationCapabilities {
-  return getNotificationBackend().getCapabilities();
-}
-
-// Returns the list of currently-registered notification channels. Returns an empty array on
-// backends that do not support channels (e.g. web).
-export function getNotificationChannels(): ReadonlyArray<Readonly<NotificationChannel>> {
-  const backend = getNotificationBackend() as NotificationBackend & {
-    getNotificationChannels?: () => ReadonlyArray<Readonly<NotificationChannel>>;
-  };
-  return backend.getNotificationChannels?.() ?? [];
-}
-
-// Returns the current notification permission state: 'default' (not yet asked), 'granted', or 'denied'.
-export function getNotificationPermission(): NotificationPermission {
-  return getNotificationBackend().getPermission();
-}
-
-// Returns all locally-scheduled (not yet delivered) notifications.
-export function getPendingNotifications(): Promise<ReadonlyArray<Readonly<ScheduledNotification>>> {
-  return getNotificationBackend().getPendingNotifications();
-}
-
-export function installNotificationHostBackend(backend: NotificationBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  const previous = getNotificationBackend();
-  _host = backend;
-  rebindNotificationSubscriptions(previous, getNotificationBackend());
-}
-
-// True when the host can show notifications. Cheap; reads the active backend.
-export function isNotificationSupported(): boolean {
-  return getNotificationBackend().isSupported();
-}
-
-// Forwards a service-worker click/action event received via postMessage to the given SW backend's
-// listeners. Call this from your page's `navigator.serviceWorker.addEventListener('message', ...)`
-// handler when the SW posts a `{ type: 'notificationclick', notificationId, actionId?, reply? }`
-// message. When `reply` is present alongside `actionId` (a `text-input` action), the reply text is
-// routed to onNotificationReply listeners; otherwise an `actionId` routes to action listeners and a
-// bare message routes to click listeners.
-export function notifyServiceWorkerBackendAction(
-  backend: NotificationBackend,
+// Forwards a worker-side notificationclick/notificationclose message to the exact service-worker
+// capability object that created the subscriptions.
+export function notifyServiceWorkerNotificationEvent(
+  capabilities: ServiceWorkerNotificationCapabilities,
   message: Readonly<{ type: string; notificationId: string; actionId?: string; reply?: string }>,
 ): void {
+  const dispatch = _serviceWorkerDispatch.get(capabilities);
+  if (dispatch === undefined) return;
+  if (message.type === 'notificationclose') {
+    dispatch.dismiss(message.notificationId);
+    return;
+  }
   if (message.type !== 'notificationclick') return;
-  const b = backend as NotificationBackend & {
-    _dispatchAction?: (notificationId: string, actionId: string) => void;
-    _dispatchClick?: (notificationId: string) => void;
-    _dispatchReply?: (notificationId: string, actionId: string, text: string) => void;
-  };
-  if (message.actionId !== undefined && message.reply !== undefined && b._dispatchReply !== undefined) {
-    b._dispatchReply(message.notificationId, message.actionId, message.reply);
-  } else if (message.actionId !== undefined && b._dispatchAction !== undefined) {
-    b._dispatchAction(message.notificationId, message.actionId);
-  } else if (b._dispatchClick !== undefined) {
-    b._dispatchClick(message.notificationId);
+  if (message.actionId !== undefined && message.reply !== undefined) {
+    dispatch.reply(message.notificationId, message.actionId, message.reply);
+  } else if (message.actionId !== undefined) {
+    dispatch.action(message.notificationId, message.actionId);
+  } else {
+    dispatch.click(message.notificationId);
   }
 }
 
-export function observeNotificationHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+export function onNotificationAction(
+  host: HasNotificationAction,
+  listener: (id: string, actionId: string) => void,
+): () => void {
+  return registerNotificationListener(host.notification.action, listener);
+}
+
+export function onNotificationClick(host: HasNotificationClick, listener: (id: string) => void): () => void {
+  return registerNotificationListener(host.notification.click, listener);
+}
+
+export function onNotificationDismiss(host: HasNotificationDismiss, listener: (id: string) => void): () => void {
+  return registerNotificationListener(host.notification.dismiss, listener);
+}
+
+export function onNotificationReply(
+  host: HasNotificationReply,
+  listener: (id: string, actionId: string, text: string) => void,
+): () => void {
+  return registerNotificationListener(host.notification.reply, listener);
+}
+
+export function onNotificationShow(host: HasNotificationShow, listener: (id: string) => void): () => void {
+  return registerNotificationListener(host.notification.show, listener);
+}
+
+export function requestNotificationPermission(host: HasNotificationDelivery): Promise<NotificationPermission> {
+  return host.notification.delivery.requestPermission();
+}
+
+export async function scheduleNotification(
+  host: HasNotificationScheduling,
+  request: Readonly<NotificationRequest>,
+  schedule: Readonly<NotificationSchedule>,
+): Promise<ScheduledNotificationHandle | null> {
+  const backend = host.notification.scheduling;
+  const id = await backend.scheduleNotification(request, schedule);
+  if (id === null) return null;
+  const handle: ScheduledNotificationHandle = { id };
+  _scheduleOwners.set(handle, backend);
+  return handle;
+}
+
+export async function showNotification(
+  host: HasNotificationDelivery & NotificationHost,
+  request: Readonly<NotificationRequest>,
+): Promise<NotificationHandle | null> {
+  const id = await host.notification.delivery.notify(request);
+  if (id === null) return null;
+  const handle: NotificationHandle = { id };
+  _notificationOwners.set(handle, { close: host.notification.close, update: host.notification.update });
+  return handle;
+}
+
+export async function updateNotification(
+  host: HasNotificationUpdate,
+  handle: NotificationHandle,
+  partial: Readonly<Partial<NotificationRequest>>,
+): Promise<boolean> {
+  if (_closedNotifications.has(handle)) return false;
+  const backend = _notificationOwners.get(handle)?.update ?? host.notification.update;
+  return backend.updateNotification(handle.id, partial);
+}
+
+function registerNotificationListener<TArgs extends unknown[]>(
+  backend: {
+    subscribe(listener: (...args: TArgs) => void): void;
+    unsubscribe(listener: (...args: TArgs) => void): void;
+  },
+  listener: (...args: TArgs) => void,
+): () => void {
+  backend.subscribe(listener);
+  let subscribed = true;
+  return () => {
+    if (!subscribed) return;
+    subscribed = false;
+    backend.unsubscribe(listener);
   };
 }
 
-// Subscribes to notification action-button activations, delivering the notification id and action id.
-// Returns an unsubscribe function. On the basic web backend this never fires; a native host or the
-// service-worker web backend is required for action delivery.
-export function onNotificationAction(listener: (id: string, actionId: string) => void): () => void {
-  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeAction(handler));
+function getServiceWorkerNotificationId(notification: ServiceWorkerNotificationLike): string | null {
+  if (typeof notification.data !== 'object' || notification.data === null) return null;
+  const id = (notification.data as { notificationId?: unknown }).notificationId;
+  return typeof id === 'string' ? id : null;
 }
 
-// Subscribes to notification body clicks, delivering the notification id.
-// Returns an unsubscribe function. On the basic web backend clicks are delivered per-instance via
-// the onclick event (wired by createWebNotificationBackend); a native host delivers a global feed.
-export function onNotificationClick(listener: (id: string) => void): () => void {
-  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeClick(handler));
-}
-
-// Subscribes to notification dismiss/close events, delivering the notification id.
-// Returns an unsubscribe function.
-export function onNotificationDismiss(listener: (id: string) => void): () => void {
-  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeDismiss(handler));
-}
-
-// Subscribes to inline-reply text actions, delivering the notification id, action id, and reply text.
-// Returns an unsubscribe function. Requires native host or service-worker backend; never fires on
-// the basic web backend.
-export function onNotificationReply(listener: (id: string, actionId: string, text: string) => void): () => void {
-  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeReply(handler));
-}
-
-// Subscribes to notification show events, delivering the notification id. Returns an unsubscribe function.
-export function onNotificationShow(listener: (id: string) => void): () => void {
-  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeShow(handler));
-}
-
-// Requests notification permission. Returns the tri-state result: 'granted', 'denied', or 'default'
-// (user dismissed the prompt without deciding). 'denied' is also returned when the host lacks the
-// notification surface. Use getNotificationPermission() to read the current state without prompting.
-export function requestNotificationPermission(): Promise<NotificationPermission> {
-  return getNotificationBackend().requestPermission();
-}
-
-export function resetNotificationBackendForTest(): void {
-  const previous = getNotificationBackend();
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-  rebindNotificationSubscriptions(previous, getNotificationBackend());
-}
-
-// Schedules a local notification for delivery at the time specified in the schedule. Returns the
-// notification id (echoes request.id when provided, else a generated id). Returns '' when
-// scheduling is not supported. On the basic web backend this uses setTimeout (best-effort,
-// cleared on page reload); native backends use the OS scheduler.
-export function scheduleNotification(
-  request: Readonly<NotificationRequest>,
-  schedule: Readonly<NotificationSchedule>,
-): Promise<string> {
-  return getNotificationBackend().scheduleNotification(request, schedule);
-}
-
-export function setNotificationBackend(backend: NotificationBackend | null): void {
-  const previous = getNotificationBackend();
-  _custom = backend;
-  rebindNotificationSubscriptions(previous, getNotificationBackend());
-}
-
-// Shows a notification. Returns the notification id (echoes request.id when provided, else a
-// generated id). Returns '' when permission is not granted or the host lacks the surface.
-export function showNotification(request: Readonly<NotificationRequest>): Promise<string> {
-  return getNotificationBackend().notify(request);
-}
-
-// Updates a live notification. Partial fields are merged into the existing notification — useful for
-// progress bars and live-content updates (e.g. download percentage). Returns true when the update
-// was applied; false when the notification is no longer visible or the backend does not support
-// updates. The basic web backend simulates updates by closing and re-opening the notification.
-export function updateNotification(id: string, partial: Readonly<Partial<NotificationRequest>>): Promise<boolean> {
-  return getNotificationBackend().updateNotification(id, partial);
-}
-
-function _repeatMs(repeat: NonNullable<NotificationSchedule['repeat']>): number {
+function repeatMilliseconds(repeat: NonNullable<NotificationSchedule['repeat']>): number {
   switch (repeat) {
     case 'minute':
       return 60_000;
@@ -731,93 +599,4 @@ function _repeatMs(repeat: NonNullable<NotificationSchedule['repeat']>): number 
     case 'year':
       return 31_536_000_000;
   }
-}
-
-const _noop = (): (() => void) => () => {};
-
-let _custom: NotificationBackend | null = null;
-let _host: NotificationBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
-
-const _sentinel: NotificationBackend = {
-  cancelScheduledNotification() {},
-  closeAllNotifications() {},
-  closeNotification() {},
-  getCapabilities(): NotificationCapabilities {
-    return {
-      actions: false,
-      channels: false,
-      coldStart: false,
-      image: false,
-      listActive: false,
-      scheduling: false,
-      textReply: false,
-    };
-  },
-  async getActiveNotifications() {
-    return [];
-  },
-  async getLaunchNotification() {
-    return null;
-  },
-  async getPendingNotifications() {
-    return [];
-  },
-  getPermission(): NotificationPermission {
-    return 'denied';
-  },
-  isSupported() {
-    return false;
-  },
-  async notify() {
-    return '';
-  },
-  async requestPermission(): Promise<NotificationPermission> {
-    return 'denied';
-  },
-  async scheduleNotification() {
-    return '';
-  },
-  subscribeAction: _noop,
-  subscribeClick: _noop,
-  subscribeDismiss: _noop,
-  subscribeReply: _noop,
-  subscribeShow: _noop,
-  async updateNotification() {
-    return false;
-  },
-};
-
-type NotificationSubscription = {
-  unsubscribe: () => void;
-  rebind: (backend: NotificationBackend) => void;
-};
-
-// Module-level notification listeners are unbounded relationships: they survive provider swaps.
-// The registry owns only these public subscriptions; backend-internal resources remain backend-owned.
-const _notificationSubscriptions = new Set<NotificationSubscription>();
-
-function registerNotificationSubscription<TArgs extends unknown[]>(
-  listener: (...args: TArgs) => void,
-  subscribe: (backend: NotificationBackend, listener: (...args: TArgs) => void) => () => void,
-): () => void {
-  let activeUnsubscribe = subscribe(getNotificationBackend(), listener);
-  const entry: NotificationSubscription = {
-    rebind(backend) {
-      activeUnsubscribe();
-      activeUnsubscribe = subscribe(backend, listener);
-    },
-    unsubscribe() {
-      if (!_notificationSubscriptions.delete(entry)) return;
-      activeUnsubscribe();
-    },
-  };
-  _notificationSubscriptions.add(entry);
-  return entry.unsubscribe;
-}
-
-function rebindNotificationSubscriptions(previous: NotificationBackend, next: NotificationBackend): void {
-  if (previous === next) return;
-  for (const subscription of _notificationSubscriptions) subscription.rebind(next);
 }

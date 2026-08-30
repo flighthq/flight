@@ -43,6 +43,7 @@
     "@flighthq/connectivity": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
+    "@flighthq/entity": "*",
     "@flighthq/filesystem": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/haptics": "*",

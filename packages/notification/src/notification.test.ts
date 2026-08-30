@@ -1,958 +1,399 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
-  NotificationBackend,
-  NotificationCapabilities,
-  NotificationChannel,
-  NotificationPermission,
-  NotificationRequest,
-  NotificationSchedule,
-  ScheduledNotification,
+  HostNotificationCapabilities,
+  NotificationCloseBackend,
+  NotificationPendingListBackend,
+  NotificationSchedulingBackend,
+  NotificationUpdateBackend,
 } from '@flighthq/types/contract';
 
 import {
   cancelScheduledNotification,
-  closeAllNotifications,
   closeNotification,
-  createNotificationChannel,
-  createServiceWorkerNotificationBackend,
-  createWebNotificationBackend,
-  deleteNotificationChannel,
+  createServiceWorkerNotificationCapabilities,
+  createWebNotificationCapabilities,
   getActiveNotifications,
-  getLaunchNotification,
-  getNotificationBackend,
-  getNotificationCapabilities,
-  getNotificationChannels,
   getNotificationPermission,
   getPendingNotifications,
-  isNotificationSupported,
-  notifyServiceWorkerBackendAction,
-  onNotificationAction,
+  notifyServiceWorkerNotificationEvent,
   onNotificationClick,
-  onNotificationDismiss,
-  onNotificationReply,
-  onNotificationShow,
   requestNotificationPermission,
   scheduleNotification,
-  setNotificationBackend,
   showNotification,
   updateNotification,
-  explainNotificationBackend,
-  installNotificationHostBackend,
-  observeNotificationHostResult,
-  resetNotificationBackendForTest,
 } from './notification';
 
-const WEB_CAPABILITIES: NotificationCapabilities = {
-  actions: false,
-  channels: false,
-  coldStart: false,
-  image: false,
-  listActive: false,
-  scheduling: true,
-  textReply: false,
-};
+interface FakeWebNotificationRecord {
+  instance: FakeWebNotification;
+  options?: NotificationOptions;
+  title: string;
+}
 
-function fakeBackend(): NotificationBackend & {
-  closedIds: string[];
-  lastTitle: string | null;
-  pendingList: ScheduledNotification[];
-  fireAction(id: string, actionId: string): void;
-  fireClick(id: string): void;
-  fireDismiss(id: string): void;
-  fireReply(id: string, actionId: string, text: string): void;
-  fireShow(id: string): void;
-  updatedId: string | null;
-  updatedPartial: Partial<NotificationRequest> | null;
-} {
-  let clickListener: ((id: string) => void) | null = null;
-  let actionListener: ((id: string, actionId: string) => void) | null = null;
-  let dismissListener: ((id: string) => void) | null = null;
-  let replyListener: ((id: string, actionId: string, text: string) => void) | null = null;
-  let showListener: ((id: string) => void) | null = null;
+class FakeWebNotification {
+  static permission: NotificationPermission = 'granted';
+  static records: FakeWebNotificationRecord[] = [];
+  static async requestPermission(): Promise<NotificationPermission> {
+    return FakeWebNotification.permission;
+  }
+
+  onclick: ((event: Event) => void) | null = null;
+  onclose: ((event: Event) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+  onshow: ((event: Event) => void) | null = null;
+
+  constructor(title: string, options?: NotificationOptions) {
+    FakeWebNotification.records.push({ instance: this, options, title });
+  }
+
+  close(): void {
+    this.onclose?.(new Event('close'));
+  }
+}
+
+const originalNotification = globalThis.Notification;
+
+beforeEach(() => {
+  FakeWebNotification.permission = 'granted';
+  FakeWebNotification.records = [];
+  globalThis.Notification = FakeWebNotification as unknown as typeof Notification;
+});
+
+afterAll(() => {
+  globalThis.Notification = originalNotification;
+});
+
+function fakeRegistration() {
+  type Entry = {
+    data?: unknown;
+    options?: NotificationOptions;
+    tag: string;
+    title: string;
+  };
+  const shown: Entry[] = [];
   return {
-    closedIds: [],
-    lastTitle: null,
-    pendingList: [],
-    updatedId: null,
-    updatedPartial: null,
-    cancelScheduledNotification(_id) {},
-    closeAllNotifications() {
-      this.closedIds.push('*');
+    add(entry: Entry) {
+      shown.push(entry);
     },
-    closeNotification(id) {
-      this.closedIds.push(id);
+    async getNotifications(filter?: { tag?: string }) {
+      return shown
+        .filter((entry) => filter?.tag === undefined || entry.tag === filter.tag)
+        .map((entry) => ({
+          data: entry.data ?? entry.options?.data,
+          tag: entry.tag,
+          title: entry.title,
+          close() {
+            const index = shown.indexOf(entry);
+            if (index !== -1) shown.splice(index, 1);
+          },
+        }));
     },
-    getCapabilities() {
-      return { ...WEB_CAPABILITIES };
-    },
-    async getLaunchNotification() {
-      return null;
-    },
-    async getActiveNotifications() {
-      return [];
-    },
-    async getPendingNotifications() {
-      return this.pendingList;
-    },
-    getPermission() {
-      return 'granted';
-    },
-    isSupported() {
-      return true;
-    },
-    async notify(request) {
-      this.lastTitle = request.title;
-      return request.id ?? 'generated-id';
-    },
-    async requestPermission(): Promise<NotificationPermission> {
-      return 'granted';
-    },
-    async scheduleNotification(request, _schedule) {
-      return request.id ?? 'sched-id';
-    },
-    subscribeAction(listener) {
-      actionListener = listener;
-      return () => {
-        actionListener = null;
-      };
-    },
-    subscribeClick(listener) {
-      clickListener = listener;
-      return () => {
-        clickListener = null;
-      };
-    },
-    subscribeDismiss(listener) {
-      dismissListener = listener;
-      return () => {
-        dismissListener = null;
-      };
-    },
-    subscribeReply(listener) {
-      replyListener = listener;
-      return () => {
-        replyListener = null;
-      };
-    },
-    subscribeShow(listener) {
-      showListener = listener;
-      return () => {
-        showListener = null;
-      };
-    },
-    async updateNotification(id, partial) {
-      this.updatedId = id;
-      this.updatedPartial = partial;
-      return true;
-    },
-    fireAction(id, actionId) {
-      actionListener?.(id, actionId);
-    },
-    fireClick(id) {
-      clickListener?.(id);
-    },
-    fireDismiss(id) {
-      dismissListener?.(id);
-    },
-    fireReply(id, actionId, text) {
-      replyListener?.(id, actionId, text);
-    },
-    fireShow(id) {
-      showListener?.(id);
+    shown,
+    async showNotification(title: string, options?: NotificationOptions) {
+      shown.push({ data: options?.data, options, tag: String(options?.tag ?? ''), title });
     },
   };
 }
 
-afterEach(() => setNotificationBackend(null));
-
-describe('cancelScheduledNotification', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    let cancelledId: string | null = null;
-    backend.cancelScheduledNotification = (id) => {
-      cancelledId = id;
-    };
-    setNotificationBackend(backend);
-    cancelScheduledNotification('sched-1');
-    expect(cancelledId).toBe('sched-1');
-  });
-});
-
-describe('closeAllNotifications', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    closeAllNotifications();
-    expect(backend.closedIds).toContain('*');
-  });
-});
-
-describe('closeNotification', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    closeNotification('msg-1');
-    expect(backend.closedIds).toEqual(['msg-1']);
-  });
-});
-
-describe('createNotificationChannel', () => {
-  it('calls createNotificationChannel on backends that support it', () => {
-    const backend = fakeBackend() as ReturnType<typeof fakeBackend> & {
-      createNotificationChannel?: (c: Readonly<NotificationChannel>) => void;
-      receivedChannel?: NotificationChannel;
-    };
-    backend.createNotificationChannel = (c) => {
-      backend.receivedChannel = c as NotificationChannel;
-    };
-    setNotificationBackend(backend);
-    const channel: NotificationChannel = { id: 'updates', name: 'Updates' };
-    createNotificationChannel(channel);
-    expect(backend.receivedChannel).toEqual(channel);
-  });
-
-  it('no-ops on backends without the method', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    expect(() => createNotificationChannel({ id: 'x', name: 'X' })).not.toThrow();
-  });
-});
-
-describe('createServiceWorkerNotificationBackend', () => {
-  function fakeRegistration() {
-    const shown: Array<{ title: string; options?: NotificationOptions }> = [];
-    return {
-      shown,
-      async showNotification(title: string, options?: NotificationOptions) {
-        shown.push({ title, options });
-      },
-      async getNotifications(_filter?: { tag?: string }) {
-        return shown.map((n) => ({
-          title: n.title,
-          tag: (n.options?.tag as string) ?? '',
-          close() {
-            const idx = shown.indexOf(n);
-            if (idx !== -1) shown.splice(idx, 1);
-          },
-        }));
-      },
-    };
-  }
-
-  it('returns a backend object satisfying the NotificationBackend interface', () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    expect(typeof backend.notify).toBe('function');
-    expect(typeof backend.requestPermission).toBe('function');
-    expect(typeof backend.isSupported).toBe('function');
-    expect(typeof backend.subscribeAction).toBe('function');
-    expect(typeof backend.subscribeClick).toBe('function');
-    expect(typeof backend.subscribeDismiss).toBe('function');
-    expect(typeof backend.subscribeShow).toBe('function');
-    expect(typeof backend.updateNotification).toBe('function');
-  });
-
-  it('getCapabilities reports actions: true', () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    const caps = backend.getCapabilities();
-    expect(caps.actions).toBe(true);
-    expect(caps.scheduling).toBe(true);
-    expect(caps.listActive).toBe(true);
-  });
-
-  it('getPermission returns a valid tri-state value', () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    const perm = backend.getPermission();
-    expect(['default', 'granted', 'denied']).toContain(perm);
-  });
-
-  it('getLaunchNotification returns null', async () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    expect(await backend.getLaunchNotification()).toBeNull();
-  });
-
-  it('scheduleNotification returns a non-empty id and getPendingNotifications lists it', async () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    const schedule: NotificationSchedule = { at: Date.now() + 60_000 };
-    const id = await backend.scheduleNotification({ title: 'SW Reminder' }, schedule);
-    expect(typeof id).toBe('string');
-    expect(id.length).toBeGreaterThan(0);
-    const pending = await backend.getPendingNotifications();
-    expect(pending.length).toBe(1);
-    expect(pending[0]!.id).toBe(id);
-    backend.cancelScheduledNotification(id);
-  });
-
-  it('cancelScheduledNotification removes from pending list', async () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    const schedule: NotificationSchedule = { at: Date.now() + 60_000 };
-    const id = await backend.scheduleNotification({ title: 'SW Soon' }, schedule);
-    backend.cancelScheduledNotification(id);
-    const pending = await backend.getPendingNotifications();
-    expect(pending.find((p) => p.id === id)).toBeUndefined();
-  });
-
-  it('subscribeAction unsubscribe stops delivery', () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    let count = 0;
-    const unsub = backend.subscribeAction(() => {
-      count += 1;
-    });
-    unsub();
-    expect(count).toBe(0);
-  });
-
-  it('requestPermission returns a valid NotificationPermission', async () => {
-    const reg = fakeRegistration();
-    const backend = createServiceWorkerNotificationBackend(reg);
-    const perm = await backend.requestPermission();
-    expect(['default', 'granted', 'denied']).toContain(perm);
-  });
-});
-
-describe('createWebNotificationBackend', () => {
-  it('returns sentinels without throwing in jsdom', async () => {
-    const backend = createWebNotificationBackend();
-    expect(typeof backend.isSupported()).toBe('boolean');
-    // requestPermission now returns NotificationPermission (tri-state string), not boolean.
-    expect(['default', 'granted', 'denied']).toContain(await backend.requestPermission());
-    expect(typeof (await backend.notify({ title: 'hi' }))).toBe('string');
-    expect(typeof backend.subscribeClick(() => {})).toBe('function');
-    expect(typeof backend.subscribeAction(() => {})).toBe('function');
-    expect(typeof backend.subscribeDismiss(() => {})).toBe('function');
-    expect(typeof backend.subscribeReply(() => {})).toBe('function');
-    expect(typeof backend.subscribeShow(() => {})).toBe('function');
-    expect(() => backend.closeNotification('x')).not.toThrow();
-    expect(() => backend.closeAllNotifications()).not.toThrow();
-  });
-
-  it('getPermission returns a valid tri-state value in jsdom', () => {
-    const backend = createWebNotificationBackend();
-    const perm = backend.getPermission();
-    expect(['default', 'granted', 'denied']).toContain(perm);
-  });
-
-  it('getCapabilities matches the expected web shape', () => {
-    const backend = createWebNotificationBackend();
-    expect(backend.getCapabilities()).toEqual(WEB_CAPABILITIES);
-  });
-
-  it('getLaunchNotification returns null on web', async () => {
-    const backend = createWebNotificationBackend();
-    expect(await backend.getLaunchNotification()).toBeNull();
-  });
-
-  it('getActiveNotifications returns an empty array on web', async () => {
-    const backend = createWebNotificationBackend();
-    expect(await backend.getActiveNotifications()).toEqual([]);
-  });
-
-  it('scheduleNotification returns a non-empty id and getPendingNotifications lists it', async () => {
-    const backend = createWebNotificationBackend();
-    const schedule: NotificationSchedule = { at: Date.now() + 60_000 };
-    const id = await backend.scheduleNotification({ title: 'Reminder' }, schedule);
-    expect(typeof id).toBe('string');
-    expect(id.length).toBeGreaterThan(0);
-    const pending = await backend.getPendingNotifications();
-    expect(pending.length).toBe(1);
-    expect(pending[0]!.id).toBe(id);
-    backend.cancelScheduledNotification(id);
-  });
-
-  it('cancelScheduledNotification removes from pending list', async () => {
-    const backend = createWebNotificationBackend();
-    const schedule: NotificationSchedule = { at: Date.now() + 60_000 };
-    const id = await backend.scheduleNotification({ title: 'Soon' }, schedule);
-    backend.cancelScheduledNotification(id);
-    const pending = await backend.getPendingNotifications();
-    expect(pending.find((p) => p.id === id)).toBeUndefined();
-  });
-
-  it('subscribeClick unsubscribe stops delivery', () => {
-    const backend = createWebNotificationBackend();
-    let count = 0;
-    const unsub = backend.subscribeClick(() => {
-      count += 1;
-    });
-    unsub();
-    // No way to trigger a click in jsdom but we at least verify unsubscribe does not throw.
-    expect(count).toBe(0);
-  });
-
-  it('subscribeAction unsubscribe is callable without throwing', () => {
-    const backend = createWebNotificationBackend();
-    const unsub = backend.subscribeAction(() => {});
-    expect(() => unsub()).not.toThrow();
-  });
-
-  it('subscribeReply unsubscribe is callable without throwing', () => {
-    const backend = createWebNotificationBackend();
-    const unsub = backend.subscribeReply(() => {});
-    expect(() => unsub()).not.toThrow();
-  });
-
-  it('subscribeShow unsubscribe is callable without throwing', () => {
-    const backend = createWebNotificationBackend();
-    const unsub = backend.subscribeShow(() => {});
-    expect(() => unsub()).not.toThrow();
-  });
-
-  it('subscribeDismiss unsubscribe is callable without throwing', () => {
-    const backend = createWebNotificationBackend();
-    const unsub = backend.subscribeDismiss(() => {});
-    expect(() => unsub()).not.toThrow();
-  });
-});
-
-describe('deleteNotificationChannel', () => {
-  it('calls deleteNotificationChannel on backends that support it', () => {
-    const backend = fakeBackend() as ReturnType<typeof fakeBackend> & {
-      deleteNotificationChannel?: (id: string) => void;
-      deletedChannelId?: string;
-    };
-    backend.deleteNotificationChannel = (id) => {
-      backend.deletedChannelId = id;
-    };
-    setNotificationBackend(backend);
-    deleteNotificationChannel('updates');
-    expect(backend.deletedChannelId).toBe('updates');
-  });
-
-  it('no-ops on backends without the method', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    expect(() => deleteNotificationChannel('x')).not.toThrow();
-  });
-});
-
-describe('explainNotificationBackend', () => {
-  afterEach(() => resetNotificationBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetNotificationBackendForTest();
-    const explanation = explainNotificationBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setNotificationBackend(fakeBackend());
-    expect(explainNotificationBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installNotificationHostBackend(fakeBackend());
-    expect(explainNotificationBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installNotificationHostBackend(fakeBackend());
-    installNotificationHostBackend(fakeBackend());
-    expect(explainNotificationBackend().conflict).toBe(true);
-  });
-});
-
-describe('getActiveNotifications', () => {
-  it('delegates to the active backend', async () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const result = await getActiveNotifications();
-    expect(Array.isArray(result)).toBe(true);
-  });
-});
-
-describe('getLaunchNotification', () => {
-  it('delegates to the active backend', async () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const result = await getLaunchNotification();
-    expect(result).toBeNull();
-  });
-});
-
-describe('getNotificationBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getNotificationBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    expect(getNotificationBackend()).toBe(backend);
-  });
-});
-
-describe('getNotificationCapabilities', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const caps = getNotificationCapabilities();
-    expect(typeof caps.actions).toBe('boolean');
-    expect(typeof caps.channels).toBe('boolean');
-    expect(typeof caps.scheduling).toBe('boolean');
-  });
-});
-
-describe('getNotificationChannels', () => {
-  it('returns an empty array on backends without channel support', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    expect(getNotificationChannels()).toEqual([]);
-  });
-
-  it('calls getNotificationChannels on backends that support it', () => {
-    const channel: NotificationChannel = { id: 'ch1', name: 'Ch 1' };
-    const backend = fakeBackend() as ReturnType<typeof fakeBackend> & {
-      getNotificationChannels?: () => ReadonlyArray<Readonly<NotificationChannel>>;
-    };
-    backend.getNotificationChannels = () => [channel];
-    setNotificationBackend(backend);
-    expect(getNotificationChannels()).toEqual([channel]);
-  });
-});
-
-describe('getNotificationPermission', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    expect(getNotificationPermission()).toBe('granted');
-  });
-
-  it('returns a valid tri-state from the web backend', () => {
-    const perm = getNotificationPermission();
-    expect(['default', 'granted', 'denied']).toContain(perm);
-  });
-});
-
-describe('getPendingNotifications', () => {
-  it('delegates to the active backend', async () => {
-    const req: NotificationRequest = { title: 'sched', id: 'sn-1' };
-    const schedule: NotificationSchedule = { at: Date.now() + 10_000 };
-    const backend = fakeBackend();
-    backend.pendingList = [{ id: 'sn-1', request: req, schedule }];
-    setNotificationBackend(backend);
-    const list = await getPendingNotifications();
-    expect(list.length).toBe(1);
-    expect(list[0]!.id).toBe('sn-1');
-  });
-});
-
-describe('installNotificationHostBackend', () => {
-  afterEach(() => resetNotificationBackendForTest());
-
-  it('installs a host backend that getNotificationBackend returns', () => {
-    const backend = fakeBackend();
-    installNotificationHostBackend(backend);
-    expect(getNotificationBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installNotificationHostBackend(first);
-    installNotificationHostBackend(second);
-    expect(getNotificationBackend()).toBe(first);
-    expect(explainNotificationBackend().conflict).toBe(true);
-  });
-});
-
-describe('isNotificationSupported', () => {
-  it('delegates to the active backend', () => {
-    setNotificationBackend(fakeBackend());
-    expect(isNotificationSupported()).toBe(true);
-  });
-
-  it('returns a boolean from the web backend', () => {
-    expect(typeof isNotificationSupported()).toBe('boolean');
-  });
-});
-
-describe('notification listener provider swaps', () => {
-  it.each([
-    [
-      'action',
-      (b: ReturnType<typeof fakeBackend>) => b.fireAction('id', 'action'),
-      (fn: () => void) => onNotificationAction(() => fn()),
-    ],
-    [
+describe('basic web notification capabilities', () => {
+  it('declares only its honest slots', () => {
+    const capabilities = createWebNotificationCapabilities();
+    expect(EntityRuntimeKey in capabilities).toBe(true);
+    expect(Object.keys(capabilities).sort()).toEqual([
       'click',
-      (b: ReturnType<typeof fakeBackend>) => b.fireClick('id'),
-      (fn: () => void) => onNotificationClick(() => fn()),
-    ],
-    [
+      'close',
+      'delivery',
       'dismiss',
-      (b: ReturnType<typeof fakeBackend>) => b.fireDismiss('id'),
-      (fn: () => void) => onNotificationDismiss(() => fn()),
-    ],
-    [
-      'reply',
-      (b: ReturnType<typeof fakeBackend>) => b.fireReply('id', 'action', 'text'),
-      (fn: () => void) => onNotificationReply(() => fn()),
-    ],
-    [
+      'pendingList',
+      'scheduling',
       'show',
-      (b: ReturnType<typeof fakeBackend>) => b.fireShow('id'),
-      (fn: () => void) => onNotificationShow(() => fn()),
-    ],
-  ])('%s subscriptions detach old and rebind to new', (_name, fire, subscribe) => {
-    const oldBackend = fakeBackend();
-    const newBackend = fakeBackend();
-    setNotificationBackend(oldBackend);
-    let calls = 0;
-    const unsubscribe = subscribe(() => {
-      calls += 1;
+      'update',
+    ]);
+  });
+
+  it('shows, updates by merging, and closes one stable id', async () => {
+    const capabilities = createWebNotificationCapabilities();
+    expect(await capabilities.delivery.notify({ body: 'old', icon: 'icon.png', id: 'n1', title: 'Title' })).toBe('n1');
+    expect(await capabilities.update.updateNotification('n1', { body: 'new' })).toBe(true);
+    expect(FakeWebNotification.records[1]).toMatchObject({
+      options: { body: 'new', icon: 'icon.png', tag: 'n1' },
+      title: 'Title',
     });
-    setNotificationBackend(newBackend);
-    fire(newBackend);
-    fire(oldBackend);
-    expect(calls).toBe(1);
-    unsubscribe();
-    fire(newBackend);
-    expect(calls).toBe(1);
+    await capabilities.close.closeNotification('n1');
+    expect(await capabilities.update.updateNotification('n1', { body: 'again' })).toBe(false);
+  });
+
+  it('returns null rather than a support-probe sentinel when runtime delivery is unavailable', async () => {
+    FakeWebNotification.permission = 'denied';
+    const capabilities = createWebNotificationCapabilities();
+    expect(await capabilities.delivery.getPermission()).toBe('denied');
+    expect(await capabilities.delivery.notify({ title: 'No' })).toBeNull();
   });
 });
 
-describe('notifyServiceWorkerBackendAction', () => {
-  function fakeSwRegistration() {
-    return {
-      async showNotification(_title: string, _options?: NotificationOptions) {},
-      async getNotifications(_filter?: { tag?: string }) {
-        return [];
+describe('explicit notification operations', () => {
+  it('reads and requests permission from the passed delivery slot', async () => {
+    const value = host({ delivery: delivery('n1') });
+    expect(await getNotificationPermission(value)).toBe('granted');
+    expect(await requestNotificationPermission(value)).toBe('granted');
+  });
+
+  it('pins close to the provider that created the displayed handle', async () => {
+    const aClosed: string[] = [];
+    const bClosed: string[] = [];
+    const closeA: NotificationCloseBackend = {
+      async closeAllNotifications() {},
+      async closeNotification(id) {
+        aClosed.push(id);
       },
     };
-  }
+    const closeB: NotificationCloseBackend = {
+      async closeAllNotifications() {},
+      async closeNotification(id) {
+        bClosed.push(id);
+      },
+    };
+    const created = await showNotification(host({ close: closeA, delivery: delivery('same-id') }), { title: 'A' });
+    expect(created).not.toBeNull();
+    await closeNotification(host({ close: closeB }), created!);
+    await closeNotification(host({ close: closeB }), created!);
+    expect(aClosed).toEqual(['same-id']);
+    expect(bClosed).toEqual([]);
+  });
 
-  it('delivers action events to subscribeAction listeners', () => {
-    const backend = createServiceWorkerNotificationBackend(fakeSwRegistration());
-    let received: [string, string] | null = null;
-    backend.subscribeAction((id, actionId) => {
-      received = [id, actionId];
+  it('pins update to the provider that created the displayed handle', async () => {
+    const aUpdated: string[] = [];
+    const bUpdated: string[] = [];
+    const updateA: NotificationUpdateBackend = {
+      async updateNotification(id) {
+        aUpdated.push(id);
+        return true;
+      },
+    };
+    const updateB: NotificationUpdateBackend = {
+      async updateNotification(id) {
+        bUpdated.push(id);
+        return true;
+      },
+    };
+    const created = await showNotification(host({ delivery: delivery('same-id'), update: updateA }), { title: 'A' });
+    expect(await updateNotification(host({ update: updateB }), created!, { body: 'changed' })).toBe(true);
+    expect(aUpdated).toEqual(['same-id']);
+    expect(bUpdated).toEqual([]);
+  });
+
+  it('pins cancellation to the provider that created the schedule handle', async () => {
+    const aCancelled: string[] = [];
+    const bCancelled: string[] = [];
+    const scheduling = (cancelled: string[]): NotificationSchedulingBackend => ({
+      async cancelScheduledNotification(id) {
+        cancelled.push(id);
+      },
+      async scheduleNotification() {
+        return 'same-id';
+      },
     });
-    notifyServiceWorkerBackendAction(backend, {
-      type: 'notificationclick',
+    const scheduled = await scheduleNotification(
+      host({ scheduling: scheduling(aCancelled) }),
+      { title: 'A' },
+      { at: 1 },
+    );
+    await cancelScheduledNotification(host({ scheduling: scheduling(bCancelled) }), scheduled!);
+    await cancelScheduledNotification(host({ scheduling: scheduling(bCancelled) }), scheduled!);
+    expect(aCancelled).toEqual(['same-id']);
+    expect(bCancelled).toEqual([]);
+  });
+
+  it('pins pending-list handles to the provider that enumerated them', async () => {
+    const cancelled: string[] = [];
+    const owner: NotificationSchedulingBackend = {
+      async cancelScheduledNotification(id) {
+        cancelled.push(id);
+      },
+      async scheduleNotification() {
+        return null;
+      },
+    };
+    const pendingList: NotificationPendingListBackend = {
+      async getPendingNotifications() {
+        return [{ id: 'listed', request: { title: 'Later' }, schedule: { at: 1 } }];
+      },
+    };
+    const fallback: NotificationSchedulingBackend = {
+      async cancelScheduledNotification() {
+        throw new Error('wrong provider');
+      },
+      async scheduleNotification() {
+        return null;
+      },
+    };
+    const [pending] = await getPendingNotifications(host({ pendingList, scheduling: owner }));
+    await cancelScheduledNotification(host({ scheduling: fallback }), pending!);
+    expect(cancelled).toEqual(['listed']);
+  });
+
+  it('pins active-list handles to the provider that enumerated them', async () => {
+    const closed: string[] = [];
+    const ownerClose: NotificationCloseBackend = {
+      async closeAllNotifications() {},
+      async closeNotification(id) {
+        closed.push(id);
+      },
+    };
+    const owner = host({
+      activeList: {
+        async getActiveNotifications() {
+          return [{ id: 'active', tag: 'tag', title: 'Title' }];
+        },
+      },
+      close: ownerClose,
+    });
+    const [active] = await getActiveNotifications(owner);
+    await closeNotification(
+      host({
+        close: {
+          async closeAllNotifications() {},
+          async closeNotification() {
+            throw new Error('wrong provider');
+          },
+        },
+      }),
+      active!,
+    );
+    expect(closed).toEqual(['active']);
+  });
+
+  it('returns an origin-pinned, idempotent event unsubscribe', () => {
+    const listeners = new Set<(id: string) => void>();
+    const value = host({
+      click: {
+        subscribe(listener) {
+          listeners.add(listener);
+        },
+        unsubscribe(listener) {
+          listeners.delete(listener);
+        },
+      },
+    });
+    const seen: string[] = [];
+    const unsubscribe = onNotificationClick(value, (id) => seen.push(id));
+    for (const listener of listeners) listener('before');
+    unsubscribe();
+    unsubscribe();
+    for (const listener of listeners) listener('after');
+    expect(seen).toEqual(['before']);
+  });
+});
+
+function delivery(id: string) {
+  return {
+    async getPermission() {
+      return 'granted' as const;
+    },
+    async notify() {
+      return id;
+    },
+    async requestPermission() {
+      return 'granted' as const;
+    },
+  };
+}
+
+function host<const TCapabilities extends HostNotificationCapabilities>(notification: TCapabilities) {
+  return { notification };
+}
+
+describe('service-worker notification capabilities', () => {
+  it('declares every honest slot while excluding update', () => {
+    const capabilities = createServiceWorkerNotificationCapabilities(fakeRegistration());
+    expect(EntityRuntimeKey in capabilities).toBe(true);
+    expect(Object.keys(capabilities).sort()).toEqual([
+      'action',
+      'activeList',
+      'click',
+      'close',
+      'delivery',
+      'dismiss',
+      'pendingList',
+      'reply',
+      'scheduling',
+      'show',
+    ]);
+    expect('update' in capabilities).toBe(false);
+  });
+
+  it('lists only Flight notifications with a stable id and truthful summary fields', async () => {
+    const registration = fakeRegistration();
+    const capabilities = createServiceWorkerNotificationCapabilities(registration);
+    await capabilities.delivery.notify({ body: 'details', id: 'flight-id', tag: 'display-tag', title: 'Flight' });
+    registration.add({ data: { unrelated: true }, tag: 'foreign', title: 'Other code' });
+    expect(await capabilities.activeList.getActiveNotifications()).toEqual([
+      { id: 'flight-id', tag: 'display-tag', title: 'Flight' },
+    ]);
+  });
+
+  it('closes by Flight id even when the platform tag differs', async () => {
+    const registration = fakeRegistration();
+    const capabilities = createServiceWorkerNotificationCapabilities(registration);
+    await capabilities.delivery.notify({ id: 'flight-id', tag: 'different-tag', title: 'Flight' });
+    await capabilities.close.closeNotification('flight-id');
+    expect(registration.shown).toEqual([]);
+  });
+
+  it('delivers each declared event and honors its unsubscribe pair', async () => {
+    const capabilities = createServiceWorkerNotificationCapabilities(fakeRegistration());
+    const seen: string[] = [];
+    const show = (id: string): void => {
+      seen.push(`show:${id}`);
+    };
+    const click = (id: string): void => {
+      seen.push(`click:${id}`);
+    };
+    const action = (id: string, actionId: string): void => {
+      seen.push(`action:${id}:${actionId}`);
+    };
+    const dismiss = (id: string): void => {
+      seen.push(`dismiss:${id}`);
+    };
+    const reply = (id: string, actionId: string, text: string): void => {
+      seen.push(`reply:${id}:${actionId}:${text}`);
+    };
+    capabilities.show.subscribe(show);
+    capabilities.click.subscribe(click);
+    capabilities.action.subscribe(action);
+    capabilities.dismiss.subscribe(dismiss);
+    capabilities.reply.subscribe(reply);
+    await capabilities.delivery.notify({ id: 'n1', title: 'Flight' });
+    notifyServiceWorkerNotificationEvent(capabilities, {
+      actionId: 'open',
       notificationId: 'n1',
+      type: 'notificationclick',
+    });
+    notifyServiceWorkerNotificationEvent(capabilities, {
       actionId: 'reply',
-    });
-    expect(received).toEqual(['n1', 'reply']);
-  });
-
-  it('delivers inline-reply text to subscribeReply listeners when reply is present', () => {
-    const backend = createServiceWorkerNotificationBackend(fakeSwRegistration());
-    let received: [string, string, string] | null = null;
-    backend.subscribeReply((id, actionId, text) => {
-      received = [id, actionId, text];
-    });
-    notifyServiceWorkerBackendAction(backend, {
+      notificationId: 'n1',
+      reply: 'hello',
       type: 'notificationclick',
-      notificationId: 'chat',
-      actionId: 'quick-reply',
-      reply: 'Hello back!',
     });
-    expect(received).toEqual(['chat', 'quick-reply', 'Hello back!']);
+    notifyServiceWorkerNotificationEvent(capabilities, { notificationId: 'n1', type: 'notificationclose' });
+    expect(seen).toEqual(['show:n1', 'action:n1:open', 'click:n1', 'reply:n1:reply:hello', 'dismiss:n1']);
+    capabilities.show.unsubscribe(show);
+    capabilities.click.unsubscribe(click);
+    capabilities.action.unsubscribe(action);
+    capabilities.dismiss.unsubscribe(dismiss);
+    capabilities.reply.unsubscribe(reply);
+    notifyServiceWorkerNotificationEvent(capabilities, { notificationId: 'n1', type: 'notificationclose' });
+    expect(seen).toHaveLength(5);
   });
 
-  it('routes a reply message to reply listeners only, not action listeners', () => {
-    const backend = createServiceWorkerNotificationBackend(fakeSwRegistration());
-    let actionFired = false;
-    backend.subscribeAction(() => {
-      actionFired = true;
-    });
-    notifyServiceWorkerBackendAction(backend, {
-      type: 'notificationclick',
-      notificationId: 'chat',
-      actionId: 'quick-reply',
-      reply: 'Hi',
-    });
-    expect(actionFired).toBe(false);
-  });
-
-  it('delivers click events to subscribeClick listeners when no actionId', () => {
-    const backend = createServiceWorkerNotificationBackend(fakeSwRegistration());
-    let received: string | null = null;
-    backend.subscribeClick((id) => {
-      received = id;
-    });
-    notifyServiceWorkerBackendAction(backend, {
-      type: 'notificationclick',
-      notificationId: 'n2',
-    });
-    expect(received).toBe('n2');
-  });
-
-  it('no-ops for non-notificationclick message types', () => {
-    const backend = createServiceWorkerNotificationBackend(fakeSwRegistration());
-    let called = false;
-    backend.subscribeClick(() => {
-      called = true;
-    });
-    notifyServiceWorkerBackendAction(backend, {
-      type: 'push',
-      notificationId: 'n3',
-    });
-    expect(called).toBe(false);
-  });
-
-  it('no-ops gracefully on a non-SW backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    expect(() =>
-      notifyServiceWorkerBackendAction(backend, { type: 'notificationclick', notificationId: 'x' }),
-    ).not.toThrow();
-    setNotificationBackend(null);
-  });
-});
-
-describe('observeNotificationHostResult', () => {
-  afterEach(() => resetNotificationBackendForTest());
-
-  it('records a successful observation', () => {
-    installNotificationHostBackend(fakeBackend());
-    observeNotificationHostResult('cancelScheduledNotification', true);
-    const explanation = explainNotificationBackend();
-    expect(explanation.operation).toBe('cancelScheduledNotification');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installNotificationHostBackend(fakeBackend());
-    observeNotificationHostResult('cancelScheduledNotification', false);
-    expect(explainNotificationBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-describe('onNotificationAction', () => {
-  it('delivers id and action id via the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let receivedId: string | null = null;
-    let receivedAction: string | null = null;
-    onNotificationAction((id, actionId) => {
-      receivedId = id;
-      receivedAction = actionId;
-    });
-    backend.fireAction('chat', 'reply');
-    expect(receivedId).toBe('chat');
-    expect(receivedAction).toBe('reply');
-  });
-
-  it('returns an unsubscribe that stops delivery', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let count = 0;
-    const unsubscribe = onNotificationAction(() => {
-      count += 1;
-    });
-    backend.fireAction('a', 'x');
-    unsubscribe();
-    backend.fireAction('a', 'x');
-    expect(count).toBe(1);
-  });
-});
-
-describe('onNotificationClick', () => {
-  it('delivers the notification id via the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let received: string | null = null;
-    onNotificationClick((id) => {
-      received = id;
-    });
-    backend.fireClick('chat');
-    expect(received).toBe('chat');
-  });
-
-  it('returns an unsubscribe that stops delivery', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let count = 0;
-    const unsubscribe = onNotificationClick(() => {
-      count += 1;
-    });
-    backend.fireClick('a');
-    unsubscribe();
-    backend.fireClick('a');
-    expect(count).toBe(1);
-  });
-});
-
-describe('onNotificationDismiss', () => {
-  it('delivers the notification id via the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let received: string | null = null;
-    onNotificationDismiss((id) => {
-      received = id;
-    });
-    backend.fireDismiss('notif-42');
-    expect(received).toBe('notif-42');
-  });
-
-  it('returns an unsubscribe that stops delivery', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let count = 0;
-    const unsubscribe = onNotificationDismiss(() => {
-      count += 1;
-    });
-    backend.fireDismiss('a');
-    unsubscribe();
-    backend.fireDismiss('a');
-    expect(count).toBe(1);
-  });
-});
-
-describe('onNotificationReply', () => {
-  it('delivers id, actionId, and reply text via the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let received: [string, string, string] | null = null;
-    onNotificationReply((id, actionId, text) => {
-      received = [id, actionId, text];
-    });
-    backend.fireReply('chat', 'reply', 'Hello back!');
-    expect(received).toEqual(['chat', 'reply', 'Hello back!']);
-  });
-
-  it('returns an unsubscribe that stops delivery', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let count = 0;
-    const unsubscribe = onNotificationReply(() => {
-      count += 1;
-    });
-    backend.fireReply('a', 'r', 'x');
-    unsubscribe();
-    backend.fireReply('a', 'r', 'x');
-    expect(count).toBe(1);
-  });
-});
-
-describe('onNotificationShow', () => {
-  it('delivers the notification id via the active backend', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let received: string | null = null;
-    onNotificationShow((id) => {
-      received = id;
-    });
-    backend.fireShow('notif-1');
-    expect(received).toBe('notif-1');
-  });
-
-  it('returns an unsubscribe that stops delivery', () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    let count = 0;
-    const unsubscribe = onNotificationShow(() => {
-      count += 1;
-    });
-    backend.fireShow('a');
-    unsubscribe();
-    backend.fireShow('a');
-    expect(count).toBe(1);
-  });
-});
-
-describe('requestNotificationPermission', () => {
-  it('delegates to the active backend and returns a tri-state NotificationPermission', async () => {
-    setNotificationBackend(fakeBackend());
-    const result = await requestNotificationPermission();
-    expect(['default', 'granted', 'denied']).toContain(result);
-    expect(result).toBe('granted');
-  });
-
-  it('returns a valid tri-state from the web backend in jsdom', async () => {
-    const result = await requestNotificationPermission();
-    expect(['default', 'granted', 'denied']).toContain(result);
-  });
-});
-
-describe('resetNotificationBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setNotificationBackend(fakeBackend());
-    installNotificationHostBackend(fakeBackend());
-    observeNotificationHostResult('cancelScheduledNotification', true);
-    resetNotificationBackendForTest();
-    expect(explainNotificationBackend().layer).toBe('host-not-enabled');
-    expect(explainNotificationBackend().conflict).toBe(false);
-    expect(explainNotificationBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('scheduleNotification', () => {
-  it('echoes the supplied id', async () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const schedule: NotificationSchedule = { at: Date.now() + 5_000 };
-    const id = await scheduleNotification({ title: 'Future', id: 'my-id' }, schedule);
-    expect(id).toBe('my-id');
-  });
-
-  it('returns a generated id when request has no id', async () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const schedule: NotificationSchedule = { at: Date.now() + 5_000 };
-    const id = await scheduleNotification({ title: 'Future' }, schedule);
-    expect(typeof id).toBe('string');
-    expect(id.length).toBeGreaterThan(0);
-  });
-});
-
-describe('setNotificationBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setNotificationBackend(fakeBackend());
-    setNotificationBackend(null);
-    expect(getNotificationBackend()).not.toBeNull();
-  });
-});
-
-describe('showNotification', () => {
-  it('delegates to the active backend and returns a string id', async () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const id = await showNotification({ title: 'Hello', body: 'there' });
-    expect(typeof id).toBe('string');
-    expect(id.length).toBeGreaterThan(0);
-    expect(backend.lastTitle).toBe('Hello');
-  });
-
-  it('echoes the caller-supplied id', async () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const id = await showNotification({ title: 'X', id: 'my-stable-id' });
-    expect(id).toBe('my-stable-id');
-  });
-
-  it('returns a string from the web backend without throwing in jsdom', async () => {
-    expect(typeof (await showNotification({ title: 'Hello' }))).toBe('string');
-  });
-});
-
-describe('updateNotification', () => {
-  it('delegates to the active backend', async () => {
-    const backend = fakeBackend();
-    setNotificationBackend(backend);
-    const result = await updateNotification('notif-1', { body: 'Updated body' });
-    expect(typeof result).toBe('boolean');
-    expect(backend.updatedId).toBe('notif-1');
-    expect(backend.updatedPartial).toEqual({ body: 'Updated body' });
-  });
-
-  it('returns false when the notification is not live on the web backend', async () => {
-    const result = await updateNotification('nonexistent-id', { body: 'New body' });
-    expect(result).toBe(false);
-  });
-
-  it('web backend updateNotification no-ops on title-less partial without live entry', async () => {
-    const { createWebNotificationBackend: create } = await import('./notification');
-    const backend = create();
-    const result = await backend.updateNotification('missing', { body: 'x' });
-    expect(result).toBe(false);
+  it('pairs schedule with pending introspection and cancellation', async () => {
+    const capabilities = createServiceWorkerNotificationCapabilities(fakeRegistration());
+    const id = await capabilities.scheduling.scheduleNotification(
+      { id: 'scheduled', title: 'Later' },
+      { at: Date.now() + 60_000 },
+    );
+    expect(id).toBe('scheduled');
+    expect(await capabilities.pendingList.getPendingNotifications()).toHaveLength(1);
+    await capabilities.scheduling.cancelScheduledNotification('scheduled');
+    expect(await capabilities.pendingList.getPendingNotifications()).toEqual([]);
   });
 });

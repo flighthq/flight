@@ -5,16 +5,16 @@ import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getSoftKeyboardBackend, setSoftKeyboardBackend } from '@flighthq/keyboard/contract';
-import { getNotificationBackend, setNotificationBackend } from '@flighthq/notification/contract';
 import { getShareBackend, setShareBackend } from '@flighthq/share/contract';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
 import { capacitorHost, registerCapacitorBackends } from './capacitorRegister';
 
 // A fake Capacitor API broad enough that every createCapacitor*Backend constructs without touching
 // missing members. Backends close over `capacitor` and only call in when their methods run (plus the
-// app/notification/device/share/statusbar/connectivity prefetches), so a thin fake proves registration
+// app/device/share/statusbar/connectivity prefetches), so a thin fake proves registration
 // routes the seams to the Capacitor backends.
 function fakeCapacitor(): CapacitorApi {
   const asyncNoop = async () => {};
@@ -72,7 +72,6 @@ afterEach(() => {
   setDeviceBackend(null);
   setFileSystemBackend(null);
   setGeolocationBackend(null);
-  setNotificationBackend(null);
   setShareBackend(null);
   setSoftKeyboardBackend(null);
   setStatusBarBackend(null);
@@ -81,6 +80,7 @@ afterEach(() => {
 describe('capacitorHost', () => {
   it('exposes the real Capacitor haptics provider', () => {
     const host = capacitorHost(fakeCapacitor());
+    expect(EntityRuntimeKey in host).toBe(true);
     expect(host.input.haptics).toBeDefined();
     expect(typeof host.input.haptics?.vibrate).toBe('function');
   });
@@ -90,9 +90,10 @@ describe('capacitorHost', () => {
   // selecting it actually gets you.
   it('claims only what has migrated, leaving unmigrated groups empty', () => {
     const host = capacitorHost(fakeCapacitor());
-    // Migrated: dialog and input are claimed with real Capacitor providers.
+    // Migrated: dialog, input, and notification are claimed with real Capacitor providers.
     expect(host.dialog.message).toBeDefined();
     expect(host.input.haptics).toBeDefined();
+    expect(host.notification.delivery).toBeDefined();
     // Still installing through package-local seams, so the host must NOT claim them.
     expect(host.storage).toEqual({});
     expect(host.system).toEqual({});
@@ -109,6 +110,7 @@ describe('capacitorHost', () => {
 describe('registerCapacitorBackends', () => {
   it('installs a backend for each covered capability', () => {
     const host = registerCapacitorBackends(fakeCapacitor());
+    expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.dialog.prompt.prompt).toBeTypeOf('function');
     expect(getAppBackend()).not.toBeNull();
@@ -116,7 +118,8 @@ describe('registerCapacitorBackends', () => {
     expect(getDeviceBackend()).not.toBeNull();
     expect(getFileSystemBackend()).not.toBeNull();
     expect(getGeolocationBackend()).not.toBeNull();
-    expect(getNotificationBackend()).not.toBeNull();
+    expect(host.notification.delivery.notify).toBeTypeOf('function');
+    expect(host.notification.scheduling.scheduleNotification).toBeTypeOf('function');
     expect(getShareBackend()).not.toBeNull();
     expect(getSoftKeyboardBackend()).not.toBeNull();
     expect(getStatusBarBackend()).not.toBeNull();

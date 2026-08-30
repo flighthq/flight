@@ -1,96 +1,108 @@
-import type { CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  CapacitorApi,
+  CapacitorLocalNotificationAction,
+  CapacitorLocalNotificationSchema,
+} from '@flighthq/types/contract';
 
-import { createCapacitorNotificationBackend } from './capacitorNotification';
-
-const flush = async () => {
-  await Promise.resolve();
-  await Promise.resolve();
-};
+import { createCapacitorNotificationCapabilities } from './capacitorNotification';
 
 function fakeCapacitor(display = 'granted') {
-  const scheduled: Array<{ id: number; title: string }> = [];
+  const scheduled: CapacitorLocalNotificationSchema[] = [];
   const cancelled: number[] = [];
-  const actionListeners: Array<(action: { actionId: string; notification: { id: number } }) => void> = [];
+  const actionListeners = new Set<(action: Readonly<CapacitorLocalNotificationAction>) => void>();
   const capacitor = {
     localNotifications: {
-      async schedule(options: { notifications: Array<{ id: number; title: string }> }) {
-        scheduled.push(...options.notifications);
-        return { notifications: options.notifications.map((n) => ({ id: n.id })) };
+      async addListener(_eventName: string, listener: (action: Readonly<CapacitorLocalNotificationAction>) => void) {
+        actionListeners.add(listener);
+        return {
+          async remove() {
+            actionListeners.delete(listener);
+          },
+        };
       },
-      async requestPermissions() {
-        return { display };
+      async cancel(options: { notifications: Array<{ id: number }> }) {
+        cancelled.push(...options.notifications.map((notification) => notification.id));
       },
       async checkPermissions() {
         return { display };
       },
-      async cancel(options: { notifications: Array<{ id: number }> }) {
-        cancelled.push(...options.notifications.map((n) => n.id));
-      },
       async getPending() {
         return { notifications: scheduled };
       },
-      async addListener(
-        _eventName: string,
-        listener: (action: { actionId: string; notification: { id: number } }) => void,
-      ) {
-        actionListeners.push(listener);
-        return { async remove() {} };
+      async requestPermissions() {
+        return { display };
+      },
+      async schedule(options: { notifications: CapacitorLocalNotificationSchema[] }) {
+        scheduled.push(...options.notifications);
+        return { notifications: options.notifications.map((notification) => ({ id: notification.id })) };
       },
     },
   } as unknown as CapacitorApi;
   return {
-    capacitor,
-    scheduled,
     cancelled,
-    fire: (a: { actionId: string; notification: { id: number } }) => actionListeners.forEach((l) => l(a)),
+    capacitor,
+    fire: (action: CapacitorLocalNotificationAction) => {
+      for (const listener of actionListeners) listener(action);
+    },
+    scheduled,
   };
 }
 
-describe('createCapacitorNotificationBackend', () => {
+describe('createCapacitorNotificationCapabilities', () => {
+  it('declares exactly delivery, scheduling, click, and action', () => {
+    const capabilities = createCapacitorNotificationCapabilities(fakeCapacitor().capacitor);
+    expect(EntityRuntimeKey in capabilities).toBe(true);
+    expect(Object.keys(capabilities).sort()).toEqual(['action', 'click', 'delivery', 'pendingList', 'scheduling']);
+  });
+
   it('schedules an immediate notification and returns the caller id', async () => {
     const { capacitor, scheduled } = fakeCapacitor();
-    const backend = createCapacitorNotificationBackend(capacitor);
-    expect(await backend.notify({ id: 'welcome', title: 'Hi', body: 'there' })).toBe('welcome');
+    const capabilities = createCapacitorNotificationCapabilities(capacitor);
+    expect(await capabilities.delivery.notify({ body: 'there', id: 'welcome', title: 'Hi' })).toBe('welcome');
     expect(scheduled).toHaveLength(1);
     expect(scheduled[0].title).toBe('Hi');
   });
 
-  it('serves permission from the prefetch cache and updates it on request', async () => {
-    const backend = createCapacitorNotificationBackend(fakeCapacitor('granted').capacitor);
-    // Reads 'default' until the construction-time prefetch settles.
-    expect(backend.getPermission()).toBe('default');
-    await flush();
-    expect(backend.getPermission()).toBe('granted');
-    expect(await backend.requestPermission()).toBe('granted');
+  it('queries and requests permission asynchronously', async () => {
+    const capabilities = createCapacitorNotificationCapabilities(fakeCapacitor('granted').capacitor);
+    expect(await capabilities.delivery.getPermission()).toBe('granted');
+    expect(await capabilities.delivery.requestPermission()).toBe('granted');
   });
 
-  it('cancels a scheduled notification by its caller id', async () => {
-    const { capacitor, cancelled } = fakeCapacitor();
-    const backend = createCapacitorNotificationBackend(capacitor);
-    await backend.scheduleNotification({ id: 'later', title: 'Later' }, { at: Date.now() + 1000 });
-    backend.cancelScheduledNotification('later');
-    await flush();
-    expect(cancelled).toHaveLength(1);
+  it('preserves repeating schedules, lists them, and cancels by caller id', async () => {
+    const { cancelled, capacitor } = fakeCapacitor();
+    const capabilities = createCapacitorNotificationCapabilities(capacitor);
+    const at = Date.now() + 1000;
+    await capabilities.scheduling.scheduleNotification({ id: 'later', title: 'Later' }, { at, repeat: 'week' });
+    const pending = await capabilities.pendingList.getPendingNotifications();
+    expect(pending[0]).toMatchObject({ id: 'later', schedule: { at, repeat: 'week' } });
+    await capabilities.scheduling.cancelScheduledNotification('later');
+    expect(cancelled).toEqual([1]);
   });
 
-  it('routes an action-performed event to click and action subscribers', async () => {
+  it('routes click and action independently and honors each unsubscribe', async () => {
     const { capacitor, fire } = fakeCapacitor();
-    const backend = createCapacitorNotificationBackend(capacitor);
-    let clicked = '';
-    let action = '';
-    backend.subscribeClick((id) => (clicked = id));
-    backend.subscribeAction((id, actionId) => (action = `${id}:${actionId}`));
-    await backend.notify({ id: 'welcome', title: 'Hi' });
-    await flush();
+    const capabilities = createCapacitorNotificationCapabilities(capacitor);
+    const clicks: string[] = [];
+    const actions: string[] = [];
+    const click = (id: string): void => {
+      clicks.push(id);
+    };
+    const action = (id: string, actionId: string): void => {
+      actions.push(`${id}:${actionId}`);
+    };
+    capabilities.click.subscribe(click);
+    capabilities.action.subscribe(action);
+    await capabilities.delivery.notify({ id: 'welcome', title: 'Hi' });
     fire({ actionId: 'tap', notification: { id: 1 } });
-    expect(clicked).toBe('welcome');
-    expect(action).toBe('welcome:tap');
-  });
-
-  it('reports sentinels for the unmodeled surface', async () => {
-    const backend = createCapacitorNotificationBackend(fakeCapacitor().capacitor);
-    expect(await backend.getActiveNotifications()).toEqual([]);
-    expect(await backend.updateNotification('x', {})).toBe(false);
-    expect(await backend.getLaunchNotification()).toBeNull();
+    expect(clicks).toEqual(['welcome']);
+    expect(actions).toEqual(['welcome:tap']);
+    capabilities.click.unsubscribe(click);
+    capabilities.action.unsubscribe(action);
+    await Promise.resolve();
+    fire({ actionId: 'tap', notification: { id: 1 } });
+    expect(clicks).toEqual(['welcome']);
+    expect(actions).toEqual(['welcome:tap']);
   });
 });

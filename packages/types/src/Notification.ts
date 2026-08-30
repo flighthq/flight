@@ -3,13 +3,13 @@
 export interface NotificationAction {
   id: string;
   title: string;
-  // Optional icon URL shown on the action button (native/SW backends only).
+  // Optional icon URL shown on the action button (native/SW providers only).
   icon?: string;
 }
 
 export interface NotificationRequest {
   title: string;
-  // Stable caller-supplied id. When omitted the backend generates one and returns it.
+  // Stable caller-supplied id. When omitted the provider generates one and returns it on the handle.
   id?: string;
   body?: string;
   icon?: string;
@@ -36,35 +36,9 @@ export interface NotificationRequest {
   data?: unknown;
 }
 
-// A notification channel/category. Load-bearing on Android-class native hosts (channels control
-// importance, sound, and grouping); a no-op concept on the web.
-export interface NotificationChannel {
-  id: string;
-  name: string;
-}
-
 // Tri-state notification permission, mirroring the web Notification API: 'default' (not yet asked),
-// 'granted', or 'denied'.
+// 'granted', or 'denied'. Permission reads are async because native providers expose async probes.
 export type NotificationPermission = 'default' | 'granted' | 'denied';
-
-// Plain-data record of what a notification backend supports. Lets callers feature-detect without
-// probing behavior.
-export interface NotificationCapabilities {
-  // Action buttons (requires the SW backend on web, or a native host).
-  actions: boolean;
-  // Notification channels/categories.
-  channels: boolean;
-  // Cold-start launch-from-notification reporting.
-  coldStart: boolean;
-  // Large body image.
-  image: boolean;
-  // Listing currently-active notifications.
-  listActive: boolean;
-  // Local scheduling for future delivery.
-  scheduling: boolean;
-  // Inline text-reply actions.
-  textReply: boolean;
-}
 
 // A delivery schedule for a local notification: an absolute fire time plus an optional repeat cadence.
 export interface NotificationSchedule {
@@ -74,51 +48,109 @@ export interface NotificationSchedule {
   repeat?: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
 }
 
-// A locally-scheduled (not yet delivered) notification: the generated id, the original request, and
-// the schedule it fires on.
-export interface ScheduledNotification {
-  id: string;
-  request: Readonly<NotificationRequest>;
-  schedule: Readonly<NotificationSchedule>;
+// Public identity for one displayed notification. APIs create a fresh handle object and retain the
+// originating provider out-of-band, so equal provider-local strings from different hosts cannot redirect
+// close or update operations.
+export interface NotificationHandle {
+  readonly id: string;
 }
 
-// System notification seam. Free functions in @flighthq/notification delegate to the active backend
-// (web Notification default, the Service Worker variant, or a native host's). notify resolves to the
-// notification id ('' when permission is not granted or the host lacks the surface) and
-// requestPermission resolves to a tri-state NotificationPermission rather than throwing — denial is an
-// expected outcome, not an error.
-export interface NotificationBackend {
-  // Shows a notification; resolves to its id, or '' when not granted / unsupported.
-  notify(request: Readonly<NotificationRequest>): Promise<string>;
+// Truthful summary returned by providers that can enumerate displayed notifications. It deliberately
+// contains only fields every declared active-list provider can recover from the platform.
+export interface ActiveNotification extends NotificationHandle {
+  readonly tag: string;
+  readonly title: string;
+}
+
+export interface ScheduledNotificationHandle {
+  readonly id: string;
+}
+
+// A locally-scheduled (not yet delivered) notification. This is also a cancellable public handle;
+// getPendingNotifications pins each returned object to the scheduling provider that enumerated it.
+export interface ScheduledNotification extends ScheduledNotificationHandle {
+  readonly request: Readonly<NotificationRequest>;
+  readonly schedule: Readonly<NotificationSchedule>;
+}
+
+export interface NotificationDeliveryBackend {
+  // Shows a notification; resolves to its provider-local id, or null when permission is not granted or
+  // the runtime API rejects the request.
+  notify(request: Readonly<NotificationRequest>): Promise<string | null>;
+  getPermission(): Promise<NotificationPermission>;
   requestPermission(): Promise<NotificationPermission>;
-  // Reads the current permission state without prompting.
-  getPermission(): NotificationPermission;
-  isSupported(): boolean;
-  // Plain-data record of what this backend supports.
-  getCapabilities(): NotificationCapabilities;
-  // The notification the app was launched from, or null when not launched via a notification.
-  getLaunchNotification(): Promise<Readonly<NotificationRequest> | null>;
-  // Currently-displayed notifications; empty when introspection is unsupported.
-  getActiveNotifications(): Promise<ReadonlyArray<Readonly<NotificationRequest>>>;
-  // Locally-scheduled (not yet delivered) notifications.
-  getPendingNotifications(): Promise<ReadonlyArray<Readonly<ScheduledNotification>>>;
-  // Schedules a local notification; resolves to its id, or '' when unsupported.
+}
+
+export interface NotificationSchedulingBackend {
   scheduleNotification(
     request: Readonly<NotificationRequest>,
     schedule: Readonly<NotificationSchedule>,
-  ): Promise<string>;
-  // Cancels a pending scheduled notification by id. No-ops when the id is unknown.
-  cancelScheduledNotification(id: string): void;
-  // Dismisses the notification with the given id. No-ops when unknown or already dismissed.
-  closeNotification(id: string): void;
-  // Dismisses all currently-shown notifications.
-  closeAllNotifications(): void;
-  // Updates a live notification by merging partial fields; resolves false when not visible or
-  // updates are unsupported.
-  updateNotification(id: string, partial: Readonly<Partial<NotificationRequest>>): Promise<boolean>;
-  subscribeClick(listener: (id: string) => void): () => void;
-  subscribeAction(listener: (id: string, actionId: string) => void): () => void;
-  subscribeDismiss(listener: (id: string) => void): () => void;
-  subscribeReply(listener: (id: string, actionId: string, text: string) => void): () => void;
-  subscribeShow(listener: (id: string) => void): () => void;
+  ): Promise<string | null>;
+  cancelScheduledNotification(id: string): Promise<void>;
 }
+
+export interface NotificationPendingListBackend {
+  getPendingNotifications(): Promise<ReadonlyArray<Readonly<ScheduledNotification>>>;
+}
+
+export interface NotificationCloseBackend {
+  closeNotification(id: string): Promise<void>;
+  closeAllNotifications(): Promise<void>;
+}
+
+export interface NotificationUpdateBackend {
+  updateNotification(id: string, partial: Readonly<Partial<NotificationRequest>>): Promise<boolean>;
+}
+
+export interface NotificationActiveListBackend {
+  getActiveNotifications(): Promise<ReadonlyArray<Readonly<ActiveNotification>>>;
+}
+
+export interface NotificationClickBackend {
+  subscribe(listener: (id: string) => void): void;
+  unsubscribe(listener: (id: string) => void): void;
+}
+
+export interface NotificationActionBackend {
+  subscribe(listener: (id: string, actionId: string) => void): void;
+  unsubscribe(listener: (id: string, actionId: string) => void): void;
+}
+
+export interface NotificationDismissBackend {
+  subscribe(listener: (id: string) => void): void;
+  unsubscribe(listener: (id: string) => void): void;
+}
+
+export interface NotificationReplyBackend {
+  subscribe(listener: (id: string, actionId: string, text: string) => void): void;
+  unsubscribe(listener: (id: string, actionId: string, text: string) => void): void;
+}
+
+export interface NotificationShowBackend {
+  subscribe(listener: (id: string) => void): void;
+  unsubscribe(listener: (id: string) => void): void;
+}
+
+export type ServiceWorkerNotificationCapabilities = Readonly<{
+  action: NotificationActionBackend;
+  activeList: NotificationActiveListBackend;
+  click: NotificationClickBackend;
+  close: NotificationCloseBackend;
+  delivery: NotificationDeliveryBackend;
+  dismiss: NotificationDismissBackend;
+  pendingList: NotificationPendingListBackend;
+  reply: NotificationReplyBackend;
+  scheduling: NotificationSchedulingBackend;
+  show: NotificationShowBackend;
+}>;
+
+export type WebNotificationCapabilities = Readonly<{
+  click: NotificationClickBackend;
+  close: NotificationCloseBackend;
+  delivery: NotificationDeliveryBackend;
+  dismiss: NotificationDismissBackend;
+  pendingList: NotificationPendingListBackend;
+  scheduling: NotificationSchedulingBackend;
+  show: NotificationShowBackend;
+  update: NotificationUpdateBackend;
+}>;
