@@ -1,5 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
+  HasNetSocket,
   SocketBackend,
   SocketCloseInfo,
   SocketConnection,
@@ -15,12 +16,8 @@ import {
   detachSocket,
   disposeSocket,
   enableSocketSignals,
-  getSocketBackend,
   getSocketReadyState,
-  installSocketHostBackend,
-  resetSocketBackendForTest,
   sendSocketMessage,
-  setSocketBackend,
   setSocketGuard,
 } from './socket';
 
@@ -67,15 +64,18 @@ function fakeBackend(): FakeSocket {
 }
 
 afterEach(() => {
-  resetSocketBackendForTest();
   setSocketGuard(null);
 });
+
+function hostOf(backend: SocketBackend): HasNetSocket {
+  return { net: { socket: backend } } as HasNetSocket;
+}
 
 describe('attachSocket', () => {
   it('resumes delivery after a detach', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     const signals = enableSocketSignals(socket);
     let opens = 0;
     connectSignal(signals.onSocketOpen, () => opens++);
@@ -87,8 +87,8 @@ describe('attachSocket', () => {
 
   it('cannot resume delivery after terminal disposal', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     const signals = enableSocketSignals(socket);
     let opens = 0;
     connectSignal(signals.onSocketOpen, () => opens++);
@@ -103,8 +103,8 @@ describe('attachSocket', () => {
 describe('closeSocket', () => {
   it('transitions to closing and forwards code/reason to the connection', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     fake.sink.handleSocketOpen();
     closeSocket(socket, 1000, 'bye');
     expect(getSocketReadyState(socket)).toBe('closing');
@@ -113,8 +113,8 @@ describe('closeSocket', () => {
 
   it('reaches closed once the backend close event arrives', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     fake.sink.handleSocketOpen();
     closeSocket(socket);
     fake.sink.handleSocketClose({ code: 1000, reason: '', wasClean: true });
@@ -123,8 +123,8 @@ describe('closeSocket', () => {
 
   it('is a no-op when already closed', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     fake.sink.handleSocketOpen();
     closeSocket(socket);
     fake.sink.handleSocketClose({ code: 1000, reason: '', wasClean: true });
@@ -134,8 +134,8 @@ describe('closeSocket', () => {
 
   it('stays closed and does not close the connection again after disposal', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     disposeSocket(socket);
     closeSocket(socket);
     expect(getSocketReadyState(socket)).toBe('closed');
@@ -146,8 +146,8 @@ describe('closeSocket', () => {
 describe('createSocket', () => {
   it('opens through the backend in the connecting state and records the url', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://host/path' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://host/path' });
     expect(socket.url).toBe('ws://host/path');
     expect(getSocketReadyState(socket)).toBe('connecting');
     expect(fake.lastOptions?.url).toBe('ws://host/path');
@@ -155,8 +155,8 @@ describe('createSocket', () => {
 
   it('passes protocols and binaryType through to the backend', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    createSocket({ url: 'ws://x', protocols: ['a', 'b'], binaryType: 'arraybuffer' });
+    const host = hostOf(fake.backend);
+    createSocket(host, { url: 'ws://x', protocols: ['a', 'b'], binaryType: 'arraybuffer' });
     expect(fake.lastOptions?.protocols).toEqual(['a', 'b']);
     expect(fake.lastOptions?.binaryType).toBe('arraybuffer');
   });
@@ -164,16 +164,16 @@ describe('createSocket', () => {
   it('tolerates a null connection from an unsupported transport', () => {
     const fake = fakeBackend();
     fake.openReturnsNull = true;
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'tcp://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'tcp://x' });
     expect(getSocketReadyState(socket)).toBe('connecting');
     expect(sendSocketMessage(socket, 'x')).toBe(false);
   });
 
   it('emits a text message with binary false and a binary message with binary true', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     const signals = enableSocketSignals(socket);
     const received: SocketMessage[] = [];
     connectSignal(signals.onSocketMessage, (m) => received.push(m));
@@ -189,8 +189,8 @@ describe('createSocket', () => {
 
   it('emits close info with code, reason, and wasClean', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     const signals = enableSocketSignals(socket);
     const infos: SocketCloseInfo[] = [];
     connectSignal(signals.onSocketClose, (i) => infos.push(i));
@@ -200,8 +200,8 @@ describe('createSocket', () => {
 
   it('emits onSocketError', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     const signals = enableSocketSignals(socket);
     let errors = 0;
     connectSignal(signals.onSocketError, () => errors++);
@@ -304,8 +304,8 @@ describe('createWebSocketBackend', () => {
 describe('detachSocket', () => {
   it('stops backend events from reaching the signals', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     const signals = enableSocketSignals(socket);
     let opens = 0;
     connectSignal(signals.onSocketOpen, () => opens++);
@@ -318,8 +318,8 @@ describe('detachSocket', () => {
 describe('disposeSocket', () => {
   it('closes an open connection and detaches so later events fire no signal', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     const signals = enableSocketSignals(socket);
     let messages = 0;
     connectSignal(signals.onSocketMessage, () => messages++);
@@ -334,8 +334,8 @@ describe('disposeSocket', () => {
 
   it('is safe to call on a fresh socket', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     expect(() => disposeSocket(socket)).not.toThrow();
   });
 });
@@ -343,22 +343,22 @@ describe('disposeSocket', () => {
 describe('enableSocketSignals', () => {
   it('returns the same group on repeated calls', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     expect(enableSocketSignals(socket)).toBe(enableSocketSignals(socket));
   });
 
   it('leaves a bare socket without signals', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     expect(socket.runtime.signals).toBeNull();
   });
 
   it('returns an inert stable group without reviving a disposed socket', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     disposeSocket(socket);
     const first = enableSocketSignals(socket);
     expect(enableSocketSignals(socket)).toBe(first);
@@ -367,23 +367,11 @@ describe('enableSocketSignals', () => {
   });
 });
 
-describe('getSocketBackend', () => {
-  it('lazily returns a web backend by default', () => {
-    expect(typeof getSocketBackend().openSocket).toBe('function');
-  });
-
-  it('returns the installed backend', () => {
-    const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    expect(getSocketBackend()).toBe(fake.backend);
-  });
-});
-
 describe('getSocketReadyState', () => {
   it('reflects connecting → open → closing → closed transitions', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     expect(getSocketReadyState(socket)).toBe('connecting');
     fake.sink.handleSocketOpen();
     expect(getSocketReadyState(socket)).toBe('open');
@@ -394,48 +382,11 @@ describe('getSocketReadyState', () => {
   });
 });
 
-describe('installSocketHostBackend', () => {
-  it('keeps host and custom slots distinct so clearing custom reveals host', () => {
-    const host = fakeBackend();
-    const custom = fakeBackend();
-    installSocketHostBackend(host.backend);
-    expect(getSocketBackend()).toBe(host.backend);
-    setSocketBackend(custom.backend);
-    expect(getSocketBackend()).toBe(custom.backend);
-    setSocketBackend(null);
-    expect(getSocketBackend()).toBe(host.backend);
-  });
-
-  it('preserves the first installed host backend', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installSocketHostBackend(first.backend);
-    installSocketHostBackend(second.backend);
-    expect(getSocketBackend()).toBe(first.backend);
-  });
-});
-
-describe('resetSocketBackendForTest', () => {
-  it('clears custom and host slots and restores the lazy web fallback', () => {
-    const originalWeb = getSocketBackend();
-    const host = fakeBackend();
-    const custom = fakeBackend();
-    installSocketHostBackend(host.backend);
-    setSocketBackend(custom.backend);
-    resetSocketBackendForTest();
-    const web = getSocketBackend();
-    expect(web).not.toBe(host.backend);
-    expect(web).not.toBe(custom.backend);
-    expect(web).not.toBe(originalWeb);
-    expect(typeof web.openSocket).toBe('function');
-  });
-});
-
 describe('sendSocketMessage', () => {
   it('sends through the connection and returns true when open', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     fake.sink.handleSocketOpen();
     expect(sendSocketMessage(socket, 'ping')).toBe(true);
     expect(fake.sent).toEqual(['ping']);
@@ -443,16 +394,16 @@ describe('sendSocketMessage', () => {
 
   it('returns false without throwing when not open', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     expect(sendSocketMessage(socket, 'ping')).toBe(false);
     expect(fake.sent).toEqual([]);
   });
 
   it('returns false after disposal without reaching the released connection', () => {
     const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     fake.sink.handleSocketOpen();
     disposeSocket(socket);
     expect(sendSocketMessage(socket, 'ping')).toBe(false);
@@ -462,8 +413,8 @@ describe('sendSocketMessage', () => {
   it('returns false for an open state whose backend supplied no connection', () => {
     const fake = fakeBackend();
     fake.openReturnsNull = true;
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'tcp://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'tcp://x' });
     fake.sink.handleSocketOpen();
     expect(getSocketReadyState(socket)).toBe('open');
     expect(sendSocketMessage(socket, 'ping')).toBe(false);
@@ -472,8 +423,8 @@ describe('sendSocketMessage', () => {
   it('forwards binary data by identity and propagates false without mutating the readonly socket', () => {
     const fake = fakeBackend();
     fake.sendReturns = false;
-    setSocketBackend(fake.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const host = hostOf(fake.backend);
+    const socket = createSocket(host, { url: 'ws://x' });
     fake.sink.handleSocketOpen();
     Object.freeze(socket.runtime);
     Object.freeze(socket);
@@ -483,30 +434,17 @@ describe('sendSocketMessage', () => {
   });
 });
 
-describe('setSocketBackend', () => {
-  it('restores the lazy web default when passed null', () => {
-    const fake = fakeBackend();
-    setSocketBackend(fake.backend);
-    expect(getSocketBackend()).toBe(fake.backend);
-    setSocketBackend(null);
-    const web = getSocketBackend();
-    expect(web).not.toBe(fake.backend);
-    expect(typeof web.openSocket).toBe('function');
-  });
-});
-
 describe('setSocketGuard', () => {
   it('installs and removes the core notice hook', () => {
     const notices: string[] = [];
     setSocketGuard((notice) => notices.push(`${notice.operation}:${notice.reason}`));
     const unsupported = fakeBackend();
     unsupported.openReturnsNull = true;
-    setSocketBackend(unsupported.backend);
-    createSocket({ url: 'tcp://x' });
+    const host = hostOf(unsupported.backend);
+    createSocket(host, { url: 'tcp://x' });
 
     const supported = fakeBackend();
-    setSocketBackend(supported.backend);
-    const socket = createSocket({ url: 'ws://x' });
+    const socket = createSocket(hostOf(supported.backend), { url: 'ws://x' });
     disposeSocket(socket);
     closeSocket(socket);
     sendSocketMessage(socket, 'x');

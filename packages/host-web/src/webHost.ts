@@ -40,6 +40,7 @@ import { webScreenCapabilities } from './webScreen';
 import { webSensorsBackend } from './webSensors';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webShellExternalBackend } from './webShell';
+import { webSocketBackend } from './webSocket';
 import { webStatusBarColorBackend } from './webStatusbar';
 import { webStorageBackend } from './webStorage';
 import { createWebWindowStoragePersistenceCapabilities } from './webStoragePersistence';
@@ -112,7 +113,7 @@ export const webHost = createEntity({
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   // MIDI access may prompt and enumerate hardware, so only the injected profile factories claim it.
   midi: {},
-  net: {},
+  net: { socket: webSocketBackend },
   power: webPowerCapabilities,
   protocol: webProtocolCapabilities,
   // Notification construction is execution-context-specific (page vs Service Worker) and requires an
