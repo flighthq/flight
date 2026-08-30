@@ -16,6 +16,14 @@ The exact predicate is every production occurrence of `typeof document === 'unde
 8. `webWindow.ts` fullscreen exit — `false`.
 9. `webWindow.ts` fullscreen subscription — `void`.
 
+## First resolved slice
+
+Pointer-lock exit now returns the method-tight reason-only outcome `ok | api-unavailable |
+operation-failed`. Document absence is therefore observable as `api-unavailable`; an already-unlocked
+document is `ok`, and only an observed successful release clears core provider provenance. Pointer-lock
+request independently reports `target-not-found | api-unavailable | denied | operation-failed | ok`, so
+an unknown provider-bound target can no longer masquerade as acquisition and pin the Web provider.
+
 ## Follow-up
 
-After Accessibility lands, run an R17 host-web pass over these nine operations and derive named result or event-construction contracts. Do not copy Accessibility reasons mechanically: each operation must advertise only failures it can reach. Host-web also contains absent-`window`, absent-`navigator`, and individual-API guards; a wider follow-up must explicitly rule and restate its population instead of silently treating the ten-document-guard census as the whole availability universe.
+After Accessibility lands, continue the R17 host-web pass over the remaining eight operations and derive named result or event-construction contracts. Do not copy Accessibility or pointer-lock reasons mechanically: each operation must advertise only failures it can reach. Host-web also contains absent-`window`, absent-`navigator`, and individual-API guards; a wider follow-up must explicitly rule and restate its population instead of silently treating the ten-document-guard census as the whole availability universe.

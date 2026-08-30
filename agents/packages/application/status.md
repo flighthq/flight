@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/application'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-29
+by: builder5
 ---
 
 # application — Status
@@ -45,6 +45,10 @@ Every item below was re-checked against `packages/application/src/` and `package
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-29** — Pointer-lock request/exit now return method-tight reason outcomes and transfer or
+  clear exact provider provenance only on `ok`; Web observes modern/legacy settlement without silent
+  unknown-target acquisition. `ApplicationWindow` and `createApplicationWindow` now satisfy the
+  Entity constructor invariant; the separate `Application` notice remains open.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Biggest false claim dropped: the parked
   "`ApplicationLoopOptions.ts` own-file split is cross-boundary work in `@flighthq/types`" — the file
   landed and `packages/types/src/ApplicationLoopOptions.ts` exists today. Also dropped: the

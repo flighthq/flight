@@ -1,6 +1,7 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
-export interface ApplicationWindow {
+export interface ApplicationWindow extends Entity {
   // Window title text. Reflected to the host chrome by setWindowTitle.
   title: string;
   // Top-left position in screen coordinates (logical pixels).

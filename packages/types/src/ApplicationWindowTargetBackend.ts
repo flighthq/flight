@@ -16,10 +16,20 @@ export interface InputFocusBackend extends Entity {
 
 // Pointer lock is command-only: request is target-scoped while exit is provider-global. Keeping both in
 // one slot records their shared coverage without merging either command with an event capability. A
-// successful request's consumer must retain this backend until exit so later Host selection cannot reroute it.
+// request outcome is method-tight: only request can report target lookup or denial, while exit can report
+// only release availability/failure. A successful request's consumer must retain this backend until exit
+// so later Host selection cannot reroute it.
+export type InputPointerLockExitOutcome =
+  | { readonly reason: 'ok' }
+  | { readonly reason: 'api-unavailable' | 'operation-failed' };
+
+export type InputPointerLockRequestOutcome =
+  | { readonly reason: 'ok' }
+  | { readonly reason: 'api-unavailable' | 'denied' | 'operation-failed' | 'target-not-found' };
+
 export interface InputPointerLockBackend extends Entity {
-  exit(): Promise<void>;
-  request(target: InputTargetHandle): Promise<void>;
+  exit(): Promise<InputPointerLockExitOutcome>;
+  request(target: InputTargetHandle): Promise<InputPointerLockRequestOutcome>;
 }
 
 // Render-context loss/restoration is emitted by the host surface, so it is a Host event slot under R18.

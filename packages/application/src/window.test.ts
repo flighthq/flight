@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   EntityWithoutRuntime,
   FullscreenBackend,
@@ -12,6 +13,8 @@ import type {
   InputDropFileBackend,
   InputFocusBackend,
   InputPointerLockBackend,
+  InputPointerLockExitOutcome,
+  InputPointerLockRequestOutcome,
   InputTargetBackend,
   InputTargetHandle,
   Matrix,
@@ -381,9 +384,11 @@ function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
     calls,
     async exit() {
       calls.push('exit');
+      return { reason: 'ok' };
     },
     async request(_target: InputTargetHandle) {
       calls.push('request');
+      return { reason: 'ok' };
     },
   });
 }
@@ -922,6 +927,7 @@ describe('computeWindowDeviceTransform', () => {
 describe('createApplicationWindow', () => {
   it('returns all signals with no side effects', () => {
     const win = createApplicationWindow();
+    expect(EntityRuntimeKey in win).toBe(true);
     expect(win.onActivate).toBeDefined();
     expect(win.onClose).toBeDefined();
     expect(win.onDeactivate).toBeDefined();
@@ -1133,8 +1139,48 @@ describe('exitApplicationFullscreen', () => {
 
 describe('exitApplicationPointerLock', () => {
   it('delegates to the input pointer-lock command capability', async () => {
-    await exitApplicationPointerLock(host);
+    await expect(exitApplicationPointerLock(host)).resolves.toEqual({ reason: 'ok' });
     expect(host.input.pointerLock.calls).toEqual(['exit']);
+  });
+
+  it.each(['api-unavailable', 'operation-failed'] satisfies InputPointerLockExitOutcome['reason'][])(
+    'retains the request origin after %s so exit can be retried',
+    async (reason) => {
+      const origin = createTestHost();
+      const active = createTestHost();
+      let attempts = 0;
+      origin.input.pointerLock.exit = async () => {
+        attempts++;
+        origin.input.pointerLock.calls.push(`exit:${attempts}`);
+        return attempts === 1 ? { reason } : { reason: 'ok' };
+      };
+
+      await lockApplicationPointer(origin, createInputTarget());
+      await expect(exitApplicationPointerLock(active)).resolves.toEqual({ reason });
+      await expect(exitApplicationPointerLock(active)).resolves.toEqual({ reason: 'ok' });
+
+      expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
+      expect(active.input.pointerLock.calls).toEqual([]);
+    },
+  );
+
+  it('keeps backend defects visible and retains the origin for retry', async () => {
+    const origin = createTestHost();
+    const active = createTestHost();
+    let attempts = 0;
+    origin.input.pointerLock.exit = async () => {
+      attempts++;
+      origin.input.pointerLock.calls.push(`exit:${attempts}`);
+      if (attempts === 1) throw new Error('busy');
+      return { reason: 'ok' };
+    };
+
+    await lockApplicationPointer(origin, createInputTarget());
+    await expect(exitApplicationPointerLock(active)).rejects.toThrow('busy');
+    await expect(exitApplicationPointerLock(active)).resolves.toEqual({ reason: 'ok' });
+
+    expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
+    expect(active.input.pointerLock.calls).toEqual([]);
   });
 });
 
@@ -1183,13 +1229,8 @@ describe('hideWindow', () => {
 describe('lockApplicationPointer', () => {
   it('passes the opaque target to the pointer-lock command capability', async () => {
     const target = createInputTarget();
-    await lockApplicationPointer(host, target);
+    await expect(lockApplicationPointer(host, target)).resolves.toEqual({ reason: 'ok' });
     expect(host.input.pointerLock.calls).toEqual(['request']);
-    await exitApplicationPointerLock(host);
-  });
-
-  it('forwards the provider promise result', async () => {
-    await expect(lockApplicationPointer(host, createInputTarget())).resolves.toBeUndefined();
     await exitApplicationPointerLock(host);
   });
 
@@ -1204,17 +1245,43 @@ describe('lockApplicationPointer', () => {
     expect(active.input.pointerLock.calls).toEqual([]);
   });
 
-  it('does not replace a successful origin when a later request is rejected', async () => {
+  it.each([
+    'api-unavailable',
+    'denied',
+    'operation-failed',
+    'target-not-found',
+  ] satisfies InputPointerLockRequestOutcome['reason'][])(
+    'does not replace a successful origin after %s',
+    async (reason) => {
+      const origin = createTestHost();
+      const declined = createTestHost();
+      const active = createTestHost();
+      declined.input.pointerLock.request = async () => {
+        declined.input.pointerLock.calls.push(`request:${reason}`);
+        return { reason };
+      };
+
+      await lockApplicationPointer(origin, createInputTarget());
+      await expect(lockApplicationPointer(declined, createInputTarget())).resolves.toEqual({ reason });
+      await exitApplicationPointerLock(active);
+
+      expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
+      expect(declined.input.pointerLock.calls).toEqual([`request:${reason}`]);
+      expect(active.input.pointerLock.calls).toEqual([]);
+    },
+  );
+
+  it('keeps backend defects visible without replacing a successful origin', async () => {
     const origin = createTestHost();
     const rejected = createTestHost();
     const active = createTestHost();
     rejected.input.pointerLock.request = async () => {
       rejected.input.pointerLock.calls.push('request:rejected');
-      throw new Error('denied');
+      throw new Error('defect');
     };
 
     await lockApplicationPointer(origin, createInputTarget());
-    await expect(lockApplicationPointer(rejected, createInputTarget())).rejects.toThrow('denied');
+    await expect(lockApplicationPointer(rejected, createInputTarget())).rejects.toThrow('defect');
     await exitApplicationPointerLock(active);
 
     expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
@@ -1222,21 +1289,17 @@ describe('lockApplicationPointer', () => {
     expect(active.input.pointerLock.calls).toEqual([]);
   });
 
-  it('retains the request origin when exit rejects so cleanup can be retried', async () => {
+  it('replaces the request origin only after a later success', async () => {
     const origin = createTestHost();
+    const replacement = createTestHost();
     const active = createTestHost();
-    let attempts = 0;
-    origin.input.pointerLock.exit = async () => {
-      attempts++;
-      origin.input.pointerLock.calls.push(`exit:${attempts}`);
-      if (attempts === 1) throw new Error('busy');
-    };
 
     await lockApplicationPointer(origin, createInputTarget());
-    await expect(exitApplicationPointerLock(active)).rejects.toThrow('busy');
+    await lockApplicationPointer(replacement, createInputTarget());
     await exitApplicationPointerLock(active);
 
-    expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
+    expect(origin.input.pointerLock.calls).toEqual(['request']);
+    expect(replacement.input.pointerLock.calls).toEqual(['request', 'exit']);
     expect(active.input.pointerLock.calls).toEqual([]);
   });
 });
