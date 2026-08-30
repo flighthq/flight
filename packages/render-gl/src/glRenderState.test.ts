@@ -742,6 +742,23 @@ describe('getGlColorAdjustmentMaterialFeatureGuard', () => {
   });
 });
 
+describe('getGlContextRuntime', () => {
+  it('returns the context runtime attached by createGlContextState', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const runtime = getGlContextRuntime(contextState);
+    expect(runtime).toBeDefined();
+    expect(runtime.gl).toBe(gl);
+    expect(runtime.teardowns).toEqual([]);
+  });
+
+  it('resolves the same runtime object on repeated calls', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    expect(getGlContextRuntime(contextState)).toBe(getGlContextRuntime(contextState));
+  });
+});
+
 describe('getGlRenderStateRuntime', () => {
   it('returns the runtime attached by createGlRenderState', () => {
     const { gl } = makeContext();

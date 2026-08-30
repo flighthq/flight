@@ -45,6 +45,7 @@ import {
   destroyWgpuRenderState,
   getWgpuColorAdjustmentMaterialFeature,
   getWgpuColorAdjustmentMaterialFeatureGuard,
+  getWgpuDeviceRuntime,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   isWgpuSupported,
@@ -738,6 +739,22 @@ describe('getWgpuColorAdjustmentMaterialFeatureGuard', () => {
       entry: { state: RegistryEntryState.Tombstoned },
     };
     expect(getWgpuColorAdjustmentMaterialFeatureGuard(state)).toBeNull();
+  });
+});
+
+describe('getWgpuDeviceRuntime', () => {
+  it('returns the device runtime attached by createWgpuDeviceState', () => {
+    const device = {} as GPUDevice;
+    const deviceState = createWgpuDeviceState(device);
+    const runtime = getWgpuDeviceRuntime(deviceState);
+    expect(runtime).toBeDefined();
+    expect(runtime.device).toBe(device);
+    expect(runtime.teardowns).toEqual([]);
+  });
+
+  it('resolves the same runtime object on repeated calls', () => {
+    const deviceState = createWgpuDeviceState({} as GPUDevice);
+    expect(getWgpuDeviceRuntime(deviceState)).toBe(getWgpuDeviceRuntime(deviceState));
   });
 });
 
