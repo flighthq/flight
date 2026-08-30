@@ -363,9 +363,9 @@ export interface CapacitorLocalNotificationAction {
   notification: { id: number };
 }
 
-// `@capacitor/network` — connectivity status + change events. Async, whereas ConnectivityBackend's
-// getStatus is a synchronous snapshot; the adapter prefetches the status and subscribes to
-// networkStatusChange to keep a local mirror current, filling the caller's `out` from it.
+// `@capacitor/network` — connectivity status + change events. Async, whereas the Host status query is
+// synchronous; the adapter reports unknown until its mirror is measured and keeps that mirror current
+// from one networkStatusChange listener.
 export interface CapacitorNetworkPlugin {
   addListener(
     eventName: 'networkStatusChange',

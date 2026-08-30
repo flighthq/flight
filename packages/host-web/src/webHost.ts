@@ -5,6 +5,7 @@ import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 import { webAccessibilityBackend } from './webAccessibility';
 import { webApplicationExitBackend } from './webApplicationExit';
 import { webClipboardBackend } from './webClipboard';
+import { webConnectivityBackend } from './webConnectivity';
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 import { webHapticsBackend } from './webHaptics';
 import {
@@ -36,6 +37,11 @@ export const webHost = createEntity({
     formats: webClipboardBackend,
     image: webClipboardBackend,
     text: webClipboardBackend,
+  },
+  connectivity: {
+    change: webConnectivityBackend,
+    reachability: webConnectivityBackend,
+    status: webConnectivityBackend,
   },
   dialog: {
     file: webFileDialogBackend,

@@ -1,5 +1,4 @@
 import { getAppBackend } from '@flighthq/app/contract';
-import { getConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
@@ -28,6 +27,7 @@ export function captureHostProbeBackends(
       | 'accessibility'
       | 'app'
       | 'clipboard'
+      | 'connectivity'
       | 'dialog'
       | 'input'
       | 'menu'
@@ -42,7 +42,7 @@ export function captureHostProbeBackends(
     accessibility: host.accessibility?.provider ?? null,
     app: getAppBackend(),
     clipboard: host.clipboard?.text ?? null,
-    connectivity: getConnectivityBackend(),
+    connectivity: host.connectivity?.status ?? null,
     cursor: null,
     device: getDeviceBackend(),
     dialog: host.dialog ?? null,

@@ -78,7 +78,17 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'tray',
     'window',
   ]),
-  web: new Set(['accessibility', 'cursor', 'dialog', 'glyph-rasterizer', 'loop', 'screen', 'share', 'window']),
+  web: new Set([
+    'accessibility',
+    'connectivity',
+    'cursor',
+    'dialog',
+    'glyph-rasterizer',
+    'loop',
+    'screen',
+    'share',
+    'window',
+  ]),
 };
 
 export function createHostProbeProviderResults(

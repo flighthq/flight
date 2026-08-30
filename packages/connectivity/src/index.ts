@@ -1,13 +1,13 @@
 export {
-  explainConnectivityBackend,
   attachConnectivity,
   createConnectivity,
   detachConnectivity,
   detectConnectivityReachability,
   disposeConnectivity,
+  destroyConnectivity,
+  getConnectivityOnline,
   getConnectivityStatus,
   hasConnectivityStatusChanged,
   isConnectivityMetered,
-  isConnectivityOnline,
   isConnectivitySaveDataEnabled,
 } from './contract';

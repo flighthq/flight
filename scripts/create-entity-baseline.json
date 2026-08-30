@@ -60,7 +60,6 @@
     "@flighthq/collision createCollisionRaycastHit3D",
     "@flighthq/collision createCollisionTimeOfImpact2D",
     "@flighthq/collision createCollisionTriangleMesh3D",
-    "@flighthq/connectivity createConnectivity",
     "@flighthq/easing createEasingSamples",
     "@flighthq/effects createAutoExposureEffect",
     "@flighthq/effects createBarrelDistortionEffect",

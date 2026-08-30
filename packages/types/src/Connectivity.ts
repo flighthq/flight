@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 export type ConnectivityConnectionType =
@@ -11,8 +12,10 @@ export type ConnectivityConnectionType =
   | 'none'
   | 'unknown';
 
+// A connectivity snapshot. `online: null` means the provider has not measured connectivity yet; it
+// must never be interpreted as offline. The remaining sentinel values likewise mean unreported.
 export interface ConnectivityStatus {
-  online: boolean;
+  online: boolean | null;
   type: ConnectivityConnectionType;
   // Estimated downlink in Mbps, or -1 when the host does not report it.
   downlink: number;
@@ -45,30 +48,35 @@ export interface ConnectivityReachabilityOptions {
   signal?: AbortSignal;
 }
 
-// Event seam for connectivity: a snapshot reader plus a change subscription. The web backend wraps
-// navigator.onLine + the Network Information API; a native host emits its own connectivity changes
-// through the same subscribe callback.
-export interface ConnectivityBackend {
+// Snapshot queries, raw host change delivery, and active reachability are separate capabilities.
+// Their provider coverage differs, and the change subscription has a teardown lifetime that the two
+// command shapes do not. A host therefore exposes them as separate slots even when one provider
+// object implements more than one facet.
+export interface ConnectivityStatusBackend extends Entity {
   getStatus(out: ConnectivityStatus): ConnectivityStatus;
-  // Optional one-shot reachability probe; callers fall back to a fetch-based default when absent.
-  detectReachability?(
+}
+
+export interface ConnectivityChangeBackend extends Entity {
+  // Terminal provider teardown. Per-entity detach consumes only the unsubscribe returned below.
+  destroy(): void;
+  // Returns null when the provider cannot establish a real change subscription. A no-op thunk would
+  // falsely claim attach success and leave the caller waiting for events that cannot arrive.
+  subscribe(listener: () => void): (() => void) | null;
+}
+
+export interface ConnectivityReachabilityBackend extends Entity {
+  detectReachability(
     options: Readonly<ConnectivityReachabilityOptions>,
     out: ConnectivityReachability,
   ): Promise<ConnectivityReachability>;
-  // Registers a listener invoked on any connectivity change; returns an unsubscribe function.
-  subscribe(listener: () => void): () => void;
 }
 
-// Connectivity event entity. Enable delivery with attachConnectivity; the signals stay inert until then.
-export interface Connectivity {
+// Core connectivity event entity. The five signals are emitted by @flighthq/connectivity after it
+// reads and diffs a status snapshot; they are not Host capability slots.
+export interface Connectivity extends Entity {
   onChange: Signal<(status: Readonly<ConnectivityStatus>) => void>;
   onConnectionTypeChange: Signal<(type: ConnectivityConnectionType) => void>;
   onMeteredChange: Signal<(metered: boolean) => void>;
   onOnline: Signal<() => void>;
   onOffline: Signal<() => void>;
 }
-
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
-// roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot.
-export type ConnectivityOperation = keyof ConnectivityBackend;

@@ -104,7 +104,8 @@ export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[])
 // Explicit Host-provider lifecycle owners, keyed by the backend interface they release.
 //
 // A function is admitted only when all three pieces agree structurally:
-//   destroyThing(host: HasThingProvider) -> ThingBackend.
+//   destroyThing(host: HasThingProvider) -> ThingBackend, or
+//   destroyThing(host: HasThingFacet) -> ThingFacetBackend.
 // This keeps an unrelated destroyThing helper from satisfying the lane, and makes the first-parameter
 // Host trait part of the proof rather than a naming convention described only in prose.
 export function collectExplicitHostDestroyOwners(
@@ -126,8 +127,12 @@ export function collectExplicitHostDestroyOwners(
       if (parameter?.type !== 'Identifier') continue;
       const annotation = parameter.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') continue;
-      if (annotation.typeName.name !== `Has${stem}Provider`) continue;
-      owners.set(`${stem}Backend`, {
+      const hostTrait = annotation.typeName.name;
+      if (!hostTrait.startsWith(`Has${stem}`)) continue;
+      const facet = hostTrait.slice(`Has${stem}`.length);
+      if (facet.length === 0) continue;
+      const interfaceName = facet === 'Provider' ? `${stem}Backend` : `${stem}${facet}Backend`;
+      owners.set(interfaceName, {
         body: text.slice(declaration.body.start + 1, declaration.body.end - 1),
         name,
       });
@@ -137,7 +142,6 @@ export function collectExplicitHostDestroyOwners(
 }
 
 // Assembles the report. Ambient setters and explicit Host-provider destroy functions are supplied in
-// distinct maps, so the report can state which ownership model it actually verified.
 export function createBackendLifecycleReport(
   interfaceNames: readonly string[],
   teardowns: ReadonlyMap<string, string>,

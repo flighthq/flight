@@ -1,535 +1,320 @@
-import { connectSignal } from '@flighthq/signals/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
-  ConnectivityBackend,
-  ConnectivityOperation,
-  ConnectivityReachability,
+  ConnectivityChangeBackend,
+  ConnectivityReachabilityBackend,
   ConnectivityStatus,
+  ConnectivityStatusBackend,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   attachConnectivity,
   createConnectivity,
-  createConnectivityStatus,
-  createWebConnectivityBackend,
   detachConnectivity,
   detectConnectivityReachability,
   disposeConnectivity,
-  explainConnectivityBackend,
-  explainConnectivityOperation,
-  getConnectivityBackend,
+  destroyConnectivity,
+  getConnectivityOnline,
   getConnectivityStatus,
-  hasConnectivityOperation,
   hasConnectivityStatusChanged,
-  installConnectivityHostBackend,
   isConnectivityMetered,
-  isConnectivityOnline,
   isConnectivitySaveDataEnabled,
-  observeConnectivityHostResult,
-  resetConnectivityBackendForTest,
-  setConnectivityBackend,
 } from './connectivity';
 
-function fakeBackend(
-  overrides?: Partial<ConnectivityStatus>,
-): ConnectivityBackend & { status: ConnectivityStatus; fire: () => void } {
-  let listener: (() => void) | null = null;
-  const status: ConnectivityStatus = {
+interface FakeConnectivityProvider extends ConnectivityStatusBackend, ConnectivityChangeBackend {
+  readonly activeSubscriptions: () => number;
+  readonly destroyCalls: () => number;
+  fire(): void;
+  readonly status: ConnectivityStatus;
+  readonly unsubscribeCalls: () => number;
+}
+
+function fakeProvider(
+  overrides: Partial<ConnectivityStatus> = {},
+  subscriptionAvailable = true,
+): FakeConnectivityProvider {
+  const listeners = new Set<() => void>();
+  const current = status({
     downlink: 10,
     downlinkMax: 100,
     effectiveType: '4g',
-    metered: false,
     online: true,
     rtt: 50,
-    saveData: false,
     type: 'wifi',
     ...overrides,
-  };
+  });
+  let destroys = 0;
+  let unsubscribes = 0;
+  let destroyed = false;
+  return Object.assign(
+    createEntity({
+      destroy() {
+        if (destroyed) return;
+        destroyed = true;
+        destroys++;
+        listeners.clear();
+      },
+      getStatus(out: ConnectivityStatus) {
+        Object.assign(out, current);
+        return out;
+      },
+      subscribe(listener: () => void) {
+        if (!subscriptionAvailable || destroyed) return null;
+        listeners.add(listener);
+        let active = true;
+        return () => {
+          if (!active) return;
+          active = false;
+          unsubscribes++;
+          listeners.delete(listener);
+        };
+      },
+    }),
+    {
+      activeSubscriptions: () => listeners.size,
+      destroyCalls: () => destroys,
+      fire: () => {
+        for (const listener of [...listeners]) listener();
+      },
+      status: current,
+      unsubscribeCalls: () => unsubscribes,
+    },
+  );
+}
+
+function hostFor(provider: FakeConnectivityProvider) {
+  return { connectivity: { change: provider, status: provider } };
+}
+
+function status(overrides: Partial<ConnectivityStatus> = {}): ConnectivityStatus {
   return {
-    status,
-    getStatus(out) {
-      out.online = status.online;
-      out.type = status.type;
-      out.downlink = status.downlink;
-      out.downlinkMax = status.downlinkMax;
-      out.effectiveType = status.effectiveType;
-      out.rtt = status.rtt;
-      out.saveData = status.saveData;
-      out.metered = status.metered;
-      return out;
-    },
-    subscribe(l) {
-      listener = l;
-      return () => {
-        listener = null;
-      };
-    },
-    fire() {
-      listener?.();
-    },
+    downlink: -1,
+    downlinkMax: -1,
+    effectiveType: '',
+    metered: false,
+    online: null,
+    rtt: -1,
+    saveData: false,
+    type: 'unknown',
+    ...overrides,
   };
 }
 
-afterEach(() => setConnectivityBackend(null));
-
 describe('attachConnectivity', () => {
-  it('emits onChange and onOffline on transition to offline', () => {
-    const backend = fakeBackend();
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
-    let changes = 0;
+  it('returns true and emits core diffs from a raw provider change', () => {
+    const provider = fakeProvider();
+    const connectivity = createConnectivity();
+    const changes: ConnectivityStatus[] = [];
+    const types: string[] = [];
+    const metered: boolean[] = [];
     let offline = 0;
-    connectSignal(net.onChange, () => changes++);
-    connectSignal(net.onOffline, () => offline++);
-    attachConnectivity(net);
-    backend.status.online = false;
-    (backend as ReturnType<typeof fakeBackend>).fire();
-    expect(changes).toBe(1);
+    connectSignal(connectivity.onChange, (value) => changes.push(value as ConnectivityStatus));
+    connectSignal(connectivity.onConnectionTypeChange, (value) => types.push(value));
+    connectSignal(connectivity.onMeteredChange, (value) => metered.push(value));
+    connectSignal(connectivity.onOffline, () => offline++);
+
+    expect(attachConnectivity(hostFor(provider), connectivity)).toBe(true);
+    Object.assign(provider.status, { metered: true, online: false, type: 'cellular' as const });
+    provider.fire();
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toMatchObject({ metered: true, online: false, type: 'cellular' });
+    expect(types).toEqual(['cellular']);
+    expect(metered).toEqual([true]);
     expect(offline).toBe(1);
   });
 
-  it('emits onOnline on transition to online', () => {
-    const backend = fakeBackend({ online: false });
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
-    let online = 0;
-    connectSignal(net.onOnline, () => online++);
-    attachConnectivity(net);
-    backend.status.online = true;
-    (backend as ReturnType<typeof fakeBackend>).fire();
-    expect(online).toBe(1);
+  it('treats unknown as unmeasured and emits offline only after a measured transition', () => {
+    const provider = fakeProvider({ online: null });
+    const connectivity = createConnectivity();
+    let offline = 0;
+    connectSignal(connectivity.onOffline, () => offline++);
+    attachConnectivity(hostFor(provider), connectivity);
+    provider.fire();
+    expect(offline).toBe(0);
+    provider.status.online = false;
+    provider.fire();
+    expect(offline).toBe(1);
   });
 
-  it('emits onConnectionTypeChange on type transition', () => {
-    const backend = fakeBackend();
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
-    const types: string[] = [];
-    connectSignal(net.onConnectionTypeChange, (t) => types.push(t));
-    attachConnectivity(net);
-    backend.status.type = 'cellular';
-    (backend as ReturnType<typeof fakeBackend>).fire();
-    expect(types).toEqual(['cellular']);
+  it('returns false instead of retaining a silent no-op subscription', () => {
+    const provider = fakeProvider({}, false);
+    expect(attachConnectivity(hostFor(provider), createConnectivity())).toBe(false);
+    expect(provider.activeSubscriptions()).toBe(0);
   });
 
-  it('does not emit onConnectionTypeChange when type is unchanged', () => {
-    const backend = fakeBackend();
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
-    let count = 0;
-    connectSignal(net.onConnectionTypeChange, () => count++);
-    attachConnectivity(net);
-    // fire without changing type
-    (backend as ReturnType<typeof fakeBackend>).fire();
-    expect(count).toBe(0);
-  });
-
-  it('emits onMeteredChange on metered transition', () => {
-    const backend = fakeBackend();
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
-    const metered: boolean[] = [];
-    connectSignal(net.onMeteredChange, (m) => metered.push(m));
-    attachConnectivity(net);
-    backend.status.metered = true;
-    (backend as ReturnType<typeof fakeBackend>).fire();
-    expect(metered).toEqual([true]);
-  });
-
-  it('is idempotent — replaces prior subscription', () => {
-    const backend = fakeBackend();
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
+  it('detaches A before attaching B and never delivers from the old origin', () => {
+    const a = fakeProvider();
+    const b = fakeProvider();
+    const connectivity = createConnectivity();
     let changes = 0;
-    connectSignal(net.onChange, () => changes++);
-    attachConnectivity(net);
-    attachConnectivity(net);
-    (backend as ReturnType<typeof fakeBackend>).fire();
+    connectSignal(connectivity.onChange, () => changes++);
+    attachConnectivity(hostFor(a), connectivity);
+    attachConnectivity(hostFor(b), connectivity);
+    expect(a.unsubscribeCalls()).toBe(1);
+    expect(a.activeSubscriptions()).toBe(0);
+    expect(b.activeSubscriptions()).toBe(1);
+    a.fire();
+    expect(changes).toBe(0);
+    b.fire();
     expect(changes).toBe(1);
+  });
+
+  it('emits distinct status snapshots rather than mutating a retained prior payload', () => {
+    const provider = fakeProvider();
+    const connectivity = createConnectivity();
+    const changes: Readonly<ConnectivityStatus>[] = [];
+    connectSignal(connectivity.onChange, (value) => changes.push(value));
+    attachConnectivity(hostFor(provider), connectivity);
+    provider.fire();
+    provider.status.type = 'cellular';
+    provider.fire();
+    expect(changes[0]).not.toBe(changes[1]);
+    expect(changes[0]?.type).toBe('wifi');
+    expect(changes[1]?.type).toBe('cellular');
   });
 });
 
 describe('createConnectivity', () => {
-  it('creates an entity with five signals', () => {
-    const net = createConnectivity();
-    expect(net.onChange).toBeDefined();
-    expect(net.onConnectionTypeChange).toBeDefined();
-    expect(net.onMeteredChange).toBeDefined();
-    expect(net.onOnline).toBeDefined();
-    expect(net.onOffline).toBeDefined();
+  it('returns an Entity carrying all five core-owned signals', () => {
+    const connectivity = createConnectivity();
+    expect(EntityRuntimeKey in connectivity).toBe(true);
+    expect(Object.keys(connectivity).sort()).toEqual([
+      'onChange',
+      'onConnectionTypeChange',
+      'onMeteredChange',
+      'onOffline',
+      'onOnline',
+    ]);
   });
 });
 
-describe('createConnectivityStatus', () => {
-  it('allocates a zeroed status with all fields at sentinel values', () => {
-    expect(createConnectivityStatus()).toEqual({
-      downlink: -1,
-      downlinkMax: -1,
-      effectiveType: '',
-      metered: false,
-      online: false,
-      rtt: -1,
-      saveData: false,
-      type: 'unknown',
-    });
-  });
-});
-
-describe('createWebConnectivityBackend', () => {
-  it('reads a status without throwing', () => {
-    const out = createConnectivityStatus();
-    const result = createWebConnectivityBackend().getStatus(out);
-    expect(typeof result.online).toBe('boolean');
-    expect(typeof result.metered).toBe('boolean');
-    expect(typeof result.saveData).toBe('boolean');
-  });
-
-  it('returns sentinel rtt and downlinkMax when connection is absent', () => {
-    const out = createConnectivityStatus();
-    createWebConnectivityBackend().getStatus(out);
-    // In jsdom, navigator.connection is absent so rtt/downlinkMax default to -1
-    expect(out.rtt).toBe(-1);
-    expect(out.downlinkMax).toBe(-1);
+describe('destroyConnectivity', () => {
+  it('uses the supplied change provider and provider teardown is terminal/idempotent', () => {
+    const provider = fakeProvider();
+    const host = hostFor(provider);
+    destroyConnectivity(host);
+    destroyConnectivity(host);
+    expect(provider.destroyCalls()).toBe(1);
+    expect(provider.subscribe(() => {})).toBeNull();
   });
 });
 
 describe('detachConnectivity', () => {
-  it('stops further delivery', () => {
-    const backend = fakeBackend();
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
-    let changes = 0;
-    connectSignal(net.onChange, () => changes++);
-    attachConnectivity(net);
-    detachConnectivity(net);
-    (backend as ReturnType<typeof fakeBackend>).fire();
-    expect(changes).toBe(0);
-  });
-
-  it('is safe to call when not attached', () => {
-    const net = createConnectivity();
-    expect(() => detachConnectivity(net)).not.toThrow();
+  it('consumes the exact unsubscribe once', () => {
+    const provider = fakeProvider();
+    const connectivity = createConnectivity();
+    attachConnectivity(hostFor(provider), connectivity);
+    detachConnectivity(connectivity);
+    detachConnectivity(connectivity);
+    expect(provider.unsubscribeCalls()).toBe(1);
   });
 });
 
 describe('detectConnectivityReachability', () => {
-  // A backend without detectReachability falls through to the web backend's own implementation, which
-  // calls fetch against options.url. BOTH CASES BELOW STUB fetch, because leaving it alone made this a
-  // real request to the public internet from a unit test: 4.1s measured here against a 5000ms default
-  // timeout, which full-suite load pushes it over. Egress is not what makes that a hazard — a sandboxed
-  // runner with no outbound network fails it every time rather than intermittently, so the current
-  // flakiness is a property of this machine's network rather than of the test. `unstubGlobals` restores
-  // the real fetch between tests.
-  //
-  // The assertion is the sentinel itself — reachable false AND latency -1 — rather than the shape of
-  // the value. A `typeof result.reachable === 'boolean'` check passes on a live success too, so it held
-  // for a test whose name promises a sentinel while checking nothing that distinguishes one.
-  it('returns a sentinel when fetch is unavailable (SSR/jsdom guard)', async () => {
-    setConnectivityBackend(fakeBackend());
-    vi.stubGlobal('fetch', undefined);
-    const out: ConnectivityReachability = { latency: 0, reachable: true };
-    const result = await detectConnectivityReachability({ url: 'https://example.com' }, out);
-    expect(result).toBe(out);
-    expect(result.reachable).toBe(false);
-    expect(result.latency).toBe(-1);
-  });
-
-  // The fallback's other sentinel path: fetch exists and the HEAD request rejects. Same contract, and
-  // it was unpinned — the absent-fetch branch could have returned the sentinel while this one did not.
-  it('returns a sentinel when the HEAD request fails', async () => {
-    setConnectivityBackend(fakeBackend());
-    vi.stubGlobal('fetch', () => Promise.reject(new Error('network unreachable')));
-    const out: ConnectivityReachability = { latency: 0, reachable: true };
-    const result = await detectConnectivityReachability({ url: 'https://example.com' }, out);
-    expect(result).toBe(out);
-    expect(result.reachable).toBe(false);
-    expect(result.latency).toBe(-1);
-  });
-
-  it('uses the backend detectReachability when available', async () => {
-    const probeBackend: ConnectivityBackend = {
-      ...fakeBackend(),
-      async detectReachability(_opts, out) {
+  it('dispatches reachability only to the supplied reachability slot', async () => {
+    let calls = 0;
+    const reachability = createEntity({
+      async detectReachability(_options, out) {
+        calls++;
+        out.latency = 7;
         out.reachable = true;
-        out.latency = 42;
         return out;
       },
-    };
-    setConnectivityBackend(probeBackend);
-    const out: ConnectivityReachability = { latency: 0, reachable: false };
-    const result = await detectConnectivityReachability({ url: 'https://example.com' }, out);
-    expect(result.reachable).toBe(true);
-    expect(result.latency).toBe(42);
+    } satisfies Omit<ConnectivityReachabilityBackend, typeof EntityRuntimeKey>);
+    const out = { latency: -1, reachable: false };
+    const result = await detectConnectivityReachability(
+      { connectivity: { reachability } },
+      { url: 'https://example.invalid' },
+      out,
+    );
+    expect(result).toBe(out);
+    expect(result).toEqual({ latency: 7, reachable: true });
+    expect(calls).toBe(1);
   });
 });
 
 describe('disposeConnectivity', () => {
-  it('detaches the subscription', () => {
-    const backend = fakeBackend();
-    setConnectivityBackend(backend);
-    const net = createConnectivity();
-    attachConnectivity(net);
-    expect(() => disposeConnectivity(net)).not.toThrow();
-  });
-
-  it('is safe to call when not attached', () => {
-    const net = createConnectivity();
-    expect(() => disposeConnectivity(net)).not.toThrow();
-  });
-});
-
-describe('explainConnectivityBackend', () => {
-  afterEach(() => resetConnectivityBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetConnectivityBackendForTest();
-    const explanation = explainConnectivityBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setConnectivityBackend(fakeBackend());
-    expect(explainConnectivityBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installConnectivityHostBackend(fakeBackend());
-    expect(explainConnectivityBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installConnectivityHostBackend(fakeBackend());
-    installConnectivityHostBackend(fakeBackend());
-    expect(explainConnectivityBackend().conflict).toBe(true);
+  it('unsubscribes once and clears listeners from every signal', () => {
+    const provider = fakeProvider();
+    const connectivity = createConnectivity();
+    attachConnectivity(hostFor(provider), connectivity);
+    connectSignal(connectivity.onChange, () => {});
+    connectSignal(connectivity.onConnectionTypeChange, () => {});
+    connectSignal(connectivity.onMeteredChange, () => {});
+    connectSignal(connectivity.onOffline, () => {});
+    connectSignal(connectivity.onOnline, () => {});
+    disposeConnectivity(connectivity);
+    disposeConnectivity(connectivity);
+    expect(provider.unsubscribeCalls()).toBe(1);
+    expect([
+      hasSignalSlots(connectivity.onChange),
+      hasSignalSlots(connectivity.onConnectionTypeChange),
+      hasSignalSlots(connectivity.onMeteredChange),
+      hasSignalSlots(connectivity.onOffline),
+      hasSignalSlots(connectivity.onOnline),
+    ]).toEqual([false, false, false, false, false]);
   });
 });
 
-describe('explainConnectivityOperation', () => {
-  afterEach(() => {
-    resetConnectivityBackendForTest();
-  });
-
-  // ★ With nothing installed, the sentinel still answers every call,
-  // so a query resolving through the getter would report every operation implemented. It must not.
-  it('reports sentinel and no implementation when nothing is installed', () => {
-    resetConnectivityBackendForTest();
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(explainConnectivityOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
-    }
-  });
-
-  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
-  // the sentinel does not implement those either, so a query resolving through getConnectivityBackend() would
-  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
-  // getter-based implementation reports a lie.
-  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
-    resetConnectivityBackendForTest();
-    expect(explainConnectivityOperation('getStatus')).toEqual({
-      implemented: false,
-      layer: 'sentinel',
-      operation: 'getStatus',
-    });
-  });
-
-  it('reports a custom backend as implementing only what it provides', () => {
-    setConnectivityBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasConnectivityOperation(operation)).toBe(false);
-    }
-    expect(explainConnectivityOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
-  });
-
-  it('reports an operation the backend does provide', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    setConnectivityBackend({ ...partialBackend(), [operation]: () => undefined } as ConnectivityBackend);
-    expect(explainConnectivityOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
-  });
-
-  it('falls through to the host for an operation the custom backend omits', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    installConnectivityHostBackend({ ...partialBackend(), [operation]: () => undefined } as ConnectivityBackend);
-    setConnectivityBackend(partialBackend());
-    expect(explainConnectivityOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
-  });
-});
-
-describe('getConnectivityBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getConnectivityBackend()).not.toBeNull();
+describe('getConnectivityOnline', () => {
+  it('preserves unknown and measured online states', () => {
+    expect(getConnectivityOnline(hostFor(fakeProvider({ online: null })))).toBeNull();
+    expect(getConnectivityOnline(hostFor(fakeProvider({ online: true })))).toBe(true);
   });
 });
 
 describe('getConnectivityStatus', () => {
-  it('fills the out parameter from the backend', () => {
-    setConnectivityBackend(fakeBackend());
-    const out = createConnectivityStatus();
-    expect(getConnectivityStatus(out)).toBe(out);
+  it('reads status and level conveniences only from the supplied host', () => {
+    const provider = fakeProvider({ metered: true, online: false, saveData: true });
+    const host = hostFor(provider);
+    const out = status();
+    expect(getConnectivityStatus(host, out)).toBe(out);
     expect(out.type).toBe('wifi');
-    expect(out.rtt).toBe(50);
-    expect(out.downlinkMax).toBe(100);
-  });
-});
-
-describe('hasConnectivityOperation', () => {
-  afterEach(() => {
-    resetConnectivityBackendForTest();
-  });
-
-  it('agrees with explainConnectivityOperation for every optional operation', () => {
-    setConnectivityBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasConnectivityOperation(operation)).toBe(explainConnectivityOperation(operation).implemented);
-    }
   });
 });
 
 describe('hasConnectivityStatusChanged', () => {
-  it('returns false for equal statuses', () => {
-    const a = createConnectivityStatus();
-    const b = createConnectivityStatus();
-    expect(hasConnectivityStatusChanged(a, b)).toBe(false);
+  it('returns false for equal or aliased snapshots', () => {
+    const a = status();
+    expect(hasConnectivityStatusChanged(a, { ...a })).toBe(false);
+    expect(hasConnectivityStatusChanged(a, a)).toBe(false);
   });
 
-  it('returns true when online differs', () => {
-    const a = { ...createConnectivityStatus(), online: true };
-    const b = createConnectivityStatus();
-    expect(hasConnectivityStatusChanged(a, b)).toBe(true);
-  });
-
-  it('returns true when type differs', () => {
-    const a = { ...createConnectivityStatus(), type: 'wifi' as const };
-    const b = createConnectivityStatus();
-    expect(hasConnectivityStatusChanged(a, b)).toBe(true);
-  });
-
-  it('returns true when rtt differs', () => {
-    const a = { ...createConnectivityStatus(), rtt: 30 };
-    const b = createConnectivityStatus();
-    expect(hasConnectivityStatusChanged(a, b)).toBe(true);
-  });
-
-  it('returns true when saveData differs', () => {
-    const a = { ...createConnectivityStatus(), saveData: true };
-    const b = createConnectivityStatus();
-    expect(hasConnectivityStatusChanged(a, b)).toBe(true);
-  });
-
-  it('returns true when metered differs', () => {
-    const a = { ...createConnectivityStatus(), metered: true };
-    const b = createConnectivityStatus();
-    expect(hasConnectivityStatusChanged(a, b)).toBe(true);
-  });
-
-  it('is alias-safe — same object returns false', () => {
-    const s = createConnectivityStatus();
-    expect(hasConnectivityStatusChanged(s, s)).toBe(false);
-  });
-});
-
-describe('installConnectivityHostBackend', () => {
-  afterEach(() => resetConnectivityBackendForTest());
-
-  it('installs a host backend that getConnectivityBackend returns', () => {
-    const backend = fakeBackend();
-    installConnectivityHostBackend(backend);
-    expect(getConnectivityBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installConnectivityHostBackend(first);
-    installConnectivityHostBackend(second);
-    expect(getConnectivityBackend()).toBe(first);
-    expect(explainConnectivityBackend().conflict).toBe(true);
+  it('detects every status axis', () => {
+    const base = status();
+    const variants: ConnectivityStatus[] = [
+      status({ online: true }),
+      status({ type: 'wifi' }),
+      status({ downlink: 1 }),
+      status({ downlinkMax: 1 }),
+      status({ effectiveType: '4g' }),
+      status({ rtt: 1 }),
+      status({ saveData: true }),
+      status({ metered: true }),
+    ];
+    expect(variants.map((variant) => hasConnectivityStatusChanged(base, variant))).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]);
   });
 });
 
 describe('isConnectivityMetered', () => {
-  it('returns false for a non-metered connection', () => {
-    setConnectivityBackend(fakeBackend({ metered: false }));
-    expect(isConnectivityMetered()).toBe(false);
-  });
-
-  it('returns true for a metered connection', () => {
-    setConnectivityBackend(fakeBackend({ metered: true }));
-    expect(isConnectivityMetered()).toBe(true);
-  });
-});
-
-describe('isConnectivityOnline', () => {
-  it('reflects the backend online flag', () => {
-    const backend = fakeBackend({ online: false });
-    setConnectivityBackend(backend);
-    expect(isConnectivityOnline()).toBe(false);
-  });
-
-  it('returns true when the backend is online', () => {
-    setConnectivityBackend(fakeBackend({ online: true }));
-    expect(isConnectivityOnline()).toBe(true);
+  it('reads the metered level from the supplied status witness', () => {
+    expect(isConnectivityMetered(hostFor(fakeProvider({ metered: true })))).toBe(true);
   });
 });
 
 describe('isConnectivitySaveDataEnabled', () => {
-  it('returns false when saveData is off', () => {
-    setConnectivityBackend(fakeBackend({ saveData: false }));
-    expect(isConnectivitySaveDataEnabled()).toBe(false);
-  });
-
-  it('returns true when saveData is on', () => {
-    setConnectivityBackend(fakeBackend({ saveData: true }));
-    expect(isConnectivitySaveDataEnabled()).toBe(true);
+  it('reads the save-data level from the supplied status witness', () => {
+    expect(isConnectivitySaveDataEnabled(hostFor(fakeProvider({ saveData: true })))).toBe(true);
   });
 });
-
-describe('observeConnectivityHostResult', () => {
-  afterEach(() => resetConnectivityBackendForTest());
-
-  it('records a successful observation', () => {
-    installConnectivityHostBackend(fakeBackend());
-    observeConnectivityHostResult('getStatus', true);
-    const explanation = explainConnectivityBackend();
-    expect(explanation.operation).toBe('getStatus');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installConnectivityHostBackend(fakeBackend());
-    observeConnectivityHostResult('getStatus', false);
-    expect(explainConnectivityBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-// Per-operation availability for ConnectivityBackend. The operations below are the ones the interface declares
-// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
-// ruling, and this is the query that makes it observable.
-const OPTIONAL_OPERATIONS: readonly ConnectivityOperation[] = ['detectReachability'];
-
-describe('resetConnectivityBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setConnectivityBackend(fakeBackend());
-    installConnectivityHostBackend(fakeBackend());
-    observeConnectivityHostResult('getStatus', true);
-    resetConnectivityBackendForTest();
-    expect(explainConnectivityBackend().layer).toBe('host-not-enabled');
-    expect(explainConnectivityBackend().conflict).toBe(false);
-    expect(explainConnectivityBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('setConnectivityBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setConnectivityBackend(fakeBackend());
-    setConnectivityBackend(null);
-    expect(getConnectivityBackend()).not.toBeNull();
-  });
-});
-
-// A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): ConnectivityBackend {
-  return {
-    getStatus: (() => undefined) as never,
-    subscribe: (() => undefined) as never,
-  } as ConnectivityBackend;
-}
