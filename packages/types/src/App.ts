@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { MenuItemTemplate } from './Menu';
 import type { Signal } from './Signal';
 
@@ -31,7 +32,7 @@ export interface AppLoginItemLike {
 export type AppPathKind = 'userData' | 'logs' | 'crashDumps';
 
 // Application event entity. Enable delivery with attachApp; the signals stay inert until then.
-export interface App {
+export interface App extends Entity {
   onActivate: Signal<() => void>;
   onAllWindowsClosed: Signal<() => void>;
   onOpenFile: Signal<(path: string) => void>;
@@ -41,75 +42,110 @@ export interface App {
   onSecondInstance: Signal<(argv: readonly string[]) => void>;
 }
 
-// Event and control seam for application identity, lifecycle, single-instance locking, and the dock.
-// The web backend wraps document/window/navigator; a native host drives the same callbacks and APIs.
-export interface AppBackend {
-  // Adds a path to the system's recent-documents list (Jump List / macOS recents). No-op on web.
-  addRecentDocument(path: string): void;
-  // Starts a dock bounce; returns a request id usable with cancelDockBounce, or -1 when unsupported.
+export type MobileOsProfile = 'android' | 'ios';
+
+export interface AppActivateBackend extends Entity {
+  subscribe(listener: () => void): () => void;
+}
+
+export interface AppActivationPolicyBackend extends Entity {
+  setActivationPolicy(policy: AppActivationPolicy): void;
+}
+
+export interface AppAllWindowsClosedBackend extends Entity {
+  subscribe(listener: () => void): () => void;
+}
+
+export interface AppBadgeBackend extends Entity {
+  setBadgeCount(count: number): boolean;
+}
+
+export interface AppDockBackend extends Entity {
   bounceDock(): number;
-  // Cancels an app-level attention request started by requestAttention.
   cancelAttention(id: number): void;
   cancelDockBounce(id: number): void;
-  // Clears the system's recent-documents list. No-op on web.
-  clearRecentDocuments(): void;
-  focus(): void;
-  // The app-identity-relative directory path for the given kind; '' on web.
-  getAppDirectoryPath(kind: AppPathKind): string;
-  // The application bundle/exe directory path, or '' on web.
-  getAppPath(): string;
-  // The process command-line arguments, or [] on web.
-  getCommandLine(): readonly string[];
-  // The application executable path, or '' on web.
-  getExecutablePath(): string;
-  getLocale(): string;
-  // The application login-item settings. Returns a default with openAtLogin: false on web.
-  getLoginItem(): AppLoginItem;
-  getName(): string;
-  // The ranked list of preferred system languages, in preference order; [] when unavailable.
-  getPreferredSystemLanguages(): readonly string[];
-  // The OS-level system locale (may differ from the UI locale); '' when unavailable.
-  getSystemLocale(): string;
-  getVersion(): string;
-  hasSingleInstanceLock(): boolean;
-  // Hides the application (macOS hide-all-windows). Returns true when supported; false on web.
-  hideApp(): boolean;
-  // True when the application is hidden (macOS). Always false on web.
-  isAppHidden(): boolean;
-  quit(): void;
-  relaunch(): void;
-  releaseSingleInstanceLock(): void;
-  // Draws OS-level attention (taskbar flash / dock bounce). Returns a request id for cancelAttention,
-  // or -1 when unsupported.
   requestAttention(critical: boolean): number;
-  requestSingleInstanceLock(): boolean;
-  // Sets the macOS activation policy. No-op on non-macOS and web.
-  setActivationPolicy(policy: AppActivationPolicy): void;
-  // Sets the numeric app badge (taskbar overlay / dock / PWA navigator.setAppBadge). Returns false
-  // when unsupported. This is the canonical home for the app badge (it is not on the tray).
-  setBadgeCount(count: number): boolean;
   setDockBadge(text: string): void;
-  // Sets the macOs dock menu (right-click the dock icon). No-op where there is no dock.
   setDockMenu(items: readonly MenuItemTemplate[]): void;
-  // Updates login-item settings. Returns false when unsupported (web). Omitted fields keep values.
-  setLoginItem(settings: Readonly<AppLoginItemLike>): boolean;
-  // Sets the application name. Returns false when unsupported (web).
-  setName(name: string): boolean;
-  // Sets the Windows AppUserModelID. Returns false when unsupported.
-  setUserModelId(id: string): boolean;
-  // Shows the application after hideApp (macOS). Returns true when supported; false on web.
-  showApp(): boolean;
-  // Registers a listener invoked when the app is activated; returns an unsubscribe function.
-  subscribeActivate(listener: () => void): () => void;
-  // Registers a listener invoked when the last window closes; returns an unsubscribe function.
-  subscribeAllWindowsClosed(listener: () => void): () => void;
-  // Registers a listener invoked when a file open is requested; returns an unsubscribe function.
-  subscribeOpenFile(listener: (path: string) => void): () => void;
-  // Registers a listener invoked when a quit is requested; the listener receives a host-cancel
-  // callback it may call to veto the quit at the OS level. Returns an unsubscribe function.
-  subscribeQuitRequest(listener: (cancelHost: () => void) => void): () => void;
-  // Registers a listener invoked when the app is ready; returns an unsubscribe function.
-  subscribeReady(listener: () => void): () => void;
-  // Registers a listener invoked when a second instance launches; returns an unsubscribe function.
-  subscribeSecondInstance(listener: (argv: readonly string[]) => void): () => void;
+}
+
+export interface AppFocusBackend extends Entity {
+  focus(): void;
+}
+
+export interface AppLocaleBackend extends Entity {
+  getLocale(): string;
+  getPreferredSystemLanguages(): readonly string[];
+  getSystemLocale(): string;
+}
+
+export interface AppLoginItemBackend extends Entity {
+  getLoginItem(): AppLoginItem;
+  setLoginItem(settings: Readonly<AppLoginItemLike>): void;
+}
+
+export interface AppNameBackend extends Entity {
+  getName(): string;
+}
+
+export interface AppNameWriteBackend extends Entity {
+  setName(name: string): void;
+}
+
+export interface AppOpenFileBackend extends Entity {
+  subscribe(listener: (path: string) => void): () => void;
+}
+
+export interface AppPathBackend extends Entity {
+  getAppDirectoryPath(kind: AppPathKind): string;
+  getAppPath(): string;
+  getExecutablePath(): string;
+}
+
+export interface AppQuitBackend extends Entity {
+  quit(): void;
+}
+
+export interface AppQuitRequestBackend extends Entity {
+  subscribe(listener: (cancelHost: () => void) => void): () => void;
+}
+
+export interface AppReadyBackend extends Entity {
+  subscribe(listener: () => void): () => void;
+}
+
+export interface AppRecentDocumentsBackend extends Entity {
+  addRecentDocument(path: string): void;
+  clearRecentDocuments(): void;
+}
+
+export interface AppRelaunchBackend extends Entity {
+  relaunch(): void;
+}
+
+export interface AppSecondInstanceBackend extends Entity {
+  subscribe(listener: (argv: readonly string[]) => void): () => void;
+}
+
+export interface AppSingleInstanceBackend extends Entity {
+  hasSingleInstanceLock(): boolean;
+  releaseSingleInstanceLock(): void;
+  requestSingleInstanceLock(): boolean;
+}
+
+export interface AppUserModelIdBackend extends Entity {
+  setUserModelId(id: string): void;
+}
+
+export interface AppVersionBackend extends Entity {
+  getVersion(): string;
+}
+
+export interface AppVisibilityCommandBackend extends Entity {
+  hideApp(): void;
+  showApp(): void;
+}
+
+export interface AppVisibilityQueryBackend extends Entity {
+  isAppHidden(): boolean;
 }
