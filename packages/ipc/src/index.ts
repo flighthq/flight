@@ -1,16 +1,1 @@
-export {
-  createIpcChannel,
-  enableIpcSignals,
-  explainIpcBackend,
-  getIpcListenerCount,
-  getIpcSignals,
-  invokeIpc,
-  invokeIpcWithTimeout,
-  onIpcInvoke,
-  onIpcMessage,
-  onIpcMessageEvent,
-  onceIpcMessage,
-  removeAllIpcListeners,
-  sendIpcMessage,
-  sendIpcMessageTo,
-} from './contract';
+export { onIpcMessage, onceIpcMessage } from './contract';

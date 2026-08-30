@@ -39,7 +39,7 @@ import type { HapticsBackend } from './Haptics';
 import type { ImageBackend } from './Image';
 import type { InputIngressBackend } from './InputIngressBackend';
 import type { InputTargetBackend } from './InputTargetBackend';
-import type { IpcBackend } from './Ipc';
+import type { IpcMessageBackend } from './Ipc';
 import type {
   SoftKeyboardAccessoryBarBackend,
   SoftKeyboardChangeBackend,
@@ -119,6 +119,7 @@ export interface Host extends Entity {
   readonly dialog: HostDialogCapabilities;
   readonly graphics: HostGraphicsCapabilities;
   readonly input: HostInputCapabilities;
+  readonly ipc: HostIpcCapabilities;
   readonly media: HostMediaCapabilities;
   readonly menu: HostMenuCapabilities;
   readonly net: HostNetCapabilities;
@@ -142,7 +143,6 @@ export interface HostAccessibilityCapabilities {
 export interface HostAppCapabilities {
   readonly exit?: ApplicationExitBackend;
   readonly identity?: AppBackend;
-  readonly ipc?: IpcBackend;
   readonly logTransport?: LogTransportBackend;
   readonly loop?: LoopBackend;
   readonly protocol?: ProtocolBackend;
@@ -195,6 +195,10 @@ export interface HostInputCapabilities {
   readonly softKeyboardStyle?: SoftKeyboardStyleBackend;
   readonly softKeyboardVisibility?: SoftKeyboardVisibilityBackend;
   readonly target?: InputTargetBackend;
+}
+
+export interface HostIpcCapabilities {
+  readonly message?: IpcMessageBackend;
 }
 
 export interface HostMediaCapabilities {
@@ -471,6 +475,10 @@ export interface HasSoftKeyboardStyle {
 
 export interface HasSoftKeyboardVisibility {
   readonly input: { readonly softKeyboardVisibility: SoftKeyboardVisibilityBackend };
+}
+
+export interface HasIpcMessage {
+  readonly ipc: { readonly message: IpcMessageBackend };
 }
 
 export interface HasMediaAudioCodec {

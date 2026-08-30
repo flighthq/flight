@@ -1,6 +1,5 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
-import { setIpcBackend } from '@flighthq/ipc/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
@@ -23,6 +22,7 @@ import type {
   HasNotificationDelivery,
   HasNotificationDismiss,
   HasNotificationShow,
+  HasIpcMessage,
   HasScreenChange,
   HasScreenQuery,
   HasUpdaterCommand,
@@ -48,7 +48,7 @@ import {
   createElectronFileSaveDialogBackend,
   createElectronMessageDialogBackend,
 } from './electronDialog';
-import { createElectronIpcBackend } from './electronIpc';
+import { createElectronIpcMessageBackend } from './electronIpc';
 import { createElectronMenuBackends } from './electronMenu';
 import { createElectronNotificationCapabilities } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
@@ -79,6 +79,7 @@ type ElectronHost = Host &
   HasNotificationShow &
   HasMenuApplication &
   HasMenuPopup &
+  HasIpcMessage &
   HasMenuSelect &
   HasScreenChange &
   HasScreenQuery &
@@ -116,6 +117,7 @@ export function registerElectronBackends(
   };
   const notification = createElectronNotificationCapabilities(electron);
   const screen = createElectronScreenCapabilities(electron);
+  const ipc = { message: createElectronIpcMessageBackend(electron) };
   const menu = createElectronMenuBackends(electron);
   const power = createElectronPowerBackends(electron);
   const storage = createElectronStorageBackend(electron, options.storageFileName);
@@ -127,7 +129,6 @@ export function registerElectronBackends(
   setTrayBackend(createElectronTrayBackend(electron));
   setShortcutBackend(createElectronShortcutBackend(electron));
   setProtocolBackend(createElectronProtocolBackend(electron));
-  setIpcBackend(createElectronIpcBackend(electron));
   return createEntity({
     accessibility: {},
     app: {},
@@ -136,6 +137,7 @@ export function registerElectronBackends(
     dialog,
     graphics: {},
     input: {},
+    ipc,
     media: {},
     menu,
     net: {},

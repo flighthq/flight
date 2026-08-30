@@ -76,6 +76,8 @@ export const webHost = createEntity({
     softKeyboardVisibility: createWebSoftKeyboardVisibilityBackend(),
     target: webInputTargetBackend,
   },
+  // No IPC provider: a browser page has no inter-process peer to receive channel messages from.
+  ipc: {},
   media: { session: webMediaSessionBackend, sessionAction: webMediaSessionActionBackend },
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},

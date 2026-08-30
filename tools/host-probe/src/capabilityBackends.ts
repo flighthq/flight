@@ -3,7 +3,6 @@ import { getDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
-import { getIpcBackend } from '@flighthq/ipc/contract';
 import { getPlatformBackend } from '@flighthq/platform/contract';
 import { getProtocolBackend } from '@flighthq/protocol/contract';
 import { getShortcutBackend } from '@flighthq/shortcut/contract';
@@ -25,6 +24,7 @@ export function captureHostProbeBackends(
       | 'connectivity'
       | 'dialog'
       | 'input'
+      | 'ipc'
       | 'menu'
       | 'notification'
       | 'power'
@@ -49,7 +49,7 @@ export function captureHostProbeBackends(
     geolocation: getGeolocationBackend(),
     'glyph-rasterizer': getGlyphRasterizerBackend(),
     haptics: host.input?.haptics ?? null,
-    ipc: getIpcBackend(),
+    ipc: host.ipc ?? null,
     loop: host.app?.loop ?? null,
     menu: host.menu ?? null,
     notification: host.notification ?? null,

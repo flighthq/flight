@@ -1,7 +1,7 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronIpcBackend } from './electronIpc';
+import { createElectronIpcMessageBackend } from './electronIpc';
 
 function fakeElectron(): {
   electron: ElectronApi;
@@ -22,32 +22,43 @@ function fakeElectron(): {
   return { electron, channels };
 }
 
-describe('createElectronIpcBackend', () => {
+describe('createElectronIpcMessageBackend', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronIpcBackend(fakeElectron().electron)).toBe(true);
+    expect(EntityRuntimeKey in createElectronIpcMessageBackend(fakeElectron().electron)).toBe(true);
   });
 
-  it('send no-ops without a webContents target', () => {
-    const { electron } = fakeElectron();
-    const backend = createElectronIpcBackend(electron);
-    expect(() => backend.send('channel', [1, 2])).not.toThrow();
-  });
-
-  it('invoke resolves to undefined on the main side', async () => {
-    const { electron } = fakeElectron();
-    const backend = createElectronIpcBackend(electron);
-    expect(await backend.invoke('channel', [])).toBeUndefined();
-  });
-
-  it('subscribe receives renderer args and unsubscribes the same handler', () => {
+  it('delivers a renderer message with its arguments, dropping the event object', () => {
     const { electron, channels } = fakeElectron();
-    const backend = createElectronIpcBackend(electron);
-    let received: readonly unknown[] | undefined;
-    const unsubscribe = backend.subscribe('chat', (args) => (received = args));
-    expect(channels.get('chat')?.size).toBe(1);
-    for (const listener of channels.get('chat') ?? []) listener({ sender: 1 }, 'hello', 42);
-    expect(received).toEqual(['hello', 42]);
-    unsubscribe();
-    expect(channels.get('chat')?.size).toBe(0);
+    const backend = createElectronIpcMessageBackend(electron);
+    const seen: readonly unknown[][] = [];
+    backend.subscribe('ping', (args) => (seen as unknown[][]).push([...args]));
+    for (const listener of channels.get('ping') ?? []) listener({ sender: 1 }, 'a', 2);
+    expect(seen).toEqual([['a', 2]]);
+  });
+
+  // The per-subscription cleanup owns everything subscribe acquired, which is why this slot declares no
+  // provider-level destroy: ipcMain is the caller's to tear down, not this backend's.
+  it('removes exactly its own ipcMain listener on unsubscribe', () => {
+    const { electron, channels } = fakeElectron();
+    const backend = createElectronIpcMessageBackend(electron);
+    const stopFirst = backend.subscribe('ping', () => {});
+    backend.subscribe('ping', () => {});
+    expect(channels.get('ping')?.size).toBe(2);
+    stopFirst();
+    expect(channels.get('ping')?.size).toBe(1);
+  });
+
+  // ★ The deleted operations must not come back as members. Electron genuinely supports main-to-renderer
+  // send, targeted send, invoke and handle — but none is built, and declaring them here would offer
+  // operations no provider performs, which is what the old backend did with a no-op send and an
+  // undefined-resolving invoke.
+  it('exposes subscribe alone, with no unbuilt operations', () => {
+    const backend = createElectronIpcMessageBackend(fakeElectron().electron);
+    expect(Object.keys(backend).filter((k) => k !== 'constructor')).toEqual(['subscribe']);
+    expect('send' in backend).toBe(false);
+    expect('invoke' in backend).toBe(false);
+    expect('handle' in backend).toBe(false);
+    expect('sendTo' in backend).toBe(false);
+    expect('destroy' in backend).toBe(false);
   });
 });

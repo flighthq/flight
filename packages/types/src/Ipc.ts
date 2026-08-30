@@ -1,65 +1,22 @@
-// Reports which IPC operations the active backend supports. The web default returns all-false
-// (no main process); a native host reports true for the operations its channel layer provides.
-export interface IpcBackendCapabilities {
-  canHandle: boolean;
-  canInvoke: boolean;
-  canSend: boolean;
-  canTarget: boolean;
-}
+// Inter-process messaging. The domain is ONE capability: receiving messages on a named channel.
+//
+// ★ WHAT WAS DELETED AND WHY. The seam previously declared send / sendTo / invoke / invokeWithTimeout /
+// handle / message-event operations, a capability struct, a target, a channel wrapper and an error
+// family. No provider implemented any of them: the only host backend (Electron main) documents `send`
+// as a no-op and `invoke` as resolving to `undefined`, and there was no second provider. They were
+// operations the SDK offered and no host could perform.
+//
+// Named Electron gaps, recorded so an absence stays examined rather than forgotten. The platform
+// genuinely supports all four; Flight has not built them:
+//   • main→renderer send — needs a specific `webContents`, so it is a targeted operation, not a global one
+//   • targeted send — same, addressed by window
+//   • invoke — `ipcMain.handle` + `ipcRenderer.invoke`, a request/response pair
+//   • handle — the main-side responder for invoke
+// Building any of them means a new slot with a real provider behind it, not a member on this one.
 
-// Inter-process messaging seam. Free functions in @flighthq/ipc delegate to the active IpcBackend
-// (web default or a native host's). send is fire-and-forget, invoke is a request/response round-trip,
-// and subscribe registers a per-channel listener. On web there is no main process: send no-ops,
-// invoke resolves to undefined, and subscribe returns an inert unsubscribe rather than throwing.
-export interface IpcBackend {
-  send(channel: string, args: readonly unknown[]): void;
-  invoke(channel: string, args: readonly unknown[]): Promise<unknown>;
+// A channel is a plain string. The former `IpcChannel` wrapper carried a single `name` field and no
+// behavior, so it was a value type standing between callers and the string they already had.
+export interface IpcMessageBackend {
+  // Delivers messages arriving on `channel`, returning the unsubscribe for THAT subscription only.
   subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void;
-  // Optional: registers a responder for invoke calls on a channel; returns an unregister thunk.
-  // Absent on backends that do not support handling (the web default).
-  handle?(channel: string, handler: (...args: readonly unknown[]) => unknown | Promise<unknown>): () => void;
-  // Optional: sends a fire-and-forget message to a specific target window/process.
-  // Absent on backends that cannot target a peer.
-  sendTo?(target: Readonly<IpcTarget>, channel: string, args: readonly unknown[]): void;
-  // Optional: reports the backend's supported operations. Absent backends are treated as web-default.
-  getCapabilities?(): Readonly<IpcBackendCapabilities>;
 }
-
-// A typed channel descriptor. Channel-accepting functions take a string or an IpcChannel, so a
-// feature can publish its channel constants once and get a single grep target.
-export interface IpcChannel {
-  name: string;
-}
-
-// Event delivered to onIpcMessageEvent listeners: the channel, the sender id (or -1 when unknown),
-// the incoming args, and a reply thunk that targets the sender (a no-op when senderId is -1).
-export interface IpcMessageEvent {
-  channel: string;
-  senderId: number;
-  args: readonly unknown[];
-  reply(...args: readonly unknown[]): void;
-}
-
-// Identifies a specific peer for targeted sends — the window/process to deliver a message to.
-export interface IpcTarget {
-  windowId: number;
-}
-
-// Rejection raised by invokeIpcWithTimeout when an invoke does not complete in time. Carries the
-// channel and the timeout in milliseconds for diagnostics.
-export class IpcTimeoutError extends Error {
-  readonly channel: string;
-  readonly timeoutMs: number;
-
-  constructor(channel: string, timeoutMs: number) {
-    super(`IPC invoke on channel "${channel}" timed out after ${timeoutMs}ms`);
-    this.name = 'IpcTimeoutError';
-    this.channel = channel;
-    this.timeoutMs = timeoutMs;
-  }
-}
-
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
-// roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot.
-export type IpcOperation = keyof IpcBackend;
