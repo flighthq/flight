@@ -672,6 +672,19 @@ regression. Every provider value and the shared opaque `InputTargetHandle` is an
 | 26 | `RenderContextBackend` | `subscribe(target, onLost, onRestored)` owns Web context-loss/restoration listeners and returns their exact release. `attachWindowRenderContext` stores the origin release in the window observer table. | **Owned.** Replacement/detach/disposal cannot redirect cleanup; Web teardown removes both exact canvas listeners idempotently. |
 | 27 | `RenderSurfaceBackend` | `resize(target, pixelWidth, pixelHeight)` is a bounded command over an opaque provider-bound target. `attachWindowRenderState` captures both the originating backend and target in its core `ApplicationWindow.onResize` connection; detach/disposal removes that connection. | **Owned by core connection and keyed handle.** Later Host selection cannot reroute an attached resize command. The target mapping is weak/GC-managed and backing-store dimensions are durable surface state, not a borrowed lease to restore on detach. |
 
+### 2026-08-29 Connectivity explicit-Host append
+
+The Connectivity slice replaces the historical combined `ConnectivityBackend` with three Entity
+interfaces. The live structural census moves from **8 of 79** to **9 of 81**: one interface removed,
+three added, and `ConnectivityChangeBackend` adds one required zero-argument provider teardown. The
+guard recognizes the explicit `destroyConnectivity(host)` route without inventing a replacement setter.
+
+| Backend | Exact resource bracket and provenance | Result |
+| --- | --- | --- |
+| `ConnectivityStatusBackend` | Synchronous query into caller/package-owned output snapshots; no retained host resource. | **Owned by bounded call.** Pre-ready Capacitor state is `online: null`, never a fabricated offline value. |
+| `ConnectivityReachabilityBackend` | One Web `HEAD` request bounded by its promise, timeout, and optional caller `AbortSignal`. | **Owned by bounded call.** There is no native-to-Web fallback; the explicit slot identifies the only provider. |
+| `ConnectivityChangeBackend` | Per-entity attach stores the exact returned release and A→B reattach consumes A before subscribing to B. Web tracks every exact DOM release. Capacitor owns one native handle plus a local subscriber set. | **Owned.** `disposeConnectivity` consumes the entity release once and clears all five core signals. Terminal `destroyConnectivity(host)` reaches the supplied provider; Capacitor removes an already-resolved handle or marks a later-resolving handle for exact removal, clears subscribers, and is idempotent. |
+
 ## Review checklist for the remaining slices
 
 For each of the three missing whole-backend hooks, tests must cover replacement with a different
