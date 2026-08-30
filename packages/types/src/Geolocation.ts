@@ -21,9 +21,6 @@ export interface GeoPosition {
 // 'unavailable' — the capability is absent (insecure context, jsdom, missing navigator).
 export type GeolocationErrorReason = 'denied' | 'timeout' | 'unavailable';
 
-// Current permission state. 'prompt' means the user has not yet been asked.
-export type GeolocationPermissionState = 'granted' | 'denied' | 'prompt';
-
 // A position read paired with its failure reason. On success, position is set and reason is null;
 // on failure, position is null and reason carries why.
 export interface GeoPositionResult {
@@ -66,7 +63,6 @@ export type GeolocationAccessOutcome = {
 export interface GeolocationBackend {
   getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null>;
   getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult>;
-  getPermission(): Promise<GeolocationPermissionState>;
   // Reports whether this provider can acquire positions now; permission denial is a separate state.
   isAvailable(): boolean;
   watchPosition(
@@ -78,6 +74,4 @@ export interface GeolocationBackend {
   // Raises the platform's own access prompt. Named so a native host implements it with its real
   // permission API instead of emulating the web's acquire-and-discard workaround.
   promptForAccess(): Promise<GeolocationAccessOutcome>;
-  requestPermission(): Promise<boolean>;
-  subscribePermission(listener: (state: GeolocationPermissionState) => void): () => void;
 }
