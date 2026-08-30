@@ -65,7 +65,7 @@ describe('enableSocketGuards', () => {
       reason: 'no-connection',
       url: 'tcp://unsupported',
     });
-    expect(String((entries[0].data as Record<string, unknown>).message)).toContain('setSocketBackend');
+    expect(String((entries[0].data as Record<string, unknown>).message)).toContain('net.socket');
   });
 
   it('warns once per command issued after terminal disposal', () => {

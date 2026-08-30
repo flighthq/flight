@@ -24,7 +24,7 @@ function warnOnSocketMisuse(notice: Readonly<SocketGuardNotice>): void {
   const url = notice.socket.url;
   const message =
     notice.reason === 'no-connection'
-      ? 'createSocket: active backend returned no connection — call setSocketBackend(...) with a backend that supports this transport'
+      ? 'createSocket: the host carries no socket provider for this transport, or its provider returned no connection — pass a host whose net.socket supports it'
       : `${notice.operation}: socket is already disposed — call createSocket(...) to create a new socket`;
   logOnce(
     `socket:${notice.operation}:${notice.reason}`,
