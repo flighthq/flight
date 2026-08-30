@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/geolocation'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder2
 ---
 
 # geolocation — Status
@@ -20,21 +20,34 @@ is short on purpose. A file:line here is a claim about this tree, not about a se
   `LocationRequest` distance/interval floor and iOS's `distanceFilter` have nowhere to land, so a
   native host cannot be told to throttle a watch. Adding fields the web backend must ignore is the
   ordinary platform-suite pattern, but it is still an explicit decision rather than an oversight.
-- **Unsubscribing from a permission watch can lose the race.** The web `subscribePermission` attaches
-  its `change` handler inside the `permissions.query()` continuation (`geolocation.ts:109-118`), while
-  the unsubscribe it returns runs against `status` / `handler` that are still `null` until then
-  (`:119-125`). Unsubscribe before the query resolves and the handler is attached afterwards anyway —
-  the listener keeps firing with no way to detach it. A change *during* that window is also missed.
+- **The permission-watch race is RESOLVED BY REMOVAL, not by a fix.** `subscribePermission` is gone
+  from this package — permission state and change belong to `@flighthq/permissions`. Recorded rather
+  than deleted so the next reader does not conclude the race was repaired in place: nothing here was
+  repaired, the surface carrying the race left. `@flighthq/permissions` has no change feed today, so
+  whoever adds one must not reproduce the pattern.
 - **Native coverage is Capacitor only**, and it is the weaker half of the seam.
   `createCapacitorGeolocationBackend` (`host-capacitor/src/capacitorGeolocation.ts`) is registered at
   `capacitorRegister.ts:48`; there is no Electron geolocation adapter. Capacitor exposes no
-  permission-change event, so `subscribePermission` is inert there, and its
   `getCurrentPositionResult` collapses every failure to `reason: 'unavailable'` — the typed
   denied/timeout distinction that `GeoPositionResult` exists for is unavailable on the one native host.
+  Its `promptForAccess` IS the strong half: Capacitor has a real permission-request API, so it prompts
+  without acquiring a fix, which is exactly what naming the operation was for.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-30** — Permission ownership split. This package now owns POSITION plus ONE named prompt
+  mechanism, `promptForGeolocationAccess` / `GeolocationBackend.promptForAccess`, returning the
+  capability-native `GeolocationAccessOutcome`
+  (granted/denied/dismissed/timeout/cleanup-failed/runtime-unavailable/operation-failed).
+  `getGeolocationPermission`, `requestGeolocationPermission` and `onGeolocationPermissionChange` are
+  DELETED, as are the three matching backend members and the `GeolocationPermissionState` clone of
+  `PermissionState`. `@flighthq/permissions` projects the outcome via `Host.system.geolocation`, so
+  no package dependency was added in either direction. `timeout` is capability-native by ruling: a
+  position deadline is an acquisition observable and says nothing about the user, and only the
+  permission owner may query state to disambiguate it — so the capability reports what it saw and
+  Permissions carries it through as a reason with NO state.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Both headline deferred items checked out
   **false**. The stem split is closed: the functions are `clearGeolocationWatch` (`geolocation.ts:11`)
