@@ -728,7 +728,7 @@ describe('ensureWgpuShadowSampleLayout', () => {
 describe('getWgpuMaterialSampler', () => {
   it('returns the shared clamp sampler for a null map', () => {
     const { state } = makeWgpuScene3DState();
-    expect(getWgpuMaterialSampler(state, null)).toBe(getWgpuRenderStateRuntime(state).linearSampler);
+    expect(getWgpuMaterialSampler(state, null)).toBe(getWgpuRenderStateRuntime(state).context.linearSampler);
   });
 
   it('derives a wrap- and mip-specific sampler for a tiling map', () => {
@@ -744,7 +744,7 @@ describe('getWgpuMaterialSampler', () => {
 
     // A non-clamp (tiling) map goes through the sampler cache, not the shared clamp sampler, and the
     // derivation is deterministic (same texture → same cached sampler).
-    expect(sampler).not.toBe(getWgpuRenderStateRuntime(state).linearSampler);
+    expect(sampler).not.toBe(getWgpuRenderStateRuntime(state).context.linearSampler);
     expect(getWgpuMaterialSampler(state, texture)).toBe(sampler);
   });
 
@@ -770,7 +770,7 @@ describe('getWgpuMaterialSampler', () => {
     getWgpuMaterialSampler(state, noMip);
     getWgpuMaterialSampler(state, withMip);
     // The two mip configs pack into two distinct numeric keys, so the cache holds both.
-    expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(2);
+    expect(getWgpuRenderStateRuntime(state).context.samplerCache.size).toBe(2);
   });
 
   it('carries the map anisotropy into the derived sampler (distinct packed key from the non-anisotropic one)', () => {
@@ -781,7 +781,7 @@ describe('getWgpuMaterialSampler', () => {
 
     getWgpuMaterialSampler(state, aniso);
     getWgpuMaterialSampler(state, noAniso);
-    expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(2);
+    expect(getWgpuRenderStateRuntime(state).context.samplerCache.size).toBe(2);
   });
 });
 

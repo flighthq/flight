@@ -117,7 +117,7 @@ describe('destroyWgpuShapeData', () => {
     const data = createWgpuShapeData(state, {} as never);
     const shapeData = getWgpuShapeData(data)!;
     const surface = acquireWgpuShapeRasterSurface(shapeData)!;
-    const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const order: string[] = [];
     const destroy = vi.fn(() => order.push('texture'));
     cache.set(surface.image, {
