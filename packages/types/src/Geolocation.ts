@@ -37,6 +37,32 @@ export interface GeolocationRequestOptions {
   maximumAgeMs?: number;
 }
 
+/**
+ * What happened when the capability raised its own access prompt.
+ *
+ * A CAPABILITY outcome, deliberately not a `PermissionState`: only the capability can raise the
+ * prompt, and G6 lets it keep that mechanism precisely because what it returns carries no permission
+ * vocabulary. Permissions projects this into its own outcome; nothing here names a state.
+ *
+ * `timeout` is an ACQUISITION observable and says nothing about the user. It occurs routinely with
+ * access already granted — indoors, no fix, a slow lock — so it must never be read as a dismissal.
+ * Only a permission-state query can tell those apart, and the capability may not hold one; it reports
+ * what it saw and leaves the interpretation to the owner that can query.
+ *
+ * `cleanup-failed` means access WAS obtained and releasing the probe failed afterwards. The decision
+ * survives it, so it is a distinct arm rather than a failure that discards the answer.
+ */
+export type GeolocationAccessOutcome = {
+  readonly reason:
+    | 'cleanup-failed'
+    | 'denied'
+    | 'dismissed'
+    | 'granted'
+    | 'operation-failed'
+    | 'runtime-unavailable'
+    | 'timeout';
+};
+
 export interface GeolocationBackend {
   getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null>;
   getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult>;
@@ -49,6 +75,9 @@ export interface GeolocationBackend {
     onError?: (reason: GeolocationErrorReason) => void,
   ): number;
   clearWatch(id: number): void;
+  // Raises the platform's own access prompt. Named so a native host implements it with its real
+  // permission API instead of emulating the web's acquire-and-discard workaround.
+  promptForAccess(): Promise<GeolocationAccessOutcome>;
   requestPermission(): Promise<boolean>;
   subscribePermission(listener: (state: GeolocationPermissionState) => void): () => void;
 }
