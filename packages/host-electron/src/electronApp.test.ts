@@ -70,7 +70,7 @@ function fakeElectron() {
 }
 
 describe('createElectronAppCapabilities', () => {
-  it('publishes common application identity, control, and event slots on every profile', () => {
+  it('publishes common application identity, control, and event slots on every profile', async () => {
     const fake = fakeElectron();
     const app = createElectronAppCapabilities(fake.electron, 'linux');
     expect(Object.keys(app).sort()).toEqual([
@@ -94,7 +94,7 @@ describe('createElectronAppCapabilities', () => {
     expect(app.locale.getPreferredSystemLanguages()).toEqual(['en-US', 'fr']);
     expect(app.path.getAppDirectoryPath('logs')).toBe('/path/logs');
     expect(app.singleInstance.requestSingleInstanceLock()).toBe(true);
-    expect(app.badge.setBadgeCount(2)).toBe(true);
+    await expect(app.badge.setBadgeCount(2)).resolves.toBe(true);
     for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 

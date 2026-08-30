@@ -84,7 +84,7 @@ async function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBack
   getScreens(host, screens);
   console.log('[harness] screens:', screens.length); // eslint-disable-line
 
-  if (host.app.badge !== undefined) setAppBadgeCount({ app: { badge: host.app.badge } }, 3);
+  if (host.app.badge !== undefined) void setAppBadgeCount({ app: { badge: host.app.badge } }, 3);
 
   const menu: readonly MenuItemTemplate[] = [
     createMenuItemTemplate({

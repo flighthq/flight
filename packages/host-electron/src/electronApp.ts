@@ -125,7 +125,7 @@ export function createElectronAppCapabilities(
       activationPolicy: createEntity({
         setActivationPolicy: (policy: 'accessory' | 'prohibited' | 'regular') => app.setActivationPolicy(policy),
       }),
-      badge: createEntity({ setBadgeCount: (count: number) => app.setBadgeCount(count) }),
+      badge: createEntity({ setBadgeCount: async (count: number) => app.setBadgeCount(count) }),
       dock: createEntity({
         bounceDock: () => dock.bounce(),
         cancelAttention: (id: number) => dock.cancelBounce(id),
@@ -159,7 +159,7 @@ export function createElectronAppCapabilities(
 
   return {
     ...common,
-    badge: createEntity({ setBadgeCount: (count: number) => app.setBadgeCount(count) }),
+    badge: createEntity({ setBadgeCount: async (count: number) => app.setBadgeCount(count) }),
   };
 }
 
