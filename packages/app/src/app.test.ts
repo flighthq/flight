@@ -77,7 +77,7 @@ function createFixture() {
       activate: subscribe('activate'),
       activationPolicy: createEntity({ setActivationPolicy: (policy: string) => calls.push(`policy:${policy}`) }),
       allWindowsClosed: subscribe('allWindowsClosed'),
-      badge: createEntity({ setBadgeCount: (count: number) => (calls.push(`badge:${count}`), true) }),
+      badge: createEntity({ setBadgeCount: async (count: number) => (calls.push(`badge:${count}`), true) }),
       dock: createEntity({
         bounceDock: () => 17,
         cancelAttention: (id: number) => calls.push(`cancelAttention:${id}`),
@@ -364,7 +364,9 @@ describe('setAppActivationPolicy', () => {
   });
 });
 describe('setAppBadgeCount', () => {
-  it('returns the provider outcome', () => expect(setAppBadgeCount(createFixture().host, 7)).toBe(true));
+  it('returns the awaited provider outcome', async () => {
+    await expect(setAppBadgeCount(createFixture().host, 7)).resolves.toBe(true);
+  });
 });
 describe('setAppDockBadge', () => {
   it('delegates', () => {

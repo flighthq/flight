@@ -8,12 +8,11 @@ type WebAppCapabilities = Required<
 export function createWebAppCapabilities(): WebAppCapabilities {
   return {
     badge: createEntity({
-      setBadgeCount: (count: number) => {
+      setBadgeCount: async (count: number) => {
         if (typeof navigator === 'undefined') return false;
-        const setAppBadge = Reflect.get(navigator, 'setAppBadge');
-        if (typeof setAppBadge !== 'function') return false;
+        if (typeof navigator.setAppBadge !== 'function') return false;
         try {
-          Reflect.apply(setAppBadge, navigator, [count]);
+          await navigator.setAppBadge(count);
           return true;
         } catch {
           return false;

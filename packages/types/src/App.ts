@@ -57,7 +57,7 @@ export interface AppAllWindowsClosedBackend extends Entity {
 }
 
 export interface AppBadgeBackend extends Entity {
-  setBadgeCount(count: number): boolean;
+  setBadgeCount(count: number): Promise<boolean>;
 }
 
 export interface AppDockBackend extends Entity {

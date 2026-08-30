@@ -234,7 +234,7 @@ export function setAppActivationPolicy(host: HasAppActivationPolicy, policy: App
   host.app.activationPolicy.setActivationPolicy(policy);
 }
 
-export function setAppBadgeCount(host: HasAppBadge, count: number): boolean {
+export function setAppBadgeCount(host: HasAppBadge, count: number): Promise<boolean> {
   return host.app.badge.setBadgeCount(count);
 }
 
