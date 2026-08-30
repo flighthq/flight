@@ -1,0 +1,8 @@
+{
+  "name": "host-web-window-only-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "host-web-window-only"
+  }
+}
