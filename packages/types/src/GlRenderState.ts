@@ -1,10 +1,10 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
 import type { Kind } from './Entity';
-import type { ExternalTexture } from './ExternalTexture';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlContext } from './GlContext';
+import type { GlContextRuntime } from './GlContextRuntime';
 import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
@@ -12,21 +12,17 @@ import type { GlModifierSnippet } from './GlModifierSnippet';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
 import type { GlRenderEffectRegistration } from './GlRenderEffectPipeline';
 import type { GlRenderTarget } from './GlRenderTarget';
-import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTexture';
+import type { GlRenderTextureGuard } from './GlRenderTexture';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
-import type { GlShapeMeshBinding } from './GlShapeMeshBinding';
-import type { GlTextureRealization, GlTextureResolver } from './GlTextureResolver';
+import type { GlTextureResolver } from './GlTextureResolver';
 import type { GlVelocityWriter } from './GlVelocityWriter';
-import type { Image } from './Image';
 import type { Material } from './Material';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
-import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { ShapeRasterizer } from './ShapeRasterizer';
-import type { TextureSource } from './TextureSource';
 import type { TintMaterialData } from './TintMaterialData';
 
 export interface GlRenderState extends RenderState {
@@ -131,41 +127,18 @@ export type GlColorAdjustmentMaterialFeatureGuard = (
 // frame via getGlRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
 export interface GlRenderStateRuntime extends RenderStateRuntime {
+  context: GlContextRuntime;
   registries: GlRenderRegistries;
   // Opt-in dev guard: called where a draw path is about to TRUST a cached binding slot and skip the
   // rebind. Null in production, so the check costs nothing and the message lives in the guard module.
   bindingCacheGuard: ((state: GlRenderState, expectedProgram: WebGLProgram) => void) | null;
-  // Atomic context binding shadows. Null always means invalid/untracked; a valid normal blend, bound
-  // program, or bound texture is represented by a complete record.
-  currentBlendSignature: GlBlendSignature | null;
-  currentShader: GlBoundShader | null;
-  currentTextureRealization: GlTextureRealization | null;
   // Optional owner-installed seam that drains queued draws before render-gl hands the context to a
   // foreign renderer. scene2d-gl installs its quad-batch writer flush lazily when a batch is first prepared;
   // render-gl reaches it only through this contract slot and therefore does not depend on scene2d-gl.
   flushPendingDraws?: ((state: GlRenderState) => void) | null;
 
   defaultBitmapShader: GlBitmapShader | null;
-  particleShader?: GlParticleShader;
-  particleCornerBuffer?: WebGLBuffer;
-  particleInstanceBuffer?: WebGLBuffer;
   particleInstanceData?: Float32Array;
-  quadBatchShader?: GlQuadBatchShader;
-  quadBatchCornerBuffer?: WebGLBuffer;
-  // Compiled color-adjustment programs, owned by the opt-in fold (registerGlColorAdjustmentMaterialFeature). Absent
-  // until the first folded flush; a state that never enables color adjustment carries neither.
-  colorScaleBiasInstancedShader?: GlColorScaleBiasInstancedShader;
-  colorMatrixInstancedShader?: GlColorScaleBiasInstancedShader;
-  colorTintInstancedShader?: GlColorScaleBiasInstancedShader;
-  uniformColorScaleBiasShader?: GlUniformColorScaleBiasShader;
-  shapeMeshBinding?: GlShapeMeshBinding;
-  shapeMeshColorScaleBiasShader?: GlShapeMeshColorScaleBiasShader;
-  shapeMeshColorMatrixShader?: GlShapeMeshColorScaleBiasShader;
-  // The 3D material dispatch policy lives in registries.meshMaterialRenderers, separate from the 2D
-  // material table because a material kind is either 2D or 3D, never both. This cache is the context-tier
-  // realization of lazily uploaded MeshGeometry data, keyed by the geometry entity (parallel to
-  // MeshGeometryRuntime.webglData; scene-gl owns and casts the concrete value shape).
-  sceneMeshUploadCache?: WeakMap<object, object> | null;
   // Per-material-kind bitmap shader for the immediate (display-object) path. resolveGlShader
   // looks a node's shader up here by its material kind — the render path has no color-adjustment (or
   // any material-specific) knowledge; the material's shader and its registration own that.
@@ -175,15 +148,12 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   webglShaderBindingResolver?: (renderProxy: RenderProxy2D) => GlBitmapShader | undefined;
   quadBatchWriterBlendMode: BlendMode | null;
   // The active quad-batch writer material (flush key, compared by reference) and its resolved
-  // renderer + per-instance float stride. quadBatchWriterMaterialData/Buffer hold the active
-  // material's per-instance attributes, parallel to the base quadBatchWriterInstanceData.
+  // renderer + per-instance float stride.
   quadBatchWriterMaterial: Material | null;
   quadBatchWriterMaterialRenderer: GlMaterialRenderer | null;
   quadBatchWriterMaterialFloats: number;
   quadBatchWriterMaterialData: Float32Array;
-  quadBatchWriterMaterialBuffer: WebGLBuffer | null;
   quadBatchWriterCount: number;
-  quadBatchWriterInstanceBuffer: WebGLBuffer | null;
   quadBatchWriterInstanceData: Float32Array;
   // Resolved backend handle plus the sampling/alpha metadata needed to restore its binding when the
   // deferred batch flushes. High-level Texture resolution stays in texture-using callers.
@@ -192,76 +162,22 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   quadBatchWriterStraightAlpha: boolean;
   // Transitional sampling key for legacy atlas/image writers. A Texture carries its sampler directly.
   quadBatchWriterSmoothing: boolean | null;
-  // Color-transform fold state for the active quad-batch writer. Orthogonal to the material and never a
-  // flush key, so tinted and untinted nodes with the same texture+blend share one batch. Mode 0 =
-  // no tint (lean base shader), 1 = one uniform tint for the whole batch (u_colorScale/u_colorBias), 2 =
-  // per-instance tints (a_colorScale/a_colorBias). A batch starts at 0, rises to 1 on the first tint, and
-  // promotes to 2 — back-filling already-written instances with the prior value/identity — when
-  // tints diverge, so attaching a tint only ever promotes a batch, never splits it.
-  // quadBatchWriterColorScaleBiasData/Buffer hold the per-instance floats (8 per instance) for mode 2;
-  // quadBatchWriterUniformColorScaleBias holds the shared value for mode 1.
+  // Color-transform fold state for the active quad-batch writer. Mode 0 = no tint, 1 = one uniform
+  // tint for the whole batch, 2 = per-instance tints. A batch promotes upward, never splits.
   quadBatchWriterColorScaleBiasMode?: number;
   quadBatchWriterUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
   quadBatchWriterColorScaleBiasData?: Float32Array;
   quadBatchWriterColorMatrixData?: Float32Array;
   quadBatchWriterColorTintData?: Uint32Array;
-  quadBatchWriterColorScaleBiasBuffer: WebGLBuffer | null;
   // Per-clip unwind stack: the form of each pushed clip (scissor vs stencil contour) so popClip
   // un-installs the right gate.
   clipForms: ('rect' | 'contour')[];
-  // Active stencil nesting depth, now driven by contour clips (formerly by masks). The GPU draw path
-  // reads this to know when a stencil test is live. Rect clips use the scissor and do not touch it.
   currentMaskDepth?: number;
   currentScissorRect?: GlScissorRect | null;
-  /**
-   * The framebuffer currently bound for rendering. Null means the default
-   * (screen) framebuffer. Maintained internally so begin/end render target
-   * can restore the previous binding without a gl.getParameter() call.
-   */
   currentFramebuffer: WebGLFramebuffer | null;
-  /**
-   * The GlRenderTarget currently bound via beginGlRenderPass, or null when rendering to the canvas.
-   * A producer stamps the color space of the content it draws onto this target (drawGlScene3D declares
-   * 'linear'); the present step then reads target.colorSpace to encode correctly. Restored by
-   * endGlRenderPass alongside currentFramebuffer.
-   */
   currentRenderTarget?: GlRenderTarget | null;
-  /**
-   * Active GL-space viewport within the current render target. Its origin is bottom-left, matching
-   * WebGL viewport/scissor coordinates; projection paths use its dimensions while clip paths also add
-   * its origin. Null means the full canvas.
-   */
   renderTargetViewport: GlViewportRect | null;
-  // Raw-element texture cache: a canvas/video/image element uploaded directly (video frames, canvas-backed
-  // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
-  textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
-  // Premultiplied texture realizations for TextureSource siblings. Keyed by stable entity identity and
-  // guarded by content version so mutable Bitmaps re-upload in place.
-  textureSourcePremultipliedTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
-  textureSourcePremultipliedSrgbTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
-  // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
-  textureSourceStraightTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
-  textureSourceStraightSrgbTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
-  // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
-  // the caller retains allocation ownership.
-  glExternalTextureCache?: WeakMap<ExternalTexture, WebGLTexture>;
-  glRenderTextureCache?: WeakMap<RenderTexture, GlRenderTextureEntry>;
   glRenderTextureGuard?: GlRenderTextureGuard | null;
-  // Dynamic host-video caches keyed by source identity and split by GPU color interpretation.
-  // `uploadedVersion` tracks the last decoded frame copied to GL.
-  videoTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;
-  videoSrgbTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;
-  // Textures whose mip chain has been generated via gl.generateMipmap, so a mip-sampling bind
-  // generates the chain exactly once and updateGlTexture can refresh it after a re-upload. Keyed by
-  // the GL texture (parallel to textureCache), lazily created on the first mip-sampled bind.
-  mipmappedTextures?: WeakSet<WebGLTexture>;
-  // The resolved EXT_texture_filter_anisotropic extension and the hardware anisotropy cap, both
-  // resolved once on the first anisotropic bind. anisotropyExt is undefined until queried, then the
-  // extension object or null when the GPU does not support anisotropic filtering.
-  anisotropyExt?: EXT_texture_filter_anisotropic | null;
-  maxAnisotropy?: number;
-  quadVertexBuffer: WebGLBuffer;
-  quadIndexBuffer: WebGLBuffer;
   quadVertexData: Float32Array;
   matrixArray: Float32Array;
   scissorStack?: GlScissorRect[];
