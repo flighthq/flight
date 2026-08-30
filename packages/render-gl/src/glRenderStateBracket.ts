@@ -1,4 +1,4 @@
-import type { GlContext, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlContext, GlContextRuntime, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -35,11 +35,11 @@ type SavedGlRenderState = {
   stencilValueMask: number;
   stencilWriteMask: number;
   currentFramebuffer: WebGLFramebuffer | null;
-  currentBlendSignature: GlRenderStateRuntime['currentBlendSignature'];
+  currentBlendSignature: GlContextRuntime['currentBlendSignature'];
   currentRenderTarget: GlRenderStateRuntime['currentRenderTarget'];
-  currentShader: GlRenderStateRuntime['currentShader'];
+  currentShader: GlContextRuntime['currentShader'];
   currentScissorRect: GlRenderStateRuntime['currentScissorRect'];
-  currentTextureRealization: GlRenderStateRuntime['currentTextureRealization'];
+  currentTextureRealization: GlContextRuntime['currentTextureRealization'];
   depthFunc: number;
   depthMask: boolean;
   depthTest: boolean;

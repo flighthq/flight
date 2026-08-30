@@ -204,9 +204,9 @@ describe('createGlOffscreenRenderState', () => {
     const offscreenRuntime = getGlRenderStateRuntime(offscreen);
 
     expect(offscreen.gl).toBe(screen.gl);
-    expect(offscreenRuntime.textureCache).toBe(screenRuntime.textureCache);
-    expect(offscreenRuntime.textureSourcePremultipliedTextureCache).toBe(
-      screenRuntime.textureSourcePremultipliedTextureCache,
+    expect(offscreenRuntime.context.textureCache).toBe(screenRuntime.context.textureCache);
+    expect(offscreenRuntime.context.textureSourcePremultipliedTextureCache).toBe(
+      screenRuntime.context.textureSourcePremultipliedTextureCache,
     );
     expect(offscreenRuntime.context.glRenderTextureCache).toBe(screenRuntime.context.glRenderTextureCache);
     expect(offscreenRuntime.context.quadIndexBuffer).toBe(screenRuntime.context.quadIndexBuffer);
