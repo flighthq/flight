@@ -376,10 +376,6 @@ export interface HasInputPointerLock {
   readonly input: { readonly pointerLock: InputPointerLockBackend };
 }
 
-export interface HasInputSoftKeyboard {
-  readonly input: { readonly softKeyboard: SoftKeyboardBackend };
-}
-
 export interface HasInputTargetPreparation {
   readonly input: { readonly target: InputTargetBackend };
 }

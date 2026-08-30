@@ -5,11 +5,6 @@ export const SoftKeyboardResizeBodyKind = 'Body';
 export type SoftKeyboardStyleKind = string;
 export const SoftKeyboardStyleDefaultKind = 'Default';
 export const SoftKeyboardStyleDarkKind = 'Dark';
-export type SoftKeyboardPhase = 'will' | 'did';
-export interface SoftKeyboardTransition {
-  durationSeconds: number;
-  height: number;
-}
 export interface SoftKeyboardInfo {
   visible: boolean;
   height: number;
@@ -17,32 +12,22 @@ export interface SoftKeyboardInfo {
   y: number;
   width: number;
 }
+
+// `ok` means the provider accepted/completed the API call, not that OS policy visibly changed.
 export interface SoftKeyboardBackend {
   getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo;
-  subscribe(listener: (phase: SoftKeyboardPhase, transition: Readonly<SoftKeyboardTransition>) => void): () => void;
-  show(): void;
-  hide(): void;
-  getResizeMode?(): SoftKeyboardResizeMode;
-  setResizeMode?(mode: SoftKeyboardResizeMode): void;
-  getAccessoryBarVisible?(): boolean;
-  setAccessoryBarVisible?(visible: boolean): void;
-  getScrollAssistEnabled?(): boolean;
-  setScrollAssistEnabled?(enabled: boolean): void;
-  setStyle?(style: SoftKeyboardStyleKind): void;
+  subscribe(listener: () => void): Promise<(() => void) | null>;
+  show(): Promise<boolean>;
+  hide(): Promise<boolean>;
+  setResizeMode?(mode: SoftKeyboardResizeMode): Promise<boolean>;
+  setAccessoryBarVisible?(visible: boolean): Promise<boolean>;
+  setScrollAssistEnabled?(enabled: boolean): Promise<boolean>;
+  setStyle?(style: SoftKeyboardStyleKind): Promise<boolean>;
 }
 export interface SoftKeyboard {
   onShow: Signal<(height: number) => void>;
   onHide: Signal<() => void>;
   onResize: Signal<(height: number) => void>;
-  onWillShow: Signal<(transition: Readonly<SoftKeyboardTransition>) => void>;
-  onWillHide: Signal<(transition: Readonly<SoftKeyboardTransition>) => void>;
-  onWillResize: Signal<(transition: Readonly<SoftKeyboardTransition>) => void>;
-  onDidShow: Signal<(height: number) => void>;
-  onDidHide: Signal<() => void>;
-  onDidResize: Signal<(height: number) => void>;
 }
 
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
-// roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot.
 export type SoftKeyboardOperation = keyof SoftKeyboardBackend;
