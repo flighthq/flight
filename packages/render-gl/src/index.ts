@@ -49,6 +49,7 @@ export {
   resolveGlRenderTargetAxes,
   resolveGlTexture,
   setGlRenderTransform2D,
+  standardGlTextureResolvers,
   uploadGlCompressedTextureContainer,
   withGlRenderTextures,
 } from './contract';
