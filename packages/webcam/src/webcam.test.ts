@@ -205,3 +205,18 @@ describe('takeWebcamPhoto', () => {
     expect(backend.lastOptions).toEqual({ allowEditing: true, source: 'camera' });
   });
 });
+
+describe('webcam public API boundary', () => {
+  it('web backend has exactly capture and captureVideo methods', () => {
+    const backend = createWebWebcamBackend();
+    const methods = Object.keys(backend).sort();
+    expect(methods).toEqual(['capture', 'captureVideo']);
+  });
+
+  it('sentinel backend has no requestPermission method', () => {
+    resetWebcamBackendForTest();
+    setWebcamBackend(null);
+    const sentinel = getWebcamBackend();
+    expect('requestPermission' in sentinel).toBe(false);
+  });
+});
