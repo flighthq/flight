@@ -1,53 +1,45 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  BackendExplanation,
+  HasUiStatusBarChange,
+  HasUiStatusBarColor,
+  HasUiStatusBarInfo,
+  HasUiStatusBarOverlays,
+  HasUiStatusBarStyle,
+  HasUiStatusBarStyleStack,
+  HasUiStatusBarVisibility,
   StatusBar,
   StatusBarAnimation,
-  StatusBarBackend,
+  StatusBarColorBackend,
   StatusBarInfo,
+  StatusBarOverlaysBackend,
   StatusBarStyle,
+  StatusBarStyleBackend,
   StatusBarStyleEntry,
   StatusBarStyleEntryHandle,
+  StatusBarVisibilityBackend,
 } from '@flighthq/types/contract';
 
-// Begins delivering OS-driven status bar changes to `bar`'s signals by subscribing to the active
-// backend. Idempotent: a prior subscription is torn down first. Pair with detachStatusBar /
-// disposeStatusBar.
-//
-// Each event carries a freshly allocated StatusBarInfo the listener owns outright. This is the one
-// place in the package that deliberately allocates per event rather than filling a shared scratch:
-// an emitted payload is retained by whoever listens, and a shared scratch would let the next event —
-// or an unrelated getStatusBarHeight() call — rewrite a snapshot a listener had already stored, and
-// would hand every attached bar the same object. Status bar changes are rare OS events, so the
-// allocation is not on any hot path; a caller that wants zero-allocation reads uses getStatusBarInfo
-// with its own `out`.
-export function attachStatusBar(bar: StatusBar): void {
+export function attachStatusBar(host: HasUiStatusBarChange & HasUiStatusBarInfo, bar: StatusBar): void {
   detachStatusBar(bar);
-  const backend = getStatusBarBackend();
-  const unsubscribe = backend.subscribe(() => {
-    emitSignal(bar.onChange, backend.getInfo(createStatusBarInfo()));
+  const changeProvider = host.ui.statusBarChange;
+  const infoProvider = host.ui.statusBarInfo;
+  const unsubscribe = changeProvider.subscribe(() => {
+    emitSignal(bar.onChange, infoProvider.getInfo(createStatusBarInfo()));
   });
   _subscriptions.set(bar, unsubscribe);
 }
 
-// Empties the style stack and restores the status bar to the state it held before the first entry
-// was pushed. The counterpart to pushStatusBarStyleEntry for whole-screen teardown, where popping
-// each handle individually would mean tracking them all. A no-op on an empty stack.
-export function clearStatusBarStyleStack(): void {
-  if (_styleStack.length === 0) return;
-  _styleStack.length = 0;
-  _applyTopStyleEntry();
+export function clearStatusBarStyleStack(host: HasUiStatusBarStyleStack): void {
+  const state = _styleStacks.get(host);
+  if (state === undefined || state.entries.length === 0) return;
+  state.entries.length = 0;
+  applyTopStyleEntry(host, state);
 }
 
-// Allocates a StatusBar event entity with inert signals; call attachStatusBar to start delivery.
 export function createStatusBar(): StatusBar {
-  return {
-    onChange: createSignal(),
-  };
+  return { onChange: createSignal() };
 }
 
-// Allocates a zeroed StatusBarInfo, suitable as the `out` for getStatusBarInfo.
-// height defaults to -1 (unknown), color to 0 (transparent black), style to 'default'.
 export function createStatusBarInfo(): StatusBarInfo {
   return {
     color: 0,
@@ -58,239 +50,136 @@ export function createStatusBarInfo(): StatusBarInfo {
   };
 }
 
-// Stops delivery to `bar` and forgets its subscription. Safe to call when not attached.
 export function detachStatusBar(bar: StatusBar): void {
   const unsubscribe = _subscriptions.get(bar);
-  if (unsubscribe !== undefined) {
-    unsubscribe();
-    _subscriptions.delete(bar);
-  }
+  if (unsubscribe === undefined) return;
+  unsubscribe();
+  _subscriptions.delete(bar);
 }
 
-// Releases `bar` for garbage collection by detaching its backend subscription. The signals remain
-// plain GC-managed memory afterward.
 export function disposeStatusBar(bar: StatusBar): void {
   detachStatusBar(bar);
 }
 
-export function explainStatusBarBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+export function getStatusBarHeight(host: HasUiStatusBarInfo): number {
+  return host.ui.statusBarInfo.getInfo(_scratchInfo).height;
 }
 
-// The active status bar backend. Precedence: custom > host > sentinel.
-export function getStatusBarBackend(): StatusBarBackend {
-  return _custom ?? _host ?? _sentinel;
+export function getStatusBarInfo(host: HasUiStatusBarInfo, out: StatusBarInfo): StatusBarInfo {
+  return host.ui.statusBarInfo.getInfo(out);
 }
 
-// Returns the status bar height in CSS pixels, or -1 when the host does not report it (web,
-// desktops). Convenience over getStatusBarInfo.
-// NOTE: On notched/island devices, the safe-area top inset (owned by @flighthq/device) may differ
-// from the status bar height. Use device.getSafeAreaInsets().top for layout-safe top padding;
-// use getStatusBarHeight() when you specifically need the status bar element's intrinsic height.
-export function getStatusBarHeight(): number {
-  return getStatusBarBackend().getInfo(_scratchInfo).height;
-}
-
-// Fills `out` with the current status bar state snapshot and returns it. Alias-safe: `out` may
-// be the same object as any internal scratch.
-export function getStatusBarInfo(out: StatusBarInfo): StatusBarInfo {
-  return getStatusBarBackend().getInfo(out);
-}
-
-// True when `handle` names an entry still on the style stack. False for a popped handle, an unknown
-// one, or the invalid handle — so a component can check before popping without tracking its own
-// mounted flag.
-export function hasStatusBarStyleEntry(handle: StatusBarStyleEntryHandle): boolean {
+export function hasStatusBarStyleEntry(host: HasUiStatusBarStyleStack, handle: StatusBarStyleEntryHandle): boolean {
   if (handle === INVALID_HANDLE) return false;
-  return _styleStack.some((e) => e.handle === handle);
+  return _styleStacks.get(host)?.entries.some((entry) => entry.handle === handle) ?? false;
 }
 
-export function installStatusBarHostBackend(backend: StatusBarBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  _host = backend;
-}
-
-export function observeStatusBarHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
-}
-
-// Converts a packed RGBA integer (0xRRGGBBAA) to a #rrggbb hex string, dropping alpha.
 export function packedRgbaToHexColor(color: number): string {
   const rgb = (color >>> 8) & 0xffffff;
   return '#' + rgb.toString(16).padStart(6, '0');
 }
 
-// Removes the style stack entry identified by `handle`. If the handle is unknown or invalid,
-// this is a no-op. The remaining stack — falling back to the baseline captured before the first
-// push — is re-applied after removal, so a field the popped entry was the last to set returns to
-// what it was rather than staying where that entry left it.
-export function popStatusBarStyleEntry(handle: StatusBarStyleEntryHandle): void {
+export function popStatusBarStyleEntry(host: HasUiStatusBarStyleStack, handle: StatusBarStyleEntryHandle): void {
   if (handle === INVALID_HANDLE) return;
-  const idx = _styleStack.findIndex((e) => e.handle === handle);
-  if (idx === -1) return;
-  _styleStack.splice(idx, 1);
-  _applyTopStyleEntry();
+  const state = _styleStacks.get(host);
+  if (state === undefined) return;
+  const index = state.entries.findIndex((entry) => entry.handle === handle);
+  if (index === -1) return;
+  state.entries.splice(index, 1);
+  applyTopStyleEntry(host, state);
 }
 
-// Pushes a style stack entry, returns an opaque handle for later pop. Nested components can push
-// entries and restore the previous state on unmount without global last-write-wins clashes.
-// Unset fields fall through to the next entry down the stack (last pushed wins per field), and
-// through an empty stack to the baseline.
-//
-// The baseline is read from the backend when the stack goes from empty to non-empty — the last
-// moment it still describes the pre-stack status bar. Capturing it at module load would be wrong
-// (no backend is installed yet) and re-reading it per push would capture the stack's own effect.
-export function pushStatusBarStyleEntry(entry: Readonly<StatusBarStyleEntry>): StatusBarStyleEntryHandle {
-  if (_styleStack.length === 0) {
-    _baseline = getStatusBarBackend().getInfo(createStatusBarInfo());
-    // `_applied` starts as a copy of the baseline, not null, so the first push only calls setters for
-    // fields it actually changes rather than restating the baseline back to the backend.
-    _applied = getStatusBarBackend().getInfo(createStatusBarInfo());
+export function pushStatusBarStyleEntry(
+  host: HasUiStatusBarStyleStack,
+  entry: Readonly<StatusBarStyleEntry>,
+): StatusBarStyleEntryHandle {
+  let state = _styleStacks.get(host);
+  if (state === undefined) {
+    const infoProvider = host.ui.statusBarInfo;
+    const baseline = infoProvider.getInfo(createStatusBarInfo());
+    state = {
+      applied: { ...baseline },
+      baseline,
+      colorProvider: host.ui.statusBarColor,
+      entries: [],
+      overlaysProvider: host.ui.statusBarOverlays,
+      styleProvider: host.ui.statusBarStyle,
+      visibilityProvider: host.ui.statusBarVisibility,
+    };
+    _styleStacks.set(host, state);
   }
   const handle = _nextHandle++;
-  _styleStack.push({ handle, entry });
-  _applyTopStyleEntry();
+  state.entries.push({ entry, handle });
+  applyTopStyleEntry(host, state);
   return handle;
 }
 
-export function resetStatusBarBackendForTest(): void {
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
+export function setStatusBarColor(host: HasUiStatusBarColor, color: number, animated?: boolean): void {
+  host.ui.statusBarColor.setBackgroundColor(color, animated);
 }
 
-// Installs a custom status bar backend; pass null to clear the custom override.
-export function setStatusBarBackend(backend: StatusBarBackend | null): void {
-  _custom = backend;
+export function setStatusBarOverlaysContent(host: HasUiStatusBarOverlays, overlay: boolean): void {
+  host.ui.statusBarOverlays.setOverlaysContent(overlay);
 }
 
-// Sets the status bar background color from a packed RGBA integer (0xRRGGBBAA). On web this
-// updates the theme-color hint; alpha is ignored. Set animated to true for a smooth transition
-// (native hosts only; no-op on web).
-export function setStatusBarColor(color: number, animated?: boolean): void {
-  getStatusBarBackend().setBackgroundColor(color, animated);
+export function setStatusBarStyle(host: HasUiStatusBarStyle, style: StatusBarStyle): void {
+  host.ui.statusBarStyle.setStyle(style);
 }
 
-// Controls whether content draws under the status bar. No-op on web.
-export function setStatusBarOverlaysContent(overlay: boolean): void {
-  getStatusBarBackend().setOverlaysContent(overlay);
+export function setStatusBarVisible(
+  host: HasUiStatusBarVisibility,
+  visible: boolean,
+  animation?: StatusBarAnimation,
+): void {
+  host.ui.statusBarVisibility.setVisible(visible, animation);
 }
 
-// Sets the status bar foreground style ('light' | 'dark' | 'default'). No-op on web.
-export function setStatusBarStyle(style: StatusBarStyle): void {
-  getStatusBarBackend().setStyle(style);
+interface StyleStackState {
+  applied: StatusBarInfo;
+  baseline: StatusBarInfo;
+  colorProvider: StatusBarColorBackend;
+  entries: Array<{ entry: Readonly<StatusBarStyleEntry>; handle: StatusBarStyleEntryHandle }>;
+  overlaysProvider: StatusBarOverlaysBackend;
+  styleProvider: StatusBarStyleBackend;
+  visibilityProvider: StatusBarVisibilityBackend;
 }
-
-// Shows or hides the status bar. animation controls the transition; defaults to 'none'. No-op on web.
-export function setStatusBarVisible(visible: boolean, animation?: StatusBarAnimation): void {
-  getStatusBarBackend().setVisible(visible, animation);
-}
-
-const _sentinel: StatusBarBackend = {
-  getInfo(out: StatusBarInfo): StatusBarInfo {
-    out.color = 0;
-    out.height = -1;
-    out.overlaysContent = false;
-    out.style = 'default';
-    out.visible = true;
-    return out;
-  },
-  setBackgroundColor(): void {},
-  setOverlaysContent(): void {},
-  setStyle(): void {},
-  setVisible(): void {},
-  subscribe(): () => void {
-    return () => {};
-  },
-};
-let _custom: StatusBarBackend | null = null;
-let _host: StatusBarBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
-let _nextHandle: StatusBarStyleEntryHandle = 1;
-const _scratchInfo: StatusBarInfo = createStatusBarInfo();
-const _styleStack: { handle: StatusBarStyleEntryHandle; entry: Readonly<StatusBarStyleEntry> }[] = [];
-const _subscriptions = new WeakMap<StatusBar, () => void>();
-
-// The status bar as it stood before the stack's first entry, and the state the stack has actually
-// pushed to the backend. Together they make pop a restore rather than a no-op: `_baseline` supplies
-// the value a released field returns to, and `_applied` keeps the backend from being told things it
-// already knows. Both are cleared when the stack empties, so the next push re-reads a baseline that
-// is once again the pre-stack truth.
-let _baseline: StatusBarInfo | null = null;
-let _applied: StatusBarInfo | null = null;
 
 const INVALID_HANDLE: StatusBarStyleEntryHandle = -1;
+let _nextHandle: StatusBarStyleEntryHandle = 1;
+const _scratchInfo: StatusBarInfo = createStatusBarInfo();
+const _styleStacks = new WeakMap<HasUiStatusBarStyleStack, StyleStackState>();
+const _subscriptions = new WeakMap<StatusBar, () => void>();
 
-// Merges the style stack top-down (last pushed = highest priority per field), falls unset fields
-// through to the captured baseline, and pushes to the backend only what actually changed.
-//
-// The baseline fallback is what makes a pop restore: merging the stack alone leaves a released field
-// undefined, and an undefined field used to mean "call no setter", which left the OS holding the
-// value of an entry that is no longer on the stack. Diffing against `_applied` keeps that fix from
-// costing a burst of redundant setter calls on every push and pop.
-function _applyTopStyleEntry(): void {
-  const backend = getStatusBarBackend();
-  let style: StatusBarStyle | undefined;
-  let visible: boolean | undefined;
+function applyTopStyleEntry(host: HasUiStatusBarStyleStack, state: StyleStackState): void {
+  let animation: StatusBarAnimation | undefined;
   let color: number | undefined;
   let overlaysContent: boolean | undefined;
-  let animation: StatusBarAnimation | undefined;
-  // Stack is in push order; iterate from last pushed (top) to earliest (bottom).
-  for (let i = _styleStack.length - 1; i >= 0; i--) {
-    const e = _styleStack[i].entry;
-    if (style === undefined && e.style !== undefined) style = e.style;
-    if (visible === undefined && e.visible !== undefined) visible = e.visible;
-    if (color === undefined && e.color !== undefined) color = e.color;
-    if (overlaysContent === undefined && e.overlaysContent !== undefined) overlaysContent = e.overlaysContent;
-    if (animation === undefined && e.animation !== undefined) animation = e.animation;
+  let style: StatusBarStyle | undefined;
+  let visible: boolean | undefined;
+  for (let index = state.entries.length - 1; index >= 0; index--) {
+    const entry = state.entries[index].entry;
+    if (animation === undefined && entry.animation !== undefined) animation = entry.animation;
+    if (color === undefined && entry.color !== undefined) color = entry.color;
+    if (overlaysContent === undefined && entry.overlaysContent !== undefined) {
+      overlaysContent = entry.overlaysContent;
+    }
+    if (style === undefined && entry.style !== undefined) style = entry.style;
+    if (visible === undefined && entry.visible !== undefined) visible = entry.visible;
   }
 
-  const baseline = _baseline;
-  if (baseline !== null) {
-    if (style === undefined) style = baseline.style;
-    if (visible === undefined) visible = baseline.visible;
-    if (color === undefined) color = baseline.color;
-    if (overlaysContent === undefined) overlaysContent = baseline.overlaysContent;
-  }
+  color ??= state.baseline.color;
+  overlaysContent ??= state.baseline.overlaysContent;
+  style ??= state.baseline.style;
+  visible ??= state.baseline.visible;
 
-  const applied = _applied;
-  if (style !== undefined && style !== applied?.style) backend.setStyle(style);
-  if (visible !== undefined && visible !== applied?.visible) backend.setVisible(visible, animation ?? 'none');
-  if (color !== undefined && color !== applied?.color) backend.setBackgroundColor(color, false);
-  if (overlaysContent !== undefined && overlaysContent !== applied?.overlaysContent) {
-    backend.setOverlaysContent(overlaysContent);
-  }
+  if (color !== state.applied.color) state.colorProvider.setBackgroundColor(color, false);
+  if (overlaysContent !== state.applied.overlaysContent) state.overlaysProvider.setOverlaysContent(overlaysContent);
+  if (style !== state.applied.style) state.styleProvider.setStyle(style);
+  if (visible !== state.applied.visible) state.visibilityProvider.setVisible(visible, animation ?? 'none');
 
-  if (_styleStack.length === 0) {
-    // The stack is spent: the backend is back at the baseline, so forget both and let the next push
-    // capture a fresh one.
-    _baseline = null;
-    _applied = null;
-    return;
-  }
-  const next = _applied ?? createStatusBarInfo();
-  if (style !== undefined) next.style = style;
-  if (visible !== undefined) next.visible = visible;
-  if (color !== undefined) next.color = color;
-  if (overlaysContent !== undefined) next.overlaysContent = overlaysContent;
-  _applied = next;
+  state.applied.color = color;
+  state.applied.overlaysContent = overlaysContent;
+  state.applied.style = style;
+  state.applied.visible = visible;
+  if (state.entries.length === 0) _styleStacks.delete(host);
 }

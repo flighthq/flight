@@ -3,18 +3,29 @@ import type {
   CapacitorApi,
   CapacitorStatusBarInfoResult,
   Entity,
-  StatusBarBackend,
+  StatusBarColorBackend,
   StatusBarInfo,
+  StatusBarInfoBackend,
+  StatusBarOverlaysBackend,
   StatusBarStyle,
+  StatusBarStyleBackend,
+  StatusBarVisibilityBackend,
 } from '@flighthq/types/contract';
 
-// Maps Flight's StatusBarBackend onto Capacitor's `@capacitor/status-bar`. The setters are async and fire
+// Maps Flight's narrow status-bar capabilities onto Capacitor's `@capacitor/status-bar`. Setters are async and fire
 // fire-and-forget: setStyle, setBackgroundColor (a packed RGBA int → a `#RRGGBB` hex string, dropping
 // alpha the plugin ignores), setVisible (→ show/hide), and setOverlaysContent (→ setOverlaysWebView).
 // getInfo is a synchronous snapshot while Capacitor's getInfo is async, so it is served from a value
 // prefetched once at construction (default until it resolves). Capacitor emits no status-bar change
-// event, so subscribe is inert.
-export function createCapacitorStatusBarBackend(capacitor: CapacitorApi): StatusBarBackend & Entity {
+// event, so this provider deliberately has no change-subscription member.
+export function createCapacitorStatusBarBackend(
+  capacitor: CapacitorApi,
+): Entity &
+  StatusBarColorBackend &
+  StatusBarInfoBackend &
+  StatusBarOverlaysBackend &
+  StatusBarStyleBackend &
+  StatusBarVisibilityBackend {
   const statusBar = capacitor.statusBar;
   // Sync getInfo over async Capacitor: prefetch the snapshot once and cache it.
   let cachedInfo: CapacitorStatusBarInfoResult | null = null;
@@ -50,11 +61,7 @@ export function createCapacitorStatusBarBackend(capacitor: CapacitorApi): Status
       if (visible) statusBar.show().catch(() => {});
       else statusBar.hide().catch(() => {});
     },
-    subscribe() {
-      // Capacitor emits no status-bar change event; inert unsubscribe.
-      return () => {};
-    },
-  } satisfies StatusBarBackend);
+  });
 }
 
 // Flight status-bar style ('light' | 'dark' | 'default') → Capacitor Style ('Light' | 'Dark' | 'Default').

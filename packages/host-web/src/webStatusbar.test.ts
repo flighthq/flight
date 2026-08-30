@@ -1,22 +1,18 @@
-import { enableHostWebStatusBar, resetHostWebStatusBarForTest } from './webStatusbar';
+import { describe, expect, it } from 'vitest';
 
-describe('enableHostWebStatusBar', () => {
-  afterEach(() => resetHostWebStatusBarForTest());
+import { webStatusBarColorBackend } from './webStatusbar';
 
-  it('does not throw on first call', () => {
-    expect(() => enableHostWebStatusBar()).not.toThrow();
+describe('webStatusBarColorBackend', () => {
+  it('claims only theme-color writing', () => {
+    expect(Object.keys(webStatusBarColorBackend)).toEqual(['setBackgroundColor']);
   });
 
-  it('is idempotent', () => {
-    enableHostWebStatusBar();
-    expect(() => enableHostWebStatusBar()).not.toThrow();
-  });
-});
-
-describe('resetHostWebStatusBarForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebStatusBar();
-    resetHostWebStatusBarForTest();
-    expect(() => enableHostWebStatusBar()).not.toThrow();
+  it('creates and updates one theme-color meta element', () => {
+    document.head.querySelectorAll('meta[name="theme-color"]').forEach((element) => element.remove());
+    webStatusBarColorBackend.setBackgroundColor(0x112233ff);
+    webStatusBarColorBackend.setBackgroundColor(0xaabbccff);
+    const elements = document.head.querySelectorAll('meta[name="theme-color"]');
+    expect(elements).toHaveLength(1);
+    expect(elements[0].getAttribute('content')).toBe('#aabbcc');
   });
 });

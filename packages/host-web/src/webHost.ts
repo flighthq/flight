@@ -14,6 +14,7 @@ import {
   webMessageDialogBackend,
   webPromptDialogBackend,
 } from './webDialog';
+import { webFileSystemBackend } from './webFilesystem';
 import { webHapticsBackend } from './webHaptics';
 import {
   webInputDropFileBackend,
@@ -39,6 +40,7 @@ import { webScreenCapabilities } from './webScreen';
 import { webSensorsBackend } from './webSensors';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webShellExternalBackend } from './webShell';
+import { webStatusBarColorBackend } from './webStatusbar';
 import { webStorageBackend } from './webStorage';
 import { createWebWindowStoragePersistenceCapabilities } from './webStoragePersistence';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
@@ -123,6 +125,7 @@ export const webHost = createEntity({
   shortcut: {},
   storage: {
     change: webStorageBackend,
+    fileSystem: webFileSystemBackend,
     local: webStorageBackend,
     persistenceQuery: webStoragePersistenceCapabilities.persistenceQuery,
     persistenceRequest: webStoragePersistenceCapabilities.persistenceRequest,
@@ -135,7 +138,7 @@ export const webHost = createEntity({
   },
   text: {},
   tray: {},
-  ui: { fullscreen: webFullscreenBackend },
+  ui: { fullscreen: webFullscreenBackend, statusBarColor: webStatusBarColorBackend },
   updater: {},
   window: webWindowBackend,
 } as const satisfies Omit<Host, typeof EntityRuntimeKey>);
