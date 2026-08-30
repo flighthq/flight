@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  Entity,
   SpatialAabb3D,
   SpatialDeclineReason,
   SpatialIndexBackend3D,
@@ -27,7 +29,7 @@ import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
 // its job rather than a mis-set constant — the walk it prevents grows as extent divided by cellSize
 // CUBED, so the runaway it exists to stop arrives sooner and steeper. A workload whose objects
 // overflow is telling the caller its cell size is wrong, which the indexing guard reports.
-export function createUniformGridSpatialBackend3D(cellSize: number): SpatialIndexBackend3D {
+export function createUniformGridSpatialBackend3D(cellSize: number): SpatialIndexBackend3D & Entity {
   const grid: UniformGrid3D = {
     cellSize,
     cells: new Map(),
@@ -43,7 +45,7 @@ export function createUniformGridSpatialBackend3D(cellSize: number): SpatialInde
     seen: new Set(),
     pairIds: [],
   };
-  return {
+  return createEntity({
     insertSpatialObject(id, bounds) {
       return _insertIntoGrid3D(grid, id, bounds, 'insert');
     },
@@ -78,7 +80,7 @@ export function createUniformGridSpatialBackend3D(cellSize: number): SpatialInde
     querySpatialRay(x, y, z, dx, dy, dz, out) {
       _queryGrid3DRay(grid, x, y, z, dx, dy, dz, out);
     },
-  };
+  } satisfies SpatialIndexBackend3D);
 }
 
 // One occupied cell: its integer cell coordinates and the ids whose bounds cover it. The coordinates

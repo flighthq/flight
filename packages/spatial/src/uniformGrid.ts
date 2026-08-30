@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  Entity,
   SpatialAabb2D,
   SpatialIndexBackend2D,
   SpatialDeclineReason,
@@ -42,7 +44,7 @@ export const MAX_INDEXED_CELLS_PER_OBJECT = 1024;
 // Object size does not set the cost: an AABB spanning more than MAX_INDEXED_CELLS_PER_OBJECT cells
 // goes to a flat overflow list that every query scans, and non-finite or inverted bounds are declined
 // outright with a false sentinel. Both are visible through explainSpatialIndexing2D.
-export function createUniformGridSpatialBackend2D(cellSize: number): SpatialIndexBackend2D {
+export function createUniformGridSpatialBackend2D(cellSize: number): SpatialIndexBackend2D & Entity {
   const grid: UniformGrid = {
     cellSize,
     cells: new Map(),
@@ -56,7 +58,7 @@ export function createUniformGridSpatialBackend2D(cellSize: number): SpatialInde
     seen: new Set(),
     pairIds: [],
   };
-  return {
+  return createEntity({
     insertSpatialObject(id, bounds) {
       return _insertIntoGrid(grid, id, bounds, 'insert');
     },
@@ -91,7 +93,7 @@ export function createUniformGridSpatialBackend2D(cellSize: number): SpatialInde
     querySpatialRay(x, y, dx, dy, out) {
       _queryGridRay(grid, x, y, dx, dy, out);
     },
-  };
+  } satisfies SpatialIndexBackend2D);
 }
 
 // One occupied cell: its integer cell coordinates and the ids whose bounds cover it. The coordinates

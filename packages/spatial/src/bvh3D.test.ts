@@ -1,4 +1,5 @@
 import type { SpatialAabb3D, SpatialIndexBackend3D, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBvhSpatialBackend3D } from './bvh3D';
@@ -35,6 +36,10 @@ function sortedPairs(pairs: readonly SpatialPair[]): string[] {
 }
 
 describe('createBvhSpatialBackend3D', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createBvhSpatialBackend3D()).toBe(true);
+  });
+
   it('retains pair objects across a steady-topology query', () => {
     const bvh = createBvhSpatialBackend3D(1);
     bvh.insertSpatialObject(1, box(0, 0, 0, 2));

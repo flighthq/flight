@@ -1,4 +1,5 @@
 import type { SpatialAabb3D, SpatialIndexingNotice, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setSpatialIndexingGuard } from './spatialIndexingGuard';
@@ -14,6 +15,10 @@ function box(minX: number, minY: number, minZ: number, size: number): SpatialAab
 }
 
 describe('createUniformGridSpatialBackend3D', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createUniformGridSpatialBackend3D(10)).toBe(true);
+  });
+
   it('clears every object while staying reusable', () => {
     const grid = createUniformGridSpatialBackend3D(10);
     grid.insertSpatialObject(1, box(0, 0, 0, 5));
