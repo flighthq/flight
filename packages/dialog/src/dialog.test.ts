@@ -160,7 +160,7 @@ describe('showConfirmDialog', () => {
 
 describe('showErrorBox', () => {
   it('dispatches an error acknowledgement', async () => {
-    await expect(showErrorBox(fakeHost(), 'Error', 'failed')).resolves.toBeUndefined();
+    await expect(showErrorBox(fakeHost(), 'Error', 'failed')).resolves.toMatchObject({ buttonIndex: 2 });
   });
 });
 
