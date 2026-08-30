@@ -6,7 +6,6 @@ import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
 import { getIpcBackend } from '@flighthq/ipc/contract';
 import { getSoftKeyboardBackend } from '@flighthq/keyboard/contract';
 import { getPlatformBackend } from '@flighthq/platform/contract';
-import { getPowerBackend } from '@flighthq/power/contract';
 import { getProtocolBackend } from '@flighthq/protocol/contract';
 import { getShellBackend } from '@flighthq/shell/contract';
 import { getShortcutBackend } from '@flighthq/shortcut/contract';
@@ -31,6 +30,7 @@ export function captureHostProbeBackends(
       | 'input'
       | 'menu'
       | 'notification'
+      | 'power'
       | 'screen'
       | 'share'
       | 'storage'
@@ -55,7 +55,7 @@ export function captureHostProbeBackends(
     menu: host.menu ?? null,
     notification: host.notification ?? null,
     platform: getPlatformBackend(),
-    power: getPowerBackend(),
+    power: host.power ?? null,
     protocol: getProtocolBackend(),
     screen: host.screen?.query ?? null,
     share: host.share?.content ?? host.share?.files ?? null,

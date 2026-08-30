@@ -1,3 +1,5 @@
+import type { Entity } from './Entity';
+import type { HostPowerCapabilities } from './Host';
 import type { PowerBatteryHealth } from './PowerBatteryHealth';
 import type { Signal } from './Signal';
 
@@ -30,48 +32,121 @@ export interface PowerStatus {
 // Event seam for power: a snapshot reader, a change subscription, and a keep-awake toggle. The web
 // backend wraps the Battery Status API and the Screen Wake Lock API; a native host reports its own
 // battery changes through the same subscribe callback.
-export interface PowerBackend {
-  destroy?(): void;
-  // Writes the battery health detail into out and returns it, or returns null when the host does not
-  // report battery health (the web backend always returns null).
-  getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth | null;
-  getStatus(out: PowerStatus): PowerStatus;
-  // Returns the current idle state at the given inactivity threshold in seconds.
-  getSystemIdleState(thresholdSeconds: number): PowerIdleState;
-  // Returns the elapsed seconds since the last user input, or -1 when unsupported.
-  getSystemIdleTime(): number;
-  // Returns true when a keep-awake lock is currently held.
-  isKeepAwakeActive(): boolean;
-  // Requests or releases a keep-awake lock for the given mode (defaults to 'PreventDisplaySleep');
-  // returns whether the request was honored.
-  setKeepAwake(enabled: boolean, mode?: PowerKeepAwakeMode): boolean;
-  // Registers a listener invoked on any power change; returns an unsubscribe function.
-  subscribe(listener: () => void): () => void;
-  // Registers a listener invoked when the screen is locked; returns an unsubscribe.
-  subscribeLockScreen(listener: () => void): () => void;
-  // Registers a listener invoked when the OS low-power mode changes; returns an unsubscribe.
-  subscribeLowPowerModeChange(listener: () => void): () => void;
-  // Registers a listener invoked when the host resumes from suspend; returns an unsubscribe.
-  subscribeResume(listener: () => void): () => void;
-  // Registers a listener invoked when the host suspends (freeze/sleep); returns an unsubscribe.
-  subscribeSuspend(listener: () => void): () => void;
-  // Registers a listener invoked when the thermal state changes; returns an unsubscribe.
-  subscribeThermalStateChange(listener: () => void): () => void;
-  // Registers a listener invoked when the screen is unlocked; returns an unsubscribe.
-  subscribeUnlockScreen(listener: () => void): () => void;
+// Keep-awake outcomes. `ok` means the provider ACQUIRED or RELEASED its keep-awake mechanism — never
+// that the hardware can no longer sleep for other policy reasons, which no host can promise.
+//
+// Acquire distinguishes three failures a caller acts on differently: the mechanism is not offered here
+// at all ('unavailable'), the platform refused this request ('denied' — on web, a Wake Lock rejection
+// such as a hidden page or missing user gesture), and the request reached the platform and broke
+// ('failed'). Release separates an ordinary no-op from a real fault: 'inactive' means nothing was held,
+// which is a SUCCESS for an idempotent caller and is reported distinctly rather than as 'ok' so a
+// caller that believed it held a lock can tell that it did not.
+export type PowerKeepAwakeAcquireReason = 'ok' | 'unavailable' | 'denied' | 'failed';
+
+export type PowerKeepAwakeReleaseReason = 'ok' | 'inactive' | 'failed';
+
+export interface PowerKeepAwakeAcquireResult {
+  readonly reason: PowerKeepAwakeAcquireReason;
 }
 
-// Power event entity. Opt-in signals, allocated by enablePowerSignals; null until enabled. Enable
-// delivery with attachPower, which stays inert for any signal left null.
-export interface Power {
+export interface PowerKeepAwakeReleaseResult {
+  readonly reason: PowerKeepAwakeReleaseReason;
+}
+
+// Power is split by what provider coverage actually varies by, not by a hand-picked noun. Every slot is
+// optional and a host omits what it cannot do: an absent slot is the honest report, where a stub that
+// answers `false` or returns an inert unsubscribe is indistinguishable from a real implementation.
+//
+// `destroy` on a slot is PROVIDER lifecycle — releasing what the provider holds. It is separate from
+// disposing a consumer's Power entity, which only tears down that consumer's own listeners.
+
+// Reads the current power status into `out`. Query only; the matching notification is `change`.
+export interface PowerStatusBackend {
+  destroy?(): void;
+  getStatus(out: PowerStatus): PowerStatus;
+}
+
+// Raw "something about power changed" notification. Carries no payload by design — the caller re-reads
+// through the status slot, because no host emits a complete status with its change event.
+export interface PowerChangeBackend {
+  destroy?(): void;
+  subscribe(listener: () => void): () => void;
+}
+
+// Stateful keep-awake. Both operations are async because the only real web mechanism (Wake Lock) is
+// async, and a synchronous answer could only be a guess about a request that had not resolved.
+// A synchronous native blocker lifts into the same shape by resolving immediately.
+export interface PowerKeepAwakeBackend {
+  acquire(mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult>;
+  destroy?(): void;
+  isActive(): boolean;
+  release(): Promise<PowerKeepAwakeReleaseResult>;
+}
+
+// System idle queries. Offered only by a host that can really observe idleness; a host that would
+// answer a constant 'Unknown'/-1 omits the slot instead, so nothing polls a value that cannot change.
+export interface PowerIdleBackend {
+  destroy?(): void;
+  getIdleState(thresholdSeconds: number): PowerIdleState;
+  getIdleTimeSeconds(): number;
+}
+
+// Session lock as ONE bracket: lock and unlock are the two edges of a single OS session-state boolean,
+// from one mechanism, and every host offers both or neither. A provider that emitted only one edge would
+// leave a consumer permanently wrong about the state the signal exists to track.
+export interface PowerSessionLockBackend {
+  destroy?(): void;
+  subscribeLock(listener: () => void): () => void;
+  subscribeUnlock(listener: () => void): () => void;
+}
+
+// Suspend/resume as ONE bracket, for the same reason: they are the two edges of one transition. Web
+// realizes them with the Page Lifecycle 'freeze'/'resume' events; a native host with its OS equivalents.
+export interface PowerSuspensionBackend {
+  destroy?(): void;
+  subscribeResume(listener: () => void): () => void;
+  subscribeSuspend(listener: () => void): () => void;
+}
+
+// Battery health detail, offered only where the host really reports it.
+export interface PowerBatteryHealthBackend {
+  destroy?(): void;
+  getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth;
+}
+
+// Thermal pressure. The subscription DELIVERS THE STATE rather than announcing that something opaque
+// changed: an event whose state the caller cannot then read is not an actionable capability. A host that
+// can signal a change but not report the level omits this slot.
+export interface PowerThermalBackend {
+  destroy?(): void;
+  getThermalState(): PowerThermalState;
+  subscribeThermalStateChange(listener: (state: PowerThermalState) => void): () => void;
+}
+
+// The host whose slots attachPower subscribes through. Every slot in the group is optional, so a caller
+// passes whichever it has: a host without `sessionLock` simply never delivers lock/unlock edges. A real
+// Host satisfies this directly.
+export interface PowerAttachHost {
+  readonly power: Partial<HostPowerCapabilities>;
+}
+
+// The consumer-held power event entity. Signals are null until enablePowerSignals allocates them, so an
+// unused group tree-shakes out. Entity-composed: this is a user-held identity-bearing object, unlike the
+// PowerStatus / PowerBatteryHealth value structs the queries fill.
+//
+// `onChange` receives a FRESH status per event. It is deliberately not a shared reusable buffer: a
+// listener that retains the payload must not have it mutate underneath on the next power event.
+//
+// onCharging / onDischarging / onIdleStateChange are CORE-derived — no backend emits them; core computes
+// them from status transitions and idle polling. They are therefore signals rather than host slots.
+export interface Power extends Entity {
   onChange: Signal<(status: Readonly<PowerStatus>) => void> | null;
   onCharging: Signal<() => void> | null;
   onDischarging: Signal<() => void> | null;
   onIdleStateChange: Signal<() => void> | null;
   onLockScreen: Signal<() => void> | null;
-  onLowPowerModeChange: Signal<() => void> | null;
   onResume: Signal<() => void> | null;
   onSuspend: Signal<() => void> | null;
-  onThermalStateChange: Signal<() => void> | null;
+  onThermalStateChange: Signal<(state: PowerThermalState) => void> | null;
   onUnlockScreen: Signal<() => void> | null;
 }

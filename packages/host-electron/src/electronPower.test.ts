@@ -1,7 +1,7 @@
 import type { PowerStatus, ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronPowerBackend } from './electronPower';
+import { createElectronPowerBackends } from './electronPower';
 
 function emptyStatus(): PowerStatus {
   return {
@@ -16,7 +16,7 @@ function emptyStatus(): PowerStatus {
   };
 }
 
-function fakeElectron(options: { onBatteryPower?: boolean; startId?: number }): {
+function fakeElectron(options: { onBatteryPower?: boolean; startId?: number; thermal?: string | null }): {
   electron: ElectronApi;
   monitorListeners: Map<string, Set<() => void>>;
   blocker: { started: number[]; stopped: number[] };
@@ -27,6 +27,10 @@ function fakeElectron(options: { onBatteryPower?: boolean; startId?: number }): 
   const electron = {
     powerMonitor: {
       onBatteryPower: options.onBatteryPower,
+      getSystemIdleState: () => 'active',
+      getSystemIdleTime: () => 11,
+      // `null` models an installed Electron whose powerMonitor has no thermal getter at all.
+      getCurrentThermalState: options.thermal === null ? undefined : () => options.thermal ?? 'nominal',
       on: (event: string, listener: () => void) => {
         if (!monitorListeners.has(event)) monitorListeners.set(event, new Set());
         monitorListeners.get(event)?.add(listener);
@@ -50,65 +54,77 @@ function fakeElectron(options: { onBatteryPower?: boolean; startId?: number }): 
   return { electron, monitorListeners, blocker };
 }
 
-describe('createElectronPowerBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronPowerBackend(fakeElectron({}).electron)).toBe(true);
+describe('createElectronPowerBackends', () => {
+  it('returns Entity-composed slots', () => {
+    const slots = createElectronPowerBackends(fakeElectron({}).electron);
+    expect(EntityRuntimeKey in slots.status).toBe(true);
+    expect(EntityRuntimeKey in slots.keepAwake).toBe(true);
   });
 
   it('getStatus reports no battery level and infers charging from AC power', () => {
-    const onAc = createElectronPowerBackend(fakeElectron({ onBatteryPower: false }).electron);
-    const status = onAc.getStatus(emptyStatus());
-    expect(status).toEqual({
-      batteryLevel: -1,
-      chargingTime: -1,
-      dischargingTime: -1,
-      isBatteryLow: false,
-      isCharging: true,
-      isLowPower: false,
-      isOnBattery: false,
-      thermalState: 'Unknown',
-    });
-    const onBattery = createElectronPowerBackend(fakeElectron({ onBatteryPower: true }).electron);
-    const batteryStatus = onBattery.getStatus(emptyStatus());
-    expect(batteryStatus.isCharging).toBe(false);
-    expect(batteryStatus.isOnBattery).toBe(true);
+    const onAc = createElectronPowerBackends(fakeElectron({ onBatteryPower: false }).electron);
+    const status = onAc.status.getStatus(emptyStatus());
+    expect(status.batteryLevel).toBe(-1);
+    expect(status.isCharging).toBe(true);
+    expect(status.isOnBattery).toBe(false);
   });
 
-  it('subscribe wires both AC and battery events and unsubscribes both', () => {
+  it('reads a real thermal state rather than a hardcoded Unknown', () => {
+    const slots = createElectronPowerBackends(fakeElectron({ thermal: 'serious' }).electron);
+    expect(slots.status.getStatus(emptyStatus()).thermalState).toBe('Serious');
+    expect(slots.thermal?.getThermalState()).toBe('Serious');
+  });
+
+  // ★ The event DELIVERS the state. A void "something changed" notification whose level the caller
+  // cannot then read is not an actionable capability.
+  it('delivers the thermal state as the subscription payload', () => {
+    const { electron, monitorListeners } = fakeElectron({ thermal: 'critical' });
+    const slots = createElectronPowerBackends(electron);
+    const seen: string[] = [];
+    const stop = slots.thermal!.subscribeThermalStateChange((state) => seen.push(state));
+    for (const l of monitorListeners.get('thermal-state-change') ?? []) l();
+    expect(seen).toEqual(['Critical']);
+    stop();
+    for (const l of monitorListeners.get('thermal-state-change') ?? []) l();
+    expect(seen).toEqual(['Critical']);
+  });
+
+  // ★ If the installed Electron cannot report the level, the slot is OMITTED and the gap is real.
+  it('omits the thermal slot entirely when the platform cannot report the level', () => {
+    const slots = createElectronPowerBackends(fakeElectron({ thermal: null }).electron);
+    expect(slots.thermal).toBeUndefined();
+  });
+
+  it('brackets session lock and unlock through the same mechanism', () => {
     const { electron, monitorListeners } = fakeElectron({});
-    const backend = createElectronPowerBackend(electron);
-    const unsubscribe = backend.subscribe(() => {});
-    expect(monitorListeners.get('on-battery')?.size).toBe(1);
-    expect(monitorListeners.get('on-ac')?.size).toBe(1);
-    unsubscribe();
-    expect(monitorListeners.get('on-battery')?.size).toBe(0);
-    expect(monitorListeners.get('on-ac')?.size).toBe(0);
+    const slots = createElectronPowerBackends(electron);
+    let locked = 0;
+    let unlocked = 0;
+    const stopLock = slots.sessionLock.subscribeLock(() => locked++);
+    const stopUnlock = slots.sessionLock.subscribeUnlock(() => unlocked++);
+    for (const l of monitorListeners.get('lock-screen') ?? []) l();
+    for (const l of monitorListeners.get('unlock-screen') ?? []) l();
+    expect([locked, unlocked]).toEqual([1, 1]);
+    stopLock();
+    stopUnlock();
+    expect(monitorListeners.get('lock-screen')?.size).toBe(0);
+    expect(monitorListeners.get('unlock-screen')?.size).toBe(0);
   });
 
-  it('subscribeSuspend and subscribeResume register and remove their listeners', () => {
-    const { electron, monitorListeners } = fakeElectron({});
-    const backend = createElectronPowerBackend(electron);
-    const unsubSuspend = backend.subscribeSuspend(() => {});
-    const unsubResume = backend.subscribeResume(() => {});
-    expect(monitorListeners.get('suspend')?.size).toBe(1);
-    expect(monitorListeners.get('resume')?.size).toBe(1);
-    unsubSuspend();
-    unsubResume();
-    expect(monitorListeners.get('suspend')?.size).toBe(0);
-    expect(monitorListeners.get('resume')?.size).toBe(0);
+  it('lifts the synchronous blocker into the common async result', async () => {
+    const { electron, blocker } = fakeElectron({ startId: 3 });
+    const slots = createElectronPowerBackends(electron);
+    await expect(slots.keepAwake.acquire('PreventDisplaySleep')).resolves.toEqual({ reason: 'ok' });
+    expect(slots.keepAwake.isActive()).toBe(true);
+    await expect(slots.keepAwake.release()).resolves.toEqual({ reason: 'ok' });
+    expect(blocker.stopped).toEqual([3]);
+    // Releasing nothing is an ordinary outcome, reported distinctly from ok.
+    await expect(slots.keepAwake.release()).resolves.toEqual({ reason: 'inactive' });
   });
 
-  it('setKeepAwake starts a single blocker and stops it when disabled', () => {
-    const { electron, blocker } = fakeElectron({ startId: 42 });
-    const backend = createElectronPowerBackend(electron);
-    expect(backend.setKeepAwake(true)).toBe(true);
-    expect(blocker.started).toEqual([42]);
-    // Already held — no second blocker, returns the requested state.
-    expect(backend.setKeepAwake(true)).toBe(true);
-    expect(blocker.started).toEqual([42]);
-    expect(backend.setKeepAwake(false)).toBe(true);
-    expect(blocker.stopped).toEqual([42]);
-    // Already released.
-    expect(backend.setKeepAwake(false)).toBe(false);
+  it('reports idle state and time from the platform', () => {
+    const slots = createElectronPowerBackends(fakeElectron({}).electron);
+    expect(slots.idle.getIdleState(60)).toBe('Active');
+    expect(slots.idle.getIdleTimeSeconds()).toBe(11);
   });
 });
