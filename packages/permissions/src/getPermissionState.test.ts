@@ -38,6 +38,44 @@ describe('getPermissionState', () => {
     await expect(getPermissionState(host, 'notifications')).resolves.toEqual({ reason: 'unsupported' });
   });
 
+  it.each([
+    [
+      { outcome: 'persistent', permissionState: 'denied' },
+      { reason: 'ok', state: 'granted' },
+    ],
+    [{ outcome: 'operation-failed', permissionState: 'granted' }, { reason: 'operation-failed' }],
+    [
+      { outcome: 'best-effort', permissionState: 'granted' },
+      { reason: 'best-effort', state: 'granted' },
+    ],
+    [
+      { outcome: 'best-effort', permissionState: 'denied' },
+      { reason: 'best-effort', state: 'denied' },
+    ],
+    [
+      { outcome: 'best-effort', permissionState: 'prompt' },
+      { reason: 'best-effort', state: 'prompt' },
+    ],
+    [
+      { outcome: 'best-effort', permissionState: null },
+      { reason: 'best-effort', state: null },
+    ],
+  ] as const)('projects the Storage owner snapshot %# without inferring field consistency', async (owner, expected) => {
+    const getPersistence = vi.fn(async () => owner);
+    const host = persistenceHost({ getPersistence });
+    forbidNativeStorageOwner();
+
+    await expect(getPermissionState(host, 'persistent-storage')).resolves.toEqual(expected);
+    expect(getPersistence).toHaveBeenCalledOnce();
+  });
+
+  it('reports an absent persistence-query owner structurally', async () => {
+    const host = persistenceHost(null);
+    forbidNativeStorageOwner();
+
+    await expect(getPermissionState(host, 'persistent-storage')).resolves.toEqual({ reason: 'unsupported' });
+  });
+
   it('requires an explicit Host at the caller boundary', () => {
     expect(ambientPermissionQueryMustNotCompile).toBeTypeOf('function');
   });
@@ -60,6 +98,28 @@ function forbidNativeNotificationOwner(): void {
       },
     ),
   );
+}
+
+function forbidNativeStorageOwner(): void {
+  vi.stubGlobal(
+    'navigator',
+    new Proxy(
+      {},
+      {
+        get() {
+          throw new Error('Permissions must delegate persistent-storage to Host.storage.persistenceQuery');
+        },
+      },
+    ),
+  );
+}
+
+function persistenceHost(persistenceQuery: object | null): Host {
+  return {
+    [EntityRuntimeKey]: undefined,
+    notification: {},
+    storage: persistenceQuery === null ? {} : { persistenceQuery },
+  } as unknown as Host;
 }
 
 function notificationHost(permission: object | null): Host {

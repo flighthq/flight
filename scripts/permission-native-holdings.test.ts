@@ -6,19 +6,18 @@ import { describe, expect, it } from 'vitest';
 import { PERMISSION_NATIVE_HOLDINGS } from '../packages/permissions/src/permissionNativeHoldings';
 
 const INITIAL_IDS = ['media', 'geolocation', 'persistence', 'midi', 'wake-lock', 'clipboard', 'push'] as const;
-const INITIAL_PERMISSION_NAMES = [
+const AFTER_PERSISTENCE_IDS = ['media', 'geolocation', 'midi', 'wake-lock', 'clipboard', 'push'] as const;
+const AFTER_PERSISTENCE_PERMISSION_NAMES = [
   'camera',
   'microphone',
   'geolocation',
-  'persistent-storage',
   'midi',
   'screen-wake-lock',
   'clipboard-read',
   'clipboard-write',
   'push',
 ] as const;
-const INITIAL_MODES = [
-  'query-and-request',
+const AFTER_PERSISTENCE_MODES = [
   'query-and-request',
   'query-and-request',
   'query-and-request',
@@ -33,16 +32,22 @@ const PERMISSION_NATIVE_HOLDING_HISTORY = [
     reason: 'ratified initial interim holdings; Notification is exclusively Host.notification.permission',
     remaining: INITIAL_IDS,
   },
+  {
+    reason: 'persistent bucket policy is exclusively Host.storage persistence query/request',
+    remaining: AFTER_PERSISTENCE_IDS,
+  },
 ] as const;
 
 describe('permission native holdings', () => {
-  it('starts with exactly the seven ratified holdings and names every future claiming domain', () => {
-    expect(PERMISSION_NATIVE_HOLDINGS.map(({ id }) => id)).toEqual(INITIAL_IDS);
-    expect(PERMISSION_NATIVE_HOLDINGS.map(({ futureClaimingDomain }) => futureClaimingDomain)).toEqual(INITIAL_IDS);
-    expect(PERMISSION_NATIVE_HOLDINGS.flatMap(({ permissionNames }) => permissionNames)).toEqual(
-      INITIAL_PERMISSION_NAMES,
+  it('retains exactly the undrained holdings and names every future claiming domain', () => {
+    expect(PERMISSION_NATIVE_HOLDINGS.map(({ id }) => id)).toEqual(AFTER_PERSISTENCE_IDS);
+    expect(PERMISSION_NATIVE_HOLDINGS.map(({ futureClaimingDomain }) => futureClaimingDomain)).toEqual(
+      AFTER_PERSISTENCE_IDS,
     );
-    expect(PERMISSION_NATIVE_HOLDINGS.map(({ mode }) => mode)).toEqual(INITIAL_MODES);
+    expect(PERMISSION_NATIVE_HOLDINGS.flatMap(({ permissionNames }) => permissionNames)).toEqual(
+      AFTER_PERSISTENCE_PERMISSION_NAMES,
+    );
+    expect(PERMISSION_NATIVE_HOLDINGS.map(({ mode }) => mode)).toEqual(AFTER_PERSISTENCE_MODES);
   });
 
   it('drains row-by-row and can never grow without a new ratified history shape', () => {
@@ -68,7 +73,6 @@ describe('permission native holdings', () => {
     const nativeSites = [
       { holding: 'media', pattern: /\b(?:mediaDevices|getUserMedia)\b/u },
       { holding: 'geolocation', pattern: /\b(?:geolocation|getCurrentPosition)\b/u },
-      { holding: 'persistence', pattern: /\b(?:storage|StorageManager|persist)\b/u },
       { holding: 'midi', pattern: /\b(?:requestMIDIAccess|MidiPermission)\b/u },
       { holding: 'wake-lock', pattern: /\b(?:wakeLock|WakeLock)\b/u },
       { holding: 'clipboard', pattern: /\bclipboard(?:-read|-write)?\b/u },
@@ -85,8 +89,20 @@ describe('permission native holdings', () => {
       ...source.matchAll(/\bnavigator\s+as[\s\S]{0,180}?\)\s*\.\s*([A-Za-z_$][\w$]*)/gu),
     ].map((match) => match[1]);
     expect([...new Set(directNavigatorMembers)].sort()).toEqual(
-      ['geolocation', 'mediaDevices', 'permissions', 'requestMIDIAccess', 'storage', 'wakeLock'].sort(),
+      ['geolocation', 'mediaDevices', 'permissions', 'requestMIDIAccess', 'wakeLock'].sort(),
     );
+  });
+
+  it('has no direct persistent-storage native owner and carries the exact projection arm twice', () => {
+    const source = productionPermissionSource();
+    expect(source).not.toMatch(/\bnavigator\s*\.\s*storage\b/u);
+    expect(source).not.toMatch(/\bStorageManager\b/u);
+    expect(source).not.toMatch(/\.persist(?:ed)?\s*\(/u);
+
+    const permissionTypes = readFileSync(resolve('packages/types/src/Permission.ts'), 'utf8');
+    const exactArm =
+      "// This arm records storage policy state, not a human decision.\n  | { readonly reason: 'best-effort'; readonly state: PermissionState | null }";
+    expect(permissionTypes.split(exactArm)).toHaveLength(3);
   });
 
   it('deletes every ambient backend and host-enabler mechanism rather than leaving a parallel era', () => {

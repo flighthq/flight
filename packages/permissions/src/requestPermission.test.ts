@@ -94,6 +94,49 @@ describe('requestPermission', () => {
     expect(query).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [
+      { outcome: 'persistent', permissionState: 'prompt' },
+      { reason: 'granted', state: 'granted' },
+    ],
+    [{ outcome: 'operation-failed', permissionState: 'denied' }, { reason: 'operation-failed' }],
+    [
+      { outcome: 'best-effort', permissionState: 'granted' },
+      { reason: 'best-effort', state: 'granted' },
+    ],
+    [
+      { outcome: 'best-effort', permissionState: 'denied' },
+      { reason: 'best-effort', state: 'denied' },
+    ],
+    [
+      { outcome: 'best-effort', permissionState: 'prompt' },
+      { reason: 'best-effort', state: 'prompt' },
+    ],
+    [
+      { outcome: 'best-effort', permissionState: null },
+      { reason: 'best-effort', state: null },
+    ],
+  ] as const)(
+    'projects the Storage request snapshot %# without inferring field consistency',
+    async (owner, expected) => {
+      const requestPersistence = vi.fn(async () => owner);
+      const host = persistenceHost({ requestPersistence });
+      forbidNativeStorageOwner();
+
+      await expect(requestPermission(host, 'persistent-storage')).resolves.toEqual(expected);
+      expect(requestPersistence).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('reports an absent persistence-request owner without crossing into query', async () => {
+    const getPersistence = vi.fn(async () => ({ outcome: 'persistent' as const, permissionState: 'granted' as const }));
+    const host = persistenceHost(null, { getPersistence });
+    forbidNativeStorageOwner();
+
+    await expect(requestPermission(host, 'persistent-storage')).resolves.toEqual({ reason: 'unsupported' });
+    expect(getPersistence).not.toHaveBeenCalled();
+  });
+
   it('requires an explicit Host at the caller boundary', () => {
     expect(ambientPermissionRequestMustNotCompile).toBeTypeOf('function');
   });
@@ -116,6 +159,31 @@ function forbidNativeNotificationOwner(): void {
       },
     ),
   );
+}
+
+function forbidNativeStorageOwner(): void {
+  vi.stubGlobal(
+    'navigator',
+    new Proxy(
+      {},
+      {
+        get() {
+          throw new Error('Permissions must delegate persistent-storage to Host.storage.persistenceRequest');
+        },
+      },
+    ),
+  );
+}
+
+function persistenceHost(persistenceRequest: object | null, persistenceQuery: object | null = null): Host {
+  return {
+    [EntityRuntimeKey]: undefined,
+    notification: {},
+    storage: {
+      ...(persistenceQuery === null ? {} : { persistenceQuery }),
+      ...(persistenceRequest === null ? {} : { persistenceRequest }),
+    },
+  } as unknown as Host;
 }
 
 function notificationHost(permission: object | null): Host {

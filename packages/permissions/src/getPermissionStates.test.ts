@@ -112,6 +112,53 @@ describe('getPermissionStates', () => {
 
     await expect(getPermissionStates(host, [])).resolves.toEqual([]);
   });
+
+  it('captures the persistence-query owner once and preserves repeated entries and order', async () => {
+    const events: string[] = [];
+    const second = {
+      async getPersistence() {
+        events.push('work:second');
+        return { outcome: 'persistent' as const, permissionState: 'granted' as const };
+      },
+    };
+    const first = {
+      async getPersistence() {
+        events.push('work:first');
+        active = second;
+        return { outcome: 'best-effort' as const, permissionState: null };
+      },
+    };
+    let active = first;
+    let ownerReads = 0;
+    const storage: object = {};
+    Object.defineProperty(storage, 'persistenceQuery', {
+      get() {
+        ownerReads++;
+        events.push('capture:persistence-query');
+        return active;
+      },
+    });
+    vi.stubGlobal(
+      'navigator',
+      new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('batch projection must not resolve a native persistent-storage owner');
+          },
+        },
+      ),
+    );
+
+    await expect(
+      getPermissionStates(hostWithStorageGroup(storage), ['persistent-storage', 'persistent-storage']),
+    ).resolves.toEqual([
+      { reason: 'best-effort', state: null },
+      { reason: 'best-effort', state: null },
+    ]);
+    expect(ownerReads).toBe(1);
+    expect(events).toEqual(['capture:persistence-query', 'work:first', 'work:first']);
+  });
 });
 
 function hostWithNotificationGroup(notification: object): Host {
@@ -135,6 +182,14 @@ function hostWithNotificationGroup(notification: object): Host {
     tray: {},
     ui: {},
     window: {},
+  } as unknown as Host;
+}
+
+function hostWithStorageGroup(storage: object): Host {
+  return {
+    [EntityRuntimeKey]: undefined,
+    notification: {},
+    storage,
   } as unknown as Host;
 }
 

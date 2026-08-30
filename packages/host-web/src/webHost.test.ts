@@ -8,4 +8,8 @@ describe('webHost', () => {
     expect(Object.keys(webHost.shell)).toEqual(['external']);
     expect(EntityRuntimeKey in webHost.shell.external).toBe(true);
   });
+
+  it('installs the Window persistence query and request slots without disturbing local storage', () => {
+    expect(Object.keys(webHost.storage).sort()).toEqual(['change', 'local', 'persistenceQuery', 'persistenceRequest']);
+  });
 });
