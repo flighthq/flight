@@ -157,7 +157,6 @@
     "@flighthq/log createConsoleCaptureSink",
     "@flighthq/log createConsoleLogSink",
     "@flighthq/log createFanoutLogSink",
-    "@flighthq/log createFileLogSink",
     "@flighthq/log createFilterLogSink",
     "@flighthq/log createJsonLogFormatter",
     "@flighthq/log createLogContext",

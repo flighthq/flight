@@ -24,7 +24,6 @@ export {
   createSampledLogSink,
   createTextLogFormatter,
   destroyFileLogSink,
-  destroyLogTransportBackend,
   disposeLogSink,
   enableLogSignals,
   endLogGroup,

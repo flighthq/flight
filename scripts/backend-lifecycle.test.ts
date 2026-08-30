@@ -49,15 +49,21 @@ describe('backend provider lifetime census', () => {
   // them — the installed native menu, and the OS keep-awake lock. The other eleven slots declared no
   // teardown because they own nothing beyond per-subscription cleanup, so removing the two old names
   // while adding the two real owners is a rename of the obligation, not a shrink of it.
+  // Explicitly retired interfaces stay in the immutable historical floor but do not masquerade as
+  // lifecycle regressions after a ratified capability deletion. A name belongs here only when the
+  // interface itself is gone; weakening or removing a live teardown still fails below.
+  const RETIRED_HISTORICAL_NAMES: readonly string[] = ['LogTransportBackend'];
+
   const REQUIRED_ENFORCED_NAMES: readonly string[] = [
     'AccessibilityBackend',
     'ConnectivityChangeBackend',
-    'LogTransportBackend',
     'MediaSessionActionBackend',
     'MediaSessionBackend',
     'MenuApplicationBackend',
     'PowerKeepAwakeBackend',
     'ScreenQueryBackend',
+    'ShortcutTriggerBackend',
+    'StorageChangeBackend',
     'UpdaterCommandBackend',
   ];
 
@@ -78,7 +84,7 @@ describe('backend provider lifetime census', () => {
       collectExplicitHostDestroyOwners(allPackageSourceFiles()),
       explicitHostSlots,
     );
-    formattedOutput = formatBackendLifecycleReport(report, HISTORICAL_BASELINE);
+    formattedOutput = formatBackendLifecycleReport(report, HISTORICAL_BASELINE, RETIRED_HISTORICAL_NAMES);
     // eslint-disable-next-line no-console
     console.log(formattedOutput);
   });
@@ -100,7 +106,6 @@ describe('backend provider lifetime census', () => {
   it('includes the whole-backend teardowns that exist', () => {
     expect(teardowns.get('AccessibilityBackend')).toBe('destroy');
     expect(teardowns.get('ConnectivityChangeBackend')).toBe('destroy');
-    expect(teardowns.get('LogTransportBackend')).toBe('destroy');
     expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
     expect(teardowns.get('StorageChangeBackend')).toBe('destroy');
   });
@@ -133,6 +138,18 @@ describe('backend provider lifetime census', () => {
       tearsDown: true,
     });
     expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('StorageChangeBackend');
+  });
+
+  it('keeps the retired Log transport as a directly owned Entity outside the Backend census', () => {
+    const fileLogSinkTypes = readFileSync(resolve('packages/types/src/FileLogSink.ts'), 'utf8');
+    const logTypes = readFileSync(resolve('packages/types/src/Log.ts'), 'utf8');
+
+    expect(report.entries.some((entry) => entry.interfaceName === 'LogTransportBackend')).toBe(false);
+    expect(RETIRED_HISTORICAL_NAMES).toEqual(['LogTransportBackend']);
+    expect(logTypes).toContain('export interface LogTransport extends Entity');
+    expect(logTypes).toContain('flush(): Promise<LogTransportFlushOutcome>');
+    expect(logTypes).toContain('destroy(): Promise<LogTransportDestroyOutcome>');
+    expect(fileLogSinkTypes).toContain('export interface FileLogSink extends Entity');
   });
 
   it('classifies all six bounded Shell providers without false teardown rows', () => {
@@ -209,7 +226,7 @@ describe('backend provider lifetime census', () => {
   });
 
   it('emits the delta inline so denominator growth is reported separately from regressions', () => {
-    const delta = compareFloorToReport(HISTORICAL_BASELINE, report);
+    const delta = compareFloorToReport(HISTORICAL_BASELINE, report, RETIRED_HISTORICAL_NAMES);
     const deltaText = formatBackendLifecycleDelta(delta);
     expect(formattedOutput).toContain(`(${deltaText})`);
   });
@@ -233,18 +250,19 @@ describe('backend provider lifetime census', () => {
     expect(REQUIRED_ENFORCED_NAMES).toEqual([
       'AccessibilityBackend',
       'ConnectivityChangeBackend',
-      'LogTransportBackend',
       'MediaSessionActionBackend',
       'MediaSessionBackend',
       'MenuApplicationBackend',
       'PowerKeepAwakeBackend',
       'ScreenQueryBackend',
+      'ShortcutTriggerBackend',
+      'StorageChangeBackend',
       'UpdaterCommandBackend',
     ]);
   });
 
   it('shows progression in the live delta when slices land beyond the historical baseline', () => {
-    const delta = compareFloorToReport(HISTORICAL_BASELINE, report);
+    const delta = compareFloorToReport(HISTORICAL_BASELINE, report, RETIRED_HISTORICAL_NAMES);
     expect(delta.enforcedGained).toContain('MenuApplicationBackend');
     expect(delta.enforcedGained).toContain('PowerKeepAwakeBackend');
     expect(delta.enforcedGained).toContain('ScreenQueryBackend');
@@ -273,7 +291,7 @@ describe('backend provider lifetime census', () => {
       enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'MenuApplicationBackend', 'PowerKeepAwakeBackend'].sort(),
       total: HISTORICAL_BASELINE.total,
     };
-    const delta = compareFloorToReport(absorbedBaseline, report);
+    const delta = compareFloorToReport(absorbedBaseline, report, RETIRED_HISTORICAL_NAMES);
     expect(delta.enforcedGained).not.toContain('MenuApplicationBackend');
     expect(delta.enforcedGained).not.toContain('PowerKeepAwakeBackend');
   });
@@ -472,6 +490,16 @@ describe('formatBackendLifecycleDelta', () => {
 });
 
 describe('compareFloorToReport', () => {
+  it('preserves an explicitly retired enforced name in history without reporting a regression', () => {
+    const floor: BackendLifecycleFloor = { enforcedNames: ['LogTransportBackend'], total: 1 };
+    const report = createEmptyBackendLifecycleReport();
+
+    const delta = compareFloorToReport(floor, report, ['LogTransportBackend']);
+
+    expect(delta.enforcedLost).toEqual([]);
+    expect(delta.seamsRemoved).toHaveLength(1);
+  });
+
   it('reports denominator shrinkage as removed seams, not a regression', () => {
     const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 5 };
     const report: BackendLifecycleReport = {

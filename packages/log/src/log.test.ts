@@ -1,13 +1,16 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
   BufferedLogSink,
+  FileLogSinkDestroyOutcome,
   LogEntry,
   LogSignals,
-  LogTransportBackend,
-  LogTransportOperation,
+  LogTransport,
+  LogTransportDestroyOutcome,
+  LogTransportFlushOutcome,
+  LogTransportWriteOutcome,
   MemoryLogSink,
 } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { EntityRuntimeKey, LogLevel } from '@flighthq/types/contract';
 
 import {
   addLogSink,
@@ -35,22 +38,18 @@ import {
   createSampledLogSink,
   createTextLogFormatter,
   destroyFileLogSink,
-  destroyLogTransportBackend,
   disposeLogSink,
   enableLogSignals,
   endLogGroup,
   endLogTimer,
   enterLogSpan,
   exitLogSpan,
-  explainLogTransportOperation,
   flushLogSink,
   getLogChannelLevel,
   getLogConsoleLevel,
   getLogLevel,
   getLogLevelName,
-  getLogTransportBackend,
   getMemoryLogSinkEntries,
-  hasLogTransportOperation,
   log,
   logAssert,
   logDebug,
@@ -74,7 +73,6 @@ import {
   setLogLevel,
   setLogRedactionPaths,
   setLogSink,
-  setLogTransportBackend,
   startLogTimer,
 } from './log';
 
@@ -87,6 +85,23 @@ function recordingSink(): { entries: LogEntry[]; sink: (entry: LogEntry) => void
   return { entries, sink };
 }
 
+function createTestLogTransport(
+  overrides: Partial<Pick<LogTransport, 'destroy' | 'flush' | 'write'>> = {},
+): LogTransport {
+  const defaultDestroy = async (): Promise<LogTransportDestroyOutcome> => ({ reason: 'destroyed' });
+  const defaultFlush = async (): Promise<LogTransportFlushOutcome> => ({
+    delivery: 'process-buffer',
+    reason: 'drained',
+  });
+  const defaultWrite = (): LogTransportWriteOutcome => ({ reason: 'accepted' });
+  return {
+    [EntityRuntimeKey]: undefined,
+    destroy: overrides.destroy ?? defaultDestroy,
+    flush: overrides.flush ?? defaultFlush,
+    write: overrides.write ?? defaultWrite,
+  };
+}
+
 beforeEach(() => {
   clearLogGroups();
   clearLogOnceKeys();
@@ -96,7 +111,6 @@ beforeEach(() => {
   clearLogChannelLevels();
   setLogConsoleLevel(LogLevel.Info);
   setLogLevel(LogLevel.Verbose);
-  setLogTransportBackend(null);
   vi.restoreAllMocks();
 });
 
@@ -448,10 +462,20 @@ describe('createFanoutLogSink', () => {
 });
 
 describe('createFileLogSink', () => {
-  it('writes formatted lines to the installed transport backend', () => {
+  it.each<LogTransportWriteOutcome>([
+    { reason: 'accepted' },
+    { reason: 'backpressure', retryAfterMs: 25 },
+    { message: 'disk full', reason: 'operation-failed' },
+    { reason: 'destroyed' },
+  ])('offers one complete formatted line when admission reports $reason', (writeOutcome) => {
     const lines: string[] = [];
-    setLogTransportBackend({ write: (line) => lines.push(line) });
-    const handle = createFileLogSink();
+    const transport = createTestLogTransport({
+      write(line) {
+        lines.push(line);
+        return writeOutcome;
+      },
+    });
+    const handle = createFileLogSink(transport);
     addLogSink(handle.sink);
     log(LogLevel.Info, 'file-entry');
     expect(lines).toHaveLength(1);
@@ -459,20 +483,54 @@ describe('createFileLogSink', () => {
     expect(parsed).toMatchObject({ __flight: true, level: 'info', data: { msg: 'file-entry' } });
   });
 
-  it('is a no-op when no transport backend is set', () => {
-    const handle = createFileLogSink();
-    addLogSink(handle.sink);
-    // Should not throw with no backend
-    expect(() => log(LogLevel.Info, 'no-backend')).not.toThrow();
+  it('creates an Entity handle', () => {
+    const handle = createFileLogSink(createTestLogTransport());
+
+    expect(EntityRuntimeKey in handle).toBe(true);
+    expect(handle[EntityRuntimeKey]).toBeUndefined();
   });
 
   it('accepts a custom formatter', () => {
     const lines: string[] = [];
-    setLogTransportBackend({ write: (line) => lines.push(line) });
-    const handle = createFileLogSink({ formatter: () => 'custom' });
+    const transport = createTestLogTransport({
+      write(line) {
+        lines.push(line);
+        return { reason: 'accepted' };
+      },
+    });
+    const handle = createFileLogSink(transport, { formatter: () => 'custom' });
     addLogSink(handle.sink);
     log(LogLevel.Info, 'x');
     expect(lines[0]).toBe('custom\n');
+  });
+
+  it('pins each handle to its injected transport', () => {
+    const firstLines: string[] = [];
+    const secondLines: string[] = [];
+    const first = createFileLogSink(
+      createTestLogTransport({
+        write(line) {
+          firstLines.push(line);
+          return { reason: 'accepted' };
+        },
+      }),
+      { formatter: () => 'first' },
+    );
+    const second = createFileLogSink(
+      createTestLogTransport({
+        write(line) {
+          secondLines.push(line);
+          return { reason: 'accepted' };
+        },
+      }),
+      { formatter: () => 'second' },
+    );
+
+    first.sink({ channel: null, data: 'entry', level: LogLevel.Info });
+    second.sink({ channel: null, data: 'entry', level: LogLevel.Info });
+
+    expect(firstLines).toEqual(['first\n']);
+    expect(secondLines).toEqual(['second\n']);
   });
 });
 
@@ -697,66 +755,169 @@ describe('createTextLogFormatter', () => {
 });
 
 describe('destroyFileLogSink', () => {
-  it('calls flush and destroy on the installed transport backend', () => {
-    const flushed: boolean[] = [];
-    const destroyed: boolean[] = [];
-    setLogTransportBackend({
-      write: () => {},
-      flush: () => flushed.push(true),
-      destroy: () => destroyed.push(true),
+  it('awaits flush before destroying the transport', async () => {
+    const events: string[] = [];
+    let finishFlush: ((outcome: LogTransportFlushOutcome) => void) | undefined;
+    const flushPromise = new Promise<LogTransportFlushOutcome>((resolve) => {
+      finishFlush = resolve;
     });
-    destroyFileLogSink(createFileLogSink());
-    expect(flushed).toHaveLength(1);
-    expect(destroyed).toHaveLength(1);
+    const transport = createTestLogTransport({
+      destroy: async () => {
+        events.push('destroy');
+        return { reason: 'destroyed' };
+      },
+      flush: () => {
+        events.push('flush-start');
+        return flushPromise.then((outcome) => {
+          events.push('flush-end');
+          return outcome;
+        });
+      },
+    });
+
+    const closing = destroyFileLogSink(createFileLogSink(transport));
+    expect(events).toEqual(['flush-start']);
+    finishFlush?.({ delivery: 'operating-system', reason: 'drained' });
+
+    await expect(closing).resolves.toEqual({
+      destroy: { reason: 'destroyed' },
+      flush: { delivery: 'operating-system', reason: 'drained' },
+      reason: 'destroyed',
+    });
+    expect(events).toEqual(['flush-start', 'flush-end', 'destroy']);
   });
 
-  // ★ The correction. Teardown used to leave the destroyed backend installed, so the file sink kept
-  // calling write on a freed handle. Writing to a freed resource is worse than losing the line.
-  it('stops the file sink writing to the transport once it is destroyed', () => {
-    const written: string[] = [];
-    setLogTransportBackend({ write: (line) => written.push(line), destroy: () => {} });
-    const handle = createFileLogSink();
+  it('attempts destroy and preserves both outcomes when flush fails', async () => {
+    const events: string[] = [];
+    const handle = createFileLogSink(
+      createTestLogTransport({
+        destroy: async () => {
+          events.push('destroy');
+          return { reason: 'destroyed' };
+        },
+        flush: async () => {
+          events.push('flush');
+          return { message: 'disk full', reason: 'operation-failed' };
+        },
+      }),
+    );
 
-    handle.sink({ level: LogLevel.Info, channel: null, data: 'before' });
-    expect(written).toHaveLength(1);
-
-    destroyFileLogSink(handle);
-    handle.sink({ level: LogLevel.Info, channel: null, data: 'after' });
-    expect(written).toHaveLength(1);
+    await expect(destroyFileLogSink(handle)).resolves.toEqual({
+      destroy: { reason: 'destroyed' },
+      flush: { message: 'disk full', reason: 'operation-failed' },
+      reason: 'operation-failed',
+    });
+    expect(events).toEqual(['flush', 'destroy']);
   });
 
-  // Exactly-once, and it falls out of clearing the slot rather than a flag that could drift from it.
-  it('destroys the backend exactly once across repeated teardown', () => {
-    const destroyed: boolean[] = [];
-    setLogTransportBackend({ write: () => {}, destroy: () => destroyed.push(true) });
-    const handle = createFileLogSink();
+  it('keeps a successor destination live when an older handle is destroyed', async () => {
+    const firstEvents: string[] = [];
+    const secondLines: string[] = [];
+    const first = createFileLogSink(
+      createTestLogTransport({
+        destroy: async () => {
+          firstEvents.push('destroy');
+          return { reason: 'destroyed' };
+        },
+      }),
+    );
+    const second = createFileLogSink(
+      createTestLogTransport({
+        write(line) {
+          secondLines.push(line);
+          return { reason: 'accepted' };
+        },
+      }),
+      { formatter: () => 'second' },
+    );
 
-    destroyFileLogSink(handle);
-    destroyFileLogSink(handle);
-    destroyLogTransportBackend();
-    expect(destroyed).toHaveLength(1);
+    await destroyFileLogSink(first);
+    second.sink({ channel: null, data: 'still-live', level: LogLevel.Info });
+
+    expect(firstEvents).toEqual(['destroy']);
+    expect(secondLines).toEqual(['second\n']);
   });
 
-  it('is a no-op when no backend is installed', () => {
-    expect(() => destroyFileLogSink(createFileLogSink())).not.toThrow();
+  it('terminals and unregisters the sink before awaiting flush', async () => {
+    const lines: string[] = [];
+    let finishFlush: ((outcome: LogTransportFlushOutcome) => void) | undefined;
+    const handle = createFileLogSink(
+      createTestLogTransport({
+        flush: () =>
+          new Promise<LogTransportFlushOutcome>((resolve) => {
+            finishFlush = resolve;
+          }),
+        write(line) {
+          lines.push(line);
+          return { reason: 'accepted' };
+        },
+      }),
+    );
+    addLogSink(handle.sink);
+
+    const closing = destroyFileLogSink(handle);
+    log(LogLevel.Info, 'after-destroy-started');
+
+    expect(lines).toEqual([]);
+    expect(removeLogSink(handle.sink)).toBe(false);
+    finishFlush?.({ delivery: 'process-buffer', reason: 'drained' });
+    await closing;
   });
 
-  it('accepts a backend without optional flush and destroy hooks', () => {
-    setLogTransportBackend({ write: () => {} });
-    expect(() => destroyFileLogSink(createFileLogSink())).not.toThrow();
-  });
-});
+  it('makes repeated teardown idempotent without repeating provider calls', async () => {
+    let destroyCalls = 0;
+    let flushCalls = 0;
+    const handle = createFileLogSink(
+      createTestLogTransport({
+        destroy: async () => {
+          destroyCalls++;
+          return { reason: 'destroyed' };
+        },
+        flush: async () => {
+          flushCalls++;
+          return { delivery: 'durable-storage', reason: 'drained' };
+        },
+      }),
+    );
 
-describe('destroyLogTransportBackend', () => {
-  it('clears the slot so getLogTransportBackend reports nothing installed', () => {
-    setLogTransportBackend({ write: () => {}, destroy: () => {} });
-    destroyLogTransportBackend();
-    expect(getLogTransportBackend()).toBeNull();
+    const first: FileLogSinkDestroyOutcome = await destroyFileLogSink(handle);
+    const second = await destroyFileLogSink(handle);
+
+    expect(first).toEqual({
+      destroy: { reason: 'destroyed' },
+      flush: { delivery: 'durable-storage', reason: 'drained' },
+      reason: 'destroyed',
+    });
+    expect(second).toEqual({ ...first, reason: 'already-destroyed' });
+    expect({ destroyCalls, flushCalls }).toEqual({ destroyCalls: 1, flushCalls: 1 });
   });
 
-  it('is safe with nothing installed', () => {
-    setLogTransportBackend(null);
-    expect(() => destroyLogTransportBackend()).not.toThrow();
+  it.each<LogTransportFlushOutcome>([
+    { delivery: 'process-buffer', reason: 'drained' },
+    { delivery: 'operating-system', reason: 'drained' },
+    { delivery: 'durable-storage', reason: 'drained' },
+    { delivery: 'remote-acknowledged', reason: 'drained' },
+  ])('preserves the $delivery delivery boundary', async (flushOutcome) => {
+    const handle = createFileLogSink(createTestLogTransport({ flush: async () => flushOutcome }));
+
+    const outcome = await destroyFileLogSink(handle);
+
+    expect(outcome.flush).toEqual(flushOutcome);
+  });
+
+  it('converts rejected flush and destroy operations into a composite failure', async () => {
+    const handle = createFileLogSink(
+      createTestLogTransport({
+        destroy: () => Promise.reject(new Error('close failed')),
+        flush: () => Promise.reject(new Error('flush failed')),
+      }),
+    );
+
+    await expect(destroyFileLogSink(handle)).resolves.toEqual({
+      destroy: { message: 'close failed', reason: 'operation-failed' },
+      flush: { message: 'flush failed', reason: 'operation-failed' },
+      reason: 'operation-failed',
+    });
   });
 });
 
@@ -935,35 +1096,6 @@ describe('exitLogSpan', () => {
   });
 });
 
-describe('explainLogTransportOperation', () => {
-  afterEach(() => {
-    setLogTransportBackend(null);
-  });
-
-  // ★ With nothing installed, the getter returns null,
-  // so a query resolving through the getter would report every operation implemented. It must not.
-  it('reports none and no implementation when nothing is installed', () => {
-    setLogTransportBackend(null);
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(explainLogTransportOperation(operation)).toEqual({ implemented: false, layer: 'none', operation });
-    }
-  });
-
-  it('reports a custom backend as implementing only what it provides', () => {
-    setLogTransportBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasLogTransportOperation(operation)).toBe(false);
-    }
-    expect(explainLogTransportOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('none');
-  });
-
-  it('reports an operation the backend does provide', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    setLogTransportBackend({ ...partialBackend(), [operation]: () => undefined } as LogTransportBackend);
-    expect(explainLogTransportOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
-  });
-});
-
 describe('flushLogSink', () => {
   it('does nothing for an unknown handle', () => {
     const unknown = { sink: () => {} } as BufferedLogSink;
@@ -1012,18 +1144,6 @@ describe('getLogLevelName', () => {
   });
 });
 
-describe('getLogTransportBackend', () => {
-  it('returns null when no backend is set', () => {
-    expect(getLogTransportBackend()).toBeNull();
-  });
-
-  it('returns the installed backend', () => {
-    const backend = { write() {} };
-    setLogTransportBackend(backend);
-    expect(getLogTransportBackend()).toBe(backend);
-  });
-});
-
 describe('getMemoryLogSinkEntries', () => {
   it('returns empty array before any entries', () => {
     const handle = createMemoryLogSink(5);
@@ -1034,19 +1154,6 @@ describe('getMemoryLogSinkEntries', () => {
     const unknown = { sink: () => {} } as MemoryLogSink;
 
     expect(getMemoryLogSinkEntries(unknown)).toEqual([]);
-  });
-});
-
-describe('hasLogTransportOperation', () => {
-  afterEach(() => {
-    setLogTransportBackend(null);
-  });
-
-  it('agrees with explainLogTransportOperation for every optional operation', () => {
-    setLogTransportBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasLogTransportOperation(operation)).toBe(explainLogTransportOperation(operation).implemented);
-    }
   });
 });
 
@@ -1452,58 +1559,6 @@ describe('setLogSink', () => {
   });
 });
 
-describe('setLogTransportBackend', () => {
-  it('sets and retrieves the backend', () => {
-    const backend = { write() {} };
-    setLogTransportBackend(backend);
-    expect(getLogTransportBackend()).toBe(backend);
-  });
-
-  it('clears the backend when null is passed', () => {
-    setLogTransportBackend({ write() {} });
-    setLogTransportBackend(null);
-    expect(getLogTransportBackend()).toBeNull();
-  });
-});
-
-// Per-operation availability for LogTransportBackend. The operations below are the ones the interface declares
-// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
-// ruling, and this is the query that makes it observable.
-const OPTIONAL_OPERATIONS: readonly LogTransportOperation[] = ['flush', 'destroy'];
-
-describe('setLogTransportBackend replacement lifetime', () => {
-  // Replacement used to leak: the outgoing transport kept its file handle and nothing ever freed it.
-  it('destroys the outgoing transport when a new one replaces it', () => {
-    const destroyed: string[] = [];
-    const first = { write: () => {}, destroy: () => destroyed.push('first') };
-    const second = { write: () => {}, destroy: () => destroyed.push('second') };
-
-    setLogTransportBackend(first);
-    setLogTransportBackend(second);
-    expect(destroyed).toEqual(['first']);
-    expect(getLogTransportBackend()).toBe(second);
-  });
-
-  it('destroys the outgoing transport when removed with null', () => {
-    const destroyed: string[] = [];
-    setLogTransportBackend({ write: () => {}, destroy: () => destroyed.push('only') });
-    setLogTransportBackend(null);
-    expect(destroyed).toEqual(['only']);
-    expect(getLogTransportBackend()).toBeNull();
-  });
-
-  // Re-installing the SAME object is not a replacement, so it must not free a transport that is still
-  // in use — the caller would be left writing to a destroyed handle it never removed.
-  it('does not destroy when the same backend is installed again', () => {
-    const destroyed: string[] = [];
-    const only = { write: () => {}, destroy: () => destroyed.push('only') };
-    setLogTransportBackend(only);
-    setLogTransportBackend(only);
-    expect(destroyed).toEqual([]);
-    expect(getLogTransportBackend()).toBe(only);
-  });
-});
-
 describe('severity wrapper providers and gates', () => {
   it('does not evaluate any provider when its level is suppressed', () => {
     const { entries } = recordingSink();
@@ -1550,13 +1605,6 @@ describe('severity wrapper providers and gates', () => {
     );
   });
 });
-
-// A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): LogTransportBackend {
-  return {
-    write: (() => undefined) as never,
-  } as LogTransportBackend;
-}
 
 describe('startLogTimer', () => {
   it('returns a LogTimer with the given label and channel', () => {

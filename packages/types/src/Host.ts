@@ -50,7 +50,6 @@ import type {
   SoftKeyboardVisibilityBackend,
 } from './Keyboard';
 import type { LifecycleBackend } from './Lifecycle';
-import type { LogTransportBackend } from './Log';
 import type { LoopBackend } from './LoopBackend';
 import type { MediaSessionActionBackend, MediaSessionBackend } from './MediaSession';
 import type { MenuApplicationBackend, MenuHighlightBackend, MenuPopupBackend, MenuSelectBackend } from './Menu';
@@ -144,7 +143,6 @@ export interface HostAccessibilityCapabilities {
 export interface HostAppCapabilities {
   readonly exit?: ApplicationExitBackend;
   readonly identity?: AppBackend;
-  readonly logTransport?: LogTransportBackend;
   readonly loop?: LoopBackend;
   readonly protocol?: ProtocolBackend;
   readonly visibility?: ApplicationVisibilityBackend;
@@ -328,10 +326,6 @@ export interface HasAppExitSubscription {
 
 export interface HasAppIdentity {
   readonly app: { readonly identity: AppBackend };
-}
-
-export interface HasAppLogTransport {
-  readonly app: { readonly logTransport: LogTransportBackend };
 }
 
 export interface HasAppLoop {

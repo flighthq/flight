@@ -1,8 +1,8 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  BackendOperationExplanation,
   BufferedLogSink,
   FileLogSink,
+  FileLogSinkDestroyOutcome,
   LogContext,
   LogData,
   LogDataProvider,
@@ -12,12 +12,13 @@ import type {
   LogSink,
   LogSpan,
   LogTimer,
-  LogTransportBackend,
-  LogTransportOperation,
+  LogTransport,
+  LogTransportDestroyOutcome,
+  LogTransportFlushOutcome,
   MemoryLogSink,
   RateLimitedLogSink,
 } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { EntityRuntimeKey, LogLevel } from '@flighthq/types/contract';
 
 // Logging is split into two faces of one contract so each consumer tree-shakes its half:
 //
@@ -159,18 +160,23 @@ export function createFanoutLogSink(...sinks: LogSink[]): LogSink {
   };
 }
 
-// Creates a sink that writes formatted entries to a LogTransportBackend. The backend is resolved
-// at emit time (not at creation time) so setLogTransportBackend can be called after
-// createFileLogSink. The formatter defaults to createJsonLogFormatter (one JSON line per entry).
-// Use disposeFileLogSink to flush and release the underlying backend resource.
-export function createFileLogSink(options: { formatter?: LogFormatter } = {}): FileLogSink {
+// Creates an Entity sink that exclusively owns the configured transport for its entire lifetime.
+// The formatter defaults to createJsonLogFormatter (one complete JSON line per entry). Each sink
+// call offers that line synchronously to the pinned transport; admission and later delivery remain
+// the transport's explicit outcome contracts.
+export function createFileLogSink(transport: LogTransport, options: { formatter?: LogFormatter } = {}): FileLogSink {
   const formatter = options.formatter ?? createJsonLogFormatter();
   const sink: LogSink = (entry: Readonly<LogEntry>): void => {
-    const backend = _transportBackend;
-    if (backend === null) return;
-    backend.write(formatter(entry) + '\n');
+    const state = _fileLogSinkStates.get(handle);
+    if (!state || state.status !== 'active' || state.transport === null) return;
+    state.transport.write(formatter(entry) + '\n');
   };
-  const handle: FileLogSink = { sink };
+  const handle: FileLogSink = { [EntityRuntimeKey]: undefined, sink };
+  _fileLogSinkStates.set(handle, {
+    destroyPromise: null,
+    status: 'active',
+    transport,
+  });
   return handle;
 }
 
@@ -290,30 +296,22 @@ export function createTextLogFormatter(
   };
 }
 
-export function destroyFileLogSink(_handle: FileLogSink): void {
-  destroyLogTransportBackend();
-}
+// Makes the sink terminal and unregisters it synchronously, then awaits its delivery boundary before
+// attempting terminal transport teardown. Destroy is attempted even when flush fails or rejects, and
+// both operation outcomes are preserved. Repeated calls await the same teardown without invoking the
+// provider again.
+export async function destroyFileLogSink(handle: FileLogSink): Promise<FileLogSinkDestroyOutcome> {
+  const state = _fileLogSinkStates.get(handle);
+  if (!state) throw new Error('destroyFileLogSink received an unknown handle');
+  if (state.status !== 'active') {
+    const outcome = await state.destroyPromise!;
+    return { ...outcome, reason: 'already-destroyed' };
+  }
 
-// Flushes the transport backend and frees its resource, then CLEARS the slot so nothing writes to it
-// again. `destroy*` rather than `dispose*` because a transport owns a file handle or socket that is
-// freed here, not merely a reference that becomes collectable.
-//
-// ★ Clearing the slot is the correction, not a side effect. This function's contract has always been
-// that entries afterwards no-op until a new backend is set — but it used to leave the destroyed backend
-// installed, so `createFileLogSink`'s sink kept calling `write` on it. A freed handle written to is
-// worse than a lost line.
-//
-// Exactly-once follows from the clear rather than from a flag: a second call finds `null` and returns,
-// so the backend's own `destroy` can never run twice.
-// Frees the installed transport's resource and clears the slot. Safe to call with nothing installed and
-// safe to call twice — the second call sees an empty slot, which is what makes teardown exactly-once
-// without a separate destroyed flag to keep in sync.
-export function destroyLogTransportBackend(): void {
-  const backend = _transportBackend;
-  if (backend === null) return;
-  _transportBackend = null;
-  if (backend.flush) backend.flush();
-  if (backend.destroy) backend.destroy();
+  state.status = 'destroying';
+  removeLogSink(handle.sink);
+  state.destroyPromise = _destroyFileLogSinkState(state);
+  return state.destroyPromise;
 }
 
 // Disposes a buffered sink: cancels its interval timer and flushes remaining entries. The sink
@@ -371,18 +369,6 @@ export function exitLogSpan(span: Readonly<LogSpan>): void {
   if (idx >= 0) _spanStack.splice(idx, 1);
 }
 
-// Returns the installed LogTransportBackend, or null if none has been set.
-// Which layer implements `operation`. This capability is a SINGLE NULLABLE SLOT — there is no host layer
-// and no sentinel — so the two honest answers are `'custom'` (a backend is installed and provides it) and
-// `'none'` (no backend is installed at all). Reporting `'sentinel'` here would name a fall-through object
-// that does not exist, and inventing a host layer would describe a precedence this package does not have.
-export function explainLogTransportOperation(operation: LogTransportOperation): BackendOperationExplanation {
-  if (_transportBackend !== null && typeof _transportBackend[operation] === 'function') {
-    return { implemented: true, layer: 'custom', operation };
-  }
-  return { implemented: false, layer: 'none', operation };
-}
-
 // Flushes a buffered sink immediately, forwarding all queued entries to its target.
 export function flushLogSink(handle: BufferedLogSink): void {
   const state = _bufferedSinkStates.get(handle);
@@ -412,10 +398,6 @@ export function getLogLevelName(level: LogLevel): string {
   return _levelNames[level] ?? 'unknown';
 }
 
-export function getLogTransportBackend(): LogTransportBackend | null {
-  return _transportBackend;
-}
-
 // Returns the captured log entries from a memory sink in insertion order (oldest-first).
 export function getMemoryLogSinkEntries(handle: MemoryLogSink): readonly LogEntry[] {
   const state = _memorySinkStates.get(handle);
@@ -425,12 +407,6 @@ export function getMemoryLogSinkEntries(handle: MemoryLogSink): readonly LogEntr
   if (head === 0) return buf.slice();
   // Ring buffer wrapped: entries from head..end are oldest, then start..head are newest.
   return [...buf.slice(head), ...buf.slice(0, head)];
-}
-
-// Whether an installed backend implements `operation`. False when nothing is installed, which for this
-// capability is also what the getter reports by returning null.
-export function hasLogTransportOperation(operation: LogTransportOperation): boolean {
-  return explainLogTransportOperation(operation).implemented;
 }
 
 // Emit side. Emits a log entry at an explicit level. `channel` is a free categorization tag
@@ -632,18 +608,6 @@ export function setLogSink(sink: LogSink | null): void {
   if (sink !== null) _sinks.push(sink);
 }
 
-// Sets the LogTransportBackend used by createFileLogSink. Set to null to detach the backend.
-// Native/Node hosts register a real fs-backed implementation. The backend is process-global
-// (one transport per process).
-// Installs the transport, DESTROYING the outgoing one first so replacement and removal cannot leak the
-// file handle or socket it held. Passing `null` removes and destroys; passing the backend already
-// installed is a no-op rather than a destroy-then-reinstall of the same object.
-export function setLogTransportBackend(backend: LogTransportBackend | null): void {
-  if (_transportBackend === backend) return;
-  destroyLogTransportBackend();
-  _transportBackend = backend;
-}
-
 // Starts a named timer. Pass the returned LogTimer to endLogTimer to record elapsed time and
 // emit a structured Debug entry.
 export function startLogTimer(label: string, channel: string | null = null): LogTimer {
@@ -661,7 +625,14 @@ interface MemoryLogSinkState {
   head: number;
 }
 
+interface FileLogSinkState {
+  destroyPromise: Promise<FileLogSinkDestroyOutcome> | null;
+  status: 'active' | 'destroyed' | 'destroying';
+  transport: LogTransport | null;
+}
+
 const _bufferedSinkStates = new WeakMap<BufferedLogSink, BufferedLogSinkState>();
+const _fileLogSinkStates = new WeakMap<FileLogSink, FileLogSinkState>();
 const _memorySinkStates = new WeakMap<MemoryLogSink, MemoryLogSinkState>();
 
 const _consoleMethods: Readonly<Record<LogLevel, 'debug' | 'error' | 'info' | 'log' | 'warn'>> = {
@@ -702,7 +673,37 @@ let _consoleLevel: LogLevel = LogLevel.Info;
 let _groupDepth = 0;
 let _level: LogLevel = LogLevel.Verbose;
 let _logSignals: LogSignals | null = null;
-let _transportBackend: LogTransportBackend | null = null;
+
+async function _destroyFileLogSinkState(state: FileLogSinkState): Promise<FileLogSinkDestroyOutcome> {
+  const transport = state.transport!;
+  let flush: LogTransportFlushOutcome;
+  let destroy: LogTransportDestroyOutcome;
+
+  try {
+    flush = await transport.flush();
+  } catch (error) {
+    flush = { message: _operationFailureMessage(error), reason: 'operation-failed' };
+  }
+
+  try {
+    destroy = await transport.destroy();
+  } catch (error) {
+    destroy = { message: _operationFailureMessage(error), reason: 'operation-failed' };
+  }
+
+  state.transport = null;
+  state.status = 'destroyed';
+  return {
+    destroy,
+    flush,
+    reason:
+      flush.reason === 'operation-failed' || destroy.reason === 'operation-failed' ? 'operation-failed' : 'destroyed',
+  };
+}
+
+function _operationFailureMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 // Applies registered serializers to values whose `__kind` matches a registered kind.
 function _applySerializers(data: Record<string, unknown>): Record<string, unknown> {
