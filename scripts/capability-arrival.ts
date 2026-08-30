@@ -92,7 +92,16 @@ const EXPECTED_EXPLICIT_HOST = ['MediaSession', 'Power', 'Screen', 'Storage'] as
 // excluded.
 const EXPECTED_EXCLUDED = ['App', 'Protocol', 'Shell', 'StatusBar', 'GlRenderSurface', 'WgpuRenderSurface'] as const;
 
-const EXPECTED_FACTORIES = ['Accessibility', 'Connectivity', 'Cursor', 'MediaSession', 'MediaSessionAction'] as const;
+const EXPECTED_FACTORIES = [
+  'Accessibility',
+  'Connectivity',
+  'Cursor',
+  'MediaSession',
+  'MediaSessionAction',
+  'SoftKeyboardChange',
+  'SoftKeyboardInfo',
+  'SoftKeyboardVisibility',
+] as const;
 
 const EXPECTED_POPULATIONS = {
   examples: { canvas: 28, dom: 24, webgl: 40, webgpu: 40 },
@@ -380,13 +389,18 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
         .filter(
           ({ call, binding }) => binding !== undefined && selectorForRegistrar(binding.imported ?? call) !== null,
         );
-      if (registrars.length !== 1) {
+      const expectedRegistrarCount = label === 'SoftKeyboard' ? 3 : 1;
+      if (registrars.length !== expectedRegistrarCount) {
         failures.push(
-          registryFailure(`${enabler} must call exactly one imported host registrar; found ${registrars.length}`),
+          registryFailure(
+            `${enabler} must call exactly ${expectedRegistrarCount} imported host registrar${expectedRegistrarCount === 1 ? '' : 's'}; found ${registrars.length}`,
+          ),
         );
         continue;
       }
-      const registrar = registrars[0].binding!;
+      // SoftKeyboard intentionally installs three independent provider lanes. Visibility is its command
+      // selector; the aggregate enabler itself remains the arrival proof for all three installations.
+      const registrar = registrars.at(-1)!.binding!;
       const selector = selectorForRegistrar(registrar.imported);
       const packageMatch = /^@flighthq\/([^/]+)\/(?:contract|[^/]+)$/.exec(registrar.module);
       if (selector === null || packageMatch === null) {

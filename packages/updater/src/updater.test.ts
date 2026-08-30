@@ -60,6 +60,26 @@ function host(command: UpdaterCommandBackend): HasUpdaterCommand {
   return { updater: { command } };
 }
 
+describe('checkForAppUpdate', () => {
+  it('returns the provider check outcome', async () => {
+    await expect(checkForAppUpdate(host(fakeBackend()))).resolves.toEqual({ reason: 'not-available' });
+  });
+});
+
+describe('destroyUpdater', () => {
+  it('destroys the selected explicit provider', () => {
+    const backend = fakeBackend();
+    destroyUpdater(host(backend));
+    expect(backend.calls.destroy).toBe(1);
+  });
+});
+
+describe('installDownloadedUpdate', () => {
+  it('rejects a handle with no completed-check origin', async () => {
+    await expect(installDownloadedUpdate(host(fakeBackend()), downloadedUpdate())).rejects.toThrow(TypeError);
+  });
+});
+
 describe('Updater command transactions', () => {
   it('awaits exactly one explicit Host updater check', async () => {
     const backend = fakeBackend({ reason: 'not-available' });
