@@ -18,7 +18,6 @@ import { enableHostWebPlatform } from './webPlatform';
 import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
 import { enableHostWebScreen } from './webScreen';
 import { enableHostWebSensors } from './webSensors';
-import { enableHostWebShare } from './webShare';
 import { enableHostWebStorage } from './webStorage';
 import { enableHostWebVideoCapability } from './webVideoCapability';
 import { enableHostWebWebcam } from './webWebcam';
@@ -44,7 +43,6 @@ export function enableHostWeb(): void {
   enableHostWebRaster2DSurface();
   enableHostWebScreen();
   enableHostWebSensors();
-  enableHostWebShare();
   enableHostWebStorage();
   enableHostWebVideoCapability();
   enableHostWebWebcam();

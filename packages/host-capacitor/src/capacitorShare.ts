@@ -1,65 +1,54 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { CapacitorApi, Entity, ShareBackend, ShareContent } from '@flighthq/types/contract';
+import type {
+  CapacitorApi,
+  CapacitorShareContentBackend,
+  EntityRuntimeKey,
+  ShareContent,
+} from '@flighthq/types/contract';
 
-// Maps Flight's ShareBackend onto Capacitor's `@capacitor/share`. `share`/`shareWithResult` are async
-// and map directly; a user cancel rejects, resolving false / a dismissed ShareResult rather than
-// throwing. Capacitor's `canShare` is async while the ShareBackend availability probes (isAvailable,
-// canShare) are synchronous, so the adapter prefetches the availability boolean once at construction and
-// the sync probes read it — reporting false until that first probe resolves. Portable ShareFile
-// descriptors carry data URLs, which Capacitor's file-URI `files` field cannot accept, so only
-// title/text/url cross; a content that is only files reports canShare false.
-export function createCapacitorShareBackend(capacitor: CapacitorApi): ShareBackend & Entity {
+// Capacitor's provider is present synchronously. Platform rejection is reported by the command
+// outcome; construction never starts an async availability probe or caches a transient false value.
+export function createCapacitorShareContentBackend(capacitor: CapacitorApi): CapacitorShareContentBackend {
   const share = capacitor.share;
-  // Sync availability probes over async Capacitor: prefetch canShare once and cache the boolean.
-  let cachedAvailable = false;
-  share
-    .canShare()
-    .then((result) => {
-      cachedAvailable = result.value;
-    })
-    .catch(() => {
-      /* leave false */
-    });
   return createEntity({
-    isAvailable() {
-      return cachedAvailable;
-    },
-    canShare(content) {
-      return cachedAvailable && hasShareableText(content);
-    },
-    async share(content, options) {
-      if (!hasShareableText(content)) return false;
+    canShareContent: hasShareableContent,
+
+    async shareContent(content, options) {
+      if (!hasShareableContent(content)) return false;
       try {
         await share.share({
-          title: content.title,
-          text: content.text,
-          url: content.url,
           dialogTitle: options?.chooserTitle,
+          text: content.text,
+          title: content.title,
+          url: content.url,
         });
         return true;
       } catch {
         return false;
       }
     },
-    async shareWithResult(content, options) {
-      if (!hasShareableText(content)) return { completed: false, activityType: null, dismissed: false };
+
+    async shareContentWithResult(content, options) {
+      if (!hasShareableContent(content)) return { activityType: null, completed: false, dismissed: false };
       try {
         const result = await share.share({
-          title: content.title,
-          text: content.text,
-          url: content.url,
           dialogTitle: options?.chooserTitle,
+          text: content.text,
+          title: content.title,
+          url: content.url,
         });
-        return { completed: true, activityType: result.activityType ?? null, dismissed: false };
+        return { activityType: result.activityType ?? null, completed: true, dismissed: false };
       } catch {
-        // A rejected share is a user dismissal, not a programmer error.
-        return { completed: false, activityType: null, dismissed: true };
+        return { activityType: null, completed: false, dismissed: true };
       }
     },
-  } satisfies ShareBackend);
+  } satisfies Omit<CapacitorShareContentBackend, typeof EntityRuntimeKey>);
 }
 
-// Capacitor's share sheet needs at least one of title/text/url; data-URL files are not expressible.
-function hasShareableText(content: Readonly<ShareContent>): boolean {
-  return content.title !== undefined || content.text !== undefined || content.url !== undefined;
+function hasShareableContent(content: Readonly<ShareContent>): boolean {
+  return (
+    (content.title !== undefined && content.title !== '') ||
+    (content.text !== undefined && content.text !== '') ||
+    (content.url !== undefined && content.url !== '')
+  );
 }

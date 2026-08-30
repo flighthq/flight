@@ -1,38 +1,128 @@
-import { createWebShareBackend, installShareHostBackend, observeShareHostResult } from '@flighthq/share/contract';
-import type { ShareBackend } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  ShareContentBackend,
+  EntityRuntimeKey,
+  ShareFile,
+  ShareFilesBackend,
+  ShareFilesContent,
+  ShareResult,
+} from '@flighthq/types/contract';
 
-export function enableHostWebShare(): void {
-  if (_enabled) return;
-  _enabled = true;
-  const inner = createWebShareBackend();
-  const backend: ShareBackend = {
-    isAvailable() {
-      return inner.isAvailable();
-    },
+export const webShareContentBackend: ShareContentBackend = createEntity({
+  canShareContent(content) {
+    return hasShareableContent(content) && canNavigatorShare(contentToNavigatorData(content));
+  },
 
-    canShare(content) {
-      const result = inner.canShare(content);
-      observeShareHostResult('canShare', result);
-      return result;
-    },
+  async shareContent(content) {
+    if (!hasShareableContent(content)) return false;
+    return invokeNavigatorShare(contentToNavigatorData(content));
+  },
 
-    async share(content, options?) {
-      const result = await inner.share(content, options);
-      observeShareHostResult('share', result);
-      return result;
-    },
+  async shareContentWithResult(content) {
+    if (!hasShareableContent(content)) return failedResult(false);
+    return invokeNavigatorShareWithResult(contentToNavigatorData(content));
+  },
+} satisfies Omit<ShareContentBackend, typeof EntityRuntimeKey>);
 
-    async shareWithResult(content, options?) {
-      const result = await inner.shareWithResult(content, options);
-      observeShareHostResult('shareWithResult', result.completed);
-      return result;
-    },
+export const webShareFilesBackend: ShareFilesBackend = createEntity({
+  canShareContent(content) {
+    if (content.files.length === 0) return false;
+    try {
+      return canNavigatorShare(filesToNavigatorData(content));
+    } catch {
+      return false;
+    }
+  },
+
+  async shareContent(content) {
+    if (content.files.length === 0) return false;
+    try {
+      return await invokeNavigatorShare(filesToNavigatorData(content));
+    } catch {
+      return false;
+    }
+  },
+
+  async shareContentWithResult(content) {
+    if (content.files.length === 0) return failedResult(false);
+    try {
+      return await invokeNavigatorShareWithResult(filesToNavigatorData(content));
+    } catch {
+      return failedResult(false);
+    }
+  },
+} satisfies Omit<ShareFilesBackend, typeof EntityRuntimeKey>);
+
+function canNavigatorShare(data: ShareData): boolean {
+  if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;
+  try {
+    return navigator.canShare?.(data) ?? true;
+  } catch {
+    return false;
+  }
+}
+
+function contentToNavigatorData(content: Readonly<{ text?: string; title?: string; url?: string }>): ShareData {
+  const data: ShareData = {};
+  if (content.title !== undefined) data.title = content.title;
+  if (content.text !== undefined) data.text = content.text;
+  if (content.url !== undefined) data.url = content.url;
+  return data;
+}
+
+function failedResult(dismissed: boolean): ShareResult {
+  return { activityType: null, completed: false, dismissed };
+}
+
+function filesToNavigatorData(content: Readonly<ShareFilesContent>): ShareData {
+  return {
+    ...contentToNavigatorData(content),
+    files: content.files.map(shareFileToDomFile),
   };
-  installShareHostBackend(backend);
 }
 
-export function resetHostWebShareForTest(): void {
-  _enabled = false;
+function hasShareableContent(content: Readonly<{ text?: string; title?: string; url?: string }>): boolean {
+  return (
+    (content.title !== undefined && content.title !== '') ||
+    (content.text !== undefined && content.text !== '') ||
+    (content.url !== undefined && content.url !== '')
+  );
 }
 
-let _enabled = false;
+async function invokeNavigatorShare(data: ShareData): Promise<boolean> {
+  if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;
+  try {
+    await navigator.share(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function invokeNavigatorShareWithResult(data: ShareData): Promise<ShareResult> {
+  if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return failedResult(false);
+  try {
+    await navigator.share(data);
+    return { activityType: null, completed: true, dismissed: false };
+  } catch (error) {
+    return failedResult(error instanceof Error && error.name === 'AbortError');
+  }
+}
+
+function shareFileToDomFile(file: Readonly<ShareFile>): File {
+  const comma = file.dataUrl.indexOf(',');
+  if (comma === -1) throw new Error('share: dataUrl is not a data URL (no comma)');
+  const header = file.dataUrl.substring(0, comma);
+  const body = file.dataUrl.substring(comma + 1);
+  let bytes: Uint8Array<ArrayBuffer>;
+  if (header.includes(';base64')) {
+    const binary = atob(body);
+    bytes = new Uint8Array(new ArrayBuffer(binary.length));
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  } else {
+    const encoded = new TextEncoder().encode(decodeURIComponent(body));
+    bytes = new Uint8Array(new ArrayBuffer(encoded.length));
+    bytes.set(encoded);
+  }
+  return new File([bytes], file.name, { type: file.mimeType });
+}
