@@ -1,732 +1,112 @@
-import { connectSignal } from '@flighthq/signals/contract';
-import type { UpdateInfo, UpdateProgress, UpdaterBackend, UpdaterError } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  AppUpdateCheckOutcome,
+  AppUpdateInstallOutcome,
+  DownloadedUpdate,
+  HasUpdaterCommand,
+  UpdaterCommandBackend,
+} from '@flighthq/types/contract';
 
-import {
-  attachAppUpdater,
-  cancelAppUpdateDownload,
-  checkAndDownloadAppUpdate,
-  checkForAppUpdate,
-  createAppUpdater,
-  createUpdaterConfig,
-  createUpdaterState,
-  detachAppUpdater,
-  disposeAppUpdater,
-  downloadAppUpdate,
-  getAppUpdaterState,
-  getUpdaterBackend,
-  getUpdaterChannel,
-  getUpdaterConfig,
-  isAppUpdateEligible,
-  quitAndInstallUpdate,
-  resetUpdaterBackendForTest,
-  rollbackAppUpdate,
-  setUpdaterBackend,
-  setUpdaterChannel,
-  setUpdaterConfig,
-  setUpdaterFeedUrl,
-  setUpdaterSignatureConfig,
-  explainUpdaterBackend,
-  installUpdaterHostBackend,
-  observeUpdaterHostResult,
-} from './updater';
+import * as updaterContract from './contract';
+import * as updaterPublic from './index';
+import { checkForAppUpdate, destroyUpdater, installDownloadedUpdate } from './updater';
 
-const FULL_UPDATE_INFO: UpdateInfo = {
-  deltaFromVersion: null,
-  downloadSizeBytes: 10_000_000,
-  isMandatory: false,
-  minimumOsVersion: null,
-  notes: 'fixes',
-  releaseDate: '2026-06-19',
-  sha512: 'abc123',
-  stagedRolloutPercent: 100,
-  version: '1.2.3',
-};
-
-interface FakeUpdaterBackend extends UpdaterBackend {
-  feedUrl: string;
-  checked: number;
-  downloaded: number;
-  cancelled: number;
-  quit: number;
-  rolledBack: number;
-  fireChecking: () => void;
-  fireUpdateAvailable: (info: Readonly<UpdateInfo>) => void;
-  fireUpdateNotAvailable: () => void;
-  fireDownloadProgress: (progress: Readonly<UpdateProgress>) => void;
-  fireUpdateDownloaded: (info: Readonly<UpdateInfo>) => void;
-  fireError: (error: Readonly<UpdaterError>) => void;
-  fireUpdateCancelled: () => void;
-  fireUpdateStaging: () => void;
-  fireUpdateVerified: () => void;
-  fireUpdateRolledBack: () => void;
+interface FakeBackend extends UpdaterCommandBackend {
+  readonly calls: {
+    check: number;
+    destroy: number;
+    install: DownloadedUpdate[];
+  };
 }
 
-function fakeBackend(): FakeUpdaterBackend {
-  let checking: (() => void) | null = null;
-  let updateAvailable: ((info: Readonly<UpdateInfo>) => void) | null = null;
-  let updateNotAvailable: (() => void) | null = null;
-  let downloadProgress: ((progress: Readonly<UpdateProgress>) => void) | null = null;
-  let updateDownloaded: ((info: Readonly<UpdateInfo>) => void) | null = null;
-  let error: ((error: Readonly<UpdaterError>) => void) | null = null;
-  let updateCancelled: (() => void) | null = null;
-  let updateStaging: (() => void) | null = null;
-  let updateVerified: (() => void) | null = null;
-  let updateRolledBack: (() => void) | null = null;
-  let channel = 'stable';
-  let config = createUpdaterConfig();
+function downloadedUpdate(version = '1.2.3'): DownloadedUpdate {
+  return Object.freeze({
+    [EntityRuntimeKey]: undefined,
+    info: Object.freeze({
+      downloadSizeBytes: null,
+      isMandatory: null,
+      minimumOsVersion: null,
+      notes: null,
+      releaseDate: null,
+      sha512: null,
+      version,
+    }),
+  }) as DownloadedUpdate;
+}
+
+function fakeBackend(
+  checkOutcome: AppUpdateCheckOutcome = { reason: 'not-available' },
+  installOutcome: AppUpdateInstallOutcome = { reason: 'ok' },
+): FakeBackend {
+  const calls = { check: 0, destroy: 0, install: [] as DownloadedUpdate[] };
   return {
-    feedUrl: '',
-    checked: 0,
-    downloaded: 0,
-    cancelled: 0,
-    quit: 0,
-    rolledBack: 0,
-    cancelDownload() {
-      this.cancelled++;
+    [EntityRuntimeKey]: undefined,
+    calls,
+    async check() {
+      calls.check++;
+      return checkOutcome;
     },
-    checkForUpdates() {
-      this.checked++;
+    destroy() {
+      calls.destroy++;
     },
-    downloadUpdate() {
-      this.downloaded++;
-    },
-    getChannel() {
-      return channel;
-    },
-    getConfig() {
-      return config;
-    },
-    quitAndInstall() {
-      this.quit++;
-    },
-    rollback() {
-      this.rolledBack++;
-    },
-    setChannel(c) {
-      channel = c;
-    },
-    setConfig(c) {
-      config = { ...c };
-    },
-    setFeedUrl(url) {
-      this.feedUrl = url;
-    },
-    setSignatureConfig() {},
-    subscribeChecking(listener) {
-      checking = listener;
-      return () => {
-        checking = null;
-      };
-    },
-    subscribeDownloadProgress(listener) {
-      downloadProgress = listener;
-      return () => {
-        downloadProgress = null;
-      };
-    },
-    subscribeError(listener) {
-      error = listener;
-      return () => {
-        error = null;
-      };
-    },
-    subscribeUpdateAvailable(listener) {
-      updateAvailable = listener;
-      return () => {
-        updateAvailable = null;
-      };
-    },
-    subscribeUpdateCancelled(listener) {
-      updateCancelled = listener;
-      return () => {
-        updateCancelled = null;
-      };
-    },
-    subscribeUpdateDownloaded(listener) {
-      updateDownloaded = listener;
-      return () => {
-        updateDownloaded = null;
-      };
-    },
-    subscribeUpdateNotAvailable(listener) {
-      updateNotAvailable = listener;
-      return () => {
-        updateNotAvailable = null;
-      };
-    },
-    subscribeUpdateRolledBack(listener) {
-      updateRolledBack = listener;
-      return () => {
-        updateRolledBack = null;
-      };
-    },
-    subscribeUpdateStaging(listener) {
-      updateStaging = listener;
-      return () => {
-        updateStaging = null;
-      };
-    },
-    subscribeUpdateVerified(listener) {
-      updateVerified = listener;
-      return () => {
-        updateVerified = null;
-      };
-    },
-    fireChecking() {
-      checking?.();
-    },
-    fireUpdateAvailable(info) {
-      updateAvailable?.(info);
-    },
-    fireUpdateNotAvailable() {
-      updateNotAvailable?.();
-    },
-    fireDownloadProgress(progress) {
-      downloadProgress?.(progress);
-    },
-    fireUpdateDownloaded(info) {
-      updateDownloaded?.(info);
-    },
-    fireError(e) {
-      error?.(e);
-    },
-    fireUpdateCancelled() {
-      updateCancelled?.();
-    },
-    fireUpdateStaging() {
-      updateStaging?.();
-    },
-    fireUpdateVerified() {
-      updateVerified?.();
-    },
-    fireUpdateRolledBack() {
-      updateRolledBack?.();
+    async install(update) {
+      calls.install.push(update);
+      return installOutcome;
     },
   };
 }
 
-afterEach(() => resetUpdaterBackendForTest());
+function host(command: UpdaterCommandBackend): HasUpdaterCommand {
+  return { updater: { command } };
+}
 
-describe('attachAppUpdater', () => {
-  it('is idempotent — re-attach tears down the prior subscription first', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    let checking = 0;
-    connectSignal(updater.onChecking, () => checking++);
-    attachAppUpdater(updater);
-    attachAppUpdater(updater); // second attach
-    backend.fireChecking();
-    // Only one subscription should be active, so checking fires once
-    expect(checking).toBe(1);
+describe('Updater command transactions', () => {
+  it('awaits exactly one explicit Host updater check', async () => {
+    const backend = fakeBackend({ reason: 'not-available' });
+
+    await expect(checkForAppUpdate(host(backend))).resolves.toEqual({ reason: 'not-available' });
+    expect(backend.calls.check).toBe(1);
   });
 
-  it('is safe when not previously attached', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    expect(() => attachAppUpdater(updater)).not.toThrow();
+  it('pins a downloaded handle to its originating provider across Host replacement', async () => {
+    const update = downloadedUpdate();
+    const origin = fakeBackend({ reason: 'downloaded', update });
+    const replacement = fakeBackend();
+    const checked = await checkForAppUpdate(host(origin));
+    if (checked.reason !== 'downloaded') throw new Error('expected downloaded update');
+
+    await expect(installDownloadedUpdate(host(replacement), checked.update)).resolves.toEqual({ reason: 'ok' });
+    expect(origin.calls.install).toEqual([update]);
+    expect(replacement.calls.install).toEqual([]);
   });
 
-  it('wires all ten signals and updates state for each', () => {
+  it('does not invent error detail when a provider operation rejects', async () => {
     const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    let checking = 0;
-    let notAvailable = 0;
-    let availableInfo: Readonly<UpdateInfo> | null = null;
-    let downloadedInfo: Readonly<UpdateInfo> | null = null;
-    let progress: Readonly<UpdateProgress> | null = null;
-    let receivedError: Readonly<UpdaterError> | null = null;
-    let cancelled = 0;
-    let staging = 0;
-    let verified = 0;
-    let rolledBack = 0;
-
-    connectSignal(updater.onChecking, () => checking++);
-    connectSignal(updater.onUpdateNotAvailable, () => notAvailable++);
-    connectSignal(updater.onUpdateAvailable, (info) => (availableInfo = info));
-    connectSignal(updater.onDownloadProgress, (p) => (progress = p));
-    connectSignal(updater.onUpdateDownloaded, (info) => (downloadedInfo = info));
-    connectSignal(updater.onError, (e) => (receivedError = e));
-    connectSignal(updater.onUpdateCancelled, () => cancelled++);
-    connectSignal(updater.onUpdateStaging, () => staging++);
-    connectSignal(updater.onUpdateVerified, () => verified++);
-    connectSignal(updater.onUpdateRolledBack, () => rolledBack++);
-    attachAppUpdater(updater);
-
-    const prog: UpdateProgress = {
-      bytesPerSecond: 1000,
-      isDelta: false,
-      percent: 42,
-      totalBytes: 100,
-      transferredBytes: 42,
+    backend.check = async () => {
+      throw new Error('native detail must not leak through a portable outcome');
     };
-    const err: UpdaterError = { kind: 'Network', message: 'timeout' };
-    backend.fireChecking();
-    backend.fireUpdateAvailable(FULL_UPDATE_INFO);
-    backend.fireUpdateNotAvailable();
-    backend.fireDownloadProgress(prog);
-    backend.fireUpdateDownloaded(FULL_UPDATE_INFO);
-    backend.fireError(err);
-    backend.fireUpdateCancelled();
-    backend.fireUpdateStaging();
-    backend.fireUpdateVerified();
-    backend.fireUpdateRolledBack();
 
-    expect(checking).toBe(1);
-    expect(notAvailable).toBe(1);
-    expect(availableInfo).toEqual(FULL_UPDATE_INFO);
-    expect(downloadedInfo).toEqual(FULL_UPDATE_INFO);
-    expect(progress).toEqual(prog);
-    expect(receivedError).toEqual(err);
-    expect(cancelled).toBe(1);
-    expect(staging).toBe(1);
-    expect(verified).toBe(1);
-    expect(rolledBack).toBe(1);
+    await expect(checkForAppUpdate(host(backend))).resolves.toEqual({ reason: 'operation-failed' });
   });
 
-  it('updates state machine phases in order', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    attachAppUpdater(updater);
-
-    expect(getAppUpdaterState(updater).phase).toBe('Idle');
-
-    backend.fireChecking();
-    expect(getAppUpdaterState(updater).phase).toBe('Checking');
-
-    backend.fireUpdateAvailable(FULL_UPDATE_INFO);
-    expect(getAppUpdaterState(updater).phase).toBe('UpdateAvailable');
-    expect(getAppUpdaterState(updater).info).toEqual(FULL_UPDATE_INFO);
-
-    const prog: UpdateProgress = {
-      bytesPerSecond: 500,
-      isDelta: false,
-      percent: 50,
-      totalBytes: 200,
-      transferredBytes: 100,
-    };
-    backend.fireDownloadProgress(prog);
-    expect(getAppUpdaterState(updater).phase).toBe('Downloading');
-    expect(getAppUpdaterState(updater).progress).toEqual(prog);
-
-    backend.fireUpdateDownloaded(FULL_UPDATE_INFO);
-    expect(getAppUpdaterState(updater).phase).toBe('Downloaded');
-
-    backend.fireUpdateStaging();
-    expect(getAppUpdaterState(updater).phase).toBe('Staging');
+  it('rejects an update handle that did not originate from a completed check', async () => {
+    await expect(installDownloadedUpdate(host(fakeBackend()), downloadedUpdate())).rejects.toThrow(TypeError);
   });
 
-  it('transitions to Error phase when backend fires error', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    attachAppUpdater(updater);
+  it('destroys only the explicitly supplied provider', () => {
+    const selected = fakeBackend();
+    const other = fakeBackend();
 
-    const err: UpdaterError = { kind: 'Signature', message: 'bad sig' };
-    backend.fireError(err);
-    expect(getAppUpdaterState(updater).phase).toBe('Error');
-    expect(getAppUpdaterState(updater).error).toEqual(err);
+    destroyUpdater(host(selected));
+
+    expect(selected.calls.destroy).toBe(1);
+    expect(other.calls.destroy).toBe(0);
   });
 
-  it('resets to Idle on cancel and rollback', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    attachAppUpdater(updater);
+  it('exports only the reduced transaction surface from both entry points', () => {
+    const expected = ['checkForAppUpdate', 'destroyUpdater', 'installDownloadedUpdate'];
 
-    backend.fireChecking();
-    backend.fireUpdateCancelled();
-    expect(getAppUpdaterState(updater).phase).toBe('Idle');
-
-    backend.fireChecking();
-    backend.fireUpdateRolledBack();
-    expect(getAppUpdaterState(updater).phase).toBe('Idle');
-    expect(getAppUpdaterState(updater).info).toBeNull();
-  });
-});
-
-describe('cancelAppUpdateDownload', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    cancelAppUpdateDownload();
-    expect(backend.cancelled).toBe(1);
-  });
-});
-
-describe('checkAndDownloadAppUpdate', () => {
-  it('calls checkForUpdates; also calls downloadUpdate when autoDownload is true', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    backend.setConfig({ allowPrerelease: false, autoDownload: true, autoInstallOnAppQuit: false });
-    checkAndDownloadAppUpdate();
-    expect(backend.checked).toBe(1);
-    expect(backend.downloaded).toBe(1);
-  });
-
-  it('only checks when autoDownload is false', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    backend.setConfig({ allowPrerelease: false, autoDownload: false, autoInstallOnAppQuit: false });
-    checkAndDownloadAppUpdate();
-    expect(backend.checked).toBe(1);
-    expect(backend.downloaded).toBe(0);
-  });
-
-  it('downloads immediately under autoDownload without gating on update-available', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    backend.setConfig({ allowPrerelease: false, autoDownload: true, autoInstallOnAppQuit: false });
-    checkAndDownloadAppUpdate();
-    // The download fires in the same call as the check; it does not wait for fireUpdateAvailable.
-    // This pins the documented fire-both convenience for instant-trigger backends.
-    expect(backend.downloaded).toBe(1);
-  });
-});
-
-describe('checkForAppUpdate', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    checkForAppUpdate();
-    expect(backend.checked).toBe(1);
-  });
-});
-
-describe('createAppUpdater', () => {
-  it('creates an entity with all ten signals', () => {
-    const updater = createAppUpdater();
-    expect(updater.onChecking).toBeDefined();
-    expect(updater.onUpdateAvailable).toBeDefined();
-    expect(updater.onUpdateNotAvailable).toBeDefined();
-    expect(updater.onDownloadProgress).toBeDefined();
-    expect(updater.onUpdateDownloaded).toBeDefined();
-    expect(updater.onError).toBeDefined();
-    expect(updater.onUpdateCancelled).toBeDefined();
-    expect(updater.onUpdateStaging).toBeDefined();
-    expect(updater.onUpdateVerified).toBeDefined();
-    expect(updater.onUpdateRolledBack).toBeDefined();
-  });
-
-  it('starts in Idle phase with all payloads null', () => {
-    const updater = createAppUpdater();
-    const state = getAppUpdaterState(updater);
-    expect(state.phase).toBe('Idle');
-    expect(state.info).toBeNull();
-    expect(state.progress).toBeNull();
-    expect(state.error).toBeNull();
-  });
-});
-
-describe('createUpdaterConfig', () => {
-  it('returns safe defaults', () => {
-    const config = createUpdaterConfig();
-    expect(config.autoDownload).toBe(false);
-    expect(config.autoInstallOnAppQuit).toBe(false);
-    expect(config.allowPrerelease).toBe(false);
-  });
-});
-
-describe('createUpdaterState', () => {
-  it('returns Idle phase with null payloads', () => {
-    const state = createUpdaterState();
-    expect(state.phase).toBe('Idle');
-    expect(state.info).toBeNull();
-    expect(state.progress).toBeNull();
-    expect(state.error).toBeNull();
-  });
-});
-
-describe('detachAppUpdater', () => {
-  it('stops further delivery', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    let checking = 0;
-    connectSignal(updater.onChecking, () => checking++);
-    attachAppUpdater(updater);
-    detachAppUpdater(updater);
-    backend.fireChecking();
-    expect(checking).toBe(0);
-  });
-
-  it('is safe when not attached', () => {
-    const updater = createAppUpdater();
-    expect(() => detachAppUpdater(updater)).not.toThrow();
-  });
-});
-
-describe('disposeAppUpdater', () => {
-  it('detaches the subscription', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const updater = createAppUpdater();
-    attachAppUpdater(updater);
-    expect(() => disposeAppUpdater(updater)).not.toThrow();
-  });
-});
-
-describe('downloadAppUpdate', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    downloadAppUpdate();
-    expect(backend.downloaded).toBe(1);
-  });
-});
-
-describe('explainUpdaterBackend', () => {
-  afterEach(() => resetUpdaterBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetUpdaterBackendForTest();
-    const explanation = explainUpdaterBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setUpdaterBackend(fakeBackend());
-    expect(explainUpdaterBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installUpdaterHostBackend(fakeBackend());
-    expect(explainUpdaterBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installUpdaterHostBackend(fakeBackend());
-    installUpdaterHostBackend(fakeBackend());
-    expect(explainUpdaterBackend().conflict).toBe(true);
-  });
-});
-
-describe('getAppUpdaterState', () => {
-  it('returns Idle state for an updater that has never been attached', () => {
-    const updater = createAppUpdater();
-    const state = getAppUpdaterState(updater);
-    expect(state.phase).toBe('Idle');
-  });
-
-  it('is per-entity — two updaters have independent states', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    const a = createAppUpdater();
-    const b = createAppUpdater();
-    attachAppUpdater(a);
-    backend.fireChecking();
-    expect(getAppUpdaterState(a).phase).toBe('Checking');
-    expect(getAppUpdaterState(b).phase).toBe('Idle');
-  });
-});
-
-describe('getUpdaterBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getUpdaterBackend()).not.toBeNull();
-  });
-});
-
-describe('getUpdaterBackend (sentinel)', () => {
-  it('no-ops commands and returns inert unsubscribes without throwing', () => {
-    const backend = getUpdaterBackend();
-    expect(() => {
-      backend.setFeedUrl('https://example.com/feed');
-      backend.checkForUpdates();
-      backend.downloadUpdate();
-      backend.cancelDownload();
-      backend.quitAndInstall();
-      backend.rollback();
-      backend.setSignatureConfig(null);
-      backend.setSignatureConfig({ algorithm: 'ed25519', publicKey: 'abc' });
-    }).not.toThrow();
-    expect(typeof backend.subscribeChecking(() => {})).toBe('function');
-    expect(typeof backend.subscribeError(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateCancelled(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateStaging(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateVerified(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateRolledBack(() => {})).toBe('function');
-  });
-
-  it('stores and returns channel', () => {
-    const backend = getUpdaterBackend();
-    expect(backend.getChannel()).toBe('stable');
-    backend.setChannel('beta');
-    expect(backend.getChannel()).toBe('beta');
-  });
-
-  it('stores and returns config', () => {
-    const backend = getUpdaterBackend();
-    const config = createUpdaterConfig();
-    expect(backend.getConfig()).toEqual(config);
-    backend.setConfig({ ...config, autoDownload: true });
-    expect(backend.getConfig().autoDownload).toBe(true);
-  });
-
-  it('returns idle state for every query', () => {
-    const backend = getUpdaterBackend();
-    expect(backend.getChannel()).toBe('stable');
-    const config = backend.getConfig();
-    expect(config.autoDownload).toBe(false);
-    expect(config.autoInstallOnAppQuit).toBe(false);
-    expect(config.allowPrerelease).toBe(false);
-  });
-});
-
-describe('getUpdaterChannel', () => {
-  it('returns the channel from the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    backend.setChannel('beta');
-    expect(getUpdaterChannel()).toBe('beta');
-  });
-});
-
-describe('getUpdaterConfig', () => {
-  it('returns the config from the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    expect(getUpdaterConfig().autoDownload).toBe(false);
-  });
-});
-
-describe('installUpdaterHostBackend', () => {
-  afterEach(() => resetUpdaterBackendForTest());
-
-  it('installs a host backend that getUpdaterBackend returns', () => {
-    const backend = fakeBackend();
-    installUpdaterHostBackend(backend);
-    expect(getUpdaterBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installUpdaterHostBackend(first);
-    installUpdaterHostBackend(second);
-    expect(getUpdaterBackend()).toBe(first);
-    expect(explainUpdaterBackend().conflict).toBe(true);
-  });
-});
-
-describe('isAppUpdateEligible', () => {
-  it('returns true when seed falls within stagedRolloutPercent', () => {
-    const info: Readonly<UpdateInfo> = { ...FULL_UPDATE_INFO, stagedRolloutPercent: 50 };
-    expect(isAppUpdateEligible(info, 0.4)).toBe(true); // 0.4 * 100 = 40 < 50
-  });
-
-  it('returns false when seed is at or above stagedRolloutPercent', () => {
-    const info: Readonly<UpdateInfo> = { ...FULL_UPDATE_INFO, stagedRolloutPercent: 50 };
-    expect(isAppUpdateEligible(info, 0.5)).toBe(false); // 0.5 * 100 = 50, not < 50
-    expect(isAppUpdateEligible(info, 0.9)).toBe(false);
-  });
-
-  it('always eligible when stagedRolloutPercent is 100', () => {
-    const info: Readonly<UpdateInfo> = { ...FULL_UPDATE_INFO, stagedRolloutPercent: 100 };
-    expect(isAppUpdateEligible(info, 0.99)).toBe(true);
-  });
-
-  it('never eligible when stagedRolloutPercent is 0', () => {
-    const info: Readonly<UpdateInfo> = { ...FULL_UPDATE_INFO, stagedRolloutPercent: 0 };
-    expect(isAppUpdateEligible(info, 0)).toBe(false);
-  });
-});
-
-describe('observeUpdaterHostResult', () => {
-  afterEach(() => resetUpdaterBackendForTest());
-
-  it('records a successful observation', () => {
-    installUpdaterHostBackend(fakeBackend());
-    observeUpdaterHostResult('cancelDownload', true);
-    const explanation = explainUpdaterBackend();
-    expect(explanation.operation).toBe('cancelDownload');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installUpdaterHostBackend(fakeBackend());
-    observeUpdaterHostResult('cancelDownload', false);
-    expect(explainUpdaterBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-describe('quitAndInstallUpdate', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    quitAndInstallUpdate();
-    expect(backend.quit).toBe(1);
-  });
-});
-
-describe('resetUpdaterBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setUpdaterBackend(fakeBackend());
-    installUpdaterHostBackend(fakeBackend());
-    observeUpdaterHostResult('cancelDownload', true);
-    resetUpdaterBackendForTest();
-    expect(explainUpdaterBackend().layer).toBe('host-not-enabled');
-    expect(explainUpdaterBackend().conflict).toBe(false);
-    expect(explainUpdaterBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('rollbackAppUpdate', () => {
-  it('delegates to the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    rollbackAppUpdate();
-    expect(backend.rolledBack).toBe(1);
-  });
-});
-
-describe('setUpdaterBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setUpdaterBackend(fakeBackend());
-    setUpdaterBackend(null);
-    expect(getUpdaterBackend()).not.toBeNull();
-  });
-});
-
-describe('setUpdaterChannel', () => {
-  it('sets the channel on the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    setUpdaterChannel('alpha');
-    expect(backend.getChannel()).toBe('alpha');
-  });
-});
-
-describe('setUpdaterConfig', () => {
-  it('forwards the config to the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    setUpdaterConfig({ allowPrerelease: true, autoDownload: true, autoInstallOnAppQuit: true });
-    const config = backend.getConfig();
-    expect(config.allowPrerelease).toBe(true);
-    expect(config.autoDownload).toBe(true);
-    expect(config.autoInstallOnAppQuit).toBe(true);
-  });
-});
-
-describe('setUpdaterFeedUrl', () => {
-  it('forwards the URL to the active backend', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    setUpdaterFeedUrl('https://example.com/feed');
-    expect(backend.feedUrl).toBe('https://example.com/feed');
-  });
-});
-
-describe('setUpdaterSignatureConfig', () => {
-  it('forwards the config to the active backend without throwing', () => {
-    const backend = fakeBackend();
-    setUpdaterBackend(backend);
-    expect(() => setUpdaterSignatureConfig({ algorithm: 'ed25519', publicKey: 'pubkey' })).not.toThrow();
-    expect(() => setUpdaterSignatureConfig(null)).not.toThrow();
+    expect(Object.keys(updaterPublic).sort()).toEqual(expected);
+    expect(Object.keys(updaterContract).sort()).toEqual(expected);
   });
 });

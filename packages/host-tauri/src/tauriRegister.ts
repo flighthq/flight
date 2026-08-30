@@ -50,7 +50,7 @@ type TauriHost = Host &
 //   registerTauriBackends({ app, window, menu, tray, clipboard, dialog, notification, opener, os, globalShortcut, process });
 //
 // Pass the returned host to clipboard, menu, window, dialog, and notification operations. Unmigrated
-// seams Tauri does not cover here (storage, protocol, updater, ipc, power, screen) retain their web
+// seams Tauri does not cover here (storage, protocol, ipc, power, screen) retain their web
 // defaults because a Tauri app runs in a webview; each set*Backend(null) still reverts one of those.
 export function registerTauriBackends(tauri: TauriApi): TauriHost {
   const clipboard = createTauriClipboardBackend(tauri);
@@ -87,6 +87,8 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     system: {},
     text: {},
     ui: {},
+    // This injected Tauri API exposes no updater plugin, so no transaction provider is claimed.
+    updater: {},
     window,
   } satisfies Omit<TauriHost, typeof EntityRuntimeKey>);
 }

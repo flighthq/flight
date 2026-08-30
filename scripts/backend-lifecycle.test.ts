@@ -53,6 +53,7 @@ describe('backend provider lifetime census', () => {
     'MenuSelectBackend',
     'PowerBackend',
     'ScreenQueryBackend',
+    'UpdaterCommandBackend',
   ];
 
   beforeAll(() => {
@@ -156,7 +157,7 @@ describe('backend provider lifetime census', () => {
 
   // The ratchet: every backend that DECLARES a whole-backend teardown must have its lifecycle owner name it.
   // That is a wiring check, not a proof that teardown is complete — see the scope caveat below.
-  it('accepts explicit Screen Host ownership without hiding inherited Menu debt', () => {
+  it('accepts structurally derived explicit Host ownership without hiding inherited Menu debt', () => {
     expect(report.violations.map((violation) => violation.interfaceName)).toEqual([
       'MenuApplicationBackend',
       'MenuHighlightBackend',
@@ -166,6 +167,7 @@ describe('backend provider lifetime census', () => {
     expect(report.violations.some((violation) => violation.interfaceName === 'ScreenQueryBackend')).toBe(false);
     expect(report.violations.some((violation) => violation.interfaceName === 'MediaSessionBackend')).toBe(false);
     expect(report.violations.some((violation) => violation.interfaceName === 'MediaSessionActionBackend')).toBe(false);
+    expect(report.violations.some((violation) => violation.interfaceName === 'UpdaterCommandBackend')).toBe(false);
     expect(hasBackendLifecycleFailure(report)).toBe(true);
   });
 
@@ -217,6 +219,7 @@ describe('backend provider lifetime census', () => {
       'MenuSelectBackend',
       'PowerBackend',
       'ScreenQueryBackend',
+      'UpdaterCommandBackend',
     ]);
   });
 

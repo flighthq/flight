@@ -40,7 +40,12 @@ describe('createHostProbeProviderResults', () => {
 
 describe('getRequiredHostProbeCapabilities', () => {
   it('keeps each host subset explicit', () => {
-    expect(getRequiredHostProbeCapabilities('electron').size).toBe(16);
+    const electron = getRequiredHostProbeCapabilities('electron');
+    expect(electron.size).toBe(16);
+    expect(electron.has('updater')).toBe(true);
+    expect(getRequiredHostProbeCapabilities('web').has('updater')).toBe(false);
+    expect(getRequiredHostProbeCapabilities('tauri').has('updater')).toBe(false);
+    expect(getRequiredHostProbeCapabilities('capacitor').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('tauri').size).toBe(10);
     expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(12);
     expect(getRequiredHostProbeCapabilities('web').size).toBe(11);

@@ -25,7 +25,9 @@ The **Capacitor (mobile) host adapter** — concrete implementations of Flight's
 
 - **A `host-*` package** (`crate: null`, TS-only, not in the sdk barrel). Injected `CapacitorApi`, no `@capacitor` hard dep.
 - **Adapter only** — provides backends to capability packages; not itself a `*Backend`.
-- **Mobile seam subset; sentinel the rest.** Desktop-only capabilities (menu, tray, window-management, updater, global shortcuts) are outside Capacitor's model — do NOT fabricate them; return sentinel; `explain*` reports `'host-does-not-offer'`, never silently substituting web. This is why the covered set differs from host-electron/host-tauri.
+- **Mobile seam subset; omit the rest.** Desktop-only capabilities (menu, tray, window-management,
+  updater, global shortcuts) are outside Capacitor's model — do not fabricate providers. In particular,
+  `Host.updater` is exactly empty. This is why the covered set differs from host-electron/host-tauri.
 
 ## Decisions
 
@@ -33,6 +35,8 @@ _Append-only, dated, blessed rulings._
 
 - **[2026-07-11] Injected `CapacitorApi`, no hard dep.** The Capacitor plugin objects are passed to `registerCapacitorBackends`, typed against a local `CapacitorApi` interface; builds and fake-tests without `@capacitor/*` installed.
 - **[2026-07-11] Mobile subset by design.** The covered seams are the mobile-relevant ones Capacitor plugins provide; the desktop-only seams host-electron fills are deliberately absent (not a gap — Capacitor's platform doesn't have them).
+- **[2026-08-30] Updater remains absent.** The supported Capacitor plugin facade has no
+  Squirrel-compatible transaction; `capacitorHost` returns `updater: {}`.
 
 ## Open directions
 

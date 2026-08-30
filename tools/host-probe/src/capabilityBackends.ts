@@ -12,7 +12,6 @@ import { getShortcutBackend } from '@flighthq/shortcut/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
 import { getTrayBackend } from '@flighthq/tray/contract';
 import type { Host } from '@flighthq/types/contract';
-import { getUpdaterBackend } from '@flighthq/updater/contract';
 
 import type { HostProbeCapability } from './expectations';
 
@@ -34,6 +33,7 @@ export function captureHostProbeBackends(
       | 'screen'
       | 'share'
       | 'storage'
+      | 'updater'
       | 'window'
     >
   > = {},
@@ -65,7 +65,7 @@ export function captureHostProbeBackends(
     statusbar: getStatusBarBackend(),
     storage: host.storage?.local ?? null,
     tray: getTrayBackend(),
-    updater: getUpdaterBackend(),
+    updater: host.updater?.command ?? null,
     window: host.window ?? null,
   };
 }

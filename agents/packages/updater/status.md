@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/updater'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder3
 ---
 
 # updater — Status
@@ -11,36 +11,25 @@ by: principal
 
 ## Open
 
-Re-checked against `packages/updater/src/`, `packages/types/src/Updater.ts`, and the one host that
-implements the seam on 2026-08-08. A file:line here is a claim about this tree, not about a session.
+Re-checked against `packages/updater/src/`, `packages/types/src/Updater.ts`, and the four Host assemblers
+on 2026-08-30. No known correctness gap remains in the authorized Squirrel-only slice.
 
-- **Nothing parses an update feed.** There is no `@flighthq/updater-formats` package and no
-  `parseUpdaterFeed*` / `parseAppcast*` symbol anywhere in `packages/`. `setUpdaterFeedUrl`
-  (`updater.ts:264`) only hands a URL to the backend, so the host owns every byte of feed
-  interpretation and must mint `UpdateInfo` itself.
-- **`checkAndDownloadAppUpdate` fires both calls in one turn** (`updater.ts:72-78`): it invokes
-  `checkForUpdates()` and, under `autoDownload`, `downloadUpdate()` immediately — it does not wait for
-  an update-available event. Fine for a trigger-style backend, wrong for one that needs the sequential
-  flow. Pinned by a colocated test so it cannot drift silently.
-- **`UpdaterError.kind` is an open `string`** (`types/src/Updater.ts:29-31`), so a caller cannot switch
-  exhaustively; the conventional values live only in the type comment.
-- **The Electron backend is the built-in Squirrel updater, so most of the seam is honest no-ops.**
-  `downloadUpdate` re-runs `checkForUpdates` (`host-electron/src/electronUpdater.ts:19-22`);
-  `cancelDownload`, `rollback`, and `setSignatureConfig` do nothing (`:23-48`); and
-  `subscribeDownloadProgress` / `Cancelled` / `RolledBack` / `Staging` / `Verified` return inert
-  unsubscribes (`:62-96`). `UpdaterState` therefore never reaches `Downloading` or `Staging` on
-  Electron, and four of the ten `AppUpdater` signals can never fire there.
-- **Every Electron updater error is reported as `kind: 'Network'`** (`electronUpdater.ts:75`),
-  whatever actually failed — a signature or disk error is indistinguishable from a fetch failure.
-- **`isAppUpdateEligible` always returns true on Electron.** `toUpdateInfo`
-  (`electronUpdater.ts:103-115`) pins `stagedRolloutPercent` to 100 and sentinels `deltaFromVersion`,
-  `downloadSizeBytes`, `minimumOsVersion`, and `sha512`, so the staged-rollout gate
-  (`updater.ts:231`) has no real input from the only host that supplies one.
+- The public package has three transaction functions: awaited check, provider-pinned install, and
+  provider destroy. Native update events are private to the Electron adapter; no duplicate `AppUpdater`
+  event/state/config model remains.
+- `Host.updater.command` is the only provider path. Electron fills it with an Entity; web, Tauri, and
+  Capacitor expose the required top-level group with an empty capability set because their current
+  injected APIs provide no compatible Squirrel transaction.
+- Feed URL is immutable Electron provider-construction policy. Downloaded metadata and handles are
+  copied/frozen, unknown fields are null, and portable failures expose only reliable method-tight causes.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Replaced the ambient 21-method command/event model with explicit
+  `Host.updater.command`, one awaited Squirrel check transaction, origin-pinned `DownloadedUpdate`
+  installation, exact provider teardown, nullable frozen metadata, and empty W/T/C capability groups.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Two recorded type claims are **false**:
   no `UpdaterErrorKind` / `UpdaterPhaseKind` string unions exist (`kind` is a bare `string` and the
   phase type is `UpdaterPhase`, `types/src/Updater.ts:29`, `:50`), and `subscribeError` does not wrap

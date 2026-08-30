@@ -24,6 +24,7 @@ import type {
   HasNotificationShow,
   HasScreenChange,
   HasScreenQuery,
+  HasUpdaterCommand,
   HasMenuApplication,
   HasMenuPopup,
   HasMenuSelect,
@@ -32,7 +33,6 @@ import type {
   HasWindowOpen,
   Host,
 } from '@flighthq/types/contract';
-import { setUpdaterBackend } from '@flighthq/updater/contract';
 
 import { createElectronAppBackend } from './electronApp';
 import { createElectronClipboardBackend } from './electronClipboard';
@@ -70,6 +70,7 @@ type ElectronHost = Host &
   HasScreenChange &
   HasScreenQuery &
   HasStorageLocal &
+  HasUpdaterCommand &
   HasWindowAttach &
   HasWindowOpen;
 
@@ -98,6 +99,7 @@ export function registerElectronBackends(
   const menu = createElectronMenuBackends(electron);
   const power = createElectronPowerBackends(electron);
   const storage = createElectronStorageBackend(electron, options.storageFileName);
+  const updater = createElectronUpdaterBackend(electron, options.updaterFeedUrl);
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
@@ -105,7 +107,6 @@ export function registerElectronBackends(
   setShortcutBackend(createElectronShortcutBackend(electron));
   setShellBackend(createElectronShellBackend(electron));
   setProtocolBackend(createElectronProtocolBackend(electron));
-  setUpdaterBackend(createElectronUpdaterBackend(electron));
   setIpcBackend(createElectronIpcBackend(electron));
   return createEntity({
     accessibility: {},
@@ -126,6 +127,7 @@ export function registerElectronBackends(
     system: {},
     text: {},
     ui: {},
+    updater: { command: updater },
     window,
   } satisfies Omit<ElectronHost, typeof EntityRuntimeKey>);
 }

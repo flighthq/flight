@@ -102,6 +102,7 @@ describe('capacitorHost', () => {
     expect(host.storage).toEqual({});
     expect(host.system).toEqual({});
     expect(host.media).toEqual({});
+    expect(host.updater).toEqual({});
   });
 
   // Every WindowBackend member is optional, so {} is the honest claim for a webview app with no native

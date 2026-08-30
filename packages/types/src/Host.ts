@@ -99,7 +99,7 @@ import type { StorageBackend, StorageChangeBackend } from './Storage';
 import type { TextSegmenterBackend } from './TextSegment';
 import type { TextShaperBackend } from './TextShaper';
 import type { TrayBackend } from './Tray';
-import type { UpdaterBackend } from './Updater';
+import type { UpdaterCommandBackend } from './Updater';
 import type { VideoCapabilityBackend } from './VideoCapabilityBackend';
 import type { WebcamBackend } from './Webcam';
 import type { WgpuHostBackend } from './WgpuHost';
@@ -123,6 +123,7 @@ export interface Host extends Entity {
   readonly system: HostSystemCapabilities;
   readonly text: HostTextCapabilities;
   readonly ui: HostUiCapabilities;
+  readonly updater: HostUpdaterCapabilities;
   readonly window: WindowBackend;
 }
 
@@ -138,7 +139,6 @@ export interface HostAppCapabilities {
   readonly loop?: LoopBackend;
   readonly protocol?: ProtocolBackend;
   readonly shortcut?: ShortcutBackend;
-  readonly updater?: UpdaterBackend;
   readonly visibility?: ApplicationVisibilityBackend;
 }
 
@@ -283,6 +283,10 @@ export interface HostUiCapabilities {
   readonly tray?: TrayBackend;
 }
 
+export interface HostUpdaterCapabilities {
+  readonly command?: UpdaterCommandBackend;
+}
+
 export interface HasAccessibilityProvider {
   readonly accessibility: { readonly provider: AccessibilityBackend };
 }
@@ -315,8 +319,8 @@ export interface HasAppShortcut {
   readonly app: { readonly shortcut: ShortcutBackend };
 }
 
-export interface HasAppUpdater {
-  readonly app: { readonly updater: UpdaterBackend };
+export interface HasUpdaterCommand {
+  readonly updater: { readonly command: UpdaterCommandBackend };
 }
 
 export interface HasAppVisibilityQuery {

@@ -1,319 +1,67 @@
-import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
-  AppUpdater,
-  UpdateInfo,
-  UpdaterBackend,
-  UpdaterConfig,
-  UpdaterSignatureConfig,
-  UpdaterState,
+  AppUpdateCheckOutcome,
+  AppUpdateInstallOutcome,
+  DownloadedUpdate,
+  HasUpdaterCommand,
+  UpdaterCommandBackend,
 } from '@flighthq/types/contract';
 
-// Begins delivering update lifecycle events to `updater`'s signals by subscribing to the active
-// backend. Each subscribe* is wired to its matching signal, and the phase state is updated on every
-// event so getAppUpdaterState reflects the latest lifecycle. Idempotent: a prior subscription is
-// torn down first. Pair with detachAppUpdater/disposeAppUpdater.
-export function attachAppUpdater(updater: AppUpdater): void {
-  detachAppUpdater(updater);
-  const backend = getUpdaterBackend();
-  const unsubscribes = [
-    backend.subscribeChecking(() => {
-      _setState(updater, { phase: 'Checking', info: null, progress: null, error: null });
-      emitSignal(updater.onChecking);
-    }),
-    backend.subscribeUpdateAvailable((info) => {
-      _setState(updater, { phase: 'UpdateAvailable', info, progress: null, error: null });
-      emitSignal(updater.onUpdateAvailable, info);
-    }),
-    backend.subscribeUpdateNotAvailable(() => {
-      _setState(updater, (prev) => ({ ...prev, phase: 'Idle' }));
-      emitSignal(updater.onUpdateNotAvailable);
-    }),
-    backend.subscribeDownloadProgress((progress) => {
-      _setState(updater, (prev) => ({ ...prev, phase: 'Downloading', progress }));
-      emitSignal(updater.onDownloadProgress, progress);
-    }),
-    backend.subscribeUpdateDownloaded((info) => {
-      _setState(updater, (prev) => ({ ...prev, phase: 'Downloaded', info, progress: null }));
-      emitSignal(updater.onUpdateDownloaded, info);
-    }),
-    backend.subscribeError((error) => {
-      _setState(updater, (prev) => ({ ...prev, phase: 'Error', error }));
-      emitSignal(updater.onError, error);
-    }),
-    backend.subscribeUpdateCancelled(() => {
-      _setState(updater, (prev) => ({ ...prev, phase: 'Idle' }));
-      emitSignal(updater.onUpdateCancelled);
-    }),
-    backend.subscribeUpdateStaging(() => {
-      _setState(updater, (prev) => ({ ...prev, phase: 'Staging' }));
-      emitSignal(updater.onUpdateStaging);
-    }),
-    backend.subscribeUpdateVerified(() => {
-      emitSignal(updater.onUpdateVerified);
-    }),
-    backend.subscribeUpdateRolledBack(() => {
-      _setState(updater, (prev) => ({ ...prev, phase: 'Idle', info: null, progress: null, error: null }));
-      emitSignal(updater.onUpdateRolledBack);
-    }),
-  ];
-  _subscriptions.set(updater, () => {
-    for (const unsubscribe of unsubscribes) unsubscribe();
-  });
-}
+const CHECK_IN_PROGRESS = Object.freeze({ reason: 'check-in-progress' }) as AppUpdateCheckOutcome;
+const NOT_AVAILABLE = Object.freeze({ reason: 'not-available' }) as AppUpdateCheckOutcome;
+const OPERATION_FAILED: Readonly<{ reason: 'operation-failed' }> = Object.freeze({ reason: 'operation-failed' });
+const INSTALL_OK = Object.freeze({ reason: 'ok' }) as AppUpdateInstallOutcome;
+const _downloadOwners = new WeakMap<DownloadedUpdate, UpdaterCommandBackend>();
 
-// Asks the active backend to cancel a download in progress. Result arrives via onUpdateCancelled or
-// onError(kind: 'Cancelled') depending on the backend.
-export function cancelAppUpdateDownload(): void {
-  getUpdaterBackend().cancelDownload();
-}
-
-// Triggers a check; if an update is found and autoDownload is true, also starts the download. This
-// is a single-call convenience; results still arrive through signals.
-export function checkAndDownloadAppUpdate(): void {
-  const config = getUpdaterConfig();
-  getUpdaterBackend().checkForUpdates();
-  if (config.autoDownload) {
-    getUpdaterBackend().downloadUpdate();
+export async function checkForAppUpdate(host: HasUpdaterCommand): Promise<AppUpdateCheckOutcome> {
+  const provider = host.updater.command;
+  try {
+    const outcome = await host.updater.command.check();
+    switch (outcome.reason) {
+      case 'check-in-progress':
+        return CHECK_IN_PROGRESS;
+      case 'not-available':
+        return NOT_AVAILABLE;
+      case 'operation-failed':
+        return OPERATION_FAILED;
+      case 'downloaded': {
+        const existingOwner = _downloadOwners.get(outcome.update);
+        if (existingOwner !== undefined && existingOwner !== provider) return OPERATION_FAILED;
+        _downloadOwners.set(outcome.update, provider);
+        return Object.freeze({ reason: 'downloaded', update: outcome.update });
+      }
+      default:
+        return OPERATION_FAILED;
+    }
+  } catch {
+    return OPERATION_FAILED;
   }
 }
 
-// Asks the active backend to check for an available update. Lifecycle results arrive through the
-// attached AppUpdater's signals.
-export function checkForAppUpdate(): void {
-  getUpdaterBackend().checkForUpdates();
+export function destroyUpdater(host: HasUpdaterCommand): void {
+  assertSyncVoid(host.updater.command.destroy());
 }
 
-// Allocates an AppUpdater event entity with inert signals and an Idle state; call attachAppUpdater
-// to start delivery.
-export function createAppUpdater(): AppUpdater {
-  const updater: AppUpdater = {
-    onChecking: createSignal(),
-    onDownloadProgress: createSignal(),
-    onError: createSignal(),
-    onUpdateAvailable: createSignal(),
-    onUpdateCancelled: createSignal(),
-    onUpdateDownloaded: createSignal(),
-    onUpdateNotAvailable: createSignal(),
-    onUpdateRolledBack: createSignal(),
-    onUpdateStaging: createSignal(),
-    onUpdateVerified: createSignal(),
-  };
-  _states.set(updater, createUpdaterState());
-  return updater;
-}
+export async function installDownloadedUpdate(
+  host: HasUpdaterCommand,
+  update: DownloadedUpdate,
+): Promise<AppUpdateInstallOutcome> {
+  const origin = _downloadOwners.get(update);
+  if (origin === undefined) throw new TypeError('Downloaded update did not originate from a completed check');
 
-// Allocates an UpdaterConfig with the recommended defaults: manual download, no auto-install, no
-// prerelease.
-export function createUpdaterConfig(): UpdaterConfig {
-  return {
-    allowPrerelease: false,
-    autoDownload: false,
-    autoInstallOnAppQuit: false,
-  };
-}
-
-// Allocates a zeroed UpdaterState at the Idle phase with all payloads null.
-export function createUpdaterState(): UpdaterState {
-  return {
-    error: null,
-    info: null,
-    phase: 'Idle',
-    progress: null,
-  };
-}
-
-// Stops delivery to `updater` and forgets its subscription. Safe to call when not attached.
-export function detachAppUpdater(updater: AppUpdater): void {
-  const unsubscribe = _subscriptions.get(updater);
-  if (unsubscribe !== undefined) {
-    unsubscribe();
-    _subscriptions.delete(updater);
+  try {
+    // Keep the direct Host capability path visible while still honoring the handle's exact origin after
+    // provider replacement. A different selected provider never observes the downloaded handle.
+    const outcome =
+      host.updater.command === origin ? await host.updater.command.install(update) : await origin.install(update);
+    if (outcome.reason !== 'ok') return OPERATION_FAILED;
+    _downloadOwners.delete(update);
+    return INSTALL_OK;
+  } catch {
+    return OPERATION_FAILED;
   }
 }
 
-// Releases `updater` for garbage collection by detaching its backend subscription. The signals remain
-// plain GC-managed memory afterward.
-export function disposeAppUpdater(updater: AppUpdater): void {
-  detachAppUpdater(updater);
-}
-
-// Asks the active backend to download the available update. Progress and completion arrive through
-// the attached AppUpdater's signals.
-export function downloadAppUpdate(): void {
-  getUpdaterBackend().downloadUpdate();
-}
-
-export function explainUpdaterBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
-}
-
-// Returns the current queryable lifecycle state for `updater`. This lets a late subscriber or UI
-// read whether a check is pending, what update is available, or the last error, without having
-// listened since the beginning.
-export function getAppUpdaterState(updater: AppUpdater): Readonly<UpdaterState> {
-  return _states.get(updater) ?? createUpdaterState();
-}
-
-export function getUpdaterBackend(): UpdaterBackend {
-  return _custom ?? _host ?? _sentinel;
-}
-
-// Returns the active update channel string. Conventional values are 'stable', 'beta', 'alpha'.
-export function getUpdaterChannel(): string {
-  return getUpdaterBackend().getChannel();
-}
-
-// Returns a copy of the active updater configuration.
-export function getUpdaterConfig(): Readonly<UpdaterConfig> {
-  return getUpdaterBackend().getConfig();
-}
-
-export function installUpdaterHostBackend(backend: UpdaterBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  _host = backend;
-}
-
-// Deterministic check for staged-rollout eligibility. Returns true when the given `rolloutSeed`
-// (a number in [0, 1)) falls within the update's staged rollout percentage. A seed derived from a
-// stable device/user identifier ensures consistent results across sessions for the same device.
-// NOTE: `stagedRolloutPercent` is 0–100; 100 means full rollout.
-export function isAppUpdateEligible(info: Readonly<UpdateInfo>, rolloutSeed: number): boolean {
-  return rolloutSeed * 100 < info.stagedRolloutPercent;
-}
-
-export function observeUpdaterHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = { operation, viability: succeeded ? 'available' : 'runtime-api-unavailable' };
-}
-
-// Quits the application and installs a downloaded update via the active backend.
-export function quitAndInstallUpdate(): void {
-  getUpdaterBackend().quitAndInstall();
-}
-
-export function resetUpdaterBackendForTest(): void {
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-  _sentinelChannel = 'stable';
-  _sentinelConfig = createUpdaterConfig();
-}
-
-// Requests the active backend to roll back the last installed update. The backend must support
-// rollback (Squirrel/MSIX); the web default no-ops. Result arrives via onUpdateRolledBack.
-export function rollbackAppUpdate(): void {
-  getUpdaterBackend().rollback();
-}
-
-export function setUpdaterBackend(backend: UpdaterBackend | null): void {
-  _custom = backend;
-}
-
-// Sets the active update channel. Conventional values: 'stable', 'beta', 'alpha'. Free string so
-// hosts and apps can define their own channels. Layered over the feed URL, not replacing it.
-export function setUpdaterChannel(channel: string): void {
-  getUpdaterBackend().setChannel(channel);
-}
-
-// Applies an updater configuration (auto-download, auto-install-on-quit, allow-prerelease) to the
-// active backend.
-export function setUpdaterConfig(config: Readonly<UpdaterConfig>): void {
-  getUpdaterBackend().setConfig(config);
-}
-
-// Points the active backend at an update feed URL.
-export function setUpdaterFeedUrl(url: string): void {
-  getUpdaterBackend().setFeedUrl(url);
-}
-
-// Configures signature/integrity verification for the active backend. Verification executes in the
-// host backend; this package owns the configuration contract and the result events. Pass null to
-// clear any previously set signature config.
-export function setUpdaterSignatureConfig(config: Readonly<UpdaterSignatureConfig> | null): void {
-  getUpdaterBackend().setSignatureConfig(config);
-}
-
-let _custom: UpdaterBackend | null = null;
-let _host: UpdaterBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
-
-let _sentinelChannel = 'stable';
-let _sentinelConfig: UpdaterConfig = createUpdaterConfig();
-
-const _sentinel: UpdaterBackend = {
-  cancelDownload() {},
-  checkForUpdates() {},
-  downloadUpdate() {},
-  getChannel() {
-    return _sentinelChannel;
-  },
-  getConfig() {
-    return _sentinelConfig;
-  },
-  quitAndInstall() {},
-  rollback() {},
-  setChannel(channel) {
-    _sentinelChannel = channel;
-  },
-  setConfig(config) {
-    _sentinelConfig = { ...config };
-  },
-  setFeedUrl() {},
-  setSignatureConfig() {},
-  subscribeChecking() {
-    return () => {};
-  },
-  subscribeDownloadProgress() {
-    return () => {};
-  },
-  subscribeError() {
-    return () => {};
-  },
-  subscribeUpdateAvailable() {
-    return () => {};
-  },
-  subscribeUpdateCancelled() {
-    return () => {};
-  },
-  subscribeUpdateDownloaded() {
-    return () => {};
-  },
-  subscribeUpdateNotAvailable() {
-    return () => {};
-  },
-  subscribeUpdateRolledBack() {
-    return () => {};
-  },
-  subscribeUpdateStaging() {
-    return () => {};
-  },
-  subscribeUpdateVerified() {
-    return () => {};
-  },
-};
-
-const _states = new WeakMap<AppUpdater, UpdaterState>();
-const _subscriptions = new WeakMap<AppUpdater, () => void>();
-
-// Updates the per-entity state. Accepts either a full replacement or an updater function.
-function _setState(updater: AppUpdater, update: UpdaterState | ((prev: Readonly<UpdaterState>) => UpdaterState)): void {
-  const prev = _states.get(updater) ?? createUpdaterState();
-  const next = typeof update === 'function' ? update(prev) : update;
-  _states.set(updater, next);
+type IsAny<T> = 0 extends 1 & T ? true : false;
+function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {
+  void value;
 }

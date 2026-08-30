@@ -334,9 +334,6 @@
     "@flighthq/tween createTweenManager",
     "@flighthq/tween createTweenStagger",
     "@flighthq/tween createTweenTimer",
-    "@flighthq/updater createAppUpdater",
-    "@flighthq/updater createUpdaterConfig",
-    "@flighthq/updater createUpdaterState",
     "@flighthq/velocity createVelocityField",
     "@flighthq/video createVideoResource",
     "@flighthq/video createVideoResourceFromMediaStream"

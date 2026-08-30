@@ -82,9 +82,12 @@ describe('backend operation seam ratchet', () => {
   // Deriving that shape adds 23 already-landed explicit Host interfaces without weakening the legacy
   // explain/has predicate, raising the floor 15 → 38. MediaSession and MediaSessionAction are among those
   // completions, and deleting either Host slot or any direct operation call drops this count.
-  // 38 of 83 enforced / 45 not migrated after the explicit-Host completion ruling.
+  // UpdaterCommand then moves from the ambient resolver to Host.updater.command: check and install are
+  // both consumed through that exact slot and destroy is counted by the companion lifecycle census.
+  // This independently raises the floor 38 → 39 without changing the membership predicate.
+  // 39 of 83 enforced / 44 not migrated after the Updater transaction migration.
   it('never enforces fewer interfaces than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(38);
+    expect(report.enforced).toBeGreaterThanOrEqual(39);
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.
@@ -116,6 +119,7 @@ describe('backend operation seam ratchet', () => {
     expect(explicitHostSlots.get('ScreenQuery')).toBe('Host.screen.query');
     expect(explicitHostSlots.get('MediaSession')).toBe('Host.media.session');
     expect(explicitHostSlots.get('MediaSessionAction')).toBe('Host.media.sessionAction');
+    expect(explicitHostSlots.get('UpdaterCommand')).toBe('Host.updater.command');
   });
 
   // Membership is structural: every enforced entry names the package whose exports proved it, and nothing

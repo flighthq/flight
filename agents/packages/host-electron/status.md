@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/host-electron'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder3
 ---
 
 # host-electron — Status
@@ -14,12 +14,6 @@ by: principal
 Every item below was re-checked against `packages/host-electron/src/` on 2026-08-08. Per-method
 coverage lives in [`seam-audit.md`](seam-audit.md); this section carries only what is unfinished.
 
-- **The updater is Squirrel-only and its progress is permanently inert.**
-  `createElectronUpdaterBackend` wraps the built-in `autoUpdater`, which conflates check+download, so
-  `downloadUpdate` and `subscribeDownloadProgress` are honest no-ops
-  (`electronUpdater.ts:6-7`, `:63`). An `electron-updater`-backed variant would need an injected
-  `ElectronUpdaterApi` and a second factory — a user ruling on the intended production updater path
-  before it is work.
 - **IPC is receive-only.** The main-process backend can `subscribe` to renderer messages but cannot
   `send`/`invoke` without a `webContents` target (`electronIpc.ts:4`, `:10`); `send` no-ops, which
   its own test pins (`electronIpc.test.ts:25`). Fixing it means either extending `IpcBackend` in
@@ -41,6 +35,9 @@ coverage lives in [`seam-audit.md`](seam-audit.md); this section carries only wh
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Electron now returns an Entity-backed `Host.updater.command`: one awaited built-in
+  Squirrel check owns its exact listener transaction, yields a frozen origin-pinned downloaded handle,
+  installs through that origin, and treats feed URL as immutable provider-construction policy.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Biggest false claim dropped: the parked
   "stale premise — no `electronStorage.ts`, no `StorageBackend` import in `electronRegister.ts`, no
   `@flighthq/storage` dependency, so the `package.json` description must not claim a storage seam."
