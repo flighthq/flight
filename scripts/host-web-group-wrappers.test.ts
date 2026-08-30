@@ -139,7 +139,8 @@ describe('host-Web group wrapper boundaries', () => {
     const source = readFileSync(path, 'utf8');
 
     expect(collectImportSpecifiers(source).sort()).toEqual([...spec.imports].sort());
-    expect(source).toContain(`export const ${spec.name} = createHost({`);
+    expect(source).toContain(`export const ${spec.name}:`);
+    expect(source).toMatch(/=\s*createHost\(\{/);
     expect(source).toMatch(new RegExp(`\\b${spec.group}: \\{`));
   });
 });

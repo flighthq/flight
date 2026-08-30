@@ -1,6 +1,7 @@
 export { enableHostWeb } from './enableHostWeb';
 export { webApplicationExitBackend } from './webApplicationExit';
 export { createWebAccessibilityBackend, webAccessibilityBackend } from './webAccessibility';
+export { webAccessibilityHost } from './webAccessibilityHost';
 export { createWebAppCapabilities } from './webApp';
 export { webAppHost } from './webAppHost';
 export { enableHostWebAudio } from './webAudio';
@@ -9,7 +10,9 @@ export { enableHostWebBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
 export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 export { webClipboardBackend } from './webClipboard';
+export { webClipboardHost } from './webClipboardHost';
 export { createWebConnectivityBackend, webConnectivityBackend } from './webConnectivity';
+export { webConnectivityHost } from './webConnectivityHost';
 export { createWebCursorBackend } from './webCursor';
 export { createWebDeviceBackend, enableWebSafeAreaInsets, webDeviceBackend } from './webDevice';
 export {
@@ -19,11 +22,13 @@ export {
   webMessageDialogBackend,
   webPromptDialogBackend,
 } from './webDialog';
+export { webDialogHost } from './webDialogHost';
 export { webFileSystemBackend } from './webFilesystem';
 export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
 export { enableHostWebGeolocation } from './webGeolocation';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
+export { webGraphicsHost } from './webGraphicsHost';
 export { webHapticsBackend } from './webHaptics';
 export { enableHostWebImage } from './webImage';
 export {
@@ -35,6 +40,7 @@ export {
   webRenderContextBackend,
   webRenderSurfaceBackend,
 } from './webInputTarget';
+export { webInputHost } from './webInputHost';
 export {
   createWebSoftKeyboardChangeBackend,
   createWebSoftKeyboardInfoBackend,
@@ -49,6 +55,7 @@ export {
 } from './webMediasession';
 export { webMediaHost } from './webMediaHost';
 export { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+export { webMenuHost } from './webMenuHost';
 export { createWebMidiAccessCapabilities, createWebMidiPermissionAccessCapabilities } from './webMidi';
 export { createWebNetBackend, webNetBackend } from './webNet';
 export { createWebPageNotificationCapabilities } from './webNotification';
@@ -65,7 +72,9 @@ export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from '
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';
 export { webScreenHost } from './webScreenHost';
 export { webShareContentBackend, webShareFilesBackend } from './webShare';
+export { webShareHost } from './webShareHost';
 export { webShellExternalBackend } from './webShell';
+export { webShellHost } from './webShellHost';
 export { webStatusBarColorBackend } from './webStatusbar';
 export { webStorageBackend } from './webStorage';
 export { webStorageHost } from './webStorageHost';
