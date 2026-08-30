@@ -25,10 +25,8 @@ import {
   createRenderCache,
   createShape,
   createWgpuCacheState,
-  createWgpuPipeline,
   getBitmapPixelRgb,
   getCanvasRenderStateTextureResolvers,
-  getWgpuRenderStateRuntime,
   refreshCanvasRenderCache,
   refreshGlRenderCache,
   refreshWgpuRenderCache,
@@ -120,18 +118,13 @@ if (target.kind === 'canvas') {
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgpu') {
   const cache = createRenderCache();
-  const cacheState = createWgpuCacheState(
-    target.state,
-    target.state.deviceState,
-    createWgpuPipeline(getWgpuRenderStateRuntime(target.state).registries),
-    {
-      format: target.state.format,
-      imageSmoothingEnabled: target.state.allowSmoothing,
-      pixelRatio: target.state.pixelRatio,
-      roundPixels: target.state.roundPixels,
-      sceneGraphSyncPolicy: target.state.sceneGraphSyncPolicy,
-    },
-  );
+  const cacheState = createWgpuCacheState(target.state, target.state.deviceState, target.state.pipeline, {
+    format: target.state.format,
+    imageSmoothingEnabled: target.state.allowSmoothing,
+    pixelRatio: target.state.pixelRatio,
+    roundPixels: target.state.roundPixels,
+    sceneGraphSyncPolicy: target.state.sceneGraphSyncPolicy,
+  });
   refreshWgpuRenderCache(target.state, cacheState, cache, subtree);
   useRenderCache(target.state, subtree, cache);
 }
