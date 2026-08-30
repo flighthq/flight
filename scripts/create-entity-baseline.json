@@ -154,8 +154,6 @@
     "@flighthq/interaction createInteractionManager",
     "@flighthq/interaction createNodeInteractionState",
     "@flighthq/ipc createIpcChannel",
-    "@flighthq/keyboard createSoftKeyboard",
-    "@flighthq/keyboard createSoftKeyboardTransition",
     "@flighthq/layout createLayoutState",
     "@flighthq/lifecycle createAppLifecycle",
     "@flighthq/loader createResourceLoader",
