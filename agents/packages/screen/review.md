@@ -13,6 +13,8 @@ ingested:
 
 # screen — Review (live-tree survey, 2026-07-13)
 
+> Historical pre-R3 review. The 2026-08-29 Screen R3 explicit-Host migration supersedes the surface described below.
+
 > Supersedes the 2026-06-25 merge-gate review (`partial — 42, REJECT: does not build`). Its blocking finding is fully resolved: the type seam now exists in `@flighthq/types` — `Screen.ts` (25-field `ScreenInfo` incl. `dpi`, `touchSupport`, `monochrome`), `ScreenChangeEvent.ts` (`ScreenChangeKind`, `ScreenChangedMetrics`, payload-carrying event), `ScreenColorSpace.ts`, `ScreenMode.ts`, `ScreenOrientation.ts`, `ScreenSignals.ts`. The package compiles; the test file's divider comments are gone; and both previously-Approved items are implemented (verified below).
 
 ## Verdict

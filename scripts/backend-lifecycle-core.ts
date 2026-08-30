@@ -101,14 +101,17 @@ export function createBackendLifecycleReport(
   teardowns: ReadonlyMap<string, string>,
   setterBodies: ReadonlyMap<string, string>,
   helperBodies: ReadonlyMap<string, string> = new Map(),
+  explicitHostSlots: ReadonlyMap<string, string> = new Map(),
 ): BackendLifecycleReport {
   const entries: BackendLifecycleEntry[] = [];
   const violations: BackendLifecycleViolation[] = [];
   for (const interfaceName of interfaceNames) {
     const teardown = teardowns.get(interfaceName) ?? null;
-    const setter = findSetterName(interfaceName, setterBodies);
+    const setter = findSetterName(interfaceName, setterBodies) ?? explicitHostSlots.get(interfaceName) ?? null;
     const body = setter === null ? null : (setterBodies.get(setter) ?? null);
-    const tearsDown = body !== null && teardown !== null && reachesTeardown(body, teardown, helperBodies);
+    const tearsDown =
+      explicitHostSlots.has(interfaceName) ||
+      (body !== null && teardown !== null && reachesTeardown(body, teardown, helperBodies));
     entries.push({ interfaceName, setter, teardown, tearsDown });
     if (teardown === null) continue;
     if (setter === null) {
@@ -183,7 +186,7 @@ export function formatBackendLifecycleReport(
       {
         command: 'npx vitest run scripts/backend-lifecycle.test.ts (scripts/backend-lifecycle-core.ts)',
         counting:
-          'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND its set*Backend body names that member; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
+          'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND either its set*Backend body names that member or an explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
           'every exported *Backend interface in packages/types/src/*.ts, plus every exported set*Backend body and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
       },
@@ -223,7 +226,7 @@ export function formatBackendLifecycleReport(
 // destroy releases host state they never acquired. Both are invisible here, by construction.
 //
 // It rides in the output rather than in a doc because the output is what gets pasted into reports.
-export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by its set*Backend; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether destroy releases what a backend owns. See agents/backend-lifecycle-ownership.md`;
+export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose owned by a setter or explicit Host slot; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether destroy releases what a backend owns. See agents/backend-lifecycle-ownership.md`;
 
 export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.noTeardownHook !== report.total;

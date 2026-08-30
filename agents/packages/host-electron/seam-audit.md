@@ -152,7 +152,7 @@ Trays identified by an opaque numeric id; an id→record map holds the `Tray` pl
 | `setEnabled` | `false` (no per-accelerator enable toggle) | limit |
 | `setAllEnabled` | no-op (no enable/disable toggle; must unregister/re-register) | limit |
 
-## screen — `ScreenBackend` (electronScreen.ts)
+## screen — `ScreenQueryBackend` + `ScreenChangeBackend` (electronScreen.ts)
 
 | Method | Electron call / sentinel | Status |
 | --- | --- | --- |

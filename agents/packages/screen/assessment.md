@@ -6,6 +6,8 @@ basedOn: ./review.md
 
 # screen — Assessment
 
+> Historical pre-R3 assessment. Screen R3 removed the ambient backend, modes enumeration, refresh hook, and direct subscription conveniences on 2026-08-29.
+
 See [charter](./charter.md) for blessed direction.
 
 ## Recommended

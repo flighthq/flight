@@ -6,6 +6,8 @@ by: principal
 
 # screen — Status
 
+Screen R3 landed 2026-08-29: explicit Host witnesses, a stable four-slot top-level group, Entity-backed values/providers/events, Web implementation ownership in host-web, split Electron query/change facets, and deletion of all ambient/diagnostic/modes/refresh/direct-subscription surfaces.
+
 > Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
 > Session narration belongs in git, which already carries it with the diff attached.
 

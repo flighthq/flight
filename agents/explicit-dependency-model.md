@@ -466,6 +466,10 @@ A and B touch disjoint packages (`host-*` and the capability packages vs `render
 - **A-pattern — one domain, end to end**, as the pattern-setter: const backend, capability group, trait, all call sites migrated, old `set*`/`get*`/`install*`/`_hostConflict` deleted. Pick a domain with more than one capability so the group structure is actually exercised — `dialog` or `window`, not `clipboard`.
 - **A-domains — the remaining domains**, one per builder, against the pattern A-pattern establishes.
 
+  Web publishes W-only slots unconditionally; missing browser APIs become domain results, never runtime slot disappearance.
+
+  **Screen R3 (2026-08-29):** `screen` is a non-optional top-level Host group. Its `query`, `change`, `details`, and `permissionChange` slots separate commands from events and make provider coverage explicit. The package-local resolver, setter, installer, diagnostics, operation roster, sentinels, refresh/mode-enumeration seams, and direct subscription conveniences were deleted; Screen operations now take a Host witness. Web owns all four stable slots, Electron owns query/change, and Tauri/Capacitor publish `{}`.
+
 ### Strand C — parsers, codecs, and the remaining ambient registries. Last.
 
 SWF parser config, image codecs, the `@flighthq/compression` decompressor registry, the loader's ambient net/codec reach, the globally-installed canvas text shaper. C waits for B-pipeline to settle what a registry type looks like, so it inherits that shape instead of inventing a second one.
