@@ -19,6 +19,9 @@ appending to it: a closed thread is deleted, not struck._
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Added injected Window query/request and Worker query-only storage-persistence
+  factories. `webHost.storage` composes the Window slots without changing the standalone
+  `webWindowBackend` import graph.
 - **2026-08-30** — Notification moved from the notification package into two injected factories. Page and Service Worker profiles are exact and separate; there are no fake page/SW timers, update, SW reply/show, or injected data key. `webHost.notification` stays empty until a caller composes the correct context.
 
 - **2026-08-30** — Removed the ambient web Shortcut backend path. `webHost` now publishes the

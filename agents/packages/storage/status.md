@@ -11,10 +11,11 @@ by: builder4
 
 ## Open
 
-- **No open implementation defect in the explicit-Host slice.** Storage commands consume
-  `HasStorageLocal`; change observation consumes `HasStorageChange`. Web truthfully supplies both and
-  Electron only local. The old ambient backend, quota surface, sentinel, Web enabler, and namespace
-  constructor are gone.
+- **No open implementation defect in the explicit-Host slice.** KV commands consume
+  `HasStorageLocal`, change observation consumes `HasStorageChange`, and bucket-policy query/request
+  consume their separate exact traits. Web supplies Window query/request and Worker query-only
+  profiles; Electron supplies only local. The old ambient backend, quota surface, sentinel, Web
+  enabler, and namespace constructor are gone.
 - **Migration is intentionally resumable rather than transactional.** Each callback checkpoints its
   version immediately. Callback exceptions propagate and earlier successful steps are not rolled back,
   so migration callbacks must remain replay-safe and idempotent.
@@ -28,6 +29,10 @@ by: builder4
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Added `storage.persistenceQuery` (Window + Worker) and
+  `storage.persistenceRequest` (Window only). The injected Web adapter observes bucket outcome and
+  permission state independently, calls `persist()` once, and lets Permissions project the result
+  without a second native owner.
 - **2026-08-29** — Replaced ambient backend selection with explicit `storage.local` / `storage.change`
   Host facets, method-tight reason envelopes, complete signal/migration lifetimes, a stable Web Entity,
   and candidate+rename Electron persistence. Public success semantics are recorded in

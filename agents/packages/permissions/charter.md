@@ -33,8 +33,8 @@ is an operational failure, never user denial. Ordered batches capture every owne
 - **Sole Notification seam.** Notification query/request delegates exclusively to
   `Host.notification.permission`. Direct `Notification` or native-plugin permission access in this
   package would create a forbidden second owner.
-- **Seven interim native holdings.** Media (camera + microphone), geolocation, persistence, MIDI,
-  wake lock, clipboard, and push are recorded structurally with their future claiming domains. They
+- **Six interim native holdings.** Media (camera + microphone), geolocation, MIDI, wake lock,
+  clipboard, and push are recorded structurally with their future claiming domains. They
   are bounded migration holdings, not ownership claims, and drain row-by-row as those domains land.
 - **No guessed aggregate.** There is no generic subscription and no owner/slot map until repeated
   owner shapes derive one. Unsupported operations remain absent or return a method-tight reason.
@@ -62,6 +62,11 @@ _Append-only, dated, blessed rulings._
 - **[2026-08-30] Exactly seven native holdings remain.** The structural ledger contains media,
   geolocation, persistence, MIDI, wake lock, clipboard, and push, each naming its future claiming
   domain. Rows may only drain; adding a row or widening a query-only row requires a new ruling.
+- **[2026-08-30] Persistent storage drained to its capability owner.** Query delegates only to
+  `Host.storage.persistenceQuery`; request delegates only to `Host.storage.persistenceRequest`.
+  Persistent and operation-failed project to their method-tight common reasons. Best-effort carries
+  the owner's exact permission state or `null`, because it records bucket policy rather than a human
+  decision. The facade has no direct Storage API path and the native-holding ledger now has six rows.
 
 ## Open directions
 
