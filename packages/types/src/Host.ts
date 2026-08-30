@@ -102,7 +102,12 @@ import type {
 import type { ShortcutQueryBackend, ShortcutTriggerBackend } from './Shortcut';
 import type { SocketBackend } from './Socket';
 import type { StatusBarBackend } from './StatusBar';
-import type { StorageBackend, StorageChangeBackend } from './Storage';
+import type {
+  StorageBackend,
+  StorageChangeBackend,
+  StoragePersistenceQueryBackend,
+  StoragePersistenceRequestBackend,
+} from './Storage';
 import type { TextSegmenterBackend } from './TextSegment';
 import type { TextShaperBackend } from './TextShaper';
 import type {
@@ -305,6 +310,8 @@ export interface HostStorageCapabilities {
   readonly change?: StorageChangeBackend;
   readonly fileSystem?: FileSystemBackend;
   readonly local?: StorageBackend;
+  readonly persistenceQuery?: StoragePersistenceQueryBackend;
+  readonly persistenceRequest?: StoragePersistenceRequestBackend;
 }
 
 export interface HostSystemCapabilities {
@@ -650,6 +657,14 @@ export interface HasStorageChange {
 
 export interface HasStorageLocal {
   readonly storage: { readonly local: StorageBackend };
+}
+
+export interface HasStoragePersistenceQuery {
+  readonly storage: { readonly persistenceQuery: StoragePersistenceQueryBackend };
+}
+
+export interface HasStoragePersistenceRequest {
+  readonly storage: { readonly persistenceRequest: StoragePersistenceRequestBackend };
 }
 
 export interface HasSystemDevice {
