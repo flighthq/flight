@@ -546,8 +546,8 @@ describe('destroyGlRenderState', () => {
     const first = createGlRenderStateFromContextState(contextState);
     const second = createGlRenderStateFromContextState(contextState);
     const teardown = vi.fn();
-    const ledger = contextState as unknown as { teardowns: Array<(context: typeof gl) => void> };
-    ledger.teardowns.push(teardown);
+    const runtime = getGlRenderStateRuntime(first);
+    runtime.context.teardowns.push(teardown);
 
     destroyGlRenderState(first);
     expect(teardown).not.toHaveBeenCalled();
@@ -555,7 +555,7 @@ describe('destroyGlRenderState', () => {
     destroyGlRenderState(second);
     expect(teardown).toHaveBeenCalledOnce();
     expect(teardown).toHaveBeenCalledWith(gl);
-    expect(ledger.teardowns).toHaveLength(0);
+    expect(runtime.context.teardowns).toHaveLength(0);
   });
 
   it('does not delete the caller-owned bitmap shader that was bound last', () => {

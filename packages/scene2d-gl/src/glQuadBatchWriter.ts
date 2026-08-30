@@ -175,6 +175,7 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
 
   const gl = state.gl;
 
+  if (!runtime.context.quadBatchResources) ensureGlQuadBatchShader(state);
   const qbr = runtime.context.quadBatchResources!;
   if (qbr.writerInstanceBuffer === null) {
     qbr.writerInstanceBuffer = gl.createBuffer()!;
@@ -280,9 +281,10 @@ export function prepareGlQuadBatchWrite(
   if (needed > runtime.quadBatchWriterInstanceData.length) {
     const newSize = Math.max(needed, runtime.quadBatchWriterInstanceData.length * 2);
     runtime.quadBatchWriterInstanceData = new Float32Array(newSize);
-    if (runtime.context.quadBatchResources!.writerInstanceBuffer !== null) {
+    const existingInstanceBuffer = runtime.context.quadBatchResources?.writerInstanceBuffer;
+    if (existingInstanceBuffer !== null && existingInstanceBuffer !== undefined) {
       const gl = state.gl;
-      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerInstanceBuffer!);
+      gl.bindBuffer(gl.ARRAY_BUFFER, existingInstanceBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
     }
   }
@@ -292,9 +294,10 @@ export function prepareGlQuadBatchWrite(
     if (materialNeeded > runtime.quadBatchWriterMaterialData.length) {
       const newSize = Math.max(materialNeeded, runtime.quadBatchWriterMaterialData.length * 2);
       runtime.quadBatchWriterMaterialData = new Float32Array(newSize);
-      if (runtime.context.quadBatchResources!.writerMaterialBuffer !== null) {
+      const existingMaterialBuffer = runtime.context.quadBatchResources?.writerMaterialBuffer;
+      if (existingMaterialBuffer !== null && existingMaterialBuffer !== undefined) {
         const gl = state.gl;
-        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerMaterialBuffer!);
+        gl.bindBuffer(gl.ARRAY_BUFFER, existingMaterialBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
       }
     }
