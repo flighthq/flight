@@ -10,7 +10,7 @@ basedOn: ./review.md
 
 1. **Complete the adjacent input host capabilities.** Listener ingress now routes all six families
    through one process-global `InputIngressBackend` with host-neutral source identities. Generalize
-   gamepad polling, animation-frame scheduling, pointer lock/capture, and coalesced-event access so a
+   gamepad polling, animation-frame scheduling, pointer capture, and coalesced-event access so a
    native host can use the full library without browser globals.
 2. **Open gamepad mapping registration.** Replace the closed `GamepadMappingKind` union and hardcoded
    standard-only lookup with the chartered registry plus separately importable W3C/raw presets. Keep the

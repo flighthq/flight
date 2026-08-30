@@ -13,7 +13,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/input` is the **full input library** — raw-system-input normalization (keyboard, pointer, relative-pointer, wheel, gamepad, text/IME via DOM), dispatched over 15 typed signals, plus held-state snapshots (`InputState`, `isInputKeyDown`, `isInputPointerButtonDown`, `getInputGamepadAxis`), per-frame edge queries (`wasInputKeyPressed`/`wasInputKeyReleased`, gamepad equivalents, `endInputStateFrame`), gamepad semantic naming (W3C standard mapping), linear and radial dead-zone math, key-repeat synthesis, pointer lock/capture helpers, and coalesced pointer event iteration. Zero per-event allocation via scratch singletons. 40 exports, 2 source files, ~104 tests. Dependencies: `signals`, `types`.
+`@flighthq/input` is the **full input library** — raw-system-input normalization (keyboard, pointer, relative-pointer, wheel, gamepad, text/IME via DOM), dispatched over 15 typed signals, plus held-state snapshots (`InputState`, `isInputKeyDown`, `isInputPointerButtonDown`, `getInputGamepadAxis`), per-frame edge queries (`wasInputKeyPressed`/`wasInputKeyReleased`, gamepad equivalents, `endInputStateFrame`), gamepad semantic naming (W3C standard mapping), linear and radial dead-zone math, key-repeat synthesis, pointer capture helpers, and coalesced pointer event iteration. Zero per-event allocation via scratch singletons. 37 exports, 2 source files, 118 tests. Dependencies: `signals`, `types`.
 
 The package is a full input library, to be refactored down into more packages as needed — not a thin normalization seam. It ends where its consumers begin: `@flighthq/interaction` hit-tests and routes, `@flighthq/input-bindings` maps actions, `@flighthq/gestures` recognizes gestures.
 
@@ -32,7 +32,7 @@ The package is a full input library, to be refactored down into more packages as
 - Device normalization for keyboard, pointer, relative pointer, wheel, gamepad, text/IME.
 - Held-state snapshots and per-frame edge tracking.
 - Gamepad semantics: dead zones, W3C button/axis naming, key-repeat synthesis.
-- Pointer lock/capture helpers, coalesced pointer iteration.
+- Pointer-capture helpers and coalesced pointer iteration.
 - `InputIngressBackend` abstraction for multi-host listener ingress.
 
 **Non-goals:**
@@ -63,6 +63,16 @@ The package is a full input library, to be refactored down into more packages as
   require a permanent P5 allowlist and make the zero input-ingress budget rot. The shared lifecycle
   contract is canonical in the [backend lifecycle ledger](../../backend-lifecycle-ownership.md), not
   duplicated here.
+
+- **[2026-08-29] Pointer lock has one explicit Application command surface.** The legacy
+  `exitInputPointerLock`, `hasInputPointerLock`, and `requestInputPointerLock` exports and the two
+  optional `InputIngressBackend` operations are deleted without compatibility aliases.
+
+  **Why:** `lockApplicationPointer` and `exitApplicationPointerLock` already provide explicit Host
+  selection, reason outcomes, and exact provider provenance. The duplicate input surface had six
+  semantic violations: silent no-op, fabricated false/true, no-DOM throw, structural-thenable
+  blindness, success without event observation, and wrong-provider release. A future state query
+  requires positive need, an explicit provider, and distinct unsupported versus inactive answers.
 
 - **[2026-07-02] Three neighbor packages blessed.** `@flighthq/input-bindings` (action maps, rebinding, chord/combo), `@flighthq/gestures` (tap/swipe/pinch/rotate recognizers), `@flighthq/gamepad-mappings` (SDL GameControllerDB-style registry). All three are wanted.
 
