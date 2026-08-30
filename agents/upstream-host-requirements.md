@@ -1375,3 +1375,17 @@ Tauri's event system could supply a future message slot, but none is built here.
 Electron supports main-to-renderer send, targeted send, invoke, and handle, but Flight has not built
 them. Each needs a specific target or request/response pair and therefore belongs in a distinct slot with
 a real provider, not as an inert method on the receive-message capability.
+
+## 2026-08-30 append — MIDI identity and interactive evidence
+
+MIDI now supplies the explicit upstream shape required by downstream hosts: `Host.midi` contains only
+independently optional `access` and `permission` providers. Access acquisition returns a retained Entity;
+input and output ports are separately retained Entities whose diagnostic ids never route later calls.
+Providers keep native identities private, dynamic state is pulled, and resource disposal releases every
+attached subscription while closing only ports opened through Flight. Native-open ports are borrowed.
+
+Web supplies injected profiles without enabling them on the default Host. Electron, Tauri, and Capacitor
+publish empty groups rather than stubs. Secure-context prompts, browser grant/deny behavior, real hotplug,
+timestamps, output delivery, and physical or virtual loopback require an opt-in interactive device matrix;
+injected tests establish mapping and lifecycle only. System-exclusive access/messages and software
+sequencing are absent from this capability.

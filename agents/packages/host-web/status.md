@@ -19,6 +19,9 @@ appending to it: a closed thread is deleted, not struck._
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — MIDI gained exact injected access and permission+access factories over lib.dom. The
+  default `webHost.midi` remains empty so ordinary construction and CI never request hardware.
+
 - **2026-08-30** — Added injected Window query/request and Worker query-only storage-persistence
   factories. `webHost.storage` composes the Window slots without changing the standalone
   `webWindowBackend` import graph.

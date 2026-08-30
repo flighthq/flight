@@ -33,8 +33,8 @@ is an operational failure, never user denial. Ordered batches capture every owne
 - **Sole Notification seam.** Notification query/request delegates exclusively to
   `Host.notification.permission`. Direct `Notification` or native-plugin permission access in this
   package would create a forbidden second owner.
-- **Six interim native holdings.** Media (camera + microphone), geolocation, MIDI, wake lock,
-  clipboard, and push are recorded structurally with their future claiming domains. They
+- **Four interim native holdings.** Media (camera + microphone), wake lock, clipboard, and push are
+  recorded structurally with their future claiming domains. They
   are bounded migration holdings, not ownership claims, and drain row-by-row as those domains land.
 - **No guessed aggregate.** There is no generic subscription and no owner/slot map until repeated
   owner shapes derive one. Unsupported operations remain absent or return a method-tight reason.
@@ -67,6 +67,12 @@ _Append-only, dated, blessed rulings._
   Persistent and operation-failed project to their method-tight common reasons. Best-effort carries
   the owner's exact permission state or `null`, because it records bucket policy rather than a human
   decision. The facade has no direct Storage API path and the native-holding ledger now has six rows.
+- **[2026-08-30] Geolocation row drained to its capability owner.** Request delegates to
+  `Host.system.geolocation.promptForAccess`, preserves timeout as a reason without inventing state,
+  and leaves no direct Geolocation API trigger in this facade. Five interim rows remain.
+- **[2026-08-30] MIDI row drained to its capability owner.** Read-only MIDI query delegates to
+  `Host.midi.permission`; MIDI request is `no-request-route` here and never touches `Host.midi.access` or
+  `navigator.requestMIDIAccess`. Four interim rows remain.
 
 ## Open directions
 

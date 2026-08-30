@@ -281,7 +281,6 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 | `physics3d` | physics · primitive | [deepening](../breadth-domain-deepening.md) | **reserve** — rust-intended. After physics2d proves the seam. Chartered 2026-07-15 |
 | `presence` | sync · primitive | [cloud](../breadth-cloud-distributed.md) | **reserve** |
 | `identity` | auth · primitive | [cloud](../breadth-cloud-distributed.md) | **reserve** — vendor territory today |
-| `midi` | midi · primitive | [adjacent](../breadth-adjacent-content.md) | **reserve** |
 
 ## Rejected candidates (2026-07-13)
 

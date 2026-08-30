@@ -25,10 +25,13 @@ migration holdings with named future owners, not hidden scope or a claim that Pe
   or native-plugin permission path remains here.
 - Persistent storage delegates query and request to their separate `Host.storage` slots; best-effort
   carries the owner's exact state or `null` and no direct Storage API path remains here.
+- Geolocation request delegates to `Host.system.geolocation`; no direct Geolocation API path remains.
+- MIDI query delegates exclusively to `Host.midi.permission`; MIDI request has no route here and cannot
+  acquire access.
 - Media and wake-lock prompt-only acquisitions clean up in `finally`; cleanup failure remains distinct
   from user denial.
-- An exact six-row ledger names media, geolocation, MIDI, wake lock, clipboard, and push as interim
-  holdings and maps each to its future claiming domain. Its history retains the seven-row checkpoint.
+- An exact four-row ledger names media, wake lock, clipboard, and push as interim holdings and maps each
+  to its future claiming domain. Its history retains the seven-row checkpoint and all three drains.
 
 ## Structural fit
 
@@ -43,6 +46,7 @@ forbids the removed ambient/enabler symbols.
 
 ## Remaining migration surface
 
-Each holding must move to its named domain and disappear from the ledger in the same slice. Clipboard
+The MIDI holding has moved to its named domain. Each remaining holding must move to its named domain and
+disappear from the ledger in the same slice. Clipboard
 and push are query-only; their side-effecting request triggers are intentionally not guessed. No
 owner/slot map or cross-domain aggregate is justified until multiple landed owner shapes derive it.
