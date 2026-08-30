@@ -45,36 +45,15 @@ function fakeTauri(openResult: string | string[] | null | Error, saveResult: str
 }
 
 describe('createTauriDirectoryOpenDialogBackend', () => {
-  it('creates an Entity provider', () => {
-    expect(EntityRuntimeKey in createTauriDirectoryOpenDialogBackend(fakeTauri(null, null).tauri)).toBe(true);
+  it('uses a method-tight single-directory operation', async () => {
+    const { tauri, calls } = fakeTauri('/docs', null);
+    const result = await createTauriDirectoryOpenDialogBackend(tauri).open();
+    expect(calls.open[0]).toEqual({ directory: true, multiple: false });
+    expect(result.outcome === 'selected' ? result.handle.path : null).toBe('/docs');
   });
 });
 
 describe('createTauriFileOpenDialogBackend', () => {
-  it('creates an Entity provider', () => {
-    expect(EntityRuntimeKey in createTauriFileOpenDialogBackend(fakeTauri(null, null).tauri)).toBe(true);
-  });
-});
-
-describe('createTauriFileSaveDialogBackend', () => {
-  it('creates an Entity provider', () => {
-    expect(EntityRuntimeKey in createTauriFileSaveDialogBackend(fakeTauri(null, null).tauri)).toBe(true);
-  });
-});
-
-describe('createTauriMessageDialogBackend', () => {
-  it('maps message to an acknowledgement result and confirm to a boolean', async () => {
-    const { tauri, calls } = fakeTauri(null, null);
-    const backend = createTauriMessageDialogBackend(tauri);
-    const result = await backend.message({ message: 'Hi', kind: 'question' });
-    expect(result).toEqual({ buttonIndex: 0, cancelled: false, checkboxChecked: false });
-    expect(calls.message[0].kind).toBe('info');
-    expect(await backend.confirm({ message: 'Sure?', kind: 'warning' })).toBe(true);
-    expect(calls.confirm[0].kind).toBe('warning');
-  });
-});
-
-describe('Tauri file dialog providers', () => {
   it('exposes independent Entity providers', () => {
     const tauri = fakeTauri(null, null).tauri;
     const providers = [
@@ -134,5 +113,26 @@ describe('Tauri file dialog providers', () => {
     expect((await createTauriDirectoryOpenDialogBackend(tauri).open()).outcome).toBe('runtime-unavailable');
     expect((await createTauriFileOpenDialogBackend(tauri).open({})).outcome).toBe('runtime-unavailable');
     expect((await createTauriFileSaveDialogBackend(tauri).save({})).outcome).toBe('runtime-unavailable');
+  });
+});
+
+describe('createTauriFileSaveDialogBackend', () => {
+  it('maps the common default name and returns one selected handle', async () => {
+    const { tauri, calls } = fakeTauri(null, '/saved.txt');
+    const result = await createTauriFileSaveDialogBackend(tauri).save({ defaultName: 'suggested.txt' });
+    expect(calls.save[0].defaultPath).toBe('suggested.txt');
+    expect(result.outcome === 'selected' ? result.handle.path : null).toBe('/saved.txt');
+  });
+});
+
+describe('createTauriMessageDialogBackend', () => {
+  it('maps message to an acknowledgement result and confirm to a boolean', async () => {
+    const { tauri, calls } = fakeTauri(null, null);
+    const backend = createTauriMessageDialogBackend(tauri);
+    const result = await backend.message({ message: 'Hi', kind: 'question' });
+    expect(result).toEqual({ buttonIndex: 0, cancelled: false, checkboxChecked: false });
+    expect(calls.message[0].kind).toBe('info');
+    expect(await backend.confirm({ message: 'Sure?', kind: 'warning' })).toBe(true);
+    expect(calls.confirm[0].kind).toBe('warning');
   });
 });

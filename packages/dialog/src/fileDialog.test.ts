@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
+import type { FileDialogHandle } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -9,66 +10,109 @@ import {
   showSaveFileDialog,
 } from './fileDialog';
 
+function fakeHost() {
+  const directory = createFileDialogHandle('Directory', 'mydir', '/tmp/mydir');
+  const first = createFileDialogHandle('File', 'a.txt', '/tmp/a.txt');
+  const second = createFileDialogHandle('File', 'b.txt', '/tmp/b.txt');
+  const saved = createFileDialogHandle('File', 'out.txt', '/tmp/out.txt');
+  return {
+    dialog: {
+      directoryOpen: createEntity({
+        async open() {
+          return { handle: directory, outcome: 'selected' as const };
+        },
+      }),
+      fileOpen: createEntity({
+        async open() {
+          return { handles: [first, second] as const, outcome: 'selected' as const };
+        },
+      }),
+      fileSave: createEntity({
+        async save() {
+          return { handle: saved, outcome: 'selected' as const };
+        },
+      }),
+    },
+  };
+}
+
 describe('createFileDialogHandle', () => {
-  it('creates an Entity handle with provider runtime operations', () => {
-    const operations = {
+  it('creates an Entity whose provider-neutral runtime operations cross package boundaries', async () => {
+    const handle = createFileDialogHandle('File', 'picked.txt', null, {
       async readText() {
-        return 'text';
+        return 'retained';
       },
-    };
-    const handle = createFileDialogHandle('File', 'a.txt', null, operations);
+    });
     expect(EntityRuntimeKey in handle).toBe(true);
-    expect(getFileDialogHandleOperations(handle)).toBe(operations);
+    expect(await getFileDialogHandleOperations(handle)?.readText?.()).toBe('retained');
   });
 });
 
 describe('getFileDialogHandleOperations', () => {
-  it('rejects a structural object with no Entity runtime authority', () => {
-    expect(getFileDialogHandleOperations({ kind: 'File', name: 'a.txt', path: null } as never)).toBeNull();
+  it('does not turn a serialized IPC DTO back into a handle with runtime authority', () => {
+    const handle = createFileDialogHandle('File', 'picked.txt', '/tmp/picked.txt');
+    const dto = JSON.parse(JSON.stringify(handle)) as FileDialogHandle;
+    expect(EntityRuntimeKey in dto).toBe(false);
+    expect(getFileDialogHandleOperations(dto)).toBeNull();
   });
 });
 
 describe('showOpenDirectoryDialog', () => {
-  it('dispatches through the directory-open slot', async () => {
+  it('routes the single-directory operation through its independent capability slot', async () => {
+    const result = await showOpenDirectoryDialog(fakeHost());
+    expect(result.outcome === 'selected' ? result.handle.kind : null).toBe('Directory');
+  });
+
+  it('preserves the directory-specific runtime-unavailable outcome', async () => {
     const host = {
       dialog: {
         directoryOpen: createEntity({
           async open() {
-            return { outcome: 'cancelled' as const };
+            return { outcome: 'runtime-unavailable' as const };
           },
         }),
       },
     };
-    await expect(showOpenDirectoryDialog(host)).resolves.toEqual({ outcome: 'cancelled' });
+    expect((await showOpenDirectoryDialog(host)).outcome).toBe('runtime-unavailable');
   });
 });
 
 describe('showOpenFileDialog', () => {
-  it('dispatches through the file-open slot', async () => {
+  it('routes file selection through its independent capability slot', async () => {
+    const result = await showOpenFileDialog(fakeHost(), { multiple: true });
+    expect(result.outcome === 'selected' ? result.handles.length : 0).toBe(2);
+  });
+
+  it('preserves the file-open-specific security outcome', async () => {
     const host = {
       dialog: {
         fileOpen: createEntity({
           async open() {
-            return { outcome: 'cancelled' as const };
+            return { outcome: 'security-denied' as const };
           },
         }),
       },
     };
-    await expect(showOpenFileDialog(host, {})).resolves.toEqual({ outcome: 'cancelled' });
+    expect((await showOpenFileDialog(host, {})).outcome).toBe('security-denied');
   });
 });
 
 describe('showSaveFileDialog', () => {
-  it('dispatches through the file-save slot', async () => {
+  it('routes file save through its independent capability slot', async () => {
+    const result = await showSaveFileDialog(fakeHost(), { defaultName: 'out.txt' });
+    expect(result.outcome === 'selected' ? result.handle.name : null).toBe('out.txt');
+  });
+
+  it('preserves the file-save-specific failure outcome', async () => {
     const host = {
       dialog: {
         fileSave: createEntity({
           async save() {
-            return { outcome: 'cancelled' as const };
+            return { outcome: 'file-save-failed' as const };
           },
         }),
       },
     };
-    await expect(showSaveFileDialog(host, {})).resolves.toEqual({ outcome: 'cancelled' });
+    expect((await showSaveFileDialog(host, {})).outcome).toBe('file-save-failed');
   });
 });
