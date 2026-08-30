@@ -1,46 +1,28 @@
 import { createHost } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 
-import { webAccessibilityBackend } from './webAccessibility';
+import { webAccessibilityHost } from './webAccessibilityHost';
 import { createWebAppCapabilities } from './webApp';
 import { webApplicationExitBackend } from './webApplicationExit';
-import { webClipboardBackend } from './webClipboard';
-import { webConnectivityBackend } from './webConnectivity';
+import { webClipboardHost } from './webClipboardHost';
+import { webConnectivityHost } from './webConnectivityHost';
 import { webDeviceBackend } from './webDevice';
-import {
-  webDirectoryOpenDialogBackend,
-  webFileOpenDialogBackend,
-  webFileSaveDialogBackend,
-  webMessageDialogBackend,
-  webPromptDialogBackend,
-} from './webDialog';
+import { webDialogHost } from './webDialogHost';
 import { webFileSystemBackend } from './webFilesystem';
-import { webHapticsBackend } from './webHaptics';
-import {
-  webInputDropFileBackend,
-  webInputFocusBackend,
-  webInputPointerLockBackend,
-  webInputTargetBackend,
-  webRenderContextBackend,
-  webRenderSurfaceBackend,
-} from './webInputTarget';
-import {
-  createWebSoftKeyboardChangeBackend,
-  createWebSoftKeyboardInfoBackend,
-  createWebSoftKeyboardVisibilityBackend,
-} from './webKeyboard';
+import { webGraphicsHost } from './webGraphicsHost';
+import { webInputHost } from './webInputHost';
 import { webLifecycleBackend } from './webLifecycle';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
-import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import { webMenuHost } from './webMenuHost';
 import { webNetBackend } from './webNet';
 import { webPlatformBackend } from './webPlatform';
 import { webPowerCapabilities } from './webPower';
 import { createWebProtocolCapabilities } from './webProtocol';
 import { webScreenCapabilities } from './webScreen';
 import { webSensorsBackend } from './webSensors';
-import { webShareContentBackend, webShareFilesBackend } from './webShare';
-import { webShellExternalBackend } from './webShell';
+import { webShareHost } from './webShareHost';
+import { webShellHost } from './webShellHost';
 import { webSocketBackend } from './webSocket';
 import { webStatusBarColorBackend } from './webStatusbar';
 import { webStorageBackend } from './webStorage';
@@ -66,52 +48,25 @@ const webProtocolCapabilities = createWebProtocolCapabilities();
 // groups are intentional: they preserve Host's stable two-level shape without claiming providers that
 // still live behind the legacy registration path.
 export const webHost = createHost({
-  accessibility: { provider: webAccessibilityBackend },
+  accessibility: webAccessibilityHost.accessibility,
   app: {
     ...webAppCapabilities,
     exit: webApplicationExitBackend,
     loop: webLoopBackend,
     visibility: webApplicationVisibilityBackend,
   },
-  clipboard: {
-    change: webClipboardBackend,
-    formats: webClipboardBackend,
-    image: webClipboardBackend,
-    text: webClipboardBackend,
-  },
-  connectivity: {
-    change: webConnectivityBackend,
-    reachability: webConnectivityBackend,
-    status: webConnectivityBackend,
-  },
-  dialog: {
-    directoryOpen: webDirectoryOpenDialogBackend,
-    fileOpen: webFileOpenDialogBackend,
-    fileSave: webFileSaveDialogBackend,
-    message: webMessageDialogBackend,
-    prompt: webPromptDialogBackend,
-  },
-  graphics: {
-    renderContext: webRenderContextBackend,
-    renderSurface: webRenderSurfaceBackend,
-  },
-  input: {
-    dropFile: webInputDropFileBackend,
-    focus: webInputFocusBackend,
-    haptics: webHapticsBackend,
-    pointerLock: webInputPointerLockBackend,
-    softKeyboardChange: createWebSoftKeyboardChangeBackend(),
-    softKeyboardInfo: createWebSoftKeyboardInfoBackend(),
-    softKeyboardVisibility: createWebSoftKeyboardVisibilityBackend(),
-    target: webInputTargetBackend,
-  },
+  clipboard: webClipboardHost.clipboard,
+  connectivity: webConnectivityHost.connectivity,
+  dialog: webDialogHost.dialog,
+  graphics: webGraphicsHost.graphics,
+  input: webInputHost.input,
   // No IPC provider: a browser page has no inter-process peer to receive channel messages from.
   ipc: {},
   media: {
     session: webMediaSessionBackend,
     sessionAction: webMediaSessionActionBackend,
   },
-  menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
+  menu: webMenuHost.menu,
   // MIDI access may prompt and enumerate hardware, so only the injected profile factories claim it.
   midi: {},
   net: { http: webNetBackend, socket: webSocketBackend },
@@ -121,8 +76,8 @@ export const webHost = createHost({
   // injected API. Compose one of the exported notification factories into a Host deliberately.
   notification: {},
   screen: webScreenCapabilities,
-  share: { content: webShareContentBackend, files: webShareFilesBackend },
-  shell: { external: webShellExternalBackend },
+  share: webShareHost.share,
+  shell: webShellHost.shell,
   // Browsers cannot register OS-global shortcuts; structural absence is the complete capability truth.
   shortcut: {},
   storage: {
