@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/connectivity'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-29
+by: builder4
 ---
 
 # connectivity — Status
@@ -11,37 +11,24 @@ by: principal
 
 ## Open
 
-Re-checked against `packages/connectivity/src/`, `packages/types/src/Connectivity.ts`, and both
-registering hosts on 2026-08-08. A file:line here is a claim about this tree, not about a session.
-
-- **Reachability is one-shot only.** `detectConnectivityReachability` (`connectivity.ts:138`) performs
-  a single `HEAD` with a timeout; no `*ReachabilityMonitor` symbol exists anywhere in `packages/`, so
-  there is no continuous probe, no backoff, and no multi-URL quorum. Ownership of that sub-entity —
-  here, or a sibling package — is still the undecided part, not the effort.
-- **No captive-portal signal.** `ConnectivityReachability` reports `reachable` / `latency` only; a
-  portal that answers 200 to any request is indistinguishable from real connectivity.
-- **`estimateConnectivityQuality` does not exist** anywhere in `packages/`, so a host without the
-  Network Information API (Firefox, Safari, most native shells) has no derived quality class — it just
-  reads the `-1` / `''` sentinels from `createConnectivityStatus` (`connectivity.ts:52-63`).
-- **`metered` is a web heuristic**: `saveData || type === 'cellular'` (`connectivity.ts:79`). Wi-Fi
-  tethered from a phone reads unmetered; an unlimited cellular plan reads metered. A native backend
-  reporting the OS flag is the only real fix.
-- **Electron has no connectivity backend.** `host-electron/src` carries no connectivity adapter and
-  `electronRegister.ts` never calls `setConnectivityBackend`, so an Electron app falls back to the web
-  backend's `navigator.onLine` — the interface-not-internet reading — with no `powerMonitor` or
-  `net.online` input.
+- **Reachability is one-shot only.** There is no continuous monitor, backoff, multi-URL quorum, or
+  captive-portal classification. Ownership of that additional Entity remains undecided.
+- **Web metering remains heuristic.** The Web provider reports metered when save-data is set or the
+  Network Information type is cellular. A native OS flag is the only authoritative answer.
+- **Electron and Tauri intentionally expose `connectivity: {}`.** Neither host package has a ruled real
+  provider; there is no implicit Web reachability or status fallback.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-- **2026-08-08** — Rewritten to the `Open` + `Log` contract. The headline false claim: "the
-  `host-capacitor` path does not yet exist" — it does, and it is wired:
-  `host-capacitor/src/capacitorConnectivity.ts`, installed at `capacitorRegister.ts:44`. Every
-  `packages/network/…` path in the old log was also stale; the package is `packages/connectivity`,
-  and the file's own `# network — Status Log` heading went with them.
-- **2026-06-25** — Deliberate no-op sweep: the assessment's Recommended list was "None", so nothing
-  within the package boundary was left to change.
-- **2026-06-24** — Connectivity matured: `saveData` / `rtt` / `metered` / `downlinkMax` on the status
-  snapshot, nine connection types, edge-triggered `onConnectionTypeChange` and `onMeteredChange`, and
-  the one-shot `detectConnectivityReachability` probe with external-cancellation support.
+- **2026-08-29** — Replaced the ambient `ConnectivityBackend` with explicit Entity-backed
+  status/change/reachability Host slots (vectors Web+Capacitor, Web+Capacitor, Web). Core attachment now
+  reports subscription failure, origin-pins exact releases, clears all five signals on dispose, and has
+  explicit terminal provider destruction. Web returns `null` when event APIs are unavailable. Capacitor
+  owns one native listener, begins unknown rather than offline, fans out locally, notifies initial
+  readiness, ignores a stale initial result after a newer event, and removes the exact handle even when
+  destroyed before registration resolves. `createConnectivityStatus` was deleted because status is a
+  backend-produced query/out snapshot, not a user-constructed identity.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract and corrected the then-existing Capacitor path.
+- **2026-06-24** — Added detailed status fields, diff signals, and one-shot reachability with cancellation.
