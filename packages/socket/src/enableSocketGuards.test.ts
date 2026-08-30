@@ -1,15 +1,8 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { LogEntry, SocketBackend } from '@flighthq/types/contract';
+import type { HasNetSocket, LogEntry, SocketBackend } from '@flighthq/types/contract';
 
 import { areSocketGuardsEnabled, disableSocketGuards, enableSocketGuards } from './enableSocketGuards';
-import {
-  closeSocket,
-  createSocket,
-  disposeSocket,
-  enableSocketSignals,
-  sendSocketMessage,
-  setSocketBackend,
-} from './socket';
+import { closeSocket, createSocket, disposeSocket, enableSocketSignals, sendSocketMessage } from './socket';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
@@ -33,8 +26,11 @@ function backend(hasConnection: boolean): SocketBackend {
 
 afterEach(() => {
   disableSocketGuards();
-  setSocketBackend(null);
 });
+
+function hostOf(backend: SocketBackend): HasNetSocket {
+  return { net: { socket: backend } } as HasNetSocket;
+}
 
 describe('areSocketGuardsEnabled', () => {
   it('reports whether the global guard hook is installed', () => {
@@ -49,18 +45,18 @@ describe('disableSocketGuards', () => {
   it('restores silent core behavior', () => {
     enableSocketGuards();
     disableSocketGuards();
-    setSocketBackend(backend(false));
-    expect(captureLog(() => createSocket({ url: 'tcp://silent' }))).toEqual([]);
+    const host = hostOf(backend(false));
+    expect(captureLog(() => createSocket(host, { url: 'tcp://silent' }))).toEqual([]);
   });
 });
 
 describe('enableSocketGuards', () => {
   it('warns once when socket creation produces no connection', () => {
     enableSocketGuards();
-    setSocketBackend(backend(false));
+    const host = hostOf(backend(false));
     const entries = captureLog(() => {
-      createSocket({ url: 'tcp://unsupported' });
-      createSocket({ url: 'tcp://unsupported-again' });
+      createSocket(host, { url: 'tcp://unsupported' });
+      createSocket(host, { url: 'tcp://unsupported-again' });
     });
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ channel: 'socket' });
@@ -74,8 +70,8 @@ describe('enableSocketGuards', () => {
 
   it('warns once per command issued after terminal disposal', () => {
     enableSocketGuards();
-    setSocketBackend(backend(true));
-    const socket = createSocket({ url: 'ws://disposed' });
+    const host = hostOf(backend(true));
+    const socket = createSocket(host, { url: 'ws://disposed' });
     disposeSocket(socket);
     const entries = captureLog(() => {
       closeSocket(socket);
@@ -97,8 +93,8 @@ describe('enableSocketGuards', () => {
 
   it('stays silent for ordinary pre-open sends and closes', () => {
     enableSocketGuards();
-    setSocketBackend(backend(true));
-    const socket = createSocket({ url: 'ws://connecting' });
+    const host = hostOf(backend(true));
+    const socket = createSocket(host, { url: 'ws://connecting' });
     const entries = captureLog(() => {
       sendSocketMessage(socket, 'early');
       closeSocket(socket);
