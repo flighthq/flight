@@ -89,6 +89,7 @@ import {
   beginWgpuFrame,
   createWgpuDeviceState,
   createWgpuRenderStateRuntime,
+  destroyWgpuRenderState,
   destroyWgpuRenderTarget,
   drawWgpuRenderTargetResult,
   getWgpuMaterialRenderer,
@@ -127,6 +128,32 @@ function makeCacheNode(source: unknown): any {
 }
 
 describe('createWgpuCacheState', () => {
+  it('does not destroy a uniform buffer owned by the screen state', () => {
+    const screen = fakeScreen();
+    const destroyUniformBuffer = vi.fn();
+    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    screenRuntime.uniformBuffer = { destroy: destroyUniformBuffer } as GPUBuffer;
+    screenRuntime.quadBatchWriterBufferPool = [];
+
+    const cacheState = createWgpuCacheState(screen);
+    destroyWgpuRenderState(cacheState);
+
+    expect(destroyUniformBuffer).not.toHaveBeenCalled();
+  });
+
+  it('does not retain the device tier when an owned cache state is left undisposed', () => {
+    const screen = fakeScreen();
+    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    const teardown = vi.fn();
+    screenRuntime.context.teardowns.push(teardown);
+    screenRuntime.quadBatchWriterBufferPool = [];
+
+    createWgpuCacheState(screen);
+    destroyWgpuRenderState(screen);
+
+    expect(teardown).toHaveBeenCalledOnce();
+  });
+
   it('resolves late screen blend-mode wiring explicitly until locally overridden', () => {
     const screen = fakeScreen();
     screen.applyBlendMode = null;
