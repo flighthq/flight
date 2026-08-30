@@ -1,123 +1,138 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
+  AppUpdateCheckOutcome,
+  AppUpdateInstallOutcome,
+  DownloadedUpdate,
   ElectronApi,
-  Entity,
   UpdateInfo,
-  UpdaterBackend,
-  UpdaterConfig,
-  UpdaterError,
+  UpdaterCommandBackend,
 } from '@flighthq/types/contract';
 
-// Maps Flight's UpdaterBackend onto Electron's built-in autoUpdater (Squirrel). The built-in updater
-// auto-downloads on check and emits no progress event, so downloadUpdate folds into checkForUpdates
-// and subscribeDownloadProgress is inert. Channels, config, signature verification, cancel, rollback,
-// staging, and verification are electron-updater concepts the built-in updater lacks — they are honest
-// no-ops / inert subscriptions here. electron-updater would expose the richer surface.
-export function createElectronUpdaterBackend(electron: ElectronApi): UpdaterBackend & Entity {
-  const autoUpdater = electron.autoUpdater;
-  let channel = '';
-  let config: UpdaterConfig = { allowPrerelease: false, autoDownload: true, autoInstallOnAppQuit: true };
-  return createEntity({
-    setFeedUrl(url) {
-      autoUpdater.setFeedURL({ url });
-    },
-    checkForUpdates() {
-      autoUpdater.checkForUpdates();
-    },
-    downloadUpdate() {
-      // The built-in autoUpdater downloads automatically once a check finds an update.
-      autoUpdater.checkForUpdates();
-    },
-    cancelDownload() {
-      // The built-in autoUpdater has no cancelable download; no-op.
-    },
-    quitAndInstall() {
-      autoUpdater.quitAndInstall();
-    },
-    rollback() {
-      // The built-in autoUpdater cannot roll back an installed update; no-op.
-    },
-    getChannel() {
-      return channel;
-    },
-    setChannel(next) {
-      // Tracked for getChannel; the built-in autoUpdater has no channel switch of its own.
-      channel = next;
-    },
-    getConfig() {
-      return config;
-    },
-    setConfig(next) {
-      // Tracked for getConfig; the built-in autoUpdater always auto-downloads regardless.
-      config = next;
-    },
-    setSignatureConfig() {
-      // The built-in autoUpdater verifies via the OS code-signing chain, not a Flight signature config; no-op.
-    },
-    subscribeChecking(listener) {
-      autoUpdater.on('checking-for-update', listener);
-      return () => autoUpdater.removeListener('checking-for-update', listener);
-    },
-    subscribeUpdateAvailable(listener) {
-      const handler = (...args: unknown[]) => listener(toUpdateInfo(args));
-      autoUpdater.on('update-available', handler);
-      return () => autoUpdater.removeListener('update-available', handler);
-    },
-    subscribeUpdateNotAvailable(listener) {
-      autoUpdater.on('update-not-available', listener);
-      return () => autoUpdater.removeListener('update-not-available', listener);
-    },
-    subscribeDownloadProgress() {
-      // The built-in autoUpdater emits no progress event; electron-updater would. Inert unsubscribe.
-      return () => {};
-    },
-    subscribeUpdateDownloaded(listener) {
-      const handler = (...args: unknown[]) => listener(toUpdateInfo(args));
-      autoUpdater.on('update-downloaded', handler);
-      return () => autoUpdater.removeListener('update-downloaded', handler);
-    },
-    subscribeError(listener) {
-      const handler = (...args: unknown[]) => {
-        const raw = args[0] as { message?: string } | string | undefined;
-        const message = typeof raw === 'object' ? (raw?.message ?? '') : String(raw ?? '');
-        const error: UpdaterError = { kind: 'Network', message };
-        listener(error);
-      };
-      autoUpdater.on('error', handler);
-      return () => autoUpdater.removeListener('error', handler);
-    },
-    subscribeUpdateCancelled() {
-      // No cancel concept in the built-in updater; inert unsubscribe.
-      return () => {};
-    },
-    subscribeUpdateRolledBack() {
-      // No rollback concept in the built-in updater; inert unsubscribe.
-      return () => {};
-    },
-    subscribeUpdateStaging() {
-      // No staging concept in the built-in updater; inert unsubscribe.
-      return () => {};
-    },
-    subscribeUpdateVerified() {
-      // No explicit verification event in the built-in updater; inert unsubscribe.
-      return () => {};
-    },
-  } satisfies UpdaterBackend);
+type NativeListener = (...args: unknown[]) => void;
+type NativeCleanup = () => void;
+
+interface CheckTransaction {
+  active: boolean;
+  readonly cleanups: Set<NativeCleanup>;
+  readonly resolve: (outcome: AppUpdateCheckOutcome) => void;
 }
 
-// Electron emits (event, releaseNotes, releaseName, releaseDate) for update-available/downloaded. The
-// fields electron-updater would supply (delta, size, mandatory, OS floor, sha512, rollout) are unknown
-// here and carry their sentinels.
-function toUpdateInfo(args: readonly unknown[]): UpdateInfo {
-  return {
-    version: String(args[2] ?? ''),
-    notes: String(args[1] ?? ''),
-    releaseDate: String(args[3] ?? ''),
-    deltaFromVersion: null,
-    downloadSizeBytes: -1,
-    isMandatory: false,
+const CHECK_IN_PROGRESS = Object.freeze({ reason: 'check-in-progress' }) as AppUpdateCheckOutcome;
+const NOT_AVAILABLE = Object.freeze({ reason: 'not-available' }) as AppUpdateCheckOutcome;
+const OPERATION_FAILED: Readonly<{ reason: 'operation-failed' }> = Object.freeze({ reason: 'operation-failed' });
+const INSTALL_OK = Object.freeze({ reason: 'ok' }) as AppUpdateInstallOutcome;
+
+// Electron's built-in Squirrel updater downloads as part of checkForUpdates. Native events are scoped
+// to one awaited transaction here and never escape as a second public event surface.
+export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: string): UpdaterCommandBackend {
+  const autoUpdater = electron.autoUpdater;
+  const providerCleanups = new Set<NativeCleanup>();
+  const downloadedUpdates = new WeakSet<DownloadedUpdate>();
+  let current: CheckTransaction | null = null;
+  let destroyed = false;
+
+  if (feedUrl !== undefined) autoUpdater.setFeedURL({ url: feedUrl });
+
+  function attach(transaction: CheckTransaction, event: string, listener: NativeListener): void {
+    autoUpdater.on(event, listener);
+    const cleanup = () => autoUpdater.removeListener(event, listener);
+    transaction.cleanups.add(cleanup);
+    providerCleanups.add(cleanup);
+  }
+
+  function release(cleanups: Set<NativeCleanup>): unknown | undefined {
+    let firstError: unknown;
+    let hasError = false;
+    for (const cleanup of [...cleanups]) {
+      try {
+        cleanup();
+        cleanups.delete(cleanup);
+        providerCleanups.delete(cleanup);
+      } catch (error) {
+        if (!hasError) firstError = error;
+        hasError = true;
+      }
+    }
+    return hasError ? firstError : undefined;
+  }
+
+  function settle(transaction: CheckTransaction, outcome: AppUpdateCheckOutcome): void {
+    if (!transaction.active) return;
+    transaction.active = false;
+    if (current === transaction) current = null;
+    if (release(transaction.cleanups) !== undefined) {
+      transaction.resolve(OPERATION_FAILED);
+      return;
+    }
+    if (outcome.reason === 'downloaded') downloadedUpdates.add(outcome.update);
+    transaction.resolve(outcome);
+  }
+
+  return createEntity({
+    check(): Promise<AppUpdateCheckOutcome> {
+      if (destroyed) return Promise.resolve(OPERATION_FAILED);
+      if (current !== null) return Promise.resolve(CHECK_IN_PROGRESS);
+
+      return new Promise((resolve) => {
+        const transaction: CheckTransaction = { active: true, cleanups: new Set(), resolve };
+        current = transaction;
+        const activeNoop = () => {
+          if (!transaction.active) return;
+        };
+        try {
+          attach(transaction, 'checking-for-update', activeNoop);
+          attach(transaction, 'update-available', activeNoop);
+          attach(transaction, 'update-not-available', () => settle(transaction, NOT_AVAILABLE));
+          attach(transaction, 'update-downloaded', (...args) => {
+            const update = createDownloadedUpdate(args);
+            settle(transaction, Object.freeze({ reason: 'downloaded', update }));
+          });
+          attach(transaction, 'error', () => settle(transaction, OPERATION_FAILED));
+          autoUpdater.checkForUpdates();
+        } catch {
+          settle(transaction, OPERATION_FAILED);
+        }
+      });
+    },
+    destroy(): void {
+      destroyed = true;
+      const transaction = current;
+      if (transaction !== null && transaction.active) {
+        transaction.active = false;
+        current = null;
+      }
+      const cleanupError = release(providerCleanups);
+      transaction?.resolve(OPERATION_FAILED);
+      if (cleanupError !== undefined) throw cleanupError;
+    },
+    async install(update): Promise<AppUpdateInstallOutcome> {
+      if (destroyed || !downloadedUpdates.has(update)) return OPERATION_FAILED;
+      try {
+        autoUpdater.quitAndInstall();
+        downloadedUpdates.delete(update);
+        return INSTALL_OK;
+      } catch {
+        return OPERATION_FAILED;
+      }
+    },
+  } satisfies Omit<UpdaterCommandBackend, symbol>);
+}
+
+// Electron emits (event, releaseNotes, releaseName, releaseDate). Every richer metadata field remains
+// explicitly unknown because the built-in updater does not prove it.
+function createDownloadedUpdate(args: readonly unknown[]): DownloadedUpdate {
+  const info: Readonly<UpdateInfo> = Object.freeze({
+    downloadSizeBytes: null,
+    isMandatory: null,
     minimumOsVersion: null,
-    sha512: '',
-    stagedRolloutPercent: 100,
-  };
+    notes: knownString(args[1]),
+    releaseDate: knownString(args[3]),
+    sha512: null,
+    version: knownString(args[2]),
+  });
+  return Object.freeze(createEntity({ info }));
+}
+
+function knownString(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
 }

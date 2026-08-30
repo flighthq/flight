@@ -63,9 +63,6 @@
     },
     {
       "path": "../types"
-    },
-    {
-      "path": "../updater"
     }
   ],
   "include": ["src"]

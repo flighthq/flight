@@ -97,6 +97,8 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     system: {},
     text: {},
     ui: {},
+    // The supported Capacitor plugin set has no Squirrel-compatible updater transaction.
+    updater: {},
     // Every WindowBackend member is optional, so {} is the honest claim: a Capacitor app runs in a
     // webview and provides no native window operations of its own.
     window: {},

@@ -57,6 +57,8 @@ describe('registerElectronBackends', () => {
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.close.closeNotification).toBeTypeOf('function');
+    expect(EntityRuntimeKey in host.updater.command).toBe(true);
+    expect(host.updater.command.check).toBeTypeOf('function');
     expect(Object.keys(host.clipboard).sort()).toEqual(['bookmark', 'formats', 'image', 'text']);
     expect(host.connectivity).toEqual({});
     expect(host.storage.local.getItem('missing')).toEqual({ reason: 'ok', value: null });

@@ -221,7 +221,6 @@ export interface ElectronDisplay {
   rotation?: number;
   touchSupport?: string;
 }
-
 // The powerMonitor slice the power backends need. Event names are a CLOSED union rather than `string`:
 // an arbitrary name would compile, register and silently never fire, which is indistinguishable from a
 // platform that does not emit it.

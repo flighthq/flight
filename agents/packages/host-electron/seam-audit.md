@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/host-electron'
-updated: 2026-06-25
+updated: 2026-08-30
 basedOn: ../../../packages/host-electron/src
 ---
 
@@ -8,7 +8,10 @@ basedOn: ../../../packages/host-electron/src
 
 A per-method map of every `@flighthq/types` host seam this package implements to its Electron call, or to the documented sentinel where Electron's main process cannot serve the method. This is the in-package parallel to the Rust conformance/divergence map: it is where an inert return is marked as a **permanent main-process limit** versus a **deferred** fill, so a host author can read what is and is not real without tracing the source.
 
-Grounded in the live `packages/host-electron/src` as of `updated`. The factories registered by `registerElectronBackends` are, in registration order: platform, app, window, dialog, clipboard, menu, tray, shortcut, screen, power, notification, shell, protocol, updater, ipc — 15 seams. There is no `storage` factory in this package today; if one is added, add its row here.
+Grounded in the live `packages/host-electron/src` as of `updated`. Migrated capabilities are returned on
+the explicit Host, while still-ambient packages retain their package-local registration during the
+transition. Storage is backed by `createElectronStorageBackend`; updater is the explicit
+`Host.updater.command` provider described below.
 
 Legend for the **Status** column:
 
@@ -220,24 +223,17 @@ Live notifications keyed by their resolved id so `close*` can dismiss them.
 | `drainPendingUrls`               | `[]` (no pre-attach buffer; links arrive live)                    | limit   |
 | `subscribe`                      | `app.on('open-url')` → `(url)`                                    | real    |
 
-## updater — `UpdaterBackend` (electronUpdater.ts)
+## updater — `UpdaterCommandBackend` (electronUpdater.ts)
 
-Backed by Electron's built-in `autoUpdater` (Squirrel), which conflates check+download and emits no progress event. Channels, config, signature, cancel, rollback, staging, and verification are electron-updater concepts the built-in updater lacks.
+Backed by Electron's built-in `autoUpdater` (Squirrel), which downloads during its check. Feed URL is
+optional immutable provider-construction policy; native events are private transaction mechanics.
 
-| Method | Electron call / sentinel | Status |
+| Method | Electron call / ownership | Status |
 | --- | --- | --- |
-| `setFeedUrl` | `autoUpdater.setFeedUrl({url})` | real |
-| `checkForUpdates` | `autoUpdater.checkForUpdates` | real |
-| `downloadUpdate` | `autoUpdater.checkForUpdates` (built-in auto-downloads on check) | real (folded) |
-| `quitAndInstall` | `autoUpdater.quitAndInstall` | real |
-| `cancelDownload` | no-op (no cancelable download) | deferred (electron-updater) |
-| `rollback` | no-op (cannot roll back an installed update) | deferred (electron-updater) |
-| `getChannel` / `setChannel` | tracked field (no built-in channel switch) | tracked |
-| `getConfig` / `setConfig` | tracked field (built-in always auto-downloads) | tracked |
-| `setSignatureConfig` | no-op (verifies via OS code-signing chain) | limit |
-| `subscribeChecking` / `…UpdateAvailable` / `…UpdateNotAvailable` / `…UpdateDownloaded` / `…Error` | matching `autoUpdater` events | real |
-| `subscribeDownloadProgress` | inert (built-in emits no progress event) | deferred (electron-updater) |
-| `subscribeUpdateCancelled` / `…RolledBack` / `…Staging` / `…Verified` | inert (no such concept in the built-in updater) | deferred (electron-updater) |
+| construction | optional `autoUpdater.setFeedURL({ url })`; destroy never resets durable policy | real |
+| `check` | one `autoUpdater.checkForUpdates`; awaited until not-available, downloaded, or error | real |
+| `install` | exact provider-origin downloaded handle → `autoUpdater.quitAndInstall` | real |
+| `destroy` | settles in-flight work and attempt-all removes only owned native listeners; failed removals remain retryable | real |
 
 ## ipc — `IpcBackend` (electronIpc.ts)
 
@@ -251,5 +247,5 @@ The main-process side: it can receive from renderers but cannot send/invoke with
 
 ## Permanent limits vs. deferred — summary
 
-- **Permanent main-process limits** (the sentinel is the final answer): app `getCommandLine`, dock operations off macOS, dialog `prompt`, clipboard files/change-count/change-event, menu dismissal-close, tray `setTemplate`, shortcut enable toggles, power battery level/health/low-power, notification launch/active/pending/scheduling/update/reply, protocol launch-url/pending, updater `setSignatureConfig`.
-- **Deferred** (Electron could serve with more wiring, tracked in `assessment.md` Backlog): renderer- targeted IPC `send`/`invoke`; the updater's progress/cancel/rollback/staging/verification surface (an electron-updater-backed second factory).
+- **Permanent main-process limits** (the sentinel is the final answer): app `getCommandLine`, dock operations off macOS, dialog `prompt`, clipboard files/change-count/change-event, menu dismissal-close, tray `setTemplate`, shortcut enable toggles, power battery level/health/low-power, notification launch/active/pending/scheduling/update/reply, protocol launch-url/pending.
+- **Deferred** (Electron could serve with more wiring, tracked in `assessment.md` Backlog): renderer-targeted IPC `send`/`invoke`.
