@@ -53,7 +53,7 @@
   "video:canvas": 11323,
   "flight-diagnostics:canvas": 1516,
   "host-web-full:canvas": 20023,
-  "host-web-window-only:canvas": 3482,
+  "host-web-window-only:canvas": 3391,
   "layout:canvas": 1234,
   "layout:canvas:all": 4452,
   "scene2d-embedded-png:canvas": 3435,
