@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-canvas-pipeline-sprite-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-canvas-pipeline-sprite",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
