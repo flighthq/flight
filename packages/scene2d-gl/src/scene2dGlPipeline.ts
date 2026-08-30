@@ -19,6 +19,7 @@ import {
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
+  StandardMaterialKind,
   TextLabelKind,
   TilemapKind,
 } from '@flighthq/types/contract';
@@ -32,6 +33,7 @@ import { defaultGlRichTextRenderer } from './glRichText';
 import { defaultGlScale9ShapeRenderer } from './glScale9Shape';
 import { defaultGlShapeRenderer, defaultGlMorphShapeRenderer } from './glShape';
 import { defaultGlSpriteRenderer } from './glSprite';
+import { standardGlMaterialRenderer } from './glStandardMaterial';
 import { defaultGlTextLabelRenderer } from './glTextLabel';
 import { defaultGlTilemapRenderer } from './glTilemap';
 
@@ -56,6 +58,11 @@ function buildScene2dGlRenderers(): KeyedTable<Renderer> {
 export const scene2dGlPipeline: GlPipeline = createGlPipeline({
   ...createEmptyGlRegistries(),
   blendRealizations: standardGlBlendRealizations,
+  materialRenderers: withRegistryTableEntry(
+    createEmptyGlRegistries().materialRenderers,
+    StandardMaterialKind,
+    standardGlMaterialRenderer,
+  ),
   renderers: buildScene2dGlRenderers(),
   strokeTessellator: {
     ...createEmptyGlRegistries().strokeTessellator,
