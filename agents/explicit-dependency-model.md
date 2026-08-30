@@ -331,7 +331,7 @@ The explicit dependency model eliminates the "unsupported" sentinel — a missin
 
 ## Relationship to existing work
 
-- **P1 (partial backend composition)** — the Host capability-group structure supersedes the `set*Backend` / `install*HostBackend` / `explain*Backend` ceremony. Partial composition becomes structural: a Host with 3 capabilities has 3 capabilities. No sentinel, no precedence, no query. The MediaSession conditional composition pattern generalizes to all decomposable backends through capability groups.
+- **P1 (partial backend composition)** — the Host capability-group structure supersedes the `set*Backend` / `install*HostBackend` / `explain*Backend` ceremony. Partial composition becomes structural: a Host with 3 capabilities has 3 capabilities. No sentinel, no precedence, no query. MediaSession's former conditional ambient composition is superseded by its explicit `session` / `sessionAction` slots.
 - **P3 (transport bypass audit)** — the derived gate still matters, but the fix changes. Instead of moving bypasses into `createWeb*Backend` functions, the fix is ensuring the function takes a host argument (via trait) rather than reaching for ambient state.
 - **P5 (DOM seams)** — the GL/WGPU host acquisition seam becomes a factory argument to render state construction rather than a separate `setWgpuHostBackend` call. Generic contracts expose semantic capabilities rather than browser objects.
 - **Node trait system** — the `Has*` trait pattern on Host mirrors the existing `BoundsNode`, `Transform2DNode`, `Spatial2DNode` pattern on nodes. Both are structural interfaces constraining function arguments to guarantee capabilities at compile time.
@@ -469,6 +469,13 @@ A and B touch disjoint packages (`host-*` and the capability packages vs `render
   Web publishes W-only slots unconditionally; missing browser APIs become domain results, never runtime slot disappearance.
 
   **Screen R3 (2026-08-29):** `screen` is a non-optional top-level Host group. Its `query`, `change`, `details`, and `permissionChange` slots separate commands from events and make provider coverage explicit. The package-local resolver, setter, installer, diagnostics, operation roster, sentinels, refresh/mode-enumeration seams, and direct subscription conveniences were deleted; Screen operations now take a Host witness. Web owns all four stable slots, Electron owns query/change, and Tauri/Capacitor publish `{}`.
+
+  **MediaSession R3 (2026-08-29):** `media.session` is the Web-only command slot and
+  `media.sessionAction` the Web-only event slot. Shape forces the split even though coverage is equal.
+  Commands take a `HasMediaSession` witness and return method-tight reason-only outcomes; actions use
+  per-action Entities whose provider subscription is origin-pinned and retryable. The ambient resolver,
+  custom/host precedence, sentinel, diagnostics/observer/support surface, and Web enabler were deleted
+  together. Web owns both stable slots; Electron/Tauri/Capacitor publish `media: {}`.
 
 ### Strand C — parsers, codecs, and the remaining ambient registries. Last.
 

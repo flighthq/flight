@@ -52,6 +52,11 @@ The host-web extraction's strict-majority analysis (148 sentinel methods across 
 
 ### Wrappers over partial backends must compose conditionally — ruled 2026-08-28
 
+> **Historical example, superseded for MediaSession on 2026-08-29.** MediaSession no longer has a
+> partial ambient backend or wrapper composition path. Its complete Web command and action shapes are
+> separate explicit `Host.media.session` / `.sessionAction` slots. The general rule below still applies
+> to ambient partial backends that remain.
+
 A wrapper that delegates to another backend — a `host-*` layer over the web default, a decorator that adds
 observation or logging — **must carry an operation only when the backend it delegates to carries it.**
 
@@ -524,9 +529,9 @@ still needs stubs for every unsupported window operation (`setProgress`, `setCon
 This is the P1 problem at its most visible: Lime can open, close, resize, and attach windows, but
 must implement 28 stubs to install a `WindowBackend` at all.
 
-**Fix:** WindowBackend is the highest-priority P1 migration target. Migrate it to optional methods
-with conditional composition (the MediaSession pattern), so HostLime implements only the operations
-it genuinely supports.
+**Fix:** WindowBackend is the highest-priority P1 migration target. Migrate it to explicit capability
+slots whose presence states what HostLime genuinely supports. The former MediaSession conditional
+ambient pattern is no longer the exemplar; MediaSession now uses explicit command/event Host slots.
 
 ### F4. AudioDeviceBackend atomicity
 

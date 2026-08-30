@@ -4,7 +4,23 @@ _Reconciled architecture record, 2026-08-28. The original audit population is fr
 `*Backend` interfaces so its partition remains reproducible. A post-audit population change is
 recorded separately below._
 
-## Result
+## 2026-08-29 live reconciliation — MediaSession R3
+
+The live structural census is now `10 of 83` teardown-bearing backend interfaces. MediaSession accounts
+for two independent Entity rows: `MediaSessionBackend` owns metadata/playback/position command lanes and
+`MediaSessionActionBackend` owns per-action native-handler lanes. Both are explicit Host capabilities,
+and `destroyMediaSession(host)` attempts every distinct provider once while preserving alias safety and
+continuing after the first failure.
+
+The Web command provider releases only publications still owned by its provider/session/lane provenance;
+readable lanes additionally require the exact published value. The action provider registers no blanket
+controls, fans out one native handler per session/action, and keeps failed final detach or destroy
+retryable. Command and action provider lifetimes are separate. These behaviors are assertion-backed.
+
+All later discussion of MediaSession custom/host slots, sentinels, enablers, `has*` queries, or combined
+action/command ownership is retained solely as the frozen pre-R3 audit history. Those APIs no longer exist.
+
+## Historical frozen result
 
 The 42-interface audit partitions exactly as:
 
@@ -18,9 +34,8 @@ The 42-interface audit partitions exactly as:
 
 The seven still-needing rows are not the total owner population. At the frozen audit, the total was
 eight: already-implemented `LogTransportBackend` plus the seven named below. Since that audit,
-`AccessibilityBackend` and `MediaSessionBackend` have landed their hooks. The live implementation
-state is therefore five declared and exercised hooks (`AccessibilityBackend`, `LogTransportBackend`,
-`MediaSessionBackend`, `MenuBackend`, and `PowerBackend`) with three still owed.
+`AccessibilityBackend` and the former combined `MediaSessionBackend` had landed their hooks at this
+snapshot. The counts in this historical subsection are not the live 83-interface census recorded above.
 
 The live tree has since added four interfaces. `AudioBackend` is a pure `canPlayType` query and
 joins the GC/bounded bucket. `WgpuHostBackend` and `InputIngressBackend` own acquisition- or
@@ -52,7 +67,7 @@ is deliberately never updated; the figures in this section track the live tree a
   measures neither test depth nor audited behavior, so it cannot say whether destroy releases what a
   backend owns`
 
-### Release audit of the five counted rows
+### Historical release audit of the five then-counted rows
 
 Each counted row was read against its implementations: what the backend *owns* versus what its
 `destroy()` *releases*. Every mismatch is listed. Every concrete whole-owner now has reachable teardown
@@ -64,7 +79,7 @@ it is hand-derived and is a floor, not an oracle.
 | --- | --- | --- | --- |
 | `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** The Entity provider is selected explicitly through `HasAccessibilityProvider`; `destroyAccessibility(host)` reaches its required final teardown. Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse, distinct-provider isolation, idempotence, and anti-resurrection are assertion-backed |
 | `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
-| `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on each exact `navigator.mediaSession` identity it published to | releases only lanes still carrying that backend's provenance token; metadata and playback state additionally require the exact published value; explicit clears relinquish ownership; failed releases remain retryable | **closed.** A superseding backend or external publisher remains intact, shared-session lanes are released independently, and a session-identity change cannot redirect cleanup |
+| `MediaSessionBackend` (pre-R3 combined shape) | the action set it registered, plus `metadata`, `playbackState` and position state on each exact `navigator.mediaSession` identity it published to | releases only lanes still carrying that backend's provenance token; metadata and playback state additionally require the exact published value; explicit clears relinquish ownership; failed releases remain retryable | **superseded by R3 split.** The same ownership guarantees now belong separately to `MediaSessionBackend` command lanes and `MediaSessionActionBackend` handler lanes on explicit Host slots. |
 | `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | `destroyMenuBackend` clears both slots first, then releases every distinct unretained backend once; Electron clears the select listener and calls `Menu.setApplicationMenu(null)`; Tauri clears JS-owned state only (listener + guard flag) — the native menu stays until the replacement backend installs its own; web is a no-op | **closed.** Capability teardown is reachable, re-entrant-safe, alias-safe and assertion-backed. Tauri's JS-only teardown is the settled design: its async menu API cannot clear the native menu synchronously, and a fire-and-forget clear races with the replacement backend's install |
 | `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel; detaches each retained `(sentinel, handler)` pair by identity; resets the four cached readings | **closed.** All three findings were remediated in order — teardown made reachable (`destroyPowerBackend`), then the release completed. This row is behaviorally assertion-backed; see *Behavioral completeness* below |
 
@@ -573,16 +588,14 @@ category; its subsequently landed hook is recorded in the row itself.
 | --- | --- | --- |
 | `AccessibilityBackend` | `createWebAccessibilityBackend` retains mirrored DOM nodes, live regions, and sometimes an owned root appended to `document.body`. | **Landed hook:** required web `destroy()` clears mirrored nodes and live regions, removes only a backend-created root, empties but preserves a caller-supplied container, and cannot lazily recreate a root afterward. The explicit Host lane derives `destroyAccessibility(host: HasAccessibilityProvider)` as its final owner; shared-provider callers decide the single final call. |
 | `AppBackend` | A backend can hold the process single-instance lock and start dock/attention requests; its event thunks alone do not release those host resources. | **Owed:** each implementation tracks locks and request ids it acquired; `destroy?()` releases its lock, cancels outstanding attention/bounce ids, and detaches any instance-owned host state. Durable user configuration such as login-at-startup is not rolled back merely because an adapter is replaced. |
-| `MediaSessionBackend` | Metadata, playback state, scrubber state, and action handlers remain installed on the OS `mediaSession` singleton after the adapter reference is dropped. | **Landed hook:** web `destroy()` clears its registered action set, metadata, playback state, and position state. `setMediaSessionBackend` covers custom-slot replacement/removal. The two-slot final-loss/alias cases remain evidence still to add: `destroyMediaSessionBackend` currently clears both slots after invoking only the active object, and a host object aliased into the custom slot can be destroyed while the host slot still retains it. |
+| `MediaSessionBackend` / `MediaSessionActionBackend` | Command publications and native action handlers remain installed on the OS `mediaSession` singleton after the adapter reference is dropped. | **R3 landed hooks:** explicit `Host.media.session` and `.sessionAction` providers have independent `destroy()`. Core attempts each distinct provider once; Web cleanup is provider/session/lane-pinned, successor- and foreign-safe, exact-session-safe, alias-safe, and retryable. |
 | `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Landed hook:** `destroy?()` on the interface; `setMenuBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron clears the select listener and calls `Menu.setApplicationMenu(null)` to remove the native menu. Tauri clears JS-owned state only (select listener, idempotency flag); the native app menu cannot be cleared synchronously because Tauri's menu API is entirely async, so destroy preserves last-known-good (native menu stays until replaced by the next `setApplicationMenu`). Web is a no-op (holds no state — `setApplicationMenu` returns false). |
 | `PowerBackend` | Electron retains a `powerSaveBlocker` id; web retains and may reacquire a `WakeLockSentinel`. Both outlive the initiating call. | **Landed hook:** `destroy?()` on the interface; `setPowerBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron stops any held power-save blocker; web releases the wake-lock sentinel. Entity subscriptions remain owned by `detachPower`/`disposePower`. |
 | `ScreenQueryBackend` (`Host.screen.query`) | `createWebScreenCapabilities` installs a lazily-created `pointermove` handler and retains cursor/cache/detail state for the explicit Host slot. | **Landed hook:** the exact pointer handler is retained and removed by idempotent `destroy?()`; owned cursor/cache/detail state is cleared. Display and permission subscriptions remain origin-pinned to their event entities. The lifecycle guard recognizes this explicit Host-owned slot without treating the still-unwired Menu facets as resolved. |
 | `ShortcutBackend` | Successful registrations install OS-global callbacks and the Electron backend retains their accelerator set. They survive loss of the adapter reference. | **Owed:** `destroy?()` calls the implementation's `unregisterAll()` and clears its owned registry. Async hosts must observe/reject teardown failures without leaving an unhandled promise. |
 
-The landed `AccessibilityBackend` and `MediaSessionBackend` hooks raise the structural gate to three
-owners. Accessibility is now proved through the explicit Host-provider owner lane rather than a setter;
-the structural/behavioral caveat above still keeps “gate enforced” distinct from “all lifecycle cases
-proven.”
+The historical three-owner sentence is superseded by the live reconciliation above. “Gate enforced” and
+“all lifecycle cases proven” remain separate claims because the gate is structural.
 
 ## Entity, key, rebind, or caller-owned lifetimes
 
