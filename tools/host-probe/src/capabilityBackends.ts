@@ -1,5 +1,4 @@
 import { getAppBackend } from '@flighthq/app/contract';
-import { getLoopBackend } from '@flighthq/application/contract';
 import { getClipboardBackend } from '@flighthq/clipboard/contract';
 import { getConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend } from '@flighthq/device/contract';
@@ -27,7 +26,7 @@ import type { HostProbeCapability } from './expectations';
 export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unknown>>;
 
 export function captureHostProbeBackends(
-  host: Partial<Pick<Host, 'dialog' | 'input' | 'notification' | 'window'>> = {},
+  host: Partial<Pick<Host, 'app' | 'dialog' | 'input' | 'notification' | 'window'>> = {},
 ): HostProbeBackendSnapshot {
   return {
     app: getAppBackend(),
@@ -41,7 +40,7 @@ export function captureHostProbeBackends(
     'glyph-rasterizer': getGlyphRasterizerBackend(),
     haptics: host.input?.haptics ?? null,
     ipc: getIpcBackend(),
-    loop: getLoopBackend(),
+    loop: host.app?.loop ?? null,
     menu: getMenuBackend(),
     notification: host.notification ?? null,
     platform: getPlatformBackend(),

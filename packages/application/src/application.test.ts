@@ -1,29 +1,22 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { ApplicationExitBackend, LoopBackend } from '@flighthq/types/contract';
+import type { ApplicationExitBackend, ApplicationVisibilityBackend, LoopBackend } from '@flighthq/types/contract';
 
 import {
   attachApplicationExit,
   attachApplicationLifecycle,
   createApplication,
-  createWebLoopBackend,
   detachApplicationExit,
   disposeApplication,
   enableApplicationLifecycleSignals,
-  explainLoopBackend,
   forEachApplicationWindow,
   getApplicationFrameRate,
   getApplicationMainWindow,
   getApplicationWindows,
-  getLoopBackend,
-  installLoopHostBackend,
   isApplicationRunning,
-  observeLoopHostResult,
   pauseApplicationLoop,
   registerApplicationWindow,
-  resetLoopBackendForTest,
   resumeApplicationLoop,
   setApplicationMainWindow,
-  setLoopBackend,
   startApplicationLoop,
   stepApplicationLoop,
   stopApplicationLoop,
@@ -52,6 +45,25 @@ function makeManualLoopBackend(): LoopBackend & { tick: (time: number) => void; 
       callback?.(time);
     },
   };
+}
+
+type RecordingApplicationVisibilityBackend = ApplicationVisibilityBackend & { visible: boolean };
+
+type LoopTestHost = {
+  readonly app: {
+    readonly loop: LoopBackend;
+    readonly visibility: RecordingApplicationVisibilityBackend;
+  };
+};
+
+function createLoopTestHost(loop: LoopBackend, visible = true): LoopTestHost {
+  const visibility: RecordingApplicationVisibilityBackend = {
+    visible,
+    isVisible() {
+      return visibility.visible;
+    },
+  };
+  return { app: { loop, visibility } };
 }
 
 type RecordingApplicationExitBackend = ApplicationExitBackend & {
@@ -83,8 +95,6 @@ function createExitTestHost(): ExitTestHost {
     },
   };
 }
-
-afterEach(() => resetLoopBackendForTest());
 
 describe('attachApplicationExit', () => {
   it('emits onExit through the host subscription', () => {
@@ -123,10 +133,10 @@ describe('attachApplicationExit', () => {
 describe('attachApplicationLifecycle', () => {
   it('pauses the loop when the window deactivates', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     const win = createApplicationWindow();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     attachApplicationLifecycle(app, win);
 
     // Simulate window deactivation by emitting its signal directly.
@@ -137,10 +147,10 @@ describe('attachApplicationLifecycle', () => {
 
   it('resumes the loop when the window activates', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     const win = createApplicationWindow();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     attachApplicationLifecycle(app, win);
 
     emitSignal(win.onDeactivate);
@@ -186,30 +196,6 @@ describe('createApplication', () => {
   });
 });
 
-describe('createWebLoopBackend', () => {
-  it('wraps requestAnimationFrame', () => {
-    const raf = vi.fn().mockReturnValue(42);
-    vi.stubGlobal('requestAnimationFrame', raf);
-    vi.stubGlobal('cancelAnimationFrame', vi.fn());
-    const backend = createWebLoopBackend();
-    const handle = backend.requestFrame(() => {});
-    expect(raf).toHaveBeenCalled();
-    expect(handle).toBe(42);
-    vi.unstubAllGlobals();
-  });
-
-  it('wraps cancelAnimationFrame', () => {
-    const caf = vi.fn();
-    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(1));
-    vi.stubGlobal('cancelAnimationFrame', caf);
-    const backend = createWebLoopBackend();
-    const handle = backend.requestFrame(() => {});
-    backend.cancelFrame(handle);
-    expect(caf).toHaveBeenCalledWith(1);
-    vi.unstubAllGlobals();
-  });
-});
-
 describe('detachApplicationExit', () => {
   it('removes the listener', () => {
     const host = createExitTestHost();
@@ -231,8 +217,8 @@ describe('detachApplicationExit', () => {
 describe('disposeApplication', () => {
   it('stops loop, removes exit listener, and sets isRunning false', () => {
     const backend = makeManualLoopBackend();
-    const host = createExitTestHost();
-    setLoopBackend(backend);
+    const loopHost = createLoopTestHost(backend);
+    const exitHost = createExitTestHost();
 
     const app = createApplication();
     let exitCalled = false;
@@ -240,15 +226,15 @@ describe('disposeApplication', () => {
       exitCalled = true;
     });
 
-    startApplicationLoop(app);
-    attachApplicationExit(host, app);
+    startApplicationLoop(loopHost, app);
+    attachApplicationExit(exitHost, app);
     expect(app.isRunning).toBe(true);
     disposeApplication(app);
 
     expect(app.isRunning).toBe(false);
-    host.app.exit.emit();
+    exitHost.app.exit.emit();
     expect(exitCalled).toBe(false);
-    expect(host.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
+    expect(exitHost.app.exit.calls).toEqual(['subscribe', 'unsubscribe']);
   });
 });
 
@@ -269,48 +255,6 @@ describe('enableApplicationLifecycleSignals', () => {
     const signal = app.onActivate;
     enableApplicationLifecycleSignals(app);
     expect(app.onActivate).toBe(signal); // same object reference
-  });
-});
-
-describe('explainLoopBackend', () => {
-  it('reports host-not-enabled when no backend is installed', () => {
-    expect(explainLoopBackend()).toEqual({
-      conflict: false,
-      layer: 'host-not-enabled',
-      operation: null,
-      viability: 'unobserved',
-    });
-  });
-
-  it('reports custom layer when custom backend is set', () => {
-    setLoopBackend(makeManualLoopBackend());
-    expect(explainLoopBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer after install', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    expect(explainLoopBackend().layer).toBe('host');
-    expect(explainLoopBackend().viability).toBe('unobserved');
-  });
-
-  it('reports conflict when a distinct host is installed twice', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    installLoopHostBackend(createWebLoopBackend());
-    expect(explainLoopBackend().conflict).toBe(true);
-  });
-
-  it('preserves first host on conflict', () => {
-    const first = createWebLoopBackend();
-    installLoopHostBackend(first);
-    installLoopHostBackend(createWebLoopBackend());
-    expect(getLoopBackend()).toBe(first);
-  });
-
-  it('is idempotent — same reference does not conflict', () => {
-    const backend = createWebLoopBackend();
-    installLoopHostBackend(backend);
-    installLoopHostBackend(backend);
-    expect(explainLoopBackend().conflict).toBe(false);
   });
 });
 
@@ -335,9 +279,9 @@ describe('getApplicationFrameRate', () => {
 
   it('returns approximate FPS after several ticks', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     // Simulate 60fps ticks (~16.67ms each).
     for (let i = 0; i <= 60; i++) {
       backend.tick(i * 16.67);
@@ -392,48 +336,6 @@ describe('getApplicationWindows', () => {
   });
 });
 
-describe('getLoopBackend', () => {
-  it('returns null when no backend is installed', () => {
-    expect(getLoopBackend()).toBeNull();
-  });
-
-  it('returns custom backend over host', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    const custom = makeManualLoopBackend();
-    setLoopBackend(custom);
-    expect(getLoopBackend()).toBe(custom);
-  });
-
-  it('returns host backend when no custom is set', () => {
-    const host = createWebLoopBackend();
-    installLoopHostBackend(host);
-    expect(getLoopBackend()).toBe(host);
-  });
-});
-
-describe('installLoopHostBackend', () => {
-  it('installs a host backend retrievable via getLoopBackend', () => {
-    const backend = createWebLoopBackend();
-    installLoopHostBackend(backend);
-    expect(getLoopBackend()).toBe(backend);
-  });
-
-  it('first-host-wins — second distinct backend sets conflict', () => {
-    const first = createWebLoopBackend();
-    installLoopHostBackend(first);
-    installLoopHostBackend(createWebLoopBackend());
-    expect(getLoopBackend()).toBe(first);
-    expect(explainLoopBackend().conflict).toBe(true);
-  });
-
-  it('same reference is idempotent — no conflict', () => {
-    const backend = createWebLoopBackend();
-    installLoopHostBackend(backend);
-    installLoopHostBackend(backend);
-    expect(explainLoopBackend().conflict).toBe(false);
-  });
-});
-
 describe('isApplicationRunning', () => {
   it('returns false before loop is started', () => {
     const app = createApplication();
@@ -442,84 +344,32 @@ describe('isApplicationRunning', () => {
 
   it('returns true after loop is started', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     expect(isApplicationRunning(app)).toBe(true);
     stopApplicationLoop(app);
   });
 
   it('returns false after loop is stopped', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     stopApplicationLoop(app);
     expect(isApplicationRunning(app)).toBe(false);
-  });
-});
-
-describe('observeLoopHostResult', () => {
-  it('records available after success', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    observeLoopHostResult('requestFrame', true);
-    expect(explainLoopBackend()).toEqual({
-      conflict: false,
-      layer: 'host',
-      operation: 'requestFrame',
-      viability: 'available',
-    });
-  });
-
-  it('records runtime-api-unavailable after failure', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    observeLoopHostResult('requestFrame', false);
-    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
-  });
-
-  it('later observation replaces prior — loss then recovery', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    observeLoopHostResult('requestFrame', false);
-    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
-    observeLoopHostResult('requestFrame', true);
-    expect(explainLoopBackend().viability).toBe('available');
-  });
-
-  it('recovery then loss — available reverts to unavailable', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    observeLoopHostResult('requestFrame', true);
-    expect(explainLoopBackend().viability).toBe('available');
-    observeLoopHostResult('requestFrame', false);
-    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
-  });
-
-  it('cancelFrame observation is recorded independently', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    observeLoopHostResult('requestFrame', true);
-    expect(explainLoopBackend().operation).toBe('requestFrame');
-    observeLoopHostResult('cancelFrame', true);
-    expect(explainLoopBackend().operation).toBe('cancelFrame');
-    expect(explainLoopBackend().viability).toBe('available');
-  });
-
-  it('cancelFrame failure overwrites prior requestFrame success', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    observeLoopHostResult('requestFrame', true);
-    observeLoopHostResult('cancelFrame', false);
-    expect(explainLoopBackend().operation).toBe('cancelFrame');
-    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
 describe('pauseApplicationLoop', () => {
   it('pauses emission without cancelling the rAF chain', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     backend.tick(0);
     backend.tick(16);
     pauseApplicationLoop(app);
@@ -531,9 +381,9 @@ describe('pauseApplicationLoop', () => {
 
   it('is idempotent', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     pauseApplicationLoop(app);
     pauseApplicationLoop(app); // second call should not throw
     expect(app.isRunning).toBe(false);
@@ -558,26 +408,15 @@ describe('registerApplicationWindow', () => {
   });
 });
 
-describe('resetLoopBackendForTest', () => {
-  it('clears all state', () => {
-    installLoopHostBackend(createWebLoopBackend());
-    observeLoopHostResult('requestFrame', true);
-    setLoopBackend(makeManualLoopBackend());
-    resetLoopBackendForTest();
-    expect(explainLoopBackend().layer).toBe('host-not-enabled');
-    expect(getLoopBackend()).toBeNull();
-  });
-});
-
 describe('resumeApplicationLoop', () => {
   it('resumes emission after pause without dumping the gap delta', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     backend.tick(0);
     backend.tick(16);
     pauseApplicationLoop(app);
@@ -592,9 +431,9 @@ describe('resumeApplicationLoop', () => {
 
   it('is a no-op when not paused', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     resumeApplicationLoop(app); // not paused, should not throw
     expect(app.isRunning).toBe(true);
     stopApplicationLoop(app);
@@ -611,61 +450,37 @@ describe('setApplicationMainWindow', () => {
   });
 });
 
-describe('setLoopBackend', () => {
-  it('clears custom back to host or null when passed null', () => {
-    const custom = makeManualLoopBackend();
-    setLoopBackend(custom);
-    expect(getLoopBackend()).toBe(custom);
-    setLoopBackend(null);
-    expect(getLoopBackend()).toBeNull();
-  });
-
-  it('clears custom but keeps host when passed null', () => {
-    const host = createWebLoopBackend();
-    installLoopHostBackend(host);
-    setLoopBackend(makeManualLoopBackend());
-    setLoopBackend(null);
-    expect(getLoopBackend()).toBe(host);
-  });
-});
-
 describe('startApplicationLoop', () => {
-  it('is a no-op when no backend is installed', () => {
-    const app = createApplication();
-    startApplicationLoop(app);
-    expect(app.isRunning).toBe(false);
-  });
-
   it('sets isRunning to true', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     expect(app.isRunning).toBe(true);
     stopApplicationLoop(app);
   });
 
   it('replaces a previous loop when called again', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     const initialCancelCount = backend.cancelCount;
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     expect(backend.cancelCount).toBeGreaterThan(initialCancelCount);
     stopApplicationLoop(app);
   });
 
   it('emits onUpdate with clamped delta and onRender on each tick', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     const updates: number[] = [];
     let renders = 0;
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     backend.tick(0);
     backend.tick(100);
 
@@ -676,12 +491,12 @@ describe('startApplicationLoop', () => {
 
   it('clamps large delta gaps to maxDeltaTime', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(app, { maxDeltaTime: 100 });
+    startApplicationLoop(host, app, { maxDeltaTime: 100 });
     backend.tick(0);
     backend.tick(5000); // 5 second gap clamped to 100ms
 
@@ -691,12 +506,12 @@ describe('startApplicationLoop', () => {
 
   it('defaults to 250ms max delta clamp', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     const updates: number[] = [];
     connectSignal(app.onUpdate, (dt) => updates.push(dt));
 
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     backend.tick(0);
     backend.tick(10000); // 10 second gap clamped to 250ms
 
@@ -706,10 +521,10 @@ describe('startApplicationLoop', () => {
 
   it('accumulates frame count and elapsed time', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
 
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     backend.tick(0);
     backend.tick(16);
     backend.tick(32);
@@ -722,12 +537,12 @@ describe('startApplicationLoop', () => {
 
   it('throttles to targetFrameRate when set', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(app, { targetFrameRate: 30 }); // 33.33ms interval
+    startApplicationLoop(host, app, { targetFrameRate: 30 }); // 33.33ms interval
     backend.tick(0); // first tick: lastTime=-1 so delta=0, accumulated=0 → emits
     backend.tick(16); // 16ms < 33.33ms → should skip
     backend.tick(34); // 34ms accumulated ≥ 33.33ms → should emit
@@ -737,18 +552,36 @@ describe('startApplicationLoop', () => {
     expect(renders).toBeGreaterThanOrEqual(2);
     stopApplicationLoop(app);
   });
+
+  it('pulls visibility from the distinct host query when choosing the frame interval', () => {
+    const backend = makeManualLoopBackend();
+    const host = createLoopTestHost(backend, false);
+    const app = createApplication();
+    let renders = 0;
+    connectSignal(app.onRender, () => renders++);
+
+    startApplicationLoop(host, app, { backgroundFrameRate: 1 });
+    backend.tick(0);
+    backend.tick(500);
+    expect(renders).toBe(1);
+
+    host.app.visibility.visible = true;
+    backend.tick(516);
+    expect(renders).toBe(2);
+    stopApplicationLoop(app);
+  });
 });
 
 describe('startApplicationLoop (fixed timestep)', () => {
   it('emits onFixedUpdate when fixedTimeStep is set', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (dt) => fixedDeltas.push(dt));
 
-    startApplicationLoop(app, { fixedTimeStep: 16 });
+    startApplicationLoop(host, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(48); // 48ms → 3 fixed steps of 16ms
 
@@ -759,13 +592,13 @@ describe('startApplicationLoop (fixed timestep)', () => {
 
   it('clamps to maxUpdatesPerFrame to prevent spiral-of-death', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
     let fixedCount = 0;
     connectSignal(app.onFixedUpdate!, () => fixedCount++);
 
-    startApplicationLoop(app, { fixedTimeStep: 16, maxUpdatesPerFrame: 3 });
+    startApplicationLoop(host, app, { fixedTimeStep: 16, maxUpdatesPerFrame: 3 });
     backend.tick(0);
     backend.tick(10000); // huge gap
 
@@ -775,11 +608,11 @@ describe('startApplicationLoop (fixed timestep)', () => {
 
   it('sets interpolationAlpha between 0 and 1 during fixed step', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
 
-    startApplicationLoop(app, { fixedTimeStep: 16 });
+    startApplicationLoop(host, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(24); // 24ms = 1 full step (16ms) + 8ms remainder → alpha = 8/16 = 0.5
 
@@ -790,7 +623,7 @@ describe('startApplicationLoop (fixed timestep)', () => {
 
   it('routes fixed-update errors through onError and continues the frame', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
     const errors: unknown[] = [];
@@ -804,7 +637,7 @@ describe('startApplicationLoop (fixed timestep)', () => {
     connectSignal(app.onUpdate, () => updates++);
     connectSignal(app.onRender, () => renders++);
 
-    startApplicationLoop(app, { fixedTimeStep: 16 });
+    startApplicationLoop(host, app, { fixedTimeStep: 16 });
     backend.tick(0);
     backend.tick(32);
 
@@ -818,7 +651,7 @@ describe('startApplicationLoop (fixed timestep)', () => {
 describe('startApplicationLoop (tick-error routing)', () => {
   it('routes onUpdate errors to onError when lifecycle signals enabled', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
     const errors: unknown[] = [];
@@ -829,7 +662,7 @@ describe('startApplicationLoop (tick-error routing)', () => {
       throw boom;
     });
 
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     backend.tick(0);
 
     expect(errors).toContain(boom);
@@ -896,13 +729,13 @@ describe('stepApplicationLoop', () => {
 
   it('uses explicit fixed-step options instead of policy from an active backend loop', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
     const fixedDeltas: number[] = [];
     connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
 
-    startApplicationLoop(app, { fixedTimeStep: 8 });
+    startApplicationLoop(host, app, { fixedTimeStep: 8 });
     stepApplicationLoop(app, 12, { fixedTimeStep: 12 });
 
     expect(fixedDeltas).toEqual([12]);
@@ -941,10 +774,10 @@ describe('stepApplicationLoop', () => {
 
   it('uses an explicit max delta instead of the active backend loop clamp', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
 
-    startApplicationLoop(app, { maxDeltaTime: 100 });
+    startApplicationLoop(host, app, { maxDeltaTime: 100 });
     stepApplicationLoop(app, 9999, { maxDeltaTime: 40 });
 
     expect(app.deltaTime).toBe(40);
@@ -1010,20 +843,20 @@ describe('stepApplicationLoop', () => {
 describe('stopApplicationLoop', () => {
   it('sets isRunning to false', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     stopApplicationLoop(app);
     expect(app.isRunning).toBe(false);
   });
 
   it('stops emitting after stop', () => {
     const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+    const host = createLoopTestHost(backend);
     const app = createApplication();
     let renders = 0;
     connectSignal(app.onRender, () => renders++);
-    startApplicationLoop(app);
+    startApplicationLoop(host, app);
     backend.tick(0);
     stopApplicationLoop(app);
     // After stop, calling tick should not emit even if the backend fires.

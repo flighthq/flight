@@ -13,7 +13,6 @@ import { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 import { enableHostWebImage } from './webImage';
 import { enableHostWebSoftKeyboard } from './webKeyboard';
 import { enableHostWebLifecycle } from './webLifecycle';
-import { enableHostWebLoop } from './webLoop';
 import { enableHostWebMediaSession } from './webMediasession';
 import { enableHostWebPermission } from './webPermissions';
 import { enableHostWebPlatform } from './webPlatform';
@@ -41,7 +40,6 @@ export function enableHostWeb(): void {
   enableHostWebImage();
   enableHostWebSoftKeyboard();
   enableHostWebLifecycle();
-  enableHostWebLoop();
   enableHostWebMediaSession();
   enableHostWebPermission();
   enableHostWebPlatform();
