@@ -1,12 +1,23 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityWithoutRuntime,
   FullscreenBackend,
   FullscreenTargetHandle,
+  HasGraphicsRenderContextSubscription,
+  HasGraphicsRenderSurface,
+  HasInputDropFileSubscription,
+  HasInputFocusSubscription,
+  HasInputPointerLock,
+  InputDropFileBackend,
+  InputFocusBackend,
+  InputPointerLockBackend,
   InputTargetBackend,
   InputTargetHandle,
   Matrix,
+  RenderContextBackend,
   RenderState,
+  RenderSurfaceBackend,
   WindowBackend,
   WindowResizeTargetHandle,
 } from '@flighthq/types/contract';
@@ -88,10 +99,46 @@ type RecordingFullscreenBackend = Required<FullscreenBackend> & {
   emit(fullscreen: boolean): void;
 };
 
+type RecordingInputDropFileBackend = InputDropFileBackend & {
+  readonly calls: string[];
+  emit(path: string): void;
+};
+
+type RecordingInputFocusBackend = InputFocusBackend & {
+  readonly calls: string[];
+  emitBlur(): void;
+  emitFocus(): void;
+};
+
+type RecordingInputPointerLockBackend = InputPointerLockBackend & { readonly calls: string[] };
+
+type RecordingRenderContextBackend = RenderContextBackend & {
+  readonly calls: string[];
+  emitLost(): void;
+  emitRestored(): void;
+};
+
+type RecordingRenderSurfaceBackend = RenderSurfaceBackend & { readonly calls: string[] };
+
 type TestHost = {
+  readonly graphics: {
+    readonly renderContext: RecordingRenderContextBackend;
+    readonly renderSurface: RecordingRenderSurfaceBackend;
+  };
+  readonly input: {
+    readonly dropFile: RecordingInputDropFileBackend;
+    readonly focus: RecordingInputFocusBackend;
+    readonly pointerLock: RecordingInputPointerLockBackend;
+  };
   readonly ui: { readonly fullscreen: RecordingFullscreenBackend };
   readonly window: RecordingWindowBackend;
 };
+
+type WindowTargetHost = HasGraphicsRenderContextSubscription &
+  HasGraphicsRenderSurface &
+  HasInputDropFileSubscription &
+  HasInputFocusSubscription &
+  HasInputPointerLock;
 
 function makeRenderState(): RenderState {
   return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
@@ -246,10 +293,11 @@ function recordingWindowBackend(): RecordingWindowBackend {
       visibilityListeners.add(listener);
       return () => visibilityListeners.delete(listener);
     },
-    async exitPointerLock() {
-      calls.push('exitPointerLock');
-    },
   };
+}
+
+function createInputTarget(): InputTargetHandle {
+  return createEntity({ __brand: 'InputTargetHandle' as const });
 }
 
 function createWindowResizeTarget(): WindowResizeTargetHandle {
@@ -283,8 +331,109 @@ function recordingFullscreenBackend(): RecordingFullscreenBackend {
   };
 }
 
+function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
+  let listener: ((path: string) => void) | null = null;
+  const calls: string[] = [];
+  return createEntity<EntityWithoutRuntime<RecordingInputDropFileBackend>>({
+    calls,
+    emit(path: string) {
+      listener?.(path);
+    },
+    subscribe(_target: InputTargetHandle, next: (path: string) => void) {
+      calls.push('subscribe');
+      listener = next;
+      return () => {
+        calls.push('release');
+        if (listener === next) listener = null;
+      };
+    },
+  });
+}
+
+function recordingInputFocusBackend(): RecordingInputFocusBackend {
+  let onBlur: (() => void) | null = null;
+  let onFocus: (() => void) | null = null;
+  const calls: string[] = [];
+  return createEntity<EntityWithoutRuntime<RecordingInputFocusBackend>>({
+    calls,
+    emitBlur() {
+      onBlur?.();
+    },
+    emitFocus() {
+      onFocus?.();
+    },
+    subscribe(_target: InputTargetHandle, nextFocus: () => void, nextBlur: () => void) {
+      calls.push('subscribe');
+      onFocus = nextFocus;
+      onBlur = nextBlur;
+      return () => {
+        calls.push('release');
+        if (onFocus === nextFocus) onFocus = null;
+        if (onBlur === nextBlur) onBlur = null;
+      };
+    },
+  });
+}
+
+function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
+  const calls: string[] = [];
+  return createEntity<EntityWithoutRuntime<RecordingInputPointerLockBackend>>({
+    calls,
+    async exit() {
+      calls.push('exit');
+    },
+    async request(_target: InputTargetHandle) {
+      calls.push('request');
+    },
+  });
+}
+
+function recordingRenderContextBackend(): RecordingRenderContextBackend {
+  let onLost: (() => void) | null = null;
+  let onRestored: (() => void) | null = null;
+  const calls: string[] = [];
+  return createEntity<EntityWithoutRuntime<RecordingRenderContextBackend>>({
+    calls,
+    emitLost() {
+      onLost?.();
+    },
+    emitRestored() {
+      onRestored?.();
+    },
+    subscribe(_target: InputTargetHandle, nextLost: () => void, nextRestored: () => void) {
+      calls.push('subscribe');
+      onLost = nextLost;
+      onRestored = nextRestored;
+      return () => {
+        calls.push('release');
+        if (onLost === nextLost) onLost = null;
+        if (onRestored === nextRestored) onRestored = null;
+      };
+    },
+  });
+}
+
+function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
+  const calls: string[] = [];
+  return createEntity<EntityWithoutRuntime<RecordingRenderSurfaceBackend>>({
+    calls,
+    resize(_target: InputTargetHandle, width: number, height: number) {
+      calls.push(`resize:${width},${height}`);
+    },
+  });
+}
+
 function createTestHost(windowBackend: RecordingWindowBackend = recordingWindowBackend()): TestHost {
-  return { ui: { fullscreen: recordingFullscreenBackend() }, window: windowBackend };
+  return {
+    graphics: { renderContext: recordingRenderContextBackend(), renderSurface: recordingRenderSurfaceBackend() },
+    input: {
+      dropFile: recordingInputDropFileBackend(),
+      focus: recordingInputFocusBackend(),
+      pointerLock: recordingInputPointerLockBackend(),
+    },
+    ui: { fullscreen: recordingFullscreenBackend() },
+    window: windowBackend,
+  };
 }
 
 let host: TestHost;
@@ -403,48 +552,68 @@ describe('attachWindowClose', () => {
 });
 
 describe('attachWindowDropFile', () => {
-  it('emits onDropFile with file name', () => {
-    const element = document.createElement('div');
+  it('forwards host-emitted paths to onDropFile', () => {
     const win = createApplicationWindow();
     let received: string | null = null;
     connectSignal(win.onDropFile, (path) => {
       received = path;
     });
-    attachWindowDropFile(win, element);
-
-    const event = new Event('drop') as Event & { dataTransfer: { files: { name: string }[] } };
-    Object.defineProperty(event, 'dataTransfer', {
-      value: { files: [{ name: 'test.png' }] },
-    });
-    element.dispatchEvent(event);
+    attachWindowDropFile(host, win, createInputTarget());
+    host.input.dropFile.emit('test.png');
 
     expect(received).toBe('test.png');
+  });
+
+  it('releases the origin provider before attaching a replacement provider', () => {
+    const origin = createTestHost();
+    const replacement = createTestHost();
+    const win = createApplicationWindow();
+    const target = createInputTarget();
+
+    attachWindowDropFile(origin, win, target);
+    attachWindowDropFile(replacement, win, target);
+    detachWindowDropFile(win);
+
+    expect(origin.input.dropFile.calls).toEqual(['subscribe', 'release']);
+    expect(replacement.input.dropFile.calls).toEqual(['subscribe', 'release']);
   });
 });
 
 describe('attachWindowFocus', () => {
-  it('emits onFocusIn on focus', () => {
-    const element = document.createElement('div');
+  it('emits onFocusIn from host focus ingress', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onFocusIn, () => {
       called = true;
     });
-    attachWindowFocus(win, element);
-    element.dispatchEvent(new Event('focus'));
+    attachWindowFocus(host, win, createInputTarget());
+    host.input.focus.emitFocus();
     expect(called).toBe(true);
   });
 
-  it('emits onFocusOut on blur', () => {
-    const element = document.createElement('div');
+  it('emits onFocusOut from host blur ingress', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onFocusOut, () => {
       called = true;
     });
-    attachWindowFocus(win, element);
-    element.dispatchEvent(new Event('blur'));
+    attachWindowFocus(host, win, createInputTarget());
+    host.input.focus.emitBlur();
     expect(called).toBe(true);
+  });
+
+  it('releases the origin provider before attaching a replacement provider', () => {
+    const origin = createTestHost();
+    const replacement = createTestHost();
+    const win = createApplicationWindow();
+    const target = createInputTarget();
+
+    attachWindowFocus(origin, win, target);
+    attachWindowFocus(replacement, win, target);
+    detachWindowFocus(win);
+
+    expect(origin.input.focus.calls).toEqual(['subscribe', 'release']);
+    expect(replacement.input.focus.calls).toEqual(['subscribe', 'release']);
   });
 });
 
@@ -512,59 +681,105 @@ describe('attachWindowOrientation', () => {
 });
 
 describe('attachWindowRenderContext', () => {
-  it('emits onRenderContextLost on webglcontextlost', () => {
-    const canvas = document.createElement('canvas');
+  it('emits onRenderContextLost from host render-context ingress', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(win, canvas);
-    canvas.dispatchEvent(new Event('webglcontextlost'));
+    attachWindowRenderContext(host, win, createInputTarget());
+    host.graphics.renderContext.emitLost();
     expect(called).toBe(true);
   });
 
-  it('emits onRenderContextRestored on webglcontextrestored', () => {
-    const canvas = document.createElement('canvas');
+  it('emits onRenderContextRestored from host render-context ingress', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onRenderContextRestored, () => {
       called = true;
     });
-    attachWindowRenderContext(win, canvas);
-    canvas.dispatchEvent(new Event('webglcontextrestored'));
+    attachWindowRenderContext(host, win, createInputTarget());
+    host.graphics.renderContext.emitRestored();
     expect(called).toBe(true);
+  });
+
+  it('releases the origin provider before attaching a replacement provider', () => {
+    const origin = createTestHost();
+    const replacement = createTestHost();
+    const win = createApplicationWindow();
+    const target = createInputTarget();
+
+    attachWindowRenderContext(origin, win, target);
+    attachWindowRenderContext(replacement, win, target);
+    detachWindowRenderContext(win);
+
+    expect(origin.graphics.renderContext.calls).toEqual(['subscribe', 'release']);
+    expect(replacement.graphics.renderContext.calls).toEqual(['subscribe', 'release']);
   });
 });
 
 describe('attachWindowRenderState', () => {
-  it('sizes the canvas backing store and writes the device transform from the window', () => {
+  it('sizes the opaque render surface and writes the device transform from the window', () => {
     const win = createApplicationWindow();
     win.width = 800;
     win.height = 600;
     win.devicePixelRatio = 2;
-    const canvas = document.createElement('canvas');
     const state = makeRenderState();
-    attachWindowRenderState(win, state, canvas);
-    expect(canvas.width).toBe(1600);
-    expect(canvas.height).toBe(1200);
+    attachWindowRenderState(host, win, state, createInputTarget());
+    expect(host.graphics.renderSurface.calls).toEqual(['resize:1600,1200']);
     expect(state.renderTransform2D?.a).toBe(2);
     expect(state.renderTransform2D?.d).toBe(2);
   });
 
-  it('reapplies the backing size and transform on window resize', () => {
+  it('keeps onResize core-owned while reapplying the backing size and transform', () => {
     const win = createApplicationWindow();
     win.width = 800;
     win.height = 600;
     win.devicePixelRatio = 1;
-    const canvas = document.createElement('canvas');
     const state = makeRenderState();
-    attachWindowRenderState(win, state, canvas);
+    attachWindowRenderState(host, win, state, createInputTarget());
     win.width = 400;
     win.devicePixelRatio = 2;
     emitSignal(win.onResize);
-    expect(canvas.width).toBe(800);
+    expect(host.graphics.renderSurface.calls).toEqual(['resize:800,600', 'resize:800,1200']);
     expect(state.renderTransform2D?.a).toBe(2);
+  });
+
+  it('pins resize commands to the provider captured by the core signal attachment', () => {
+    const origin = createTestHost();
+    const active = createTestHost();
+    const win = createApplicationWindow();
+    win.width = 320;
+    win.height = 200;
+    const state = makeRenderState();
+
+    attachWindowRenderState(origin, win, state, createInputTarget());
+    host = active;
+    win.width = 640;
+    emitSignal(win.onResize);
+
+    expect(origin.graphics.renderSurface.calls).toEqual(['resize:320,200', 'resize:640,200']);
+    expect(active.graphics.renderSurface.calls).toEqual([]);
+  });
+
+  it('composes the five retained seams as explicit trait intersections', async () => {
+    const targetHost = createTestHost();
+    const composedHost: WindowTargetHost = targetHost;
+    const target = createInputTarget();
+    const win = createApplicationWindow();
+
+    attachWindowDropFile(composedHost, win, target);
+    attachWindowFocus(composedHost, win, target);
+    attachWindowRenderContext(composedHost, win, target);
+    attachWindowRenderState(composedHost, win, makeRenderState(), target);
+    await lockApplicationPointer(composedHost, target);
+
+    expect(targetHost.input.dropFile.calls).toEqual(['subscribe']);
+    expect(targetHost.input.focus.calls).toEqual(['subscribe']);
+    expect(targetHost.graphics.renderContext.calls).toEqual(['subscribe']);
+    expect(targetHost.graphics.renderSurface.calls).toEqual(['resize:0,0']);
+    expect(targetHost.input.pointerLock.calls).toEqual(['request']);
+    await exitApplicationPointerLock(targetHost);
   });
 });
 
@@ -754,36 +969,33 @@ describe('detachWindowClose', () => {
 });
 
 describe('detachWindowDropFile', () => {
-  it('removes listeners', () => {
-    const element = document.createElement('div');
+  it('releases the host subscription', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onDropFile, () => {
       called = true;
     });
-    attachWindowDropFile(win, element);
+    attachWindowDropFile(host, win, createInputTarget());
     detachWindowDropFile(win);
-
-    const event = new Event('drop');
-    Object.defineProperty(event, 'dataTransfer', { value: { files: [] } });
-    element.dispatchEvent(event);
+    host.input.dropFile.emit('ignored.txt');
 
     expect(called).toBe(false);
+    expect(host.input.dropFile.calls).toEqual(['subscribe', 'release']);
   });
 });
 
 describe('detachWindowFocus', () => {
-  it('removes both listeners', () => {
-    const element = document.createElement('div');
+  it('releases both host event paths', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onFocusIn, () => {
       called = true;
     });
-    attachWindowFocus(win, element);
+    attachWindowFocus(host, win, createInputTarget());
     detachWindowFocus(win);
-    element.dispatchEvent(new Event('focus'));
+    host.input.focus.emitFocus();
     expect(called).toBe(false);
+    expect(host.input.focus.calls).toEqual(['subscribe', 'release']);
   });
 });
 
@@ -835,17 +1047,17 @@ describe('detachWindowOrientation', () => {
 });
 
 describe('detachWindowRenderContext', () => {
-  it('removes render context listeners', () => {
-    const canvas = document.createElement('canvas');
+  it('releases render-context ingress', () => {
     const win = createApplicationWindow();
     let called = false;
     connectSignal(win.onRenderContextLost, () => {
       called = true;
     });
-    attachWindowRenderContext(win, canvas);
+    attachWindowRenderContext(host, win, createInputTarget());
     detachWindowRenderContext(win);
-    canvas.dispatchEvent(new Event('webglcontextlost'));
+    host.graphics.renderContext.emitLost();
     expect(called).toBe(false);
+    expect(host.graphics.renderContext.calls).toEqual(['subscribe', 'release']);
   });
 });
 
@@ -855,13 +1067,12 @@ describe('detachWindowRenderState', () => {
     win.width = 800;
     win.height = 600;
     win.devicePixelRatio = 1;
-    const canvas = document.createElement('canvas');
     const state = makeRenderState();
-    attachWindowRenderState(win, state, canvas);
+    attachWindowRenderState(host, win, state, createInputTarget());
     detachWindowRenderState(win);
     win.width = 400;
     emitSignal(win.onResize);
-    expect(canvas.width).toBe(800);
+    expect(host.graphics.renderSurface.calls).toEqual(['resize:800,600']);
   });
 });
 
@@ -921,9 +1132,9 @@ describe('exitApplicationFullscreen', () => {
 });
 
 describe('exitApplicationPointerLock', () => {
-  it('delegates to the host capability', async () => {
+  it('delegates to the input pointer-lock command capability', async () => {
     await exitApplicationPointerLock(host);
-    expect(host.window.calls).toEqual(['exitPointerLock']);
+    expect(host.input.pointerLock.calls).toEqual(['exit']);
   });
 });
 
@@ -970,19 +1181,63 @@ describe('hideWindow', () => {
 });
 
 describe('lockApplicationPointer', () => {
-  it('calls requestPointerLock on the element', async () => {
-    const element = document.createElement('div');
-    const mock = vi.fn().mockResolvedValue(undefined);
-    element.requestPointerLock = mock;
-    await lockApplicationPointer(element);
-    expect(mock).toHaveBeenCalled();
+  it('passes the opaque target to the pointer-lock command capability', async () => {
+    const target = createInputTarget();
+    await lockApplicationPointer(host, target);
+    expect(host.input.pointerLock.calls).toEqual(['request']);
+    await exitApplicationPointerLock(host);
   });
 
-  it('resolves without throwing when requestPointerLock is unavailable', async () => {
-    const element = document.createElement('div');
-    // Remove requestPointerLock to simulate an older browser.
-    Object.defineProperty(element, 'requestPointerLock', { value: undefined, configurable: true });
-    await expect(lockApplicationPointer(element)).resolves.toBeUndefined();
+  it('forwards the provider promise result', async () => {
+    await expect(lockApplicationPointer(host, createInputTarget())).resolves.toBeUndefined();
+    await exitApplicationPointerLock(host);
+  });
+
+  it('exits through the successful request origin after a different host becomes active', async () => {
+    const origin = createTestHost();
+    const active = createTestHost();
+
+    await lockApplicationPointer(origin, createInputTarget());
+    await exitApplicationPointerLock(active);
+
+    expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
+    expect(active.input.pointerLock.calls).toEqual([]);
+  });
+
+  it('does not replace a successful origin when a later request is rejected', async () => {
+    const origin = createTestHost();
+    const rejected = createTestHost();
+    const active = createTestHost();
+    rejected.input.pointerLock.request = async () => {
+      rejected.input.pointerLock.calls.push('request:rejected');
+      throw new Error('denied');
+    };
+
+    await lockApplicationPointer(origin, createInputTarget());
+    await expect(lockApplicationPointer(rejected, createInputTarget())).rejects.toThrow('denied');
+    await exitApplicationPointerLock(active);
+
+    expect(origin.input.pointerLock.calls).toEqual(['request', 'exit']);
+    expect(rejected.input.pointerLock.calls).toEqual(['request:rejected']);
+    expect(active.input.pointerLock.calls).toEqual([]);
+  });
+
+  it('retains the request origin when exit rejects so cleanup can be retried', async () => {
+    const origin = createTestHost();
+    const active = createTestHost();
+    let attempts = 0;
+    origin.input.pointerLock.exit = async () => {
+      attempts++;
+      origin.input.pointerLock.calls.push(`exit:${attempts}`);
+      if (attempts === 1) throw new Error('busy');
+    };
+
+    await lockApplicationPointer(origin, createInputTarget());
+    await expect(exitApplicationPointerLock(active)).rejects.toThrow('busy');
+    await exitApplicationPointerLock(active);
+
+    expect(origin.input.pointerLock.calls).toEqual(['request', 'exit:1', 'exit:2']);
+    expect(active.input.pointerLock.calls).toEqual([]);
   });
 });
 

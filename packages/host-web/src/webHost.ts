@@ -6,7 +6,14 @@ import { webApplicationExitBackend } from './webApplicationExit';
 import { webClipboardBackend } from './webClipboard';
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 import { webHapticsBackend } from './webHaptics';
-import { webInputTargetBackend } from './webInputTarget';
+import {
+  webInputDropFileBackend,
+  webInputFocusBackend,
+  webInputPointerLockBackend,
+  webInputTargetBackend,
+  webRenderContextBackend,
+  webRenderSurfaceBackend,
+} from './webInputTarget';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
@@ -32,8 +39,14 @@ export const webHost = createEntity({
     message: webMessageDialogBackend,
     prompt: webPromptDialogBackend,
   },
-  graphics: {},
-  input: { haptics: webHapticsBackend, target: webInputTargetBackend },
+  graphics: { renderContext: webRenderContextBackend, renderSurface: webRenderSurfaceBackend },
+  input: {
+    dropFile: webInputDropFileBackend,
+    focus: webInputFocusBackend,
+    haptics: webHapticsBackend,
+    pointerLock: webInputPointerLockBackend,
+    target: webInputTargetBackend,
+  },
   media: {},
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},

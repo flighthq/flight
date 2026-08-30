@@ -19,6 +19,7 @@ export * from './webGlyphRasterizer';
 export * from './webHaptics';
 export * from './webHost';
 export * from './webImage';
+export * from './webInputTarget';
 export * from './webKeyboard';
 export * from './webLifecycle';
 export * from './webLoop';
