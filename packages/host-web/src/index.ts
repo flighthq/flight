@@ -52,7 +52,6 @@ export {
   createWebServiceWorkerNotificationCapabilities,
   notifyWebServiceWorkerNotificationEvent,
 } from './webServiceWorkerNotification';
-export { enableHostWebPermission } from './webPermissions';
 export { enableHostWebPlatform } from './webPlatform';
 export { webPowerCapabilities } from './webPower';
 export { enableHostWebProtocol } from './webProtocol';

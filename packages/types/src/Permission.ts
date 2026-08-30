@@ -1,10 +1,9 @@
-// Permission seam. Free functions in @flighthq/permissions delegate to the active PermissionBackend
-// (web default over navigator.permissions + each permission's concrete request path, or a native
-// host's). State reads and requests resolve to a three-state result and never throw — an absent API,
-// an unqueryable name, or a denied request is an expected-failure surface, not a programmer error.
+// Shared vocabulary projected by @flighthq/permissions from explicit Host capability owners. The
+// package is a facade, not a native permission provider: Notification permission, in particular, is
+// owned exclusively by Host.notification.permission.
 
-// A named OS/runtime permission. Open string union: the listed names are the built-in vocabulary a
-// web backend knows how to query and request; a native host may accept any additional string.
+// A named OS/runtime permission. The listed names are the interim shared vocabulary; the open string
+// tail lets a caller receive an honest unsupported outcome for a host-specific name.
 export type PermissionName =
   | 'camera'
   | 'microphone'
@@ -18,37 +17,29 @@ export type PermissionName =
   | 'screen-wake-lock'
   | (string & {});
 
-// Current permission state (the Permissions-API vocabulary). 'prompt' means the user has not yet
-// been asked — the request would trigger the OS prompt.
+// Current projected permission state. 'prompt' means no decision was made; it never means that a
+// query silently escalated to a request.
 export type PermissionState = 'granted' | 'denied' | 'prompt';
 
-export interface PermissionBackend {
-  // Queries the current state of a named permission without prompting. Resolves to 'prompt' (or the
-  // best-available sentinel) when the name is unqueryable or the underlying API is absent.
-  getState(name: PermissionName): Promise<PermissionState>;
-  // Requests a named permission, triggering the OS prompt where the platform supports it. Resolves
-  // to 'granted'/'denied'/'prompt'; a name with no request path or a missing API resolves to a
-  // sentinel rather than throwing.
-  request(name: PermissionName): Promise<PermissionState>;
-}
+export type PermissionQueryFailureReason = 'operation-failed' | 'runtime-unavailable' | 'unsupported';
 
-// Why a permission read produced the state it did. `'prompt'` is triple-overloaded on the web — the user
-// has not decided, the name is not queryable, or the Permissions API is absent entirely — and those three
-// have different remedies: wait for a request, use a different name, or stop asking on this platform.
-// The backend already knows which branch it took; this reports it as plain data rather than a message.
-//
-//   decided        the state is a real answer from the platform ('granted' or 'denied')
-//   undecided      queryable and genuinely not yet decided — a request would prompt
-//   unqueryable    the Permissions API exists but rejected this descriptor name
-//   unsupported    no Permissions API on this platform; the state is a per-name fallback
-export type PermissionStateSource = 'decided' | 'undecided' | 'unqueryable' | 'unsupported';
+// Query is read-only. It never falls through to a request that may prompt, and a failed/unsupported
+// query never returns a plausible state.
+export type PermissionQueryOutcome =
+  | { readonly reason: 'ok'; readonly state: PermissionState }
+  | { readonly reason: PermissionQueryFailureReason };
 
-export interface PermissionStateExplanation {
-  readonly name: PermissionName;
-  readonly source: PermissionStateSource;
-  readonly state: PermissionState;
-}
+export type PermissionRequestFailureReason =
+  | 'no-request-route'
+  | 'operation-failed'
+  | 'runtime-unavailable'
+  | 'unsupported';
 
-// Reports a `requestPermission` call that had no concrete request path and silently degraded to a plain
-// state query — the prompt the caller expected never appeared. Installed by enablePermissionGuards.
-export type PermissionRequestFallbackGuard = (name: PermissionName, state: PermissionState) => void;
+// Request preserves the owner's decision reason while projecting its common state. cleanup-failed is
+// Flight's operational failure after a successful temporary acquisition; it is never user denial.
+export type PermissionRequestOutcome =
+  | { readonly reason: 'cleanup-failed'; readonly state: 'granted' }
+  | { readonly reason: 'denied'; readonly state: 'denied' }
+  | { readonly reason: 'dismissed'; readonly state: 'prompt' }
+  | { readonly reason: 'granted'; readonly state: 'granted' }
+  | { readonly reason: PermissionRequestFailureReason };

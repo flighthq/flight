@@ -9,7 +9,6 @@ import { enableHostWebGeolocation } from './webGeolocation';
 import { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 import { enableHostWebImage } from './webImage';
 import { enableHostWebLifecycle } from './webLifecycle';
-import { enableHostWebPermission } from './webPermissions';
 import { enableHostWebPlatform } from './webPlatform';
 import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
 import { enableHostWebSensors } from './webSensors';
@@ -28,7 +27,6 @@ export function enableHostWeb(): void {
   enableHostWebGlyphRasterizer();
   enableHostWebImage();
   enableHostWebLifecycle();
-  enableHostWebPermission();
   enableHostWebPlatform();
   enableHostWebRaster2DSurface();
   enableHostWebSensors();

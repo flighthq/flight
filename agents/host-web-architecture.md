@@ -171,7 +171,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 20 | menu | createWebMenuBackend | 1/2 | **none** | — | 66.7% false. |
 | 21 | net | createWebNetBackend | 1/0 | **ambient** | — | WHATWG fetch. Zero navigator/document/window refs. Stays inline, unchanged. |
 | 22 | notification | createWebNotificationBackend | 14/4 | **host-web** | window | Notification instances/permission/timers |
-| 23 | permissions | createWebPermissionBackend | 2/0 | **host-web** | nav | navigator.permissions.query |
+| 23 | permissions | — | 0/0 | **facade/projector** | explicit Host | Notification uses only `Host.notification.permission`; seven interim native holdings are ledgered in Permissions |
 | 24 | platform | createWebPlatformBackend | 1/0 | **host-web** | window+nav | navigator UA/language/touch |
 | 25 | power | createWebPowerBackend | 6/7 | **none** | — | 53.8% false. |
 | 26 | protocol | createWebProtocolBackend | 3/7 | **none** | — | 70.0% false. |
@@ -192,12 +192,13 @@ The inventory must use the record's exact current headings as its schema: `Manda
 
 | Outcome | Count | Modules |
 |---------|-------|---------|
-| **host-web** | 24 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, permissions, platform, screen, sensors, share, shell, storage, webcam |
+| **host-web** | 23 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, platform, screen, sensors, share, shell, storage, webcam |
+| **explicit facade/projector** | 1 | permissions |
 | **ambient-language** | 3 | net, socket, textsegment |
 | **none / strict-majority** | 6 | app (9G/29S), application/window (10G/18S), menu (1G/2S), power (6G/7S), protocol (3G/7S), statusbar (2G/4S) |
 | **none / all-sentinel** | 4 | ipc (0/4), shortcut (0/7), tray (0/19), updater (0/21) |
 
-**False concentration:** 10 NONE rows contain 149 methods: 31 genuine, 118 sentinel (79.2%). The other 27 real factory rows contain 21 sentinel among 170 methods (12.4%). Log's correction row contributes no method.
+**False concentration:** 10 NONE rows contain 149 methods: 31 genuine, 118 sentinel (79.2%). The other 26 real factory rows contain 21 sentinel among 168 methods (12.5%). Log's correction row contributes no method.
 
 ---
 
@@ -322,11 +323,11 @@ When a legacy required interface makes a sentinel unavoidable, that sentinel bel
 
 ### Capability classification: global-singleton vs per-instance
 
-23 web implementations. 21 are **global singletons** with no-arg enablers; 2 are **per-instance**.
+22 web implementations. 20 are **global singletons** with no-arg enablers; 2 are **per-instance**. Permissions is neither: it is an explicit-Host facade/projector with no host-web provider or enabler.
 
 | Category | Count | Pattern | Enabler signature |
 |----------|-------|---------|-------------------|
-| Global singleton | 21 | `enableHostWeb*()` no-arg, installs one global backend | `enableHostWebClipboard()` |
+| Global singleton | 20 | `enableHostWeb*()` no-arg, installs one global backend | `enableHostWebClipboard()` |
 | Per-instance | 2 (Cursor, Keyboard) | Factory takes a caller-owned resource, returns a backend | `createWebCursorBackend(element)`, `createWebSoftKeyboard*Backend()` |
 
 Cursor requires an `HTMLElement` owned by the caller (per-`InteractionManager`). A global slot cannot hold it — each interaction manager has its own element. Cursor is a **public factory in host-web's app lane**, not an enabler and not in the umbrella.
@@ -340,8 +341,8 @@ Accessibility has graduated from this ambient global-singleton classification. `
 
 ### enableHostWeb() membership
 
-`enableHostWeb()` composes the 19 remaining ambient global-singleton enablers. Cursor is excluded
-(per-instance); Keyboard is excluded because it uses direct witness factories; Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell are excluded because
+`enableHostWeb()` composes the 18 remaining ambient global-singleton enablers. Cursor is excluded
+(per-instance); Keyboard is excluded because it uses direct witness factories; Permissions is excluded because it is an explicit-Host facade; Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell are excluded because
 they are stable explicit `webHost` slots.
 
 ```typescript
@@ -357,7 +358,6 @@ export function enableHostWeb(): void {
   enableHostWebGlyphRasterizer();
   enableHostWebImage();
   enableHostWebLifecycle();
-  enableHostWebPermission();
   enableHostWebPlatform();
   enableHostWebRaster2DSurface();
   enableHostWebSensors();
@@ -367,7 +367,7 @@ export function enableHostWeb(): void {
 }
 ```
 
-Not included: Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell (explicit `webHost`
+Not included: Permissions (explicit-Host facade/projector); Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell (explicit `webHost`
 slots), Cursor and Keyboard (per-instance/direct-witness factories, not enablers), ipc, shortcut, tray, updater (all-sentinel), Log
 (zero-provider; absent from Host),
 app, application-window, menu, power, protocol, statusbar (strict-majority no-op), net, socket,
@@ -604,7 +604,9 @@ The 3 ambient-language packages: no structural change.
 
 ### SDK barrel re-exports
 
-`enableHostWeb` and all 22 `enableHostWeb*` re-exported from `@flighthq/sdk`. `createWebCursorBackend` NOT re-exported (host-* packages are outside the SDK barrel). Factories NOT re-exported.
+`enableHostWeb` and the cultivated per-capability `enableHostWeb*` functions are re-exported from
+`@flighthq/sdk`. `createWebCursorBackend` is not re-exported (host-* packages are outside the SDK
+barrel). Factories are not re-exported.
 
 ### sideEffects
 
@@ -689,14 +691,14 @@ Two prerequisite commits are now on base, completing the documentation reconcili
 
 ### Measured facts
 
-- 36 packages, 37 real `createWeb*Backend` functions (application has 2), plus one retained Log correction row.
-- 327 factory-implemented methods; 180 genuine, 147 sentinel (45.0% false).
+- 36 packages, 36 real `createWeb*Backend` functions (application has 2; Permissions has none), plus one retained Log correction row.
+- 325 factory-implemented methods; 178 genuine, 147 sentinel (45.2% false).
 - 10 NONE rows in the corrected classification: 6 strict-majority and 4 all-sentinel. Log is zero-provider, not NONE.
-- 23 rows host-web (browser APIs required).
+- 22 rows host-web (browser APIs required); Permissions is the explicit facade/projector row.
 - 3 rows ambient-language (standard JS: fetch, WebSocket, Intl.Segmenter). Structurally unchanged.
 - 56 lib.dom-bearing types files total (249 sites): 40 render-backend headers (224 sites, expected) + 16 nominal-neutral files (25 sites — the extraction surface). All 25 neutral sites resolved via neutral protocols, opaque handles, or render-tier moves.
 - 0 dynamic imports in non-test production capability and host package sources (test files and tool-* excluded).
-- All 37 real factories confirmed: no addEventListener, no setTimeout/setInterval, no async/Promise at construction. 7 factories allocate passive closure state spanning primitives, Maps, Sets, arrays, config objects, and retained DOM/object references.
+- All 36 real factories confirmed: no addEventListener, no setTimeout/setInterval, no async/Promise at construction. 7 factories allocate passive closure state spanning primitives, Maps, Sets, arrays, config objects, and retained DOM/object references.
 
 ### Design chosen
 
