@@ -551,6 +551,22 @@ A and B touch disjoint packages (`host-*` and the capability packages vs `render
   deleted together. Accelerator formatting and `CommandOrControl` resolution now require an explicit
   platform argument.
 
+  **APP + PROTOCOL R7/R3 result (2026-08-30):** APP retains independent method-tight slots for its
+  commands, queries, and six provider-emitted events. Every exported host operation takes the exact
+  `HasApp*` witness; `createApp` is an Entity and each attachment stores the exact provider release.
+  Web owns badge/focus/locale/name/quit/ready/relaunch; Electron and Capacitor shapes are selected by
+  injected OS profile; Tauri claims only its seven real identity/control slots. The ambient backend,
+  resolver precedence, diagnostics, sentinels, command-line zero-provider surface, and Web enabler are
+  deleted in the same slice.
+
+  PROTOCOL is a required top-level group with six optional slots: `registration`,
+  `registrationQuery`, `unregistration`, `default`, `launch`, and `open`. It is not nested under APP
+  because its registration/default/open lifecycle is independently provided. Web owns launch and
+  registration, Electron owns default/open/registration/query/unregistration, Capacitor owns open,
+  and Tauri owns none. Command and event shapes remain split under R16. `ProtocolHandler` is an Entity
+  with origin-pinned release; pure URL parse/build helpers stay hostless. The ambient resolver,
+  diagnostics, sentinels, inert pending drain, and Web enabler are deleted together.
+
 ### Strand C — parsers, codecs, and the remaining ambient registries. Last.
 
 SWF parser config, image codecs, the `@flighthq/compression` decompressor registry, the loader's ambient net/codec reach, the globally-installed canvas text shaper. C waits for B-pipeline to settle what a registry type looks like, so it inherits that shape instead of inventing a second one.
