@@ -1,8 +1,8 @@
 import type { Signal } from './Signal';
 
-// Mobile status bar seam. Free functions in @flighthq/statusbar delegate to the active StatusBarBackend
-// (web default or a native host's). Web has no real status bar; only the theme-color hint is honored,
-// the rest are no-ops until a native host registers a backend.
+// Mobile status bar seam. Operations consume narrow explicit Host capability slots. Web owns only the
+// theme-color command; native hosts may supply the independent snapshot, style, visibility, overlay,
+// and change capabilities they actually implement.
 export type StatusBarStyle = 'light' | 'dark' | 'default';
 
 // Transition used when showing/hiding the status bar. 'none' is the default (immediate); native hosts
@@ -64,17 +64,6 @@ export interface StatusBarColorBackend {
 export interface StatusBarVisibilityBackend {
   setVisible(visible: boolean, animation?: StatusBarAnimation): void;
 }
-
-// Full native-provider convenience shape. Host capability slots use the narrow interfaces above so a
-// provider never has to claim an operation it cannot perform.
-export interface StatusBarBackend
-  extends
-    StatusBarChangeBackend,
-    StatusBarInfoBackend,
-    StatusBarOverlaysBackend,
-    StatusBarStyleBackend,
-    StatusBarColorBackend,
-    StatusBarVisibilityBackend {}
 
 // Status bar event entity. Enable delivery with attachStatusBar; the signals stay inert until then.
 export interface StatusBar {

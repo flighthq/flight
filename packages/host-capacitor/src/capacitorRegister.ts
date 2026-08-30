@@ -1,7 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { setGeolocationBackend } from '@flighthq/geolocation/contract';
-import { setStatusBarBackend } from '@flighthq/statusbar/contract';
 import type {
   CapacitorApi,
   CapacitorShareContentBackend,
@@ -26,6 +24,12 @@ import type {
   HasSoftKeyboardScrollAssist,
   HasSoftKeyboardStyle,
   HasSoftKeyboardVisibility,
+  HasStorageFileSystem,
+  HasUiStatusBarColor,
+  HasUiStatusBarInfo,
+  HasUiStatusBarOverlays,
+  HasUiStatusBarStyle,
+  HasUiStatusBarVisibility,
   Host,
   MobileOsProfile,
 } from '@flighthq/types/contract';
@@ -74,15 +78,20 @@ type CapacitorHost<Profile extends MobileOsProfile> = Host &
   HasSoftKeyboardResizeModeWrite &
   HasSoftKeyboardScrollAssist &
   HasSoftKeyboardStyle &
-  HasSoftKeyboardVisibility & {
+  HasSoftKeyboardVisibility &
+  HasStorageFileSystem &
+  HasUiStatusBarColor &
+  HasUiStatusBarInfo &
+  HasUiStatusBarOverlays &
+  HasUiStatusBarStyle &
+  HasUiStatusBarVisibility & {
     readonly app: CapacitorAppCapabilitiesFor<Profile>;
     readonly protocol: CapacitorProtocolCapabilities;
     readonly share: { readonly content: CapacitorShareContentBackend };
   };
 
-// The explicit Capacitor host. Clipboard, dialog, haptics, notification, and content sharing are claimed; every other capability
-// still installs through its package-local seam and is NOT represented here, so an empty group means
-// "not yet migrated", never "Capacitor cannot do this".
+// The explicit Capacitor host. Every populated slot below is backed by a real plugin operation; empty
+// groups make unsupported or not-yet-migrated coverage explicit.
 export function capacitorHost<Profile extends MobileOsProfile>(
   capacitor: CapacitorApi,
   profile: Profile,
@@ -90,6 +99,7 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   const app = createCapacitorAppCapabilities(capacitor, profile);
   const clipboard = createCapacitorClipboardBackend(capacitor);
   const connectivity = createCapacitorConnectivityBackend(capacitor);
+  const statusBar = createCapacitorStatusBarBackend(capacitor);
   return createEntity({
     accessibility: {},
     app,
@@ -129,11 +139,17 @@ export function capacitorHost<Profile extends MobileOsProfile>(
     share: { content: createCapacitorShareContentBackend(capacitor) },
     // Capacitor exposes none of Shell's six native command capabilities.
     shell: {},
-    storage: {},
+    storage: { fileSystem: createCapacitorFileSystemBackend(capacitor) },
     system: { device: createCapacitorDeviceBackend(capacitor) },
     text: {},
     tray: {},
-    ui: {},
+    ui: {
+      statusBarColor: statusBar,
+      statusBarInfo: statusBar,
+      statusBarOverlays: statusBar,
+      statusBarStyle: statusBar,
+      statusBarVisibility: statusBar,
+    },
     // The supported Capacitor plugin set has no Squirrel-compatible updater transaction.
     updater: {},
     // Every WindowBackend member is optional, so {} is the honest claim: a Capacitor app runs in a
@@ -150,15 +166,12 @@ export function capacitorHost<Profile extends MobileOsProfile>(
 //   // …import the other plugins…
 //   registerCapacitorBackends({ app: App, clipboard: Clipboard, /* … */ statusBar: StatusBar });
 //
-// Pass the returned host to clipboard, dialog, haptics, and notification operations. The other mobile seams remain
-// package-local registrations. Storage is deliberately not adapted because its synchronous contract
-// cannot express Capacitor Preferences' asynchronous API.
+// Pass the returned host to explicit capability operations. The remaining mobile seams below still use
+// package-local registration while their domains migrate.
 export function registerCapacitorBackends<Profile extends MobileOsProfile>(
   capacitor: CapacitorApi,
   profile: Profile,
 ): CapacitorHost<Profile> {
-  setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));
   setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));
-  setStatusBarBackend(createCapacitorStatusBarBackend(capacitor));
   return capacitorHost(capacitor, profile);
 }

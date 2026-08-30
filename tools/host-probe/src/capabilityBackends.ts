@@ -1,7 +1,5 @@
-import { getFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
-import { getStatusBarBackend } from '@flighthq/statusbar/contract';
 import type { Host } from '@flighthq/types/contract';
 
 import type { HostProbeCapability } from './expectations';
@@ -30,6 +28,7 @@ export function captureHostProbeBackends(
       | 'storage'
       | 'system'
       | 'tray'
+      | 'ui'
       | 'updater'
       | 'window'
     >
@@ -43,7 +42,7 @@ export function captureHostProbeBackends(
     cursor: null,
     device: host.system?.device ?? null,
     dialog: host.dialog ?? null,
-    filesystem: getFileSystemBackend(),
+    filesystem: host.storage?.fileSystem ?? null,
     geolocation: getGeolocationBackend(),
     'glyph-rasterizer': getGlyphRasterizerBackend(),
     haptics: host.input?.haptics ?? null,
@@ -84,7 +83,14 @@ export function captureHostProbeBackends(
       host.input?.softKeyboardAccessoryBar ??
       host.input?.softKeyboardScrollAssist ??
       null,
-    statusbar: getStatusBarBackend(),
+    statusbar:
+      host.ui?.statusBarInfo ??
+      host.ui?.statusBarColor ??
+      host.ui?.statusBarStyle ??
+      host.ui?.statusBarVisibility ??
+      host.ui?.statusBarOverlays ??
+      host.ui?.statusBarChange ??
+      null,
     storage: host.storage?.local ?? null,
     tray: firstProvidedSlot(host.tray),
     updater: host.updater?.command ?? null,

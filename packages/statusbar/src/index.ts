@@ -4,7 +4,6 @@ export {
   createStatusBar,
   detachStatusBar,
   disposeStatusBar,
-  explainStatusBarBackend,
   getStatusBarHeight,
   getStatusBarInfo,
   hasStatusBarStyleEntry,

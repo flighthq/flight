@@ -1,57 +1,21 @@
-import {
-  installStatusBarHostBackend,
-  observeStatusBarHostResult,
-  packedRgbaToHexColor,
-} from '@flighthq/statusbar/contract';
-import type { StatusBarBackend, StatusBarInfo } from '@flighthq/types/contract';
+import { packedRgbaToHexColor } from '@flighthq/statusbar/contract';
+import type { StatusBarColorBackend } from '@flighthq/types/contract';
 
-export function enableHostWebStatusBar(): void {
-  if (_enabled) return;
-  _enabled = true;
-  const backend: StatusBarBackend = {
-    getInfo(out: StatusBarInfo): StatusBarInfo {
-      out.color = 0;
-      out.height = -1;
-      out.overlaysContent = false;
-      out.style = 'default';
-      out.visible = true;
-      return out;
-    },
-    setBackgroundColor(color: number): void {
-      try {
-        if (typeof document === 'undefined') {
-          observeStatusBarHostResult('setBackgroundColor', false);
-          return;
-        }
-        const head = document.head;
-        if (head === null || head === undefined) {
-          observeStatusBarHostResult('setBackgroundColor', false);
-          return;
-        }
-        let meta = head.querySelector('meta[name="theme-color"]');
-        if (meta === null) {
-          meta = document.createElement('meta');
-          meta.setAttribute('name', 'theme-color');
-          head.appendChild(meta);
-        }
-        meta.setAttribute('content', packedRgbaToHexColor(color));
-        observeStatusBarHostResult('setBackgroundColor', true);
-      } catch {
-        observeStatusBarHostResult('setBackgroundColor', false);
+// Web owns one honest status-bar-adjacent operation: writing the document theme-color hint. It does
+// not claim native status-bar snapshots, foreground style, visibility, overlays, or change events.
+export const webStatusBarColorBackend: StatusBarColorBackend = {
+  setBackgroundColor(color): void {
+    try {
+      if (typeof document === 'undefined' || document.head === null) return;
+      let meta = document.head.querySelector('meta[name="theme-color"]');
+      if (meta === null) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'theme-color');
+        document.head.appendChild(meta);
       }
-    },
-    setOverlaysContent(): void {},
-    setStyle(): void {},
-    setVisible(): void {},
-    subscribe(): () => void {
-      return () => {};
-    },
-  };
-  installStatusBarHostBackend(backend);
-}
-
-export function resetHostWebStatusBarForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;
+      meta.setAttribute('content', packedRgbaToHexColor(color));
+    } catch {
+      // A missing or restricted DOM is the operation's documented no-effect runtime outcome.
+    }
+  },
+};

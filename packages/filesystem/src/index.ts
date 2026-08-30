@@ -1,5 +1,4 @@
 export {
-  explainFileSystemBackend,
   appendTextFile,
   canAccessFile,
   copyFile,

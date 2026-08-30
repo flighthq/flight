@@ -96,13 +96,17 @@ describe('createCapacitorFileSystemBackend', () => {
     expect(await backend.statFile('/missing')).toBeNull();
   });
 
-  it('reports sentinels for the unmodeled surface', async () => {
+  it('omits operations the Capacitor plugin cannot perform', () => {
     const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
-    expect(await backend.readBinaryFileRange('/x', 0, 4)).toBeNull();
-    expect(await backend.getFilePermissions('/x')).toBeNull();
-    expect(await backend.canAccessFile('/x', 'readable')).toBe(false);
-    expect(await backend.getFileSystemUsage()).toBeNull();
-    expect(backend.getPath('home')).toBe('');
-    expect(typeof backend.watch('/x', () => {})).toBe('function');
+    expect(Object.keys(backend)).not.toEqual(
+      expect.arrayContaining([
+        'canAccessFile',
+        'getFilePermissions',
+        'getFileSystemUsage',
+        'getPath',
+        'readBinaryFileRange',
+        'watch',
+      ]),
+    );
   });
 });

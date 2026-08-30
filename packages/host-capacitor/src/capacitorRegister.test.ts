@@ -1,7 +1,5 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
-import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
@@ -61,9 +59,7 @@ function fakeCapacitor(): CapacitorApi {
 }
 
 afterEach(() => {
-  setFileSystemBackend(null);
   setGeolocationBackend(null);
-  setStatusBarBackend(null);
 });
 
 describe('capacitor power slot coverage', () => {
@@ -101,8 +97,9 @@ describe('capacitorHost', () => {
     expect(host.input.haptics).toBeDefined();
     expect(host.notification.delivery).toBeDefined();
     expect(host.share.content).toBeDefined();
-    // Still installing through package-local seams, so the host must NOT claim them.
-    expect(host.storage).toEqual({});
+    expect(host.storage.fileSystem).toBeDefined();
+    expect(host.ui.statusBarColor).toBeDefined();
+    expect(host.ui.statusBarInfo).toBeDefined();
     expect(host.system.device).toBeDefined();
     expect(host.media).toEqual({});
     expect(host.shortcut).toEqual({});
@@ -134,14 +131,15 @@ describe('registerCapacitorBackends', () => {
     expect(host.connectivity.status.getStatus).toBeTypeOf('function');
     expect(host.connectivity.change.subscribe).toBeTypeOf('function');
     expect(host.system.device).toBeDefined();
-    expect(getFileSystemBackend()).not.toBeNull();
+    expect(host.storage.fileSystem.readTextFile).toBeTypeOf('function');
     expect(getGeolocationBackend()).not.toBeNull();
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.scheduling.scheduleNotification).toBeTypeOf('function');
     expect(host.share.content.canShareContent({ text: 'ready' })).toBe(true);
     expect(host.input.softKeyboardInfo).toBeDefined();
     expect(host.input.softKeyboardVisibility).toBeDefined();
-    expect(getStatusBarBackend()).not.toBeNull();
+    expect(host.ui.statusBarColor.setBackgroundColor).toBeTypeOf('function');
+    expect(host.ui.statusBarInfo.getInfo).toBeTypeOf('function');
   });
 
   // Haptics has migrated off the ambient seam: registerCapacitorBackends now RETURNS a Host carrying the

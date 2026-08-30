@@ -18,7 +18,7 @@ export {
   webMessageDialogBackend,
   webPromptDialogBackend,
 } from './webDialog';
-export { enableHostWebFileSystem } from './webFilesystem';
+export { webFileSystemBackend } from './webFilesystem';
 export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
 export { enableHostWebGeolocation } from './webGeolocation';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
@@ -60,7 +60,7 @@ export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from '
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';
 export { webShareContentBackend, webShareFilesBackend } from './webShare';
 export { webShellExternalBackend } from './webShell';
-export { enableHostWebStatusBar } from './webStatusbar';
+export { webStatusBarColorBackend } from './webStatusbar';
 export { webStorageBackend } from './webStorage';
 export {
   createWebWindowStoragePersistenceCapabilities,

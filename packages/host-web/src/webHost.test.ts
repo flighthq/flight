@@ -9,7 +9,17 @@ describe('webHost', () => {
     expect(EntityRuntimeKey in webHost.shell.external).toBe(true);
   });
 
-  it('installs the Window persistence query and request slots without disturbing local storage', () => {
-    expect(Object.keys(webHost.storage).sort()).toEqual(['change', 'local', 'persistenceQuery', 'persistenceRequest']);
+  it('publishes explicit storage providers including the honest OPFS surface', () => {
+    expect(Object.keys(webHost.storage).sort()).toEqual([
+      'change',
+      'fileSystem',
+      'local',
+      'persistenceQuery',
+      'persistenceRequest',
+    ]);
+  });
+
+  it('publishes Web theme color without native status-bar claims', () => {
+    expect(Object.keys(webHost.ui).sort()).toEqual(['fullscreen', 'statusBarColor']);
   });
 });

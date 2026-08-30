@@ -159,7 +159,7 @@ export interface CapacitorDialogPromptResult {
 }
 
 // `@capacitor/filesystem` — async file I/O. Text uses the `utf8` encoding; binary omits `encoding` and
-// crosses as a Base64 string. The FileSystemBackend methods without a Capacitor call (streams, symlinks,
+// crosses as a Base64 string. File-system operations without a Capacitor call (streams, symlinks,
 // permissions, watch, usage) report their sentinels. Paths are forwarded as-is: the caller supplies a
 // Capacitor-resolvable path (a `file://` URI or a path under a configured Directory).
 export interface CapacitorFilesystemPlugin {
@@ -399,7 +399,7 @@ export interface CapacitorShareResult {
 }
 
 // `@capacitor/status-bar` — the mobile status bar. Setters are async fire-and-forget; the sync
-// StatusBarBackend.getInfo reads a value prefetched at construction. `style` is Capacitor's enum
+// The status-bar info capability reads a value prefetched at construction. `style` is Capacitor's enum
 // ('Dark' | 'Light' | 'Default'); `color` is a `#RRGGBB` hex string.
 export interface CapacitorStatusBarPlugin {
   getInfo(): Promise<CapacitorStatusBarInfoResult>;

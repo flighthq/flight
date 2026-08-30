@@ -1,17 +1,15 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { CapacitorApi, Entity, FileEntry, FileStat, FileSystemBackend } from '@flighthq/types/contract';
+import type { CapacitorApi, Entity, FileEntry, FileStat, FileSystemBasicBackend } from '@flighthq/types/contract';
 
-// Maps Flight's FileSystemBackend onto Capacitor's async `@capacitor/filesystem`. Both sides are
+// Maps Flight's honest FileSystemHostBackend onto Capacitor's async `@capacitor/filesystem`. Both sides are
 // Promise-based, so the core surface maps cleanly: text via the `utf8` encoding, binary via Base64
 // (Capacitor omits `encoding` for binary and crosses bytes as a Base64 string), plus
 // exists/remove/mkdir/readdir/stat/rename/copy/append. Reads resolve to null / [] and writes to false on
 // failure instead of throwing, per the contract. Paths are forwarded as-is: the caller supplies a
 // Capacitor-resolvable path (a `file://` URI, or a path the host's default Directory resolves).
 //
-// Capacitor has no call for streams, symlinks, POSIX permissions, real-path resolution, filesystem
-// usage, byte-range reads, atomic writes, watching, or well-known path lookup, so those methods report
-// the contract sentinels (null / false / '' / [] / inert unsubscribe).
-export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBackend & Entity {
+// Operations the plugin cannot perform are absent from the returned provider.
+export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
   const filesystem = capacitor.filesystem;
   return createEntity({
     async readTextFile(path) {
@@ -36,23 +34,9 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
         return null;
       }
     },
-    async readBinaryFileRange() {
-      // Capacitor has no byte-range read; report unsupported via the null sentinel.
-      return null;
-    },
     async writeBinaryFile(path, data) {
       try {
         await filesystem.writeFile({ path, data: bytesToBase64(data), recursive: true });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    async writeFileAtomic(path, data) {
-      // No atomic-write primitive; best-effort direct write (text or binary).
-      try {
-        if (typeof data === 'string') await filesystem.writeFile({ path, data, encoding: 'utf8', recursive: true });
-        else await filesystem.writeFile({ path, data: bytesToBase64(data), recursive: true });
         return true;
       } catch {
         return false;
@@ -103,10 +87,6 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
         return [];
       }
     },
-    async readDirectoryRecursive() {
-      // Capacitor's readdir is non-recursive; a from-scratch walk is out of this adapter's scope.
-      return [];
-    },
     async statFile(path) {
       try {
         const stat = await filesystem.stat({ path });
@@ -146,42 +126,7 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
         return false;
       }
     },
-    async openFileReadStream() {
-      return null;
-    },
-    async openFileWriteStream() {
-      return null;
-    },
-    async createFileSymlink() {
-      return false;
-    },
-    async readFileSymlink() {
-      return null;
-    },
-    async getFileRealPath() {
-      return null;
-    },
-    async getFilePermissions() {
-      return null;
-    },
-    async setFilePermissions() {
-      return false;
-    },
-    async canAccessFile() {
-      return false;
-    },
-    async getFileSystemUsage() {
-      return null;
-    },
-    watch() {
-      // Capacitor Filesystem emits no change events; inert unsubscribe.
-      return () => {};
-    },
-    getPath() {
-      // Well-known directory paths come from Capacitor's Directory enum, resolved host-side, not a call.
-      return '';
-    },
-  } satisfies FileSystemBackend);
+  } satisfies FileSystemBasicBackend);
 }
 
 function toFileEntry(name: string, path: string, type: string): FileEntry {
