@@ -201,7 +201,7 @@ describe('resizeWgpuRenderTarget', () => {
     const target = createWgpuRenderTarget(state, 64, 64);
     const texture = target.texture;
     const depthStencilTexture = target.depthStencilTexture;
-    const sampler = getWgpuRenderStateRuntime(state).linearSampler;
+    const sampler = getWgpuRenderStateRuntime(state).context.linearSampler;
     const bindGroup = resolveWgpuSmoothingBindGroup(state, target, true);
 
     resizeWgpuRenderTarget(state, target, 64, 64);
