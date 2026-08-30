@@ -57,14 +57,37 @@ export interface RenderRegistries {
   // policy mistakes without adding their warning dependency to the substrate-independent render path.
   renderRootGuard?: SlotTable<RenderRootGuard>;
   // Opt-in closed-ring/self-intersection stroke kernel. The empty slot means the compact mesh lane
-  // rasterizes closed strokes; a bound pure function is safe to snapshot across derived pipelines.
-  strokeTessellator: SlotTable<
-    (path: Readonly<Path>, style: Readonly<StrokeStyle>, tolerance?: number) => PathMesh | null
-  >;
+  // rasterizes closed strokes.
+  strokeTessellator: SlotTable<StrokeTessellator>;
 }
 
 export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: Renderable) => void;
 export type RenderRootGuard = (state: RenderState, root: Renderable) => void;
+
+/**
+ * Tessellates a stroked path into a mesh, or `null` when the stroke has no representable geometry.
+ *
+ * **An implementation must be pure.** Three requirements, and they are a contract rather than advice
+ * because a derived render pipeline INHERITS the tessellator bound to the pipeline it came from — one
+ * function object is shared by every state over that lineage:
+ *
+ * - **Reentrant.** A call may begin while another is in progress; neither may disturb the other.
+ * - **Safe to share across render states.** Keep no per-state scratch — no module-level buffer, pool,
+ *   or cache reused between calls. A tessellator that memoized into a captured array would return one
+ *   state's geometry to another, and nothing in the render path would detect the substitution.
+ * - **Alias-free in its results.** Every call returns freshly allocated `vertices` and `indices`. A
+ *   caller may mutate or retain what it receives, so returning a shared buffer corrupts earlier
+ *   results retroactively.
+ *
+ * Inputs are `Readonly` and must not be mutated. If a future implementation genuinely needs scratch,
+ * it allocates per call; the sharing rule is what makes inheritance across derived pipelines correct,
+ * so it cannot be relaxed for one implementation without changing how every pipeline derives.
+ */
+export type StrokeTessellator = (
+  path: Readonly<Path>,
+  style: Readonly<StrokeStyle>,
+  tolerance?: number,
+) => PathMesh | null;
 
 // Package-private machinery for a RenderState entity. Lives in the runtime tier (not on the entity)
 // so the public RenderState surface stays minimal; the render path resolves it via

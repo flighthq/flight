@@ -258,6 +258,7 @@
     "@flighthq/render-gl createGlRenderTexturePool",
     "@flighthq/render-wgpu createBitmapFromWgpuRenderState",
     "@flighthq/render-wgpu createWgpuCanvasElement",
+    "@flighthq/render-wgpu createWgpuOffscreenRenderState",
     "@flighthq/render-wgpu createWgpuRenderState",
     "@flighthq/render-wgpu createWgpuRenderTarget",
     "@flighthq/render-wgpu createWgpuRenderTexturePool",

@@ -853,7 +853,7 @@ export * from './WgpuQuadBatchResources';
 export * from './WgpuRichTextOverlay';
 export * from './WgpuShapeMesh';
 export * from './WgpuShapeRendererData';
-export * from './WgpuRenderStateSignals';
+export * from './WgpuDeviceSignals';
 export * from './WgpuRenderStats';
 export * from './WgpuRenderTarget';
 export * from './RenderTexture';

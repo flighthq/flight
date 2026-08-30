@@ -2,6 +2,7 @@ export * from './wgpuAdapterCapabilities';
 export * from './wgpuAntialias';
 export * from './wgpuBackground';
 export * from './wgpuCompressedTexture';
+export * from './wgpuDeviceLoss';
 export * from './wgpuDraw';
 export * from './wgpuExternalTexture';
 export * from './wgpuElement';

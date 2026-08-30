@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/render-wgpu'
-updated: 2026-08-16
-by: builder4
+updated: 2026-08-30
+by: builder2
 ---
 
 # render-wgpu — Status
@@ -14,11 +14,11 @@ by: builder4
 Every item was re-checked against `packages/render-wgpu/src/` (and `packages/types/src/`) on 2026-08-08.
 A file:line here is a claim about this tree, not about a session.
 
-- **`WgpuRenderStateSignals` is a header with no implementation.** The interface declares `onDeviceLost` and
-  `onContextResize` (`packages/types/src/WgpuRenderStateSignals.ts:2-4`) and is exported from `types`'
-  barrels, but `enableWgpuRenderStateSignals` / `getWgpuRenderStateSignals` exist nowhere in `packages/`.
-  Device loss is therefore unobservable from this backend, and a consumer reading `@flighthq/types` sees a
-  capability that is not there.
+- **`onContextResize` was dropped, not moved.** `WgpuRenderStateSignals` is gone; its second member had no
+  producer or consumer. Resize belongs to a presentation surface, not a GPUDevice, so it earns a
+  surface-tier group and a producer if wanted.
+- **The `GlContextLoss` orphan remains** (`types/src/GlContextLoss.ts`, zero emitters). Not fixed alongside
+  WGPU: WebGL loss is a cancelable DOM event with a restore path, WebGPU loss a terminal promise with none.
 - **No profiling surface.** `enableWgpuTimestampQueries`, `getWgpuFrameGpuTime`, and
   `encodeWgpuTimestampResolve` are absent. `wgpuAdapterCapabilities.ts` still reports `timestamp-query`
   availability that nothing consumes.
@@ -46,6 +46,16 @@ A file:line here is a claim about this tree, not about a session.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-30** — `StrokeTessellator` is a named type in `types/src/RenderState.ts` stating its sharing
+  contract (reentrant, shareable, alias-free results), because a derived pipeline inherits its source's
+  tessellator. `copyWgpuRenderStateRegistrations` now explicitly names that source policy, and
+  `tessellateStrokePath` is verified pure.
+
+- **2026-08-30** — Device loss is observable at the shared `WgpuDeviceRuntime` tier. One observer is
+  attached per device in `createMinimalDeviceRuntime`; `onDeviceLost` emits once only for unexpected
+  loss, while Flight's own `'destroyed'` resolution remains a clean teardown. Deriving offscreen state
+  from a dead device returns `WgpuOffscreenRenderStateResult` with `reason: 'device-lost'`.
 
 - **2026-08-19** — Wired `WgpuRenderOptions.antialias` at the single main-surface seam as a 2× supersample
   texture plus fullscreen linear resolve (`wgpuAntialias.ts`, `wgpuBackground.ts`); default and capture
