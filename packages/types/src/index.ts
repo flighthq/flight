@@ -262,6 +262,7 @@ export * from './GlMeshMaterialRenderer';
 export * from './GlMeshProgram';
 export * from './GlModifierSnippet';
 export * from './GlPbrProgram';
+export * from './GlPipeline';
 export * from './GlRenderEffectPipeline';
 export * from './GlRenderOptions';
 export * from './GlRenderState';

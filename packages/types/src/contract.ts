@@ -270,6 +270,7 @@ export * from './GlMeshProgram';
 export * from './GlModifierSnippet';
 export * from './GlParticleResources';
 export * from './GlPbrProgram';
+export * from './GlPipeline';
 export * from './GlQuadBatchResources';
 export * from './GlRenderEffectPipeline';
 export * from './GlRenderOptions';
