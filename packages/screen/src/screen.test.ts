@@ -528,11 +528,27 @@ describe('explainScreenOperation', () => {
     expect(explainScreenOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
   });
 
-  it('falls through to the host for an operation the custom backend omits', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    installScreenHostBackend({ ...partialBackend(), [operation]: () => undefined } as ScreenBackend);
+  it('reports the wholesale custom selection when the selected backend omits an operation', () => {
+    installScreenHostBackend({
+      ...partialBackend(),
+      getModes(_screen, out) {
+        out.length = 1;
+        out[0] = { width: 777, height: 1, refreshRate: 1, colorDepth: 1, pixelFormat: 'host' };
+        return out;
+      },
+    });
     setScreenBackend(partialBackend());
-    expect(explainScreenOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+    const screen = createScreenInfo();
+    screen.width = 320;
+    const modes: ScreenMode[] = [];
+    getScreenModes(screen, modes);
+    expect(modes[0]?.width).toBe(320);
+    expect(modes[0]?.width).not.toBe(777);
+    expect(explainScreenOperation('getModes')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'getModes',
+    });
   });
 });
 describe('getPrimaryScreen', () => {
