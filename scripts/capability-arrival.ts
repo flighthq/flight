@@ -79,7 +79,6 @@ const EXPECTED_AGGREGATE = [
   'Permission',
   'Platform',
   'Raster2DSurface',
-  'Screen',
   'Sensors',
   'Storage',
   'VideoCapability',
