@@ -19,6 +19,14 @@ function backendProducing(width: number, height: number): GlyphRasterizerBackend
   };
 }
 
+function red4pxBackend(): GlyphRasterizerBackend {
+  const pixels = new Uint8ClampedArray(4 * 4 * 4);
+  for (let offset = 0; offset < pixels.length; offset += 4) pixels.set([255, 0, 0, 255], offset);
+  return {
+    rasterize: () => ({ advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels, width: 4 }),
+  };
+}
+
 describe('explainGlyphAtlasEntry', () => {
   afterEach(() => setGlyphRasterizerBackend(null));
 
@@ -32,6 +40,39 @@ describe('explainGlyphAtlasEntry', () => {
     expect(explanation.reason).toBe('ok');
     expect(explanation.glyphWidth).toBe(8);
     expect(explanation.usableWidth).toBe(62);
+  });
+
+  it('agrees with a real entry produced by the backend pinned to another equivalent atlas', () => {
+    setGlyphRasterizerBackend(null);
+    const rasterizerBackend = red4pxBackend();
+    const options = {
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend,
+      width: 64,
+    } as const;
+    const subjectAtlas = createGlyphAtlas(options);
+    const explanationAtlas = createGlyphAtlas(options);
+
+    // Exercise the subject first. A single atlas would cache the successful entry and let the
+    // explanation pass without proving which backend its uncached path resolves.
+    const entry = getGlyphAtlasEntry(subjectAtlas, 65);
+    expect(entry).not.toBeNull();
+    expect(entry?.width).toBe(4);
+    const firstPixelOffset = 4 * (entry!.y * subjectAtlas.runtime.bitmap.width + entry!.x);
+    expect(subjectAtlas.runtime.bitmap.data.slice(firstPixelOffset, firstPixelOffset + 4)).toEqual(
+      new Uint8ClampedArray([255, 0, 0, 255]),
+    );
+
+    expect(explainGlyphAtlasEntry(explanationAtlas, 65)).toEqual({
+      glyphHeight: entry?.height,
+      glyphWidth: entry?.width,
+      reason: 'ok',
+      renderable: true,
+      usableHeight: 62,
+      usableWidth: 62,
+    });
   });
 
   // The two null paths are genuinely different problems with different remedies, which is the whole
