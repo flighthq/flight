@@ -33,6 +33,7 @@ import { webLifecycleBackend } from './webLifecycle';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import { webNetBackend } from './webNet';
 import { webPlatformBackend } from './webPlatform';
 import { webPowerCapabilities } from './webPower';
 import { createWebProtocolCapabilities } from './webProtocol';
@@ -113,7 +114,7 @@ export const webHost = createEntity({
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   // MIDI access may prompt and enumerate hardware, so only the injected profile factories claim it.
   midi: {},
-  net: { socket: webSocketBackend },
+  net: { http: webNetBackend, socket: webSocketBackend },
   power: webPowerCapabilities,
   protocol: webProtocolCapabilities,
   // Notification construction is execution-context-specific (page vs Service Worker) and requires an

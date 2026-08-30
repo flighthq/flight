@@ -1,6 +1,6 @@
 import type * as NetModule from '@flighthq/net/contract';
 import type * as Scene3DFormatsModule from '@flighthq/scene3d-formats/contract';
-import type { NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type { HasNetHttp, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromAwd2Url } from './awd2Load';
@@ -38,6 +38,10 @@ function emptyDocument(): Scene3DDocument {
   };
 }
 
+function fakeHost(): HasNetHttp {
+  return { net: { http: { sendNetRequest: mocks.sendNetRequest } } };
+}
+
 function okResponse(body: ArrayBuffer): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
 }
@@ -53,7 +57,7 @@ describe('loadScene3DDocumentFromAwd2Url', () => {
     mocks.parseAwd2.mockReturnValue(document);
     mocks.sendNetRequest.mockResolvedValue(okResponse(new Uint8Array([5, 6]).buffer));
 
-    const loaded = await loadScene3DDocumentFromAwd2Url('model.awd');
+    const loaded = await loadScene3DDocumentFromAwd2Url(fakeHost(), 'model.awd');
 
     expect(Array.from(mocks.parseAwd2.mock.calls[0][0])).toEqual([5, 6]);
     expect(loaded).toBe(document);

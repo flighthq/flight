@@ -1,4 +1,4 @@
-import { setNetBackend } from '@flighthq/net/contract';
+import type { HasNetHttp, NetBackend } from '@flighthq/types/contract';
 
 import { resetAudioBackendForTest, setAudioBackend } from './audioBackend';
 import {
@@ -10,6 +10,16 @@ import {
   loadAudioResourceFromUrls,
   selectAudioResourceUrl,
 } from './audioResourceFrom';
+
+function fakeNetHost(backend?: NetBackend): HasNetHttp {
+  return {
+    net: {
+      http: backend ?? {
+        sendNetRequest: async () => ({ status: 200, statusText: 'OK', ok: true, headers: {}, body: null, url: '' }),
+      },
+    },
+  };
+}
 
 const decodedBuffer = { duration: 1 } as AudioBuffer;
 
@@ -58,7 +68,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  setNetBackend(null);
   resetAudioBackendForTest();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -179,8 +188,8 @@ describe('loadAudioResourceFromBytes', () => {
 });
 
 describe('loadAudioResourceFromUrl', () => {
-  it('routes URL loading through the installed NetBackend', async () => {
-    const sendNetRequest = vi.fn().mockResolvedValue({
+  it('routes URL loading through the host NetBackend', async () => {
+    const mockSendNetRequest = vi.fn().mockResolvedValue({
       body: new ArrayBuffer(8),
       headers: { 'content-type': 'audio/mpeg' },
       ok: true,
@@ -188,62 +197,64 @@ describe('loadAudioResourceFromUrl', () => {
       statusText: 'OK',
       url: 'sound.mp3',
     });
-    setNetBackend({ sendNetRequest });
+    const host = fakeNetHost({ sendNetRequest: mockSendNetRequest });
 
-    const resource = await loadAudioResourceFromUrl(mockContext, 'sound.mp3');
+    const resource = await loadAudioResourceFromUrl(host, mockContext, 'sound.mp3');
 
     expect(resource.buffer).toBe(decodedBuffer);
-    expect(sendNetRequest).toHaveBeenCalledWith(
+    expect(mockSendNetRequest).toHaveBeenCalledWith(
       { method: 'GET', responseType: 'arraybuffer', url: 'sound.mp3' },
       undefined,
     );
   });
 
-  it('fetches, decodes, and returns a resource', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
+  it('decodes a successful arraybuffer response into a resource', async () => {
+    const host = fakeNetHost({
+      sendNetRequest: async () => ({
+        body: new ArrayBuffer(8),
+        headers: { 'content-type': 'audio/mpeg' },
         ok: true,
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-        headers: new Headers({ 'content-type': 'audio/mpeg' }),
+        status: 200,
+        statusText: 'OK',
+        url: 'sound.mp3',
       }),
-    );
-    const resource = await loadAudioResourceFromUrl(mockContext, 'sound.mp3');
+    });
+    const resource = await loadAudioResourceFromUrl(host, mockContext, 'sound.mp3');
     expect(resource.buffer).toBe(decodedBuffer);
   });
 
-  // fetch resolves for 404/500, so without a status check the error page reaches the decoder and the
-  // caller is told the codec failed. The assertion pins the status, not merely that it rejected.
   it('rejects with the HTTP status rather than decoding an error response', async () => {
     const decodeAudioData = vi.fn().mockResolvedValue(decodedBuffer);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
+    const host = fakeNetHost({
+      sendNetRequest: async () => ({
+        body: null,
+        headers: {},
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        arrayBuffer: () => Promise.resolve(new TextEncoder().encode('<html>404</html>').buffer),
-        headers: new Headers({ 'content-type': 'text/html' }),
+        url: 'missing.mp3',
       }),
-    );
+    });
     await expect(
-      loadAudioResourceFromUrl({ decodeAudioData } as unknown as AudioContext, 'missing.mp3'),
+      loadAudioResourceFromUrl(host, { decodeAudioData } as unknown as AudioContext, 'missing.mp3'),
     ).rejects.toThrow('Failed to load audio: missing.mp3 (404 Not Found)');
     expect(decodeAudioData).not.toHaveBeenCalled();
   });
 
   it('rejects when the signal aborts while the decode is in flight', async () => {
     const { context, finishDecode } = createPendingDecodeContext();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
+    const host = fakeNetHost({
+      sendNetRequest: async () => ({
+        body: new ArrayBuffer(8),
+        headers: { 'content-type': 'audio/mpeg' },
         ok: true,
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-        headers: new Headers({ 'content-type': 'audio/mpeg' }),
+        status: 200,
+        statusText: 'OK',
+        url: 'sound.mp3',
       }),
-    );
+    });
     const controller = new AbortController();
-    const promise = loadAudioResourceFromUrl(context, 'sound.mp3', controller.signal);
+    const promise = loadAudioResourceFromUrl(host, context, 'sound.mp3', controller.signal);
     await Promise.resolve();
     controller.abort(new Error('cancelled'));
     finishDecode();
@@ -253,23 +264,30 @@ describe('loadAudioResourceFromUrl', () => {
 
 describe('loadAudioResourceFromUrls', () => {
   it('resolves with a null-buffer resource when sources is empty', async () => {
-    const resource = await loadAudioResourceFromUrls(mockContext, []);
+    const host = fakeNetHost();
+    const resource = await loadAudioResourceFromUrls(host, mockContext, []);
     expect(resource.buffer).toBeNull();
   });
 
   it('loads the first playable source', async () => {
     setAudioBackend({ canPlayType: (type: string) => type === 'audio/ogg' });
-    const fetchMock = vi.fn().mockResolvedValue({
+    const mockSendNetRequest = vi.fn().mockResolvedValue({
+      body: new ArrayBuffer(8),
+      headers: { 'content-type': 'audio/ogg' },
       ok: true,
-      arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-      headers: new Headers(),
+      status: 200,
+      statusText: 'OK',
+      url: 'sound.ogg',
     });
-    vi.stubGlobal('fetch', fetchMock);
+    const host = fakeNetHost({ sendNetRequest: mockSendNetRequest });
 
-    const resource = await loadAudioResourceFromUrls(mockContext, [{ url: 'sound.mp3' }, { url: 'sound.ogg' }]);
+    const resource = await loadAudioResourceFromUrls(host, mockContext, [{ url: 'sound.mp3' }, { url: 'sound.ogg' }]);
 
     expect(resource.buffer).toBe(decodedBuffer);
-    expect(fetchMock).toHaveBeenCalledWith('sound.ogg', expect.anything());
+    expect(mockSendNetRequest).toHaveBeenCalledWith(
+      { method: 'GET', responseType: 'arraybuffer', url: 'sound.ogg' },
+      undefined,
+    );
   });
 });
 

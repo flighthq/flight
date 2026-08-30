@@ -1,6 +1,6 @@
 import type * as NetModule from '@flighthq/net/contract';
 import type * as Scene3DFormatsModule from '@flighthq/scene3d-formats/contract';
-import type { NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type { HasNetHttp, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromMd5MeshUrl } from './md5Load';
@@ -39,6 +39,10 @@ function emptyDocument(): Scene3DDocument {
   };
 }
 
+function fakeHost(): HasNetHttp {
+  return { net: { http: { sendNetRequest: mocks.sendNetRequest } } };
+}
+
 function okResponse(body: string): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
 }
@@ -54,7 +58,7 @@ describe('loadScene3DDocumentFromMd5MeshUrl', () => {
     mocks.parseMd5Mesh.mockReturnValue(document);
     mocks.sendNetRequest.mockResolvedValue(okResponse('MD5Version 10'));
 
-    const loaded = await loadScene3DDocumentFromMd5MeshUrl('model.md5mesh');
+    const loaded = await loadScene3DDocumentFromMd5MeshUrl(fakeHost(), 'model.md5mesh');
 
     expect(mocks.parseMd5Mesh).toHaveBeenCalledWith('MD5Version 10');
     expect(loaded).toBe(document);
