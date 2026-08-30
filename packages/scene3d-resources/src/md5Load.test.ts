@@ -40,7 +40,10 @@ function emptyDocument(): Scene3DDocument {
 }
 
 function fakeHost(): HasNetHttp {
-  return { net: { http: { sendNetRequest: mocks.sendNetRequest } } };
+  const host: HasNetHttp = {
+    net: { http: { sendNetRequest: (request, options) => mocks.sendNetRequest(host, request, options) } },
+  };
+  return host;
 }
 
 function okResponse(body: string): NetResponse {
