@@ -18,7 +18,7 @@ import {
   hasBackendLifecycleFailure,
 } from './backend-lifecycle-core';
 import type { BackendLifecycleDelta, BackendLifecycleFloor, BackendLifecycleReport } from './backend-lifecycle-core';
-import { collectBackendInterfaceNames } from './backend-operation-seam-core';
+import { collectBackendInterfaceNames, collectExplicitHostLifecycleSlots } from './backend-operation-seam-core';
 import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
 
 // P4's provider-lifetime census. Population and exclusions are both derived: a backend can only leak a
@@ -45,6 +45,7 @@ describe('backend provider lifetime census', () => {
     'AccessibilityBackend',
     'ConnectivityChangeBackend',
     'LogTransportBackend',
+    'MediaSessionActionBackend',
     'MediaSessionBackend',
     'MenuApplicationBackend',
     'MenuHighlightBackend',
@@ -59,13 +60,17 @@ describe('backend provider lifetime census', () => {
     expect(typeFiles.length).toBeGreaterThan(0);
     const names = collectBackendInterfaceNames(typeFiles).map((name) => `${name}Backend`);
     teardowns = collectWholeBackendTeardowns(typeFiles);
+    const explicitHostSlots = new Map([
+      ['ScreenQueryBackend', 'Host.screen.query'],
+      ...collectExplicitHostLifecycleSlots(typeFiles, allPackageSourceFiles()),
+    ]);
     report = createBackendLifecycleReport(
       names,
       teardowns,
       collectSetterBodies(),
       collectFunctionBodies(),
       collectExplicitHostDestroyOwners(allPackageSourceFiles()),
-      new Map([['ScreenQueryBackend', 'Host.screen.query']]),
+      explicitHostSlots,
     );
     formattedOutput = formatBackendLifecycleReport(report, HISTORICAL_BASELINE);
     // eslint-disable-next-line no-console
@@ -148,14 +153,15 @@ describe('backend provider lifetime census', () => {
       'MenuSelectBackend',
     ]);
     expect(report.violations.some((violation) => violation.interfaceName === 'ScreenQueryBackend')).toBe(false);
+    expect(report.violations.some((violation) => violation.interfaceName === 'MediaSessionBackend')).toBe(false);
+    expect(report.violations.some((violation) => violation.interfaceName === 'MediaSessionActionBackend')).toBe(false);
     expect(hasBackendLifecycleFailure(report)).toBe(true);
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The printed number is read as a completeness measure by everyone
   // who has not read this file, and the live audit found rows where it is not one: `PowerBackend`'s
   // host-installed instance has no reachable teardown at all (there is no `destroyPowerBackend`, and
-  // `setPowerBackend` destroys only the custom slot), while `MediaSessionBackend`'s destroy resets
-  // metadata and playbackState it may never have set. Deleting the caveat to tidy the output fails here.
+  // `setPowerBackend` destroys only the custom slot). Deleting the caveat to tidy the output fails here.
   it('prints the caveat that the count is structural and behavior is unverified', () => {
     expect(formattedOutput).toContain(BACKEND_LIFECYCLE_SCOPE_CAVEAT);
     expect(formattedOutput).toContain('STRUCTURAL');
@@ -192,6 +198,7 @@ describe('backend provider lifetime census', () => {
       'AccessibilityBackend',
       'ConnectivityChangeBackend',
       'LogTransportBackend',
+      'MediaSessionActionBackend',
       'MediaSessionBackend',
       'MenuApplicationBackend',
       'MenuHighlightBackend',

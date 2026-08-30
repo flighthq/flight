@@ -44,7 +44,7 @@ import type { SoftKeyboardBackend } from './Keyboard';
 import type { LifecycleBackend } from './Lifecycle';
 import type { LogTransportBackend } from './Log';
 import type { LoopBackend } from './LoopBackend';
-import type { MediaSessionBackend } from './MediaSession';
+import type { MediaSessionActionBackend, MediaSessionBackend } from './MediaSession';
 import type { MenuApplicationBackend, MenuHighlightBackend, MenuPopupBackend, MenuSelectBackend } from './Menu';
 import type { MessageDialogBackend } from './MessageDialogBackend';
 import type { NetBackend } from './Net';
@@ -167,6 +167,7 @@ export interface HostMediaCapabilities {
   readonly audioCodec?: AudioBackend;
   readonly audioDevice?: AudioDeviceBackend;
   readonly session?: MediaSessionBackend;
+  readonly sessionAction?: MediaSessionActionBackend;
   readonly video?: VideoCapabilityBackend;
   readonly webcam?: WebcamBackend;
 }
@@ -393,6 +394,10 @@ export interface HasMediaAudioDevice {
 
 export interface HasMediaSession {
   readonly media: { readonly session: MediaSessionBackend };
+}
+
+export interface HasMediaSessionAction {
+  readonly media: { readonly sessionAction: MediaSessionActionBackend };
 }
 
 export interface HasMediaVideo {

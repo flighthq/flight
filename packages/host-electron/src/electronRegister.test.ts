@@ -51,6 +51,7 @@ afterEach(() => {
 describe('registerElectronBackends', () => {
   it('routes capability seams to the Electron backends without throwing', async () => {
     const host = registerElectronBackends(fakeElectron());
+    expect(host.media).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.file.openFile).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');

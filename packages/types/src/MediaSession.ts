@@ -1,3 +1,6 @@
+import type { Entity } from './Entity';
+import type { Signal } from './Signal';
+
 // A single now-playing artwork image. `src` is the image URL; `sizes` (e.g. '96x96 128x128') and
 // `type` (MIME, e.g. 'image/png') are optional hints the OS uses to pick the best resolution.
 // Mirrors the web MediaImage passed to MediaMetadata.
@@ -51,38 +54,79 @@ export interface MediaSessionPositionState {
   position: number;
 }
 
-// OS media-session seam. Free functions in @flighthq/mediasession delegate to the active
-// MediaSessionBackend (web default over navigator.mediaSession, or a native host's). Every method is
-// a no-op sentinel when the host lacks the capability rather than throwing — publishing now-playing
-// state is an expected-to-be-absent surface, not a programmer error.
-// ★ EVERY OPERATION IS OPTIONAL, and that is the declaration rather than a convenience. A host declares
-// what it cannot do by OMITTING the method — there is no sentinel implementation to fall back on, so an
-// absent operation is absent rather than silently answered by a no-op that a caller cannot distinguish
-// from a real one. Ask `hasMediaSessionOperation` before assuming an operation exists.
-export interface MediaSessionBackend {
-  // Publishes the now-playing card, or clears it when metadata is null.
-  setMetadata?(metadata: Readonly<MediaSessionMetadata> | null): void;
-  // Reports whether media is playing/paused/absent to the OS media UI.
-  setPlaybackState?(state: MediaSessionPlaybackState): void;
-  // Publishes the scrubber position/duration, or clears it when state is null.
-  setPositionState?(state: Readonly<MediaSessionPositionState> | null): void;
-  // Registers a handler for an OS transport button, or clears it when handler is null.
-  setActionHandler?(
-    action: MediaSessionAction,
-    handler: ((details: Readonly<MediaSessionActionDetails>) => void) | null,
-  ): void;
-  // Clears everything this backend published to the OS: the now-playing card, the playback state, the
-  // scrubber, and every action handler it registered.
-  //
-  // ★ `destroy`, not `dispose`, and it is a WHOLE-BACKEND teardown even though the backend holds no
-  // object. What it frees is state installed into a host singleton (`navigator.mediaSession`): metadata,
-  // playback state and action callbacks that outlive the backend and keep pointing at it. Replacing the
-  // backend without this leaves the OS showing a card the replaced implementation published, with
-  // transport buttons still calling into it.
-  destroy?(): void;
+// Reasons a media-session command can fail without throwing. Public command functions narrow this
+// vocabulary to only the reasons their exact operation can reach.
+export type MediaSessionOperationBlockReason =
+  | 'invalid-artwork-source'
+  | 'invalid-duration'
+  | 'invalid-playback-rate'
+  | 'invalid-position'
+  | 'media-metadata-unavailable'
+  | 'media-session-unavailable'
+  | 'operation-failed'
+  | 'position-state-unavailable';
+
+export interface MediaSessionOperationOutcome<
+  BlockReason extends MediaSessionOperationBlockReason = MediaSessionOperationBlockReason,
+> {
+  readonly reason: 'ok' | BlockReason;
 }
 
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
-// roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot.
-export type MediaSessionOperation = keyof MediaSessionBackend;
+export type MediaSessionSetMetadataOutcome = MediaSessionOperationOutcome<
+  'media-session-unavailable' | 'media-metadata-unavailable' | 'invalid-artwork-source' | 'operation-failed'
+>;
+
+export type MediaSessionClearMetadataOutcome = MediaSessionOperationOutcome<
+  'media-session-unavailable' | 'operation-failed'
+>;
+
+export type MediaSessionSetPlaybackStateOutcome = MediaSessionOperationOutcome<
+  'media-session-unavailable' | 'operation-failed'
+>;
+
+export type MediaSessionSetPositionStateOutcome = MediaSessionOperationOutcome<
+  | 'media-session-unavailable'
+  | 'position-state-unavailable'
+  | 'invalid-duration'
+  | 'invalid-position'
+  | 'invalid-playback-rate'
+  | 'operation-failed'
+>;
+
+export type MediaSessionClearPositionStateOutcome = MediaSessionOperationOutcome<
+  'media-session-unavailable' | 'position-state-unavailable' | 'operation-failed'
+>;
+
+// Web-only today. Slot absence on Host.media is capability absence; these method results describe
+// runtime availability and operation failure after a host has supplied the command capability.
+export interface MediaSessionBackend extends Entity {
+  clearMetadata(): MediaSessionClearMetadataOutcome;
+  clearPositionState(): MediaSessionClearPositionStateOutcome;
+  // Releases only the metadata/playback/position lanes this exact provider still owns. A failed
+  // release remains retryable; action subscriptions have their own provider lifetime below.
+  destroy(): void;
+  setMetadata(metadata: Readonly<MediaSessionMetadata>): MediaSessionSetMetadataOutcome;
+  setPlaybackState(state: MediaSessionPlaybackState): MediaSessionSetPlaybackStateOutcome;
+  setPositionState(state: Readonly<MediaSessionPositionState>): MediaSessionSetPositionStateOutcome;
+}
+
+// Event capability split from MediaSessionBackend even though both are Web-only: commands and
+// subscriptions have incompatible shapes and independent teardown obligations.
+export interface MediaSessionActionBackend extends Entity {
+  // Releases every surviving native action registration owned by this provider. Individual
+  // subscriptions are still released through their exact returned unsubscribe.
+  destroy(): void;
+  // Registers only the requested action. Returns null when the browser session or action is unavailable;
+  // otherwise returns the exact, retryable unsubscribe for this provider/session/action/token origin.
+  subscribe(
+    action: MediaSessionAction,
+    listener: (details: Readonly<MediaSessionActionDetails>) => void,
+  ): (() => void) | null;
+}
+
+// One Entity per requested OS action. Blanket action registration is intentionally impossible: doing
+// so would advertise transport controls the application has not attached a handler to.
+export interface MediaSessionActionSignal extends Entity {
+  readonly action: MediaSessionAction;
+  readonly onAction: Signal<(details: Readonly<MediaSessionActionDetails>) => void>;
+}

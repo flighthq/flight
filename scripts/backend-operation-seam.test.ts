@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   BACKEND_OPERATION_SEAM_SCOPE_CAVEAT,
   collectBackendInterfaceNames,
+  collectExplicitHostOperationSeams,
   createBackendOperationSeamReport,
   createEmptyBackendOperationSeamReport,
   formatBackendOperationSeamReport,
@@ -17,10 +18,11 @@ import type { BackendOperationSeamReport } from './backend-operation-seam-core';
 import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
 
 // The ratchet. Membership in the enforced set is DERIVED — a package is migrated because it exports
-// `explain<Name>Operation`, never because it appears in a list here — so the gate tightens by itself as
-// each slice lands and cannot be quieted by editing a roster.
+// `explain<Name>Operation`, or because its explicit Host trait has equal method coverage in production
+// calls, never because it appears in a list here.
 describe('backend operation seam ratchet', () => {
   let report: BackendOperationSeamReport;
+  let explicitHostSlots: ReadonlyMap<string, string>;
 
   beforeAll(async () => {
     const names = collectBackendInterfaceNames(packageSourceFiles('types'));
@@ -34,7 +36,11 @@ describe('backend operation seam ratchet', () => {
       const module = (await import(/* @vite-ignore */ pathToFileURL(publicLane).href)) as Record<string, unknown>;
       exportsByPackage.set(packageName, new Set(Object.keys(module)));
     }
-    report = createBackendOperationSeamReport(names, exportsByPackage);
+    explicitHostSlots = collectExplicitHostOperationSeams(
+      packageSourceFiles('types'),
+      packageNames().flatMap(packageSourceFiles),
+    );
+    report = createBackendOperationSeamReport(names, exportsByPackage, explicitHostSlots);
     // eslint-disable-next-line no-console
     console.log(formatBackendOperationSeamReport(report));
   }, 300_000);
@@ -71,9 +77,14 @@ describe('backend operation seam ratchet', () => {
   // it does not rewrite the preceding 12 → 13 AudioDevice history.
   // Image then independently adds operation-specific explanation for Bitmap materialization, with sentinel,
   // host, custom-precedence, and consumer-absence coverage. That raises the floor 14 → 15.
-  // 15 of 46 enforced / 31 not migrated after the Window and Image closures.
+  // The explicit-Host completion ruling then closes a second, equal-coverage migration shape: a Has* trait
+  // owns the exact Host slot and production directly calls every non-lifecycle backend operation through it.
+  // Deriving that shape adds 23 already-landed explicit Host interfaces without weakening the legacy
+  // explain/has predicate, raising the floor 15 → 38. MediaSession and MediaSessionAction are among those
+  // completions, and deleting either Host slot or any direct operation call drops this count.
+  // 38 of 83 enforced / 45 not migrated after the explicit-Host completion ruling.
   it('never enforces fewer interfaces than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(15);
+    expect(report.enforced).toBeGreaterThanOrEqual(38);
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.
@@ -99,6 +110,12 @@ describe('backend operation seam ratchet', () => {
   it('reports no violation among the migrated interfaces', () => {
     expect(report.violations).toEqual([]);
     expect(hasBackendOperationSeamFailure(report)).toBe(false);
+  });
+
+  it('derives the explicit Screen and MediaSession Host completions by equal interface coverage', () => {
+    expect(explicitHostSlots.get('ScreenQuery')).toBe('Host.screen.query');
+    expect(explicitHostSlots.get('MediaSession')).toBe('Host.media.session');
+    expect(explicitHostSlots.get('MediaSessionAction')).toBe('Host.media.sessionAction');
   });
 
   // Membership is structural: every enforced entry names the package whose exports proved it, and nothing

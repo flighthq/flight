@@ -10,7 +10,6 @@ import { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 import { enableHostWebImage } from './webImage';
 import { enableHostWebSoftKeyboard } from './webKeyboard';
 import { enableHostWebLifecycle } from './webLifecycle';
-import { enableHostWebMediaSession } from './webMediasession';
 import { enableHostWebPermission } from './webPermissions';
 import { enableHostWebPlatform } from './webPlatform';
 import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
@@ -32,7 +31,6 @@ export function enableHostWeb(): void {
   enableHostWebImage();
   enableHostWebSoftKeyboard();
   enableHostWebLifecycle();
-  enableHostWebMediaSession();
   enableHostWebPermission();
   enableHostWebPlatform();
   enableHostWebRaster2DSurface();

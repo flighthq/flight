@@ -17,6 +17,7 @@ import {
   webRenderSurfaceBackend,
 } from './webInputTarget';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
+import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 import { webScreenCapabilities } from './webScreen';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
@@ -56,7 +57,7 @@ export const webHost = createEntity({
     pointerLock: webInputPointerLockBackend,
     target: webInputTargetBackend,
   },
-  media: {},
+  media: { session: webMediaSessionBackend, sessionAction: webMediaSessionActionBackend },
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},
   notification: webNotificationCapabilities,

@@ -74,7 +74,6 @@ const EXPECTED_AGGREGATE = [
   'Image',
   'SoftKeyboard',
   'Lifecycle',
-  'MediaSession',
   'Permission',
   'Platform',
   'Raster2DSurface',
@@ -83,6 +82,10 @@ const EXPECTED_AGGREGATE = [
   'VideoCapability',
   'Webcam',
 ] as const;
+
+// These capabilities arrive as stable slots on the explicit Web Host, not through the legacy
+// process-global enabler registry.
+const EXPECTED_EXPLICIT_HOST = ['MediaSession', 'Screen'] as const;
 
 // These are deliberately not part of enableHostWeb(): applications opt into application services,
 // shell chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
@@ -98,7 +101,7 @@ const EXPECTED_EXCLUDED = [
   'WgpuRenderSurface',
 ] as const;
 
-const EXPECTED_FACTORIES = ['Accessibility', 'Connectivity', 'Cursor'] as const;
+const EXPECTED_FACTORIES = ['Accessibility', 'Connectivity', 'Cursor', 'MediaSession', 'MediaSessionAction'] as const;
 
 const EXPECTED_POPULATIONS = {
   examples: { canvas: 28, dom: 24, webgl: 40, webgpu: 40 },
@@ -363,7 +366,7 @@ function describeMembers(values: Iterable<string>): string {
   return [...values].sort().join(', ');
 }
 
-function deriveRegistry(root: string): Registry {
+function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions['transformSource']): Registry {
   const hostWebDir = join(root, 'packages/host-web/src');
   const failures: CapabilityArrivalFailure[] = [];
   const byLabel = new Map<string, CapabilityRecord>();
@@ -447,6 +450,27 @@ function deriveRegistry(root: string): Registry {
     failures.push(
       registryFailure(
         `documented non-aggregate enablers must be exactly ${EXPECTED_EXCLUDED.length} members; expected [${describeMembers(EXPECTED_EXCLUDED)}], found [${describeMembers(excluded)}]`,
+      ),
+    );
+  }
+
+  const webHostPath = join(hostWebDir, 'webHost.ts');
+  const webHostRelativePath = relative(root, webHostPath).split(sep).join('/');
+  const webHostRaw = readFileSync(webHostPath, 'utf8');
+  const webHostSource = transformSource?.({ path: webHostRelativePath, source: webHostRaw }) ?? webHostRaw;
+  const explicitHost = new Set<string>();
+  const mediaGroup = /\bmedia\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
+  if (
+    /\bsession\s*:\s*webMediaSessionBackend\b/.test(mediaGroup) &&
+    /\bsessionAction\s*:\s*webMediaSessionActionBackend\b/.test(mediaGroup)
+  ) {
+    explicitHost.add('MediaSession');
+  }
+  if (/\bscreen\s*:\s*webScreenCapabilities\b/.test(webHostSource)) explicitHost.add('Screen');
+  if (!sameMembers(explicitHost, EXPECTED_EXPLICIT_HOST)) {
+    failures.push(
+      registryFailure(
+        `explicit Web Host capabilities must be exactly ${EXPECTED_EXPLICIT_HOST.length} members; expected [${describeMembers(EXPECTED_EXPLICIT_HOST)}], found [${describeMembers(explicitHost)}]`,
       ),
     );
   }
@@ -701,13 +725,15 @@ export async function capabilityArrivalFailures(
 ): Promise<CapabilityArrivalFailure[]> {
   const root = resolve(options.root ?? join(import.meta.dirname, '..'));
   const context = await analysisContext(root);
-  const { discovered, registry } = context;
+  const { discovered } = context;
+  const registry =
+    options.transformSource === undefined ? context.registry : deriveRegistry(root, options.transformSource);
+  const failures = [...registry.failures, ...discovered.failures];
+  if (failures.some((failure) => failure.kind === 'registry' || failure.kind === 'population')) return failures;
   const graph =
     options.transformSource === undefined
       ? context.graph
       : new SemanticGraph(createProgram(root, options.transformSource), registry);
-  const failures = [...registry.failures, ...discovered.failures];
-  if (failures.some((failure) => failure.kind === 'registry' || failure.kind === 'population')) return failures;
 
   const functionalWithoutAggregate: string[] = [];
   for (const page of discovered.pages) {
@@ -810,7 +836,7 @@ async function main(): Promise<void> {
     return;
   }
   console.log(
-    `Capability-arrival coverage passed (${EXPECTED_TOTALS.examples} example cells, ${EXPECTED_TOTALS.functional} functional cells, ${EXPECTED_AGGREGATE.length} aggregate capabilities, ${EXPECTED_EXCLUDED.length} explicit enablers).`,
+    `Capability-arrival coverage passed (${EXPECTED_TOTALS.examples} example cells, ${EXPECTED_TOTALS.functional} functional cells, ${EXPECTED_AGGREGATE.length} aggregate capabilities, ${EXPECTED_EXCLUDED.length} explicit enablers, ${EXPECTED_EXPLICIT_HOST.length} explicit Host capabilities).`,
   );
 }
 

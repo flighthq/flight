@@ -254,8 +254,8 @@ describe('isTeardownFunctionName', () => {
     expect(isTeardownFunctionName('destroy')).toBe(true);
     expect(isTeardownFunctionName('dispose')).toBe(true);
     expect(isTeardownFunctionName('destroySource')).toBe(true);
-    expect(isTeardownFunctionName('destroyMediaSessionBackend')).toBe(true);
-    expect(isTeardownFunctionName('releaseMediaSessionBackends')).toBe(true);
+    expect(isTeardownFunctionName('destroyHostProvider')).toBe(true);
+    expect(isTeardownFunctionName('releaseHostBackends')).toBe(true);
   });
 
   // ★ `release` is an ordinary operation verb in this SDK, so a bare `release*` arm swept in plain API
