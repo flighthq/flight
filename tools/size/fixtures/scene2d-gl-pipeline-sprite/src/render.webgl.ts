@@ -1,0 +1,51 @@
+import { addNodeChild } from '@flighthq/node';
+import { withRegistryTableEntry } from '@flighthq/registry';
+import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import {
+  createEmptyGlRegistries,
+  createGlCanvasElement,
+  createGlContextFromCanvasElement,
+  createGlPipeline,
+  createGlRenderState,
+  getGlPipelineRegistries,
+  registerGlImageTextureResolver,
+  renderGlBackground,
+} from '@flighthq/render-gl';
+import { createDisplayObject, createSprite } from '@flighthq/scene2d';
+import { defaultGlSpriteRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { SpriteKind } from '@flighthq/types';
+
+const canvas = createGlCanvasElement(400, 300, 1);
+document.body.style.margin = '0';
+document.body.appendChild(canvas);
+
+const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  { pixelRatio: 1, backgroundColor: 0x1a1a2eff },
+);
+
+const pipeline = createGlPipeline({
+  ...createEmptyGlRegistries(),
+  renderers: withRegistryTableEntry(createEmptyGlRegistries().renderers, SpriteKind, defaultGlSpriteRenderer),
+});
+
+const registries = getGlPipelineRegistries(pipeline);
+for (const [kind, entry] of registries.renderers.entries) {
+  registerRenderer(state, kind, entry.value);
+}
+registerGlImageTextureResolver(state);
+registerGlStandardMaterial(state);
+
+const root = createDisplayObject();
+const sprite = createSprite();
+sprite.x = 60;
+sprite.y = 40;
+sprite.width = 280;
+sprite.height = 220;
+addNodeChild(root, sprite);
+
+prepareScene2DRender(state, root);
+renderGlBackground(state);
+renderGlScene2D(state, root);
+
+Reflect.set(globalThis, '__flightScene2dGlPipelineSprite', { registries, root });
