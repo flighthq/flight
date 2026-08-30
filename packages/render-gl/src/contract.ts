@@ -11,6 +11,7 @@ export * from './explainGlTextureResolution';
 export * from './glFullscreenPass';
 export * from './glLinearToSrgbPass';
 export * from './glMaterialRegistry';
+export * from './glPipeline';
 export * from './glPresentRenderTarget';
 export * from './glProgram';
 export * from './glReadback';
