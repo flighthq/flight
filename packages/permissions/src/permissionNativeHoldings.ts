@@ -1,11 +1,4 @@
-export type PermissionNativeHoldingId =
-  | 'clipboard'
-  | 'geolocation'
-  | 'media'
-  | 'midi'
-  | 'persistence'
-  | 'push'
-  | 'wake-lock';
+export type PermissionNativeHoldingId = 'clipboard' | 'geolocation' | 'media' | 'midi' | 'push' | 'wake-lock';
 
 export interface PermissionNativeHolding {
   readonly futureClaimingDomain: PermissionNativeHoldingId;
@@ -28,12 +21,6 @@ export const PERMISSION_NATIVE_HOLDINGS = [
     id: 'geolocation',
     mode: 'query-and-request',
     permissionNames: ['geolocation'],
-  },
-  {
-    futureClaimingDomain: 'persistence',
-    id: 'persistence',
-    mode: 'query-and-request',
-    permissionNames: ['persistent-storage'],
   },
   {
     futureClaimingDomain: 'midi',
