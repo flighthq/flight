@@ -1,8 +1,1 @@
-export {
-  explainWebcamBackend,
-  createWebcamStreamEntity,
-  recordWebcamVideo,
-  requestWebcamPermission,
-  selectWebcamImage,
-  takeWebcamPhoto,
-} from './contract';
+export { explainWebcamBackend, recordWebcamVideo, selectWebcamImage, takeWebcamPhoto } from './contract';
