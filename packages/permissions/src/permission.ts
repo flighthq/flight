@@ -12,8 +12,8 @@ import type {
 import { PERMISSION_NATIVE_HOLDINGS } from './permissionNativeHoldings';
 
 // Queries are read-only: this function never escalates to a request that may prompt. Notification is
-// projected exclusively from Host.notification.permission; the remaining names are explicit interim
-// Web holdings recorded in permissionNativeHoldings.ts.
+// projected exclusively from Host.notification.permission, MIDI from Host.midi.permission, and the
+// remaining names from explicit interim Web holdings recorded in permissionNativeHoldings.ts.
 export function getPermissionState(host: Host, name: PermissionName): Promise<PermissionQueryOutcome> {
   return queryPermissionState(capturePermissionQueryOrigins(host, [name]), name);
 }
@@ -38,6 +38,7 @@ export function requestPermission(host: Host, name: PermissionName): Promise<Per
   // outcome. Routed above the interim guard because that guard is derived from the holdings ledger,
   // and geolocation's row is gone.
   if (name === 'geolocation') return requestGeolocationAccessPermission(host);
+  if (name === 'midi') return Promise.resolve({ reason: 'no-request-route' });
   if (!isInterimPermissionName(name)) return Promise.resolve({ reason: 'unsupported' });
 
   switch (name) {
@@ -45,8 +46,6 @@ export function requestPermission(host: Host, name: PermissionName): Promise<Per
       return requestWebMediaPermission('video');
     case 'microphone':
       return requestWebMediaPermission('audio');
-    case 'midi':
-      return requestWebMidiPermission();
     case 'screen-wake-lock':
       return requestWebScreenWakeLockPermission();
     case 'clipboard-read':
@@ -72,9 +71,14 @@ type NotificationPermissionRequestProjectionOutcome = {
 };
 
 interface PermissionQueryOrigins {
+  readonly midi: MidiPermissionProjectionBackend | null;
   readonly notification: NotificationPermissionProjectionBackend | null;
   readonly persistence: StoragePersistenceQueryBackend | null;
   readonly web: WebPermissionQueryOrigin | null;
+}
+
+interface MidiPermissionProjectionBackend {
+  getPermission(): Promise<PermissionQueryOutcome>;
 }
 
 type WebPermissionQueryOrigin =
@@ -83,15 +87,22 @@ type WebPermissionQueryOrigin =
 
 function capturePermissionQueryOrigins(host: Host, names: readonly PermissionName[]): PermissionQueryOrigins {
   const needsNotification = names.includes('notifications');
+  const needsMidi = names.includes('midi');
   const needsPersistence = names.includes('persistent-storage');
   const needsWeb = names.some(
-    (name) => name !== 'notifications' && name !== 'persistent-storage' && isInterimPermissionName(name),
+    (name) =>
+      name !== 'midi' && name !== 'notifications' && name !== 'persistent-storage' && isInterimPermissionName(name),
   );
   return {
+    midi: needsMidi ? captureMidiPermission(host) : null,
     notification: needsNotification ? captureNotificationPermission(host) : null,
     persistence: needsPersistence ? captureStoragePersistenceQuery(host) : null,
     web: needsWeb ? captureWebPermissionQueryOrigin() : null,
   };
+}
+
+function captureMidiPermission(host: Host): MidiPermissionProjectionBackend | null {
+  return host.midi.permission ?? null;
 }
 
 function captureNotificationPermission(host: Host): NotificationPermissionProjectionBackend | null {
@@ -125,6 +136,7 @@ async function queryPermissionState(
   name: PermissionName,
 ): Promise<PermissionQueryOutcome> {
   if (name === 'notifications') return queryNotificationPermission(origins.notification);
+  if (name === 'midi') return queryMidiPermission(origins.midi);
   if (name === 'persistent-storage') return queryStoragePersistencePermission(origins.persistence);
   if (!isInterimPermissionName(name)) return { reason: 'unsupported' };
   if (origins.web === null) return { reason: 'runtime-unavailable' };
@@ -134,6 +146,15 @@ async function queryPermissionState(
     return isPermissionState(status.state) ? { reason: 'ok', state: status.state } : { reason: 'operation-failed' };
   } catch (error) {
     return { reason: isUnsupportedPermissionQueryError(error) ? 'unsupported' : 'operation-failed' };
+  }
+}
+
+async function queryMidiPermission(provider: MidiPermissionProjectionBackend | null): Promise<PermissionQueryOutcome> {
+  if (provider === null) return { reason: 'unsupported' };
+  try {
+    return await provider.getPermission();
+  } catch {
+    return { reason: 'operation-failed' };
   }
 }
 
@@ -310,19 +331,6 @@ function stopMediaStreamTracksAttemptAll(stream: Readonly<MediaStream>): boolean
     }
   }
   return succeeded;
-}
-
-async function requestWebMidiPermission(): Promise<PermissionRequestOutcome> {
-  if (typeof navigator === 'undefined') return { reason: 'runtime-unavailable' };
-  const request = (navigator as Navigator & { requestMIDIAccess?: () => Promise<unknown> }).requestMIDIAccess;
-  if (typeof request !== 'function') return { reason: 'runtime-unavailable' };
-  try {
-    await request.call(navigator);
-    return { reason: 'granted', state: 'granted' };
-  } catch (error) {
-    const reason = classifyRequestFailure(error);
-    return reason === 'denied' ? { reason, state: 'denied' } : { reason };
-  }
 }
 
 async function requestWebScreenWakeLockPermission(): Promise<PermissionRequestOutcome> {

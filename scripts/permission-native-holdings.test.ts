@@ -150,7 +150,7 @@ describe('permission native holdings', () => {
     // drained row unable to come back quietly.
     expect([...new Set(directNavigatorMembers)].sort()).toEqual(['mediaDevices', 'permissions', 'wakeLock'].sort());
     expect(source).not.toMatch(/\b(?:MIDIAccess|MIDIInput|MIDIOptions|MIDIOutput|requestMIDIAccess)\b/u);
-    expect(source).toMatch(/case 'midi':[\s\S]{0,120}reason: 'no-request-route'/u);
+    expect(source).toMatch(/(?:name === 'midi'|case 'midi':)[\s\S]{0,120}reason: 'no-request-route'/u);
   });
 
   it('has no direct persistent-storage native owner and carries the exact projection arm twice', () => {
