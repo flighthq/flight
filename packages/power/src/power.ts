@@ -137,11 +137,12 @@ export function destroyPowerKeepAwake(...hosts: readonly HasPowerKeepAwake[]): v
   let failure: unknown = null;
   for (const provider of pending) {
     try {
-      provider.destroy?.();
-      _destroyedKeepAwake.add(provider);
+      if (provider.destroy !== undefined) assertSyncVoid(provider.destroy());
     } catch (error) {
       failure ??= error;
+      continue;
     }
+    _destroyedKeepAwake.add(provider);
   }
   if (failure !== null) throw failure;
 }
@@ -272,3 +273,8 @@ const _subscriptions = new WeakMap<Power, (() => void)[]>();
 // Providers already finally-released. A destroy that THREW is deliberately absent, so the next call
 // retries exactly the failed obligations and never re-destroys a successful one.
 const _destroyedKeepAwake = new WeakSet<PowerKeepAwakeBackend>();
+
+type IsAny<T> = 0 extends 1 & T ? true : false;
+function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {
+  void value;
+}
