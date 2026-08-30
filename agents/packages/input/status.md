@@ -16,8 +16,8 @@ about this tree, not about a session.
 
 - **Listener ingress is portable; adjacent browser capabilities are not.** One process-global
   `InputIngressBackend` now serves many exact `InputIngressSource` identities, and all six listener
-  families route through it. `navigator.getGamepads`, animation-frame scheduling, pointer lock,
-  pointer capture, and coalesced Web events still need separately measured host capabilities.
+  families route through it. `navigator.getGamepads`, animation-frame scheduling, pointer capture,
+  and coalesced Web events still need separately measured host capabilities.
   Gamepad rumble also remains absent.
 - **`onKeyUp` records a release for a key the state never saw pressed** (`inputManager.ts:298-301`),
   asymmetric with the up→down press guard immediately above it (`:294-297`). Making it symmetric
@@ -34,6 +34,9 @@ about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-29** — Deleted the three legacy input pointer-lock exports and two optional ingress
+  operations; Application's explicit Host command surface is sole, and any future state query must
+  distinguish unsupported from inactive through an explicit provider.
 - **2026-08-27** — All 13 listener registrations and 13 removals moved behind the explicit Web
   `InputIngressBackend`; existing callers use the broadened host-neutral attach/detach surface, the P5
   input-ingress budget is zero, and lifecycle ownership points to the shared backend ledger.

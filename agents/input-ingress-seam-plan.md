@@ -1,7 +1,7 @@
 # Input ingress seam
 
 _2026-08-27. Approved shape and implementation record. The 26-site listener-ingress slice is
-implemented; the adjacent browser capabilities listed below remain separate work._
+implemented; later follow-ups are recorded below without rewriting its accepted P5 evidence._
 
 ## Measured slice
 
@@ -80,12 +80,15 @@ interpret receives an inert release rather than a DOM cast or ambient fallback.
 - Package tests preserve event normalization, enabled policy, detach behavior, and independent
   multi-source routing.
 
-## Adjacent work not claimed by this slice
+## Adjacent work and later closure
 
-Five `direct-dom` findings remain in `inputManager.ts`: `document.exitPointerLock` (two findings),
-`document.pointerLockElement` (one), and `navigator.getGamepads` (two). Gamepad scheduling still uses
-`requestAnimationFrame`/`cancelAnimationFrame`, while pointer capture and coalesced-event helpers are
-also browser-shaped even though P5 does not count them.
+At this slice's landing, five `direct-dom` findings remained in `inputManager.ts`:
+`document.exitPointerLock` (two findings), `document.pointerLockElement` (one), and
+`navigator.getGamepads` (two). The accepted P5 pointer-lock checkpoint remains immutable evidence of
+that repair state.
 
-Those capabilities need their own measured host seam. This slice provides portable listener ingress;
-it does not claim complete native gamepad polling, scheduling, pointer lock/capture, or coalescing.
+The 2026-08-29 follow-up deleted the duplicate input pointer-lock surface rather than adding another
+host seam. `lockApplicationPointer` and `exitApplicationPointerLock` remain the sole explicit command
+surface. Gamepad polling and scheduling, pointer capture, and coalesced-event access remain adjacent
+browser-shaped work; any future pointer-lock state query requires positive need, an explicit
+provider, and distinct unsupported versus inactive answers.

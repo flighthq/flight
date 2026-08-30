@@ -16,12 +16,12 @@ ingested:
 ## Verdict
 
 **Solid — 82/100.** The live package is a coherent, side-effect-free input library rather than the
-non-mergeable intermediate delta described by the old review. Forty public functions normalize
+non-mergeable intermediate delta described by the old review. Thirty-seven public functions normalize
 keyboard, pointer, relative-pointer, wheel, gamepad, and text/IME events; maintain held and per-frame
-edge state; and provide gamepad dead zones/names, reusable key-repeat timing, pointer lock/capture, and
+edge state; and provide gamepad dead zones/names, reusable key-repeat timing, pointer capture, and
 coalesced pointer iteration. Its types-first contract, package exports, and 118-test suite are complete
 and green. Listener attachment is host-neutral through `InputIngressBackend`; the principal remaining
-depth is the adjacent browser-bound gamepad, scheduling, pointer-lock/capture, and coalescing surface.
+depth is the adjacent browser-bound gamepad, scheduling, pointer-capture, and coalescing surface.
 
 ## What is solid
 
@@ -35,9 +35,9 @@ depth is the adjacent browser-bound gamepad, scheduling, pointer-lock/capture, a
   keyboard/gamepad press/release queries have behavioral coverage.
 - Gamepad helpers provide linear and radial dead-zone math, alias-safe stick output, semantic names for
   the W3C standard mapping, and `null` for unknown mappings or indices.
-- Pointer capability helpers use honest sentinels: pointer-lock requests resolve `false` on expected
-  absence/failure, capture release tolerates an already-released pointer, and coalesced iteration falls
-  back to the original event.
+- Pointer capture release tolerates an already-released pointer, and coalesced iteration falls back to
+  the original event. Pointer-lock ownership and outcomes live solely on Application's explicit Host
+  command surface rather than a second ingress-bound API.
 - Cross-package interfaces live in `@flighthq/types`. In particular, `GamepadMappingKind` types both
   semantic-name queries and `InputKeyRepeatTimer` names the reusable timer handle returned by
   `createInputKeyRepeatTimer`.
@@ -48,7 +48,7 @@ depth is the adjacent browser-bound gamepad, scheduling, pointer-lock/capture, a
 ## Remaining depth
 
 - **Remaining host capabilities.** All six listener families accept host-neutral source identities,
-  but `navigator.getGamepads`, pointer-lock/capture APIs, coalesced Web events, and
+  but `navigator.getGamepads`, pointer-capture APIs, coalesced Web events, and
   `requestAnimationFrame` remain wired directly. Native hosts can supply normalized listener ingress
   but cannot yet replace the full package capability set.
 - **Gamepad mapping extensibility.** `GamepadMappingKind` is still a closed

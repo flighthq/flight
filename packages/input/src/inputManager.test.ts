@@ -30,7 +30,6 @@ import {
   detachTextInput,
   detachWheelInput,
   endInputStateFrame,
-  exitInputPointerLock,
   getCoalescedInputPointerEvents,
   getGamepadAxisName,
   getGamepadButtonName,
@@ -39,13 +38,11 @@ import {
   getKeyCodeFromDomKeyboardEvent,
   getKeyModifierFromDomKeyboardEvent,
   getMouseWheelModeFromDomWheelEvent,
-  hasInputPointerLock,
   isInputGamepadButtonDown,
   isInputKeyDown,
   isInputPointerButtonDown,
   installInputIngressHostBackend,
   releaseInputPointerCapture,
-  requestInputPointerLock,
   resetInputIngressBackendForTest,
   setInputIngressBackend,
   setInputPointerCapture,
@@ -930,48 +927,6 @@ describe('endInputStateFrame', () => {
   });
 });
 
-describe('exitInputPointerLock', () => {
-  it('calls document.exitPointerLock through the Web backend when available', () => {
-    let called = false;
-    Object.defineProperty(document, 'exitPointerLock', {
-      configurable: true,
-      value: () => {
-        called = true;
-      },
-    });
-    exitInputPointerLock();
-    expect(called).toBe(true);
-  });
-
-  it('delegates to the selected backend without falling through to Web', () => {
-    const exitPointerLock = vi.fn();
-    const webExitPointerLock = vi.fn();
-    Object.defineProperty(document, 'exitPointerLock', {
-      configurable: true,
-      value: webExitPointerLock,
-    });
-    setInputIngressBackend({ ...createTestInputIngressBackend(), exitPointerLock });
-
-    exitInputPointerLock();
-
-    expect(exitPointerLock).toHaveBeenCalledOnce();
-    expect(webExitPointerLock).not.toHaveBeenCalled();
-  });
-
-  it('is inert when the selected backend omits pointer-lock exit', () => {
-    const webExitPointerLock = vi.fn();
-    Object.defineProperty(document, 'exitPointerLock', {
-      configurable: true,
-      value: webExitPointerLock,
-    });
-    setInputIngressBackend(createTestInputIngressBackend());
-
-    exitInputPointerLock();
-
-    expect(webExitPointerLock).not.toHaveBeenCalled();
-  });
-});
-
 describe('getCoalescedInputPointerEvents', () => {
   it('falls back to a single event when getCoalescedEvents is unavailable', () => {
     const event = createPointerEvent('pointermove', { clientX: 10, clientY: 20 });
@@ -1123,56 +1078,6 @@ describe('getMouseWheelModeFromDomWheelEvent', () => {
   });
 });
 
-describe('hasInputPointerLock', () => {
-  it('returns false when no element is pointer-locked', () => {
-    Object.defineProperty(document, 'pointerLockElement', {
-      configurable: true,
-      get: () => null,
-    });
-    expect(hasInputPointerLock()).toBe(false);
-  });
-
-  it('returns true when an element holds the pointer lock', () => {
-    const element = document.createElement('div');
-    Object.defineProperty(document, 'pointerLockElement', {
-      configurable: true,
-      get: () => element,
-    });
-    expect(hasInputPointerLock()).toBe(true);
-    // Restore
-    Object.defineProperty(document, 'pointerLockElement', {
-      configurable: true,
-      get: () => null,
-    });
-  });
-
-  it('delegates to the selected backend without reading Web state', () => {
-    const pointerLockElement = vi.fn(() => null);
-    Object.defineProperty(document, 'pointerLockElement', {
-      configurable: true,
-      get: pointerLockElement,
-    });
-    const hasPointerLock = vi.fn(() => true);
-    setInputIngressBackend({ ...createTestInputIngressBackend(), hasPointerLock });
-
-    expect(hasInputPointerLock()).toBe(true);
-    expect(hasPointerLock).toHaveBeenCalledOnce();
-    expect(pointerLockElement).not.toHaveBeenCalled();
-  });
-
-  it('returns false when the selected backend omits pointer-lock state', () => {
-    const pointerLockElement = vi.fn(() => document.body);
-    Object.defineProperty(document, 'pointerLockElement', {
-      configurable: true,
-      get: pointerLockElement,
-    });
-    setInputIngressBackend(createTestInputIngressBackend());
-
-    expect(hasInputPointerLock()).toBe(false);
-    expect(pointerLockElement).not.toHaveBeenCalled();
-  });
-});
-
 describe('installInputIngressHostBackend', () => {
   it('preserves the first installed host identity', () => {
     const firstHost = createTestInputIngressBackend();
@@ -1220,33 +1125,6 @@ describe('releaseInputPointerCapture', () => {
       throw new DOMException('No pointer');
     };
     expect(() => releaseInputPointerCapture(element, 0)).not.toThrow();
-  });
-});
-
-describe('requestInputPointerLock', () => {
-  it('resolves to true when requestPointerLock succeeds synchronously', async () => {
-    const element = document.createElement('div');
-    // Cast: synchronous void return is valid per the spec (older browsers), but the
-    // TypeScript lib types it as Promise<void>; the double cast handles the overlap check.
-    element.requestPointerLock = (() => undefined) as unknown as () => Promise<void>;
-    const result = await requestInputPointerLock(element);
-    expect(result).toBe(true);
-  });
-
-  it('resolves to true when requestPointerLock returns a resolving Promise', async () => {
-    const element = document.createElement('div');
-    element.requestPointerLock = () => Promise.resolve();
-    const result = await requestInputPointerLock(element);
-    expect(result).toBe(true);
-  });
-
-  it('resolves to false when requestPointerLock throws', async () => {
-    const element = document.createElement('div');
-    element.requestPointerLock = () => {
-      throw new Error('Not allowed');
-    };
-    const result = await requestInputPointerLock(element);
-    expect(result).toBe(false);
   });
 });
 

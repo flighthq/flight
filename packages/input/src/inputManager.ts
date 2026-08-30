@@ -541,14 +541,6 @@ export function createWebInputIngressBackend(): InputIngressBackend {
       target.addEventListener('wheel', onWheel, { passive: !preventDefault });
       return () => target.removeEventListener('wheel', onWheel);
     },
-
-    exitPointerLock(): void {
-      if (document.exitPointerLock) document.exitPointerLock();
-    },
-
-    hasPointerLock(): boolean {
-      return document.pointerLockElement !== null;
-    },
   };
 }
 
@@ -587,14 +579,6 @@ export function endInputStateFrame(state: InputState): void {
   state.justReleasedKeys.clear();
   state.justPressedGamepadButtons.clear();
   state.justReleasedGamepadButtons.clear();
-}
-
-/**
- * Exits pointer lock, returning the pointer to normal movement.
- * No-op if pointer lock is not currently active.
- */
-export function exitInputPointerLock(): void {
-  getInputIngressBackend().exitPointerLock?.();
 }
 
 /**
@@ -686,13 +670,6 @@ export function getMouseWheelModeFromDomWheelEvent(event: Readonly<WheelEvent>):
   return 'unknown';
 }
 
-/**
- * Returns `true` if pointer lock is currently active on any element.
- */
-export function hasInputPointerLock(): boolean {
-  return getInputIngressBackend().hasPointerLock?.() ?? false;
-}
-
 // First host wins; a custom backend installed through setInputIngressBackend always takes precedence.
 export function installInputIngressHostBackend(backend: InputIngressBackend): void {
   if (_hostInputIngressBackend === null) _hostInputIngressBackend = backend;
@@ -731,26 +708,6 @@ export function releaseInputPointerCapture(element: HTMLElement, pointerId: numb
     element.releasePointerCapture(pointerId);
   } catch {
     // Ignore — the pointer may have already been released.
-  }
-}
-
-/**
- * Requests pointer lock on `element`. Returns a `Promise<boolean>` that
- * resolves to `true` when lock is granted or `false` if the request is
- * rejected (e.g. outside a user gesture, or the browser denies it).
- */
-export function requestInputPointerLock(element: HTMLElement): Promise<boolean> {
-  try {
-    const result = element.requestPointerLock();
-    if (result instanceof Promise) {
-      return result.then(
-        () => true,
-        () => false,
-      );
-    }
-    return Promise.resolve(true);
-  } catch {
-    return Promise.resolve(false);
   }
 }
 
