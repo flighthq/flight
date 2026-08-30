@@ -82,7 +82,9 @@ describe('getPermissionStates', () => {
         return { reason: 'ok' as const, state: 'granted' as const };
       },
     };
-    let active = first;
+    let active: {
+      getPermission(): Promise<{ reason: 'ok'; state: 'denied' | 'granted' }>;
+    } = first;
     let midiOwnerReads = 0;
     const midi: object = {};
     Object.defineProperty(midi, 'permission', {

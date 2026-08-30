@@ -1,4 +1,4 @@
-export type PermissionNativeHoldingId = 'clipboard' | 'media' | 'midi' | 'push' | 'wake-lock';
+export type PermissionNativeHoldingId = 'clipboard' | 'media' | 'push' | 'wake-lock';
 
 export interface PermissionNativeHolding {
   readonly futureClaimingDomain: PermissionNativeHoldingId;
@@ -15,12 +15,6 @@ export const PERMISSION_NATIVE_HOLDINGS = [
     id: 'media',
     mode: 'query-and-request',
     permissionNames: ['camera', 'microphone'],
-  },
-  {
-    futureClaimingDomain: 'midi',
-    id: 'midi',
-    mode: 'query-and-request',
-    permissionNames: ['midi'],
   },
   {
     futureClaimingDomain: 'wake-lock',

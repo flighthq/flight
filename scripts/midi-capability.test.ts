@@ -48,7 +48,7 @@ describe('MIDI explicit Host capability shape', () => {
     expect(requestOwners).toEqual(['packages/host-web/src/webMidi.ts']);
 
     const permission = source('packages/permissions/src/permission.ts');
-    expect(permission).toMatch(/case 'midi':[\s\S]{0,120}reason: 'no-request-route'/u);
+    expect(permission).toMatch(/(?:name === 'midi'|case 'midi':)[\s\S]{0,120}reason: 'no-request-route'/u);
     expect(permission).not.toContain('requestWebMidiPermission');
   });
 
@@ -84,7 +84,7 @@ function productionSources(directory: string): string {
 function productionTypeScriptFiles(directory: string): Array<{ contents: string; path: string }> {
   const absolute = resolve(ROOT, directory);
   return walk(absolute)
-    .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts'))
+    .filter((path) => !path.includes('/dist/') && path.endsWith('.ts') && !path.endsWith('.test.ts'))
     .map((path) => ({ contents: readFileSync(path, 'utf8'), path: relative(ROOT, path) }))
     .sort((left, right) => left.path.localeCompare(right.path));
 }
