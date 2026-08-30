@@ -2,7 +2,7 @@ import type { Entity, EntityWithoutRuntime } from './Entity';
 import type { Matrix4 } from './Matrix4';
 import type { Vector2 } from './Vector2';
 
-// 3D camera. (The device/photo seam is `Webcam`, freeing this name for the scene camera.)
+// 3D camera. (The device/photo seam is `MediaFileCapture`, freeing this name for the scene camera.)
 // `view` is the world->view Matrix4 (the inverse of the camera's world transform); `projection`
 // is the discriminated perspective/orthographic descriptor. `near`/`far` are the clip-plane
 // distances. `jitter` is the per-frame sub-pixel NDC offset applied to every projection.

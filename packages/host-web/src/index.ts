@@ -64,7 +64,7 @@ export { webShellExternalBackend } from './webShell';
 export { enableHostWebStatusBar } from './webStatusbar';
 export { webStorageBackend } from './webStorage';
 export { enableHostWebVideoCapability } from './webVideoCapability';
-export { enableHostWebWebcam } from './webWebcam';
+export { enableHostWebMediaFileCapture } from './webMediaFileCapture';
 export { webHost } from './webHost';
 export {
   createWebFullscreenTargetHandle,
