@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationWindow,
@@ -18,6 +19,8 @@ import type {
   HasWindowResizeSubscription,
   HasWindowVisibilitySubscription,
   InputPointerLockBackend,
+  InputPointerLockExitOutcome,
+  InputPointerLockRequestOutcome,
   InputTargetHandle,
   Matrix,
   NativeWindowHandle,
@@ -245,7 +248,7 @@ export function computeWindowDeviceTransform(win: Readonly<ApplicationWindow>, o
 }
 
 export function createApplicationWindow(): ApplicationWindow {
-  return {
+  return createEntity({
     alwaysOnTop: false,
     devicePixelRatio: 1,
     focused: false,
@@ -282,7 +285,7 @@ export function createApplicationWindow(): ApplicationWindow {
     onRenderContextRestored: createSignal(),
     onResize: createSignal(),
     onRestore: createSignal(),
-  };
+  });
 }
 
 export function detachWindowClose(win: ApplicationWindow): void {
@@ -356,11 +359,11 @@ export function exitApplicationFullscreen(host: HasUiFullscreen): Promise<boolea
 }
 
 // Releases the host's active Pointer Lock, restoring cursor movement.
-export function exitApplicationPointerLock(host: HasInputPointerLock): Promise<void> {
+export async function exitApplicationPointerLock(host: HasInputPointerLock): Promise<InputPointerLockExitOutcome> {
   const backend = _pointerLockBackend ?? host.input.pointerLock;
-  return backend.exit().then(() => {
-    if (_pointerLockBackend === backend) _pointerLockBackend = null;
-  });
+  const outcome = await backend.exit();
+  if (outcome.reason === 'ok' && _pointerLockBackend === backend) _pointerLockBackend = null;
+  return outcome;
 }
 
 // Briefly flashes the window frame to attract attention. Native hosts may implement it via the
@@ -392,14 +395,17 @@ export function hideWindow(host: WindowOperationHost<'hide'>, win: ApplicationWi
 }
 
 // Requests Pointer Lock on an opaque target, hiding and confining the cursor so raw mouse deltas are
-// delivered via pointermove events. Returns a promise that resolves on success or rejects if the
-// host denies (web requires a prior user gesture). Successful acquisition pins its eventual exit to
-// this exact provider even if the caller later supplies a different Host.
-export function lockApplicationPointer(host: HasInputPointerLock, target: InputTargetHandle): Promise<void> {
+// delivered via pointermove events. Expected target, availability, denial, and operation failures are
+// returned as method-tight outcomes. Only successful acquisition pins its eventual exit to this exact
+// provider even if the caller later supplies a different Host.
+export async function lockApplicationPointer(
+  host: HasInputPointerLock,
+  target: InputTargetHandle,
+): Promise<InputPointerLockRequestOutcome> {
   const backend = host.input.pointerLock;
-  return backend.request(target).then(() => {
-    _pointerLockBackend = backend;
-  });
+  const outcome = await backend.request(target);
+  if (outcome.reason === 'ok') _pointerLockBackend = backend;
+  return outcome;
 }
 
 // Maximizes the window. Updates state and emits onMaximize when the state changes.

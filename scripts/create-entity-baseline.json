@@ -24,7 +24,6 @@
     "@flighthq/app createApp",
     "@flighthq/app createAppLoginItem",
     "@flighthq/application createApplication",
-    "@flighthq/application createApplicationWindow",
     "@flighthq/assets createAssetLibrary",
     "@flighthq/audio createAudioResource",
     "@flighthq/audio createAudioResourceFailure",

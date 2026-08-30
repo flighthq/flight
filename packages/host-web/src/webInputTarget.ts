@@ -4,6 +4,8 @@ import type {
   InputDropFileBackend,
   InputFocusBackend,
   InputPointerLockBackend,
+  InputPointerLockExitOutcome,
+  InputPointerLockRequestOutcome,
   InputTargetBackend,
   InputTargetHandle,
   RenderContextBackend,
@@ -43,15 +45,42 @@ export const webInputFocusBackend = createEntity<EntityWithoutRuntime<InputFocus
 
 export const webInputPointerLockBackend = createEntity<EntityWithoutRuntime<InputPointerLockBackend>>({
   exit() {
-    if (typeof document === 'undefined' || typeof document.exitPointerLock !== 'function') return Promise.resolve();
-    document.exitPointerLock();
-    return Promise.resolve();
+    if (typeof document === 'undefined') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
+    if (document.pointerLockElement === null) return Promise.resolve(POINTER_LOCK_OK);
+    const exitPointerLock = document.exitPointerLock;
+    if (typeof exitPointerLock !== 'function') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
+    const observation = observePointerLockExit(document);
+    try {
+      exitPointerLock.call(document);
+    } catch {
+      observation.release();
+      return Promise.resolve(POINTER_LOCK_OPERATION_FAILED);
+    }
+    if (document.pointerLockElement === null) {
+      observation.release();
+      return Promise.resolve(POINTER_LOCK_OK);
+    }
+    return observation.outcome;
   },
   request(target: InputTargetHandle) {
     const element = _inputTargets.get(target);
-    if (element === undefined || typeof element.requestPointerLock !== 'function') return Promise.resolve();
-    const result = element.requestPointerLock();
-    return (result instanceof Promise ? result : Promise.resolve()) as Promise<void>;
+    if (element === undefined) return Promise.resolve(POINTER_LOCK_TARGET_NOT_FOUND);
+    const requestPointerLock = element.requestPointerLock;
+    if (typeof requestPointerLock !== 'function') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
+    const observation = observeLegacyPointerLockRequest(element);
+    let result: unknown;
+    try {
+      result = requestPointerLock.call(element);
+      if (!isPromiseLike(result)) return observation.outcome;
+    } catch (error) {
+      observation.release();
+      return Promise.resolve(classifyPointerLockRequestFailure(error));
+    }
+    observation.release();
+    return Promise.resolve(result).then(
+      () => POINTER_LOCK_OK,
+      (error: unknown) => classifyPointerLockRequestFailure(error),
+    );
   },
 }) satisfies InputPointerLockBackend;
 
@@ -115,6 +144,76 @@ const _inputTargetSubscriptionCleanups = new Set<() => void>();
 
 function noop(): void {}
 
+function classifyPointerLockRequestFailure(error: unknown): InputPointerLockRequestOutcome {
+  const name = typeof error === 'object' && error !== null ? (error as { readonly name?: unknown }).name : undefined;
+  return name === 'NotAllowedError' || name === 'SecurityError' ? POINTER_LOCK_DENIED : POINTER_LOCK_OPERATION_FAILED;
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return (
+    ((typeof value === 'object' && value !== null) || typeof value === 'function') &&
+    typeof (value as { readonly then?: unknown }).then === 'function'
+  );
+}
+
+function observeLegacyPointerLockRequest(element: HTMLElement): {
+  readonly outcome: Promise<InputPointerLockRequestOutcome>;
+  release(): void;
+} {
+  const ownerDocument = element.ownerDocument;
+  let active = true;
+  let resolveOutcome: (outcome: InputPointerLockRequestOutcome) => void = noop;
+  const release = (): void => {
+    if (!active) return;
+    active = false;
+    ownerDocument.removeEventListener('pointerlockchange', onChange);
+    ownerDocument.removeEventListener('pointerlockerror', onError);
+  };
+  const settle = (outcome: InputPointerLockRequestOutcome): void => {
+    if (!active) return;
+    release();
+    resolveOutcome(outcome);
+  };
+  const onChange = (): void => settle(isPointerLockTarget(element) ? POINTER_LOCK_OK : POINTER_LOCK_OPERATION_FAILED);
+  const onError = (): void => settle(POINTER_LOCK_OPERATION_FAILED);
+  const outcome = new Promise<InputPointerLockRequestOutcome>((resolve) => {
+    resolveOutcome = resolve;
+  });
+  ownerDocument.addEventListener('pointerlockchange', onChange);
+  ownerDocument.addEventListener('pointerlockerror', onError);
+  return { outcome, release };
+}
+
+function observePointerLockExit(ownerDocument: Document): {
+  readonly outcome: Promise<InputPointerLockExitOutcome>;
+  release(): void;
+} {
+  let active = true;
+  let resolveOutcome: (outcome: InputPointerLockExitOutcome) => void = noop;
+  const release = (): void => {
+    if (!active) return;
+    active = false;
+    ownerDocument.removeEventListener('pointerlockchange', onChange);
+  };
+  const onChange = (): void => {
+    if (!active) return;
+    release();
+    resolveOutcome(ownerDocument.pointerLockElement === null ? POINTER_LOCK_OK : POINTER_LOCK_OPERATION_FAILED);
+  };
+  const outcome = new Promise<InputPointerLockExitOutcome>((resolve) => {
+    resolveOutcome = resolve;
+  });
+  ownerDocument.addEventListener('pointerlockchange', onChange);
+  return { outcome, release };
+}
+
+function isPointerLockTarget(element: HTMLElement): boolean {
+  const root = element.getRootNode() as Node & { readonly pointerLockElement?: Element | null };
+  return (
+    ('pointerLockElement' in root ? root.pointerLockElement : element.ownerDocument.pointerLockElement) === element
+  );
+}
+
 function trackWebInputTargetSubscription(cleanup: () => void): () => void {
   let active = true;
   const trackedCleanup = (): void => {
@@ -126,3 +225,9 @@ function trackWebInputTargetSubscription(cleanup: () => void): () => void {
   _inputTargetSubscriptionCleanups.add(trackedCleanup);
   return trackedCleanup;
 }
+
+const POINTER_LOCK_API_UNAVAILABLE = { reason: 'api-unavailable' } as const;
+const POINTER_LOCK_DENIED = { reason: 'denied' } as const;
+const POINTER_LOCK_OK = { reason: 'ok' } as const;
+const POINTER_LOCK_OPERATION_FAILED = { reason: 'operation-failed' } as const;
+const POINTER_LOCK_TARGET_NOT_FOUND = { reason: 'target-not-found' } as const;
