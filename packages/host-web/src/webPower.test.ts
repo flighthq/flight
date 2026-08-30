@@ -26,6 +26,7 @@ afterEach(async () => {
   setNavigator({ request: async () => sentinel() });
   await webPowerKeepAwakeBackend.release();
   setNavigator(undefined);
+  vi.unstubAllGlobals();
 });
 
 describe('createWebPowerReadings', () => {
@@ -173,7 +174,7 @@ describe('webPowerSuspensionBackend', () => {
       addEventListener: (n: string) => names.push(n),
       removeEventListener: (n: string) => removed.push(n),
     };
-    Object.defineProperty(globalThis, 'document', { configurable: true, value: doc });
+    vi.stubGlobal('document', doc);
     const stopSuspend = webPowerSuspensionBackend.subscribeSuspend(() => {});
     const stopResume = webPowerSuspensionBackend.subscribeResume(() => {});
     expect(names).toEqual(['freeze', 'resume']);
