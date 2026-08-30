@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuPresentationRenderState, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 
 import {
   acquireWgpuSurfaceAntialiasView,
@@ -39,7 +39,7 @@ function ensureWgpuDepthStencil(state: WgpuRenderState, width: number, height: n
  * record that work, then call renderWgpuBackground to open the forward canvas pass on the same encoder.
  * Ordinary render loops can keep calling renderWgpuBackground directly; it begins a frame lazily.
  */
-export function beginWgpuFrame(state: WgpuRenderState): void {
+export function beginWgpuFrame(state: WgpuPresentationRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder !== null) return;
 
@@ -56,7 +56,7 @@ export function beginWgpuFrame(state: WgpuRenderState): void {
   runtime.scissorStack = [];
 }
 
-export function renderWgpuBackground(state: WgpuRenderState): void {
+export function renderWgpuBackground(state: WgpuPresentationRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
 
   // End any previous open pass (safety guard).
@@ -144,7 +144,7 @@ export function retireWgpuTexture(state: WgpuRenderState, texture: GPUTexture): 
   (runtime.retiredTextures ?? (runtime.retiredTextures = [])).push(texture);
 }
 
-export function submitWgpuRenderPass(state: WgpuRenderState): void {
+export function submitWgpuRenderPass(state: WgpuPresentationRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const { renderPass, commandEncoder, uniformBuffer, uniformData, uniformOffset } = runtime;
   const device = state.device;
@@ -187,4 +187,116 @@ export function submitWgpuRenderPass(state: WgpuRenderState): void {
   runtime.canvasTextureView = null;
   runtime.canvasViewCleared = false;
   clearWgpuSurfacePresentation(state);
+}
+
+/**
+ * Temporarily records an offscreen state's work into a presentation state's live command encoder.
+ * The borrower keeps its own uniform ring, batch buffers, traversal counters, and GPU resources; only
+ * the frame encoder/pass boundary is borrowed, and this callback bracket always returns it.
+ */
+export function withWgpuFrameBorrow<T>(
+  ownerState: WgpuPresentationRenderState,
+  borrowerState: WgpuRenderState,
+  callback: () => T,
+): T {
+  if (borrowerState.device !== ownerState.device) {
+    throw new Error('Wgpu frame owner and borrower must use the same GPU device');
+  }
+  const owner = getWgpuRenderStateRuntime(ownerState);
+  const borrower = getWgpuRenderStateRuntime(borrowerState);
+  if (borrower.commandEncoder !== null) throw new Error('Wgpu frame borrower already has an active frame');
+
+  const ownsFrame = owner.commandEncoder === null;
+  if (ownsFrame) beginWgpuFrame(ownerState);
+  const saved = captureBorrowerFrameState(borrower);
+  borrower.commandEncoder = owner.commandEncoder;
+  borrower.renderPass = owner.renderPass;
+  borrower.canvasTextureView = owner.canvasTextureView;
+  borrower.canvasViewCleared = owner.canvasViewCleared;
+  borrower.depthStencilTexture = owner.depthStencilTexture;
+  borrower.depthStencilView = owner.depthStencilView;
+  borrower.depthStencilWidth = owner.depthStencilWidth;
+  borrower.depthStencilHeight = owner.depthStencilHeight;
+  borrower.currentColorFormat = owner.currentColorFormat;
+  borrower.currentRenderTarget = owner.currentRenderTarget;
+  borrower.renderTargetViewport = owner.renderTargetViewport;
+  borrower.borrowedSurfaceExtent = { height: ownerState.surface.height, width: ownerState.surface.width };
+  borrower.uniformOffset = 0;
+  borrower.quadBatchWriterBufferCursor = 0;
+
+  try {
+    return callback();
+  } finally {
+    if (borrower.uniformOffset > 0) {
+      borrowerState.device.queue.writeBuffer(
+        borrower.uniformBuffer,
+        0,
+        borrower.uniformData.buffer,
+        0,
+        borrower.uniformOffset,
+      );
+    }
+    owner.commandEncoder = borrower.commandEncoder;
+    owner.renderPass = borrower.renderPass;
+    owner.canvasTextureView = borrower.canvasTextureView;
+    owner.canvasViewCleared = borrower.canvasViewCleared;
+    owner.depthStencilTexture = borrower.depthStencilTexture;
+    owner.depthStencilView = borrower.depthStencilView;
+    owner.depthStencilWidth = borrower.depthStencilWidth;
+    owner.depthStencilHeight = borrower.depthStencilHeight;
+    owner.currentColorFormat = borrower.currentColorFormat;
+    owner.currentRenderTarget = borrower.currentRenderTarget;
+    owner.renderTargetViewport = borrower.renderTargetViewport;
+    transferRetiredWgpuResources(borrower, owner);
+    restoreBorrowerFrameState(borrower, saved);
+    if (ownsFrame) submitWgpuRenderPass(ownerState);
+  }
+}
+
+type BorrowerFrameState = Pick<
+  WgpuRenderStateRuntime,
+  | 'canvasTextureView'
+  | 'canvasViewCleared'
+  | 'borrowedSurfaceExtent'
+  | 'commandEncoder'
+  | 'currentColorFormat'
+  | 'currentRenderTarget'
+  | 'depthStencilHeight'
+  | 'depthStencilTexture'
+  | 'depthStencilView'
+  | 'depthStencilWidth'
+  | 'renderPass'
+  | 'renderTargetViewport'
+>;
+
+function captureBorrowerFrameState(runtime: WgpuRenderStateRuntime): BorrowerFrameState {
+  return {
+    canvasTextureView: runtime.canvasTextureView,
+    canvasViewCleared: runtime.canvasViewCleared,
+    borrowedSurfaceExtent: runtime.borrowedSurfaceExtent,
+    commandEncoder: runtime.commandEncoder,
+    currentColorFormat: runtime.currentColorFormat,
+    currentRenderTarget: runtime.currentRenderTarget,
+    depthStencilHeight: runtime.depthStencilHeight,
+    depthStencilTexture: runtime.depthStencilTexture,
+    depthStencilView: runtime.depthStencilView,
+    depthStencilWidth: runtime.depthStencilWidth,
+    renderPass: runtime.renderPass,
+    renderTargetViewport: runtime.renderTargetViewport,
+  };
+}
+
+function restoreBorrowerFrameState(runtime: WgpuRenderStateRuntime, saved: BorrowerFrameState): void {
+  Object.assign(runtime, saved);
+}
+
+function transferRetiredWgpuResources(borrower: WgpuRenderStateRuntime, owner: WgpuRenderStateRuntime): void {
+  if (borrower.retiredBuffers !== undefined && borrower.retiredBuffers.length > 0) {
+    (owner.retiredBuffers ?? (owner.retiredBuffers = [])).push(...borrower.retiredBuffers);
+    borrower.retiredBuffers.length = 0;
+  }
+  if (borrower.retiredTextures !== undefined && borrower.retiredTextures.length > 0) {
+    (owner.retiredTextures ?? (owner.retiredTextures = [])).push(...borrower.retiredTextures);
+    borrower.retiredTextures.length = 0;
+  }
 }

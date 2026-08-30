@@ -28,7 +28,8 @@ import { JSDOM } from 'jsdom';
 
 import { createGlOffscreenRenderState } from '../packages/render-gl/src/glRenderState';
 import { createGlState } from '../packages/render-gl/src/glTestHelper';
-import { createWgpuOffscreenRenderState } from '../packages/render-wgpu/src/wgpuRenderState';
+import { createWgpuPipeline } from '../packages/render-wgpu/src/wgpuPipeline';
+import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '../packages/render-wgpu/src/wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from '../packages/render-wgpu/src/wgpuTestHelper';
 import { createRegistrarProgressFrame } from './check-progress';
 import {
@@ -830,7 +831,17 @@ async function prepareArgument(
   }
   if (types.has('WgpuRenderState')) {
     const state = await createWgpuRenderStateForTest();
-    return rootArgument(parameter, state, () => createWgpuOffscreenRenderState(state), createWgpuRenderStateForTest);
+    return rootArgument(
+      parameter,
+      state,
+      () =>
+        createWgpuOffscreenRenderState(
+          state.deviceState,
+          createWgpuPipeline(getWgpuRenderStateRuntime(state).registries),
+          { format: state.format },
+        ),
+      createWgpuRenderStateForTest,
+    );
   }
   if (types.has('CanvasRenderState')) {
     const state = createCanvasProbeState();

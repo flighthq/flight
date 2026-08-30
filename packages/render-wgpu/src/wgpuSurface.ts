@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import type { Bitmap, WgpuRenderState } from '@flighthq/types/contract';
+import type { Bitmap, WgpuPresentationRenderState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -18,7 +18,7 @@ import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 // Returns the offscreen texture the frame should render into when capture is enabled, creating/resizing
 // it to the canvas on demand, or null when capture is off (the caller then renders to the swapchain).
 // Internal: called by renderWgpuBackground to redirect the frame so its pixels stay readable.
-export function acquireWgpuFrameCaptureTexture(state: Readonly<WgpuRenderState>): GPUTexture | null {
+export function acquireWgpuFrameCaptureTexture(state: Readonly<WgpuPresentationRenderState>): GPUTexture | null {
   const runtime = getWgpuRenderStateRuntime(state);
   if (!runtime.frameCaptureEnabled) return null;
 
@@ -49,7 +49,7 @@ export function acquireWgpuFrameCaptureTexture(state: Readonly<WgpuRenderState>)
 // is deliberately generous: a readback that takes seconds is a loaded machine, while one that never
 // settles is the failure this bounds, and only the caller knows which budget it is working inside.
 export async function createBitmapFromWgpuRenderState(
-  state: Readonly<WgpuRenderState>,
+  state: Readonly<WgpuPresentationRenderState>,
   timeoutMs = DEFAULT_MAP_TIMEOUT_MS,
 ): Promise<Bitmap> {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -99,14 +99,14 @@ export async function createBitmapFromWgpuRenderState(
 // The frame is then drawn into an offscreen texture instead of the swapchain (the only reliably
 // readable path on headless/software adapters); the canvas is not presented while capture is on. Leave
 // it off for normal on-screen rendering. The capture texture and buffer are allocated lazily.
-export function enableWgpuFrameCapture(state: Readonly<WgpuRenderState>): void {
+export function enableWgpuFrameCapture(state: Readonly<WgpuPresentationRenderState>): void {
   getWgpuRenderStateRuntime(state).frameCaptureEnabled = true;
 }
 
 // Encodes the capture-texture → capture-buffer copy into the frame's command encoder, sizing/reallocating
 // the retained buffer to the canvas on demand. No-op unless capture is enabled. Internal: called by
 // submitWgpuRenderPass so the copy is queued in the render frame, not a later (dropped) task.
-export function encodeWgpuFrameCapture(state: Readonly<WgpuRenderState>, encoder: GPUCommandEncoder): void {
+export function encodeWgpuFrameCapture(state: Readonly<WgpuPresentationRenderState>, encoder: GPUCommandEncoder): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const texture = runtime.frameCaptureTexture;
   if (!runtime.frameCaptureEnabled || texture === null || texture === undefined) return;

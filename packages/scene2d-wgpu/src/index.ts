@@ -30,5 +30,6 @@ export {
   registerWgpuVelocityWriter,
   renderWgpuScene2D,
   renderWgpuVelocity,
+  scene2dWgpuPipeline,
 } from './contract';
 export { getWgpuShapeRasterizer, registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';

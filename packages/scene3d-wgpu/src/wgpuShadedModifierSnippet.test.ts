@@ -15,15 +15,14 @@ function makeSnippet(overrides?: Partial<WgpuModifierSnippet>): WgpuModifierSnip
 }
 
 describe('registerWgpuModifierSnippet', () => {
-  it('replaces the table while an explicitly copied state retains its snapshot through lazy scene init', () => {
+  it('replaces the table while an explicit pipeline state retains its snapshot through lazy scene init', () => {
     const { state: screen } = makeWgpuScene3DState();
-    const { state: derived } = makeWgpuScene3DState();
     const initial = makeSnippet();
     const override = makeSnippet({ contribution: () => ({ source: '// override' }) });
     registerWgpuModifierSnippet(screen, initial);
     const snapshot = getWgpuRenderStateRuntime(screen).registries.modifierSnippets;
+    const { state: derived } = makeWgpuScene3DState(createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries));
 
-    copyWgpuRenderStateRegistrations(derived, screen);
     getWgpuScene3DRuntime(derived);
     registerWgpuModifierSnippet(screen, override);
 
@@ -44,4 +43,4 @@ describe('resolveWgpuModifierSnippet', () => {
   });
 });
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { copyWgpuRenderStateRegistrations, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createWgpuPipeline, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';

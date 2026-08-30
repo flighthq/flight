@@ -4,10 +4,12 @@ import {
   acquireWgpuSurfaceAntialiasView,
   clearWgpuSurfacePresentation,
   encodeWgpuSurfaceAntialiasResolve,
+  getWgpuSurfaceLogicalExtent,
   getWgpuSurfaceRenderExtent,
   getWgpuSurfaceRenderScale,
 } from './wgpuAntialias';
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import { createWgpuRenderStateFromCanvasElement, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { setWgpuRenderPassScissorRect } from './wgpuScissor';
 import { enableWgpuFrameCapture } from './wgpuSurface';
@@ -16,6 +18,8 @@ import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper'
 beforeAll(() => {
   installWgpuMock();
 });
+
+const _pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
 describe('acquireWgpuSurfaceAntialiasView', () => {
   it('returns and retains a 2x render view when the option is enabled', async () => {
@@ -59,6 +63,16 @@ describe('encodeWgpuSurfaceAntialiasResolve', () => {
 
     expect(beginRenderPass).toHaveBeenCalledOnce();
     expect(draw).toHaveBeenCalledWith(3);
+  });
+});
+
+describe('getWgpuSurfaceLogicalExtent', () => {
+  it('keeps presentation coordinates logical while the render extent is supersampled', async () => {
+    const state = await createWgpuRenderStateForTest({ antialias: true });
+    acquireWgpuSurfaceAntialiasView(state, state.context.getCurrentTexture().createView());
+
+    expect(getWgpuSurfaceLogicalExtent(state)).toEqual({ height: 600, width: 800 });
+    expect(getWgpuSurfaceRenderExtent(state)).toEqual({ height: 1200, width: 1600 });
   });
 });
 
@@ -166,7 +180,7 @@ describe('WgpuRenderOptions.antialias', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;
-    const state = await createWgpuRenderStateFromCanvasElement(canvas, { antialias: true });
+    const state = await createWgpuRenderStateFromCanvasElement(canvas, _pipeline, { antialias: true });
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const first = runtime.surfaceAntialiasTexture!;

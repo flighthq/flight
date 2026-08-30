@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuPresentationRenderState, WgpuRenderState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -8,7 +8,7 @@ const SUPERSAMPLE_SCALE = 2;
 // the presentation view so encodeWgpuSurfaceAntialiasResolve can downsample into it on the same encoder.
 // Null means the normal direct-to-presentation path remains active.
 export function acquireWgpuSurfaceAntialiasView(
-  state: Readonly<WgpuRenderState>,
+  state: Readonly<WgpuPresentationRenderState>,
   presentationView: GPUTextureView,
 ): GPUTextureView | null {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -58,14 +58,17 @@ export function acquireWgpuSurfaceAntialiasView(
   return view;
 }
 
-export function clearWgpuSurfacePresentation(state: Readonly<WgpuRenderState>): void {
+export function clearWgpuSurfacePresentation(state: Readonly<WgpuPresentationRenderState>): void {
   getWgpuRenderStateRuntime(state).surfacePresentationView = null;
 }
 
 // Encodes the single surface resolve after every scene/effect/3D draw has completed and before capture
 // readback. Linear sampling at each destination pixel center averages the corresponding 2×2 source
 // texels, so this is a real supersample resolve rather than a post-capture image filter.
-export function encodeWgpuSurfaceAntialiasResolve(state: Readonly<WgpuRenderState>, encoder: GPUCommandEncoder): void {
+export function encodeWgpuSurfaceAntialiasResolve(
+  state: Readonly<WgpuPresentationRenderState>,
+  encoder: GPUCommandEncoder,
+): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const presentationView = runtime.surfacePresentationView;
   const pipeline = runtime.surfaceAntialiasResolvePipeline;
@@ -88,6 +91,19 @@ export function encodeWgpuSurfaceAntialiasResolve(state: Readonly<WgpuRenderStat
   pass.end();
 }
 
+// Logical surface dimensions for descriptor/effect distances. Unlike getWgpuSurfaceRenderExtent this
+// deliberately ignores the optional 2× presentation target; an explicit frame borrower receives the
+// logical owner extent for the bounded session.
+export function getWgpuSurfaceLogicalExtent(state: Readonly<WgpuRenderState>): { width: number; height: number } {
+  if ('surface' in state) {
+    const presentationState = state as WgpuPresentationRenderState;
+    return { width: presentationState.surface.width, height: presentationState.surface.height };
+  }
+  const borrowed = getWgpuRenderStateRuntime(state).borrowedSurfaceExtent;
+  if (borrowed !== null) return borrowed;
+  throw new Error('A device-only WgpuRenderState has no logical surface extent outside an explicit frame borrow');
+}
+
 // The logical canvas dimensions remain the coordinate space used by 2D transforms. This helper is
 // only for hardware viewport restoration after an offscreen target returns to the supersampled surface.
 export function getWgpuSurfaceRenderExtent(state: Readonly<WgpuRenderState>): { width: number; height: number } {
@@ -95,7 +111,12 @@ export function getWgpuSurfaceRenderExtent(state: Readonly<WgpuRenderState>): { 
   if (runtime.surfacePresentationView !== null) {
     return { width: runtime.surfaceAntialiasWidth, height: runtime.surfaceAntialiasHeight };
   }
-  return { width: state.surface.width, height: state.surface.height };
+  if ('surface' in state) {
+    const presentationState = state as WgpuPresentationRenderState;
+    return { width: presentationState.surface.width, height: presentationState.surface.height };
+  }
+  if (runtime.borrowedSurfaceExtent !== null) return runtime.borrowedSurfaceExtent;
+  throw new Error('A device-only WgpuRenderState has no presentation extent outside an explicit frame borrow');
 }
 
 // Scissor rectangles are expressed in the logical main-surface coordinate space. Scale only while the
@@ -105,7 +126,7 @@ export function getWgpuSurfaceRenderScale(state: Readonly<WgpuRenderState>): num
   return runtime.currentRenderTarget === null && runtime.surfacePresentationView !== null ? SUPERSAMPLE_SCALE : 1;
 }
 
-function ensureWgpuSurfaceAntialiasPipeline(state: Readonly<WgpuRenderState>): void {
+function ensureWgpuSurfaceAntialiasPipeline(state: Readonly<WgpuPresentationRenderState>): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.surfaceAntialiasResolvePipeline !== null) return;
 

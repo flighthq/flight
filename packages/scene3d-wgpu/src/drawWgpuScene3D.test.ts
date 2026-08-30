@@ -9,16 +9,13 @@ import {
 } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
-import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import {
+  createWgpuOffscreenRenderState,
+  createWgpuPipeline,
+  getWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type {
-  WgpuOffscreenRenderStateResult,
-  WgpuRenderState,
-  Camera3D,
-  ParticleEmitter3D,
-  Scene3DLightsLike,
-  Skeleton3D,
-} from '@flighthq/types/contract';
+import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D, isWgpuMeshGpuSkinned } from './drawWgpuScene3D';
@@ -26,13 +23,6 @@ import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMateri
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
-
-// createWgpuOffscreenRenderState reports a method-tight outcome because a lost device cannot back a
-// derived pipeline. These tests all run on a live fake device, so anything but `ok` is a test bug.
-function unwrapOffscreen(result: WgpuOffscreenRenderStateResult): WgpuRenderState {
-  if (result.reason !== 'ok') throw new Error(`expected an offscreen state, got ${result.reason}`);
-  return result.state;
-}
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({
@@ -53,7 +43,11 @@ describe('drawWgpuScene3D', () => {
   it('uploads one shared geometry once across a primary and derived state on the same device', () => {
     const { fake, state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);
-    const derived = unwrapOffscreen(createWgpuOffscreenRenderState(state));
+    const derived = createWgpuOffscreenRenderState(
+      state.deviceState,
+      createWgpuPipeline(getWgpuRenderStateRuntime(state).registries),
+      { format: state.format },
+    );
     const stateRuntime = getWgpuRenderStateRuntime(state);
     const derivedRuntime = getWgpuRenderStateRuntime(derived);
     derivedRuntime.commandEncoder = stateRuntime.commandEncoder;

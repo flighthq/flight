@@ -1,6 +1,11 @@
-import { createWgpuDeviceState, createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import {
+  createEmptyWgpuRegistries,
+  createWgpuDeviceState,
+  createWgpuPipeline,
+  createWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
+import type { WgpuPipeline, WgpuPresentationRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
@@ -50,7 +55,9 @@ function installWgpuConstants(): void {
 // runtime (so bind/draw find runtime.renderPass), the uniform ring buffer wired up (so the draw path
 // can ring-allocate), and currentColorFormat set to the canvas format. scene-wgpu's own per-state
 // runtime is created lazily on first getWgpuScene3DRuntime, exactly as in production.
-export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState } {
+export function makeWgpuScene3DState(
+  pipeline: Readonly<WgpuPipeline> = createWgpuPipeline(createEmptyWgpuRegistries()),
+): { fake: FakeWgpu; state: WgpuPresentationRenderState } {
   installWgpuConstants();
   const calls: { name: string; args: unknown[] }[] = [];
   const record =
@@ -148,18 +155,22 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
   const state = createRenderState({
     allowSmoothing: true,
     backgroundColorRgba: [0, 0, 0, 0],
-  }) as WgpuRenderState;
+  }) as WgpuPresentationRenderState;
+
+  const deviceState = createWgpuDeviceState(device);
 
   Object.assign(state, {
     applyBlendMode: null,
     canvas,
     context: {} as GPUCanvasContext,
     device,
+    deviceState,
     format: 'bgra8unorm',
+    pipeline,
     surface: { height: canvas.height, width: canvas.width },
   });
 
-  const runtime = createWgpuRenderStateRuntime(createWgpuDeviceState(device as GPUDevice));
+  const runtime = createWgpuRenderStateRuntime(deviceState, pipeline);
   Object.assign(runtime, {
     commandEncoder,
     currentBlendMode: null,
