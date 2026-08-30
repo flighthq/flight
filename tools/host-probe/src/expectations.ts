@@ -85,6 +85,7 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'dialog',
     'glyph-rasterizer',
     'loop',
+    'power',
     'screen',
     'share',
     'storage',
