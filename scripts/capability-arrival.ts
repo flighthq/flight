@@ -66,7 +66,6 @@ const EXPECTED_AGGREGATE = [
   'AudioDevice',
   'BitmapEncode',
   'BitmapReadback',
-  'FileSystem',
   'FontLoading',
   'Geolocation',
   'GlyphRasterizer',
@@ -81,6 +80,7 @@ const EXPECTED_AGGREGATE = [
 const EXPECTED_EXPLICIT_HOST = [
   'App',
   'Device',
+  'FileSystem',
   'Lifecycle',
   'MediaSession',
   'Power',
@@ -89,13 +89,14 @@ const EXPECTED_EXPLICIT_HOST = [
   'Screen',
   'Sensors',
   'Storage',
+  'StatusBar',
 ] as const;
 
-// These are deliberately not part of enableHostWeb(): applications opt into status chrome and
-// renderer surfaces explicitly. Keeping the names here turns a newly added web
+// These are deliberately not part of enableHostWeb(): applications opt into renderer surfaces
+// explicitly. Keeping the names here turns a newly added web
 // enabler into a reviewable registry change instead of silently treating it as either aggregate or
 // excluded.
-const EXPECTED_EXCLUDED = ['StatusBar', 'GlRenderSurface', 'WgpuRenderSurface'] as const;
+const EXPECTED_EXCLUDED = ['GlRenderSurface', 'WgpuRenderSurface'] as const;
 
 const EXPECTED_FACTORIES = [
   'Accessibility',
@@ -489,12 +490,15 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
   if (/\bprotocol\s*:\s*webProtocolCapabilities\b/.test(webHostSource)) explicitHost.add('Protocol');
   if (/\bscreen\s*:\s*webScreenCapabilities\b/.test(webHostSource)) explicitHost.add('Screen');
   const storageGroup = /\bstorage\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
+  if (/\bfileSystem\s*:\s*webFileSystemBackend\b/.test(storageGroup)) explicitHost.add('FileSystem');
   if (
     /\bchange\s*:\s*webStorageBackend\b/.test(storageGroup) &&
     /\blocal\s*:\s*webStorageBackend\b/.test(storageGroup)
   ) {
     explicitHost.add('Storage');
   }
+  const uiGroup = /\bui\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
+  if (/\bstatusBarColor\s*:\s*webStatusBarColorBackend\b/.test(uiGroup)) explicitHost.add('StatusBar');
   if (!sameMembers(explicitHost, EXPECTED_EXPLICIT_HOST)) {
     failures.push(
       registryFailure(
