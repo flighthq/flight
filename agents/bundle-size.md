@@ -207,14 +207,14 @@ The observed ratios are 3.03× and 4.67×. Two data points are an observation, n
 Future pairs make anomalies visible — a ratio near 1× would mean a single capability drags the aggregate,
 which is a decomposition defect worth investigating.
 
-### R19 Host-arc measurement ledger
+### R37 Host-arc measurement ledger
 
 Each row is one same-program before/after comparison. Values are unminified tree-shaken gzip bytes from
 `npm run size`, advisory only; aggregate absolute size is not a signal.
 
 | Arc | `host-web-full:canvas` | `host-web-window-only:canvas` | Full/window ratio | Interpretation |
 | --- | --- | --- | --- | --- |
-| Persistent Storage (`c2ae7b471` → `51c27a430`) | 20,023 B → 20,339 B (**+316 B**) | 3,482 B → 3,482 B (**0 B**) | 5.75× → 5.84× (**+0.09×**) | Expected isolation: the aggregate grew, the window-only counterpart was byte-identical, and the ratio rose. The 3,482 B counterpart remains +84 B from R19's 3,398 B reference because of the already-open pre-arc finding; this arc added 0 B to it. |
+| Persistent Storage (`c2ae7b471` → `51c27a430`) | 20,023 B → 20,339 B (**+316 B**) | 3,482 B → 3,482 B (**0 B**) | 5.75× → 5.84× (**+0.09×**) | Expected isolation: the aggregate grew, the window-only counterpart was byte-identical, and the ratio rose. The 3,482 B counterpart remains +84 B from R37's 3,398 B reference because of the already-open pre-arc finding; this arc added 0 B to it. |
 
 ## The discipline these numbers protect
 
