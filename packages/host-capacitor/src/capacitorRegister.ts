@@ -107,6 +107,8 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     // API through the seams this host wires. The group is empty rather than stubbed.
     power: {},
     notification: createCapacitorNotificationCapabilities(capacitor),
+    // The supported Capacitor plugin set exposes no OS-global shortcut provider.
+    shortcut: {},
     screen: {},
     share: { content: createCapacitorShareContentBackend(capacitor) },
     // Capacitor exposes none of Shell's six native command capabilities.

@@ -1,7 +1,6 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
-import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi } from '@flighthq/types/contract';
@@ -45,7 +44,6 @@ afterEach(() => {
   setPlatformBackend(null);
   setAppBackend(null);
   setTrayBackend(null);
-  setShortcutBackend(null);
 });
 
 describe('registerTauriBackends', () => {
@@ -59,6 +57,8 @@ describe('registerTauriBackends', () => {
     expect(host.dialog.fileSave.save).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
+    expect(EntityRuntimeKey in host.shortcut.query).toBe(true);
+    expect(EntityRuntimeKey in host.shortcut.trigger).toBe(true);
     expect(Object.keys(host.clipboard)).toEqual(['text']);
     expect(host.connectivity).toEqual({});
     expect(host.window.open).toBeTypeOf('function');

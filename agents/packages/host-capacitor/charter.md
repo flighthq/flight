@@ -3,7 +3,7 @@ package: '@flighthq/host-capacitor'
 role: host
 crate: null
 draft: false
-lastDirection: 2026-07-11
+lastDirection: 2026-08-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -37,6 +37,9 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-11] Mobile subset by design.** The covered seams are the mobile-relevant ones Capacitor plugins provide; the desktop-only seams host-electron fills are deliberately absent (not a gap — Capacitor's platform doesn't have them).
 - **[2026-08-30] Updater remains absent.** The supported Capacitor plugin facade has no
   Squirrel-compatible transaction; `capacitorHost` returns `updater: {}`.
+- **[2026-08-30] Global shortcut absence is structural.** `Host.shortcut` is the exact empty group
+  `{}` because the injected mobile facade supplies neither query nor native trigger registration.
+  Capacitor does not publish a sentinel provider or emulate registrations.
 
 ## Open directions
 

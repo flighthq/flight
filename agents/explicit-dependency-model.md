@@ -520,6 +520,18 @@ A and B touch disjoint packages (`host-*` and the capability packages vs `render
   custom/host precedence, sentinel, diagnostics/observer/support surface, and Web enabler were deleted
   together. Web owns both stable slots; Electron/Tauri/Capacitor publish `media: {}`.
 
+  **Shortcut R3 (2026-08-30):** `shortcut` is a required top-level Host group with independent
+  optional `query` and `trigger` slots. E/T publish both; W/C publish exact `{}`. The query command
+  and trigger event subscription remain split even where host coverage is identical. Native
+  registration is an awaited trigger subscription whose opaque token and exact provider origin are
+  retained out of band on a per-registration `GlobalShortcut` Entity. Core parses before reaching a
+  provider and returns explicit outcomes for malformed input, native refusal/collision, same-chord
+  in-progress work, and an attempted provider fault. Same-chord acquisition is serialized and
+  transactional; teardown is creator-pinned, attempt-all, deduplicated, and retryable. The ambient
+  backend/signal/diagnostic/sentinel model, enumeration, and unsupported enable/suspend operations were
+  deleted together. Accelerator formatting and `CommandOrControl` resolution now require an explicit
+  platform argument.
+
 ### Strand C — parsers, codecs, and the remaining ambient registries. Last.
 
 SWF parser config, image codecs, the `@flighthq/compression` decompressor registry, the loader's ambient net/codec reach, the globally-installed canvas text shaper. C waits for B-pipeline to settle what a registry type looks like, so it inherits that shape instead of inventing a second one.

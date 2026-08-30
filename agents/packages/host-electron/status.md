@@ -35,6 +35,10 @@ coverage lives in [`seam-audit.md`](seam-audit.md); this section carries only wh
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Shortcut now publishes independent query and trigger Entities on the returned
+  Host. Registration/unregistration is awaited, refusal stays distinct from a provider fault, opaque
+  tokens retain exact native ownership, and provider destroy attempts every distinct accelerator while
+  retaining failed obligations for retry.
 - **2026-08-30** — Electron now returns an Entity-backed `Host.updater.command`: one awaited built-in
   Squirrel check owns its exact listener transaction, yields a frozen origin-pinned downloaded handle,
   installs through that origin, and treats feed URL as immutable provider-construction policy.

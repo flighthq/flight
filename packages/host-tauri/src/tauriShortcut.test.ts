@@ -1,105 +1,103 @@
 import type { TauriApi, TauriShortcutEvent } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createTauriShortcutBackend } from './tauriShortcut';
+import { createTauriShortcutQueryBackend, createTauriShortcutTriggerBackend } from './tauriShortcut';
+
+interface Deferred {
+  readonly promise: Promise<void>;
+  readonly resolve: () => void;
+}
+
+function deferred(): Deferred {
+  let resolve!: () => void;
+  const promise = new Promise<void>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
 
 function fakeTauri() {
   const handlers = new Map<string, (event: Readonly<TauriShortcutEvent>) => void>();
-  const calls: { register: string[]; unregister: string[]; unregisterAll: number } = {
-    register: [],
-    unregister: [],
-    unregisterAll: 0,
-  };
+  const unregisterCalls: string[] = [];
+  const unregisterFailures = new Set<string>();
   const tauri = {
     globalShortcut: {
-      async register(shortcut: string, handler: (event: Readonly<TauriShortcutEvent>) => void) {
-        calls.register.push(shortcut);
-        handlers.set(shortcut, handler);
+      isRegistered: async (accelerator: string) => handlers.has(accelerator),
+      register: async (accelerator: string, handler: (event: Readonly<TauriShortcutEvent>) => void) => {
+        handlers.set(accelerator, handler);
       },
-      async unregister(shortcut: string) {
-        calls.unregister.push(shortcut);
-        handlers.delete(shortcut);
+      unregister: async (accelerator: string) => {
+        unregisterCalls.push(accelerator);
+        if (unregisterFailures.delete(accelerator)) throw new Error(`failed ${accelerator}`);
+        handlers.delete(accelerator);
       },
-      async unregisterAll() {
-        calls.unregisterAll++;
-        handlers.clear();
-      },
-      async isRegistered(shortcut: string) {
-        return handlers.has(shortcut);
-      },
+      unregisterAll: async () => void handlers.clear(),
     },
   } as unknown as TauriApi;
-  return { tauri, handlers, calls };
+  return { handlers, tauri, unregisterCalls, unregisterFailures };
 }
 
-describe('createTauriShortcutBackend', () => {
-  it('optimistically mirrors registrations synchronously', () => {
-    const { tauri, calls } = fakeTauri();
-    const backend = createTauriShortcutBackend(tauri);
-    expect(backend.register('CmdOrCtrl+K', () => {})).toBe(true);
-    expect(backend.isRegistered('CmdOrCtrl+K')).toBe(true);
-    expect(backend.getRegistered()).toEqual(['CmdOrCtrl+K']);
-    expect(calls.register).toEqual(['CmdOrCtrl+K']);
-  });
-
-  it('delivers a ShortcutEvent only on the Pressed state', async () => {
-    const { tauri, handlers } = fakeTauri();
-    const backend = createTauriShortcutBackend(tauri);
-    let fired = 0;
-    let seen = '';
-    backend.register('Alt+P', (event) => {
-      fired++;
-      seen = event.accelerator;
-    });
-    await Promise.resolve();
-    const handler = handlers.get('Alt+P')!;
-    handler({ shortcut: 'Alt+P', state: 'Released' });
-    handler({ shortcut: 'Alt+P', state: 'Pressed' });
-    expect(fired).toBe(1);
-    expect(seen).toBe('Alt+P');
-  });
-
-  it('unregisters individually and en masse', () => {
-    const { tauri, calls } = fakeTauri();
-    const backend = createTauriShortcutBackend(tauri);
-    backend.register('A', () => {});
-    backend.register('B', () => {});
-    expect(backend.unregister('A')).toBe(true);
-    expect(backend.isRegistered('A')).toBe(false);
-    backend.unregisterAll();
-    expect(backend.getRegistered()).toEqual([]);
-    expect(calls.unregisterAll).toBe(1);
-  });
-
-  it('reports the enable-toggle sentinels', () => {
-    const backend = createTauriShortcutBackend(fakeTauri().tauri);
-    expect(backend.setEnabled('A', true)).toBe(false);
-    expect(() => backend.setAllEnabled(true)).not.toThrow();
+describe('createTauriShortcutQueryBackend', () => {
+  it('returns an Entity and awaits the plugin query', async () => {
+    const fake = fakeTauri();
+    fake.handlers.set('Control+K', () => {});
+    const provider = createTauriShortcutQueryBackend(fake.tauri);
+    expect(EntityRuntimeKey in provider).toBe(true);
+    await expect(provider.isRegistered('Control+K')).resolves.toBe(true);
+    await expect(provider.isRegistered('Control+J')).resolves.toBe(false);
   });
 });
 
-// ★ THE REJECTION AXIS. `unregisterAll()` releases OS-global registrations through a promise the
-// synchronous release path cannot await, so the `.catch` at the call site is all that stands between a
-// rejected unregister and an unhandled rejection. Nothing exercised it before.
-describe('createTauriShortcutBackend release when unregisterAll rejects', () => {
-  it('still clears its own registry and raises no unhandled rejection', async () => {
-    const { tauri } = fakeTauri();
-    (tauri as unknown as { globalShortcut: { unregisterAll: () => Promise<void> } }).globalShortcut.unregisterAll =
-      () => Promise.reject(new Error('unregister refused by the platform'));
+describe('createTauriShortcutTriggerBackend', () => {
+  it('returns an Entity, awaits acquisition, filters release events, and tears down by exact token', async () => {
+    const fake = fakeTauri();
+    const provider = createTauriShortcutTriggerBackend(fake.tauri);
+    const trigger = vi.fn();
+    expect(EntityRuntimeKey in provider).toBe(true);
+    const outcome = await provider.subscribe('Control+K', trigger);
+    expect(outcome.reason).toBe('subscribed');
+    if (outcome.reason !== 'subscribed') return;
+    expect(EntityRuntimeKey in outcome.subscription).toBe(true);
+    fake.handlers.get('Control+K')?.({ shortcut: 'Control+K', state: 'Released' });
+    fake.handlers.get('Control+K')?.({ shortcut: 'Control+K', state: 'Pressed' });
+    expect(trigger).toHaveBeenCalledTimes(1);
+    await expect(provider.unsubscribe(outcome.subscription)).resolves.toEqual({ reason: 'unsubscribed' });
+    expect(fake.handlers.has('Control+K')).toBe(false);
+  });
 
-    const unhandled: unknown[] = [];
-    const onUnhandled = (reason: unknown): void => void unhandled.push(reason);
-    process.on('unhandledRejection', onUnhandled);
-    try {
-      const backend = createTauriShortcutBackend(tauri);
-      backend.register('CmdOrCtrl+K', () => {});
-      backend.unregisterAll();
-      // The local registry is cleared synchronously regardless of what the platform promise does.
-      expect(backend.isRegistered('CmdOrCtrl+K')).toBe(false);
+  it('propagates attempted provider faults and never publishes a failed registration', async () => {
+    const fake = fakeTauri();
+    fake.tauri.globalShortcut.register = async () => {
+      throw new Error('registration failed');
+    };
+    const provider = createTauriShortcutTriggerBackend(fake.tauri);
+    await expect(provider.subscribe('Control+K', () => {})).rejects.toThrow('registration failed');
+    await expect(provider.destroy()).resolves.toBeUndefined();
+  });
 
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(unhandled).toEqual([]);
-    } finally {
-      process.off('unhandledRejection', onUnhandled);
-    }
+  it('destroy waits for pending acquisition, attempts every obligation, and retries only failures', async () => {
+    const fake = fakeTauri();
+    const registration = deferred();
+    fake.tauri.globalShortcut.register = async (accelerator, handler) => {
+      if (accelerator === 'Control+A') await registration.promise;
+      fake.handlers.set(accelerator, handler);
+    };
+    const provider = createTauriShortcutTriggerBackend(fake.tauri);
+    const pending = provider.subscribe('Control+A', () => {});
+    await provider.subscribe('Control+B', () => {});
+    fake.unregisterFailures.add('Control+A');
+
+    const destroying = provider.destroy();
+    registration.resolve();
+    await pending;
+    await expect(destroying).rejects.toThrow('failed Control+A');
+    expect([...fake.unregisterCalls].sort()).toEqual(['Control+A', 'Control+B']);
+    expect(fake.handlers.has('Control+A')).toBe(true);
+    expect(fake.handlers.has('Control+B')).toBe(false);
+
+    await expect(provider.destroy()).resolves.toBeUndefined();
+    expect(fake.unregisterCalls).toHaveLength(3);
+    expect(fake.unregisterCalls.filter((accelerator) => accelerator === 'Control+A')).toHaveLength(2);
+    expect(fake.unregisterCalls.filter((accelerator) => accelerator === 'Control+B')).toHaveLength(1);
   });
 });

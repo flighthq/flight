@@ -14,6 +14,21 @@ _2026-08-28. Requirements record — feedback from the flight-hx Haxe/Lime bindi
 4. Existing-window attachment and backend lifetime
 5. DOM/scratch-surface/socket/GPU seams (subsequent design work)
 
+## 2026-08-30 landed example — Shortcut structural availability
+
+Shortcut now demonstrates the P1 target without partial ambient composition. Every Host has a required
+`shortcut` group whose independently optional `query` and `trigger` slots are the availability truth:
+Electron and Tauri provide both, Web and Capacitor provide neither and therefore return exact `{}`.
+There is no boolean/null/sentinel that means “provider absent.” Malformed accelerators are rejected by
+core before provider selection, and attempted native work returns method-tight outcomes distinguishing
+native refusal/collision, same-chord work already in progress, and provider failure.
+
+The trigger slot also demonstrates P4 lifetime ownership: registration returns an opaque token; core
+stores token plus creator provider; detach cannot be redirected through a later Host; and provider
+destroy awaits pending work, attempts all distinct releases, and retains failures for retry. Hosts that
+cannot register global shortcuts omit the slot rather than implement inert enable/suspend/enumeration
+methods.
+
 ---
 
 ## P1 — Partial backend composition and per-operation availability

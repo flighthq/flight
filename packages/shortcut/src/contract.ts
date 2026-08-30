@@ -1,3 +1,2 @@
-export * from './enableShortcutGuards';
-export * from './explainGlobalShortcutRegistration';
 export * from './shortcut';
+export * from './shortcutExplicitDependency';

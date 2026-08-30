@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/shortcut'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder3
 ---
 
 # shortcut — Status
@@ -11,22 +11,17 @@ by: principal
 
 ## Open
 
-Every item was re-checked against `packages/shortcut/src/` (and `packages/types/src/`) on 2026-08-08.
+Every item was re-checked against `packages/shortcut/src/` (and `packages/types/src/`) on 2026-08-30.
 A file:line here is a claim about this tree, not about a session. Most of what the old log carried
 had already landed; this is what is genuinely still open.
 
-- **`ShortcutSignals` carries only `onTrigger`** (`packages/types/src/ShortcutSignals.ts:6-8`). A
-  settings or conflict-detection UI that wants to observe registration changes has nothing to listen
-  to: there is no `onRegister` / `onUnregister`, and the firing side in `registerGlobalShortcut`
-  (`shortcut.ts:247`) / `unregisterGlobalShortcut` (`:300`) / `unregisterAllGlobalShortcuts` (`:293`)
-  cannot land until the type does.
 - **The key vocabulary is split across two packages and two representations.** `ShortcutKeyName` is
   a string union (`packages/types/src/ShortcutKeyName.ts:10`); `@flighthq/input` addresses keys as a
   numeric `KeyCode` and never references `ShortcutKeyName`. One
   SDK, two spellings for the same physical key — aligning them (or declaring them deliberately
   distinct layers) is a cross-package ruling, not a rename.
-- **`formatAcceleratorForDisplay` has no consumer.** `shortcut.ts:114` and
-  `getAcceleratorModifierLabel` (`:142`) exist precisely so menu and tray can render a chord the way
+- **`formatAcceleratorForDisplay` has no consumer.** `shortcut.ts` exports it and
+  `getAcceleratorModifierLabel` precisely so menu and tray can render a chord the way
   the OS spells it; neither package imports `@flighthq/shortcut` today, so `@flighthq/menu` prints
   the raw declared string. The open call is the dependency direction (menu/tray → shortcut) rather
   than the code.
@@ -35,6 +30,11 @@ had already landed; this is what is genuinely still open.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Replaced the ambient `ShortcutBackend` with explicit `Host.shortcut.trigger` and
+  `.query` providers. Registration is now an awaited, origin-pinned `GlobalShortcut` Entity lifecycle
+  with explicit parse/refusal/collision/in-progress/provider-fault outcomes; deleted enumeration,
+  enable/suspend emulation, guards, sentinels, and global trigger state. Electron and Tauri provide both
+  slots; Web and Capacitor provide exact empty groups.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped as **false**: the two
   "design forks, deliberately not decided" (shifted-punctuation glyph keys, non-Electron physical
   keys) — `ShortcutKeyName.ts:1-9` already rules on both, choosing the physical-key vocabulary over

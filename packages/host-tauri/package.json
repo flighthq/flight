@@ -47,6 +47,7 @@
     "@flighthq/notification": "*",
     "@flighthq/platform": "*",
     "@flighthq/shortcut": "*",
+    "@flighthq/shell": "*",
     "@flighthq/signals": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*"

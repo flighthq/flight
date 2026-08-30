@@ -9,6 +9,7 @@ describe('webClipboardBackend', () => {
   it('is the exact provider for every web clipboard capability slot', () => {
     expect(EntityRuntimeKey in webClipboardBackend).toBe(true);
     expect(EntityRuntimeKey in webHost).toBe(true);
+    expect(webHost.shortcut).toEqual({});
     expect(Object.keys(webHost.clipboard).sort()).toEqual(['change', 'formats', 'image', 'text']);
     expect(webHost.clipboard.change).toBe(webClipboardBackend);
     expect(webHost.clipboard.formats).toBe(webClipboardBackend);

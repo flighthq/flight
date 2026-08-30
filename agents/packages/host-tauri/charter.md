@@ -3,7 +3,7 @@ package: '@flighthq/host-tauri'
 role: host
 crate: null
 draft: false
-lastDirection: 2026-07-11
+lastDirection: 2026-08-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -43,6 +43,10 @@ _Append-only, dated, blessed rulings._
 - **[2026-08-30] Shell coverage is an exact explicit Host subset.** Tauri constructs Entity providers for
   external URLs, path open, and path reveal. Trash, Windows shortcut links, and beep are absent slots;
   there is no aggregate Shell backend, ambient setter, or unsupported method.
+- **[2026-08-30] Shortcut query and trigger are independent explicit slots.** Tauri publishes both
+  at `Host.shortcut`, awaits plugin registration before reporting success, stores the exact opaque
+  registration token, and filters native events to `Pressed`. The former optimistic local `Set`,
+  ambient backend installation, public enumeration, and enable-toggle sentinels are removed.
 
 ## Open directions
 

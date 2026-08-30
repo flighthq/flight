@@ -5,7 +5,6 @@ import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
 import { getPlatformBackend } from '@flighthq/platform/contract';
 import { getProtocolBackend } from '@flighthq/protocol/contract';
-import { getShortcutBackend } from '@flighthq/shortcut/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
 import { getTrayBackend } from '@flighthq/tray/contract';
 import type { Host } from '@flighthq/types/contract';
@@ -31,6 +30,7 @@ export function captureHostProbeBackends(
       | 'screen'
       | 'share'
       | 'shell'
+      | 'shortcut'
       | 'storage'
       | 'updater'
       | 'window'
@@ -66,7 +66,7 @@ export function captureHostProbeBackends(
       host.shell?.shortcutLink ??
       host.shell?.beep ??
       null,
-    shortcut: getShortcutBackend(),
+    shortcut: host.shortcut?.trigger ?? host.shortcut?.query ?? null,
     'soft-keyboard':
       host.input?.softKeyboardInfo ??
       host.input?.softKeyboardChange ??

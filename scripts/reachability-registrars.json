@@ -1214,10 +1214,6 @@
       "registrar": "registerShapeBoundsCommand"
     },
     {
-      "packageName": "shortcut",
-      "registrar": "registerGlobalShortcut"
-    },
-    {
       "packageName": "skeleton2d",
       "registrar": "registerSkeleton2DAnimationTargetBinder"
     },

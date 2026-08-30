@@ -1,41 +1,60 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, Entity, ShortcutBackend } from '@flighthq/types/contract';
+import type {
+  Accelerator,
+  ElectronApi,
+  ShortcutQueryBackend,
+  ShortcutTriggerBackend,
+  ShortcutTriggerSubscription,
+} from '@flighthq/types/contract';
 
-// Maps Flight's ShortcutBackend onto Electron's `globalShortcut` module. Electron's unregister returns
-// void, so it is treated as always succeeding (true) to satisfy Flight's boolean contract. Electron's
-// callback is bare; the seam synthesizes the ShortcutEvent (carrying the accelerator) Flight delivers.
-// The set of registered accelerators is tracked here since Electron exposes no enumeration.
-export function createElectronShortcutBackend(electron: ElectronApi): ShortcutBackend & Entity {
+export function createElectronShortcutQueryBackend(electron: ElectronApi): ShortcutQueryBackend {
+  const provider = createEntity({
+    async isRegistered(accelerator: Accelerator) {
+      return electron.globalShortcut.isRegistered(accelerator);
+    },
+  });
+  return provider;
+}
+
+// Electron registration is synchronous, but the provider lifts it into the same awaited subscription
+// contract as Tauri. Exact opaque tokens keep native accelerator identity private and creator-pinned.
+export function createElectronShortcutTriggerBackend(electron: ElectronApi): ShortcutTriggerBackend {
   const globalShortcut = electron.globalShortcut;
-  const registered = new Set<string>();
-  return createEntity({
-    getRegistered() {
-      return [...registered];
+  const registrations = new Map<ShortcutTriggerSubscription, Accelerator>();
+
+  async function releaseAccelerator(accelerator: Accelerator): Promise<void> {
+    globalShortcut.unregister(accelerator);
+    for (const [subscription, registered] of registrations) {
+      if (registered === accelerator) registrations.delete(subscription);
+    }
+  }
+
+  const provider = createEntity({
+    async destroy() {
+      let firstError: unknown;
+      const accelerators = new Set(registrations.values());
+      for (const accelerator of accelerators) {
+        try {
+          await releaseAccelerator(accelerator);
+        } catch (error) {
+          if (firstError === undefined) firstError = error;
+        }
+      }
+      if (firstError !== undefined) throw firstError;
     },
-    register(accelerator, listener) {
-      const ok = globalShortcut.register(accelerator, () => listener({ accelerator }));
-      if (ok) registered.add(accelerator);
-      return ok;
+    async subscribe(accelerator: Accelerator, trigger: () => void) {
+      const subscription = createEntity();
+      const registered = globalShortcut.register(accelerator, trigger);
+      if (!registered) return { reason: 'refused' as const };
+      registrations.set(subscription, accelerator);
+      return { reason: 'subscribed' as const, subscription };
     },
-    setAllEnabled(_enabled) {
-      // Electron's globalShortcut has no enable/disable toggle; a caller must unregister/re-register.
-      // Reported as a no-op rather than silently re-registering.
+    async unsubscribe(subscription: ShortcutTriggerSubscription) {
+      const accelerator = registrations.get(subscription);
+      if (accelerator === undefined) return { reason: 'unknown-subscription' as const };
+      await releaseAccelerator(accelerator);
+      return { reason: 'unsubscribed' as const };
     },
-    setEnabled(_accelerator, _enabled) {
-      // Electron has no per-accelerator enable toggle; report unsupported via false.
-      return false;
-    },
-    unregister(accelerator) {
-      globalShortcut.unregister(accelerator);
-      registered.delete(accelerator);
-      return true;
-    },
-    unregisterAll() {
-      globalShortcut.unregisterAll();
-      registered.clear();
-    },
-    isRegistered(accelerator) {
-      return globalShortcut.isRegistered(accelerator);
-    },
-  } satisfies ShortcutBackend);
+  });
+  return provider;
 }
