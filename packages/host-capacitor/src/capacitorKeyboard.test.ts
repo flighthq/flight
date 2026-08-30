@@ -80,19 +80,20 @@ describe('createCapacitorSoftKeyboardAccessoryBarBackend', () => {
 });
 
 describe('createCapacitorSoftKeyboardChangeBackend', () => {
-  it('subscribe returns a cleanup function and fires on will events', async () => {
+  it('subscribe returns ok with unsubscribe and fires on will events', async () => {
     const { capacitor, fire } = fakeCapacitor();
     const backend = createCapacitorSoftKeyboardChangeBackend(capacitor);
     let fires = 0;
-    const cleanup = await backend.subscribe(() => fires++);
-    expect(cleanup).not.toBeNull();
+    const subscription = await backend.subscribe(() => fires++);
+    expect(subscription.result).toBe('ok');
+    expect(subscription.unsubscribe).not.toBeNull();
     fire('keyboardWillShow', { keyboardHeight: 300 });
     fire('keyboardWillHide');
     expect(fires).toBe(2);
-    cleanup!();
+    subscription.unsubscribe!();
   });
 
-  it('subscribe returns null when listener attachment fails', async () => {
+  it('subscribe returns acquisition-failed when listener attachment fails', async () => {
     const failCapacitor = {
       keyboard: {
         async addListener() {
@@ -100,7 +101,9 @@ describe('createCapacitorSoftKeyboardChangeBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    expect(await createCapacitorSoftKeyboardChangeBackend(failCapacitor).subscribe(() => {})).toBeNull();
+    const subscription = await createCapacitorSoftKeyboardChangeBackend(failCapacitor).subscribe(() => {});
+    expect(subscription.result).toBe('acquisition-failed');
+    expect(subscription.unsubscribe).toBeNull();
   });
 });
 

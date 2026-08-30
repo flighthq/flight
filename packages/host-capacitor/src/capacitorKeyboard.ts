@@ -3,8 +3,10 @@ import type {
   CapacitorApi,
   CapacitorPluginListenerHandle,
   Entity,
+  EntityRuntimeKey,
   SoftKeyboardAccessoryBarBackend,
   SoftKeyboardChangeBackend,
+  SoftKeyboardChangeSubscription,
   SoftKeyboardInfo,
   SoftKeyboardInfoBackend,
   SoftKeyboardResizeMode,
@@ -15,7 +17,6 @@ import type {
   SoftKeyboardStyleKind,
   SoftKeyboardVisibilityBackend,
   SoftKeyboardVisibilityResult,
-  EntityRuntimeKey,
 } from '@flighthq/types/contract';
 import {
   SoftKeyboardResizeBodyKind,
@@ -43,18 +44,21 @@ export function createCapacitorSoftKeyboardAccessoryBarBackend(
 export function createCapacitorSoftKeyboardChangeBackend(capacitor: CapacitorApi): SoftKeyboardChangeBackend & Entity {
   const keyboard = capacitor.keyboard;
   return createEntity({
-    async subscribe(listener: () => void): Promise<(() => void) | null> {
+    async subscribe(listener: () => void): Promise<SoftKeyboardChangeSubscription> {
       let showHandle: CapacitorPluginListenerHandle;
       let hideHandle: CapacitorPluginListenerHandle;
       try {
         showHandle = await keyboard.addListener('keyboardWillShow', () => listener());
         hideHandle = await keyboard.addListener('keyboardWillHide', () => listener());
       } catch {
-        return null;
+        return { result: 'acquisition-failed', unsubscribe: null };
       }
-      return () => {
-        showHandle.remove().catch(() => {});
-        hideHandle.remove().catch(() => {});
+      return {
+        result: 'ok',
+        unsubscribe: () => {
+          showHandle.remove().catch(() => {});
+          hideHandle.remove().catch(() => {});
+        },
       };
     },
   } satisfies OmitRuntime<SoftKeyboardChangeBackend>);
