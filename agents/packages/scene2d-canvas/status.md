@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-canvas'
-updated: 2026-08-13
-by: builder4
+updated: 2026-08-30
+by: builder
 ---
 
 # scene2d-canvas — Status
@@ -45,6 +45,7 @@ tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — `CanvasPipeline` Entity landed (pipeline entity doc backfill): `createCanvasPipeline`, `createEmptyCanvasRegistries`, `getCanvasPipelineRegistries`, `canvasShapeCommandTable`, and `scene2dCanvasPipeline` const (12 renderers, native blend policy, 16 shape commands). `@flighthq/entity` promoted to dependency.
 - **2026-08-13** — Canvas Shape command registration now structurally pairs draw and bounds contributions,
   forwarding backend-neutral geometry into `@flighthq/shape`. Invalid/nonfinite line widths and miter limits
   normalize at replay to deterministic Canvas defaults, eliminating prior-Shape context leakage.

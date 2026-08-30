@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/render-gl'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder
 ---
 
 # render-gl — Status
@@ -131,6 +131,7 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — `GlPipeline` Entity landed: `createGlPipeline`, `createEmptyGlRegistries`, `getGlPipelineRegistries` — the backend core's immutable pipeline primitive, consumed by `scene2dGlPipeline` and future GL assemblies.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 "Pass 2 / 91-100" inventory
   checked out **false wholesale**: `glTexture.ts`, `glPipelineState.ts`, `glInstrumentation.ts`,
   `glCapabilities.ts`, `glContextLoss.ts`, and `glExtension.ts` are not in `src/`, and not one of
