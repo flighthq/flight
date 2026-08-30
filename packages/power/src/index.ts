@@ -2,6 +2,7 @@ export {
   acquirePowerKeepAwake,
   attachPower,
   createPower,
+  destroyPowerKeepAwake,
   detachPower,
   disposePower,
   enablePowerSignals,

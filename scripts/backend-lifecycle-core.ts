@@ -292,9 +292,19 @@ export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleRepo
 
 // `LogTransportBackend` → `setLogTransportBackend`. Derived from the interface name rather than mapped,
 // so a new backend is picked up without an entry anywhere.
+// The wiring that owns a backend's final release. Under the ambient model that was always a
+// `set<Name>Backend`; a migrated domain has no setter at all and instead exports an explicit Host
+// boundary, `destroy<Name>`, which destroys every distinct supplied provider exactly once.
+//
+// ★ Recognizing only the setter made a CORRECTLY migrated domain red by construction: deleting the
+// ambient setter — the whole point of the migration — removed the only thing this reader could see, so
+// the gate reported "unwired" for backends whose ownership had actually become explicit.
 function findSetterName(interfaceName: string, setterBodies: ReadonlyMap<string, string>): string | null {
-  const candidate = `set${interfaceName.slice(0, -'Backend'.length)}Backend`;
-  return setterBodies.has(candidate) ? candidate : null;
+  const base = interfaceName.slice(0, -'Backend'.length);
+  const setter = `set${base}Backend`;
+  if (setterBodies.has(setter)) return setter;
+  const boundary = `destroy${base}`;
+  return setterBodies.has(boundary) ? boundary : null;
 }
 
 // A zero-parameter `destroy`/`dispose` member, in EITHER declaration syntax.

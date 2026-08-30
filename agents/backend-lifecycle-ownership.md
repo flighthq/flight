@@ -710,6 +710,45 @@ the explicit `destroyStorage(host)` route makes that hook reachable without a re
 | `StorageBackend` | Five synchronous bounded operations. Namespacing, typed access, byte size, batches, and migration are core-derived and acquire no provider resource. | **Owned by bounded call.** The explicit `storage.local` slot is the only provider used. |
 | `StorageChangeBackend` | `attachStorage(host, signals)` stores the exact release returned by the supplied provider. Reattach consumes the old release before acquiring the new one; detach/dispose consume it once. The Web provider records exact DOM listener identities and its required `destroy()` releases every still-active record terminally and idempotently. | **Owned.** Cleanup never consults a later Host, and `destroyStorage(host)` reaches the exact supplied provider. |
 
+### 2026-08-30 — Menu and Power: ownership survives the split, on one slot each
+
+Both domains left the ambient model and split into per-capability slots. The teardown obligation did
+not multiply with the slots and it did not disappear: in each domain exactly ONE slot acquires a
+whole-provider resource, and that is the only one that declares `destroy`.
+
+- **`MenuApplicationBackend`** owns the INSTALLED NATIVE MENU. Electron clears the app menu on
+  teardown; Tauri releases its JS-owned state (it cannot clear asynchronously without racing a
+  successor's install, which the row already records). `popup` is command-only, and
+  `highlight`/`select` return a per-subscription unsubscribe that already owns everything the call
+  acquired — a `destroy` on those three was a declared obligation no provider implemented.
+- **`PowerKeepAwakeBackend`** owns an OS LOCK: a WakeLock sentinel plus the release listener attached
+  to it on web, a `powerSaveBlocker` id on electron. The other seven power slots own nothing beyond
+  per-subscription cleanup.
+
+**Cached state is not an ownable resource.** The web `status`/`change` pair briefly kept `destroy` to
+reset module-scoped battery readings. That was wrong twice over: a cache is state, not an externally
+freeable handle, and holding it at module scope let a destroyed provider's last readings be served to
+its successor as if fresh. The readings moved into the provider's own closure, so dropping the
+provider releases them and neither slot carries an obligation.
+
+**Final release without a setter.** A migrated domain has no `set*Backend`, so ownership is expressed
+as an exported Host boundary: `destroyMenuApplication(...hosts)` and `destroyPowerKeepAwake(...hosts)`.
+Each destroys every DISTINCT supplied provider exactly once (alias-safe — two hosts may share one
+provider object, and double-destroying would double-release), attempts every obligation even after one
+throws, rethrows the first error once the siblings have run, and RETAINS only the failures so a later
+call retries exactly those and never re-destroys a success.
+
+★ **The structural collector had to learn this shape.** `scripts/backend-lifecycle-core.ts` recognized
+ownership only as `set<Name>Backend`. Deleting the ambient setter — the entire point of the migration —
+removed the only thing it could see, so a correctly migrated domain went red BY CONSTRUCTION: twelve
+rows across Menu and Power. `findSetterName` now also accepts the `destroy<Name>` boundary. This is a
+reader fix, not a relaxation: a backend that declares a teardown still has to name a wiring that runs it.
+
+The required-enforced ledger's current row replaces `MenuBackend`/`PowerBackend` with
+`MenuApplicationBackend`/`PowerKeepAwakeBackend`. That is a rename of the obligation, not a shrink:
+the two interfaces are gone, and the two real owners took their place. The historical baseline is
+untouched.
+
 ## Review checklist for the remaining slices
 
 For each of the three missing whole-backend hooks, tests must cover replacement with a different

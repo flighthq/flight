@@ -1,7 +1,7 @@
 import {
-  webPowerChangeBackend,
+  createWebPowerReadings,
+  webPowerCapabilities,
   webPowerKeepAwakeBackend,
-  webPowerStatusBackend,
   webPowerSuspensionBackend,
 } from './webPower';
 
@@ -28,10 +28,62 @@ afterEach(async () => {
   setNavigator(undefined);
 });
 
-describe('webPowerChangeBackend', () => {
+describe('createWebPowerReadings', () => {
   it('returns an inert unsubscribe when the Battery API is absent, without pretending to observe', () => {
     setNavigator(undefined);
-    expect(() => webPowerChangeBackend.subscribe(() => {})()).not.toThrow();
+    expect(() => createWebPowerReadings().change.subscribe(() => {})()).not.toThrow();
+  });
+
+  // ★ The cache is closure-owned, so two provider pairs never share readings and dropping one releases
+  // its state naturally — which is why neither slot declares a teardown obligation.
+  it('gives each provider pair its own readings and no destroy obligation', () => {
+    const first = createWebPowerReadings();
+    const second = createWebPowerReadings();
+    expect(first.status).not.toBe(second.status);
+    // Neither declares nor implements a teardown: the interfaces no longer carry `destroy` at all, so
+    // this asserts the runtime shape the type now forbids naming.
+    expect('destroy' in first.change).toBe(false);
+    expect('destroy' in first.status).toBe(false);
+  });
+});
+
+describe('createWebPowerReadings status', () => {
+  it('reports the domain unknown encoding before any battery reading arrives', () => {
+    const out = createWebPowerReadings().status.getStatus({
+      batteryLevel: 0,
+      chargingTime: 0,
+      dischargingTime: 0,
+      isBatteryLow: true,
+      isCharging: true,
+      isLowPower: true,
+      isOnBattery: true,
+      thermalState: 'Critical',
+    });
+    expect(out.batteryLevel).toBe(-1);
+    // Web cannot read thermal pressure at all, which is why it exposes no thermal slot.
+    expect(out.thermalState).toBe('Unknown');
+  });
+});
+
+describe('webPowerCapabilities', () => {
+  // ★ EXACT SLOT COVERAGE for W. The four absent slots are the point: web previously implemented all of
+  // them with inert subscriptions and constant sentinels, which no structural probe could tell from a
+  // real provider. Asserting the exact key set is what stops one being quietly re-added as a stub.
+  it('offers exactly status, change, keepAwake and suspension', () => {
+    expect(
+      Object.keys(webPowerCapabilities)
+        .filter((k) => k !== 'constructor')
+        .sort(),
+    ).toEqual(['change', 'keepAwake', 'status', 'suspension']);
+    expect('idle' in webPowerCapabilities).toBe(false);
+    expect('sessionLock' in webPowerCapabilities).toBe(false);
+    expect('batteryHealth' in webPowerCapabilities).toBe(false);
+    expect('thermal' in webPowerCapabilities).toBe(false);
+  });
+
+  it('declares a teardown obligation on keepAwake alone', () => {
+    expect(typeof webPowerCapabilities.keepAwake.destroy).toBe('function');
+    expect('destroy' in webPowerCapabilities.suspension).toBe(false);
   });
 });
 
@@ -110,24 +162,6 @@ describe('webPowerKeepAwakeBackend', () => {
     await webPowerKeepAwakeBackend.acquire('PreventDisplaySleep');
     await expect(webPowerKeepAwakeBackend.release()).resolves.toEqual({ reason: 'ok' });
     expect(webPowerKeepAwakeBackend.isActive()).toBe(false);
-  });
-});
-
-describe('webPowerStatusBackend', () => {
-  it('reports the domain unknown encoding before any battery reading arrives', () => {
-    const out = webPowerStatusBackend.getStatus({
-      batteryLevel: 0,
-      chargingTime: 0,
-      dischargingTime: 0,
-      isBatteryLow: true,
-      isCharging: true,
-      isLowPower: true,
-      isOnBattery: true,
-      thermalState: 'Critical',
-    });
-    expect(out.batteryLevel).toBe(-1);
-    // Web cannot read thermal pressure at all, which is why it exposes no thermal slot.
-    expect(out.thermalState).toBe('Unknown');
   });
 });
 

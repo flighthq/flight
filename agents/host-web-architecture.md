@@ -691,3 +691,24 @@ Two prerequisite commits are now on base, completing the documentation reconcili
 ### Design chosen
 
 Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine implementations: 22 global-singleton enablers + 1 per-instance factory (Cursor). Cursor excluded from `enableHostWeb()` umbrella (umbrella membership = 22). 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions settled in section 6). Precedence: custom > host > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent (second call allocates nothing, preserves provider identity). Distinct second host does not last-write-win: the original is preserved and `conflict` reports the rejected install independently. explain* separates installed layer, last observed runtime reachability, observing operation, and conflict. Viability is observed by real operations, never probed at enable time and never inferred from operation success. Unbounded relationships rebind across provider transitions; bounded pending operations complete where they started. Bundle acceptance fixtures required.
+
+## 2026-08-30 append — Power on web, and the four members that were not there
+
+`enableHostWebPower` is gone with the rest of the ambient family; the web providers are plain consts
+composed into `webPowerCapabilities`.
+
+Web offers FOUR power slots — `status`, `change`, `keepAwake`, `suspension` — and omits `idle`,
+`sessionLock`, `batteryHealth` and `thermal`. It previously implemented all of them: four subscriptions
+were `return () => {};` and the idle/battery/thermal queries answered a constant `'Unknown'`/`-1`/`null`.
+Structurally that was indistinguishable from a real implementation, and core polled the constant idle
+state on a timer that could never fire a transition. An omitted slot is the honest report.
+
+`suspension` is genuinely real on web: `freeze` and `resume` are the spec'd Page Lifecycle pair, both
+fire, and both unsubscribe cleanly. An earlier inventory of mine claimed web had "suspend only" — that
+was wrong; `subscribeResume` was wired the whole time.
+
+Keep-awake awaits `navigator.wakeLock.request` and classifies the failure: `NotAllowedError` /
+`SecurityError` become `denied`, anything else `failed`, and an absent API or the
+`PreventAppSuspension` mode become `unavailable`. The battery readings live in the provider's own
+closure rather than at module scope, so a destroyed provider's last readings can no longer be served to
+its successor as if freshly measured.

@@ -70,5 +70,6 @@ export const webHost = createEntity({
   system: {},
   text: {},
   ui: { fullscreen: webFullscreenBackend },
+  updater: {},
   window: webWindowBackend,
 } as const satisfies Omit<Host, typeof EntityRuntimeKey>);

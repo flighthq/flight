@@ -10,71 +10,19 @@ import type {
   PowerSuspensionBackend,
 } from '@flighthq/types/contract';
 
-// The web power providers. Web offers exactly three slots — status, change and suspension — plus
-// keepAwake. It omits idle, sessionLock, batteryHealth and thermal because it cannot observe them: an
-// omitted slot is the honest report, where the previous backend's constant 'Unknown'/-1 answers and
-// inert `() => {}` subscriptions were indistinguishable from a real implementation.
-
-export const webPowerChangeBackend: PowerChangeBackend = {
-  destroy(): void {
-    resetCachedBatteryReadings();
-  },
-  subscribe(listener: () => void): () => void {
-    const battery = _getWebBatteryManagerPromise();
-    if (battery === null) return () => {};
-    let manager: WebBatteryManager | null = null;
-    const onLevelChange = (): void => {
-      if (manager !== null) _cachedLevel = manager.level;
-      listener();
-    };
-    const onChargingChange = (): void => {
-      if (manager !== null) _cachedCharging = manager.charging;
-      listener();
-    };
-    const onChargingTimeChange = (): void => {
-      if (manager !== null) {
-        const t = manager.chargingTime;
-        _cachedChargingTime = t === Infinity ? -1 : t;
-      }
-      listener();
-    };
-    const onDischargingTimeChange = (): void => {
-      if (manager !== null) {
-        const t = manager.dischargingTime;
-        _cachedDischargingTime = t === Infinity ? -1 : t;
-      }
-      listener();
-    };
-    let cancelled = false;
-    battery
-      .then((m) => {
-        if (cancelled) return;
-        manager = m;
-        _cachedLevel = m.level;
-        _cachedCharging = m.charging;
-        _cachedChargingTime = m.chargingTime === Infinity ? -1 : m.chargingTime;
-        _cachedDischargingTime = m.dischargingTime === Infinity ? -1 : m.dischargingTime;
-        m.addEventListener?.('levelchange', onLevelChange);
-        m.addEventListener?.('chargingchange', onChargingChange);
-        m.addEventListener?.('chargingtimechange', onChargingTimeChange);
-        m.addEventListener?.('dischargingtimechange', onDischargingTimeChange);
-        listener();
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-      manager?.removeEventListener?.('levelchange', onLevelChange);
-      manager?.removeEventListener?.('chargingchange', onChargingChange);
-      manager?.removeEventListener?.('chargingtimechange', onChargingTimeChange);
-      manager?.removeEventListener?.('dischargingtimechange', onDischargingTimeChange);
-      manager = null;
-    };
-  },
-};
+// The web power providers. Web offers status, change, keepAwake and suspension. It omits idle,
+// sessionLock, batteryHealth and thermal because it cannot observe them: an omitted slot is the honest
+// report, where the previous backend's constant 'Unknown'/-1 answers and inert `() => {}` subscriptions
+// were indistinguishable from a real implementation.
+//
+// Only keepAwake declares `destroy`. It is the one provider here that acquires a WHOLE-PROVIDER
+// resource — an OS wake lock plus the release listener attached to its sentinel — which outlives any
+// single call. change/status own only cached readings, held in their own closure below so dropping the
+// provider releases them; a `destroy` there would be a teardown obligation with nothing behind it.
 
 // Keep-awake over the Wake Lock API. Both operations AWAIT the platform, so the reported outcome is the
 // real one: the previous backend called request() fire-and-forget, swallowed the rejection and returned
-// `true` synchronously, so a denied lock was reported as success and a lost lock still read as active.
+// `true` synchronously, so a denied lock read as success and a lost lock still read as active.
 export const webPowerKeepAwakeBackend: PowerKeepAwakeBackend = {
   async acquire(mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> {
     // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
@@ -103,8 +51,10 @@ export const webPowerKeepAwakeBackend: PowerKeepAwakeBackend = {
   },
   destroy(): void {
     void _releaseSentinel();
-    detachWakeLockReleaseListeners();
-    resetCachedBatteryReadings();
+    for (const [sentinel, onRelease] of _wakeLockReleaseListeners) {
+      sentinel.removeEventListener?.('release', onRelease);
+    }
+    _wakeLockReleaseListeners.clear();
   },
   isActive(): boolean {
     return _wakeLockSentinel !== null;
@@ -122,30 +72,10 @@ export const webPowerKeepAwakeBackend: PowerKeepAwakeBackend = {
       return { reason: 'failed' };
     }
     if (_wakeLockSentinel === sentinel) _wakeLockSentinel = null;
-    sentinel.removeEventListener?.('release', _wakeLockReleaseListeners.get(sentinel) ?? (() => {}));
+    const onRelease = _wakeLockReleaseListeners.get(sentinel);
+    if (onRelease !== undefined) sentinel.removeEventListener?.('release', onRelease);
     _wakeLockReleaseListeners.delete(sentinel);
     return { reason: 'ok' };
-  },
-};
-
-export const webPowerStatusBackend: PowerStatusBackend = {
-  destroy(): void {
-    resetCachedBatteryReadings();
-  },
-  getStatus(out: PowerStatus): PowerStatus {
-    const level = _cachedLevel;
-    const charging = _cachedCharging;
-    out.batteryLevel = level;
-    out.chargingTime = _cachedChargingTime;
-    out.dischargingTime = _cachedDischargingTime;
-    out.isBatteryLow = level >= 0 && level <= 0.2 && !charging;
-    out.isCharging = charging;
-    out.isLowPower = false;
-    out.isOnBattery = level >= 0 && !charging;
-    // Web cannot read thermal pressure at all, which is why there is no web thermal slot. The field
-    // stays at the domain's unknown encoding rather than implying a reading.
-    out.thermalState = 'Unknown';
-    return out;
   },
 };
 
@@ -163,20 +93,96 @@ export const webPowerSuspensionBackend: PowerSuspensionBackend = {
   },
 };
 
+// change and status SHARE one closure-owned battery cache. The readings used to be module-scoped with a
+// `destroy` to reset them — but cached readings are not an externally freeable resource, they are just
+// state, and state belongs to the provider that owns it. Held in this closure, dropping the provider
+// releases them naturally and neither slot carries a teardown obligation.
+export function createWebPowerReadings(): { change: PowerChangeBackend; status: PowerStatusBackend } {
+  let cachedCharging = false;
+  let cachedChargingTime = -1;
+  let cachedDischargingTime = -1;
+  let cachedLevel = -1;
+
+  return {
+    change: {
+      subscribe(listener: () => void): () => void {
+        const battery = _getWebBatteryManagerPromise();
+        if (battery === null) return () => {};
+        let manager: WebBatteryManager | null = null;
+        const onLevelChange = (): void => {
+          if (manager !== null) cachedLevel = manager.level;
+          listener();
+        };
+        const onChargingChange = (): void => {
+          if (manager !== null) cachedCharging = manager.charging;
+          listener();
+        };
+        const onChargingTimeChange = (): void => {
+          if (manager !== null) {
+            const t = manager.chargingTime;
+            cachedChargingTime = t === Infinity ? -1 : t;
+          }
+          listener();
+        };
+        const onDischargingTimeChange = (): void => {
+          if (manager !== null) {
+            const t = manager.dischargingTime;
+            cachedDischargingTime = t === Infinity ? -1 : t;
+          }
+          listener();
+        };
+        let cancelled = false;
+        battery
+          .then((m) => {
+            if (cancelled) return;
+            manager = m;
+            cachedLevel = m.level;
+            cachedCharging = m.charging;
+            cachedChargingTime = m.chargingTime === Infinity ? -1 : m.chargingTime;
+            cachedDischargingTime = m.dischargingTime === Infinity ? -1 : m.dischargingTime;
+            m.addEventListener?.('levelchange', onLevelChange);
+            m.addEventListener?.('chargingchange', onChargingChange);
+            m.addEventListener?.('chargingtimechange', onChargingTimeChange);
+            m.addEventListener?.('dischargingtimechange', onDischargingTimeChange);
+            listener();
+          })
+          .catch(() => {});
+        // The per-subscription cleanup owns everything this call acquired — which is why the slot needs
+        // no provider-level destroy.
+        return () => {
+          cancelled = true;
+          manager?.removeEventListener?.('levelchange', onLevelChange);
+          manager?.removeEventListener?.('chargingchange', onChargingChange);
+          manager?.removeEventListener?.('chargingtimechange', onChargingTimeChange);
+          manager?.removeEventListener?.('dischargingtimechange', onDischargingTimeChange);
+          manager = null;
+        };
+      },
+    },
+    status: {
+      getStatus(out: PowerStatus): PowerStatus {
+        out.batteryLevel = cachedLevel;
+        out.chargingTime = cachedChargingTime;
+        out.dischargingTime = cachedDischargingTime;
+        out.isBatteryLow = cachedLevel >= 0 && cachedLevel <= 0.2 && !cachedCharging;
+        out.isCharging = cachedCharging;
+        out.isLowPower = false;
+        out.isOnBattery = cachedLevel >= 0 && !cachedCharging;
+        // Web cannot read thermal pressure at all, which is why there is no web thermal slot. The field
+        // stays at the domain's unknown encoding rather than implying a reading.
+        out.thermalState = 'Unknown';
+        return out;
+      },
+    },
+  };
+}
+
 // The web power capability group, for composing into a Host.
 export const webPowerCapabilities = createEntity({
-  change: webPowerChangeBackend,
+  ...createWebPowerReadings(),
   keepAwake: webPowerKeepAwakeBackend,
-  status: webPowerStatusBackend,
   suspension: webPowerSuspensionBackend,
 });
-
-function detachWakeLockReleaseListeners(): void {
-  for (const [sentinel, onRelease] of _wakeLockReleaseListeners) {
-    sentinel.removeEventListener?.('release', onRelease);
-  }
-  _wakeLockReleaseListeners.clear();
-}
 
 function _getWebBatteryManagerPromise(): Promise<WebBatteryManager> | null {
   if (typeof navigator === 'undefined') return null;
@@ -212,20 +218,6 @@ async function _releaseSentinel(): Promise<void> {
   }
 }
 
-// Returns the cached battery readings to their unknown values. These are module-scoped and outlive any
-// one backend, so a destroyed backend's last readings would otherwise be served by its successor as if
-// freshly measured — `-1`/`false` is what "not measured" means everywhere else in this file.
-function resetCachedBatteryReadings(): void {
-  _cachedCharging = false;
-  _cachedChargingTime = -1;
-  _cachedDischargingTime = -1;
-  _cachedLevel = -1;
-}
-
-let _cachedCharging = false;
-let _cachedChargingTime = -1;
-let _cachedDischargingTime = -1;
-let _cachedLevel = -1;
 let _wakeLockSentinel: WebWakeLockSentinel | null = null;
 
 const _wakeLockReleaseListeners = new Map<WebWakeLockSentinel, () => void>();

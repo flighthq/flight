@@ -1328,3 +1328,25 @@ I falsified this exact hypothesis early and told the fleet not to re-tread it. I
 path. It is — in the **verification** stage, which I never looked at. A partial view of a pipeline
 produced a confident exclusion, and an exclusion is more dangerous than a wrong lead because it
 removes ground from the search instead of adding it.
+
+## 2026-08-30 append — named provider gaps: Power on Tauri and Capacitor
+
+Neither `host-tauri` nor `host-capacitor` has any power provider. Both now ship `power: {}` with a
+comment naming the gap, rather than a guessed group or a stubbed one.
+
+What a future provider would have to supply, slot by slot, so the gap is actionable rather than a
+shrug:
+
+- `status` + `change` — a battery/AC reading and a notification that it moved. Tauri has no first-party
+  battery plugin; Capacitor's Device plugin reports battery level and charging, so `status` is
+  reachable there today and `change` would need polling or a plugin event.
+- `keepAwake` — Tauri: a plugin wrapping the OS inhibitor. Capacitor: the KeepAwake plugin. Both are
+  async, which the awaited acquire/release contract already accommodates.
+- `idle`, `sessionLock` — desktop-session concepts. Plausible for Tauri via OS APIs; not meaningful on
+  a Capacitor mobile app, which should keep omitting them.
+- `suspension` — Capacitor's App plugin has pause/resume, but that is APP lifecycle, which
+  `@flighthq/lifecycle` owns. Mapping it to power would re-open the overlap recorded in the power cell's
+  status; it should not be wired without that ruling.
+- `batteryHealth`, `thermal` — no first-party API on either host today. Omit until one exists.
+
+The point of recording this is that an empty group must stay distinguishable from an unexamined one.

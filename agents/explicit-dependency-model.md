@@ -505,6 +505,35 @@ A and B touch disjoint packages (`host-*` and the capability packages vs `render
 
 SWF parser config, image codecs, the `@flighthq/compression` decompressor registry, the loader's ambient net/codec reach, the globally-installed canvas text shaper. C waits for B-pipeline to settle what a registry type looks like, so it inherits that shape instead of inventing a second one.
 
+### 2026-08-30 append — Power, and what "an attempt is never an outcome" cost
+
+Power migrated to a top-level `power` group with eight optional slots (status, change, keepAwake, idle,
+sessionLock, suspension, batteryHealth, thermal). `lowPowerModeChange` was DELETED rather than migrated:
+every provider's implementation was inert, so it was a capability no host had. Tauri and Capacitor ship
+`power: {}` with a named gap comment — an empty group is honest and forward-compatible, a guessed one
+lies.
+
+**The ambient seam reported attempts as outcomes.** `setKeepAwake` returned `true` synchronously while
+the Wake Lock request was still in flight, `.catch(() => {})` swallowed the rejection, and
+`observePowerHostResult` recorded the ATTEMPT — so `explainPowerBackend()` reported a denied lock as
+`viability: 'available'` while `hasPowerKeepAwake()` returned false. The seam lied in both directions:
+it also reported a lost lock as still active, because a failed re-acquire was swallowed and the released
+sentinel was never cleared. Keep-awake is now awaited with method-tight reasons — acquire distinguishes
+`unavailable` / `denied` / `failed`, release distinguishes `inactive` from `failed` — and released state
+is never published before the awaited release succeeds.
+
+**Two R7/R13 findings worth carrying to the next domain.** First, structural uniformity is not coverage:
+every web power member was present and four of them were `return () => {};`, which no `has*Operation`
+probe can distinguish from a real implementation. Deleting them is what made the slot roster honest.
+Second, an event whose state the caller cannot then read is not a capability: Electron's
+`thermal-state-change` fires with no payload, and `getStatus` had `thermalState` hardcoded to
+`'Unknown'`. The slot survived only because the installed Electron (31.7.7, `electron.d.ts:9923`)
+declares `getCurrentThermalState`; the facade now exposes it and the subscription delivers the level.
+Where an installed Electron lacks the getter the slot is omitted and the gap is recorded.
+
+**Closed-union event names.** `ElectronPowerMonitor.on` took `event: string`, so a typo compiled,
+registered and silently never fired. It is now a closed union of the five events the backends use.
+
 ### Not in this program
 
 - **Scene-document.** It is its own commissioned build with its own record. This model's "scene-document materialization" bullet is a consequence to apply *when* that reader is written, not a reason to reopen it here.
