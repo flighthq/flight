@@ -38,6 +38,7 @@ export * from './webShell';
 export * from './webServiceWorkerNotification';
 export * from './webStatusbar';
 export * from './webStorage';
+export * from './webStoragePersistence';
 export * from './webVideoCapability';
 export * from './webMediaFileCapture';
 export * from './webWindow';

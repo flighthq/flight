@@ -26,14 +26,14 @@ describe('getStoragePersistence', () => {
 
   it('captures the query slot once and never crosses into request', async () => {
     const events: string[] = [];
-    const query: StoragePersistenceQueryBackend = createEntity({
-      async getPersistence() {
+    const query = createEntity({
+      async getPersistence(): Promise<StoragePersistenceResult> {
         events.push('query');
         return { outcome: 'persistent', permissionState: 'granted' };
       },
     });
-    const request: StoragePersistenceRequestBackend = createEntity({
-      async requestPersistence() {
+    const request = createEntity({
+      async requestPersistence(): Promise<StoragePersistenceResult> {
         events.push('request');
         return { outcome: 'persistent', permissionState: 'granted' };
       },
@@ -75,14 +75,14 @@ describe('requestStoragePersistence', () => {
 
   it('captures the request slot once and never crosses into query', async () => {
     const events: string[] = [];
-    const query: StoragePersistenceQueryBackend = createEntity({
-      async getPersistence() {
+    const query = createEntity({
+      async getPersistence(): Promise<StoragePersistenceResult> {
         events.push('query');
         return { outcome: 'persistent', permissionState: 'granted' };
       },
     });
-    const request: StoragePersistenceRequestBackend = createEntity({
-      async requestPersistence() {
+    const request = createEntity({
+      async requestPersistence(): Promise<StoragePersistenceResult> {
         events.push('request');
         return { outcome: 'best-effort', permissionState: null };
       },

@@ -63,6 +63,10 @@ export { webShareContentBackend, webShareFilesBackend } from './webShare';
 export { webShellExternalBackend } from './webShell';
 export { enableHostWebStatusBar } from './webStatusbar';
 export { webStorageBackend } from './webStorage';
+export {
+  createWebWindowStoragePersistenceCapabilities,
+  createWebWorkerStoragePersistenceCapabilities,
+} from './webStoragePersistence';
 export { enableHostWebVideoCapability } from './webVideoCapability';
 export { enableHostWebMediaFileCapture } from './webMediaFileCapture';
 export { webHost } from './webHost';

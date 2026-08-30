@@ -34,7 +34,21 @@ import { webScreenCapabilities } from './webScreen';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webShellExternalBackend } from './webShell';
 import { webStorageBackend } from './webStorage';
+import { createWebWindowStoragePersistenceCapabilities } from './webStoragePersistence';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
+
+const webStoragePersistenceCapabilities = createWebWindowStoragePersistenceCapabilities({
+  async getPermissionState() {
+    const status = await navigator.permissions.query({ name: 'persistent-storage' as PermissionName });
+    return status.state;
+  },
+  async persist() {
+    return navigator.storage.persist();
+  },
+  async persisted() {
+    return navigator.storage.persisted();
+  },
+});
 
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
 // groups are intentional: they preserve Host's stable two-level shape without claiming providers that
@@ -95,7 +109,12 @@ export const webHost = createEntity({
   shell: { external: webShellExternalBackend },
   // Browsers cannot register OS-global shortcuts; structural absence is the complete capability truth.
   shortcut: {},
-  storage: { change: webStorageBackend, local: webStorageBackend },
+  storage: {
+    change: webStorageBackend,
+    local: webStorageBackend,
+    persistenceQuery: webStoragePersistenceCapabilities.persistenceQuery,
+    persistenceRequest: webStoragePersistenceCapabilities.persistenceRequest,
+  },
   system: {},
   text: {},
   tray: {},
