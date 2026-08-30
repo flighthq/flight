@@ -7,10 +7,10 @@ import * as midi from './contract';
 
 describe('attachMidiAccessStateSubscription', () => {
   it('pins the exact access origin and emits stable hotplug port entities', async () => {
-    let listener: ((port: unknown) => void) | null = null;
+    const listener: { current: ((port: unknown) => void) | null } = { current: null };
     const release = vi.fn(async () => ({ reason: 'ok' }));
     const access = createAccess(async (next) => {
-      listener = next;
+      listener.current = next;
       return { attachment: createEntity({ release }), reason: 'ok' };
     });
     const subscription = requiredFunction('createMidiAccessStateSubscription')() as SignalEntity;
@@ -20,7 +20,7 @@ describe('attachMidiAccessStateSubscription', () => {
       reason: 'ok',
     });
     const port = createInputPort();
-    listener?.(port);
+    listener.current?.(port);
     expect(seen).toEqual([port]);
     await requiredFunction('detachMidiAccessStateSubscription')(subscription);
     expect(release).toHaveBeenCalledOnce();
@@ -29,10 +29,10 @@ describe('attachMidiAccessStateSubscription', () => {
 
 describe('attachMidiInputMessageSubscription', () => {
   it('copies each byte payload and carries the native event time', async () => {
-    let listener: ((data: Uint8Array, timestamp: number) => void) | null = null;
+    const listener: { current: ((data: Uint8Array, timestamp: number) => void) | null } = { current: null };
     const input = createInputPort({
       attachMessage: async (next) => {
-        listener = next;
+        listener.current = next;
         return { attachment: successfulAttachment(), reason: 'ok' };
       },
     });
@@ -45,7 +45,7 @@ describe('attachMidiInputMessageSubscription', () => {
       reason: 'ok',
     });
     const nativeData = new Uint8Array([0x90, 60, 127]);
-    listener?.(nativeData, 42.5);
+    listener.current?.(nativeData, 42.5);
     nativeData[1] = 1;
     expect(seen).toHaveLength(1);
     expect([...seen[0].data]).toEqual([0x90, 60, 127]);
@@ -56,10 +56,10 @@ describe('attachMidiInputMessageSubscription', () => {
 
 describe('attachMidiPortStateSubscription', () => {
   it('emits the originating port while state and connection stay pull-based', async () => {
-    let listener: (() => void) | null = null;
+    const listener: { current: (() => void) | null } = { current: null };
     const port = createInputPort({
       attachStateChange: async (next) => {
-        listener = next;
+        listener.current = next;
         return { attachment: successfulAttachment(), reason: 'ok' };
       },
     });
@@ -69,7 +69,7 @@ describe('attachMidiPortStateSubscription', () => {
     await expect(requiredFunction('attachMidiPortStateSubscription')(port, subscription)).resolves.toEqual({
       reason: 'ok',
     });
-    listener?.();
+    listener.current?.();
     expect(seen).toEqual([port]);
     expect(Reflect.has(port, 'state')).toBe(false);
     expect(Reflect.has(port, 'connection')).toBe(false);
@@ -148,19 +148,19 @@ describe('detachMidiPortStateSubscription', () => {
 
 describe('disposeMidiAccessStateSubscription', () => {
   it('invalidates an in-flight attach, releases its eventual origin, clears slots, and stays terminal', async () => {
-    let settle: ((value: unknown) => void) | null = null;
+    const settle: { current: ((value: unknown) => void) | null } = { current: null };
     const release = vi.fn(async () => ({ reason: 'ok' }));
     const access = createAccess(
       () =>
         new Promise((resolve) => {
-          settle = resolve;
+          settle.current = resolve;
         }),
     );
     const subscription = requiredFunction('createMidiAccessStateSubscription')() as SignalEntity;
     connectSignal(subscription.onMidiAccessStateChange, vi.fn());
     const attaching = requiredFunction('attachMidiAccessStateSubscription')(access, subscription);
     const disposing = requiredFunction('disposeMidiAccessStateSubscription')(subscription);
-    settle?.({ attachment: createEntity({ release }), reason: 'ok' });
+    settle.current?.({ attachment: createEntity({ release }), reason: 'ok' });
     await attaching;
     await expect(disposing).resolves.toEqual({ reason: 'ok' });
     expect(release).toHaveBeenCalledOnce();
@@ -254,7 +254,7 @@ function requiredFunction(name: string): (...args: unknown[]) => unknown {
   const value: unknown = Reflect.get(midi, name);
   expect(value, `${name} export`).toBeTypeOf('function');
   if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
-  return value;
+  return value as (...args: unknown[]) => unknown;
 }
 
 function successfulAttachment(): object {
