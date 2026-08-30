@@ -459,6 +459,22 @@ describe('isSoftKeyboardVisible', () => {
   });
 });
 
+describe('resetSoftKeyboardBackendForTest', () => {
+  it('clears installed custom providers', () => {
+    setSoftKeyboardInfoBackend(fakeInfoBackend());
+    resetSoftKeyboardBackendForTest();
+    expect(getSoftKeyboardInfoBackend()).toBeNull();
+  });
+});
+
+describe('setSoftKeyboardAccessoryBarBackend', () => {
+  it('sets the custom accessory-bar provider', () => {
+    const backend = fakeAccessoryBarBackend();
+    setSoftKeyboardAccessoryBarBackend(backend);
+    expect(getSoftKeyboardAccessoryBarBackend()).toBe(backend);
+  });
+});
+
 describe('setSoftKeyboardAccessoryBarVisible', () => {
   it('returns operation-unavailable when no backend is set', async () => {
     expect(await setSoftKeyboardAccessoryBarVisible(true)).toBe('operation-unavailable');
@@ -470,6 +486,22 @@ describe('setSoftKeyboardAccessoryBarVisible', () => {
   });
 });
 
+describe('setSoftKeyboardChangeBackend', () => {
+  it('sets the custom change provider', () => {
+    const backend = fakeChangeBackend();
+    setSoftKeyboardChangeBackend(backend);
+    expect(getSoftKeyboardChangeBackend()).toBe(backend);
+  });
+});
+
+describe('setSoftKeyboardInfoBackend', () => {
+  it('sets the custom info provider', () => {
+    const backend = fakeInfoBackend();
+    setSoftKeyboardInfoBackend(backend);
+    expect(getSoftKeyboardInfoBackend()).toBe(backend);
+  });
+});
+
 describe('setSoftKeyboardResizeMode', () => {
   it('returns operation-unavailable when no backend is set', async () => {
     expect(await setSoftKeyboardResizeMode('None')).toBe('operation-unavailable');
@@ -478,6 +510,22 @@ describe('setSoftKeyboardResizeMode', () => {
   it('returns ok when backend is present', async () => {
     setSoftKeyboardResizeModeWriteBackend(fakeResizeModeWriteBackend());
     expect(await setSoftKeyboardResizeMode('Body')).toBe('ok');
+  });
+});
+
+describe('setSoftKeyboardResizeModeWriteBackend', () => {
+  it('sets the custom resize-mode provider', () => {
+    const backend = fakeResizeModeWriteBackend();
+    setSoftKeyboardResizeModeWriteBackend(backend);
+    expect(getSoftKeyboardResizeModeWriteBackend()).toBe(backend);
+  });
+});
+
+describe('setSoftKeyboardScrollAssistBackend', () => {
+  it('sets the custom scroll-assist provider', () => {
+    const backend = fakeScrollAssistBackend();
+    setSoftKeyboardScrollAssistBackend(backend);
+    expect(getSoftKeyboardScrollAssistBackend()).toBe(backend);
   });
 });
 
@@ -500,6 +548,22 @@ describe('setSoftKeyboardStyle', () => {
   it('returns ok when backend is present', async () => {
     setSoftKeyboardStyleBackend(fakeStyleBackend());
     expect(await setSoftKeyboardStyle('Dark')).toBe('ok');
+  });
+});
+
+describe('setSoftKeyboardStyleBackend', () => {
+  it('sets the custom style provider', () => {
+    const backend = fakeStyleBackend();
+    setSoftKeyboardStyleBackend(backend);
+    expect(getSoftKeyboardStyleBackend()).toBe(backend);
+  });
+});
+
+describe('setSoftKeyboardVisibilityBackend', () => {
+  it('sets the custom visibility provider', () => {
+    const backend = fakeVisibilityBackend();
+    setSoftKeyboardVisibilityBackend(backend);
+    expect(getSoftKeyboardVisibilityBackend()).toBe(backend);
   });
 });
 
