@@ -26,7 +26,7 @@ describe('getWgpuScene3DRuntime', () => {
     expect(stateRuntime.registries.meshMaterialRenderers).toBe(materials);
     expect(stateRuntime.registries.modifierSnippets).toBe(modifierSnippets);
     expect(stateRuntime.registries.modifierSnippetRevision).toBe(modifierSnippetRevision);
-    expect(stateRuntime.sceneMeshUploadCache).toBe(scene.uploadCache);
+    expect(stateRuntime.context.sceneMeshUploadCache).toBe(scene.uploadCache);
   });
 });
 

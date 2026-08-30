@@ -118,7 +118,7 @@ describe('defaultWgpuTextLabelRenderer', () => {
     const order: string[] = [];
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     installTestRaster2DSurfaceProvider((surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
@@ -154,7 +154,7 @@ describe('drawWgpuTextLabel', () => {
 
     const firstSurface = (firstData as unknown as { surface: Raster2DSurface }).surface;
     const secondSurface = (secondData as unknown as { surface: Raster2DSurface }).surface;
-    const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const firstImage = firstSurface.image;
     expect(firstSurface).not.toBe(secondSurface);
     expect(firstSurface.image).not.toBe(secondSurface.image);
@@ -206,7 +206,7 @@ describe('drawWgpuTextLabel', () => {
     registerWgpuStandardMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
     drawWgpuTextLabel(state, proxy);
-    const updateSpy = vi.spyOn(getWgpuRenderStateRuntime(state).textureCache, 'get');
+    const updateSpy = vi.spyOn(getWgpuRenderStateRuntime(state).context.textureCache, 'get');
     proxy.alpha = 0.5;
     drawWgpuTextLabel(state, proxy);
     // Version is unchanged, so the rasterization block is skipped entirely on the second draw.

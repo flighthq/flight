@@ -126,7 +126,7 @@ describe('destroyWgpuScale9ShapeData', () => {
     const state = await createWgpuRenderStateForTest();
     const data = createWgpuScale9ShapeData(state, createScale9Shape(grid));
     const surface = acquireWgpuScale9ShapeRasterSurface(getWgpuScale9ShapeData(data)!)!;
-    const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const order: string[] = [];
     const destroy = vi.fn(() => order.push('texture'));
     cache.set(surface.image, { texture: { destroy } } as never);

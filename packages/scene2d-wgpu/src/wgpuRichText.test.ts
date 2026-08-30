@@ -82,7 +82,7 @@ describe('destroyWgpuRichTextData', () => {
     const order: string[] = [];
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     installTestRaster2DSurfaceProvider((surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
@@ -129,7 +129,7 @@ describe('drawWgpuRichText', () => {
 
     const firstOwned = getWgpuRendererData<{ surface: Raster2DSurface | null }>(firstProxy.rendererData)!;
     const secondOwned = getWgpuRendererData<{ surface: Raster2DSurface | null }>(secondProxy.rendererData)!;
-    const cache = getWgpuRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     expect(firstOwned.surface).not.toBeNull();
     expect(secondOwned.surface).not.toBeNull();
     const firstSurface = firstOwned.surface!;
