@@ -281,6 +281,18 @@ The explicit path is precise but verbose. Convenience consts are essential:
 
 These are **discoverable shortcuts to the explicit path**, not a different API. Each const is the same type as a manual assembly. A user starts with the convenience, then replaces it with manual assembly when they want to optimize — and the types guide them because the shape is identical. No tiers (core/standard/full) — one const per backend per dimension. `explain()` covers "am I paying for too much?"
 
+## Entity boundary
+
+Entity is the base type for every SDK object — anything you `create*`, hold a reference to, and pass across call boundaries. The runtime slot is the enforcement mechanism: it forces code through the constructor, which gives consistent V8 hidden classes, portable concrete types (Haxe/Rust/C++ auto-porting), and the package-private runtime extension point. A plain object literal that happens to match the public fields has no runtime, and any function touching `getRuntime(entity)` catches the difference immediately.
+
+**Entity:** Host, Pipeline, GlContextState, WgpuDeviceState, backends, renderers, renderer registries, parser configs, codec registries, nodes, textures, meshes, materials, matrices, rectangles, vectors — anything the user creates and holds.
+
+**Not Entity:** descriptors (plain data literals — effect descriptors, adjustment descriptors, material descriptors), options/config bags (consumed once by a `create*` call and discarded), query results and intermediates (bounds results, hit test results, `out`-parameter values), and type-only constructs (trait interfaces, capability group interfaces, kind constants).
+
+The rule for `create*`: **`create*` always returns Entity. If something shouldn't be Entity, it doesn't use `create*`.** Descriptors use object literals. Options use object literals. There is no `build*`, `make*`, or `assemble*` verb to avoid Entity — the question is whether the thing has identity and ongoing reference. If it does, it's Entity.
+
+**Tree-shaking with const Entity instances.** A const like `webHost` or `scene2dGlPipeline` is a module-scope `createHost(...)` / `createGlPipeline(...)` call. ES modules evaluate lazily: the constructor runs only when the module is first imported. If nobody imports it, it tree-shakes out entirely. But if both `webHost` and individual backends (`webNetBackend`) live in the same file, importing either evaluates the whole file. So the whole-store const and the individual backends live in **separate source files** within the package, re-exported through the package root. Import `webHost` → pay for everything. Import `webNetBackend` → pay for net only.
+
 ## Module-scoped scratch state
 
 Module-scoped `_scratch*`, `_temp*`, and `_pool` variables are **performance infrastructure, not capability dependencies**. They do not move to explicit arguments. The principle: module-scoped state for **allocation/identity** (scratch buffers, object pools, handle counters, guard enable flags) is fine. Module-scoped state for **capabilities** (backends, registries, codecs) is the target of this model.
