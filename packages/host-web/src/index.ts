@@ -2,6 +2,7 @@ export { enableHostWeb } from './enableHostWeb';
 export { webApplicationExitBackend } from './webApplicationExit';
 export { createWebAccessibilityBackend, webAccessibilityBackend } from './webAccessibility';
 export { createWebAppCapabilities } from './webApp';
+export { webAppHost } from './webAppHost';
 export { enableHostWebAudio } from './webAudio';
 export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebBitmapEncode } from './webBitmapEncode';
@@ -46,6 +47,7 @@ export {
   webMediaSessionActionBackend,
   webMediaSessionBackend,
 } from './webMediasession';
+export { webMediaHost } from './webMediaHost';
 export { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 export { createWebMidiAccessCapabilities, createWebMidiPermissionAccessCapabilities } from './webMidi';
 export { createWebNetBackend, webNetBackend } from './webNet';
@@ -56,13 +58,17 @@ export {
 } from './webServiceWorkerNotification';
 export { createWebPlatformBackend, webPlatformBackend } from './webPlatform';
 export { webPowerCapabilities } from './webPower';
+export { webPowerHost } from './webPowerHost';
 export { createWebProtocolCapabilities } from './webProtocol';
+export { webProtocolHost } from './webProtocolHost';
 export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from './webRaster2DSurface';
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';
+export { webScreenHost } from './webScreenHost';
 export { webShareContentBackend, webShareFilesBackend } from './webShare';
 export { webShellExternalBackend } from './webShell';
 export { webStatusBarColorBackend } from './webStatusbar';
 export { webStorageBackend } from './webStorage';
+export { webStorageHost } from './webStorageHost';
 export {
   createWebWindowStoragePersistenceCapabilities,
   createWebWorkerStoragePersistenceCapabilities,
@@ -70,10 +76,13 @@ export {
 export { enableHostWebVideoCapability } from './webVideoCapability';
 export { enableHostWebMediaFileCapture } from './webMediaFileCapture';
 export { webHost } from './webHost';
+export { webSystemHost } from './webSystemHost';
+export { webUiHost } from './webUiHost';
 export {
   createWebFullscreenTargetHandle,
   createWebWindowResizeTargetHandle,
   webFullscreenBackend,
   webWindowBackend,
 } from './webWindow';
+export { webWindowHost } from './webWindowHost';
 export { createWebWgpuRenderSurfaceProvider, enableHostWebWgpuRenderSurface } from './webWgpuRenderSurface';
