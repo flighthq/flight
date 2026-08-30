@@ -28,6 +28,7 @@ import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 import { webPowerCapabilities } from './webPower';
 import { webScreenCapabilities } from './webScreen';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
+import { webShellExternalBackend } from './webShell';
 import { webStorageBackend } from './webStorage';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
@@ -74,6 +75,7 @@ export const webHost = createEntity({
   notification: webNotificationCapabilities,
   screen: webScreenCapabilities,
   share: { content: webShareContentBackend, files: webShareFilesBackend },
+  shell: { external: webShellExternalBackend },
   storage: { change: webStorageBackend, local: webStorageBackend },
   system: {},
   text: {},

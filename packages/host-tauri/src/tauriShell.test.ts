@@ -1,15 +1,16 @@
 import type { TauriApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createTauriShellBackend } from './tauriShell';
+import { makeTauriShellCapabilities } from './tauriShell';
 
-function fakeTauri(reject = false) {
+function fakeTauri(rejection: unknown = NO_REJECTION) {
   const calls: { openUrl: string[]; openPath: string[]; reveal: string[] } = {
     openUrl: [],
     openPath: [],
     reveal: [],
   };
   const guard = async () => {
-    if (reject) throw new Error('boom');
+    if (rejection !== NO_REJECTION) throw rejection;
   };
   const tauri = {
     opener: {
@@ -30,35 +31,45 @@ function fakeTauri(reject = false) {
   return { tauri, calls };
 }
 
-describe('createTauriShellBackend', () => {
-  it('opens URLs and paths through the opener plugin', async () => {
+describe('makeTauriShellCapabilities', () => {
+  it('constructs exactly three Entity providers', () => {
+    const capabilities = makeTauriShellCapabilities(fakeTauri().tauri);
+    expect(Object.keys(capabilities).sort()).toEqual(['external', 'pathOpen', 'pathReveal']);
+    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
+  });
+
+  it('opens URLs and paths and reveals through the opener plugin', async () => {
     const { tauri, calls } = fakeTauri();
-    const backend = createTauriShellBackend(tauri);
-    expect(await backend.openExternal('https://x.test')).toBe(true);
-    expect(await backend.openPath('/tmp/a')).toBe(true);
-    expect(await backend.showItemInFolder('/tmp/a')).toBe(true);
+    const capabilities = makeTauriShellCapabilities(tauri);
+    await expect(capabilities.external?.open('https://x.test')).resolves.toEqual({ reason: 'ok' });
+    await expect(capabilities.pathOpen?.open('/tmp/a')).resolves.toEqual({ reason: 'ok' });
+    await expect(capabilities.pathReveal?.reveal('/tmp/a')).resolves.toEqual({ reason: 'ok' });
     expect(calls.openUrl).toEqual(['https://x.test']);
     expect(calls.openPath).toEqual(['/tmp/a']);
     expect(calls.reveal).toEqual(['/tmp/a']);
   });
 
-  it('reports the error message from openPathResult', async () => {
-    expect(await createTauriShellBackend(fakeTauri().tauri).openPathResult('/tmp/a')).toBe('');
-    expect(await createTauriShellBackend(fakeTauri(true).tauri).openPathResult('/tmp/a')).toBe('boom');
+  it('preserves the path rejection message', async () => {
+    const capabilities = makeTauriShellCapabilities(fakeTauri(new Error('boom')).tauri);
+    await expect(capabilities.pathOpen?.open('/tmp/a')).resolves.toEqual({
+      message: 'boom',
+      reason: 'operation-failed',
+    });
   });
 
-  it('resolves false when the opener rejects', async () => {
-    const backend = createTauriShellBackend(fakeTauri(true).tauri);
-    expect(await backend.openExternal('https://x.test')).toBe(false);
-    expect(await backend.showItemInFolder('/tmp/a')).toBe(false);
+  it('does not turn an empty rejected path open into success', async () => {
+    const capabilities = makeTauriShellCapabilities(fakeTauri('').tauri);
+    await expect(capabilities.pathOpen?.open('/tmp/a')).resolves.toEqual({ message: '', reason: 'operation-failed' });
   });
 
-  it('reports sentinels for trash, shortcut links, and beep', async () => {
-    const backend = createTauriShellBackend(fakeTauri().tauri);
-    expect(await backend.moveToTrash('/tmp/a')).toBe(false);
-    expect(await backend.moveItemsToTrash(['/a', '/b'])).toEqual([false, false]);
-    expect(await backend.readShortcutLink('/a.lnk')).toBeNull();
-    expect(await backend.writeShortcutLink('/a.lnk', { target: '/t' })).toBe(false);
-    expect(() => backend.beep()).not.toThrow();
+  it('maps external and reveal rejection without inventing unsupported slots', async () => {
+    const capabilities = makeTauriShellCapabilities(fakeTauri(new Error('boom')).tauri);
+    await expect(capabilities.external?.open('https://x.test')).resolves.toEqual({ reason: 'operation-failed' });
+    await expect(capabilities.pathReveal?.reveal('/tmp/a')).resolves.toEqual({ reason: 'operation-failed' });
+    expect(capabilities.beep).toBeUndefined();
+    expect(capabilities.shortcutLink).toBeUndefined();
+    expect(capabilities.trash).toBeUndefined();
   });
 });
+
+const NO_REJECTION = Symbol('no rejection');

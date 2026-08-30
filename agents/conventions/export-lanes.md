@@ -128,7 +128,8 @@ A **foreign host** is a runtime Flight targets but does not ship: Electron, Taur
 today; Cairo and Lime next. Flight describes each one's API in `@flighthq/types` as a minimal
 structural interface, and takes **no dependency** on the thing described. `ElectronApi.ts`,
 `TauriApi.ts`, and `CapacitorApi.ts` are the template — the real module satisfies the interface
-structurally, so a consumer passes it straight in (`registerElectronBackends(electron)`).
+structurally, so a consumer passes it with explicit host configuration
+(`registerElectronBackends(electron, { platform: 'windows' })`).
 
 Three properties fall out, and they are the reason for the shape:
 

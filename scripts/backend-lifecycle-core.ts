@@ -123,7 +123,8 @@ export function collectExplicitHostDestroyOwners(
       if (!name.startsWith('destroy') || name.endsWith('Backend')) continue;
       const stem = name.slice('destroy'.length);
       if (stem.length === 0) continue;
-      const parameter = declaration.params[0];
+      // Oxc's declaration.params element type is narrower than its runtime Identifier nodes.
+      const parameter = declaration.params[0] as Node | undefined;
       if (parameter?.type !== 'Identifier') continue;
       const annotation = parameter.typeAnnotation?.typeAnnotation;
       if (annotation?.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') continue;
@@ -142,6 +143,7 @@ export function collectExplicitHostDestroyOwners(
 }
 
 // Assembles the report. Ambient setters and explicit Host-provider destroy functions are supplied in
+// distinct maps, so the report can state which ownership model it actually verified.
 export function createBackendLifecycleReport(
   interfaceNames: readonly string[],
   teardowns: ReadonlyMap<string, string>,

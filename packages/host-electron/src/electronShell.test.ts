@@ -1,73 +1,108 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronShellBackend } from './electronShell';
+import { makeElectronShellCapabilities } from './electronShell';
 
 function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
   return { shell } as unknown as ElectronApi;
 }
 
-describe('createElectronShellBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronShellBackend(fakeElectron({}))).toBe(true);
+describe('makeElectronShellCapabilities', () => {
+  it('constructs every Windows provider as an Entity', () => {
+    const capabilities = makeElectronShellCapabilities(fakeElectron({}), 'windows');
+    expect(Object.keys(capabilities).sort()).toEqual([
+      'beep',
+      'external',
+      'pathOpen',
+      'pathReveal',
+      'shortcutLink',
+      'trash',
+    ]);
+    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
-  it('openExternal returns true on success and false on throw', async () => {
-    const ok = createElectronShellBackend(fakeElectron({ openExternal: async () => {} }));
-    expect(await ok.openExternal('https://example.test')).toBe(true);
-    const bad = createElectronShellBackend(
+  it('omits shortcutLink on an injected non-Windows platform', () => {
+    expect(Object.keys(makeElectronShellCapabilities(fakeElectron({}), 'linux')).sort()).toEqual([
+      'beep',
+      'external',
+      'pathOpen',
+      'pathReveal',
+      'trash',
+    ]);
+  });
+
+  it('maps awaited external completion and rejection', async () => {
+    const ok = makeElectronShellCapabilities(fakeElectron({ openExternal: async () => {} }), 'linux');
+    await expect(ok.external?.open('https://example.test')).resolves.toEqual({ reason: 'ok' });
+    const failed = makeElectronShellCapabilities(
       fakeElectron({
         openExternal: async () => {
-          throw new Error('no');
+          throw new Error('denied');
         },
       }),
+      'linux',
     );
-    expect(await bad.openExternal('https://example.test')).toBe(false);
+    await expect(failed.external?.open('https://example.test')).resolves.toEqual({ reason: 'operation-failed' });
   });
 
-  it('openPath maps the empty-string success convention to true', async () => {
-    const ok = createElectronShellBackend(fakeElectron({ openPath: async () => '' }));
-    expect(await ok.openPath('/a')).toBe(true);
-    const err = createElectronShellBackend(fakeElectron({ openPath: async () => 'no such file' }));
-    expect(await err.openPath('/a')).toBe(false);
+  it('preserves an Electron path error string', async () => {
+    const success = makeElectronShellCapabilities(fakeElectron({ openPath: async () => '' }), 'linux');
+    await expect(success.pathOpen?.open('/a')).resolves.toEqual({ reason: 'ok' });
+    const failed = makeElectronShellCapabilities(fakeElectron({ openPath: async () => 'no such file' }), 'linux');
+    await expect(failed.pathOpen?.open('/a')).resolves.toEqual({
+      message: 'no such file',
+      reason: 'operation-failed',
+    });
   });
 
-  it('showItemInFolder returns true after revealing the path', async () => {
-    let revealed = '';
-    const backend = createElectronShellBackend(
+  it('does not turn an empty rejected path open into success', async () => {
+    const capabilities = makeElectronShellCapabilities(
       fakeElectron({
-        showItemInFolder: (path: string) => {
+        openPath: async () => {
+          throw new Error('');
+        },
+      }),
+      'linux',
+    );
+    await expect(capabilities.pathOpen?.open('/a')).resolves.toEqual({ message: '', reason: 'operation-failed' });
+  });
+
+  it('maps path reveal and trash outcomes', async () => {
+    let revealed = '';
+    const capabilities = makeElectronShellCapabilities(
+      fakeElectron({
+        showItemInFolder(path) {
           revealed = path;
         },
+        trashItem: async () => {},
       }),
+      'linux',
     );
-    expect(await backend.showItemInFolder('/a/b')).toBe(true);
+    await expect(capabilities.pathReveal?.reveal('/a/b')).resolves.toEqual({ reason: 'ok' });
+    await expect(capabilities.trash?.moveToTrash('/a/b')).resolves.toEqual({ reason: 'ok' });
     expect(revealed).toBe('/a/b');
   });
 
-  it('moveToTrash returns true on success and false on throw', async () => {
-    const ok = createElectronShellBackend(fakeElectron({ trashItem: async () => {} }));
-    expect(await ok.moveToTrash('/a')).toBe(true);
-    const bad = createElectronShellBackend(
+  it('keeps shortcut read and write outcomes method-tight', async () => {
+    const capabilities = makeElectronShellCapabilities(
       fakeElectron({
-        trashItem: async () => {
-          throw new Error('no');
-        },
+        readShortcutLink: () => ({ target: '/target' }),
+        writeShortcutLink: () => false,
       }),
+      'windows',
     );
-    expect(await bad.moveToTrash('/a')).toBe(false);
+    await expect(capabilities.shortcutLink?.read('/app.lnk')).resolves.toEqual({
+      link: { target: '/target' },
+      reason: 'ok',
+    });
+    await expect(capabilities.shortcutLink?.write('/app.lnk', { target: '/target' }, 'replace')).resolves.toEqual({
+      reason: 'operation-failed',
+    });
   });
 
-  it('beep delegates to the shell', () => {
-    let beeped = false;
-    const backend = createElectronShellBackend(
-      fakeElectron({
-        beep: () => {
-          beeped = true;
-        },
-      }),
-    );
-    backend.beep();
-    expect(beeped).toBe(true);
+  it('dispatches beep synchronously', () => {
+    const beep = vi.fn();
+    makeElectronShellCapabilities(fakeElectron({ beep }), 'linux').beep?.beep();
+    expect(beep).toHaveBeenCalledOnce();
   });
 });

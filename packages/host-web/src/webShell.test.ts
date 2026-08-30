@@ -1,22 +1,34 @@
-import { enableHostWebShell, resetHostWebShellForTest } from './webShell';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-describe('enableHostWebShell', () => {
-  afterEach(() => resetHostWebShellForTest());
+import { webShellExternalBackend } from './webShell';
 
-  it('does not throw on first call', () => {
-    expect(() => enableHostWebShell()).not.toThrow();
+afterEach(() => vi.unstubAllGlobals());
+
+describe('webShellExternalBackend', () => {
+  it('is a stable Entity', () => {
+    expect(EntityRuntimeKey in webShellExternalBackend).toBe(true);
   });
 
-  it('is idempotent', () => {
-    enableHostWebShell();
-    expect(() => enableHostWebShell()).not.toThrow();
+  it('reports popup blocking when window.open returns null', async () => {
+    vi.stubGlobal('window', { open: () => null });
+    await expect(webShellExternalBackend.open('https://example.test')).resolves.toEqual({
+      reason: 'popup-blocked',
+    });
   });
-});
 
-describe('resetHostWebShellForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebShell();
-    resetHostWebShellForTest();
-    expect(() => enableHostWebShell()).not.toThrow();
+  it('reports success only when window.open returns a window', async () => {
+    vi.stubGlobal('window', { open: () => ({}) });
+    await expect(webShellExternalBackend.open('https://example.test')).resolves.toEqual({ reason: 'ok' });
+  });
+
+  it('reports operation failure when the browser API throws', async () => {
+    vi.stubGlobal('window', {
+      open() {
+        throw new Error('denied');
+      },
+    });
+    await expect(webShellExternalBackend.open('https://example.test')).resolves.toEqual({
+      reason: 'operation-failed',
+    });
   });
 });

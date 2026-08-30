@@ -41,8 +41,9 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/entity": "*",
     "typescript": "^5.3.0"
   },
-  "description": "OS shell integration over a swappable web/native backend: open external URLs and paths, reveal items in the file manager, move to trash, beep",
+  "description": "OS shell commands over six explicit Host capability slots with required external URL policy",
   "sideEffects": false
 }

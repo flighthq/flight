@@ -17,7 +17,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-The Electron main-process host adapter -- concrete implementations of Flight's platform/host capability seams (`*Backend` traits in `@flighthq/types`) realized over the real `electron` module. An adapter, not a domain library: it owns no capability semantics of its own, only the translation between a Flight seam and an Electron API call. `registerElectronBackends(electron)` returns an explicit Host for migrated capabilities, including `Host.updater.command`, while still installing unmigrated package-local seams. The `electron` module is injected (typed against a local `ElectronApi` interface), so the package carries no `electron` dependency and is fake-testable. Not re-exported from `@flighthq/sdk`. No Rust mirror (`crate: null`) -- Electron's substrate does not exist in the Rust box.
+The Electron main-process host adapter -- concrete implementations of Flight's platform/host capability seams (`*Backend` traits in `@flighthq/types`) realized over the real `electron` module. An adapter, not a domain library: it owns no capability semantics of its own, only the translation between a Flight seam and an Electron API call. `registerElectronBackends(electron, options)` composes migrated explicit Host slots, including updater and Shell, while installing remaining package-local seams. The `electron` module and required platform configuration are injected (typed against local interfaces), so the package carries no `electron` dependency and is fake-testable. Not re-exported from `@flighthq/sdk`. No Rust mirror (`crate: null`) -- Electron's substrate does not exist in the Rust box.
 
 ## Decisions
 

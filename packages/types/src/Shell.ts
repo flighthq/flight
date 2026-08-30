@@ -1,41 +1,64 @@
-// Operating-system shell integration seam. Free functions in @flighthq/shell delegate to the active
-// ShellBackend (web default or a native host's). Operations the web cannot perform — revealing a file
-// in the OS file manager, moving a path to the trash, opening an arbitrary local path, reading/writing
-// Windows .lnk shortcut links — resolve to false / [] / null / an error string rather than throwing.
-// They are expected-failure surfaces on the web, not programmer errors.
-export interface ShellBackend {
+import type { Entity } from './Entity';
+
+// Opening an external URL is security-sensitive, so every call must name the schemes it permits.
+// There is deliberately no default and no allow-all sentinel: callers decide policy before a provider
+// is dispatched. Scheme names omit the trailing colon, for example ['https', 'mailto'].
+export interface ShellExternalUrlPolicy {
+  readonly allowedSchemes: readonly string[];
+}
+
+export type ShellExternalOutcome = {
+  readonly reason: 'blocked-scheme' | 'ok' | 'operation-failed' | 'popup-blocked';
+};
+
+export type ShellPathOpenOutcome =
+  | { readonly reason: 'ok' }
+  | { readonly message: string; readonly reason: 'operation-failed' };
+
+export type ShellPathRevealOutcome = { readonly reason: 'ok' | 'operation-failed' };
+
+export type ShellShortcutLinkReadOutcome =
+  | { readonly link: Readonly<ShellShortcutLink>; readonly reason: 'ok' }
+  | { readonly message: string; readonly reason: 'operation-failed' };
+
+export type ShellShortcutLinkWriteOutcome = { readonly reason: 'ok' | 'operation-failed' };
+
+export type ShellTrashOutcome = { readonly reason: 'ok' | 'operation-failed' };
+
+// The six provider interfaces are separate because host coverage differs by operation. An omitted
+// Host.shell slot is capability absence, never a provider whose methods return unsupported sentinels.
+// These bounded commands own no whole-provider resource, so their Entity identity has no destroy hook.
+export interface ShellBeepBackend extends Entity {
   beep(): void;
-  moveItemsToTrash(paths: readonly string[]): Promise<readonly boolean[]>;
-  moveToTrash(path: string): Promise<boolean>;
-  openExternal(url: string, options?: Readonly<ShellOpenExternalOptions>): Promise<boolean>;
-  openPath(path: string, options?: Readonly<ShellOpenPathOptions>): Promise<boolean>;
-  // Opens a local path and resolves to the OS error message, or '' on success.
-  openPathResult(path: string, options?: Readonly<ShellOpenPathOptions>): Promise<string>;
-  readShortcutLink(shortcutPath: string): Promise<ShellShortcutLink | null>;
-  showItemInFolder(path: string): Promise<boolean>;
-  writeShortcutLink(
+}
+
+export interface ShellExternalBackend extends Entity {
+  open(url: string): Promise<ShellExternalOutcome>;
+}
+
+export interface ShellPathOpenBackend extends Entity {
+  open(path: string): Promise<ShellPathOpenOutcome>;
+}
+
+export interface ShellPathRevealBackend extends Entity {
+  reveal(path: string): Promise<ShellPathRevealOutcome>;
+}
+
+export interface ShellShortcutLinkBackend extends Entity {
+  read(shortcutPath: string): Promise<ShellShortcutLinkReadOutcome>;
+  write(
     shortcutPath: string,
     link: Readonly<ShellShortcutLink>,
-    operation?: ShellShortcutWriteOperation,
-  ): Promise<boolean>;
+    operation: ShellShortcutWriteOperation,
+  ): Promise<ShellShortcutLinkWriteOutcome>;
 }
 
-// Options for openShellExternalUrl. activate raises the opened application to the foreground (macOS);
-// it has no web equivalent and is ignored by the web backend.
-export interface ShellOpenExternalOptions {
-  activate?: boolean;
-}
-
-// Options for openShellPath / openShellPathResult. workingDirectory sets the working directory for
-// the launched application; application names a specific OS application to open the path with
-// (defaulting to the path's registered handler). Both are native-host only.
-export interface ShellOpenPathOptions {
-  application?: string;
-  workingDirectory?: string;
+export interface ShellTrashBackend extends Entity {
+  moveToTrash(path: string): Promise<ShellTrashOutcome>;
 }
 
 // A Windows .lnk shell shortcut link. target is the path the shortcut points to; the remaining
-// fields are optional shortcut metadata populated by native hosts.
+// fields are optional shortcut metadata populated by the Windows provider.
 export interface ShellShortcutLink {
   target: string;
   appUserModelId?: string;
@@ -46,6 +69,5 @@ export interface ShellShortcutLink {
   workingDirectory?: string;
 }
 
-// How writeShellShortcutLink applies a shortcut link at a path: create a new link (failing if one
-// exists), update an existing link's fields, or replace it wholesale. Defaults to 'create'.
+// How writeShellShortcutLink applies a shortcut link at a path.
 export type ShellShortcutWriteOperation = 'create' | 'replace' | 'update';

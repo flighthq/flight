@@ -91,7 +91,14 @@ import type {
 } from './Screen';
 import type { SensorsBackend } from './Sensors';
 import type { ShareContentBackend, ShareFilesBackend } from './Share';
-import type { ShellBackend } from './Shell';
+import type {
+  ShellBeepBackend,
+  ShellExternalBackend,
+  ShellPathOpenBackend,
+  ShellPathRevealBackend,
+  ShellShortcutLinkBackend,
+  ShellTrashBackend,
+} from './Shell';
 import type { ShortcutBackend } from './Shortcut';
 import type { SocketBackend } from './Socket';
 import type { StatusBarBackend } from './StatusBar';
@@ -119,6 +126,7 @@ export interface Host extends Entity {
   readonly notification: HostNotificationCapabilities;
   readonly screen: HostScreenCapabilities;
   readonly share: HostShareCapabilities;
+  readonly shell: HostShellCapabilities;
   readonly storage: HostStorageCapabilities;
   readonly system: HostSystemCapabilities;
   readonly text: HostTextCapabilities;
@@ -255,6 +263,17 @@ export interface HostScreenCapabilities {
   readonly query?: ScreenQueryBackend;
 }
 
+// Shell is top-level because its six command capabilities have distinct provider coverage. Every
+// Host names the group; omitted slots mean genuine absence, never a false-returning stub.
+export interface HostShellCapabilities {
+  readonly beep?: ShellBeepBackend;
+  readonly external?: ShellExternalBackend;
+  readonly pathOpen?: ShellPathOpenBackend;
+  readonly pathReveal?: ShellPathRevealBackend;
+  readonly shortcutLink?: ShellShortcutLinkBackend;
+  readonly trash?: ShellTrashBackend;
+}
+
 export interface HostStorageCapabilities {
   readonly change?: StorageChangeBackend;
   readonly fileSystem?: FileSystemBackend;
@@ -280,7 +299,6 @@ export interface HostTextCapabilities {
 
 export interface HostUiCapabilities {
   readonly fullscreen?: FullscreenBackend;
-  readonly shell?: ShellBackend;
   readonly statusBar?: StatusBarBackend;
   readonly tray?: TrayBackend;
 }
@@ -667,8 +685,28 @@ export interface HasShareFiles {
   readonly share: { readonly files: ShareFilesBackend };
 }
 
-export interface HasUiShell {
-  readonly ui: { readonly shell: ShellBackend };
+export interface HasShellBeep {
+  readonly shell: { readonly beep: ShellBeepBackend };
+}
+
+export interface HasShellExternal {
+  readonly shell: { readonly external: ShellExternalBackend };
+}
+
+export interface HasShellPathOpen {
+  readonly shell: { readonly pathOpen: ShellPathOpenBackend };
+}
+
+export interface HasShellPathReveal {
+  readonly shell: { readonly pathReveal: ShellPathRevealBackend };
+}
+
+export interface HasShellShortcutLink {
+  readonly shell: { readonly shortcutLink: ShellShortcutLinkBackend };
+}
+
+export interface HasShellTrash {
+  readonly shell: { readonly trash: ShellTrashBackend };
 }
 
 export interface HasUiStatusBar {

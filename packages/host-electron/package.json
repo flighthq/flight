@@ -50,6 +50,7 @@
     "@flighthq/power": "*",
     "@flighthq/protocol": "*",
     "@flighthq/shell": "*",
+    "@flighthq/screen": "*",
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
     "@flighthq/storage": "*",
@@ -59,6 +60,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Electron host backend: registers Electron main-process implementations of Flight's window/app/dialog/clipboard/menu/tray/shortcut/screen/power/notification/shell/protocol/updater/ipc/storage seams",
+  "description": "Electron host adapter with injected API/platform configuration and explicit capability composition",
   "sideEffects": false
 }

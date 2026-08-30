@@ -43,7 +43,10 @@ function installElectronProbe(): HostProbeInstallResult {
     // Electron's NativeImage parameter is nominally richer than Flight's dependency-free handle.
     Tray: electron.Tray as ElectronApi['Tray'],
   };
-  const host = registerElectronBackends(api, { storageFileName: 'flight-host-probe-storage.json' });
+  const host = registerElectronBackends(api, {
+    platform: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux',
+    storageFileName: 'flight-host-probe-storage.json',
+  });
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
   const results: HostProbeResult[] = [];
 

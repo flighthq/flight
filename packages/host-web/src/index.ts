@@ -51,7 +51,7 @@ export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from '
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';
 export { enableHostWebSensors } from './webSensors';
 export { webShareContentBackend, webShareFilesBackend } from './webShare';
-export { enableHostWebShell } from './webShell';
+export { webShellExternalBackend } from './webShell';
 export { enableHostWebStatusBar } from './webStatusbar';
 export { webStorageBackend } from './webStorage';
 export { enableHostWebVideoCapability } from './webVideoCapability';

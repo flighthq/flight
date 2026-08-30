@@ -18,6 +18,7 @@ describe('createHostProbeProviderResults', () => {
         'power',
         'screen',
         'share',
+        'shell',
         'storage',
         'window',
       ]),
@@ -48,6 +49,6 @@ describe('getRequiredHostProbeCapabilities', () => {
     expect(getRequiredHostProbeCapabilities('capacitor').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('tauri').size).toBe(10);
     expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(12);
-    expect(getRequiredHostProbeCapabilities('web').size).toBe(11);
+    expect(getRequiredHostProbeCapabilities('web').size).toBe(12);
   });
 });

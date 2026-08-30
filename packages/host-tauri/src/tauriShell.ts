@@ -1,65 +1,52 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ShellBackend, TauriApi } from '@flighthq/types/contract';
+import type {
+  EntityRuntimeKey,
+  HostShellCapabilities,
+  ShellExternalBackend,
+  ShellPathOpenBackend,
+  ShellPathRevealBackend,
+  TauriApi,
+} from '@flighthq/types/contract';
 
-// Maps Flight's ShellBackend onto Tauri's async `@tauri-apps/plugin-opener`. Opening a URL or path in
-// the OS default handler and revealing a file in the file manager map directly; async operations
-// resolve to false on failure rather than throwing (expected-failure surfaces). Tauri exposes no trash
-// operation, no Windows .lnk shortcut read/write, and no system beep, so those methods report the
-// contract sentinels (false / [] / null / no-op).
-export function createTauriShellBackend(tauri: TauriApi): ShellBackend {
+// Tauri's opener plugin provides exactly external URL, path-open, and path-reveal commands. Every
+// provider is an Entity; unsupported trash, shortcut-link, and beep slots are omitted by construction.
+export function makeTauriShellCapabilities(
+  tauri: TauriApi,
+): HostShellCapabilities & Required<Pick<HostShellCapabilities, 'external' | 'pathOpen' | 'pathReveal'>> {
   const opener = tauri.opener;
-  return createEntity({
-    async openExternal(url) {
+  const external: ShellExternalBackend = createEntity({
+    async open(url) {
       try {
         await opener.openUrl(url);
-        return true;
+        return { reason: 'ok' };
       } catch {
-        return false;
+        return { reason: 'operation-failed' };
       }
     },
-    async openPath(path) {
+  } satisfies Omit<ShellExternalBackend, typeof EntityRuntimeKey>);
+  const pathOpen: ShellPathOpenBackend = createEntity({
+    async open(path) {
       try {
         await opener.openPath(path);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    async openPathResult(path) {
-      // Tauri's opener rejects with an error on failure; surface its message, '' on success.
-      try {
-        await opener.openPath(path);
-        return '';
+        return { reason: 'ok' };
       } catch (error) {
-        return error instanceof Error ? error.message : String(error);
+        return { message: errorMessage(error), reason: 'operation-failed' };
       }
     },
-    async showItemInFolder(path) {
+  } satisfies Omit<ShellPathOpenBackend, typeof EntityRuntimeKey>);
+  const pathReveal: ShellPathRevealBackend = createEntity({
+    async reveal(path) {
       try {
         await opener.revealItemInDir(path);
-        return true;
+        return { reason: 'ok' };
       } catch {
-        return false;
+        return { reason: 'operation-failed' };
       }
     },
-    async moveToTrash() {
-      // Tauri's opener has no trash operation; report unsupported.
-      return false;
-    },
-    async moveItemsToTrash(paths) {
-      // No trash operation — report per-path failure without pretending success.
-      return paths.map(() => false);
-    },
-    async readShortcutLink() {
-      // Tauri has no Windows .lnk shortcut reader; report null.
-      return null;
-    },
-    async writeShortcutLink() {
-      // Tauri has no Windows .lnk shortcut writer; report unsupported.
-      return false;
-    },
-    beep() {
-      // Tauri exposes no system beep; no-op.
-    },
-  });
+  } satisfies Omit<ShellPathRevealBackend, typeof EntityRuntimeKey>);
+  return { external, pathOpen, pathReveal };
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

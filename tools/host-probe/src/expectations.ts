@@ -88,6 +88,7 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'power',
     'screen',
     'share',
+    'shell',
     'storage',
     'window',
   ]),

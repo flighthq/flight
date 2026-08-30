@@ -138,7 +138,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 
 1. **host-web** (23): genuinely browser-required. Extracted to `@flighthq/host-web`.
 2. **ambient-language** (3): standard-JS implementations. Stay inline, structurally unchanged.
-3. **none** (12): 7 strict-majority no-op + 5 all-sentinel.
+3. **none** (11): 6 strict-majority no-op + 5 all-sentinel.
 
 ### Complete table
 
@@ -173,7 +173,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 27 | screen | createWebScreenCapabilities | 4 slots | **host-web** | DOM+window | Stable query/change/details/permissionChange slots over Window.screen/ScreenDetails |
 | 28 | sensors | createWebSensorsBackend | 17/4 | **host-web** | window | Generic Sensor API, devicemotion/deviceorientation |
 | 29 | share | webShareContentBackend / webShareFilesBackend | 3/0 + 3/0 | **host-web** | nav | navigator.canShare/share |
-| 30 | shell | createWebShellBackend | 1/8 | **none** | — | 88.9% false. |
+| 30 | shell | webShellExternalBackend | 1/0 | **host-web** | window | Stable Entity over window.open; the eight native-only aggregate methods were deleted. |
 | 31 | shortcut | createWebShortcutBackend | 0/7 | **none** | — | ALL sentinel. |
 | 32 | socket | createWebSocketBackend | 1/0 | **ambient** | — | WHATWG WebSocket. Stays inline, unchanged. |
 | 33 | statusbar | createWebStatusBarBackend | 2/4 | **none** | — | 66.7% false. |
@@ -187,12 +187,12 @@ The inventory must use the record's exact current headings as its schema: `Manda
 
 | Outcome | Count | Modules |
 |---------|-------|---------|
-| **host-web** | 23 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, permissions, platform, screen, sensors, share, storage, webcam |
+| **host-web** | 24 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, permissions, platform, screen, sensors, share, shell, storage, webcam |
 | **ambient-language** | 3 | net, socket, textsegment |
-| **none / strict-majority** | 7 | app (9G/29S), application/window (10G/18S), menu (1G/2S), power (6G/7S), protocol (3G/7S), shell (1G/8S), statusbar (2G/4S) |
+| **none / strict-majority** | 6 | app (9G/29S), application/window (10G/18S), menu (1G/2S), power (6G/7S), protocol (3G/7S), statusbar (2G/4S) |
 | **none / all-sentinel** | 5 | ipc (0/4), log (0/1), shortcut (0/7), tray (0/19), updater (0/21) |
 
-**False concentration:** 12 NONE rows contain 159 methods: 32 genuine, 127 sentinel (79.9%). The other 26 rows: 21 sentinel among 169 (12.4%).
+**False concentration:** 11 NONE rows contain 150 methods: 31 genuine, 119 sentinel (79.3%). The other 27 rows: 21 sentinel among 170 (12.4%).
 
 ---
 
@@ -260,7 +260,7 @@ Three families: wake-lock, battery, page-lifecycle. Must not recombine.
 
 | Method | API evidence | Narrow semantic home |
 |--------|-------------|---------------------|
-| openExternal | window.open with scheme allowlist | HOST-WEB/Window — external-URL opener |
+| openExternal | window.open after caller-owned scheme policy | DELIVERED — stable `webShellExternalBackend` at `webHost.shell.external` |
 
 ### 5.7 statusbar genuine minority (2 methods)
 
@@ -331,7 +331,7 @@ Accessibility has graduated from this ambient global-singleton classification. `
 ### enableHostWeb() membership
 
 `enableHostWeb()` composes the 19 remaining ambient global-singleton enablers. Cursor is excluded
-(per-instance); Accessibility, Clipboard, Connectivity, MediaSession, and Screen are excluded because
+(per-instance); Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell are excluded because
 they are stable explicit `webHost` slots.
 
 ```typescript
@@ -358,9 +358,9 @@ export function enableHostWeb(): void {
 }
 ```
 
-Not included: Accessibility, Clipboard, Connectivity, MediaSession, and Screen (explicit `webHost`
+Not included: Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell (explicit `webHost`
 slots), Cursor (per-instance factory, not an enabler), ipc, log, shortcut, tray, updater (all-sentinel),
-app, application-window, menu, power, protocol, shell, statusbar (strict-majority no-op), net, socket,
+app, application-window, menu, power, protocol, statusbar (strict-majority no-op), net, socket,
 textsegment (ambient-language, inline).
 
 ---

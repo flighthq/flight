@@ -93,6 +93,8 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     notification: createCapacitorNotificationCapabilities(capacitor),
     screen: {},
     share: { content: createCapacitorShareContentBackend(capacitor) },
+    // Capacitor exposes none of Shell's six native command capabilities.
+    shell: {},
     storage: {},
     system: {},
     text: {},

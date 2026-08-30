@@ -1,7 +1,6 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
-import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -47,7 +46,6 @@ afterEach(() => {
   setAppBackend(null);
   setTrayBackend(null);
   setShortcutBackend(null);
-  setShellBackend(null);
 });
 
 describe('registerTauriBackends', () => {
@@ -66,6 +64,12 @@ describe('registerTauriBackends', () => {
     expect(host.window.open).toBeTypeOf('function');
     expect(getPlatformName()).toBe('linux');
     expect(await readClipboardText(host)).toBe('TAURI-TEXT');
+  });
+
+  it('claims exactly the three genuine Shell slots', () => {
+    const host = registerTauriBackends(fakeTauri());
+    expect(Object.keys(host.shell).sort()).toEqual(['external', 'pathOpen', 'pathReveal']);
+    for (const provider of Object.values(host.shell)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });
 

@@ -1,7 +1,6 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
-import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
@@ -12,6 +11,9 @@ import type {
   HasDialogFileSave,
   HasDialogMessage,
   HasNotificationDelivery,
+  HasShellExternal,
+  HasShellPathOpen,
+  HasShellPathReveal,
   HasMenuApplication,
   HasMenuPopup,
   HasMenuSelect,
@@ -32,7 +34,7 @@ import {
 import { createTauriMenuBackends } from './tauriMenu';
 import { createTauriNotificationCapabilities } from './tauriNotification';
 import { createTauriPlatformBackend } from './tauriPlatform';
-import { createTauriShellBackend } from './tauriShell';
+import { makeTauriShellCapabilities } from './tauriShell';
 import { createTauriShortcutBackend } from './tauriShortcut';
 import { createTauriTrayBackend } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
@@ -47,6 +49,9 @@ type TauriHost = Host &
   HasMenuPopup &
   HasMenuSelect &
   HasNotificationDelivery &
+  HasShellExternal &
+  HasShellPathOpen &
+  HasShellPathReveal &
   HasWindowAttach &
   HasWindowOpen;
 
@@ -71,12 +76,12 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
   };
   const notification = createTauriNotificationCapabilities(tauri);
   const menu = createTauriMenuBackends(tauri);
+  const shell = makeTauriShellCapabilities(tauri);
   const window = createTauriWindowBackend(tauri);
   setPlatformBackend(createTauriPlatformBackend(tauri));
   setAppBackend(createTauriAppBackend(tauri));
   setTrayBackend(createTauriTrayBackend(tauri));
   setShortcutBackend(createTauriShortcutBackend(tauri));
-  setShellBackend(createTauriShellBackend(tauri));
   return createEntity({
     accessibility: {},
     app: {},
@@ -94,6 +99,7 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     notification,
     screen: {},
     share: {},
+    shell,
     storage: {},
     system: {},
     text: {},

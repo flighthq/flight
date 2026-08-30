@@ -38,7 +38,6 @@
     { "path": "../screen" },
     { "path": "../sensors" },
     { "path": "../share" },
-    { "path": "../shell" },
     { "path": "../signals" },
     { "path": "../statusbar" },
     { "path": "../storage" },

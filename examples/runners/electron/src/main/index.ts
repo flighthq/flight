@@ -124,7 +124,9 @@ void app.whenReady().then(() => {
     // Electron's NativeImage parameter is nominally richer than Flight's dependency-free handle.
     Tray: electron.Tray as ElectronApi['Tray'],
   };
-  const host = registerElectronBackends(electronApi);
+  const host = registerElectronBackends(electronApi, {
+    platform: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux',
+  });
   installIpcBridge(host);
 
   mainWindow = createApplicationWindow();

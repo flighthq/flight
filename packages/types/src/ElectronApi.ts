@@ -8,7 +8,7 @@
 //     fs,
 //     Tray: electron.Tray as ElectronApi['Tray'],
 //   };
-//   registerElectronBackends(electronApi);
+//   registerElectronBackends(electronApi, { platform: 'windows' });
 //
 // Typing it here (rather than importing 'electron') keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Electron surface the seams require, which is the

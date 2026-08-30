@@ -136,7 +136,6 @@
     "@flighthq/host-tauri createTauriMenuBackend",
     "@flighthq/host-tauri createTauriNotificationCapabilities",
     "@flighthq/host-tauri createTauriPlatformBackend",
-    "@flighthq/host-tauri createTauriShellBackend",
     "@flighthq/host-tauri createTauriShortcutBackend",
     "@flighthq/host-tauri createTauriTrayBackend",
     "@flighthq/host-tauri createTauriWindowBackend",

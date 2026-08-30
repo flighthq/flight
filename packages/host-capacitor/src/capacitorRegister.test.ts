@@ -123,6 +123,11 @@ describe('capacitorHost', () => {
   it('claims no native window operations', () => {
     expect(capacitorHost(fakeCapacitor()).window).toEqual({});
   });
+
+  it('names Shell as an exact empty capability group', () => {
+    const host = capacitorHost(fakeCapacitor());
+    expect(host.shell).toEqual({});
+  });
 });
 
 describe('registerCapacitorBackends', () => {
