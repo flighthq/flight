@@ -76,6 +76,7 @@ export {
 export { enableHostWebVideoCapability } from './webVideoCapability';
 export { enableHostWebMediaFileCapture } from './webMediaFileCapture';
 export { webHost } from './webHost';
+export { webHostNet } from './webHostNet';
 export { webSystemHost } from './webSystemHost';
 export { webUiHost } from './webUiHost';
 export {
