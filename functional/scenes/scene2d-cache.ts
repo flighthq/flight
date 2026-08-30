@@ -25,7 +25,10 @@ import {
   createRenderCache,
   createShape,
   createWgpuCacheState,
+  createWgpuPipeline,
   getBitmapPixelRgb,
+  getCanvasRenderStateTextureResolvers,
+  getWgpuRenderStateRuntime,
   refreshCanvasRenderCache,
   refreshGlRenderCache,
   refreshWgpuRenderCache,
@@ -91,8 +94,19 @@ addNodeChild(root, subtree);
 // useRenderCache(state, source, cache) attaches the cache so the screen pass composites it.
 if (target.kind === 'canvas') {
   const cache = createRenderCache();
-  const cacheState = createCanvasCacheState(target.state);
-  refreshCanvasRenderCache(cacheState, cache, subtree);
+  const cacheState = createCanvasCacheState(
+    target.state,
+    target.state.surface,
+    target.state.pipeline,
+    getCanvasRenderStateTextureResolvers(target.state),
+    {
+      imageSmoothingEnabled: target.state.allowSmoothing,
+      pixelRatio: target.state.pixelRatio,
+      roundPixels: target.state.roundPixels,
+      sceneGraphSyncPolicy: target.state.sceneGraphSyncPolicy,
+    },
+  );
+  refreshCanvasRenderCache(target.state, cacheState, cache, subtree);
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgl') {
   const cache = createRenderCache();
@@ -106,8 +120,19 @@ if (target.kind === 'canvas') {
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgpu') {
   const cache = createRenderCache();
-  const cacheState = createWgpuCacheState(target.state);
-  refreshWgpuRenderCache(cacheState, cache, subtree);
+  const cacheState = createWgpuCacheState(
+    target.state,
+    target.state.deviceState,
+    createWgpuPipeline(getWgpuRenderStateRuntime(target.state).registries),
+    {
+      format: target.state.format,
+      imageSmoothingEnabled: target.state.allowSmoothing,
+      pixelRatio: target.state.pixelRatio,
+      roundPixels: target.state.roundPixels,
+      sceneGraphSyncPolicy: target.state.sceneGraphSyncPolicy,
+    },
+  );
+  refreshWgpuRenderCache(target.state, cacheState, cache, subtree);
   useRenderCache(target.state, subtree, cache);
 }
 

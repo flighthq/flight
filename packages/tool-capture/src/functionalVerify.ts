@@ -14,7 +14,7 @@ import type {
   DomRenderState,
   GlRenderState,
   Bitmap,
-  WgpuRenderState,
+  WgpuPresentationRenderState,
 } from '@flighthq/types/contract';
 
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
@@ -88,7 +88,7 @@ export type FunctionalVerification = CaptureVerification;
 
 export interface FunctionalWgpuTarget {
   kind: 'webgpu';
-  state: WgpuRenderState;
+  state: WgpuPresentationRenderState;
   width: number;
   height: number;
   scale: number;
@@ -169,7 +169,7 @@ export function registerFunctionalTarget<T extends FunctionalTarget>(target: T):
   return target;
 }
 
-export function registerWgpuFunctionalTarget(state: WgpuRenderState, scale = 1): void {
+export function registerWgpuFunctionalTarget(state: WgpuPresentationRenderState, scale = 1): void {
   enableWgpuFrameCapture(state);
   // Every functional WGPU scene passes through here, INCLUDING the ~100 that build their own render
   // state instead of going through the harness — which is where the sampleCount requests live. Without

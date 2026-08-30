@@ -8,6 +8,7 @@ import {
   resetWgpuHostBackendForTest,
   setWgpuHostBackend,
 } from './wgpuHost';
+import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
   createWgpuRenderState,
   createWgpuRenderStateFromCanvasElement,
@@ -25,6 +26,8 @@ function fakeBackend(): WgpuHostBackend {
 
 beforeAll(installWgpuMock);
 afterEach(resetWgpuHostBackendForTest);
+
+const _pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
 
 describe('createWebWgpuHostBackend', () => {
   it('acquires Flight-owned browser handles and releases each native handle', async () => {
@@ -117,7 +120,7 @@ describe('setWgpuHostBackend', () => {
     const canvas = document.createElement('canvas');
     setWgpuHostBackend(backend);
 
-    const state = await createWgpuRenderStateFromCanvasElement(canvas);
+    const state = await createWgpuRenderStateFromCanvasElement(canvas, _pipeline);
     expect(backend.acquire).toHaveBeenCalledWith(canvas, { format: undefined, powerPreference: undefined });
     expect(state.context).toBe(acquisition.context);
     expect(state.device).toBe(acquisition.device);
@@ -143,7 +146,7 @@ describe('setWgpuHostBackend', () => {
     };
     setWgpuHostBackend(backend);
 
-    expect(() => createWgpuRenderState(acquisition)).toThrow('configure failed');
+    expect(() => createWgpuRenderState(acquisition, _pipeline)).toThrow('configure failed');
     expect(backend.release).toHaveBeenCalledOnce();
     expect(backend.release).toHaveBeenCalledWith(acquisition);
 
@@ -174,7 +177,7 @@ describe('setWgpuHostBackend', () => {
     };
     setWgpuHostBackend(backend);
 
-    expect(() => createWgpuRenderState(acquisition)).toThrow('configure failed');
+    expect(() => createWgpuRenderState(acquisition, _pipeline)).toThrow('configure failed');
     expect(backend.release).not.toHaveBeenCalled();
     expect(destroy).not.toHaveBeenCalled();
     expect(unconfigure).not.toHaveBeenCalled();
@@ -200,7 +203,7 @@ describe('setWgpuHostBackend', () => {
     };
     setWgpuHostBackend(backend);
 
-    const state = createWgpuRenderState(acquisition);
+    const state = createWgpuRenderState(acquisition, _pipeline);
     destroyWgpuRenderState(state);
 
     expect(backend.release).not.toHaveBeenCalled();

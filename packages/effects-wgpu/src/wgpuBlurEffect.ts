@@ -1,4 +1,8 @@
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
+import {
+  acquireWgpuRenderTarget,
+  getWgpuSurfaceLogicalExtent,
+  releaseWgpuRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 import type { BlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
@@ -49,7 +53,7 @@ export function applyGaussianBlurToWgpu(
   // their own sampleCount is 1 — so asking `getWgpuRenderTargetSupersampleScale` gave 1 and the first
   // version of this fix changed nothing at all. Texel density against the canvas is the thing that
   // actually matters here, and it is true of any target however it was obtained.
-  const scale = getWgpuRenderTargetTexelScale(source.width, state.surface.width);
+  const scale = getWgpuRenderTargetTexelScale(source.width, getWgpuSurfaceLogicalExtent(state).width);
   const sigmaX = (options.blurX ?? 4) * scale;
   const sigmaY = (options.blurY ?? 4) * scale;
   const radiusX = sigmaX > 0 ? Math.ceil(sigmaX * 3) : 0;

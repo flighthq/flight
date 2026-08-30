@@ -1,3 +1,4 @@
+import { getWgpuSurfaceLogicalExtent } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 interface WgpuEffectLogicalResolution {
@@ -10,7 +11,7 @@ export function getWgpuEffectLogicalResolution(
   state: Readonly<WgpuRenderState>,
   target: Readonly<WgpuRenderTarget>,
 ): WgpuEffectLogicalResolution {
-  const texelsPerLogicalPixel = getWgpuRenderTargetTexelScale(target.width, state.surface.width);
+  const texelsPerLogicalPixel = getWgpuRenderTargetTexelScale(target.width, getWgpuSurfaceLogicalExtent(state).width);
   return {
     height: target.height / texelsPerLogicalPixel,
     texelsPerLogicalPixel,

@@ -1,6 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { copyWgpuRenderStateRegistrations, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createWgpuPipeline, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuMeshMaterialRenderer } from '@flighthq/types/contract';
 import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
@@ -34,15 +34,14 @@ describe('registerWgpuMeshMaterialRenderer', () => {
     expect(getWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind)).toBe(renderer);
   });
 
-  it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
+  it('replaces the persistent table while an explicit pipeline state retains its snapshot', () => {
     const { state: screen } = makeWgpuScene3DState();
-    const { state: derived } = makeWgpuScene3DState();
     const renderer = makeRenderer();
     const replacement = makeRenderer();
     registerWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind, renderer);
     const snapshot = getWgpuRenderStateRuntime(screen).registries.meshMaterialRenderers;
+    const { state: derived } = makeWgpuScene3DState(createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries));
 
-    copyWgpuRenderStateRegistrations(derived, screen);
     getWgpuScene3DRuntime(derived);
     registerWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind, replacement);
 

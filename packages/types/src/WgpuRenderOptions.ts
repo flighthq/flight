@@ -5,6 +5,10 @@ export interface WgpuRenderOptions {
   antialias?: boolean;
   // Packed sRGB RGBA (`0xRRGGBBAA`), split into clear-color channels by renderColor.
   backgroundColor?: number;
+  // Device-only states have no acquisition from which to derive a default render-target format.
+  // Presentation creation always supplies the acquired format; direct offscreen creation defaults to
+  // bgra8unorm unless the caller selects another immutable state format here.
+  format?: GPUTextureFormat;
   imageSmoothingEnabled?: boolean;
   pixelRatio?: number;
   roundPixels?: boolean;

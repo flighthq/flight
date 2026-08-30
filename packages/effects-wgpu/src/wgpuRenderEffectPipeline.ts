@@ -14,6 +14,7 @@ import {
   destroyWgpuRenderTargetPool,
   endWgpuRenderPass,
   getWgpuRenderStateRuntime,
+  getWgpuSurfaceLogicalExtent,
   releaseWgpuRenderTarget,
   resizeWgpuRenderTarget,
 } from '@flighthq/render-wgpu/contract';
@@ -51,8 +52,7 @@ export function beginWgpuRenderEffectPipeline(
   pipeline: WgpuRenderEffectPipeline,
   colorSpace: RenderTargetColorSpace = 'srgb',
 ): void {
-  const w = state.surface.width;
-  const h = state.surface.height;
+  const { height: h, width: w } = getWgpuSurfaceLogicalExtent(state);
   const format = pipeline.options.format === 'rgba16f' ? 'rgba16float' : state.format;
 
   if (pipeline.sceneTarget === null) {

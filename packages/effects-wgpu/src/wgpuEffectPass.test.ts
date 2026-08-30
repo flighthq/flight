@@ -51,7 +51,7 @@ function createHarness(): { recorded: Recorded; state: WgpuRenderState } {
     canvasTextureView: { id: 'canvasView' },
     commandEncoder,
     renderPass: null,
-    renderTargetViewport: null,
+    renderTargetViewport: { height: 64, width: 64 },
   };
   let nextBindGroup = 0;
   const state = {

@@ -1,4 +1,8 @@
-import { setWgpuRenderTransform2D } from '@flighthq/render-wgpu/contract';
+import {
+  createWgpuPipeline,
+  getWgpuRenderStateRuntime,
+  setWgpuRenderTransform2D,
+} from '@flighthq/render-wgpu/contract';
 import type { Bitmap, RenderEffect, RenderEffectPadding, RenderTexture } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -9,7 +13,6 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   applyWgpuRenderEffectsToRenderTexture,
-  beginWgpuFrame,
   computeRenderEffectPadding,
   createDisplayObject,
   createDropShadowEffect,
@@ -29,7 +32,7 @@ import {
   releaseWgpuRenderTexture,
   renderIntoWgpuRenderTexture,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  withWgpuFrameBorrow,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
@@ -69,10 +72,11 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgpu') throw new Error('per-node-effect-glow-shadow requires WebGPU');
 const { render, state, width } = target;
 
-const offscreen = createWgpuOffscreenRenderState(state);
-if (offscreen.reason !== 'ok')
-  throw new Error('per-node-effect-glow-shadow cannot derive an offscreen state: ' + offscreen.reason);
-const offscreenState = offscreen.state;
+const offscreenState = createWgpuOffscreenRenderState(
+  state.deviceState,
+  createWgpuPipeline(getWgpuRenderStateRuntime(state).registries),
+  { format: state.format },
+);
 const pool = createWgpuRenderTexturePool();
 registerWgpuOuterGlowEffect(offscreenState);
 registerWgpuDropShadowEffect(offscreenState);
@@ -141,18 +145,18 @@ function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectP
   appendShapeBeginFill(source, 0x43dce8ff, 1);
   appendShapeRectangle(source, padding.left, padding.top, CONTENT_WIDTH, CONTENT_HEIGHT);
   appendShapeEndFill(source);
-  beginWgpuFrame(offscreenState);
-  renderIntoWgpuRenderTexture(offscreenState, sourceTexture, (captureState) => {
-    setWgpuRenderTransform2D(captureState, createMatrix());
-    prepareScene2DRender(captureState, source);
-    renderWgpuScene2D(captureState, source);
+  withWgpuFrameBorrow(state, offscreenState, () => {
+    renderIntoWgpuRenderTexture(offscreenState, sourceTexture, (captureState) => {
+      setWgpuRenderTransform2D(captureState, createMatrix());
+      prepareScene2DRender(captureState, source);
+      renderWgpuScene2D(captureState, source);
+    });
+    if (
+      !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])
+    ) {
+      throw new Error(`[per-node-effect-glow-shadow] ${effect.kind} did not run`);
+    }
   });
-  if (
-    !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])
-  ) {
-    throw new Error(`[per-node-effect-glow-shadow] ${effect.kind} did not run`);
-  }
-  submitWgpuRenderPass(offscreenState);
   releaseWgpuRenderTexture(state, pool, scratchTexture);
   releaseWgpuRenderTexture(state, pool, sourceTexture);
   return destTexture;

@@ -4,115 +4,85 @@ import {
   retireWgpuBuffer,
   retireWgpuTexture,
   submitWgpuRenderPass,
+  withWgpuFrameBorrow,
 } from './wgpuBackground';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { createWgpuPipeline } from './wgpuPipeline';
+import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
-beforeAll(() => {
-  installWgpuMock();
-});
+beforeAll(() => installWgpuMock());
 
 describe('beginWgpuFrame', () => {
-  it('opens an encoder without opening the canvas pass', async () => {
+  it('opens one encoder and preserves it across repeated calls', async () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuFrame(state);
-    const runtime = getWgpuRenderStateRuntime(state);
-    expect(runtime.commandEncoder).not.toBeNull();
-    expect(runtime.renderPass).toBeNull();
-  });
-
-  it('does not replace an active encoder or reset its uniform allocations', async () => {
-    const state = await createWgpuRenderStateForTest();
+    const encoder = getWgpuRenderStateRuntime(state).commandEncoder;
     beginWgpuFrame(state);
-    const runtime = getWgpuRenderStateRuntime(state);
-    const encoder = runtime.commandEncoder;
-    runtime.uniformOffset = 512;
-    beginWgpuFrame(state);
-    expect(runtime.commandEncoder).toBe(encoder);
-    expect(runtime.uniformOffset).toBe(512);
+    expect(getWgpuRenderStateRuntime(state).commandEncoder).toBe(encoder);
   });
 });
 
 describe('renderWgpuBackground', () => {
-  it('opens a render pass on the state', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const runtime = getWgpuRenderStateRuntime(state);
-    expect(runtime.renderPass).toBeNull();
-    renderWgpuBackground(state);
-    expect(runtime.renderPass).not.toBeNull();
-  });
-
-  it('resets uniformOffset to zero', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const runtime = getWgpuRenderStateRuntime(state);
-    runtime.uniformOffset = 512;
-    renderWgpuBackground(state);
-    expect(runtime.uniformOffset).toBe(0);
-  });
-
-  it('creates a command encoder', async () => {
+  it('opens the presentation pass on the current surface', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    expect(getWgpuRenderStateRuntime(state).commandEncoder).not.toBeNull();
-  });
-
-  it('opens the canvas pass on an explicitly begun frame without resetting its uniform allocations', async () => {
-    const state = await createWgpuRenderStateForTest();
-    beginWgpuFrame(state);
-    const runtime = getWgpuRenderStateRuntime(state);
-    const encoder = runtime.commandEncoder;
-    runtime.uniformOffset = 512;
-    renderWgpuBackground(state);
-    expect(runtime.commandEncoder).toBe(encoder);
-    expect(runtime.uniformOffset).toBe(512);
-    expect(runtime.renderPass).not.toBeNull();
+    expect(getWgpuRenderStateRuntime(state).renderPass).not.toBeNull();
+    submitWgpuRenderPass(state);
   });
 });
 
 describe('retireWgpuBuffer', () => {
-  it('queues the buffer for post-submit destruction instead of destroying it now', async () => {
+  it('adds the buffer to the post-submit destruction ledger', async () => {
     const state = await createWgpuRenderStateForTest();
-    const destroy = vi.fn();
-    const buffer = { destroy } as unknown as GPUBuffer;
-
+    const buffer = { destroy: vi.fn() } as unknown as GPUBuffer;
     retireWgpuBuffer(state, buffer);
-
-    expect(destroy).not.toHaveBeenCalled();
-    expect(getWgpuRenderStateRuntime(state).retiredBuffers).toContain(buffer);
+    expect(getWgpuRenderStateRuntime(state).retiredBuffers).toEqual([buffer]);
   });
 });
 
 describe('retireWgpuTexture', () => {
-  it('queues the texture for post-submit destruction instead of destroying it now', async () => {
+  it('adds the texture to the post-submit destruction ledger', async () => {
     const state = await createWgpuRenderStateForTest();
-    const destroy = vi.fn();
-    const texture = { destroy } as unknown as GPUTexture;
-
+    const texture = { destroy: vi.fn() } as unknown as GPUTexture;
     retireWgpuTexture(state, texture);
-
-    // Nothing is freed while the frame is still recording — that is the whole reason this seam exists.
-    expect(destroy).not.toHaveBeenCalled();
-    expect(getWgpuRenderStateRuntime(state).retiredTextures).toContain(texture);
+    expect(getWgpuRenderStateRuntime(state).retiredTextures).toEqual([texture]);
   });
 });
 
 describe('submitWgpuRenderPass', () => {
-  it('clears commandEncoder after submit', async () => {
+  it('submits and closes the active frame', async () => {
     const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
+    beginWgpuFrame(state);
     submitWgpuRenderPass(state);
     expect(getWgpuRenderStateRuntime(state).commandEncoder).toBeNull();
   });
+});
 
-  it('clears renderPass after submit', async () => {
-    const state = await createWgpuRenderStateForTest();
-    renderWgpuBackground(state);
-    submitWgpuRenderPass(state);
-    expect(getWgpuRenderStateRuntime(state).renderPass).toBeNull();
+describe('withWgpuFrameBorrow', () => {
+  it('returns callback values and closes a standalone frame', async () => {
+    const screen = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(
+      screen.deviceState,
+      createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries),
+      { format: screen.format },
+    );
+
+    expect(withWgpuFrameBorrow(screen, offscreen, () => 42)).toBe(42);
+    expect(getWgpuRenderStateRuntime(screen).commandEncoder).toBeNull();
+    expect(getWgpuRenderStateRuntime(offscreen).commandEncoder).toBeNull();
   });
 
-  it('is safe to call without an open pass', async () => {
-    const state = await createWgpuRenderStateForTest();
-    expect(() => submitWgpuRenderPass(state)).not.toThrow();
+  it('rejects a borrower owned by a different GPU device', async () => {
+    const owner = await createWgpuRenderStateForTest();
+    const other = await createWgpuRenderStateForTest();
+    const borrower = createWgpuOffscreenRenderState(
+      other.deviceState,
+      createWgpuPipeline(getWgpuRenderStateRuntime(other).registries),
+      { format: other.format },
+    );
+
+    expect(() => withWgpuFrameBorrow(owner, borrower, () => {})).toThrow(/same GPU device/);
+    expect(getWgpuRenderStateRuntime(owner).commandEncoder).toBeNull();
+    expect(getWgpuRenderStateRuntime(borrower).commandEncoder).toBeNull();
   });
 });

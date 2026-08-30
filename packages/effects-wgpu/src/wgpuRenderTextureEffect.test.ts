@@ -2,21 +2,17 @@ import { createBlurEffect } from '@flighthq/effects/contract';
 import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
-  copyWgpuRenderStateRegistrations,
   createWgpuOffscreenRenderState,
+  createWgpuPipeline,
   createWgpuRenderStateForTest,
   createWgpuRenderTexturePool,
+  getWgpuRenderStateRuntime,
   getWgpuRenderTextureTarget,
   installWgpuMock,
   isWgpuRenderTextureReady,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type {
-  WgpuOffscreenRenderStateResult,
-  WgpuRenderState,
-  RenderEffect,
-  WgpuRenderEffectRunner,
-} from '@flighthq/types/contract';
+import type { RenderEffect, WgpuRenderEffectRunner } from '@flighthq/types/contract';
 
 import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { getWgpuRenderEffectRunner, registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
@@ -25,13 +21,6 @@ import {
   explainWgpuRenderEffectApplication,
   setWgpuRenderEffectApplicationGuard,
 } from './wgpuRenderTextureEffect';
-
-// createWgpuOffscreenRenderState reports a method-tight outcome because a lost device cannot back a
-// derived pipeline. These tests all run on a live fake device, so anything but `ok` is a test bug.
-function unwrapOffscreen(result: WgpuOffscreenRenderStateResult): WgpuRenderState {
-  if (result.reason !== 'ok') throw new Error(`expected an offscreen state, got ${result.reason}`);
-  return result.state;
-}
 
 beforeAll(() => installWgpuMock());
 
@@ -123,20 +112,28 @@ describe('explainWgpuRenderEffectApplication', () => {
   });
 });
 
-describe('offscreen effect registration snapshots', () => {
-  it('copies runners at derivation and requires explicit re-copy for later runners', async () => {
+describe('offscreen effect pipeline snapshots', () => {
+  it('captures runners in each explicitly created immutable pipeline', async () => {
     const screen = await createWgpuRenderStateForTest();
     const first: WgpuRenderEffectRunner = vi.fn();
     const later: WgpuRenderEffectRunner = vi.fn();
     registerWgpuRenderEffect(screen, 'acme.First', first);
-    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
+    const offscreen = createWgpuOffscreenRenderState(
+      screen.deviceState,
+      createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries),
+      { format: screen.format },
+    );
     registerWgpuRenderEffect(screen, 'acme.Later', later);
 
     expect(getWgpuRenderEffectRunner(offscreen, 'acme.First')).toBe(first);
     expect(getWgpuRenderEffectRunner(offscreen, 'acme.Later')).toBeNull();
 
-    copyWgpuRenderStateRegistrations(offscreen, screen);
-    expect(getWgpuRenderEffectRunner(offscreen, 'acme.Later')).toBe(later);
+    const refreshed = createWgpuOffscreenRenderState(
+      screen.deviceState,
+      createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries),
+      { format: screen.format },
+    );
+    expect(getWgpuRenderEffectRunner(refreshed, 'acme.Later')).toBe(later);
   });
 });
 

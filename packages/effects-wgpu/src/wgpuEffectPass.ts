@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, getWgpuSurfaceRenderExtent } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuDualSourceEffectPipeline,
   WgpuEffectBlendMode,
@@ -189,8 +189,9 @@ function beginEffectPass(
   if (dest !== null) {
     pass.setViewport(0, 0, dest.width, dest.height, 0, 1);
   } else {
-    const w = runtime.renderTargetViewport?.width ?? state.surface.width;
-    const h = runtime.renderTargetViewport?.height ?? state.surface.height;
+    const extent = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
+    const w = extent.width;
+    const h = extent.height;
     pass.setViewport(0, 0, w, h, 0, 1);
   }
   return pass;

@@ -1,5 +1,6 @@
 import {
   getWgpuRenderStateRuntime,
+  createWgpuPipeline,
   isWgpuRenderTextureReady,
   setWgpuRenderTransform2D,
 } from '@flighthq/render-wgpu/contract';
@@ -14,7 +15,6 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   applyWgpuRenderEffectsToRenderTexture,
-  beginWgpuFrame,
   computeNodeRootLocalBoundsRectangle,
   computeRenderEffectPadding,
   createBlurEffect,
@@ -36,7 +36,7 @@ import {
   releaseWgpuRenderTexture,
   renderIntoWgpuRenderTexture,
   renderWgpuScene2D,
-  submitWgpuRenderPass,
+  withWgpuFrameBorrow,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
@@ -74,10 +74,11 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgpu') throw new Error('per-node-effect-lane requires WebGPU');
 const { render, state, width } = target;
 
-const offscreen = createWgpuOffscreenRenderState(state);
-if (offscreen.reason !== 'ok')
-  throw new Error('per-node-effect-lane cannot derive an offscreen state: ' + offscreen.reason);
-const offscreenState = offscreen.state;
+const offscreenState = createWgpuOffscreenRenderState(
+  state.deviceState,
+  createWgpuPipeline(getWgpuRenderStateRuntime(state).registries),
+  { format: state.format },
+);
 const pool = createWgpuRenderTexturePool();
 registerWgpuBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
@@ -199,18 +200,18 @@ function captureSubtree(): {
   const scratchTexture = acquireWgpuRenderTexture(state, pool, descriptor);
   const transform = createMatrix();
   computeScene2DRenderTargetTransform(transform, source, bounds, padding.left, padding.top);
-  beginWgpuFrame(offscreenState);
-  renderIntoWgpuRenderTexture(offscreenState, sourceTexture, (captureState) => {
-    setWgpuRenderTransform2D(captureState, transform);
-    prepareScene2DRender(captureState, source);
-    renderWgpuScene2D(captureState, source);
+  withWgpuFrameBorrow(state, offscreenState, () => {
+    renderIntoWgpuRenderTexture(offscreenState, sourceTexture, (captureState) => {
+      setWgpuRenderTransform2D(captureState, transform);
+      prepareScene2DRender(captureState, source);
+      renderWgpuScene2D(captureState, source);
+    });
+    if (
+      !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)
+    ) {
+      throw new Error('[per-node-effect-lane] the registered blur effect did not run');
+    }
   });
-  if (
-    !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)
-  ) {
-    throw new Error('[per-node-effect-lane] the registered blur effect did not run');
-  }
-  submitWgpuRenderPass(offscreenState);
   return { destTexture, scratchTexture, sourceTexture };
 }
 

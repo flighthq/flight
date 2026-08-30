@@ -12,6 +12,7 @@ export * from './wgpuFullscreenPass';
 export * from './wgpuHost';
 export * from './wgpuMaterialRegistry';
 export * from './wgpuMipmap';
+export * from './wgpuPipeline';
 export * from './wgpuRenderState';
 export * from './wgpuRenderTarget';
 export * from './wgpuRenderTargetPool';

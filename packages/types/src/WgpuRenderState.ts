@@ -16,11 +16,13 @@ import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecode
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime';
+import type { WgpuDeviceState } from './WgpuDeviceState';
 import type { WgpuPresentationSurface } from './WgpuHost';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
 import type { WgpuParticleResources } from './WgpuParticleResources';
+import type { WgpuPipeline } from './WgpuPipeline';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
 import type { WgpuRenderEffectRunner } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
@@ -31,9 +33,16 @@ import type { WgpuVelocityWriter } from './WgpuVelocityWriter';
 
 export interface WgpuRenderState extends RenderState {
   applyBlendMode: ((state: WgpuRenderState, blendMode: BlendMode | null) => void) | null;
-  readonly context: GPUCanvasContext;
+  readonly deviceState: WgpuDeviceState;
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
+  readonly pipeline: Readonly<WgpuPipeline>;
+}
+
+// Presentation is an explicit capability. Device-only offscreen states deliberately cannot be passed
+// to frame/surface APIs, while every draw and render-target API continues to accept the base state.
+export interface WgpuPresentationRenderState extends WgpuRenderState {
+  readonly context: GPUCanvasContext;
   // The presentation surface's live size. Not an HTMLCanvasElement: nothing on this path reads a DOM
   // member, so a native host supplies its own size provider and the web path passes its canvas directly.
   readonly surface: WgpuPresentationSurface;
@@ -131,6 +140,10 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Active blend mode tracked to avoid redundant pipeline rebinds. Internal — formerly public on the
   // WgpuRenderState entity.
   currentBlendMode: BlendMode | null;
+  teardowns: ((state: WgpuRenderState) => void)[];
+  // Present only for the bounded duration of withWgpuFrameBorrow. Device-only render-target code uses
+  // this extent when it restores the borrowed presentation pass without gaining a surface capability.
+  borrowedSurfaceExtent: { readonly height: number; readonly width: number } | null;
 
   // Bind group layouts — shared across all pipelines
   uniformBindGroupLayout: GPUBindGroupLayout;

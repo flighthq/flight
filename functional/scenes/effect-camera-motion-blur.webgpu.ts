@@ -13,6 +13,7 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderStateFromCanvasElement,
+  scene2dWgpuPipeline,
   registerWgpuCameraMotionBlurEffect,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
@@ -52,7 +53,10 @@ enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderStateFromCanvasElement(canvas, { pixelRatio, backgroundColor: 0x05060aff });
+export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
+  pixelRatio,
+  backgroundColor: 0x05060aff,
+});
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuCameraMotionBlurEffect(state);

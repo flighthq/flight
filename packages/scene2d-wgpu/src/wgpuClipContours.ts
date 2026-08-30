@@ -1,4 +1,8 @@
-import { getWgpuRenderStateRuntime, retireWgpuBuffer } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  getWgpuSurfaceRenderExtent,
+  retireWgpuBuffer,
+} from '@flighthq/render-wgpu/contract';
 import type { Matrix, PathWinding, WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
@@ -102,7 +106,7 @@ export function pushWgpuClipContours(
 
 function createClipContourUniformBuffer(state: WgpuRenderState, t: Readonly<Matrix>): GPUBuffer {
   const runtime = getWgpuRenderStateRuntime(state);
-  const viewport = runtime.renderTargetViewport ?? state.surface;
+  const viewport = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
   // Column-major mat3x3f = projection · worldTransform, mapping clip-local points to clip space exactly

@@ -8,7 +8,7 @@ import type {
   DomRenderState,
   GlRenderState,
   WgpuPresentationSurface,
-  WgpuRenderState,
+  WgpuPresentationRenderState,
 } from '@flighthq/types/contract';
 
 import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';
@@ -18,7 +18,7 @@ import { registerFunctionalTarget, registerWgpuFunctionalTarget, runRenderVerifi
 
 export interface CapturePageTargetOptions {
   renderer: 'canvas' | 'dom' | 'webgl' | 'webgpu';
-  state: CanvasRenderState | DomRenderState | GlRenderState | WgpuRenderState;
+  state: CanvasRenderState | DomRenderState | GlRenderState | WgpuPresentationRenderState;
   /** Draw work to perform after registration. May be omitted when the page already rendered. */
   render?: () => void | Promise<void>;
   assertRender?: FunctionalRenderOracle;
@@ -97,7 +97,7 @@ export async function installCaptureTarget(
 ): Promise<CaptureVerification | null> {
   const scale = options.scale ?? 1;
   if (options.renderer === 'webgpu') {
-    registerWgpuFunctionalTarget(options.state as WgpuRenderState, scale);
+    registerWgpuFunctionalTarget(options.state as WgpuPresentationRenderState, scale);
   } else {
     registerFunctionalTarget(createFunctionalTarget(options, scale));
   }
@@ -141,7 +141,8 @@ function createFunctionalTarget(options: Readonly<CapturePageTargetOptions>, sca
   const element = 'element' in state ? state.element : null;
   // A WGPU state carries no canvas — it sizes from its presentation surface — so this fallback has to read
   // the surface too, or a webgpu target with no explicit width silently falls through to zero.
-  const surface = 'surface' in state ? (state.surface as WgpuPresentationSurface) : null;
+  const surface =
+    options.renderer === 'webgpu' && 'surface' in state ? (state.surface as WgpuPresentationSurface) : null;
   const gl = options.renderer === 'webgl' ? (state as GlRenderState).gl : null;
   const width = options.width ?? gl?.drawingBufferWidth ?? canvas?.width ?? surface?.width ?? element?.clientWidth ?? 0;
   const height =
@@ -160,7 +161,7 @@ async function synchronizeCaptureTarget(
   if (renderer === 'webgl') {
     (state as GlRenderState).gl.finish();
   } else if (renderer === 'webgpu') {
-    await (state as WgpuRenderState).device.queue.onSubmittedWorkDone();
+    await (state as WgpuPresentationRenderState).device.queue.onSubmittedWorkDone();
   } else if (renderer === 'dom') {
     (state as DomRenderState).element.getBoundingClientRect();
   }

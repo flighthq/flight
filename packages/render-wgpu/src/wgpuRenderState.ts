@@ -1,9 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import {
-  copyAllRenderersFromRenderState,
-  copyRenderStateRegistrations,
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   destroyRenderState,
@@ -18,60 +15,20 @@ import type {
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
   WgpuHostBackend,
-  WgpuOffscreenRenderStateResult,
-  WgpuPresentationSurface,
+  WgpuPipeline,
+  WgpuPresentationRenderState,
   WgpuRenderOptions,
   WgpuRenderState,
   WgpuRenderStateRuntime,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
-import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
 import { warmWgpuPipelines } from './wgpuDraw';
 import { getWgpuHostBackend } from './wgpuHost';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
 const RING_SLOT_COUNT = 4096;
-
-// Explicit snapshot re-copy. Device resources remain shared. Persistent tables share immutable
-// snapshots through distinct aggregates, so either pipeline can
-// still replace registration policy independently after derivation.
-export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source: WgpuRenderState): void {
-  const targetRuntime = getWgpuRenderStateRuntime(target);
-  const sourceRuntime = getWgpuRenderStateRuntime(source);
-  // Blend-mode wiring belongs to the screen pipeline and may be enabled after a derived state is
-  // created. Keep the entity field plain; resolve its explicit parent at each draw seam.
-  target.applyBlendMode = null;
-  targetRuntime.applyBlendModeParent = source;
-  targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
-  targetRuntime.mipmapDegradedGuard = sourceRuntime.mipmapDegradedGuard;
-  targetRuntime.mipmapGenerator = sourceRuntime.mipmapGenerator;
-  targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
-  targetRuntime.registries = {
-    colorAdjustmentFeature: sourceRuntime.registries.colorAdjustmentFeature,
-    colorAdjustmentFeatureGuard: sourceRuntime.registries.colorAdjustmentFeatureGuard,
-    compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
-    compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
-    customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
-    materialRenderers: sourceRuntime.registries.materialRenderers,
-    meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
-    modifierSnippets: sourceRuntime.registries.modifierSnippets,
-    modifierSnippetRevision: sourceRuntime.registries.modifierSnippetRevision,
-    renderEffects: sourceRuntime.registries.renderEffects,
-    renderers: targetRuntime.registries.renderers,
-    shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
-    // INHERIT the source's tessellator. This previously named the target's own table, which read as a
-    // deliberate keep-own policy and was then overwritten by copyRenderStateRegistrations two lines
-    // below — so the code stated one policy and did the opposite. Inheriting is correct because
-    // `StrokeTessellator` requires a shareable implementation; it is not merely what already happened.
-    strokeTessellator: sourceRuntime.registries.strokeTessellator,
-    textureResolvers: sourceRuntime.registries.textureResolvers,
-    velocityWriters: sourceRuntime.registries.velocityWriters,
-  };
-  targetRuntime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
-  copyRenderStateRegistrations(target, source);
-}
 
 // Acquires host handles the CALLER owns. Ownership is `caller`, so Flight never releases these: the caller
 // ends their life with `releaseWgpuAcquisition`, and a state built on them leaves them intact when it is
@@ -97,55 +54,30 @@ export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
 }
 
 /**
- * Creates a second render pipeline over `screenState`'s GPUDevice.
+ * Creates a device-only render state with its own frame-local resources.
  *
  * The state receives a fresh command encoder, uniform ring, traversal/proxy tree, batch writer, clip
  * stack, and render transform. Immutable pipelines/layouts/samplers plus uploaded textures and render
  * texture realizations share a device tier. Registrations are a creation-time snapshot.
  */
-export function createWgpuOffscreenRenderState(screenState: WgpuRenderState): WgpuOffscreenRenderStateResult {
-  // A dead device cannot back a new pipeline. Report it rather than throwing: losing a device is an
-  // expected outcome, not API misuse, and the caller needs the reason to decide what to do next.
-  const lost = getWgpuRenderStateRuntime(screenState).context.lost;
-  if (lost !== null) return { reason: 'device-lost', info: lost };
-
-  const state = _createRenderState({
-    allowSmoothing: screenState.allowSmoothing,
-    backgroundColor: screenState.backgroundColor,
-    backgroundColorRgba: [...screenState.backgroundColorRgba],
-    backgroundColorString: screenState.backgroundColorString,
-    pixelRatio: screenState.pixelRatio,
-    renderAlpha: screenState.renderAlpha,
-    renderBlendMode: screenState.renderBlendMode,
-    renderTransform2D: createMatrix(),
-    roundPixels: screenState.roundPixels,
-    sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
-  }) as WgpuRenderState;
-  state.applyBlendMode = null;
-  (state as { surface: WgpuPresentationSurface }).surface = screenState.surface;
-  (state as { context: GPUCanvasContext }).context = screenState.context;
-  (state as { device: GPUDevice }).device = screenState.device;
-  (state as { format: GPUTextureFormat }).format = screenState.format;
-
-  const screenRuntime = getWgpuRenderStateRuntime(screenState);
-  const runtime = createWgpuRenderStateRuntime(screenRuntime);
-  state[EntityRuntimeKey] = runtime;
-  initializeOffscreenWgpuRuntime(state, runtime, screenRuntime);
-  copyAllRenderersFromRenderState(state, screenState);
-  copyWgpuRenderStateRegistrations(state, screenState);
-  warmWgpuPipelines(state);
-  return { reason: 'ok', state };
+export function createWgpuOffscreenRenderState(
+  deviceState: Readonly<WgpuDeviceState>,
+  pipeline: Readonly<WgpuPipeline>,
+  options: Readonly<WgpuRenderOptions> = {},
+): WgpuRenderState {
+  return initializeWgpuDeviceRenderState(deviceState, pipeline, options);
 }
 
 // Synchronous: with the handles already in hand there is nothing left to await. Everything asynchronous
 // lives in acquisition.
 export function createWgpuRenderState(
   acquisition: Readonly<WgpuHostAcquisition>,
-  options: WgpuRenderOptions = {},
-): WgpuRenderState {
+  pipeline: Readonly<WgpuPipeline>,
+  options: Readonly<WgpuRenderOptions> = {},
+): WgpuPresentationRenderState {
   const hostBackend = getWgpuHostBackend();
   try {
-    return initializeWgpuRenderState(options, acquisition, hostBackend);
+    return initializeWgpuPresentationRenderState(options, acquisition, pipeline, hostBackend);
   } catch (error) {
     // ★ NEVER release what the caller owns, not even while unwinding a failure. This is the path where
     // borrowed handles were previously destroyed on the way out, and it was safe only because the shipped
@@ -159,32 +91,29 @@ export function createWgpuRenderState(
 // releases them — the behavior every existing caller had when it passed a canvas.
 export async function createWgpuRenderStateFromCanvasElement(
   canvas: HTMLCanvasElement,
+  pipeline: Readonly<WgpuPipeline>,
   options: Readonly<WgpuRenderOptions & WgpuHostAcquisitionOptions> = {},
-): Promise<WgpuRenderState> {
+): Promise<WgpuPresentationRenderState> {
   const acquisition = await getWgpuHostBackend().acquire(canvas, {
     format: options.format,
     powerPreference: options.powerPreference,
   });
-  return createWgpuRenderState(acquisition, options);
+  return createWgpuRenderState(acquisition, pipeline, options);
 }
 
 export function createWgpuRenderStateRuntime(
-  deviceStateOrSharedRuntime: WgpuDeviceState | WgpuRenderStateRuntime,
+  deviceState: Readonly<WgpuDeviceState>,
+  pipeline: Readonly<WgpuPipeline>,
 ): WgpuRenderStateRuntime {
-  const entityRuntime = (deviceStateOrSharedRuntime as WgpuDeviceState)[EntityRuntimeKey] as
-    | WgpuDeviceRuntime
-    | undefined;
-  if (entityRuntime !== undefined) {
-    return createWgpuRenderStateRuntimeInternal(undefined, null, null, entityRuntime);
-  }
-  return createWgpuRenderStateRuntimeInternal(deviceStateOrSharedRuntime as WgpuRenderStateRuntime, null, null);
+  return createWgpuRenderStateRuntimeInternal(getWgpuDeviceRuntime(deviceState), pipeline);
 }
 
-function initializeWgpuRenderState(
+function initializeWgpuPresentationRenderState(
   options: Readonly<WgpuRenderOptions>,
   acquisition: Readonly<WgpuHostAcquisition>,
+  pipeline: Readonly<WgpuPipeline>,
   hostBackend: WgpuHostBackend,
-): WgpuRenderState {
+): WgpuPresentationRenderState {
   const { context, device, format } = acquisition;
 
   // COPY_SRC lets the canvas texture be read back via copyTextureToBuffer (createBitmapFromWgpuRenderState).
@@ -197,37 +126,35 @@ function initializeWgpuRenderState(
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
   });
 
-  // Align uniform ring buffer slots to device limits
+  const deviceState = createWgpuDeviceState(device);
+  const ownership: WgpuAcquisitionOwnership = { acquisition, hostBackend, references: 0 };
+  _acquisitionByDeviceRuntime.set(getWgpuDeviceRuntime(deviceState), ownership);
+  const state = initializeWgpuDeviceRenderState(deviceState, pipeline, { ...options, format });
+  Object.assign(state, { context, surface: acquisition.surface });
+  getWgpuRenderStateRuntime(state).surfaceAntialiasEnabled = options.antialias ?? false;
+  return state as WgpuPresentationRenderState;
+}
+
+function initializeWgpuDeviceRenderState(
+  deviceState: Readonly<WgpuDeviceState>,
+  pipeline: Readonly<WgpuPipeline>,
+  options: Readonly<WgpuRenderOptions>,
+): WgpuRenderState {
+  const device = deviceState.device;
+  const format = options.format ?? 'bgra8unorm';
+  const deviceRuntime = getWgpuDeviceRuntime(deviceState);
+  initializeWgpuDeviceRuntime(deviceRuntime);
+
   const uniformStride = Math.max(256, device.limits.minUniformBufferOffsetAlignment, UNIFORM_BYTE_SIZE);
   const ringByteSize = uniformStride * RING_SLOT_COUNT;
-
   const uniformBuffer = device.createBuffer({
     size: ringByteSize,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
-
   const uniformData = new Float32Array(ringByteSize / 4);
-  const uniformDataU32 = new Uint32Array(uniformData.buffer);
-
-  const { uniformBindGroupLayout, textureBindGroupLayout } = createWgpuBindGroupLayouts(device);
-
   const uniformBindGroup = device.createBindGroup({
-    layout: uniformBindGroupLayout,
+    layout: deviceRuntime.uniformBindGroupLayout,
     entries: [{ binding: 0, resource: { buffer: uniformBuffer, size: UNIFORM_BYTE_SIZE } }],
-  });
-
-  const linearSampler = device.createSampler({
-    minFilter: 'linear',
-    magFilter: 'linear',
-    addressModeU: 'clamp-to-edge',
-    addressModeV: 'clamp-to-edge',
-  });
-
-  const nearestSampler = device.createSampler({
-    minFilter: 'nearest',
-    magFilter: 'nearest',
-    addressModeU: 'clamp-to-edge',
-    addressModeV: 'clamp-to-edge',
   });
 
   const state = _createRenderState({
@@ -241,34 +168,17 @@ function initializeWgpuRenderState(
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
   state.applyBlendMode = null;
-  (state as { surface: WgpuPresentationSurface }).surface = acquisition.surface;
-  (state as { context: GPUCanvasContext }).context = context;
-  (state as { device: GPUDevice }).device = device;
-  (state as { format: GPUTextureFormat }).format = format;
+  Object.assign(state, { deviceState, device, format, pipeline });
 
-  const runtime = createWgpuRenderStateRuntimeWithHost(acquisition, hostBackend);
+  const runtime = createWgpuRenderStateRuntime(deviceState, pipeline);
   state[EntityRuntimeKey] = runtime;
 
-  const ctx = runtime.context;
-  ctx.uniformBindGroupLayout = uniformBindGroupLayout;
-  ctx.textureBindGroupLayout = textureBindGroupLayout;
-  ctx.pipelineCache = new Map();
-  ctx.linearSampler = linearSampler;
-  ctx.nearestSampler = nearestSampler;
-  ctx.samplerCache = new Map();
-  ctx.mipmapPipelineCache = new Map();
-  ctx.textureCache = new WeakMap();
-  ctx.textureSourcePremultipliedTextureCache = new WeakMap();
-  ctx.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
-  ctx.textureSourceStraightTextureCache = new WeakMap();
-  ctx.textureSourceStraightSrgbTextureCache = new WeakMap();
-
-  runtime.surfaceAntialiasEnabled = options.antialias ?? false;
+  runtime.surfaceAntialiasEnabled = false;
   runtime.currentBlendMode = null;
   runtime.currentRenderTarget = null;
   runtime.uniformBuffer = uniformBuffer;
   runtime.uniformData = uniformData;
-  runtime.uniformDataU32 = uniformDataU32;
+  runtime.uniformDataU32 = new Uint32Array(uniformData.buffer);
   runtime.uniformOffset = 0;
   runtime.uniformStride = uniformStride;
   runtime.uniformBindGroup = uniformBindGroup;
@@ -298,6 +208,12 @@ function initializeWgpuRenderState(
   runtime.renderPass = null;
   runtime.canvasTextureView = null;
   runtime.canvasViewCleared = false;
+  runtime.frameCaptureEnabled = false;
+  runtime.frameCaptureTexture = null;
+  runtime.frameCaptureBuffer = null;
+  runtime.frameCaptureBytesPerRow = 0;
+  runtime.frameCaptureWidth = 0;
+  runtime.frameCaptureHeight = 0;
 
   runtime.depthStencilTexture = null;
   runtime.depthStencilView = null;
@@ -334,6 +250,8 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   if (_destroyedStates.has(state)) return;
   _destroyedStates.add(state);
   const runtime = getWgpuRenderStateRuntime(state);
+  for (const teardown of [...runtime.teardowns]) teardown(state);
+  runtime.teardowns.length = 0;
   destroyRenderState(state);
   runtime.uniformBuffer?.destroy();
   runtime.particleInstanceBuffer?.destroy();
@@ -359,18 +277,9 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   }
 }
 
-function createWgpuRenderStateRuntimeWithHost(
-  acquisition: Readonly<WgpuHostAcquisition>,
-  hostBackend: WgpuHostBackend,
-): WgpuRenderStateRuntime {
-  return createWgpuRenderStateRuntimeInternal(undefined, acquisition, hostBackend);
-}
-
 function createWgpuRenderStateRuntimeInternal(
-  sharedRuntime: WgpuRenderStateRuntime | undefined,
-  acquisition: Readonly<WgpuHostAcquisition> | null = null,
-  hostBackend: WgpuHostBackend | null = null,
-  existingDeviceRuntime?: WgpuDeviceRuntime,
+  deviceRuntime: WgpuDeviceRuntime,
+  pipeline: Readonly<WgpuPipeline>,
 ): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.applyBlendModeParent = null;
@@ -383,38 +292,13 @@ function createWgpuRenderStateRuntimeInternal(
   runtime.surfaceAntialiasResolvePipeline = null;
   runtime.surfaceAntialiasResolveBindGroup = null;
   runtime.surfacePresentationView = null;
-  runtime.registries = {
-    compressedTextureDecoder: createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered'),
-    compressedTextureUpload: createSlotTable('WgpuCompressedTextureUpload', 'Unregistered'),
-    customMaterialShaders: createKeyedTable('WgpuCustomMaterialShader', 'Unregistered'),
-    materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
-    meshMaterialRenderers: createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial'),
-    modifierSnippets: createKeyedTable('WgpuModifierSnippet', 'Unregistered'),
-    modifierSnippetRevision: 0,
-    renderEffects: createKeyedTable('WgpuRenderEffect', 'Unregistered'),
-    renderers: runtime.registries.renderers,
-    shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
-    strokeTessellator: runtime.registries.strokeTessellator,
-    textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
-    velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
-  };
-  let deviceRuntime: WgpuDeviceRuntime;
-  if (sharedRuntime !== undefined) {
-    deviceRuntime = sharedRuntime.context;
-    const parentOwnership = _acquisitionByStateRuntime.get(sharedRuntime);
-    if (parentOwnership !== undefined) {
-      parentOwnership.references++;
-      _acquisitionByStateRuntime.set(runtime, parentOwnership);
-    }
-  } else if (acquisition !== null) {
-    deviceRuntime = createMinimalDeviceRuntime(acquisition.device);
-    if (hostBackend !== null) {
-      _acquisitionByStateRuntime.set(runtime, { acquisition, hostBackend, references: 1 });
-    }
-  } else if (existingDeviceRuntime !== undefined) {
-    deviceRuntime = existingDeviceRuntime;
-  } else {
-    throw new Error('WgpuRenderState runtime requires a device state, shared runtime, or acquisition');
+  runtime.registries = { ...pipeline.registries };
+  runtime.teardowns = [];
+  runtime.borrowedSurfaceExtent = null;
+  const ownership = _acquisitionByDeviceRuntime.get(deviceRuntime);
+  if (ownership !== undefined) {
+    ownership.references++;
+    _acquisitionByStateRuntime.set(runtime, ownership);
   }
   deviceRuntime.references++;
   runtime.context = deviceRuntime;
@@ -502,76 +386,45 @@ export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (de
   getWgpuRenderStateRuntime(state).context.teardowns.push(teardown);
 }
 
+export function registerWgpuRenderStateTeardown(
+  state: WgpuRenderState,
+  teardown: (state: WgpuRenderState) => void,
+): void {
+  getWgpuRenderStateRuntime(state).teardowns.push(teardown);
+}
+
 // Small-integer codes for the sampler-cache numeric key (see getWgpuSampler). Module-level so the key
 // packing reads a field instead of allocating — no per-call table construction.
 const SAMPLER_FILTER_BITS: Record<GPUFilterMode, number> = { nearest: 0, linear: 1 };
 const SAMPLER_WRAP_BITS: Record<TextureWrap, number> = { 'clamp-to-edge': 0, 'mirror-repeat': 1, repeat: 2 };
 const SAMPLER_MIPMAP_BITS: Record<GPUMipmapFilterMode, number> = { nearest: 1, linear: 2 };
 
-function initializeOffscreenWgpuRuntime(
-  state: WgpuRenderState,
-  runtime: WgpuRenderStateRuntime,
-  screenRuntime: WgpuRenderStateRuntime,
-): void {
-  const ctx = runtime.context;
-  const ringByteSize = screenRuntime.uniformStride * RING_SLOT_COUNT;
-  const uniformBuffer = state.device.createBuffer({
-    size: ringByteSize,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+function initializeWgpuDeviceRuntime(runtime: WgpuDeviceRuntime): void {
+  if ((runtime.uniformBindGroupLayout as GPUBindGroupLayout | null) !== null) return;
+  const device = runtime.device;
+  const { uniformBindGroupLayout, textureBindGroupLayout } = createWgpuBindGroupLayouts(device);
+  runtime.uniformBindGroupLayout = uniformBindGroupLayout;
+  runtime.textureBindGroupLayout = textureBindGroupLayout;
+  runtime.pipelineCache = new Map();
+  runtime.linearSampler = device.createSampler({
+    minFilter: 'linear',
+    magFilter: 'linear',
+    addressModeU: 'clamp-to-edge',
+    addressModeV: 'clamp-to-edge',
   });
-  const uniformData = new Float32Array(ringByteSize / 4);
-  runtime.currentBlendMode = null;
-  runtime.currentRenderTarget = null;
-  runtime.uniformBuffer = uniformBuffer;
-  runtime.uniformData = uniformData;
-  runtime.uniformDataU32 = new Uint32Array(uniformData.buffer);
-  runtime.uniformOffset = 0;
-  runtime.uniformStride = screenRuntime.uniformStride;
-  runtime.uniformBindGroup = state.device.createBindGroup({
-    layout: ctx.uniformBindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer, size: UNIFORM_BYTE_SIZE } }],
+  runtime.nearestSampler = device.createSampler({
+    minFilter: 'nearest',
+    magFilter: 'nearest',
+    addressModeU: 'clamp-to-edge',
+    addressModeV: 'clamp-to-edge',
   });
-  runtime.matrixArray = new Float32Array(9);
-  runtime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
-  runtime.particleInstanceBuffer = null;
-  runtime.particleInstanceData = null;
-  runtime.particleInstanceCapacity = 0;
-  runtime.quadBatchWriterBlendMode = null;
-  runtime.quadBatchWriterMaterial = null;
-  runtime.quadBatchWriterMaterialRenderer = null;
-  runtime.quadBatchWriterMaterialFloats = 0;
-  runtime.quadBatchWriterCount = 0;
-  runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
-  runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
-  runtime.quadBatchWriterTexture = null;
-  runtime.quadBatchWriterSampler = null;
-  runtime.quadBatchWriterSmoothing = null;
-  runtime.quadBatchWriterBufferPool = [];
-  runtime.quadBatchWriterBufferCursor = 0;
-  runtime.commandEncoder = null;
-  runtime.renderPass = null;
-  runtime.canvasTextureView = null;
-  runtime.canvasViewCleared = false;
-  runtime.frameCaptureEnabled = false;
-  runtime.frameCaptureTexture = null;
-  runtime.frameCaptureBuffer = null;
-  runtime.frameCaptureBytesPerRow = 0;
-  runtime.frameCaptureWidth = 0;
-  runtime.frameCaptureHeight = 0;
-  runtime.depthStencilTexture = null;
-  runtime.depthStencilView = null;
-  runtime.depthStencilWidth = 0;
-  runtime.depthStencilHeight = 0;
-  runtime.currentMaskDepth = 0;
-  runtime.maskWriteMode = false;
-  runtime.clipContourPipelines = undefined;
-  runtime.clipContourStack = [];
-  runtime.shapeMeshPipelines = undefined;
-  runtime.clipForms = [];
-  runtime.scissorStack = [];
-  runtime.currentScissorRect = null;
-  runtime.renderTargetViewport = null;
-  runtime.renderTargetStack = [];
+  runtime.samplerCache = new Map();
+  runtime.mipmapPipelineCache = new Map();
+  runtime.textureCache = new WeakMap();
+  runtime.textureSourcePremultipliedTextureCache = new WeakMap();
+  runtime.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
+  runtime.textureSourceStraightTextureCache = new WeakMap();
+  runtime.textureSourceStraightSrgbTextureCache = new WeakMap();
 }
 
 type WgpuAcquisitionOwnership = {
@@ -586,11 +439,9 @@ export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition
 }
 
 function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
-  const runtime: WgpuDeviceRuntime = {
+  return {
     binding: null,
     device,
-    lost: null,
-    signals: null,
     references: 0,
     teardowns: [],
     uniformBindGroupLayout: null as unknown as GPUBindGroupLayout,
@@ -606,13 +457,10 @@ function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
     textureSourceStraightTextureCache: new WeakMap(),
     textureSourceStraightSrgbTextureCache: new WeakMap(),
   };
-  // One observer per physical device, attached here — the single place a device tier is built — and
-  // therefore before any render state is published on it.
-  observeWgpuDeviceLoss(runtime);
-  return runtime;
 }
 
 const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();
+const _acquisitionByDeviceRuntime = new WeakMap<WgpuDeviceRuntime, WgpuAcquisitionOwnership>();
 const _destroyedStates = new WeakSet<WgpuRenderState>();
 
 // Resolve the blend hook at the draw seam rather than hiding derived-state delegation behind an

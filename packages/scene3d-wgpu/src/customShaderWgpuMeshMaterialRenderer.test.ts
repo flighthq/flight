@@ -4,7 +4,7 @@ import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
-  copyWgpuRenderStateRegistrations,
+  createWgpuPipeline,
   getWgpuRenderStateRuntime,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
@@ -207,14 +207,13 @@ describe('registerWgpuCustomMaterialShader', () => {
     expect(getWgpuCustomMaterialShaderSource(state, 'missing')).toBeNull();
   });
 
-  it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
+  it('replaces the persistent table while an explicit pipeline state retains its snapshot', () => {
     const { state: screen } = makeWgpuScene3DState();
-    const { state: derived } = makeWgpuScene3DState();
     const replacement = `${SOURCE}\n// replacement`;
     registerWgpuCustomMaterialShader(screen, 'ripple', SOURCE);
     const snapshot = getWgpuRenderStateRuntime(screen).registries.customMaterialShaders;
+    const { state: derived } = makeWgpuScene3DState(createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries));
 
-    copyWgpuRenderStateRegistrations(derived, screen);
     getWgpuScene3DRuntime(derived);
     registerWgpuCustomMaterialShader(screen, 'ripple', replacement);
 

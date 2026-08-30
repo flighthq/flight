@@ -1,6 +1,7 @@
 import type { ColorScaleBias, RenderProxy, WgpuRenderState } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
+import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 // ---- WGSL source ----
@@ -349,7 +350,7 @@ export function writeWgpuQuadUniforms(
   const floatBase = byteOffset >> 2; // divide by 4
   const { uniformData, uniformDataU32, matrixArray } = runtime;
 
-  const viewport = runtime.renderTargetViewport ?? state.surface;
+  const viewport = runtime.renderTargetViewport ?? getWgpuSurfaceRenderExtent(state);
   setWgpuMatrixFromTransform(matrixArray, renderProxy.transform2D, viewport);
 
   // mat3x3 columns with per-column padding (4 floats each = 16 bytes):
