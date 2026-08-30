@@ -19,7 +19,7 @@ import { getParsedOxcSource } from './oxc-source';
 // gate by editing a list instead of the seam.
 
 export interface BackendOperationSeamEntry {
-  // `FileDialog` for `FileDialogBackend` — the token every derived name is built from.
+  // `FileOpenDialog` for `FileOpenDialogBackend` — the token every derived name is built from.
   name: string;
   // True when either the legacy explain/has seam or an equal-coverage explicit Host shape is present.
   migrated: boolean;

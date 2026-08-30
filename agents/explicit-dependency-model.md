@@ -67,7 +67,7 @@ The callsite passes the host; the trait does the rest:
 ```typescript
 fetchResource(webHost, url);           // webHost satisfies HasNetHttp
 playSound(webHost, soundId);           // webHost satisfies HasAudioDevice
-openFileDialog(minimalHost, options);  // type error — minimalHost has no dialog.file
+showOpenFileDialog(minimalHost, options);  // type error — minimalHost has no dialog.fileOpen
 ```
 
 This is the same pattern as `getNode2DBounds(node: BoundsNode)` — the function declares the trait it needs, the compiler enforces it, the distance between cause and symptom is zero.
@@ -103,7 +103,9 @@ interface AudioCapabilities {
 }
 
 interface DialogCapabilities {
-  file?: FileDialogBackend;
+  directoryOpen?: DirectoryOpenDialogBackend;
+  fileOpen?: FileOpenDialogBackend;
+  fileSave?: FileSaveDialogBackend;
   message?: MessageDialogBackend;
   prompt?: PromptDialogBackend;   // split from message; see First inventories
 }
@@ -310,9 +312,9 @@ Registry: renderers
   Unused:     Text, TileMap, QuadBatch, Mesh
 
 Host: webHost
-  Installed:  audio.device, dialog.file, dialog.message, net.http, clipboard.access
+  Installed:  audio.device, dialog.fileOpen, dialog.fileSave, dialog.message, net.http, clipboard.access
   Exercised:  net.http, audio.device
-  Unused:     dialog.file, dialog.message, clipboard.access
+  Unused:     dialog.fileSave, dialog.message, clipboard.access
 ```
 
 This is the diagnostics inversion principle applied to **cost** instead of failure. Today's `explain*` tells you why something didn't work. This tells you what you're paying for but not using.
@@ -428,6 +430,23 @@ does **not** mean the bytes were fsynced or will survive sudden power loss. Elec
 contract with a same-directory temporary candidate plus rename and commits its cache only after the
 rename succeeds.
 
+**FileDialog R7/Entity result — 2026-08-30 append.** The former `dialog.file` aggregate is refined into
+`dialog.fileOpen`, `dialog.directoryOpen`, and `dialog.fileSave`. Web, Electron, and Tauri construct all
+three slots; Capacitor constructs none. Identical provider coverage does not merge unlike method shapes:
+file-open owns filters/multiple and a nonempty handle set, directory-open has no common options and one
+selected directory, and file-save owns filters/defaultName and one selected handle. Each awaited result
+distinguishes selected, cancelled, runtime-unavailable, reliably classified security-denied, and its own
+operation failure. A selected outcome states only that the platform returned a selection; it promises no
+future readability, writability, permission, or durability.
+
+`FileDialogHandle` is the concrete worked example for the broader side-table census. The former Web
+`WeakMap<FileDialogHandle, FileSystem*Handle>` lived in the provider package while the key crossed into
+filesystem; that package boundary made a structurally matching or serialized handle lose the only route
+to its native identity. The replacement puts provider-neutral read/write operations in the Entity runtime
+slot carried by the handle itself. The census priority is therefore highest when a side-table key crosses
+a package/process boundary the table does not: local reference equality is not proof of cross-boundary
+identity. An IPC DTO deliberately carries only serializable path/name data and is never a handle.
+
 ### First inventories — what they changed
 
 Two domain inventories (`window`, `dialog`) and the GL/WGPU context inventory landed 2026-08-29 and each overturned something this record proposed. All three are ruled; none is open.
@@ -436,7 +455,7 @@ Two domain inventories (`window`, `dialog`) and the GL/WGPU context inventory la
 
 **`dialog.color` / `ColorPickerBackend` is withdrawn — on non-existence, not on any conflict.** No colour-picker capability exists in any package source, in the `dialog` package's surface, or in any host runtime (Electron, Tauri, Capacitor). It is a slot invented for a capability that exists nowhere. It is *not* withdrawn because of `gui-architecture.md`'s "ColorPicker — NO, a composition" ruling: that governs an in-app GUI **controller** built from sliders and a text input, while `dialog.color` would be an OS-native chooser. Different layers, no contradiction — recorded because a ruling resting on a bad premise gets reopened on that premise. Groups are forward-compatible; add it if a host ever ships one.
 
-**`dialog` is `{ file?, message?, prompt? }` — `prompt` splits out.** Electron's `prompt()` is `Promise.resolve(null)` under the comment "Electron has no native text-input dialog"; Tauri is identical; Capacitor implements it; web uses `window.prompt`. Two of four hosts structurally cannot do it. Leaving `prompt` inside `message` means a *present* `dialog.message` with one permanently lying operation — this model's central failure mode, reproduced inside the new structure on day one. `null` currently means both "user cancelled" (a legitimate domain outcome that keeps its sentinel) and "this platform has none" (an absent capability, which must become a type error).
+**`dialog` is `{ directoryOpen?, fileOpen?, fileSave?, message?, prompt? }` — `prompt` and each file-picker method split out.** Electron's `prompt()` is `Promise.resolve(null)` under the comment "Electron has no native text-input dialog"; Tauri is identical; Capacitor implements it; web uses `window.prompt`. Two of four hosts structurally cannot do it. Leaving `prompt` inside `message` means a *present* `dialog.message` with one permanently lying operation — this model's central failure mode, reproduced inside the new structure on day one. The three file-picker slots are the later FileDialog R7 refinement recorded above; they share W/E/T coverage but have incompatible option/result shapes and remain absent on Capacitor.
 
 **Window fullscreen and surface fullscreen are two capabilities, not two granularities of one.** `setWindowFullscreen` is a window-scoped boolean mirrored on the entity and routed through the backend seam; `requestApplicationFullscreen(element)` calls `element.requestFullscreen()` on an **arbitrary** element and `exitApplicationFullscreen()` calls the **document-global** `document.exitFullscreen()`, while `fullscreenchange` is subscribed on the document. Under R7 coverage settles it: no host offers "make this arbitrary element fullscreen." Three consequences. **(a)** `request(target)` / `exit()` / `subscribe(handler)` is the honest shape — on the web at most one element is fullscreen per document, so the capability is a document-scoped singleton; a symmetric `exit(target)` would lie about a constraint the caller needs. **(b)** The `HTMLElement` parameter must go: a raw DOM type in an exported signature cannot exist on a native host, and the missing primitive is an opaque **fullscreen target handle** the web backend realizes as an element and a native host as its window or surface. **(c)** `subscribe` carries a teardown obligation expressed as an eligibility edge — a host providing it must provide its unsubscribe, so the trait requires both, the same mechanism as `open`-requires-`close`.
 

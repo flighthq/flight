@@ -749,6 +749,21 @@ The required-enforced ledger's current row replaces `MenuBackend`/`PowerBackend`
 the two interfaces are gone, and the two real owners took their place. The historical baseline is
 untouched.
 
+### 2026-08-30 FileDialog explicit-Host append
+
+The historical `DialogBackend` row above records the removed aggregate/WeakMap implementation. The
+explicit slice replaces it with three bounded-call Entity providers and moves file authority onto each
+returned `FileDialogHandle` Entity runtime. No provider owns a durable descriptor or backend-wide
+resource, so no provider `destroy` or handle `dispose` is declared. Replacing the one aggregate with
+three method-tight interfaces moves the structural census from 82 to 84 backends while leaving its
+whole-provider teardown numerator unchanged at 10.
+
+| Backend | Exact resource bracket and provenance | Result |
+| --- | --- | --- |
+| `FileOpenDialogBackend` | One awaited picker call. Web's legacy fallback retains exact change/cancel/focus listeners until a single settlement and removes all three; a selected legacy `File` is retained only by the returned handle runtime. | **Owned by call/handle.** Cancellation, focus return, failure, or selection settles once; dropping the handle releases its runtime by GC. |
+| `DirectoryOpenDialogBackend` | One awaited picker call. Web requests read mode and returns no legacy directory surrogate when the platform API is absent. | **Owned by call.** No directory bridge or invented teardown survives. |
+| `FileSaveDialogBackend` | One awaited picker call. The returned handle runtime can create a writable per filesystem operation; that operation closes on success and aborts best-effort on failure. | **Owned by filesystem operation.** The provider and handle retain no open writable, so neither earns a destroy/dispose hook. |
+
 ## Review checklist for the remaining slices
 
 For each of the three missing whole-backend hooks, tests must cover replacement with a different

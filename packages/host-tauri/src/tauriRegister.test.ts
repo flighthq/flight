@@ -56,7 +56,9 @@ describe('registerTauriBackends', () => {
     expect(host.media).toEqual({});
     expect(host.updater).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
-    expect(host.dialog.file.openFile).toBeTypeOf('function');
+    expect(host.dialog.directoryOpen.open).toBeTypeOf('function');
+    expect(host.dialog.fileOpen.open).toBeTypeOf('function');
+    expect(host.dialog.fileSave.save).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(Object.keys(host.clipboard)).toEqual(['text']);

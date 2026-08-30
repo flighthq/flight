@@ -1,73 +1,62 @@
 import type { ApplicationWindow } from './ApplicationWindow';
+import type { Entity, EntityRuntime } from './Entity';
 
-// File-extension group for open/save dialogs, e.g. { name: 'Images', extensions: ['png', 'jpg'] }.
+// One picker filter. Each MIME key owns exactly the extensions it describes; native providers flatten
+// the extension values while Web passes the pairing through to the File System Access API.
 export interface FileDialogFilter {
-  name: string;
-  extensions: string[];
-  // Optional MIME types for this group; consumed by the web File System Access API and the
-  // legacy <input accept> attribute. Native hosts may ignore it in favor of extensions.
-  mimeTypes?: string[];
+  readonly accept: Readonly<Record<string, readonly string[]>>;
+  readonly name: string;
 }
 
 // A handle to a file or directory chosen through a dialog. On web, path is null because browsers
-// cannot expose real host paths; native hosts populate path. The live web FileSystem*Handle (when
-// the File System Access API produced it) is retrieved separately via getWebFileSystemHandle /
-// getWebDirectorySystemHandle, keyed by this handle's reference identity.
-export interface FileDialogHandle {
-  kind: 'File' | 'Directory';
-  name: string;
-  path: string | null;
+// cannot expose real host paths; native hosts populate path. Provider-neutral file operations live in
+// the Entity runtime so the identity remains valid after crossing package boundaries.
+export interface FileDialogHandle extends Entity {
+  readonly kind: 'File' | 'Directory';
+  readonly name: string;
+  readonly path: string | null;
 }
 
-// Starting location hint for file/directory pickers. The web File System Access API only honors
-// 'desktop'|'documents'|'downloads'|'music'|'pictures'|'videos'; the remaining values are native-only
-// and silently dropped on web.
-export type FileDialogStartIn =
-  | 'desktop'
-  | 'documents'
-  | 'downloads'
-  | 'music'
-  | 'pictures'
-  | 'videos'
-  | 'home'
-  | 'temp'
-  | 'appData'
-  | 'cache';
+// Runtime operations are deliberately provider-neutral: filesystem consumes these without knowing
+// whether the handle retains a File, a FileSystemFileHandle, or a future native binding.
+export interface FileDialogHandleOperations {
+  readonly readBinary?: () => Promise<Uint8Array | null>;
+  readonly readText?: () => Promise<string | null>;
+  readonly writeBinary?: (data: Readonly<Uint8Array>) => Promise<boolean>;
+  readonly writeText?: (data: string) => Promise<boolean>;
+}
+
+export interface FileDialogHandleRuntime extends EntityRuntime {
+  operations: FileDialogHandleOperations | null;
+}
 
 export interface OpenFileDialogOptions {
-  title?: string;
-  multiple?: boolean;
-  directory?: boolean;
-  filters?: FileDialogFilter[];
-  defaultPath?: string;
-  // Starting location hint for the picker; web honors a subset of values.
-  startIn?: FileDialogStartIn;
-  // Native parent window to attach the modal dialog to; web backends ignore it.
-  parentWindow?: ApplicationWindow;
-}
-
-// Options for a directory picker, distinct from an open-file picker. Web honors multiple/startIn;
-// native hosts additionally honor parentWindow.
-export interface OpenDirectoryDialogOptions {
-  title?: string;
-  multiple?: boolean;
-  // Starting location hint for the picker; web honors a subset of values.
-  startIn?: FileDialogStartIn;
-  // Native parent window to attach the modal dialog to; web backends ignore it.
-  parentWindow?: ApplicationWindow;
+  readonly filters?: readonly FileDialogFilter[];
+  readonly multiple?: boolean;
 }
 
 export interface SaveFileDialogOptions {
-  title?: string;
-  defaultPath?: string;
-  // Suggested file name for the save target; preferred over defaultPath's basename when present.
-  defaultName?: string;
-  filters?: FileDialogFilter[];
-  // Starting location hint for the picker; web honors a subset of values.
-  startIn?: FileDialogStartIn;
-  // Native parent window to attach the modal dialog to; web backends ignore it.
-  parentWindow?: ApplicationWindow;
+  readonly defaultName?: string;
+  readonly filters?: readonly FileDialogFilter[];
 }
+
+export type FileOpenDialogResult =
+  | { readonly handles: readonly [FileDialogHandle, ...FileDialogHandle[]]; readonly outcome: 'selected' }
+  | {
+      readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | 'file-open-failed';
+    };
+
+export type DirectoryOpenDialogResult =
+  | { readonly handle: FileDialogHandle; readonly outcome: 'selected' }
+  | {
+      readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | 'directory-open-failed';
+    };
+
+export type FileSaveDialogResult =
+  | { readonly handle: FileDialogHandle; readonly outcome: 'selected' }
+  | {
+      readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | 'file-save-failed';
+    };
 
 // Options for a text prompt dialog. Aligns prompt with its sibling dialog calls (object options).
 export interface PromptDialogOptions {

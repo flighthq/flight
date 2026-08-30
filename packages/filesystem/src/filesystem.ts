@@ -1,4 +1,4 @@
-import { getWebFileSystemHandle } from '@flighthq/dialog/contract';
+import { getFileDialogHandleOperations } from '@flighthq/dialog/contract';
 import type {
   BackendExplanation,
   FileDialogHandle,
@@ -460,47 +460,25 @@ export function readBinaryFileRange(path: string, offset: number, length: number
 }
 
 // Reads bytes from a FileDialogHandle produced by @flighthq/dialog on web via the File System
-// Access API, or falls back to the OPFS backend by name when the native handle is unavailable.
+// provider-neutral operations carried in the handle's Entity runtime.
 // On native hosts (Electron/Tauri), delegates to readBinaryFile using handle.path.
 // Returns null when the handle is unreadable or the path is unavailable.
 export async function readDialogHandleBinaryFile(handle: Readonly<FileDialogHandle>): Promise<Uint8Array | null> {
   // On native hosts, path is a real file-system path; delegate to the backend directly.
   if (handle.path !== null) return getFileSystemBackend().readBinaryFile(handle.path);
-  // On web: use the live FileSystemFileHandle stashed by the dialog backend, if any.
-  const fsHandle = getWebFileSystemHandle(handle);
-  if (fsHandle !== null) {
-    try {
-      const file = await fsHandle.getFile();
-      return new Uint8Array(await file.arrayBuffer());
-    } catch {
-      return null;
-    }
-  }
-  // Fallback: try OPFS by file name (only works if the file was previously written to OPFS).
-  if (handle.name === '') return null;
-  return getFileSystemBackend().readBinaryFile(handle.name);
+  const read = getFileDialogHandleOperations(handle)?.readBinary;
+  return read === undefined ? null : read();
 }
 
 // Reads text from a FileDialogHandle produced by @flighthq/dialog on web via the File System
-// Access API, or falls back to the OPFS backend by name when the native handle is unavailable.
+// provider-neutral operations carried in the handle's Entity runtime.
 // On native hosts (Electron/Tauri), delegates to readTextFile using handle.path.
 // Returns null when the handle is unreadable or the path is unavailable.
 export async function readDialogHandleTextFile(handle: Readonly<FileDialogHandle>): Promise<string | null> {
   // On native hosts, path is a real file-system path; delegate to the backend directly.
   if (handle.path !== null) return getFileSystemBackend().readTextFile(handle.path);
-  // On web: use the live FileSystemFileHandle stashed by the dialog backend, if any.
-  const fsHandle = getWebFileSystemHandle(handle);
-  if (fsHandle !== null) {
-    try {
-      const file = await fsHandle.getFile();
-      return await file.text();
-    } catch {
-      return null;
-    }
-  }
-  // Fallback: try OPFS by file name (only works if the file was previously written to OPFS).
-  if (handle.name === '') return null;
-  return getFileSystemBackend().readTextFile(handle.name);
+  const read = getFileDialogHandleOperations(handle)?.readText;
+  return read === undefined ? null : read();
 }
 
 // Lists directory entries (one level only), or [] when missing or access is denied.
@@ -600,7 +578,7 @@ export async function writeBinaryFileChunks(
 }
 
 // Writes bytes to a FileDialogHandle produced by @flighthq/dialog (typically a save-file handle).
-// On web, uses the live writable FileSystemFileHandle stashed by the dialog backend when available.
+// On web, uses provider-neutral writable operations retained in the handle's Entity runtime.
 // On native hosts (Electron/Tauri), delegates to writeBinaryFile using handle.path.
 // Returns false when the handle is not writable or the path is unavailable.
 export async function writeDialogHandleBinaryFile(
@@ -609,37 +587,19 @@ export async function writeDialogHandleBinaryFile(
 ): Promise<boolean> {
   // On native hosts, path is a real file-system path; delegate to the backend directly.
   if (handle.path !== null) return getFileSystemBackend().writeBinaryFile(handle.path, data);
-  // On web: use the live FileSystemFileHandle stashed by the dialog backend, if any.
-  const fsHandle = getWebFileSystemHandle(handle);
-  if (fsHandle === null) return false;
-  try {
-    const writable = await fsHandle.createWritable();
-    await writable.write(data.slice());
-    await writable.close();
-    return true;
-  } catch {
-    return false;
-  }
+  const write = getFileDialogHandleOperations(handle)?.writeBinary;
+  return write === undefined ? false : write(data);
 }
 
 // Writes text to a FileDialogHandle produced by @flighthq/dialog (typically a save-file handle).
-// On web, uses the live writable FileSystemFileHandle stashed by the dialog backend when available.
+// On web, uses provider-neutral writable operations retained in the handle's Entity runtime.
 // On native hosts (Electron/Tauri), delegates to writeTextFile using handle.path.
 // Returns false when the handle is not writable or the path is unavailable.
 export async function writeDialogHandleTextFile(handle: Readonly<FileDialogHandle>, data: string): Promise<boolean> {
   // On native hosts, path is a real file-system path; delegate to the backend directly.
   if (handle.path !== null) return getFileSystemBackend().writeTextFile(handle.path, data);
-  // On web: use the live FileSystemFileHandle stashed by the dialog backend, if any.
-  const fsHandle = getWebFileSystemHandle(handle);
-  if (fsHandle === null) return false;
-  try {
-    const writable = await fsHandle.createWritable();
-    await writable.write(data);
-    await writable.close();
-    return true;
-  } catch {
-    return false;
-  }
+  const write = getFileDialogHandleOperations(handle)?.writeText;
+  return write === undefined ? false : write(data);
 }
 
 // Atomic write: writes data to a temp sibling and moves it into place in one operation. Avoids

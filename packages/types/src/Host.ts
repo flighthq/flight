@@ -29,7 +29,7 @@ import type {
 } from './Connectivity';
 import type { DeviceBackend } from './Device';
 import type { Entity } from './Entity';
-import type { FileDialogBackend } from './FileDialogBackend';
+import type { DirectoryOpenDialogBackend, FileOpenDialogBackend, FileSaveDialogBackend } from './FileDialogBackend';
 import type { FileSystemBackend } from './FileSystem';
 import type { FontLoadingBackend } from './FontLoadingBackend';
 import type { FullscreenBackend } from './FullscreenBackend';
@@ -156,7 +156,9 @@ export interface HostConnectivityCapabilities {
 }
 
 export interface HostDialogCapabilities {
-  readonly file?: FileDialogBackend;
+  readonly directoryOpen?: DirectoryOpenDialogBackend;
+  readonly fileOpen?: FileOpenDialogBackend;
+  readonly fileSave?: FileSaveDialogBackend;
   readonly message?: MessageDialogBackend;
   readonly prompt?: PromptDialogBackend;
 }
@@ -357,9 +359,16 @@ export interface HasConnectivityReachability {
 export interface HasConnectivityStatus {
   readonly connectivity: { readonly status: ConnectivityStatusBackend };
 }
+export interface HasDialogDirectoryOpen {
+  readonly dialog: { readonly directoryOpen: DirectoryOpenDialogBackend };
+}
 
-export interface HasDialogFile {
-  readonly dialog: { readonly file: FileDialogBackend };
+export interface HasDialogFileOpen {
+  readonly dialog: { readonly fileOpen: FileOpenDialogBackend };
+}
+
+export interface HasDialogFileSave {
+  readonly dialog: { readonly fileSave: FileSaveDialogBackend };
 }
 
 export interface HasDialogMessage {

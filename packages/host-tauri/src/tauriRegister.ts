@@ -7,7 +7,9 @@ import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
   EntityRuntimeKey,
   HasClipboardText,
-  HasDialogFile,
+  HasDialogDirectoryOpen,
+  HasDialogFileOpen,
+  HasDialogFileSave,
   HasDialogMessage,
   HasNotificationDelivery,
   HasMenuApplication,
@@ -21,7 +23,12 @@ import type {
 
 import { createTauriAppBackend } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
-import { createTauriFileDialogBackend, createTauriMessageDialogBackend } from './tauriDialog';
+import {
+  createTauriDirectoryOpenDialogBackend,
+  createTauriFileOpenDialogBackend,
+  createTauriFileSaveDialogBackend,
+  createTauriMessageDialogBackend,
+} from './tauriDialog';
 import { createTauriMenuBackends } from './tauriMenu';
 import { createTauriNotificationCapabilities } from './tauriNotification';
 import { createTauriPlatformBackend } from './tauriPlatform';
@@ -32,7 +39,9 @@ import { createTauriWindowBackend } from './tauriWindow';
 
 type TauriHost = Host &
   HasClipboardText &
-  HasDialogFile &
+  HasDialogDirectoryOpen &
+  HasDialogFileOpen &
+  HasDialogFileSave &
   HasDialogMessage &
   HasMenuApplication &
   HasMenuPopup &
@@ -55,7 +64,9 @@ type TauriHost = Host &
 export function registerTauriBackends(tauri: TauriApi): TauriHost {
   const clipboard = createTauriClipboardBackend(tauri);
   const dialog = {
-    file: createTauriFileDialogBackend(tauri),
+    directoryOpen: createTauriDirectoryOpenDialogBackend(tauri),
+    fileOpen: createTauriFileOpenDialogBackend(tauri),
+    fileSave: createTauriFileSaveDialogBackend(tauri),
     message: createTauriMessageDialogBackend(tauri),
   };
   const notification = createTauriNotificationCapabilities(tauri);

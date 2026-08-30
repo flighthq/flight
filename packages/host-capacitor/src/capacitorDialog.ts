@@ -2,7 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import type { CapacitorApi, Entity, MessageDialogBackend, PromptDialogBackend } from '@flighthq/types/contract';
 
 // Maps Capacitor's alert and confirmation surfaces onto Flight's message-dialog capability. Capacitor
-// has no native file picker; consumers leave dialog.file absent instead of advertising sentinels.
+// has no native file picker; consumers leave the three file-dialog slots absent instead of advertising sentinels.
 export function createCapacitorMessageDialogBackend(capacitor: CapacitorApi): MessageDialogBackend & Entity {
   const dialog = capacitor.dialog;
   return createEntity({

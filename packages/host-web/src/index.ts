@@ -10,7 +10,13 @@ export { webClipboardBackend } from './webClipboard';
 export { createWebConnectivityBackend, webConnectivityBackend } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';
 export { enableHostWebDevice } from './webDevice';
-export { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
+export {
+  webDirectoryOpenDialogBackend,
+  webFileOpenDialogBackend,
+  webFileSaveDialogBackend,
+  webMessageDialogBackend,
+  webPromptDialogBackend,
+} from './webDialog';
 export { enableHostWebFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
 export { enableHostWebGeolocation } from './webGeolocation';
