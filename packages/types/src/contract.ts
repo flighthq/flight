@@ -350,6 +350,7 @@ export * from './InnerGlowEffect';
 export * from './InnerShadowEffect';
 export * from './InputGamepadData';
 export * from './InputIngressBackend';
+export * from './InputTargetBackend';
 export * from './InputKeyboardData';
 export * from './InputKeyRepeatOptions';
 export * from './InputKeyRepeatTimer';

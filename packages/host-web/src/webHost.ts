@@ -6,6 +6,7 @@ import { webApplicationExitBackend } from './webApplicationExit';
 import { webClipboardBackend } from './webClipboard';
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 import { webHapticsBackend } from './webHaptics';
+import { webInputTargetBackend } from './webInputTarget';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
@@ -31,7 +32,7 @@ export const webHost = createEntity({
     prompt: webPromptDialogBackend,
   },
   graphics: {},
-  input: { haptics: webHapticsBackend },
+  input: { haptics: webHapticsBackend, target: webInputTargetBackend },
   media: {},
   net: {},
   notification: webNotificationCapabilities,
