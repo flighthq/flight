@@ -146,7 +146,6 @@
     "@flighthq/host-tauri createTauriShortcutBackend",
     "@flighthq/host-tauri createTauriTrayBackend",
     "@flighthq/host-tauri createTauriWindowBackend",
-    "@flighthq/host-web createWebCursorBackend",
     "@flighthq/image createEmbeddedImageResourceReference",
     "@flighthq/image createExternalImageResourceReference",
     "@flighthq/image createImageResourceFailure",

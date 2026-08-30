@@ -4,6 +4,7 @@ import {
   hasBitmapReadbackHostBackend,
   resetBitmapReadbackBackendForTest,
 } from '@flighthq/bitmap/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
@@ -14,6 +15,10 @@ afterEach(() => {
 });
 
 describe('createWebBitmapReadbackBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createWebBitmapReadbackBackend()).toBe(true);
+  });
+
   it('creates an explicit readback operation without touching the DOM', () => {
     const createElement = vi.spyOn(document, 'createElement');
 
