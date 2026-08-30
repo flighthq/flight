@@ -3,7 +3,6 @@ import type {
   GeolocationAccessOutcome,
   GeolocationBackend,
   GeolocationErrorReason,
-  GeolocationPermissionState,
   GeolocationRequestOptions,
   GeoPosition,
   GeoPositionResult,
@@ -77,18 +76,6 @@ export function createWebGeolocationBackend(): GeolocationBackend {
         }
       });
     },
-    async getPermission() {
-      const permissions = typeof navigator !== 'undefined' ? (navigator.permissions ?? null) : null;
-      if (permissions !== null && typeof permissions.query === 'function') {
-        try {
-          const status = await permissions.query({ name: 'geolocation' });
-          return status.state as GeolocationPermissionState;
-        } catch {
-          // Fall through to prompt default.
-        }
-      }
-      return 'prompt';
-    },
     isAvailable() {
       if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
       return getWebGeolocation() !== null;
@@ -113,41 +100,6 @@ export function createWebGeolocationBackend(): GeolocationBackend {
           resolve({ reason: 'operation-failed' });
         }
       });
-    },
-    async requestPermission() {
-      const permissions = typeof navigator !== 'undefined' ? (navigator.permissions ?? null) : null;
-      if (permissions !== null && typeof permissions.query === 'function') {
-        try {
-          const status = await permissions.query({ name: 'geolocation' });
-          return status.state === 'granted';
-        } catch {
-          // Fall through to a probe below.
-        }
-      }
-      return (await this.getCurrentPosition({})) !== null;
-    },
-    subscribePermission(listener) {
-      const permissions = typeof navigator !== 'undefined' ? (navigator.permissions ?? null) : null;
-      if (permissions === null || typeof permissions.query !== 'function') return _noopUnsubscribe;
-      let status: PermissionStatus | null = null;
-      let handler: (() => void) | null = null;
-      permissions
-        .query({ name: 'geolocation' })
-        .then((s) => {
-          status = s;
-          handler = () => listener(s.state as GeolocationPermissionState);
-          s.addEventListener('change', handler);
-        })
-        .catch(() => {
-          // Permissions API unavailable; subscription is a no-op.
-        });
-      return () => {
-        if (status !== null && handler !== null) {
-          status.removeEventListener('change', handler);
-          status = null;
-          handler = null;
-        }
-      };
     },
     watchPosition(listener, options, onError) {
       const geo = getWebGeolocation();
@@ -192,10 +144,6 @@ export function getGeolocationBackend(): GeolocationBackend {
   return _custom ?? _host ?? _sentinel;
 }
 
-export function getGeolocationPermission(): Promise<GeolocationPermissionState> {
-  return getGeolocationBackend().getPermission();
-}
-
 export function installGeolocationHostBackend(backend: GeolocationBackend): void {
   if (_host !== null) {
     if (_host !== backend) _hostConflict = true;
@@ -213,14 +161,6 @@ export function observeGeolocationHostResult(operation: string, succeeded: boole
     operation,
     viability: succeeded ? 'available' : 'runtime-api-unavailable',
   };
-}
-
-export function onGeolocationPermissionChange(listener: (state: GeolocationPermissionState) => void): () => void {
-  return getGeolocationBackend().subscribePermission(listener);
-}
-
-export function requestGeolocationPermission(): Promise<boolean> {
-  return getGeolocationBackend().requestPermission();
 }
 
 export function resetGeolocationBackendForTest(): void {
@@ -247,7 +187,6 @@ let _host: GeolocationBackend | null = null;
 let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _emptyOptions: GeolocationRequestOptions = {};
-const _noopUnsubscribe = () => {};
 
 const _sentinel: GeolocationBackend = {
   clearWatch() {},
@@ -257,20 +196,11 @@ const _sentinel: GeolocationBackend = {
   getCurrentPositionResult() {
     return Promise.resolve({ position: null, reason: 'unavailable' as const });
   },
-  getPermission() {
-    return Promise.resolve('prompt' as GeolocationPermissionState);
-  },
   isAvailable() {
     return false;
   },
   promptForAccess() {
     return Promise.resolve({ reason: 'runtime-unavailable' as const });
-  },
-  requestPermission() {
-    return Promise.resolve(false);
-  },
-  subscribePermission() {
-    return _noopUnsubscribe;
   },
   watchPosition() {
     return -1;

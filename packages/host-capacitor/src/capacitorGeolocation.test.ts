@@ -65,12 +65,6 @@ describe('createCapacitorGeolocationBackend', () => {
     expect(position).toMatchObject({ latitude: 37.5, longitude: -122.3, accuracy: 5, heading: 90, floorLevel: 0 });
   });
 
-  it('maps permission state', async () => {
-    const backend = createCapacitorGeolocationBackend(fakeCapacitor('denied').capacitor);
-    expect(await backend.getPermission()).toBe('denied');
-    expect(await backend.requestPermission()).toBe(false);
-  });
-
   it('bridges the numeric watch id and clears the resolved string id', async () => {
     const { capacitor, cleared, fire } = fakeCapacitor();
     const backend = createCapacitorGeolocationBackend(capacitor);

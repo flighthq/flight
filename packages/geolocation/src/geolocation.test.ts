@@ -1,9 +1,4 @@
-import type {
-  GeolocationBackend,
-  GeolocationErrorReason,
-  GeolocationPermissionState,
-  GeoPosition,
-} from '@flighthq/types/contract';
+import type { GeolocationBackend, GeolocationErrorReason, GeoPosition } from '@flighthq/types/contract';
 
 import {
   clearGeolocationWatch,
@@ -12,10 +7,7 @@ import {
   getCurrentGeoPosition,
   getCurrentGeoPositionResult,
   getGeolocationBackend,
-  getGeolocationPermission,
   isGeolocationAvailable,
-  onGeolocationPermissionChange,
-  requestGeolocationPermission,
   setGeolocationBackend,
   watchGeolocationPosition,
   explainGeolocationBackend,
@@ -44,17 +36,8 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
       position.longitude = 2;
       return { position, reason: null };
     },
-    async getPermission(): Promise<GeolocationPermissionState> {
-      return 'granted';
-    },
     isAvailable() {
       return available;
-    },
-    async requestPermission() {
-      return true;
-    },
-    subscribePermission(_listener: (state: GeolocationPermissionState) => void) {
-      return () => {};
     },
     watchPosition(listener, _options, onError) {
       const position = createGeoPosition();
@@ -106,13 +89,6 @@ describe('createWebGeolocationBackend', () => {
     expect(await backend.getCurrentPosition({})).toBeNull();
     expect(typeof backend.watchPosition(() => {}, {})).toBe('number');
     expect(() => backend.clearWatch(-1)).not.toThrow();
-    expect(typeof (await backend.requestPermission())).toBe('boolean');
-  });
-
-  it('getPermission returns a GeolocationPermissionState string', async () => {
-    const backend = createWebGeolocationBackend();
-    const state = await backend.getPermission();
-    expect(['granted', 'denied', 'prompt']).toContain(state);
   });
 
   it('getCurrentPositionResult returns unavailable reason when geolocation is absent', async () => {
@@ -120,13 +96,6 @@ describe('createWebGeolocationBackend', () => {
     const result = await backend.getCurrentPositionResult({});
     expect(result.position).toBeNull();
     expect(result.reason).toBe('unavailable');
-  });
-
-  it('subscribePermission returns an unsubscribe function', () => {
-    const backend = createWebGeolocationBackend();
-    const unsubscribe = backend.subscribePermission(() => {});
-    expect(typeof unsubscribe).toBe('function');
-    expect(() => unsubscribe()).not.toThrow();
   });
 
   it('reads a host-provided floorLevel from coords', async () => {
@@ -247,18 +216,6 @@ describe('getGeolocationBackend', () => {
   });
 });
 
-describe('getGeolocationPermission', () => {
-  it('reflects the backend permission state', async () => {
-    setGeolocationBackend(fakeBackend());
-    expect(await getGeolocationPermission()).toBe('granted');
-  });
-
-  it('returns a GeolocationPermissionState string from the web backend', async () => {
-    const state = await getGeolocationPermission();
-    expect(['granted', 'denied', 'prompt']).toContain(state);
-  });
-});
-
 describe('installGeolocationHostBackend', () => {
   afterEach(() => resetGeolocationBackendForTest());
 
@@ -315,42 +272,6 @@ describe('observeGeolocationHostResult', () => {
     installGeolocationHostBackend(fakeBackend());
     observeGeolocationHostResult('clearWatch', false);
     expect(explainGeolocationBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-describe('onGeolocationPermissionChange', () => {
-  it('returns an unsubscribe function', () => {
-    const unsubscribe = onGeolocationPermissionChange(() => {});
-    expect(typeof unsubscribe).toBe('function');
-    expect(() => unsubscribe()).not.toThrow();
-  });
-
-  it('uses the backend subscribePermission', () => {
-    let subscribed = false;
-    let unsubscribed = false;
-    const backend = fakeBackend();
-    backend.subscribePermission = (_listener) => {
-      subscribed = true;
-      return () => {
-        unsubscribed = true;
-      };
-    };
-    setGeolocationBackend(backend);
-    const unsub = onGeolocationPermissionChange(() => {});
-    expect(subscribed).toBe(true);
-    unsub();
-    expect(unsubscribed).toBe(true);
-  });
-});
-
-describe('requestGeolocationPermission', () => {
-  it('reflects the backend result', async () => {
-    setGeolocationBackend(fakeBackend());
-    expect(await requestGeolocationPermission()).toBe(true);
-  });
-
-  it('returns a boolean from the web backend without throwing', async () => {
-    expect(typeof (await requestGeolocationPermission())).toBe('boolean');
   });
 });
 

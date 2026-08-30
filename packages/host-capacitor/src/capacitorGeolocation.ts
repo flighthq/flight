@@ -1,7 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
   GeolocationBackend,
-  GeolocationPermissionState,
   GeoPosition,
   GeoPositionResult,
   CapacitorApi,
@@ -36,13 +35,6 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
       } catch {
         const out: GeoPositionResult = { position: null, reason: 'unavailable' };
         return out;
-      }
-    },
-    async getPermission(): Promise<GeolocationPermissionState> {
-      try {
-        return toPermissionState((await geolocation.checkPermissions()).location);
-      } catch {
-        return 'prompt';
       }
     },
     isAvailable() {
@@ -84,17 +76,6 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
         return { reason: 'operation-failed' as const };
       }
     },
-    async requestPermission() {
-      try {
-        return (await geolocation.requestPermissions()).location === 'granted';
-      } catch {
-        return false;
-      }
-    },
-    subscribePermission() {
-      // Capacitor emits no permission-change event; inert unsubscribe.
-      return () => {};
-    },
   } satisfies GeolocationBackend);
 }
 
@@ -114,8 +95,3 @@ function toGeoPosition(position: Readonly<CapacitorPosition>): GeoPosition {
 }
 
 // Capacitor reports 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'; the last folds to 'prompt'.
-function toPermissionState(location: string): GeolocationPermissionState {
-  if (location === 'granted') return 'granted';
-  if (location === 'denied') return 'denied';
-  return 'prompt';
-}

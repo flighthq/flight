@@ -25,16 +25,6 @@ export function enableHostWebGeolocation(): void {
         return result;
       });
     },
-    async getPermission() {
-      try {
-        const state = await inner.getPermission();
-        observeGeolocationHostResult('getPermission', true);
-        return state;
-      } catch {
-        observeGeolocationHostResult('getPermission', false);
-        return 'prompt';
-      }
-    },
     isAvailable() {
       const available = inner.isAvailable();
       observeGeolocationHostResult('isAvailable', available);
@@ -46,19 +36,6 @@ export function enableHostWebGeolocation(): void {
       // runtime-unavailable reports an unusable provider.
       observeGeolocationHostResult('promptForAccess', outcome.reason !== 'runtime-unavailable');
       return outcome;
-    },
-    async requestPermission() {
-      try {
-        const result = await inner.requestPermission();
-        observeGeolocationHostResult('requestPermission', result);
-        return result;
-      } catch {
-        observeGeolocationHostResult('requestPermission', false);
-        return false;
-      }
-    },
-    subscribePermission(listener) {
-      return inner.subscribePermission(listener);
     },
     watchPosition(listener, options, onError) {
       return inner.watchPosition(listener, options, onError);
