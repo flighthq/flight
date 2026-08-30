@@ -71,6 +71,19 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
       watchIds.delete(id);
       if (stringId !== undefined && stringId !== null) geolocation.clearWatch({ id: stringId }).catch(() => {});
     },
+    // Capacitor HAS a real permission-request API, so the prompt is raised without acquiring a fix —
+    // which is the whole reason this operation is named rather than defined as a discarded position
+    // read. 'prompt' back from the plugin means the dialog closed undecided.
+    async promptForAccess() {
+      try {
+        const location = (await geolocation.requestPermissions()).location;
+        if (location === 'granted') return { reason: 'granted' as const };
+        if (location === 'prompt') return { reason: 'dismissed' as const };
+        return { reason: 'denied' as const };
+      } catch {
+        return { reason: 'operation-failed' as const };
+      }
+    },
     async requestPermission() {
       try {
         return (await geolocation.requestPermissions()).location === 'granted';

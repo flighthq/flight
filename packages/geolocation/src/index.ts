@@ -6,6 +6,7 @@ export {
   getCurrentGeoPositionResult,
   getGeolocationPermission,
   isGeolocationAvailable,
+  promptForGeolocationAccess,
   onGeolocationPermissionChange,
   requestGeolocationPermission,
   watchGeolocationPosition,

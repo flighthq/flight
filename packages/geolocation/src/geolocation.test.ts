@@ -28,6 +28,7 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
   return {
     cleared: [],
     lastWatch: 0,
+    promptForAccess: () => Promise.resolve({ reason: 'granted' as const }),
     clearWatch(id) {
       this.cleared.push(id);
     },

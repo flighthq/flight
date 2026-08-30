@@ -1,5 +1,6 @@
 import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
+  GeolocationAccessOutcome,
   GeolocationBackend,
   GeolocationErrorReason,
   GeolocationPermissionState,
@@ -91,6 +92,27 @@ export function createWebGeolocationBackend(): GeolocationBackend {
     isAvailable() {
       if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
       return getWebGeolocation() !== null;
+    },
+    // The web has no permission-request API: the prompt is raised as a side effect of a position
+    // read. Code 1 is a refusal; code 3 is an acquisition TIMEOUT and says nothing about the user, so
+    // it is reported as such rather than guessed at. 'dismissed' is reachable only on hosts that can
+    // actually observe a closed-undecided prompt, which the web cannot.
+    promptForAccess() {
+      return new Promise<GeolocationAccessOutcome>((resolve) => {
+        const geo = getWebGeolocation();
+        if (geo === null || typeof geo.getCurrentPosition !== 'function') {
+          resolve({ reason: 'runtime-unavailable' });
+          return;
+        }
+        try {
+          geo.getCurrentPosition(
+            () => resolve({ reason: 'granted' }),
+            (error) => resolve({ reason: mapWebAccessError(error) }),
+          );
+        } catch {
+          resolve({ reason: 'operation-failed' });
+        }
+      });
     },
     async requestPermission() {
       const permissions = typeof navigator !== 'undefined' ? (navigator.permissions ?? null) : null;
@@ -241,6 +263,9 @@ const _sentinel: GeolocationBackend = {
   isAvailable() {
     return false;
   },
+  promptForAccess() {
+    return Promise.resolve({ reason: 'runtime-unavailable' as const });
+  },
   requestPermission() {
     return Promise.resolve(false);
   },
@@ -272,6 +297,17 @@ function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosit
     speed: coords.speed ?? 0,
     timestamp: position.timestamp,
   };
+}
+
+function mapWebAccessError(error: GeolocationPositionError): GeolocationAccessOutcome['reason'] {
+  switch (error.code) {
+    case 1:
+      return 'denied';
+    case 3:
+      return 'timeout';
+    default:
+      return 'operation-failed';
+  }
 }
 
 function mapWebPositionError(error: GeolocationPositionError): GeolocationErrorReason {

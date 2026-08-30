@@ -31,10 +31,14 @@ export type PermissionQueryOutcome =
   | { readonly reason: 'best-effort'; readonly state: PermissionState | null }
   | { readonly reason: PermissionQueryFailureReason };
 
+// `timeout` is reason-only ON PURPOSE: an owner reporting a timeout observed an acquisition deadline,
+// not a decision, so projecting any state from it would invent one. A caller that needs the state
+// queries for it explicitly.
 export type PermissionRequestFailureReason =
   | 'no-request-route'
   | 'operation-failed'
   | 'runtime-unavailable'
+  | 'timeout'
   | 'unsupported';
 
 // Request preserves the owner's decision reason while projecting its common state. cleanup-failed is

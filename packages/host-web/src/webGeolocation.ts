@@ -40,6 +40,13 @@ export function enableHostWebGeolocation(): void {
       observeGeolocationHostResult('isAvailable', available);
       return available;
     },
+    async promptForAccess() {
+      const outcome = await inner.promptForAccess();
+      // A denial or a dismissal is the API working, not the API being absent — only
+      // runtime-unavailable reports an unusable provider.
+      observeGeolocationHostResult('promptForAccess', outcome.reason !== 'runtime-unavailable');
+      return outcome;
+    },
     async requestPermission() {
       try {
         const result = await inner.requestPermission();
