@@ -43,7 +43,7 @@ Zero new packages needed. These are pure depth + one example each as evidence th
 
 - **`audio-formats`** — triad-predicted codec cell. Decode heavy-lifting is rust-intended. **Priority: soon.**
 - Audio FFT/analysis — rust-intended.
-- **`midi`** — reserve name only.
+- **`midi`** — built as explicit basic access/permission, port Entity, and event-subscription bedrock.
 
 ### Camera / Photo
 
@@ -62,7 +62,7 @@ Zero new packages needed. These are pure depth + one example each as evidence th
 | `history` | soon | Command-stack undo. Discuss vs snapshot |
 | `snapping` | later | Align/distribute/magnetism |
 | `geo` / `geo-formats` / `maptile` | later | After scope ruling |
-| `midi` | reserve | |
+| `midi` | built | Explicit Host ownership; injected Web profiles; basic-only safety |
 | `chart` | reserve-name-only | Assembly not bedrock |
 | `schedule` | reserve-name-only | |
 

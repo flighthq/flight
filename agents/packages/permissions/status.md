@@ -11,6 +11,13 @@ by: builder2
 
 <!-- newest entry on top -->
 
+## 2026-08-30 — MIDI holding drained
+
+- MIDI query now projects only `Host.midi.permission`; MIDI request returns `no-request-route` without
+  resolving access or Web globals. The append-only history records the drain after Persistence and
+  Geolocation, and the active ledger has four total, unique rows. Mutation controls reject re-adding
+  MIDI or removing a row with live native sites.
+
 ## 2026-08-30 — Geolocation delegated; another ledger row drains
 
 `requestPermission(host, 'geolocation')` no longer holds a native trigger. It reads

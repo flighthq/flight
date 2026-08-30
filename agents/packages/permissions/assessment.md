@@ -24,17 +24,19 @@ _None open._ The ratified explicit-Host facade slice is complete.
    captured once before any work begins.
 6. **Bounded temporary acquisition.** Media tracks are stopped attempt-all and wake locks are released
    in `finally`; cleanup failure is separately reported after successful acquisition.
-7. **Six-row native-holdings ledger.** Media, geolocation, MIDI, wake lock, clipboard, and push each
-   name their future claiming domain; structural tests retain the seven-row history checkpoint and
-   allow rows to drain, never grow.
+7. **Four-row native-holdings ledger.** Media, wake lock, clipboard, and push each name their future
+   claiming domain; structural tests retain the seven-row history checkpoint and the Persistence,
+   Geolocation, and MIDI drains, allowing rows to shrink but never grow.
 8. **Permanent ownership falsifiers.** Colocated export-named tests and the cross-domain structural
    gate forbid a second native Notification owner and the deleted ambient mechanisms.
 9. **Persistent storage projection.** Query and request use only their corresponding `Host.storage`
    slots, preserve best-effort state or `null`, and leave no direct Storage API owner in Permissions.
+10. **MIDI projection without acquisition.** Query uses only `Host.midi.permission`; request has no
+    route here and cannot touch `Host.midi.access` or a Web global.
 
 ## Backlog
 
-- **Drain the six native holdings** as their named domains land. Clipboard and push remain
+- **Drain the four native holdings** as their named domains land. Clipboard and push remain
   query-only; adding a request trigger or a new holding requires a ruling.
 - **No owner/slot map yet.** Derive one only after repeated owner shapes exist; do not guess an
   aggregate or generic subscription.

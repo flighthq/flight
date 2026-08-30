@@ -746,3 +746,17 @@ sentinel/ambient-installation wording is superseded. `webHost` now carries the r
 publishes neither optional provider. There is no `createWebShortcutBackend`, `enableHostWebShortcut`,
 ambient slot, explain/observe surface, or sentinel implementation. Host probing derives support from the
 presence of an actual provider, so the empty group remains structurally unsupported.
+
+## 20. MIDI injected-profile reconciliation (2026-08-30)
+
+MIDI lands after the frozen factory census and does not revise its historical counts. It follows the
+explicit Host profile lane instead: `webHost.midi` is exactly empty, while callers that possess the native
+facade may construct an access-only profile or a permission-plus-access profile. Both factories accept
+exact injected `Navigator` slices, publish Entity capabilities, and retain native access and port identity
+inside the profile that created them.
+
+Construction performs no runtime probe and no hardware acquisition. The access provider is the sole
+`requestMIDIAccess` owner and calls it with zero options; the permission provider queries only basic MIDI
+with `sysex: false`. System-exclusive input is discarded, system-exclusive output is rejected before the
+native provider, and no software scheduler is introduced. Electron, Tauri, and Capacitor retain empty MIDI
+groups until real providers exist.
