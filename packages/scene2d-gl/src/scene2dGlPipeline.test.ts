@@ -2,6 +2,7 @@ import { getGlPipelineRegistries } from '@flighthq/render-gl/contract';
 import {
   BitmapTextKind,
   BitmapTextureSourceKind,
+  BlendMode,
   DisplayObjectKind,
   EntityRuntimeKey,
   ImageTextureSourceKind,
@@ -62,9 +63,17 @@ describe('scene2dGlPipeline', () => {
     expect(registries.textureResolvers.entries.has(RenderTargetTextureSourceKind)).toBe(true);
   });
 
+  it('carries the six standard fixed-function blend realizations', () => {
+    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    expect(registries.blendRealizations.entries.size).toBe(6);
+    expect(registries.blendRealizations.entries.has(BlendMode.Normal)).toBe(true);
+    expect(registries.blendRealizations.entries.has(BlendMode.Add)).toBe(true);
+    expect(registries.blendRealizations.entries.has(BlendMode.Multiply)).toBe(true);
+    expect(registries.blendRealizations.entries.has(BlendMode.Screen)).toBe(true);
+  });
+
   it('starts with empty GL-specific tables that earlier families do not populate', () => {
     const registries = getGlPipelineRegistries(scene2dGlPipeline);
-    expect(registries.blendRealizations.entries.size).toBe(0);
     expect(registries.materialRenderers.entries.size).toBe(0);
   });
 });
