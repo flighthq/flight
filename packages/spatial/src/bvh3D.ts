@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  Entity,
   SpatialAabb3D,
   SpatialIndexBackend3D,
   SpatialIndexingExplanation,
@@ -35,9 +37,9 @@ import { reportSpatialIndexing } from './spatialIndexingGuard';
 // The default suits a world whose objects are order-of-magnitude single-digit units and move a few
 // units per step. It is a world-space LENGTH, like the grid's cell size, so the two tune against the
 // same intuition.
-export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): SpatialIndexBackend3D {
+export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): SpatialIndexBackend3D & Entity {
   const tree = createBvh3D(margin);
-  return {
+  return createEntity({
     clearSpatialIndex: () => clearBvh3D(tree),
     explainSpatialIndexing: (id) => explainBvh3D(tree, id),
     insertSpatialObject: (id, bounds) => insertBvh3D(tree, id, bounds, 'insert'),
@@ -56,7 +58,7 @@ export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): Spati
       if (wasMissing) reportBvh3DIndexing(tree, id, explainBvh3D(tree, id).mode, 'update', 'missing-id');
       return inserted;
     },
-  };
+  } satisfies SpatialIndexBackend3D);
 }
 
 interface Bvh3D {

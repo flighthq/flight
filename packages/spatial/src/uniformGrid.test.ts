@@ -1,4 +1,5 @@
 import type { SpatialAabb2D, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setSpatialIndexingGuard } from './spatialIndexingGuard';
@@ -319,6 +320,10 @@ describe('cell range across every transition that can strand it', () => {
 });
 
 describe('createUniformGridSpatialBackend2D', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createUniformGridSpatialBackend2D(10)).toBe(true);
+  });
+
   it('keeps region comparisons reentrant when a bounds getter starts a nested query', () => {
     const grid = createUniformGridSpatialBackend2D(0);
     grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
