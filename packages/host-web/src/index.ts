@@ -87,3 +87,4 @@ export {
 } from './webWindow';
 export { webWindowHost } from './webWindowHost';
 export { createWebWgpuRenderSurfaceProvider, enableHostWebWgpuRenderSurface } from './webWgpuRenderSurface';
+export { webSocketBackend } from './webSocket';

@@ -1,13 +1,15 @@
 import type { SocketEventSink } from '@flighthq/types/contract';
 
+import { webSocketBackend as fromPublicLane } from './index';
 import { webSocketBackend } from './webSocket';
 
 describe('webSocketBackend', () => {
   // Builder composes `webHostNet` from this value, so it has to be reachable from the package root,
   // not just from the module file. A provider only webHost can see cannot be composed by anyone else.
-  it('is exported from the package public lane for host-group composition', async () => {
-    const publicLane = (await import('./index')) as Record<string, unknown>;
-    expect(publicLane.webSocketBackend).toBe(webSocketBackend);
+  // Statically imported, not `await import('./index')`: the barrel pulls in every provider and blows
+  // the per-test timeout, which reads as "not exported" when the export is fine.
+  it('is exported from the package public lane for host-group composition', () => {
+    expect(fromPublicLane).toBe(webSocketBackend);
   });
 
   it('is a stable provider value rather than an installed singleton', async () => {
