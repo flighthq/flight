@@ -19,6 +19,20 @@ import {
 const examplesDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'examples/packages');
 
 describe('collectSizeCases', () => {
+  test('collects aggregate and sprite comparator pairs for scene2d pipelines', () => {
+    const pipelineKeys = collectSizeCases(examplesDirectory)
+      .map(getSizeCaseKey)
+      .filter((key) => key.startsWith('scene2d-') && key.includes('-pipeline'));
+    expect(pipelineKeys).toEqual([
+      'scene2d-canvas-pipeline:canvas',
+      'scene2d-canvas-pipeline-sprite:canvas',
+      'scene2d-gl-pipeline:webgl',
+      'scene2d-gl-pipeline-sprite:webgl',
+      'scene2d-wgpu-pipeline:webgpu',
+      'scene2d-wgpu-pipeline-sprite:webgpu',
+    ]);
+  });
+
   test('orders the canonical release target before its diagnostics variant', () => {
     const diagnosticsCases = collectSizeCases(examplesDirectory).filter((item) => item.name === 'flight-diagnostics');
     expect(diagnosticsCases.map((item) => item.variant)).toEqual([null, 'diagnostics']);

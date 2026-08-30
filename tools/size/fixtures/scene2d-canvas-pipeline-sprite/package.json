@@ -1,0 +1,8 @@
+{
+  "name": "scene2d-canvas-pipeline-sprite-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "scene2d-canvas-pipeline-sprite"
+  }
+}

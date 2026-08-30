@@ -12,6 +12,7 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { registerGlStandardMaterial, renderGlScene2D, scene2dGlPipeline } from '@flighthq/scene2d-gl';
+import { RegistryEntryState } from '@flighthq/types';
 
 const canvas = createGlCanvasElement(400, 300, 1);
 document.body.style.margin = '0';
@@ -27,7 +28,7 @@ const state = createGlRenderState(
 
 const registries = getGlPipelineRegistries(scene2dGlPipeline);
 for (const [kind, entry] of registries.renderers.entries) {
-  registerRenderer(state, kind, entry.value);
+  if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
 }
 registerGlImageTextureResolver(state);
 registerGlStandardMaterial(state);
@@ -37,8 +38,6 @@ const root = createDisplayObject();
 const sprite = createSprite();
 sprite.x = 60;
 sprite.y = 40;
-sprite.width = 280;
-sprite.height = 220;
 addNodeChild(root, sprite);
 
 prepareScene2DRender(state, root);
