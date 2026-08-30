@@ -3,6 +3,7 @@ import {
   hasFontLoadingHostBackend,
   resetFontLoadingBackendForTest,
 } from '@flighthq/font/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createWebFontLoadingBackend,
@@ -16,6 +17,10 @@ afterEach(() => {
 });
 
 describe('createWebFontLoadingBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createWebFontLoadingBackend()).toBe(true);
+  });
+
   it('returns a backend with all four operations', () => {
     const backend = createWebFontLoadingBackend();
     expect(backend.addFontFace).toBeTypeOf('function');

@@ -1,10 +1,10 @@
 import { hasBitmapReadbackHostBackend, installBitmapReadbackHostBackend } from '@flighthq/bitmap/contract';
 import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapReadbackBackend } from '@flighthq/types/contract';
+import type { Bitmap, BitmapReadbackBackend, Entity } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-export function createWebBitmapReadbackBackend(): BitmapReadbackBackend {
-  return {
+export function createWebBitmapReadbackBackend(): BitmapReadbackBackend & Entity {
+  return createEntity({
     readBitmap(source, width, height, mode) {
       if (typeof document === 'undefined') return { bitmap: null, reason: 'no-canvas' };
       const canvas = document.createElement('canvas');
@@ -42,7 +42,7 @@ export function createWebBitmapReadbackBackend(): BitmapReadbackBackend {
       });
       return { bitmap, reason: 'ok' };
     },
-  };
+  } satisfies BitmapReadbackBackend);
 }
 
 export function enableHostWebBitmapReadback(): void {
