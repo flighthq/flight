@@ -45,6 +45,7 @@ and rethrows the original enable error. After a successful enable, `disableDebug
 | `packages/media/src/enableAudioMixerGuards.test.ts` | 30 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/movieclip/src/enableMovieClipGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/permissions/src/enablePermissionGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
+| `packages/physics2d/src/enablePhysics2DGuards.test.ts` | 22 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/physics3d/src/enablePhysics3DGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/render-gl/src/enableGlTextureResolverGuards.test.ts` | 32 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/render-gl/src/glRenderState.test.ts` | 521 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
@@ -66,11 +67,9 @@ and rethrows the original enable error. After a successful enable, `disableDebug
 | `packages/scene3d-wgpu/src/enableWgpuScene3DCustomShaderGuards.test.ts` | 42, 65 | 2 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/scene3d-wgpu/src/enableWgpuScene3DForwardLightSelectionGuards.test.ts` | 25 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/shape/src/enableShapeBoundsGuards.test.ts` | 52 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
-| `packages/shortcut/src/enableShortcutGuards.test.ts` | 39 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/socket/src/enableSocketGuards.test.ts` | 16 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/statechart/src/enableStatechartGuards.test.ts` | 71 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/swf/src/enableSwfGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/textshaper/src/enableTextShaperGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/textureatlas/src/enableTextureAtlasGuards.test.ts` | 44 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `tools/size/fixtures/log-console/src/render.canvas.ts` | 3 | 1 | `missing-cleanup` | Missing an exception-safe shorter-lifetime teardown. The sink and anything its closure captures remain reachable and can receive later log entries. |
-
