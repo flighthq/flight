@@ -1,10 +1,10 @@
 import { createMatrix4 } from '@flighthq/geometry/contract';
-import type { GlRenderState, GlLitProgram } from '@flighthq/types/contract';
-import { EntityRuntimeKey, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
+import type { GlLitProgram } from '@flighthq/types/contract';
+import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock, GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2 } from './glScene3DTestHelper';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeLitProgram(): GlLitProgram {
   const loc = (name: string): WebGLUniformLocation => ({ name }) as WebGLUniformLocation;
@@ -40,13 +40,9 @@ function makeLitProgram(): GlLitProgram {
   };
 }
 
-function makeState(gl: ReturnType<typeof makeFakeGl2>): GlRenderState {
-  return { [EntityRuntimeKey]: {}, gl } as unknown as GlRenderState;
-}
-
 describe('bindGlMeshLightBlock', () => {
   it('uploads the directional, ambient, count, shadow-gate, and ibl-gate uniforms from the packed block', () => {
-    const gl = makeFakeGl2();
+    const { state, gl } = makeGlScene3DState();
     const data = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
     data[0] = 0;
     data[1] = -1;
@@ -54,7 +50,7 @@ describe('bindGlMeshLightBlock', () => {
     data[5] = 1;
     data[6] = 1;
     data[8] = 0.2;
-    bindGlMeshLightBlock(makeState(gl), makeLitProgram(), {
+    bindGlMeshLightBlock(state, makeLitProgram(), {
       ambientCount: 1,
       data,
       directionalCount: 1,
@@ -70,9 +66,8 @@ describe('bindGlMeshLightBlock', () => {
   });
 
   it('skips the light uniform upload when the program already holds the block version', () => {
-    const gl = makeFakeGl2();
+    const { state, gl } = makeGlScene3DState();
     const program = makeLitProgram();
-    const state = makeState(gl);
     const block = {
       ambientCount: 1,
       data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
@@ -91,9 +86,8 @@ describe('bindGlMeshLightBlock', () => {
   });
 
   it('re-uploads the light uniforms when the block version changes', () => {
-    const gl = makeFakeGl2();
+    const { state, gl } = makeGlScene3DState();
     const program = makeLitProgram();
-    const state = makeState(gl);
     const data = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
     const block = { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0 };
     bindGlMeshLightBlock(state, program, { ...block, version: 1 });
@@ -102,9 +96,8 @@ describe('bindGlMeshLightBlock', () => {
   });
 
   it('re-uploads when a different per-object block has the same version', () => {
-    const gl = makeFakeGl2();
+    const { state, gl } = makeGlScene3DState();
     const program = makeLitProgram();
-    const state = makeState(gl);
     const common = {
       ambientCount: 0,
       directionalCount: 0,
@@ -119,8 +112,8 @@ describe('bindGlMeshLightBlock', () => {
   });
 
   it('uploads the punctual light arrays and their int counts from the packed block', () => {
-    const gl = makeFakeGl2();
-    bindGlMeshLightBlock(makeState(gl), makeLitProgram(), {
+    const { state, gl } = makeGlScene3DState();
+    bindGlMeshLightBlock(state, makeLitProgram(), {
       ambientCount: 0,
       data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
       directionalCount: 0,
@@ -150,8 +143,7 @@ describe('bindGlMeshLightBlock', () => {
   });
 
   it('uploads the active directional shadow filter and bias configuration', () => {
-    const gl = makeFakeGl2();
-    const state = makeState(gl);
+    const { state, gl } = makeGlScene3DState();
     const runtime = getGlScene3DRuntime(state);
     runtime.shadow = {
       enabled: true,
