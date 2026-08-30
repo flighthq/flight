@@ -1,22 +1,22 @@
-import { enableHostWebLifecycle, resetHostWebLifecycleForTest } from './webLifecycle';
+import type { AppLifecycleState } from '@flighthq/types/contract';
 
-describe('enableHostWebLifecycle', () => {
-  afterEach(() => resetHostWebLifecycleForTest());
+import { webLifecycleBackend } from './webLifecycle';
 
-  it('does not throw on first call', () => {
-    expect(() => enableHostWebLifecycle()).not.toThrow();
+describe('webLifecycleBackend', () => {
+  it('is a stable provider value rather than an installed singleton', async () => {
+    const again = (await import('./webLifecycle')).webLifecycleBackend;
+    expect(again).toBe(webLifecycleBackend);
   });
 
-  it('is idempotent', () => {
-    enableHostWebLifecycle();
-    expect(() => enableHostWebLifecycle()).not.toThrow();
+  it('answers a lifecycle state and a launch kind', () => {
+    const state: AppLifecycleState = webLifecycleBackend.getState();
+    expect(['active', 'inactive', 'background']).toContain(state);
+    expect(['cold', 'warm']).toContain(webLifecycleBackend.getLaunchKind?.() ?? 'warm');
   });
-});
 
-describe('resetHostWebLifecycleForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebLifecycle();
-    resetHostWebLifecycleForTest();
-    expect(() => enableHostWebLifecycle()).not.toThrow();
+  it('returns a working unsubscribe from subscribe', () => {
+    const unsubscribe = webLifecycleBackend.subscribe(() => {});
+    expect(typeof unsubscribe).toBe('function');
+    expect(() => unsubscribe()).not.toThrow();
   });
 });

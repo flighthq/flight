@@ -27,6 +27,7 @@ import {
   createWebSoftKeyboardInfoBackend,
   createWebSoftKeyboardVisibilityBackend,
 } from './webKeyboard';
+import { webLifecycleBackend } from './webLifecycle';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
@@ -123,7 +124,7 @@ export const webHost = createEntity({
     persistenceQuery: webStoragePersistenceCapabilities.persistenceQuery,
     persistenceRequest: webStoragePersistenceCapabilities.persistenceRequest,
   },
-  system: {},
+  system: { lifecycle: webLifecycleBackend },
   text: {},
   tray: {},
   ui: { fullscreen: webFullscreenBackend },

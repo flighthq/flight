@@ -1,13 +1,6 @@
-import { createWebLifecycleBackend, installLifecycleHostBackend } from '@flighthq/lifecycle/contract';
+import { createWebLifecycleBackend } from '@flighthq/lifecycle/contract';
+import type { LifecycleBackend } from '@flighthq/types/contract';
 
-export function enableHostWebLifecycle(): void {
-  if (_enabled) return;
-  _enabled = true;
-  installLifecycleHostBackend(createWebLifecycleBackend());
-}
-
-export function resetHostWebLifecycleForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;
+// Published on the Host rather than installed into the lifecycle package: a caller selects this
+// provider by passing the host that carries it, so two hosts can hold different providers.
+export const webLifecycleBackend: LifecycleBackend = createWebLifecycleBackend();
