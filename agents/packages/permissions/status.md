@@ -1,7 +1,7 @@
 ---
 package: "@flighthq/permissions"
-updated: null
-by: null
+updated: 2026-08-30
+by: builder2
 ---
 
 # permissions — Status Log
@@ -10,6 +10,34 @@ by: null
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-08-30 — Geolocation delegated; another ledger row drains
+
+`requestPermission(host, 'geolocation')` no longer holds a native trigger. It reads
+`Host.system.geolocation` and projects the capability's own `GeolocationAccessOutcome`;
+`requestWebGeolocationPermission` and the private `getWebGeolocation` helper are DELETED, not
+relocated. Routed above the interim guard, as `notifications` already is, because that guard is
+derived from the holdings ledger and geolocation's row is gone.
+
+No package dependency was added: this file imports only `@flighthq/types` and reads a Host slot.
+
+`timeout` is carried through as a REASON WITH NO STATE (`PermissionRequestFailureReason` gained
+`'timeout'`). A position deadline is an acquisition observable, not a decision — projecting a state
+from it would invent one. A caller that needs the state queries for it.
+
+After the persistence drain, `PERMISSION_NATIVE_HOLDINGS` drops from six rows to five; the history
+ratchet in `scripts/permission-native-holdings.test.ts` retains the seven-row initial checkpoint, the
+six-row persistence successor, and this five-row successor. That gate also had a defect this drain
+exposed: its first test asserted the LIVE ledger equalled the seven INITIAL ids, so it could not have
+survived a drain. It now describes the initial checkpoint, and the live set is checked against the
+latest checkpoint by the ratchet test.
+
+WATCH NEXT: the gate's `nativeSites` patterns match WORDS, not native reach. Geolocation's was
+narrowed to `navigator.geolocation` / `getCurrentPosition` because the bare token also appears as a
+permission name, a `PermissionNativeHoldingId` member, and now the delegation itself — testing the
+word would pin the row forever by the very code that removed the holding. Persistence's native-reach
+pattern is narrowed for the same reason; the five live rows will each need this treatment when they
+drain.
 
 ## 2026-08-30 — Persistent storage owner projected; ledger row drained
 
