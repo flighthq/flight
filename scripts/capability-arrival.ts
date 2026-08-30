@@ -72,17 +72,15 @@ const EXPECTED_AGGREGATE = [
   'Geolocation',
   'GlyphRasterizer',
   'Image',
-  'Lifecycle',
   'Platform',
   'Raster2DSurface',
-  'Sensors',
   'VideoCapability',
   'Webcam',
 ] as const;
 
 // These capabilities arrive as stable slots on the explicit Web Host, not through the legacy
 // process-global enabler registry.
-const EXPECTED_EXPLICIT_HOST = ['MediaSession', 'Power', 'Screen', 'Storage'] as const;
+const EXPECTED_EXPLICIT_HOST = ['Lifecycle', 'MediaSession', 'Power', 'Screen', 'Sensors', 'Storage'] as const;
 
 // These are deliberately not part of enableHostWeb(): applications opt into application services,
 // status chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
@@ -469,6 +467,9 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
   ) {
     explicitHost.add('MediaSession');
   }
+  const systemGroup = /\bsystem\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
+  if (/\blifecycle\s*:\s*webLifecycleBackend\b/.test(systemGroup)) explicitHost.add('Lifecycle');
+  if (/\bsensors\s*:\s*webSensorsBackend\b/.test(systemGroup)) explicitHost.add('Sensors');
   if (/\bpower\s*:\s*webPowerCapabilities\b/.test(webHostSource)) explicitHost.add('Power');
   if (/\bscreen\s*:\s*webScreenCapabilities\b/.test(webHostSource)) explicitHost.add('Screen');
   const storageGroup = /\bstorage\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
