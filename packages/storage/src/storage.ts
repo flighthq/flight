@@ -3,6 +3,8 @@ import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq
 import type {
   HasStorageChange,
   HasStorageLocal,
+  HasStoragePersistenceQuery,
+  HasStoragePersistenceRequest,
   StorageBackend,
   StorageBooleanOrResult,
   StorageBooleanResult,
@@ -23,6 +25,7 @@ import type {
   StorageNamespace,
   StorageNumberOrResult,
   StorageNumberResult,
+  StoragePersistenceResult,
   StoragePresenceResult,
   StorageRemoveItemResult,
   StorageRemoveItemsResult,
@@ -245,6 +248,11 @@ export function getStorageNumberOr(host: HasStorageLocal, key: string, fallback:
   return Number.isFinite(value) ? { reason: 'ok', value } : { reason: 'parse-failed', value: fallback };
 }
 
+export function getStoragePersistence(host: HasStoragePersistenceQuery): Promise<StoragePersistenceResult> {
+  const backend = host.storage.persistenceQuery;
+  return backend.getPersistence();
+}
+
 // Validates the complete plan before reading or mutating storage. Every successful callback is followed
 // immediately by its own checkpoint. A checkpoint failure leaves callback effects visible and causes that
 // version to replay next time, so callbacks must be idempotent; exceptions propagate and nothing rolls back.
@@ -316,6 +324,11 @@ export function removeStorageItems(
     completed++;
   }
   return { completed, failedKey: null, reason: 'ok' };
+}
+
+export function requestStoragePersistence(host: HasStoragePersistenceRequest): Promise<StoragePersistenceResult> {
+  const backend = host.storage.persistenceRequest;
+  return backend.requestPersistence();
 }
 
 export function setNamespacedStorageItem(
