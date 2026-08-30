@@ -24,21 +24,15 @@ describe('existing web message providers', () => {
   });
 });
 
-describe('web file dialog providers', () => {
-  it('exposes three independent Entity providers', () => {
+describe('webDirectoryOpenDialogBackend', () => {
+  it('is an Entity installed in the independent directory-open slot', () => {
     expect(EntityRuntimeKey in webDirectoryOpenDialogBackend).toBe(true);
-    expect(EntityRuntimeKey in webFileOpenDialogBackend).toBe(true);
-    expect(EntityRuntimeKey in webFileSaveDialogBackend).toBe(true);
     expect(webDirectoryOpenDialogBackend).not.toBe(webFileOpenDialogBackend);
-    expect(webFileOpenDialogBackend).not.toBe(webFileSaveDialogBackend);
     expect(webHost.dialog.directoryOpen).toBe(webDirectoryOpenDialogBackend);
-    expect(webHost.dialog.fileOpen).toBe(webFileOpenDialogBackend);
-    expect(webHost.dialog.fileSave).toBe(webFileSaveDialogBackend);
   });
 
-  it('reports runtime-unavailable for directory and save when the required API is absent', async () => {
+  it('reports runtime-unavailable when the required API is absent', async () => {
     expect(await webDirectoryOpenDialogBackend.open()).toEqual({ outcome: 'runtime-unavailable' });
-    expect(await webFileSaveDialogBackend.save({})).toEqual({ outcome: 'runtime-unavailable' });
   });
 
   it('opens a directory in read mode and returns an Entity only after platform selection', async () => {
@@ -54,6 +48,15 @@ describe('web file dialog providers', () => {
       expect(result.handle.kind).toBe('Directory');
       expect(EntityRuntimeKey in result.handle).toBe(true);
     }
+  });
+});
+
+describe('webFileOpenDialogBackend', () => {
+  it('is an Entity installed in the independent file-open slot', () => {
+    expect(EntityRuntimeKey in webFileOpenDialogBackend).toBe(true);
+    expect(webFileOpenDialogBackend).not.toBe(webDirectoryOpenDialogBackend);
+    expect(webFileOpenDialogBackend).not.toBe(webFileSaveDialogBackend);
+    expect(webHost.dialog.fileOpen).toBe(webFileOpenDialogBackend);
   });
 
   it('preserves MIME-extension pairing and multiple selection', async () => {
@@ -142,6 +145,18 @@ describe('web file dialog providers', () => {
     expect(removeInput).toHaveBeenCalledWith('change', expect.any(Function));
     expect(removeInput).toHaveBeenCalledWith('cancel', expect.any(Function));
     expect(removeWindow).toHaveBeenCalledWith('focus', expect.any(Function));
+  });
+});
+
+describe('webFileSaveDialogBackend', () => {
+  it('is an Entity installed in the independent file-save slot', () => {
+    expect(EntityRuntimeKey in webFileSaveDialogBackend).toBe(true);
+    expect(webFileSaveDialogBackend).not.toBe(webFileOpenDialogBackend);
+    expect(webHost.dialog.fileSave).toBe(webFileSaveDialogBackend);
+  });
+
+  it('reports runtime-unavailable when the required API is absent', async () => {
+    expect(await webFileSaveDialogBackend.save({})).toEqual({ outcome: 'runtime-unavailable' });
   });
 
   it('owns and closes each save writable operation', async () => {
