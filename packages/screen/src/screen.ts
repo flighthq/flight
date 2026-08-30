@@ -457,8 +457,10 @@ export function explainScreenBackend(): BackendExplanation {
 // ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
 // this report `true` for everything and say nothing at all.
 export function explainScreenOperation(operation: ScreenOperation): BackendOperationExplanation {
-  if (_custom !== null && typeof _custom[operation] === 'function') {
-    return { implemented: true, layer: 'custom', operation };
+  if (_custom !== null) {
+    return typeof _custom[operation] === 'function'
+      ? { implemented: true, layer: 'custom', operation }
+      : { implemented: false, layer: 'sentinel', operation };
   }
   if (_host !== null && typeof _host[operation] === 'function') {
     return { implemented: true, layer: 'host', operation };
