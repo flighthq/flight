@@ -1,13 +1,15 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   BackendExplanation,
   BackendOperationExplanation,
+  Entity,
   GlyphRasterizedBitmap,
   GlyphRasterizerBackend,
   GlyphRasterizerOperation,
 } from '@flighthq/types/contract';
 
-export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
-  return {
+export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
+  return createEntity({
     rasterize(_codepoint, options): GlyphRasterizedBitmap | null {
       const size = Math.max(1, Math.round(options.fontSize));
       const width = Math.max(1, Math.round(size * 0.6));
@@ -23,7 +25,7 @@ export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
         width,
       };
     },
-  };
+  } satisfies GlyphRasterizerBackend);
 }
 
 export function explainGlyphRasterizerBackend(): BackendExplanation {

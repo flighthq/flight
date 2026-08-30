@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createPath, flattenPath, getPathBounds } from '@flighthq/path/contract';
 import type {
+  Entity,
   GlyphMetrics,
   GlyphOutlineSource,
   GlyphRasterizedBitmap,
@@ -13,8 +15,10 @@ import type {
 // `GlyphAtlasOptions.rasterizerBackend` without changing the process-wide backend. Rasterization is a
 // portable 4x4 coverage scan over flattened contours: it needs no DOM/canvas and therefore works for
 // imported fonts in browser, worker, native-host, and headless environments alike.
-export function createGlyphRasterizerBackendFromGlyphOutlineSource(source: GlyphOutlineSource): GlyphRasterizerBackend {
-  return {
+export function createGlyphRasterizerBackendFromGlyphOutlineSource(
+  source: GlyphOutlineSource,
+): GlyphRasterizerBackend & Entity {
+  return createEntity({
     measureMetrics(options): GlyphMetrics | null {
       const metrics = source.getGlyphOutlineMetrics();
       const scale = resolveGlyphOutlineScale(metrics.unitsPerEm, options.fontSize);
@@ -28,7 +32,7 @@ export function createGlyphRasterizerBackendFromGlyphOutlineSource(source: Glyph
     rasterize(codePoint, options): GlyphRasterizedBitmap | null {
       return rasterizeGlyphOutlineSource(source, codePoint, options);
     },
-  };
+  } satisfies GlyphRasterizerBackend);
 }
 
 function rasterizeGlyphOutlineSource(
