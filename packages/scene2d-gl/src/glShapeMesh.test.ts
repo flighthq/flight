@@ -112,7 +112,7 @@ describe('drawGlShapeMeshes', () => {
     drawGlShapeMeshes(state, makeProxy({ colorScaleBias: ct(0.5) }), [TRIANGLE]);
 
     // The tinted program is compiled only through the opt-in fold; the base path never touches it.
-    expect(getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader).toBeUndefined();
+    expect(getGlRenderStateRuntime(state).context.shapeMeshResources?.colorScaleBiasShader ?? null).toBeNull();
   });
 
   it('tints solid-fill meshes through the fold with the same uniforms as the quad-batch path', () => {
@@ -124,7 +124,7 @@ describe('drawGlShapeMeshes', () => {
       { ...TRIANGLE, color: 0xffffffff, alpha: 1 },
     ]);
 
-    const shader = getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader!;
+    const shader = getGlRenderStateRuntime(state).context.shapeMeshResources!.colorScaleBiasShader!;
     expect(shader).toBeDefined();
     // Scale and bias are uploaded verbatim — identical to glColorAdjustmentMaterialFeature's
     // bindGlQuadBatchWriterUniformColorScaleBias.
@@ -142,7 +142,7 @@ describe('drawGlShapeMeshes', () => {
     drawGlShapeMeshes(state, makeProxy({ colorScaleBias: null }), [TRIANGLE]);
 
     // No transform → the fold is not consulted (gated on non-null), so no tint shader is compiled.
-    expect(getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader).toBeUndefined();
+    expect(getGlRenderStateRuntime(state).context.shapeMeshResources?.colorScaleBiasShader ?? null).toBeNull();
   });
 });
 

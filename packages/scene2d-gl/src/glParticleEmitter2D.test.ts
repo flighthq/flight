@@ -139,7 +139,7 @@ describe('drawGlParticleEmitter2D', () => {
       }),
     );
 
-    const shader = getGlRenderStateRuntime(state).particleShader!;
+    const shader = getGlRenderStateRuntime(state).context.particleResources!.shader;
     expect(gl.uniform1i).toHaveBeenCalledWith(shader.locStraightTextureAlpha, 1);
   });
 });

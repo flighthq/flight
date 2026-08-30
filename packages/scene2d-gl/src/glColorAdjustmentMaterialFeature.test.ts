@@ -186,7 +186,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlQuadBatchColorScaleBias(state, ct(0.25), 1);
     runtime.quadBatchWriterCount = 2;
     flushGlQuadBatchWriter(state);
-    expect(runtime.quadBatchWriterColorScaleBiasBuffer).not.toBeNull();
+    expect(runtime.context.quadBatchResources?.writerColorScaleBiasBuffer).not.toBeNull();
     expect(gl.vertexAttribPointer).toHaveBeenCalledWith(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);
   });
@@ -223,7 +223,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlQuadBatchColorScaleBias(state, null, 0);
     runtime.quadBatchWriterCount = 1;
     flushGlQuadBatchWriter(state);
-    expect(runtime.quadBatchWriterColorScaleBiasBuffer ?? null).toBeNull();
+    expect(runtime.context.quadBatchResources?.writerColorScaleBiasBuffer ?? null).toBeNull();
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
   });
 });

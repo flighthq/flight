@@ -1,3 +1,4 @@
+import type { EntityRuntime } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { Image } from './Image';
 import type { RenderTexture } from './RenderTexture';
@@ -8,7 +9,7 @@ import type { WgpuShapeMeshPipeline } from './WgpuRenderState';
 import type { WgpuTextureEntry, WgpuTextureSourceTextureEntry, WgpuVideoTextureEntry } from './WgpuRenderState';
 import type { WgpuRenderTextureEntry } from './WgpuRenderTexture';
 
-export interface WgpuDeviceRuntime {
+export interface WgpuDeviceRuntime extends EntityRuntime {
   readonly device: GPUDevice;
   references: number;
   teardowns: Array<(device: GPUDevice) => void>;

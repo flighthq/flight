@@ -1,3 +1,4 @@
+import type { EntityRuntime } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { GlColorAdjustmentResources } from './GlColorAdjustmentResources';
 import type { GlContext } from './GlContext';
@@ -11,12 +12,13 @@ import type { Image } from './Image';
 import type { RenderTexture } from './RenderTexture';
 import type { TextureSource } from './TextureSource';
 
-// Shared GPU state for one WebGL context. Wraps the acquired GlContext and owns the binding shadow,
-// compiled shader programs, texture upload caches, shared GPU buffers, and extension queries. Every
-// GlRenderState over the same context shares this object via a visible `context` reference — no
-// defineProperty, no WeakMap. Owner-keyed resource substates (particle, quad-batch, color-adjustment,
-// shape-mesh) are nullable and lazily allocated by the subsystem that owns them.
-export interface GlContextRuntime {
+// Shared GPU state for one WebGL context, stored as the Entity runtime of a GlContextState. Wraps
+// the acquired GlContext and owns the binding shadow, compiled shader programs, texture upload
+// caches, shared GPU buffers, and extension queries. Every GlRenderState over the same context
+// shares this object via a visible `context` reference. Owner-keyed resource substates (particle,
+// quad-batch, color-adjustment, shape-mesh) are nullable and lazily allocated by the subsystem
+// that owns them.
+export interface GlContextRuntime extends EntityRuntime {
   readonly gl: GlContext;
   references: number;
   teardowns: Array<(gl: GlContext) => void>;

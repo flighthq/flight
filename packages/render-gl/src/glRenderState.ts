@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import {
@@ -66,6 +67,7 @@ export function createGlContextState(gl: GlContext): GlContextState {
   gl.bufferData(gl.ARRAY_BUFFER, 64, gl.DYNAMIC_DRAW);
 
   const contextRuntime: GlContextRuntime = {
+    binding: null,
     colorAdjustmentResources: null,
     currentBlendSignature: null,
     currentShader: null,
@@ -84,8 +86,9 @@ export function createGlContextState(gl: GlContext): GlContextState {
     textureSourceStraightSrgbTextureCache: new WeakMap(),
     textureSourceStraightTextureCache: new WeakMap(),
   };
-  _contextStateToRuntime.set(contextRuntime as GlContextState, contextRuntime);
-  return contextRuntime as GlContextState;
+  const state = createEntity({ gl }) as GlContextState;
+  state[EntityRuntimeKey] = contextRuntime;
+  return state;
 }
 
 /**
@@ -183,13 +186,7 @@ export function createGlRenderStateRuntime(
   if (sharedRuntime !== undefined) {
     runtime.context = sharedRuntime.context;
   } else if (contextState !== undefined) {
-    const fromMap = _contextStateToRuntime.get(contextState);
-    if (fromMap !== undefined) {
-      runtime.context = fromMap;
-    } else {
-      runtime.context = createMinimalContextRuntime(contextState.gl);
-      _contextStateToRuntime.set(contextState, runtime.context);
-    }
+    runtime.context = contextState[EntityRuntimeKey] as GlContextRuntime;
   } else {
     runtime.context = createMinimalContextRuntime(null as unknown as GlContext);
   }
@@ -289,6 +286,10 @@ export function getGlColorAdjustmentMaterialFeatureGuard(
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
+export function getGlContextRuntime(contextState: Readonly<GlContextState>): GlContextRuntime {
+  return contextState[EntityRuntimeKey] as GlContextRuntime;
+}
+
 // Resolves the package-private GPU runtime attached to a GlRenderState. Mutable by design: the
 // render path writes its fields every frame.
 export function getGlRenderStateRuntime(state: GlRenderState): GlRenderStateRuntime {
@@ -318,10 +319,6 @@ export function invalidateGlRenderStateCache(state: GlRenderState): void {
   runtime.renderTargetViewport = null;
 }
 
-export function registerGlContextTeardown(state: GlRenderState, teardown: (gl: GlContext) => void): void {
-  getGlRenderStateRuntime(state).context.teardowns.push(teardown);
-}
-
 function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRuntime: GlRenderStateRuntime): void {
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;
@@ -348,8 +345,13 @@ function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRunti
   runtime.clipForms = [];
 }
 
+export function registerGlContextTeardown(state: GlRenderState, teardown: (gl: GlContext) => void): void {
+  getGlRenderStateRuntime(state).context.teardowns.push(teardown);
+}
+
 function createMinimalContextRuntime(gl: GlContext): GlContextRuntime {
   return {
+    binding: null,
     colorAdjustmentResources: null,
     currentBlendSignature: null,
     currentShader: null,
@@ -370,5 +372,4 @@ function createMinimalContextRuntime(gl: GlContext): GlContextRuntime {
   };
 }
 
-const _contextStateToRuntime = new WeakMap<GlContextState, GlContextRuntime>();
 const _destroyedStates = new WeakSet<GlRenderState>();
