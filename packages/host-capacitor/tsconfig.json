@@ -35,9 +35,6 @@
       "path": "../haptics"
     },
     {
-      "path": "../keyboard"
-    },
-    {
       "path": "../notification"
     },
     {

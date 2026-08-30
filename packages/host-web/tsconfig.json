@@ -23,7 +23,6 @@
     { "path": "../glyphatlas" },
     { "path": "../haptics" },
     { "path": "../image" },
-    { "path": "../keyboard" },
     { "path": "../lifecycle" },
     { "path": "../media" },
     { "path": "../menu" },

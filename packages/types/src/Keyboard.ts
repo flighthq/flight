@@ -15,16 +15,14 @@ export interface SoftKeyboardInfo {
   y: number;
   width: number;
 }
-
 export interface SoftKeyboard {
   onShow: Signal<(height: number) => void>;
   onHide: Signal<() => void>;
   onResize: Signal<(height: number) => void>;
 }
 
-export type SoftKeyboardVisibilityResult = 'ok' | 'runtime-unavailable' | 'operation-failed';
+export type SoftKeyboardVisibilityResult = 'ok' | 'operation-failed';
 export const SoftKeyboardVisibilityOkKind = 'ok';
-export const SoftKeyboardVisibilityRuntimeUnavailableKind = 'runtime-unavailable';
 export const SoftKeyboardVisibilityOperationFailedKind = 'operation-failed';
 
 export type SoftKeyboardSetterResult = 'ok' | 'operation-unavailable' | 'operation-failed';
@@ -32,9 +30,8 @@ export const SoftKeyboardSetterOkKind = 'ok';
 export const SoftKeyboardSetterOperationUnavailableKind = 'operation-unavailable';
 export const SoftKeyboardSetterOperationFailedKind = 'operation-failed';
 
-export type SoftKeyboardAttachResult = 'ok' | 'no-provider' | 'acquisition-failed';
+export type SoftKeyboardAttachResult = 'ok' | 'acquisition-failed';
 export const SoftKeyboardAttachOkKind = 'ok';
-export const SoftKeyboardAttachNoProviderKind = 'no-provider';
 export const SoftKeyboardAttachAcquisitionFailedKind = 'acquisition-failed';
 
 export interface SoftKeyboardInfoBackend extends Entity {

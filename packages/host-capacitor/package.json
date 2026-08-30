@@ -46,7 +46,6 @@
     "@flighthq/filesystem": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/haptics": "*",
-    "@flighthq/keyboard": "*",
     "@flighthq/notification": "*",
     "@flighthq/share": "*",
     "@flighthq/statusbar": "*",
