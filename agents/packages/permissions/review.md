@@ -12,7 +12,7 @@ ingested:
 
 ## Verdict
 
-`authoritative` for the ratified explicit-Host facade slice. The remaining seven native sites are explicit
+`authoritative` for the ratified explicit-Host facade slice. The remaining six native sites are explicit
 migration holdings with named future owners, not hidden scope or a claim that Permissions owns them.
 
 ## Present capabilities
@@ -23,10 +23,12 @@ migration holdings with named future owners, not hidden scope or a claim that Pe
 - `requestPermission(host, name)` preserves owner reasons and never degrades to a query.
 - Notification delegates exclusively to `Host.notification.permission`; no direct Web Notification
   or native-plugin permission path remains here.
+- Persistent storage delegates query and request to their separate `Host.storage` slots; best-effort
+  carries the owner's exact state or `null` and no direct Storage API path remains here.
 - Media and wake-lock prompt-only acquisitions clean up in `finally`; cleanup failure remains distinct
   from user denial.
-- An exact seven-row ledger names media, geolocation, persistence, MIDI, wake lock, clipboard, and
-  push as interim holdings and maps each to its future claiming domain.
+- An exact six-row ledger names media, geolocation, MIDI, wake lock, clipboard, and push as interim
+  holdings and maps each to its future claiming domain. Its history retains the seven-row checkpoint.
 
 ## Structural fit
 

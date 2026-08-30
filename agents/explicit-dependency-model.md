@@ -441,6 +441,14 @@ does **not** mean the bytes were fsynced or will survive sudden power loss. Elec
 contract with a same-directory temporary candidate plus rename and commits its cache only after the
 rename succeeds.
 
+Persistent bucket policy is a separate asynchronous capability with two slots: `persistenceQuery` is
+Window + Worker, while `persistenceRequest` is Window only. The Web adapter receives injected platform
+functions and returns one coherent observation whose `outcome` and `permissionState` are independent;
+an unobserved permission is `null`, never an inferred prompt. Permissions projects this owner snapshot
+through the Host slots and no longer calls the Storage API or carries a persistence native-holding row.
+Electron, Tauri, and Capacitor make no persistence claim, and quota, KV, IndexedDB, and OPFS are not part
+of these slots.
+
 **FileDialog R7/Entity result — 2026-08-30 append.** The former `dialog.file` aggregate is refined into
 `dialog.fileOpen`, `dialog.directoryOpen`, and `dialog.fileSave`. Web, Electron, and Tauri construct all
 three slots; Capacitor constructs none. Identical provider coverage does not merge unlike method shapes:

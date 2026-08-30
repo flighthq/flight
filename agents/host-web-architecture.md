@@ -171,7 +171,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 20 | menu | createWebMenuBackend | 1/2 | **none** | — | 66.7% false. |
 | 21 | net | createWebNetBackend | 1/0 | **ambient** | — | WHATWG fetch. Zero navigator/document/window refs. Stays inline, unchanged. |
 | 22 | notification | createWebNotificationBackend | 14/4 | **host-web** | window | Notification instances/permission/timers |
-| 23 | permissions | — | 0/0 | **facade/projector** | explicit Host | Notification uses only `Host.notification.permission`; seven interim native holdings are ledgered in Permissions |
+| 23 | permissions | — | 0/0 | **facade/projector** | explicit Host | Notification and persistent storage use only their capability-owned Host slots; six interim native holdings remain ledgered in Permissions |
 | 24 | platform | createWebPlatformBackend | 1/0 | **host-web** | window+nav | navigator UA/language/touch |
 | 25 | power | createWebPowerBackend | 6/7 | **none** | — | 53.8% false. |
 | 26 | protocol | createWebProtocolBackend | 3/7 | **none** | — | 70.0% false. |
@@ -182,7 +182,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 31 | shortcut | createWebShortcutBackend | 0/7 | **none** | — | ALL sentinel. |
 | 32 | socket | createWebSocketBackend | 1/0 | **ambient** | — | WHATWG WebSocket. Stays inline, unchanged. |
 | 33 | statusbar | createWebStatusBarBackend | 2/4 | **none** | — | 66.7% false. |
-| 34 | storage | webStorageBackend (`local` + `change`) | 6/0 | **host-web** | DOM+window | localStorage, Window storage events |
+| 34 | storage | webStorageBackend + injected persistence factories | 9/0 | **host-web** | DOM+window+worker | localStorage, Window storage events, StorageManager persisted/persist, Permissions query |
 | 35 | textsegment | createWebTextSegmenterBackend | 1/0 | **ambient** | — | Intl.Segmenter (ECMA-402). Stays inline, unchanged. |
 | 36 | tray | createWebTrayBackend | 0/19 | **none** | — | ALL sentinel. |
 | 37 | updater | createWebUpdaterBackend | 0/21 | **none** | — | ALL sentinel. |

@@ -38,6 +38,10 @@ _Append-only, dated, blessed rulings._
 - **[2026-08-30] Global shortcuts are structurally absent.** `webHost.shortcut` is exactly `{}`:
   browsers offer no OS-global trigger registration or native registration-state query. There is no
   web shortcut factory, sentinel, ambient enable function, or zero-provider toggle.
+- **[2026-08-30] Storage persistence profiles follow execution context.** Window supplies query and
+  request; Worker supplies query only. Both factories take injected functions and return Entity
+  capabilities. `webHost` composes the Window profile, while native hosts make no claim through this
+  package.
 
 ## Open directions
 

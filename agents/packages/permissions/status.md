@@ -11,6 +11,16 @@ by: null
 
 <!-- newest entry on top -->
 
+## 2026-08-30 — Persistent storage owner projected; ledger row drained
+
+- Query and request now capture only `Host.storage.persistenceQuery` and
+  `Host.storage.persistenceRequest`, respectively; absence is structural and neither method crosses
+  into the other slot.
+- Projection preserves Storage's independent facts: persistent maps to common granted, operational
+  failure stays reason-only, and best-effort carries the exact permission state or `null`.
+- Deleted the direct `navigator.storage` request path and persistence holding/type id. The append-only
+  history retains the seven-row checkpoint and adds the exact six-row successor.
+
 ## 2026-08-30 — Explicit-Host facade and seven-row ownership ledger
 
 - Replaced the ambient `PermissionBackend` era with explicit `Host` query/request projection and
