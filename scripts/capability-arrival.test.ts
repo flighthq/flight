@@ -196,7 +196,9 @@ describe('capability-arrival source gate', () => {
     expect(failures).toEqual([
       expect.objectContaining({
         kind: 'registry',
-        message: expect.stringContaining('expected [MediaSession, Screen, Storage], found [Screen, Storage]'),
+        message: expect.stringContaining(
+          'expected [MediaSession, Power, Screen, Storage], found [Power, Screen, Storage]',
+        ),
       }),
     ]);
   });
