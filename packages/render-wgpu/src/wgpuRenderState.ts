@@ -15,6 +15,7 @@ import type {
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
   WgpuHostBackend,
+  WgpuOffscreenRenderStateResult,
   WgpuPipeline,
   WgpuPresentationRenderState,
   WgpuRenderOptions,
@@ -23,8 +24,10 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
+import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
 import { warmWgpuPipelines } from './wgpuDraw';
 import { getWgpuHostBackend } from './wgpuHost';
+import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
@@ -60,12 +63,41 @@ export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
  * stack, and render transform. Immutable pipelines/layouts/samplers plus uploaded textures and render
  * texture realizations share a device tier. Registrations are a creation-time snapshot.
  */
+export function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuOffscreenRenderStateResult;
 export function createWgpuOffscreenRenderState(
   deviceState: Readonly<WgpuDeviceState>,
   pipeline: Readonly<WgpuPipeline>,
+  options?: Readonly<WgpuRenderOptions>,
+): WgpuRenderState;
+export function createWgpuOffscreenRenderState(
+  sourceOrDeviceState: WgpuRenderState | Readonly<WgpuDeviceState>,
+  pipeline?: Readonly<WgpuPipeline>,
   options: Readonly<WgpuRenderOptions> = {},
-): WgpuRenderState {
-  return initializeWgpuDeviceRenderState(deviceState, pipeline, options);
+): WgpuRenderState | WgpuOffscreenRenderStateResult {
+  if (pipeline !== undefined) return initializeWgpuDeviceRenderState(sourceOrDeviceState, pipeline, options);
+
+  const source = sourceOrDeviceState as WgpuRenderState;
+  const sourceRuntime = getWgpuRenderStateRuntime(source);
+  const lost = sourceRuntime.context.lost;
+  if (lost !== null) return { reason: 'device-lost', info: lost };
+
+  const derivedPipeline = createWgpuPipeline(sourceRuntime.registries);
+  const state = initializeWgpuDeviceRenderState(source.deviceState, derivedPipeline, {
+    backgroundColor: source.backgroundColor,
+    format: source.format,
+    imageSmoothingEnabled: source.allowSmoothing,
+    pixelRatio: source.pixelRatio,
+    roundPixels: source.roundPixels,
+    sceneGraphSyncPolicy: source.sceneGraphSyncPolicy,
+  });
+  const runtime = getWgpuRenderStateRuntime(state);
+  runtime.applyBlendModeParent = source;
+  runtime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
+  runtime.mipmapDegradedGuard = sourceRuntime.mipmapDegradedGuard;
+  runtime.mipmapGenerator = sourceRuntime.mipmapGenerator;
+  runtime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
+  runtime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
+  return { reason: 'ok', state };
 }
 
 // Synchronous: with the handles already in hand there is nothing left to await. Everything asynchronous
@@ -102,10 +134,21 @@ export async function createWgpuRenderStateFromCanvasElement(
 }
 
 export function createWgpuRenderStateRuntime(
-  deviceState: Readonly<WgpuDeviceState>,
-  pipeline: Readonly<WgpuPipeline>,
+  deviceStateOrRuntime: Readonly<WgpuDeviceState> | WgpuRenderStateRuntime,
+  pipeline?: Readonly<WgpuPipeline>,
 ): WgpuRenderStateRuntime {
-  return createWgpuRenderStateRuntimeInternal(getWgpuDeviceRuntime(deviceState), pipeline);
+  const deviceRuntime =
+    EntityRuntimeKey in deviceStateOrRuntime
+      ? getWgpuDeviceRuntime(deviceStateOrRuntime as Readonly<WgpuDeviceState>)
+      : (deviceStateOrRuntime as WgpuRenderStateRuntime).context;
+  const resolvedPipeline =
+    pipeline ??
+    createWgpuPipeline(
+      EntityRuntimeKey in deviceStateOrRuntime
+        ? createEmptyWgpuRegistries()
+        : (deviceStateOrRuntime as WgpuRenderStateRuntime).registries,
+    );
+  return createWgpuRenderStateRuntimeInternal(deviceRuntime, resolvedPipeline);
 }
 
 function initializeWgpuPresentationRenderState(
@@ -439,9 +482,11 @@ export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition
 }
 
 function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
-  return {
+  const runtime: WgpuDeviceRuntime = {
     binding: null,
     device,
+    lost: null,
+    signals: null,
     references: 0,
     teardowns: [],
     uniformBindGroupLayout: null as unknown as GPUBindGroupLayout,
@@ -457,6 +502,8 @@ function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
     textureSourceStraightTextureCache: new WeakMap(),
     textureSourceStraightSrgbTextureCache: new WeakMap(),
   };
+  observeWgpuDeviceLoss(runtime);
+  return runtime;
 }
 
 const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();
