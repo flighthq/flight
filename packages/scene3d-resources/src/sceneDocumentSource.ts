@@ -1,6 +1,7 @@
 import { sendNetRequest } from '@flighthq/net/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  HasNetHttp,
   NetProgress,
   NetRequestOptions,
   Scene3DDocument,
@@ -20,10 +21,12 @@ export function getScene3DDocumentBasePathFromUrl(url: string): string | null {
 // response, or null on any expected transport/HTTP failure. No resource resolution or renderer/GPU work
 // happens here; callers compose parsing and later resource acquisition explicitly.
 export async function loadScene3DDocumentBytesFromUrl(
+  host: HasNetHttp,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Uint8Array | null> {
   const response = await sendNetRequest(
+    host,
     { method: 'GET', responseType: 'arraybuffer', url },
     createScene3DDocumentNetRequestOptions(url, options),
   );
@@ -35,10 +38,12 @@ export async function loadScene3DDocumentBytesFromUrl(
 // for the text document loaders (OBJ, MD5). Returns the text on a 2xx response, or null on any expected
 // transport/HTTP failure. Fetches only source text — no parsing, resource realization, or rendering work.
 export async function loadScene3DDocumentTextFromUrl(
+  host: HasNetHttp,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<string | null> {
   const response = await sendNetRequest(
+    host,
     { method: 'GET', responseType: 'text', url },
     createScene3DDocumentNetRequestOptions(url, options),
   );

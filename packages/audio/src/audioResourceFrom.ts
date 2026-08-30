@@ -1,5 +1,5 @@
 import { sendNetRequest } from '@flighthq/net/contract';
-import type { AudioResource, AudioResourceUrl } from '@flighthq/types/contract';
+import type { AudioResource, AudioResourceUrl, HasNetHttp } from '@flighthq/types/contract';
 
 import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
 import { createAudioResource } from './audioResource';
@@ -65,11 +65,13 @@ export async function loadAudioResourceFromBytes(
 }
 
 export async function loadAudioResourceFromUrl(
+  host: HasNetHttp,
   context: AudioContext,
   url: string,
   signal?: AbortSignal,
 ): Promise<AudioResource> {
   const response = await sendNetRequest(
+    host,
     { method: 'GET', responseType: 'arraybuffer', url },
     signal === undefined ? undefined : { signal },
   );
@@ -82,13 +84,14 @@ export async function loadAudioResourceFromUrl(
 }
 
 export async function loadAudioResourceFromUrls(
+  host: HasNetHttp,
   context: AudioContext,
   sources: readonly AudioResourceUrl[],
   signal?: AbortSignal,
 ): Promise<AudioResource> {
   const selected = selectAudioResourceUrl(sources);
   if (selected === null) return createAudioResource();
-  return loadAudioResourceFromUrl(context, selected, signal);
+  return loadAudioResourceFromUrl(host, context, selected, signal);
 }
 
 // Picks the first source URL the environment can play, or null when none is playable. A source's

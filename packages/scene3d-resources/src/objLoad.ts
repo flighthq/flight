@@ -1,5 +1,10 @@
 import { parseObj } from '@flighthq/scene3d-formats/contract';
-import type { ObjMaterialLibrary, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type {
+  HasNetHttp,
+  ObjMaterialLibrary,
+  Scene3DDocument,
+  Scene3DDocumentLoadOptions,
+} from '@flighthq/types/contract';
 
 import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
@@ -9,11 +14,12 @@ import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromU
 // with createScene3DFromDocument and resolve on your own schedule. Returns null on transport failure; it
 // never creates a renderer or GPU resource.
 export async function loadScene3DDocumentFromObjUrl(
+  host: HasNetHttp,
   url: string,
   materials?: Readonly<ObjMaterialLibrary>,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
-  const source = await loadScene3DDocumentTextFromUrl(url, options);
+  const source = await loadScene3DDocumentTextFromUrl(host, url, options);
   if (source === null) return null;
   const document = parseObj(source, materials);
   setScene3DDocumentResourceBasePathFromUrl(document, url);

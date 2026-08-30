@@ -1,5 +1,5 @@
 import { parseMd2 } from '@flighthq/scene3d-formats/contract';
-import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { HasNetHttp, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
@@ -8,10 +8,11 @@ import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFrom
 // assemble with createScene3DFromDocument and resolve on your own schedule. Returns null on transport failure;
 // it never creates a renderer or GPU resource.
 export async function loadScene3DDocumentFromMd2Url(
+  host: HasNetHttp,
   url: string,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
-  const bytes = await loadScene3DDocumentBytesFromUrl(url, options);
+  const bytes = await loadScene3DDocumentBytesFromUrl(host, url, options);
   if (bytes === null) return null;
   const document = parseMd2(bytes);
   setScene3DDocumentResourceBasePathFromUrl(document, url);

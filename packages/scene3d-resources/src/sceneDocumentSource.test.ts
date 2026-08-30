@@ -1,6 +1,11 @@
-import { setNetBackend } from '@flighthq/net/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { NetResponse, Scene3DDocument, Scene3DDocumentLoadProgress } from '@flighthq/types/contract';
+import type {
+  HasNetHttp,
+  NetBackend,
+  NetResponse,
+  Scene3DDocument,
+  Scene3DDocumentLoadProgress,
+} from '@flighthq/types/contract';
 import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -11,6 +16,10 @@ import {
   setScene3DDocumentResourceBasePathFromUrl,
 } from './sceneDocumentSource';
 
+function fakeNetHost(backend: NetBackend): HasNetHttp {
+  return { net: { http: backend } };
+}
+
 function okResponse(body: string | ArrayBuffer): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
 }
@@ -18,10 +27,6 @@ function okResponse(body: string | ArrayBuffer): NetResponse {
 function failResponse(): NetResponse {
   return { body: null, headers: {}, ok: false, status: 404, statusText: 'Not Found', url: 'u' };
 }
-
-afterEach(() => {
-  setNetBackend(null);
-});
 
 describe('getScene3DDocumentBasePathFromUrl', () => {
   it('returns the containing path without query or fragment data', () => {
@@ -36,7 +41,7 @@ describe('loadScene3DDocumentBytesFromUrl', () => {
     const events: Scene3DDocumentLoadProgress[] = [];
     const progress = createSignal<(event: Readonly<Scene3DDocumentLoadProgress>) => void>();
     connectSignal(progress, (event) => events.push({ ...event }));
-    setNetBackend({
+    const host = fakeNetHost({
       sendNetRequest: async (_request, options) => {
         expect(options?.signal).toBe(controller.signal);
         emitSignal(options!.progress!, { loaded: 2, phase: 'download', total: 3 });
@@ -44,35 +49,35 @@ describe('loadScene3DDocumentBytesFromUrl', () => {
       },
     });
 
-    const bytes = await loadScene3DDocumentBytesFromUrl('model.bin', { progress, signal: controller.signal });
+    const bytes = await loadScene3DDocumentBytesFromUrl(host, 'model.bin', { progress, signal: controller.signal });
 
     expect(Array.from(bytes!)).toEqual([1, 2, 3]);
     expect(events).toEqual([{ loaded: 2, phase: 'download', total: 3, url: 'model.bin' }]);
   });
 
   it('returns null on an expected transport failure', async () => {
-    setNetBackend({ sendNetRequest: async () => failResponse() });
-    await expect(loadScene3DDocumentBytesFromUrl('missing.bin')).resolves.toBeNull();
+    const host = fakeNetHost({ sendNetRequest: async () => failResponse() });
+    await expect(loadScene3DDocumentBytesFromUrl(host, 'missing.bin')).resolves.toBeNull();
   });
 });
 
 describe('loadScene3DDocumentTextFromUrl', () => {
   it('fetches the URL as text and returns the string', async () => {
     let requestedType: string | undefined;
-    setNetBackend({
+    const host = fakeNetHost({
       sendNetRequest: async (request) => {
         requestedType = request.responseType;
         return okResponse('v 0 0 0');
       },
     });
 
-    await expect(loadScene3DDocumentTextFromUrl('model.obj')).resolves.toBe('v 0 0 0');
+    await expect(loadScene3DDocumentTextFromUrl(host, 'model.obj')).resolves.toBe('v 0 0 0');
     expect(requestedType).toBe('text');
   });
 
   it('returns null on an expected transport failure', async () => {
-    setNetBackend({ sendNetRequest: async () => failResponse() });
-    await expect(loadScene3DDocumentTextFromUrl('missing.obj')).resolves.toBeNull();
+    const host = fakeNetHost({ sendNetRequest: async () => failResponse() });
+    await expect(loadScene3DDocumentTextFromUrl(host, 'missing.obj')).resolves.toBeNull();
   });
 });
 

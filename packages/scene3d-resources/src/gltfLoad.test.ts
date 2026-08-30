@@ -1,6 +1,12 @@
 import type * as NetModule from '@flighthq/net/contract';
 import type * as Scene3DFormatsModule from '@flighthq/scene3d-formats/contract';
-import type { GltfExtensionHandler, ImportDiagnostic, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type {
+  GltfExtensionHandler,
+  HasNetHttp,
+  ImportDiagnostic,
+  NetResponse,
+  Scene3DDocument,
+} from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } from './gltfLoad';
@@ -39,6 +45,10 @@ function emptyDocument(): Scene3DDocument {
   };
 }
 
+function fakeHost(): HasNetHttp {
+  return { net: { http: { sendNetRequest: mocks.sendNetRequest } } };
+}
+
 function response(body: string | ArrayBuffer, url = 'u'): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url };
 }
@@ -57,7 +67,10 @@ describe('loadScene3DDocumentFromGlbUrl', () => {
     mocks.parseGlb.mockReturnValue(document);
     mocks.sendNetRequest.mockResolvedValue(response(new Uint8Array([1, 2, 3]).buffer));
 
-    const loaded = await loadScene3DDocumentFromGlbUrl('models/ship.glb', { diagnostics, extensionHandlers });
+    const loaded = await loadScene3DDocumentFromGlbUrl(fakeHost(), 'models/ship.glb', {
+      diagnostics,
+      extensionHandlers,
+    });
 
     expect(Array.from(mocks.parseGlb.mock.calls[0][0])).toEqual([1, 2, 3]);
     expect(mocks.parseGlb.mock.calls[0][1]).toBe(diagnostics);
@@ -76,7 +89,7 @@ describe('loadScene3DDocumentFromGlbUrl', () => {
       url: 'u',
     });
 
-    await expect(loadScene3DDocumentFromGlbUrl('missing.glb')).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGlbUrl(fakeHost(), 'missing.glb')).resolves.toBeNull();
     expect(mocks.parseGlb).not.toHaveBeenCalled();
   });
 });
@@ -88,14 +101,17 @@ describe('loadScene3DDocumentFromGltfUrl', () => {
     const extensionHandlers: GltfExtensionHandler[] = [{ apply() {}, kind: 'KHR_lights_punctual' }];
     mocks.parseGltf.mockReturnValue(document);
     const requested: string[] = [];
-    mocks.sendNetRequest.mockImplementation(async (request) => {
+    mocks.sendNetRequest.mockImplementation(async (_host, request) => {
       requested.push(request.url);
       return request.url.endsWith('.gltf')
         ? response('{"asset":{"version":"2.0"},"buffers":[{"byteLength":2,"uri":"mesh.bin"}]}')
         : response(new Uint8Array([8, 9]).buffer);
     });
 
-    const loaded = await loadScene3DDocumentFromGltfUrl('models/ship.gltf', { diagnostics, extensionHandlers });
+    const loaded = await loadScene3DDocumentFromGltfUrl(fakeHost(), 'models/ship.gltf', {
+      diagnostics,
+      extensionHandlers,
+    });
 
     expect(requested).toEqual(['models/ship.gltf', 'models/mesh.bin']);
     expect(mocks.parseGltf.mock.calls[0][1]).toBe(diagnostics);
@@ -110,14 +126,14 @@ describe('loadScene3DDocumentFromGltfUrl', () => {
 
   it('returns null when JSON or a required external buffer cannot load', async () => {
     mocks.sendNetRequest.mockResolvedValue(response('{'));
-    await expect(loadScene3DDocumentFromGltfUrl('broken.gltf')).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGltfUrl(fakeHost(), 'broken.gltf')).resolves.toBeNull();
 
-    mocks.sendNetRequest.mockImplementation(async (request) =>
+    mocks.sendNetRequest.mockImplementation(async (_host, request) =>
       request.url.endsWith('.gltf')
         ? response('{"asset":{"version":"2.0"},"buffers":[{"byteLength":2,"uri":"missing.bin"}]}')
         : { body: null, headers: {}, ok: false, status: 404, statusText: 'x', url: request.url },
     );
-    await expect(loadScene3DDocumentFromGltfUrl('models/ship.gltf')).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGltfUrl(fakeHost(), 'models/ship.gltf')).resolves.toBeNull();
     expect(mocks.parseGltf).not.toHaveBeenCalled();
   });
 });

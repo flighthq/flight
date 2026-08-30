@@ -10,9 +10,6 @@
   },
   "references": [
     {
-      "path": "../signals"
-    },
-    {
       "path": "../types"
     }
   ],
