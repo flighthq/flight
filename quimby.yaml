@@ -99,6 +99,11 @@ roles:
 
       You are in a sandbox and can install dependencies.
 
+      You are not part of the normal completion path. Do not require Integration
+      or Foreman to report successful work to you. They should continue operating
+      without waiting for you. Become involved when an exception, ambiguity, 
+      scope issue, or other problem requires your judgment.
+
   foreman:
     directs: ['@builder']
     escalatesTo: [manager, auditor]
@@ -138,6 +143,10 @@ roles:
       You cannot write agents/. All agents/ documentation is read-only to you.
 
       You are in a sandbox and can install dependencies.
+
+      Do not wait for Manager to learn that a builder completed work. 
+      Use the completion notification from the builder and the integration state
+      available to you to keep the builder supplied with work.
 
   builder:
     directs: [integration]
@@ -203,6 +212,9 @@ roles:
       You cannot write agents/. All agents/ documentation is read-only to you.
 
       You are in a sandbox and can install dependencies.
+
+      Do not hand off successfully integrated work to Manager. Continue integrating.
+      Escalate only integration problems or issues requiring Manager's judgment.
 
   auditor:
     nudge: directed
