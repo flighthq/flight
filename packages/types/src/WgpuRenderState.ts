@@ -19,6 +19,7 @@ import type { WgpuPresentationSurface } from './WgpuHost';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
+import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime';
 import type { WgpuParticleResources } from './WgpuParticleResources';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
 import type { WgpuRenderEffectRunner } from './WgpuRenderEffectPipeline';
@@ -110,6 +111,7 @@ export interface WgpuColorAdjustmentFlush {
 // frame via getWgpuRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
 export interface WgpuRenderStateRuntime extends RenderStateRuntime {
+  context: WgpuDeviceRuntime;
   registries: WgpuRenderRegistries;
   // Derived pipelines resolve optional blend-mode wiring through this parent at the draw seam. The
   // entity's applyBlendMode member stays a plain field, so the delegation is explicit and portable.
