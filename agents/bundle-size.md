@@ -193,6 +193,8 @@ The existing 7 fixtures stay as-is. New fixtures are added as the explicit depen
 
 Each whole-store const has a single-capability counterpart fixture. The pair answers: does tree-shaking exclude unused registrations? A substantially smaller counterpart means yes; close numbers mean one renderer or family drags the rest.
 
+All values are **unminified tree-shaken gzip** (`npm run size`), advisory only — they never gate, and are not shipping cost. `npm run size:minified` owns the shipping claim.
+
 | Pair | Aggregate | Counterpart | Delta | % smaller | Ratio |
 | --- | --- | --- | --- | --- | --- |
 | **Pipeline** (`scene2d-gl-pipeline:webgl` / `scene2d-gl-pipeline-sprite:webgl`) | 43,217 B | 14,271 B | 28,946 B | 67.0% | 3.03× |
@@ -201,7 +203,9 @@ Each whole-store const has a single-capability counterpart fixture. The pair ans
 Both unminified tree-shaken gzip. The pipeline pair was measured at tree `99091faf5`; the webHost
 aggregate reflects the later Accessibility R3 baseline at `6b6238e9e`.
 
-**Interpretation (fixed):** sprite-only is ~67% smaller than the full pipeline — tree-shaking works and the aggregate measures the honest whole store. The webHost pair shows the same pattern at ~74% smaller. A ratio above 2× is the healthy signal; a ratio near 1× would mean a single capability drags most of the aggregate, which is a decomposition defect.
+The observed ratios are 3.03× and 3.78×. Two data points are an observation, not a norm or threshold.
+Future pairs make anomalies visible — a ratio near 1× would mean a single capability drags the aggregate,
+which is a decomposition defect worth investigating.
 
 ## The discipline these numbers protect
 
