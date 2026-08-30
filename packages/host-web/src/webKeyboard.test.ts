@@ -4,8 +4,6 @@ import {
   createWebSoftKeyboardChangeBackend,
   createWebSoftKeyboardInfoBackend,
   createWebSoftKeyboardVisibilityBackend,
-  enableHostWebSoftKeyboard,
-  resetHostWebKeyboardForTest,
 } from './webKeyboard';
 
 type VirtualKeyboardStub = {
@@ -114,7 +112,6 @@ describe('createWebSoftKeyboardChangeBackend', () => {
     }
   });
 });
-
 describe('createWebSoftKeyboardInfoBackend', () => {
   it('reads info without throwing', () => {
     const out = blankInfo();
@@ -212,26 +209,5 @@ describe('createWebSoftKeyboardVisibilityBackend', () => {
     const backend = createWebSoftKeyboardVisibilityBackend();
     expect(await backend.show()).toBe('operation-failed');
     expect(await backend.hide()).toBe('operation-failed');
-  });
-});
-
-describe('enableHostWebSoftKeyboard', () => {
-  afterEach(() => resetHostWebKeyboardForTest());
-
-  it('does not throw on first call', () => {
-    expect(() => enableHostWebSoftKeyboard()).not.toThrow();
-  });
-
-  it('is idempotent', () => {
-    enableHostWebSoftKeyboard();
-    expect(() => enableHostWebSoftKeyboard()).not.toThrow();
-  });
-});
-
-describe('resetHostWebKeyboardForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebSoftKeyboard();
-    resetHostWebKeyboardForTest();
-    expect(() => enableHostWebSoftKeyboard()).not.toThrow();
   });
 });

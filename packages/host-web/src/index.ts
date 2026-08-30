@@ -33,7 +33,11 @@ export {
   webRenderContextBackend,
   webRenderSurfaceBackend,
 } from './webInputTarget';
-export { enableHostWebSoftKeyboard } from './webKeyboard';
+export {
+  createWebSoftKeyboardChangeBackend,
+  createWebSoftKeyboardInfoBackend,
+  createWebSoftKeyboardVisibilityBackend,
+} from './webKeyboard';
 export { enableHostWebLifecycle } from './webLifecycle';
 export { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 export {

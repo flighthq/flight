@@ -319,10 +319,6 @@ export interface HasAppIdentity {
   readonly app: { readonly identity: AppBackend };
 }
 
-export interface HasAppIpc {
-  readonly app: { readonly ipc: IpcBackend };
-}
-
 export interface HasAppLogTransport {
   readonly app: { readonly logTransport: LogTransportBackend };
 }

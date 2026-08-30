@@ -3,15 +3,6 @@ import { setDeviceBackend } from '@flighthq/device/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { setGeolocationBackend } from '@flighthq/geolocation/contract';
-import {
-  setSoftKeyboardAccessoryBarBackend,
-  setSoftKeyboardChangeBackend,
-  setSoftKeyboardInfoBackend,
-  setSoftKeyboardResizeModeWriteBackend,
-  setSoftKeyboardScrollAssistBackend,
-  setSoftKeyboardStyleBackend,
-  setSoftKeyboardVisibilityBackend,
-} from '@flighthq/keyboard/contract';
 import { setStatusBarBackend } from '@flighthq/statusbar/contract';
 import type {
   CapacitorApi,
@@ -28,6 +19,13 @@ import type {
   HasNotificationClick,
   HasNotificationDelivery,
   HasNotificationScheduling,
+  HasSoftKeyboardAccessoryBar,
+  HasSoftKeyboardChange,
+  HasSoftKeyboardInfo,
+  HasSoftKeyboardResizeModeWrite,
+  HasSoftKeyboardScrollAssist,
+  HasSoftKeyboardStyle,
+  HasSoftKeyboardVisibility,
   Host,
 } from '@flighthq/types/contract';
 
@@ -63,7 +61,14 @@ type CapacitorHost = Host &
   HasNotificationAction &
   HasNotificationClick &
   HasNotificationDelivery &
-  HasNotificationScheduling & { readonly share: { readonly content: CapacitorShareContentBackend } };
+  HasNotificationScheduling &
+  HasSoftKeyboardAccessoryBar &
+  HasSoftKeyboardChange &
+  HasSoftKeyboardInfo &
+  HasSoftKeyboardResizeModeWrite &
+  HasSoftKeyboardScrollAssist &
+  HasSoftKeyboardStyle &
+  HasSoftKeyboardVisibility & { readonly share: { readonly content: CapacitorShareContentBackend } };
 
 // The explicit Capacitor host. Clipboard, dialog, haptics, notification, and content sharing are claimed; every other capability
 // still installs through its package-local seam and is NOT represented here, so an empty group means
@@ -81,7 +86,16 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
       prompt: createCapacitorPromptDialogBackend(capacitor),
     },
     graphics: {},
-    input: { haptics: createCapacitorHapticsBackend(capacitor) },
+    input: {
+      haptics: createCapacitorHapticsBackend(capacitor),
+      softKeyboardAccessoryBar: createCapacitorSoftKeyboardAccessoryBarBackend(capacitor),
+      softKeyboardChange: createCapacitorSoftKeyboardChangeBackend(capacitor),
+      softKeyboardInfo: createCapacitorSoftKeyboardInfoBackend(capacitor),
+      softKeyboardResizeModeWrite: createCapacitorSoftKeyboardResizeModeWriteBackend(capacitor),
+      softKeyboardScrollAssist: createCapacitorSoftKeyboardScrollAssistBackend(capacitor),
+      softKeyboardStyle: createCapacitorSoftKeyboardStyleBackend(capacitor),
+      softKeyboardVisibility: createCapacitorSoftKeyboardVisibilityBackend(capacitor),
+    },
     media: {},
     // Capacitor exposes no menu capability: a webview app has no native menu bar, and its context
     // menus are the web overlay's job, not Capacitor's.
@@ -123,13 +137,6 @@ export function registerCapacitorBackends(capacitor: CapacitorApi): CapacitorHos
   setDeviceBackend(createCapacitorDeviceBackend(capacitor));
   setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));
   setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));
-  setSoftKeyboardAccessoryBarBackend(createCapacitorSoftKeyboardAccessoryBarBackend(capacitor));
-  setSoftKeyboardChangeBackend(createCapacitorSoftKeyboardChangeBackend(capacitor));
-  setSoftKeyboardInfoBackend(createCapacitorSoftKeyboardInfoBackend(capacitor));
-  setSoftKeyboardResizeModeWriteBackend(createCapacitorSoftKeyboardResizeModeWriteBackend(capacitor));
-  setSoftKeyboardScrollAssistBackend(createCapacitorSoftKeyboardScrollAssistBackend(capacitor));
-  setSoftKeyboardStyleBackend(createCapacitorSoftKeyboardStyleBackend(capacitor));
-  setSoftKeyboardVisibilityBackend(createCapacitorSoftKeyboardVisibilityBackend(capacitor));
   setStatusBarBackend(createCapacitorStatusBarBackend(capacitor));
   return capacitorHost(capacitor);
 }

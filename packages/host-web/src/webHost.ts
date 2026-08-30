@@ -22,6 +22,11 @@ import {
   webRenderContextBackend,
   webRenderSurfaceBackend,
 } from './webInputTarget';
+import {
+  createWebSoftKeyboardChangeBackend,
+  createWebSoftKeyboardInfoBackend,
+  createWebSoftKeyboardVisibilityBackend,
+} from './webKeyboard';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
@@ -66,6 +71,9 @@ export const webHost = createEntity({
     focus: webInputFocusBackend,
     haptics: webHapticsBackend,
     pointerLock: webInputPointerLockBackend,
+    softKeyboardChange: createWebSoftKeyboardChangeBackend(),
+    softKeyboardInfo: createWebSoftKeyboardInfoBackend(),
+    softKeyboardVisibility: createWebSoftKeyboardVisibilityBackend(),
     target: webInputTargetBackend,
   },
   media: { session: webMediaSessionBackend, sessionAction: webMediaSessionActionBackend },

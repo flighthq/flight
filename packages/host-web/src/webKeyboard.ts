@@ -1,9 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import {
-  installSoftKeyboardChangeHostBackend,
-  installSoftKeyboardInfoHostBackend,
-  installSoftKeyboardVisibilityHostBackend,
-} from '@flighthq/keyboard/contract';
 import type {
   Entity,
   SoftKeyboardChangeBackend,
@@ -36,7 +31,6 @@ export function createWebSoftKeyboardChangeBackend(): SoftKeyboardChangeBackend 
     },
   } satisfies OmitRuntime<SoftKeyboardChangeBackend>);
 }
-
 export function createWebSoftKeyboardInfoBackend(): SoftKeyboardInfoBackend & Entity {
   return createEntity({
     getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
@@ -66,18 +60,6 @@ export function createWebSoftKeyboardVisibilityBackend(): SoftKeyboardVisibility
       return 'ok';
     },
   } satisfies OmitRuntime<SoftKeyboardVisibilityBackend>);
-}
-
-export function enableHostWebSoftKeyboard(): void {
-  if (_enabled) return;
-  _enabled = true;
-  installSoftKeyboardInfoHostBackend(createWebSoftKeyboardInfoBackend());
-  installSoftKeyboardChangeHostBackend(createWebSoftKeyboardChangeBackend());
-  installSoftKeyboardVisibilityHostBackend(createWebSoftKeyboardVisibilityBackend());
-}
-
-export function resetHostWebKeyboardForTest(): void {
-  _enabled = false;
 }
 
 interface VirtualKeyboard extends EventTarget {
@@ -115,5 +97,3 @@ function getWebKeyboardGeometry(): WebKeyboardGeometry {
   const y = height > 0 ? viewport.height : 0;
   return { height, width, x: 0, y };
 }
-
-let _enabled = false;
