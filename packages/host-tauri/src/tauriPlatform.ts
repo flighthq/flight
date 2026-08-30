@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { PlatformBackend, PlatformName, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's PlatformBackend onto Tauri's `@tauri-apps/plugin-os`. Locale is the plugin's one async
@@ -13,7 +14,7 @@ export function createTauriPlatformBackend(tauri: TauriApi): PlatformBackend {
     .catch(() => {
       /* leave '' */
     });
-  return {
+  return createEntity({
     getInfo(out) {
       out.name = toPlatformName(os.platform());
       out.kind = 'desktop';
@@ -24,7 +25,7 @@ export function createTauriPlatformBackend(tauri: TauriApi): PlatformBackend {
       out.runtime = 'tauri';
       return out;
     },
-  };
+  });
 }
 
 function toPlatformName(platform: string): PlatformName {
