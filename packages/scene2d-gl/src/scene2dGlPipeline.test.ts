@@ -16,6 +16,7 @@ import {
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
+  StandardMaterialKind,
   TextLabelKind,
   TilemapKind,
 } from '@flighthq/types/contract';
@@ -78,8 +79,17 @@ describe('scene2dGlPipeline', () => {
     expect(registries.strokeTessellator.entry?.state).toBe(RegistryEntryState.Bound);
   });
 
-  it('starts with empty GL-specific tables that earlier families do not populate', () => {
+  it('carries the standard material renderer for StandardMaterialKind', () => {
     const registries = getGlPipelineRegistries(scene2dGlPipeline);
-    expect(registries.materialRenderers.entries.size).toBe(0);
+    expect(registries.materialRenderers.entries.size).toBe(1);
+    const entry = registries.materialRenderers.entries.get(StandardMaterialKind);
+    expect(entry).toBeDefined();
+    expect(entry?.state).toBe(RegistryEntryState.Bound);
+  });
+
+  it('starts with empty GL-specific tables that no family populates', () => {
+    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    expect(registries.customEffectShaders.entries.size).toBe(0);
+    expect(registries.customMaterialShaders.entries.size).toBe(0);
   });
 });
