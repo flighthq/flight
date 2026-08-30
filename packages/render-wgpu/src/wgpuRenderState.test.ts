@@ -199,6 +199,14 @@ describe('createWgpuDeviceState', () => {
 });
 
 describe('createWgpuOffscreenRenderState', () => {
+  it('rejects a device-only state at presentation boundaries', () => {
+    const deviceOnlyState = null as WgpuRenderState | null;
+    if (deviceOnlyState === null) return;
+
+    // @ts-expect-error — a device-only state has no presentation surface or canvas context.
+    beginWgpuFrame(deviceOnlyState);
+  });
+
   it('resolves late screen blend-mode wiring explicitly until locally overridden', async () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
