@@ -122,6 +122,71 @@ reader finds a stale-looking number, one command away from tidy, and no reason n
 here. Nothing in the tooling can express "deliberately not updated" — `size:minified` will keep
 failing these cases nightly, and that red is the intended state, not a task.
 
+## Size fixtures vs examples
+
+**Size measurement must not depend on examples.** Examples exist to demonstrate usage — under the explicit dependency model they will naturally import `webHost`, `scene2dGlPipeline`, and other whole-store consts, because convenience is the point of a demo. Measuring those tells you "the whole store is this big," which is not the interesting question. The interesting questions are:
+
+- What does a **minimal app** cost?
+- What does **adding one feature** cost?
+- Does the **whole-store const** (`webHost`, `scene2dGlPipeline`) cost more than the sum of its parts?
+- Is the cost of a **manual pipeline** with one renderer honest?
+
+These require purpose-built fixtures that control exactly what is imported. Today's 7 dedicated fixtures under `tools/size/fixtures/` are the right shape — the ~132 example-derived measurements become a secondary check (do examples grow unexpectedly?) rather than the primary cost surface.
+
+### Where fixtures live
+
+`tools/size/fixtures/`, one directory per fixture, same structure as today:
+
+```
+tools/size/fixtures/
+  sprite-only/           ← minimal: one renderer, one texture resolver
+  sprite-text/           ← sprite + text label
+  full-2d-gl/            ← scene2dGlPipeline — the whole-store 2D cost
+  manual-pipeline/       ← manual createGlPipeline with one renderer
+  host-web-full/         ← webHost — the whole-store host cost
+  host-web-net-only/     ← webNetBackend alone
+  effects-gl/            ← sprite + one effect runner
+  ...
+```
+
+Each fixture is a standalone workspace package (`"private": true`, `"flightSize": { "name": "..." }`), measured per backend just like examples. Fixture names describe the import profile, not a feature or a demo.
+
+### Structural validity — not a blank screen
+
+A size fixture must represent a **real import graph that would render pixels**. The bundler's tree-shaking is reachability-based: if a fixture imports `spriteRenderer` and threads it through `createGlPipeline → createGlRenderState → render`, the bundler retains the full render path. If it only imports the symbol and assigns it to a `Reflect.set(globalThis, ...)` escape hatch, it retains the symbol but may eliminate internal branches that the real call chain would keep alive.
+
+The structural validity floor:
+
+1. **Construct the full call chain.** Host (or raw context) → context state → pipeline → render state → at least one node → `prepareScene2DRender` → `render*Scene2D`. This is code that would produce pixels in a browser. It does not need to run.
+2. **Use the `Reflect.set(globalThis, ...)` escape only for the terminal value** — the render call's result or a node reference. The escape prevents the bundler from eliminating the entire fixture as dead code. It must sit at the END of the call chain, not in the middle, so every intermediate construction is reachable.
+3. **No synthetic shortcuts.** Don't import a renderer without threading it into a pipeline. Don't create a pipeline without passing it to a render state. Don't create a render state without calling render through it. Each fixture is a skeleton app, not a bag of imports.
+
+### Capture for validity evidence
+
+Size fixtures should also be **capturable** — runnable through the visual-capture tool to produce a screenshot proving the fixture renders visible output. This is a secondary check, not the primary measurement:
+
+- A fixture that measures 18 KB but renders a blank screen has a bug in its call chain — the 18 KB is a lie about what the feature costs, because the feature isn't working.
+- A fixture that measures 18 KB and renders a blue rectangle with a sprite is honest — that's what the import graph costs when it actually works.
+
+Capture is not pixel-perfect regression (that's functional tests' job). It is **existence evidence**: the fixture produces output, therefore the measured import graph is the real one. A blank capture is a failing fixture, regardless of its byte count.
+
+Captures live alongside the fixtures: `tools/size/fixtures/<name>/baseline.png`. They are captured once when the fixture is authored and re-captured when the fixture's imports change structurally. They are not regression-tested frame-by-frame — a visual spot-check that something rendered is sufficient.
+
+### Coverage adequacy
+
+The pipeline is the coverage map. Every registry family that can be included or excluded is a dimension:
+
+- **Extremes**: bare minimum (one renderer, one resolver) and full pipeline (the whole-store const). These are the floor and ceiling.
+- **Single-addition deltas**: bare + text, bare + shape, bare + effects, bare + tilemap. Each tells you what one feature costs over the floor.
+- **Host extremes**: full `webHost` vs single-backend imports (`webNetBackend`, `webAudioDeviceBackend`).
+- **Cross-cutting**: SWF import (already exists), format loading, diagnostics overhead (already exists).
+
+A fixture is missing if a registry family has no dedicated measurement — no fixture where it is the only addition over the baseline. The `explain()` diagnostic (when built) can validate this from the other direction: a fixture whose explain report shows unused registrations is either too broad or documenting whole-store cost intentionally.
+
+### Transition
+
+The existing 7 fixtures stay as-is. New fixtures are added as the explicit dependency model lands — each new const (`scene2dGlPipeline`, `webHost`, manual pipeline variants) gets a size fixture on arrival. Example-derived measurements remain in the baseline as a secondary signal but are no longer the primary cost surface. Examples are free to import `@flighthq/sdk`, `webHost`, and other convenience consts for clarity without distorting the size story.
+
 ## The discipline these numbers protect
 
 - Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small examples larger — unless the size tradeoff is intentional and measured.
