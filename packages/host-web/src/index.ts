@@ -39,7 +39,6 @@ export {
   createWebSoftKeyboardInfoBackend,
   createWebSoftKeyboardVisibilityBackend,
 } from './webKeyboard';
-export { enableHostWebLifecycle } from './webLifecycle';
 export { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 export {
   createWebMediaSessionActionBackend,

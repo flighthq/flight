@@ -8,7 +8,6 @@ import { enableHostWebFontLoading } from './webFontLoading';
 import { enableHostWebGeolocation } from './webGeolocation';
 import { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 import { enableHostWebImage } from './webImage';
-import { enableHostWebLifecycle } from './webLifecycle';
 import { enableHostWebMediaFileCapture } from './webMediaFileCapture';
 import { enableHostWebPlatform } from './webPlatform';
 import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
@@ -26,7 +25,6 @@ export function enableHostWeb(): void {
   enableHostWebGeolocation();
   enableHostWebGlyphRasterizer();
   enableHostWebImage();
-  enableHostWebLifecycle();
   enableHostWebPlatform();
   enableHostWebRaster2DSurface();
   enableHostWebSensors();
