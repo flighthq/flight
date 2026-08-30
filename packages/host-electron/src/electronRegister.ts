@@ -2,7 +2,10 @@ import { createEntity } from '@flighthq/entity/contract';
 import type {
   DesktopOsProfile,
   ElectronApi,
+  ElectronAppCapabilitiesFor,
   ElectronBackendOptions,
+  ElectronProtocolCapabilities,
+  ElectronTrayCapabilitiesFor,
   EntityRuntimeKey,
   HasClipboardBookmark,
   HasClipboardFormats,
@@ -41,7 +44,6 @@ import type {
 } from '@flighthq/types/contract';
 
 import { createElectronAppCapabilities } from './electronApp';
-import type { ElectronAppCapabilitiesFor } from './electronApp';
 import { createElectronClipboardBackend } from './electronClipboard';
 import {
   createElectronDirectoryOpenDialogBackend,
@@ -55,13 +57,11 @@ import { createElectronNotificationCapabilities } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
 import { createElectronPowerBackends } from './electronPower';
 import { createElectronProtocolCapabilities } from './electronProtocol';
-import type { ElectronProtocolCapabilities } from './electronProtocol';
 import { createElectronScreenCapabilities } from './electronScreen';
 import { makeElectronShellCapabilities } from './electronShell';
 import { createElectronShortcutQueryBackend, createElectronShortcutTriggerBackend } from './electronShortcut';
 import { createElectronStorageBackend } from './electronStorage';
 import { createElectronTrayCapabilities } from './electronTray';
-import type { ElectronTrayCapabilitiesFor } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
 

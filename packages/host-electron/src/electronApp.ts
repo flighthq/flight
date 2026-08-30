@@ -4,57 +4,16 @@ import type {
   AppPathKind,
   DesktopOsProfile,
   ElectronApi,
-  Entity,
+  ElectronAppCapabilitiesFor,
+  ElectronCommonAppCapabilities,
+  ElectronLinuxAppCapabilities,
+  ElectronMacosAppCapabilities,
+  ElectronWindowsAppCapabilities,
   HostAppCapabilities,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
-
-type ElectronCommonAppCapabilities = Entity &
-  Required<
-    Pick<
-      HostAppCapabilities,
-      | 'allWindowsClosed'
-      | 'focus'
-      | 'locale'
-      | 'name'
-      | 'nameWrite'
-      | 'path'
-      | 'quit'
-      | 'quitRequest'
-      | 'ready'
-      | 'relaunch'
-      | 'secondInstance'
-      | 'singleInstance'
-      | 'version'
-    >
-  >;
-type ElectronMacosAppCapabilities = ElectronCommonAppCapabilities &
-  Required<
-    Pick<
-      HostAppCapabilities,
-      | 'activate'
-      | 'activationPolicy'
-      | 'badge'
-      | 'dock'
-      | 'loginItem'
-      | 'openFile'
-      | 'hiddenQuery'
-      | 'hide'
-      | 'recentDocuments'
-      | 'show'
-    >
-  >;
-type ElectronLinuxAppCapabilities = ElectronCommonAppCapabilities & Required<Pick<HostAppCapabilities, 'badge'>>;
-type ElectronWindowsAppCapabilities = ElectronCommonAppCapabilities &
-  Required<Pick<HostAppCapabilities, 'loginItem' | 'recentDocuments' | 'userModelId'>>;
-
-export type ElectronAppCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
-  ? ElectronMacosAppCapabilities
-  : Profile extends 'windows'
-    ? ElectronWindowsAppCapabilities
-    : ElectronLinuxAppCapabilities;
 
 export function createElectronAppCapabilities<Profile extends DesktopOsProfile>(
   electron: ElectronApi,

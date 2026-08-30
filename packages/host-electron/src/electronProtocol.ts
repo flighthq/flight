@@ -1,10 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, Entity, HostProtocolCapabilities } from '@flighthq/types/contract';
-
-export type ElectronProtocolCapabilities = Entity &
-  Required<
-    Pick<HostProtocolCapabilities, 'default' | 'open' | 'registration' | 'registrationQuery' | 'unregistration'>
-  >;
+import type { ElectronApi, ElectronProtocolCapabilities } from '@flighthq/types/contract';
 
 export function createElectronProtocolCapabilities(electron: ElectronApi): ElectronProtocolCapabilities {
   const app = electron.app;

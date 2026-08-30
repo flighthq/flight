@@ -2,6 +2,8 @@ import { createEntity } from '@flighthq/entity/contract';
 import { setGeolocationBackend } from '@flighthq/geolocation/contract';
 import type {
   CapacitorApi,
+  CapacitorAppCapabilitiesFor,
+  CapacitorProtocolCapabilities,
   CapacitorShareContentBackend,
   EntityRuntimeKey,
   HasConnectivityChange,
@@ -35,7 +37,6 @@ import type {
 } from '@flighthq/types/contract';
 
 import { createCapacitorAppCapabilities } from './capacitorApp';
-import type { CapacitorAppCapabilitiesFor } from './capacitorApp';
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
 import { createCapacitorConnectivityBackend } from './capacitorConnectivity';
 import { createCapacitorDeviceBackend } from './capacitorDevice';
@@ -54,7 +55,6 @@ import {
 } from './capacitorKeyboard';
 import { createCapacitorNotificationCapabilities } from './capacitorNotification';
 import { createCapacitorProtocolCapabilities } from './capacitorProtocol';
-import type { CapacitorProtocolCapabilities } from './capacitorProtocol';
 import { createCapacitorShareContentBackend } from './capacitorShare';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 

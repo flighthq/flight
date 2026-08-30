@@ -7,6 +7,7 @@ import type {
   ElectronNativeImage,
   ElectronRectangle,
   ElectronTray,
+  ElectronTrayCapabilitiesFor,
   HostTrayCapabilities,
   MenuItemTemplate,
   Signal,
@@ -20,23 +21,6 @@ import type {
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
-
-type ElectronCommonTrayCapabilities = Required<
-  Pick<
-    HostTrayCapabilities,
-    'bounds' | 'image' | 'interactionEvents' | 'lifecycle' | 'menu' | 'menuSelectionEvents' | 'popupMenu' | 'tooltip'
-  >
->;
-type ElectronMacosTrayCapabilities = ElectronCommonTrayCapabilities &
-  Required<Pick<HostTrayCapabilities, 'doubleClickPolicy' | 'dropEvents' | 'pressedImage' | 'templateImage' | 'title'>>;
-type ElectronWindowsTrayCapabilities = ElectronCommonTrayCapabilities &
-  Required<Pick<HostTrayCapabilities, 'balloon' | 'balloonEvents'>>;
-
-export type ElectronTrayCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
-  ? ElectronMacosTrayCapabilities
-  : Profile extends 'windows'
-    ? ElectronWindowsTrayCapabilities
-    : ElectronCommonTrayCapabilities;
 
 interface NativeListener {
   event: string;

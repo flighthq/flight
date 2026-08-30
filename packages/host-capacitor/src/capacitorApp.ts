@@ -1,19 +1,12 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
+  CapacitorAndroidAppCapabilities,
+  CapacitorAppCapabilitiesFor,
+  CapacitorCommonAppCapabilities,
   CapacitorPluginListenerHandle,
-  Entity,
-  HostAppCapabilities,
   MobileOsProfile,
 } from '@flighthq/types/contract';
-
-type CapacitorCommonAppCapabilities = Entity & Required<Pick<HostAppCapabilities, 'activate' | 'name' | 'version'>>;
-type CapacitorAndroidAppCapabilities = CapacitorCommonAppCapabilities &
-  Required<Pick<HostAppCapabilities, 'hide' | 'quit'>>;
-
-export type CapacitorAppCapabilitiesFor<Profile extends MobileOsProfile> = Profile extends 'android'
-  ? CapacitorAndroidAppCapabilities
-  : CapacitorCommonAppCapabilities;
 
 export function createCapacitorAppCapabilities<Profile extends MobileOsProfile>(
   capacitor: CapacitorApi,
