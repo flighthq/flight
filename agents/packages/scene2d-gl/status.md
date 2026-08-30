@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-gl'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder
 ---
 
 # scene2d-gl — Status
@@ -61,6 +61,7 @@ Every item below was re-checked against `packages/scene2d-gl/src/` (and `render-
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — `scene2dGlPipeline` const: turnkey GL pipeline carrying all standard 2D GL renderers, blend modes, shape commands, and effect runners into a single `GlPipeline` value.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Three headline claims checked out
   **false** and were deleted. The largest: `registerGlDisplayObjectRenderers` and its file
   `glDisplayObjectRegistration.ts` **do not exist** — turnkey wiring is `renderGlScene2D` plus the

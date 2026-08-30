@@ -30,7 +30,7 @@ It ends where the backend-agnostic core (`@flighthq/render`) ends: `render` owns
 
 In scope:
 
-- The Canvas 2D `{ createData, submit }` renderer for every display-object kind, and the umbrella `registerCanvasDisplayObjectRenderers` / `canvasDisplayObjectRendererEntries`.
+- The Canvas 2D `{ createData, submit }` renderer for every display-object kind, the `CanvasPipeline` Entity (`createCanvasPipeline` / `getCanvasPipelineRegistries`), and the turnkey `scene2dCanvasPipeline` const.
 - The Canvas shape-command spine and its open registry; the Canvas material seam and its registry.
 - Canvas blend-mode mapping, clipping/masking, offscreen render targets, render caching, and the CSS-filter binding.
 - Independent offscreen render-state derivation plus screen-owned produced-texture leases used by explicit effect/composition pipelines.
