@@ -264,6 +264,7 @@
     "@flighthq/registry createSlotTable",
     "@flighthq/registry-catalog createRegistryCatalog",
     "@flighthq/registry-codegen createRegistryCodegenPlan",
+    "@flighthq/render-gl createEmptyGlRegistries",
     "@flighthq/render-gl createGlCanvasElement",
     "@flighthq/render-gl createGlRenderTarget",
     "@flighthq/render-gl createGlRenderTexturePool",
