@@ -72,6 +72,12 @@ describe('scene2dGlPipeline', () => {
     expect(registries.blendRealizations.entries.has(BlendMode.Screen)).toBe(true);
   });
 
+  it('carries the stroke tessellator in the slot table', () => {
+    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    expect(registries.strokeTessellator.entry).not.toBeNull();
+    expect(registries.strokeTessellator.entry?.state).toBe(RegistryEntryState.Bound);
+  });
+
   it('starts with empty GL-specific tables that earlier families do not populate', () => {
     const registries = getGlPipelineRegistries(scene2dGlPipeline);
     expect(registries.materialRenderers.entries.size).toBe(0);

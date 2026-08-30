@@ -1,3 +1,4 @@
+import { tessellateStrokePath } from '@flighthq/path/contract';
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   createEmptyGlRegistries,
@@ -13,6 +14,7 @@ import {
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
+  RegistryEntryState,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -55,5 +57,9 @@ export const scene2dGlPipeline: GlPipeline = createGlPipeline({
   ...createEmptyGlRegistries(),
   blendRealizations: standardGlBlendRealizations,
   renderers: buildScene2dGlRenderers(),
+  strokeTessellator: {
+    ...createEmptyGlRegistries().strokeTessellator,
+    entry: { state: RegistryEntryState.Bound, value: tessellateStrokePath },
+  },
   textureResolvers: standardGlTextureResolvers,
 });
