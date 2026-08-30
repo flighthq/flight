@@ -99,7 +99,7 @@ import type {
   ShellShortcutLinkBackend,
   ShellTrashBackend,
 } from './Shell';
-import type { ShortcutBackend } from './Shortcut';
+import type { ShortcutQueryBackend, ShortcutTriggerBackend } from './Shortcut';
 import type { SocketBackend } from './Socket';
 import type { StatusBarBackend } from './StatusBar';
 import type { StorageBackend, StorageChangeBackend } from './Storage';
@@ -128,6 +128,7 @@ export interface Host extends Entity {
   readonly screen: HostScreenCapabilities;
   readonly share: HostShareCapabilities;
   readonly shell: HostShellCapabilities;
+  readonly shortcut: HostShortcutCapabilities;
   readonly storage: HostStorageCapabilities;
   readonly system: HostSystemCapabilities;
   readonly text: HostTextCapabilities;
@@ -146,7 +147,6 @@ export interface HostAppCapabilities {
   readonly logTransport?: LogTransportBackend;
   readonly loop?: LoopBackend;
   readonly protocol?: ProtocolBackend;
-  readonly shortcut?: ShortcutBackend;
   readonly visibility?: ApplicationVisibilityBackend;
 }
 
@@ -278,6 +278,13 @@ export interface HostShellCapabilities {
   readonly trash?: ShellTrashBackend;
 }
 
+// Shortcut stays top-level because trigger is an event subscription and query is a command/result;
+// both happen to have E/T coverage, but combining their incompatible shapes would hide that split.
+export interface HostShortcutCapabilities {
+  readonly query?: ShortcutQueryBackend;
+  readonly trigger?: ShortcutTriggerBackend;
+}
+
 export interface HostStorageCapabilities {
   readonly change?: StorageChangeBackend;
   readonly fileSystem?: FileSystemBackend;
@@ -335,12 +342,16 @@ export interface HasAppProtocol {
   readonly app: { readonly protocol: ProtocolBackend };
 }
 
-export interface HasAppShortcut {
-  readonly app: { readonly shortcut: ShortcutBackend };
-}
-
 export interface HasUpdaterCommand {
   readonly updater: { readonly command: UpdaterCommandBackend };
+}
+
+export interface HasShortcutQuery {
+  readonly shortcut: { readonly query: ShortcutQueryBackend };
+}
+
+export interface HasShortcutTrigger {
+  readonly shortcut: { readonly trigger: ShortcutTriggerBackend };
 }
 
 export interface HasAppVisibilityQuery {

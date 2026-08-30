@@ -1,7 +1,7 @@
 ---
 package: "@flighthq/host-web"
-updated: null
-by: null
+updated: 2026-08-30
+by: builder3
 ---
 
 # host-web — Status
@@ -18,3 +18,7 @@ appending to it: a closed thread is deleted, not struck._
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-30** — Removed the ambient web Shortcut backend path. `webHost` now publishes the
+  required top-level `shortcut` group as exact `{}`, so absence of both optional providers is
+  structural and survives composition/probing without a sentinel.

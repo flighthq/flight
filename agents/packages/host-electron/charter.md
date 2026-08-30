@@ -3,7 +3,7 @@ package: '@flighthq/host-electron'
 role: host
 crate: null
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-08-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -21,6 +21,11 @@ The Electron main-process host adapter -- concrete implementations of Flight's p
 
 ## Decisions
 
+- **[2026-08-30] Shortcut registration is an explicit awaited resource.** Electron publishes both
+  `Host.shortcut.trigger` and `Host.shortcut.query`. Each successful native registration returns an
+  opaque Entity token, and later unsubscribe/destroy work is pinned to the provider that created it.
+  Native `register` refusal is data, while thrown provider faults remain distinguishable. There is no
+  ambient `@flighthq/shortcut` installation, tracked public enumeration, or fabricated enable toggle.
 - **[2026-08-30] Updater is an explicit Squirrel transaction.** The provider is returned at
   `Host.updater.command`; feed URL is construction policy, native events settle one awaited check, and
   downloaded handles retain exact provider origin. No `@flighthq/updater` ambient registration remains.

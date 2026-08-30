@@ -5,6 +5,8 @@ import { getElectronBrowserWindow, registerElectronBackends } from '@flighthq/ho
 import type { ApplicationWindow, ElectronApi, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
 import {
   createApplicationWindow,
+  attachGlobalShortcut,
+  createGlobalShortcut,
   createMenuItemTemplate,
   createTrayIcon,
   getAppLocale,
@@ -16,7 +18,6 @@ import {
   onTrayEvent,
   openWindow,
   readClipboardText,
-  registerGlobalShortcut,
   setAppBadgeCount,
   setApplicationMenu,
   setTrayIconTooltip,
@@ -96,7 +97,11 @@ function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>)
   connectSignal(menuSelect.onMenuItemSelect, (id) => console.log('[harness] menu select:', id)); // eslint-disable-line
   attachMenuSelect(host, menuSelect);
 
-  registerGlobalShortcut('CommandOrControl+Shift+F', () => console.log('[harness] global shortcut fired')); // eslint-disable-line
+  const shortcut = createGlobalShortcut('CommandOrControl+Shift+F');
+  if (shortcut.reason === 'created') {
+    connectSignal(shortcut.shortcut.onTrigger, () => console.log('[harness] global shortcut fired')); // eslint-disable-line
+    void attachGlobalShortcut(host, shortcut.shortcut);
+  }
 
   void (async () => {
     await writeClipboardText(host, 'Hello from Flight via Electron');

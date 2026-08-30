@@ -21,6 +21,11 @@ The narrow question is what a queried asset emits and how that becomes source. T
 registration is a fact derivable from content plus backend — so who derives it, and why does anyone
 bother when a shotgun is one line?**
 
+This document's “registration” means build-time renderer/catalog linking. OS-global Shortcut
+registration is a different lifecycle: since 2026-08-30 it is an awaited runtime trigger subscription
+owned by a `GlobalShortcut` Entity, exact provider, and opaque token. It is not catalogued, generated,
+enumerated, or last-write-wins; same-chord acquisition is serialized and teardown is creator-pinned.
+
 ## The frame: this is linking
 
 The clearest statement of what these pieces are, and the one that decides most of the arguments below:

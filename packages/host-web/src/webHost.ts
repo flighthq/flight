@@ -86,6 +86,8 @@ export const webHost = createEntity({
   screen: webScreenCapabilities,
   share: { content: webShareContentBackend, files: webShareFilesBackend },
   shell: { external: webShellExternalBackend },
+  // Browsers cannot register OS-global shortcuts; structural absence is the complete capability truth.
+  shortcut: {},
   storage: { change: webStorageBackend, local: webStorageBackend },
   system: {},
   text: {},

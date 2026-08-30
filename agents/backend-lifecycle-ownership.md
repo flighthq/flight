@@ -4,9 +4,25 @@ _Reconciled architecture record, 2026-08-28. The original audit population is fr
 `*Backend` interfaces so its partition remains reproducible. A post-audit population change is
 recorded separately below._
 
+## 2026-08-30 live reconciliation — Shortcut explicit trigger ownership
+
+The former ambient `ShortcutBackend` was replaced by independent explicit Host query and trigger
+providers. Only `ShortcutTriggerBackend` owns native resources: every successful `subscribe` returns an
+opaque Entity token, and core retains the exact provider/token pair on the `GlobalShortcut` Entity
+attachment. Detach and disposal release through that origin even when passed a replacement Host. Failed
+release leaves the attachment and provider ledger intact for exact retry.
+
+Provider `destroy()` first waits for pending acquisition, then attempts every distinct registered
+accelerator even after a failure; successes leave the ledger and failures remain for retry. Same-chord
+core acquisition is serialized and transactional, so no second attachment overwrites the first and no
+late acquisition resurrects after destroy. `ShortcutQueryBackend` is a stateless command provider and
+owns no registration lifetime. Historical ambient replacement/unregister-all text below is retained only
+as frozen audit history.
+
 ## 2026-08-29 live reconciliation — MediaSession R3
 
-The live structural census is now `10 of 83` teardown-bearing backend interfaces. MediaSession accounts
+The live structural census is now `12 of 84` teardown-bearing backend interfaces after the subsequent
+Updater and Shortcut explicit-Host migrations. MediaSession accounts
 for two independent Entity rows: `MediaSessionBackend` owns metadata/playback/position command lanes and
 `MediaSessionActionBackend` owns per-action native-handler lanes. Both are explicit Host capabilities,
 and `destroyMediaSession(host)` attempts every distinct provider once while preserving alias safety and
@@ -592,7 +608,7 @@ category; its subsequently landed hook is recorded in the row itself.
 | `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Landed hook:** `destroy?()` on the interface; `setMenuBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron clears the select listener and calls `Menu.setApplicationMenu(null)` to remove the native menu. Tauri clears JS-owned state only (select listener, idempotency flag); the native app menu cannot be cleared synchronously because Tauri's menu API is entirely async, so destroy preserves last-known-good (native menu stays until replaced by the next `setApplicationMenu`). Web is a no-op (holds no state — `setApplicationMenu` returns false). |
 | `PowerBackend` | Electron retains a `powerSaveBlocker` id; web retains and may reacquire a `WakeLockSentinel`. Both outlive the initiating call. | **Landed hook:** `destroy?()` on the interface; `setPowerBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron stops any held power-save blocker; web releases the wake-lock sentinel. Entity subscriptions remain owned by `detachPower`/`disposePower`. |
 | `ScreenQueryBackend` (`Host.screen.query`) | `createWebScreenCapabilities` installs a lazily-created `pointermove` handler and retains cursor/cache/detail state for the explicit Host slot. | **Landed hook:** the exact pointer handler is retained and removed by idempotent `destroy?()`; owned cursor/cache/detail state is cleared. Display and permission subscriptions remain origin-pinned to their event entities. The lifecycle guard recognizes this explicit Host-owned slot without treating the still-unwired Menu facets as resolved. |
-| `ShortcutBackend` | Successful registrations install OS-global callbacks and the Electron backend retains their accelerator set. They survive loss of the adapter reference. | **Owed:** `destroy?()` calls the implementation's `unregisterAll()` and clears its owned registry. Async hosts must observe/reject teardown failures without leaving an unhandled promise. |
+| `ShortcutTriggerBackend` | Successful subscriptions install OS-global callbacks and the provider retains exact opaque token-to-accelerator ownership. They survive loss of the adapter reference. | **Landed hook:** required awaited `destroy()` waits for pending acquisition, attempts every distinct accelerator, deduplicates aliased obligations, continues after failure, and retains failures for retry. Per-registration detach is creator-pinned through the stored provider/token pair. |
 
 The historical three-owner sentence is superseded by the live reconciliation above. “Gate enforced” and
 “all lifecycle cases proven” remain separate claims because the gate is structural.

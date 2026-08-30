@@ -109,6 +109,7 @@ describe('capacitorHost', () => {
     expect(host.storage).toEqual({});
     expect(host.system).toEqual({});
     expect(host.media).toEqual({});
+    expect(host.shortcut).toEqual({});
     expect(host.updater).toEqual({});
   });
 

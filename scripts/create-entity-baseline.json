@@ -289,7 +289,6 @@
     "@flighthq/shading createToonModifier",
     "@flighthq/shading createVertexDisplaceModifier",
     "@flighthq/shape createMorphShapeAnimationTarget",
-    "@flighthq/shortcut createParsedAccelerator",
     "@flighthq/signals createSignal",
     "@flighthq/skeleton2d createSkeleton2DBoneAnimationTarget",
     "@flighthq/skeleton2d createSkeleton2DSlotAnimationTarget",

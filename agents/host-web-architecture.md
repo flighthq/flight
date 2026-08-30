@@ -712,3 +712,14 @@ Keep-awake awaits `navigator.wakeLock.request` and classifies the failure: `NotA
 `PreventAppSuspension` mode become `unavailable`. The battery readings live in the provider's own
 closure rather than at module scope, so a destroyed provider's last readings can no longer be served to
 its successor as if freshly measured.
+
+---
+
+## 19. Shortcut explicit-Host correction (2026-08-30)
+
+The historical shortcut rows above correctly found zero browser implementation, but their remaining
+sentinel/ambient-installation wording is superseded. `webHost` now carries the required top-level
+`shortcut` group as exact `{}`. Because neither query nor trigger registration exists in browsers, it
+publishes neither optional provider. There is no `createWebShortcutBackend`, `enableHostWebShortcut`,
+ambient slot, explain/observe surface, or sentinel implementation. Host probing derives support from the
+presence of an actual provider, so the empty group remains structurally unsupported.

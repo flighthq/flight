@@ -146,16 +146,17 @@ Trays identified by an opaque numeric id; an id→record map holds the `Tray` pl
 | `setTitle` / `setTooltip` | `tray.setTitle` / `setToolTip` (+ record cache) | real |
 | `subscribe` | sets the single tray event listener; unsubscribe clears it | real |
 
-## shortcut — `ShortcutBackend` (electronShortcut.ts)
+## shortcut — `ShortcutQueryBackend` + `ShortcutTriggerBackend` (electronShortcut.ts)
 
 | Method | Electron call / sentinel | Status |
 | --- | --- | --- |
-| `register` | `globalShortcut.register`; synthesizes the `ShortcutEvent` | real |
-| `unregister` / `unregisterAll` | `globalShortcut.unregister` / `unregisterAll` (always `true`; Electron returns void) | real |
-| `isRegistered` | `globalShortcut.isRegistered` | real |
-| `getRegistered` | tracked accelerator set (Electron exposes no enumeration) | tracked |
-| `setEnabled` | `false` (no per-accelerator enable toggle) | limit |
-| `setAllEnabled` | no-op (no enable/disable toggle; must unregister/re-register) | limit |
+| query `isRegistered` | awaited lift of `globalShortcut.isRegistered` | real |
+| trigger `subscribe` | awaited lift of `globalShortcut.register`; `false` becomes explicit native refusal and success returns an opaque Entity token | real |
+| trigger `unsubscribe` | token-to-accelerator ownership lookup + `globalShortcut.unregister`; only an exact owned token can release | real |
+| trigger `destroy` | attempts `globalShortcut.unregister` for every distinct owned accelerator, continues after failure, and retains failed obligations for retry | real |
+
+Public enumeration and enable/disable methods do not exist. Electron exposes neither a trustworthy
+enumeration API nor a per-registration enabled state, so the seam does not fabricate either one.
 
 ## screen — `ScreenQueryBackend` + `ScreenChangeBackend` (electronScreen.ts)
 
@@ -248,5 +249,5 @@ The main-process side: it can receive from renderers but cannot send/invoke with
 
 ## Permanent limits vs. deferred — summary
 
-- **Permanent main-process limits** (the sentinel is the final answer): app `getCommandLine`, dock operations off macOS, dialog `prompt`, clipboard files/change-count/change-event, menu dismissal-close, tray `setTemplate`, shortcut enable toggles, power battery level/health/low-power, notification launch/active/pending/scheduling/update/reply, protocol launch-url/pending.
+- **Permanent main-process limits:** app `getCommandLine`, dock operations off macOS, dialog `prompt`, clipboard files/change-count/change-event, menu dismissal-close, tray `setTemplate`, power battery level/health/low-power, notification launch/active/pending/scheduling/update/reply, protocol launch-url/pending. Shortcut enable toggles are absent from the seam rather than represented by a sentinel.
 - **Deferred** (Electron could serve with more wiring, tracked in `assessment.md` Backlog): renderer-targeted IPC `send`/`invoke`.

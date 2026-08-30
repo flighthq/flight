@@ -2,7 +2,6 @@ import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
-import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
   ElectronApi,
@@ -25,6 +24,8 @@ import type {
   HasIpcMessage,
   HasScreenChange,
   HasScreenQuery,
+  HasShortcutQuery,
+  HasShortcutTrigger,
   HasUpdaterCommand,
   HasMenuApplication,
   HasMenuPopup,
@@ -56,7 +57,7 @@ import { createElectronPowerBackends } from './electronPower';
 import { createElectronProtocolBackend } from './electronProtocol';
 import { createElectronScreenCapabilities } from './electronScreen';
 import { makeElectronShellCapabilities } from './electronShell';
-import { createElectronShortcutBackend } from './electronShortcut';
+import { createElectronShortcutQueryBackend, createElectronShortcutTriggerBackend } from './electronShortcut';
 import { createElectronStorageBackend } from './electronStorage';
 import { createElectronTrayBackend } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
@@ -83,6 +84,8 @@ type ElectronHost = Host &
   HasMenuSelect &
   HasScreenChange &
   HasScreenQuery &
+  HasShortcutQuery &
+  HasShortcutTrigger &
   HasStorageLocal &
   HasUpdaterCommand &
   HasShellBeep &
@@ -118,6 +121,8 @@ export function registerElectronBackends(
   const notification = createElectronNotificationCapabilities(electron);
   const screen = createElectronScreenCapabilities(electron);
   const ipc = { message: createElectronIpcMessageBackend(electron) };
+  const query = createElectronShortcutQueryBackend(electron);
+  const trigger = createElectronShortcutTriggerBackend(electron);
   const menu = createElectronMenuBackends(electron);
   const power = createElectronPowerBackends(electron);
   const storage = createElectronStorageBackend(electron, options.storageFileName);
@@ -127,7 +132,6 @@ export function registerElectronBackends(
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
   setTrayBackend(createElectronTrayBackend(electron));
-  setShortcutBackend(createElectronShortcutBackend(electron));
   setProtocolBackend(createElectronProtocolBackend(electron));
   return createEntity({
     accessibility: {},
@@ -143,6 +147,7 @@ export function registerElectronBackends(
     net: {},
     power,
     notification,
+    shortcut: { query, trigger },
     screen,
     share: {},
     shell,

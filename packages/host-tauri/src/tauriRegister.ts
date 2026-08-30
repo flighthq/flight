@@ -1,7 +1,6 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
-import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
   EntityRuntimeKey,
@@ -14,6 +13,8 @@ import type {
   HasShellExternal,
   HasShellPathOpen,
   HasShellPathReveal,
+  HasShortcutQuery,
+  HasShortcutTrigger,
   HasMenuApplication,
   HasMenuPopup,
   HasMenuSelect,
@@ -35,7 +36,7 @@ import { createTauriMenuBackends } from './tauriMenu';
 import { createTauriNotificationCapabilities } from './tauriNotification';
 import { createTauriPlatformBackend } from './tauriPlatform';
 import { makeTauriShellCapabilities } from './tauriShell';
-import { createTauriShortcutBackend } from './tauriShortcut';
+import { createTauriShortcutQueryBackend, createTauriShortcutTriggerBackend } from './tauriShortcut';
 import { createTauriTrayBackend } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
 
@@ -52,6 +53,8 @@ type TauriHost = Host &
   HasShellExternal &
   HasShellPathOpen &
   HasShellPathReveal &
+  HasShortcutQuery &
+  HasShortcutTrigger &
   HasWindowAttach &
   HasWindowOpen;
 
@@ -75,13 +78,14 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     message: createTauriMessageDialogBackend(tauri),
   };
   const notification = createTauriNotificationCapabilities(tauri);
+  const query = createTauriShortcutQueryBackend(tauri);
+  const trigger = createTauriShortcutTriggerBackend(tauri);
   const menu = createTauriMenuBackends(tauri);
   const shell = makeTauriShellCapabilities(tauri);
   const window = createTauriWindowBackend(tauri);
   setPlatformBackend(createTauriPlatformBackend(tauri));
   setAppBackend(createTauriAppBackend(tauri));
   setTrayBackend(createTauriTrayBackend(tauri));
-  setShortcutBackend(createTauriShortcutBackend(tauri));
   return createEntity({
     accessibility: {},
     app: {},
@@ -100,6 +104,7 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     // API through the seams this host wires. The group is empty rather than stubbed.
     power: {},
     notification,
+    shortcut: { query, trigger },
     screen: {},
     share: {},
     shell,

@@ -1,54 +1,69 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ShortcutBackend, TauriApi } from '@flighthq/types/contract';
+import type {
+  Accelerator,
+  ShortcutQueryBackend,
+  ShortcutTriggerBackend,
+  ShortcutTriggerSubscription,
+  TauriApi,
+} from '@flighthq/types/contract';
 
-// Maps Flight's ShortcutBackend onto Tauri's `@tauri-apps/plugin-global-shortcut`. The seam is
-// synchronous (register returns a boolean now) while every Tauri call is async, so the adapter fires
-// register/unregister and forgets, optimistically reporting success and mirroring the registered set in
-// a local Set — that Set is what getRegistered/isRegistered read (synchronously). Tauri's handler fires
-// for both press and release; the adapter filters to 'Pressed' so a keypress delivers one ShortcutEvent.
-// Per-accelerator and global enable toggles have no Tauri equivalent, so they report their sentinels.
-export function createTauriShortcutBackend(tauri: TauriApi): ShortcutBackend {
-  const globalShortcut = tauri.globalShortcut;
-  const registered = new Set<string>();
-  return createEntity({
-    getRegistered() {
-      return [...registered];
-    },
-    isRegistered(accelerator) {
-      return registered.has(accelerator);
-    },
-    register(accelerator, listener) {
-      // Optimistic: mirror the registration now and fire the async Tauri register; on rejection, drop
-      // it from the mirror so getRegistered/isRegistered stay honest.
-      registered.add(accelerator);
-      globalShortcut
-        .register(accelerator, (event) => {
-          if (event.state === 'Pressed') listener({ accelerator });
-        })
-        .catch(() => {
-          registered.delete(accelerator);
-        });
-      return true;
-    },
-    setAllEnabled() {
-      // Tauri has no enable/disable toggle; a caller must unregister/re-register. Reported as a no-op.
-    },
-    setEnabled() {
-      // Tauri has no per-accelerator enable toggle; report unsupported via false.
-      return false;
-    },
-    unregister(accelerator) {
-      registered.delete(accelerator);
-      globalShortcut.unregister(accelerator).catch(() => {
-        /* already unregistered or never registered */
-      });
-      return true;
-    },
-    unregisterAll() {
-      registered.clear();
-      globalShortcut.unregisterAll().catch(() => {
-        /* nothing registered */
-      });
+export function createTauriShortcutQueryBackend(tauri: TauriApi): ShortcutQueryBackend {
+  const provider = createEntity({
+    async isRegistered(accelerator: Accelerator) {
+      return await tauri.globalShortcut.isRegistered(accelerator);
     },
   });
+  return provider;
+}
+
+// Tauri's plugin is async at every boundary. Registrations enter the owned ledger only after native
+// acquisition settles; failed unregisters remain there so destroy or an exact-token retry can release them.
+export function createTauriShortcutTriggerBackend(tauri: TauriApi): ShortcutTriggerBackend {
+  const globalShortcut = tauri.globalShortcut;
+  const registrations = new Map<ShortcutTriggerSubscription, Accelerator>();
+  const pending = new Set<Promise<void>>();
+
+  async function releaseAccelerator(accelerator: Accelerator): Promise<void> {
+    await globalShortcut.unregister(accelerator);
+    for (const [subscription, registered] of registrations) {
+      if (registered === accelerator) registrations.delete(subscription);
+    }
+  }
+
+  const provider = createEntity({
+    async destroy() {
+      await Promise.allSettled([...pending]);
+      let firstError: unknown;
+      const accelerators = new Set(registrations.values());
+      for (const accelerator of accelerators) {
+        try {
+          await releaseAccelerator(accelerator);
+        } catch (error) {
+          if (firstError === undefined) firstError = error;
+        }
+      }
+      if (firstError !== undefined) throw firstError;
+    },
+    async subscribe(accelerator: Accelerator, trigger: () => void) {
+      const subscription = createEntity();
+      const registration = globalShortcut.register(accelerator, (event) => {
+        if (event.state === 'Pressed' && registrations.has(subscription)) trigger();
+      });
+      pending.add(registration);
+      try {
+        await registration;
+        registrations.set(subscription, accelerator);
+        return { reason: 'subscribed' as const, subscription };
+      } finally {
+        pending.delete(registration);
+      }
+    },
+    async unsubscribe(subscription: ShortcutTriggerSubscription) {
+      const accelerator = registrations.get(subscription);
+      if (accelerator === undefined) return { reason: 'unknown-subscription' as const };
+      await releaseAccelerator(accelerator);
+      return { reason: 'unsubscribed' as const };
+    },
+  });
+  return provider;
 }

@@ -1,62 +1,79 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronShortcutBackend } from './electronShortcut';
+import { createElectronShortcutQueryBackend, createElectronShortcutTriggerBackend } from './electronShortcut';
 
-function fakeElectron(): { electron: ElectronApi; registered: Map<string, () => void> } {
-  const registered = new Map<string, () => void>();
+function fakeElectron() {
+  const callbacks = new Map<string, () => void>();
+  const unregisterCalls: string[] = [];
+  const unregisterFailures = new Set<string>();
   const electron = {
     globalShortcut: {
+      isRegistered: (accelerator: string) => callbacks.has(accelerator),
       register: (accelerator: string, callback: () => void) => {
-        registered.set(accelerator, callback);
+        if (callbacks.has(accelerator)) return false;
+        callbacks.set(accelerator, callback);
         return true;
       },
       unregister: (accelerator: string) => {
-        registered.delete(accelerator);
+        unregisterCalls.push(accelerator);
+        if (unregisterFailures.delete(accelerator)) throw new Error(`failed ${accelerator}`);
+        callbacks.delete(accelerator);
       },
-      unregisterAll: () => {
-        registered.clear();
-      },
-      isRegistered: (accelerator: string) => registered.has(accelerator),
+      unregisterAll: () => void callbacks.clear(),
     },
   } as unknown as ElectronApi;
-  return { electron, registered };
+  return { callbacks, electron, unregisterCalls, unregisterFailures };
 }
 
-describe('createElectronShortcutBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronShortcutBackend(fakeElectron().electron)).toBe(true);
+describe('createElectronShortcutQueryBackend', () => {
+  it('returns an Entity and lifts the native query into the awaited contract', async () => {
+    const fake = fakeElectron();
+    fake.callbacks.set('Control+K', () => {});
+    const provider = createElectronShortcutQueryBackend(fake.electron);
+    expect(EntityRuntimeKey in provider).toBe(true);
+    await expect(provider.isRegistered('Control+K')).resolves.toBe(true);
+    await expect(provider.isRegistered('Control+J')).resolves.toBe(false);
+  });
+});
+
+describe('createElectronShortcutTriggerBackend', () => {
+  it('returns an Entity, subscribes by exact token, and delivers native triggers', async () => {
+    const fake = fakeElectron();
+    const provider = createElectronShortcutTriggerBackend(fake.electron);
+    const trigger = vi.fn();
+    expect(EntityRuntimeKey in provider).toBe(true);
+    const outcome = await provider.subscribe('Control+K', trigger);
+    expect(outcome.reason).toBe('subscribed');
+    if (outcome.reason !== 'subscribed') return;
+    expect(EntityRuntimeKey in outcome.subscription).toBe(true);
+    fake.callbacks.get('Control+K')?.();
+    expect(trigger).toHaveBeenCalledTimes(1);
+    await expect(provider.unsubscribe(outcome.subscription)).resolves.toEqual({ reason: 'unsubscribed' });
+    expect(fake.callbacks.has('Control+K')).toBe(false);
+    await expect(provider.unsubscribe(outcome.subscription)).resolves.toEqual({ reason: 'unknown-subscription' });
   });
 
-  it('registers and reports a shortcut, invoking its listener', () => {
+  it('reports native collision/refusal without minting a token', async () => {
     const fake = fakeElectron();
-    const backend = createElectronShortcutBackend(fake.electron);
-    let fired = 0;
-    expect(
-      backend.register('CommandOrControl+X', () => {
-        fired++;
-      }),
-    ).toBe(true);
-    expect(backend.isRegistered('CommandOrControl+X')).toBe(true);
-    fake.registered.get('CommandOrControl+X')?.();
-    expect(fired).toBe(1);
+    fake.callbacks.set('Control+K', () => {});
+    const provider = createElectronShortcutTriggerBackend(fake.electron);
+    await expect(provider.subscribe('Control+K', () => {})).resolves.toEqual({ reason: 'refused' });
   });
 
-  it('unregisters one shortcut, returning true', () => {
+  it('destroy attempts every distinct obligation and retries only failed releases', async () => {
     const fake = fakeElectron();
-    const backend = createElectronShortcutBackend(fake.electron);
-    backend.register('Ctrl+A', () => {});
-    expect(backend.unregister('Ctrl+A')).toBe(true);
-    expect(backend.isRegistered('Ctrl+A')).toBe(false);
-  });
+    const provider = createElectronShortcutTriggerBackend(fake.electron);
+    await provider.subscribe('Control+A', () => {});
+    await provider.subscribe('Control+B', () => {});
+    fake.unregisterFailures.add('Control+A');
 
-  it('unregisters all shortcuts', () => {
-    const fake = fakeElectron();
-    const backend = createElectronShortcutBackend(fake.electron);
-    backend.register('Ctrl+A', () => {});
-    backend.register('Ctrl+B', () => {});
-    backend.unregisterAll();
-    expect(backend.isRegistered('Ctrl+A')).toBe(false);
-    expect(backend.isRegistered('Ctrl+B')).toBe(false);
+    await expect(provider.destroy()).rejects.toThrow('failed Control+A');
+    expect(fake.unregisterCalls).toEqual(['Control+A', 'Control+B']);
+    expect(fake.callbacks.has('Control+A')).toBe(true);
+    expect(fake.callbacks.has('Control+B')).toBe(false);
+
+    await expect(provider.destroy()).resolves.toBeUndefined();
+    expect(fake.unregisterCalls).toEqual(['Control+A', 'Control+B', 'Control+A']);
   });
 });
