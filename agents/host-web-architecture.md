@@ -177,7 +177,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 31 | shortcut | createWebShortcutBackend | 0/7 | **none** | — | ALL sentinel. |
 | 32 | socket | createWebSocketBackend | 1/0 | **ambient** | — | WHATWG WebSocket. Stays inline, unchanged. |
 | 33 | statusbar | createWebStatusBarBackend | 2/4 | **none** | — | 66.7% false. |
-| 34 | storage | createWebStorageBackend | 6/0 | **host-web** | DOM+window | localStorage, Window storage events |
+| 34 | storage | webStorageBackend (`local` + `change`) | 6/0 | **host-web** | DOM+window | localStorage, Window storage events |
 | 35 | textsegment | createWebTextSegmenterBackend | 1/0 | **ambient** | — | Intl.Segmenter (ECMA-402). Stays inline, unchanged. |
 | 36 | tray | createWebTrayBackend | 0/19 | **none** | — | ALL sentinel. |
 | 37 | updater | createWebUpdaterBackend | 0/21 | **none** | — | ALL sentinel. |

@@ -42,6 +42,8 @@ export interface ElectronApi {
 export interface ElectronFs {
   existsSync(path: string): boolean;
   readFileSync(path: string, encoding: 'utf-8'): string;
+  renameSync(oldPath: string, newPath: string): void;
+  unlinkSync(path: string): void;
   writeFileSync(path: string, data: string): void;
 }
 

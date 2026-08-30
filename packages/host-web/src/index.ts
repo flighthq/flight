@@ -47,7 +47,7 @@ export { enableHostWebSensors } from './webSensors';
 export { webShareContentBackend, webShareFilesBackend } from './webShare';
 export { enableHostWebShell } from './webShell';
 export { enableHostWebStatusBar } from './webStatusbar';
-export { enableHostWebStorage } from './webStorage';
+export { webStorageBackend } from './webStorage';
 export { enableHostWebVideoCapability } from './webVideoCapability';
 export { enableHostWebWebcam } from './webWebcam';
 export { webHost } from './webHost';

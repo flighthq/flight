@@ -1,19 +1,31 @@
-import type { StorageBackend, StorageNamespace, StorageOperation } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type {
+  EntityRuntimeKey,
+  HasStorageChange,
+  HasStorageLocal,
+  StorageBackend,
+  StorageChange,
+  StorageChangeBackend,
+  StorageClearFailureReason,
+  StorageGetItemFailureReason,
+  StorageRemoveItemFailureReason,
+  StorageSetItemFailureReason,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey as EntityRuntimeKeyValue } from '@flighthq/types/contract';
 
 import {
+  attachStorage,
   clearStorage,
   clearStorageNamespace,
-  createStorageNamespace,
-  createWebStorageBackend,
-  disableStorageSignals,
-  enableStorageSignals,
-  explainStorageBackend,
-  explainStorageOperation,
+  createStorageSignals,
+  destroyStorage,
+  detachStorage,
+  disposeStorage,
   getNamespacedStorageByteSize,
   getNamespacedStorageEntries,
   getNamespacedStorageItem,
   getNamespacedStorageKeys,
-  getStorageBackend,
   getStorageBoolean,
   getStorageBooleanOr,
   getStorageByteSize,
@@ -27,20 +39,13 @@ import {
   getStorageKeys,
   getStorageNumber,
   getStorageNumberOr,
-  getStorageQuotaEstimate,
-  getStorageSignals,
-  hasNamespacedStorageItem,
-  hasStorageItem,
-  hasStorageOperation,
-  installStorageHostBackend,
+  getNamespacedStorageItemPresence,
+  getStorageItemPresence,
   migrateStorage,
-  observeStorageHostResult,
   removeNamespacedStorageItem,
   removeStorageItem,
   removeStorageItems,
-  resetStorageBackendForTest,
   setNamespacedStorageItem,
-  setStorageBackend,
   setStorageBoolean,
   setStorageItem,
   setStorageItems,
@@ -48,875 +53,577 @@ import {
   setStorageNumber,
 } from './storage';
 
-function fakeBackend(): StorageBackend {
-  const map = new Map<string, string>();
-  return {
-    getItem(key) {
-      return map.has(key) ? (map.get(key) as string) : null;
+interface MemoryStorageBackend extends StorageBackend {
+  readonly data: Record<string, string>;
+  getCalls: number;
+  readonly getFailures: Map<string, StorageGetItemFailureReason>;
+  keysFailure: StorageGetItemFailureReason | null;
+  readonly removeFailures: Map<string, StorageRemoveItemFailureReason>;
+  readonly setFailures: Map<string, StorageSetItemFailureReason>;
+  clearFailure: StorageClearFailureReason | null;
+}
+
+function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemoryStorageBackend {
+  const data = { ...initial };
+  const getFailures = new Map<string, StorageGetItemFailureReason>();
+  const removeFailures = new Map<string, StorageRemoveItemFailureReason>();
+  const setFailures = new Map<string, StorageSetItemFailureReason>();
+  return createEntity({
+    clearFailure: null,
+    data,
+    getCalls: 0,
+    getFailures,
+    keysFailure: null,
+    removeFailures,
+    setFailures,
+    clear() {
+      if (this.clearFailure !== null) return { reason: this.clearFailure };
+      for (const key of Object.keys(data)) delete data[key];
+      return { reason: 'ok' };
     },
-    setItem(key, value) {
-      map.set(key, value);
-      return true;
+    getItem(key) {
+      this.getCalls++;
+      const failure = getFailures.get(key);
+      if (failure !== undefined) return { reason: failure, value: null };
+      return { reason: 'ok', value: Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null };
+    },
+    keys() {
+      return this.keysFailure === null
+        ? { reason: 'ok', value: Object.keys(data) }
+        : { reason: this.keysFailure, value: null };
     },
     removeItem(key) {
-      map.delete(key);
-      return true;
+      const failure = removeFailures.get(key);
+      if (failure !== undefined) return { reason: failure };
+      delete data[key];
+      return { reason: 'ok' };
     },
-    clear() {
-      map.clear();
-      return true;
+    setItem(key, value) {
+      const failure = setFailures.get(key);
+      if (failure !== undefined) return { reason: failure };
+      data[key] = value;
+      return { reason: 'ok' };
     },
-    keys() {
-      return [...map.keys()];
-    },
-  };
+  } satisfies Omit<MemoryStorageBackend, typeof EntityRuntimeKey>);
 }
 
-function deniedBackend(): StorageBackend {
-  return {
-    getItem() {
-      return null;
-    },
-    setItem() {
-      return false;
-    },
-    removeItem() {
-      return false;
-    },
-    clear() {
-      return false;
-    },
-    keys() {
-      return [];
-    },
-  };
+function localHost(backend: StorageBackend): HasStorageLocal {
+  return { storage: { local: backend } };
 }
 
-afterEach(() => {
-  disableStorageSignals();
-  setStorageBackend(null);
+function changeHost(backend: StorageChangeBackend): HasStorageChange {
+  return { storage: { change: backend } };
+}
+
+describe('attachStorage', () => {
+  it('retains and releases the exact provider subscription when re-attached', () => {
+    const released: string[] = [];
+    const captured: { listener?: (change: Readonly<StorageChange>) => void } = {};
+    const a = createEntity({
+      destroy() {},
+      subscribe(listener: (change: Readonly<StorageChange>) => void) {
+        captured.listener = listener;
+        return () => released.push('a');
+      },
+    });
+    const b = createEntity({
+      destroy() {},
+      subscribe() {
+        return () => released.push('b');
+      },
+    });
+    const signals = createStorageSignals();
+    const changes: StorageChange[] = [];
+    connectSignal(signals.onChange, (change) => changes.push({ ...change }));
+
+    expect(attachStorage(changeHost(a), signals)).toBe(true);
+    captured.listener?.({ key: 'a', newValue: '1', oldValue: null });
+    expect(changes).toEqual([{ key: 'a', newValue: '1', oldValue: null }]);
+    expect(attachStorage(changeHost(b), signals)).toBe(true);
+    expect(released).toEqual(['a']);
+    detachStorage(signals);
+    expect(released).toEqual(['a', 'b']);
+  });
+
+  it('returns false and retains no cleanup when acquisition fails', () => {
+    const provider = createEntity({ destroy() {}, subscribe: () => null });
+    const signals = createStorageSignals();
+    expect(attachStorage(changeHost(provider), signals)).toBe(false);
+    expect(() => detachStorage(signals)).not.toThrow();
+  });
 });
 
 describe('clearStorage', () => {
-  it('clears via the active backend', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    expect(clearStorage()).toBe(true);
-    expect(getStorageKeys()).toEqual([]);
-  });
-
-  it('returns false when denied', () => {
-    setStorageBackend(deniedBackend());
-    expect(clearStorage()).toBe(false);
+  it('returns the method reason and emits only after success', () => {
+    const backend = memoryBackend({ a: '1' });
+    const host = localHost(backend);
+    const signals = createStorageSignals();
+    const changes: StorageChange[] = [];
+    connectSignal(signals.onChange, (change) => changes.push({ ...change }));
+    backend.clearFailure = 'security-denied';
+    expect(clearStorage(host, signals)).toEqual({ reason: 'security-denied' });
+    expect(changes).toEqual([]);
+    backend.clearFailure = null;
+    expect(clearStorage(host, signals)).toEqual({ reason: 'ok' });
+    expect(changes).toEqual([{ key: null, newValue: null, oldValue: null }]);
   });
 });
 
 describe('clearStorageNamespace', () => {
-  it('removes only keys under the prefix', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    setNamespacedStorageItem(ns, 'a', '1');
-    setNamespacedStorageItem(ns, 'b', '2');
-    setStorageItem('global', 'g');
-    expect(clearStorageNamespace(ns)).toBe(true);
-    expect(getNamespacedStorageKeys(ns)).toEqual([]);
-    expect(getStorageItem('global')).toBe('g');
+  it('removes matching keys, stops on failure, and exposes completed world state', () => {
+    const backend = memoryBackend({ 'ns.a': '1', 'ns.b': '2', other: '3' });
+    backend.removeFailures.set('ns.b', 'remove-failed');
+    expect(clearStorageNamespace(localHost(backend), { prefix: 'ns' })).toEqual({
+      completed: 1,
+      failedKey: 'ns.b',
+      reason: 'remove-failed',
+    });
+    expect(backend.data).toEqual({ 'ns.b': '2', other: '3' });
   });
 
-  it('drives the namespace byte-size and key-set to empty after cleanup', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    setNamespacedStorageItem(ns, 'a', '1');
-    setNamespacedStorageItem(ns, 'b', '2');
-    expect(getNamespacedStorageByteSize(ns)).toBeGreaterThan(0);
-    expect(clearStorageNamespace(ns)).toBe(true);
-    expect(getNamespacedStorageKeys(ns)).toEqual([]);
-    expect(getNamespacedStorageByteSize(ns)).toBe(0);
-  });
-});
-
-describe('createStorageNamespace', () => {
-  it('creates a namespace with the given prefix', () => {
-    const ns = createStorageNamespace('app');
-    expect(ns.prefix).toBe('app');
-  });
-});
-
-describe('createWebStorageBackend', () => {
-  it('returns a backend whose reads yield sentinels without throwing', () => {
-    const backend = createWebStorageBackend();
-    expect(() => backend.getItem('missing')).not.toThrow();
-    expect(Array.isArray(backend.keys())).toBe(true);
-    expect(typeof backend.setItem('k', 'v')).toBe('boolean');
-  });
-});
-
-describe('disableStorageSignals', () => {
-  it('is a no-op when signals are not enabled', () => {
-    expect(() => disableStorageSignals()).not.toThrow();
-  });
-
-  it('stops emitting after disable', () => {
-    setStorageBackend(fakeBackend());
-    enableStorageSignals();
-    disableStorageSignals();
-    expect(getStorageSignals()).toBeNull();
-    // write should not throw after disable
-    setStorageItem('x', 'y');
-  });
-});
-
-describe('enableStorageSignals', () => {
-  it('returns a StorageSignals object', () => {
-    const sigs = enableStorageSignals();
-    expect(sigs).not.toBeNull();
-    expect(sigs.onChange).toBeDefined();
-  });
-
-  it('is idempotent — returns the same object', () => {
-    const a = enableStorageSignals();
-    const b = enableStorageSignals();
-    expect(a).toBe(b);
-  });
-
-  it('emits onChange when setStorageItem is called', () => {
-    setStorageBackend(fakeBackend());
-    const sigs = enableStorageSignals();
-    const changes: Array<{ key: string | null; oldValue: string | null; newValue: string | null }> = [];
-    sigs.onChange.emit = (change) => changes.push({ ...change });
-    setStorageItem('hello', 'world');
-    expect(changes).toHaveLength(1);
-    expect(changes[0].key).toBe('hello');
-    expect(changes[0].newValue).toBe('world');
-  });
-
-  it('emits onChange when clearStorage is called', () => {
-    setStorageBackend(fakeBackend());
-    const sigs = enableStorageSignals();
-    const changes: Array<{ key: string | null }> = [];
-    sigs.onChange.emit = (change) => changes.push({ key: change.key });
-    clearStorage();
-    expect(changes).toHaveLength(1);
-    expect(changes[0].key).toBeNull();
-  });
-
-  it('emits onChange when removeStorageItem is called', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    const sigs = enableStorageSignals();
-    const changes: Array<{ key: string | null; newValue: string | null }> = [];
-    sigs.onChange.emit = (change) => changes.push({ key: change.key, newValue: change.newValue });
-    removeStorageItem('a');
-    expect(changes).toHaveLength(1);
-    expect(changes[0].key).toBe('a');
-    expect(changes[0].newValue).toBeNull();
-  });
-});
-
-describe('explainStorageBackend', () => {
-  afterEach(() => resetStorageBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetStorageBackendForTest();
-    const explanation = explainStorageBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setStorageBackend(fakeBackend());
-    expect(explainStorageBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installStorageHostBackend(fakeBackend());
-    expect(explainStorageBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installStorageHostBackend(fakeBackend());
-    installStorageHostBackend(fakeBackend());
-    expect(explainStorageBackend().conflict).toBe(true);
-  });
-});
-
-describe('explainStorageOperation', () => {
-  afterEach(() => {
-    resetStorageBackendForTest();
-  });
-
-  // ★ With nothing installed, the sentinel still answers every call,
-  // so a query resolving through the getter would report every operation implemented. It must not.
-  it('reports sentinel and no implementation when nothing is installed', () => {
-    resetStorageBackendForTest();
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(explainStorageOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
-    }
-  });
-
-  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
-  // the sentinel does not implement those either, so a query resolving through getStorageBackend() would
-  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
-  // getter-based implementation reports a lie.
-  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
-    resetStorageBackendForTest();
-    expect(explainStorageOperation('getItem')).toEqual({
-      implemented: false,
-      layer: 'sentinel',
-      operation: 'getItem',
+  it('returns no partial state when key enumeration fails', () => {
+    const backend = memoryBackend({ 'ns.a': '1' });
+    backend.keysFailure = 'security-denied';
+    expect(clearStorageNamespace(localHost(backend), { prefix: 'ns' })).toEqual({
+      completed: 0,
+      failedKey: null,
+      reason: 'security-denied',
     });
   });
+});
 
-  it('reports a custom backend as implementing only what it provides', () => {
-    setStorageBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasStorageOperation(operation)).toBe(false);
-    }
-    expect(explainStorageOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+describe('createStorageSignals', () => {
+  it('creates an Entity with an onChange signal', () => {
+    const signals = createStorageSignals();
+    expect(EntityRuntimeKeyValue in signals).toBe(true);
+    expect(signals.onChange).toBeDefined();
   });
+});
 
-  it('reports an operation the backend does provide', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    setStorageBackend({ ...partialBackend(), [operation]: () => undefined } as StorageBackend);
-    expect(explainStorageOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+describe('destroyStorage', () => {
+  it('runs the explicit change-provider teardown', () => {
+    let destroyed = 0;
+    const provider = createEntity({ destroy: () => destroyed++, subscribe: () => null });
+    destroyStorage(changeHost(provider));
+    expect(destroyed).toBe(1);
   });
+});
 
-  it('falls through to the host for an operation the custom backend omits', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    installStorageHostBackend({ ...partialBackend(), [operation]: () => undefined } as StorageBackend);
-    setStorageBackend(partialBackend());
-    expect(explainStorageOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+describe('detachStorage', () => {
+  it('is idempotent', () => {
+    let released = 0;
+    const provider = createEntity({ destroy() {}, subscribe: () => () => released++ });
+    const signals = createStorageSignals();
+    attachStorage(changeHost(provider), signals);
+    detachStorage(signals);
+    detachStorage(signals);
+    expect(released).toBe(1);
+  });
+});
+
+describe('disposeStorage', () => {
+  it('detaches and clears listeners', () => {
+    let calls = 0;
+    const signals = createStorageSignals();
+    connectSignal(signals.onChange, () => calls++);
+    disposeStorage(signals);
+    expect(signals.onChange.data).toBeNull();
+    expect(calls).toBe(0);
   });
 });
 
 describe('getNamespacedStorageByteSize', () => {
-  it('counts only namespaced keys', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    setNamespacedStorageItem(ns, 'x', 'y');
-    setStorageItem('global', 'g');
-    const size = getNamespacedStorageByteSize(ns);
-    expect(size).toBeGreaterThan(0);
-  });
-
-  it('returns 0 for empty namespace', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('empty');
-    expect(getNamespacedStorageByteSize(ns)).toBe(0);
+  it('computes byte size from raw prefixed keys', () => {
+    const host = localHost(memoryBackend({ 'n.a': 'xy', other: 'ignored' }));
+    expect(getNamespacedStorageByteSize(host, { prefix: 'n' })).toEqual({
+      failedKey: null,
+      reason: 'ok',
+      value: ('n.a'.length + 'xy'.length) * 2,
+    });
   });
 });
 
 describe('getNamespacedStorageEntries', () => {
-  it('returns unprefixed key/value pairs', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    setNamespacedStorageItem(ns, 'a', '1');
-    setNamespacedStorageItem(ns, 'b', '2');
-    setStorageItem('ns.x', 'outside'); // Actually prefix-matching — valid entry
-    const entries = getNamespacedStorageEntries(ns);
-    const keys = entries.map((e) => e[0]).sort();
-    expect(keys).toContain('a');
-    expect(keys).toContain('b');
-  });
-
-  it('does not include global keys', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('app');
-    setStorageItem('global', 'g');
-    setNamespacedStorageItem(ns, 'local', 'v');
-    const entries = getNamespacedStorageEntries(ns);
-    expect(entries.every((e) => e[0] !== 'global')).toBe(true);
+  it('filters entries and strips the namespace prefix', () => {
+    const host = localHost(memoryBackend({ 'app.a': '1', 'app.b': '2', other: '3' }));
+    const namespace = { prefix: 'app' };
+    expect(getNamespacedStorageEntries(host, namespace)).toEqual({
+      failedKey: null,
+      reason: 'ok',
+      value: [
+        ['a', '1'],
+        ['b', '2'],
+      ],
+    });
   });
 });
 
 describe('getNamespacedStorageItem', () => {
-  it('returns null when absent', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    expect(getNamespacedStorageItem(ns, 'missing')).toBeNull();
+  it('reads the prefixed key', () => {
+    const host = localHost(memoryBackend({ 'app.a': '1' }));
+    const namespace = { prefix: 'app' };
+    expect(getNamespacedStorageItem(host, namespace, 'a')).toEqual({ reason: 'ok', value: '1' });
   });
+});
 
-  it('round-trips through the backend', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    setNamespacedStorageItem(ns, 'key', 'val');
-    expect(getNamespacedStorageItem(ns, 'key')).toBe('val');
+describe('getNamespacedStorageItemPresence', () => {
+  it('reports a missing prefixed key', () => {
+    const host = localHost(memoryBackend());
+    const namespace = { prefix: 'app' };
+    expect(getNamespacedStorageItemPresence(host, namespace, 'missing')).toEqual({ reason: 'ok', value: false });
   });
 });
 
 describe('getNamespacedStorageKeys', () => {
-  it('returns unprefixed keys', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('app');
-    setNamespacedStorageItem(ns, 'x', '1');
-    setNamespacedStorageItem(ns, 'y', '2');
-    setStorageItem('global', 'g');
-    const keys = getNamespacedStorageKeys(ns).sort();
-    expect(keys).toEqual(['x', 'y']);
-  });
-});
-
-describe('getStorageBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getStorageBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setStorageBackend(backend);
-    expect(getStorageBackend()).toBe(backend);
+  it('filters keys and strips the namespace prefix', () => {
+    const host = localHost(memoryBackend({ 'app.a': '1', 'app.b': '2', other: '3' }));
+    const namespace = { prefix: 'app' };
+    expect(getNamespacedStorageKeys(host, namespace)).toEqual({ reason: 'ok', value: ['a', 'b'] });
   });
 });
 
 describe('getStorageBoolean', () => {
-  it('returns true for stored "true"', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('flag', 'true');
-    expect(getStorageBoolean('flag')).toBe(true);
-  });
-
-  it('returns false for stored "false"', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('flag', 'false');
-    expect(getStorageBoolean('flag')).toBe(false);
-  });
-
-  it('returns null for absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageBoolean('missing')).toBeNull();
-  });
-
-  it('returns null for unrecognized value', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('flag', '1');
-    expect(getStorageBoolean('flag')).toBeNull();
+  it('distinguishes miss, values, and parse failure', () => {
+    const backend = memoryBackend({ bad: 'yes', false: 'false', true: 'true' });
+    const host = localHost(backend);
+    expect(getStorageBoolean(host, 'true')).toEqual({ reason: 'ok', value: true });
+    expect(getStorageBoolean(host, 'false')).toEqual({ reason: 'ok', value: false });
+    expect(getStorageBoolean(host, 'missing')).toEqual({ reason: 'ok', value: null });
+    expect(getStorageBoolean(host, 'bad')).toEqual({ reason: 'parse-failed', value: null });
   });
 });
 
 describe('getStorageBooleanOr', () => {
-  it('returns fallback on absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageBooleanOr('missing', true)).toBe(true);
-  });
-
-  it('returns stored value when present', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('flag', 'false');
-    expect(getStorageBooleanOr('flag', true)).toBe(false);
+  it('retains fallback decode and provider failure reasons', () => {
+    const backend = memoryBackend({ bad: 'yes' });
+    const host = localHost(backend);
+    expect(getStorageBooleanOr(host, 'bad', true)).toEqual({ reason: 'parse-failed', value: true });
+    backend.getFailures.set('denied', 'security-denied');
+    expect(getStorageBooleanOr(host, 'denied', true)).toEqual({ reason: 'security-denied', value: null });
   });
 });
 
 describe('getStorageByteSize', () => {
-  it('returns 0 for an empty store', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageByteSize()).toBe(0);
-  });
-
-  it('returns a positive size after writing', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('key', 'value');
-    expect(getStorageByteSize()).toBeGreaterThan(0);
-  });
-
-  it('delegates to backend.byteSize when present', () => {
-    const backend = fakeBackend();
-    backend.byteSize = () => 42;
-    setStorageBackend(backend);
-    expect(getStorageByteSize()).toBe(42);
+  it('returns empty success separately from keys and value failures', () => {
+    const empty = memoryBackend();
+    expect(getStorageByteSize(localHost(empty))).toEqual({ failedKey: null, reason: 'ok', value: 0 });
+    empty.keysFailure = 'read-failed';
+    expect(getStorageByteSize(localHost(empty))).toEqual({ failedKey: null, reason: 'read-failed', value: null });
+    const failedValue = memoryBackend({ a: '1' });
+    failedValue.getFailures.set('a', 'security-denied');
+    expect(getStorageByteSize(localHost(failedValue))).toEqual({
+      failedKey: 'a',
+      reason: 'security-denied',
+      value: null,
+    });
   });
 });
 
 describe('getStorageEntries', () => {
-  it('returns all key/value pairs', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    setStorageItem('b', '2');
-    const entries = getStorageEntries();
-    const sorted = [...entries].sort((a, b) => a[0].localeCompare(b[0]));
-    expect(sorted).toEqual([
-      ['a', '1'],
-      ['b', '2'],
-    ]);
-  });
-
-  it('returns [] for a denied backend', () => {
-    setStorageBackend(deniedBackend());
-    expect(getStorageEntries()).toEqual([]);
-  });
-
-  it('returns [] for an empty store', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageEntries()).toEqual([]);
+  it('returns no partial payload after the first failed value read', () => {
+    const backend = memoryBackend({ a: '1', b: '2' });
+    backend.getFailures.set('b', 'read-failed');
+    expect(getStorageEntries(localHost(backend))).toEqual({
+      failedKey: 'b',
+      reason: 'read-failed',
+      value: null,
+    });
   });
 });
 
 describe('getStorageItem', () => {
-  it('returns null for an absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageItem('missing')).toBeNull();
-  });
-
-  it('round-trips through the backend', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('greeting', 'hi');
-    expect(getStorageItem('greeting')).toBe('hi');
+  it('distinguishes missing, empty, and failed reads', () => {
+    const backend = memoryBackend({ empty: '' });
+    const host = localHost(backend);
+    expect(getStorageItem(host, 'missing')).toEqual({ reason: 'ok', value: null });
+    expect(getStorageItem(host, 'empty')).toEqual({ reason: 'ok', value: '' });
   });
 });
 
 describe('getStorageItemCount', () => {
-  it('returns 0 for an empty store', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageItemCount()).toBe(0);
-  });
-
-  it('counts stored keys', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    setStorageItem('b', '2');
-    expect(getStorageItemCount()).toBe(2);
-  });
-
-  it('returns 0 when denied', () => {
-    setStorageBackend(deniedBackend());
-    expect(getStorageItemCount()).toBe(0);
+  it('distinguishes an empty store from failed enumeration', () => {
+    const backend = memoryBackend();
+    const host = localHost(backend);
+    expect(getStorageItemCount(host)).toEqual({ reason: 'ok', value: 0 });
+    backend.keysFailure = 'runtime-unavailable';
+    expect(getStorageItemCount(host)).toEqual({ reason: 'runtime-unavailable', value: null });
   });
 });
 
 describe('getStorageItemOr', () => {
-  it('returns the stored value', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('k', 'v');
-    expect(getStorageItemOr('k', 'default')).toBe('v');
+  it('does not hide failure behind fallback', () => {
+    const backend = memoryBackend({ empty: '' });
+    const host = localHost(backend);
+    expect(getStorageItemOr(host, 'missing', 'fallback')).toEqual({ reason: 'ok', value: 'fallback' });
+    expect(getStorageItemOr(host, 'empty', 'fallback')).toEqual({ reason: 'ok', value: '' });
+    backend.getFailures.set('denied', 'security-denied');
+    expect(getStorageItemOr(host, 'denied', 'fallback')).toEqual({ reason: 'security-denied', value: null });
   });
+});
 
-  it('returns the fallback on absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageItemOr('missing', 'fallback')).toBe('fallback');
+describe('getStorageItemPresence', () => {
+  it('returns null payload on provider failure instead of false', () => {
+    const backend = memoryBackend();
+    backend.getFailures.set('key', 'read-failed');
+    expect(getStorageItemPresence(localHost(backend), 'key')).toEqual({ reason: 'read-failed', value: null });
   });
 });
 
 describe('getStorageItems', () => {
-  it('returns parallel-indexed values', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    setStorageItem('b', '2');
-    const results = getStorageItems(['a', 'missing', 'b']);
-    expect(results).toEqual(['1', null, '2']);
-  });
-
-  it('returns [] for empty keys array', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageItems([])).toEqual([]);
+  it('stops on first failure and returns no partial array', () => {
+    const backend = memoryBackend({ a: '1', c: '3' });
+    backend.getFailures.set('b', 'read-failed');
+    expect(getStorageItems(localHost(backend), ['a', 'b', 'c'])).toEqual({
+      failedKey: 'b',
+      reason: 'read-failed',
+      value: null,
+    });
+    expect(backend.getCalls).toBe(2);
   });
 });
 
 describe('getStorageJSON', () => {
-  it('parses a valid JSON string', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('obj', '{"x":1}');
-    expect(getStorageJSON<{ x: number }>('obj')).toEqual({ x: 1 });
-  });
-
-  it('returns null on absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageJSON('missing')).toBeNull();
-  });
-
-  it('returns null on corrupt stored data (parse failure)', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('bad', 'not-json{');
-    expect(getStorageJSON('bad')).toBeNull();
-  });
-
-  it('round-trips through setStorageJSON', () => {
-    setStorageBackend(fakeBackend());
-    setStorageJSON('data', { hello: 'world' });
-    expect(getStorageJSON<{ hello: string }>('data')).toEqual({ hello: 'world' });
+  it('keeps miss and stored null ordinary while identifying malformed input', () => {
+    const backend = memoryBackend({ bad: '{', null: 'null', value: '{"x":1}' });
+    const host = localHost(backend);
+    expect(getStorageJSON<{ x: number }>(host, 'value')).toEqual({ reason: 'ok', value: { x: 1 } });
+    expect(getStorageJSON(host, 'missing')).toEqual({ reason: 'ok', value: null });
+    expect(getStorageJSON(host, 'null')).toEqual({ reason: 'ok', value: null });
+    expect(getStorageJSON(host, 'bad')).toEqual({ reason: 'parse-failed', value: null });
   });
 });
 
 describe('getStorageJSONOr', () => {
-  it('returns fallback on absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageJSONOr('missing', 42)).toBe(42);
-  });
-
-  it('returns fallback on parse failure', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('bad', '{corrupt');
-    expect(getStorageJSONOr('bad', 'default')).toBe('default');
-  });
-
-  it('returns the parsed value when present', () => {
-    setStorageBackend(fakeBackend());
-    setStorageJSON('n', 99);
-    expect(getStorageJSONOr('n', 0)).toBe(99);
+  it('returns fallback with the parse reason but preserves a stored null', () => {
+    const host = localHost(memoryBackend({ bad: '{', null: 'null' }));
+    expect(getStorageJSONOr(host, 'bad', { x: 2 })).toEqual({ reason: 'parse-failed', value: { x: 2 } });
+    expect(getStorageJSONOr(host, 'null', { x: 2 })).toEqual({ reason: 'ok', value: null });
   });
 });
 
 describe('getStorageKeys', () => {
-  it('lists stored keys', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    setStorageItem('b', '2');
-    expect(getStorageKeys().sort()).toEqual(['a', 'b']);
+  it('distinguishes successful empty keys from a failed query', () => {
+    const backend = memoryBackend();
+    const host = localHost(backend);
+    expect(getStorageKeys(host)).toEqual({ reason: 'ok', value: [] });
+    backend.keysFailure = 'runtime-unavailable';
+    expect(getStorageKeys(host)).toEqual({ reason: 'runtime-unavailable', value: null });
   });
 });
 
 describe('getStorageNumber', () => {
-  it('returns a stored number', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('n', '42');
-    expect(getStorageNumber('n')).toBe(42);
-  });
-
-  it('returns null for absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageNumber('missing')).toBeNull();
-  });
-
-  it('returns null for non-numeric value', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('bad', 'nope');
-    expect(getStorageNumber('bad')).toBeNull();
+  it('reports nonfinite stored values as parse failures', () => {
+    const host = localHost(memoryBackend({ bad: 'Infinity', number: '2.5' }));
+    expect(getStorageNumber(host, 'number')).toEqual({ reason: 'ok', value: 2.5 });
+    expect(getStorageNumber(host, 'missing')).toEqual({ reason: 'ok', value: null });
+    expect(getStorageNumber(host, 'bad')).toEqual({ reason: 'parse-failed', value: null });
   });
 });
 
 describe('getStorageNumberOr', () => {
-  it('returns fallback on absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(getStorageNumberOr('missing', -1)).toBe(-1);
-  });
-
-  it('returns stored value when present', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('n', '7');
-    expect(getStorageNumberOr('n', 0)).toBe(7);
-  });
-});
-
-describe('getStorageQuotaEstimate', () => {
-  it('returns null when navigator.storage is absent', async () => {
-    const result = await getStorageQuotaEstimate();
-    // In jsdom, navigator.storage.estimate may or may not be available — just assert no throw.
-    expect(result === null || typeof result === 'object').toBe(true);
-  });
-});
-
-describe('getStorageSignals', () => {
-  it('returns null before enableStorageSignals', () => {
-    expect(getStorageSignals()).toBeNull();
-  });
-
-  it('returns the signals after enableStorageSignals', () => {
-    const sigs = enableStorageSignals();
-    expect(getStorageSignals()).toBe(sigs);
-  });
-});
-
-describe('hasNamespacedStorageItem', () => {
-  it('returns false when absent', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    expect(hasNamespacedStorageItem(ns, 'missing')).toBe(false);
-  });
-
-  it('returns true when present', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    setNamespacedStorageItem(ns, 'key', 'val');
-    expect(hasNamespacedStorageItem(ns, 'key')).toBe(true);
-  });
-});
-
-describe('hasStorageItem', () => {
-  it('returns false for absent key', () => {
-    setStorageBackend(fakeBackend());
-    expect(hasStorageItem('missing')).toBe(false);
-  });
-
-  it('returns true for a stored key', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('present', 'value');
-    expect(hasStorageItem('present')).toBe(true);
-  });
-
-  it('returns false when denied', () => {
-    setStorageBackend(deniedBackend());
-    expect(hasStorageItem('any')).toBe(false);
-  });
-});
-
-describe('hasStorageOperation', () => {
-  afterEach(() => {
-    resetStorageBackendForTest();
-  });
-
-  it('agrees with explainStorageOperation for every optional operation', () => {
-    setStorageBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasStorageOperation(operation)).toBe(explainStorageOperation(operation).implemented);
-    }
-  });
-});
-
-describe('installStorageHostBackend', () => {
-  afterEach(() => resetStorageBackendForTest());
-
-  it('installs a host backend that getStorageBackend returns', () => {
-    const backend = fakeBackend();
-    installStorageHostBackend(backend);
-    expect(getStorageBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installStorageHostBackend(first);
-    installStorageHostBackend(second);
-    expect(getStorageBackend()).toBe(first);
-    expect(explainStorageBackend().conflict).toBe(true);
+  it('retains the fallback parse reason', () => {
+    const host = localHost(memoryBackend({ bad: 'Infinity' }));
+    expect(getStorageNumberOr(host, 'bad', 7)).toEqual({ reason: 'parse-failed', value: 7 });
   });
 });
 
 describe('migrateStorage', () => {
-  it('runs migrations in version order', () => {
-    setStorageBackend(fakeBackend());
-    const calls: number[] = [];
-    const migrations = [
+  it('validates the entire plan before reading storage', () => {
+    const backend = memoryBackend();
+    expect(() => migrateStorage(localHost(backend), null, [{ migrate() {}, version: 0 }])).toThrow(RangeError);
+    expect(backend.getCalls).toBe(0);
+    expect(() =>
+      migrateStorage(localHost(backend), null, [
+        { migrate() {}, version: 1 },
+        { migrate() {}, version: 1 },
+      ]),
+    ).toThrow(RangeError);
+  });
+
+  it('runs zero callbacks after provider read failure or invalid stored version', () => {
+    const backend = memoryBackend({ __flight_storage_version: 'not-a-version' });
+    let callbacks = 0;
+    expect(migrateStorage(localHost(backend), null, [{ migrate: () => callbacks++, version: 1 }])).toEqual({
+      failedVersion: null,
+      reason: 'version-parse-failed',
+      stage: 'read-version',
+      version: null,
+    });
+    expect(callbacks).toBe(0);
+    backend.getFailures.set('__flight_storage_version', 'security-denied');
+    expect(migrateStorage(localHost(backend), null, [{ migrate: () => callbacks++, version: 1 }])).toEqual({
+      failedVersion: null,
+      reason: 'security-denied',
+      stage: 'read-version',
+      version: null,
+    });
+    expect(callbacks).toBe(0);
+  });
+
+  it('checkpoints after every callback in sorted order', () => {
+    const backend = memoryBackend();
+    const seen: string[] = [];
+    const result = migrateStorage(localHost(backend), null, [
       {
+        migrate() {
+          seen.push(`two:${backend.data.__flight_storage_version}`);
+        },
         version: 2,
-        migrate: () => {
-          calls.push(2);
-        },
       },
-      {
-        version: 1,
-        migrate: () => {
-          calls.push(1);
-        },
-      },
-    ];
-    const result = migrateStorage(null, migrations);
-    expect(result).toBe(2);
-    expect(calls).toEqual([1, 2]);
+      { migrate: () => seen.push('one'), version: 1 },
+    ]);
+    expect(result).toEqual({ failedVersion: null, reason: 'ok', stage: null, version: 2 });
+    expect(seen).toEqual(['one', 'two:1']);
+    expect(backend.data.__flight_storage_version).toBe('2');
   });
 
-  it('skips migrations at or below current version', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('__flight_storage_version', '2');
-    const calls: number[] = [];
+  it('reports the last checkpoint and replays a callback whose checkpoint failed', () => {
+    const backend = memoryBackend();
+    const original = backend.setItem.bind(backend);
+    let checkpointWrites = 0;
+    backend.setItem = (key, value) => {
+      checkpointWrites++;
+      return checkpointWrites === 2 ? { reason: 'write-failed' } : original(key, value);
+    };
+    let versionTwoCalls = 0;
     const migrations = [
-      {
-        version: 1,
-        migrate: () => {
-          calls.push(1);
-        },
-      },
-      {
-        version: 2,
-        migrate: () => {
-          calls.push(2);
-        },
-      },
-      {
-        version: 3,
-        migrate: () => {
-          calls.push(3);
-        },
-      },
+      { migrate() {}, version: 1 },
+      { migrate: () => versionTwoCalls++, version: 2 },
     ];
-    const result = migrateStorage(null, migrations);
-    expect(result).toBe(3);
-    expect(calls).toEqual([3]);
+    expect(migrateStorage(localHost(backend), null, migrations)).toEqual({
+      failedVersion: 2,
+      reason: 'write-failed',
+      stage: 'checkpoint',
+      version: 1,
+    });
+    expect(versionTwoCalls).toBe(1);
+    backend.setItem = original;
+    expect(migrateStorage(localHost(backend), null, migrations).reason).toBe('ok');
+    expect(versionTwoCalls).toBe(2);
   });
 
-  it('works with a namespace', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('app');
-    const calls: number[] = [];
-    const migrations = [
-      {
-        version: 1,
-        migrate: () => {
-          calls.push(1);
+  it('propagates callback exceptions without rolling back prior checkpoints', () => {
+    const backend = memoryBackend();
+    expect(() =>
+      migrateStorage(localHost(backend), null, [
+        { migrate() {}, version: 1 },
+        {
+          migrate: () => {
+            throw new Error('callback failed');
+          },
+          version: 2,
         },
-      },
-    ];
-    const result = migrateStorage(ns, migrations);
-    expect(result).toBe(1);
-    expect(calls).toEqual([1]);
-    expect(getNamespacedStorageItem(ns, '__flight_storage_version')).toBe('1');
-  });
-
-  it('returns -1 when a migration throws', () => {
-    setStorageBackend(fakeBackend());
-    const migrations = [
-      {
-        version: 1,
-        migrate: () => {
-          throw new Error('fail');
-        },
-      },
-    ];
-    expect(migrateStorage(null, migrations)).toBe(-1);
-  });
-});
-
-describe('observeStorageHostResult', () => {
-  afterEach(() => resetStorageBackendForTest());
-
-  it('records a successful observation', () => {
-    installStorageHostBackend(fakeBackend());
-    observeStorageHostResult('getItem', true);
-    const explanation = explainStorageBackend();
-    expect(explanation.operation).toBe('getItem');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installStorageHostBackend(fakeBackend());
-    observeStorageHostResult('getItem', false);
-    expect(explainStorageBackend().viability).toBe('runtime-api-unavailable');
+      ]),
+    ).toThrow('callback failed');
+    expect(backend.data.__flight_storage_version).toBe('1');
   });
 });
 
 describe('removeNamespacedStorageItem', () => {
-  it('removes a namespaced key', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('ns');
-    setNamespacedStorageItem(ns, 'key', 'val');
-    expect(removeNamespacedStorageItem(ns, 'key')).toBe(true);
-    expect(getNamespacedStorageItem(ns, 'key')).toBeNull();
+  it('emits only a real successful prefixed change', () => {
+    const backend = memoryBackend({ 'ns.a': '1' });
+    const host = localHost(backend);
+    const signals = createStorageSignals();
+    const changes: StorageChange[] = [];
+    connectSignal(signals.onChange, (change) => changes.push({ ...change }));
+    expect(removeNamespacedStorageItem(host, { prefix: 'ns' }, 'a', signals)).toEqual({ reason: 'ok' });
+    expect(changes).toEqual([{ key: 'ns.a', newValue: null, oldValue: '1' }]);
   });
 });
 
 describe('removeStorageItem', () => {
-  it('removes via the active backend', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    expect(removeStorageItem('a')).toBe(true);
-    expect(getStorageItem('a')).toBeNull();
+  it('treats absent removal as idempotent success', () => {
+    const backend = memoryBackend();
+    const signals = createStorageSignals();
+    const changes: StorageChange[] = [];
+    connectSignal(signals.onChange, (change) => changes.push({ ...change }));
+    expect(removeStorageItem(localHost(backend), 'missing', signals)).toEqual({ reason: 'ok' });
+    expect(changes).toEqual([]);
   });
 });
 
 describe('removeStorageItems', () => {
-  it('removes multiple keys', () => {
-    setStorageBackend(fakeBackend());
-    setStorageItem('a', '1');
-    setStorageItem('b', '2');
-    expect(removeStorageItems(['a', 'b'])).toBe(true);
-    expect(getStorageItem('a')).toBeNull();
-    expect(getStorageItem('b')).toBeNull();
-  });
-
-  it('returns false when any removal fails', () => {
-    setStorageBackend(deniedBackend());
-    expect(removeStorageItems(['x'])).toBe(false);
-  });
-});
-
-describe('resetStorageBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setStorageBackend(fakeBackend());
-    installStorageHostBackend(fakeBackend());
-    observeStorageHostResult('getItem', true);
-    resetStorageBackendForTest();
-    expect(explainStorageBackend().layer).toBe('host-not-enabled');
-    expect(explainStorageBackend().conflict).toBe(false);
-    expect(explainStorageBackend().viability).toBe('unobserved');
+  it('stops at the first failure and reports completed removals', () => {
+    const backend = memoryBackend({ a: '1', b: '2', c: '3' });
+    backend.removeFailures.set('b', 'security-denied');
+    expect(removeStorageItems(localHost(backend), ['a', 'b', 'c'])).toEqual({
+      completed: 1,
+      failedKey: 'b',
+      reason: 'security-denied',
+    });
+    expect(backend.data).toEqual({ b: '2', c: '3' });
   });
 });
 
 describe('setNamespacedStorageItem', () => {
-  it('stores under the prefixed key', () => {
-    setStorageBackend(fakeBackend());
-    const ns = createStorageNamespace('app');
-    setNamespacedStorageItem(ns, 'setting', '42');
-    expect(getStorageItem('app.setting')).toBe('42');
-  });
-});
-
-describe('setStorageBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setStorageBackend(fakeBackend());
-    setStorageBackend(null);
-    expect(getStorageBackend()).not.toBeNull();
+  it('prefixes namespaced keys', () => {
+    const backend = memoryBackend();
+    const host = localHost(backend);
+    expect(setNamespacedStorageItem(host, { prefix: 'app' }, 'key', 'value')).toEqual({ reason: 'ok' });
+    expect(backend.data).toEqual({ 'app.key': 'value' });
   });
 });
 
 describe('setStorageBoolean', () => {
-  it('writes "true" for true', () => {
-    setStorageBackend(fakeBackend());
-    setStorageBoolean('flag', true);
-    expect(getStorageItem('flag')).toBe('true');
-  });
-
-  it('writes "false" for false', () => {
-    setStorageBackend(fakeBackend());
-    setStorageBoolean('flag', false);
-    expect(getStorageItem('flag')).toBe('false');
+  it('serializes booleans', () => {
+    const backend = memoryBackend();
+    const host = localHost(backend);
+    expect(setStorageBoolean(host, 'flag', true)).toEqual({ reason: 'ok' });
+    expect(backend.data).toEqual({ flag: 'true' });
   });
 });
 
 describe('setStorageItem', () => {
-  it('writes via the active backend', () => {
-    setStorageBackend(fakeBackend());
-    expect(setStorageItem('x', 'y')).toBe(true);
-    expect(getStorageItem('x')).toBe('y');
+  it('reads old values only for observed signals and emits only after successful mutation', () => {
+    const backend = memoryBackend({ key: 'old' });
+    const host = localHost(backend);
+    const signals = createStorageSignals();
+    expect(setStorageItem(host, 'key', 'unobserved', signals)).toEqual({ reason: 'ok' });
+    expect(backend.getCalls).toBe(0);
+    const changes: StorageChange[] = [];
+    connectSignal(signals.onChange, (change) => changes.push({ ...change }));
+    backend.setFailures.set('key', 'quota-exceeded');
+    expect(setStorageItem(host, 'key', 'failed', signals)).toEqual({ reason: 'quota-exceeded' });
+    expect(changes).toEqual([]);
+    backend.setFailures.delete('key');
+    expect(setStorageItem(host, 'key', 'new', signals)).toEqual({ reason: 'ok' });
+    expect(changes).toEqual([{ key: 'key', newValue: 'new', oldValue: 'unobserved' }]);
   });
 });
 
 describe('setStorageItems', () => {
-  it('writes all key/value pairs', () => {
-    setStorageBackend(fakeBackend());
-    expect(setStorageItems({ a: '1', b: '2' })).toBe(true);
-    expect(getStorageItem('a')).toBe('1');
-    expect(getStorageItem('b')).toBe('2');
-  });
-
-  it('returns false when any write fails', () => {
-    setStorageBackend(deniedBackend());
-    expect(setStorageItems({ a: '1' })).toBe(false);
+  it('stops after a failed write and exposes completed world state', () => {
+    const backend = memoryBackend();
+    backend.setFailures.set('b', 'quota-exceeded');
+    expect(setStorageItems(localHost(backend), { a: '1', b: '2', c: '3' })).toEqual({
+      completed: 1,
+      failedKey: 'b',
+      reason: 'quota-exceeded',
+    });
+    expect(backend.data).toEqual({ a: '1' });
   });
 });
 
-// Per-operation availability for StorageBackend. The operations below are the ones the interface declares
-// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
-// ruling, and this is the query that makes it observable.
-const OPTIONAL_OPERATIONS: readonly StorageOperation[] = ['byteSize', 'subscribeChanges'];
-
 describe('setStorageJSON', () => {
-  it('stores a stringified value', () => {
-    setStorageBackend(fakeBackend());
-    expect(setStorageJSON('obj', { n: 1 })).toBe(true);
-    expect(getStorageItem('obj')).toBe('{"n":1}');
-  });
-
-  it('returns false for cyclic values', () => {
-    setStorageBackend(fakeBackend());
-    const cyclic: Record<string, unknown> = {};
+  it('keeps serialization failures core-owned, including undefined', () => {
+    const backend = memoryBackend();
+    const host = localHost(backend);
+    const cyclic: { self?: unknown } = {};
     cyclic.self = cyclic;
-    expect(setStorageJSON('bad', cyclic)).toBe(false);
+    expect(setStorageJSON(host, 'cyclic', cyclic)).toEqual({ reason: 'serialization-failed' });
+    expect(setStorageJSON(host, 'undefined', undefined)).toEqual({ reason: 'serialization-failed' });
+    expect(setStorageJSON(host, 'value', { x: 1 })).toEqual({ reason: 'ok' });
+    expect(backend.data.value).toBe('{"x":1}');
   });
 });
 
 describe('setStorageNumber', () => {
-  it('stores the number as a string', () => {
-    setStorageBackend(fakeBackend());
-    setStorageNumber('n', 3.14);
-    expect(getStorageItem('n')).toBe('3.14');
+  it('stores finite values and throws RangeError for programmer misuse', () => {
+    const backend = memoryBackend();
+    const host = localHost(backend);
+    expect(setStorageNumber(host, 'number', 2.5)).toEqual({ reason: 'ok' });
+    expect(backend.data.number).toBe('2.5');
+    expect(() => setStorageNumber(host, 'nan', Number.NaN)).toThrow(RangeError);
+    expect(() => setStorageNumber(host, 'infinity', Infinity)).toThrow(RangeError);
   });
 });
-
-// A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): StorageBackend {
-  return {
-    getItem: (() => undefined) as never,
-    setItem: (() => undefined) as never,
-    removeItem: (() => undefined) as never,
-    clear: (() => undefined) as never,
-    keys: (() => undefined) as never,
-  } as StorageBackend;
-}

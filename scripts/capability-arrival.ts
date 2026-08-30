@@ -78,14 +78,13 @@ const EXPECTED_AGGREGATE = [
   'Platform',
   'Raster2DSurface',
   'Sensors',
-  'Storage',
   'VideoCapability',
   'Webcam',
 ] as const;
 
 // These capabilities arrive as stable slots on the explicit Web Host, not through the legacy
 // process-global enabler registry.
-const EXPECTED_EXPLICIT_HOST = ['MediaSession', 'Screen'] as const;
+const EXPECTED_EXPLICIT_HOST = ['MediaSession', 'Screen', 'Storage'] as const;
 
 // These are deliberately not part of enableHostWeb(): applications opt into application services,
 // shell chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
@@ -467,6 +466,13 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
     explicitHost.add('MediaSession');
   }
   if (/\bscreen\s*:\s*webScreenCapabilities\b/.test(webHostSource)) explicitHost.add('Screen');
+  const storageGroup = /\bstorage\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
+  if (
+    /\bchange\s*:\s*webStorageBackend\b/.test(storageGroup) &&
+    /\blocal\s*:\s*webStorageBackend\b/.test(storageGroup)
+  ) {
+    explicitHost.add('Storage');
+  }
   if (!sameMembers(explicitHost, EXPECTED_EXPLICIT_HOST)) {
     failures.push(
       registryFailure(

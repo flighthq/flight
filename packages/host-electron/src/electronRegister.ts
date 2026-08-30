@@ -6,7 +6,6 @@ import { setPowerBackend } from '@flighthq/power/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
 import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
-import { setStorageBackend } from '@flighthq/storage/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
   ElectronApi,
@@ -29,6 +28,7 @@ import type {
   HasMenuApplication,
   HasMenuPopup,
   HasMenuSelect,
+  HasStorageLocal,
   HasWindowAttach,
   HasWindowOpen,
   Host,
@@ -70,6 +70,7 @@ type ElectronHost = Host &
   HasMenuSelect &
   HasScreenChange &
   HasScreenQuery &
+  HasStorageLocal &
   HasWindowAttach &
   HasWindowOpen;
 
@@ -82,8 +83,8 @@ type ElectronHost = Host &
 //   const electronApi: ElectronApi = { ...electron, fs, Tray: electron.Tray as ElectronApi['Tray'] };
 //   registerElectronBackends(electronApi);
 //
-// Pass the returned host to clipboard, window, dialog, and notification operations. The remaining set*Backend(null)
-// package seams revert independently; there is no bulk unregister because those backends are independent.
+// Pass the returned host to clipboard, window, dialog, notification, and storage operations. Remaining
+// ambient package seams revert independently; there is no bulk unregister for those independent backends.
 export function registerElectronBackends(
   electron: ElectronApi,
   options: Readonly<ElectronBackendOptions> = {},
@@ -96,6 +97,7 @@ export function registerElectronBackends(
   const notification = createElectronNotificationCapabilities(electron);
   const screen = createElectronScreenCapabilities(electron);
   const menu = createElectronMenuBackends(electron);
+  const storage = createElectronStorageBackend(electron, options.storageFileName);
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
@@ -103,7 +105,6 @@ export function registerElectronBackends(
   setShortcutBackend(createElectronShortcutBackend(electron));
   setPowerBackend(createElectronPowerBackend(electron));
   setShellBackend(createElectronShellBackend(electron));
-  setStorageBackend(createElectronStorageBackend(electron, options.storageFileName));
   setProtocolBackend(createElectronProtocolBackend(electron));
   setUpdaterBackend(createElectronUpdaterBackend(electron));
   setIpcBackend(createElectronIpcBackend(electron));
@@ -121,7 +122,7 @@ export function registerElectronBackends(
     notification,
     screen,
     share: {},
-    storage: {},
+    storage: { local: storage },
     system: {},
     text: {},
     ui: {},

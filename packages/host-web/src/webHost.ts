@@ -21,6 +21,7 @@ import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMedia
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 import { webScreenCapabilities } from './webScreen';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
+import { webStorageBackend } from './webStorage';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
@@ -63,7 +64,7 @@ export const webHost = createEntity({
   notification: webNotificationCapabilities,
   screen: webScreenCapabilities,
   share: { content: webShareContentBackend, files: webShareFilesBackend },
-  storage: {},
+  storage: { change: webStorageBackend, local: webStorageBackend },
   system: {},
   text: {},
   ui: { fullscreen: webFullscreenBackend },

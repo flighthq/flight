@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/storage'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-29
+by: builder4
 ---
 
 # storage — Status
@@ -11,40 +11,27 @@ by: principal
 
 ## Open
 
-Every item was re-checked against `packages/storage/src/storage.ts` and `packages/types/src/Storage.ts`
-on 2026-08-08. A file:line here is a claim about this tree, not about a session.
-
-- **Namespaced single-key writes silently skip `onChange`.** `_emitStorageChange` has exactly five
-  callers — `clearStorage`, `removeStorageItem` (`:383`), `setStorageItem` (`:430`),
-  and the two cross-tab re-wire paths (`:132`, `:414`). `setNamespacedStorageItem` (`:399`) and
-  `removeNamespacedStorageItem` (`:374`) call the backend directly. These are **not** bulk ops, so the
-  documented "bulk writes are deliberately not signal-aware" tradeoff does not cover them: a caller who
-  uses namespaces gets no change events at all, and nothing says so.
-- **Bulk ops are also silent, by decision** — `setStorageItems` (`:436`), `removeStorageItems` (`:389`),
-  and `clearStorageNamespace` (`:21`) loop the backend to avoid a per-key `oldValue` read. That is the
-  intended tradeoff, but no `explain*` query or guard tells a caller why their listener never fires.
-- **`migrateStorage` is not atomic and not resumable.** On a throwing migration it returns `-1`
-  (`storage.ts:359`) with every earlier migration in the batch already applied and the version key
-  never written (`:363-369`), so the next run replays them from the stored version. Either the version
-  key advances per successful step or the failure is documented as leaving a torn store.
-- **`__flight_storage_version` is a soft reservation with no enforcement.** The key is a local literal
-  (`storage.ts:349`) and appears in `getStorageKeys` (`:288`), `getStorageEntries` (`:227`),
-  `getStorageItemCount` (`:244`), and `getStorageByteSize` (`:210`) like any user key. A caller
-  enumerating their own keyspace sees Flight's bookkeeping.
-- **`getStorageQuotaEstimate` is the package's only async export** (`storage.ts:309`) — every other
-  function is synchronous. `navigator.storage.estimate()` is inherently async, so this is a real
-  seam split rather than an oversight, but it means the storage API has two calling conventions.
-- **No `@flighthq/storage-formats` neighbor exists.** `packages/storage-formats/` is absent and
-  `exportStorageSnapshot` / `importStorageSnapshot` have zero hits across `packages/**/*.ts`. Snapshot
-  export/import is the one named Gold surface still unbuilt.
-- **`onStorageChange(listener): () => void` is deliberately absent** pending a ruling on auto-enable.
-  Today subscribing means `connectSignal(enableStorageSignals().onChange, listener)`; the question is
-  whether a convenience wrapper may turn signals on as a side effect of subscribing.
+- **No open implementation defect in the explicit-Host slice.** Storage commands consume
+  `HasStorageLocal`; change observation consumes `HasStorageChange`. Web truthfully supplies both and
+  Electron only local. The old ambient backend, quota surface, sentinel, Web enabler, and namespace
+  constructor are gone.
+- **Migration is intentionally resumable rather than transactional.** Each callback checkpoints its
+  version immediately. Callback exceptions propagate and earlier successful steps are not rolled back,
+  so migration callbacks must remain replay-safe and idempotent.
+- **Durability is intentionally narrower than atomic visibility.** Mutation `reason: 'ok'` promises
+  visibility plus provider-cache agreement, not fsync or sudden-power-loss survival. Electron meets the
+  contract with a same-directory temporary candidate and rename.
+- **No `@flighthq/storage-formats` neighbor exists.** Snapshot export/import remains a possible future
+  package rather than part of this synchronous capability.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-29** — Replaced ambient backend selection with explicit `storage.local` / `storage.change`
+  Host facets, method-tight reason envelopes, complete signal/migration lifetimes, a stable Web Entity,
+  and candidate+rename Electron persistence. Public success semantics are recorded in
+  `packages/types/src/Storage.ts` and the package charter.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 claim that
   `StorageChange`, `StorageMigration`, `StorageNamespace`, `StorageQuota`, and `StorageSignals` each
   got their own file and "follow the one-concept-per-file convention" is **false**:

@@ -11,7 +11,6 @@ import { getProtocolBackend } from '@flighthq/protocol/contract';
 import { getShellBackend } from '@flighthq/shell/contract';
 import { getShortcutBackend } from '@flighthq/shortcut/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
-import { getStorageBackend } from '@flighthq/storage/contract';
 import { getTrayBackend } from '@flighthq/tray/contract';
 import type { Host } from '@flighthq/types/contract';
 import { getUpdaterBackend } from '@flighthq/updater/contract';
@@ -34,6 +33,7 @@ export function captureHostProbeBackends(
       | 'notification'
       | 'screen'
       | 'share'
+      | 'storage'
       | 'window'
     >
   > = {},
@@ -63,7 +63,7 @@ export function captureHostProbeBackends(
     shortcut: getShortcutBackend(),
     'soft-keyboard': getSoftKeyboardBackend(),
     statusbar: getStatusBarBackend(),
-    storage: getStorageBackend(),
+    storage: host.storage?.local ?? null,
     tray: getTrayBackend(),
     updater: getUpdaterBackend(),
     window: host.window ?? null,

@@ -78,7 +78,7 @@ import type { ShellBackend } from './Shell';
 import type { ShortcutBackend } from './Shortcut';
 import type { SocketBackend } from './Socket';
 import type { StatusBarBackend } from './StatusBar';
-import type { StorageBackend } from './Storage';
+import type { StorageBackend, StorageChangeBackend } from './Storage';
 import type { TextSegmenterBackend } from './TextSegment';
 import type { TextShaperBackend } from './TextShaper';
 import type { TrayBackend } from './Tray';
@@ -216,6 +216,7 @@ export interface HostScreenCapabilities {
 }
 
 export interface HostStorageCapabilities {
+  readonly change?: StorageChangeBackend;
   readonly fileSystem?: FileSystemBackend;
   readonly local?: StorageBackend;
 }
@@ -454,6 +455,10 @@ export interface HasNotificationUpdate {
 
 export interface HasStorageFileSystem {
   readonly storage: { readonly fileSystem: FileSystemBackend };
+}
+
+export interface HasStorageChange {
+  readonly storage: { readonly change: StorageChangeBackend };
 }
 
 export interface HasStorageLocal {

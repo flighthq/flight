@@ -87,6 +87,7 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'loop',
     'screen',
     'share',
+    'storage',
     'window',
   ]),
 };

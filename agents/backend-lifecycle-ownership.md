@@ -698,6 +698,18 @@ guard recognizes the explicit `destroyConnectivity(host)` route without inventin
 | `ConnectivityReachabilityBackend` | One Web `HEAD` request bounded by its promise, timeout, and optional caller `AbortSignal`. | **Owned by bounded call.** There is no native-to-Web fallback; the explicit slot identifies the only provider. |
 | `ConnectivityChangeBackend` | Per-entity attach stores the exact returned release and A→B reattach consumes A before subscribing to B. Web tracks every exact DOM release. Capacitor owns one native handle plus a local subscriber set. | **Owned.** `disposeConnectivity` consumes the entity release once and clears all five core signals. Terminal `destroyConnectivity(host)` reaches the supplied provider; Capacitor removes an already-resolved handle or marks a later-resolving handle for exact removal, clears subscribers, and is idempotent. |
 
+### 2026-08-29 Storage explicit-Host append
+
+The historical `StorageBackend` row above describes the removed ambient population. The explicit slice
+separates bounded local commands from the event-provider lifetime. `StorageBackend` remains a pure
+five-operation Entity. `StorageChangeBackend` is a distinct Entity with required terminal `destroy()`;
+the explicit `destroyStorage(host)` route makes that hook reachable without a replacement setter.
+
+| Backend | Exact resource bracket and provenance | Result |
+| --- | --- | --- |
+| `StorageBackend` | Five synchronous bounded operations. Namespacing, typed access, byte size, batches, and migration are core-derived and acquire no provider resource. | **Owned by bounded call.** The explicit `storage.local` slot is the only provider used. |
+| `StorageChangeBackend` | `attachStorage(host, signals)` stores the exact release returned by the supplied provider. Reattach consumes the old release before acquiring the new one; detach/dispose consume it once. The Web provider records exact DOM listener identities and its required `destroy()` releases every still-active record terminally and idempotently. | **Owned.** Cleanup never consults a later Host, and `destroyStorage(host)` reaches the exact supplied provider. |
+
 ## Review checklist for the remaining slices
 
 For each of the three missing whole-backend hooks, tests must cover replacement with a different
