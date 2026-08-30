@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   BACKEND_LIFECYCLE_SCOPE_CAVEAT,
+  collectExplicitHostDestroyOwners,
   collectMethodSyntaxTeardowns,
   collectWholeBackendTeardowns,
   compareBackendLifecycleReports,
@@ -20,9 +21,9 @@ import type { BackendLifecycleDelta, BackendLifecycleFloor, BackendLifecycleRepo
 import { collectBackendInterfaceNames } from './backend-operation-seam-core';
 import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
 
-// P4's replacement-lifetime census. Population and exclusions are both derived: a backend can only leak a
+// P4's provider-lifetime census. Population and exclusions are both derived: a backend can only leak a
 // resource it owns, and ownership is the interface declaring a NO-ARGUMENT `destroy()`/`dispose()`.
-describe('backend replacement lifetime census', () => {
+describe('backend provider lifetime census', () => {
   let report: BackendLifecycleReport;
   let teardowns: ReadonlyMap<string, string>;
   let formattedOutput: string;
@@ -62,6 +63,7 @@ describe('backend replacement lifetime census', () => {
       teardowns,
       collectSetterBodies(),
       collectFunctionBodies(),
+      collectExplicitHostDestroyOwners(allPackageSourceFiles()),
       new Map([['ScreenQueryBackend', 'Host.screen.query']]),
     );
     formattedOutput = formatBackendLifecycleReport(report, HISTORICAL_BASELINE);
@@ -84,8 +86,19 @@ describe('backend replacement lifetime census', () => {
   });
 
   it('includes the whole-backend teardowns that exist', () => {
+    expect(teardowns.get('AccessibilityBackend')).toBe('destroy');
     expect(teardowns.get('LogTransportBackend')).toBe('destroy');
     expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
+  });
+
+  it('keeps explicit Host-provider release separate from ambient setter replacement', () => {
+    const accessibility = report.entries.find((entry) => entry.interfaceName === 'AccessibilityBackend');
+    expect(accessibility).toMatchObject({
+      owner: 'destroyAccessibility',
+      ownerKind: 'explicit-host-destroy',
+      tearsDown: true,
+    });
+    expect(collectSetterBodies().has('setAccessibilityBackend')).toBe(false);
   });
 
   // ★ WHY WIDENING THE PARSER LEFT THE LIVE COUNT WHERE IT WAS — stated executably, because a number
@@ -113,7 +126,7 @@ describe('backend replacement lifetime census', () => {
     }
   });
 
-  // The ratchet: every backend that DECLARES a whole-backend teardown must have its setter name it.
+  // The ratchet: every backend that DECLARES a whole-backend teardown must have its lifecycle owner name it.
   // That is a wiring check, not a proof that teardown is complete — see the scope caveat below.
   it('accepts explicit Screen Host ownership without hiding inherited Menu debt', () => {
     expect(report.violations.map((violation) => violation.interfaceName)).toEqual([
@@ -247,11 +260,67 @@ describe('collectWholeBackendTeardowns member syntax', () => {
   });
 });
 
+describe('explicit Host-provider lifecycle owners', () => {
+  it('derives destroyThing(host: HasThingProvider) and rejects names without the matching Host trait', () => {
+    const fixture = join(mkdtempSync(join(tmpdir(), 'backend-lifecycle-host-')), 'ExplicitHostOwnerFixture.ts');
+    writeFileSync(
+      fixture,
+      [
+        'interface HasWidgetProvider { widget: { provider: { destroy(): void } } }',
+        'interface HasOtherProvider { other: { provider: { destroy(): void } } }',
+        'export function destroyWidget(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
+        'export function destroyMismatched(host: HasOtherProvider): void { host.other.provider.destroy(); }',
+        'export function destroyWidgetBackend(host: HasWidgetProvider): void { host.widget.provider.destroy(); }',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    const owners = collectExplicitHostDestroyOwners([fixture]);
+    expect([...owners.keys()]).toEqual(['WidgetBackend']);
+    expect(owners.get('WidgetBackend')?.name).toBe('destroyWidget');
+
+    const report = createBackendLifecycleReport(
+      ['WidgetBackend'],
+      new Map([['WidgetBackend', 'destroy']]),
+      new Map(),
+      new Map(),
+      owners,
+    );
+    expect(report.entries[0]).toEqual({
+      interfaceName: 'WidgetBackend',
+      owner: 'destroyWidget',
+      ownerKind: 'explicit-host-destroy',
+      teardown: 'destroy',
+      tearsDown: true,
+    });
+    expect(report.violations).toEqual([]);
+  });
+
+  it('fails an explicit Host owner that does not reach the provider teardown', () => {
+    const report = createBackendLifecycleReport(
+      ['WidgetBackend'],
+      new Map([['WidgetBackend', 'destroy']]),
+      new Map(),
+      new Map(),
+      new Map([['WidgetBackend', { body: 'void host.widget.provider;', name: 'destroyWidget' }]]),
+    );
+
+    expect(report.violations).toEqual([
+      {
+        detail: 'destroyWidget owns final release without calling destroy, so the provider leaks',
+        interfaceName: 'WidgetBackend',
+        rule: 'teardown-unwired',
+      },
+    ]);
+  });
+});
+
 describe('compareBackendLifecycleReports', () => {
   function syntheticReport(names: readonly string[], teardownNames: readonly string[]): BackendLifecycleReport {
     const entries = names.map((interfaceName) => ({
       interfaceName,
-      setter: null,
+      owner: null,
+      ownerKind: null,
       teardown: teardownNames.includes(interfaceName) ? 'destroy' : null,
       tearsDown: false,
     }));
@@ -356,9 +425,9 @@ describe('compareFloorToReport', () => {
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
       ],
       noTeardownHook: 2,
       total: 3,
@@ -378,9 +447,9 @@ describe('compareFloorToReport', () => {
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
       ],
       noTeardownHook: 2,
       total: 3,
@@ -399,9 +468,9 @@ describe('compareFloorToReport', () => {
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'DBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'DBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
       ],
       noTeardownHook: 2,
       total: 3,
@@ -442,11 +511,11 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'DBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'EBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'DBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'EBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
       ],
       noTeardownHook: 4,
       total: 5,
@@ -463,8 +532,8 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 0,
       enforcedNames: [],
       entries: [
-        { interfaceName: 'ABackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
       ],
       noTeardownHook: 2,
       total: 2,
@@ -481,9 +550,9 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
-        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
-        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
       ],
       noTeardownHook: 2,
       total: 3,
@@ -500,8 +569,8 @@ describe('formatBackendLifecycleReport with floor', () => {
       enforced: 0,
       enforcedNames: [],
       entries: [
-        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
-        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'BBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', owner: null, ownerKind: null, teardown: null, tearsDown: false },
       ],
       noTeardownHook: 2,
       total: 2,
@@ -517,7 +586,7 @@ describe('formatBackendLifecycleReport with floor', () => {
       ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
-      entries: [{ interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false }],
+      entries: [{ interfaceName: 'ABackend', owner: null, ownerKind: null, teardown: 'destroy', tearsDown: false }],
       noTeardownHook: 0,
       total: 1,
       violations: [],
@@ -552,8 +621,8 @@ function collectSetterBodies(): ReadonlyMap<string, string> {
   return bodies;
 }
 
-// Every top-level function body in the repo's package sources, so the census can follow a setter into the
-// helper it delegates teardown to.
+// Every top-level function body in the repo's package sources, so the census can follow a lifecycle
+// owner into the helper it delegates teardown to.
 function collectFunctionBodies(): ReadonlyMap<string, string> {
   const bodies = new Map<string, string>();
   for (const packageName of packageNames()) {
@@ -574,6 +643,10 @@ function collectFunctionBodies(): ReadonlyMap<string, string> {
     }
   }
   return bodies;
+}
+
+function allPackageSourceFiles(): string[] {
+  return packageNames().flatMap(packageSourceFiles);
 }
 
 function packageNames(): string[] {

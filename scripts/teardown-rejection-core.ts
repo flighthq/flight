@@ -46,7 +46,7 @@ export interface TeardownRejectionReport {
 // reserved pool/cache bracket — so matching every `release*` swept in plain API methods:
 // `releaseSingleInstanceLock` is an `AppBackend` operation, present in all four hosts, and counting it
 // inflated the teardown denominator with functions that tear nothing down. Only the backend-release
-// helpers (`releaseMediaSessionBackends`, `releaseAccessibilityBackends`) are teardown paths.
+// helpers such as `releaseMediaSessionBackends` are teardown paths.
 export function isTeardownFunctionName(name: string): boolean {
   if (name === 'destroy' || name === 'dispose') return true;
   if (/^release[A-Z][A-Za-z0-9]*Backends?$/.test(name)) return true;

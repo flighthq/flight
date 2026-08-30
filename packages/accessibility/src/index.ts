@@ -1,7 +1,7 @@
 export {
-  explainAccessibilityBackend,
   announceAccessibility,
   clearAccessibilityTree,
+  destroyAccessibility,
   removeAccessibilityNode,
   setAccessibilityFocus,
   setAccessibilityNode,

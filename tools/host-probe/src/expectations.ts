@@ -1,6 +1,7 @@
 import type { HostProbeHost, HostProbeResult } from './contract';
 
 export const HostProbeCapabilities = [
+  'accessibility',
   'app',
   'clipboard',
   'connectivity',
@@ -77,7 +78,7 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'tray',
     'window',
   ]),
-  web: new Set(['cursor', 'dialog', 'glyph-rasterizer', 'loop', 'screen', 'share', 'window']),
+  web: new Set(['accessibility', 'cursor', 'dialog', 'glyph-rasterizer', 'loop', 'screen', 'share', 'window']),
 };
 
 export function createHostProbeProviderResults(

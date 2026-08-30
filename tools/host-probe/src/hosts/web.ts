@@ -7,10 +7,30 @@ import type { HostProbeInstallResult, HostProbeResult } from '#host-probe/contra
 
 export async function installWebHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
   enableHostWebGlyphRasterizer();
-  const results = await Promise.all([probeWebCursor(), probeWebGlyphRasterizer(), probeWebLoop()]);
+  const results = await Promise.all([
+    probeWebAccessibility(),
+    probeWebCursor(),
+    probeWebGlyphRasterizer(),
+    probeWebLoop(),
+  ]);
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(webHost));
   if (results[0]?.status === 'pass') changedCapabilities.push('cursor');
   return { changedCapabilities, results };
+}
+
+async function probeWebAccessibility(): Promise<HostProbeResult> {
+  const provider = webHost.accessibility.provider;
+  const id = 'flight-host-probe-accessibility';
+  const outcome = provider.setNode({ id, label: 'Host probe', role: 'status' });
+  const element = document.querySelector(`[data-flight-accessibility-id="${id}"]`);
+  const reflected = outcome.reason === 'ok' && element?.getAttribute('aria-label') === 'Host probe';
+  provider.removeNode(id);
+  return {
+    detail: reflected ? 'ARIA node reflected into the DOM' : `ARIA node reflection returned ${outcome.reason}`,
+    id: 'runtime.accessibility',
+    kind: 'runtime',
+    status: reflected ? 'pass' : 'fail',
+  };
 }
 
 async function probeWebCursor(): Promise<HostProbeResult> {
