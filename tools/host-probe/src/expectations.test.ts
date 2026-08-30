@@ -31,6 +31,6 @@ describe('getRequiredHostProbeCapabilities', () => {
     expect(getRequiredHostProbeCapabilities('electron').size).toBe(16);
     expect(getRequiredHostProbeCapabilities('tauri').size).toBe(10);
     expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(12);
-    expect(getRequiredHostProbeCapabilities('web').size).toBe(7);
+    expect(getRequiredHostProbeCapabilities('web').size).toBe(8);
   });
 });
