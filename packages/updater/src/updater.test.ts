@@ -61,26 +61,6 @@ function host(command: UpdaterCommandBackend): HasUpdaterCommand {
 }
 
 describe('checkForAppUpdate', () => {
-  it('returns the provider check outcome', async () => {
-    await expect(checkForAppUpdate(host(fakeBackend()))).resolves.toEqual({ reason: 'not-available' });
-  });
-});
-
-describe('destroyUpdater', () => {
-  it('destroys the selected explicit provider', () => {
-    const backend = fakeBackend();
-    destroyUpdater(host(backend));
-    expect(backend.calls.destroy).toBe(1);
-  });
-});
-
-describe('installDownloadedUpdate', () => {
-  it('rejects a handle with no completed-check origin', async () => {
-    await expect(installDownloadedUpdate(host(fakeBackend()), downloadedUpdate())).rejects.toThrow(TypeError);
-  });
-});
-
-describe('Updater command transactions', () => {
   it('awaits exactly one explicit Host updater check', async () => {
     const backend = fakeBackend({ reason: 'not-available' });
 
@@ -88,6 +68,29 @@ describe('Updater command transactions', () => {
     expect(backend.calls.check).toBe(1);
   });
 
+  it('does not invent error detail when a provider operation rejects', async () => {
+    const backend = fakeBackend();
+    backend.check = async () => {
+      throw new Error('native detail must not leak through a portable outcome');
+    };
+
+    await expect(checkForAppUpdate(host(backend))).resolves.toEqual({ reason: 'operation-failed' });
+  });
+});
+
+describe('destroyUpdater', () => {
+  it('destroys only the explicitly supplied provider', () => {
+    const selected = fakeBackend();
+    const other = fakeBackend();
+
+    destroyUpdater(host(selected));
+
+    expect(selected.calls.destroy).toBe(1);
+    expect(other.calls.destroy).toBe(0);
+  });
+});
+
+describe('installDownloadedUpdate', () => {
   it('pins a downloaded handle to its originating provider across Host replacement', async () => {
     const update = downloadedUpdate();
     const origin = fakeBackend({ reason: 'downloaded', update });
@@ -100,27 +103,8 @@ describe('Updater command transactions', () => {
     expect(replacement.calls.install).toEqual([]);
   });
 
-  it('does not invent error detail when a provider operation rejects', async () => {
-    const backend = fakeBackend();
-    backend.check = async () => {
-      throw new Error('native detail must not leak through a portable outcome');
-    };
-
-    await expect(checkForAppUpdate(host(backend))).resolves.toEqual({ reason: 'operation-failed' });
-  });
-
   it('rejects an update handle that did not originate from a completed check', async () => {
     await expect(installDownloadedUpdate(host(fakeBackend()), downloadedUpdate())).rejects.toThrow(TypeError);
-  });
-
-  it('destroys only the explicitly supplied provider', () => {
-    const selected = fakeBackend();
-    const other = fakeBackend();
-
-    destroyUpdater(host(selected));
-
-    expect(selected.calls.destroy).toBe(1);
-    expect(other.calls.destroy).toBe(0);
   });
 
   it('exports only the reduced transaction surface from both entry points', () => {
