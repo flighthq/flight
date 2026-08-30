@@ -81,6 +81,12 @@ For a project such as `examples/`, keep its web runner as the frontend and copy 
 
 The host probe stays separate even when a project gains those runners. It is the small executable contract test that catches adapter registration or packaging failures without conflating them with a large project's rendering behavior.
 
+## Capability presence is a slot, not a group
+
+`captureHostProbeBackends` reports whether a host provides a capability. For a two-level Host group, mapping `host.ipc ?? null` is wrong: an empty `{}` group is truthy and would report support. IPC, Menu, and Power therefore inspect the first populated slot and return `null` when the group is empty. Rows that already name a slot, such as `clipboard.text`, `input.haptics`, and `share.content`, are unaffected.
+
+Dialog and Notification still map their whole groups because every current host populates them. If either ever permits an empty group, it must use the same populated-slot rule.
+
 ## Automation boundary
 
 The automatic lane is intentionally non-invasive: provider transitions, app/platform identity, window/screen availability, scheduling, glyph rasterization, and canvas readback. Clipboard mutation, notifications, dialogs, shortcuts, tray interaction, haptics, geolocation permission, lifecycle, and updater behavior belong to explicit interactive/device lanes. Their fake-API behavior remains covered by the colocated `packages/host-*/src/*.test.ts` suites.

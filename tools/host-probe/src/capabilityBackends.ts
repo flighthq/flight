@@ -49,12 +49,12 @@ export function captureHostProbeBackends(
     geolocation: getGeolocationBackend(),
     'glyph-rasterizer': getGlyphRasterizerBackend(),
     haptics: host.input?.haptics ?? null,
-    ipc: host.ipc ?? null,
+    ipc: firstProvidedSlot(host.ipc),
     loop: host.app?.loop ?? null,
-    menu: host.menu ?? null,
+    menu: firstProvidedSlot(host.menu),
     notification: host.notification ?? null,
     platform: getPlatformBackend(),
-    power: host.power ?? null,
+    power: firstProvidedSlot(host.power),
     protocol: getProtocolBackend(),
     screen: host.screen?.query ?? null,
     share: host.share?.content ?? host.share?.files ?? null,
@@ -93,4 +93,14 @@ export function diffHostProbeBackends(
     if (before[capability] !== after[capability]) changed.push(capability);
   }
   return changed;
+}
+
+// Required capability groups remain `{}` on hosts without a provider. The group object itself is
+// therefore not availability evidence; only a populated slot is.
+function firstProvidedSlot(group: object | undefined): unknown {
+  if (group === undefined) return null;
+  for (const value of Object.values(group)) {
+    if (value !== undefined) return value;
+  }
+  return null;
 }

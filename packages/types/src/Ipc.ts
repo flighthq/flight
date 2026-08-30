@@ -16,7 +16,10 @@
 
 // A channel is a plain string. The former `IpcChannel` wrapper carried a single `name` field and no
 // behavior, so it was a value type standing between callers and the string they already had.
-export interface IpcMessageBackend {
+// Both the contract and its constructors carry Entity identity; exposing it only at runtime would deny
+// consumers the identity the provider actually owns.
+export interface IpcMessageBackend extends Entity {
   // Delivers messages arriving on `channel`, returning the unsubscribe for THAT subscription only.
   subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void;
 }
+import type { Entity } from './Entity';

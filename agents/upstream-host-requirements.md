@@ -1365,3 +1365,13 @@ shrug:
 - `batteryHealth`, `thermal` — no first-party API on either host today. Omit until one exists.
 
 The point of recording this is that an empty group must stay distinguishable from an unexamined one.
+
+## 2026-08-30 append — named provider gaps: IPC
+
+`host.ipc.message` is Electron-only. Web, Tauri, and Capacitor ship `ipc: {}` rather than a guessed or
+stubbed provider. A browser page and Capacitor webview have no inter-process peer for this channel model;
+Tauri's event system could supply a future message slot, but none is built here.
+
+Electron supports main-to-renderer send, targeted send, invoke, and handle, but Flight has not built
+them. Each needs a specific target or request/response pair and therefore belongs in a distinct slot with
+a real provider, not as an inert method on the receive-message capability.

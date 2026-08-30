@@ -567,6 +567,22 @@ Where an installed Electron lacks the getter the slot is omitted and the gap is 
 **Closed-union event names.** `ElectronPowerMonitor.on` took `event: string`, so a typo compiled,
 registered and silently never fired. It is now a closed union of the five events the backends use.
 
+### 2026-08-30 append — IPC, and the operations nobody could perform
+
+IPC reduced to a top-level `ipc` group with one slot, `message`, Electron-only, behind exact
+`HasIpcMessage`. Every operation takes that witness directly: no resolver, sentinel, installed-backend
+state, or missing-provider runtime arm exists.
+
+The old seam offered operations no host performed: `send` was a documented no-op, `invoke` resolved to
+`undefined`, and `sendTo`, `handle`, capability inspection, and message-event paths had no implementation.
+They and their supporting wrapper/error types are deleted. Future send, targeted-send, invoke, and handle
+work requires distinct slots backed by real providers.
+
+`ipc.message` remains named because the member carries its own protocol and lifecycle. The provider's
+contract and constructor both carry Entity identity; composing `createEntity` while leaving the interface
+non-Entity would deny consumers the identity the runtime owns. Finally, a required empty capability group
+is not availability evidence: host-probe inspects populated slots instead of treating `{}` as a provider.
+
 ### Not in this program
 
 - **Scene-document.** It is its own commissioned build with its own record. This model's "scene-document materialization" bullet is a consequence to apply *when* that reader is written, not a reason to reopen it here.
