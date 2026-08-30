@@ -66,13 +66,11 @@ const EXPECTED_AGGREGATE = [
   'AudioDevice',
   'BitmapEncode',
   'BitmapReadback',
-  'Device',
   'FileSystem',
   'FontLoading',
   'Geolocation',
   'GlyphRasterizer',
   'Image',
-  'Platform',
   'Raster2DSurface',
   'VideoCapability',
   'MediaFileCapture',
@@ -82,9 +80,11 @@ const EXPECTED_AGGREGATE = [
 // process-global enabler registry.
 const EXPECTED_EXPLICIT_HOST = [
   'App',
+  'Device',
   'Lifecycle',
   'MediaSession',
   'Power',
+  'Platform',
   'Protocol',
   'Screen',
   'Sensors',
@@ -101,8 +101,10 @@ const EXPECTED_FACTORIES = [
   'Accessibility',
   'Connectivity',
   'Cursor',
+  'Device',
   'MediaSession',
   'MediaSessionAction',
+  'Platform',
   'SoftKeyboardChange',
   'SoftKeyboardInfo',
   'SoftKeyboardVisibility',
@@ -479,7 +481,9 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
     explicitHost.add('MediaSession');
   }
   const systemGroup = /\bsystem\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
+  if (/\bdevice\s*:\s*webDeviceBackend\b/.test(systemGroup)) explicitHost.add('Device');
   if (/\blifecycle\s*:\s*webLifecycleBackend\b/.test(systemGroup)) explicitHost.add('Lifecycle');
+  if (/\bplatform\s*:\s*webPlatformBackend\b/.test(systemGroup)) explicitHost.add('Platform');
   if (/\bsensors\s*:\s*webSensorsBackend\b/.test(systemGroup)) explicitHost.add('Sensors');
   if (/\bpower\s*:\s*webPowerCapabilities\b/.test(webHostSource)) explicitHost.add('Power');
   if (/\bprotocol\s*:\s*webProtocolCapabilities\b/.test(webHostSource)) explicitHost.add('Protocol');
