@@ -11,6 +11,8 @@ interface FakeSentinel {
   release?: () => Promise<void>;
 }
 
+const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+
 function setNavigator(wakeLock: unknown): void {
   Object.defineProperty(globalThis, 'navigator', {
     configurable: true,
@@ -25,8 +27,12 @@ function sentinel(overrides: Partial<FakeSentinel> = {}): FakeSentinel {
 afterEach(async () => {
   setNavigator({ request: async () => sentinel() });
   await webPowerKeepAwakeBackend.release();
-  setNavigator(undefined);
   vi.unstubAllGlobals();
+  if (originalNavigatorDescriptor === undefined) {
+    delete (globalThis as { navigator?: Navigator }).navigator;
+  } else {
+    Object.defineProperty(globalThis, 'navigator', originalNavigatorDescriptor);
+  }
 });
 
 describe('createWebPowerReadings', () => {
