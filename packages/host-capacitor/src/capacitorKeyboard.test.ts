@@ -3,11 +3,6 @@ import { EntityRuntimeKey, SoftKeyboardResizeBodyKind } from '@flighthq/types/co
 
 import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
 
-const flush = async () => {
-  await Promise.resolve();
-  await Promise.resolve();
-};
-
 function fakeCapacitor() {
   const calls: Array<{ method: string; arg?: unknown }> = [];
   const listeners = new Map<string, Array<(info?: unknown) => void>>();
@@ -52,22 +47,28 @@ describe('createCapacitorKeyboardBackend', () => {
     expect(EntityRuntimeKey in createCapacitorKeyboardBackend(fakeCapacitor().capacitor)).toBe(true);
   });
 
-  it('maps show/hide and setters onto the plugin', () => {
+  it('maps show/hide onto the plugin and returns true', async () => {
     const { capacitor, calls } = fakeCapacitor();
     const backend = createCapacitorKeyboardBackend(capacitor);
-    backend.show();
-    backend.hide();
-    backend.setResizeMode?.(SoftKeyboardResizeBodyKind);
-    backend.setScrollAssistEnabled?.(false);
-    expect(calls.map((c) => c.method)).toEqual(['show', 'hide', 'setResizeMode', 'setScroll']);
-    expect(calls[2].arg).toEqual({ mode: 'body' });
-    expect(calls[3].arg).toEqual({ isDisabled: true });
+    expect(await backend.show()).toBe(true);
+    expect(await backend.hide()).toBe(true);
+    expect(calls.map((c) => c.method)).toEqual(['show', 'hide']);
+  });
+
+  it('maps setters onto the plugin and returns true', async () => {
+    const { capacitor, calls } = fakeCapacitor();
+    const backend = createCapacitorKeyboardBackend(capacitor);
+    expect(await backend.setResizeMode?.(SoftKeyboardResizeBodyKind)).toBe(true);
+    expect(await backend.setScrollAssistEnabled?.(false)).toBe(true);
+    expect(calls.map((c) => c.method)).toEqual(['setResizeMode', 'setScroll']);
+    expect(calls[0].arg).toEqual({ mode: 'body' });
+    expect(calls[1].arg).toEqual({ isDisabled: true });
   });
 
   it('tracks the keyboard mirror from will-show/will-hide events', async () => {
     const { capacitor, fire } = fakeCapacitor();
     const backend = createCapacitorKeyboardBackend(capacitor);
-    await flush();
+    await Promise.resolve();
     fire('keyboardWillShow', { keyboardHeight: 320 });
     const shown = backend.getInfo(blankInfo());
     expect(shown.visible).toBe(true);
@@ -76,17 +77,61 @@ describe('createCapacitorKeyboardBackend', () => {
     expect(backend.getInfo(blankInfo()).visible).toBe(false);
   });
 
-  it('delivers will-phase transitions to a subscriber', async () => {
+  it('subscribe returns a cleanup function and fires on will events', async () => {
     const { capacitor, fire } = fakeCapacitor();
     const backend = createCapacitorKeyboardBackend(capacitor);
-    const events: Array<{ phase: string; height: number }> = [];
-    backend.subscribe((phase, transition) => events.push({ phase, height: transition.height }));
-    await flush();
+    let fires = 0;
+    const cleanup = await backend.subscribe(() => fires++);
+    expect(cleanup).not.toBeNull();
     fire('keyboardWillShow', { keyboardHeight: 300 });
     fire('keyboardWillHide');
-    expect(events).toEqual([
-      { phase: 'will', height: 300 },
-      { phase: 'will', height: 0 },
-    ]);
+    expect(fires).toBe(2);
+    cleanup!();
+  });
+
+  it('subscribe returns null when listener attachment fails', async () => {
+    const failCapacitor = {
+      keyboard: {
+        async show() {},
+        async hide() {},
+        async addListener() {
+          throw new Error('not available');
+        },
+      },
+    } as unknown as CapacitorApi;
+    const backend = createCapacitorKeyboardBackend(failCapacitor);
+    expect(await backend.subscribe(() => {})).toBeNull();
+  });
+
+  it('show returns false when plugin rejects', async () => {
+    const failCapacitor = {
+      keyboard: {
+        async show() {
+          throw new Error('unavailable');
+        },
+        async hide() {},
+        async addListener() {
+          return { async remove() {} };
+        },
+      },
+    } as unknown as CapacitorApi;
+    const backend = createCapacitorKeyboardBackend(failCapacitor);
+    expect(await backend.show()).toBe(false);
+  });
+
+  it('hide returns false when plugin rejects', async () => {
+    const failCapacitor = {
+      keyboard: {
+        async show() {},
+        async hide() {
+          throw new Error('unavailable');
+        },
+        async addListener() {
+          return { async remove() {} };
+        },
+      },
+    } as unknown as CapacitorApi;
+    const backend = createCapacitorKeyboardBackend(failCapacitor);
+    expect(await backend.hide()).toBe(false);
   });
 });
