@@ -1,4 +1,5 @@
 import type { Entity } from './Entity';
+import type { PermissionState } from './Permission';
 import type { Signal } from './Signal';
 
 export type StorageClearFailureReason = 'runtime-unavailable' | 'security-denied' | 'quota-exceeded' | 'clear-failed';
@@ -55,6 +56,42 @@ export type StorageJsonOrResult<Value> = StorageFallbackResult<Value | null>;
 export type StorageNumberOrResult = StorageFallbackResult<number>;
 
 export type StorageJsonResult<Value> = StorageValueResult<Value | null, StorageReadFailureReason>;
+
+// One coherent observation of two independent platform facts. `outcome` reports bucket policy;
+// `permissionState` reports the separately observed Permissions API state. A missing observation is
+// null, never a fabricated prompt, and neither field may be inferred from the other.
+export interface StoragePersistenceResult {
+  readonly outcome: 'persistent' | 'best-effort' | 'operation-failed';
+  readonly permissionState: PermissionState | null;
+}
+
+export interface StoragePersistenceQueryBackend extends Entity {
+  getPersistence(): Promise<StoragePersistenceResult>;
+}
+
+export interface StoragePersistenceRequestBackend extends Entity {
+  requestPersistence(): Promise<StoragePersistenceResult>;
+}
+
+// Injected Web surfaces keep platform access at the host composition boundary. Window adds persist();
+// Worker intentionally cannot manufacture the request slot.
+export interface WebWorkerStoragePersistenceApi {
+  getPermissionState(): Promise<PermissionState>;
+  persisted(): Promise<boolean>;
+}
+
+export interface WebWindowStoragePersistenceApi extends WebWorkerStoragePersistenceApi {
+  persist(): Promise<boolean>;
+}
+
+export interface WebWorkerStoragePersistenceCapabilities extends Entity {
+  readonly persistenceQuery: StoragePersistenceQueryBackend;
+}
+
+export interface WebWindowStoragePersistenceCapabilities extends Entity {
+  readonly persistenceQuery: StoragePersistenceQueryBackend;
+  readonly persistenceRequest: StoragePersistenceRequestBackend;
+}
 
 // Multi-key queries return no partial payload: the first failed provider read identifies its key, while
 // a keys-enumeration failure has failedKey null. This differs deliberately from mutations, whose already
