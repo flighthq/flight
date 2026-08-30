@@ -23,7 +23,7 @@ export { enableHostWebSoftKeyboard } from './webKeyboard';
 export { enableHostWebLifecycle } from './webLifecycle';
 export { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 export { enableHostWebMediaSession } from './webMediasession';
-export { enableHostWebMenu } from './webMenu';
+export { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 export { enableHostWebPermission } from './webPermissions';
 export { enableHostWebPlatform } from './webPlatform';
 export { enableHostWebPower } from './webPower';

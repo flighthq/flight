@@ -94,7 +94,6 @@ const EXPECTED_AGGREGATE = [
 // excluded.
 const EXPECTED_EXCLUDED = [
   'App',
-  'Menu',
   'Power',
   'Protocol',
   'Shell',

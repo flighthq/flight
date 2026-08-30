@@ -1,16 +1,17 @@
 import type { Signal } from './Signal';
+
 /**
- * Optional signal group for menu lifecycle events. Opt-in via `enableMenuSignals()` from
- * `@flighthq/menu` — the signals are null until that function is called, so the group is
- * tree-shaken when unused. All signals fire synchronously within the calling thread.
+ * Core context-menu dispatcher signals. These stay a package-level opt-in group rather than Host event
+ * slots because the CORE dispatcher emits them around the popup call — no backend emits them, so under
+ * R18 they are not a host capability. Opt in via `enableMenuSignals()` from `@flighthq/menu`.
+ *
+ * Item selection and item highlight are NOT here: after the DOM overlay moved to host-web, both are
+ * emitted by a backend, so they became Host event slots (`menu.select`, `menu.highlight`) with their own
+ * signal entities.
  */
 export interface MenuSignals {
-  /** Fires when a context menu is opened via showContextMenu. */
-  onContextMenuOpen: Signal<() => void>;
   /** Fires when a context menu is dismissed (either by selection or outside-click). */
   onContextMenuClose: Signal<() => void>;
-  /** Fires when any menu item is highlighted (hovered/keyboard-focused). Payload is the item id. */
-  onMenuItemHighlight: Signal<(id: string) => void>;
-  /** Fires when a menu item is selected; same id as onMenuSelect but as a multi-listener signal. */
-  onMenuItemSelect: Signal<(id: string) => void>;
+  /** Fires when a context menu is opened via showContextMenu. */
+  onContextMenuOpen: Signal<() => void>;
 }

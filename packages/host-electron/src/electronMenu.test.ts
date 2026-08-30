@@ -1,6 +1,7 @@
+import type { MenuApplicationBackend, MenuPopupBackend, MenuSelectBackend } from '@flighthq/types/contract';
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 
-import { createElectronMenuBackend } from './electronMenu';
+import { createElectronMenuBackends } from './electronMenu';
 
 function fakeElectron(): {
   electron: ElectronApi;
@@ -46,12 +47,12 @@ function clickItem(built: ElectronMenuItemOptions[][], id: string): void {
   item?.click?.();
 }
 
-describe('createElectronMenuBackend', () => {
+describe('createElectronMenuBackends', () => {
   it('builds and applies the application menu and reports clicks via subscribeSelect', () => {
     const { electron, built, applied } = fakeElectron();
-    const backend = createElectronMenuBackend(electron);
+    const backend = _slots(electron);
     const seen: string[] = [];
-    backend.subscribeSelect((id) => seen.push(id));
+    backend.subscribeSelect((id: string) => seen.push(id));
     expect(
       backend.setApplicationMenu([
         { id: 'open', label: 'Open' },
@@ -66,9 +67,9 @@ describe('createElectronMenuBackend', () => {
 
   it('stops delivering selects after unsubscribe', () => {
     const { electron, built } = fakeElectron();
-    const backend = createElectronMenuBackend(electron);
+    const backend = _slots(electron);
     const seen: string[] = [];
-    const unsubscribe = backend.subscribeSelect((id) => seen.push(id));
+    const unsubscribe = backend.subscribeSelect((id: string) => seen.push(id));
     backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
     unsubscribe();
     clickItem(built, 'a');
@@ -77,7 +78,7 @@ describe('createElectronMenuBackend', () => {
 
   it('clears the native application menu on destroy', () => {
     const { electron, applied } = fakeElectron();
-    const backend = createElectronMenuBackend(electron);
+    const backend = _slots(electron);
     backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
     expect(applied.length).toBe(1);
     backend.destroy?.();
@@ -87,7 +88,7 @@ describe('createElectronMenuBackend', () => {
 
   it('clears the native application menu exactly once on double destroy', () => {
     const { electron, applied } = fakeElectron();
-    const backend = createElectronMenuBackend(electron);
+    const backend = _slots(electron);
     backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
     expect(applied.length).toBe(1);
     backend.destroy?.();
@@ -96,23 +97,48 @@ describe('createElectronMenuBackend', () => {
     expect(applied[1]).toBeNull();
   });
 
-  it('clears the select listener on destroy', () => {
+  // ★ destroy is PROVIDER lifecycle and is deliberately separate from subscription teardown: it releases
+  // the OS menu, and the select subscription ends only through its own unsubscribe. Conflating the two —
+  // which the merged backend did — meant tearing down a provider silently killed every subscriber.
+  it('releases the native menu on destroy without ending select subscriptions', () => {
     const { electron, built } = fakeElectron();
-    const backend = createElectronMenuBackend(electron);
+    const backend = _slots(electron);
     const seen: string[] = [];
-    backend.subscribeSelect((id) => seen.push(id));
+    const unsubscribe = backend.subscribeSelect((id: string) => seen.push(id));
     backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
     backend.destroy?.();
     clickItem(built, 'a');
-    expect(seen).toEqual([]);
+    expect(seen).toEqual(['a']);
+
+    // The subscription's own unsubscribe is what ends it.
+    unsubscribe();
+    clickItem(built, 'a');
+    expect(seen).toEqual(['a']);
   });
 
   it('resolves the context menu promise with the clicked id', async () => {
     const { electron, built, popups } = fakeElectron();
-    const backend = createElectronMenuBackend(electron);
+    const backend = _slots(electron);
     const pending = backend.popupContextMenu([{ id: 'paste', label: 'Paste' }], 10, 20);
     expect(popups).toEqual([{ x: 10, y: 20 }]);
     clickItem(built, 'paste');
     expect(await pending).toBe('paste');
   });
 });
+
+// The merged MenuBackend is gone; these tests exercise the three slots that replaced it. This helper
+// recomposes the old surface so each assertion still names the operation it is really testing.
+function _slots(api: ElectronApi): {
+  destroy?: () => void;
+  popupContextMenu: MenuPopupBackend['popup'];
+  setApplicationMenu: MenuApplicationBackend['setApplicationMenu'];
+  subscribeSelect: MenuSelectBackend['subscribe'];
+} {
+  const { application, popup, select } = createElectronMenuBackends(api);
+  return {
+    destroy: application.destroy?.bind(application),
+    popupContextMenu: popup.popup,
+    setApplicationMenu: application.setApplicationMenu,
+    subscribeSelect: select.subscribe,
+  };
+}

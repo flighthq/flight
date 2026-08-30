@@ -1,6 +1,5 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { explainMenuReplacementGuarantee, hasMenuReplacementGuarantee, setMenuBackend } from '@flighthq/menu/contract';
 import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
 import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
@@ -46,7 +45,6 @@ function fakeTauri(): TauriApi {
 afterEach(() => {
   setPlatformBackend(null);
   setAppBackend(null);
-  setMenuBackend(null);
   setTrayBackend(null);
   setShortcutBackend(null);
   setShellBackend(null);
@@ -63,21 +61,5 @@ describe('registerTauriBackends', () => {
     expect(host.window.open).toBeTypeOf('function');
     expect(getPlatformName()).toBe('linux');
     expect(await readClipboardText(host)).toBe('TAURI-TEXT');
-  });
-
-  it('selects the Tauri menu identity with both native replacement guarantees unsupported', () => {
-    registerTauriBackends(fakeTauri());
-    for (const guarantee of ['native-clear-to-sentinel', 'native-destroy-before-install'] as const) {
-      expect(explainMenuReplacementGuarantee(guarantee)).toEqual({
-        guarantee,
-        implemented: true,
-        layer: 'custom',
-        liftableBy: ['atomic-replace-retains-old-on-rejection', 'rollback-or-undo', 'current-app-menu-getter'],
-        operation: 'destroy',
-        reason: 'no-atomic-replace-rollback-or-current-menu',
-        support: 'unsupported',
-      });
-      expect(hasMenuReplacementGuarantee(guarantee)).toBe(false);
-    }
   });
 });

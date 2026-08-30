@@ -1,7 +1,6 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setIpcBackend } from '@flighthq/ipc/contract';
-import { setMenuBackend } from '@flighthq/menu/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setPowerBackend } from '@flighthq/power/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
@@ -26,6 +25,9 @@ import type {
   HasNotificationDelivery,
   HasNotificationDismiss,
   HasNotificationShow,
+  HasMenuApplication,
+  HasMenuPopup,
+  HasMenuSelect,
   HasWindowAttach,
   HasWindowOpen,
   Host,
@@ -36,7 +38,7 @@ import { createElectronAppBackend } from './electronApp';
 import { createElectronClipboardBackend } from './electronClipboard';
 import { createElectronFileDialogBackend, createElectronMessageDialogBackend } from './electronDialog';
 import { createElectronIpcBackend } from './electronIpc';
-import { createElectronMenuBackend } from './electronMenu';
+import { createElectronMenuBackends } from './electronMenu';
 import { createElectronNotificationCapabilities } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
 import { createElectronPowerBackend } from './electronPower';
@@ -62,6 +64,9 @@ type ElectronHost = Host &
   HasNotificationDelivery &
   HasNotificationDismiss &
   HasNotificationShow &
+  HasMenuApplication &
+  HasMenuPopup &
+  HasMenuSelect &
   HasWindowAttach &
   HasWindowOpen;
 
@@ -86,10 +91,10 @@ export function registerElectronBackends(
     message: createElectronMessageDialogBackend(electron),
   };
   const notification = createElectronNotificationCapabilities(electron);
+  const menu = createElectronMenuBackends(electron);
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
-  setMenuBackend(createElectronMenuBackend(electron));
   setTrayBackend(createElectronTrayBackend(electron));
   setShortcutBackend(createElectronShortcutBackend(electron));
   setScreenBackend(createElectronScreenBackend(electron));
@@ -107,6 +112,7 @@ export function registerElectronBackends(
     graphics: {},
     input: {},
     media: {},
+    menu,
     net: {},
     notification,
     storage: {},

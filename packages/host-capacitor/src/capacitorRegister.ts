@@ -62,6 +62,9 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     graphics: {},
     input: { haptics: createCapacitorHapticsBackend(capacitor) },
     media: {},
+    // Capacitor exposes no menu capability: a webview app has no native menu bar, and its context
+    // menus are the web overlay's job, not Capacitor's.
+    menu: {},
     net: {},
     notification: createCapacitorNotificationCapabilities(capacitor),
     storage: {},

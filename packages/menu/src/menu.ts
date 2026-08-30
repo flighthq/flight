@@ -1,12 +1,35 @@
-import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendExplanation } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  MenuBackend,
+  HasMenuApplication,
+  HasMenuHighlight,
+  HasMenuPopup,
+  HasMenuSelect,
+  MenuHighlight,
   MenuItemTemplate,
-  MenuReplacementGuarantee,
-  MenuReplacementGuaranteeExplanation,
+  MenuSelect,
   MenuSignals,
 } from '@flighthq/types/contract';
+
+// Starts delivering highlight notifications from the host's provider into `highlight`. Re-attaching
+// detaches first, so one entity never holds two live subscriptions.
+//
+// The unsubscribe is ORIGIN-PINNED: it is stored beside the entity that opened it, so detach ends
+// exactly the subscription this attach created. Under the old ambient model a rebind could leave an
+// earlier subscription live against a replaced backend with nothing holding its unsubscribe.
+export function attachMenuHighlight(host: HasMenuHighlight, highlight: MenuHighlight): void {
+  detachMenuHighlight(highlight);
+  const unsubscribe = host.menu.highlight.subscribe((id) => emitSignal(highlight.onMenuItemHighlight, id));
+  _highlightUnsubscribe.set(highlight, unsubscribe);
+}
+
+// Starts delivering application menu-bar selections from the host's provider into `select`. Same
+// origin-pinned unsubscribe contract as attachMenuHighlight.
+export function attachMenuSelect(host: HasMenuSelect, select: MenuSelect): void {
+  detachMenuSelect(select);
+  const unsubscribe = host.menu.select.subscribe((id) => emitSignal(select.onMenuItemSelect, id));
+  _selectUnsubscribe.set(select, unsubscribe);
+}
 
 // Deep-clones a MenuItemTemplate tree. The returned tree has the same shape and values. Safe to call
 // with a template carrying a submenu — children are cloned recursively.
@@ -16,6 +39,12 @@ export function cloneMenuTemplate(template: Readonly<MenuItemTemplate>): MenuIte
     clone.submenu = template.submenu.map(cloneMenuTemplate);
   }
   return clone;
+}
+
+// Allocates a MenuHighlight event entity with an inert signal; call attachMenuHighlight to start
+// delivery. Entity-composed, like every identity-bearing SDK object.
+export function createMenuHighlight(): MenuHighlight {
+  return createEntity({ onMenuItemHighlight: createSignal() });
 }
 
 // Builds a menu item template, filling defaults (type 'normal', enabled true). Recursively normalizes
@@ -33,274 +62,76 @@ export function createMenuItemTemplate(template?: Readonly<Partial<MenuItemTempl
   return item;
 }
 
-// Clears every owned backend slot before releasing the captured objects. Clearing first makes whole
-// teardown re-entrant-safe: a destroy hook that calls back here sees empty slots rather than recursing.
-// Tauri's hook remains JS-only, so this clears Flight ownership but does not claim to clear its native menu.
-export function destroyMenuBackend(): void {
-  const previous = [_custom, _host] as const;
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-  releaseMenuBackends(previous, []);
+// Allocates a MenuSelect event entity with an inert signal; call attachMenuSelect to start delivery.
+export function createMenuSelect(): MenuSelect {
+  return createEntity({ onMenuItemSelect: createSignal() });
 }
 
-// Activates the optional MenuSignals group and returns it. Calling this is when the cost is assumed.
-// The returned object is shared for the lifetime of the package; calling enableMenuSignals multiple
-// times returns the same instance. Connect slots via connectSignal from @flighthq/signals.
+// Stops delivery without discarding the entity: runs this entity's own unsubscribe, if it has one.
+// Safe to call when never attached. Does NOT touch the provider — backend teardown is `destroy` on the
+// slot, a separate host/provider lifecycle concern.
+export function detachMenuHighlight(highlight: MenuHighlight): void {
+  _highlightUnsubscribe.get(highlight)?.();
+  _highlightUnsubscribe.delete(highlight);
+}
+
+export function detachMenuSelect(select: MenuSelect): void {
+  _selectUnsubscribe.get(select)?.();
+  _selectUnsubscribe.delete(select);
+}
+
+// Detaches and then clears the entity's listeners, so the entity becomes GC-eligible. Teardown of the
+// PROVIDER is not performed here; that is `destroy` on the host's slot.
+export function disposeMenuHighlight(highlight: MenuHighlight): void {
+  detachMenuHighlight(highlight);
+  clearSignal(highlight.onMenuItemHighlight);
+}
+
+export function disposeMenuSelect(select: MenuSelect): void {
+  detachMenuSelect(select);
+  clearSignal(select.onMenuItemSelect);
+}
+
+// Activates the core context-menu dispatcher signals and returns the group. These are NOT host
+// capabilities: the dispatcher below emits them around the popup call, so no backend can deliver them.
+// The module-level identity/enable state here is package state, not ambient capability resolution —
+// nothing about which provider serves a call is decided by it.
 export function enableMenuSignals(): MenuSignals {
-  if (_menuSignals === null) {
-    _menuSignals = {
-      onContextMenuClose: createSignal(),
-      onContextMenuOpen: createSignal(),
-      onMenuItemHighlight: createSignal(),
-      onMenuItemSelect: createSignal(),
-    };
-  }
+  _menuSignals ??= { onContextMenuClose: createSignal(), onContextMenuOpen: createSignal() };
   return _menuSignals;
 }
 
-export function explainMenuBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
-}
-
-// Explains a relational replacement guarantee independently of whether the selected real backend has a
-// destroy operation. Guarantee metadata is read from the same object that owns the selected slot, so a
-// replacement cannot inherit a stale limitation from the backend it displaced.
-export function explainMenuReplacementGuarantee(
-  guarantee: MenuReplacementGuarantee,
-): MenuReplacementGuaranteeExplanation {
-  const backend = _custom ?? _host;
-  const implemented = backend !== null && typeof backend.destroy === 'function';
-  const layer = implemented ? (_custom !== null ? 'custom' : 'host') : 'sentinel';
-  const declaration = backend?.replacementGuarantees?.find((candidate) => candidate.guarantee === guarantee);
-  if (declaration !== undefined) {
-    return { ...declaration, implemented, layer, operation: 'destroy' };
-  }
-  return {
-    guarantee,
-    implemented,
-    layer,
-    liftableBy: [],
-    operation: 'destroy',
-    reason: null,
-    support: 'unobserved',
-  };
-}
-
-// Returns the active backend following the precedence chain: custom > host > sentinel.
-export function getMenuBackend(): MenuBackend {
-  return _custom ?? _host ?? _sentinel;
-}
-
-// Returns the active MenuSignals group, or null if enableMenuSignals has not been called.
 export function getMenuSignals(): Readonly<MenuSignals> | null {
   return _menuSignals;
 }
 
-// Whether a host backend currently occupies the host slot. This intentionally does not inspect the
-// effective backend: a custom backend has higher dispatch precedence but must not suppress host setup.
-export function hasMenuHostBackend(): boolean {
-  return _host !== null;
+// Installs the application menu bar through the host's provider. Returns false when the install did
+// not take effect. A host without a native menu bar omits the slot entirely, so this cannot be reached
+// with a stub that always answers false.
+export function setApplicationMenu(host: HasMenuApplication, items: readonly MenuItemTemplate[]): boolean {
+  return host.menu.application.setApplicationMenu(items);
 }
 
-export function hasMenuReplacementGuarantee(guarantee: MenuReplacementGuarantee): boolean {
-  return explainMenuReplacementGuarantee(guarantee).support === 'supported';
-}
-
-export function installMenuHostBackend(backend: MenuBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  _host = backend;
-}
-
-export function observeMenuHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
-}
-
-// Subscribes to application menu item selections by item id. Returns an unsubscribe function. On web
-// this never fires (no native app menu bar). Selections are also fanned out to onMenuItemSelect when
-// the MenuSignals group is enabled.
-export function onMenuSelect(listener: (id: string) => void): () => void {
-  return getMenuBackend().subscribeSelect((id) => {
-    listener(id);
-    if (_menuSignals !== null) emitSignal(_menuSignals.onMenuItemSelect, id);
-  });
-}
-
-export function resetMenuBackendForTest(): void {
-  destroyMenuBackend();
-}
-
-// Installs the application menu bar. Returns true on success, or false when the host lacks a native
-// menu bar (e.g. web).
-export function setApplicationMenu(items: readonly MenuItemTemplate[]): boolean {
-  return getMenuBackend().setApplicationMenu(items);
-}
-
-// Sets a custom menu backend; pass null to clear and fall back to the host or sentinel.
-// Destroys the outgoing backend before installing the replacement, so getMenuBackend still returns
-// the outgoing backend during its destroy call. If destroy throws, the replacement is not installed
-// and the outgoing backend remains selected/owned for retry. Skips destroy when the outgoing backend
-// is retained in the host slot (shared identity).
-export function setMenuBackend(backend: MenuBackend | null): void {
-  if (_custom === backend) return;
-  const previous = [_custom] as const;
-  releaseMenuBackends(previous, [_host]);
-  _custom = backend;
-}
-
-// Pops up a context menu at (x, y) and resolves the clicked item id, or null when dismissed. On web,
-// renders a positioned DOM popup (separators, enabled/checked rendering, dismiss on outside-click /
-// Escape). On a native host, delegates to the OS context menu.
-export function showContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
-  if (_menuSignals !== null) emitSignal(_menuSignals.onContextMenuOpen);
-  const promise = getMenuBackend().popupContextMenu(items, x, y);
-  if (_menuSignals !== null) {
-    const signals = _menuSignals;
-    void promise.then(() => emitSignal(signals.onContextMenuClose));
-  }
+// Pops up a context menu through the host's provider and resolves the chosen item id, or null when
+// dismissed. Emits the core open/close dispatcher signals around the call when they are enabled.
+export function showContextMenu(
+  host: HasMenuPopup,
+  items: readonly MenuItemTemplate[],
+  x: number,
+  y: number,
+): Promise<string | null> {
+  const signals = _menuSignals;
+  if (signals !== null) emitSignal(signals.onContextMenuOpen);
+  const promise = host.menu.popup.popup(items, x, y);
+  if (signals !== null) void promise.then(() => emitSignal(signals.onContextMenuClose));
   return promise;
 }
 
-// Renders a minimal DOM popup for showContextMenu in a browser environment. Returns the clicked item
-// id or null when the menu is dismissed without a selection. Keyboard support is ArrowUp/ArrowDown
-// within one menu level, plus Enter/Space to select and Escape to dismiss. Submenus open on hover
-// only: there is no ArrowRight/ArrowLeft traversal, so a submenu's rows are unreachable by keyboard,
-// and Enter on a submenu parent currently resolves the popup with that parent's id rather than
-// opening it. Both are recorded as open work in the package assessment rather than fixed here.
-// Exported so the host-web enabler can delegate to this DOM rendering implementation.
-export function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
-  return new Promise((resolve) => {
-    if (typeof document === 'undefined') {
-      resolve(null);
-      return;
-    }
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483646;';
-    const menu = buildWebMenuElement(items, (id) => close(id));
-    function clampMenu(el: HTMLElement, anchorX: number, anchorY: number): void {
-      el.style.left = `${anchorX}px`;
-      el.style.top = `${anchorY}px`;
-      const rect = el.getBoundingClientRect();
-      const vw = typeof window !== 'undefined' ? window.innerWidth : 0;
-      const vh = typeof window !== 'undefined' ? window.innerHeight : 0;
-      if (rect.right > vw) el.style.left = `${Math.max(0, anchorX - rect.width)}px`;
-      if (rect.bottom > vh) el.style.top = `${Math.max(0, anchorY - rect.height)}px`;
-    }
-    function close(selectedId: string | null): void {
-      document.removeEventListener('keydown', onKeyDown);
-      overlay.remove();
-      menu.remove();
-      resolve(selectedId);
-    }
-    // Keyboard navigation. Scoped to this menu's own rows: a submenu is built as a nested <ul> inside
-    // its parent <li>, so an unscoped descendant query also matches the rows of every collapsed
-    // submenu. Those rows are display:none, which made arrow-key travel stop on invisible entries —
-    // the highlight vanished for a keypress — and let Enter resolve the popup with the id of an item
-    // the user could not see.
-    const focusableItems = menu.querySelectorAll<HTMLElement>(':scope > li[data-enabled="true"]');
-    let focusIndex = -1;
-    function moveFocus(delta: number): void {
-      const items = Array.from(focusableItems);
-      if (items.length === 0) return;
-      // From the initial no-selection state the wrap has to be spelled out: -1 is a sentinel, not a
-      // position, and running it through the modulo lands ArrowUp on the second-to-last row rather
-      // than the last one. Down enters at the top, up enters at the bottom.
-      focusIndex =
-        focusIndex === -1 ? (delta < 0 ? items.length - 1 : 0) : (focusIndex + delta + items.length) % items.length;
-      items.forEach((el, i) => {
-        if (i === focusIndex) {
-          el.setAttribute('data-focused', 'true');
-          el.style.background = '#0066cc';
-          el.style.color = '#fff';
-        } else {
-          el.removeAttribute('data-focused');
-          el.style.background = '';
-          el.style.color = '#111';
-        }
-      });
-      if (_menuSignals !== null) {
-        const focused = items[focusIndex];
-        const itemId = focused?.dataset['itemId'];
-        if (itemId !== undefined) emitSignal(_menuSignals.onMenuItemHighlight, itemId);
-      }
-    }
-    function onKeyDown(e: KeyboardEvent): void {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        close(null);
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        moveFocus(1);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        moveFocus(-1);
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        const focused = Array.from(focusableItems)[focusIndex];
-        if (focused !== undefined) {
-          const itemId = focused.dataset['itemId'];
-          if (itemId !== undefined) close(itemId);
-        }
-      }
-    }
-    overlay.addEventListener('click', () => close(null));
-    document.addEventListener('keydown', onKeyDown);
-    document.body.appendChild(overlay);
-    document.body.appendChild(menu);
-    clampMenu(menu, x, y);
-  });
-}
-
-let _custom: MenuBackend | null = null;
-let _host: MenuBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
-let _menuSignals: MenuSignals | null = null;
-
-const _sentinel: MenuBackend = {
-  async popupContextMenu() {
-    return null;
-  },
-  setApplicationMenu() {
-    return false;
-  },
-  subscribeSelect() {
-    return () => {};
-  },
-};
-
-// Releases each captured backend that no slot in the caller's future state retains, exactly once by
-// identity. Callers pass retained slots explicitly so replacement can release before assignment while
-// whole teardown can clear before release; reading the live slots here would make one ordering impossible.
-function releaseMenuBackends(
-  previous: readonly (Readonly<MenuBackend> | null)[],
-  retainedSlots: readonly (Readonly<MenuBackend> | null)[],
-): void {
-  const retained = new Set<unknown>(retainedSlots.filter((slot) => slot !== null));
-  const released = new Set<unknown>();
-  for (const backend of previous) {
-    if (backend === null || retained.has(backend) || released.has(backend)) continue;
-    released.add(backend);
-    backend.destroy?.();
-  }
+// Validates a MenuItemTemplate tree for consistency. Returns null on success, or a string describing
+// the first violation found. Does not throw — returns a sentinel for expected failures. Throws only
+// for cyclic submenu references (programmer error).
+export function validateMenuItemTemplate(template: Readonly<MenuItemTemplate>): string | null {
+  return _validateItem(template, new Set());
 }
 
 function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<MenuItemTemplate>>): string | null {
@@ -362,123 +193,9 @@ function _validateRadioGroups(items: readonly Readonly<MenuItemTemplate>[]): str
   return null;
 }
 
-// Validates a MenuItemTemplate tree for consistency. Returns null on success, or a string describing
-// the first violation found. Does not throw — returns a sentinel for expected failures. Throws only
-// for cyclic submenu references (programmer error).
-export function validateMenuItemTemplate(template: Readonly<MenuItemTemplate>): string | null {
-  return _validateItem(template, new Set());
-}
+let _menuSignals: MenuSignals | null = null;
 
-function buildWebMenuElement(items: readonly MenuItemTemplate[], onSelect: (id: string) => void): HTMLUListElement {
-  const menu = document.createElement('ul');
-  menu.style.cssText = [
-    'position:fixed',
-    'z-index:2147483647',
-    'margin:0',
-    'padding:4px 0',
-    'list-style:none',
-    'background:#fff',
-    'border:1px solid #ccc',
-    'border-radius:4px',
-    'box-shadow:0 4px 12px rgba(0,0,0,.15)',
-    'min-width:160px',
-    'font:13px/1.4 system-ui,sans-serif',
-    'color:#111',
-    'user-select:none',
-  ].join(';');
-  for (const item of items) {
-    // Hidden items are not rendered at all, rather than rendered and styled away: an item that is not
-    // in the DOM cannot be reached by arrow keys or hover, which is the difference between `visible`
-    // and `enabled`.
-    if (item.visible === false) continue;
-    const li = document.createElement('li');
-    if (item.type === 'separator') {
-      li.style.cssText = 'height:1px;margin:4px 8px;background:#e0e0e0;';
-      menu.appendChild(li);
-      continue;
-    }
-    const enabled = item.enabled !== false;
-    const hasSubmenu = item.submenu !== undefined && item.submenu.length > 0;
-    li.setAttribute('data-enabled', enabled ? 'true' : 'false');
-    if (item.id !== undefined) li.dataset['itemId'] = item.id;
-    li.style.cssText = [
-      'display:flex',
-      'align-items:center',
-      'padding:5px 12px 5px 28px',
-      'cursor:' + (enabled ? 'default' : 'not-allowed'),
-      'color:' + (enabled ? '#111' : '#999'),
-      'position:relative',
-    ].join(';');
-    // Checkmark / radio dot
-    if (item.checked === true) {
-      const mark = document.createElement('span');
-      mark.textContent = item.type === 'radio' ? '●' : '✓';
-      mark.style.cssText = 'position:absolute;left:8px;font-size:11px;';
-      li.appendChild(mark);
-    }
-    const labelEl = document.createElement('span');
-    labelEl.textContent = item.label ?? '';
-    labelEl.style.cssText = 'flex:1;';
-    if (item.sublabel !== undefined) {
-      const sublabelEl = document.createElement('span');
-      sublabelEl.textContent = item.sublabel;
-      sublabelEl.style.cssText = 'display:block;font-size:11px;color:#888;';
-      labelEl.appendChild(sublabelEl);
-    }
-    li.appendChild(labelEl);
-    // The accelerator/submenu spans below are matched with span:last-child on hover, so the tooltip is
-    // set as an attribute rather than appended as another child.
-    if (item.toolTip !== undefined) li.title = item.toolTip;
-    if (hasSubmenu) {
-      const arrow = document.createElement('span');
-      arrow.textContent = '▶';
-      arrow.style.cssText = 'margin-left:8px;font-size:9px;color:#888;';
-      li.appendChild(arrow);
-    } else if (item.accelerator !== undefined) {
-      const accel = document.createElement('span');
-      accel.textContent = item.accelerator;
-      accel.style.cssText = 'margin-left:24px;color:#888;font-size:11px;';
-      li.appendChild(accel);
-    }
-    if (enabled) {
-      li.addEventListener('mouseenter', () => {
-        li.style.background = '#0066cc';
-        li.style.color = '#fff';
-        const accelEl = li.querySelector<HTMLElement>('span:last-child');
-        if (accelEl !== null && accelEl !== labelEl) accelEl.style.color = 'rgba(255,255,255,.7)';
-        if (_menuSignals !== null && item.id !== undefined) {
-          emitSignal(_menuSignals.onMenuItemHighlight, item.id);
-        }
-      });
-      li.addEventListener('mouseleave', () => {
-        li.style.background = '';
-        li.style.color = '#111';
-        const accelEl = li.querySelector<HTMLElement>('span:last-child');
-        if (accelEl !== null && accelEl !== labelEl) accelEl.style.color = '#888';
-      });
-      if (hasSubmenu) {
-        // Submenu: open on hover, select from child list.
-        const submenuEl = buildWebMenuElement(item.submenu!, onSelect);
-        submenuEl.style.position = 'absolute';
-        submenuEl.style.top = '0';
-        submenuEl.style.left = '100%';
-        submenuEl.style.display = 'none';
-        li.appendChild(submenuEl);
-        li.addEventListener('mouseenter', () => {
-          submenuEl.style.display = 'block';
-        });
-        li.addEventListener('mouseleave', () => {
-          submenuEl.style.display = 'none';
-        });
-      } else if (item.id !== undefined) {
-        const itemId = item.id;
-        li.addEventListener('click', (e) => {
-          e.stopPropagation();
-          onSelect(itemId);
-        });
-      }
-    }
-    menu.appendChild(li);
-  }
-  return menu;
-}
+// Origin-pinned subscription bookkeeping: each entity's own unsubscribe, held beside the entity rather
+// than in a shared slot, so detaching one never ends another's subscription.
+const _highlightUnsubscribe = new WeakMap<MenuHighlight, () => void>();
+const _selectUnsubscribe = new WeakMap<MenuSelect, () => void>();

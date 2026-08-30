@@ -1,47 +1,68 @@
-import type { ElectronApi, MenuBackend } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  ElectronApi,
+  MenuApplicationBackend,
+  MenuPopupBackend,
+  MenuSelectBackend,
+} from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
 
-// Maps Flight's MenuBackend onto Electron's Menu module. Flight menu items are plain templates with a
-// stable `id`; Electron delivers selection through per-item `click` callbacks, so the seam funnels
-// those clicks back through an explicit onSelect. The application menu's clicks go to the listener
-// registered via subscribeSelect; context-menu clicks resolve the popup Promise with the clicked id.
-export function createElectronMenuBackend(electron: ElectronApi): MenuBackend {
-  // The single application-menu select listener, owned by this backend. setApplicationMenu wires it
-  // as onSelect; subscribeSelect sets it and returns an unsubscribe that clears it.
+// Maps Flight's menu slots onto Electron's Menu module. Flight menu items are plain templates with a
+// stable `id`; Electron delivers selection through per-item `click` callbacks, so the seam funnels those
+// clicks back through an explicit onSelect. Application-menu clicks go to the listener registered on the
+// select slot; context-menu clicks resolve the popup Promise with the clicked id.
+//
+// The three slots are built together because `application` and `select` genuinely SHARE state: the
+// listener the select slot registers is the one setApplicationMenu wires into the rebuilt menu. They stay
+// separate SLOTS because their shapes are incompatible — a command returning boolean and an event
+// subscription returning an unsubscribe — but a caller taking only one of them still gets a coherent
+// pair, because both read the same closure.
+export function createElectronMenuBackends(electron: ElectronApi): {
+  application: MenuApplicationBackend;
+  popup: MenuPopupBackend;
+  select: MenuSelectBackend;
+} {
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
   return {
-    destroy() {
-      if (destroyed) return;
-      destroyed = true;
-      selectListener = null;
-      electron.Menu.setApplicationMenu(null);
-    },
-    setApplicationMenu(items) {
-      electron.Menu.setApplicationMenu(
-        electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => selectListener?.(id))),
-      );
-      return true;
-    },
-    popupContextMenu(items, x, y) {
-      // The Electron seam exposes no menu close event, so the Promise resolves on the first item
-      // click and never resolves to null from a dismissal — callers treat a non-resolving Promise as
-      // "still open". We resolve null only if popup throws.
-      return new Promise<string | null>((resolve) => {
-        const menu = electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => resolve(id)));
-        try {
-          menu.popup({ x, y });
-        } catch {
-          resolve(null);
-        }
-      });
-    },
-    subscribeSelect(listener) {
-      selectListener = listener;
-      return () => {
-        if (selectListener === listener) selectListener = null;
-      };
-    },
+    application: createEntity<MenuApplicationBackend>({
+      // Provider lifecycle: releases the OS menu this provider installed. It deliberately does NOT end
+      // select subscriptions — those are ended by their own unsubscribe.
+      destroy(): void {
+        if (destroyed) return;
+        destroyed = true;
+        electron.Menu.setApplicationMenu(null);
+      },
+      setApplicationMenu(items): boolean {
+        electron.Menu.setApplicationMenu(
+          electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => selectListener?.(id))),
+        );
+        return true;
+      },
+    }),
+    popup: createEntity<MenuPopupBackend>({
+      // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
+      // and never resolves to null from a dismissal — callers treat a non-resolving Promise as "still
+      // open". We resolve null only if popup throws.
+      popup(items, x, y): Promise<string | null> {
+        return new Promise<string | null>((resolve) => {
+          const menu = electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => resolve(id)));
+          try {
+            menu.popup({ x, y });
+          } catch {
+            resolve(null);
+          }
+        });
+      },
+    }),
+    select: createEntity<MenuSelectBackend>({
+      subscribe(listener): () => void {
+        selectListener = listener;
+        return () => {
+          if (selectListener === listener) selectListener = null;
+        };
+      },
+    }),
   };
 }

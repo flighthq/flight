@@ -8,6 +8,7 @@ import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend }
 import { webHapticsBackend } from './webHaptics';
 import { webInputTargetBackend } from './webInputTarget';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
+import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
@@ -34,6 +35,7 @@ export const webHost = createEntity({
   graphics: {},
   input: { haptics: webHapticsBackend, target: webInputTargetBackend },
   media: {},
+  menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},
   notification: webNotificationCapabilities,
   storage: {},

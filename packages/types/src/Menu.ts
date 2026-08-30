@@ -1,4 +1,3 @@
-import type { BackendOperationExplanation } from './BackendOperationExplanation';
 import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole';
 
 // Application and context menu seam. Free functions in @flighthq/menu delegate to the active
@@ -36,61 +35,42 @@ export interface MenuItemTemplate {
   submenu?: MenuItemTemplate[];
 }
 
-// Native replacement guarantees are properties of the transition between two application menus, not
-// separate operations. A backend can therefore implement `destroy` while truthfully declaring that its
-// host API cannot provide one of these orderings.
-export type MenuReplacementGuarantee = 'native-clear-to-sentinel' | 'native-destroy-before-install';
+// The menu capability is split into three backend shapes, one per slot, and they are deliberately NOT
+// merged. Coverage differs — every provider can pop up a context menu, only Electron/Tauri own a native
+// application menu bar or deliver menu-bar selections — but coverage alone is not the reason. The shapes
+// are incompatible: `application` is a fire-and-forget command returning success, `select` is an event
+// subscription returning an unsubscribe, and `popup` is a request/response resolving to a chosen id.
+// Merging them would force a provider to present members it cannot honour, which is precisely how the
+// old single MenuBackend let the web backend claim four operations while implementing one.
+//
+// `destroy` is PROVIDER lifecycle — releasing whatever OS handle the provider holds — and is separate
+// from subscription teardown, which is the unsubscribe returned by `subscribe`. Tearing down a
+// subscription must never destroy the provider, and destroying a provider is not a way to unsubscribe.
 
-export type MenuReplacementGuaranteeReason = 'no-atomic-replace-rollback-or-current-menu';
-
-export type MenuReplacementLiftPremise =
-  | 'atomic-replace-retains-old-on-rejection'
-  | 'current-app-menu-getter'
-  | 'rollback-or-undo';
-
-export type MenuReplacementGuaranteeDeclaration =
-  | {
-      readonly guarantee: MenuReplacementGuarantee;
-      readonly liftableBy: readonly [];
-      readonly reason: null;
-      readonly support: 'supported';
-    }
-  | {
-      readonly guarantee: MenuReplacementGuarantee;
-      readonly liftableBy: readonly MenuReplacementLiftPremise[];
-      readonly reason: MenuReplacementGuaranteeReason;
-      readonly support: 'unsupported';
-    };
-
-export type MenuReplacementGuaranteeExplanation = BackendOperationExplanation &
-  (
-    | {
-        readonly guarantee: MenuReplacementGuarantee;
-        readonly liftableBy: readonly [];
-        readonly operation: 'destroy';
-        readonly reason: null;
-        readonly support: 'supported' | 'unobserved';
-      }
-    | {
-        readonly guarantee: MenuReplacementGuarantee;
-        readonly liftableBy: readonly MenuReplacementLiftPremise[];
-        readonly operation: 'destroy';
-        readonly reason: MenuReplacementGuaranteeReason;
-        readonly support: 'unsupported';
-      }
-  );
-
-// The backend seam realized by the web default and by native hosts (e.g. host-electron). This is the
-// honored shape — a method no real host implements would be a phantom. Application-menu installation
-// returns a boolean (false when the host has no native menu bar, e.g. web); context-menu popups
-// resolve to the selected item id, or null when dismissed; selections are delivered by id.
-export interface MenuBackend {
-  // Static facts about cross-menu replacement behavior. This is intentionally separate from operation
-  // presence: `has*Operation` remains structural, while these guarantees cannot be derived from a method's
-  // existence. Omission means unobserved, never implicitly supported.
-  readonly replacementGuarantees?: readonly MenuReplacementGuaranteeDeclaration[];
+// Installs the application menu bar. Returns false when the install did not take effect. Only hosts with
+// a real native menu bar expose this slot at all; a host without one omits it rather than returning false.
+export interface MenuApplicationBackend {
   destroy?(): void;
   setApplicationMenu(items: readonly MenuItemTemplate[]): boolean;
-  popupContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null>;
-  subscribeSelect(listener: (id: string) => void): () => void;
+}
+
+// Delivers item-highlight notifications (hover / keyboard focus) by item id. Only a provider that
+// renders the menu itself can observe highlight, which today is the web DOM overlay — native hosts hand
+// the menu to the OS and never see it. `subscribe` returns the unsubscribe for THAT subscription only.
+export interface MenuHighlightBackend {
+  destroy?(): void;
+  subscribe(listener: (id: string) => void): () => void;
+}
+
+// Pops up a context menu at (x, y) and resolves the chosen item id, or null when dismissed.
+export interface MenuPopupBackend {
+  destroy?(): void;
+  popup(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null>;
+}
+
+// Delivers application menu-bar selections by item id. `subscribe` returns the unsubscribe for THAT
+// subscription only.
+export interface MenuSelectBackend {
+  destroy?(): void;
+  subscribe(listener: (id: string) => void): () => void;
 }

@@ -1,6 +1,5 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
-import { setMenuBackend } from '@flighthq/menu/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
@@ -11,6 +10,9 @@ import type {
   HasDialogFile,
   HasDialogMessage,
   HasNotificationDelivery,
+  HasMenuApplication,
+  HasMenuPopup,
+  HasMenuSelect,
   HasWindowAttach,
   HasWindowOpen,
   Host,
@@ -20,7 +22,7 @@ import type {
 import { createTauriAppBackend } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
 import { createTauriFileDialogBackend, createTauriMessageDialogBackend } from './tauriDialog';
-import { createTauriMenuBackend } from './tauriMenu';
+import { createTauriMenuBackends } from './tauriMenu';
 import { createTauriNotificationCapabilities } from './tauriNotification';
 import { createTauriPlatformBackend } from './tauriPlatform';
 import { createTauriShellBackend } from './tauriShell';
@@ -32,6 +34,9 @@ type TauriHost = Host &
   HasClipboardText &
   HasDialogFile &
   HasDialogMessage &
+  HasMenuApplication &
+  HasMenuPopup &
+  HasMenuSelect &
   HasNotificationDelivery &
   HasWindowAttach &
   HasWindowOpen;
@@ -44,9 +49,9 @@ type TauriHost = Host &
 //   // …import the other modules/plugins…
 //   registerTauriBackends({ app, window, menu, tray, clipboard, dialog, notification, opener, os, globalShortcut, process });
 //
-// Pass the returned host to clipboard, window, dialog, and notification operations. Unmigrated seams Tauri does not
-// cover here (storage, protocol, updater, ipc, power, screen) retain their web defaults because a Tauri
-// app runs in a webview; each set*Backend(null) still reverts one of those package-local capabilities.
+// Pass the returned host to clipboard, menu, window, dialog, and notification operations. Unmigrated
+// seams Tauri does not cover here (storage, protocol, updater, ipc, power, screen) retain their web
+// defaults because a Tauri app runs in a webview; each set*Backend(null) still reverts one of those.
 export function registerTauriBackends(tauri: TauriApi): TauriHost {
   const clipboard = createTauriClipboardBackend(tauri);
   const dialog = {
@@ -54,10 +59,10 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     message: createTauriMessageDialogBackend(tauri),
   };
   const notification = createTauriNotificationCapabilities(tauri);
+  const menu = createTauriMenuBackends(tauri);
   const window = createTauriWindowBackend(tauri);
   setPlatformBackend(createTauriPlatformBackend(tauri));
   setAppBackend(createTauriAppBackend(tauri));
-  setMenuBackend(createTauriMenuBackend(tauri));
   setTrayBackend(createTauriTrayBackend(tauri));
   setShortcutBackend(createTauriShortcutBackend(tauri));
   setShellBackend(createTauriShellBackend(tauri));
@@ -69,6 +74,7 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     graphics: {},
     input: {},
     media: {},
+    menu,
     net: {},
     notification,
     storage: {},
