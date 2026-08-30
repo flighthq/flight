@@ -13,13 +13,13 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/log` is the **leveled structured logging library** — `log(level, data, channel?)` with severity wrappers, multi-sink fan-out (console, memory, file, buffered, rate-limited, sampled, filtered, fanout), per-channel level gating, formatters (text, JSON), transports, timing/spans, groups, assertions, and redaction. 61 exports in 1 source file, 114 tests. Dependencies: `signals`, `types`.
+`@flighthq/log` is the **leveled structured logging library** — `log(level, data, channel?)` with severity wrappers, multi-sink fan-out (console, memory, file, buffered, rate-limited, sampled, filtered, fanout), per-channel level gating, formatters (text, JSON), explicitly injected transports, timing/spans, groups, assertions, and redaction. Dependencies: `signals`, `types`.
 
 ## North star
 
 1. **SDK diagnostic layer.** Log is the SDK's own logging surface — leveled, structured, capture-aware. It is not a distributed tracing library or a production observability platform.
 2. **Composable sinks.** Sinks are combinators (filter, rate-limit, sample, buffer, fanout) that compose freely. A sink pipeline is explicit — the user builds it.
-3. **Near scope ceiling.** 61 exports covering core + 8 sink types + 2 formatters + timing/spans + groups + assertions + redaction + channel levels + serializers is a complete diagnostic logging surface for a graphics SDK.
+3. **Near scope ceiling.** Core + 8 sink types + 2 formatters + timing/spans + groups + assertions + redaction + channel levels + serializers is a complete diagnostic logging surface for a graphics SDK.
 
 ## Boundaries
 
@@ -41,6 +41,10 @@ status: ./status.md
 ## Decisions
 
 - **[2026-07-02] ~~Missing types~~ — false alarm.** Types were already present and correctly defined in `@flighthq/types`. The depth review was based on stale state. No action needed.
+
+- **[2026-08-30] File transports are zero-provider explicit dependencies.** `LogTransport` is a caller-configured `Entity` passed directly to `createFileLogSink`. There is no `HostAppCapabilities.logTransport`, `HasAppLogTransport`, ambient transport slot, selector, Web factory, or sentinel. Each `FileLogSink` exclusively owns and pins its transport. `write` synchronously reports FIFO admission for one complete line; `accepted` claims admission, never persistence. Awaited `flush` settles lines accepted before the call and names its delivery boundary; awaited, idempotent `destroyFileLogSink` unregisters first, attempts transport destroy even after flush failure, and preserves both outcomes.
+
+  **Why:** No package or platform supplied the old Host/ambient provider. Direct ownership makes two destinations independent, removes stale-successor teardown, and makes backpressure, failure, delivery, and terminal behavior observable without inventing a host capability.
 
 - **[2026-07-02] The 61-export single file should decompose.** Natural candidates: core log engine, sinks, formatters, timing/spans. The file is too large for one module.
 

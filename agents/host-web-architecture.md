@@ -12,7 +12,10 @@ App vocabulary: `enableHostWeb()`, `enableHostWebClipboard()`. Host-author seam:
 
 ### Current shape (lazy self-install)
 
-37 packages carry 38 `createWeb*Backend` functions. Each capability package co-locates three functions:
+36 packages carried 37 real `createWeb*Backend` functions at this census. The former count of 38
+included a phantom `createWebLogTransportBackend`: no such factory existed. The corrected Log row is
+retained below only so the historical row numbering stays stable; Log is now a zero-provider direct
+dependency with no Host slot, ambient selector, Web provider, or sentinel.
 
 ```
 getClipboardBackend()       → returns _backend ?? createWebClipboardBackend()
@@ -128,17 +131,19 @@ export function setNetBackend(backend: NetBackend | null): void {
 
 ### Method
 
-Each of the 38 `createWeb*Backend` functions was audited in full. The 38 factories implement 328 methods on their returned backend objects: 180 genuine, 148 sentinel. Strict-majority threshold: sentinel > genuine → NONE (no enabler for broad interface). 12 NONE rows. 32 genuine minority methods preserved via narrower split (section 5).
+Each of the 37 real `createWeb*Backend` functions was audited in full. They implement 327 methods on
+their returned backend objects: 180 genuine, 147 sentinel. The ledger keeps one non-factory Log
+correction row. Strict-majority threshold: sentinel > genuine → NONE (no enabler for broad interface).
 
 Every implementation inventory governed by this record must be written from a working copy in which the deciding record commit is applied, not merely named. Before authoring, record `git merge-base --is-ancestor <record-commit> HEAD` as a passing precondition and read this file from that working copy.
 
-The inventory must use the record's exact current headings as its schema: `Mandatory 38-Row Classification`, `Capability classification: global-singleton vs per-instance`, `No False Host Implementations`, `Provider-transition lifetime rule`, `Async viability semantics`, and `Repository gates`. Under each heading, every method row cites the exact deciding subsection. A renamed, missing, or superseded heading makes the inventory structurally incomplete; prose restating a remembered rule or a pasted commit hash cannot substitute. Replication may begin only from a complete inventory assembled under this heading skeleton.
+The inventory must use the record's exact current headings as its schema: `Mandatory 38-Row Classification`, `Capability classification: global-singleton vs per-instance`, `No False Host Implementations`, `Provider-transition lifetime rule`, `Async viability semantics`, and `Repository gates`. The first heading is a stable ledger identifier: it now means 37 factory rows plus the retained Log correction row. Under each heading, every method row cites the exact deciding subsection. A renamed, missing, or superseded heading makes the inventory structurally incomplete; prose restating a remembered rule or a pasted commit hash cannot substitute. Replication may begin only from a complete inventory assembled under this heading skeleton.
 
 ### Three outcomes
 
-1. **host-web** (23): genuinely browser-required. Extracted to `@flighthq/host-web`.
+1. **host-web** (24): genuinely browser-required. Extracted to `@flighthq/host-web`.
 2. **ambient-language** (3): standard-JS implementations. Stay inline, structurally unchanged.
-3. **none** (11): 6 strict-majority no-op + 5 all-sentinel.
+3. **none** (10): 6 strict-majority no-op + 4 all-sentinel.
 
 ### Complete table
 
@@ -161,7 +166,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 15 | ipc | createWebIpcBackend | 0/4 | **none** | — | ALL sentinel. |
 | 16 | keyboard | createWebSoftKeyboardBackend | 4/0 | **host-web** | DOM+window+nav | navigator.virtualKeyboard, Window.visualViewport |
 | 17 | lifecycle | createWebLifecycleBackend | 4/0 | **host-web** | DOM+window | document visibility, page lifecycle events |
-| 18 | log | createWebLogTransportBackend | 0/1 | **none** | — | ALL sentinel. |
+| 18 | log | — (no factory existed) | 0/0 | **zero-provider** | — | Corrected 2026-08-30: `LogTransport` is injected directly into `createFileLogSink`; no Host/Web capability exists. |
 | 19 | mediasession | createWebMediaSessionBackend / createWebMediaSessionActionBackend | 2 slots | **host-web** | nav | Explicit `webHost.media.session` commands and `.sessionAction` events over navigator.mediaSession / MediaMetadata |
 | 20 | menu | createWebMenuBackend | 1/2 | **none** | — | 66.7% false. |
 | 21 | net | createWebNetBackend | 1/0 | **ambient** | — | WHATWG fetch. Zero navigator/document/window refs. Stays inline, unchanged. |
@@ -190,9 +195,9 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | **host-web** | 24 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, permissions, platform, screen, sensors, share, shell, storage, webcam |
 | **ambient-language** | 3 | net, socket, textsegment |
 | **none / strict-majority** | 6 | app (9G/29S), application/window (10G/18S), menu (1G/2S), power (6G/7S), protocol (3G/7S), statusbar (2G/4S) |
-| **none / all-sentinel** | 5 | ipc (0/4), log (0/1), shortcut (0/7), tray (0/19), updater (0/21) |
+| **none / all-sentinel** | 4 | ipc (0/4), shortcut (0/7), tray (0/19), updater (0/21) |
 
-**False concentration:** 11 NONE rows contain 150 methods: 31 genuine, 119 sentinel (79.3%). The other 27 rows: 21 sentinel among 170 (12.4%).
+**False concentration:** 10 NONE rows contain 149 methods: 31 genuine, 118 sentinel (79.2%). The other 27 real factory rows contain 21 sentinel among 170 methods (12.4%). Log's correction row contributes no method.
 
 ---
 
@@ -359,7 +364,8 @@ export function enableHostWeb(): void {
 ```
 
 Not included: Accessibility, Clipboard, Connectivity, MediaSession, Screen, and Shell (explicit `webHost`
-slots), Cursor (per-instance factory, not an enabler), ipc, log, shortcut, tray, updater (all-sentinel),
+slots), Cursor (per-instance factory, not an enabler), ipc, shortcut, tray, updater (all-sentinel), Log
+(zero-provider; absent from Host),
 app, application-window, menu, power, protocol, statusbar (strict-majority no-op), net, socket,
 textsegment (ambient-language, inline).
 
@@ -382,9 +388,9 @@ Second call allocates nothing, preserves provider identity. The enabler's own `_
 
 ### Factory construction: proven lazy, closure state acknowledged
 
-All 38 `createWeb*Backend` factories were audited. None attach an `addEventListener`, start a `setTimeout`/`setInterval`, or initiate async work (`Promise`/`await`) at construction. Every factory returns an inert object whose methods are callable but passive until a consumer invokes them.
+All 37 real `createWeb*Backend` factories were audited. None attach an `addEventListener`, start a `setTimeout`/`setInterval`, or initiate async work (`Promise`/`await`) at construction. Every factory returns an inert object whose methods are callable but passive until a consumer invokes them. The Log correction row has no constructor to audit.
 
-Seven of the 38 factories allocate closure state — mutable variables captured by the returned object's method closures (not exhaustive per-variable — representative types shown):
+Seven of the 37 factories allocate closure state — mutable variables captured by the returned object's method closures (not exhaustive per-variable — representative types shown):
 
 | Factory | Closure state (representative) | Types present |
 |---------|-------------------------------|---------------|
@@ -442,7 +448,7 @@ The fields answer separate questions. **Layer** says what is installed or select
 - **`custom`** — direct `set*Backend()` active. Always wins (highest priority).
 - **`host`** — `enableHostWeb*()` installed a host backend.
 - **`host-not-enabled`** — a genuine web implementation exists but has not been enabled. Sentinel serves.
-- **`no-host-implementation`** — no web implementation exists for this capability (NONE rows: ipc, log, shortcut, tray, updater, and statusbar.getInfo). Sentinel serves.
+- **`no-host-implementation`** — no web implementation exists for this capability (NONE rows: ipc, shortcut, tray, updater, and statusbar.getInfo). Sentinel serves. Log is not in this layer model: its old capability was deleted and direct injection has no sentinel.
 
 ### Viability semantics
 
@@ -622,7 +628,7 @@ AGENTS.md host-* family adds host-web (future host-node). Both outside SDK barre
 
 1. **Add precedence infrastructure to 23 host-web capability packages** — custom/host slots, `installHost`, `getHostIdentity`. Change `get*Backend` to custom → host → sentinel.
 
-2. **Delete the 5 all-sentinel backends** (ipc, log, shortcut, tray, updater) — factory removed, sentinel serves.
+2. **Delete the 4 all-sentinel backends** (ipc, shortcut, tray, updater) — factory removed, sentinel serves. Log is a separate zero-provider deletion: remove Host/ambient selection and require direct transport injection.
 
 3. **Create host-web package** — standard shape. `npm run packages:check`.
 
@@ -679,18 +685,21 @@ Two prerequisite commits are now on base, completing the documentation reconcili
 
 ### Measured facts
 
-- 37 packages, 38 `createWeb*Backend` functions (application has 2).
-- 328 factory-implemented methods (methods on the objects the 38 factories return); 180 genuine, 148 sentinel (45.1% false).
-- 12 rows strict-majority no-op: 7 partial (32 genuine methods → narrow split), 5 all-sentinel.
+- 36 packages, 37 real `createWeb*Backend` functions (application has 2), plus one retained Log correction row.
+- 327 factory-implemented methods; 180 genuine, 147 sentinel (45.0% false).
+- 10 NONE rows in the corrected classification: 6 strict-majority and 4 all-sentinel. Log is zero-provider, not NONE.
 - 23 rows host-web (browser APIs required).
 - 3 rows ambient-language (standard JS: fetch, WebSocket, Intl.Segmenter). Structurally unchanged.
 - 56 lib.dom-bearing types files total (249 sites): 40 render-backend headers (224 sites, expected) + 16 nominal-neutral files (25 sites — the extraction surface). All 25 neutral sites resolved via neutral protocols, opaque handles, or render-tier moves.
 - 0 dynamic imports in non-test production capability and host package sources (test files and tool-* excluded).
-- All 38 factories confirmed: no addEventListener, no setTimeout/setInterval, no async/Promise at construction. 7 factories allocate passive closure state spanning primitives, Maps, Sets, arrays, config objects, and retained DOM/object references.
+- All 37 real factories confirmed: no addEventListener, no setTimeout/setInterval, no async/Promise at construction. 7 factories allocate passive closure state spanning primitives, Maps, Sets, arrays, config objects, and retained DOM/object references.
 
 ### Design chosen
 
 Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine implementations: 22 global-singleton enablers + 1 per-instance factory (Cursor). Cursor excluded from `enableHostWeb()` umbrella (umbrella membership = 22). 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions settled in section 6). Precedence: custom > host > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent (second call allocates nothing, preserves provider identity). Distinct second host does not last-write-win: the original is preserved and `conflict` reports the rejected install independently. explain* separates installed layer, last observed runtime reachability, observing operation, and conflict. Viability is observed by real operations, never probed at enable time and never inferred from operation success. Unbounded relationships rebind across provider transitions; bounded pending operations complete where they started. Bundle acceptance fixtures required.
+
+Log is no longer one of those sentinel rows: its zero-provider Host/ambient seam is deleted, and
+`createFileLogSink` receives an owned `LogTransport` Entity directly.
 
 ## 2026-08-30 append — Power on web, and the four members that were not there
 

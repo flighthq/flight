@@ -24,6 +24,12 @@ describe('backend operation seam ratchet', () => {
   let report: BackendOperationSeamReport;
   let explicitHostSlots: ReadonlyMap<string, string>;
 
+  // These obligations left the derived population through ratified architecture changes, not lost
+  // implementation: Window became an explicit Host dependency and zero-provider LogTransportBackend was
+  // deleted. They offset the immutable historical numeric floor only while their exact current shapes
+  // remain true in the assertion below.
+  const RETIRED_MIGRATION_OBLIGATIONS: readonly string[] = ['LogTransport', 'Window'];
+
   beforeAll(async () => {
     const names = collectBackendInterfaceNames(packageSourceFiles('types'));
     const exportsByPackage = new Map<string, ReadonlySet<string>>();
@@ -88,6 +94,17 @@ describe('backend operation seam ratchet', () => {
   // 39 of 83 enforced / 44 not migrated after the Updater transaction migration.
   it('never enforces fewer interfaces than the slices already landed', () => {
     expect(report.enforced).toBeGreaterThanOrEqual(39);
+  });
+
+  it('offsets the floor only for the two explicitly retired ambient migration obligations', () => {
+    const byName = new Map(report.entries.map((entry) => [entry.name, entry]));
+    const hostTypes = readFileSync(resolve(ROOT, 'packages/types/src/Host.ts'), 'utf8');
+
+    expect(RETIRED_MIGRATION_OBLIGATIONS).toEqual(['LogTransport', 'Window']);
+    expect(byName.has('LogTransport')).toBe(false);
+    expect(byName.get('Window')).toMatchObject({ migrated: false, packageName: null });
+    expect(hostTypes).not.toContain('logTransport');
+    expect(hostTypes).toContain('readonly window: WindowBackend');
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.

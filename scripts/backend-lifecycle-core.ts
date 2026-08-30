@@ -239,6 +239,7 @@ export function formatBackendLifecycleDelta(delta: Readonly<BackendLifecycleDelt
 export function formatBackendLifecycleReport(
   report: Readonly<BackendLifecycleReport>,
   floor?: Readonly<BackendLifecycleFloor>,
+  retiredEnforcedNames: readonly string[] = [],
 ): string {
   const lines: string[] = [];
   lines.push(
@@ -262,7 +263,7 @@ export function formatBackendLifecycleReport(
   // is a completeness measure, and that reading is what this line must not support.
   const summary = `${report.enforced} of ${report.total} backends declare a whole-backend teardown hook, ${report.noTeardownHook} declare none`;
   if (floor !== undefined) {
-    const delta = compareFloorToReport(floor, report);
+    const delta = compareFloorToReport(floor, report, retiredEnforcedNames);
     lines.push(`${summary} (${formatBackendLifecycleDelta(delta)})`);
   } else {
     lines.push(summary);
@@ -292,7 +293,7 @@ export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleRepo
   return report.violations.length > 0 || report.enforced + report.noTeardownHook !== report.total;
 }
 
-// `LogTransportBackend` → `setLogTransportBackend`. Derived from the interface name rather than mapped,
+// `MediaSessionBackend` → `setMediaSessionBackend`. Derived from the interface name rather than mapped,
 // so a new backend is picked up without an entry anywhere.
 // The wiring that owns a backend's final release. Under the ambient model that was always a
 // `set<Name>Backend`; a migrated domain has no setter at all and instead exports an explicit Host
@@ -358,9 +359,11 @@ export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[])
 export function compareFloorToReport(
   floor: Readonly<BackendLifecycleFloor>,
   current: Readonly<BackendLifecycleReport>,
+  retiredEnforcedNames: readonly string[] = [],
 ): BackendLifecycleDelta {
   const floorEnforced = new Set(floor.enforcedNames);
   const currentEnforced = new Set(current.enforcedNames);
+  const retiredEnforced = new Set(retiredEnforcedNames);
   const totalGrowth = current.total - floor.total;
   const seamsAdded: string[] = [];
   for (let i = 0; i < totalGrowth; i++) seamsAdded.push(`(+${i + 1})`);
@@ -368,7 +371,7 @@ export function compareFloorToReport(
   for (let i = 0; i < -totalGrowth; i++) seamsRemoved.push(`(-${i + 1})`);
   return {
     enforcedGained: current.enforcedNames.filter((name) => !floorEnforced.has(name)),
-    enforcedLost: [...floorEnforced].filter((name) => !currentEnforced.has(name)).sort(),
+    enforcedLost: [...floorEnforced].filter((name) => !retiredEnforced.has(name) && !currentEnforced.has(name)).sort(),
     seamsAdded,
     seamsRemoved,
   };

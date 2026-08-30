@@ -1,6 +1,6 @@
 # Backend lifecycle ownership
 
-_Reconciled architecture record, 2026-08-28. The original audit population is frozen at 42
+_Reconciled architecture record, 2026-08-30. The original audit population is frozen at 42
 `*Backend` interfaces so its partition remains reproducible. A post-audit population change is
 recorded separately below._
 
@@ -38,6 +38,26 @@ action/command ownership is retained solely as the frozen pre-R3 audit history. 
 
 ## Historical frozen result
 
+## LogTransport retirement (live state)
+
+The original 42-interface audit remains historical evidence, including its `LogTransportBackend`
+row. On 2026-08-30 that zero-provider interface and its ambient owner were deleted: no concrete
+package or platform provider existed, so there is no successor Host slot or sentinel. The live
+`LogTransport` is instead an Entity configured by the caller and passed directly to
+`createFileLogSink`; `FileLogSink` exclusively owns it and is also an Entity. Synchronous `write`
+reports complete-line FIFO admission. Awaited `flush` names the delivery boundary for lines accepted
+before the call. `destroyFileLogSink` unregisters and terminals the sink before its first await,
+attempts transport destroy even if flush fails, preserves both outcomes, and shares one terminal
+provider sequence across repeated calls.
+
+The lifecycle gate keeps `LogTransportBackend` in its immutable historical floor and names it in an
+explicit retirement list. That list suppresses only the false “lost teardown” regression for an
+interface that no longer exists; removing or unwiring a live teardown still fails. `LogTransport`
+is outside the `*Backend` denominator, while the focused Log tests provide the behavioral lifecycle
+proof that the structural backend census cannot.
+
+## Result
+
 The 42-interface audit partitions exactly as:
 
 ```text
@@ -49,9 +69,10 @@ The 42-interface audit partitions exactly as:
 ```
 
 The seven still-needing rows are not the total owner population. At the frozen audit, the total was
-eight: already-implemented `LogTransportBackend` plus the seven named below. Since that audit,
-`AccessibilityBackend` and the former combined `MediaSessionBackend` had landed their hooks at this
-snapshot. The counts in this historical subsection are not the live 83-interface census recorded above.
+eight: already-implemented `LogTransportBackend` plus the seven named below. That statement is a
+snapshot, not the live denominator: `LogTransportBackend` is now explicitly retired as described
+above, while Accessibility and MediaSession landed later and Menu subsequently split into narrower
+interfaces.
 
 The live tree has since added four interfaces. `AudioBackend` is a pure `canPlayType` query and
 joins the GC/bounded bucket. `WgpuHostBackend` and `InputIngressBackend` own acquisition- or
@@ -61,8 +82,11 @@ handle-keyed with its own teardown (`createDevice`/`destroyDevice`, `createBuffe
 `createSource`/`destroySource`) and it declares no zero-argument teardown, so it joins the
 entity/keyed/caller-owned bucket by the same rule that places `TrayBackend.destroy(id)` there.
 
-Therefore the live total is 46 and the live partition is `1 + 7 + 22 + 16 = 46`. None of the
-post-audit rows changes the whole-owner population, which remains eight — so 8 − 5 = three still owed.
+The old `1 + 7 + 22 + 16 = 46` live partition is retained only as the 2026-08-28 snapshot. It must not
+be carried forward after the Log retirement and later interface splits. The 2026-08-30 structural
+run reports 83 current `*Backend` interfaces: 7 declare whole-backend hooks and 76 declare none. Its
+four owner-missing violations are the already-split Menu interfaces; this Log slice neither hides nor
+repairs them.
 
 ### Provenance of the live figures
 
@@ -76,7 +100,7 @@ is deliberately never updated; the figures in this section track the live tree a
   in `packages/*/src/*.ts`; `*.test.ts` excluded
 - **counting predicate** — one unit = one interface; *owning* = declares a **zero-parameter**
   `destroy`/`dispose` in method or property syntax, so a per-object teardown taking an id is excluded
-- **live output** — `5 of 46 backends declare a whole-backend teardown hook, 41 declare none`, followed
+- **2026-08-30 output** — `7 of 83 backends declare a whole-backend teardown hook, 76 declare none`, followed
   by the scope caveat the gate now prints on every run:
   `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by an ambient setter or
   explicit Host-provider destroy owner;
@@ -94,7 +118,7 @@ it is hand-derived and is a floor, not an oracle.
 | row | owns | destroy releases | mismatch |
 | --- | --- | --- | --- |
 | `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** The Entity provider is selected explicitly through `HasAccessibilityProvider`; `destroyAccessibility(host)` reaches its required final teardown. Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse, distinct-provider isolation, idempotence, and anti-resurrection are assertion-backed |
-| `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
+| `LogTransportBackend` | — | — | **historical row, retired live:** no concrete implementation existed; the interface and ambient single-slot management were deleted 2026-08-30. Direct `LogTransport`/`FileLogSink` Entity ownership is behaviorally covered outside this Backend census |
 | `MediaSessionBackend` (pre-R3 combined shape) | the action set it registered, plus `metadata`, `playbackState` and position state on each exact `navigator.mediaSession` identity it published to | releases only lanes still carrying that backend's provenance token; metadata and playback state additionally require the exact published value; explicit clears relinquish ownership; failed releases remain retryable | **superseded by R3 split.** The same ownership guarantees now belong separately to `MediaSessionBackend` command lanes and `MediaSessionActionBackend` handler lanes on explicit Host slots. |
 | `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | `destroyMenuBackend` clears both slots first, then releases every distinct unretained backend once; Electron clears the select listener and calls `Menu.setApplicationMenu(null)`; Tauri clears JS-owned state only (listener + guard flag) — the native menu stays until the replacement backend installs its own; web is a no-op | **closed.** Capability teardown is reachable, re-entrant-safe, alias-safe and assertion-backed. Tauri's JS-only teardown is the settled design: its async menu API cannot clear the native menu synchronously, and a fire-and-forget clear races with the replacement backend's install |
 | `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel; detaches each retained `(sentinel, handler)` pair by identity; resets the four cached readings | **closed.** All three findings were remediated in order — teardown made reachable (`destroyPowerBackend`), then the release completed. This row is behaviorally assertion-backed; see *Behavioral completeness* below |
@@ -104,7 +128,7 @@ is caller-owned, which is the correct bracket.
 
 #### Behavioral completeness, recorded here because no gate can hold it
 
-The structural lifecycle gate stays at **5 of 50** and must not move for this. It counts a declared
+The structural lifecycle gate now reports **7 of 83** and must not move merely to reward behavioral work. It counts a declared
 teardown named by its setter; it cannot observe whether that teardown releases what the backend owns,
 which is exactly what the scope caveat it prints says. Advancing that number to reward behavioral work
 would make it assert something it does not check — the failure this record exists to prevent.
@@ -124,8 +148,8 @@ counted removals would pass against an implementation that removes the wrong han
 one. Counting is not identity.
 
 `Accessibility` cleanup is likewise assertion-backed by its borrowed-container identity tests. The
-remaining rows are unchanged: `Menu` still carries the mismatch named above, while `LogTransport` has
-no implementation to audit. `MediaSession` is now assertion-backed by per-backend, per-session,
+remaining rows are unchanged: `Menu` still carries the mismatch named above, while the retired
+`LogTransportBackend` is replaced by directly owned Entity lifecycle evidence. `MediaSession` is now assertion-backed by per-backend, per-session,
 per-lane ownership tests, including B-supersedes-A and failed-release retry cases.
 
 ### Mutation-audit ordering
@@ -229,8 +253,9 @@ the next run rather than lying indefinitely.
 
 `verified` / `failing` / **`unverified`**. The third is what stops the instrument from misleading. With
 two states, a row nobody has written evidence for must be lumped with either the passes or the failures,
-and both readings are wrong — it is simply unmeasured. `LogTransport`, which has no implementation in the
-repo at all, is permanently `unverified` and that is the correct answer rather than a gap to close.
+and both readings are wrong — it is simply unmeasured. The retired `LogTransportBackend` has no live
+row; the direct `LogTransport`/`FileLogSink` ownership path is verified separately by its focused
+behavioral suite rather than being forced into this Backend mutation denominator.
 
 ##### Four rules that keep it from becoming a misleading count
 
@@ -339,8 +364,9 @@ the next run rather than lying indefinitely.
 
 `verified` / `failing` / **`unverified`**. The third is what stops the instrument from misleading. With
 two states, a row nobody has written evidence for must be lumped with either the passes or the failures,
-and both readings are wrong — it is simply unmeasured. `LogTransport`, which has no implementation in the
-repo at all, is permanently `unverified` and that is the correct answer rather than a gap to close.
+and both readings are wrong — it is simply unmeasured. The retired `LogTransportBackend` has no live
+row; the direct `LogTransport`/`FileLogSink` ownership path is verified separately by its focused
+behavioral suite rather than being forced into this Backend mutation denominator.
 
 ##### Four rules that keep it from becoming a misleading count
 
@@ -586,13 +612,15 @@ required provider `destroy()`. Whoever constructs or shares a provider owns the 
 structural lifecycle gate derives this owner from the matching function name and first-parameter Host
 trait, separately from ambient setter replacement.
 
-### Existing owner: LogTransportBackend
+### Retired historical owner: LogTransportBackend
 
-`LogTransportBackend` may retain a file descriptor, socket, or native writer. Its optional
-`destroy()` is implemented by `destroyLogTransportBackend`: the slot is cleared before `flush()` and
-`destroy()` run, so later file-sink writes cannot reach a freed transport and repeated teardown is a
-no-op. `setLogTransportBackend` preserves identical-object assignment and destroys a different or
-removed outgoing transport. This is the complete single-slot reference implementation.
+The optional `LogTransportBackend` and `destroyLogTransportBackend` single-slot owner described by
+the original audit no longer exist. The live contract is required and value-based:
+`createFileLogSink(transport, options)` pins one `LogTransport` Entity, and
+`destroyFileLogSink(handle)` owns its final awaited `flush()` then `destroy()` sequence. Terminal state
+and sink removal happen before the first await; failure of flush cannot skip destroy; both provider
+outcomes survive; a second or concurrent teardown does not invoke either provider method again. Two
+handles can target distinct destinations, and destroying an older handle cannot affect its successor.
 
 ### Seven additional owners
 

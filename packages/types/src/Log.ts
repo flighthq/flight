@@ -1,3 +1,5 @@
+import type { Entity } from './Entity';
+
 // Severity doubles as a verbosity threshold. Console output shows an entry when the configured
 // console level is at or above the entry's level (so Error surfaces first, Verbose only at the top);
 // None disables console output. The capture sink, by contrast, receives every level regardless of
@@ -46,18 +48,45 @@ export interface LogTimer {
   startedAt: number;
 }
 
-// A line-oriented transport for file/remote log sinks. The web default is a no-op; native hosts
-// register an fs-backed implementation via setLogTransportBackend. `flush` and `dispose` are
-// optional — sinks call them when present.
-export interface LogTransportBackend {
-  write(line: string): void;
-  flush?(): void;
-  // ★ `destroy`, not `dispose`. A transport owns a NON-GC RESOURCE — a file handle, a socket, a native
-  // writer — and teardown frees it immediately, leaving the transport invalid. `dispose*` is the other
-  // verb: detach listeners and clear registries so an entity becomes GC-eligible, with nothing to free.
-  // A teardown verb that ships with the wrong meaning is corrected in every consumer afterwards, and
-  // both verbs already have settled meanings in this SDK.
-  destroy?(): void;
+/** The FIFO admission result returned synchronously for one complete log line. */
+export type LogTransportWriteOutcome =
+  | { readonly reason: 'accepted' }
+  | { readonly reason: 'backpressure'; readonly retryAfterMs?: number }
+  | { readonly reason: 'destroyed' }
+  | { readonly reason: 'operation-failed'; readonly message: string };
+
+/** The strongest delivery boundary reached by every accepted line covered by a successful flush. */
+export type LogTransportDeliveryBoundary =
+  | 'process-buffer'
+  | 'operating-system'
+  | 'durable-storage'
+  | 'remote-acknowledged';
+
+/** The result of settling all lines accepted before the flush call against a named delivery boundary. */
+export type LogTransportFlushOutcome =
+  | { readonly reason: 'drained'; readonly delivery: LogTransportDeliveryBoundary }
+  | { readonly reason: 'destroyed' }
+  | { readonly reason: 'operation-failed'; readonly message: string };
+
+/** The terminal result of releasing a transport's owned resource. */
+export type LogTransportDestroyOutcome =
+  | { readonly reason: 'destroyed' }
+  | { readonly reason: 'already-destroyed' }
+  | { readonly reason: 'operation-failed'; readonly message: string };
+
+/**
+ * A configured, line-oriented destination owned by one FileLogSink.
+ *
+ * `write` is a synchronous admission method. An `accepted` result means the complete supplied line
+ * entered this transport's FIFO in call order; it does not claim persistence or any external delivery.
+ * Other results mean that line was not admitted. `flush` settles every line accepted before that call
+ * and names the strongest boundary reached without implying a stronger one. `destroy` is awaited,
+ * terminal, and idempotent; writes after teardown report `destroyed`.
+ */
+export interface LogTransport extends Entity {
+  write(line: string): LogTransportWriteOutcome;
+  flush(): Promise<LogTransportFlushOutcome>;
+  destroy(): Promise<LogTransportDestroyOutcome>;
 }
 
 // One emitted log entry. `channel` is a free categorization tag (for example 'batch', 'shader',
@@ -73,8 +102,3 @@ export interface LogEntry {
 // class) so it stays trivially swappable and portable. Installed via setLogSink in
 // @flighthq/log.
 export type LogSink = (entry: Readonly<LogEntry>) => void;
-
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
-// roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot.
-export type LogTransportOperation = keyof LogTransportBackend;

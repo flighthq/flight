@@ -1,24 +1,24 @@
 ---
 package: '@flighthq/log'
 status: solid
-score: 76
-updated: 2026-07-13
+score: 82
+updated: 2026-08-30
 ingested:
-  - live packages/log/src/log.ts (800 lines) + log.test.ts (114 tests, 61 describes)
+  - live packages/log/src/log.ts (828 lines) + log.test.ts (147 tests, 62 describes)
   - live packages/types/src/Log.ts + LogSignals.ts
   - charter.md (2026-07-02 direction), assessment.md, status.md
   - prior review (2026-06-25 merge gate, score 40)
 ---
 
-# log — Review (live-tree re-review, 2026-07-13)
+# log — Review (explicit-transport update, 2026-08-30)
 
 ## Verdict
 
-**Solid, 76/100** — up from 40. The prior score reflected a build-blocking merge state (seven `@flighthq/types` imports undefined at the integration head), not the code's quality. That state is resolved in the live tree: `packages/types/src/Log.ts` now defines `LogContext`, `LogData`, `LogDataProvider`, `LogEntry`, `LogFormatter`, `LogLevel`, `LogSpan`, `LogTimer`, `LogTransportBackend`, and `LogSink`, and `packages/types/src/LogSignals.ts` defines `LogSignals`. Every import in `packages/log/src/log.ts:1-14` resolves. The recovery landed via `06a0c480` ("recover lost source across packages"); the three structural divider comments the prior review flagged were removed in `d730004a`. The charter's 2026-07-02 "false alarm" decision is confirmed against live source.
+**Solid, 82/100.** The missing-types diagnosis remains closed. `packages/types/src/Log.ts` now defines the core values plus the explicit `LogTransport` Entity and its admission/delivery/terminal outcomes; `FileLogSink` is an owned Entity. The 2026-08-30 slice removes the zero-provider ambient and Host transport surfaces instead of replacing them with another selector.
 
 What ships is a genuinely comprehensive diagnostic logging library: 62 exports (58 functions + 4 opaque sink handle interfaces: `BufferedLogSink`, `FileLogSink`, `MemoryLogSink`, `RateLimitedLogSink`), one thin barrel, `"sideEffects": false`, 114 colocated tests with alphabetized describes mirroring exports. The codebase-map line ("leveled structured logging — log(level, data, channel?), severity wrappers, multi-sink fan-out (console/memory/file/buffered/rate-limited/sampled/filtered/fanout), text/JSON formatters, timing/spans, groups, assertions, redaction") is **accurate against source**, feature for feature — no longer aspirational.
 
-The score lands at solid-mid rather than higher because three fidelity holes cut across otherwise-complete subsystems: entries carry no capture-time timestamp, redaction/serializers apply only inside one formatter rather than at emit, and the file-sink tier is a single global transport that cannot serve two destinations. None is a missing subsystem; each is a place where an existing subsystem doesn't fully deliver its own promise.
+The score rises because the file-sink ownership hole is closed: independent sinks pin independent transports and teardown cannot target a stale successor. Two fidelity holes remain: entries carry no capture-time timestamp, and redaction/serializers apply only inside one formatter rather than at emit.
 
 ## AAA gap read (against a mature structured-logging library)
 
@@ -31,7 +31,7 @@ Present and verified in `packages/log/src/log.ts`:
 - **Spans/timing/groups** — `createLogSpan`/`enterLogSpan`/`exitLogSpan` (field-merging span stack, out-of-order unwind supported), `startLogTimer`/`endLogTimer` (emits elapsed-ms Debug entry), `beginLogGroup`/`endLogGroup` (depth-tracked).
 - **Sampling, rate limiting, redaction, assertions, once-logging** — `createSampledLogSink`, `createRateLimitedLogSink`, `setLogRedactionPaths` (dot-notation, copy-before-mutate in `_redactPath`), `logAssert` (never throws), `logOnce`.
 - **Crash-report buffering** — `createMemoryLogSink(capacity)` ring buffer + `getMemoryLogSinkEntries` (oldest-first) is the right primitive; see the timestamp gap below for the caveat.
-- **Persistence seam** — `LogTransportBackend` (`write`/`flush?`/`dispose?`) with `createWebLogTransportBackend` as the honest no-op web default and `setLogTransportBackend` for native hosts. Rotation correctly lives behind the seam, not in the SDK.
+- **Persistence seam** — the caller supplies one `LogTransport` Entity directly to `createFileLogSink`. `write` synchronously admits a complete line into the transport FIFO or reports backpressure/failure/destroyed. `flush` awaits all pre-call accepted lines and names the achieved delivery boundary. `destroyFileLogSink` unregisters before awaiting, then preserves both flush and destroy outcomes while attempting destroy even after flush failure. There is no Web default, Host slot, ambient selector, or borrowed transport API.
 - **Serializer registry** — `registerLogSerializer(kind, fn)` keyed on `__kind` strings, last-write-wins. Correct open-registry fork shape.
 - **Signals** — `enableLogSignals` → `LogSignals` (`onLogEntry`, `onLogError`), inert until enabled; `_passesLevelGate` short-circuits when no sinks and no signals, so an unconfigured build does no work.
 
@@ -55,9 +55,9 @@ A mature structured logger stamps at capture. The fix is one field on `LogEntry`
 
 `setLogRedactionPaths` reads as a privacy feature ("keep this out of the logs") but only holds for one formatter. Either apply redaction+serializers once at emit (before `_emitToSinks`), or document the feature as JSON-formatter-scoped. Applying at emit is the honest fix and removes per-formatter duplication; within-package and sweep-safe.
 
-### Gap 3 — single global transport; file-sink handles are vestigial
+### Resolved — file-sink handles own independent transports
 
-All `createFileLogSink` handles share the one module-global `_transportBackend`. `disposeFileLogSink(_handle)` **ignores its handle parameter** and flushes/disposes the global backend (`log.ts:290-296`). Two file sinks cannot write to two destinations, and disposing "one" disposes the shared transport for all. Either the transport moves onto the `FileLogSink` handle (`createFileLogSink(options: { transport?, formatter? })` falling back to the global), or the API should stop pretending handles are independent. Per-sink transport is the mature shape and keeps the global as default; recommended.
+`createFileLogSink(transport, options)` now pins the injected transport in handle-owned private state. Two handles can target two destinations. Starting destroy makes only that handle terminal and removes its sink before the first await, so a stale handle cannot destroy or write to a successor. Repeated teardown shares the provider call and reports `already-destroyed`; flush and destroy rejection are converted into preserved operation outcomes. The old global, optional backend surface is deleted rather than retained as a fallback.
 
 ### Smaller observations
 
@@ -69,13 +69,13 @@ All `createFileLogSink` handles share the one module-global `_transportBackend`.
 
 ## Standards summary
 
-- **Naming (pass)** — full unabbreviated names throughout; `create*`/`get*`/`set*`/`dispose*` discipline holds (`disposeLogSink`/`disposeFileLogSink` correctly `dispose*`, not `destroy*` — timers/GC release, no native handles).
+- **Naming (pass)** — full unabbreviated names throughout. Buffered timer detachment remains `disposeLogSink`; transport finalization is `destroyFileLogSink` because the pinned transport owns a terminal resource.
 - **Tree-shaking (pass)** — thin barrel, `"sideEffects": false`, no top-level side effects; emit side and listener side documented as two tree-shakable faces (`log.ts:16-27`).
 - **Registry vs union (pass)** — serializer registry is string-keyed, last-write-wins.
 - **Sentinels (pass)** — `parseLogLevel`→`null`, `removeLogSink`→`false`, `getLogChannelLevel`→`null`, `logAssert` never throws.
-- **Tests (pass)** — 61 alphabetized describes mirroring exports; 114 tests. Copy-before-mutate covered for redaction.
+- **Tests (pass)** — 62 alphabetized describes, including exact `createFileLogSink` and `destroyFileLogSink` export-named blocks; 147 focused tests. The explicit transport slice covers every admission outcome, every delivery boundary, two destinations, stale-handle isolation, flush-failure cleanup, rejected operations, and idempotence.
 
-## Admin-doc drift noted (not edited here)
+## Admin-doc state
 
-- `charter.md` "What it is" says 61 exports; live is 62 (58 functions + 4 interfaces). Trivial.
-- The codebase-map Package Map line for `log` is now accurate — the prior assessment's "Package Map description update" item is satisfied.
+The charter, assessment, status, Package Map, Web architecture record, lifecycle ownership record, and
+explicit dependency model were reconciled with the 2026-08-30 zero-provider decision.
