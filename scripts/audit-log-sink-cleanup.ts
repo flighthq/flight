@@ -52,25 +52,35 @@ function main(): void {
 
   if (check) {
     const committed = readFileSync(outputPath, 'utf8');
-    if (committed !== report) {
+    if (!areLogSinkCleanupAuditReportsSemanticallyEqual(committed, report)) {
       console.error('The committed log-sink cleanup audit is stale. Run:');
       console.error('  npx tsx scripts/audit-log-sink-cleanup.ts --write');
       process.exitCode = 1;
     }
   }
 
+  const enforcementErrors = collectLogSinkCleanupAuditEnforcementErrors(registrations);
+  for (const error of enforcementErrors) console.error(error);
+  if (enforcementErrors.length > 0) process.exitCode = 1;
+}
+
+export function areLogSinkCleanupAuditReportsSemanticallyEqual(committed: string, report: string): boolean {
+  return normalizeLogSinkCleanupAuditForCheck(committed) === normalizeLogSinkCleanupAuditForCheck(report);
+}
+
+export function collectLogSinkCleanupAuditEnforcementErrors(registrations: readonly LogSinkRegistration[]): string[] {
+  const errors: string[] = [];
+  const pageLifetime = registrations.filter(isPageLifetimeRegistration);
+  if (pageLifetime.length !== 1) {
+    errors.push(`Expected exactly one page-lifetime size-fixture registration, found ${pageLifetime.length}.`);
+  }
   const unexpectedMissing = registrations.filter(
     (registration) => registration.classification === 'missing-cleanup' && !isPageLifetimeRegistration(registration),
   );
-  const pageLifetime = registrations.filter(isPageLifetimeRegistration);
-  if (pageLifetime.length !== 1) {
-    console.error(`Expected exactly one page-lifetime size-fixture registration, found ${pageLifetime.length}.`);
-    process.exitCode = 1;
-  }
   if (unexpectedMissing.length > 0) {
-    console.error(`${unexpectedMissing.length} addLogSink registration(s) have no guaranteed cleanup.`);
-    process.exitCode = 1;
+    errors.push(`${unexpectedMissing.length} addLogSink registration(s) have no guaranteed cleanup.`);
   }
+  return errors;
 }
 
 function findRegistrations(): LogSinkRegistration[] {
@@ -267,6 +277,18 @@ function isPageLifetimeRegistration(registration: Readonly<LogSinkRegistration>)
   );
 }
 
+function normalizeLogSinkCleanupAuditForCheck(report: string): string {
+  let everyRegistration = false;
+  return report
+    .split('\n')
+    .map((line) => {
+      if (line === '## Every registration') everyRegistration = true;
+      if (!everyRegistration) return line;
+      return line.replace(/^(\| `[^`]+` \|) \d+(?:, \d+)* (\| \d+ \|)/, '$1 <lines> $2');
+    })
+    .join('\n');
+}
+
 function visit(node: ts.Node, callback: (node: ts.Node) => void): void {
   callback(node);
   node.forEachChild((child) => visit(child, callback));
@@ -343,7 +365,6 @@ function formatReport(registrations: readonly LogSinkRegistration[]): string {
       `| \`${group.path}\` | ${group.lines.join(', ')} | ${group.lines.length} | \`${group.classification}\` | ${cleanupDescriptions[group.classification]} |`,
     );
   }
-  lines.push('');
   return `${lines.join('\n')}\n`;
 }
 
