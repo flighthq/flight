@@ -1,5 +1,4 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
-
+import { createCanvasRenderState } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 import * as contractEffects from './contract';
 import * as publicEffects from './index';

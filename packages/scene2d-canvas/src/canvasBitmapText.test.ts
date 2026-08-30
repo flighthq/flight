@@ -5,8 +5,8 @@ import { vi } from 'vitest';
 
 import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
 
 // Single-page stub glyph source whose page-0 image is a real Image backed by a DOM <img>.
 function createTestGlyphSource(): GlyphSource {

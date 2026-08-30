@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasTestSupport';
 import {
   beginCanvasRenderPass,
   createCanvasRenderTarget,
@@ -8,7 +8,7 @@ import {
   endCanvasRenderPass,
   resizeCanvasRenderTarget,
   setCanvasRenderTransform2D,
-} from './canvasRenderTarget';
+} from './canvasTestSupport';
 
 function makeState() {
   return createCanvasRenderState(document.createElement('canvas'));

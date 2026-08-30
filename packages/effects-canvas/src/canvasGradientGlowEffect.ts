@@ -41,7 +41,10 @@ export function applyGradientGlowEffectToCanvas(
   maybeEffect?: Readonly<GradientGlowEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<GradientGlowEffect>);
-  const pool = maybeEffect === undefined ? createCanvasRenderTargetPool() : (poolOrEffect as CanvasRenderTargetPool);
+  const pool =
+    maybeEffect === undefined
+      ? createCanvasRenderTargetPool(source.surface.creator)
+      : (poolOrEffect as CanvasRenderTargetPool);
   applyGradientGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 

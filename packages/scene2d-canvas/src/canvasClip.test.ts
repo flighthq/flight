@@ -1,5 +1,5 @@
 import { enableCanvasClip } from './canvasClip';
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasTestSupport';
 
 describe('enableCanvasClip', () => {
   it('sets the display object clip hooks on the render state', () => {

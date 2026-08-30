@@ -1,5 +1,9 @@
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
-import { isCanvasRenderTextureReady, setCanvasRenderTransform2D } from '@flighthq/scene2d-canvas/contract';
+import {
+  acquireCanvasRenderSurface,
+  isCanvasRenderTextureReady,
+  setCanvasRenderTransform2D,
+} from '@flighthq/scene2d-canvas/contract';
 import type { Bitmap, RenderEffect, RenderTexture } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -15,6 +19,7 @@ import {
   createBlurEffect,
   createCanvasOffscreenRenderState,
   createCanvasRenderTexturePool,
+  createCanvasTextureResolvers,
   createDisplayObject,
   createMatrix,
   createRectangle,
@@ -69,8 +74,19 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'canvas') throw new Error('per-node-effect-lane requires Canvas');
 const { render, state, width } = target;
 
-const offscreenState = createCanvasOffscreenRenderState(state);
-const pool = createCanvasRenderTexturePool();
+const offscreenSurface = acquireCanvasRenderSurface(state.surface.creator, {
+  height: 1,
+  pixelRatio: state.pixelRatio,
+  width: 1,
+});
+if (offscreenSurface === null) throw new Error('Failed to acquire the Canvas effect surface.');
+const offscreenState = createCanvasOffscreenRenderState(
+  offscreenSurface,
+  state.pipeline,
+  createCanvasTextureResolvers(state.surface.creator),
+  { pixelRatio: state.pixelRatio },
+);
+const pool = createCanvasRenderTexturePool(state.surface.creator);
 registerCanvasBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
 const effects: ReadonlyArray<Readonly<RenderEffect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
@@ -192,7 +208,7 @@ function captureSubtree(): {
       [sourceTexture, scratchTexture] = textures;
       const transform = createMatrix();
       computeScene2DRenderTargetTransform(transform, source, bounds, padding.left, padding.top);
-      renderIntoCanvasRenderTexture(offscreenState, sourceTexture, (captureState) => {
+      renderIntoCanvasRenderTexture(state, offscreenState, sourceTexture, (captureState) => {
         setCanvasRenderTransform2D(captureState, transform);
         prepareScene2DRender(captureState, source);
         renderCanvasScene2D(captureState, source);

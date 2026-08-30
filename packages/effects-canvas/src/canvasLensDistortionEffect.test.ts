@@ -1,6 +1,6 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderTarget, LensDistortionEffect } from '@flighthq/types/contract';
 
+import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import {
   applyLensDistortionEffectToCanvas,
   defaultCanvasLensDistortionEffectRunner,
@@ -126,7 +126,10 @@ describe('applyLensDistortionEffectToCanvas', () => {
 
 describe('defaultCanvasLensDistortionEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
-    const { dest, pool, source, written } = { ...createTargets(8, 8), pool: { free: [], inUse: [] } };
+    const { dest, pool, source, written } = {
+      ...createTargets(8, 8),
+      pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] },
+    };
 
     defaultCanvasLensDistortionEffectRunner({ dest, pool, source, state: {} as never }, {
       amount: 0,

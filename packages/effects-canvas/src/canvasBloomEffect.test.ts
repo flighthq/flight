@@ -1,4 +1,3 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
 import type { BloomEffect, CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import {
@@ -6,6 +5,7 @@ import {
   defaultCanvasBloomEffectRunner,
   registerCanvasBloomEffect,
 } from './canvasBloomEffect';
+import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // A target whose ImageData is a real buffer, so the bright pass and the composite run their actual
@@ -51,7 +51,11 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
 // never ran.
 function createPool(width: number): CanvasRenderTargetPool {
   const blank = (): CanvasRenderTarget => createTarget(new Array(width * 4).fill(0));
-  return { free: [blank(), blank()], inUse: [] } as unknown as CanvasRenderTargetPool;
+  return {
+    creator: canvasTestSurfaceCreator,
+    free: [blank(), blank()],
+    inUse: [],
+  } as unknown as CanvasRenderTargetPool;
 }
 
 const read = (target: CanvasRenderTarget): number[] => [...target.context.getImageData(0, 0, 1, 1).data];

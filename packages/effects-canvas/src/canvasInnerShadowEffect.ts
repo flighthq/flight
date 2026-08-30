@@ -46,7 +46,10 @@ export function applyInnerShadowEffectToCanvas(
   maybeEffect?: Readonly<InnerShadowEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<InnerShadowEffect>);
-  const pool = maybeEffect === undefined ? createCanvasRenderTargetPool() : (poolOrEffect as CanvasRenderTargetPool);
+  const pool =
+    maybeEffect === undefined
+      ? createCanvasRenderTargetPool(source.surface.creator)
+      : (poolOrEffect as CanvasRenderTargetPool);
   applyInnerShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 

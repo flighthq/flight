@@ -1,6 +1,10 @@
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
+  createCanvasRenderSurface,
+  createCanvasTextureResolvers,
+  scene2dCanvasPipeline,
   createCanvasRenderState,
   enableFlightDiagnostics,
   defaultCanvasBeginFill,
@@ -21,13 +25,22 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createCanvasElement(800, 500, pixelRatio);
+export const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createCanvasRenderState(canvas, {
-  backgroundColor: 0x151b2bff,
-  sceneGraphSyncPolicy: 'requiresInvalidation',
-});
+export const state = createCanvasRenderState(
+  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
+    height: canvas.height / pixelRatio,
+    pixelRatio,
+    width: canvas.width / pixelRatio,
+  }),
+  scene2dCanvasPipeline,
+  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  {
+    backgroundColor: 0x151b2bff,
+    sceneGraphSyncPolicy: 'requiresInvalidation',
+  },
+);
 enableFlightDiagnostics(state);
 
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);

@@ -1,6 +1,8 @@
 import type { BlendMode } from './BlendMode';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
+import type { CanvasPipeline } from './CanvasPipeline';
 import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
+import type { CanvasRenderSurface } from './CanvasRenderSurface';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
 import type { KeyedTable } from './RegistryTable';
@@ -15,6 +17,8 @@ export interface CanvasRenderState extends RenderState {
   readonly canvas: HTMLCanvasElement;
   readonly context: CanvasRenderingContext2D;
   readonly contextAttributes: CanvasRenderingContext2DSettings;
+  readonly pipeline: Readonly<CanvasPipeline>;
+  readonly surface: CanvasRenderSurface;
 }
 
 // Pure registration policy owned by one Canvas render pipeline. Tables are persistent: a derived
@@ -46,6 +50,7 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   canvasTextureResolvers: CanvasTextureResolvers;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
+  teardowns: ((state: CanvasRenderState) => void)[];
   // Backdrop targets a BlendEffect can name through its `backdropKey`, so the advanced-blend recipe can
   // read a layer it did not produce. The registry holds the target only and never owns or frees it.
   // Absent until a backdrop is registered, so a scene using no advanced blend carries no map.

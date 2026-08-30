@@ -2,9 +2,9 @@ import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
-import { resolveCanvasTexture } from './canvasTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
+import { resolveCanvasTexture } from './canvasTestSupport';
 
 describe('registerCanvasImageTextureResolver', () => {
   it('returns the host image source directly', () => {

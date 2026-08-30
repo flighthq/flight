@@ -6,6 +6,7 @@ export { enableHostWebAudio } from './webAudio';
 export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
+export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 export { webClipboardBackend } from './webClipboard';
 export { createWebConnectivityBackend, webConnectivityBackend } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';

@@ -1,6 +1,6 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
 
+import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 import {
   applyTiltShiftEffectToCanvas,
@@ -133,10 +133,13 @@ describe('defaultCanvasTiltShiftEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const { dest, source, written } = createImpulseTargets(2, 16, [4]);
 
-    defaultCanvasTiltShiftEffectRunner({ dest, pool: { free: [], inUse: [] }, source, state: {} as never }, {
-      blur: 0,
-      kind: 'TiltShiftEffect',
-    } as TiltShiftEffect);
+    defaultCanvasTiltShiftEffectRunner(
+      { dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] }, source, state: {} as never },
+      {
+        blur: 0,
+        kind: 'TiltShiftEffect',
+      } as TiltShiftEffect,
+    );
 
     expect(written.data).not.toBeNull();
   });

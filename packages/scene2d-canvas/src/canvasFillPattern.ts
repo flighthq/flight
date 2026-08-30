@@ -9,6 +9,7 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 
+import { acquireCanvasTextureResolverSurface } from './canvasTextureResolver';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
 // Flash's gradient box is normalized to ±819.2 units.
@@ -29,6 +30,7 @@ export function createBitmapPattern(
 
 export function createGradientPattern(
   context: CanvasRenderingContext2D,
+  resolvers: CanvasTextureResolvers,
   gradientType: GradientType,
   colors: number[],
   alphas: number[],
@@ -43,7 +45,7 @@ export function createGradientPattern(
   if (gradientType === 'radial') {
     return createRadialGradient(context, colors, alphas, ratios, mat, focalPointRatio);
   }
-  return createLinearGradient(context, colors, alphas, ratios, mat, spreadMethod);
+  return createLinearGradient(context, resolvers, colors, alphas, ratios, mat, spreadMethod);
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +90,7 @@ function createRadialGradient(
 
 function createLinearGradient(
   context: CanvasRenderingContext2D,
+  resolvers: CanvasTextureResolvers,
   colors: number[],
   alphas: number[],
   ratios: number[],
@@ -112,11 +115,14 @@ function createLinearGradient(
   const dx = x2 - x1;
   const dy = y2 - y1;
 
-  const offscreen = document.createElement('canvas');
-  offscreen.width = context.canvas.width;
-  offscreen.height = context.canvas.height;
-  const octx = offscreen.getContext('2d');
-  if (octx === null) return null;
+  const surface = acquireCanvasTextureResolverSurface(resolvers, {
+    height: context.canvas.height,
+    pixelRatio: 1,
+    width: context.canvas.width,
+  });
+  if (surface === null) return null;
+  const offscreen = surface.canvas;
+  const octx = surface.context;
 
   const tiledGradient = octx.createLinearGradient(
     x1 - dx * ((STEPS - 1) / 2),

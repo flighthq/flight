@@ -1,13 +1,13 @@
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   CanvasRenderState,
+  CanvasRenderSurfaceCreator,
   CanvasRenderTexturePool,
   RenderTarget,
   RenderTargetDescriptor,
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { getCanvasRenderCacheScreenState } from './canvasCache';
 import { destroyCanvasRenderTarget } from './canvasRenderTarget';
 import { destroyCanvasRenderTexture, invalidateCanvasRenderTexture } from './canvasRenderTexture';
 
@@ -26,10 +26,10 @@ export function acquireCanvasRenderTexture(
   return renderTexture;
 }
 
-export function createCanvasRenderTexturePool(): CanvasRenderTexturePool {
+export function createCanvasRenderTexturePool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTexturePool {
   return {
     destroyed: false,
-    effectTargets: { free: [], inUse: [] },
+    effectTargets: { creator, free: [], inUse: [] },
     free: [],
     leased: new Set(),
     owner: null,
@@ -103,7 +103,7 @@ function assertUsablePool(state: CanvasRenderState, pool: CanvasRenderTexturePoo
 }
 
 function assertPoolOwner(state: CanvasRenderState, pool: CanvasRenderTexturePool): void {
-  const owner = getCanvasRenderCacheScreenState(state);
+  const owner = state;
   if (pool.owner === null) {
     pool.owner = owner;
   } else if (pool.owner !== owner) {

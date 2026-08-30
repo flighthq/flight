@@ -49,7 +49,10 @@ export function applyBevelEffectToCanvas(
   maybeEffect?: Readonly<BevelEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<BevelEffect>);
-  const pool = maybeEffect === undefined ? createCanvasRenderTargetPool() : (poolOrEffect as CanvasRenderTargetPool);
+  const pool =
+    maybeEffect === undefined
+      ? createCanvasRenderTargetPool(source.surface.creator)
+      : (poolOrEffect as CanvasRenderTargetPool);
   applyBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
 

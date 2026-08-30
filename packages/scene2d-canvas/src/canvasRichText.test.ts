@@ -2,13 +2,13 @@
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 
-import { createCanvasRenderState } from './canvasRenderState';
 import {
   defaultCanvasRichTextRenderer,
   drawCanvasRichText,
   drawCanvasRichTextMask,
   registerCanvasTextInputOverlay,
 } from './canvasRichText';
+import { createCanvasRenderState } from './canvasTestSupport';
 
 function makeState() {
   const canvas = document.createElement('canvas');

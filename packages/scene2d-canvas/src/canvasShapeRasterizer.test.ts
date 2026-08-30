@@ -16,7 +16,7 @@ import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver
 import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
-import { createCanvasTextureResolvers } from './canvasTextureResolver';
+import { createCanvasTextureResolvers } from './canvasTestSupport';
 
 // The state the backend hands the rasterizer is where the commands live, so this is the wiring a GPU or
 // DOM backend does on its own state. Texture fills are their own command set, separately registered from

@@ -1,7 +1,14 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
-import type { CanvasRenderState, CanvasRenderTarget, Matrix, RenderPassPreserve } from '@flighthq/types/contract';
+import type {
+  CanvasRenderState,
+  CanvasRenderSurfaceCreator,
+  CanvasRenderTarget,
+  Matrix,
+  RenderPassPreserve,
+} from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { acquireCanvasRenderSurface, destroyCanvasRenderSurface } from './canvasRenderSurface';
 
 // Writable view of the readonly canvas/context handles. The render-target redirection deliberately
 // swaps these handles, so this narrow cast is the redirection boundary — mirrors the construction
@@ -57,19 +64,24 @@ export function beginCanvasRenderPass(
   if (!preserved) handles.context.clearRect(0, 0, target.width, target.height);
 }
 
-export function createCanvasRenderTarget(width: number, height: number): CanvasRenderTarget {
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.ceil(width));
-  canvas.height = Math.max(1, Math.ceil(height));
-  const context = canvas.getContext('2d')!;
-  return { canvas, context, width: canvas.width, height: canvas.height };
+export function createCanvasRenderTarget(
+  creator: Readonly<CanvasRenderSurfaceCreator>,
+  width: number,
+  height: number,
+): CanvasRenderTarget {
+  const targetWidth = Math.max(1, Math.ceil(width));
+  const targetHeight = Math.max(1, Math.ceil(height));
+  const surface = acquireCanvasRenderSurface(creator, {
+    height: targetHeight,
+    pixelRatio: 1,
+    width: targetWidth,
+  });
+  if (surface === null) throw new Error('Failed to acquire Canvas render target surface.');
+  return { canvas: surface.canvas, context: surface.context, height: targetHeight, surface, width: targetWidth };
 }
 
 export function destroyCanvasRenderTarget(target: CanvasRenderTarget): void {
-  // Collapse the canvas to zero size so the browser can reclaim its backing store now.
-  // Setting width/height to 0 also implicitly resets the context state.
-  target.canvas.width = 0;
-  target.canvas.height = 0;
+  destroyCanvasRenderSurface(target.surface);
   target.width = 0;
   target.height = 0;
 }

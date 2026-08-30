@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import type { CanvasRenderState, Matrix } from '@flighthq/types/contract';
 
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasTestSupport';
 import { setCanvasTransform } from './canvasTransform';
 
 describe('setCanvasTransform', () => {

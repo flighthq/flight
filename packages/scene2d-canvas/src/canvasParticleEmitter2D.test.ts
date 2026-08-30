@@ -4,8 +4,8 @@ import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
 
 function makeAtlas() {
   const img = document.createElement('img') as HTMLImageElement;

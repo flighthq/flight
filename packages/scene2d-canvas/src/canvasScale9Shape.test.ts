@@ -3,11 +3,11 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/types/contract';
 
-import { createCanvasRenderState } from './canvasRenderState';
 import { buildScale9Mapper } from './canvasScale9Mapper';
 import { defaultCanvasScale9ShapeRenderer, drawCanvasScale9Shape } from './canvasScale9Shape';
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
+import { createCanvasRenderState } from './canvasTestSupport';
 
 const grid = { x: 10, y: 10, width: 80, height: 80 };
 

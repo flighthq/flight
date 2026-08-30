@@ -3,8 +3,8 @@ import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { RichText } from '@flighthq/types/contract';
 
-import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasRichText } from './canvasRichText';
+import { createCanvasRenderState } from './canvasTestSupport';
 import { drawCanvasTextInputOverlay, enableCanvasTextInput } from './canvasTextInput';
 
 function makeState() {

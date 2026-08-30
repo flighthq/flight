@@ -1,3 +1,4 @@
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -16,6 +17,8 @@ import {
   appendShapeRectangle,
   beginCanvasRenderEffectPipeline,
   createCanvasElement,
+  createCanvasRenderSurface,
+  createCanvasTextureResolvers,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createDisplayObject,
@@ -31,6 +34,7 @@ import {
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
+  scene2dCanvasPipeline,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -48,10 +52,19 @@ declareExpectedImageDescription(
     'the underlying tone stays mid-grey rather than drifting lighter or darker overall.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(800, 600, pixelRatio);
+const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x808080ff });
+export const state = createCanvasRenderState(
+  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
+    height: canvas.height / pixelRatio,
+    pixelRatio,
+    width: canvas.width / pixelRatio,
+  }),
+  scene2dCanvasPipeline,
+  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  { pixelRatio, backgroundColor: 0x808080ff },
+);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasFilmGrainEffect(state);

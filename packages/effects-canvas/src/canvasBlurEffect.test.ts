@@ -1,6 +1,5 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
-
 import { applyBlurEffectToCanvas, defaultCanvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
+import { createCanvasRenderState } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 describe('applyBlurEffectToCanvas', () => {

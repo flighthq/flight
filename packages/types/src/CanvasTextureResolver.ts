@@ -1,5 +1,8 @@
 import type { Bitmap } from './Bitmap';
+import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
+import type { CanvasRenderSurface } from './CanvasRenderSurface';
 import type { Kind } from './Entity';
+import type { Entity } from './Entity';
 import type { RenderRegistry } from './RenderRegistrySignals';
 import type { Texture } from './Texture';
 import type { TextureSourceKind } from './TextureSourceKind';
@@ -20,7 +23,8 @@ export type CanvasTextureResolver = (
 //
 // A resolver that genuinely needs a render state — a render-target texture belongs to the state that
 // owns the target — captures that state when it is registered.
-export interface CanvasTextureResolvers {
+export interface CanvasTextureResolvers extends Entity {
+  readonly surfaceCreator: Readonly<CanvasRenderSurfaceCreator>;
   // Undefined until the first explicit registration, so a bundle only retains the backing realizations
   // it installs.
   registry?: Map<TextureSourceKind, CanvasTextureResolver> | null;
@@ -32,6 +36,7 @@ export interface CanvasTextureResolvers {
     Texture,
     {
       element: HTMLCanvasElement;
+      surface: CanvasRenderSurface;
       flipX: boolean;
       flipY: boolean;
       imageVersion: number;

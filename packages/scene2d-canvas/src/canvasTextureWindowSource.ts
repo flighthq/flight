@@ -1,7 +1,7 @@
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasTextureResolvers, Texture } from '@flighthq/types/contract';
 
-import { resolveCanvasTexture } from './canvasTextureResolver';
+import { acquireCanvasTextureResolverSurface, resolveCanvasTexture } from './canvasTextureResolver';
 
 // Resolves a Texture's uv window as a standalone drawable for Canvas patterns. Identity windows
 // return the source directly. Sub-rect/flip windows are materialized once per render state and
@@ -58,11 +58,13 @@ export function resolveCanvasTextureWindowSource(
     return entry.element;
   }
 
-  const element = document.createElement('canvas');
-  element.width = Math.max(1, Math.ceil(sourceWidth));
-  element.height = Math.max(1, Math.ceil(sourceHeight));
-  const context = element.getContext('2d');
-  if (context === null) return null;
+  const surface = acquireCanvasTextureResolverSurface(resolvers, {
+    height: Math.max(1, Math.ceil(sourceHeight)),
+    pixelRatio: 1,
+    width: Math.max(1, Math.ceil(sourceWidth)),
+  });
+  if (surface === null) return null;
+  const { canvas: element, context } = surface;
   context.imageSmoothingEnabled = !texture.sampler.magFilter.startsWith('nearest');
 
   const sourceX = Math.min(uvOffsetX * backingWidth, (uvOffsetX + uvScaleX) * backingWidth);
@@ -81,6 +83,7 @@ export function resolveCanvasTextureWindowSource(
     flipY: texture.flipY,
     imageVersion,
     source,
+    surface,
     textureVersion: texture.version,
     uvOffsetX,
     uvOffsetY,

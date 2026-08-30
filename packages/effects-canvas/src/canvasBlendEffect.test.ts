@@ -1,4 +1,3 @@
-import { createCanvasRenderState, createCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
 import type { BlendEffect, CanvasRenderState, CanvasRenderTarget } from '@flighthq/types/contract';
 
 import {
@@ -10,6 +9,7 @@ import {
   registerCanvasBlendEffectBackdrop,
   unregisterCanvasBlendEffectBackdrop,
 } from './canvasBlendEffect';
+import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // These tests assert the DRAW CONTRACT, not pixels, and that is deliberate rather than a shortcut.
@@ -110,7 +110,7 @@ describe('defaultCanvasBlendEffectRunner', () => {
     const drawn = recordDraws(dest);
 
     defaultCanvasBlendEffectRunner(
-      { state, source, dest, pool: { free: [], inUse: [] } },
+      { state, source, dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] } },
       blendEffect({ mode: 'Screen', backdropKey: 'scene' }),
     );
 

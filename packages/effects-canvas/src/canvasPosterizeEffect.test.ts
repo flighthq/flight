@@ -1,6 +1,6 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderTarget, PosterizeEffect } from '@flighthq/types/contract';
 
+import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import {
   applyPosterizeEffectToCanvas,
   defaultCanvasPosterizeEffectRunner,
@@ -114,10 +114,13 @@ describe('defaultCanvasPosterizeEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const { dest, source, written } = createStubTargets([255, 0, 0, 255]);
 
-    defaultCanvasPosterizeEffectRunner({ dest, pool: { free: [], inUse: [] }, source, state: {} as never }, {
-      kind: 'PosterizeEffect',
-      levels: 2,
-    } as PosterizeEffect);
+    defaultCanvasPosterizeEffectRunner(
+      { dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] }, source, state: {} as never },
+      {
+        kind: 'PosterizeEffect',
+        levels: 2,
+      } as PosterizeEffect,
+    );
 
     expect(written.data![0]).toBe(expected(255, 2));
   });

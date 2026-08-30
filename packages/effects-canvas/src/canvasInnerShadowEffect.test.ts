@@ -1,6 +1,6 @@
-import { createCanvasRenderState, createCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool, InnerShadowEffect } from '@flighthq/types/contract';
 
+import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
 import {
   applyInnerShadowEffectToCanvas,
   defaultCanvasInnerShadowEffectRunner,
@@ -17,7 +17,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     target.canvas.id = id;
     return target;
   });
-  return { pool: { free: [...targets].reverse(), inUse: [] }, targets };
+  return { pool: { creator: canvasTestSurfaceCreator, free: [...targets].reverse(), inUse: [] }, targets };
 }
 
 interface Draw {

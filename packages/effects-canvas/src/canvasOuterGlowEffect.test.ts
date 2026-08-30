@@ -25,6 +25,7 @@ vi.mock('./canvasSourceModeCompositing', () => ({
 }));
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { canvasTestSurfaceCreator } from './canvasEffectTestSupport';
 import {
   applyOuterGlowEffectToCanvas,
   defaultCanvasOuterGlowEffectRunner,
@@ -81,7 +82,7 @@ beforeEach(() => {
 });
 
 function createTarget(id: string, width = 32, height = 16): never {
-  return { id, canvas: {}, context: {}, width, height } as never;
+  return { id, canvas: {}, context: {}, surface: { creator: canvasTestSurfaceCreator }, width, height } as never;
 }
 
 describe('registerCanvasOuterGlowEffect', () => {

@@ -4,15 +4,18 @@ import {
   computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
   computeRenderTargetSize,
-  copyAllRenderersFromRenderState,
   getRenderProxyCache,
   noopRendererData,
   prepareScene2DRender,
   registerRenderCacheRenderer,
 } from '@flighthq/render/contract';
 import type {
+  CanvasPipeline,
+  CanvasRenderOptions,
+  CanvasRenderSurface,
   CanvasRenderState,
   CanvasRenderTarget,
+  CanvasTextureResolvers,
   Node2D,
   Scene2DRenderer,
   Matrix,
@@ -24,11 +27,17 @@ import type {
 
 import { renderCanvasScene2D } from './canvasNode2D';
 import {
-  copyCanvasRenderStateRegistrations,
   createCanvasRenderState,
+  destroyCanvasRenderState,
   getCanvasRenderStateRuntime,
+  registerCanvasRenderStateTeardown,
 } from './canvasRenderState';
-import { createCanvasRenderTarget, resizeCanvasRenderTarget, setCanvasRenderTransform2D } from './canvasRenderTarget';
+import {
+  createCanvasRenderTarget,
+  destroyCanvasRenderTarget,
+  resizeCanvasRenderTarget,
+  setCanvasRenderTransform2D,
+} from './canvasRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
 
 // Writable view of the readonly canvas/context handles. refreshCanvasRenderCache redirects the
@@ -46,8 +55,16 @@ type CanvasRenderStateHandles = CanvasRenderState & {
  * baked subtree looks the same offscreen as it would on screen — but keeps its own render
  * node map, adapter map, and frame counter, so baking never touches the screen state.
  */
-export function createCanvasCacheState(screenState: CanvasRenderState): CanvasRenderState {
-  return createCanvasOffscreenRenderState(screenState);
+export function createCanvasCacheState(
+  ownerState: CanvasRenderState,
+  surface: CanvasRenderSurface,
+  pipeline: Readonly<CanvasPipeline>,
+  canvasTextureResolvers: CanvasTextureResolvers,
+  options: Partial<CanvasRenderOptions> = {},
+): CanvasRenderState {
+  const cacheState = createCanvasOffscreenRenderState(surface, pipeline, canvasTextureResolvers, options);
+  registerCanvasRenderStateTeardown(ownerState, () => destroyCanvasRenderState(cacheState));
+  return cacheState;
 }
 
 /**
@@ -55,37 +72,23 @@ export function createCanvasCacheState(screenState: CanvasRenderState): CanvasRe
  * Renderers and policy registrations are creation-time snapshots; traversal/proxy state and host
  * canvases remain independent.
  */
-export function createCanvasOffscreenRenderState(screenState: CanvasRenderState): CanvasRenderState {
-  const screen = getCanvasRenderStateRuntime(screenState);
-  const cacheState = createCanvasRenderState(document.createElement('canvas'), {
-    backgroundColor: screenState.backgroundColor,
-    imageSmoothingEnabled: screen.imageSmoothingEnabled,
-    imageSmoothingQuality: screen.imageSmoothingQuality,
-    pixelRatio: screenState.pixelRatio,
-    roundPixels: screenState.roundPixels,
-    sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
-  });
-  cacheState.allowSmoothing = screenState.allowSmoothing;
-  cacheState.renderAlpha = screenState.renderAlpha;
-  cacheState.renderBlendMode = screenState.renderBlendMode;
-  copyAllRenderersFromRenderState(cacheState, screenState);
-  copyCanvasRenderStateRegistrations(cacheState, screenState);
-  _cacheStateScreen.set(cacheState, screenState);
-  return cacheState;
+export function createCanvasOffscreenRenderState(
+  surface: CanvasRenderSurface,
+  pipeline: Readonly<CanvasPipeline>,
+  canvasTextureResolvers: CanvasTextureResolvers,
+  options: Partial<CanvasRenderOptions> = {},
+): CanvasRenderState {
+  return createCanvasRenderState(surface, pipeline, canvasTextureResolvers, options);
 }
 
 export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): void {
   // Explicitly collapses the offscreen canvas backing this cache's render target so the browser
   // can reclaim its compositor/GPU memory immediately, rather than waiting for GC. After calling
-  // this, the target is invalid. For a plain slot-release without destroying the backing store,
-  // use releaseCanvasRenderCache instead.
+  // this, the target is invalid.
   const targets = getTargets(state);
   const target = targets.get(cache);
   if (target !== undefined) {
-    target.canvas.width = 0;
-    target.canvas.height = 0;
-    target.width = 0;
-    target.height = 0;
+    destroyCanvasRenderTarget(target);
     targets.delete(cache);
   }
 }
@@ -108,7 +111,7 @@ export function ensureCanvasRenderCacheTarget(
   const targets = getTargets(state);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createCanvasRenderTarget(width, height);
+    target = createCanvasRenderTarget(state.surface.creator, width, height);
     targets.set(cache, target);
   } else {
     resizeCanvasRenderTarget(target, width, height);
@@ -116,14 +119,8 @@ export function ensureCanvasRenderCacheTarget(
   return target;
 }
 
-// Cache rendering uses a second render state over a target owned by the screen state. Backend
-// resources that must remain visible while that cache state walks a subtree use the same owner.
-export function getCanvasRenderCacheScreenState(state: CanvasRenderState): CanvasRenderState {
-  return _cacheStateScreen.get(state) ?? state;
-}
-
 export function getCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): CanvasRenderTarget | null {
-  return getTargets(state).get(cache) ?? null;
+  return _renderCacheTargets.get(state)?.get(cache) ?? null;
 }
 
 /**
@@ -138,12 +135,12 @@ export function getCanvasRenderCacheTarget(state: CanvasRenderState, cache: Rend
  * (keyed by the handle), never by the handle, so one handle can be composited by several states.
  */
 export function refreshCanvasRenderCache(
+  ownerState: CanvasRenderState,
   cacheState: CanvasRenderState,
   cache: RenderCache,
   source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
-  const screenState = getCanvasRenderCacheScreenState(cacheState);
   const padding = options?.padding ?? 0;
   const minWidth = options?.minWidth ?? 1;
   const minHeight = options?.minHeight ?? 1;
@@ -151,11 +148,11 @@ export function refreshCanvasRenderCache(
   computeNodeBoundsRectangle(_bounds, source, source);
   const { width, height } = computeRenderTargetSize(_targetSize, _bounds, padding, minWidth, minHeight);
 
-  const existing = getCanvasRenderCacheTarget(screenState, cache);
+  const existing = getCanvasRenderCacheTarget(ownerState, cache);
   // A canvas resize clears its pixels, so a resized target must be redrawn even if the
   // subtree itself is unchanged.
   const resized = existing === null || existing.width !== width || existing.height !== height;
-  const target = ensureCanvasRenderCacheTarget(screenState, cache, width, height);
+  const target = ensureCanvasRenderCacheTarget(ownerState, cache, width, height);
 
   computeScene2DRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
@@ -177,8 +174,11 @@ export function refreshCanvasRenderCache(
 }
 
 export function releaseCanvasRenderCache(state: CanvasRenderState, cache: RenderCache): void {
-  // A CanvasRenderTarget holds no GPU handle; dropping the reference is enough to free it.
-  getTargets(state).delete(cache);
+  const targets = _renderCacheTargets.get(state);
+  const target = targets?.get(cache);
+  if (target === undefined) return;
+  destroyCanvasRenderTarget(target);
+  targets!.delete(cache);
 }
 
 function drawCanvasRenderCache(state: RenderState, renderProxy: RenderProxy2D): void {
@@ -193,13 +193,22 @@ function drawCanvasRenderCache(state: RenderState, renderProxy: RenderProxy2D): 
   canvasState.context.drawImage(target.canvas, 0, 0);
 }
 
-function getTargets(state: CanvasRenderState): WeakMap<RenderCache, CanvasRenderTarget> {
+function getTargets(state: CanvasRenderState): Map<RenderCache, CanvasRenderTarget> {
   let targets = _renderCacheTargets.get(state);
   if (targets === undefined) {
-    targets = new WeakMap();
+    targets = new Map();
     _renderCacheTargets.set(state, targets);
+    registerCanvasRenderStateTeardown(state, destroyOwnedCanvasRenderCacheTargets);
   }
   return targets;
+}
+
+function destroyOwnedCanvasRenderCacheTargets(state: CanvasRenderState): void {
+  const targets = _renderCacheTargets.get(state);
+  if (targets === undefined) return;
+  for (const target of targets.values()) destroyCanvasRenderTarget(target);
+  targets.clear();
+  _renderCacheTargets.delete(state);
 }
 
 export const defaultCanvasRenderCacheRenderer: Scene2DRenderer = {
@@ -209,9 +218,7 @@ export const defaultCanvasRenderCacheRenderer: Scene2DRenderer = {
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be
 // composited by several states without the handle carrying a backend resource.
-const _renderCacheTargets = new WeakMap<CanvasRenderState, WeakMap<RenderCache, CanvasRenderTarget>>();
-// Links an offscreen cache state back to the screen state whose targets it bakes into.
-const _cacheStateScreen = new WeakMap<CanvasRenderState, CanvasRenderState>();
+const _renderCacheTargets = new WeakMap<CanvasRenderState, Map<RenderCache, CanvasRenderTarget>>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
 const _targetSize = { width: 0, height: 0 };

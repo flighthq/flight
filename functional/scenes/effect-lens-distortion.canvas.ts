@@ -1,3 +1,4 @@
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   getBitmapPixelRgb,
@@ -8,6 +9,8 @@ import {
   appendShapeRectangle,
   beginCanvasRenderEffectPipeline,
   createCanvasElement,
+  createCanvasRenderSurface,
+  createCanvasTextureResolvers,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createDisplayObject,
@@ -22,6 +25,7 @@ import {
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
+  scene2dCanvasPipeline,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -41,10 +45,19 @@ declareExpectedImageDescription(
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(800, 600, pixelRatio);
+const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
+export const state = createCanvasRenderState(
+  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
+    height: canvas.height / pixelRatio,
+    pixelRatio,
+    width: canvas.width / pixelRatio,
+  }),
+  scene2dCanvasPipeline,
+  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  { pixelRatio, backgroundColor: 0x05060aff },
+);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasLensDistortionEffect(state);

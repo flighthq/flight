@@ -8,9 +8,9 @@ import {
 import { createTexture } from '@flighthq/texture/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
-import { resolveCanvasTexture } from './canvasTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
+import { resolveCanvasTexture } from './canvasTestSupport';
 
 beforeEach(() => setImageBackend(createWebImageBackend()));
 afterEach(() => {

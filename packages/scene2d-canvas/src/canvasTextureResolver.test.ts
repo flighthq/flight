@@ -4,14 +4,28 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, RenderRegistry } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
 import {
+  acquireCanvasTextureResolverSurface,
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
+  destroyCanvasTextureResolvers,
   registerCanvasTextureResolver,
   resolveCanvasTexture,
-} from './canvasTextureResolver';
+} from './canvasTestSupport';
+
+describe('acquireCanvasTextureResolverSurface', () => {
+  it('acquires through the resolver set’s pinned creator', () => {
+    const resolvers = createCanvasTextureResolvers();
+    const surface = acquireCanvasTextureResolverSurface(resolvers, { height: 16, pixelRatio: 2, width: 24 });
+
+    expect(surface).not.toBeNull();
+    expect(surface!.creator).toBe(resolvers.surfaceCreator);
+    expect(surface!.canvas.width).toBe(48);
+    expect(surface!.canvas.height).toBe(32);
+  });
+});
 
 // A texture whose source kind nothing has registered a resolver for — the shape a miss is reported for.
 function createUnresolvableTexture() {
@@ -85,6 +99,25 @@ describe('createCanvasTextureResolvers', () => {
 
     expect(first.registry?.has(BitmapTextureSourceKind)).toBe(true);
     expect(second.registry).toBeNull();
+  });
+});
+
+describe('destroyCanvasTextureResolvers', () => {
+  it('destroys every acquired surface and clears registrations exactly once', () => {
+    const resolvers = createCanvasTextureResolvers();
+    const first = acquireCanvasTextureResolverSurface(resolvers, { height: 16, pixelRatio: 1, width: 24 })!;
+    const second = acquireCanvasTextureResolverSurface(resolvers, { height: 8, pixelRatio: 2, width: 12 })!;
+    registerCanvasTextureResolver(resolvers, BitmapTextureSourceKind, () => null);
+
+    destroyCanvasTextureResolvers(resolvers);
+    destroyCanvasTextureResolvers(resolvers);
+
+    expect(first.canvas.width).toBe(0);
+    expect(first.canvas.height).toBe(0);
+    expect(second.canvas.width).toBe(0);
+    expect(second.canvas.height).toBe(0);
+    expect(resolvers.registry).toBeNull();
+    expect(resolvers.registryMiss).toBeNull();
   });
 });
 

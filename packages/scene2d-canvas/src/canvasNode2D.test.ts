@@ -5,7 +5,7 @@ import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding';
 import { defaultCanvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D';
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasTestSupport';
 
 function makeState() {
   const canvas = document.createElement('canvas');

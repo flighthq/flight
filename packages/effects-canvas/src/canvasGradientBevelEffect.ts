@@ -46,7 +46,10 @@ export function applyGradientBevelEffectToCanvas(
   maybeEffect?: Readonly<GradientBevelEffect>,
 ): void {
   const effect = maybeEffect ?? (poolOrEffect as Readonly<GradientBevelEffect>);
-  const pool = maybeEffect === undefined ? createCanvasRenderTargetPool() : (poolOrEffect as CanvasRenderTargetPool);
+  const pool =
+    maybeEffect === undefined
+      ? createCanvasRenderTargetPool(source.surface.creator)
+      : (poolOrEffect as CanvasRenderTargetPool);
   applyGradientBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
 

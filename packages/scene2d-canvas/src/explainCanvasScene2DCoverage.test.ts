@@ -10,7 +10,7 @@ import { BlendMode, RenderRegistry, RequirementFacet, SceneCoverage } from '@fli
 import { describe, expect, it } from 'vitest';
 
 import { registerCanvasMaterialRenderer } from './canvasMaterialRegistry';
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasTestSupport';
 import { explainCanvasScene2DCoverage, hasCanvasScene2DCoverage } from './explainCanvasScene2DCoverage';
 
 const materialRenderer = { getState: () => ({}) } as unknown as CanvasMaterialRenderer;
@@ -102,24 +102,26 @@ describe('hasCanvasScene2DCoverage', () => {
   it('is false when only the shared half is unserved, so composition cannot hide a gap', () => {
     const state = makeState();
     registerCanvasMaterialRenderer(state, 'acme.Custom', materialRenderer);
-    expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['Shape'] }))).toBe(
+    expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['acme.Node'] }))).toBe(
       false,
     );
   });
 
   it('is false when only the Canvas half is unserved', () => {
     const state = makeState();
-    registerRenderer(state, 'Shape', nodeRenderer);
-    expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['Shape'] }))).toBe(
+    registerRenderer(state, 'acme.Node', nodeRenderer);
+    expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['acme.Node'] }))).toBe(
       false,
     );
   });
 
   it('is true once both halves are served', () => {
     const state = makeState();
-    registerRenderer(state, 'Shape', nodeRenderer);
+    registerRenderer(state, 'acme.Node', nodeRenderer);
     registerCanvasMaterialRenderer(state, 'acme.Custom', materialRenderer);
-    expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['Shape'] }))).toBe(true);
+    expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['acme.Node'] }))).toBe(
+      true,
+    );
   });
 
   it('is true for a scene using only blend modes, which need nothing registered here', () => {

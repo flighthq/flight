@@ -15,6 +15,7 @@ import type {
   Adjustment,
   CanvasRenderEffectPipeline,
   CanvasRenderState,
+  CanvasRenderSurfaceCreator,
   CanvasRenderTarget,
   CanvasRenderTargetPool,
   RenderEffect,
@@ -43,7 +44,7 @@ export function acquireCanvasRenderTarget(
 ): CanvasRenderTarget {
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
-  const target = pool.free.pop() ?? createCanvasRenderTarget(w, h);
+  const target = pool.free.pop() ?? createCanvasRenderTarget(pool.creator, w, h);
   if (target.width !== w || target.height !== h) resizeCanvasRenderTarget(target, w, h);
   pool.inUse.push(target);
   return target;
@@ -54,7 +55,7 @@ export function beginCanvasRenderEffectPipeline(state: CanvasRenderState, pipeli
   const h = state.canvas.height;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createCanvasRenderTarget(w, h);
+    pipeline.sceneTarget = createCanvasRenderTarget(state.surface.creator, w, h);
   } else {
     resizeCanvasRenderTarget(pipeline.sceneTarget, w, h);
   }
@@ -64,19 +65,19 @@ export function beginCanvasRenderEffectPipeline(state: CanvasRenderState, pipeli
 }
 
 export function createCanvasRenderEffectPipeline(
-  _state: CanvasRenderState,
+  state: CanvasRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): CanvasRenderEffectPipeline {
   return {
     options: { ...options },
     sceneTarget: null,
-    pool: createCanvasRenderTargetPool(),
+    pool: createCanvasRenderTargetPool(state.surface.creator),
     lutCache: createColorLutCache(),
   };
 }
 
-export function createCanvasRenderTargetPool(): CanvasRenderTargetPool {
-  return { free: [], inUse: [] };
+export function createCanvasRenderTargetPool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTargetPool {
+  return { creator, free: [], inUse: [] };
 }
 
 export function destroyCanvasRenderEffectPipeline(

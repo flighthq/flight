@@ -2,7 +2,23 @@ import type { CanvasRenderState } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { applyCanvasBlendMode, enableCanvasBlendMode } from './canvasMaterials';
-import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
+import { createCanvasPipeline, createEmptyCanvasRegistries } from './canvasPipeline';
+import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderSurface } from './canvasRenderSurface';
+import {
+  canvasTestSurfaceCreator,
+  createCanvasRenderState,
+  createCanvasTextureResolvers,
+  getCanvasRenderStateRuntime,
+} from './canvasTestSupport';
+
+function createBlendlessState(canvas: HTMLCanvasElement): CanvasRenderState {
+  return createExplicitCanvasRenderState(
+    createCanvasRenderSurface(canvasTestSurfaceCreator, canvas),
+    createCanvasPipeline(createEmptyCanvasRegistries()),
+    createCanvasTextureResolvers(),
+  );
+}
 
 describe('applyCanvasBlendMode', () => {
   let canvas: HTMLCanvasElement;
@@ -69,7 +85,7 @@ describe('applyCanvasBlendMode', () => {
 describe('enableCanvasBlendMode', () => {
   it('wires applyBlendMode onto the state', () => {
     const canvas = document.createElement('canvas');
-    const s = createCanvasRenderState(canvas);
+    const s = createBlendlessState(canvas);
     expect(s.applyBlendMode).toBeNull();
     enableCanvasBlendMode(s);
     expect(s.applyBlendMode).not.toBeNull();
@@ -77,7 +93,7 @@ describe('enableCanvasBlendMode', () => {
 
   it('causes blend modes to be applied to the canvas context', () => {
     const canvas = document.createElement('canvas');
-    const s = createCanvasRenderState(canvas);
+    const s = createBlendlessState(canvas);
     enableCanvasBlendMode(s);
     s.applyBlendMode!(s, BlendMode.Multiply);
     expect(s.context.globalCompositeOperation).toBe('multiply');
