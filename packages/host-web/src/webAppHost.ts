@@ -1,4 +1,5 @@
 import { createHost } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 
 import { createWebAppCapabilities } from './webApp';
 import { webApplicationExitBackend } from './webApplicationExit';
@@ -13,4 +14,4 @@ export const webAppHost = createHost({
     loop: webLoopBackend,
     visibility: webApplicationVisibilityBackend,
   },
-});
+} as const satisfies Pick<Omit<Host, typeof EntityRuntimeKey>, 'app'>);
