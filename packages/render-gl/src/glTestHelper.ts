@@ -53,7 +53,6 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     clipForms: [],
     quadBatchWriterBlendMode: null,
     quadBatchWriterCount: 0,
-    quadBatchWriterInstanceBuffer: null,
     quadBatchWriterInstanceData: new Float32Array(13 * 256),
     quadBatchWriterTexture: null,
     quadBatchWriterSampler: null,
