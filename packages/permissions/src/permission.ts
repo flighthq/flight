@@ -34,6 +34,10 @@ export function requestPermission(host: Host, name: PermissionName): Promise<Per
   if (name === 'persistent-storage') {
     return requestStoragePersistencePermission(captureStoragePersistenceRequest(host));
   }
+  // Geolocation is delegated, not held: the capability owns the prompt mechanism and this projects its
+  // outcome. Routed above the interim guard because that guard is derived from the holdings ledger,
+  // and geolocation's row is gone.
+  if (name === 'geolocation') return requestGeolocationAccessPermission(host);
   if (!isInterimPermissionName(name)) return Promise.resolve({ reason: 'unsupported' });
 
   switch (name) {
@@ -41,8 +45,6 @@ export function requestPermission(host: Host, name: PermissionName): Promise<Per
       return requestWebMediaPermission('video');
     case 'microphone':
       return requestWebMediaPermission('audio');
-    case 'geolocation':
-      return requestWebGeolocationPermission();
     case 'midi':
       return requestWebMidiPermission();
     case 'screen-wake-lock':
@@ -216,6 +218,35 @@ function projectStoragePersistenceRequest(result: Readonly<StoragePersistenceRes
   }
 }
 
+// Projects the capability's own access outcome into permission vocabulary. `timeout` is carried
+// through as a REASON WITH NO STATE: it reports an acquisition deadline, not a decision, and
+// inventing a state from it would assert something the capability never observed. A caller that needs
+// the state queries for it.
+async function requestGeolocationAccessPermission(host: Host): Promise<PermissionRequestOutcome> {
+  const backend = host.system?.geolocation;
+  if (backend === undefined || typeof backend.promptForAccess !== 'function') {
+    return { reason: 'runtime-unavailable' };
+  }
+  let outcome;
+  try {
+    outcome = await backend.promptForAccess();
+  } catch {
+    return { reason: 'operation-failed' };
+  }
+  switch (outcome.reason) {
+    case 'granted':
+      return { reason: 'granted', state: 'granted' };
+    case 'denied':
+      return { reason: 'denied', state: 'denied' };
+    case 'dismissed':
+      return { reason: 'dismissed', state: 'prompt' };
+    case 'cleanup-failed':
+      return { reason: 'cleanup-failed', state: 'granted' };
+    default:
+      return { reason: outcome.reason };
+  }
+}
+
 function isInterimPermissionName(name: PermissionName): boolean {
   return PERMISSION_NATIVE_HOLDINGS.some(({ permissionNames }) =>
     (permissionNames as readonly string[]).includes(name),
@@ -281,26 +312,6 @@ function stopMediaStreamTracksAttemptAll(stream: Readonly<MediaStream>): boolean
   return succeeded;
 }
 
-function requestWebGeolocationPermission(): Promise<PermissionRequestOutcome> {
-  const geolocation = getWebGeolocation();
-  if (geolocation === null || typeof geolocation.getCurrentPosition !== 'function') {
-    return Promise.resolve({ reason: 'runtime-unavailable' });
-  }
-  return new Promise((resolve) => {
-    try {
-      geolocation.getCurrentPosition(
-        () => resolve({ reason: 'granted', state: 'granted' }),
-        (error) => {
-          const reason = error.code === 1 ? 'denied' : 'operation-failed';
-          resolve(reason === 'denied' ? { reason, state: 'denied' } : { reason });
-        },
-      );
-    } catch {
-      resolve({ reason: 'operation-failed' });
-    }
-  });
-}
-
 async function requestWebMidiPermission(): Promise<PermissionRequestOutcome> {
   if (typeof navigator === 'undefined') return { reason: 'runtime-unavailable' };
   const request = (navigator as Navigator & { requestMIDIAccess?: () => Promise<unknown> }).requestMIDIAccess;
@@ -342,15 +353,6 @@ async function requestWebScreenWakeLockPermission(): Promise<PermissionRequestOu
   if (failure !== null) return failure === 'denied' ? { reason: 'denied', state: 'denied' } : { reason: failure };
   if (cleanupFailed) return { reason: 'cleanup-failed', state: 'granted' };
   return { reason: 'granted', state: 'granted' };
-}
-
-function getWebGeolocation(): Geolocation | null {
-  if (typeof navigator === 'undefined') return null;
-  try {
-    return navigator.geolocation ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function getWebMediaDevices(): MediaDevices | null {
