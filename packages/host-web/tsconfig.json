@@ -26,6 +26,7 @@
     { "path": "../lifecycle" },
     { "path": "../media" },
     { "path": "../menu" },
+    { "path": "../midi" },
     { "path": "../notification" },
     { "path": "../platform" },
     { "path": "../power" },

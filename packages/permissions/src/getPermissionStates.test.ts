@@ -67,6 +67,56 @@ describe('getPermissionStates', () => {
     expect(events.slice(0, 2)).toEqual(['capture:notification', 'capture:web-query']);
   });
 
+  it('captures the MIDI permission owner exactly once and keeps repeats pinned to it', async () => {
+    const events: string[] = [];
+    const second = {
+      async getPermission() {
+        events.push('work:second');
+        return { reason: 'ok' as const, state: 'denied' as const };
+      },
+    };
+    const first = {
+      async getPermission() {
+        events.push('work:first');
+        active = second;
+        return { reason: 'ok' as const, state: 'granted' as const };
+      },
+    };
+    let active = first;
+    let midiOwnerReads = 0;
+    const midi: object = {};
+    Object.defineProperty(midi, 'permission', {
+      get() {
+        midiOwnerReads += 1;
+        events.push('capture:midi');
+        return active;
+      },
+    });
+    Object.defineProperty(midi, 'access', {
+      get() {
+        throw new Error('batch permission query acquired MIDI access');
+      },
+    });
+    vi.stubGlobal(
+      'navigator',
+      new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('batch MIDI query resolved ambient Web');
+          },
+        },
+      ),
+    );
+
+    await expect(getPermissionStates(hostWithGroups({}, midi), ['midi', 'midi'])).resolves.toEqual([
+      { reason: 'ok', state: 'granted' },
+      { reason: 'ok', state: 'granted' },
+    ]);
+    expect(midiOwnerReads).toBe(1);
+    expect(events).toEqual(['capture:midi', 'work:first', 'work:first']);
+  });
+
   it('keeps input order and repeated entries when work resolves out of order', async () => {
     const resolvers: Array<(state: { state: string }) => void> = [];
     vi.stubGlobal('navigator', {
@@ -162,6 +212,10 @@ describe('getPermissionStates', () => {
 });
 
 function hostWithNotificationGroup(notification: object): Host {
+  return hostWithGroups(notification, {});
+}
+
+function hostWithGroups(notification: object, midi: object): Host {
   return {
     [EntityRuntimeKey]: undefined,
     accessibility: {},
@@ -173,6 +227,7 @@ function hostWithNotificationGroup(notification: object): Host {
     input: {},
     media: {},
     menu: {},
+    midi,
     net: {},
     notification,
     share: {},

@@ -76,6 +76,34 @@ describe('getPermissionState', () => {
     await expect(getPermissionState(host, 'persistent-storage')).resolves.toEqual({ reason: 'unsupported' });
   });
 
+  it('projects MIDI from only Host.midi.permission without touching Web globals or access', async () => {
+    const getPermission = vi.fn(async () => ({ reason: 'ok' as const, state: 'prompt' as const }));
+    const midi: object = {};
+    Object.defineProperty(midi, 'access', {
+      get() {
+        throw new Error('a MIDI permission query acquired access');
+      },
+    });
+    Object.defineProperty(midi, 'permission', { value: { getPermission } });
+    vi.stubGlobal(
+      'navigator',
+      new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('a MIDI permission query resolved an ambient Web owner');
+          },
+        },
+      ),
+    );
+
+    await expect(getPermissionState(hostWithMidiGroup(midi), 'midi')).resolves.toEqual({
+      reason: 'ok',
+      state: 'prompt',
+    });
+    expect(getPermission).toHaveBeenCalledOnce();
+  });
+
   it('requires an explicit Host at the caller boundary', () => {
     expect(ambientPermissionQueryMustNotCompile).toBeTypeOf('function');
   });
@@ -134,6 +162,7 @@ function notificationHost(permission: object | null): Host {
     input: {},
     media: {},
     menu: {},
+    midi: {},
     net: {},
     notification: permission === null ? {} : { permission },
     share: {},
@@ -144,4 +173,8 @@ function notificationHost(permission: object | null): Host {
     ui: {},
     window: {},
   } as unknown as Host;
+}
+
+function hostWithMidiGroup(midi: object): Host {
+  return { ...notificationHost(null), midi } as Host;
 }

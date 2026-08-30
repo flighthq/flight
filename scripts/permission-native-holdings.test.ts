@@ -28,22 +28,16 @@ const INITIAL_MODES = [
 ] as const;
 const AFTER_PERSISTENCE_IDS = ['media', 'geolocation', 'midi', 'wake-lock', 'clipboard', 'push'] as const;
 const AFTER_GEOLOCATION_IDS = ['media', 'midi', 'wake-lock', 'clipboard', 'push'] as const;
-const AFTER_GEOLOCATION_PERMISSION_NAMES = [
+const AFTER_MIDI_IDS = ['media', 'wake-lock', 'clipboard', 'push'] as const;
+const AFTER_MIDI_PERMISSION_NAMES = [
   'camera',
   'microphone',
-  'midi',
   'screen-wake-lock',
   'clipboard-read',
   'clipboard-write',
   'push',
 ] as const;
-const AFTER_GEOLOCATION_MODES = [
-  'query-and-request',
-  'query-and-request',
-  'query-and-request',
-  'query-only',
-  'query-only',
-] as const;
+const AFTER_MIDI_MODES = ['query-and-request', 'query-and-request', 'query-only', 'query-only'] as const;
 
 // APPEND ONLY. A new checkpoint may remove ids from the preceding checkpoint; it may never add one.
 const PERMISSION_NATIVE_HOLDING_HISTORY = [
@@ -61,6 +55,10 @@ const PERMISSION_NATIVE_HOLDING_HISTORY = [
       'promptForAccess through Host.system.geolocation and holds no native geolocation trigger',
     remaining: AFTER_GEOLOCATION_IDS,
   },
+  {
+    reason: 'MIDI query moved to Host.midi.permission; access and prompting moved to the MIDI owner',
+    remaining: AFTER_MIDI_IDS,
+  },
 ] as const;
 
 describe('permission native holdings', () => {
@@ -75,14 +73,12 @@ describe('permission native holdings', () => {
   });
 
   it('retains exactly the undrained holdings and names every future claiming domain', () => {
-    expect(PERMISSION_NATIVE_HOLDINGS.map(({ id }) => id)).toEqual(AFTER_GEOLOCATION_IDS);
-    expect(PERMISSION_NATIVE_HOLDINGS.map(({ futureClaimingDomain }) => futureClaimingDomain)).toEqual(
-      AFTER_GEOLOCATION_IDS,
-    );
+    expect(PERMISSION_NATIVE_HOLDINGS.map(({ id }) => id)).toEqual(AFTER_MIDI_IDS);
+    expect(PERMISSION_NATIVE_HOLDINGS.map(({ futureClaimingDomain }) => futureClaimingDomain)).toEqual(AFTER_MIDI_IDS);
     expect(PERMISSION_NATIVE_HOLDINGS.flatMap(({ permissionNames }) => permissionNames)).toEqual(
-      AFTER_GEOLOCATION_PERMISSION_NAMES,
+      AFTER_MIDI_PERMISSION_NAMES,
     );
-    expect(PERMISSION_NATIVE_HOLDINGS.map(({ mode }) => mode)).toEqual(AFTER_GEOLOCATION_MODES);
+    expect(PERMISSION_NATIVE_HOLDINGS.map(({ mode }) => mode)).toEqual(AFTER_MIDI_MODES);
     for (const { futureClaimingDomain, id, mode, permissionNames } of PERMISSION_NATIVE_HOLDINGS) {
       expect(futureClaimingDomain, id).toBe(id);
       expect(['query-and-request', 'query-only'], id).toContain(mode);
@@ -100,6 +96,39 @@ describe('permission native holdings', () => {
     expect(PERMISSION_NATIVE_HOLDINGS.map(({ id }) => id)).toEqual(PERMISSION_NATIVE_HOLDING_HISTORY.at(-1)?.remaining);
   });
 
+  it('partitions every initial holding and permission name exactly once after the MIDI drain', () => {
+    const remaining = PERMISSION_NATIVE_HOLDING_HISTORY.at(-1)?.remaining ?? [];
+    const remainingIds = new Set<string>(remaining);
+    const removed = INITIAL_IDS.filter((id) => !remainingIds.has(id));
+    expect(removed).toEqual(['geolocation', 'persistence', 'midi']);
+    expect(new Set([...remaining, ...removed]).size).toBe(INITIAL_IDS.length);
+    expect([...remaining, ...removed].sort()).toEqual([...INITIAL_IDS].sort());
+
+    const liveNames = PERMISSION_NATIVE_HOLDINGS.flatMap(({ permissionNames }) => permissionNames);
+    const removedPermissionNames = ['geolocation', 'persistent-storage', 'midi'] as const;
+    expect([...liveNames, ...removedPermissionNames].sort()).toEqual([...INITIAL_PERMISSION_NAMES].sort());
+    expect(new Set([...liveNames, ...removedPermissionNames]).size).toBe(INITIAL_PERMISSION_NAMES.length);
+  });
+
+  it('rejects a history mutation that re-adds MIDI after removal', () => {
+    const history = [
+      ...PERMISSION_NATIVE_HOLDING_HISTORY,
+      { reason: 'invalid re-addition', remaining: [...AFTER_MIDI_IDS, 'midi'] },
+    ];
+    expect(historyTransitionFailures(history)).toEqual(['checkpoint 4 did not shrink', 'checkpoint 4 re-added midi']);
+  });
+
+  it('rejects removing another row while its native site remains and catches a reintroduced MIDI acquisition', () => {
+    const withoutMedia = PERMISSION_NATIVE_HOLDINGS.filter(({ id }) => id !== 'media');
+    expect(nativeCoverageFailures(withoutMedia, productionPermissionSource())).toContain('media has live native sites');
+    expect(
+      nativeCoverageFailures(
+        PERMISSION_NATIVE_HOLDINGS,
+        `${productionPermissionSource()}\nnavigator.requestMIDIAccess()`,
+      ),
+    ).toContain('midi has live native sites');
+  });
+
   it('has no second native Notification permission owner anywhere in Permissions', () => {
     const source = productionPermissionSource();
     expect(source).not.toMatch(/\bNotification\s*\./u);
@@ -110,29 +139,7 @@ describe('permission native holdings', () => {
 
   it('makes every interim native trigger visible through a live holding row', () => {
     const source = productionPermissionSource();
-    const nativeSites = [
-      { holding: 'media', pattern: /\b(?:mediaDevices|getUserMedia)\b/u },
-      // Matches NATIVE REACH, not the word. The bare token `geolocation` also appears as a permission
-      // NAME, as a PermissionNativeHoldingId member, and — since the drain — in the delegation
-      // `host.system?.geolocation`, none of which is a native trigger. Testing the word would keep the
-      // row pinned forever by the very code that removed the holding. The companion
-      // directNavigatorMembers assertion below is the exact check; this is its per-row form.
-      // Each remaining live row still uses a word pattern and will need the same narrowing when it drains.
-      { holding: 'geolocation', pattern: /navigator\s*\.\s*geolocation\b|\bgetCurrentPosition\b/u },
-      {
-        holding: 'persistence',
-        pattern: /navigator\s*\.\s*storage\b|\bStorageManager\b|\.persist(?:ed)?\s*\(/u,
-      },
-      { holding: 'midi', pattern: /\b(?:requestMIDIAccess|MidiPermission)\b/u },
-      { holding: 'wake-lock', pattern: /\b(?:wakeLock|WakeLock)\b/u },
-      { holding: 'clipboard', pattern: /\bclipboard(?:-read|-write)?\b/u },
-      { holding: 'push', pattern: /\b(?:push|serviceWorker|pushManager)\b/u },
-    ] as const;
-    const activeHoldings = new Set(PERMISSION_NATIVE_HOLDINGS.map(({ id }) => id));
-
-    for (const { holding, pattern } of nativeSites) {
-      if (pattern.test(source)) expect(activeHoldings, holding).toContain(holding);
-    }
+    expect(nativeCoverageFailures(PERMISSION_NATIVE_HOLDINGS, source)).toEqual([]);
 
     const directNavigatorMembers = [
       ...source.matchAll(/\bnavigator\s*\.\s*([A-Za-z_$][\w$]*)/gu),
@@ -141,9 +148,9 @@ describe('permission native holdings', () => {
     // `geolocation` left this set when Permissions stopped holding a native geolocation trigger. The
     // set is exact on purpose: a re-added probe reappears here and fails, which is what makes the
     // drained row unable to come back quietly.
-    expect([...new Set(directNavigatorMembers)].sort()).toEqual(
-      ['mediaDevices', 'permissions', 'requestMIDIAccess', 'wakeLock'].sort(),
-    );
+    expect([...new Set(directNavigatorMembers)].sort()).toEqual(['mediaDevices', 'permissions', 'wakeLock'].sort());
+    expect(source).not.toMatch(/\b(?:MIDIAccess|MIDIInput|MIDIOptions|MIDIOutput|requestMIDIAccess)\b/u);
+    expect(source).toMatch(/case 'midi':[\s\S]{0,120}reason: 'no-request-route'/u);
   });
 
   it('has no direct persistent-storage native owner and carries the exact projection arm twice', () => {
@@ -207,4 +214,45 @@ function readProductionSources(directory: string): string {
     .sort()
     .map((file) => readFileSync(join(directory, file), 'utf8'))
     .join('\n');
+}
+
+interface HoldingLike {
+  readonly id: string;
+}
+
+interface HistoryLike {
+  readonly reason: string;
+  readonly remaining: readonly string[];
+}
+
+function historyTransitionFailures(history: readonly HistoryLike[]): string[] {
+  const failures: string[] = [];
+  for (let index = 1; index < history.length; index++) {
+    const previous = new Set(history[index - 1].remaining);
+    const current = history[index].remaining;
+    if (current.length >= previous.size) failures.push(`checkpoint ${index} did not shrink`);
+    for (const id of current) {
+      if (!previous.has(id)) failures.push(`checkpoint ${index} re-added ${id}`);
+    }
+  }
+  return failures;
+}
+
+function nativeCoverageFailures(holdings: readonly HoldingLike[], source: string): string[] {
+  const nativeSites = [
+    { holding: 'media', pattern: /\b(?:mediaDevices|getUserMedia)\b/u },
+    { holding: 'geolocation', pattern: /navigator\s*\.\s*geolocation\b|\bgetCurrentPosition\b/u },
+    {
+      holding: 'persistence',
+      pattern: /navigator\s*\.\s*storage\b|\bStorageManager\b|\.persist(?:ed)?\s*\(/u,
+    },
+    { holding: 'midi', pattern: /\brequestMIDIAccess\b/u },
+    { holding: 'wake-lock', pattern: /\b(?:wakeLock|WakeLock)\b/u },
+    { holding: 'clipboard', pattern: /\bclipboard(?:-read|-write)?\b/u },
+    { holding: 'push', pattern: /\b(?:push|serviceWorker|pushManager)\b/u },
+  ] as const;
+  const active = new Set(holdings.map(({ id }) => id));
+  return nativeSites
+    .filter(({ holding, pattern }) => pattern.test(source) && !active.has(holding))
+    .map(({ holding }) => `${holding} has live native sites`);
 }
