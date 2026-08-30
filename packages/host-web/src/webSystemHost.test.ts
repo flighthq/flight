@@ -8,7 +8,9 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-import { webDeviceBackend, webLifecycleBackend, webPlatformBackend, webSensorsBackend, webSystemHost } from './index';
+import { webDeviceBackend, webPlatformBackend, webSystemHost } from './index';
+import { webLifecycleBackend } from './webLifecycle';
+import { webSensorsBackend } from './webSensors';
 
 describe('webSystemHost', () => {
   it('is an Entity compatible with the exact Web System capabilities', () => {
