@@ -49,6 +49,7 @@ export {
   resolveGlRenderTargetAxes,
   resolveGlTexture,
   setGlRenderTransform2D,
+  standardGlBlendRealizations,
   standardGlTextureResolvers,
   uploadGlCompressedTextureContainer,
   withGlRenderTextures,

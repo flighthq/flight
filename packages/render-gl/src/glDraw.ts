@@ -1,4 +1,4 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   GlContext,
@@ -631,3 +631,10 @@ const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization]
   [BlendMode.Normal, NORMAL_BLEND],
   [BlendMode.Screen, { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' }],
 ];
+
+let _standardGlBlendRealizations = createKeyedTable<GlBlendRealization>('GlBlendRealization', 'Normal');
+for (const [mode, realization] of DEFAULT_GL_BLEND_MODES) {
+  _standardGlBlendRealizations = withRegistryTableEntry(_standardGlBlendRealizations, mode, realization);
+}
+
+export { _standardGlBlendRealizations as standardGlBlendRealizations };

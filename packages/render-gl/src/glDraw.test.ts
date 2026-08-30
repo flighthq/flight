@@ -26,6 +26,7 @@ import {
   registerDefaultGlBlendModes,
   registerGlBlendMode,
   setGlQuadMatrixFromOffset,
+  standardGlBlendRealizations,
   updateGlTexture,
   useGlProgram,
 } from './glDraw';
@@ -945,6 +946,23 @@ describe('setGlQuadMatrixFromOffset', () => {
     setGlQuadMatrixFromOffset(state, 2, 0, 0, 2, 0, 0, 5, 0);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
     expect(getGlRenderStateRuntime(state).matrixArray[6]).toBeCloseTo(-0.9);
+  });
+});
+
+describe('standardGlBlendRealizations', () => {
+  it('carries the six default fixed-function blend modes', () => {
+    expect(standardGlBlendRealizations.entries.size).toBe(6);
+    expect(standardGlBlendRealizations.entries.has(BlendMode.Add)).toBe(true);
+    expect(standardGlBlendRealizations.entries.has(BlendMode.Darken)).toBe(true);
+    expect(standardGlBlendRealizations.entries.has(BlendMode.Lighten)).toBe(true);
+    expect(standardGlBlendRealizations.entries.has(BlendMode.Multiply)).toBe(true);
+    expect(standardGlBlendRealizations.entries.has(BlendMode.Normal)).toBe(true);
+    expect(standardGlBlendRealizations.entries.has(BlendMode.Screen)).toBe(true);
+  });
+
+  it('does not include advanced blend modes that need a shader pass', () => {
+    expect(standardGlBlendRealizations.entries.has(AdvancedBlendMode.Overlay)).toBe(false);
+    expect(standardGlBlendRealizations.entries.has(AdvancedBlendMode.HardLight)).toBe(false);
   });
 });
 
