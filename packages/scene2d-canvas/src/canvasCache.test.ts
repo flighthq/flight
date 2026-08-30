@@ -18,6 +18,7 @@ import {
 import {
   copyCanvasRenderStateRegistrations,
   createCanvasRenderState,
+  destroyCanvasRenderState,
   getCanvasRenderStateRuntime,
 } from './canvasRenderState';
 
@@ -82,6 +83,30 @@ describe('createCanvasCacheState', () => {
 });
 
 describe('createCanvasOffscreenRenderState', () => {
+  it('does not reach ambient document state during construction', () => {
+    const screen = makeCanvasState();
+    const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'document')!;
+    Object.defineProperty(globalThis, 'document', { configurable: true, value: undefined });
+
+    try {
+      expect(() => createCanvasOffscreenRenderState(screen)).not.toThrow();
+    } finally {
+      Object.defineProperty(globalThis, 'document', documentDescriptor);
+    }
+  });
+
+  it('releases the owned backing store when destroyed', () => {
+    const screen = makeCanvasState();
+    const offscreen = createCanvasOffscreenRenderState(screen);
+    offscreen.canvas.width = 17;
+    offscreen.canvas.height = 19;
+
+    destroyCanvasRenderState(offscreen);
+
+    expect(offscreen.canvas.width).toBe(0);
+    expect(offscreen.canvas.height).toBe(0);
+  });
+
   it('creates an independent host canvas linked to the screen target owner', () => {
     const screen = makeCanvasState();
     const offscreen = createCanvasOffscreenRenderState(screen);

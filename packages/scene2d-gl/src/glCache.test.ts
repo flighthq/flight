@@ -76,7 +76,11 @@ vi.mock('./glNode2D', async (importOriginal) => {
 });
 
 import { destroyGlRenderTarget, drawGlRenderTargetResult } from '@flighthq/render-gl/contract';
-import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import {
+  createGlRenderStateRuntime,
+  destroyGlRenderState,
+  getGlRenderStateRuntime,
+} from '@flighthq/render-gl/contract';
 
 import {
   createGlCacheState,
@@ -113,6 +117,17 @@ describe('createGlCacheState', () => {
     });
     expect((cacheState as any).gl).toBe((screen as any).gl);
     expect(getGlRenderStateRuntime(cacheState).renderProxyMap).not.toBe(getGlRenderStateRuntime(screen).renderProxyMap);
+  });
+
+  it('does not retain the context tier when an owned cache state is left undisposed', () => {
+    const screen = fakeScreen();
+    const teardown = vi.fn();
+    getGlRenderStateRuntime(screen).context.teardowns.push(teardown);
+
+    createGlCacheState(screen);
+    destroyGlRenderState(screen);
+
+    expect(teardown).toHaveBeenCalledOnce();
   });
 });
 
