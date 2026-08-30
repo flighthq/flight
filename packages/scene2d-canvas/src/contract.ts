@@ -36,4 +36,7 @@ export * from './canvasTextureWindowSource';
 export * from './canvasTransform';
 export * from './enableCanvasTextureResolverGuards';
 export * from './explainCanvasTextureResolution';
+export * from './canvasPipeline';
+export * from './canvasShapeCommandTable';
 export * from './canvasShapeRasterizer';
+export * from './scene2dCanvasPipeline';
