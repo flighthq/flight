@@ -1,12 +1,11 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { HostAppCapabilities } from '@flighthq/types/contract';
+import type { Entity, HostAppCapabilities } from '@flighthq/types/contract';
 
-type WebAppCapabilities = Required<
-  Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>
->;
+type WebAppCapabilities = Entity &
+  Required<Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>>;
 
 export function createWebAppCapabilities(): WebAppCapabilities {
-  return {
+  return createEntity({
     badge: createEntity({
       setBadgeCount: async (count: number) => {
         if (typeof navigator === 'undefined') return false;
@@ -75,5 +74,5 @@ export function createWebAppCapabilities(): WebAppCapabilities {
         } catch {}
       },
     }),
-  };
+  });
 }

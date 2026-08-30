@@ -4,30 +4,32 @@ import type {
   AppPathKind,
   DesktopOsProfile,
   ElectronApi,
+  Entity,
   HostAppCapabilities,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
 
-type ElectronCommonAppCapabilities = Required<
-  Pick<
-    HostAppCapabilities,
-    | 'allWindowsClosed'
-    | 'focus'
-    | 'locale'
-    | 'name'
-    | 'nameWrite'
-    | 'path'
-    | 'quit'
-    | 'quitRequest'
-    | 'ready'
-    | 'relaunch'
-    | 'secondInstance'
-    | 'singleInstance'
-    | 'version'
-  >
->;
+type ElectronCommonAppCapabilities = Entity &
+  Required<
+    Pick<
+      HostAppCapabilities,
+      | 'allWindowsClosed'
+      | 'focus'
+      | 'locale'
+      | 'name'
+      | 'nameWrite'
+      | 'path'
+      | 'quit'
+      | 'quitRequest'
+      | 'ready'
+      | 'relaunch'
+      | 'secondInstance'
+      | 'singleInstance'
+      | 'version'
+    >
+  >;
 type ElectronMacosAppCapabilities = ElectronCommonAppCapabilities &
   Required<
     Pick<
@@ -77,7 +79,7 @@ export function createElectronAppCapabilities(
     app.on(event, listener);
     return () => app.removeListener(event, listener);
   };
-  const common: ElectronCommonAppCapabilities = {
+  const common: ElectronCommonAppCapabilities = createEntity({
     allWindowsClosed: createEntity({ subscribe: (listener: () => void) => subscribe('window-all-closed', listener) }),
     focus: createEntity({ focus: () => app.focus() }),
     locale: createEntity({
@@ -114,12 +116,12 @@ export function createElectronAppCapabilities(
       requestSingleInstanceLock: () => app.requestSingleInstanceLock(),
     }),
     version: createEntity({ getVersion: () => app.getVersion() }),
-  };
+  });
 
   if (profile === 'macos') {
     const dock = app.dock;
     if (dock === undefined) throw new Error('Electron macOS app capabilities require app.dock');
-    return {
+    return createEntity({
       ...common,
       activate: createEntity({ subscribe: (listener: () => void) => subscribe('activate', listener) }),
       activationPolicy: createEntity({
@@ -145,22 +147,22 @@ export function createElectronAppCapabilities(
       hide: createEntity({ hideApp: () => app.hide() }),
       recentDocuments: createElectronRecentDocumentsBackend(electron),
       show: createEntity({ showApp: () => app.show() }),
-    };
+    });
   }
 
   if (profile === 'windows') {
-    return {
+    return createEntity({
       ...common,
       loginItem: createElectronLoginItemBackend(electron),
       recentDocuments: createElectronRecentDocumentsBackend(electron),
       userModelId: createEntity({ setUserModelId: (id: string) => app.setAppUserModelId(id) }),
-    };
+    });
   }
 
-  return {
+  return createEntity({
     ...common,
     badge: createEntity({ setBadgeCount: async (count: number) => app.setBadgeCount(count) }),
-  };
+  });
 }
 
 function createElectronLoginItemBackend(electron: ElectronApi) {

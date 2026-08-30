@@ -73,6 +73,7 @@ describe('createElectronAppCapabilities', () => {
   it('publishes common application identity, control, and event slots on every profile', async () => {
     const fake = fakeElectron();
     const app = createElectronAppCapabilities(fake.electron, 'linux');
+    expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual([
       'allWindowsClosed',
       'badge',

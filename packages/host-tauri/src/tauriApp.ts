@@ -1,9 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { HostAppCapabilities, TauriApi } from '@flighthq/types/contract';
+import type { Entity, HostAppCapabilities, TauriApi } from '@flighthq/types/contract';
 
-export type TauriAppCapabilities = Required<
-  Pick<HostAppCapabilities, 'hide' | 'locale' | 'name' | 'quit' | 'relaunch' | 'show' | 'version'>
->;
+export type TauriAppCapabilities = Entity &
+  Required<Pick<HostAppCapabilities, 'hide' | 'locale' | 'name' | 'quit' | 'relaunch' | 'show' | 'version'>>;
 
 export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilities {
   let locale = '';
@@ -21,7 +20,7 @@ export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilitie
     .locale()
     .then((value) => (locale = value ?? ''))
     .catch(() => {});
-  return {
+  return createEntity({
     locale: createEntity({
       getLocale: () => locale,
       getPreferredSystemLanguages: () => (locale === '' ? [] : [locale]),
@@ -33,5 +32,5 @@ export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilitie
     relaunch: createEntity({ relaunch: () => void tauri.process.relaunch().catch(() => {}) }),
     show: createEntity({ showApp: () => void tauri.app.show().catch(() => {}) }),
     version: createEntity({ getVersion: () => version }),
-  };
+  });
 }

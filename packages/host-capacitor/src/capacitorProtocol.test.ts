@@ -26,6 +26,7 @@ describe('createCapacitorProtocolCapabilities', () => {
       },
     } as unknown as CapacitorApi;
     const protocol = createCapacitorProtocolCapabilities(capacitor);
+    expect(EntityRuntimeKey in protocol).toBe(true);
     expect(Object.keys(protocol)).toEqual(['open']);
     expect(EntityRuntimeKey in protocol.open).toBe(true);
     let url = '';

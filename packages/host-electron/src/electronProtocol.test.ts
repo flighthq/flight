@@ -31,6 +31,7 @@ function fakeElectron() {
 describe('createElectronProtocolCapabilities', () => {
   it('publishes five exact Entity-backed protocol slots', () => {
     const protocol = createElectronProtocolCapabilities(fakeElectron().electron);
+    expect(EntityRuntimeKey in protocol).toBe(true);
     expect(Object.keys(protocol).sort()).toEqual([
       'default',
       'open',
