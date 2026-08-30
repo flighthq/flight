@@ -3,16 +3,16 @@
 // (Electron/Tauri) reports every attached display. Enumeration writes into caller-owned `out` arrays
 // and objects so hot paths allocate nothing.
 
+import type { Entity } from './Entity';
 import type { ScreenChangeEvent } from './ScreenChangeEvent';
 import type { ScreenColorSpace } from './ScreenColorSpace';
-import type { ScreenMode } from './ScreenMode';
 import type { ScreenOrientation } from './ScreenOrientation';
 
 // A single display's geometry in OS virtual-desktop coordinates. work* excludes OS chrome (taskbar,
 // menu bar); scaleFactor is the device-pixel ratio. The web reports one primary screen. Fields the
 // host cannot supply carry sentinels: numeric metrics are -1, label is '', and touchSupport is
 // 'unknown'.
-export interface ScreenInfo {
+export interface ScreenInfo extends Entity {
   id: number;
   x: number;
   y: number;
@@ -57,27 +57,25 @@ export interface ScreenInfo {
 // entirely, which is the absence-of-an-export ruling, so there is nothing for a fourth state to mean.
 export type ScreenPermissionState = 'denied' | 'granted' | 'prompt';
 
-export interface ScreenBackend {
+export interface ScreenQueryBackend extends Entity {
+  destroy?(): void;
   getScreens(out: ScreenInfo[]): ScreenInfo[];
   getPrimaryScreen(out: ScreenInfo): ScreenInfo;
-  // Registers a listener invoked on any display/work-area/orientation change; returns an unsubscribe.
-  subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void): () => void;
-  // Fills `out` with the cursor position in virtual-desktop coordinates and returns it.
   getCursorPosition(out: { x: number; y: number }): { x: number; y: number };
-  // Fills `out` with the available display modes for `screen`. Optional: hosts that cannot enumerate
-  // modes omit it, and callers fall back to a synthetic single mode.
-  getModes?(screen: Readonly<ScreenInfo>, out: ScreenMode[]): ScreenMode[];
-  // Resolves the window-management permission state. Optional: a host with no permission concept omits
-  // it and callers fall back to `'prompt'`, which is the same answer the web path gives when the
-  // Permissions API is absent — so omission and "not yet asked" stay one indistinguishable state on
-  // purpose, rather than inventing a fourth that callers would have to handle.
-  queryWindowManagementPermission?(): Promise<ScreenPermissionState>;
-  // Registers a listener for window-management permission changes and returns an unsubscribe. Optional
-  // for the same reason; omitting it yields a no-op unsubscribe rather than a thrown call.
-  subscribeWindowManagementPermission?(listener: (state: ScreenPermissionState) => void): () => void;
 }
 
-// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
-// roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot.
-export type ScreenOperation = keyof ScreenBackend;
+export interface ScreenChangeBackend extends Entity {
+  destroy?(): void;
+  subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void): () => void;
+}
+
+export interface ScreenDetailsBackend extends Entity {
+  destroy?(): void;
+  queryPermission(): Promise<ScreenPermissionState>;
+  request(): Promise<boolean>;
+}
+
+export interface ScreenPermissionChangeBackend extends Entity {
+  destroy?(): void;
+  subscribe(listener: (state: ScreenPermissionState) => void): () => void;
+}
