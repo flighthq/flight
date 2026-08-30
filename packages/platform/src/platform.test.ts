@@ -1,10 +1,9 @@
-import type { PlatformBackend, PlatformInfo } from '@flighthq/types/contract';
+import type { HasSystemPlatform, PlatformBackend, PlatformInfo } from '@flighthq/types/contract';
 
+import * as platformContract from './platform';
 import {
   comparePlatformVersions,
   createPlatformInfo,
-  createWebPlatformBackend,
-  getPlatformBackend,
   getPlatformEngine,
   getPlatformInfo,
   getPlatformKind,
@@ -16,11 +15,6 @@ import {
   isPlatformTouch,
   isPlatformVersionAtLeast,
   isPlatformWeb,
-  setPlatformBackend,
-  explainPlatformBackend,
-  installPlatformHostBackend,
-  observePlatformHostResult,
-  resetPlatformBackendForTest,
 } from './platform';
 
 function fakeBackend(info: Partial<PlatformInfo>): PlatformBackend {
@@ -32,7 +26,9 @@ function fakeBackend(info: Partial<PlatformInfo>): PlatformBackend {
   };
 }
 
-afterEach(() => setPlatformBackend(null));
+function fakeHost(info: Partial<PlatformInfo>): HasSystemPlatform {
+  return { system: { platform: fakeBackend(info) } };
+}
 
 describe('comparePlatformVersions', () => {
   it('returns 0 for identical strings', () => {
@@ -92,571 +88,157 @@ describe('createPlatformInfo', () => {
   });
 });
 
-describe('createWebPlatformBackend', () => {
-  it('produces a backend that fills the out info', () => {
-    const out = createPlatformInfo();
-    const result = createWebPlatformBackend().getInfo(out);
-    expect(result).toBe(out);
-    expect(typeof result.name).toBe('string');
-  });
-
-  it('sets engine to a known canonical value', () => {
-    const out = createPlatformInfo();
-    createWebPlatformBackend().getInfo(out);
-    expect(['blink', 'gecko', 'webkit', 'unknown']).toContain(out.engine);
-  });
-
-  it('sets runtime to a known canonical value', () => {
-    const out = createPlatformInfo();
-    createWebPlatformBackend().getInfo(out);
-    expect(['web', 'electron', 'tauri', 'capacitor', 'native', 'unknown']).toContain(out.runtime);
-  });
-
-  it('sets kind to a known canonical value', () => {
-    const out = createPlatformInfo();
-    createWebPlatformBackend().getInfo(out);
-    expect(['desktop', 'mobile', 'web', 'unknown']).toContain(out.kind);
-  });
-
-  it('sets name to a known canonical value', () => {
-    const out = createPlatformInfo();
-    createWebPlatformBackend().getInfo(out);
-    expect(['web', 'windows', 'macos', 'linux', 'ios', 'android', 'unknown']).toContain(out.name);
-  });
-
-  it('sets endianness to a known canonical value', () => {
-    const out = createPlatformInfo();
-    createWebPlatformBackend().getInfo(out);
-    expect(['little', 'big', 'unknown']).toContain(out.endianness);
-  });
-
-  it('sets pointerWidth to a known canonical value', () => {
-    const out = createPlatformInfo();
-    createWebPlatformBackend().getInfo(out);
-    expect([-1, 32, 64]).toContain(out.pointerWidth);
-  });
-
-  it('sets osBuild, distro, distroVersion to empty string on web', () => {
-    const out = createPlatformInfo();
-    createWebPlatformBackend().getInfo(out);
-    expect(out.osBuild).toBe('');
-    expect(out.distro).toBe('');
-    expect(out.distroVersion).toBe('');
-  });
-});
-
-describe('explainPlatformBackend', () => {
-  afterEach(() => resetPlatformBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetPlatformBackendForTest();
-    const explanation = explainPlatformBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setPlatformBackend(fakeBackend({}));
-    expect(explainPlatformBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installPlatformHostBackend(fakeBackend({}));
-    expect(explainPlatformBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installPlatformHostBackend(fakeBackend({}));
-    installPlatformHostBackend(fakeBackend({}));
-    expect(explainPlatformBackend().conflict).toBe(true);
-  });
-});
-
-describe('getPlatformBackend', () => {
-  it('falls back to a web backend when none is registered', () => {
-    expect(getPlatformBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend({ kind: 'desktop', name: 'windows' });
-    setPlatformBackend(backend);
-    expect(getPlatformBackend()).toBe(backend);
-  });
-});
-
 describe('getPlatformEngine', () => {
-  it('returns the engine from the active backend', () => {
-    setPlatformBackend(fakeBackend({ engine: 'blink' }));
-    expect(getPlatformEngine()).toBe('blink');
+  it('returns the engine from the host backend', () => {
+    expect(getPlatformEngine(fakeHost({ engine: 'blink' }))).toBe('blink');
   });
 
   it('returns gecko when set', () => {
-    setPlatformBackend(fakeBackend({ engine: 'gecko' }));
-    expect(getPlatformEngine()).toBe('gecko');
+    expect(getPlatformEngine(fakeHost({ engine: 'gecko' }))).toBe('gecko');
   });
 
   it('returns webkit when set', () => {
-    setPlatformBackend(fakeBackend({ engine: 'webkit' }));
-    expect(getPlatformEngine()).toBe('webkit');
+    expect(getPlatformEngine(fakeHost({ engine: 'webkit' }))).toBe('webkit');
   });
 
   it('returns unknown for native backends', () => {
-    setPlatformBackend(fakeBackend({ engine: 'unknown' }));
-    expect(getPlatformEngine()).toBe('unknown');
+    expect(getPlatformEngine(fakeHost({ engine: 'unknown' }))).toBe('unknown');
   });
 });
 
 describe('getPlatformInfo', () => {
   it('fills and returns the out parameter', () => {
-    setPlatformBackend(fakeBackend({ arch: 'arm64', kind: 'mobile', name: 'ios' }));
+    const host = fakeHost({ arch: 'arm64', kind: 'mobile', name: 'ios' });
     const out = createPlatformInfo();
-    expect(getPlatformInfo(out)).toBe(out);
+    expect(getPlatformInfo(host, out)).toBe(out);
     expect(out.name).toBe('ios');
     expect(out.arch).toBe('arm64');
   });
 });
 
 describe('getPlatformKind', () => {
-  it('returns the active backend kind', () => {
-    setPlatformBackend(fakeBackend({ kind: 'desktop' }));
-    expect(getPlatformKind()).toBe('desktop');
+  it('returns the host backend kind', () => {
+    expect(getPlatformKind(fakeHost({ kind: 'desktop' }))).toBe('desktop');
   });
 });
 
 describe('getPlatformName', () => {
-  it('returns the active backend name', () => {
-    setPlatformBackend(fakeBackend({ name: 'macos' }));
-    expect(getPlatformName()).toBe('macos');
+  it('returns the host backend name', () => {
+    expect(getPlatformName(fakeHost({ name: 'macos' }))).toBe('macos');
   });
 });
 
 describe('getPlatformRuntime', () => {
   it('returns web when no host shell is detected', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'web' }));
-    expect(getPlatformRuntime()).toBe('web');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'web' }))).toBe('web');
   });
 
   it('returns electron when set', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'electron' }));
-    expect(getPlatformRuntime()).toBe('electron');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'electron' }))).toBe('electron');
   });
 
   it('returns tauri when set', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'tauri' }));
-    expect(getPlatformRuntime()).toBe('tauri');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'tauri' }))).toBe('tauri');
   });
 
   it('returns capacitor when set', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'capacitor' }));
-    expect(getPlatformRuntime()).toBe('capacitor');
+    expect(getPlatformRuntime(fakeHost({ runtime: 'capacitor' }))).toBe('capacitor');
   });
 
   it('returns native when set by a native backend', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'native' }));
-    expect(getPlatformRuntime()).toBe('native');
-  });
-});
-
-describe('installPlatformHostBackend', () => {
-  afterEach(() => resetPlatformBackendForTest());
-
-  it('installs a host backend that getPlatformBackend returns', () => {
-    const backend = fakeBackend({});
-    installPlatformHostBackend(backend);
-    expect(getPlatformBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend({});
-    const second = fakeBackend({});
-    installPlatformHostBackend(first);
-    installPlatformHostBackend(second);
-    expect(getPlatformBackend()).toBe(first);
-    expect(explainPlatformBackend().conflict).toBe(true);
+    expect(getPlatformRuntime(fakeHost({ runtime: 'native' }))).toBe('native');
   });
 });
 
 describe('isPlatformDesktop', () => {
   it('is true only for desktop kind', () => {
-    setPlatformBackend(fakeBackend({ kind: 'desktop' }));
-    expect(isPlatformDesktop()).toBe(true);
-    setPlatformBackend(fakeBackend({ kind: 'web' }));
-    expect(isPlatformDesktop()).toBe(false);
+    expect(isPlatformDesktop(fakeHost({ kind: 'desktop' }))).toBe(true);
+    expect(isPlatformDesktop(fakeHost({ kind: 'web' }))).toBe(false);
   });
 });
 
 describe('isPlatformMobile', () => {
   it('is true only for mobile kind', () => {
-    setPlatformBackend(fakeBackend({ kind: 'mobile' }));
-    expect(isPlatformMobile()).toBe(true);
+    expect(isPlatformMobile(fakeHost({ kind: 'mobile' }))).toBe(true);
   });
 });
 
 describe('isPlatformNative', () => {
   it('is true for electron runtime', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'electron' }));
-    expect(isPlatformNative()).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'electron' }))).toBe(true);
   });
 
   it('is true for tauri runtime', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'tauri' }));
-    expect(isPlatformNative()).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'tauri' }))).toBe(true);
   });
 
   it('is true for capacitor runtime', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'capacitor' }));
-    expect(isPlatformNative()).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'capacitor' }))).toBe(true);
   });
 
   it('is true for native runtime', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'native' }));
-    expect(isPlatformNative()).toBe(true);
+    expect(isPlatformNative(fakeHost({ runtime: 'native' }))).toBe(true);
   });
 
   it('is false for web runtime', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'web' }));
-    expect(isPlatformNative()).toBe(false);
+    expect(isPlatformNative(fakeHost({ runtime: 'web' }))).toBe(false);
   });
 
   it('is false for unknown runtime', () => {
-    setPlatformBackend(fakeBackend({ runtime: 'unknown' }));
-    expect(isPlatformNative()).toBe(false);
+    expect(isPlatformNative(fakeHost({ runtime: 'unknown' }))).toBe(false);
   });
 });
 
 describe('isPlatformTouch', () => {
   it('reflects the backend isTouch flag', () => {
-    setPlatformBackend(fakeBackend({ isTouch: true }));
-    expect(isPlatformTouch()).toBe(true);
+    expect(isPlatformTouch(fakeHost({ isTouch: true }))).toBe(true);
   });
 });
 
 describe('isPlatformVersionAtLeast', () => {
   it('is true when version equals minimum', () => {
-    setPlatformBackend(fakeBackend({ version: '14.0' }));
-    expect(isPlatformVersionAtLeast('14.0')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '14.0' }), '14.0')).toBe(true);
   });
 
   it('is true when version exceeds minimum', () => {
-    setPlatformBackend(fakeBackend({ version: '15.0' }));
-    expect(isPlatformVersionAtLeast('14.0')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '15.0' }), '14.0')).toBe(true);
   });
 
   it('is false when version is below minimum', () => {
-    setPlatformBackend(fakeBackend({ version: '13.0' }));
-    expect(isPlatformVersionAtLeast('14.0')).toBe(false);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '13.0' }), '14.0')).toBe(false);
   });
 
   it('is false when version is empty (unknown)', () => {
-    setPlatformBackend(fakeBackend({ version: '' }));
-    expect(isPlatformVersionAtLeast('1.0')).toBe(false);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '' }), '1.0')).toBe(false);
   });
 
   it('handles patch-level comparison', () => {
-    setPlatformBackend(fakeBackend({ version: '10.15.7' }));
-    expect(isPlatformVersionAtLeast('10.15.6')).toBe(true);
-    expect(isPlatformVersionAtLeast('10.15.7')).toBe(true);
-    expect(isPlatformVersionAtLeast('10.15.8')).toBe(false);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }), '10.15.6')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }), '10.15.7')).toBe(true);
+    expect(isPlatformVersionAtLeast(fakeHost({ version: '10.15.7' }), '10.15.8')).toBe(false);
   });
 });
 
 describe('isPlatformWeb', () => {
   it('is true only for web kind', () => {
-    setPlatformBackend(fakeBackend({ kind: 'web' }));
-    expect(isPlatformWeb()).toBe(true);
+    expect(isPlatformWeb(fakeHost({ kind: 'web' }))).toBe(true);
   });
 });
 
-describe('observePlatformHostResult', () => {
-  afterEach(() => resetPlatformBackendForTest());
-
-  it('records a successful observation', () => {
-    installPlatformHostBackend(fakeBackend({}));
-    observePlatformHostResult('getInfo', true);
-    const explanation = explainPlatformBackend();
-    expect(explanation.operation).toBe('getInfo');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installPlatformHostBackend(fakeBackend({}));
-    observePlatformHostResult('getInfo', false);
-    expect(explainPlatformBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-describe('resetPlatformBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setPlatformBackend(fakeBackend({}));
-    installPlatformHostBackend(fakeBackend({}));
-    observePlatformHostResult('getInfo', true);
-    resetPlatformBackendForTest();
-    expect(explainPlatformBackend().layer).toBe('host-not-enabled');
-    expect(explainPlatformBackend().conflict).toBe(false);
-    expect(explainPlatformBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('setPlatformBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setPlatformBackend(fakeBackend({ name: 'linux' }));
-    setPlatformBackend(null);
-    expect(getPlatformBackend()).not.toBeNull();
-  });
-});
-
-// Web backend UA-detection tests — use the internal createWebPlatformBackend to exercise detection
-// heuristics under controlled UA strings. These run in jsdom which may have its own navigator.
-describe('web backend UA detection', () => {
-  // Helper: temporarily replace navigator.userAgent for a block (jsdom only).
-  function withUserAgent(ua: string, fn: () => void): void {
-    const original = navigator.userAgent;
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: ua });
-    try {
-      fn();
-    } finally {
-      Object.defineProperty(navigator, 'userAgent', { configurable: true, value: original });
-    }
-  }
-
-  describe('arch detection', () => {
-    it('detects arm64 from aarch64', () => {
-      withUserAgent('Mozilla/5.0 (Linux; aarch64) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.arch).toBe('arm64');
-      });
-    });
-
-    it('detects arm64 from arm64 token', () => {
-      withUserAgent('Mozilla/5.0 (iPhone; CPU arm64)', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.arch).toBe('arm64');
-      });
-    });
-
-    it('detects x64 from Win64', () => {
-      withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.arch).toBe('x64');
-      });
-    });
-
-    it('detects x64 from WOW64', () => {
-      withUserAgent('Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.arch).toBe('x64');
-      });
-    });
-
-    it('returns empty string when arch is undetectable', () => {
-      withUserAgent('Mozilla/5.0 (X11; Linux) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.arch).toBe('');
-      });
-    });
-  });
-
-  describe('canonical token normalization', () => {
-    const KNOWN_NAMES = ['web', 'windows', 'macos', 'linux', 'ios', 'android', 'unknown'];
-    const KNOWN_KINDS = ['desktop', 'mobile', 'web', 'unknown'];
-    const KNOWN_RUNTIMES = ['web', 'electron', 'tauri', 'capacitor', 'native', 'unknown'];
-    const KNOWN_ENGINES = ['blink', 'gecko', 'webkit', 'unknown'];
-    const KNOWN_ENDIANNESSES = ['little', 'big', 'unknown'];
-    const KNOWN_POINTER_WIDTHS = [-1, 32, 64];
-
-    const TEST_UAS = [
-      // Windows Chrome
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      // macOS Safari
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
-      // Firefox
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
-      // iOS Safari
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15',
-      // Android Chrome
-      'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+describe('R3 boundary', () => {
+  it('exports no ambient-state API (setPlatformBackend, getPlatformBackend, etc.)', () => {
+    const exports = Object.keys(platformContract);
+    const deletedSymbols = [
+      'createWebPlatformBackend',
+      'explainPlatformBackend',
+      'getPlatformBackend',
+      'installPlatformHostBackend',
+      'observePlatformHostResult',
+      'resetPlatformBackendForTest',
+      'setPlatformBackend',
     ];
-
-    for (const ua of TEST_UAS) {
-      it(`only emits known canonical tokens for UA: ${ua.slice(0, 60)}…`, () => {
-        withUserAgent(ua, () => {
-          const out = createPlatformInfo();
-          createWebPlatformBackend().getInfo(out);
-          expect(KNOWN_NAMES).toContain(out.name);
-          expect(KNOWN_KINDS).toContain(out.kind);
-          expect(KNOWN_RUNTIMES).toContain(out.runtime);
-          expect(KNOWN_ENGINES).toContain(out.engine);
-          expect(KNOWN_ENDIANNESSES).toContain(out.endianness);
-          expect(KNOWN_POINTER_WIDTHS).toContain(out.pointerWidth);
-          expect(typeof out.version).toBe('string');
-          expect(typeof out.engineVersion).toBe('string');
-          expect(typeof out.arch).toBe('string');
-        });
-      });
+    for (const symbol of deletedSymbols) {
+      expect(exports).not.toContain(symbol);
     }
-  });
-
-  describe('endianness detection', () => {
-    it('returns a known canonical value', () => {
-      const out = createPlatformInfo();
-      createWebPlatformBackend().getInfo(out);
-      expect(['little', 'big', 'unknown']).toContain(out.endianness);
-    });
-
-    it('returns little on jsdom (x64 host)', () => {
-      // jsdom runs on Node.js on x64 hardware — always little-endian.
-      const out = createPlatformInfo();
-      createWebPlatformBackend().getInfo(out);
-      expect(out.endianness).toBe('little');
-    });
-  });
-
-  describe('engine detection', () => {
-    it('detects blink from Chrome UA', () => {
-      withUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        () => {
-          const out = createPlatformInfo();
-          createWebPlatformBackend().getInfo(out);
-          expect(out.engine).toBe('blink');
-        },
-      );
-    });
-
-    it('detects gecko from Firefox UA', () => {
-      withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.engine).toBe('gecko');
-      });
-    });
-
-    it('detects webkit from Safari UA', () => {
-      withUserAgent(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
-        () => {
-          const out = createPlatformInfo();
-          createWebPlatformBackend().getInfo(out);
-          expect(out.engine).toBe('webkit');
-        },
-      );
-    });
-  });
-
-  describe('engineVersion detection', () => {
-    it('extracts Firefox version', () => {
-      withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.engineVersion).toBe('120.0');
-      });
-    });
-
-    it('extracts Chrome version', () => {
-      withUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.109 Safari/537.36',
-        () => {
-          const out = createPlatformInfo();
-          createWebPlatformBackend().getInfo(out);
-          expect(out.engineVersion).toBe('120.0.6099.109');
-        },
-      );
-    });
-
-    it('extracts Edge version (Edg/ token)', () => {
-      withUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.133',
-        () => {
-          const out = createPlatformInfo();
-          createWebPlatformBackend().getInfo(out);
-          expect(out.engineVersion).toBe('120.0.2210.133');
-        },
-      );
-    });
-
-    it('extracts Safari version from Version/ token', () => {
-      withUserAgent(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
-        () => {
-          const out = createPlatformInfo();
-          createWebPlatformBackend().getInfo(out);
-          expect(out.engineVersion).toBe('16.0');
-        },
-      );
-    });
-  });
-
-  describe('pointerWidth detection', () => {
-    it('returns 64 for x64 arch', () => {
-      withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.pointerWidth).toBe(64);
-      });
-    });
-
-    it('returns 64 for arm64 arch', () => {
-      withUserAgent('Mozilla/5.0 (Linux; aarch64) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.pointerWidth).toBe(64);
-      });
-    });
-
-    it('returns -1 when arch is undetectable', () => {
-      withUserAgent('Mozilla/5.0 (X11; Linux) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.pointerWidth).toBe(-1);
-      });
-    });
-  });
-
-  describe('version detection', () => {
-    it('parses Windows version from NT string', () => {
-      withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.version).toBe('10.0');
-      });
-    });
-
-    it('parses macOS version with underscore separators', () => {
-      withUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.version).toBe('10.15.7');
-      });
-    });
-
-    it('parses iOS version', () => {
-      withUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.version).toBe('17.4.1');
-      });
-    });
-
-    it('parses Android version', () => {
-      withUserAgent('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.version).toBe('14');
-      });
-    });
-
-    it('returns empty string when version is undetectable', () => {
-      withUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36', () => {
-        const out = createPlatformInfo();
-        createWebPlatformBackend().getInfo(out);
-        expect(out.version).toBe('');
-      });
-    });
   });
 });

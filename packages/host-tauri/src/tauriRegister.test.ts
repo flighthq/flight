@@ -1,7 +1,7 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
+import { getPlatformName } from '@flighthq/platform/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { TauriApi } from '@flighthq/types/contract';
+import type { HasSystemPlatform, TauriApi } from '@flighthq/types/contract';
 
 import { registerTauriBackends } from './tauriRegister';
 
@@ -38,10 +38,6 @@ function fakeTauri(): TauriApi {
   } as unknown as TauriApi;
 }
 
-afterEach(() => {
-  setPlatformBackend(null);
-});
-
 describe('registerTauriBackends', () => {
   it('routes capability seams to the Tauri backends without throwing', async () => {
     const host = registerTauriBackends(fakeTauri(), 'linux');
@@ -58,7 +54,7 @@ describe('registerTauriBackends', () => {
     expect(Object.keys(host.clipboard)).toEqual(['text']);
     expect(host.connectivity).toEqual({});
     expect(host.window.open).toBeTypeOf('function');
-    expect(getPlatformName()).toBe('linux');
+    expect(getPlatformName(host as HasSystemPlatform)).toBe('linux');
     expect(await readClipboardText(host)).toBe('TAURI-TEXT');
   });
 

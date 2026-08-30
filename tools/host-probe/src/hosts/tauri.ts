@@ -1,7 +1,7 @@
 import { getAppName, getAppVersion } from '@flighthq/app/contract';
 import { registerTauriBackends } from '@flighthq/host-tauri';
 import { getPlatformName } from '@flighthq/platform/contract';
-import type { DesktopOsProfile, TauriApi } from '@flighthq/types/contract';
+import type { DesktopOsProfile, HasSystemPlatform, TauriApi } from '@flighthq/types/contract';
 import * as app from '@tauri-apps/api/app';
 import * as menu from '@tauri-apps/api/menu';
 import * as tray from '@tauri-apps/api/tray';
@@ -41,7 +41,7 @@ export async function installTauriHostProbe(before: HostProbeBackendSnapshot): P
   await waitFor(() => getAppName(host).length > 0);
   const name = getAppName(host);
   const version = getAppVersion(host);
-  const platform = getPlatformName();
+  const platform = getPlatformName(host as HasSystemPlatform);
   return {
     changedCapabilities,
     results: [

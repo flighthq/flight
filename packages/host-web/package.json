@@ -68,6 +68,7 @@
     "@flighthq/statusbar": "*",
     "@flighthq/storage": "*",
     "@flighthq/types": "*",
+    "@flighthq/useragent": "*",
     "@flighthq/video": "*",
     "@flighthq/webcam": "*"
   },

@@ -3,29 +3,23 @@ import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
+  HasSystemDevice,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
-import { DeviceFormFactorDesktop, DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
+import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
+import * as deviceContract from './device';
 import {
   createDeviceCapabilities,
   createDeviceDisplayMetrics,
   createDeviceInfo,
   createSafeAreaInsets,
-  createWebDeviceBackend,
-  enableWebSafeAreaInsets,
-  getDeviceBackend,
   getDeviceCapabilities,
   getDeviceDisplayMetrics,
   getDeviceId,
   getDeviceInfo,
   getSafeAreaInsets,
   refreshDeviceInfo,
-  setDeviceBackend,
-  explainDeviceBackend,
-  installDeviceHostBackend,
-  observeDeviceHostResult,
-  resetDeviceBackendForTest,
 } from './device';
 
 function fakeBackend(): DeviceBackend {
@@ -87,7 +81,9 @@ function fakeBackend(): DeviceBackend {
   };
 }
 
-afterEach(() => setDeviceBackend(null));
+function fakeHost(): HasSystemDevice {
+  return { system: { device: fakeBackend() } };
+}
 
 describe('createDeviceCapabilities', () => {
   it('allocates a zeroed snapshot with all false capability flags', () => {
@@ -148,148 +144,11 @@ describe('createSafeAreaInsets', () => {
   });
 });
 
-describe('createWebDeviceBackend', () => {
-  it('fills the snapshot with sentinels without throwing (jsdom)', () => {
-    const backend = createWebDeviceBackend();
-    const info = backend.getInfo(createDeviceInfo());
-    expect(info.model).toBe('');
-    expect(info.manufacturer).toBe('');
-    expect(info.marketingName).toBe('');
-    expect(info.productName).toBe('');
-    expect(info.boardName).toBe('');
-    expect(info.webViewVersion).toBe('');
-    expect(info.colorGamut).toBe('');
-    expect(info.fontScale).toBe(-1);
-    expect(info.isHdr).toBe(false);
-    expect(typeof info.totalMemory).toBe('number');
-    expect(info.availableMemory).toBe(-1);
-    expect(typeof info.cpuCores).toBe('number');
-    expect(info.isJailbroken).toBe(false);
-    expect(info.isRooted).toBe(false);
-    expect(info.osBuild).toBe('');
-    expect(typeof info.formFactor).toBe('string');
-    expect(typeof info.arch).toBe('string');
-    expect(info.platformString).toBe(navigator.userAgent);
-    expect(Array.isArray(info.supportedAbis)).toBe(true);
-    expect(info.supportedAbis.length).toBe(0);
-  });
-
-  it('returns zero safe-area insets on plain web (no CSS probe)', () => {
-    const backend = createWebDeviceBackend();
-    expect(backend.getSafeAreaInsets(createSafeAreaInsets())).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
-  });
-
-  it('getId returns a string (empty or a UUID) without throwing', () => {
-    const backend = createWebDeviceBackend();
-    const id = backend.getId();
-    expect(typeof id).toBe('string');
-  });
-
-  it('getId returns the same value on repeated calls (stable install id)', () => {
-    const backend = createWebDeviceBackend();
-    const id1 = backend.getId();
-    const id2 = backend.getId();
-    if (id1 !== '') {
-      expect(id1).toBe(id2);
-    }
-  });
-
-  it('returns display metrics with a valid pixel ratio from jsdom', () => {
-    const backend = createWebDeviceBackend();
-    const metrics = backend.getDisplayMetrics(createDeviceDisplayMetrics());
-    // jsdom exposes window.devicePixelRatio = 1 and screen.width/height
-    expect(typeof metrics.pixelRatio).toBe('number');
-    expect(typeof metrics.logicalWidth).toBe('number');
-  });
-
-  it('totalMemory converts deviceMemory GiB to bytes', () => {
-    // Patch navigator.deviceMemory to a known value
-    const nav = navigator as unknown as Record<string, unknown>;
-    const original = nav['deviceMemory'];
-    try {
-      Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 4 });
-      const backend = createWebDeviceBackend();
-      const info = backend.getInfo(createDeviceInfo());
-      expect(info.totalMemory).toBe(4 * 1024 * 1024 * 1024);
-    } finally {
-      if (original !== undefined) {
-        Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: original });
-      } else {
-        // jsdom has no deviceMemory; delete the injected one so it does not leak into a shared worker.
-        delete (navigator as unknown as Record<string, unknown>)['deviceMemory'];
-      }
-    }
-  });
-
-  it('osVersion parses Android version from UA', () => {
-    const backend = createWebDeviceBackend();
-    const result = backend.getInfo(createDeviceInfo());
-    // jsdom UA results in a string; actual parsing is covered by useragent unit tests
-    expect(typeof result.osVersion).toBe('string');
-  });
-
-  it('getCapabilities returns a capability snapshot without throwing', () => {
-    const backend = createWebDeviceBackend();
-    const caps = backend.getCapabilities(createDeviceCapabilities());
-    expect(typeof caps.hasKeyboard).toBe('boolean');
-    expect(typeof caps.hasMouse).toBe('boolean');
-    expect(caps.hasStylus).toBe(false);
-  });
-});
-
-describe('enableWebSafeAreaInsets', () => {
-  it('returns a dispose function and does not throw in jsdom', () => {
-    const dispose = enableWebSafeAreaInsets();
-    expect(typeof dispose).toBe('function');
-    dispose();
-  });
-});
-
-describe('explainDeviceBackend', () => {
-  afterEach(() => resetDeviceBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetDeviceBackendForTest();
-    const explanation = explainDeviceBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setDeviceBackend(fakeBackend());
-    expect(explainDeviceBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installDeviceHostBackend(fakeBackend());
-    expect(explainDeviceBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installDeviceHostBackend(fakeBackend());
-    installDeviceHostBackend(fakeBackend());
-    expect(explainDeviceBackend().conflict).toBe(true);
-  });
-});
-
-describe('getDeviceBackend', () => {
-  it('falls back to a web backend when none is set', () => {
-    expect(getDeviceBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setDeviceBackend(backend);
-    expect(getDeviceBackend()).toBe(backend);
-  });
-});
-
 describe('getDeviceCapabilities', () => {
-  it('fills and returns out via the active backend', () => {
-    setDeviceBackend(fakeBackend());
+  it('fills and returns out via the host backend', () => {
+    const host = fakeHost();
     const out = createDeviceCapabilities();
-    const result = getDeviceCapabilities(out);
+    const result = getDeviceCapabilities(host, out);
     expect(result).toBe(out);
     expect(out.hasKeyboard).toBe(true);
     expect(out.hasMouse).toBe(true);
@@ -298,10 +157,10 @@ describe('getDeviceCapabilities', () => {
 });
 
 describe('getDeviceDisplayMetrics', () => {
-  it('fills and returns out via the active backend', () => {
-    setDeviceBackend(fakeBackend());
+  it('fills and returns out via the host backend', () => {
+    const host = fakeHost();
     const out = createDeviceDisplayMetrics();
-    const result = getDeviceDisplayMetrics(out);
+    const result = getDeviceDisplayMetrics(host, out);
     expect(result).toBe(out);
     expect(out.colorDepth).toBe(8);
     expect(out.densityDpi).toBe(440);
@@ -314,29 +173,17 @@ describe('getDeviceDisplayMetrics', () => {
 });
 
 describe('getDeviceId', () => {
-  it('returns a string without throwing', () => {
-    expect(typeof getDeviceId()).toBe('string');
-  });
-
-  it('returns the value from a registered backend', () => {
-    setDeviceBackend(fakeBackend());
-    expect(getDeviceId()).toBe('test-device-id');
-  });
-
-  it('returns a stable value across two reads (web fallback)', () => {
-    const id1 = getDeviceId();
-    const id2 = getDeviceId();
-    if (id1 !== '') {
-      expect(id1).toBe(id2);
-    }
+  it('returns the value from the host backend', () => {
+    const host = fakeHost();
+    expect(getDeviceId(host)).toBe('test-device-id');
   });
 });
 
 describe('getDeviceInfo', () => {
-  it('fills and returns out via the active backend', () => {
-    setDeviceBackend(fakeBackend());
+  it('fills and returns out via the host backend', () => {
+    const host = fakeHost();
     const out = createDeviceInfo();
-    const result = getDeviceInfo(out);
+    const result = getDeviceInfo(host, out);
     expect(result).toBe(out);
     expect(out.arch).toBe('arm64');
     expect(out.availableMemory).toBe(3_000_000_000);
@@ -344,7 +191,7 @@ describe('getDeviceInfo', () => {
     expect(out.colorGamut).toBe('display-p3');
     expect(out.cpuCores).toBe(8);
     expect(out.fontScale).toBe(1.2);
-    expect(out.formFactor).toBe(DeviceFormFactorPhone);
+    expect(out.formFactor).toBe('Phone');
     expect(out.gpuRenderer).toBe('Adreno 650');
     expect(out.gpuVendor).toBe('Qualcomm');
     expect(out.isHdr).toBe(true);
@@ -364,66 +211,42 @@ describe('getDeviceInfo', () => {
     expect(out.totalMemory).toBe(8_000_000_000);
     expect(out.webViewVersion).toBe('120.0.6099.230');
   });
-
-  it('web backend returns Desktop formFactor for desktop UA', () => {
-    const backend = createWebDeviceBackend();
-    const info = backend.getInfo(createDeviceInfo());
-    // jsdom uses a desktop UA, so formFactor should be Desktop or Unknown
-    expect([DeviceFormFactorDesktop, DeviceFormFactorUnknown]).toContain(info.formFactor);
-  });
 });
 
 describe('getSafeAreaInsets', () => {
-  it('fills and returns out via the active backend', () => {
-    setDeviceBackend(fakeBackend());
+  it('fills and returns out via the host backend', () => {
+    const host = fakeHost();
     const out = createSafeAreaInsets();
-    const result = getSafeAreaInsets(out);
+    const result = getSafeAreaInsets(host, out);
     expect(result).toBe(out);
     expect(out.top).toBe(24);
     expect(out.bottom).toBe(16);
   });
 });
 
-describe('installDeviceHostBackend', () => {
-  afterEach(() => resetDeviceBackendForTest());
-
-  it('installs a host backend that getDeviceBackend returns', () => {
-    const backend = fakeBackend();
-    installDeviceHostBackend(backend);
-    expect(getDeviceBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installDeviceHostBackend(first);
-    installDeviceHostBackend(second);
-    expect(getDeviceBackend()).toBe(first);
-    expect(explainDeviceBackend().conflict).toBe(true);
-  });
-});
-
-describe('observeDeviceHostResult', () => {
-  afterEach(() => resetDeviceBackendForTest());
-
-  it('records a successful observation', () => {
-    installDeviceHostBackend(fakeBackend());
-    observeDeviceHostResult('getCapabilities', true);
-    const explanation = explainDeviceBackend();
-    expect(explanation.operation).toBe('getCapabilities');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installDeviceHostBackend(fakeBackend());
-    observeDeviceHostResult('getCapabilities', false);
-    expect(explainDeviceBackend().viability).toBe('runtime-api-unavailable');
+describe('R3 boundary', () => {
+  it('exports no ambient-state API (setDeviceBackend, getDeviceBackend, etc.)', () => {
+    const exports = Object.keys(deviceContract);
+    const deletedSymbols = [
+      'createWebDeviceBackend',
+      'enableWebSafeAreaInsets',
+      'explainDeviceBackend',
+      'getDeviceBackend',
+      'installDeviceHostBackend',
+      'observeDeviceHostResult',
+      'resetDeviceBackendForTest',
+      'setDeviceBackend',
+    ];
+    for (const symbol of deletedSymbols) {
+      expect(exports).not.toContain(symbol);
+    }
   });
 });
 
 describe('refreshDeviceInfo', () => {
-  it('does not throw on the default web backend', () => {
-    expect(() => refreshDeviceInfo()).not.toThrow();
+  it('does not throw on a backend without refresh', () => {
+    const host = fakeHost();
+    expect(() => refreshDeviceInfo(host)).not.toThrow();
   });
 
   it('calls refresh() on backends that expose it', () => {
@@ -434,32 +257,8 @@ describe('refreshDeviceInfo', () => {
         refreshed = true;
       },
     };
-    setDeviceBackend(backend);
-    refreshDeviceInfo();
+    const host: HasSystemDevice = { system: { device: backend } };
+    refreshDeviceInfo(host);
     expect(refreshed).toBe(true);
-  });
-});
-
-describe('resetDeviceBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setDeviceBackend(fakeBackend());
-    installDeviceHostBackend(fakeBackend());
-    observeDeviceHostResult('getCapabilities', true);
-    resetDeviceBackendForTest();
-    expect(explainDeviceBackend().layer).toBe('host-not-enabled');
-    expect(explainDeviceBackend().conflict).toBe(false);
-    expect(explainDeviceBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('setDeviceBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setDeviceBackend(fakeBackend());
-    setDeviceBackend(null);
-    expect(getDeviceBackend()).not.toBeNull();
-    // After reset, should be the web backend (not the fake)
-    const out = createDeviceInfo();
-    getDeviceInfo(out);
-    expect(out.model).toBe('');
   });
 });
