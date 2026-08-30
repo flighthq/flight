@@ -1,4 +1,5 @@
 import type { ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronIpcBackend } from './electronIpc';
 
@@ -22,6 +23,10 @@ function fakeElectron(): {
 }
 
 describe('createElectronIpcBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronIpcBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('send no-ops without a webContents target', () => {
     const { electron } = fakeElectron();
     const backend = createElectronIpcBackend(electron);

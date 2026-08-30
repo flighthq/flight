@@ -1,4 +1,5 @@
-import type { AppBackend, AppLoginItem, AppPathKind, ElectronApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AppBackend, AppLoginItem, AppPathKind, ElectronApi, Entity } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
 
@@ -6,9 +7,9 @@ import { toElectronTemplate } from './electronMenuTemplate';
 // operations no-op or return -1 where there is no dock. Subscribe methods wire an electron event
 // listener and return an unsubscribe that removes that exact handler; the wrapper adapts Electron's
 // (event, ...) argument shape to Flight's listener signature.
-export function createElectronAppBackend(electron: ElectronApi): AppBackend {
+export function createElectronAppBackend(electron: ElectronApi): AppBackend & Entity {
   const app = electron.app;
-  return {
+  return createEntity({
     addRecentDocument(path) {
       app.addRecentDocument(path);
     },
@@ -161,7 +162,7 @@ export function createElectronAppBackend(electron: ElectronApi): AppBackend {
       app.on('second-instance', handler);
       return () => app.removeListener('second-instance', handler);
     },
-  };
+  } satisfies AppBackend);
 }
 
 function toElectronPathName(kind: AppPathKind): string {

@@ -1,13 +1,14 @@
-import type { ShortcutBackend, ElectronApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ElectronApi, Entity, ShortcutBackend } from '@flighthq/types/contract';
 
 // Maps Flight's ShortcutBackend onto Electron's `globalShortcut` module. Electron's unregister returns
 // void, so it is treated as always succeeding (true) to satisfy Flight's boolean contract. Electron's
 // callback is bare; the seam synthesizes the ShortcutEvent (carrying the accelerator) Flight delivers.
 // The set of registered accelerators is tracked here since Electron exposes no enumeration.
-export function createElectronShortcutBackend(electron: ElectronApi): ShortcutBackend {
+export function createElectronShortcutBackend(electron: ElectronApi): ShortcutBackend & Entity {
   const globalShortcut = electron.globalShortcut;
   const registered = new Set<string>();
-  return {
+  return createEntity({
     getRegistered() {
       return [...registered];
     },
@@ -36,5 +37,5 @@ export function createElectronShortcutBackend(electron: ElectronApi): ShortcutBa
     isRegistered(accelerator) {
       return globalShortcut.isRegistered(accelerator);
     },
-  };
+  } satisfies ShortcutBackend);
 }

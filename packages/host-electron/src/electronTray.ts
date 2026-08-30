@@ -1,10 +1,12 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
-  TrayBackend,
-  TrayEventData,
-  TrayEventType,
   ElectronApi,
   ElectronMenu,
   ElectronTray,
+  Entity,
+  TrayBackend,
+  TrayEventData,
+  TrayEventType,
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
@@ -14,7 +16,7 @@ import { toElectronTemplate } from './electronMenuTemplate';
 // back) and a single event listener. Every tray, on creation, attaches click handlers that forward a
 // TrayEventData to whatever listener subscribe has installed, so trays created after subscribe still
 // report events. Electron's icon is required, so a missing icon becomes ''.
-export function createElectronTrayBackend(electron: ElectronApi): TrayBackend {
+export function createElectronTrayBackend(electron: ElectronApi): TrayBackend & Entity {
   const trays = new Map<number, TrayRecord>();
   let nextId = 0;
   // The single tray event listener, owned by this backend and set via subscribe.
@@ -34,7 +36,7 @@ export function createElectronTrayBackend(electron: ElectronApi): TrayBackend {
       type,
     });
   };
-  return {
+  return createEntity({
     create(options) {
       const id = nextId++;
       const tray = new electron.Tray(options.icon ?? '');
@@ -137,7 +139,7 @@ export function createElectronTrayBackend(electron: ElectronApi): TrayBackend {
         if (eventListener === listener) eventListener = null;
       };
     },
-  };
+  } satisfies TrayBackend);
 }
 
 function toBounds(tray: Readonly<ElectronTray>): { x: number; y: number; width: number; height: number } | null {

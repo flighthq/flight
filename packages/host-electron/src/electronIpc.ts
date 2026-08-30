@@ -1,11 +1,12 @@
-import type { IpcBackend, ElectronApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ElectronApi, Entity, IpcBackend } from '@flighthq/types/contract';
 
 // Maps Flight's IpcBackend onto Electron's ipcMain. This is the main-process side: it can receive
 // messages from renderers (subscribe) but cannot itself send or invoke without a webContents target,
 // so send no-ops and invoke resolves to undefined — the same inert shape the web default uses.
-export function createElectronIpcBackend(electron: ElectronApi): IpcBackend {
+export function createElectronIpcBackend(electron: ElectronApi): IpcBackend & Entity {
   const ipcMain = electron.ipcMain;
-  return {
+  return createEntity({
     send() {
       // Main-to-renderer send needs a specific webContents; out of scope for this generic backend.
     },
@@ -18,5 +19,5 @@ export function createElectronIpcBackend(electron: ElectronApi): IpcBackend {
       ipcMain.on(channel, handler);
       return () => ipcMain.removeListener(channel, handler);
     },
-  };
+  } satisfies IpcBackend);
 }

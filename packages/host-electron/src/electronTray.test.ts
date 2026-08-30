@@ -5,6 +5,7 @@ import type {
   ElectronMenuItemOptions,
   ElectronTray,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronTrayBackend } from './electronTray';
 
@@ -60,6 +61,10 @@ function fakeElectron(): {
 }
 
 describe('createElectronTrayBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronTrayBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('creates a tray with icon, tooltip, and title and returns a numeric id', () => {
     const { electron, trays } = fakeElectron();
     const backend = createElectronTrayBackend(electron);

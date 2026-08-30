@@ -1,4 +1,5 @@
-import type { StorageBackend, ElectronApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ElectronApi, Entity, StorageBackend } from '@flighthq/types/contract';
 
 // Maps Flight's StorageBackend onto a JSON file in the Electron userData directory. The file is
 // read and written synchronously to match the StorageBackend contract (localStorage is sync). All
@@ -14,7 +15,10 @@ import type { StorageBackend, ElectronApi } from '@flighthq/types/contract';
 // node-fs injection covers those" for the @flighthq/filesystem seam. This storage implementation
 // threads the fs surface through ElectronApi.fs instead, keeping host-electron node:fs-free while
 // still providing the main-process storage backend the seam requires.
-export function createElectronStorageBackend(electron: ElectronApi, fileName = 'storage.json'): StorageBackend {
+export function createElectronStorageBackend(
+  electron: ElectronApi,
+  fileName = 'storage.json',
+): StorageBackend & Entity {
   const fs = electron.fs;
   let store: Record<string, string> | null = null;
 
@@ -49,7 +53,7 @@ export function createElectronStorageBackend(electron: ElectronApi, fileName = '
     }
   }
 
-  return {
+  return createEntity({
     clear() {
       store = {};
       return save();
@@ -71,5 +75,5 @@ export function createElectronStorageBackend(electron: ElectronApi, fileName = '
       load()[key] = value;
       return save();
     },
-  };
+  } satisfies StorageBackend);
 }

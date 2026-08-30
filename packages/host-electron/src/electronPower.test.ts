@@ -1,4 +1,5 @@
 import type { PowerStatus, ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronPowerBackend } from './electronPower';
 
@@ -50,6 +51,10 @@ function fakeElectron(options: { onBatteryPower?: boolean; startId?: number }): 
 }
 
 describe('createElectronPowerBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronPowerBackend(fakeElectron({}).electron)).toBe(true);
+  });
+
   it('getStatus reports no battery level and infers charging from AC power', () => {
     const onAc = createElectronPowerBackend(fakeElectron({ onBatteryPower: false }).electron);
     const status = onAc.getStatus(emptyStatus());

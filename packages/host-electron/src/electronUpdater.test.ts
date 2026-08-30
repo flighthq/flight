@@ -1,4 +1,5 @@
 import type { ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronUpdaterBackend } from './electronUpdater';
 
@@ -37,6 +38,10 @@ function emit(listeners: Map<string, Set<(...args: unknown[]) => void>>, event: 
 }
 
 describe('createElectronUpdaterBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronUpdaterBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('drives feed URL, checks, auto-download, and quit commands', () => {
     const { electron, calls } = fakeElectron();
     const backend = createElectronUpdaterBackend(electron);

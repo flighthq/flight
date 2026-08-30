@@ -1,13 +1,14 @@
-import type { ProtocolBackend, ElectronApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ElectronApi, Entity, ProtocolBackend } from '@flighthq/types/contract';
 
 // Maps Flight's ProtocolBackend onto Electron's `app` protocol-client methods. Deep links arrive via
 // the 'open-url' event (macOs); the subscribe wrapper adapts Electron's (event, url) argument shape to
 // Flight's (url) listener and returns an unsubscribe that removes that exact handler.
-export function createElectronProtocolBackend(electron: ElectronApi): ProtocolBackend {
+export function createElectronProtocolBackend(electron: ElectronApi): ProtocolBackend & Entity {
   const app = electron.app;
   // Electron exposes no scheme enumeration, so the seam tracks what it has registered.
   const registered = new Set<string>();
-  return {
+  return createEntity({
     register(scheme) {
       const ok = app.setAsDefaultProtocolClient(scheme);
       if (ok) registered.add(scheme);
@@ -50,5 +51,5 @@ export function createElectronProtocolBackend(electron: ElectronApi): ProtocolBa
       app.on('open-url', handler);
       return () => app.removeListener('open-url', handler);
     },
-  };
+  } satisfies ProtocolBackend);
 }

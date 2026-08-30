@@ -1,4 +1,5 @@
 import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronScreenBackend } from './electronScreen';
 
@@ -40,6 +41,10 @@ function fakeElectron(): {
 }
 
 describe('createElectronScreenBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronScreenBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('fills the primary screen into out', () => {
     const { electron } = fakeElectron();
     const backend = createElectronScreenBackend(electron);
