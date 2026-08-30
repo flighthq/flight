@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/lifecycle'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder2
 ---
 
 # lifecycle — Status
@@ -38,6 +38,19 @@ the `host-*` packages on 2026-08-08. A file:line here is a claim about this tree
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-30** — Migrated to the explicit Host model. `attachAppLifecycle`, `getAppLifecycleState`,
+  `getAppLaunchKind`, `isAppActive` / `isAppBackground` / `isAppInactive`, `hasLifecycleOperation` and
+  `explainLifecycleOperation` now take `host: HasSystemLifecycle` and dispatch through
+  `host.system.lifecycle`. DELETED: `getLifecycleBackend`, `setLifecycleBackend`,
+  `installLifecycleHostBackend`, `explainLifecycleBackend`, `observeLifecycleHostResult`,
+  `resetLifecycleBackendForTest`, the `_custom ?? _host ?? _sentinel` chain and its four module
+  variables. host-web now publishes `webLifecycleBackend` as a value on `webHost.system.lifecycle`
+  instead of installing it, so `enableHostWebLifecycle` is gone too.
+  ★ The sentinel went with the resolver, which changes what `explainLifecycleOperation` MEANS:
+  `layer: 'sentinel'` now reports that THIS host's provider omits the operation, not that a
+  process-wide fallback answered for it. The old tests asserting "nothing installed" had no successor
+  state to describe and were rewritten as per-host questions.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped as **false**: "Debounce /
   coalescing policy tests … the formal invariant test is pending" — the property/fuzz battery landed
