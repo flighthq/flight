@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import {
@@ -84,8 +85,9 @@ export async function createWgpuAcquisitionFromCanvasElement(
 
 export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
   const deviceRuntime = createMinimalDeviceRuntime(device);
-  _deviceStateToRuntime.set(deviceRuntime as unknown as WgpuDeviceState, deviceRuntime);
-  return deviceRuntime as unknown as WgpuDeviceState;
+  const state = createEntity({ device }) as WgpuDeviceState;
+  state[EntityRuntimeKey] = deviceRuntime;
+  return state;
 }
 
 /**
@@ -158,9 +160,11 @@ export async function createWgpuRenderStateFromCanvasElement(
 export function createWgpuRenderStateRuntime(
   deviceStateOrSharedRuntime: WgpuDeviceState | WgpuRenderStateRuntime,
 ): WgpuRenderStateRuntime {
-  const existingDeviceRuntime = _deviceStateToRuntime.get(deviceStateOrSharedRuntime as WgpuDeviceState);
-  if (existingDeviceRuntime !== undefined) {
-    return createWgpuRenderStateRuntimeInternal(undefined, null, null, existingDeviceRuntime);
+  const entityRuntime = (deviceStateOrSharedRuntime as WgpuDeviceState)[EntityRuntimeKey] as
+    | WgpuDeviceRuntime
+    | undefined;
+  if (entityRuntime !== undefined) {
+    return createWgpuRenderStateRuntimeInternal(undefined, null, null, entityRuntime);
   }
   return createWgpuRenderStateRuntimeInternal(deviceStateOrSharedRuntime as WgpuRenderStateRuntime, null, null);
 }
@@ -420,6 +424,10 @@ export function getWgpuColorAdjustmentMaterialFeatureGuard(
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
+export function getWgpuDeviceRuntime(deviceState: Readonly<WgpuDeviceState>): WgpuDeviceRuntime {
+  return deviceState[EntityRuntimeKey] as WgpuDeviceRuntime;
+}
+
 // Resolves the package-private GPU runtime attached to a WgpuRenderState. Mutable by design: the
 // render path writes its fields every frame.
 export function getWgpuRenderStateRuntime(state: WgpuRenderState): WgpuRenderStateRuntime {
@@ -481,11 +489,6 @@ export function isWgpuSupported(): boolean {
 
 export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (device: GPUDevice) => void): void {
   getWgpuRenderStateRuntime(state).context.teardowns.push(teardown);
-}
-
-// The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
-export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition>): void {
-  getWgpuHostBackend().release(acquisition);
 }
 
 // Small-integer codes for the sampler-cache numeric key (see getWgpuSampler). Module-level so the key
@@ -566,8 +569,14 @@ type WgpuAcquisitionOwnership = {
   references: number;
 };
 
+// The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
+export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition>): void {
+  getWgpuHostBackend().release(acquisition);
+}
+
 function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
   return {
+    binding: null,
     device,
     references: 0,
     teardowns: [],
@@ -587,7 +596,6 @@ function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
 }
 
 const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();
-const _deviceStateToRuntime = new WeakMap<WgpuDeviceState, WgpuDeviceRuntime>();
 const _destroyedStates = new WeakSet<WgpuRenderState>();
 
 // Resolve the blend hook at the draw seam rather than hiding derived-state delegation behind an
