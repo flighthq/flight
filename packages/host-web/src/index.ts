@@ -23,7 +23,6 @@ export { enableHostWebLifecycle } from './webLifecycle';
 export { enableHostWebLoop } from './webLoop';
 export { enableHostWebMediaSession } from './webMediasession';
 export { enableHostWebMenu } from './webMenu';
-export { enableHostWebNotification } from './webNotification';
 export { enableHostWebPermission } from './webPermissions';
 export { enableHostWebPlatform } from './webPlatform';
 export { enableHostWebPower } from './webPower';

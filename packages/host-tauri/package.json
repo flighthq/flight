@@ -42,6 +42,7 @@
     "@flighthq/application": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/dialog": "*",
+    "@flighthq/entity": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",
     "@flighthq/platform": "*",

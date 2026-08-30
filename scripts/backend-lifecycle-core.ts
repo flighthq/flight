@@ -11,7 +11,7 @@ import { getParsedOxcSource } from './oxc-source';
 // ★ THE EXCLUSION IS DERIVED, AND IT IS MOST OF THE POPULATION. A setter can only leak a resource its
 // backend owns, and ownership is observable: the interface declares a NO-ARGUMENT teardown member
 // (`destroy()` / `dispose()`). A per-object teardown — `TrayBackend.destroy(id)`,
-// `WindowBackend.close(win)`, `NotificationBackend.closeNotification(id)` — frees one item, not the
+// `WindowBackend.close(win)`, `NotificationCloseBackend.closeNotification(id)` — frees one item, not the
 // backend, so a setter has nothing to call for it and is correctly excluded. Counting those as
 // violations would report 39 leaks where there is nothing to free.
 //

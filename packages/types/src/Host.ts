@@ -10,6 +10,7 @@ import type { BitmapReadbackBackend } from './BitmapReadbackBackend';
 import type { ClipboardBackend } from './Clipboard';
 import type { ConnectivityBackend } from './Connectivity';
 import type { DeviceBackend } from './Device';
+import type { Entity } from './Entity';
 import type { FileDialogBackend } from './FileDialogBackend';
 import type { FileSystemBackend } from './FileSystem';
 import type { FontLoadingBackend } from './FontLoadingBackend';
@@ -28,7 +29,19 @@ import type { MediaSessionBackend } from './MediaSession';
 import type { MenuBackend } from './Menu';
 import type { MessageDialogBackend } from './MessageDialogBackend';
 import type { NetBackend } from './Net';
-import type { NotificationBackend } from './Notification';
+import type {
+  NotificationActionBackend,
+  NotificationActiveListBackend,
+  NotificationClickBackend,
+  NotificationCloseBackend,
+  NotificationDeliveryBackend,
+  NotificationDismissBackend,
+  NotificationPendingListBackend,
+  NotificationReplyBackend,
+  NotificationSchedulingBackend,
+  NotificationShowBackend,
+  NotificationUpdateBackend,
+} from './Notification';
 import type { PathBooleanBackend } from './PathBooleanBackend';
 import type { PermissionBackend } from './Permission';
 import type { PlatformBackend } from './Platform';
@@ -51,7 +64,7 @@ import type { VideoCapabilityBackend } from './VideoCapabilityBackend';
 import type { WebcamBackend } from './Webcam';
 import type { WgpuHostBackend } from './WgpuHost';
 
-export interface Host {
+export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
   readonly app: HostAppCapabilities;
   readonly dialog: HostDialogCapabilities;
@@ -59,6 +72,7 @@ export interface Host {
   readonly input: HostInputCapabilities;
   readonly media: HostMediaCapabilities;
   readonly net: HostNetCapabilities;
+  readonly notification: HostNotificationCapabilities;
   readonly storage: HostStorageCapabilities;
   readonly system: HostSystemCapabilities;
   readonly text: HostTextCapabilities;
@@ -115,6 +129,20 @@ export interface HostNetCapabilities {
   readonly socket?: SocketBackend;
 }
 
+export interface HostNotificationCapabilities {
+  readonly action?: NotificationActionBackend;
+  readonly activeList?: NotificationActiveListBackend;
+  readonly click?: NotificationClickBackend;
+  readonly close?: NotificationCloseBackend;
+  readonly delivery?: NotificationDeliveryBackend;
+  readonly dismiss?: NotificationDismissBackend;
+  readonly pendingList?: NotificationPendingListBackend;
+  readonly reply?: NotificationReplyBackend;
+  readonly scheduling?: NotificationSchedulingBackend;
+  readonly show?: NotificationShowBackend;
+  readonly update?: NotificationUpdateBackend;
+}
+
 export interface HostStorageCapabilities {
   readonly fileSystem?: FileSystemBackend;
   readonly local?: StorageBackend;
@@ -143,7 +171,6 @@ export interface HostUiCapabilities {
   readonly clipboard?: ClipboardBackend;
   readonly fullscreen?: FullscreenBackend;
   readonly menu?: MenuBackend;
-  readonly notification?: NotificationBackend;
   readonly share?: ShareBackend;
   readonly shell?: ShellBackend;
   readonly statusBar?: StatusBarBackend;
@@ -262,6 +289,50 @@ export interface HasNetSocket {
   readonly net: { readonly socket: SocketBackend };
 }
 
+export interface HasNotificationAction {
+  readonly notification: { readonly action: NotificationActionBackend };
+}
+
+export interface HasNotificationActiveList {
+  readonly notification: { readonly activeList: NotificationActiveListBackend };
+}
+
+export interface HasNotificationClick {
+  readonly notification: { readonly click: NotificationClickBackend };
+}
+
+export interface HasNotificationClose {
+  readonly notification: { readonly close: NotificationCloseBackend };
+}
+
+export interface HasNotificationDelivery {
+  readonly notification: { readonly delivery: NotificationDeliveryBackend };
+}
+
+export interface HasNotificationDismiss {
+  readonly notification: { readonly dismiss: NotificationDismissBackend };
+}
+
+export interface HasNotificationPendingList {
+  readonly notification: { readonly pendingList: NotificationPendingListBackend };
+}
+
+export interface HasNotificationReply {
+  readonly notification: { readonly reply: NotificationReplyBackend };
+}
+
+export interface HasNotificationScheduling {
+  readonly notification: { readonly scheduling: NotificationSchedulingBackend };
+}
+
+export interface HasNotificationShow {
+  readonly notification: { readonly show: NotificationShowBackend };
+}
+
+export interface HasNotificationUpdate {
+  readonly notification: { readonly update: NotificationUpdateBackend };
+}
+
 export interface HasStorageFileSystem {
   readonly storage: { readonly fileSystem: FileSystemBackend };
 }
@@ -336,10 +407,6 @@ export interface HasUiFullscreenSubscription {
 
 export interface HasUiMenu {
   readonly ui: { readonly menu: MenuBackend };
-}
-
-export interface HasUiNotification {
-  readonly ui: { readonly notification: NotificationBackend };
 }
 
 export interface HasUiShare {

@@ -1,6 +1,7 @@
 import { getAppName, setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
 import { setStorageBackend } from '@flighthq/storage/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 
 import { registerElectronBackends } from './electronRegister';
@@ -51,8 +52,11 @@ afterEach(() => {
 describe('registerElectronBackends', () => {
   it('routes capability seams to the Electron backends without throwing', async () => {
     const host = registerElectronBackends(fakeElectron());
+    expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.file.openFile).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');
+    expect(host.notification.delivery.notify).toBeTypeOf('function');
+    expect(host.notification.close.closeNotification).toBeTypeOf('function');
     expect(host.window.open).toBeTypeOf('function');
     expect(getAppName()).toBe('ElectronApp');
     expect(await readClipboardText()).toBe('ELECTRON-TEXT');

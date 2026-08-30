@@ -1,8 +1,8 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { setClipboardBackend } from '@flighthq/clipboard/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { setIpcBackend } from '@flighthq/ipc/contract';
 import { setMenuBackend } from '@flighthq/menu/contract';
-import { setNotificationBackend } from '@flighthq/notification/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setPowerBackend } from '@flighthq/power/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
@@ -16,6 +16,12 @@ import type {
   ElectronBackendOptions,
   HasDialogFile,
   HasDialogMessage,
+  HasNotificationAction,
+  HasNotificationClick,
+  HasNotificationClose,
+  HasNotificationDelivery,
+  HasNotificationDismiss,
+  HasNotificationShow,
   HasWindowAttach,
   HasWindowOpen,
   Host,
@@ -27,7 +33,7 @@ import { createElectronClipboardBackend } from './electronClipboard';
 import { createElectronFileDialogBackend, createElectronMessageDialogBackend } from './electronDialog';
 import { createElectronIpcBackend } from './electronIpc';
 import { createElectronMenuBackend } from './electronMenu';
-import { createElectronNotificationBackend } from './electronNotification';
+import { createElectronNotificationCapabilities } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
 import { createElectronPowerBackend } from './electronPower';
 import { createElectronProtocolBackend } from './electronProtocol';
@@ -48,16 +54,27 @@ import { createElectronWindowBackend } from './electronWindow';
 //   const electronApi: ElectronApi = { ...electron, fs, Tray: electron.Tray as ElectronApi['Tray'] };
 //   registerElectronBackends(electronApi);
 //
-// Pass the returned host to window and dialog operations. The remaining set*Backend(null) package seams
+// Pass the returned host to window, dialog, and notification operations. The remaining set*Backend(null) package seams
 // revert independently; there is no bulk unregister because those backends are independent.
 export function registerElectronBackends(
   electron: ElectronApi,
   options: Readonly<ElectronBackendOptions> = {},
-): Host & HasDialogFile & HasDialogMessage & HasWindowAttach & HasWindowOpen {
+): Host &
+  HasDialogFile &
+  HasDialogMessage &
+  HasNotificationAction &
+  HasNotificationClick &
+  HasNotificationClose &
+  HasNotificationDelivery &
+  HasNotificationDismiss &
+  HasNotificationShow &
+  HasWindowAttach &
+  HasWindowOpen {
   const dialog = {
     file: createElectronFileDialogBackend(electron),
     message: createElectronMessageDialogBackend(electron),
   };
+  const notification = createElectronNotificationCapabilities(electron);
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
@@ -67,13 +84,12 @@ export function registerElectronBackends(
   setShortcutBackend(createElectronShortcutBackend(electron));
   setScreenBackend(createElectronScreenBackend(electron));
   setPowerBackend(createElectronPowerBackend(electron));
-  setNotificationBackend(createElectronNotificationBackend(electron));
   setShellBackend(createElectronShellBackend(electron));
   setStorageBackend(createElectronStorageBackend(electron, options.storageFileName));
   setProtocolBackend(createElectronProtocolBackend(electron));
   setUpdaterBackend(createElectronUpdaterBackend(electron));
   setIpcBackend(createElectronIpcBackend(electron));
-  return {
+  return createEntity({
     accessibility: {},
     app: {},
     dialog,
@@ -81,10 +97,11 @@ export function registerElectronBackends(
     input: {},
     media: {},
     net: {},
+    notification,
     storage: {},
     system: {},
     text: {},
     ui: {},
     window,
-  };
+  });
 }

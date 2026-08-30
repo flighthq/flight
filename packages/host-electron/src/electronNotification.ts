@@ -1,134 +1,103 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
-  NotificationBackend,
-  NotificationCapabilities,
-  NotificationPermission,
   ElectronApi,
   ElectronNotification,
+  HostNotificationCapabilities,
+  NotificationPermission,
 } from '@flighthq/types/contract';
 
-// Maps Flight's NotificationBackend onto Electron's Notification module. Electron needs no permission
-// prompt, so getPermission/requestPermission report 'granted' when supported and 'denied' otherwise.
-// notify resolves to the notification id (the request's id, or a generated one), and forwards the
-// notification's click/action/show/dismiss events keyed by that id. Each live notification is tracked
-// by id so closeNotification/closeAllNotifications can dismiss it. notify resolves '' when unsupported.
-export function createElectronNotificationBackend(electron: ElectronApi): NotificationBackend {
-  // Listeners owned by this backend, set via the subscribe* methods.
-  let clickListener: ((id: string) => void) | null = null;
-  let actionListener: ((id: string, actionId: string) => void) | null = null;
-  let dismissListener: ((id: string) => void) | null = null;
-  let showListener: ((id: string) => void) | null = null;
-  // Live notifications keyed by their resolved id, so close* can dismiss them.
+// Maps Electron's Notification module onto only the slots it genuinely supports. The factory owns
+// live native notifications and independent listener sets; subscribing one consumer never replaces
+// another. Electron has no permission prompt, scheduling, active enumeration, update, or inline reply.
+export function createElectronNotificationCapabilities(electron: ElectronApi) {
+  const actionListeners = new Set<(id: string, actionId: string) => void>();
+  const clickListeners = new Set<(id: string) => void>();
+  const dismissListeners = new Set<(id: string) => void>();
+  const showListeners = new Set<(id: string) => void>();
   const live = new Map<string, ElectronNotification>();
   let nextId = 0;
-  return {
-    async notify(request) {
-      if (!electron.Notification.isSupported()) return '';
-      const id = request.id ?? `notification-${nextId++}`;
-      const actions = request.actions ?? [];
-      const n = new electron.Notification({
-        title: request.title,
-        body: request.body,
-        icon: request.icon,
-        silent: request.silent,
-        actions: actions.map((a) => ({ type: 'button', text: a.title })),
-      });
-      n.on('show', () => showListener?.(id));
-      n.on('click', () => clickListener?.(id));
-      // Electron's action event passes (event, index); map the index back to the action id.
-      n.on('action', (...args) => {
-        const index = Number(args[1]);
-        actionListener?.(id, String(actions[index]?.id ?? ''));
-      });
-      n.on('close', () => {
+
+  return createEntity({
+    action: {
+      subscribe(listener: (id: string, actionId: string) => void) {
+        actionListeners.add(listener);
+      },
+      unsubscribe(listener: (id: string, actionId: string) => void) {
+        actionListeners.delete(listener);
+      },
+    },
+    click: {
+      subscribe(listener: (id: string) => void) {
+        clickListeners.add(listener);
+      },
+      unsubscribe(listener: (id: string) => void) {
+        clickListeners.delete(listener);
+      },
+    },
+    close: {
+      async closeAllNotifications() {
+        for (const notification of live.values()) notification.close();
+        live.clear();
+      },
+      async closeNotification(id: string) {
+        const notification = live.get(id);
+        if (notification === undefined) return;
+        notification.close();
         live.delete(id);
-        dismissListener?.(id);
-      });
-      live.set(id, n);
-      n.show();
-      return id;
+      },
     },
-    async requestPermission(): Promise<NotificationPermission> {
-      // Electron requires no permission grant; support is the only gate.
-      return electron.Notification.isSupported() ? 'granted' : 'denied';
+    delivery: {
+      async getPermission(): Promise<NotificationPermission> {
+        return electron.Notification.isSupported() ? 'granted' : 'denied';
+      },
+      async notify(request) {
+        if (!electron.Notification.isSupported()) return null;
+        const id = request.id ?? `notification-${nextId++}`;
+        const actions = request.actions ?? [];
+        const notification = new electron.Notification({
+          actions: actions.map((action) => ({ text: action.title, type: 'button' })),
+          body: request.body,
+          icon: request.icon,
+          silent: request.silent,
+          title: request.title,
+        });
+        notification.on('show', () => {
+          for (const listener of showListeners) listener(id);
+        });
+        notification.on('click', () => {
+          for (const listener of clickListeners) listener(id);
+        });
+        notification.on('action', (...args) => {
+          const actionId = String(actions[Number(args[1])]?.id ?? '');
+          for (const listener of actionListeners) listener(id, actionId);
+        });
+        notification.on('close', () => {
+          live.delete(id);
+          for (const listener of dismissListeners) listener(id);
+        });
+        live.set(id, notification);
+        notification.show();
+        return id;
+      },
+      async requestPermission(): Promise<NotificationPermission> {
+        return electron.Notification.isSupported() ? 'granted' : 'denied';
+      },
     },
-    getPermission(): NotificationPermission {
-      return electron.Notification.isSupported() ? 'granted' : 'denied';
+    dismiss: {
+      subscribe(listener: (id: string) => void) {
+        dismissListeners.add(listener);
+      },
+      unsubscribe(listener: (id: string) => void) {
+        dismissListeners.delete(listener);
+      },
     },
-    isSupported() {
-      return electron.Notification.isSupported();
+    show: {
+      subscribe(listener: (id: string) => void) {
+        showListeners.add(listener);
+      },
+      unsubscribe(listener: (id: string) => void) {
+        showListeners.delete(listener);
+      },
     },
-    getCapabilities(): NotificationCapabilities {
-      return {
-        actions: true,
-        channels: false,
-        coldStart: false,
-        image: false,
-        listActive: false,
-        scheduling: false,
-        textReply: false,
-      };
-    },
-    async getLaunchNotification() {
-      // Electron's main process has no launch-from-notification reporting.
-      return null;
-    },
-    async getActiveNotifications() {
-      // Electron does not enumerate shown notifications.
-      return [];
-    },
-    async getPendingNotifications() {
-      // No local scheduling support; nothing is ever pending.
-      return [];
-    },
-    async scheduleNotification() {
-      // Electron's Notification has no local scheduling; report unsupported via the '' sentinel.
-      return '';
-    },
-    cancelScheduledNotification() {
-      // No scheduling support — nothing to cancel.
-    },
-    closeNotification(id) {
-      const n = live.get(id);
-      if (!n) return;
-      n.close();
-      live.delete(id);
-    },
-    closeAllNotifications() {
-      for (const n of live.values()) n.close();
-      live.clear();
-    },
-    async updateNotification() {
-      // Electron's Notification has no in-place update; a caller must close and re-notify. Report
-      // that the update was not applied rather than silently pretending success.
-      return false;
-    },
-    subscribeClick(listener) {
-      clickListener = listener;
-      return () => {
-        if (clickListener === listener) clickListener = null;
-      };
-    },
-    subscribeAction(listener) {
-      actionListener = listener;
-      return () => {
-        if (actionListener === listener) actionListener = null;
-      };
-    },
-    subscribeDismiss(listener) {
-      dismissListener = listener;
-      return () => {
-        if (dismissListener === listener) dismissListener = null;
-      };
-    },
-    subscribeReply() {
-      // Electron's desktop Notification has no inline text-reply action; inert unsubscribe.
-      return () => {};
-    },
-    subscribeShow(listener) {
-      showListener = listener;
-      return () => {
-        if (showListener === listener) showListener = null;
-      };
-    },
-  };
+  } as const satisfies HostNotificationCapabilities);
 }

@@ -1,150 +1,133 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
-  NotificationBackend,
-  NotificationCapabilities,
-  NotificationPermission,
   CapacitorApi,
   CapacitorLocalNotificationSchema,
   CapacitorPluginListenerHandle,
+  HostNotificationCapabilities,
+  NotificationPermission,
+  NotificationSchedule,
 } from '@flighthq/types/contract';
 
-// Maps Flight's NotificationBackend onto Capacitor's `@capacitor/local-notifications`. Capacitor ids are
-// numeric while Flight's are strings, so the adapter mints a monotonic numeric id per notification and
-// maps back to the caller's string id (or a generated one) on return. `notify` schedules an immediate
-// notification; `scheduleNotification` schedules at the request time; `getPendingNotifications` reads the
-// pending list. `requestPermission` maps directly; the sync `getPermission` is served from a value
-// prefetched once at construction (async→sync bridge), so it may read 'default' until that first probe
-// resolves. Click/action delivery wires through the `localNotificationActionPerformed` listener; active
-// list, image, and in-place update are outside the modeled surface and report the contract sentinels.
-export function createCapacitorNotificationBackend(capacitor: CapacitorApi): NotificationBackend {
+// Capacitor local notifications truthfully cover delivery, scheduling/cancellation, click, and action.
+// Numeric plugin ids are kept behind the capability object and mapped to Flight's string ids.
+export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi) {
   const notifications = capacitor.localNotifications;
-  let nextNumericId = 1;
-  // A notification's Flight id, keyed by the numeric id Capacitor uses, so returned/enumerated
-  // notifications carry the caller's original string id rather than the internal counter.
+  const actionSubscriptions = new Map<(id: string, actionId: string) => void, () => void>();
+  const clickSubscriptions = new Map<(id: string) => void, () => void>();
   const idByNumber = new Map<number, string>();
-  // Sync getPermission has no async escape; prefetch the display state once and cache it.
-  let cachedPermission: NotificationPermission = 'default';
-  notifications
-    .checkPermissions()
-    .then((status) => {
-      cachedPermission = toNotificationPermission(status.display);
-    })
-    .catch(() => {
-      /* leave the 'default' sentinel */
-    });
-  return {
-    async notify(request) {
-      const numericId = nextNumericId++;
-      const stringId = request.id ?? `notification-${numericId}`;
-      idByNumber.set(numericId, stringId);
-      try {
-        await notifications.schedule({ notifications: [{ id: numericId, title: request.title, body: request.body }] });
-        return stringId;
-      } catch {
-        return '';
-      }
+  let nextNumericId = 1;
+
+  return createEntity({
+    action: {
+      subscribe(listener: (id: string, actionId: string) => void) {
+        removeSubscription(actionSubscriptions, listener);
+        const unsubscribe = toUnsubscribe(
+          notifications.addListener('localNotificationActionPerformed', (action) => {
+            listener(idByNumber.get(action.notification.id) ?? String(action.notification.id), action.actionId);
+          }),
+        );
+        actionSubscriptions.set(listener, unsubscribe);
+      },
+      unsubscribe(listener: (id: string, actionId: string) => void) {
+        removeSubscription(actionSubscriptions, listener);
+      },
     },
-    async requestPermission(): Promise<NotificationPermission> {
-      try {
-        const status = await notifications.requestPermissions();
-        cachedPermission = toNotificationPermission(status.display);
-        return cachedPermission;
-      } catch {
-        return 'denied';
-      }
+    click: {
+      subscribe(listener: (id: string) => void) {
+        removeSubscription(clickSubscriptions, listener);
+        const unsubscribe = toUnsubscribe(
+          notifications.addListener('localNotificationActionPerformed', (action) => {
+            if (action.actionId === 'tap')
+              listener(idByNumber.get(action.notification.id) ?? String(action.notification.id));
+          }),
+        );
+        clickSubscriptions.set(listener, unsubscribe);
+      },
+      unsubscribe(listener: (id: string) => void) {
+        removeSubscription(clickSubscriptions, listener);
+      },
     },
-    getPermission(): NotificationPermission {
-      return cachedPermission;
+    delivery: {
+      async getPermission(): Promise<NotificationPermission> {
+        try {
+          return toNotificationPermission((await notifications.checkPermissions()).display);
+        } catch {
+          return 'denied';
+        }
+      },
+      async notify(request) {
+        const numericId = nextNumericId++;
+        const stringId = request.id ?? `notification-${numericId}`;
+        idByNumber.set(numericId, stringId);
+        try {
+          await notifications.schedule({
+            notifications: [{ body: request.body, id: numericId, title: request.title }],
+          });
+          return stringId;
+        } catch {
+          idByNumber.delete(numericId);
+          return null;
+        }
+      },
+      async requestPermission(): Promise<NotificationPermission> {
+        try {
+          return toNotificationPermission((await notifications.requestPermissions()).display);
+        } catch {
+          return 'denied';
+        }
+      },
     },
-    isSupported() {
-      return true;
+    pendingList: {
+      async getPendingNotifications() {
+        try {
+          const pending = await notifications.getPending();
+          return pending.notifications.map((schema) => {
+            const id = idByNumber.get(schema.id) ?? String(schema.id);
+            return {
+              id,
+              request: { body: schema.body, id, title: schema.title },
+              schedule: {
+                at: schema.schedule?.at?.getTime() ?? 0,
+                repeat: toNotificationRepeat(schema.schedule?.every),
+              },
+            };
+          });
+        } catch {
+          return [];
+        }
+      },
     },
-    getCapabilities(): NotificationCapabilities {
-      return {
-        actions: true,
-        channels: true,
-        coldStart: true,
-        image: false,
-        listActive: false,
-        scheduling: true,
-        textReply: false,
-      };
+    scheduling: {
+      async cancelScheduledNotification(id: string) {
+        const numericId = findNumericId(idByNumber, id);
+        if (numericId === null) return;
+        await notifications.cancel({ notifications: [{ id: numericId }] });
+        idByNumber.delete(numericId);
+      },
+      async scheduleNotification(request, schedule) {
+        const numericId = nextNumericId++;
+        const stringId = request.id ?? `notification-${numericId}`;
+        idByNumber.set(numericId, stringId);
+        const schema: CapacitorLocalNotificationSchema = {
+          body: request.body,
+          id: numericId,
+          schedule: {
+            at: new Date(schedule.at),
+            every: schedule.repeat,
+            repeats: schedule.repeat !== undefined,
+          },
+          title: request.title,
+        };
+        try {
+          await notifications.schedule({ notifications: [schema] });
+          return stringId;
+        } catch {
+          idByNumber.delete(numericId);
+          return null;
+        }
+      },
     },
-    async getLaunchNotification() {
-      return null;
-    },
-    async getActiveNotifications() {
-      // Capacitor exposes pending (scheduled) notifications, not the currently-displayed set; report none.
-      return [];
-    },
-    async getPendingNotifications() {
-      try {
-        const pending = await notifications.getPending();
-        return pending.notifications.map((schema) => ({
-          id: idByNumber.get(schema.id) ?? String(schema.id),
-          request: { id: idByNumber.get(schema.id) ?? String(schema.id), title: schema.title, body: schema.body },
-          schedule: { at: schema.schedule?.at?.getTime() ?? 0 },
-        }));
-      } catch {
-        return [];
-      }
-    },
-    async scheduleNotification(request, schedule) {
-      const numericId = nextNumericId++;
-      const stringId = request.id ?? `notification-${numericId}`;
-      idByNumber.set(numericId, stringId);
-      const schema: CapacitorLocalNotificationSchema = {
-        id: numericId,
-        title: request.title,
-        body: request.body,
-        schedule: { at: new Date(schedule.at) },
-      };
-      try {
-        await notifications.schedule({ notifications: [schema] });
-        return stringId;
-      } catch {
-        return '';
-      }
-    },
-    cancelScheduledNotification(id) {
-      const numericId = findNumericId(idByNumber, id);
-      if (numericId === null) return;
-      notifications.cancel({ notifications: [{ id: numericId }] }).catch(() => {});
-    },
-    closeNotification() {
-      // Capacitor local notifications expose no dismiss-shown-by-id call.
-    },
-    closeAllNotifications() {
-      // No dismiss-all call.
-    },
-    async updateNotification() {
-      // Capacitor has no in-place update; report not applied.
-      return false;
-    },
-    subscribeClick(listener) {
-      return toUnsubscribe(
-        notifications.addListener('localNotificationActionPerformed', (action) => {
-          if (action.actionId === 'tap')
-            listener(idByNumber.get(action.notification.id) ?? String(action.notification.id));
-        }),
-      );
-    },
-    subscribeAction(listener) {
-      return toUnsubscribe(
-        notifications.addListener('localNotificationActionPerformed', (action) =>
-          listener(idByNumber.get(action.notification.id) ?? String(action.notification.id), action.actionId),
-        ),
-      );
-    },
-    subscribeDismiss() {
-      return () => {};
-    },
-    subscribeReply() {
-      return () => {};
-    },
-    subscribeShow() {
-      return () => {};
-    },
-  };
+  } as const satisfies HostNotificationCapabilities);
 }
 
 function findNumericId(idByNumber: ReadonlyMap<number, string>, stringId: string): number | null {
@@ -161,8 +144,29 @@ function toNotificationPermission(display: string): NotificationPermission {
   return 'default';
 }
 
-// Bridges Capacitor's Promise<PluginListenerHandle> to Flight's synchronous unsubscribe: fire the
-// registration, adopt the handle when it resolves, and remove it (immediately if already resolved).
+function toNotificationRepeat(value: string | undefined): NotificationSchedule['repeat'] {
+  switch (value) {
+    case 'minute':
+    case 'hour':
+    case 'day':
+    case 'week':
+    case 'month':
+    case 'year':
+      return value;
+    default:
+      return undefined;
+  }
+}
+
+function removeSubscription<TListener>(subscriptions: Map<TListener, () => void>, listener: TListener): void {
+  const unsubscribe = subscriptions.get(listener);
+  if (unsubscribe === undefined) return;
+  subscriptions.delete(listener);
+  unsubscribe();
+}
+
+// Bridges Capacitor's Promise<PluginListenerHandle> to the synchronous event-slot pair. If unsubscribe
+// wins the registration race, the native handle is removed as soon as it resolves.
 function toUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {
   let removed = false;
   let handle: CapacitorPluginListenerHandle | null = null;

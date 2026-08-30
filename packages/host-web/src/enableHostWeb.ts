@@ -15,7 +15,6 @@ import { enableHostWebSoftKeyboard } from './webKeyboard';
 import { enableHostWebLifecycle } from './webLifecycle';
 import { enableHostWebLoop } from './webLoop';
 import { enableHostWebMediaSession } from './webMediasession';
-import { enableHostWebNotification } from './webNotification';
 import { enableHostWebPermission } from './webPermissions';
 import { enableHostWebPlatform } from './webPlatform';
 import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
@@ -44,7 +43,6 @@ export function enableHostWeb(): void {
   enableHostWebLifecycle();
   enableHostWebLoop();
   enableHostWebMediaSession();
-  enableHostWebNotification();
   enableHostWebPermission();
   enableHostWebPlatform();
   enableHostWebRaster2DSurface();

@@ -320,7 +320,7 @@ export interface CapacitorKeyboardPlugin {
 
 // `@capacitor/local-notifications` — scheduled/immediate local notifications. Ids are numeric, so the
 // adapter maps Flight's string ids onto a monotonic counter. `display` is the permission state
-// ('granted' | 'denied' | 'prompt' | 'prompt-with-rationale'), served synchronously from a prefetch.
+// ('granted' | 'denied' | 'prompt' | 'prompt-with-rationale').
 export interface CapacitorLocalNotificationsPlugin {
   addListener(
     eventName: 'localNotificationActionPerformed',
@@ -338,7 +338,11 @@ export interface CapacitorLocalNotificationsPlugin {
 export interface CapacitorLocalNotificationSchema {
   body?: string;
   id: number;
-  schedule?: { at?: Date };
+  schedule?: {
+    at?: Date;
+    every?: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
+    repeats?: boolean;
+  };
   title: string;
 }
 

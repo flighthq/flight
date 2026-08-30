@@ -1,3 +1,5 @@
+import { createEntity } from '@flighthq/entity/contract';
+import { webNotificationCapabilities } from '@flighthq/notification/contract';
 import type { Host } from '@flighthq/types/contract';
 
 import { webApplicationExitBackend } from './webApplicationExit';
@@ -8,7 +10,7 @@ import { webFullscreenBackend, webWindowBackend } from './webWindow';
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
 // groups are intentional: they preserve Host's stable two-level shape without claiming providers that
 // still live behind the legacy registration path.
-export const webHost = {
+export const webHost = createEntity({
   accessibility: {},
   app: { exit: webApplicationExitBackend },
   dialog: {
@@ -20,9 +22,10 @@ export const webHost = {
   input: { haptics: webHapticsBackend },
   media: {},
   net: {},
+  notification: webNotificationCapabilities,
   storage: {},
   system: {},
   text: {},
   ui: { fullscreen: webFullscreenBackend },
   window: webWindowBackend,
-} as const satisfies Host;
+} as const) satisfies Host;

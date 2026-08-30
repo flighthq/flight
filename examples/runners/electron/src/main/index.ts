@@ -60,7 +60,7 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
   ipcMain.handle('flight:readClipboard', () => readClipboardText());
   ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) => writeClipboardText(String(text)));
   ipcMain.handle('flight:notify', (_event: unknown, body: unknown) =>
-    showNotification({ title: 'Flight Harness', body: String(body) }),
+    showNotification(host, { title: 'Flight Harness', body: String(body) }),
   );
 }
 
