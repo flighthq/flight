@@ -12,6 +12,7 @@ import type {
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlContext,
+  GlContextRuntime,
   GlContextState,
   GlRenderOptions,
   GlRenderState,
@@ -56,7 +57,33 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
 }
 
 export function createGlContextState(gl: GlContext): GlContextState {
-  const contextRuntime: GlContextRuntime = { fields: {}, gl, references: 0, teardowns: [] };
+  const quadIndexBuffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
+
+  const quadVertexBuffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, 64, gl.DYNAMIC_DRAW);
+
+  const contextRuntime: GlContextRuntime = {
+    colorAdjustmentResources: null,
+    currentBlendSignature: null,
+    currentShader: null,
+    currentTextureRealization: null,
+    gl,
+    particleResources: null,
+    quadBatchResources: null,
+    quadIndexBuffer,
+    quadVertexBuffer,
+    references: 0,
+    shapeMeshResources: null,
+    teardowns: [],
+    textureCache: new WeakMap(),
+    textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
+    textureSourcePremultipliedTextureCache: new WeakMap(),
+    textureSourceStraightSrgbTextureCache: new WeakMap(),
+    textureSourceStraightTextureCache: new WeakMap(),
+  };
   _contextStateToRuntime.set(contextRuntime as GlContextState, contextRuntime);
   return contextRuntime as GlContextState;
 }
@@ -103,17 +130,6 @@ export function createGlRenderStateFromContextState(
   options: GlRenderOptions = {},
 ): GlRenderState {
   const gl = contextState.gl;
-  const matrixArray = new Float32Array(9);
-
-  // Static index buffer [0, 1, 2, 0, 2, 3]
-  const quadIndexBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
-
-  // Dynamic vertex buffer: 4 vertices × 4 floats (x, y, u, v) × 4 bytes = 64 bytes
-  const quadVertexBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, 64, gl.DYNAMIC_DRAW);
 
   const state = _createRenderState({
     allowSmoothing: options.imageSmoothingEnabled ?? options.allowSmoothing ?? true,
@@ -130,12 +146,9 @@ export function createGlRenderStateFromContextState(
 
   const runtime = createGlRenderStateRuntime(contextState);
   state[EntityRuntimeKey] = runtime;
-  runtime.currentBlendSignature = null;
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;
-  runtime.currentShader = null;
   runtime.currentScissorRect = null;
-  runtime.currentTextureRealization = null;
   runtime.flushPendingDraws = null;
   runtime.renderTargetViewport = null;
   runtime.defaultBitmapShader = null;
@@ -144,25 +157,14 @@ export function createGlRenderStateFromContextState(
   runtime.quadBatchWriterMaterialRenderer = null;
   runtime.quadBatchWriterMaterialFloats = 0;
   runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
-  runtime.quadBatchWriterMaterialBuffer = null;
   runtime.quadBatchWriterCount = 0;
-  runtime.quadBatchWriterInstanceBuffer = null;
   runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
   runtime.quadBatchWriterTexture = null;
   runtime.quadBatchWriterSampler = null;
   runtime.quadBatchWriterStraightAlpha = false;
   runtime.quadBatchWriterSmoothing = null;
-  // Color-adjustment fold state (mode/data/buffer + the compiled programs) is not allocated here: it
-  // is owned by the opt-in registerGlColorAdjustmentMaterialFeature, so a state that never tints carries none of it.
-  runtime.textureCache = new WeakMap();
-  runtime.textureSourcePremultipliedTextureCache = new WeakMap();
-  runtime.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
-  runtime.textureSourceStraightTextureCache = new WeakMap();
-  runtime.textureSourceStraightSrgbTextureCache = new WeakMap();
-  runtime.quadVertexBuffer = quadVertexBuffer;
-  runtime.quadIndexBuffer = quadIndexBuffer;
   runtime.quadVertexData = new Float32Array(16);
-  runtime.matrixArray = matrixArray;
+  runtime.matrixArray = new Float32Array(9);
   runtime.scissorStack = [];
   runtime.clipForms = [];
 
@@ -178,32 +180,20 @@ export function createGlRenderStateRuntime(
   sharedRuntime?: GlRenderStateRuntime,
 ): GlRenderStateRuntime {
   const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
-  let contextRuntime: GlContextRuntime;
   if (sharedRuntime !== undefined) {
-    contextRuntime = getGlContextRuntime(sharedRuntime);
+    runtime.context = sharedRuntime.context;
   } else if (contextState !== undefined) {
     const fromMap = _contextStateToRuntime.get(contextState);
     if (fromMap !== undefined) {
-      contextRuntime = fromMap;
+      runtime.context = fromMap;
     } else {
-      contextRuntime = { fields: {}, gl: contextState.gl, references: 0, teardowns: [] };
-      _contextStateToRuntime.set(contextState, contextRuntime);
+      runtime.context = createMinimalContextRuntime(contextState.gl);
+      _contextStateToRuntime.set(contextState, runtime.context);
     }
   } else {
-    contextRuntime = { fields: {}, gl: null as unknown as GlContext, references: 0, teardowns: [] };
+    runtime.context = createMinimalContextRuntime(null as unknown as GlContext);
   }
-  contextRuntime.references++;
-  _contextRuntimeByStateRuntime.set(runtime, contextRuntime);
-  for (const key of GL_CONTEXT_RUNTIME_KEYS) {
-    Object.defineProperty(runtime, key, {
-      configurable: true,
-      enumerable: true,
-      get: () => contextRuntime.fields[key],
-      set: (value: unknown) => {
-        (contextRuntime.fields as Partial<Record<GlContextRuntimeKey, unknown>>)[key] = value;
-      },
-    });
-  }
+  runtime.context.references++;
   runtime.currentRenderTarget = null;
   runtime.registries = {
     blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
@@ -224,7 +214,6 @@ export function createGlRenderStateRuntime(
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
     velocityWriters: createKeyedTable('GlVelocityWriter', 'Unregistered'),
   };
-  // Per-state, not shared on the context tier: guards are installed per render state.
   runtime.bindingCacheGuard = null;
   return runtime;
 }
@@ -247,35 +236,43 @@ export function destroyGlRenderState(state: GlRenderState): void {
   _destroyedStates.add(state);
   const runtime = getGlRenderStateRuntime(state);
   destroyRenderState(state);
-  const contextRuntime = getGlContextRuntime(runtime);
-  contextRuntime.references--;
-  if (contextRuntime.references !== 0) return;
-  const gl = contextRuntime.gl;
-  for (const teardown of contextRuntime.teardowns) teardown(gl);
-  contextRuntime.teardowns.length = 0;
+  const ctx = runtime.context;
+  ctx.references--;
+  if (ctx.references !== 0) return;
+  const gl = ctx.gl;
+  for (const teardown of ctx.teardowns) teardown(gl);
+  ctx.teardowns.length = 0;
 
-  // Dedupe: several owned shader wrappers may share a program. The current binding is intentionally
-  // absent from this ledger: binding a caller-owned shader never transfers allocation ownership.
   const programs = new Set<WebGLProgram>();
   if (runtime.defaultBitmapShader) programs.add(runtime.defaultBitmapShader.program);
-  if (runtime.particleShader) programs.add(runtime.particleShader.program);
-  if (runtime.quadBatchShader) programs.add(runtime.quadBatchShader.program);
-  if (runtime.colorScaleBiasInstancedShader) programs.add(runtime.colorScaleBiasInstancedShader.program);
-  if (runtime.colorMatrixInstancedShader) programs.add(runtime.colorMatrixInstancedShader.program);
-  if (runtime.colorTintInstancedShader) programs.add(runtime.colorTintInstancedShader.program);
-  if (runtime.uniformColorScaleBiasShader) programs.add(runtime.uniformColorScaleBiasShader.program);
-  if (runtime.shapeMeshColorScaleBiasShader) programs.add(runtime.shapeMeshColorScaleBiasShader.program);
-  if (runtime.shapeMeshColorMatrixShader) programs.add(runtime.shapeMeshColorMatrixShader.program);
+  if (ctx.particleResources) programs.add(ctx.particleResources.shader.program);
+  if (ctx.quadBatchResources) programs.add(ctx.quadBatchResources.shader.program);
+  if (ctx.colorAdjustmentResources) {
+    programs.add(ctx.colorAdjustmentResources.scaleBiasInstancedShader.program);
+    programs.add(ctx.colorAdjustmentResources.matrixInstancedShader.program);
+    programs.add(ctx.colorAdjustmentResources.tintInstancedShader.program);
+    programs.add(ctx.colorAdjustmentResources.uniformScaleBiasShader.program);
+  }
+  if (ctx.shapeMeshResources) {
+    if (ctx.shapeMeshResources.colorScaleBiasShader) programs.add(ctx.shapeMeshResources.colorScaleBiasShader.program);
+    if (ctx.shapeMeshResources.colorMatrixShader) programs.add(ctx.shapeMeshResources.colorMatrixShader.program);
+  }
   for (const program of programs) gl.deleteProgram(program);
 
-  gl.deleteBuffer(runtime.quadVertexBuffer);
-  gl.deleteBuffer(runtime.quadIndexBuffer);
-  if (runtime.particleCornerBuffer) gl.deleteBuffer(runtime.particleCornerBuffer);
-  if (runtime.particleInstanceBuffer) gl.deleteBuffer(runtime.particleInstanceBuffer);
-  if (runtime.quadBatchCornerBuffer) gl.deleteBuffer(runtime.quadBatchCornerBuffer);
-  if (runtime.quadBatchWriterInstanceBuffer) gl.deleteBuffer(runtime.quadBatchWriterInstanceBuffer);
-  if (runtime.quadBatchWriterMaterialBuffer) gl.deleteBuffer(runtime.quadBatchWriterMaterialBuffer);
-  if (runtime.quadBatchWriterColorScaleBiasBuffer) gl.deleteBuffer(runtime.quadBatchWriterColorScaleBiasBuffer);
+  gl.deleteBuffer(ctx.quadVertexBuffer);
+  gl.deleteBuffer(ctx.quadIndexBuffer);
+  if (ctx.particleResources) {
+    gl.deleteBuffer(ctx.particleResources.cornerBuffer);
+    gl.deleteBuffer(ctx.particleResources.instanceBuffer);
+  }
+  if (ctx.quadBatchResources) {
+    gl.deleteBuffer(ctx.quadBatchResources.cornerBuffer);
+    if (ctx.quadBatchResources.writerInstanceBuffer) gl.deleteBuffer(ctx.quadBatchResources.writerInstanceBuffer);
+    if (ctx.quadBatchResources.writerMaterialBuffer) gl.deleteBuffer(ctx.quadBatchResources.writerMaterialBuffer);
+    if (ctx.quadBatchResources.writerColorScaleBiasBuffer) {
+      gl.deleteBuffer(ctx.quadBatchResources.writerColorScaleBiasBuffer);
+    }
+  }
 }
 
 export function getGlColorAdjustmentMaterialFeature(
@@ -312,19 +309,17 @@ export function getGlRenderStateRuntime(state: GlRenderState): GlRenderStateRunt
 // renderer must call this before returning control to render-gl.
 export function invalidateGlRenderStateCache(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.currentBlendSignature = null;
+  runtime.context.currentBlendSignature = null;
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;
-  runtime.currentShader = null;
+  runtime.context.currentShader = null;
   runtime.currentScissorRect = null;
-  runtime.currentTextureRealization = null;
+  runtime.context.currentTextureRealization = null;
   runtime.renderTargetViewport = null;
 }
 
 export function registerGlContextTeardown(state: GlRenderState, teardown: (gl: GlContext) => void): void {
-  const runtime = getGlRenderStateRuntime(state);
-  const contextRuntime = getGlContextRuntime(runtime);
-  contextRuntime.teardowns.push(teardown);
+  getGlRenderStateRuntime(state).context.teardowns.push(teardown);
 }
 
 function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRuntime: GlRenderStateRuntime): void {
@@ -353,60 +348,27 @@ function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRunti
   runtime.clipForms = [];
 }
 
-type GlContextRuntimeKey = (typeof GL_CONTEXT_RUNTIME_KEYS)[number];
-type GlContextRuntime = {
-  fields: Partial<Pick<GlRenderStateRuntime, GlContextRuntimeKey>>;
-  gl: GlContext;
-  references: number;
-  teardowns: Array<(gl: GlContext) => void>;
-};
-
-function getGlContextRuntime(runtime: GlRenderStateRuntime): GlContextRuntime {
-  const contextRuntime = _contextRuntimeByStateRuntime.get(runtime);
-  if (contextRuntime === undefined) throw new Error('GlRenderState runtime has no context tier');
-  return contextRuntime;
+function createMinimalContextRuntime(gl: GlContext): GlContextRuntime {
+  return {
+    colorAdjustmentResources: null,
+    currentBlendSignature: null,
+    currentShader: null,
+    currentTextureRealization: null,
+    gl,
+    particleResources: null,
+    quadBatchResources: null,
+    quadIndexBuffer: null as unknown as WebGLBuffer,
+    quadVertexBuffer: null as unknown as WebGLBuffer,
+    references: 0,
+    shapeMeshResources: null,
+    teardowns: [],
+    textureCache: new WeakMap(),
+    textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
+    textureSourcePremultipliedTextureCache: new WeakMap(),
+    textureSourceStraightSrgbTextureCache: new WeakMap(),
+    textureSourceStraightTextureCache: new WeakMap(),
+  };
 }
 
-// Storage in these slots is a pure function of (WebGL context, source data). Accessors on each state
-// preserve the established runtime surface while routing the actual value to one shared context tier.
-// Pass-local framebuffer/viewport/clip fields stay state-local because glRenderPass owns their exact
-// dormant restore points on its per-context stack.
-const GL_CONTEXT_RUNTIME_KEYS = [
-  'currentBlendSignature',
-  'currentShader',
-  'currentTextureRealization',
-  'particleShader',
-  'particleCornerBuffer',
-  'particleInstanceBuffer',
-  'quadBatchShader',
-  'quadBatchCornerBuffer',
-  'colorScaleBiasInstancedShader',
-  'colorMatrixInstancedShader',
-  'colorTintInstancedShader',
-  'uniformColorScaleBiasShader',
-  'shapeMeshBinding',
-  'shapeMeshColorScaleBiasShader',
-  'shapeMeshColorMatrixShader',
-  'sceneMeshUploadCache',
-  'textureCache',
-  'textureSourcePremultipliedTextureCache',
-  'textureSourcePremultipliedSrgbTextureCache',
-  'textureSourceStraightTextureCache',
-  'textureSourceStraightSrgbTextureCache',
-  'glExternalTextureCache',
-  'glRenderTextureCache',
-  'videoTextureCache',
-  'videoSrgbTextureCache',
-  'mipmappedTextures',
-  'anisotropyExt',
-  'maxAnisotropy',
-  'quadVertexBuffer',
-  'quadIndexBuffer',
-  'quadBatchWriterInstanceBuffer',
-  'quadBatchWriterMaterialBuffer',
-  'quadBatchWriterColorScaleBiasBuffer',
-] as const satisfies ReadonlyArray<keyof GlRenderStateRuntime>;
-
-const _contextRuntimeByStateRuntime = new WeakMap<GlRenderStateRuntime, GlContextRuntime>();
 const _contextStateToRuntime = new WeakMap<GlContextState, GlContextRuntime>();
 const _destroyedStates = new WeakSet<GlRenderState>();
