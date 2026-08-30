@@ -1,6 +1,11 @@
-import { createGlContextState, createGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import {
+  createEmptyGlRegistries,
+  createGlContextState,
+  createGlPipeline,
+  createGlRenderStateRuntime,
+} from '@flighthq/render-gl/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { GlContext, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlContext, GlPipeline, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // A minimal fake WebGL2 context for scene-gl unit tests. vitest-webgl-canvas-mock only mocks the
@@ -337,7 +342,10 @@ function validateFakeGlDrawElements(
 // A GlRenderState backed by the fake WebGL2 context, with the render-gl runtime attached (so
 // bindGlTexture's textureCache exists). scene-gl's own per-state runtime is created lazily on first
 // getGlScene3DRuntime, exactly as in production.
-export function makeGlScene3DState(gl?: FakeGl2): { state: GlRenderState; gl: FakeGl2 } {
+export function makeGlScene3DState(
+  gl?: FakeGl2,
+  pipeline: Readonly<GlPipeline> = createGlPipeline(createEmptyGlRegistries()),
+): { state: GlRenderState; gl: FakeGl2 } {
   const context = gl ?? makeFakeGl2();
   const canvas = { width: 256, height: 256 } as HTMLCanvasElement;
   const state = createRenderState({
@@ -345,9 +353,10 @@ export function makeGlScene3DState(gl?: FakeGl2): { state: GlRenderState; gl: Fa
     backgroundColorRgba: [0, 0, 0, 0],
   }) as GlRenderState;
 
-  Object.assign(state, { canvas, gl: context, applyBlendMode: null });
+  const contextState = createGlContextState(context as GlContext);
+  Object.assign(state, { applyBlendMode: null, canvas, contextState, gl: context, pipeline });
 
-  const runtime = createGlRenderStateRuntime(createGlContextState(context as GlContext));
+  const runtime = createGlRenderStateRuntime(contextState, pipeline);
   Object.assign(runtime, {
     currentBlendSignature: null,
     currentFramebuffer: null,

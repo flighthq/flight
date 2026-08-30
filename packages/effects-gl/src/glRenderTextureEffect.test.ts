@@ -1,11 +1,14 @@
 import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
   createGlContextFromCanvasElement,
   acquireGlRenderTexture,
   clearGlRenderTexture,
-  copyGlRenderStateRegistrations,
   createGlOffscreenRenderState,
   createGlRenderState,
   createGlRenderTexturePool,
+  getGlRenderStateRuntime,
   getGlRenderTextureTarget,
   isGlRenderTextureReady,
   writeGlRenderTextureTarget,
@@ -232,23 +235,32 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(createGlContextFromCanvasElement(canvas));
+  return createGlRenderState(
+    createGlContextState(createGlContextFromCanvasElement(canvas)),
+    createGlPipeline(createEmptyGlRegistries()),
+  );
 }
 
 describe('offscreen effect registration snapshots', () => {
-  it('copies registered runners at derivation and requires explicit re-copy for later runners', () => {
+  it('captures registered runners in a rebuilt pipeline without observing later replacements', () => {
     const screen = createState();
     const first: GlRenderEffectRunner = vi.fn();
     const later: GlRenderEffectRunner = vi.fn();
     registerGlRenderEffect(screen, 'acme.First', first);
-    const offscreen = createGlOffscreenRenderState(screen);
+    const offscreen = createGlOffscreenRenderState(
+      screen.contextState,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
     registerGlRenderEffect(screen, 'acme.Later', later);
 
     expect(getGlRenderEffectRunner(offscreen, 'acme.First')).toBe(first);
     expect(getGlRenderEffectRunner(offscreen, 'acme.Later')).toBeNull();
 
-    copyGlRenderStateRegistrations(offscreen, screen);
-    expect(getGlRenderEffectRunner(offscreen, 'acme.Later')).toBe(later);
+    const rebuilt = createGlOffscreenRenderState(
+      screen.contextState,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
+    expect(getGlRenderEffectRunner(rebuilt, 'acme.Later')).toBe(later);
   });
 });
 

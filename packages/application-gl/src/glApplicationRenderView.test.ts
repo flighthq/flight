@@ -4,12 +4,13 @@ import {
   synchronizeApplicationRenderView,
 } from '@flighthq/application/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlPipeline, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { createGlApplicationRenderView, destroyGlApplicationRenderView } from './glApplicationRenderView';
 
 const mocks = vi.hoisted(() => ({
   createGlContextFromCanvasElement: vi.fn(),
+  createGlContextState: vi.fn(),
   createGlRenderState: vi.fn(),
   createGlRenderTarget: vi.fn(),
   createViewport: vi.fn(),
@@ -25,6 +26,7 @@ vi.mock('@flighthq/node/contract', () => ({
 
 vi.mock('@flighthq/render-gl/contract', () => ({
   createGlContextFromCanvasElement: mocks.createGlContextFromCanvasElement,
+  createGlContextState: mocks.createGlContextState,
   createGlRenderState: mocks.createGlRenderState,
   createGlRenderTarget: mocks.createGlRenderTarget,
   destroyGlRenderState: mocks.destroyGlRenderState,
@@ -35,8 +37,10 @@ vi.mock('@flighthq/render-gl/contract', () => ({
 
 beforeEach(() => {
   mocks.createGlContextFromCanvasElement.mockImplementation(() => ({ drawingBufferHeight: 0, drawingBufferWidth: 0 }));
-  mocks.createGlRenderState.mockImplementation((gl, options: { pixelRatio: number }) => ({
-    gl,
+  mocks.createGlContextState.mockImplementation((gl) => ({ gl }));
+  mocks.createGlRenderState.mockImplementation((contextState, _pipeline, options: { pixelRatio: number }) => ({
+    contextState,
+    gl: contextState.gl,
     pixelRatio: options.pixelRatio,
     renderTransform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   }));
@@ -55,6 +59,8 @@ beforeEach(() => {
   );
 });
 
+const pipeline = {} as GlPipeline;
+
 describe('createGlApplicationRenderView', () => {
   it('allocates and links the GL state, target, and device-pixel viewport', () => {
     const window = createApplicationWindow();
@@ -65,6 +71,7 @@ describe('createGlApplicationRenderView', () => {
 
     const view = createGlApplicationRenderView(window, canvas, {
       context: { antialias: false },
+      pipeline,
       render: { roundPixels: true },
       target: { colorSpace: 'linear', depth: 'depth-stencil' },
     });
@@ -72,13 +79,13 @@ describe('createGlApplicationRenderView', () => {
     expect(canvas.width).toBe(640);
     expect(canvas.height).toBe(360);
     expect(mocks.createGlContextFromCanvasElement).toHaveBeenCalledWith(canvas, { antialias: false });
-    expect(mocks.createGlRenderState).toHaveBeenCalledWith(
+    expect(mocks.createGlContextState).toHaveBeenCalledWith(
       mocks.createGlContextFromCanvasElement.mock.results[0].value,
-      {
-        pixelRatio: 2,
-        roundPixels: true,
-      },
     );
+    expect(mocks.createGlRenderState).toHaveBeenCalledWith(mocks.createGlContextState.mock.results[0].value, pipeline, {
+      pixelRatio: 2,
+      roundPixels: true,
+    });
     expect(mocks.createGlRenderTarget).toHaveBeenCalledWith(view.renderState, {
       colorSpace: 'linear',
       depth: 'depth-stencil',
@@ -93,7 +100,7 @@ describe('createGlApplicationRenderView', () => {
     window.width = 20;
     window.height = 10;
     const canvas = document.createElement('canvas');
-    const view = createGlApplicationRenderView(window, canvas);
+    const view = createGlApplicationRenderView(window, canvas, { pipeline });
     mocks.invalidateGlRenderStateCache.mockClear();
     mocks.resizeGlRenderTarget.mockClear();
 
@@ -114,7 +121,7 @@ describe('destroyGlApplicationRenderView', () => {
     const window = createApplicationWindow();
     window.width = 20;
     window.height = 10;
-    const view = createGlApplicationRenderView(window, document.createElement('canvas'));
+    const view = createGlApplicationRenderView(window, document.createElement('canvas'), { pipeline });
     attachApplicationRenderView(view);
     mocks.resizeGlRenderTarget.mockClear();
 

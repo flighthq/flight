@@ -10,6 +10,8 @@ import type {
   VertexAttributeLayout,
 } from '@flighthq/sdk';
 import {
+  scene2dGlPipeline,
+  createGlContextState,
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
@@ -46,9 +48,12 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, {
+      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+    }),
+  ),
+  scene2dGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x0a0c10ff,

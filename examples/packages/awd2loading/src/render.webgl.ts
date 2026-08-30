@@ -1,5 +1,7 @@
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
+  scene2dGlPipeline,
+  createGlContextState,
   createGlContextFromCanvasElement,
   beginGlRenderEffectPipeline,
   createGlCanvasElement,
@@ -18,7 +20,10 @@ export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  ),
+  scene2dGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x07101bff,

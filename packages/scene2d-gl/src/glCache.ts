@@ -4,10 +4,12 @@ import {
   beginGlRenderPass,
   createGlOffscreenRenderState,
   createGlRenderTarget,
+  destroyGlRenderState,
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
   endGlRenderPass,
   resizeGlRenderTarget,
+  registerGlRenderStateTeardown,
   setGlRenderTransform2D,
 } from '@flighthq/render-gl/contract';
 import {
@@ -23,6 +25,9 @@ import type {
   Node2D,
   Scene2DRenderer,
   GlRenderState,
+  GlContextState,
+  GlPipeline,
+  GlRenderOptions,
   GlRenderTarget,
   Matrix,
   RenderCache,
@@ -42,11 +47,14 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
  * scene-graph bookkeeping: its own render node map, adapter map, and frame counter, so baking
  * neither substitutes a cache into itself nor disturbs the screen state's nodes.
  */
-export function createGlCacheState(screenState: GlRenderState): GlRenderState {
-  const cacheState = createGlOffscreenRenderState(screenState);
-  // Adapter maps are deliberately fresh on the derived state. In particular, the cache adapter
-  // attached on the screen state is absent while this state renders the content that populates it.
-  _cacheStateScreen.set(cacheState, screenState);
+export function createGlCacheState(
+  ownerState: GlRenderState,
+  contextState: Readonly<GlContextState>,
+  pipeline: Readonly<GlPipeline>,
+  options: GlRenderOptions = {},
+): GlRenderState {
+  const cacheState = createGlOffscreenRenderState(contextState, pipeline, options);
+  registerGlRenderStateTeardown(ownerState, () => destroyGlRenderState(cacheState));
   return cacheState;
 }
 
@@ -60,30 +68,24 @@ export function enableGlRenderCache(state: GlRenderState): void {
  * content prefer refreshGlRenderCache.
  */
 export function ensureGlRenderCacheTarget(
-  state: GlRenderState,
+  ownerState: GlRenderState,
   cache: RenderCache,
   width: number,
   height: number,
 ): GlRenderTarget {
-  const targets = getTargets(state);
+  const targets = ensureTargets(ownerState);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createGlRenderTarget(state, { width, height });
+    target = createGlRenderTarget(ownerState, { width, height });
     targets.set(cache, target);
   } else {
-    resizeGlRenderTarget(state, target, width, height);
+    resizeGlRenderTarget(ownerState, target, width, height);
   }
   return target;
 }
 
-// Cache rendering uses a second render state over the screen state's GL context. Backend resources
-// that must remain visible while that cache state walks a subtree are owned by the screen state.
-export function getGlRenderCacheScreenState(state: GlRenderState): GlRenderState {
-  return _cacheStateScreen.get(state) ?? state;
-}
-
-export function getGlRenderCacheTarget(state: GlRenderState, cache: RenderCache): GlRenderTarget | null {
-  return getTargets(state).get(cache) ?? null;
+export function getGlRenderCacheTarget(ownerState: GlRenderState, cache: RenderCache): GlRenderTarget | null {
+  return _renderCacheTargets.get(ownerState)?.get(cache) ?? null;
 }
 
 /**
@@ -94,12 +96,12 @@ export function getGlRenderCacheTarget(state: GlRenderState, cache: RenderCache)
  * state bakes, then restores the screen pass and invalidates both states' binding caches.
  */
 export function refreshGlRenderCache(
+  ownerState: GlRenderState,
   cacheState: GlRenderState,
   cache: RenderCache,
   source: Node2D,
   options?: Readonly<RenderCacheRefreshOptions>,
 ): boolean {
-  const screenState = getGlRenderCacheScreenState(cacheState);
   const padding = options?.padding ?? 0;
   const minWidth = options?.minWidth ?? 1;
   const minHeight = options?.minHeight ?? 1;
@@ -107,9 +109,9 @@ export function refreshGlRenderCache(
   computeNodeRootLocalBoundsRectangle(_bounds, source);
   const { width, height } = computeRenderTargetSize(_targetSize, _bounds, padding, minWidth, minHeight);
 
-  const existing = getGlRenderCacheTarget(screenState, cache);
+  const existing = getGlRenderCacheTarget(ownerState, cache);
   const resized = existing === null || existing.width !== width || existing.height !== height;
-  const target = ensureGlRenderCacheTarget(screenState, cache, width, height);
+  const target = ensureGlRenderCacheTarget(ownerState, cache, width, height);
 
   computeScene2DRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
@@ -134,19 +136,20 @@ export function refreshGlRenderCache(
   return dirty || resized;
 }
 
-export function releaseGlRenderCache(state: GlRenderState, cache: RenderCache): void {
-  const targets = getTargets(state);
+export function releaseGlRenderCache(ownerState: GlRenderState, cache: RenderCache): void {
+  const targets = _renderCacheTargets.get(ownerState);
+  if (targets === undefined) return;
   const target = targets.get(cache);
   if (target === undefined) return;
   // A GlRenderTarget owns a framebuffer and texture; GC will not free them.
-  destroyGlRenderTarget(state, target);
+  destroyGlRenderTarget(ownerState, target);
   targets.delete(cache);
 }
 
 function drawGlRenderCache(state: GlRenderState, renderProxy: RenderProxy2D): void {
   const cache = getRenderProxyCache(state, renderProxy.source);
   if (cache === null) return;
-  const target = getTargets(state).get(cache);
+  const target = _renderCacheTargets.get(state)?.get(cache);
   if (target === undefined) return;
   // Drain pending batched geometry before the immediate composite quad. Like every other
   // immediate-draw renderer (RichText, Scale9), this bypasses the quad-batch writer; without the
@@ -158,13 +161,22 @@ function drawGlRenderCache(state: GlRenderState, renderProxy: RenderProxy2D): vo
   drawGlRenderTargetResult(state, renderProxy, target, _identity);
 }
 
-function getTargets(state: GlRenderState): WeakMap<RenderCache, GlRenderTarget> {
-  let targets = _renderCacheTargets.get(state);
+function ensureTargets(ownerState: GlRenderState): Map<RenderCache, GlRenderTarget> {
+  let targets = _renderCacheTargets.get(ownerState);
   if (targets === undefined) {
-    targets = new WeakMap();
-    _renderCacheTargets.set(state, targets);
+    targets = new Map();
+    _renderCacheTargets.set(ownerState, targets);
+    registerGlRenderStateTeardown(ownerState, destroyOwnedGlRenderCacheTargets);
   }
   return targets;
+}
+
+function destroyOwnedGlRenderCacheTargets(ownerState: GlRenderState): void {
+  const targets = _renderCacheTargets.get(ownerState);
+  if (targets === undefined) return;
+  for (const target of targets.values()) destroyGlRenderTarget(ownerState, target);
+  targets.clear();
+  _renderCacheTargets.delete(ownerState);
 }
 
 export const defaultGlRenderCacheRenderer: Scene2DRenderer = {
@@ -174,9 +186,7 @@ export const defaultGlRenderCacheRenderer: Scene2DRenderer = {
 
 // The screen state owns each cache's target, keyed by the handle, so one handle can be
 // composited by several states without the handle carrying a backend resource.
-const _renderCacheTargets = new WeakMap<GlRenderState, WeakMap<RenderCache, GlRenderTarget>>();
-// Links an offscreen cache state back to the screen state whose targets it bakes into.
-const _cacheStateScreen = new WeakMap<GlRenderState, GlRenderState>();
+const _renderCacheTargets = new WeakMap<GlRenderState, Map<RenderCache, GlRenderTarget>>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
 const _identity = createMatrix() as Matrix;

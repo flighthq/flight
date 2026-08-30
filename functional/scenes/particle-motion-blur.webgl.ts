@@ -9,6 +9,8 @@ import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 //
 import type { Bitmap, Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
+  scene2dGlPipeline,
+  createGlContextState,
   ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
@@ -63,9 +65,12 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, {
+      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+    }),
+  ),
+  scene2dGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x101014ff,

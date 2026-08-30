@@ -1,10 +1,12 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
-  copyGlRenderStateRegistrations,
+  createEmptyGlRegistries,
+  createGlContextState,
+  createGlPipeline,
   createGlRenderStateRuntime,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlPipeline, GlRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -17,8 +19,17 @@ import {
   setGlCustomShaderSourceGuard,
 } from './glCustomShaderEffect';
 
-function makeState(): GlRenderState {
-  return { [EntityRuntimeKey]: createGlRenderStateRuntime() } as unknown as GlRenderState;
+const testPipeline = createGlPipeline(createEmptyGlRegistries());
+
+function makeState(pipeline: Readonly<GlPipeline> = testPipeline): GlRenderState {
+  const gl = document.createElement('canvas').getContext('webgl2')!;
+  const contextState = createGlContextState(gl);
+  return {
+    [EntityRuntimeKey]: createGlRenderStateRuntime(contextState, pipeline),
+    contextState,
+    gl,
+    pipeline,
+  } as unknown as GlRenderState;
 }
 
 const FRAGMENT_SRC = `#version 300 es
@@ -108,12 +119,11 @@ describe('registerGlCustomShaderSource', () => {
 
   it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
     const screen = makeState();
-    const derived = makeState();
     const replacement = FRAGMENT_SRC.replace('texture(u_texture0, v_texCoord)', 'vec4(1.0)');
     registerGlCustomShaderSource(screen, 'ripple', FRAGMENT_SRC);
     const snapshot = getGlRenderStateRuntime(screen).registries.customEffectShaders;
+    const derived = makeState(createGlPipeline(getGlRenderStateRuntime(screen).registries));
 
-    copyGlRenderStateRegistrations(derived, screen);
     registerGlCustomShaderSource(screen, 'ripple', replacement);
 
     expect(getGlRenderStateRuntime(derived).registries.customEffectShaders).toBe(snapshot);

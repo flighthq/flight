@@ -1,5 +1,5 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { copyGlRenderStateRegistrations, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
 import type { GlModifierSnippet } from '@flighthq/types/contract';
 
@@ -35,13 +35,15 @@ describe('registerGlModifierSnippet', () => {
 
   it('replaces the table while an explicitly copied state retains its snapshot through lazy scene init', () => {
     const { state: screen } = makeGlScene3DState();
-    const { state: derived } = makeGlScene3DState();
     const initial = makeSnippet();
     const override = makeSnippet({ contribution: () => '// override' });
     registerGlModifierSnippet(screen, initial);
     const snapshot = getGlRenderStateRuntime(screen).registries.modifierSnippets;
+    const { state: derived } = makeGlScene3DState(
+      undefined,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
 
-    copyGlRenderStateRegistrations(derived, screen);
     getGlScene3DRuntime(derived);
     registerGlModifierSnippet(screen, override);
 

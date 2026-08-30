@@ -9,6 +9,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, createViewport } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
+  createGlContextState,
   beginGlRenderPass,
   createGlCanvasElement,
   createGlProgram,
@@ -21,7 +22,7 @@ import {
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
-import { defaultGlShapeRenderer, enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { scene2dGlPipeline, defaultGlShapeRenderer, enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
@@ -57,10 +58,13 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, {
-    antialias: false,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, {
+      antialias: false,
+      contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+    }),
+  ),
+  scene2dGlPipeline,
   {
     pixelRatio: scale,
   },

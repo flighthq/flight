@@ -5,6 +5,7 @@ import {
   createEmptyGlRegistries,
   createGlCanvasElement,
   createGlContextFromCanvasElement,
+  createGlContextState,
   createGlPipeline,
   createGlRenderState,
   getGlPipelineRegistries,
@@ -19,15 +20,18 @@ const canvas = createGlCanvasElement(400, 300, 1);
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
-  { pixelRatio: 1, backgroundColor: 0x1a1a2eff },
-);
-
 const pipeline = createGlPipeline({
   ...createEmptyGlRegistries(),
   renderers: withRegistryTableEntry(createEmptyGlRegistries().renderers, SpriteKind, defaultGlSpriteRenderer),
 });
+
+const state = createGlRenderState(
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  ),
+  pipeline,
+  { pixelRatio: 1, backgroundColor: 0x1a1a2eff },
+);
 
 const registries = getGlPipelineRegistries(pipeline);
 for (const [kind, entry] of registries.renderers.entries) {

@@ -1,6 +1,7 @@
 import type { ApplicationWindow } from './ApplicationWindow';
 import type { Entity } from './Entity';
 import type { GlContextOptions } from './GlContext';
+import type { GlPipeline } from './GlPipeline';
 import type { GlRenderOptions } from './GlRenderOptions';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget } from './GlRenderTarget';
@@ -32,6 +33,7 @@ export type ApplicationRenderViewTargetOptions = Omit<RenderTargetDescriptor, 'h
 
 export interface GlApplicationRenderViewOptions {
   readonly context?: Readonly<GlContextOptions>;
+  readonly pipeline: Readonly<GlPipeline>;
   readonly render?: Readonly<GlRenderOptions>;
   readonly target?: Readonly<ApplicationRenderViewTargetOptions>;
 }

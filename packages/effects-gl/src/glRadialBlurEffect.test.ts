@@ -1,4 +1,10 @@
-import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
+  createGlContextFromCanvasElement,
+  createGlRenderState,
+} from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, RadialBlurEffect } from '@flighthq/types/contract';
 
 const programMock = vi.hoisted(() => ({
@@ -132,7 +138,10 @@ describe('defaultGlRadialBlurEffectRunner', () => {
 
 describe('registerGlRadialBlurEffect', () => {
   it('makes the runner resolvable for the RadialBlurEffect kind', () => {
-    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
+    const state = createGlRenderState(
+      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlPipeline(createEmptyGlRegistries()),
+    );
 
     expect(getGlRenderEffectRunner(state, 'RadialBlurEffect')).toBeNull();
     registerGlRadialBlurEffect(state);

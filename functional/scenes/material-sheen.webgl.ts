@@ -3,6 +3,8 @@ import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
+  scene2dGlPipeline,
+  createGlContextState,
   createScene3DLights,
   addNodeChild,
   beginGlRenderEffectPipeline,
@@ -53,9 +55,12 @@ const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, {
-    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
-  }),
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, {
+      contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
+    }),
+  ),
+  scene2dGlPipeline,
   {
     pixelRatio,
     backgroundColor: 0x0a0c10ff,

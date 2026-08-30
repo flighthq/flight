@@ -1,6 +1,12 @@
 vi.mock('./glSsaoEffect', () => ({ applySsaoEffectToGl: vi.fn() }));
 
-import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
+  createGlContextFromCanvasElement,
+  createGlRenderState,
+} from '@flighthq/render-gl/contract';
 
 import {
   applyContactShadowsEffectToGl,
@@ -36,7 +42,10 @@ describe('defaultGlContactShadowsEffectRunner', () => {
 
 describe('registerGlContactShadowsEffect', () => {
   it('installs the contact-shadows runner on the supplied state', () => {
-    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
+    const state = createGlRenderState(
+      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlPipeline(createEmptyGlRegistries()),
+    );
     registerGlContactShadowsEffect(state);
     expect(getGlRenderEffectRunner(state, 'ContactShadowsEffect')).toBe(defaultGlContactShadowsEffectRunner);
   });

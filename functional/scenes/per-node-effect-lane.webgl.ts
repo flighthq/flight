@@ -70,7 +70,7 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgl') throw new Error('per-node-effect-lane requires WebGL');
 const { render, state, width } = target;
 
-const offscreenState = createGlOffscreenRenderState(state);
+const offscreenState = createGlOffscreenRenderState(state.contextState, state.pipeline);
 const pool = createGlRenderTexturePool();
 registerGlBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);

@@ -5,11 +5,13 @@ import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlContext } from './GlContext';
 import type { GlContextRuntime } from './GlContextRuntime';
+import type { GlContextState } from './GlContextState';
 import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlModifierSnippet } from './GlModifierSnippet';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
+import type { GlPipeline } from './GlPipeline';
 import type { GlRenderEffectRegistration } from './GlRenderEffectPipeline';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureGuard } from './GlRenderTexture';
@@ -27,7 +29,9 @@ import type { TintMaterialData } from './TintMaterialData';
 
 export interface GlRenderState extends RenderState {
   applyBlendMode: ((state: GlRenderState, blendMode: BlendMode | null) => void) | null;
+  readonly contextState: GlContextState;
   readonly gl: GlContext;
+  readonly pipeline: GlPipeline;
 }
 
 // Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived
@@ -129,6 +133,7 @@ export type GlColorAdjustmentMaterialFeatureGuard = (
 export interface GlRenderStateRuntime extends RenderStateRuntime {
   context: GlContextRuntime;
   registries: GlRenderRegistries;
+  teardowns: ((state: GlRenderState) => void)[];
   // Opt-in dev guard: called where a draw path is about to TRUST a cached binding slot and skip the
   // rebind. Null in production, so the check costs nothing and the message lives in the guard module.
   bindingCacheGuard: ((state: GlRenderState, expectedProgram: WebGLProgram) => void) | null;

@@ -1,4 +1,7 @@
 import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
   createGlContextFromCanvasElement,
   acquireGlRenderTexture,
   createGlRenderState,
@@ -18,7 +21,12 @@ import {
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
 function createGlState() {
-  return { state: createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas'))) };
+  return {
+    state: createGlRenderState(
+      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlPipeline(createEmptyGlRegistries()),
+    ),
+  };
 }
 
 describe('applyBlurEffectToGl', () => {

@@ -1,6 +1,6 @@
 import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contract';
-import { createGlOffscreenRenderState, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createGlOffscreenRenderState, createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
@@ -138,7 +138,10 @@ describe('registerGlVelocityWriter', () => {
 
     registerGlVelocityWriter(state, kind, defaultGlNode2DVelocityWriter);
     const registered = getGlRenderStateRuntime(state).registries.velocityWriters;
-    const offscreen = createGlOffscreenRenderState(state);
+    const offscreen = createGlOffscreenRenderState(
+      state.contextState,
+      createGlPipeline(getGlRenderStateRuntime(state).registries),
+    );
     registerGlVelocityWriter(state, kind, replacement);
 
     expect(registered).not.toBe(before);

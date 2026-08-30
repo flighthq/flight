@@ -1,5 +1,5 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { copyGlRenderStateRegistrations, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer, Material } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
@@ -34,12 +34,14 @@ describe('registerGlMeshMaterialRenderer', () => {
 
   it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
     const { state: screen } = makeGlScene3DState();
-    const { state: derived } = makeGlScene3DState();
     const replacement: GlMeshMaterialRenderer = { bind() {}, draw() {} };
     registerGlMeshMaterialRenderer(screen, TestKind, renderer);
     const snapshot = getGlRenderStateRuntime(screen).registries.meshMaterialRenderers;
+    const { state: derived } = makeGlScene3DState(
+      undefined,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
 
-    copyGlRenderStateRegistrations(derived, screen);
     getGlScene3DRuntime(derived);
     registerGlMeshMaterialRenderer(screen, TestKind, replacement);
 

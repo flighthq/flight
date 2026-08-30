@@ -1,4 +1,10 @@
-import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
+  createGlContextFromCanvasElement,
+  createGlRenderState,
+} from '@flighthq/render-gl/contract';
 
 import * as contractEffects from './contract';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
@@ -53,8 +59,14 @@ describe('GL effect registration', () => {
     ['VignetteEffect', 'registerGlVignetteEffect', 'defaultGlVignetteEffectRunner'],
     ['WhiteBalanceEffect', 'registerGlWhiteBalanceEffect', 'defaultGlWhiteBalanceEffectRunner'],
   ] as const)('registers the public %s runner on only the supplied state', (kind, registerName, runnerName) => {
-    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
-    const other = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
+    const state = createGlRenderState(
+      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlPipeline(createEmptyGlRegistries()),
+    );
+    const other = createGlRenderState(
+      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlPipeline(createEmptyGlRegistries()),
+    );
 
     publicEffects[registerName](state);
 

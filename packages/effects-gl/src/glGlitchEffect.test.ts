@@ -1,4 +1,10 @@
-import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
+  createGlContextFromCanvasElement,
+  createGlRenderState,
+} from '@flighthq/render-gl/contract';
 import type { GlitchEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 // The shader is module-private, so it is read back from the argument the effect hands the program
@@ -132,7 +138,10 @@ describe('defaultGlGlitchEffectRunner', () => {
 
 describe('registerGlGlitchEffect', () => {
   it('makes the runner resolvable for the GlitchEffect kind', () => {
-    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
+    const state = createGlRenderState(
+      createGlContextState(createGlContextFromCanvasElement(document.createElement('canvas'))),
+      createGlPipeline(createEmptyGlRegistries()),
+    );
 
     expect(getGlRenderEffectRunner(state, 'GlitchEffect')).toBeNull();
     registerGlGlitchEffect(state);

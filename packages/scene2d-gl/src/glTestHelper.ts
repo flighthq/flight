@@ -1,4 +1,10 @@
-import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import {
+  createEmptyGlRegistries,
+  createGlContextFromCanvasElement,
+  createGlContextState,
+  createGlPipeline,
+  createGlRenderState,
+} from '@flighthq/render-gl/contract';
 import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 // Local test helper for scene2d-gl unit tests. Mirrors render-gl's own private
@@ -19,7 +25,8 @@ export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?:
     drawingBufferHeight: { configurable: true, value: canvas.height },
     drawingBufferWidth: { configurable: true, value: canvas.width },
   });
-  const state = createGlRenderState(gl, {
+  const contextState = createGlContextState(gl);
+  const state = createGlRenderState(contextState, createGlPipeline(createEmptyGlRegistries()), {
     backgroundColor: 0x00000000,
     imageSmoothingEnabled: options?.allowSmoothing ?? true,
     pixelRatio: options?.pixelRatio,
