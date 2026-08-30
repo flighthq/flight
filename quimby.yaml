@@ -176,7 +176,7 @@ roles:
       If more approved work is available, continue working rather than
       waiting unnecessarily for integration or review.
 
-      If no useful approved work remains, report completion to Foreman and
+      If no useful approved work remains, escalate completion to Foreman and
       wait for another assignment.
 
       Never silently stop working. Always leave Foreman with a clear state:
@@ -239,9 +239,12 @@ roles:
 services:
   serve: quimby serve
 
+integrate:
+  from: integration
+
 layouts:
   default:
-    expr: '((principal manager foreman auditor integration) | (@builder)):80 / (host $serve):20'
+    expr: '((principal foreman auditor manager integration) | (@builder)):80 / (host $serve):20'
 
 default: default
 
