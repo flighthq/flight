@@ -53,10 +53,10 @@ describe('generateWgpuMipmaps', () => {
     const state = await createWgpuRenderStateForTest();
     spyEncoderPasses(state);
     generateWgpuMipmaps(state, makeTextureSpy(), 4, 4, 'rgba8unorm');
-    const pipeline = getWgpuRenderStateRuntime(state).mipmapPipelineCache.get('rgba8unorm')?.pipeline;
+    const pipeline = getWgpuRenderStateRuntime(state).context.mipmapPipelineCache.get('rgba8unorm')?.pipeline;
     expect(pipeline).toBeDefined();
     generateWgpuMipmaps(state, makeTextureSpy(), 8, 8, 'rgba8unorm');
-    expect(getWgpuRenderStateRuntime(state).mipmapPipelineCache.get('rgba8unorm')?.pipeline).toBe(pipeline);
+    expect(getWgpuRenderStateRuntime(state).context.mipmapPipelineCache.get('rgba8unorm')?.pipeline).toBe(pipeline);
   });
 
   it('keeps linear and sRGB downsample pipelines distinct', async () => {
@@ -64,7 +64,7 @@ describe('generateWgpuMipmaps', () => {
     spyEncoderPasses(state);
     generateWgpuMipmaps(state, makeTextureSpy(), 4, 4, 'rgba8unorm');
     generateWgpuMipmaps(state, makeTextureSpy(), 4, 4, 'rgba8unorm-srgb');
-    expect(getWgpuRenderStateRuntime(state).mipmapPipelineCache.size).toBe(2);
+    expect(getWgpuRenderStateRuntime(state).context.mipmapPipelineCache.size).toBe(2);
   });
 });
 

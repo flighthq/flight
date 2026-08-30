@@ -175,8 +175,8 @@ describe('createWgpuDeviceState', () => {
     const deviceState = createWgpuDeviceState(device);
     const runtimeA = createWgpuRenderStateRuntime(deviceState);
     const runtimeB = createWgpuRenderStateRuntime(deviceState);
-    runtimeA.standardMaterialModule = {} as GPUShaderModule;
-    expect(runtimeB.standardMaterialModule).toBe(runtimeA.standardMaterialModule);
+    runtimeA.context.standardMaterialModule = {} as GPUShaderModule;
+    expect(runtimeB.context.standardMaterialModule).toBe(runtimeA.context.standardMaterialModule);
   });
 });
 
@@ -251,7 +251,7 @@ describe('createWgpuOffscreenRenderState', () => {
       'acme.Effect',
       effectRunner as never,
     );
-    getWgpuRenderStateRuntime(screen).wgpuRenderTextureCache = new WeakMap();
+    getWgpuRenderStateRuntime(screen).context.wgpuRenderTextureCache = new WeakMap();
 
     const offscreen = createWgpuOffscreenRenderState(screen);
     const screenRuntime = getWgpuRenderStateRuntime(screen);
@@ -259,10 +259,7 @@ describe('createWgpuOffscreenRenderState', () => {
 
     expect(offscreen.device).toBe(screen.device);
     expect(offscreen.surface).toBe(screen.surface);
-    expect(offscreenRuntime.pipelineCache).toBe(screenRuntime.pipelineCache);
-    expect(offscreenRuntime.textureCache).toBe(screenRuntime.textureCache);
-    expect(offscreenRuntime.wgpuRenderTextureCache).toBe(screenRuntime.wgpuRenderTextureCache);
-    expect(offscreenRuntime.uniformBindGroupLayout).toBe(screenRuntime.uniformBindGroupLayout);
+    expect(offscreenRuntime.context).toBe(screenRuntime.context);
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
@@ -598,20 +595,19 @@ describe('createWgpuRenderStateRuntime', () => {
     const runtimeB = createWgpuRenderStateRuntime(deviceState);
 
     const sampler = {} as GPUSampler;
-    runtimeA.linearSampler = sampler;
-    expect(runtimeB.linearSampler).toBe(sampler);
+    runtimeA.context.linearSampler = sampler;
+    expect(runtimeB.context.linearSampler).toBe(sampler);
 
     const sampler2 = {} as GPUSampler;
-    runtimeB.linearSampler = sampler2;
-    expect(runtimeA.linearSampler).toBe(sampler2);
+    runtimeB.context.linearSampler = sampler2;
+    expect(runtimeA.context.linearSampler).toBe(sampler2);
   });
 
   it('keeps separate device tiers when two runtimes are built from different WgpuDeviceStates', () => {
     const runtimeA = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
     const runtimeB = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
 
-    runtimeA.linearSampler = {} as GPUSampler;
-    expect(runtimeB.linearSampler).toBeUndefined();
+    expect(runtimeA.context).not.toBe(runtimeB.context);
   });
 });
 
@@ -655,8 +651,8 @@ describe('destroyWgpuRenderState', () => {
     const offscreenRuntime = getWgpuRenderStateRuntime(offscreen);
 
     const sampler = {} as GPUSampler;
-    runtime.linearSampler = sampler;
-    expect(offscreenRuntime.linearSampler).toBe(sampler);
+    runtime.context.linearSampler = sampler;
+    expect(offscreenRuntime.context.linearSampler).toBe(sampler);
 
     destroyWgpuRenderState(offscreen);
     destroyWgpuRenderState(state);
@@ -757,8 +753,10 @@ describe('getWgpuSampler', () => {
     const b = getWgpuSampler(state, 'linear', 'linear', 'repeat', 'repeat');
     expect(a).toBe(b);
     // The cache is keyed by a packed NUMBER (no per-call string allocation), and one config caches once.
-    expect([...getWgpuRenderStateRuntime(state).samplerCache.keys()].every((k) => typeof k === 'number')).toBe(true);
-    expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(1);
+    expect([...getWgpuRenderStateRuntime(state).context.samplerCache.keys()].every((k) => typeof k === 'number')).toBe(
+      true,
+    );
+    expect(getWgpuRenderStateRuntime(state).context.samplerCache.size).toBe(1);
   });
 
   it('returns a distinct sampler for a different wrap or filter', async () => {
@@ -775,7 +773,7 @@ describe('getWgpuSampler', () => {
     const noMip = getWgpuSampler(state, 'linear', 'linear', 'repeat', 'repeat');
     const trilinear = getWgpuSampler(state, 'linear', 'linear', 'repeat', 'repeat', 'linear');
     expect(noMip).not.toBe(trilinear);
-    expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(2);
+    expect(getWgpuRenderStateRuntime(state).context.samplerCache.size).toBe(2);
   });
 
   it('forces linear filtering and a linear mip filter when anisotropy exceeds 1', async () => {
@@ -792,7 +790,7 @@ describe('getWgpuSampler', () => {
     const a = getWgpuSampler(state, 'linear', 'linear', 'repeat', 'repeat', 'linear', 4.9);
     const b = getWgpuSampler(state, 'linear', 'linear', 'repeat', 'repeat', 'linear', 4);
     expect(a).toBe(b);
-    expect(getWgpuRenderStateRuntime(state).samplerCache.size).toBe(1);
+    expect(getWgpuRenderStateRuntime(state).context.samplerCache.size).toBe(1);
   });
 
   it('keeps independent minification and magnification filters', async () => {

@@ -61,7 +61,7 @@ describe('destroyWgpuRenderTexture', () => {
     const renderTexture = texture();
     renderWgpuBackground(state);
     renderIntoWgpuRenderTexture(state, renderTexture, () => {});
-    const entry = getWgpuRenderStateRuntime(state).wgpuRenderTextureCache!.get(renderTexture)!;
+    const entry = getWgpuRenderStateRuntime(state).context.wgpuRenderTextureCache!.get(renderTexture)!;
     const destroy = vi.spyOn(entry.target.texture, 'destroy');
 
     destroyWgpuRenderTexture(state, renderTexture);

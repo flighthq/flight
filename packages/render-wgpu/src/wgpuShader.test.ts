@@ -34,8 +34,8 @@ describe('createWgpuPipelineLayout', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const layout = createWgpuPipelineLayout(
       state.device,
-      runtime.uniformBindGroupLayout,
-      runtime.textureBindGroupLayout,
+      runtime.context.uniformBindGroupLayout,
+      runtime.context.textureBindGroupLayout,
     );
     expect(layout).toBeDefined();
   });
