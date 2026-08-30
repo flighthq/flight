@@ -463,6 +463,7 @@ export interface ElectronNotificationOptions {
   icon?: string;
   silent?: boolean;
   actions?: { text: string; type: 'button' }[];
+  hasReply?: boolean;
 }
 
 export interface ElectronNotification {

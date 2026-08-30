@@ -19,6 +19,8 @@ appending to it: a closed thread is deleted, not struck._
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-30** — Notification moved from the notification package into two injected factories. Page and Service Worker profiles are exact and separate; there are no fake page/SW timers, update, SW reply/show, or injected data key. `webHost.notification` stays empty until a caller composes the correct context.
+
 - **2026-08-30** — Removed the ambient web Shortcut backend path. `webHost` now publishes the
   required top-level `shortcut` group as exact `{}`, so absence of both optional providers is
   structural and survives composition/probing without a sentinel.

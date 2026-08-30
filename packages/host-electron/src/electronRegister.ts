@@ -20,7 +20,9 @@ import type {
   HasNotificationClose,
   HasNotificationDelivery,
   HasNotificationDismiss,
-  HasNotificationShow,
+  HasNotificationLifecycle,
+  HasNotificationReceived,
+  HasNotificationReply,
   HasIpcMessage,
   HasScreenChange,
   HasScreenQuery,
@@ -74,12 +76,12 @@ type ElectronHost<Profile extends DesktopOsProfile> = Host & {
   HasDialogFileOpen &
   HasDialogFileSave &
   HasDialogMessage &
-  HasNotificationAction &
   HasNotificationClick &
   HasNotificationClose &
   HasNotificationDelivery &
   HasNotificationDismiss &
-  HasNotificationShow &
+  HasNotificationLifecycle &
+  HasNotificationReceived &
   HasMenuApplication &
   HasMenuPopup &
   HasIpcMessage &
@@ -98,6 +100,8 @@ type ElectronHost<Profile extends DesktopOsProfile> = Host & {
   HasWindowAttach &
   HasWindowOpen;
 
+type ElectronMacosHost = ElectronHost<'macos'> & HasNotificationAction & HasNotificationReply;
+
 // Builds the explicit Electron host and installs capabilities that have not yet migrated from their
 // package-local seams. Run this once in the Electron main process, passing the `electron` module plus
 // the real node:fs module (needed for the storage backend):
@@ -109,10 +113,26 @@ type ElectronHost<Profile extends DesktopOsProfile> = Host & {
 //
 // Pass the returned host to clipboard, window, dialog, notification, and storage operations. Remaining
 // ambient package seams revert independently; there is no bulk unregister for those independent backends.
-export function registerElectronBackends<Profile extends DesktopOsProfile>(
+export function registerElectronBackends(
+  electron: ElectronApi,
+  options: Readonly<ElectronBackendOptions> & { readonly platform: 'macos' },
+): ElectronMacosHost;
+export function registerElectronBackends<Profile extends 'linux' | 'windows'>(
   electron: ElectronApi,
   options: Readonly<ElectronBackendOptions> & { readonly platform: Profile },
-): ElectronHost<Profile> {
+): ElectronHost<Profile>;
+export function registerElectronBackends(
+  electron: ElectronApi,
+  options: Readonly<ElectronBackendOptions> & {
+    readonly platform: DesktopOsProfile;
+  },
+): ElectronHost<DesktopOsProfile> | ElectronMacosHost;
+export function registerElectronBackends(
+  electron: ElectronApi,
+  options: Readonly<ElectronBackendOptions> & {
+    readonly platform: DesktopOsProfile;
+  },
+): ElectronHost<DesktopOsProfile> | ElectronMacosHost {
   const clipboard = createElectronClipboardBackend(electron);
   const dialog = {
     directoryOpen: createElectronDirectoryOpenDialogBackend(electron),
@@ -120,7 +140,7 @@ export function registerElectronBackends<Profile extends DesktopOsProfile>(
     fileSave: createElectronFileSaveDialogBackend(electron),
     message: createElectronMessageDialogBackend(electron),
   };
-  const notification = createElectronNotificationCapabilities(electron);
+  const notification = createElectronNotificationCapabilities(electron, options);
   const screen = createElectronScreenCapabilities(electron);
   const ipc = { message: createElectronIpcMessageBackend(electron) };
   const query = createElectronShortcutQueryBackend(electron);
@@ -137,7 +157,12 @@ export function registerElectronBackends<Profile extends DesktopOsProfile>(
   return createEntity({
     accessibility: {},
     app: {},
-    clipboard: { bookmark: clipboard, formats: clipboard, image: clipboard, text: clipboard },
+    clipboard: {
+      bookmark: clipboard,
+      formats: clipboard,
+      image: clipboard,
+      text: clipboard,
+    },
     connectivity: {},
     dialog,
     graphics: {},
@@ -159,5 +184,7 @@ export function registerElectronBackends<Profile extends DesktopOsProfile>(
     ui: {},
     updater: { command: updater },
     window,
-  } satisfies Omit<ElectronHost<Profile>, typeof EntityRuntimeKey>);
+  } satisfies
+    | Omit<ElectronHost<DesktopOsProfile>, typeof EntityRuntimeKey>
+    | Omit<ElectronMacosHost, typeof EntityRuntimeKey>);
 }

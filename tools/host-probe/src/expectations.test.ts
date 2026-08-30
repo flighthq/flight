@@ -1,4 +1,5 @@
 import {
+  createHostProbeNotificationProfileResult,
   createHostProbeProviderResults,
   getRequiredHostProbeCapabilities,
   HostProbeCapabilities,
@@ -15,6 +16,13 @@ describe('createHostProbeProviderResults', () => {
         'dialog',
         'glyph-rasterizer',
         'loop',
+        'notification.click',
+        'notification.close',
+        'notification.delivery',
+        'notification.dismiss',
+        'notification.lifecycle',
+        'notification.permission',
+        'notification.received',
         'power',
         'screen',
         'share',
@@ -42,13 +50,23 @@ describe('createHostProbeProviderResults', () => {
 describe('getRequiredHostProbeCapabilities', () => {
   it('keeps each host subset explicit', () => {
     const electron = getRequiredHostProbeCapabilities('electron');
-    expect(electron.size).toBe(16);
+    expect(electron.size).toBe(21);
     expect(electron.has('updater')).toBe(true);
     expect(getRequiredHostProbeCapabilities('web').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('tauri').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('capacitor').has('updater')).toBe(false);
-    expect(getRequiredHostProbeCapabilities('tauri').size).toBe(10);
-    expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(12);
-    expect(getRequiredHostProbeCapabilities('web').size).toBe(12);
+    expect(getRequiredHostProbeCapabilities('tauri').size).toBe(12);
+    expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(17);
+    expect(getRequiredHostProbeCapabilities('web').size).toBe(19);
+  });
+});
+
+describe('createHostProbeNotificationProfileResult', () => {
+  it('passes only an exact slot profile', () => {
+    const notification = { delivery: {}, permission: {} };
+    expect(createHostProbeNotificationProfileResult('tauri', notification, ['delivery', 'permission']).status).toBe(
+      'pass',
+    );
+    expect(createHostProbeNotificationProfileResult('tauri', notification, ['delivery']).status).toBe('fail');
   });
 });

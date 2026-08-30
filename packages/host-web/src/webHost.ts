@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { webNotificationCapabilities } from '@flighthq/notification/contract';
 import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 
 import { webAccessibilityBackend } from './webAccessibility';
@@ -65,7 +64,10 @@ export const webHost = createEntity({
     message: webMessageDialogBackend,
     prompt: webPromptDialogBackend,
   },
-  graphics: { renderContext: webRenderContextBackend, renderSurface: webRenderSurfaceBackend },
+  graphics: {
+    renderContext: webRenderContextBackend,
+    renderSurface: webRenderSurfaceBackend,
+  },
   input: {
     dropFile: webInputDropFileBackend,
     focus: webInputFocusBackend,
@@ -78,11 +80,16 @@ export const webHost = createEntity({
   },
   // No IPC provider: a browser page has no inter-process peer to receive channel messages from.
   ipc: {},
-  media: { session: webMediaSessionBackend, sessionAction: webMediaSessionActionBackend },
+  media: {
+    session: webMediaSessionBackend,
+    sessionAction: webMediaSessionActionBackend,
+  },
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},
   power: webPowerCapabilities,
-  notification: webNotificationCapabilities,
+  // Notification construction is execution-context-specific (page vs Service Worker) and requires an
+  // injected API. Compose one of the exported notification factories into a Host deliberately.
+  notification: {},
   screen: webScreenCapabilities,
   share: { content: webShareContentBackend, files: webShareFilesBackend },
   shell: { external: webShellExternalBackend },

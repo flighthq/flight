@@ -38,7 +38,10 @@ function fakeElectron(): ElectronApi {
     autoUpdater: { on: noop, removeListener: noop },
     shell: {},
     dialog: {},
-    Menu: { buildFromTemplate: () => ({ popup: noop }), setApplicationMenu: noop },
+    Menu: {
+      buildFromTemplate: () => ({ popup: noop }),
+      setApplicationMenu: noop,
+    },
     // The remaining members are unused at registration time.
     _off: off,
   } as unknown as ElectronApi;
@@ -50,7 +53,9 @@ afterEach(() => {
 
 describe('registerElectronBackends', () => {
   it('routes capability seams to the Electron backends without throwing', async () => {
-    const host = registerElectronBackends(fakeElectron(), { platform: 'linux' });
+    const host = registerElectronBackends(fakeElectron(), {
+      platform: 'linux',
+    });
     expect(host.media).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.directoryOpen.open).toBeTypeOf('function');
@@ -58,22 +63,29 @@ describe('registerElectronBackends', () => {
     expect(host.dialog.fileSave.save).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
-    expect(host.notification.close.closeNotification).toBeTypeOf('function');
+    expect(host.notification.close.closeAllNotifications).toBeTypeOf('function');
     expect(EntityRuntimeKey in host.shortcut.query).toBe(true);
     expect(EntityRuntimeKey in host.shortcut.trigger).toBe(true);
     expect(EntityRuntimeKey in host.updater.command).toBe(true);
     expect(host.updater.command.check).toBeTypeOf('function');
     expect(Object.keys(host.clipboard).sort()).toEqual(['bookmark', 'formats', 'image', 'text']);
     expect(host.connectivity).toEqual({});
-    expect(host.storage.local.getItem('missing')).toEqual({ reason: 'ok', value: null });
+    expect(host.storage.local.getItem('missing')).toEqual({
+      reason: 'ok',
+      value: null,
+    });
     expect(host.window.open).toBeTypeOf('function');
     expect(getAppName()).toBe('ElectronApp');
     expect(await readClipboardText(host)).toBe('ELECTRON-TEXT');
   });
 
   it('constructs the exact six Shell slots from an injected platform fact', () => {
-    const windowsHost = registerElectronBackends(fakeElectron(), { platform: 'windows' });
-    const linuxHost = registerElectronBackends(fakeElectron(), { platform: 'linux' });
+    const windowsHost = registerElectronBackends(fakeElectron(), {
+      platform: 'windows',
+    });
+    const linuxHost = registerElectronBackends(fakeElectron(), {
+      platform: 'linux',
+    });
     expect(Object.keys(windowsHost.shell).sort()).toEqual([
       'beep',
       'external',

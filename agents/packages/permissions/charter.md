@@ -29,8 +29,14 @@ The complete permission surface: query the current state of a named permission, 
 
 _Append-only, dated, blessed rulings._
 
+- **[2026-08-30] Notification permission has one native owner.** The explicit
+  `Host.notification.permission` trait owns native notification permission query/request. Generic Permissions
+  may delegate the `'notifications'` name to that trait, but must not call `Notification` or a native plugin as
+  a second owner. Permission success authorizes a later delivery attempt; it never means a notification was
+  displayed. This supersedes the notification-specific web routing clause in the 2026-07-10 decision below.
+
 - **[2026-07-10] Async command capability, three-state result.** `getPermissionState(name): Promise<PermissionState>` (query, non-prompting) and `requestPermission(name): Promise<PermissionState>` (may trigger the OS prompt). `PermissionState = 'granted' | 'denied' | 'prompt'` (the Permissions-API vocabulary; `'prompt'` = not yet decided). `PermissionName` = open string union (`'camera'|'microphone'|'geolocation'|'notifications'|'clipboard-read'|'clipboard-write'|'persistent-storage'|'push'|'midi'|'screen-wake-lock' | (string & {})`). Async because the web Permissions API and every request path are promise-based.
-- **[2026-07-10] Web backend maps query + request per permission.** Query goes through `navigator.permissions.query({ name })` where supported; `request*` routes each name to its real web trigger (notifications → `Notification.requestPermission`, camera/mic → `getUserMedia`, geolocation → a one-shot position request, persistent-storage → `navigator.storage.persist`, …). A name with no mapping, or a missing API, resolves to `'prompt'`/`'denied'` sentinel — never throws.
+- **[2026-07-10] Web backend maps query + request per permission.** Query goes through `navigator.permissions.query({ name })` where supported; `request*` routes each name to its real web trigger (camera/mic → `getUserMedia`, geolocation → a one-shot position request, persistent-storage → `navigator.storage.persist`, …). Notification is superseded by the 2026-08-30 delegation ruling above. A name with no mapping, or a missing API, resolves to `'prompt'`/`'denied'` sentinel — never throws.
 - **[2026-07-10] `PermissionName`/`PermissionState`/`PermissionBackend` in `@flighthq/types`.** Header owns the shapes; functions carry the `Permission` name.
 
 ## Open directions

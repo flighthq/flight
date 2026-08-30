@@ -1,771 +1,555 @@
+import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostNotificationCapabilities,
-  NotificationCloseBackend,
-  NotificationSchedulingBackend,
-  NotificationUpdateBackend,
+  Notification,
+  NotificationClickBackend,
+  NotificationEventBackendAttachOutcome,
 } from '@flighthq/types/contract';
 
 import {
+  attachNotificationActionSubscription,
+  attachNotificationClickSubscription,
+  attachNotificationDismissSubscription,
+  attachNotificationReceivedSubscription,
+  attachNotificationReplySubscription,
+  bindNotificationClose,
+  bindScheduledNotificationCancel,
   cancelScheduledNotification,
   closeAllNotifications,
   closeNotification,
-  createServiceWorkerNotificationCapabilities,
-  createWebNotificationCapabilities,
+  createNotificationActionSubscription,
+  createNotificationClickSubscription,
+  createNotificationDismissSubscription,
+  createNotificationReceivedSubscription,
+  createNotificationReplySubscription,
+  createNotificationResource,
+  createScheduledNotificationResource,
+  destroyNotificationCapabilities,
+  detachNotificationActionSubscription,
+  detachNotificationClickSubscription,
+  detachNotificationDismissSubscription,
+  detachNotificationReceivedSubscription,
+  detachNotificationReplySubscription,
+  disposeNotificationActionSubscription,
+  disposeNotificationClickSubscription,
+  disposeNotificationDismissSubscription,
+  disposeNotificationReceivedSubscription,
+  disposeNotificationReplySubscription,
   getActiveNotifications,
   getNotificationPermission,
   getPendingNotifications,
-  notifyServiceWorkerNotificationEvent,
-  onNotificationAction,
-  onNotificationClick,
-  onNotificationDismiss,
-  onNotificationReply,
-  onNotificationShow,
   requestNotificationPermission,
   scheduleNotification,
   showNotification,
-  updateNotification,
 } from './notification';
-
-interface FakeWebNotificationRecord {
-  instance: FakeWebNotification;
-  options?: NotificationOptions;
-  title: string;
-}
-
-class FakeWebNotification {
-  static permission: NotificationPermission = 'granted';
-  static records: FakeWebNotificationRecord[] = [];
-  static async requestPermission(): Promise<NotificationPermission> {
-    return FakeWebNotification.permission;
-  }
-
-  onclick: ((event: Event) => void) | null = null;
-  onclose: ((event: Event) => void) | null = null;
-  onerror: ((event: Event) => void) | null = null;
-  onshow: ((event: Event) => void) | null = null;
-
-  constructor(title: string, options?: NotificationOptions) {
-    FakeWebNotification.records.push({ instance: this, options, title });
-  }
-
-  close(): void {
-    this.onclose?.(new Event('close'));
-  }
-}
-
-const originalNotification = globalThis.Notification;
-
-beforeEach(() => {
-  FakeWebNotification.permission = 'granted';
-  FakeWebNotification.records = [];
-  globalThis.Notification = FakeWebNotification as unknown as typeof Notification;
-});
-
-afterAll(() => {
-  globalThis.Notification = originalNotification;
-});
-
-function fakeRegistration() {
-  type Entry = {
-    data?: unknown;
-    options?: NotificationOptions;
-    tag: string;
-    title: string;
-  };
-  const shown: Entry[] = [];
-  return {
-    add(entry: Entry) {
-      shown.push(entry);
-    },
-    async getNotifications(filter?: { tag?: string }) {
-      return shown
-        .filter((entry) => filter?.tag === undefined || entry.tag === filter.tag)
-        .map((entry) => ({
-          data: entry.data ?? entry.options?.data,
-          tag: entry.tag,
-          title: entry.title,
-          close() {
-            const index = shown.indexOf(entry);
-            if (index !== -1) shown.splice(index, 1);
-          },
-        }));
-    },
-    shown,
-    async showNotification(title: string, options?: NotificationOptions) {
-      shown.push({ data: options?.data, options, tag: String(options?.tag ?? ''), title });
-    },
-  };
-}
-
-describe('basic web notification capabilities', () => {
-  it('declares only its honest slots', () => {
-    const capabilities = createWebNotificationCapabilities();
-    expect(EntityRuntimeKey in capabilities).toBe(true);
-    expect(Object.keys(capabilities).sort()).toEqual([
-      'click',
-      'close',
-      'delivery',
-      'dismiss',
-      'scheduling',
-      'show',
-      'update',
-    ]);
-  });
-
-  it('shows, updates by merging, and closes one stable id', async () => {
-    const capabilities = createWebNotificationCapabilities();
-    expect(await capabilities.delivery.notify({ body: 'old', icon: 'icon.png', id: 'n1', title: 'Title' })).toBe('n1');
-    expect(await capabilities.update.updateNotification('n1', { body: 'new' })).toBe(true);
-    expect(FakeWebNotification.records[1]).toMatchObject({
-      options: { body: 'new', icon: 'icon.png', tag: 'n1' },
-      title: 'Title',
-    });
-    await capabilities.close.closeNotification('n1');
-    expect(await capabilities.update.updateNotification('n1', { body: 'again' })).toBe(false);
-  });
-
-  it('returns null rather than a support-probe sentinel when runtime delivery is unavailable', async () => {
-    FakeWebNotification.permission = 'denied';
-    const capabilities = createWebNotificationCapabilities();
-    expect(await capabilities.delivery.getPermission()).toBe('denied');
-    expect(await capabilities.delivery.notify({ title: 'No' })).toBeNull();
-  });
-});
-
-describe('cancelScheduledNotification', () => {
-  it('pins cancellation to the scheduling provider that created the handle', async () => {
-    const aCancelled: string[] = [];
-    const bCancelled: string[] = [];
-    const scheduling = (cancelled: string[]): NotificationSchedulingBackend => ({
-      async cancelScheduledNotification(id) {
-        cancelled.push(id);
-      },
-      async getPendingNotifications() {
-        return [];
-      },
-      async scheduleNotification() {
-        return 'same-id';
-      },
-    });
-    const scheduled = await scheduleNotification(
-      host({ scheduling: scheduling(aCancelled) }),
-      { title: 'A' },
-      { at: 1 },
-    );
-    await cancelScheduledNotification(host({ scheduling: scheduling(bCancelled) }), scheduled!);
-    await cancelScheduledNotification(host({ scheduling: scheduling(bCancelled) }), scheduled!);
-    expect(aCancelled).toEqual(['same-id']);
-    expect(bCancelled).toEqual([]);
-  });
-});
-
-function delivery(id: string) {
-  return {
-    async getPermission() {
-      return 'granted' as const;
-    },
-    async notify() {
-      return id;
-    },
-    async requestPermission() {
-      return 'granted' as const;
-    },
-  };
-}
 
 function host<const TCapabilities extends HostNotificationCapabilities>(notification: TCapabilities) {
   return { notification };
 }
 
-describe('closeAllNotifications', () => {
-  it('routes to the passed close provider', async () => {
-    let closeAllCalls = 0;
-    await closeAllNotifications(
-      host({
-        close: {
-          async closeAllNotifications() {
-            closeAllCalls += 1;
-          },
-          async closeNotification() {},
-        },
-      }),
-    );
-    expect(closeAllCalls).toBe(1);
-  });
-});
-
-describe('closeNotification', () => {
-  it('pins close to the delivery provider and closes only once', async () => {
-    const aClosed: string[] = [];
-    const bClosed: string[] = [];
-    const closeA: NotificationCloseBackend = {
-      async closeAllNotifications() {},
-      async closeNotification(id) {
-        aClosed.push(id);
-      },
-    };
-    const closeB: NotificationCloseBackend = {
-      async closeAllNotifications() {},
-      async closeNotification(id) {
-        bClosed.push(id);
-      },
-    };
-    const created = await showNotification(host({ close: closeA, delivery: delivery('same-id') }), { title: 'A' });
-    await closeNotification(host({ close: closeB }), created!);
-    await closeNotification(host({ close: closeB }), created!);
-    expect(aClosed).toEqual(['same-id']);
-    expect(bClosed).toEqual([]);
-  });
-});
-
-describe('createServiceWorkerNotificationCapabilities', () => {
-  it('creates the honest service-worker capability shape', () => {
-    expect(Object.keys(createServiceWorkerNotificationCapabilities(fakeRegistration())).sort()).toEqual([
-      'action',
-      'activeList',
-      'click',
-      'close',
-      'delivery',
-      'dismiss',
-      'reply',
-      'scheduling',
-      'show',
-    ]);
-  });
-});
-
-describe('createWebNotificationCapabilities', () => {
-  it('creates the honest basic-web capability shape', () => {
-    expect(Object.keys(createWebNotificationCapabilities()).sort()).toEqual([
-      'click',
-      'close',
-      'delivery',
-      'dismiss',
-      'scheduling',
-      'show',
-      'update',
-    ]);
-  });
-});
-
-describe('explicit notification operations', () => {
-  it('reads and requests permission from the passed delivery slot', async () => {
-    const value = host({ delivery: delivery('n1') });
-    expect(await getNotificationPermission(value)).toBe('granted');
-    expect(await requestNotificationPermission(value)).toBe('granted');
-  });
-
-  it('pins close to the provider that created the displayed handle', async () => {
-    const aClosed: string[] = [];
-    const bClosed: string[] = [];
-    const closeA: NotificationCloseBackend = {
-      async closeAllNotifications() {},
-      async closeNotification(id) {
-        aClosed.push(id);
-      },
-    };
-    const closeB: NotificationCloseBackend = {
-      async closeAllNotifications() {},
-      async closeNotification(id) {
-        bClosed.push(id);
-      },
-    };
-    const created = await showNotification(host({ close: closeA, delivery: delivery('same-id') }), { title: 'A' });
-    expect(created).not.toBeNull();
-    await closeNotification(host({ close: closeB }), created!);
-    await closeNotification(host({ close: closeB }), created!);
-    expect(aClosed).toEqual(['same-id']);
-    expect(bClosed).toEqual([]);
-  });
-
-  it('pins update to the provider that created the displayed handle', async () => {
-    const aUpdated: string[] = [];
-    const bUpdated: string[] = [];
-    const updateA: NotificationUpdateBackend = {
-      async updateNotification(id) {
-        aUpdated.push(id);
-        return true;
-      },
-    };
-    const updateB: NotificationUpdateBackend = {
-      async updateNotification(id) {
-        bUpdated.push(id);
-        return true;
-      },
-    };
-    const created = await showNotification(host({ delivery: delivery('same-id'), update: updateA }), { title: 'A' });
-    expect(await updateNotification(host({ update: updateB }), created!, { body: 'changed' })).toBe(true);
-    expect(aUpdated).toEqual(['same-id']);
-    expect(bUpdated).toEqual([]);
-  });
-
-  it('pins cancellation to the provider that created the schedule handle', async () => {
-    const aCancelled: string[] = [];
-    const bCancelled: string[] = [];
-    const scheduling = (cancelled: string[]): NotificationSchedulingBackend => ({
-      async cancelScheduledNotification(id) {
-        cancelled.push(id);
-      },
-      async getPendingNotifications() {
-        return [];
-      },
-      async scheduleNotification() {
-        return 'same-id';
-      },
-    });
-    const scheduled = await scheduleNotification(
-      host({ scheduling: scheduling(aCancelled) }),
-      { title: 'A' },
-      { at: 1 },
-    );
-    await cancelScheduledNotification(host({ scheduling: scheduling(bCancelled) }), scheduled!);
-    await cancelScheduledNotification(host({ scheduling: scheduling(bCancelled) }), scheduled!);
-    expect(aCancelled).toEqual(['same-id']);
-    expect(bCancelled).toEqual([]);
-  });
-
-  it('pins pending-list handles to the provider that enumerated them', async () => {
-    const cancelled: string[] = [];
-    const owner: NotificationSchedulingBackend = {
-      async cancelScheduledNotification(id) {
-        cancelled.push(id);
-      },
-      async getPendingNotifications() {
-        return [{ id: 'listed', request: { title: 'Later' }, schedule: { at: 1 } }];
-      },
-      async scheduleNotification() {
-        return null;
-      },
-    };
-    const fallback: NotificationSchedulingBackend = {
-      async cancelScheduledNotification() {
-        throw new Error('wrong provider');
-      },
-      async getPendingNotifications() {
-        return [];
-      },
-      async scheduleNotification() {
-        return null;
-      },
-    };
-    const [pending] = await getPendingNotifications(host({ scheduling: owner }));
-    await cancelScheduledNotification(host({ scheduling: fallback }), pending!);
-    expect(cancelled).toEqual(['listed']);
-  });
-
-  it('pins active-list handles to the provider that enumerated them', async () => {
-    const closed: string[] = [];
-    const ownerClose: NotificationCloseBackend = {
-      async closeAllNotifications() {},
-      async closeNotification(id) {
-        closed.push(id);
-      },
-    };
-    const owner = host({
-      activeList: {
-        async getActiveNotifications() {
-          return [{ id: 'active', tag: 'tag', title: 'Title' }];
-        },
-      },
-      close: ownerClose,
-    });
-    const [active] = await getActiveNotifications(owner);
-    await closeNotification(
-      host({
-        close: {
-          async closeAllNotifications() {},
-          async closeNotification() {
-            throw new Error('wrong provider');
-          },
-        },
-      }),
-      active!,
-    );
-    expect(closed).toEqual(['active']);
-  });
-
-  it('returns an origin-pinned, idempotent event unsubscribe', () => {
-    const listeners = new Set<(id: string) => void>();
-    const value = host({
-      click: {
-        subscribe(listener) {
-          listeners.add(listener);
-        },
-        unsubscribe(listener) {
-          listeners.delete(listener);
-        },
-      },
-    });
-    const seen: string[] = [];
-    const unsubscribe = onNotificationClick(value, (id) => seen.push(id));
-    for (const listener of listeners) listener('before');
-    unsubscribe();
-    unsubscribe();
-    for (const listener of listeners) listener('after');
-    expect(seen).toEqual(['before']);
-  });
-});
-
-describe('getActiveNotifications', () => {
-  it('pins returned handles to the listing provider', async () => {
-    const closed: string[] = [];
-    const owner = host({
-      activeList: {
-        async getActiveNotifications() {
-          return [{ id: 'active', tag: 'tag', title: 'Title' }];
-        },
-      },
-      close: {
-        async closeAllNotifications() {},
-        async closeNotification(id: string) {
-          closed.push(id);
-        },
-      },
-    });
-    const [active] = await getActiveNotifications(owner);
-    await closeNotification(
-      host({
-        close: {
-          async closeAllNotifications() {},
-          async closeNotification() {
-            throw new Error('wrong provider');
-          },
-        },
-      }),
-      active!,
-    );
-    expect(closed).toEqual(['active']);
-  });
-});
-
-describe('getNotificationPermission', () => {
-  it('reads permission from the passed delivery provider', async () => {
-    expect(await getNotificationPermission(host({ delivery: delivery('n1') }))).toBe('granted');
-  });
-});
-
-describe('getPendingNotifications', () => {
-  it('pins returned handles to the enumerating scheduling provider', async () => {
-    const cancelled: string[] = [];
-    const owner: NotificationSchedulingBackend = {
-      async cancelScheduledNotification(id) {
-        cancelled.push(id);
-      },
-      async getPendingNotifications() {
-        return [{ id: 'listed', request: { title: 'Later' }, schedule: { at: 1 } }];
-      },
-      async scheduleNotification() {
-        return null;
-      },
-    };
-    const [pending] = await getPendingNotifications(host({ scheduling: owner }));
-    await cancelScheduledNotification(
-      host({
-        scheduling: {
-          async cancelScheduledNotification() {
-            throw new Error('wrong provider');
-          },
-          async getPendingNotifications() {
-            return [];
-          },
-          async scheduleNotification() {
-            return null;
-          },
-        },
-      }),
-      pending!,
-    );
-    expect(cancelled).toEqual(['listed']);
-  });
-});
-
-describe('notifyServiceWorkerNotificationEvent', () => {
-  it('routes a worker click to the matching capability object', () => {
-    const capabilities = createServiceWorkerNotificationCapabilities(fakeRegistration());
-    const seen: string[] = [];
-    capabilities.click.subscribe((id) => seen.push(id));
-    notifyServiceWorkerNotificationEvent(capabilities, { notificationId: 'n1', type: 'notificationclick' });
-    expect(seen).toEqual(['n1']);
-  });
-});
-
-describe('onNotificationAction', () => {
-  it('subscribes and idempotently unsubscribes an action listener', () => {
-    const listeners = new Set<(id: string, actionId: string) => void>();
-    const seen: string[] = [];
-    const unsubscribe = onNotificationAction(
-      host({
-        action: {
-          subscribe(listener) {
-            listeners.add(listener);
-          },
-          unsubscribe(listener) {
+function createClickBackend(options?: Readonly<{ attachFailure?: boolean; releaseFailure?: boolean }>) {
+  const listeners = new Set<(notification: Readonly<Notification>) => void>();
+  const backend: NotificationClickBackend = {
+    async attach(listener): Promise<NotificationEventBackendAttachOutcome> {
+      if (options?.attachFailure === true) {
+        return {
+          reason: 'operation-failed',
+          releaseFailed: options.releaseFailure === true,
+        };
+      }
+      listeners.add(listener);
+      return {
+        attachment: {
+          async release() {
+            if (options?.releaseFailure === true) return { reason: 'operation-failed' };
             listeners.delete(listener);
+            return { reason: 'ok' };
           },
         },
-      }),
-      (id, actionId) => seen.push(`${id}:${actionId}`),
-    );
-    for (const listener of listeners) listener('n1', 'open');
-    unsubscribe();
-    unsubscribe();
-    for (const listener of listeners) listener('n2', 'ignored');
+        reason: 'ok',
+      };
+    },
+  };
+  return { backend, listeners };
+}
+
+describe('attachNotificationActionSubscription', () => {
+  it('acquires the action event and emits the stable Notification Entity', async () => {
+    const listeners = new Set<(notification: Readonly<Notification>, actionId: string) => void>();
+    const subscription = createNotificationActionSubscription();
+    const notification = createNotificationResource('n1', 'Title');
+    const seen: string[] = [];
+    connectSignal(subscription.onNotificationAction, (value, actionId) => seen.push(`${value.id}:${actionId}`));
+    await expect(
+      attachNotificationActionSubscription(
+        host({
+          action: {
+            async attach(listener) {
+              listeners.add(listener);
+              return {
+                attachment: {
+                  async release() {
+                    listeners.delete(listener);
+                    return { reason: 'ok' };
+                  },
+                },
+                reason: 'ok',
+              };
+            },
+          },
+        }),
+        subscription,
+      ),
+    ).resolves.toEqual({ reason: 'ok' });
+    for (const listener of listeners) listener(notification, 'open');
     expect(seen).toEqual(['n1:open']);
   });
 });
 
-describe('onNotificationClick', () => {
-  it('subscribes and idempotently unsubscribes a click listener', () => {
-    const listeners = new Set<(id: string) => void>();
-    const seen: string[] = [];
-    const unsubscribe = onNotificationClick(
+describe('attachNotificationClickSubscription', () => {
+  it('preserves simultaneous attach and cleanup failures', async () => {
+    const subscription = createNotificationClickSubscription();
+    const attached = attachNotificationClickSubscription(
       host({
-        click: {
-          subscribe(listener) {
-            listeners.add(listener);
-          },
-          unsubscribe(listener) {
-            listeners.delete(listener);
-          },
-        },
+        click: createClickBackend({ attachFailure: true, releaseFailure: true }).backend,
       }),
-      (id) => seen.push(id),
+      subscription,
     );
-    for (const listener of listeners) listener('n1');
-    unsubscribe();
-    unsubscribe();
-    for (const listener of listeners) listener('ignored');
-    expect(seen).toEqual(['n1']);
+    const disposed = disposeNotificationClickSubscription(subscription);
+    await expect(attached).resolves.toEqual({
+      attachFailed: true,
+      reason: 'operation-failed',
+      releaseFailed: true,
+    });
+    await expect(disposed).resolves.toEqual({ reason: 'ok' });
+  });
+
+  it('routes the provider Entity and owns only its acquired release', async () => {
+    const { backend, listeners } = createClickBackend();
+    const subscription = createNotificationClickSubscription();
+    const notification = createNotificationResource('n1', 'Title');
+    const seen: Notification[] = [];
+    connectSignal(subscription.onNotificationClick, (value) => seen.push(value));
+    await expect(attachNotificationClickSubscription(host({ click: backend }), subscription)).resolves.toEqual({
+      reason: 'ok',
+    });
+    for (const listener of listeners) listener(notification);
+    expect(seen).toEqual([notification]);
+    await expect(detachNotificationClickSubscription(subscription)).resolves.toEqual({ reason: 'ok' });
+    expect(listeners.size).toBe(0);
   });
 });
 
-describe('onNotificationDismiss', () => {
-  it('subscribes and idempotently unsubscribes a dismiss listener', () => {
-    const listeners = new Set<(id: string) => void>();
-    const seen: string[] = [];
-    const unsubscribe = onNotificationDismiss(
-      host({
-        dismiss: {
-          subscribe(listener) {
-            listeners.add(listener);
-          },
-          unsubscribe(listener) {
-            listeners.delete(listener);
-          },
-        },
-      }),
-      (id) => seen.push(id),
-    );
-    for (const listener of listeners) listener('n1');
-    unsubscribe();
-    unsubscribe();
-    for (const listener of listeners) listener('ignored');
-    expect(seen).toEqual(['n1']);
+describe('attachNotificationDismissSubscription', () => {
+  it('acquires and releases the dismiss event', async () => {
+    const { backend } = createClickBackend();
+    const subscription = createNotificationDismissSubscription();
+    await expect(attachNotificationDismissSubscription(host({ dismiss: backend }), subscription)).resolves.toEqual({
+      reason: 'ok',
+    });
+    await expect(detachNotificationDismissSubscription(subscription)).resolves.toEqual({ reason: 'ok' });
   });
 });
 
-describe('onNotificationReply', () => {
-  it('subscribes and idempotently unsubscribes a reply listener', () => {
-    const listeners = new Set<(id: string, actionId: string, text: string) => void>();
-    const seen: string[] = [];
-    const unsubscribe = onNotificationReply(
-      host({
-        reply: {
-          subscribe(listener) {
-            listeners.add(listener);
-          },
-          unsubscribe(listener) {
-            listeners.delete(listener);
-          },
-        },
-      }),
-      (id, actionId, text) => seen.push(`${id}:${actionId}:${text}`),
-    );
-    for (const listener of listeners) listener('n1', 'reply', 'hello');
-    unsubscribe();
-    unsubscribe();
-    for (const listener of listeners) listener('ignored', 'reply', 'ignored');
-    expect(seen).toEqual(['n1:reply:hello']);
+describe('attachNotificationReceivedSubscription', () => {
+  it('acquires and releases the backend-emitted received event', async () => {
+    const { backend } = createClickBackend();
+    const subscription = createNotificationReceivedSubscription();
+    await expect(attachNotificationReceivedSubscription(host({ received: backend }), subscription)).resolves.toEqual({
+      reason: 'ok',
+    });
+    await expect(detachNotificationReceivedSubscription(subscription)).resolves.toEqual({ reason: 'ok' });
   });
 });
 
-describe('onNotificationShow', () => {
-  it('subscribes and idempotently unsubscribes a show listener', () => {
-    const listeners = new Set<(id: string) => void>();
-    const seen: string[] = [];
-    const unsubscribe = onNotificationShow(
-      host({
-        show: {
-          subscribe(listener) {
-            listeners.add(listener);
+describe('attachNotificationReplySubscription', () => {
+  it('acquires and releases the reply event', async () => {
+    const listeners = new Set<(notification: Readonly<Notification>, actionId: string, text: string) => void>();
+    const subscription = createNotificationReplySubscription();
+    await expect(
+      attachNotificationReplySubscription(
+        host({
+          reply: {
+            async attach(listener) {
+              listeners.add(listener);
+              return {
+                attachment: {
+                  async release() {
+                    listeners.delete(listener);
+                    return { reason: 'ok' };
+                  },
+                },
+                reason: 'ok',
+              };
+            },
           },
-          unsubscribe(listener) {
-            listeners.delete(listener);
+        }),
+        subscription,
+      ),
+    ).resolves.toEqual({ reason: 'ok' });
+    await expect(detachNotificationReplySubscription(subscription)).resolves.toEqual({ reason: 'ok' });
+  });
+});
+
+describe('bindNotificationClose', () => {
+  it('pins the provider close operation to its Notification Entity', async () => {
+    const notification = createNotificationResource('bound', 'Bound');
+    bindNotificationClose(notification, async () => ({ reason: 'ok' }));
+    await expect(closeNotification(notification)).resolves.toEqual({
+      reason: 'ok',
+    });
+  });
+});
+
+describe('bindScheduledNotificationCancel', () => {
+  it('pins the provider cancel operation to its ScheduledNotification Entity', async () => {
+    const scheduled = createScheduledNotificationResource('bound', { title: 'Bound' }, { at: 1 });
+    bindScheduledNotificationCancel(scheduled, async () => ({ reason: 'ok' }));
+    await expect(cancelScheduledNotification(scheduled)).resolves.toEqual({
+      reason: 'ok',
+    });
+  });
+});
+
+describe('cancelScheduledNotification', () => {
+  it('uses only the origin-pinned private cancellation and is idempotent', async () => {
+    const scheduled = createScheduledNotificationResource('same', { title: 'Later' }, { at: 1 });
+    let cancels = 0;
+    bindScheduledNotificationCancel(scheduled, async () => {
+      cancels += 1;
+      return { reason: 'ok' };
+    });
+    await expect(cancelScheduledNotification(scheduled)).resolves.toEqual({
+      reason: 'ok',
+    });
+    await expect(cancelScheduledNotification(scheduled)).resolves.toEqual({
+      reason: 'already-cancelled',
+    });
+    expect(cancels).toBe(1);
+  });
+});
+
+describe('closeAllNotifications', () => {
+  it('dispatches provider-wide close through the exact Host trait', async () => {
+    const outcome = { reason: 'ok' } as const;
+    await expect(
+      closeAllNotifications(
+        host({
+          close: {
+            async closeAllNotifications() {
+              return outcome;
+            },
           },
+        }),
+      ),
+    ).resolves.toBe(outcome);
+  });
+});
+
+describe('closeNotification', () => {
+  it('never accepts a replacement Host and never reroutes a foreign id', async () => {
+    const notification = createNotificationResource('shared', 'A');
+    await expect(closeNotification(notification)).resolves.toEqual({
+      reason: 'operation-failed',
+    });
+  });
+
+  it('uses only the origin-pinned close and is idempotent', async () => {
+    const notification = createNotificationResource('same', 'A');
+    let closes = 0;
+    bindNotificationClose(notification, async () => {
+      closes += 1;
+      return { reason: 'ok' };
+    });
+    await expect(closeNotification(notification)).resolves.toEqual({
+      reason: 'ok',
+    });
+    await expect(closeNotification(notification)).resolves.toEqual({
+      reason: 'already-closed',
+    });
+    expect(closes).toBe(1);
+  });
+});
+
+describe('createNotificationActionSubscription', () => {
+  it('creates an Entity with an inert signal', () => {
+    expect(EntityRuntimeKey in createNotificationActionSubscription()).toBe(true);
+  });
+});
+
+describe('createNotificationClickSubscription', () => {
+  it('creates an Entity with an inert signal', () => {
+    expect(EntityRuntimeKey in createNotificationClickSubscription()).toBe(true);
+  });
+});
+
+describe('createNotificationDismissSubscription', () => {
+  it('creates an Entity with an inert signal', () => {
+    expect(EntityRuntimeKey in createNotificationDismissSubscription()).toBe(true);
+  });
+});
+
+describe('createNotificationReceivedSubscription', () => {
+  it('creates an Entity with an inert signal', () => {
+    expect(EntityRuntimeKey in createNotificationReceivedSubscription()).toBe(true);
+  });
+});
+
+describe('createNotificationReplySubscription', () => {
+  it('creates an Entity with an inert signal', () => {
+    expect(EntityRuntimeKey in createNotificationReplySubscription()).toBe(true);
+  });
+});
+
+describe('createNotificationResource', () => {
+  it('creates stable public identity without a native key', () => {
+    const notification = createNotificationResource('n1', 'Title', 'group');
+    expect(EntityRuntimeKey in notification).toBe(true);
+    expect(notification).toMatchObject({
+      id: 'n1',
+      tag: 'group',
+      title: 'Title',
+    });
+  });
+});
+
+describe('createScheduledNotificationResource', () => {
+  it('creates a stable scheduled Entity with request and schedule facts', () => {
+    const request = { title: 'Later' };
+    const schedule = { at: 1 };
+    const scheduled = createScheduledNotificationResource('s1', request, schedule);
+    expect(EntityRuntimeKey in scheduled).toBe(true);
+    expect(scheduled).toMatchObject({ id: 's1', request, schedule });
+  });
+});
+
+describe('destroyNotificationCapabilities', () => {
+  it('dispatches through lifecycle and preserves retry-only failures', async () => {
+    let calls = 0;
+    const value = host({
+      lifecycle: {
+        async destroy() {
+          calls += 1;
+          return calls === 1
+            ? {
+                failures: [{ id: 'n1', operation: 'close' as const }],
+                reason: 'operation-failed' as const,
+              }
+            : { reason: 'ok' as const };
         },
-      }),
-      (id) => seen.push(id),
+      },
+    });
+    await expect(destroyNotificationCapabilities(value)).resolves.toMatchObject({ reason: 'operation-failed' });
+    await expect(destroyNotificationCapabilities(value)).resolves.toEqual({
+      reason: 'ok',
+    });
+  });
+});
+
+describe('detachNotificationActionSubscription', () => {
+  it('is harmless before attach', async () => {
+    await expect(detachNotificationActionSubscription(createNotificationActionSubscription())).resolves.toEqual({
+      reason: 'not-attached',
+    });
+  });
+});
+
+describe('detachNotificationClickSubscription', () => {
+  it('is harmless before attach', async () => {
+    await expect(detachNotificationClickSubscription(createNotificationClickSubscription())).resolves.toEqual({
+      reason: 'not-attached',
+    });
+  });
+});
+
+describe('detachNotificationDismissSubscription', () => {
+  it('is harmless before attach', async () => {
+    await expect(detachNotificationDismissSubscription(createNotificationDismissSubscription())).resolves.toEqual({
+      reason: 'not-attached',
+    });
+  });
+});
+
+describe('detachNotificationReceivedSubscription', () => {
+  it('is harmless before attach', async () => {
+    await expect(detachNotificationReceivedSubscription(createNotificationReceivedSubscription())).resolves.toEqual({
+      reason: 'not-attached',
+    });
+  });
+});
+
+describe('detachNotificationReplySubscription', () => {
+  it('is harmless before attach', async () => {
+    await expect(detachNotificationReplySubscription(createNotificationReplySubscription())).resolves.toEqual({
+      reason: 'not-attached',
+    });
+  });
+});
+
+describe('disposeNotificationActionSubscription', () => {
+  it('is terminal and idempotent', async () => {
+    const subscription = createNotificationActionSubscription();
+    await expect(disposeNotificationActionSubscription(subscription)).resolves.toEqual({ reason: 'ok' });
+    await expect(disposeNotificationActionSubscription(subscription)).resolves.toEqual({ reason: 'already-disposed' });
+  });
+});
+
+describe('disposeNotificationClickSubscription', () => {
+  it('keeps a failed release observable', async () => {
+    const subscription = createNotificationClickSubscription();
+    await attachNotificationClickSubscription(
+      host({ click: createClickBackend({ releaseFailure: true }).backend }),
+      subscription,
     );
-    for (const listener of listeners) listener('n1');
-    unsubscribe();
-    unsubscribe();
-    for (const listener of listeners) listener('ignored');
-    expect(seen).toEqual(['n1']);
+    await expect(disposeNotificationClickSubscription(subscription)).resolves.toEqual({
+      attachFailed: false,
+      reason: 'operation-failed',
+      releaseFailed: true,
+    });
+  });
+});
+
+describe('disposeNotificationDismissSubscription', () => {
+  it('is terminal', async () => {
+    await expect(disposeNotificationDismissSubscription(createNotificationDismissSubscription())).resolves.toEqual({
+      reason: 'ok',
+    });
+  });
+});
+
+describe('disposeNotificationReceivedSubscription', () => {
+  it('is terminal', async () => {
+    await expect(disposeNotificationReceivedSubscription(createNotificationReceivedSubscription())).resolves.toEqual({
+      reason: 'ok',
+    });
+  });
+});
+
+describe('disposeNotificationReplySubscription', () => {
+  it('is terminal', async () => {
+    await expect(disposeNotificationReplySubscription(createNotificationReplySubscription())).resolves.toEqual({
+      reason: 'ok',
+    });
+  });
+});
+
+describe('getActiveNotifications', () => {
+  it('returns provider-reconciled stable Entity identity without remapping', async () => {
+    const notification = createNotificationResource('same', 'Title');
+    const backend = {
+      async getActiveNotifications() {
+        return { notifications: [notification], reason: 'ok' as const };
+      },
+    };
+    const value = host({ activeList: backend });
+    const first = await getActiveNotifications(value);
+    const second = await getActiveNotifications(value);
+    expect(first.reason).toBe('ok');
+    expect(second.reason).toBe('ok');
+    if (first.reason === 'ok' && second.reason === 'ok') expect(second.notifications[0]).toBe(first.notifications[0]);
+  });
+});
+
+describe('getNotificationPermission', () => {
+  it('preserves query failure instead of collapsing it to denied', async () => {
+    await expect(
+      getNotificationPermission(
+        host({
+          permission: {
+            async getPermission() {
+              return { reason: 'operation-failed' };
+            },
+            async requestPermission() {
+              return { reason: 'operation-failed' };
+            },
+          },
+        }),
+      ),
+    ).resolves.toEqual({ reason: 'operation-failed' });
+  });
+});
+
+describe('getPendingNotifications', () => {
+  it('preserves provider failure instead of returning an empty success', async () => {
+    await expect(
+      getPendingNotifications(
+        host({
+          scheduling: {
+            async cancelAllScheduledNotifications() {
+              return { reason: 'ok' };
+            },
+            async getPendingNotifications() {
+              return { reason: 'operation-failed' };
+            },
+            async scheduleNotification() {
+              return { reason: 'operation-failed' };
+            },
+          },
+        }),
+      ),
+    ).resolves.toEqual({ reason: 'operation-failed' });
   });
 });
 
 describe('requestNotificationPermission', () => {
-  it('requests permission from the passed delivery provider', async () => {
-    expect(await requestNotificationPermission(host({ delivery: delivery('n1') }))).toBe('granted');
+  it('preserves the provider request outcome', async () => {
+    await expect(
+      requestNotificationPermission(
+        host({
+          permission: {
+            async getPermission() {
+              return { permission: 'default', reason: 'ok' };
+            },
+            async requestPermission() {
+              return { reason: 'dismissed' };
+            },
+          },
+        }),
+      ),
+    ).resolves.toEqual({ reason: 'dismissed' });
   });
 });
 
 describe('scheduleNotification', () => {
-  it('returns a handle for the id from the passed scheduling provider', async () => {
-    const handle = await scheduleNotification(
-      host({
-        scheduling: {
-          async cancelScheduledNotification() {},
-          async getPendingNotifications() {
-            return [];
+  it('returns the provider-created stable Entity', async () => {
+    const scheduled = createScheduledNotificationResource('later', { title: 'Later' }, { at: 1 });
+    await expect(
+      scheduleNotification(
+        host({
+          scheduling: {
+            async cancelAllScheduledNotifications() {
+              return { reason: 'ok' };
+            },
+            async getPendingNotifications() {
+              return { notifications: [], reason: 'ok' };
+            },
+            async scheduleNotification() {
+              return { precision: 'exact', reason: 'scheduled', scheduled };
+            },
           },
-          async scheduleNotification(request, schedule) {
-            expect(request.title).toBe('Later');
-            expect(schedule.at).toBe(1);
-            return 'scheduled';
-          },
-        },
-      }),
-      { title: 'Later' },
-      { at: 1 },
-    );
-    expect(handle).toEqual({ id: 'scheduled' });
-  });
-});
-
-describe('service-worker notification capabilities', () => {
-  it('declares every honest slot while excluding update', () => {
-    const capabilities = createServiceWorkerNotificationCapabilities(fakeRegistration());
-    expect(EntityRuntimeKey in capabilities).toBe(true);
-    expect(Object.keys(capabilities).sort()).toEqual([
-      'action',
-      'activeList',
-      'click',
-      'close',
-      'delivery',
-      'dismiss',
-      'reply',
-      'scheduling',
-      'show',
-    ]);
-    expect('update' in capabilities).toBe(false);
-  });
-
-  it('lists only Flight notifications with a stable id and truthful summary fields', async () => {
-    const registration = fakeRegistration();
-    const capabilities = createServiceWorkerNotificationCapabilities(registration);
-    await capabilities.delivery.notify({ body: 'details', id: 'flight-id', tag: 'display-tag', title: 'Flight' });
-    registration.add({ data: { unrelated: true }, tag: 'foreign', title: 'Other code' });
-    expect(await capabilities.activeList.getActiveNotifications()).toEqual([
-      { id: 'flight-id', tag: 'display-tag', title: 'Flight' },
-    ]);
-  });
-
-  it('closes by Flight id even when the platform tag differs', async () => {
-    const registration = fakeRegistration();
-    const capabilities = createServiceWorkerNotificationCapabilities(registration);
-    await capabilities.delivery.notify({ id: 'flight-id', tag: 'different-tag', title: 'Flight' });
-    await capabilities.close.closeNotification('flight-id');
-    expect(registration.shown).toEqual([]);
-  });
-
-  it('delivers each declared event and honors its unsubscribe pair', async () => {
-    const capabilities = createServiceWorkerNotificationCapabilities(fakeRegistration());
-    const seen: string[] = [];
-    const show = (id: string): void => {
-      seen.push(`show:${id}`);
-    };
-    const click = (id: string): void => {
-      seen.push(`click:${id}`);
-    };
-    const action = (id: string, actionId: string): void => {
-      seen.push(`action:${id}:${actionId}`);
-    };
-    const dismiss = (id: string): void => {
-      seen.push(`dismiss:${id}`);
-    };
-    const reply = (id: string, actionId: string, text: string): void => {
-      seen.push(`reply:${id}:${actionId}:${text}`);
-    };
-    capabilities.show.subscribe(show);
-    capabilities.click.subscribe(click);
-    capabilities.action.subscribe(action);
-    capabilities.dismiss.subscribe(dismiss);
-    capabilities.reply.subscribe(reply);
-    await capabilities.delivery.notify({ id: 'n1', title: 'Flight' });
-    notifyServiceWorkerNotificationEvent(capabilities, {
-      actionId: 'open',
-      notificationId: 'n1',
-      type: 'notificationclick',
-    });
-    notifyServiceWorkerNotificationEvent(capabilities, {
-      actionId: 'reply',
-      notificationId: 'n1',
-      reply: 'hello',
-      type: 'notificationclick',
-    });
-    notifyServiceWorkerNotificationEvent(capabilities, { notificationId: 'n1', type: 'notificationclose' });
-    expect(seen).toEqual(['show:n1', 'action:n1:open', 'click:n1', 'reply:n1:reply:hello', 'dismiss:n1']);
-    capabilities.show.unsubscribe(show);
-    capabilities.click.unsubscribe(click);
-    capabilities.action.unsubscribe(action);
-    capabilities.dismiss.unsubscribe(dismiss);
-    capabilities.reply.unsubscribe(reply);
-    notifyServiceWorkerNotificationEvent(capabilities, { notificationId: 'n1', type: 'notificationclose' });
-    expect(seen).toHaveLength(5);
-  });
-
-  it('pairs schedule with pending introspection and cancellation', async () => {
-    const capabilities = createServiceWorkerNotificationCapabilities(fakeRegistration());
-    const id = await capabilities.scheduling.scheduleNotification(
-      { id: 'scheduled', title: 'Later' },
-      { at: Date.now() + 60_000 },
-    );
-    expect(id).toBe('scheduled');
-    expect(await capabilities.scheduling.getPendingNotifications()).toHaveLength(1);
-    await capabilities.scheduling.cancelScheduledNotification('scheduled');
-    expect(await capabilities.scheduling.getPendingNotifications()).toEqual([]);
+        }),
+        { title: 'Later' },
+        { at: 1 },
+      ),
+    ).resolves.toEqual({ precision: 'exact', reason: 'scheduled', scheduled });
   });
 });
 
 describe('showNotification', () => {
-  it('returns a handle for the id from the passed delivery provider', async () => {
-    expect(await showNotification(host({ delivery: delivery('shown') }), { title: 'Title' })).toEqual({
-      id: 'shown',
-    });
-  });
-});
-
-describe('updateNotification', () => {
-  it('pins updates to the provider that created the displayed handle', async () => {
-    const aUpdated: string[] = [];
-    const bUpdated: string[] = [];
-    const updateA: NotificationUpdateBackend = {
-      async updateNotification(id) {
-        aUpdated.push(id);
-        return true;
-      },
-    };
-    const updateB: NotificationUpdateBackend = {
-      async updateNotification(id) {
-        bUpdated.push(id);
-        return true;
-      },
-    };
-    const created = await showNotification(host({ delivery: delivery('same-id'), update: updateA }), { title: 'A' });
-    expect(await updateNotification(host({ update: updateB }), created!, { body: 'changed' })).toBe(true);
-    expect(aUpdated).toEqual(['same-id']);
-    expect(bUpdated).toEqual([]);
+  it('returns only the provider acquisition outcome', async () => {
+    const notification = createNotificationResource('shown', 'Title');
+    await expect(
+      showNotification(
+        host({
+          delivery: {
+            async notify() {
+              return { notification, reason: 'accepted' };
+            },
+          },
+        }),
+        { title: 'Title' },
+      ),
+    ).resolves.toEqual({ notification, reason: 'accepted' });
   });
 });

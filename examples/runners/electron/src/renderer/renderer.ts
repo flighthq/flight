@@ -81,6 +81,6 @@ document.getElementById('write')?.addEventListener('click', async () => {
 });
 
 document.getElementById('notify')?.addEventListener('click', async () => {
-  await window.flightHarness.notify('Hello from the renderer');
-  log('notification requested');
+  const outcome = await window.flightHarness.notify('Hello from the renderer');
+  log(`notification delivery: ${outcome.reason}`);
 });
