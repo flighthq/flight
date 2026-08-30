@@ -34,7 +34,7 @@ import type { LifecycleBackend } from './Lifecycle';
 import type { LogTransportBackend } from './Log';
 import type { LoopBackend } from './LoopBackend';
 import type { MediaSessionBackend } from './MediaSession';
-import type { MenuBackend } from './Menu';
+import type { MenuApplicationBackend, MenuHighlightBackend, MenuPopupBackend, MenuSelectBackend } from './Menu';
 import type { MessageDialogBackend } from './MessageDialogBackend';
 import type { NetBackend } from './Net';
 import type {
@@ -79,6 +79,7 @@ export interface Host extends Entity {
   readonly graphics: HostGraphicsCapabilities;
   readonly input: HostInputCapabilities;
   readonly media: HostMediaCapabilities;
+  readonly menu: HostMenuCapabilities;
   readonly net: HostNetCapabilities;
   readonly notification: HostNotificationCapabilities;
   readonly storage: HostStorageCapabilities;
@@ -141,6 +142,17 @@ export interface HostMediaCapabilities {
   readonly webcam?: WebcamBackend;
 }
 
+// Menu is a top-level group rather than a ui slot: its three capabilities have different provider
+// coverage AND incompatible shapes, so one MenuBackend could not represent them honestly. The group is
+// non-optional like every other; the slots inside it are optional, and an omitted slot means the host
+// genuinely lacks that capability — never a stub that answers false.
+export interface HostMenuCapabilities {
+  readonly application?: MenuApplicationBackend;
+  readonly highlight?: MenuHighlightBackend;
+  readonly popup?: MenuPopupBackend;
+  readonly select?: MenuSelectBackend;
+}
+
 export interface HostNetCapabilities {
   readonly connectivity?: ConnectivityBackend;
   readonly http?: NetBackend;
@@ -186,7 +198,6 @@ export interface HostTextCapabilities {
 
 export interface HostUiCapabilities {
   readonly fullscreen?: FullscreenBackend;
-  readonly menu?: MenuBackend;
   readonly share?: ShareBackend;
   readonly shell?: ShellBackend;
   readonly statusBar?: StatusBarBackend;
@@ -443,8 +454,20 @@ export interface HasUiFullscreenSubscription {
   readonly ui: { readonly fullscreen: Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> };
 }
 
-export interface HasUiMenu {
-  readonly ui: { readonly menu: MenuBackend };
+export interface HasMenuApplication {
+  readonly menu: { readonly application: MenuApplicationBackend };
+}
+
+export interface HasMenuHighlight {
+  readonly menu: { readonly highlight: MenuHighlightBackend };
+}
+
+export interface HasMenuPopup {
+  readonly menu: { readonly popup: MenuPopupBackend };
+}
+
+export interface HasMenuSelect {
+  readonly menu: { readonly select: MenuSelectBackend };
 }
 
 export interface HasUiShare {

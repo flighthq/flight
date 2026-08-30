@@ -11,7 +11,8 @@ import {
   getAppName,
   getAppVersion,
   getScreens,
-  onMenuSelect,
+  attachMenuSelect,
+  createMenuSelect,
   onTrayEvent,
   openWindow,
   readClipboardText,
@@ -23,6 +24,7 @@ import {
   showOpenFileDialog,
   writeClipboardText,
 } from '@flighthq/sdk';
+import { connectSignal } from '@flighthq/signals/contract';
 import electron from 'electron';
 
 const { app, ipcMain } = electron;
@@ -65,7 +67,7 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
 
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves
 // the Electron backends are wired.
-function runOsIntegrationDemo(host: HasClipboardText): void {
+function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>): void {
   console.log('[harness] app:', getAppName(), getAppVersion(), getAppLocale()); // eslint-disable-line
 
   const screens: ScreenInfo[] = [];
@@ -84,8 +86,10 @@ function runOsIntegrationDemo(host: HasClipboardText): void {
       ],
     }),
   ];
-  setApplicationMenu(menu);
-  onMenuSelect((id) => console.log('[harness] menu select:', id)); // eslint-disable-line
+  setApplicationMenu(host, menu);
+  const menuSelect = createMenuSelect();
+  connectSignal(menuSelect.onMenuItemSelect, (id) => console.log('[harness] menu select:', id)); // eslint-disable-line
+  attachMenuSelect(host, menuSelect);
 
   registerGlobalShortcut('CommandOrControl+Shift+F', () => console.log('[harness] global shortcut fired')); // eslint-disable-line
 

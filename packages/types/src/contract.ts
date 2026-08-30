@@ -416,6 +416,8 @@ export * from './MediaChannelSignals';
 export * from './MedianEffect';
 export * from './MediaSession';
 export * from './Menu';
+export * from './MenuHighlight';
+export * from './MenuSelect';
 export * from './MenuSignals';
 export * from './Mesh';
 export * from './MeshDeformer';
