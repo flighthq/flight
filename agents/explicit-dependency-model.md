@@ -48,8 +48,8 @@ interface HasNetHttp {
   readonly net: { readonly http: NetBackend };
 }
 
-interface HasAudioDevice {
-  readonly audio: { readonly device: AudioDeviceBackend };
+interface HasMediaAudioDevice {
+  readonly media: { readonly audioDevice: AudioDeviceBackend };
 }
 
 // Functions declare what they need
@@ -57,8 +57,8 @@ function fetchResource(host: HasNetHttp, url: string): Promise<Response> {
   return host.net.http.fetch(url);
 }
 
-function playSound(host: HasAudioDevice, soundId: string): void {
-  host.audio.device.play(soundId);
+function playSound(host: HasMediaAudioDevice, soundId: string): void {
+  host.media.audioDevice.play(soundId);
 }
 ```
 
@@ -66,7 +66,7 @@ The callsite passes the host; the trait does the rest:
 
 ```typescript
 fetchResource(webHost, url);           // webHost satisfies HasNetHttp
-playSound(webHost, soundId);           // webHost satisfies HasAudioDevice
+playSound(webHost, soundId);           // webHost satisfies HasMediaAudioDevice
 showOpenFileDialog(minimalHost, options);  // type error — minimalHost has no dialog.fileOpen
 ```
 
@@ -75,7 +75,7 @@ This is the same pattern as `getNode2DBounds(node: BoundsNode)` — the function
 **Multi-capability functions compose via intersection:**
 
 ```typescript
-type LoaderHost = HasNetHttp & HasAudioDevice;
+type LoaderHost = HasNetHttp & HasMediaAudioDevice;
 function loadAndPlay(host: LoaderHost, url: string): Promise<void> { ... }
 ```
 
@@ -88,44 +88,60 @@ The intersection type IS the documentation of what the function costs.
 Host uses two-level nesting. The top level is a domain group (always present, never `undefined`). The second level is capability slots within that domain (optional — present if the host supports them).
 
 ```typescript
-interface Host {
-  audio: AudioCapabilities;
-  dialog: DialogCapabilities;
-  window: WindowCapabilities;
-  clipboard: ClipboardCapabilities;
-  net: NetCapabilities;
-  // ~10-12 domain groups
+interface Host extends Entity {
+  readonly accessibility: HostAccessibilityCapabilities;
+  readonly app: HostAppCapabilities;
+  readonly clipboard: HostClipboardCapabilities;
+  readonly connectivity: HostConnectivityCapabilities;
+  readonly dialog: HostDialogCapabilities;
+  readonly graphics: HostGraphicsCapabilities;
+  readonly input: HostInputCapabilities;
+  readonly ipc: HostIpcCapabilities;
+  readonly media: HostMediaCapabilities;
+  readonly menu: HostMenuCapabilities;
+  readonly midi: HostMidiCapabilities;
+  readonly net: HostNetCapabilities;
+  readonly notification: HostNotificationCapabilities;
+  readonly power: HostPowerCapabilities;
+  readonly protocol: HostProtocolCapabilities;
+  readonly screen: HostScreenCapabilities;
+  readonly share: HostShareCapabilities;
+  readonly shell: HostShellCapabilities;
+  readonly shortcut: HostShortcutCapabilities;
+  readonly storage: HostStorageCapabilities;
+  readonly system: HostSystemCapabilities;
+  readonly text: HostTextCapabilities;
+  readonly tray: HostTrayCapabilities;
+  readonly ui: HostUiCapabilities;
+  readonly updater: HostUpdaterCapabilities;
+  readonly window: WindowBackend;
+  // 26 domain groups
 }
 
-interface AudioCapabilities {
-  device?: AudioDeviceBackend;
-  // future: capture?, spatial?
+interface HostDialogCapabilities {
+  readonly directoryOpen?: DirectoryOpenDialogBackend;
+  readonly fileOpen?: FileOpenDialogBackend;
+  readonly fileSave?: FileSaveDialogBackend;
+  readonly message?: MessageDialogBackend;
+  readonly prompt?: PromptDialogBackend;
 }
 
-interface DialogCapabilities {
-  directoryOpen?: DirectoryOpenDialogBackend;
-  fileOpen?: FileOpenDialogBackend;
-  fileSave?: FileSaveDialogBackend;
-  message?: MessageDialogBackend;
-  prompt?: PromptDialogBackend;   // split from message; see First inventories
-}
-
-// WITHDRAWN — window's real granularity is per-operation, not three slots.
-// See First inventories. Kept here only to show what the two-level sketch
-// originally proposed and why guessing level two is banned by R7.
-interface WindowCapabilities {
-  management?: WindowManagementBackend;
-  fullscreen?: WindowFullscreenBackend;
-  appearance?: WindowAppearanceBackend;
+interface HostMediaCapabilities {
+  readonly audioCodec?: AudioBackend;
+  readonly audioDevice?: AudioDeviceBackend;
+  readonly session?: MediaSessionBackend;
+  readonly sessionAction?: MediaSessionActionBackend;
+  readonly video?: VideoCapabilityBackend;
+  readonly mediaFileCapture?: MediaFileCaptureBackend;
 }
 ```
 
 **Why two levels:**
 
-- **Groups are always present** so access is one `?.` check: `if (host.audio.device) playSound(host, soundId)`. No double-optional.
-- **Forward-compatible decomposition.** When a real host proves that audio playback and audio capture are independent, add `host.audio.capture`. Code using `HasAudioDevice` (which requires `audio.device`) is unaffected.
-- **No prediction needed.** A domain with one capability today (audio: just `device`) is not assumed to be atomic forever. The group structure handles growth without breaking existing traits or call sites.
-- **Discoverable.** `host.audio.` autocompletes to show what audio capabilities exist. `host.dialog.` shows dialog capabilities. ~10-12 top-level groups, not 25-30 flat fields.
+- **Groups are always present** so access is one `?.` check: `if (host.media.audioDevice) playSound(host, soundId)`. No double-optional.
+- **Forward-compatible decomposition.** When a real host proves that audio playback and audio capture are independent, add a new slot to `HostMediaCapabilities`. Code using `HasMediaAudioDevice` (which requires `media.audioDevice`) is unaffected.
+- **No prediction needed.** A domain with one capability today is not assumed to be atomic forever. The group structure handles growth without breaking existing traits or call sites.
+- **Discoverable.** `host.media.` autocompletes to show what media capabilities exist. `host.dialog.` shows dialog capabilities. 26 top-level groups, each with optional capability slots.
 
 **Construction:**
 
@@ -135,9 +151,8 @@ import { webHost } from '@flighthq/host-web';
 
 // Partial host — manual assembly
 const host = createHost({
-  audio: { device: webAudioDeviceBackend },
+  media: { audioDevice: webAudioDeviceBackend },
   net: { http: webNetBackend },
-  window: { management: limeWindowManagementBackend },
 });
 
 // createHost fills empty groups automatically
@@ -312,9 +327,9 @@ Registry: renderers
   Unused:     Text, TileMap, QuadBatch, Mesh
 
 Host: webHost
-  Installed:  audio.device, dialog.fileOpen, dialog.fileSave, dialog.message, net.http, clipboard.access
-  Exercised:  net.http, audio.device
-  Unused:     dialog.fileSave, dialog.message, clipboard.access
+  Installed:  media.audioDevice, dialog.fileOpen, dialog.fileSave, dialog.message, net.http, clipboard.text
+  Exercised:  net.http, media.audioDevice
+  Unused:     dialog.fileSave, dialog.message, clipboard.text
 ```
 
 This is the diagnostics inversion principle applied to **cost** instead of failure. Today's `explain*` tells you why something didn't work. This tells you what you're paying for but not using.
@@ -382,7 +397,7 @@ An enumerated list reads as complete whether or not it was derived completely, a
 
 **R12 — "Conditional" is not "sometimes absent." Presence is a construction fact; denial is a domain outcome.** Whether a capability is present is decided by how the *host was built*, never discovered at runtime. A capability gated on a permission or a secure context is **present** on that host, and a refusal at call time is a domain-specific outcome handled like any other denied/timeout/IO case. What must never appear is a slot that is present-or-absent depending on a runtime check, or a `has*Capability()` probe — that is the runtime capability query this model deletes, and `hasWindowOperation` was removed for exactly this reason. *Absent* means the host does not offer it; *denied* means it offers it and the platform said no.
 
-**R13 — A super-group slot may hold only a capability with a single uniform coverage vector.** The moment a domain's derived coverage varies *internally*, it needs the second level for its own slots and is promoted to a top-level group — the shape `dialog` (non-optional group, optional `file?`/`message?`/`prompt?`) and `window` (non-optional group, optional operations) already have. Nesting a varying domain inside a super-group produces `host.ui.clipboard?.text?` — three levels and two optionals, defeating the single-`?.` property that two-level nesting exists for. Clipboard was promoted out of `ui` on exactly this ground. Expect it again: `menu`, `notification`, `share`, `screen` and `sensors` all sit in super-groups undreived, and at least one will likely move. **The record's "~10-12 domain groups" is an estimate written before any domain was derived, and it yields to the derivation** (R5) — never compress a domain into a super-group to protect a number.
+**R13 — A super-group slot may hold only a capability with a single uniform coverage vector.** The moment a domain's derived coverage varies *internally*, it needs the second level for its own slots and is promoted to a top-level group — the shape `dialog` (non-optional group, optional `file?`/`message?`/`prompt?`) and `window` (non-optional group, optional operations) already have. Nesting a varying domain inside a super-group produces `host.ui.clipboard?.text?` — three levels and two optionals, defeating the single-`?.` property that two-level nesting exists for. Clipboard was promoted out of `ui` on exactly this ground. Expect it again: `menu`, `notification`, `share`, `screen` and `sensors` all sit in super-groups undreived, and at least one will likely move. **The record originally estimated "~10-12 domain groups" before any domain was derived; the actual count settled at 26 (R5) — never compress a domain into a super-group to protect a number.**
 
 **R14 — A stub that *documents* a seam it does not *implement* is deleted, not preserved.** `getWindowDisplay` was an unconditional `return -1` with an unused parameter and an eslint suppression hiding it, under a comment claiming that host-electron and host-winit resolve the display through `@flighthq/screen`. There was no host argument, no lookup, no dispatch — no mechanism by which any provider could ever have supplied a value. The sentinel was the smaller problem: **the comment was false in the durable way**, and the next person to implement multi-monitor support would have looked for the seam it promised, believed the wiring existed, and built against nothing. Delete the function, its export, and its test — a test asserting that a function returning a hardcoded `-1` returns `-1` cannot fail except by editing the constant it pins, so leaving it behind preserves a green assertion about nothing. Expect these as each domain is derived. Deleting is **not** a judgement that the feature is unwanted: when a provider exists it returns as a derived capability slot, never as a sentinel-returning free function, and its placement is derived then (R10) rather than inferred from the API it would be built on.
 
@@ -524,7 +539,7 @@ Each defect is latent because its construction is absent from the tree; these AR
 A and B touch disjoint packages (`host-*` and the capability packages vs `render-*`), so they do not serialize. A is the larger census — 48 `set*Backend`, 48 `get*Backend`, 43 `install*HostBackend`, 38 `_hostConflict`, 39 `enableHostWeb*`, all verified against the tree on 2026-08-29 — but it is also the more mechanical, and it parallelizes cleanly one capability domain per builder.
 
 - **A-inventory — per-domain site derivation.** No dependency, and an **input to A-types, not a consumer of it** — the same role B-inventory plays in strand B. For a given domain, derive every site (`set*` / `get*` / `install*` / `_hostConflict` / `enableHostWeb*`) and every consumer. Run it on **two** domains concurrently, `window` (management / fullscreen / appearance) and `dialog` (file / message / colour): a group structure validated against a single domain is a structure fitted to that domain, and if the two disagree about what a group is, that must surface before the shape is replicated across ten. It is the front half of the migration slice the same builder finishes — not read-only research occupying a builder slot.
-- **A-types — type spine:** `Host`, the ~10–12 capability groups, every `Has*` trait. Types only. Gates everything else in the strand.
+- **A-types — type spine:** `Host`, the 26 capability groups, every `Has*` trait. Types only. Gates everything else in the strand.
 - **A-pattern — one domain, end to end**, as the pattern-setter: const backend, capability group, trait, all call sites migrated, old `set*`/`get*`/`install*`/`_hostConflict` deleted. Pick a domain with more than one capability so the group structure is actually exercised — `dialog` or `window`, not `clipboard`.
 - **A-domains — the remaining domains**, one per builder, against the pattern A-pattern establishes.
 
