@@ -18,6 +18,7 @@ export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from '
 export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 export { webHapticsBackend } from './webHaptics';
 export { enableHostWebImage } from './webImage';
+export { createWebInputTargetHandle, webInputTargetBackend } from './webInputTarget';
 export { enableHostWebSoftKeyboard } from './webKeyboard';
 export { enableHostWebLifecycle } from './webLifecycle';
 export { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';

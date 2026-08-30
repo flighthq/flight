@@ -2,6 +2,7 @@ import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flig
 import type {
   ApplicationWindow,
   FullscreenTargetHandle,
+  HasInputTargetPreparation,
   HasUiFullscreen,
   HasUiFullscreenSubscription,
   HasWindowAttach,
@@ -12,6 +13,7 @@ import type {
   HasWindowPointerLockExit,
   HasWindowResizeSubscription,
   HasWindowVisibilitySubscription,
+  InputTargetHandle,
   Matrix,
   NativeWindowHandle,
   RenderState,
@@ -447,18 +449,10 @@ export function openWindow(
   return result;
 }
 
-// Prepares an element for direct input by setting CSS properties that suppress default browser
-// touch/selection/tap-highlight behavior: touch-action:none, user-select:none,
-// webkit-tap-highlight-color:transparent. For canvas elements, adds translateZ(0) to promote to
-// a GPU compositing layer, reducing canvas flicker on touch. Call once; no teardown needed.
-export function prepareElementForInput(element: HTMLElement): void {
-  element.style.touchAction = 'none';
-  element.style.userSelect = 'none';
-  element.style.webkitUserSelect = 'none';
-  (element.style as CSSStyleDeclaration & { webkitTapHighlightColor: string }).webkitTapHighlightColor = 'transparent';
-  if (element instanceof HTMLCanvasElement) {
-    element.style.transform = 'translateZ(0)';
-  }
+// Prepares a provider-bound target for direct input. The provider owns platform details such as
+// browser CSS and canvas compositing; the application contract only carries opaque identity.
+export function prepareElementForInput(host: HasInputTargetPreparation, target: InputTargetHandle): void {
+  host.input.target.prepare(target);
 }
 
 export function requestApplicationFullscreen(host: HasUiFullscreen, target: FullscreenTargetHandle): Promise<boolean> {

@@ -1,7 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   FullscreenBackend,
   FullscreenTargetHandle,
+  InputTargetBackend,
+  InputTargetHandle,
   Matrix,
   RenderState,
   WindowBackend,
@@ -1132,23 +1135,15 @@ describe('openWindow', () => {
 });
 
 describe('prepareElementForInput', () => {
-  it('sets touch-action and user-select', () => {
-    const element = document.createElement('div');
-    prepareElementForInput(element);
-    expect(element.style.touchAction).toBe('none');
-    expect(element.style.userSelect).toBe('none');
-  });
+  it('passes the opaque target to the explicit input preparation capability', () => {
+    const prepare = vi.fn();
+    const backend = createEntity<{ prepare: typeof prepare }>({ prepare }) satisfies InputTargetBackend;
+    const target: InputTargetHandle = createEntity({ __brand: 'InputTargetHandle' as const });
 
-  it('sets transform on canvas elements', () => {
-    const canvas = document.createElement('canvas');
-    prepareElementForInput(canvas);
-    expect(canvas.style.transform).toBe('translateZ(0)');
-  });
+    prepareElementForInput({ input: { target: backend } }, target);
 
-  it('does not set transform on non-canvas elements', () => {
-    const div = document.createElement('div');
-    prepareElementForInput(div);
-    expect(div.style.transform).toBe('');
+    expect(prepare).toHaveBeenCalledOnce();
+    expect(prepare).toHaveBeenCalledWith(target);
   });
 });
 

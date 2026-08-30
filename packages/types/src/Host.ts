@@ -27,6 +27,7 @@ import type { GlyphRasterizerBackend } from './GlyphSource';
 import type { HapticsBackend } from './Haptics';
 import type { ImageBackend } from './Image';
 import type { InputIngressBackend } from './InputIngressBackend';
+import type { InputTargetBackend } from './InputTargetBackend';
 import type { IpcBackend } from './Ipc';
 import type { SoftKeyboardBackend } from './Keyboard';
 import type { LifecycleBackend } from './Lifecycle';
@@ -129,6 +130,7 @@ export interface HostInputCapabilities {
   readonly haptics?: HapticsBackend;
   readonly ingress?: InputIngressBackend;
   readonly softKeyboard?: SoftKeyboardBackend;
+  readonly target?: InputTargetBackend;
 }
 
 export interface HostMediaCapabilities {
@@ -295,6 +297,10 @@ export interface HasInputIngress {
 
 export interface HasInputSoftKeyboard {
   readonly input: { readonly softKeyboard: SoftKeyboardBackend };
+}
+
+export interface HasInputTargetPreparation {
+  readonly input: { readonly target: InputTargetBackend };
 }
 
 export interface HasMediaAudioCodec {
