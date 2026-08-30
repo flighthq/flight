@@ -19,6 +19,7 @@ import {
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import { webPowerCapabilities } from './webPower';
 import { webScreenCapabilities } from './webScreen';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webStorageBackend } from './webStorage';
@@ -61,6 +62,7 @@ export const webHost = createEntity({
   media: { session: webMediaSessionBackend, sessionAction: webMediaSessionActionBackend },
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},
+  power: webPowerCapabilities,
   notification: webNotificationCapabilities,
   screen: webScreenCapabilities,
   share: { content: webShareContentBackend, files: webShareFilesBackend },

@@ -2,7 +2,6 @@ import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setIpcBackend } from '@flighthq/ipc/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
-import { setPowerBackend } from '@flighthq/power/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
 import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
@@ -42,7 +41,7 @@ import { createElectronIpcBackend } from './electronIpc';
 import { createElectronMenuBackends } from './electronMenu';
 import { createElectronNotificationCapabilities } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
-import { createElectronPowerBackend } from './electronPower';
+import { createElectronPowerBackends } from './electronPower';
 import { createElectronProtocolBackend } from './electronProtocol';
 import { createElectronScreenCapabilities } from './electronScreen';
 import { createElectronShellBackend } from './electronShell';
@@ -97,13 +96,13 @@ export function registerElectronBackends(
   const notification = createElectronNotificationCapabilities(electron);
   const screen = createElectronScreenCapabilities(electron);
   const menu = createElectronMenuBackends(electron);
+  const power = createElectronPowerBackends(electron);
   const storage = createElectronStorageBackend(electron, options.storageFileName);
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
   setTrayBackend(createElectronTrayBackend(electron));
   setShortcutBackend(createElectronShortcutBackend(electron));
-  setPowerBackend(createElectronPowerBackend(electron));
   setShellBackend(createElectronShellBackend(electron));
   setProtocolBackend(createElectronProtocolBackend(electron));
   setUpdaterBackend(createElectronUpdaterBackend(electron));
@@ -119,6 +118,7 @@ export function registerElectronBackends(
     media: {},
     menu,
     net: {},
+    power,
     notification,
     screen,
     share: {},

@@ -39,7 +39,7 @@ export {
 export { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
 export { enableHostWebPermission } from './webPermissions';
 export { enableHostWebPlatform } from './webPlatform';
-export { enableHostWebPower } from './webPower';
+export { webPowerCapabilities } from './webPower';
 export { enableHostWebProtocol } from './webProtocol';
 export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from './webRaster2DSurface';
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';

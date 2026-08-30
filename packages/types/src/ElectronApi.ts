@@ -222,9 +222,24 @@ export interface ElectronDisplay {
   touchSupport?: string;
 }
 
+// The powerMonitor slice the power backends need. Event names are a CLOSED union rather than `string`:
+// an arbitrary name would compile, register and silently never fire, which is indistinguishable from a
+// platform that does not emit it.
+export type ElectronPowerMonitorEvent =
+  | 'lock-screen'
+  | 'on-ac'
+  | 'on-battery'
+  | 'resume'
+  | 'suspend'
+  | 'thermal-state-change'
+  | 'unlock-screen';
+
 export interface ElectronPowerMonitor {
-  on(event: string, listener: () => void): void;
-  removeListener(event: string, listener: () => void): void;
+  on(event: ElectronPowerMonitorEvent, listener: () => void): void;
+  removeListener(event: ElectronPowerMonitorEvent, listener: () => void): void;
+  // Electron's thermal-state-change event carries no payload, so the level is READ here on notification.
+  // Without this the event could only announce that something unreadable had changed.
+  getCurrentThermalState?(): 'unknown' | 'nominal' | 'fair' | 'serious' | 'critical';
   getSystemIdleState(idleThresholdSeconds: number): 'active' | 'idle' | 'locked' | 'unknown';
   getSystemIdleTime(): number;
   onBatteryPower?: boolean;

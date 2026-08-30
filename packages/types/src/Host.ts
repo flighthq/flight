@@ -63,7 +63,16 @@ import type {
 import type { PathBooleanBackend } from './PathBooleanBackend';
 import type { PermissionBackend } from './Permission';
 import type { PlatformBackend } from './Platform';
-import type { PowerBackend } from './Power';
+import type {
+  PowerBatteryHealthBackend,
+  PowerChangeBackend,
+  PowerIdleBackend,
+  PowerKeepAwakeBackend,
+  PowerSessionLockBackend,
+  PowerStatusBackend,
+  PowerSuspensionBackend,
+  PowerThermalBackend,
+} from './Power';
 import type { PromptDialogBackend } from './PromptDialogBackend';
 import type { ProtocolBackend } from './Protocol';
 import type {
@@ -98,6 +107,7 @@ export interface Host extends Entity {
   readonly media: HostMediaCapabilities;
   readonly menu: HostMenuCapabilities;
   readonly net: HostNetCapabilities;
+  readonly power: HostPowerCapabilities;
   readonly notification: HostNotificationCapabilities;
   readonly screen: HostScreenCapabilities;
   readonly share: HostShareCapabilities;
@@ -208,6 +218,20 @@ export interface HostShareCapabilities {
   readonly files?: ShareFilesBackend;
 }
 
+// Power is a top-level group: its capabilities vary independently by host (web has keep-awake and
+// suspend/resume but no idle, session lock or battery health; electron has all of them), so one
+// PowerBackend could not represent any host honestly.
+export interface HostPowerCapabilities {
+  readonly batteryHealth?: PowerBatteryHealthBackend;
+  readonly change?: PowerChangeBackend;
+  readonly idle?: PowerIdleBackend;
+  readonly keepAwake?: PowerKeepAwakeBackend;
+  readonly sessionLock?: PowerSessionLockBackend;
+  readonly status?: PowerStatusBackend;
+  readonly suspension?: PowerSuspensionBackend;
+  readonly thermal?: PowerThermalBackend;
+}
+
 export interface HostScreenCapabilities {
   readonly change?: ScreenChangeBackend;
   readonly details?: ScreenDetailsBackend;
@@ -227,7 +251,6 @@ export interface HostSystemCapabilities {
   readonly lifecycle?: LifecycleBackend;
   readonly permissions?: PermissionBackend;
   readonly platform?: PlatformBackend;
-  readonly power?: PowerBackend;
   readonly sensors?: SensorsBackend;
 }
 
@@ -457,6 +480,38 @@ export interface HasStorageFileSystem {
   readonly storage: { readonly fileSystem: FileSystemBackend };
 }
 
+export interface HasPowerBatteryHealth {
+  readonly power: { readonly batteryHealth: PowerBatteryHealthBackend };
+}
+
+export interface HasPowerChange {
+  readonly power: { readonly change: PowerChangeBackend };
+}
+
+export interface HasPowerIdle {
+  readonly power: { readonly idle: PowerIdleBackend };
+}
+
+export interface HasPowerKeepAwake {
+  readonly power: { readonly keepAwake: PowerKeepAwakeBackend };
+}
+
+export interface HasPowerSessionLock {
+  readonly power: { readonly sessionLock: PowerSessionLockBackend };
+}
+
+export interface HasPowerStatus {
+  readonly power: { readonly status: PowerStatusBackend };
+}
+
+export interface HasPowerSuspension {
+  readonly power: { readonly suspension: PowerSuspensionBackend };
+}
+
+export interface HasPowerThermal {
+  readonly power: { readonly thermal: PowerThermalBackend };
+}
+
 export interface HasStorageChange {
   readonly storage: { readonly change: StorageChangeBackend };
 }
@@ -483,10 +538,6 @@ export interface HasSystemPermissions {
 
 export interface HasSystemPlatform {
   readonly system: { readonly platform: PlatformBackend };
-}
-
-export interface HasSystemPower {
-  readonly system: { readonly power: PowerBackend };
 }
 
 export interface HasScreenChange {

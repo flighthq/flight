@@ -71,6 +71,9 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     // menus are the web overlay's job, not Capacitor's.
     menu: {},
     net: {},
+    // No power provider: Capacitor exposes no battery, idle, session-lock, thermal or keep-awake
+    // API through the seams this host wires. The group is empty rather than stubbed.
+    power: {},
     notification: createCapacitorNotificationCapabilities(capacitor),
     screen: {},
     share: { content: createCapacitorShareContentBackend(capacitor) },

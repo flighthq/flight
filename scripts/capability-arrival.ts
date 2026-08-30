@@ -90,15 +90,7 @@ const EXPECTED_EXPLICIT_HOST = ['MediaSession', 'Screen', 'Storage'] as const;
 // shell chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
 // enabler into a reviewable registry change instead of silently treating it as either aggregate or
 // excluded.
-const EXPECTED_EXCLUDED = [
-  'App',
-  'Power',
-  'Protocol',
-  'Shell',
-  'StatusBar',
-  'GlRenderSurface',
-  'WgpuRenderSurface',
-] as const;
+const EXPECTED_EXCLUDED = ['App', 'Protocol', 'Shell', 'StatusBar', 'GlRenderSurface', 'WgpuRenderSurface'] as const;
 
 const EXPECTED_FACTORIES = ['Accessibility', 'Connectivity', 'Cursor', 'MediaSession', 'MediaSessionAction'] as const;
 
