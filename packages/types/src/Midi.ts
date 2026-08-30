@@ -40,11 +40,13 @@ export type MidiAccessPortsOutcome<Port extends MidiPort> =
   | { readonly ports: ReadonlyArray<Port>; readonly reason: 'ok' }
   | { readonly reason: 'disposed' | 'operation-failed' };
 
-export interface MidiAccessLifecycleFailure {
-  readonly id: string;
-  readonly operation: 'close';
-  readonly type: MidiPort['type'];
-}
+export type MidiAccessLifecycleFailure =
+  | { readonly operation: 'state-subscription-release' }
+  | {
+      readonly id: string;
+      readonly operation: MidiPortLifecycleFailure['operation'];
+      readonly type: MidiPort['type'];
+    };
 
 export type MidiAccessDisposeOutcome =
   | { readonly reason: 'already-disposed' | 'ok' }
@@ -70,7 +72,7 @@ export type MidiPortStateOutcome =
   | { readonly reason: 'disposed' | 'operation-failed' };
 
 export interface MidiPortLifecycleFailure {
-  readonly operation: 'close';
+  readonly operation: 'close' | 'message-subscription-release' | 'state-subscription-release';
 }
 
 export type MidiPortDisposeOutcome =

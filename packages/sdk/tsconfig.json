@@ -217,6 +217,9 @@
       "path": "../menu"
     },
     {
+      "path": "../midi"
+    },
+    {
       "path": "../mesh"
     },
     {

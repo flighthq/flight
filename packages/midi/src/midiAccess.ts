@@ -13,6 +13,7 @@ import type {
 
 import { disposeMidiPort } from './midiPort';
 import { getMidiAccessResourceState, retainMidiAccessResourceState } from './midiResource';
+import { disposeMidiAccessStateSubscription } from './midiSubscription';
 
 // Provider-contract constructor. Native MIDIAccess identity stays in provider-local state; this empty
 // public Entity is the only handle consumers retain.
@@ -54,14 +55,31 @@ export async function requestMidiAccess(host: HasMidiAccess): Promise<MidiAccess
 async function disposeMidiAccessKnownPorts(access: MidiAccess): Promise<MidiAccessDisposeOutcome> {
   const state = getMidiAccessResourceState(access);
   if (state === undefined) return { reason: 'already-disposed' };
-  const failures: Array<{ id: string; operation: 'close'; type: MidiPort['type'] }> = [];
-  for (const port of state.knownPorts) {
+  const failures: Array<
+    | { operation: 'state-subscription-release' }
+    | {
+        id: string;
+        operation: 'close' | 'message-subscription-release' | 'state-subscription-release';
+        type: MidiPort['type'];
+      }
+  > = [];
+  for (const subscription of [...state.subscriptions]) {
+    const outcome = await disposeMidiAccessStateSubscription(subscription);
+    if (outcome.reason === 'operation-failed' && outcome.releaseFailed) {
+      failures.push({ operation: 'state-subscription-release' });
+    } else state.subscriptions.delete(subscription);
+  }
+  for (const port of [...state.knownPorts]) {
     const outcome = await disposeMidiPort(port);
-    if (outcome.reason === 'operation-failed') failures.push({ id: port.id, operation: 'close', type: port.type });
+    if (outcome.reason === 'operation-failed') {
+      for (const failure of outcome.failures)
+        failures.push({ id: port.id, operation: failure.operation, type: port.type });
+    } else {
+      state.knownPorts.delete(port);
+    }
   }
   if (failures.length > 0) return { failures, reason: 'operation-failed' };
   state.disposeCompleted = true;
-  state.knownPorts.clear();
   return { reason: 'ok' };
 }
 

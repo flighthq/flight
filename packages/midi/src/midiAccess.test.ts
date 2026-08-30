@@ -24,6 +24,53 @@ describe('disposeMidiAccess', () => {
     await expect(disposeMidiAccess(access)).resolves.toEqual({ reason: 'ok' });
     await expect(disposeMidiAccess(access)).resolves.toEqual({ reason: 'already-disposed' });
   });
+
+  it('attempts subscriptions and hotplug-only ports, then retries only failed releases', async () => {
+    const accessListener: { current: ((port: unknown) => void) | null } = { current: null };
+    const release = vi
+      .fn()
+      .mockResolvedValueOnce({ reason: 'operation-failed' })
+      .mockResolvedValueOnce({ reason: 'ok' });
+    const access = requiredFunction('createMidiAccessResource')({
+      attachStateChange: async (listener: (port: unknown) => void) => {
+        accessListener.current = listener;
+        return { attachment: createEntity({ release }), reason: 'ok' };
+      },
+      getInputPorts: () => [],
+      getOutputPorts: () => [],
+    });
+    const connection = { value: 'closed' };
+    const close = vi.fn(async () => {
+      connection.value = 'closed';
+    });
+    const port = requiredFunction('createMidiOutputPortResource')(
+      { id: 'hotplug', manufacturer: null, name: 'Hotplug', version: null },
+      {
+        attachStateChange: vi.fn(),
+        close,
+        getConnection: () => connection.value,
+        getState: () => 'connected',
+        open: async () => {
+          connection.value = 'open';
+        },
+        send: vi.fn(),
+      },
+    );
+    const subscription = requiredFunction('createMidiAccessStateSubscription')();
+    await requiredFunction('attachMidiAccessStateSubscription')(access, subscription);
+    accessListener.current?.(port);
+    await requiredFunction('openMidiPort')(port);
+
+    const disposeMidiAccess = requiredFunction('disposeMidiAccess');
+    await expect(disposeMidiAccess(access)).resolves.toEqual({
+      failures: [{ operation: 'state-subscription-release' }],
+      reason: 'operation-failed',
+    });
+    expect(close).toHaveBeenCalledOnce();
+    await expect(disposeMidiAccess(access)).resolves.toEqual({ reason: 'ok' });
+    expect(close).toHaveBeenCalledOnce();
+    expect(release).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('getMidiAccessInputPorts', () => {

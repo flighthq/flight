@@ -2,12 +2,15 @@ import type {
   MidiAccess,
   MidiAccessDisposeOutcome,
   MidiAccessResourceOperations,
+  MidiAccessStateSubscription,
+  MidiInputMessageSubscription,
   MidiInputPort,
   MidiInputPortResourceOperations,
   MidiOutputPort,
   MidiOutputPortResourceOperations,
   MidiPort,
   MidiPortDisposeOutcome,
+  MidiPortStateSubscription,
 } from '@flighthq/types/contract';
 
 export interface MidiAccessResourceState {
@@ -16,6 +19,7 @@ export interface MidiAccessResourceState {
   disposed: boolean;
   knownPorts: Set<MidiPort>;
   operations: MidiAccessResourceOperations;
+  subscriptions: Set<MidiAccessStateSubscription>;
 }
 
 interface MidiPortResourceStateBase {
@@ -23,10 +27,12 @@ interface MidiPortResourceStateBase {
   disposePending: Promise<MidiPortDisposeOutcome> | null;
   disposed: boolean;
   flightOpened: boolean;
+  stateSubscriptions: Set<MidiPortStateSubscription>;
 }
 
 export interface MidiInputPortResourceState extends MidiPortResourceStateBase {
   kind: 'input';
+  messageSubscriptions: Set<MidiInputMessageSubscription>;
   operations: MidiInputPortResourceOperations;
 }
 
@@ -55,6 +61,7 @@ export function retainMidiAccessResourceState(access: MidiAccess, operations: Mi
     disposed: false,
     knownPorts: new Set(),
     operations,
+    subscriptions: new Set(),
   });
 }
 
@@ -62,7 +69,7 @@ export function retainMidiInputPortResourceState(
   port: MidiInputPort,
   operations: MidiInputPortResourceOperations,
 ): void {
-  portStates.set(port, createMidiPortState('input', operations));
+  portStates.set(port, { ...createMidiPortState('input', operations), messageSubscriptions: new Set() });
 }
 
 export function retainMidiOutputPortResourceState(
@@ -83,5 +90,6 @@ function createMidiPortState<
     flightOpened: false,
     kind,
     operations,
+    stateSubscriptions: new Set(),
   } as Extract<MidiPortResourceState, { kind: Kind }>;
 }

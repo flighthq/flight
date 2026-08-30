@@ -18,6 +18,7 @@ import {
   retainMidiInputPortResourceState,
   retainMidiOutputPortResourceState,
 } from './midiResource';
+import { disposeMidiInputMessageSubscription, disposeMidiPortStateSubscription } from './midiSubscription';
 
 interface MidiPortMetadata {
   readonly id: string;
@@ -140,21 +141,40 @@ export function sendMidiMessage(
 async function disposeOwnedMidiPort(port: MidiPort): Promise<MidiPortDisposeOutcome> {
   const state = getMidiPortResourceState(port);
   if (state === undefined) return { reason: 'already-disposed' };
+  const failures: Array<{
+    operation: 'close' | 'message-subscription-release' | 'state-subscription-release';
+  }> = [];
+  for (const subscription of [...state.stateSubscriptions]) {
+    const outcome = await disposeMidiPortStateSubscription(subscription);
+    if (outcome.reason === 'operation-failed' && outcome.releaseFailed) {
+      failures.push({ operation: 'state-subscription-release' });
+    } else state.stateSubscriptions.delete(subscription);
+  }
+  if (state.kind === 'input') {
+    for (const subscription of [...state.messageSubscriptions]) {
+      const outcome = await disposeMidiInputMessageSubscription(subscription);
+      if (outcome.reason === 'operation-failed' && outcome.releaseFailed) {
+        failures.push({ operation: 'message-subscription-release' });
+      } else state.messageSubscriptions.delete(subscription);
+    }
+  }
   if (state.flightOpened) {
     let connectionIsClosed = false;
     try {
       connectionIsClosed = state.operations.getConnection() === 'closed';
     } catch {
-      return { failures: [{ operation: 'close' }], reason: 'operation-failed' };
+      // A failed diagnostic read does not waive cleanup. Attempt the owned close directly.
     }
     if (!connectionIsClosed) {
       try {
         await state.operations.close();
+        state.flightOpened = false;
       } catch {
-        return { failures: [{ operation: 'close' }], reason: 'operation-failed' };
+        failures.push({ operation: 'close' });
       }
     }
   }
+  if (failures.length > 0) return { failures, reason: 'operation-failed' };
   state.flightOpened = false;
   state.disposeCompleted = true;
   return { reason: 'ok' };

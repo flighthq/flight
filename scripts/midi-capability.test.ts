@@ -39,6 +39,11 @@ describe('MIDI explicit Host capability shape', () => {
     const defaultHost = source('packages/host-web/src/webHost.ts');
     expect(defaultHost).toMatch(/midi:\s*\{\}/u);
     expect(defaultHost).not.toContain('requestMIDIAccess');
+
+    const implementation = productionSources('packages/midi/src');
+    expect(`${adapter}\n${implementation}`).not.toMatch(
+      /\b(?:queueMicrotask|requestAnimationFrame|setInterval|setTimeout)\s*\(/u,
+    );
   });
 
   it('has one production request owner and makes Permissions MIDI requestless', () => {
