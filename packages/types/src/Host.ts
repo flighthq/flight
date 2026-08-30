@@ -55,6 +55,7 @@ import type { MediaFileCaptureBackend } from './MediaFileCapture';
 import type { MediaSessionActionBackend, MediaSessionBackend } from './MediaSession';
 import type { MenuApplicationBackend, MenuHighlightBackend, MenuPopupBackend, MenuSelectBackend } from './Menu';
 import type { MessageDialogBackend } from './MessageDialogBackend';
+import type { MidiAccessBackend, MidiPermissionBackend } from './Midi';
 import type { NetBackend } from './Net';
 import type {
   NotificationActionBackend,
@@ -142,6 +143,7 @@ export interface Host extends Entity {
   readonly ipc: HostIpcCapabilities;
   readonly media: HostMediaCapabilities;
   readonly menu: HostMenuCapabilities;
+  readonly midi: HostMidiCapabilities;
   readonly net: HostNetCapabilities;
   readonly power: HostPowerCapabilities;
   readonly notification: HostNotificationCapabilities;
@@ -239,6 +241,11 @@ export interface HostMenuCapabilities {
   readonly highlight?: MenuHighlightBackend;
   readonly popup?: MenuPopupBackend;
   readonly select?: MenuSelectBackend;
+}
+
+export interface HostMidiCapabilities {
+  readonly access?: MidiAccessBackend;
+  readonly permission?: MidiPermissionBackend;
 }
 
 export interface HostNetCapabilities {
@@ -569,6 +576,14 @@ export interface HasNetHttp {
 
 export interface HasNetSocket {
   readonly net: { readonly socket: SocketBackend };
+}
+
+export interface HasMidiAccess {
+  readonly midi: { readonly access: MidiAccessBackend };
+}
+
+export interface HasMidiPermission {
+  readonly midi: { readonly permission: MidiPermissionBackend };
 }
 
 export interface HasNotificationAction {

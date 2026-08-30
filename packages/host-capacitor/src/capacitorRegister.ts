@@ -108,6 +108,7 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     // Capacitor exposes no menu capability: a webview app has no native menu bar, and its context
     // menus are the web overlay's job, not Capacitor's.
     menu: {},
+    midi: {},
     net: {},
     // No power provider: Capacitor exposes no battery, idle, session-lock, thermal or keep-awake
     // API through the seams this host wires. The group is empty rather than stubbed.

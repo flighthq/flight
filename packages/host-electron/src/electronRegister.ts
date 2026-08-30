@@ -170,6 +170,7 @@ export function registerElectronBackends(
     ipc,
     media: {},
     menu,
+    midi: {},
     net: {},
     power,
     notification,
