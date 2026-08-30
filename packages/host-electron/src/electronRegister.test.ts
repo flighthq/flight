@@ -1,6 +1,5 @@
 import { getAppName, setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { setStorageBackend } from '@flighthq/storage/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 
@@ -26,6 +25,8 @@ function fakeElectron(): ElectronApi {
     fs: {
       existsSync: () => false,
       readFileSync: () => '{}',
+      renameSync: noop,
+      unlinkSync: noop,
       writeFileSync: noop,
     },
     globalShortcut: {},
@@ -45,7 +46,6 @@ function fakeElectron(): ElectronApi {
 
 afterEach(() => {
   setAppBackend(null);
-  setStorageBackend(null);
 });
 
 describe('registerElectronBackends', () => {
@@ -59,6 +59,7 @@ describe('registerElectronBackends', () => {
     expect(host.notification.close.closeNotification).toBeTypeOf('function');
     expect(Object.keys(host.clipboard).sort()).toEqual(['bookmark', 'formats', 'image', 'text']);
     expect(host.connectivity).toEqual({});
+    expect(host.storage.local.getItem('missing')).toEqual({ reason: 'ok', value: null });
     expect(host.window.open).toBeTypeOf('function');
     expect(getAppName()).toBe('ElectronApp');
     expect(await readClipboardText(host)).toBe('ELECTRON-TEXT');

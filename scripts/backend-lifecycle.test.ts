@@ -96,6 +96,7 @@ describe('backend provider lifetime census', () => {
     expect(teardowns.get('ConnectivityChangeBackend')).toBe('destroy');
     expect(teardowns.get('LogTransportBackend')).toBe('destroy');
     expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
+    expect(teardowns.get('StorageChangeBackend')).toBe('destroy');
   });
 
   it('keeps explicit Host-provider release separate from ambient setter replacement', () => {
@@ -116,6 +117,16 @@ describe('backend provider lifetime census', () => {
       tearsDown: true,
     });
     expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('ConnectivityChangeBackend');
+  });
+
+  it('recognizes Storage explicit Host release without reintroducing an ambient setter', () => {
+    const storage = report.entries.find((entry) => entry.interfaceName === 'StorageChangeBackend');
+    expect(storage).toMatchObject({
+      owner: 'destroyStorage',
+      ownerKind: 'explicit-host-destroy',
+      tearsDown: true,
+    });
+    expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('StorageChangeBackend');
   });
 
   // ★ WHY WIDENING THE PARSER LEFT THE LIVE COUNT WHERE IT WAS — stated executably, because a number

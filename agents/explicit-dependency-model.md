@@ -404,6 +404,30 @@ An enumerated list reads as complete whether or not it was derived completely, a
 
 The three event slots remain separate from both command slots under R16 even though Web realizes all five through one opaque `InputTargetHandle` mapping. Multi-capability use is expressed as the explicit intersection of their five `Has*` traits; no aggregate slot hides that cost.
 
+**Storage R7/R3 result — 2026-08-29 append.** The provider coverage derivation yields two slots:
+`storage.local` is supplied by Web and Electron, while `storage.change` is supplied only by Web. Byte
+size is computed from primitive key/value reads in core, so it is not a Host capability. The quota
+surface is deleted rather than guessed into the Host. Web exports one stable Entity in both truthful
+slots; Electron retains its configured factory and supplies only `local`.
+
+R3 removes the ambient backend population in the same slice: no `getStorageBackend`,
+`setStorageBackend`, `installStorageHostBackend`, conflict observer, host-Web enabler, sentinel,
+`createWebStorageBackend`, quota API/type, or `createStorageNamespace` remains. Every core operation
+takes the narrow `HasStorageLocal` or `HasStorageChange` trait it needs.
+
+All provider and core results use `reason` as the sole discriminant. A missing key is
+`{ value: null, reason: 'ok' }`; an empty string remains a value. Failed queries return a null payload
+instead of partial data, while mutation batches report the completed prefix and failing key. Typed and
+JSON helpers add their own parse/serialization reasons without erasing provider failures. Migration
+steps are validated before any read, checkpoint after every successful callback, propagate callback
+exceptions, and never roll earlier steps back; callbacks must therefore be replay-safe and idempotent.
+
+The Storage success contract is deliberately narrower than durability: mutation `reason: 'ok'` means
+the new value is atomically visible through the provider and its cache matches that visible value. It
+does **not** mean the bytes were fsynced or will survive sudden power loss. Electron realizes that
+contract with a same-directory temporary candidate plus rename and commits its cache only after the
+rename succeeds.
+
 ### First inventories — what they changed
 
 Two domain inventories (`window`, `dialog`) and the GL/WGPU context inventory landed 2026-08-29 and each overturned something this record proposed. All three are ruled; none is open.

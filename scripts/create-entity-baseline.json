@@ -315,7 +315,6 @@
     "@flighthq/spritesheet createSpritesheetPlayer",
     "@flighthq/statechart createStatechartInstance",
     "@flighthq/statusbar createStatusBar",
-    "@flighthq/storage createStorageNamespace",
     "@flighthq/swf createGlyphOutlineSourcesFromSwf",
     "@flighthq/swf createScene2DFromSwf",
     "@flighthq/swf createScene2DImportFromSwf",

@@ -17,6 +17,7 @@ describe('createHostProbeProviderResults', () => {
         'loop',
         'screen',
         'share',
+        'storage',
         'window',
       ]),
     );
@@ -41,6 +42,6 @@ describe('getRequiredHostProbeCapabilities', () => {
     expect(getRequiredHostProbeCapabilities('electron').size).toBe(16);
     expect(getRequiredHostProbeCapabilities('tauri').size).toBe(10);
     expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(12);
-    expect(getRequiredHostProbeCapabilities('web').size).toBe(9);
+    expect(getRequiredHostProbeCapabilities('web').size).toBe(10);
   });
 });

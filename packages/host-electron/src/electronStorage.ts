@@ -1,79 +1,148 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, Entity, StorageBackend } from '@flighthq/types/contract';
+import type {
+  ElectronApi,
+  Entity,
+  EntityRuntimeKey,
+  StorageBackend,
+  StorageClearFailureReason,
+  StorageGetItemFailureReason,
+  StorageRemoveItemFailureReason,
+  StorageSetItemFailureReason,
+} from '@flighthq/types/contract';
 
-// Maps Flight's StorageBackend onto a JSON file in the Electron userData directory. The file is
-// read and written synchronously to match the StorageBackend contract (localStorage is sync). All
-// reads/writes are guarded with try/catch; failures return the documented sentinels (null/false/[])
-// rather than throwing — storage is an expected-failure surface (permissions, disk full, etc.).
-//
-// The userData path comes from electron.app.getPath('userData'), and file I/O is performed via
-// electron.fs — a minimal { readFileSync, writeFileSync, existsSync } slice injected on ElectronApi
-// to keep this package node:fs-dependency-free (matching the electron-free design principle). In
-// most Electron apps this is satisfied by the real node:fs module passed to registerElectronBackends.
-//
-// Design note: `node:fs` is documented in the codebase map as "out of scope here — a future
-// node-fs injection covers those" for the @flighthq/filesystem seam. This storage implementation
-// threads the fs surface through ElectronApi.fs instead, keeping host-electron node:fs-free while
-// still providing the main-process storage backend the seam requires.
+type StorageRecord = Record<string, string>;
+type StorageRecordResult =
+  | { readonly reason: 'ok'; readonly value: StorageRecord }
+  | { readonly reason: StorageGetItemFailureReason; readonly value: null };
+
+// Maps synchronous Storage commands to one JSON file in Electron's userData directory. Mutations build
+// a candidate record, write it to a temporary file in the SAME directory, atomically rename it over the
+// target, and only then commit the in-memory cache. `reason: 'ok'` therefore means atomic visibility,
+// not fsync or power-loss durability; the public StorageMutationResult contract states that distinction.
 export function createElectronStorageBackend(
   electron: ElectronApi,
   fileName = 'storage.json',
 ): StorageBackend & Entity {
   const fs = electron.fs;
-  let store: Record<string, string> | null = null;
+  let cache: StorageRecord | null = null;
+  let temporaryId = 0;
 
-  function load(): Record<string, string> {
-    if (store !== null) return store;
+  const load = (): StorageRecordResult => {
+    if (cache !== null) return { reason: 'ok', value: cache };
+    let path: string;
     try {
-      const dir = electron.app.getPath('userData');
-      const path = `${dir}/${fileName}`;
-      if (fs.existsSync(path)) {
-        const raw = fs.readFileSync(path, 'utf-8');
-        const parsed = JSON.parse(raw);
-        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          store = parsed as Record<string, string>;
-          return store;
+      path = storagePath();
+      if (!fs.existsSync(path)) {
+        cache = {};
+        return { reason: 'ok', value: cache };
+      }
+      const raw = fs.readFileSync(path, 'utf-8');
+      const parsed = parseStorageRecord(raw);
+      if (parsed === null) return { reason: 'persistence-invalid', value: null };
+      cache = parsed;
+      return { reason: 'ok', value: cache };
+    } catch (error) {
+      return { reason: classifyReadFailure(error), value: null };
+    }
+  };
+
+  const persist = <
+    FailureReason extends StorageClearFailureReason | StorageRemoveItemFailureReason | StorageSetItemFailureReason,
+  >(
+    candidate: Readonly<StorageRecord>,
+    fallback: FailureReason,
+  ): { readonly reason: 'ok' | FailureReason | 'security-denied' | 'quota-exceeded' } => {
+    let temporaryPath: string | null = null;
+    try {
+      const path = storagePath();
+      temporaryPath = `${path}.tmp-${++temporaryId}`;
+      fs.writeFileSync(temporaryPath, JSON.stringify(candidate));
+      fs.renameSync(temporaryPath, path);
+      return { reason: 'ok' };
+    } catch (error) {
+      if (temporaryPath !== null) {
+        try {
+          fs.unlinkSync(temporaryPath);
+        } catch {
+          // Cleanup is best-effort and never changes the method-tight failure reported to the caller.
         }
       }
-    } catch {
-      /* unreadable or corrupt file — start fresh */
+      return { reason: classifyMutationFailure(error, fallback) };
     }
-    store = {};
-    return store;
-  }
+  };
 
-  function save(): boolean {
-    try {
-      const dir = electron.app.getPath('userData');
-      const path = `${dir}/${fileName}`;
-      fs.writeFileSync(path, JSON.stringify(load()));
-      return true;
-    } catch {
-      return false;
-    }
-  }
+  const storagePath = (): string => `${electron.app.getPath('userData')}/${fileName}`;
 
   return createEntity({
     clear() {
-      store = {};
-      return save();
+      const candidate: StorageRecord = {};
+      const result = persist(candidate, 'clear-failed');
+      if (result.reason === 'ok') cache = candidate;
+      return result;
     },
     getItem(key) {
-      const s = load();
-      return Object.prototype.hasOwnProperty.call(s, key) ? s[key] : null;
+      const loaded = load();
+      if (loaded.reason !== 'ok') return loaded;
+      return {
+        reason: 'ok',
+        value: Object.prototype.hasOwnProperty.call(loaded.value, key) ? loaded.value[key] : null,
+      };
     },
     keys() {
-      return Object.keys(load());
+      const loaded = load();
+      if (loaded.reason !== 'ok') return loaded;
+      return { reason: 'ok', value: Object.keys(loaded.value) };
     },
     removeItem(key) {
-      const s = load();
-      if (!Object.prototype.hasOwnProperty.call(s, key)) return false;
-      delete s[key];
-      return save();
+      const loaded = load();
+      if (loaded.reason !== 'ok') return { reason: loaded.reason };
+      if (!Object.prototype.hasOwnProperty.call(loaded.value, key)) return { reason: 'ok' };
+      const candidate = { ...loaded.value };
+      delete candidate[key];
+      const result = persist(candidate, 'remove-failed');
+      if (result.reason === 'ok') cache = candidate;
+      return result;
     },
     setItem(key, value) {
-      load()[key] = value;
-      return save();
+      const loaded = load();
+      if (loaded.reason !== 'ok') return { reason: loaded.reason };
+      const candidate = { ...loaded.value, [key]: value };
+      const result = persist(candidate, 'write-failed');
+      if (result.reason === 'ok') cache = candidate;
+      return result;
     },
-  } satisfies StorageBackend);
+  } satisfies Omit<StorageBackend, typeof EntityRuntimeKey>);
+}
+
+function classifyMutationFailure<FailureReason extends string>(
+  error: unknown,
+  fallback: FailureReason,
+): FailureReason | 'security-denied' | 'quota-exceeded' {
+  const code = getErrorCode(error);
+  if (code === 'EACCES' || code === 'EPERM') return 'security-denied';
+  if (code === 'EDQUOT' || code === 'ENOSPC') return 'quota-exceeded';
+  return fallback;
+}
+
+function classifyReadFailure(error: unknown): StorageGetItemFailureReason {
+  const code = getErrorCode(error);
+  return code === 'EACCES' || code === 'EPERM' ? 'security-denied' : 'read-failed';
+}
+
+function getErrorCode(error: unknown): string | null {
+  if (error === null || typeof error !== 'object' || !('code' in error)) return null;
+  return typeof error.code === 'string' ? error.code : null;
+}
+
+function parseStorageRecord(raw: string): StorageRecord | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const entries = Object.entries(parsed);
+  if (entries.some(([, value]) => typeof value !== 'string')) return null;
+  return Object.fromEntries(entries) as StorageRecord;
 }
