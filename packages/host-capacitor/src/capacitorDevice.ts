@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorDeviceInfo,
@@ -5,6 +6,7 @@ import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
+  Entity,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/contract';
@@ -16,7 +18,7 @@ import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/types/
 // webview), which map onto DeviceInfo; the fields it does not report (arch, memory, GPU, ABIs, board,
 // rooted/jailbroken) keep their sentinels. Display metrics, capabilities, and safe-area insets have no
 // `@capacitor/device` call, so those out-fills report sentinels too.
-export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBackend {
+export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBackend & Entity {
   const device = capacitor.device;
   // Sync getters over async Capacitor: prefetch identity once and serve the cached values.
   let cachedInfo: CapacitorDeviceInfo | null = null;
@@ -37,7 +39,7 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
     .catch(() => {
       /* leave '' */
     });
-  return {
+  return createEntity({
     getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
       // `@capacitor/device` reports no input capabilities; report the false sentinels.
       out.hasKeyboard = false;
@@ -96,7 +98,7 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
       out.left = 0;
       return out;
     },
-  };
+  } satisfies DeviceBackend);
 }
 
 // Capacitor's platform is 'ios' | 'android' | 'web'; a mobile platform is a phone (no tablet signal),

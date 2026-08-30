@@ -1,4 +1,5 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorMessageDialogBackend, createCapacitorPromptDialogBackend } from './capacitorDialog';
 
@@ -23,6 +24,10 @@ function fakeCapacitor(promptResult = { value: 'typed', cancelled: false }) {
 }
 
 describe('createCapacitorMessageDialogBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorMessageDialogBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('maps message onto a single-button alert', async () => {
     const { capacitor, calls } = fakeCapacitor();
     const backend = createCapacitorMessageDialogBackend(capacitor);
@@ -38,6 +43,10 @@ describe('createCapacitorMessageDialogBackend', () => {
 });
 
 describe('createCapacitorPromptDialogBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorPromptDialogBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('maps prompt', async () => {
     const prompt = createCapacitorPromptDialogBackend(fakeCapacitor().capacitor);
     expect(await prompt.prompt({ message: 'name?' })).toBe('typed');

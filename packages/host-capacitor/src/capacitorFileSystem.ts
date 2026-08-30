@@ -1,4 +1,5 @@
-import type { FileEntry, FileStat, FileSystemBackend, CapacitorApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CapacitorApi, Entity, FileEntry, FileStat, FileSystemBackend } from '@flighthq/types/contract';
 
 // Maps Flight's FileSystemBackend onto Capacitor's async `@capacitor/filesystem`. Both sides are
 // Promise-based, so the core surface maps cleanly: text via the `utf8` encoding, binary via Base64
@@ -10,9 +11,9 @@ import type { FileEntry, FileStat, FileSystemBackend, CapacitorApi } from '@flig
 // Capacitor has no call for streams, symlinks, POSIX permissions, real-path resolution, filesystem
 // usage, byte-range reads, atomic writes, watching, or well-known path lookup, so those methods report
 // the contract sentinels (null / false / '' / [] / inert unsubscribe).
-export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBackend {
+export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBackend & Entity {
   const filesystem = capacitor.filesystem;
-  return {
+  return createEntity({
     async readTextFile(path) {
       try {
         return readResultAsText((await filesystem.readFile({ path, encoding: 'utf8' })).data);
@@ -180,7 +181,7 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
       // Well-known directory paths come from Capacitor's Directory enum, resolved host-side, not a call.
       return '';
     },
-  };
+  } satisfies FileSystemBackend);
 }
 
 function toFileEntry(name: string, path: string, type: string): FileEntry {

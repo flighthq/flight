@@ -1,9 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  CapacitorApi,
+  CapacitorStatusBarInfoResult,
+  Entity,
   StatusBarBackend,
   StatusBarInfo,
   StatusBarStyle,
-  CapacitorApi,
-  CapacitorStatusBarInfoResult,
 } from '@flighthq/types/contract';
 
 // Maps Flight's StatusBarBackend onto Capacitor's `@capacitor/status-bar`. The setters are async and fire
@@ -12,7 +14,7 @@ import type {
 // getInfo is a synchronous snapshot while Capacitor's getInfo is async, so it is served from a value
 // prefetched once at construction (default until it resolves). Capacitor emits no status-bar change
 // event, so subscribe is inert.
-export function createCapacitorStatusBarBackend(capacitor: CapacitorApi): StatusBarBackend {
+export function createCapacitorStatusBarBackend(capacitor: CapacitorApi): StatusBarBackend & Entity {
   const statusBar = capacitor.statusBar;
   // Sync getInfo over async Capacitor: prefetch the snapshot once and cache it.
   let cachedInfo: CapacitorStatusBarInfoResult | null = null;
@@ -24,7 +26,7 @@ export function createCapacitorStatusBarBackend(capacitor: CapacitorApi): Status
     .catch(() => {
       /* leave null → defaults */
     });
-  return {
+  return createEntity({
     getInfo(out: StatusBarInfo): StatusBarInfo {
       const info = cachedInfo;
       out.color = info?.color !== undefined ? hexToRgba(info.color) : 0;
@@ -52,7 +54,7 @@ export function createCapacitorStatusBarBackend(capacitor: CapacitorApi): Status
       // Capacitor emits no status-bar change event; inert unsubscribe.
       return () => {};
     },
-  };
+  } satisfies StatusBarBackend);
 }
 
 // Flight status-bar style ('light' | 'dark' | 'default') → Capacitor Style ('Light' | 'Dark' | 'Default').

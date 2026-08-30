@@ -5,6 +5,7 @@ import type {
   SafeAreaInsets,
   CapacitorApi,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorDeviceBackend } from './capacitorDevice';
 
@@ -67,6 +68,10 @@ function blankInfo(): DeviceInfo {
 }
 
 describe('createCapacitorDeviceBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorDeviceBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('fills DeviceInfo from the prefetched Capacitor info once it resolves', async () => {
     const backend = createCapacitorDeviceBackend(fakeCapacitor().capacitor);
     // Sentinels until the construction-time prefetch settles.

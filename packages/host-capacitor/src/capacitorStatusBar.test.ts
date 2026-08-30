@@ -1,4 +1,5 @@
 import type { StatusBarInfo, CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
 
@@ -39,6 +40,10 @@ function blankInfo(): StatusBarInfo {
 }
 
 describe('createCapacitorStatusBarBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorStatusBarBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('maps setters onto the Capacitor plugin', () => {
     const { capacitor, calls } = fakeCapacitor();
     const backend = createCapacitorStatusBarBackend(capacitor);

@@ -1,4 +1,11 @@
-import type { AppBackend, AppLoginItem, CapacitorApi, CapacitorPluginListenerHandle } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  AppBackend,
+  AppLoginItem,
+  CapacitorApi,
+  CapacitorPluginListenerHandle,
+  Entity,
+} from '@flighthq/types/contract';
 
 // Maps Flight's AppBackend onto Capacitor's `@capacitor/app` (identity + exit/minimize + lifecycle/url
 // events).
@@ -12,7 +19,7 @@ import type { AppBackend, AppLoginItem, CapacitorApi, CapacitorPluginListenerHan
 // login item, single-instance, command line, executable paths — has no Capacitor call and reports the
 // contract sentinels (''/[]/false/-1/no-op/inert unsubscribe). Locale is not exposed by `@capacitor/app`
 // (it lives on `@capacitor/device`), so the locale getters report the '' / [] sentinels.
-export function createCapacitorAppBackend(capacitor: CapacitorApi): AppBackend {
+export function createCapacitorAppBackend(capacitor: CapacitorApi): AppBackend & Entity {
   const app = capacitor.app;
   // Sync getters over async Capacitor: prefetch once, serve the cached value.
   let cachedName = '';
@@ -26,7 +33,7 @@ export function createCapacitorAppBackend(capacitor: CapacitorApi): AppBackend {
     .catch(() => {
       /* leave '' */
     });
-  return {
+  return createEntity({
     addRecentDocument() {
       // No Capacitor recent-documents API.
     },
@@ -152,7 +159,7 @@ export function createCapacitorAppBackend(capacitor: CapacitorApi): AppBackend {
     subscribeSecondInstance() {
       return () => {};
     },
-  };
+  } satisfies AppBackend);
 }
 
 // Bridges Capacitor's Promise<PluginListenerHandle> to Flight's synchronous unsubscribe: fire the

@@ -1,4 +1,5 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorFileSystemBackend } from './capacitorFileSystem';
 
@@ -48,6 +49,10 @@ function fakeCapacitor() {
 }
 
 describe('createCapacitorFileSystemBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorFileSystemBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('round-trips a text file', async () => {
     const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
     expect(await backend.writeTextFile('/a.txt', 'hello')).toBe(true);

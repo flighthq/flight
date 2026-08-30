@@ -1,4 +1,5 @@
 import type { CapacitorApi, CapacitorPosition } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCapacitorGeolocationBackend } from './capacitorGeolocation';
 
@@ -49,6 +50,10 @@ function fakeCapacitor(permission = 'granted') {
 }
 
 describe('createCapacitorGeolocationBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorGeolocationBackend(fakeCapacitor().capacitor)).toBe(true);
+  });
+
   it('reports an installed Capacitor geolocation provider as available', () => {
     const backend = createCapacitorGeolocationBackend(fakeCapacitor().capacitor);
     expect(backend.isAvailable()).toBe(true);
