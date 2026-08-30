@@ -162,7 +162,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 16 | keyboard | createWebSoftKeyboardBackend | 4/0 | **host-web** | DOM+window+nav | navigator.virtualKeyboard, Window.visualViewport |
 | 17 | lifecycle | createWebLifecycleBackend | 4/0 | **host-web** | DOM+window | document visibility, page lifecycle events |
 | 18 | log | createWebLogTransportBackend | 0/1 | **none** | — | ALL sentinel. |
-| 19 | mediasession | createWebMediaSessionBackend | 4/0 | **host-web** | nav | navigator.mediaSession, MediaMetadata |
+| 19 | mediasession | createWebMediaSessionBackend / createWebMediaSessionActionBackend | 2 slots | **host-web** | nav | Explicit `webHost.media.session` commands and `.sessionAction` events over navigator.mediaSession / MediaMetadata |
 | 20 | menu | createWebMenuBackend | 1/2 | **none** | — | 66.7% false. |
 | 21 | net | createWebNetBackend | 1/0 | **ambient** | — | WHATWG fetch. Zero navigator/document/window refs. Stays inline, unchanged. |
 | 22 | notification | createWebNotificationBackend | 14/4 | **host-web** | window | Notification instances/permission/timers |
@@ -330,33 +330,38 @@ Accessibility has graduated from this ambient global-singleton classification. `
 
 ### enableHostWeb() membership
 
-At the original census, `enableHostWeb()` composed 22 global-singleton enablers and excluded Cursor. Accessibility is now also excluded because its provider is constructed directly into `webHost`.
+`enableHostWeb()` composes the 19 remaining ambient global-singleton enablers. Cursor is excluded
+(per-instance); Accessibility, Clipboard, Connectivity, MediaSession, and Screen are excluded because
+they are stable explicit `webHost` slots.
 
 ```typescript
 export function enableHostWeb(): void {
-  enableHostWebClipboard();
-  enableHostWebConnectivity();
+  enableHostWebAudio();
+  enableHostWebAudioDevice();
+  enableHostWebBitmapEncode();
+  enableHostWebBitmapReadback();
   enableHostWebDevice();
-  enableHostWebDialog();
   enableHostWebFileSystem();
+  enableHostWebFontLoading();
   enableHostWebGeolocation();
   enableHostWebGlyphRasterizer();
-  enableHostWebHaptics();
   enableHostWebImage();
   enableHostWebSoftKeyboard();
   enableHostWebLifecycle();
-  enableHostWebLoop();
-  enableHostWebMediaSession();
-  enableHostWebNotification();
   enableHostWebPermission();
   enableHostWebPlatform();
+  enableHostWebRaster2DSurface();
   enableHostWebSensors();
   enableHostWebStorage();
+  enableHostWebVideoCapability();
   enableHostWebWebcam();
 }
 ```
 
-Not included: Cursor (per-instance factory, not an enabler), ipc, log, shortcut, tray, updater (all-sentinel), app, application-window, menu, power, protocol, shell, statusbar (strict-majority no-op), net, socket, textsegment (ambient-language, inline).
+Not included: Accessibility, Clipboard, Connectivity, MediaSession, and Screen (explicit `webHost`
+slots), Cursor (per-instance factory, not an enabler), ipc, log, shortcut, tray, updater (all-sentinel),
+app, application-window, menu, power, protocol, shell, statusbar (strict-majority no-op), net, socket,
+textsegment (ambient-language, inline).
 
 ---
 

@@ -3,7 +3,7 @@ package: '@flighthq/mediasession'
 role: package
 crate: null
 draft: false
-lastDirection: 2026-07-11
+lastDirection: 2026-08-29
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -11,26 +11,37 @@ status: ./status.md
 
 # mediasession — Charter
 
-See [platform integration shared principles](../platform-integration.md) for the suite-wide decisions (flat free functions over a swappable `*Backend`; web backend installed explicitly via `enableHostWebMediaSession()` from `@flighthq/host-web`; `get*Backend`/`set*Backend`; custom > host > sentinel; sentinels not throws; `sideEffects:false`).
-
 ## What it is
 
-`@flighthq/mediasession` is the **OS media-session integration seam** — it publishes the currently-playing media's metadata and playback state to the operating system's media UI (lock-screen / notification-shade transport controls, hardware media keys, smart-watch remotes) and routes those hardware transport actions back to the app. It is the "now playing" bridge a media/audio app wires so the OS shows the track and its play/pause/next/seek controls work. Web backend wraps `navigator.mediaSession`; native hosts (`host-electron`/`host-tauri`/`host-capacitor`) can replace it.
+`@flighthq/mediasession` is the explicit-Host OS media-session bridge. It publishes now-playing
+metadata, playback state and position, and turns provider-emitted transport actions into per-action
+signal entities. It does not play media or own a timeline.
+
+The capability is Web-only today. `webHost.media` supplies `session` and `sessionAction`;
+Electron, Tauri and Capacitor truthfully publish an empty media group.
 
 ## North star
 
-Flat functions over a `MediaSessionBackend`:
-- **Metadata**: `setMediaSessionMetadata({ title, artist, album, artwork: MediaSessionArtwork[] })` / `clearMediaSessionMetadata()` — the now-playing card.
-- **Playback state**: `setMediaSessionPlaybackState('none' | 'paused' | 'playing')`.
-- **Position**: `setMediaSessionPositionState({ duration, playbackRate, position })` / `clearMediaSessionPositionState()` — the scrubber.
-- **Action handlers**: `setMediaSessionActionHandler(action, handler)` / `clearMediaSessionActionHandler(action)` where `MediaSessionAction = 'play'|'pause'|'stop'|'seekbackward'|'seekforward'|'seekto'|'previoustrack'|'nexttrack'|'skipad'|...` — the OS transport buttons calling back into the app.
-- Seam accessors `getMediaSessionBackend`/`setMediaSessionBackend`; web backend installed via `enableHostWebMediaSession()` from `@flighthq/host-web` (custom > host > sentinel). Types (`MediaSessionBackend`, `MediaSessionMetadata`, `MediaSessionArtwork`, `MediaSessionAction`, `MediaSessionPlaybackState`, `MediaSessionPositionState`) in `@flighthq/types`.
+- Commands take a `HasMediaSession` witness and return a method-tight, reason-only outcome:
+  `setMediaSessionMetadata`, `clearMediaSessionMetadata`, `setMediaSessionPlaybackState`,
+  `setMediaSessionPositionState`, and `clearMediaSessionPositionState`.
+- Events use a `MediaSessionActionSignal` Entity created for one action and managed through
+  `createMediaSessionActionSignal`, `attachMediaSessionAction`, `detachMediaSessionAction`, and
+  `disposeMediaSessionActionSignal`.
+- Commands and actions occupy separate Host slots because their shapes and lifetimes differ.
+- Web providers live in `@flighthq/host-web`: `createWebMediaSessionBackend` owns command publications;
+  `createWebMediaSessionActionBackend` owns native action registrations.
 
 ## Boundaries
 
-- **The OS transport/metadata seam, not a player.** It reports state to the OS and forwards OS actions; it does NOT play audio/video (that's `@flighthq/media`) or own the timeline. A media app reads its player's state and calls these; the action handlers drive the player.
-- **`@flighthq/types` for the seam + data types; the package holds the functions.** The web backend (wrapping `navigator.mediaSession`) is installed via `enableHostWebMediaSession()` from `@flighthq/host-web`. Deps: `@flighthq/types` only. No dependency on `@flighthq/media` — the app wires the two.
-- **Web sentinels.** On a host without `navigator.mediaSession`, the web backend no-ops / returns sentinels rather than throwing (suite rule).
+- No ambient resolver, custom/host precedence, sentinel, support observer, diagnostic probe, or enabler.
+  Capability absence is an omitted Host slot; runtime browser failure is a command outcome.
+- `@flighthq/mediasession` depends only on Entity, Signals, and Types. It remains independent of
+  `@flighthq/media`; applications wire player state to the session.
+- Position validation is local. An invalid playback-state union value is programmer misuse and throws
+  before provider dispatch. Platform method/assignment failures return `operation-failed`.
+- A subscription is established only for the requested action. Attach returns `false` when the provider
+  cannot subscribe; a successful attach retains the exact returned unsubscribe until release succeeds.
 
 ## Decisions
 
@@ -38,8 +49,16 @@ _Append-only, dated, blessed rulings._
 
 - **[2026-07-11] Web backend wraps `navigator.mediaSession` directly.** Metadata → `new MediaMetadata(...)`, playback/position → the corresponding setters, action handlers → `setActionHandler`. Guarded by `typeof navigator !== 'undefined' && 'mediaSession' in navigator` — absent → no-op sentinel.
 - **[2026-07-11] Decoupled from `@flighthq/media`.** The seam takes plain data + callbacks; it does not import the player. This keeps a media-less app (e.g. a game using it for its own audio) able to use it, and avoids a dependency cycle.
+- **[2026-08-29] R3 explicit Host split.** `Host.media.session` is the Web-only command slot and
+  `Host.media.sessionAction` the Web-only event slot. Both backends are Entities with independent
+  teardown. This supersedes the 2026-07-11 sentinel/location portion of the first ruling: the provider
+  moved to `@flighthq/host-web`, and ambient absence became Host slot absence.
+- **[2026-08-29] Reason-only outcomes.** Each command exposes only the reasons it can reach. Metadata
+  construction isolates artwork-source `TypeError`; later browser artwork loading is unobservable.
+- **[2026-08-29] Provenance-pinned cleanup.** Web ownership includes provider, exact session, lane/action,
+  and token. Successors and foreign publications survive; failed detach/destroy remains retryable.
 
 ## Open directions
 
-1. **`media` integration helper.** A thin optional bridge (in `@flighthq/media` or an example) that mirrors a media channel's state into the session automatically — built where the player lives, not here.
-2. **Richer action set.** `togglemicrophone`/`togglecamera`/`hangup` (call-app actions) as the web API grows them.
+1. An optional player integration helper belongs with `@flighthq/media` or an example, not here.
+2. Action-vocabulary growth requires a separate ruling; R3 deliberately preserves the existing set.
