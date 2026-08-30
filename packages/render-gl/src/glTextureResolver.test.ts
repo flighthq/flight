@@ -19,6 +19,7 @@ import {
   registerStandardGlTextureResolvers,
   registerGlTextureResolver,
   resolveGlTexture,
+  standardGlTextureResolvers,
 } from './glTextureResolver';
 
 function textureWithImage(image: TextureSource | null): TextureLike {
@@ -265,5 +266,18 @@ describe('resolveGlTexture', () => {
   it('returns null when the state has no registered source resolver', () => {
     const { state } = createGlState();
     expect(resolveGlTexture(state, textureWithImage(imageResource()))).toBeNull();
+  });
+});
+
+describe('standardGlTextureResolvers', () => {
+  it('carries the three standard source kinds', () => {
+    expect(standardGlTextureResolvers.entries.size).toBe(3);
+    expect(standardGlTextureResolvers.entries.has(BitmapTextureSourceKind)).toBe(true);
+    expect(standardGlTextureResolvers.entries.has(ImageTextureSourceKind)).toBe(true);
+    expect(standardGlTextureResolvers.entries.has(RenderTargetTextureSourceKind)).toBe(true);
+  });
+
+  it('does not include the compressed-image resolver', () => {
+    expect(standardGlTextureResolvers.entries.has(CompressedImageTextureSourceKind)).toBe(false);
   });
 });

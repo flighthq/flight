@@ -1,4 +1,4 @@
-import { withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { createKeyedTable, withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   RenderTargetColorSpace,
@@ -148,3 +148,19 @@ function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureL
   const handle = bindGlRenderTexture(state, texture as Readonly<RenderTexture>);
   return handle === null ? null : { straightAlpha: false, texture: handle };
 }
+
+const _standardGlTextureResolvers = withRegistryTableEntry(
+  withRegistryTableEntry(
+    withRegistryTableEntry(
+      createKeyedTable<GlTextureResolver>('GlTextureResolver', 'Unregistered'),
+      BitmapTextureSourceKind,
+      resolveGlBitmapTexture,
+    ),
+    ImageTextureSourceKind,
+    resolveGlImageTexture,
+  ),
+  RenderTargetTextureSourceKind,
+  resolveGlRenderTexture,
+);
+
+export { _standardGlTextureResolvers as standardGlTextureResolvers };

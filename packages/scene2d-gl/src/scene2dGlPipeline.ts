@@ -1,5 +1,5 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import { createEmptyGlRegistries, createGlPipeline } from '@flighthq/render-gl/contract';
+import { createEmptyGlRegistries, createGlPipeline, standardGlTextureResolvers } from '@flighthq/render-gl/contract';
 import type { GlPipeline, KeyedTable, Renderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
@@ -49,4 +49,5 @@ function buildScene2dGlRenderers(): KeyedTable<Renderer> {
 export const scene2dGlPipeline: GlPipeline = createGlPipeline({
   ...createEmptyGlRegistries(),
   renderers: buildScene2dGlRenderers(),
+  textureResolvers: standardGlTextureResolvers,
 });

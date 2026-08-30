@@ -1,12 +1,15 @@
 import { getGlPipelineRegistries } from '@flighthq/render-gl/contract';
 import {
   BitmapTextKind,
+  BitmapTextureSourceKind,
   DisplayObjectKind,
   EntityRuntimeKey,
+  ImageTextureSourceKind,
   MorphShapeKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
+  RenderTargetTextureSourceKind,
   RegistryEntryState,
   RichTextKind,
   Scale9ShapeKind,
@@ -51,10 +54,17 @@ describe('scene2dGlPipeline', () => {
     expect(scene2dGlPipeline).toBe(scene2dGlPipeline);
   });
 
-  it('starts with empty GL-specific tables that renderers family does not populate', () => {
+  it('carries the three standard texture resolvers', () => {
+    const registries = getGlPipelineRegistries(scene2dGlPipeline);
+    expect(registries.textureResolvers.entries.size).toBe(3);
+    expect(registries.textureResolvers.entries.has(BitmapTextureSourceKind)).toBe(true);
+    expect(registries.textureResolvers.entries.has(ImageTextureSourceKind)).toBe(true);
+    expect(registries.textureResolvers.entries.has(RenderTargetTextureSourceKind)).toBe(true);
+  });
+
+  it('starts with empty GL-specific tables that earlier families do not populate', () => {
     const registries = getGlPipelineRegistries(scene2dGlPipeline);
     expect(registries.blendRealizations.entries.size).toBe(0);
-    expect(registries.textureResolvers.entries.size).toBe(0);
     expect(registries.materialRenderers.entries.size).toBe(0);
   });
 });
