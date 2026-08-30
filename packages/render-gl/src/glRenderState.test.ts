@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import {
   createKeyedTable,
@@ -21,7 +22,7 @@ import type {
   RenderEffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
@@ -37,6 +38,7 @@ import {
   destroyGlRenderState,
   getGlColorAdjustmentMaterialFeature,
   getGlColorAdjustmentMaterialFeatureGuard,
+  getGlContextRuntime,
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
   registerGlContextTeardown,
@@ -153,6 +155,47 @@ describe('createGlContextState', () => {
 
     runtimeA.context.currentShader = { locations: null, program: {} as WebGLProgram };
     expect(runtimeB.context.currentShader).toBe(runtimeA.context.currentShader);
+  });
+});
+
+describe('createGlContextState (Entity backing)', () => {
+  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without createEntity', () => {
+    const gl = makeGL();
+    const literal = { gl };
+    expect(EntityRuntimeKey in literal).toBe(false);
+
+    const entity = createGlContextState(gl);
+    expect(EntityRuntimeKey in entity).toBe(true);
+  });
+
+  it('yields distinct nonsharing states from two calls over the same raw context', () => {
+    const gl = makeGL();
+    const stateA = createGlContextState(gl);
+    const stateB = createGlContextState(gl);
+
+    expect(stateA).not.toBe(stateB);
+    expect(stateA[EntityRuntimeKey]).not.toBe(stateB[EntityRuntimeKey]);
+
+    const runtimeA = getGlContextRuntime(stateA);
+    const runtimeB = getGlContextRuntime(stateB);
+    expect(runtimeA).not.toBe(runtimeB);
+    expect(runtimeA.teardowns).not.toBe(runtimeB.teardowns);
+    expect(runtimeA.textureCache).not.toBe(runtimeB.textureCache);
+  });
+
+  it('shares the context tier between two render states built from the same Entity state', () => {
+    const gl = makeGL();
+    const contextState = createGlContextState(gl);
+    const renderA = createGlRenderStateFromContextState(contextState);
+    const renderB = createGlRenderStateFromContextState(contextState);
+
+    const runtimeA = getGlRenderStateRuntime(renderA);
+    const runtimeB = getGlRenderStateRuntime(renderB);
+
+    expect(runtimeA).not.toBe(runtimeB);
+    expect(runtimeA.context).toBe(runtimeB.context);
+    expect(runtimeA.context.gl).toBe(gl);
+    expect(runtimeA.context.teardowns).toBe(runtimeB.context.teardowns);
   });
 });
 
@@ -755,4 +798,3 @@ describe('registerGlContextTeardown', () => {
     expect(teardown).toHaveBeenCalledWith(gl);
   });
 });
-import { createEntity } from '@flighthq/entity/contract';
