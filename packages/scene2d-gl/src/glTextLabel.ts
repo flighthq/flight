@@ -68,10 +68,10 @@ function destroyGlTextLabelData(state: GlRenderState, data: RendererData): void 
   const runtime = getGlRenderStateRuntime(state);
   const { surface } = getGlTextLabelData(data);
   if (surface === null) return;
-  const entry = runtime.textureSourcePremultipliedTextureCache.get(surface.image);
+  const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
-    runtime.textureSourcePremultipliedTextureCache.delete(surface.image);
+    runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
   destroyRaster2DSurface(surface);
 }
@@ -157,7 +157,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   ensureGlQuadBatchShader(state);
 
   const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
-  const straightAlpha = runtime.currentTextureRealization!.straightAlpha;
+  const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
   const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,

@@ -54,7 +54,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
 
     const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
     if (glTexture === null) continue;
-    const straightAlpha = runtime.currentTextureRealization!.straightAlpha;
+    const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
     ensureGlQuadBatchShader(state);
     // prepareGlQuadBatchWrite may flush the prior page's batch (each page binds a different image), so
     // read the running instance count AFTER it so material/color-adjustment indices align with `base`.

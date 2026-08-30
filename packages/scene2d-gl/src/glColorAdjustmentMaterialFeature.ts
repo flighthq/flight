@@ -5,6 +5,7 @@ import { enableColorAdjustments } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
   GlColorAdjustmentMaterialFeature,
+  GlColorAdjustmentResources,
   GlColorScaleBiasInstancedShader,
   GlRenderState,
   GlRenderStateRuntime,
@@ -316,7 +317,7 @@ function bindGlQuadBatchWriterInstancedColorMatrix(state: GlRenderState): void {
   setGlQuadBatchWorldAndTexture(state, shader.locWorldMatrix, shader.locTexture, shader.locStraightTextureAlpha);
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerColorScaleBiasBuffer!);
   for (let attribute = 0; attribute < 5; attribute++) {
     const location = 7 + attribute;
     gl.enableVertexAttribArray(location);
@@ -335,7 +336,7 @@ function bindGlQuadBatchWriterInstancedColorScaleBias(state: GlRenderState): voi
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerColorScaleBiasBuffer!);
   gl.enableVertexAttribArray(7);
   gl.vertexAttribPointer(7, 4, gl.FLOAT, false, COLOR_SCALE_BIAS_STRIDE, 0);
   gl.vertexAttribDivisor(7, 1);
@@ -352,75 +353,92 @@ function bindGlQuadBatchWriterPackedTint(state: GlRenderState): void {
   bindGlQuadBatchBaseAttributes(state, shader.locCorner);
 
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerColorScaleBiasBuffer!);
   gl.enableVertexAttribArray(7);
   gl.vertexAttribPointer(7, 4, gl.UNSIGNED_BYTE, true, 4, 0);
   gl.vertexAttribDivisor(7, 1);
 }
 
+function ensureGlColorAdjustmentResources(state: GlRenderState, runtime: GlRenderStateRuntime): GlColorAdjustmentResources {
+  const gl = state.gl;
+
+  const scaleBiasProgram = createGlProgram(
+    gl,
+    CT_INSTANCED_VS,
+    CT_INSTANCED_FS,
+    'Sprite-batch color adjustment (per-instance)',
+  );
+  const matrixProgram = createGlProgram(
+    gl,
+    CT_MATRIX_INSTANCED_VS,
+    CT_MATRIX_INSTANCED_FS,
+    'Sprite-batch color matrix',
+  );
+  const tintProgram = createGlProgram(gl, CT_PACKED_TINT_VS, CT_PACKED_TINT_FS, 'Sprite-batch tint (RGBA8)');
+  const uniformProgram = createGlProgram(gl, QUAD_BATCH_VS, UNIFORM_CT_FS, 'Sprite-batch color adjustment (uniform)');
+
+  const resources: GlColorAdjustmentResources = {
+    scaleBiasInstancedShader: {
+      program: scaleBiasProgram,
+      locCorner: 0,
+      locWorldMatrix: gl.getUniformLocation(scaleBiasProgram, 'u_world')!,
+      locTexture: gl.getUniformLocation(scaleBiasProgram, 'u_texture')!,
+      locStraightTextureAlpha: gl.getUniformLocation(scaleBiasProgram, 'u_straightTextureAlpha')!,
+    },
+    matrixInstancedShader: {
+      program: matrixProgram,
+      locCorner: 0,
+      locWorldMatrix: gl.getUniformLocation(matrixProgram, 'u_world')!,
+      locTexture: gl.getUniformLocation(matrixProgram, 'u_texture')!,
+      locStraightTextureAlpha: gl.getUniformLocation(matrixProgram, 'u_straightTextureAlpha')!,
+    },
+    tintInstancedShader: {
+      program: tintProgram,
+      locCorner: 0,
+      locWorldMatrix: gl.getUniformLocation(tintProgram, 'u_world')!,
+      locTexture: gl.getUniformLocation(tintProgram, 'u_texture')!,
+      locStraightTextureAlpha: gl.getUniformLocation(tintProgram, 'u_straightTextureAlpha')!,
+    },
+    uniformScaleBiasShader: {
+      program: uniformProgram,
+      locCorner: 0,
+      locWorldMatrix: gl.getUniformLocation(uniformProgram, 'u_world')!,
+      locTexture: gl.getUniformLocation(uniformProgram, 'u_texture')!,
+      locStraightTextureAlpha: gl.getUniformLocation(uniformProgram, 'u_straightTextureAlpha')!,
+      locColorScale: gl.getUniformLocation(uniformProgram, 'u_colorScale')!,
+      locColorBias: gl.getUniformLocation(uniformProgram, 'u_colorBias')!,
+    },
+  };
+  runtime.context.colorAdjustmentResources = resources;
+  return resources;
+}
+
 function ensureGlColorScaleBiasInstancedShader(state: GlRenderState): GlColorScaleBiasInstancedShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.colorScaleBiasInstancedShader) return runtime.colorScaleBiasInstancedShader;
-
-  const gl = state.gl;
-  const program = createGlProgram(gl, CT_INSTANCED_VS, CT_INSTANCED_FS, 'Sprite-batch color adjustment (per-instance)');
-  runtime.colorScaleBiasInstancedShader = {
-    program,
-    locCorner: 0,
-    locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
-    locTexture: gl.getUniformLocation(program, 'u_texture')!,
-    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
-  };
-  return runtime.colorScaleBiasInstancedShader;
+  const resources = runtime.context.colorAdjustmentResources;
+  if (resources) return resources.scaleBiasInstancedShader;
+  return ensureGlColorAdjustmentResources(state, runtime).scaleBiasInstancedShader;
 }
 
 function ensureGlColorMatrixInstancedShader(state: GlRenderState): GlColorScaleBiasInstancedShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.colorMatrixInstancedShader) return runtime.colorMatrixInstancedShader;
-  const gl = state.gl;
-  const program = createGlProgram(gl, CT_MATRIX_INSTANCED_VS, CT_MATRIX_INSTANCED_FS, 'Sprite-batch color matrix');
-  runtime.colorMatrixInstancedShader = {
-    program,
-    locCorner: 0,
-    locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
-    locTexture: gl.getUniformLocation(program, 'u_texture')!,
-    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
-  };
-  return runtime.colorMatrixInstancedShader;
+  const resources = runtime.context.colorAdjustmentResources;
+  if (resources) return resources.matrixInstancedShader;
+  return ensureGlColorAdjustmentResources(state, runtime).matrixInstancedShader;
 }
 
 function ensureGlColorTintInstancedShader(state: GlRenderState): GlColorScaleBiasInstancedShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.colorTintInstancedShader) return runtime.colorTintInstancedShader;
-
-  const gl = state.gl;
-  const program = createGlProgram(gl, CT_PACKED_TINT_VS, CT_PACKED_TINT_FS, 'Sprite-batch tint (RGBA8)');
-  runtime.colorTintInstancedShader = {
-    program,
-    locCorner: 0,
-    locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
-    locTexture: gl.getUniformLocation(program, 'u_texture')!,
-    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
-  };
-  return runtime.colorTintInstancedShader;
+  const resources = runtime.context.colorAdjustmentResources;
+  if (resources) return resources.tintInstancedShader;
+  return ensureGlColorAdjustmentResources(state, runtime).tintInstancedShader;
 }
 
 function ensureGlUniformColorScaleBiasShader(state: GlRenderState): GlUniformColorScaleBiasShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.uniformColorScaleBiasShader) return runtime.uniformColorScaleBiasShader;
-
-  const gl = state.gl;
-  const program = createGlProgram(gl, QUAD_BATCH_VS, UNIFORM_CT_FS, 'Sprite-batch color adjustment (uniform)');
-  runtime.uniformColorScaleBiasShader = {
-    program,
-    locCorner: 0,
-    locWorldMatrix: gl.getUniformLocation(program, 'u_world')!,
-    locTexture: gl.getUniformLocation(program, 'u_texture')!,
-    locStraightTextureAlpha: gl.getUniformLocation(program, 'u_straightTextureAlpha')!,
-    locColorScale: gl.getUniformLocation(program, 'u_colorScale')!,
-    locColorBias: gl.getUniformLocation(program, 'u_colorBias')!,
-  };
-  return runtime.uniformColorScaleBiasShader;
+  const resources = runtime.context.colorAdjustmentResources;
+  if (resources) return resources.uniformScaleBiasShader;
+  return ensureGlColorAdjustmentResources(state, runtime).uniformScaleBiasShader;
 }
 
 // Value equality for the whole-batch uniform check: reference-equal short-circuits (the common case —
@@ -462,10 +480,11 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 
   if (ctMode === CT_MODE_PACKED_TINT) {
     const gl = state.gl;
-    if (runtime.quadBatchWriterColorScaleBiasBuffer == null) {
-      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
+    const qbr = runtime.context.quadBatchResources!;
+    if (qbr.writerColorScaleBiasBuffer == null) {
+      qbr.writerColorScaleBiasBuffer = gl.createBuffer()!;
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerColorScaleBiasBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorTintData!.subarray(0, count), gl.DYNAMIC_DRAW);
     bindGlQuadBatchWriterPackedTint(state);
     return true;
@@ -473,9 +492,9 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 
   if (ctMode === CT_MODE_MATRIX) {
     const gl = state.gl;
-    if (runtime.quadBatchWriterColorScaleBiasBuffer == null)
-      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
+    const qbr = runtime.context.quadBatchResources!;
+    if (qbr.writerColorScaleBiasBuffer == null) qbr.writerColorScaleBiasBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerColorScaleBiasBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       runtime.quadBatchWriterColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
@@ -487,10 +506,11 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
 
   if (ctMode === CT_MODE_PER_INSTANCE) {
     const gl = state.gl;
-    if (runtime.quadBatchWriterColorScaleBiasBuffer == null) {
-      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
+    const qbr = runtime.context.quadBatchResources!;
+    if (qbr.writerColorScaleBiasBuffer == null) {
+      qbr.writerColorScaleBiasBuffer = gl.createBuffer()!;
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerColorScaleBiasBuffer);
     // Reallocate to exactly what is drawn: the color-adjustment data array grows lazily as tints are
     // recorded, so a fixed subData offset could outrun a stale buffer. Only per-instance-tinted
     // batches pay this, and the untinted common path never allocates the buffer at all.
@@ -507,9 +527,9 @@ function flushGlColorAdjustmentMaterialFeature(state: GlRenderState, count: numb
     promoteGlQuadBatchWriterColorScaleBiasToMatrix(runtime, count, uniformColorScaleBias!);
     runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
     const gl = state.gl;
-    if (runtime.quadBatchWriterColorScaleBiasBuffer == null)
-      runtime.quadBatchWriterColorScaleBiasBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterColorScaleBiasBuffer);
+    const qbr = runtime.context.quadBatchResources!;
+    if (qbr.writerColorScaleBiasBuffer == null) qbr.writerColorScaleBiasBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerColorScaleBiasBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
       runtime.quadBatchWriterColorMatrixData!.subarray(0, count * COLOR_MATRIX_FLOATS),
@@ -913,10 +933,11 @@ function drawGlShapeMeshesColorScaleBias(
 
 function ensureGlShapeMeshColorMatrixShader(state: GlRenderState): GlShapeMeshColorScaleBiasShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.shapeMeshColorMatrixShader) return runtime.shapeMeshColorMatrixShader;
+  const smr = runtime.context.shapeMeshResources!;
+  if (smr.colorMatrixShader) return smr.colorMatrixShader;
   const gl = state.gl;
   const program = createGlProgram(gl, SHAPE_MESH_CT_VS, SHAPE_MESH_MATRIX_FS, 'Shape-mesh color matrix');
-  runtime.shapeMeshColorMatrixShader = {
+  const shader: GlShapeMeshColorScaleBiasShader = {
     program,
     positionLocation: gl.getAttribLocation(program, 'a_position'),
     matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
@@ -931,16 +952,18 @@ function ensureGlShapeMeshColorMatrixShader(state: GlRenderState): GlShapeMeshCo
       gl.getUniformLocation(program, 'u_colorBias'),
     ],
   };
-  return runtime.shapeMeshColorMatrixShader;
+  smr.colorMatrixShader = shader;
+  return shader;
 }
 
 function ensureGlShapeMeshColorScaleBiasShader(state: GlRenderState): GlShapeMeshColorScaleBiasShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.shapeMeshColorScaleBiasShader) return runtime.shapeMeshColorScaleBiasShader;
+  const smr = runtime.context.shapeMeshResources!;
+  if (smr.colorScaleBiasShader) return smr.colorScaleBiasShader;
 
   const gl = state.gl;
   const program = createGlProgram(gl, SHAPE_MESH_CT_VS, SHAPE_MESH_CT_FS, 'Shape-mesh color adjustment');
-  runtime.shapeMeshColorScaleBiasShader = {
+  const shader: GlShapeMeshColorScaleBiasShader = {
     program,
     positionLocation: gl.getAttribLocation(program, 'a_position'),
     matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
@@ -948,7 +971,8 @@ function ensureGlShapeMeshColorScaleBiasShader(state: GlRenderState): GlShapeMes
     colorScaleLocation: gl.getUniformLocation(program, 'u_colorScale'),
     colorBiasLocation: gl.getUniformLocation(program, 'u_colorBias'),
   };
-  return runtime.shapeMeshColorScaleBiasShader;
+  smr.colorScaleBiasShader = shader;
+  return shader;
 }
 
 // Mirrors the base flat-color mesh vertex shader (glShapeMesh's VERTEX_SOURCE): u_matrix is the shared
