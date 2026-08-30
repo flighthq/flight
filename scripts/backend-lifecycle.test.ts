@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { collectFunctionBodies, collectSetterBodies, packageSourceFiles } from './backend-lifecycle-collect';
 import {
   BACKEND_LIFECYCLE_SCOPE_CAVEAT,
   collectExplicitHostDestroyOwners,
@@ -20,6 +21,7 @@ import {
 import type { BackendLifecycleDelta, BackendLifecycleFloor, BackendLifecycleReport } from './backend-lifecycle-core';
 import { collectBackendInterfaceNames, collectExplicitHostLifecycleSlots } from './backend-operation-seam-core';
 import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
+import { runGates } from './gateRunner';
 
 // P4's provider-lifetime census. Population and exclusions are both derived: a backend can only leak a
 // resource it owns, and ownership is the interface declaring a NO-ARGUMENT `destroy()`/`dispose()`.
@@ -623,53 +625,6 @@ describe('formatBackendLifecycleReport with floor', () => {
 
 const ROOT = resolve(__dirname, '..');
 
-// Every exported `set*Backend` in the repo, mapped to its body text.
-function collectSetterBodies(): ReadonlyMap<string, string> {
-  const bodies = new Map<string, string>();
-  for (const packageName of packageNames()) {
-    for (const file of packageSourceFiles(packageName)) {
-      const text = readFileSync(file, 'utf-8');
-      const pattern = /^export function (set\w*Backend|destroy[A-Z]\w*)\([^)]*\)[^{]*\{/gm;
-      let match: RegExpExecArray | null;
-      while ((match = pattern.exec(text)) !== null) {
-        const open = text.indexOf('{', match.index);
-        let depth = 0;
-        let end = open;
-        for (; end < text.length; end++) {
-          if (text[end] === '{') depth++;
-          else if (text[end] === '}' && --depth === 0) break;
-        }
-        bodies.set(match[1], text.slice(open + 1, end));
-      }
-    }
-  }
-  return bodies;
-}
-
-// Every top-level function body in the repo's package sources, so the census can follow a lifecycle
-// owner into the helper it delegates teardown to.
-function collectFunctionBodies(): ReadonlyMap<string, string> {
-  const bodies = new Map<string, string>();
-  for (const packageName of packageNames()) {
-    for (const file of packageSourceFiles(packageName)) {
-      const text = readFileSync(file, 'utf-8');
-      const pattern = /^(?:export )?function (\w+)\([^)]*\)[^{]*\{/gm;
-      let match: RegExpExecArray | null;
-      while ((match = pattern.exec(text)) !== null) {
-        const open = text.indexOf('{', match.index);
-        let depth = 0;
-        let end = open;
-        for (; end < text.length; end++) {
-          if (text[end] === '{') depth++;
-          else if (text[end] === '}' && --depth === 0) break;
-        }
-        bodies.set(match[1], text.slice(open + 1, end));
-      }
-    }
-  }
-  return bodies;
-}
-
 function allPackageSourceFiles(): string[] {
   return packageNames().flatMap(packageSourceFiles);
 }
@@ -681,10 +636,60 @@ function packageNames(): string[] {
     .sort();
 }
 
-function packageSourceFiles(packageName: string): string[] {
-  const sourceDir = join(ROOT, 'packages', packageName, 'src');
-  if (!existsSync(sourceDir)) return [];
-  return readdirSync(sourceDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts'))
-    .map((entry) => join(sourceDir, entry.name));
+// The census is only as good as its reachability. Before 2026-08-30 it existed ONLY as this test file,
+// so it sat outside `npm run check` — a slice deleted every ambient setter, left twelve backends
+// declaring a teardown nothing ran, passed the whole-repo check and was attested green.
+//
+// These assertions RUN THE REAL RUNNER against the REAL gate rather than reading source text, because a
+// comment or a string match cannot tell you whether the standard check would actually go red.
+describe('backend-lifecycle gate wiring', () => {
+  it('is registered in the standard check runner, with the real command', async () => {
+    const gates = await loadCheckGates();
+    const gate = gates.find((entry) => entry.label === 'backend-lifecycle:check');
+    expect(gate).toBeDefined();
+    expect(gate?.args).toContain('scripts/backend-lifecycle.ts');
+  });
+
+  // ★ The gate PASSES today, executed through the same runner `npm run check` uses.
+  it('passes when run through the standard gate runner', async () => {
+    const [result] = await runGates(
+      [{ args: ['scripts/backend-lifecycle.ts'], command: 'tsx', label: 'lifecycle' }],
+      1,
+    );
+    expect(result?.passed).toBe(true);
+    expect(result?.code).toBe(0);
+  }, 120_000);
+
+  // ★ And a lifecycle RED makes the runner fail. The census entry point is pointed at a types tree with a
+  // planted violation — a backend declaring destroy() with no wiring — proving the standard check would
+  // go red rather than merely printing a warning. This is not an expected-red gate: nothing is left
+  // failing, the fixture is temporary and the real gate above still passes.
+  it('makes the standard runner fail when a backend declares an unwired teardown', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lifecycle-red-'));
+    writeFileSync(
+      join(dir, 'gate.ts'),
+      [
+        "import { createBackendLifecycleReport, hasBackendLifecycleFailure } from '" +
+          join(ROOT, 'scripts', 'backend-lifecycle-core').replaceAll('\\', '/') +
+          "';",
+        "const report = createBackendLifecycleReport(['OrphanBackend'], new Map([['OrphanBackend', 'destroy']]), new Map());",
+        'if (hasBackendLifecycleFailure(report)) process.exit(1);',
+      ].join('\n'),
+      'utf-8',
+    );
+    const [result] = await runGates([{ args: [join(dir, 'gate.ts')], command: 'tsx', label: 'lifecycle-red' }], 1);
+    expect(result?.passed).toBe(false);
+    expect(result?.code).toBe(1);
+  }, 120_000);
+});
+
+// Loads check.ts's registrations without running any gate, by stubbing the registry it imports.
+async function loadCheckGates(): Promise<readonly { args: readonly string[]; label: string }[]> {
+  const source = readFileSync(join(ROOT, 'scripts', 'check.ts'), 'utf-8');
+  const collected: { args: readonly string[]; label: string }[] = [];
+  for (const match of source.matchAll(/add\('([^']+)',\s*'([^']+)',\s*\[([^\]]*)\]/g)) {
+    const args = [...match[3].matchAll(/'([^']*)'/g)].map((a) => a[1]);
+    collected.push({ args, label: match[1] });
+  }
+  return collected;
 }

@@ -73,6 +73,12 @@ add('mocks:check', 'tsx', ['scripts/mocks.ts', '--check']);
 add('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);
 
 if (!scoped) {
+  // ★ WIRED IN 2026-08-30, and the reason is a failure this gate would have caught. The
+  // replacement-lifetime census existed only as a vitest test, so it sat OUTSIDE this sweep: a slice
+  // deleted every ambient setter, left twelve backends declaring a teardown nothing ran, passed
+  // `npm run check` and was attested green. A gate the standard check cannot reach is one that
+  // eventually goes unrun.
+  add('backend-lifecycle:check', 'tsx', ['scripts/backend-lifecycle.ts']);
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
   // Advisory, and deliberately not a gate. `create*` is useful API-design evidence, but a function
   // can legitimately create a non-Entity value. The baseline makes additions and resolved entries
