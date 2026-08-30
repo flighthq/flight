@@ -75,18 +75,27 @@ const EXPECTED_AGGREGATE = [
   'Platform',
   'Raster2DSurface',
   'VideoCapability',
-  'Webcam',
+  'MediaFileCapture',
 ] as const;
 
 // These capabilities arrive as stable slots on the explicit Web Host, not through the legacy
 // process-global enabler registry.
-const EXPECTED_EXPLICIT_HOST = ['Lifecycle', 'MediaSession', 'Power', 'Screen', 'Sensors', 'Storage'] as const;
+const EXPECTED_EXPLICIT_HOST = [
+  'App',
+  'Lifecycle',
+  'MediaSession',
+  'Power',
+  'Protocol',
+  'Screen',
+  'Sensors',
+  'Storage',
+] as const;
 
-// These are deliberately not part of enableHostWeb(): applications opt into application services,
-// status chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
+// These are deliberately not part of enableHostWeb(): applications opt into status chrome and
+// renderer surfaces explicitly. Keeping the names here turns a newly added web
 // enabler into a reviewable registry change instead of silently treating it as either aggregate or
 // excluded.
-const EXPECTED_EXCLUDED = ['App', 'Protocol', 'StatusBar', 'GlRenderSurface', 'WgpuRenderSurface'] as const;
+const EXPECTED_EXCLUDED = ['StatusBar', 'GlRenderSurface', 'WgpuRenderSurface'] as const;
 
 const EXPECTED_FACTORIES = [
   'Accessibility',
@@ -460,6 +469,8 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
   const webHostRaw = readFileSync(webHostPath, 'utf8');
   const webHostSource = transformSource?.({ path: webHostRelativePath, source: webHostRaw }) ?? webHostRaw;
   const explicitHost = new Set<string>();
+  const appGroup = /\bapp\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
+  if (/\.\.\.webAppCapabilities\b/.test(appGroup)) explicitHost.add('App');
   const mediaGroup = /\bmedia\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
   if (
     /\bsession\s*:\s*webMediaSessionBackend\b/.test(mediaGroup) &&
@@ -471,6 +482,7 @@ function deriveRegistry(root: string, transformSource?: CapabilityArrivalOptions
   if (/\blifecycle\s*:\s*webLifecycleBackend\b/.test(systemGroup)) explicitHost.add('Lifecycle');
   if (/\bsensors\s*:\s*webSensorsBackend\b/.test(systemGroup)) explicitHost.add('Sensors');
   if (/\bpower\s*:\s*webPowerCapabilities\b/.test(webHostSource)) explicitHost.add('Power');
+  if (/\bprotocol\s*:\s*webProtocolCapabilities\b/.test(webHostSource)) explicitHost.add('Protocol');
   if (/\bscreen\s*:\s*webScreenCapabilities\b/.test(webHostSource)) explicitHost.add('Screen');
   const storageGroup = /\bstorage\s*:\s*\{([^{}]*)\}/s.exec(webHostSource)?.[1] ?? '';
   if (
