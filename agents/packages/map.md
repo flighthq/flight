@@ -147,7 +147,7 @@ Host/OS integration so applications need no escape hatch out of the SDK. Each ca
 - `@flighthq/menu`: native application-menu and context-menu descriptors (native host required to realize).
 - `@flighthq/tray`: system tray / menu-bar icon (icon, tooltip, title, context menu, click events). The application/dock badge lives in `@flighthq/app`, not here.
 - `@flighthq/shortcut`: global OS hotkeys over a swappable web/native `ShortcutBackend`, plus the accelerator value domain: alias-insensitive parsing and normalization, diagnostic parse errors, platform-aware display labels, equality/validation, enumeration/conflict queries, opt-in trigger signals, and enable/suspend commands. The web backend returns unsupported sentinels; Electron and Tauri adapters provide registration, while their native plugins do not currently realize the enable/suspend semantics.
-- `@flighthq/screen`: display enumeration, work area, scale factor.
+- `@flighthq/screen`: Host-explicit display enumeration, work area, scale factor, pure current-mode derivation, and Entity-backed display/permission event groups. Web supplies stable query/change/details/permissionChange slots from `@flighthq/host-web`; Electron supplies split query/change slots; no ambient backend registry remains.
 - `@flighthq/storage`: synchronous persistent key/value (web backend over localStorage).
 - `@flighthq/device`: static device/OS identity — model, manufacturer, OS, memory, safe-area insets. Battery is _not_ here; it is a live concern owned by `@flighthq/power`.
 - `@flighthq/share`: explicit system share-sheet invocation through top-level content/files Host slots,
@@ -174,7 +174,7 @@ Application/process layer (host shell integration beyond a single window):
 - `@flighthq/updater` (event): auto-update lifecycle — checking/available/progress/downloaded/error signals plus check/download/quit-and-install commands.
 - `@flighthq/ipc`: inter-process messaging — `sendIpcMessage`, `invokeIpc`, `onIpcMessage` over a host channel backend (for split-process hosts like Electron main↔renderer).
 
-Inbound host events are delivered through the same seam: command-style capabilities that also receive events expose a flat `on*(listener): () => void` over a backend `subscribe*` method — `onMenuSelect`, `onTrayEvent` (+ `setTrayContextMenu`), `onNotificationClick`/`onNotificationAction`, `onScreenChange`, power `onSuspend`/`onResume`. The window backend delivers OS-originated changes by mutating the `ApplicationWindow` and emitting its signals directly (it owns the `win`↔OS-window mapping from `openWindow`); native window backends additionally implement icon/opacity/progress/attention/skip-taskbar/menu-bar/parent controls.
+Inbound host events are delivered through explicit event slots and Entity attachment — for example `attachScreenSignals(host, signals)` binds `Host.screen.change`. Other domains still expose their existing subscription surfaces while awaiting their own migration slices. The window backend delivers OS-originated changes by mutating the `ApplicationWindow` and emitting its signals directly (it owns the `win`↔OS-window mapping from `openWindow`); native window backends additionally implement icon/opacity/progress/attention/skip-taskbar/menu-bar/parent controls.
 
 Host backends (the concrete adapters that fill the seams) are a distinct package class — they carry a host dependency, are not tree-shakable, and are named `host-<runtime>`:
 

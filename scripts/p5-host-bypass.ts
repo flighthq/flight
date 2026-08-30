@@ -457,6 +457,8 @@ const P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS = {
   total: 14,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
+// Immutable historical checkpoint: Screen R3 later deleted ScreenBackend, but this reason deliberately
+// preserves the symbol used by the audited P5 repair when the checkpoint was recorded.
 // One checkpoint for one slice. Both window-management sites were routed together, so the honest evidence
 // is a single entry declaring what it repaired rather than two synthetic one-site steps.
 const P5_HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS = {

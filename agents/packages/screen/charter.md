@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Display/monitor enumeration and the seam for reacting to display-configuration changes. The package answers "what screens are attached, where are they, and how are they configured" — per-screen geometry (bounds, work area), scale/DPI, primary detection, orientation/rotation, color/HDR metrics, refresh rate, and display modes — plus coordinate converters, point/rect-to-screen lookups, cursor-position queries, and a change-event stream (callback and opt-in signals). It runs over a swappable `ScreenBackend`: a web backend (window/screen + matchMedia + the Window Management API for multi-monitor) installed explicitly via `enableHostWebScreen()` from `@flighthq/host-web`; native hosts replace via `setScreenBackend`. Resolution: custom > host > sentinel.
+Display/monitor enumeration over an explicit Host witness. `Host.screen` is a non-optional group with optional `query`, `change`, `details`, and `permissionChange` slots. The package owns pure geometry/current-mode helpers plus Entity-backed Screen values and event groups; web providers live in `@flighthq/host-web`, Electron supplies split query/change facets, and no ambient resolver or installer remains.
 
 ## Decisions
 
@@ -25,6 +25,5 @@ Display/monitor enumeration and the seam for reacting to display-configuration c
 ## Open directions
 
 - Whether cheap web-populatable fields (`monochrome`, `dpi`, `depthPerComponent`) should be derived on the web backend or left sentinel until native.
-- Late-subscribe + upgrade ordering: consumers calling `onScreenChange` before `requestScreenDetails()` miss post-upgrade events.
 - Stable-id contract across hot-plug for `ScreenInfo.id`.
 - `screen` vs `device` boundary for display metrics ownership.

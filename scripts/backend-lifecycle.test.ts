@@ -44,8 +44,12 @@ describe('backend replacement lifetime census', () => {
     'AccessibilityBackend',
     'LogTransportBackend',
     'MediaSessionBackend',
-    'MenuBackend',
+    'MenuApplicationBackend',
+    'MenuHighlightBackend',
+    'MenuPopupBackend',
+    'MenuSelectBackend',
     'PowerBackend',
+    'ScreenQueryBackend',
   ];
 
   beforeAll(() => {
@@ -53,7 +57,13 @@ describe('backend replacement lifetime census', () => {
     expect(typeFiles.length).toBeGreaterThan(0);
     const names = collectBackendInterfaceNames(typeFiles).map((name) => `${name}Backend`);
     teardowns = collectWholeBackendTeardowns(typeFiles);
-    report = createBackendLifecycleReport(names, teardowns, collectSetterBodies(), collectFunctionBodies());
+    report = createBackendLifecycleReport(
+      names,
+      teardowns,
+      collectSetterBodies(),
+      collectFunctionBodies(),
+      new Map([['ScreenQueryBackend', 'Host.screen.query']]),
+    );
     formattedOutput = formatBackendLifecycleReport(report, HISTORICAL_BASELINE);
     // eslint-disable-next-line no-console
     console.log(formattedOutput);
@@ -105,9 +115,15 @@ describe('backend replacement lifetime census', () => {
 
   // The ratchet: every backend that DECLARES a whole-backend teardown must have its setter name it.
   // That is a wiring check, not a proof that teardown is complete — see the scope caveat below.
-  it('reports no unwired teardown among the backends that declare one', () => {
-    expect(report.violations).toEqual([]);
-    expect(hasBackendLifecycleFailure(report)).toBe(false);
+  it('accepts explicit Screen Host ownership without hiding inherited Menu debt', () => {
+    expect(report.violations.map((violation) => violation.interfaceName)).toEqual([
+      'MenuApplicationBackend',
+      'MenuHighlightBackend',
+      'MenuPopupBackend',
+      'MenuSelectBackend',
+    ]);
+    expect(report.violations.some((violation) => violation.interfaceName === 'ScreenQueryBackend')).toBe(false);
+    expect(hasBackendLifecycleFailure(report)).toBe(true);
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The printed number is read as a completeness measure by everyone
@@ -146,20 +162,25 @@ describe('backend replacement lifetime census', () => {
     ]);
   });
 
-  it('pins the required enforced names to the five current enforced backends', () => {
+  it('pins the required enforced names to the current teardown-bearing backends', () => {
     expect(REQUIRED_ENFORCED_NAMES).toEqual([
       'AccessibilityBackend',
       'LogTransportBackend',
       'MediaSessionBackend',
-      'MenuBackend',
+      'MenuApplicationBackend',
+      'MenuHighlightBackend',
+      'MenuPopupBackend',
+      'MenuSelectBackend',
       'PowerBackend',
+      'ScreenQueryBackend',
     ]);
   });
 
   it('shows progression in the live delta when slices land beyond the historical baseline', () => {
     const delta = compareFloorToReport(HISTORICAL_BASELINE, report);
-    expect(delta.enforcedGained).toContain('MenuBackend');
+    expect(delta.enforcedGained).toContain('MenuApplicationBackend');
     expect(delta.enforcedGained).toContain('PowerBackend');
+    expect(delta.enforcedGained).toContain('ScreenQueryBackend');
     expect(delta.enforcedLost).toEqual([]);
   });
 
@@ -168,9 +189,9 @@ describe('backend replacement lifetime census', () => {
     expect(missing).toEqual([]);
   });
 
-  it('would fail if MenuBackend were removed from the required set but still enforced', () => {
-    const withoutMenu = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'MenuBackend');
-    expect(withoutMenu).not.toContain('MenuBackend');
+  it('would fail if a Menu facet were removed from the required set but still enforced', () => {
+    const withoutMenu = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'MenuApplicationBackend');
+    expect(withoutMenu).not.toContain('MenuApplicationBackend');
     expect(withoutMenu.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
   });
 
@@ -182,11 +203,11 @@ describe('backend replacement lifetime census', () => {
 
   it('would lose progression visibility if historical baseline absorbed Menu and Power', () => {
     const absorbedBaseline: BackendLifecycleFloor = {
-      enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'MenuBackend', 'PowerBackend'].sort(),
+      enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'MenuApplicationBackend', 'PowerBackend'].sort(),
       total: HISTORICAL_BASELINE.total,
     };
     const delta = compareFloorToReport(absorbedBaseline, report);
-    expect(delta.enforcedGained).not.toContain('MenuBackend');
+    expect(delta.enforcedGained).not.toContain('MenuApplicationBackend');
     expect(delta.enforcedGained).not.toContain('PowerBackend');
   });
 });

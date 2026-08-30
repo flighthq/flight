@@ -146,7 +146,7 @@ exports, they fall into two families:
 
 - **`attach<Entity>`, one argument** — the entity *is* a dedicated capability and the counterpart is
   ambient platform: `attachConnectivity(net)`, `attachSocket(socket)`, `attachSensors(sensors)`,
-  `attachScreenSignals(signals)`, `attachStatusBar(bar)`, `attachClipboardWatch(watch)`.
+  `attachScreenSignals(host, signals)`, `attachStatusBar(bar)`, `attachClipboardWatch(host, watch)`.
 - **`attach<Entity><Event>`** — the entity is general-purpose with many signals, so the name says which
   one: `attachWindowClose(win)`, `attachWindowResize(win, element)`, `attachWindowFocus(win, element)`,
   `attachWindowVisibility(win)`, `attachApplicationExit(app)`, `attachApplicationLifecycle(app, win)`.

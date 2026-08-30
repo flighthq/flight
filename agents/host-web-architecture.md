@@ -170,7 +170,7 @@ The inventory must use the record's exact current headings as its schema: `Manda
 | 24 | platform | createWebPlatformBackend | 1/0 | **host-web** | window+nav | navigator UA/language/touch |
 | 25 | power | createWebPowerBackend | 6/7 | **none** | — | 53.8% false. |
 | 26 | protocol | createWebProtocolBackend | 3/7 | **none** | — | 70.0% false. |
-| 27 | screen | createWebScreenBackend | 5/0 | **host-web** | DOM+window | Window.screen/ScreenDetails |
+| 27 | screen | createWebScreenCapabilities | 4 slots | **host-web** | DOM+window | Stable query/change/details/permissionChange slots over Window.screen/ScreenDetails |
 | 28 | sensors | createWebSensorsBackend | 17/4 | **host-web** | window | Generic Sensor API, devicemotion/deviceorientation |
 | 29 | share | webShareContentBackend / webShareFilesBackend | 3/0 + 3/0 | **host-web** | nav | navigator.canShare/share |
 | 30 | shell | createWebShellBackend | 1/8 | **none** | — | 88.9% false. |
@@ -351,7 +351,6 @@ export function enableHostWeb(): void {
   enableHostWebNotification();
   enableHostWebPermission();
   enableHostWebPlatform();
-  enableHostWebScreen();
   enableHostWebSensors();
   enableHostWebStorage();
   enableHostWebWebcam();

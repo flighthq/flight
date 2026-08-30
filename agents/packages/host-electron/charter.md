@@ -11,6 +11,8 @@ status: ./status.md
 
 # host-electron — Charter
 
+Screen is registered explicitly as Entity-backed `Host.screen.query` and `Host.screen.change` facets, never through a package-global setter.
+
 See [platform integration shared principles](../platform-integration.md) for the suite-wide decisions.
 
 ## What it is
