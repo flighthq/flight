@@ -1,4 +1,10 @@
-import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
+  createGlContextFromCanvasElement,
+  createGlRenderState,
+} from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, RenderEffect } from '@flighthq/types/contract';
 
@@ -92,7 +98,10 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 16;
   canvas.height = 16;
-  return createGlRenderState(createGlContextFromCanvasElement(canvas));
+  return createGlRenderState(
+    createGlContextState(createGlContextFromCanvasElement(canvas)),
+    createGlPipeline(createEmptyGlRegistries()),
+  );
 }
 
 function effect(kind: string, extra: Readonly<Record<string, unknown>> = {}): Readonly<RenderEffect> {

@@ -1,6 +1,8 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
+  scene2dGlPipeline,
+  createGlContextState,
   createGlContextFromCanvasElement,
   createCanvasRenderState,
   createCanvasShapeRasterizer,
@@ -58,9 +60,12 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   document.body.appendChild(canvas);
 
   const state = createGlRenderState(
-    createGlContextFromCanvasElement(canvas, {
-      contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
-    }),
+    createGlContextState(
+      createGlContextFromCanvasElement(canvas, {
+        contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
+      }),
+    ),
+    scene2dGlPipeline,
     {
       pixelRatio,
       backgroundColor: options.background,

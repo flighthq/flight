@@ -42,7 +42,7 @@ describe('enableGlTextureResolverGuards', () => {
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.missing.gl',
         message:
-          'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver), or copyGlRenderStateRegistrations(offscreenState, screenState) after a late screen registration',
+          'resolveGlTexture: texture source kind has no registered resolver — rebuild the GlPipeline with the required resolver and create the render state from that pipeline',
       });
     } finally {
       removeLogSink(sink.sink);

@@ -132,7 +132,7 @@ describe('createWgpuCacheState', () => {
     const screen = fakeScreen();
     const destroyUniformBuffer = vi.fn();
     const screenRuntime = getWgpuRenderStateRuntime(screen);
-    screenRuntime.uniformBuffer = { destroy: destroyUniformBuffer } as GPUBuffer;
+    screenRuntime.uniformBuffer = { destroy: destroyUniformBuffer } as unknown as GPUBuffer;
     screenRuntime.quadBatchWriterBufferPool = [];
 
     const cacheState = createWgpuCacheState(screen);

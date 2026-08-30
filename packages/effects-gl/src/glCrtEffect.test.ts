@@ -1,4 +1,10 @@
-import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import {
+  createGlContextState,
+  createEmptyGlRegistries,
+  createGlPipeline,
+  createGlContextFromCanvasElement,
+  createGlRenderState,
+} from '@flighthq/render-gl/contract';
 import type { CrtEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 // The shader is a module-private string, so it is read back from the argument the effect hands the
@@ -103,7 +109,10 @@ describe('defaultGlCrtEffectRunner', () => {
 describe('registerGlCrtEffect', () => {
   it('makes the runner resolvable for the CrtEffect kind', () => {
     const canvas = document.createElement('canvas');
-    const state = createGlRenderState(createGlContextFromCanvasElement(canvas));
+    const state = createGlRenderState(
+      createGlContextState(createGlContextFromCanvasElement(canvas)),
+      createGlPipeline(createEmptyGlRegistries()),
+    );
 
     expect(getGlRenderEffectRunner(state, 'CrtEffect')).toBeNull();
     registerGlCrtEffect(state);

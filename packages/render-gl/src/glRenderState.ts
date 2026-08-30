@@ -1,9 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import {
-  copyAllRenderersFromRenderState,
-  copyRenderStateRegistrations,
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   destroyRenderState,
@@ -15,47 +12,12 @@ import type {
   GlContext,
   GlContextRuntime,
   GlContextState,
+  GlPipeline,
   GlRenderOptions,
   GlRenderState,
   GlRenderStateRuntime,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
-
-// Explicit snapshot re-copy. Mutable legacy maps are cloned; persistent tables may share immutable
-// snapshots through distinct aggregates. Either way, later replacements diverge between render states,
-// and a cache/effect state may intentionally omit screen policy.
-export function copyGlRenderStateRegistrations(target: GlRenderState, source: GlRenderState): void {
-  const targetRuntime = getGlRenderStateRuntime(target);
-  const sourceRuntime = getGlRenderStateRuntime(source);
-  target.applyBlendMode = source.applyBlendMode;
-  targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
-  targetRuntime.materialBitmapShaderMap =
-    sourceRuntime.materialBitmapShaderMap === undefined ? undefined : new Map(sourceRuntime.materialBitmapShaderMap);
-  targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
-  targetRuntime.registries = {
-    blendRealizations: sourceRuntime.registries.blendRealizations,
-    colorAdjustmentFeature: sourceRuntime.registries.colorAdjustmentFeature,
-    colorAdjustmentFeatureGuard: sourceRuntime.registries.colorAdjustmentFeatureGuard,
-    compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
-    compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
-    customEffectShaders: sourceRuntime.registries.customEffectShaders,
-    customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
-    materialRenderers: sourceRuntime.registries.materialRenderers,
-    meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
-    modifierSnippets: sourceRuntime.registries.modifierSnippets,
-    modifierSnippetRevision: sourceRuntime.registries.modifierSnippetRevision,
-    pbrExtensions: sourceRuntime.registries.pbrExtensions,
-    pbrExtensionRevision: sourceRuntime.registries.pbrExtensionRevision,
-    renderEffects: sourceRuntime.registries.renderEffects,
-    renderers: targetRuntime.registries.renderers,
-    shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
-    strokeTessellator: targetRuntime.registries.strokeTessellator,
-    textureResolvers: sourceRuntime.registries.textureResolvers,
-    velocityWriters: sourceRuntime.registries.velocityWriters,
-  };
-  targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
-  copyRenderStateRegistrations(target, source);
-}
 
 export function createGlContextState(gl: GlContext): GlContextState {
   const quadIndexBuffer = gl.createBuffer()!;
@@ -91,45 +53,17 @@ export function createGlContextState(gl: GlContext): GlContextState {
   return state;
 }
 
-/**
- * Creates a second render pipeline over `screenState`'s WebGL context.
- *
- * GPU objects and upload caches are aliases of one context tier. Pipeline policy is a creation-time
- * snapshot: renderer/clip/material/effect/texture registrations start equal, then either state may
- * override or omit them independently. Per-node proxies, adapters, frame counters, batch writers,
- * render transforms, and renderer data are always fresh.
- */
-export function createGlOffscreenRenderState(screenState: GlRenderState): GlRenderState {
-  const state = _createRenderState({
-    allowSmoothing: screenState.allowSmoothing,
-    backgroundColor: screenState.backgroundColor,
-    backgroundColorRgba: [...screenState.backgroundColorRgba],
-    backgroundColorString: screenState.backgroundColorString,
-    pixelRatio: screenState.pixelRatio,
-    renderAlpha: screenState.renderAlpha,
-    renderBlendMode: screenState.renderBlendMode,
-    renderTransform2D: createMatrix(),
-    roundPixels: screenState.roundPixels,
-    sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
-  }) as GlRenderState;
-  state.applyBlendMode = screenState.applyBlendMode;
-  (state as { gl: GlContext }).gl = screenState.gl;
-
-  const screenRuntime = getGlRenderStateRuntime(screenState);
-  const runtime = createGlRenderStateRuntime(undefined, screenRuntime);
-  state[EntityRuntimeKey] = runtime;
-  initializeOffscreenGlRuntime(runtime, screenRuntime);
-  copyAllRenderersFromRenderState(state, screenState);
-  copyGlRenderStateRegistrations(state, screenState);
-  return state;
-}
-
-export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}): GlRenderState {
-  return createGlRenderStateFromContextState(createGlContextState(gl), options);
-}
-
-export function createGlRenderStateFromContextState(
+export function createGlOffscreenRenderState(
   contextState: Readonly<GlContextState>,
+  pipeline: Readonly<GlPipeline>,
+  options: GlRenderOptions = {},
+): GlRenderState {
+  return createGlRenderState(contextState, pipeline, options);
+}
+
+export function createGlRenderState(
+  contextState: Readonly<GlContextState>,
+  pipeline: Readonly<GlPipeline>,
   options: GlRenderOptions = {},
 ): GlRenderState {
   const gl = contextState.gl;
@@ -143,11 +77,11 @@ export function createGlRenderStateFromContextState(
   }) as GlRenderState;
 
   state.applyBlendMode = null;
-  (state as { gl: GlContext }).gl = gl;
+  Object.assign(state, { contextState, gl, pipeline });
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 
-  const runtime = createGlRenderStateRuntime(contextState);
+  const runtime = createGlRenderStateRuntime(contextState, pipeline);
   state[EntityRuntimeKey] = runtime;
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;
@@ -179,39 +113,16 @@ export function createGlRenderStateFromContextState(
 }
 
 export function createGlRenderStateRuntime(
-  contextState?: Readonly<GlContextState>,
-  sharedRuntime?: GlRenderStateRuntime,
+  contextState: Readonly<GlContextState>,
+  pipeline: Readonly<GlPipeline>,
 ): GlRenderStateRuntime {
   const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
-  if (sharedRuntime !== undefined) {
-    runtime.context = sharedRuntime.context;
-  } else if (contextState !== undefined) {
-    runtime.context = contextState[EntityRuntimeKey] as GlContextRuntime;
-  } else {
-    runtime.context = createMinimalContextRuntime(null as unknown as GlContext);
-  }
+  runtime.context = contextState[EntityRuntimeKey] as GlContextRuntime;
   runtime.context.references++;
   runtime.currentRenderTarget = null;
-  runtime.registries = {
-    blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
-    compressedTextureDecoder: createSlotTable('GlCompressedTextureDecoder', 'Unregistered'),
-    compressedTextureUpload: createSlotTable('GlCompressedTextureUpload', 'Unregistered'),
-    customEffectShaders: createKeyedTable('GlCustomEffectShader', 'Unregistered'),
-    customMaterialShaders: createKeyedTable('GlCustomMaterialShader', 'Unregistered'),
-    materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
-    meshMaterialRenderers: createKeyedTable('GlMeshMaterialRenderer', 'StandardMaterial'),
-    modifierSnippets: createKeyedTable('GlModifierSnippet', 'Unregistered'),
-    modifierSnippetRevision: 0,
-    pbrExtensions: createKeyedTable('GlPbrExtension', 'Unregistered'),
-    pbrExtensionRevision: 0,
-    renderEffects: createKeyedTable('GlRenderEffect', 'Unregistered'),
-    renderers: runtime.registries.renderers,
-    shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),
-    strokeTessellator: runtime.registries.strokeTessellator,
-    textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
-    velocityWriters: createKeyedTable('GlVelocityWriter', 'Unregistered'),
-  };
+  runtime.registries = { ...pipeline.registries };
   runtime.bindingCacheGuard = null;
+  runtime.teardowns = [];
   return runtime;
 }
 
@@ -232,6 +143,8 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (_destroyedStates.has(state)) return;
   _destroyedStates.add(state);
   const runtime = getGlRenderStateRuntime(state);
+  for (const teardown of [...runtime.teardowns]) teardown(state);
+  runtime.teardowns.length = 0;
   destroyRenderState(state);
   const ctx = runtime.context;
   ctx.references--;
@@ -319,57 +232,15 @@ export function invalidateGlRenderStateCache(state: GlRenderState): void {
   runtime.renderTargetViewport = null;
 }
 
-function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRuntime: GlRenderStateRuntime): void {
-  runtime.currentFramebuffer = null;
-  runtime.currentMaskDepth = 0;
-  runtime.currentScissorRect = null;
-  runtime.currentRenderTarget = null;
-  runtime.flushPendingDraws = null;
-  runtime.renderTargetViewport = null;
-  runtime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
-  runtime.quadBatchWriterBlendMode = null;
-  runtime.quadBatchWriterMaterial = null;
-  runtime.quadBatchWriterMaterialRenderer = null;
-  runtime.quadBatchWriterMaterialFloats = 0;
-  runtime.quadBatchWriterMaterialData = new Float32Array(8 * 256);
-  runtime.quadBatchWriterCount = 0;
-  runtime.quadBatchWriterInstanceData = new Float32Array(13 * 256);
-  runtime.quadBatchWriterTexture = null;
-  runtime.quadBatchWriterSampler = null;
-  runtime.quadBatchWriterStraightAlpha = false;
-  runtime.quadBatchWriterSmoothing = null;
-  runtime.particleInstanceData = new Float32Array(0);
-  runtime.quadVertexData = new Float32Array(16);
-  runtime.matrixArray = new Float32Array(9);
-  runtime.scissorStack = [];
-  runtime.clipForms = [];
+export function registerGlContextTeardown(
+  contextState: Readonly<GlContextState>,
+  teardown: (gl: GlContext) => void,
+): void {
+  getGlContextRuntime(contextState).teardowns.push(teardown);
 }
 
-export function registerGlContextTeardown(state: GlRenderState, teardown: (gl: GlContext) => void): void {
-  getGlRenderStateRuntime(state).context.teardowns.push(teardown);
-}
-
-function createMinimalContextRuntime(gl: GlContext): GlContextRuntime {
-  return {
-    binding: null,
-    colorAdjustmentResources: null,
-    currentBlendSignature: null,
-    currentShader: null,
-    currentTextureRealization: null,
-    gl,
-    particleResources: null,
-    quadBatchResources: null,
-    quadIndexBuffer: null as unknown as WebGLBuffer,
-    quadVertexBuffer: null as unknown as WebGLBuffer,
-    references: 0,
-    shapeMeshResources: null,
-    teardowns: [],
-    textureCache: new WeakMap(),
-    textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
-    textureSourcePremultipliedTextureCache: new WeakMap(),
-    textureSourceStraightSrgbTextureCache: new WeakMap(),
-    textureSourceStraightTextureCache: new WeakMap(),
-  };
+export function registerGlRenderStateTeardown(state: GlRenderState, teardown: (state: GlRenderState) => void): void {
+  getGlRenderStateRuntime(state).teardowns.push(teardown);
 }
 
 const _destroyedStates = new WeakSet<GlRenderState>();

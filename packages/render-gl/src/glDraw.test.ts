@@ -30,7 +30,9 @@ import {
   updateGlTexture,
   useGlProgram,
 } from './glDraw';
+import { createEmptyGlRegistries, createGlPipeline } from './glPipeline';
 import {
+  createGlContextState,
   createGlOffscreenRenderState,
   createGlRenderState,
   getGlRenderStateRuntime,
@@ -38,6 +40,12 @@ import {
 } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState, makeGL } from './glTestHelper';
+
+const testPipeline = createGlPipeline(createEmptyGlRegistries());
+
+function createTestGlRenderState(gl: WebGL2RenderingContext) {
+  return createGlRenderState(createGlContextState(gl), testPipeline);
+}
 
 // A single 4×4 bc3 level for exercising the opt-in compressed upload seam.
 function compressedBc3Image(): CompressedImage {
@@ -93,9 +101,12 @@ function makeSampler(overrides?: Partial<SamplerLike>): SamplerLike {
 describe('applyGlBlendMode', () => {
   it('applies a different realization for the same mode on a derived state', () => {
     const gl = makeGL();
-    const screen = createGlRenderState(gl);
+    const screen = createTestGlRenderState(gl);
     registerGlBlendMode(screen, 'acme.Split', { dst: 'ONE', equation: 'MIN', src: 'ONE' });
-    const offscreen = createGlOffscreenRenderState(screen);
+    const offscreen = createGlOffscreenRenderState(
+      screen.contextState,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
     registerGlBlendMode(screen, 'acme.Split', { dst: 'ONE', src: 'ZERO' });
 
     applyGlBlendMode(offscreen, 'acme.Split');
@@ -910,7 +921,10 @@ describe('registerGlBlendMode', () => {
     const replacement = { src: 'ZERO', dst: 'ONE' } as const;
     registerGlBlendMode(screen, 'acme.Foo', initial);
     const snapshot = getGlRenderStateRuntime(screen).registries.blendRealizations;
-    const offscreen = createGlOffscreenRenderState(screen);
+    const offscreen = createGlOffscreenRenderState(
+      screen.contextState,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
 
     registerGlBlendMode(screen, 'acme.Foo', replacement);
 

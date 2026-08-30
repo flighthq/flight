@@ -2,6 +2,7 @@ import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createRenderCache } from '@flighthq/render';
 import {
+  createGlContextState,
   beginGlRenderPass,
   createGlCanvasElement,
   createGlRenderState,
@@ -11,7 +12,7 @@ import {
   createGlContextFromCanvasElement,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
+import { scene2dGlPipeline, createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
@@ -35,10 +36,13 @@ enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, {
-    antialias: false,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, {
+      antialias: false,
+      contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+    }),
+  ),
+  scene2dGlPipeline,
   {
     pixelRatio: scale,
   },
@@ -48,10 +52,15 @@ const screenTarget = createGlRenderTarget(state, {
   height: canvas.height,
   width: canvas.width,
 });
-const cacheState = createGlCacheState(state);
+const cacheState = createGlCacheState(state, state.contextState, state.pipeline, {
+  allowSmoothing: state.allowSmoothing,
+  pixelRatio: state.pixelRatio,
+  roundPixels: state.roundPixels,
+  sceneGraphSyncPolicy: state.sceneGraphSyncPolicy,
+});
 
 beginGlRenderPass(state, screenTarget);
-refreshGlRenderCache(cacheState, createRenderCache(), createDisplayObject());
+refreshGlRenderCache(state, cacheState, createRenderCache(), createDisplayObject());
 
 // The cache state is a distinct GlRenderState over the same physical context. Its nested pass must
 // restore this outer framebuffer before the screen render continues. Green is the untouched target

@@ -1,5 +1,7 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
+  scene2dGlPipeline,
+  createGlContextState,
   createGlContextFromCanvasElement,
   addNodeChild,
   addTextureAtlasRegion,
@@ -40,9 +42,12 @@ const INSTANCE_COUNT = 24;
 enableHostWebGlRenderSurface();
 const producerCanvas = createGlCanvasElement(PRODUCER_WIDTH, PRODUCER_HEIGHT);
 const producerState = createGlRenderState(
-  createGlContextFromCanvasElement(producerCanvas, {
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  }),
+  createGlContextState(
+    createGlContextFromCanvasElement(producerCanvas, {
+      contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+    }),
+  ),
+  scene2dGlPipeline,
   {
     backgroundColor: 0x18253dff,
     sceneGraphSyncPolicy: 'requiresInvalidation',

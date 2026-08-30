@@ -3,6 +3,7 @@ import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createGlCanvasElement,
   createGlContextFromCanvasElement,
+  createGlContextState,
   createGlRenderState,
   enableGlBlendModeSupport,
   getGlPipelineRegistries,
@@ -17,7 +18,10 @@ document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
 const state = createGlRenderState(
-  createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  createGlContextState(
+    createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  ),
+  scene2dGlPipeline,
   { pixelRatio: 1, backgroundColor: 0x1a1a2eff },
 );
 

@@ -69,7 +69,7 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
       return 'drawGlShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerGlShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))';
     case RenderRegistry.TextureResolver:
       if ('gl' in state)
-        return 'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver), or copyGlRenderStateRegistrations(offscreenState, screenState) after a late screen registration';
+        return 'resolveGlTexture: texture source kind has no registered resolver — rebuild the GlPipeline with the required resolver and create the render state from that pipeline';
       if ('device' in state)
         return 'resolveWgpuTexture: texture source kind has no registered resolver — call registerWgpuTextureResolver(state, sourceKind, resolver)';
       if ('element' in state)

@@ -66,7 +66,7 @@ function warnOnSecondRenderRoot(state: RenderState, root: Renderable): void {
     {
       firstRoot: previous,
       message:
-        'prepareScene2DRender: one GlRenderState was used for multiple roots — derive a dedicated pipeline with createGlOffscreenRenderState(screenState)',
+        'prepareScene2DRender: one GlRenderState was used for multiple roots — create a dedicated state with createGlOffscreenRenderState(contextState, pipeline)',
       root,
       state,
     },

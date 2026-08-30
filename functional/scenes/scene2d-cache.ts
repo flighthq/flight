@@ -96,8 +96,13 @@ if (target.kind === 'canvas') {
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgl') {
   const cache = createRenderCache();
-  const cacheState = createGlCacheState(target.state);
-  refreshGlRenderCache(cacheState, cache, subtree);
+  const cacheState = createGlCacheState(target.state, target.state.contextState, target.state.pipeline, {
+    allowSmoothing: target.state.allowSmoothing,
+    pixelRatio: target.state.pixelRatio,
+    roundPixels: target.state.roundPixels,
+    sceneGraphSyncPolicy: target.state.sceneGraphSyncPolicy,
+  });
+  refreshGlRenderCache(target.state, cacheState, cache, subtree);
   useRenderCache(target.state, subtree, cache);
 } else if (target.kind === 'webgpu') {
   const cache = createRenderCache();

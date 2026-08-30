@@ -1,6 +1,6 @@
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { copyGlRenderStateRegistrations, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createGlPipeline, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlPbrExtensionRegistration } from '@flighthq/types/contract';
 
 import {
@@ -62,12 +62,14 @@ describe('getGlPbrExtensionRegistration', () => {
 describe('registerGlPbrExtension', () => {
   it('replaces the persistent table and revision while an explicitly copied state retains its snapshot', () => {
     const { state: screen } = makeGlScene3DState();
-    const { state: derived } = makeGlScene3DState();
     const replacement: GlPbrExtensionRegistration = { ...registration, bind(): void {} };
     registerGlPbrExtension(screen, 'VendorExtension', registration);
     const snapshot = getGlRenderStateRuntime(screen).registries.pbrExtensions;
+    const { state: derived } = makeGlScene3DState(
+      undefined,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
 
-    copyGlRenderStateRegistrations(derived, screen);
     getGlScene3DRuntime(derived);
     registerGlPbrExtension(screen, 'VendorExtension', replacement);
 

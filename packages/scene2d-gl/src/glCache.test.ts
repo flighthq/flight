@@ -1,9 +1,8 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import type * as GlRenderGlModule from '@flighthq/render-gl/contract';
-import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
+import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type * as GlNode2DModule from './glNode2D';
 import type * as GlQuadBatchWriterModule from './glQuadBatchWriter';
@@ -77,7 +76,10 @@ vi.mock('./glNode2D', async (importOriginal) => {
 
 import { destroyGlRenderTarget, drawGlRenderTargetResult } from '@flighthq/render-gl/contract';
 import {
-  createGlRenderStateRuntime,
+  createEmptyGlRegistries,
+  createGlContextState,
+  createGlPipeline,
+  createGlRenderState,
   destroyGlRenderState,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
@@ -87,7 +89,6 @@ import {
   defaultGlRenderCacheRenderer,
   enableGlRenderCache,
   ensureGlRenderCacheTarget,
-  getGlRenderCacheScreenState,
   getGlRenderCacheTarget,
   refreshGlRenderCache,
   releaseGlRenderCache,
@@ -95,11 +96,11 @@ import {
 import { renderGlScene2D } from './glNode2D';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
+const testPipeline = createGlPipeline(createEmptyGlRegistries());
+
 function fakeScreen(options = {}): GlRenderState {
-  const state = createRenderState(options) as unknown as GlRenderState;
-  (state as any).gl = { clear: vi.fn(), clearColor: vi.fn(), COLOR_BUFFER_BIT: 0x4000 };
-  state[EntityRuntimeKey] = createGlRenderStateRuntime();
-  return state;
+  const gl = document.createElement('canvas').getContext('webgl2')!;
+  return createGlRenderState(createGlContextState(gl), testPipeline, options);
 }
 
 function makeCacheNode(source: unknown): any {
@@ -110,7 +111,11 @@ describe('createGlCacheState', () => {
   it('copies renderers and shares the GL context but keeps its own node map', () => {
     const screen = fakeScreen();
     enableGlRenderCache(screen);
-    const cacheState = createGlCacheState(screen);
+    const cacheState = createGlCacheState(
+      screen,
+      screen.contextState,
+      createGlPipeline(getGlRenderStateRuntime(screen).registries),
+    );
     expect(getGlRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
       value: defaultGlRenderCacheRenderer,
@@ -124,7 +129,7 @@ describe('createGlCacheState', () => {
     const teardown = vi.fn();
     getGlRenderStateRuntime(screen).context.teardowns.push(teardown);
 
-    createGlCacheState(screen);
+    createGlCacheState(screen, screen.contextState, screen.pipeline);
     destroyGlRenderState(screen);
 
     expect(teardown).toHaveBeenCalledOnce();
@@ -200,16 +205,6 @@ describe('ensureGlRenderCacheTarget', () => {
   });
 });
 
-describe('getGlRenderCacheScreenState', () => {
-  it('resolves a cache render state to the screen state that owns shared GL resources', () => {
-    const screen = fakeScreen();
-    const cacheState = createGlCacheState(screen);
-
-    expect(getGlRenderCacheScreenState(cacheState)).toBe(screen);
-    expect(getGlRenderCacheScreenState(screen)).toBe(screen);
-  });
-});
-
 describe('getGlRenderCacheTarget', () => {
   it('returns null before a target is allocated', () => {
     expect(getGlRenderCacheTarget(fakeScreen(), createRenderCache())).toBeNull();
@@ -226,10 +221,10 @@ describe('getGlRenderCacheTarget', () => {
 describe('refreshGlRenderCache', () => {
   it('bakes on the first call and allocates the target on the screen state', () => {
     const screen = fakeScreen();
-    const cacheState = createGlCacheState(screen);
+    const cacheState = createGlCacheState(screen, screen.contextState, screen.pipeline);
     const cache = createRenderCache();
     const obj = createDisplayObject();
-    const rebaked = refreshGlRenderCache(cacheState, cache, obj, { padding: 5 });
+    const rebaked = refreshGlRenderCache(screen, cacheState, cache, obj, { padding: 5 });
     expect(rebaked).toBe(true);
     expect(renderGlScene2D).toHaveBeenCalled();
     const target = getGlRenderCacheTarget(screen, cache);
@@ -239,11 +234,13 @@ describe('refreshGlRenderCache', () => {
 
   it('skips the bake under requiresInvalidation when nothing changed', () => {
     const screen = fakeScreen({ sceneGraphSyncPolicy: 'requiresInvalidation' });
-    const cacheState = createGlCacheState(screen);
+    const cacheState = createGlCacheState(screen, screen.contextState, screen.pipeline, {
+      sceneGraphSyncPolicy: 'requiresInvalidation',
+    });
     const cache = createRenderCache();
     const obj = createDisplayObject();
-    refreshGlRenderCache(cacheState, cache, obj, { padding: 5 });
-    expect(refreshGlRenderCache(cacheState, cache, obj, { padding: 5 })).toBe(false);
+    refreshGlRenderCache(screen, cacheState, cache, obj, { padding: 5 });
+    expect(refreshGlRenderCache(screen, cacheState, cache, obj, { padding: 5 })).toBe(false);
   });
 });
 
@@ -255,5 +252,16 @@ describe('releaseGlRenderCache', () => {
     releaseGlRenderCache(state, cache);
     expect(destroyGlRenderTarget).toHaveBeenCalledWith(state, target);
     expect(getGlRenderCacheTarget(state, cache)).toBeNull();
+  });
+
+  it('destroys every enumerated target when the owning state is destroyed', () => {
+    const state = fakeScreen();
+    ensureGlRenderCacheTarget(state, createRenderCache(), 8, 8);
+    ensureGlRenderCacheTarget(state, createRenderCache(), 16, 16);
+    vi.mocked(destroyGlRenderTarget).mockClear();
+
+    destroyGlRenderState(state);
+
+    expect(destroyGlRenderTarget).toHaveBeenCalledTimes(2);
   });
 });
