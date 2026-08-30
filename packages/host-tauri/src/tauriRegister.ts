@@ -90,6 +90,9 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     dialog,
     graphics: {},
     input: {},
+    // No IPC provider: Tauri's event system is not wired to this seam. Its emit/listen pair could supply
+    // a message slot, but nothing here builds one, so the group stays honestly empty.
+    ipc: {},
     media: {},
     menu,
     net: {},

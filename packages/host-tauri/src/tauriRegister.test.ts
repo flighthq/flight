@@ -82,3 +82,13 @@ describe('tauri power slot coverage', () => {
     expect(host.power).toEqual({});
   });
 });
+
+describe('tauri power slot coverage', () => {
+  // ★ EXACT SLOT COVERAGE for T: an EMPTY group, not a guessed or stubbed one. An empty group is
+  // honest and forward-compatible; the named gap lives in agents/upstream-host-requirements.md so an
+  // examined absence stays distinguishable from an unexamined one.
+  it('claims no power capability at all', () => {
+    const host = registerTauriBackends(fakeTauri());
+    expect(host.power).toEqual({});
+  });
+});

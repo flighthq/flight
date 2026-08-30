@@ -72,7 +72,6 @@ const EXPECTED_AGGREGATE = [
   'Geolocation',
   'GlyphRasterizer',
   'Image',
-  'SoftKeyboard',
   'Lifecycle',
   'Permission',
   'Platform',

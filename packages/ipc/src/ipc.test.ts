@@ -1,659 +1,128 @@
-import type {
-  IpcBackend,
-  IpcBackendCapabilities,
-  IpcChannel,
-  IpcOperation,
-  IpcSignals,
-} from '@flighthq/types/contract';
-import { IpcTimeoutError } from '@flighthq/types/contract';
+import type { HasIpcMessage } from '@flighthq/types/contract';
 
-import {
-  createIpcChannel,
-  enableIpcSignals,
-  explainIpcBackend,
-  explainIpcOperation,
-  getIpcBackend,
-  getIpcListenerCount,
-  getIpcSignals,
-  hasIpcBackend,
-  hasIpcOperation,
-  installIpcHostBackend,
-  invokeIpc,
-  invokeIpcWithTimeout,
-  observeIpcHostResult,
-  onIpcInvoke,
-  onIpcMessage,
-  onIpcMessageEvent,
-  onceIpcMessage,
-  removeAllIpcListeners,
-  resetIpcBackendForTest,
-  sendIpcMessage,
-  sendIpcMessageTo,
-  setIpcBackend,
-} from './ipc';
+import { onIpcMessage, onceIpcMessage } from './ipc';
 
-interface FakeIpcBackend extends IpcBackend {
-  sent: { channel: string; args: readonly unknown[] }[];
-  sentTo: { target: { windowId: number }; channel: string; args: readonly unknown[] }[];
-  result: unknown;
-  handlers: Map<string, (...args: readonly unknown[]) => unknown | Promise<unknown>>;
-  fire: (channel: string, args: readonly unknown[]) => void;
-}
-
-function fakeBackend(
-  opts: { canSend?: boolean; canInvoke?: boolean; canHandle?: boolean; canTarget?: boolean } = {},
-): FakeIpcBackend {
-  const { canSend = true, canInvoke = true, canHandle = true, canTarget = true } = opts;
-
-  const listeners = new Map<string, (args: readonly unknown[]) => void>();
-  const backend: FakeIpcBackend = {
-    sent: [],
-    sentTo: [],
-    result: undefined,
-    handlers: new Map(),
-    send(channel, args) {
-      this.sent.push({ channel, args });
+// A host carrying a recording message provider. Nothing installs anywhere, so two hosts can be live at
+// once — the property the ambient seam could not express.
+function messageHost(): HasIpcMessage & {
+  deliver(channel: string, ...args: readonly unknown[]): void;
+  subscriberCount(channel: string): number;
+} {
+  const channels = new Map<string, Set<(args: readonly unknown[]) => void>>();
+  return {
+    deliver(channel: string, ...args: readonly unknown[]): void {
+      for (const listener of [...(channels.get(channel) ?? [])]) listener(args);
     },
-    invoke(channel, _args) {
-      return Promise.resolve(this.result);
+    ipc: {
+      message: {
+        subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void {
+          const set = channels.get(channel) ?? new Set();
+          channels.set(channel, set);
+          set.add(listener);
+          return () => set.delete(listener);
+        },
+      },
     },
-    subscribe(channel, listener) {
-      listeners.set(channel, listener);
-      return () => {
-        listeners.delete(channel);
-      };
-    },
-    handle(channel, handler) {
-      this.handlers.set(channel, handler);
-      return () => {
-        this.handlers.delete(channel);
-      };
-    },
-    sendTo(target, channel, args) {
-      this.sentTo.push({ target, channel, args });
-    },
-    getCapabilities(): Readonly<IpcBackendCapabilities> {
-      return { canHandle, canInvoke, canSend, canTarget };
-    },
-    fire(channel, args) {
-      listeners.get(channel)?.(args);
+    subscriberCount(channel: string): number {
+      return channels.get(channel)?.size ?? 0;
     },
   };
-  return backend;
 }
 
-afterEach(() => {
-  setIpcBackend(null);
-  removeAllIpcListeners();
-});
-
-describe('createIpcChannel', () => {
-  it('returns a descriptor with the given name', () => {
-    const ch: IpcChannel = createIpcChannel('events.ready');
-    expect(ch.name).toBe('events.ready');
-  });
-
-  it('accepts IpcChannel descriptors in sendIpcMessage', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const ch = createIpcChannel('log');
-    sendIpcMessage(ch, 'hello');
-    expect(backend.sent).toEqual([{ channel: 'log', args: ['hello'] }]);
-  });
-
-  it('accepts IpcChannel descriptors in onIpcMessage', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const ch = createIpcChannel('event');
-    const received: unknown[] = [];
-    onIpcMessage(ch, (...args) => received.push(...args));
-    backend.fire('event', ['x']);
-    expect(received).toEqual(['x']);
-  });
-});
-
-describe('enableIpcSignals', () => {
-  it('returns an IpcSignals group', () => {
-    const signals: IpcSignals = enableIpcSignals();
-    expect(signals.onBackendChanged).toBeDefined();
-    expect(signals.onChannelMessage).toBeDefined();
-  });
-
-  it('returns the same instance on repeated calls', () => {
-    const a = enableIpcSignals();
-    const b = enableIpcSignals();
-    expect(a).toBe(b);
-  });
-
-  it('fires onBackendChanged when setIpcBackend is called', () => {
-    const signals = enableIpcSignals();
-    let fired = 0;
-    signals.onBackendChanged.emit = () => {
-      fired++;
-    };
-    setIpcBackend(fakeBackend());
-    expect(fired).toBe(1);
-    setIpcBackend(null);
-    expect(fired).toBe(2);
-  });
-
-  it('fires onChannelMessage when a message is received', () => {
-    const signals = enableIpcSignals();
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const channels: string[] = [];
-    signals.onChannelMessage.emit = (ch) => {
-      channels.push(ch);
-    };
-    onIpcMessage('events', () => {});
-    backend.fire('events', []);
-    expect(channels).toEqual(['events']);
-  });
-
-  it('does not emit onChannelMessage at subscribe time, only on delivery', () => {
-    const signals = enableIpcSignals();
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const channels: string[] = [];
-    signals.onChannelMessage.emit = (ch) => {
-      channels.push(ch);
-    };
-    onIpcMessage('events', () => {});
-    onIpcMessageEvent('events2', () => {});
-    // Registering listeners must not emit; the signal is a per-delivery notification.
-    expect(channels).toEqual([]);
-    backend.fire('events', []);
-    backend.fire('events2', []);
-    expect(channels).toEqual(['events', 'events2']);
-  });
-});
-
-describe('explainIpcBackend', () => {
-  afterEach(() => resetIpcBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetIpcBackendForTest();
-    const explanation = explainIpcBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setIpcBackend(fakeBackend());
-    expect(explainIpcBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installIpcHostBackend(fakeBackend());
-    expect(explainIpcBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installIpcHostBackend(fakeBackend());
-    installIpcHostBackend(fakeBackend());
-    expect(explainIpcBackend().conflict).toBe(true);
-  });
-});
-
-describe('explainIpcOperation', () => {
-  afterEach(() => {
-    resetIpcBackendForTest();
-  });
-
-  // ★ With nothing installed, the sentinel still answers every call,
-  // so a query resolving through the getter would report every operation implemented. It must not.
-  it('reports sentinel and no implementation when nothing is installed', () => {
-    resetIpcBackendForTest();
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(explainIpcOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
-    }
-  });
-
-  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
-  // the sentinel does not implement those either, so a query resolving through getIpcBackend() would
-  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
-  // getter-based implementation reports a lie.
-  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
-    resetIpcBackendForTest();
-    expect(explainIpcOperation('send')).toEqual({
-      implemented: false,
-      layer: 'sentinel',
-      operation: 'send',
-    });
-  });
-
-  it('reports a custom backend as implementing only what it provides', () => {
-    setIpcBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasIpcOperation(operation)).toBe(false);
-    }
-    expect(explainIpcOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
-  });
-
-  it('reports an operation the backend does provide', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    setIpcBackend({ ...partialBackend(), [operation]: () => undefined } as IpcBackend);
-    expect(explainIpcOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
-  });
-
-  it('falls through to the host for an operation the custom backend omits', () => {
-    const operation = OPTIONAL_OPERATIONS[0];
-    installIpcHostBackend({ ...partialBackend(), [operation]: () => undefined } as IpcBackend);
-    setIpcBackend(partialBackend());
-    expect(explainIpcOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
-  });
-});
-
-describe('getIpcBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getIpcBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    expect(getIpcBackend()).toBe(backend);
-  });
-});
-
-describe('getIpcBackend (sentinel)', () => {
-  it('no-ops send, resolves invoke to undefined, returns an inert unsubscribe', async () => {
-    const backend = getIpcBackend();
-    expect(() => backend.send('channel', [1])).not.toThrow();
-    expect(await backend.invoke('channel', [])).toBeUndefined();
-    expect(typeof backend.subscribe('channel', () => {})).toBe('function');
-  });
-
-  it('reports canSend/canInvoke/canHandle/canTarget as false', () => {
-    const backend = getIpcBackend();
-    const caps = backend.getCapabilities!();
-    expect(caps.canSend).toBe(false);
-    expect(caps.canInvoke).toBe(false);
-    expect(caps.canHandle).toBe(false);
-    expect(caps.canTarget).toBe(false);
-  });
-});
-
-describe('getIpcListenerCount', () => {
-  it('returns 0 for an unknown channel', () => {
-    expect(getIpcListenerCount('never')).toBe(0);
-  });
-
-  it('increments when listeners are added', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    onIpcMessage('ch', () => {});
-    onIpcMessage('ch', () => {});
-    expect(getIpcListenerCount('ch')).toBe(2);
-  });
-
-  it('decrements when a listener unsubscribes', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const off = onIpcMessage('ch', () => {});
-    expect(getIpcListenerCount('ch')).toBe(1);
-    off();
-    expect(getIpcListenerCount('ch')).toBe(0);
-  });
-
-  it('accepts an IpcChannel descriptor', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const ch = createIpcChannel('typed');
-    onIpcMessage(ch, () => {});
-    expect(getIpcListenerCount(ch)).toBe(1);
-  });
-});
-
-describe('getIpcSignals', () => {
-  it('returns null before enableIpcSignals is called', async () => {
-    // The IpcSignals group is a module-level singleton, so once any test in this suite calls
-    // enableIpcSignals the value persists. Re-import the module in isolation to assert the
-    // lazy-null contract deterministically: a fresh module has no group until enable is called.
-    vi.resetModules();
-    const fresh = await import('./ipc');
-    expect(fresh.getIpcSignals()).toBeNull();
-    // Delivery still works with the group disabled — the emit is guarded, never required.
-    const backend = fakeBackend();
-    fresh.setIpcBackend(backend);
-    const received: unknown[] = [];
-    fresh.onIpcMessage('disabled', (...args) => received.push(...args));
-    backend.fire('disabled', ['x']);
-    expect(received).toEqual(['x']);
-    expect(fresh.getIpcSignals()).toBeNull();
-    fresh.setIpcBackend(null);
-  });
-
-  it('returns the signals object after enableIpcSignals', () => {
-    const signals = enableIpcSignals();
-    expect(getIpcSignals()).toBe(signals);
-  });
-});
-
-describe('hasIpcBackend', () => {
-  it('returns false before any backend is set', () => {
-    expect(hasIpcBackend()).toBe(false);
-  });
-
-  it('returns true after setting a native backend', () => {
-    setIpcBackend(fakeBackend());
-    expect(hasIpcBackend()).toBe(true);
-  });
-
-  it('returns false after resetting to null', () => {
-    setIpcBackend(fakeBackend());
-    setIpcBackend(null);
-    expect(hasIpcBackend()).toBe(false);
-  });
-});
-
-describe('hasIpcOperation', () => {
-  afterEach(() => {
-    resetIpcBackendForTest();
-  });
-
-  it('agrees with explainIpcOperation for every optional operation', () => {
-    setIpcBackend(partialBackend());
-    for (const operation of OPTIONAL_OPERATIONS) {
-      expect(hasIpcOperation(operation)).toBe(explainIpcOperation(operation).implemented);
-    }
-  });
-});
-
-describe('installIpcHostBackend', () => {
-  afterEach(() => resetIpcBackendForTest());
-
-  it('installs a host backend that getIpcBackend returns', () => {
-    const backend = fakeBackend();
-    installIpcHostBackend(backend);
-    expect(getIpcBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installIpcHostBackend(first);
-    installIpcHostBackend(second);
-    expect(getIpcBackend()).toBe(first);
-    expect(explainIpcBackend().conflict).toBe(true);
-  });
-});
-
-describe('invokeIpc', () => {
-  it('passes variadic args as an array and resolves the backend result', async () => {
-    const backend = fakeBackend();
-    backend.result = 42;
-    setIpcBackend(backend);
-    expect(await invokeIpc('compute', 1, 2)).toBe(42);
-  });
-
-  it('accepts an IpcChannel descriptor', async () => {
-    const backend = fakeBackend();
-    backend.result = 'ok';
-    setIpcBackend(backend);
-    expect(await invokeIpc(createIpcChannel('compute'), 1)).toBe('ok');
-  });
-});
-
-describe('invokeIpcWithTimeout', () => {
-  it('resolves when the backend responds before timeout', async () => {
-    const backend = fakeBackend();
-    backend.result = 99;
-    setIpcBackend(backend);
-    expect(await invokeIpcWithTimeout('cmd', 1000)).toBe(99);
-  });
-
-  it('rejects with IpcTimeoutError when the backend does not respond in time', async () => {
-    // Replace invoke with one that never resolves.
-    const backend = fakeBackend();
-    backend.invoke = (_channel, _args) => new Promise(() => {});
-    setIpcBackend(backend);
-    await expect(invokeIpcWithTimeout('cmd', 10)).rejects.toBeInstanceOf(IpcTimeoutError);
-  });
-
-  it('IpcTimeoutError carries channel and timeoutMs', async () => {
-    const backend = fakeBackend();
-    backend.invoke = () => new Promise(() => {});
-    setIpcBackend(backend);
-    let err: IpcTimeoutError | undefined;
-    try {
-      await invokeIpcWithTimeout('slow-channel', 5);
-    } catch (e) {
-      err = e as IpcTimeoutError;
-    }
-    expect(err?.channel).toBe('slow-channel');
-    expect(err?.timeoutMs).toBe(5);
-  });
-});
-
-describe('observeIpcHostResult', () => {
-  afterEach(() => resetIpcBackendForTest());
-
-  it('records a successful observation', () => {
-    installIpcHostBackend(fakeBackend());
-    observeIpcHostResult('send', true);
-    const explanation = explainIpcBackend();
-    expect(explanation.operation).toBe('send');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installIpcHostBackend(fakeBackend());
-    observeIpcHostResult('send', false);
-    expect(explainIpcBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
 describe('onceIpcMessage', () => {
-  it('auto-unsubscribes after the first message', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const received: unknown[] = [];
-    onceIpcMessage('ping', (...args) => received.push(...args));
-    backend.fire('ping', ['first']);
-    backend.fire('ping', ['second']);
-    expect(received).toEqual(['first']);
+  it('delivers the first message and then releases the subscription', () => {
+    const host = messageHost();
+    const seen: (readonly unknown[])[] = [];
+    onceIpcMessage(host, 'ping', (...args) => seen.push(args));
+    host.deliver('ping', 1);
+    host.deliver('ping', 2);
+    expect(seen).toEqual([[1]]);
+    expect(host.subscriberCount('ping')).toBe(0);
   });
 
-  it('can be manually unsubscribed before the message fires', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const received: unknown[] = [];
-    const off = onceIpcMessage('ping', () => received.push('fired'));
-    off();
-    backend.fire('ping', []);
-    expect(received).toHaveLength(0);
-  });
-});
-
-describe('onIpcInvoke', () => {
-  it('registers a handler via backend.handle', async () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    onIpcInvoke('compute', (...args) => (args[0] as number) * 2);
-    expect(backend.handlers.has('compute')).toBe(true);
+  // A caller that never receives a message must still be able to stop listening.
+  it('returns an unsubscribe that works before any message arrives', () => {
+    const host = messageHost();
+    let count = 0;
+    const stop = onceIpcMessage(host, 'ping', () => count++);
+    stop();
+    expect(host.subscriberCount('ping')).toBe(0);
+    host.deliver('ping');
+    expect(count).toBe(0);
   });
 
-  it('returns an inert unsubscribe when backend has no handle method', () => {
-    const backend = fakeBackend();
-    // Remove optional handle method.
-    delete (backend as Partial<FakeIpcBackend>).handle;
-    setIpcBackend(backend);
-    const off = onIpcInvoke('compute', () => {});
-    expect(typeof off).toBe('function');
-    expect(() => off()).not.toThrow();
+  it('is idempotent — releasing after delivery does not throw or double-release', () => {
+    const host = messageHost();
+    const stop = onceIpcMessage(host, 'ping', () => {});
+    host.deliver('ping');
+    expect(() => {
+      stop();
+      stop();
+    }).not.toThrow();
   });
 
-  it('unregisters the handler when unsubscribe is called', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const off = onIpcInvoke('compute', () => {});
-    off();
-    expect(backend.handlers.has('compute')).toBe(false);
+  // ★ ACQUISITION RACE: a provider that delivers synchronously DURING subscribe returns its unsubscribe
+  // only afterwards. Without the guard the subscription would leak, because release ran before there was
+  // anything to release.
+  it('releases even when the provider delivers during subscribe', () => {
+    let released = false;
+    const host: HasIpcMessage = {
+      ipc: {
+        message: {
+          subscribe(_channel, listener): () => void {
+            listener([42]);
+            return () => (released = true);
+          },
+        },
+      },
+    };
+    const seen: (readonly unknown[])[] = [];
+    onceIpcMessage(host, 'ping', (...args) => seen.push(args));
+    expect(seen).toEqual([[42]]);
+    expect(released).toBe(true);
   });
 });
 
 describe('onIpcMessage', () => {
-  it('spreads incoming args to the listener and unsubscribes', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const received: unknown[] = [];
-    const unsubscribe = onIpcMessage('event', (...args) => received.push(args));
-    backend.fire('event', ['a', 'b']);
-    expect(received).toEqual([['a', 'b']]);
-    unsubscribe();
-    backend.fire('event', ['c']);
-    expect(received).toEqual([['a', 'b']]);
+  it('delivers every message on its channel with the sent arguments', () => {
+    const host = messageHost();
+    const seen: (readonly unknown[])[] = [];
+    onIpcMessage(host, 'ping', (...args) => seen.push(args));
+    host.deliver('ping', 1, 'two');
+    host.deliver('ping', 3);
+    expect(seen).toEqual([[1, 'two'], [3]]);
   });
 
-  it('tracks listener count correctly', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    expect(getIpcListenerCount('evt')).toBe(0);
-    const off = onIpcMessage('evt', () => {});
-    expect(getIpcListenerCount('evt')).toBe(1);
-    off();
-    expect(getIpcListenerCount('evt')).toBe(0);
-  });
-});
-
-describe('onIpcMessageEvent', () => {
-  it('delivers an IpcMessageEvent with channel, senderId -1, and args', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const events: Array<{ channel: string; senderId: number; args: readonly unknown[] }> = [];
-    const off = onIpcMessageEvent('ch', (ev) =>
-      events.push({ channel: ev.channel, senderId: ev.senderId, args: ev.args }),
-    );
-    backend.fire('ch', ['hello', 42]);
-    expect(events).toEqual([{ channel: 'ch', senderId: -1, args: ['hello', 42] }]);
-    off();
+  it('delivers only its own channel', () => {
+    const host = messageHost();
+    let count = 0;
+    onIpcMessage(host, 'wanted', () => count++);
+    host.deliver('other', 1);
+    expect(count).toBe(0);
   });
 
-  it('reply is a no-op when senderId is -1, even with a sendTo-capable backend', () => {
-    // No backend surfaces sender identity yet, so senderId is permanently -1 and reply must
-    // early-return before touching backend.sendTo. Use a sendTo-capable fake to prove the gate
-    // is on senderId, not method presence: a reply still produces zero outbound sends. This pins
-    // the forward-compatible contract until a backend supplies a real senderId.
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    let observedSenderId: number | undefined;
-    const off = onIpcMessageEvent('ch', (ev) => {
-      observedSenderId = ev.senderId;
-      ev.reply('pong');
-    });
-    backend.fire('ch', []);
-    expect(observedSenderId).toBe(-1);
-    expect(typeof backend.sendTo).toBe('function');
-    expect(backend.sentTo).toHaveLength(0);
-    off();
+  // ★ ORIGIN-PINNED: releasing one listener must not disturb another on the SAME channel.
+  it('unsubscribes exactly its own subscription', () => {
+    const host = messageHost();
+    const kept: unknown[] = [];
+    const stopDropped = onIpcMessage(host, 'shared', () => kept.push('dropped'));
+    onIpcMessage(host, 'shared', () => kept.push('kept'));
+    stopDropped();
+    host.deliver('shared');
+    expect(kept).toEqual(['kept']);
+    expect(host.subscriberCount('shared')).toBe(1);
   });
 
-  it('tracks listener count and unsubscribes correctly', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const off = onIpcMessageEvent('ch2', () => {});
-    expect(getIpcListenerCount('ch2')).toBe(1);
-    off();
-    expect(getIpcListenerCount('ch2')).toBe(0);
+  // ★ Two hosts live at once, each serving its own subscription. Unwritable under the ambient seam,
+  // which had exactly one answer per process.
+  it('routes each subscription to the host it was given', () => {
+    const first = messageHost();
+    const second = messageHost();
+    const seen: string[] = [];
+    onIpcMessage(first, 'c', () => seen.push('first'));
+    onIpcMessage(second, 'c', () => seen.push('second'));
+    second.deliver('c');
+    first.deliver('c');
+    expect(seen).toEqual(['second', 'first']);
   });
 });
-
-describe('removeAllIpcListeners', () => {
-  it('removes all listeners for a specific channel', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const received: string[] = [];
-    onIpcMessage('a', () => received.push('a1'));
-    onIpcMessage('a', () => received.push('a2'));
-    onIpcMessage('b', () => received.push('b1'));
-    removeAllIpcListeners('a');
-    backend.fire('a', []);
-    backend.fire('b', []);
-    // 'a' listeners removed, 'b' still active.
-    expect(received).toEqual(['b1']);
-  });
-
-  it('removes all listeners for all channels when omitted', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const received: string[] = [];
-    onIpcMessage('a', () => received.push('a'));
-    onIpcMessage('b', () => received.push('b'));
-    removeAllIpcListeners();
-    backend.fire('a', []);
-    backend.fire('b', []);
-    expect(received).toHaveLength(0);
-  });
-
-  it('accepts an IpcChannel descriptor', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    const ch = createIpcChannel('typed');
-    const received: number[] = [];
-    onIpcMessage(ch, () => received.push(1));
-    removeAllIpcListeners(ch);
-    backend.fire('typed', []);
-    expect(received).toHaveLength(0);
-  });
-});
-
-describe('resetIpcBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setIpcBackend(fakeBackend());
-    installIpcHostBackend(fakeBackend());
-    observeIpcHostResult('send', true);
-    resetIpcBackendForTest();
-    expect(explainIpcBackend().layer).toBe('host-not-enabled');
-    expect(explainIpcBackend().conflict).toBe(false);
-    expect(explainIpcBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('sendIpcMessage', () => {
-  it('forwards channel and args array to the backend', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    sendIpcMessage('log', 'hi', 7);
-    expect(backend.sent).toEqual([{ channel: 'log', args: ['hi', 7] }]);
-  });
-});
-
-// Per-operation availability for IpcBackend. The operations below are the ones the interface declares
-// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
-// ruling, and this is the query that makes it observable.
-const OPTIONAL_OPERATIONS: readonly IpcOperation[] = ['handle', 'sendTo', 'getCapabilities'];
-
-describe('sendIpcMessageTo', () => {
-  it('forwards target, channel, and args to backend.sendTo', () => {
-    const backend = fakeBackend();
-    setIpcBackend(backend);
-    sendIpcMessageTo({ windowId: 3 }, 'log', 'hello');
-    expect(backend.sentTo).toEqual([{ target: { windowId: 3 }, channel: 'log', args: ['hello'] }]);
-  });
-
-  it('no-ops when backend has no sendTo method', () => {
-    const backend = fakeBackend();
-    delete (backend as Partial<FakeIpcBackend>).sendTo;
-    setIpcBackend(backend);
-    expect(() => sendIpcMessageTo({ windowId: 1 }, 'log', 'hi')).not.toThrow();
-  });
-});
-
-describe('setIpcBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setIpcBackend(fakeBackend());
-    setIpcBackend(null);
-    expect(getIpcBackend()).not.toBeNull();
-  });
-});
-
-// A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): IpcBackend {
-  return {
-    send: (() => undefined) as never,
-    invoke: (() => undefined) as never,
-    subscribe: (() => undefined) as never,
-  } as IpcBackend;
-}

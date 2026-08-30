@@ -96,6 +96,8 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
       softKeyboardStyle: createCapacitorSoftKeyboardStyleBackend(capacitor),
       softKeyboardVisibility: createCapacitorSoftKeyboardVisibilityBackend(capacitor),
     },
+    // No IPC provider: a Capacitor webview app has no second process to exchange channel messages with.
+    ipc: {},
     media: {},
     // Capacitor exposes no menu capability: a webview app has no native menu bar, and its context
     // menus are the web overlay's job, not Capacitor's.
