@@ -616,6 +616,23 @@ contract and constructor both carry Entity identity; composing `createEntity` wh
 non-Entity would deny consumers the identity the runtime owns. Finally, a required empty capability group
 is not availability evidence: host-probe inspects populated slots instead of treating `{}` as a provider.
 
+### 2026-08-30 append — Filesystem and Statusbar honest-provider batch
+
+Filesystem now takes `HasStorageFileSystem` at every backend-dependent call site. Its host contract has
+the 21 operations real OPFS can perform, with method presence preserving the narrower Capacitor vector;
+the seven symlink, permission, real-path, watch, and well-known-path absence operations remain owned by
+core and never appear as inert host members. Web publishes the stable OPFS value at
+`storage.fileSystem`; Capacitor publishes only its real basic subset. The aggregate backend, ambient
+resolver/setter/installer/observer/diagnostics state, Web constructor, and Web enabler are deleted.
+
+Statusbar's coverage varies per operation, so `ui` carries independent `statusBarColor`,
+`statusBarInfo`, `statusBarOverlays`, `statusBarStyle`, `statusBarVisibility`, and `statusBarChange`
+slots. Web owns only color through the document theme-color hint. Capacitor owns the first five native
+command/query slots and omits the change slot its plugin cannot deliver. Style stacks are keyed by the
+explicit Host and retain the exact providers plus baseline captured on the empty-to-nonempty edge;
+attachments likewise retain the exact subscribe and snapshot origins until detach. The aggregate
+backend and every ambient registration/diagnostic/enabler path are deleted.
+
 ### Not in this program
 
 - **Scene-document.** It is its own commissioned build with its own record. This model's "scene-document materialization" bullet is a consequence to apply *when* that reader is written, not a reason to reopen it here.
