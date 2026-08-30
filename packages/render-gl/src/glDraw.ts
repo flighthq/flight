@@ -40,7 +40,7 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
     equation: gl[realization.equation ?? 'FUNC_ADD'],
     src: gl[realization.src],
   };
-  const current = runtime.currentBlendSignature;
+  const current = runtime.context.currentBlendSignature;
   if (
     current !== null &&
     current.dst === signature.dst &&
@@ -50,7 +50,7 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
     return;
   gl.blendEquation(signature.equation);
   gl.blendFunc(signature.src, signature.dst);
-  runtime.currentBlendSignature = signature;
+  runtime.context.currentBlendSignature = signature;
 }
 
 // Applies a sampler's wrap, filtering, anisotropy, and mip chain to the currently-bound TEXTURE_2D.
@@ -87,11 +87,11 @@ export function applyGlSamplerState(
   if (ext) {
     // Clamp the requested level to [1, hardware max]; 1 disables anisotropy and also resets a texture
     // that a previous anisotropic sampler left elevated.
-    const level = Math.max(1, Math.min(sampler.anisotropy, runtime.maxAnisotropy ?? 1));
+    const level = Math.max(1, Math.min(sampler.anisotropy, runtime.context.maxAnisotropy ?? 1));
     gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, level);
   }
   if (useMips) {
-    const mipped = (runtime.mipmappedTextures ??= new WeakSet<WebGLTexture>());
+    const mipped = (runtime.context.mipmappedTextures ??= new WeakSet<WebGLTexture>());
     if (!mipped.has(texture)) {
       gl.generateMipmap(gl.TEXTURE_2D);
       mipped.add(texture);
@@ -192,7 +192,7 @@ export function bindGlTexture(
 ): WebGLTexture {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const textureCache = runtime.textureCache;
+  const textureCache = runtime.context.textureCache;
   let texture = textureCache.get(imageSource);
   if (!texture) {
     texture = gl.createTexture()!;
@@ -234,11 +234,11 @@ function bindGlTextureSourceTexture(
   const gl = state.gl;
   const cache = premultiply
     ? colorSpace === 'srgb'
-      ? runtime.textureSourcePremultipliedSrgbTextureCache
-      : runtime.textureSourcePremultipliedTextureCache
+      ? runtime.context.textureSourcePremultipliedSrgbTextureCache
+      : runtime.context.textureSourcePremultipliedTextureCache
     : colorSpace === 'srgb'
-      ? runtime.textureSourceStraightSrgbTextureCache
-      : runtime.textureSourceStraightTextureCache;
+      ? runtime.context.textureSourceStraightSrgbTextureCache
+      : runtime.context.textureSourceStraightTextureCache;
   let entry = cache.get(image);
   if (entry === undefined) {
     entry = { texture: gl.createTexture()!, version: -1 };
@@ -260,7 +260,7 @@ export function bindGlTextureRealization(
   realization: Readonly<GlTextureRealization> | null,
 ): WebGLTexture | null {
   state.gl.bindTexture(state.gl.TEXTURE_2D, realization?.texture ?? null);
-  getGlRenderStateRuntime(state).currentTextureRealization = realization;
+  getGlRenderStateRuntime(state).context.currentTextureRealization = realization;
   return realization?.texture ?? null;
 }
 
@@ -282,8 +282,8 @@ export function bindGlVideoTexture(
   const gl = state.gl;
   const cache =
     texture.colorSpace === 'srgb'
-      ? (runtime.videoSrgbTextureCache ??= new WeakMap())
-      : (runtime.videoTextureCache ??= new WeakMap());
+      ? (runtime.context.videoSrgbTextureCache ??= new WeakMap())
+      : (runtime.context.videoTextureCache ??= new WeakMap());
   let entry = cache.get(image);
   if (entry === undefined) {
     entry = { texture: gl.createTexture()!, uploadedVersion: -1 };
@@ -327,8 +327,9 @@ export function drawGlQuad(
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const { quadVertexData, quadVertexBuffer, quadIndexBuffer } = runtime;
-  const locations = runtime.currentShader?.locations;
+  const { quadVertexData } = runtime;
+  const { quadVertexBuffer, quadIndexBuffer } = runtime.context;
+  const locations = runtime.context.currentShader?.locations;
   const v = quadVertexData;
   v[0] = x0;
   v[1] = y0;
@@ -401,7 +402,7 @@ export function setGlQuadMatrixFromOffset(
   const runtime = getGlRenderStateRuntime(state);
   setGlMatrixFromValues(
     state.gl,
-    runtime.currentShader!.locations!,
+    runtime.context.currentShader!.locations!,
     runtime.matrixArray,
     a,
     b,
@@ -427,7 +428,7 @@ export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, can
   // Refresh the mip chain if this texture carries one (a canvas/video that opted into mipmaps); the
   // re-uploaded base level would otherwise leave stale lower mips. The 2D default has no chain, so
   // the common per-frame canvas/video upload skips the cost.
-  if (runtime.mipmappedTextures?.has(texture)) gl.generateMipmap(gl.TEXTURE_2D);
+  if (runtime.context.mipmappedTextures?.has(texture)) gl.generateMipmap(gl.TEXTURE_2D);
 }
 
 function uploadGlBitmap(
@@ -528,12 +529,12 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
   const runtime = getGlRenderStateRuntime(state);
   const resolved = shader ?? ensureDefaultGlBitmapShader(state);
   const program = resolved.program;
-  if (runtime.currentShader?.program !== program) {
+  if (runtime.context.currentShader?.program !== program) {
     state.gl.useProgram(program);
-    runtime.currentShader = { locations: resolved.locations, program };
+    runtime.context.currentShader = { locations: resolved.locations, program };
     return;
   }
-  runtime.currentShader = { locations: resolved.locations, program };
+  runtime.context.currentShader = { locations: resolved.locations, program };
   // The skip below is the cache being trusted: render-gl believes this program is already bound. That
   // is only sound while render-gl is the sole writer of GL state on the context, which is exactly the
   // integration contract invalidateGlRenderStateCache exists to restore. The guard verifies it; without
@@ -549,11 +550,11 @@ function ensureGlAnisotropyExt(
   state: GlRenderState,
   runtime: GlRenderStateRuntime,
 ): EXT_texture_filter_anisotropic | null {
-  let ext = runtime.anisotropyExt;
+  let ext = runtime.context.anisotropyExt;
   if (ext === undefined) {
     ext = state.gl.getExtension('EXT_texture_filter_anisotropic');
-    runtime.anisotropyExt = ext;
-    runtime.maxAnisotropy = ext ? (state.gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 1;
+    runtime.context.anisotropyExt = ext;
+    runtime.context.maxAnisotropy = ext ? (state.gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 1;
   }
   return ext;
 }

@@ -101,13 +101,13 @@ function compileQuadBatchWriterShader(gl: GlContext): GlQuadBatchShader {
 export function bindGlQuadBatchBaseAttributes(state: GlRenderState, locCorner: number): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchCornerBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.cornerBuffer);
   gl.enableVertexAttribArray(locCorner);
   gl.vertexAttribPointer(locCorner, 2, gl.FLOAT, false, 8, 0);
   gl.vertexAttribDivisor(locCorner, 0);
 
   const stride = QUAD_BATCH_INSTANCE_STRIDE;
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer!);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerInstanceBuffer!);
   gl.enableVertexAttribArray(1);
   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 0);
   gl.vertexAttribDivisor(1, 1);
@@ -130,18 +130,24 @@ export function bindGlQuadBatchBaseAttributes(state: GlRenderState, locCorner: n
 
 export function ensureGlQuadBatchShader(state: GlRenderState): GlQuadBatchShader {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.quadBatchShader) return runtime.quadBatchShader;
+  if (runtime.context.quadBatchResources) return runtime.context.quadBatchResources.shader;
 
   const gl = state.gl;
-  runtime.quadBatchShader = compileQuadBatchWriterShader(gl);
+  const shader = compileQuadBatchWriterShader(gl);
 
   const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
   const cornerBuf = gl.createBuffer()!;
   gl.bindBuffer(gl.ARRAY_BUFFER, cornerBuf);
   gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
-  runtime.quadBatchCornerBuffer = cornerBuf;
+  runtime.context.quadBatchResources = {
+    cornerBuffer: cornerBuf,
+    shader,
+    writerColorScaleBiasBuffer: null,
+    writerInstanceBuffer: null,
+    writerMaterialBuffer: null,
+  };
 
-  return runtime.quadBatchShader;
+  return shader;
 }
 
 export function flushGlQuadBatchWriter(state: GlRenderState): void {
@@ -169,12 +175,13 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
 
   const gl = state.gl;
 
-  if (runtime.quadBatchWriterInstanceBuffer === null) {
-    runtime.quadBatchWriterInstanceBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer);
+  const qbr = runtime.context.quadBatchResources!;
+  if (qbr.writerInstanceBuffer === null) {
+    qbr.writerInstanceBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerInstanceBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceData.byteLength, gl.DYNAMIC_DRAW);
   } else {
-    gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerInstanceBuffer);
   }
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.quadBatchWriterInstanceData, 0, count * QUAD_BATCH_INSTANCE_FLOATS);
 
@@ -188,12 +195,12 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
   const ctHandled = getGlColorAdjustmentMaterialFeature(state)?.flush(state, count) ?? false;
   if (!ctHandled) {
     if (floats > 0) {
-      if (runtime.quadBatchWriterMaterialBuffer === null) {
-        runtime.quadBatchWriterMaterialBuffer = gl.createBuffer()!;
-        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialBuffer);
+      if (qbr.writerMaterialBuffer === null) {
+        qbr.writerMaterialBuffer = gl.createBuffer()!;
+        gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerMaterialBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialData.byteLength, gl.DYNAMIC_DRAW);
       } else {
-        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, qbr.writerMaterialBuffer);
       }
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.quadBatchWriterMaterialData, 0, count * floats);
     }
@@ -201,7 +208,7 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
     renderer.bind(state, material);
   }
 
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.quadIndexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.context.quadIndexBuffer);
   gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, count);
 
   for (let loc = 1; loc <= MAX_INSTANCE_ATTRIB_LOCATION; loc++) {
@@ -273,9 +280,9 @@ export function prepareGlQuadBatchWrite(
   if (needed > runtime.quadBatchWriterInstanceData.length) {
     const newSize = Math.max(needed, runtime.quadBatchWriterInstanceData.length * 2);
     runtime.quadBatchWriterInstanceData = new Float32Array(newSize);
-    if (runtime.quadBatchWriterInstanceBuffer !== null) {
+    if (runtime.context.quadBatchResources!.writerInstanceBuffer !== null) {
       const gl = state.gl;
-      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterInstanceBuffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerInstanceBuffer!);
       gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
     }
   }
@@ -285,9 +292,9 @@ export function prepareGlQuadBatchWrite(
     if (materialNeeded > runtime.quadBatchWriterMaterialData.length) {
       const newSize = Math.max(materialNeeded, runtime.quadBatchWriterMaterialData.length * 2);
       runtime.quadBatchWriterMaterialData = new Float32Array(newSize);
-      if (runtime.quadBatchWriterMaterialBuffer !== null) {
+      if (runtime.context.quadBatchResources!.writerMaterialBuffer !== null) {
         const gl = state.gl;
-        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadBatchWriterMaterialBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadBatchResources!.writerMaterialBuffer!);
         gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
       }
     }
@@ -340,14 +347,14 @@ export function setGlQuadBatchWorldAndTexture(
   gl.uniformMatrix3fv(locWorldMatrix, false, m);
   gl.uniform1i(locTexture, 0);
   if (locStraightTextureAlpha !== undefined) {
-    gl.uniform1i(locStraightTextureAlpha, runtime.currentTextureRealization?.straightAlpha === true ? 1 : 0);
+    gl.uniform1i(locStraightTextureAlpha, runtime.context.currentTextureRealization?.straightAlpha === true ? 1 : 0);
   }
 }
 
 export function useGlQuadBatchProgram(state: GlRenderState, program: WebGLProgram): void {
   const runtime = getGlRenderStateRuntime(state);
-  if (runtime.currentShader?.program !== program) {
+  if (runtime.context.currentShader?.program !== program) {
     state.gl.useProgram(program);
   }
-  runtime.currentShader = { locations: null, program };
+  runtime.context.currentShader = { locations: null, program };
 }

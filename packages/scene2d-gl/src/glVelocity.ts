@@ -299,7 +299,7 @@ export function renderGlVelocity<Traits extends object>(
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   gl.useProgram(program.program);
-  runtime.currentShader = { locations: null, program: program.program };
+  runtime.context.currentShader = { locations: null, program: program.program };
   gl.bindBuffer(gl.ARRAY_BUFFER, program.quadBuffer);
   gl.enableVertexAttribArray(program.locCorner);
   gl.vertexAttribPointer(program.locCorner, 2, gl.FLOAT, false, 0, 0);

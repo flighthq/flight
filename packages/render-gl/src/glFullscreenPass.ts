@@ -30,8 +30,8 @@ export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget
   runtime.renderTargetViewport = { height: target.height, width: target.width, x: 0, y: 0 };
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  runtime.currentTextureRealization = null;
-  runtime.currentBlendSignature = null;
+  runtime.context.currentTextureRealization = null;
+  runtime.context.currentBlendSignature = null;
 }
 
 export function compileGlFullscreenProgram(gl: GlContext, fragmentSource: string): GlFullscreenProgram {
@@ -69,10 +69,10 @@ export function drawGlFullscreenPass(
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
 
-  if (runtime.currentShader?.program !== program.program) {
+  if (runtime.context.currentShader?.program !== program.program) {
     gl.useProgram(program.program);
   }
-  runtime.currentShader = { locations: null, program: program.program };
+  runtime.context.currentShader = { locations: null, program: program.program };
 
   const destFramebuffer = dest?.framebuffer ?? null;
   if (runtime.currentFramebuffer !== destFramebuffer) {
@@ -90,15 +90,15 @@ export function drawGlFullscreenPass(
     if (program.textures[i]) gl.uniform1i(program.textures[i], i);
   }
   gl.activeTexture(gl.TEXTURE0);
-  runtime.currentTextureRealization = null;
+  runtime.context.currentTextureRealization = null;
 
-  runtime.currentBlendSignature = null;
+  runtime.context.currentBlendSignature = null;
   applyGlBlendMode(state, null);
 
   setUniforms(gl, program);
   drawGlFullscreenQuad(state, program);
 
-  runtime.currentBlendSignature = null;
+  runtime.context.currentBlendSignature = null;
   applyGlBlendMode(state, null);
 
   // Unbind the sampled inputs. A fullscreen pass frequently reads a render target's own texture and
@@ -148,9 +148,9 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   v[14] = 0;
   v[15] = 1;
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.quadVertexBuffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, runtime.context.quadVertexBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.quadIndexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, runtime.context.quadIndexBuffer);
   gl.enableVertexAttribArray(program.locPosition);
   gl.enableVertexAttribArray(program.locTexCoord);
   gl.vertexAttribPointer(program.locPosition, 2, gl.FLOAT, false, 16, 0);

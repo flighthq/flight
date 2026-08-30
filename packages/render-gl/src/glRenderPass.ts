@@ -273,9 +273,9 @@ function captureGlPassState(state: GlRenderState): SavedGlPassState {
 }
 
 function invalidateGlPassBindingCache(runtime: ReturnType<typeof getGlRenderStateRuntime>): void {
-  runtime.currentBlendSignature = null;
-  runtime.currentShader = null;
-  runtime.currentTextureRealization = null;
+  runtime.context.currentBlendSignature = null;
+  runtime.context.currentShader = null;
+  runtime.context.currentTextureRealization = null;
 }
 
 function restoreGlPassState(state: GlRenderState, saved: Readonly<SavedGlPassState>): void {
