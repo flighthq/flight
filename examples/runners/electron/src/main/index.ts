@@ -71,7 +71,7 @@ function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>)
   console.log('[harness] app:', getAppName(), getAppVersion(), getAppLocale()); // eslint-disable-line
 
   const screens: ScreenInfo[] = [];
-  getScreens(screens);
+  getScreens(host, screens);
   console.log('[harness] screens:', screens.length); // eslint-disable-line
 
   setAppBadgeCount(3);

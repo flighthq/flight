@@ -67,6 +67,7 @@ export function capacitorHost(capacitor: CapacitorApi): CapacitorHost {
     menu: {},
     net: {},
     notification: createCapacitorNotificationCapabilities(capacitor),
+    screen: {},
     share: { content: createCapacitorShareContentBackend(capacitor) },
     storage: {},
     system: {},

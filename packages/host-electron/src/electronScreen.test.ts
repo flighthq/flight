@@ -1,7 +1,7 @@
 import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronScreenBackend } from './electronScreen';
+import { createElectronScreenCapabilities } from './electronScreen';
 
 function display(id: number, x: number): ElectronDisplay {
   return {
@@ -23,6 +23,7 @@ function fakeElectron(): {
     screen: {
       getPrimaryDisplay: () => primary,
       getAllDisplays: () => [primary, secondary],
+      getCursorScreenPoint: () => ({ x: 12, y: 34 }),
       on: (event: string, listener: () => void) => {
         const list = listeners.get(event) ?? [];
         list.push(listener);
@@ -40,18 +41,20 @@ function fakeElectron(): {
   return { electron, listeners };
 }
 
-describe('createElectronScreenBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronScreenBackend(fakeElectron().electron)).toBe(true);
+describe('createElectronScreenCapabilities', () => {
+  it('returns Entity-backed query and change facets', () => {
+    const capabilities = createElectronScreenCapabilities(fakeElectron().electron);
+    expect(EntityRuntimeKey in capabilities.query).toBe(true);
+    expect(EntityRuntimeKey in capabilities.change).toBe(true);
   });
 
   it('fills the primary screen into out', () => {
     const { electron } = fakeElectron();
-    const backend = createElectronScreenBackend(electron);
+    const backend = createElectronScreenCapabilities(electron).query;
     const out = {} as ScreenInfo;
     const result = backend.getPrimaryScreen(out);
     expect(result).toBe(out);
-    expect(out).toEqual({
+    expect(out).toMatchObject({
       id: 1,
       x: 0,
       y: 0,
@@ -62,11 +65,12 @@ describe('createElectronScreenBackend', () => {
       scaleFactor: 2,
       isPrimary: true,
     });
+    expect(Object.keys(out).filter((key) => key !== String(EntityRuntimeKey))).toHaveLength(25);
   });
 
   it('enumerates all screens marking the primary', () => {
     const { electron } = fakeElectron();
-    const backend = createElectronScreenBackend(electron);
+    const backend = createElectronScreenCapabilities(electron).query;
     const out: ScreenInfo[] = [];
     backend.getScreens(out);
     expect(out).toHaveLength(2);
@@ -79,7 +83,7 @@ describe('createElectronScreenBackend', () => {
 
   it('subscribes to all change events and unsubscribes from all', () => {
     const fake = fakeElectron();
-    const backend = createElectronScreenBackend(fake.electron);
+    const backend = createElectronScreenCapabilities(fake.electron).change;
     let count = 0;
     const off = backend.subscribe(() => {
       count++;

@@ -57,7 +57,7 @@ function installElectronProbe(): HostProbeInstallResult {
   });
 
   const screens: ReturnType<typeof getScreens> = [];
-  getScreens(screens);
+  getScreens(host, screens);
   results.push({
     detail: `${screens.length} Electron screen(s)`,
     id: 'runtime.screen',

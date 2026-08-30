@@ -2,81 +2,142 @@ import { createEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronDisplay,
-  Entity,
-  ScreenBackend,
+  HostScreenCapabilities,
   ScreenChangeEvent,
   ScreenChangeKind,
+  ScreenColorSpace,
   ScreenInfo,
+  ScreenOrientation,
 } from '@flighthq/types/contract';
 
-// Maps Flight's ScreenBackend onto Electron's `screen` module. Enumeration writes into caller-owned
-// `out` values so hot paths allocate nothing. subscribe wires all three of Electron's display change
-// events to one listener and returns an unsubscribe that removes all three.
-export function createElectronScreenBackend(electron: ElectronApi): ScreenBackend & Entity {
+export function createElectronScreenCapabilities(
+  electron: ElectronApi,
+): Required<Pick<HostScreenCapabilities, 'change' | 'query'>> {
   const screen = electron.screen;
-  return createEntity({
-    getScreens(out) {
+  const query = createEntity({
+    getCursorPosition(out: { x: number; y: number }) {
+      Object.assign(out, screen.getCursorScreenPoint());
+      return out;
+    },
+    getPrimaryScreen(out: ScreenInfo) {
+      return fillScreenInfo(out, screen.getPrimaryDisplay(), true);
+    },
+    getScreens(out: ScreenInfo[]) {
       const displays = screen.getAllDisplays();
       const primaryId = screen.getPrimaryDisplay().id;
       out.length = displays.length;
-      for (let i = 0; i < displays.length; i++) {
-        const display = displays[i];
-        out[i] = fillScreenInfo({} as ScreenInfo, display, display.id === primaryId);
-      }
+      displays.forEach((display, index) => {
+        out[index] ??= emptyScreenInfo();
+        fillScreenInfo(out[index], display, display.id === primaryId);
+      });
       return out;
     },
-    getPrimaryScreen(out) {
-      return fillScreenInfo(out, screen.getPrimaryDisplay(), true);
-    },
-    getCursorPosition(out) {
-      const point = screen.getCursorScreenPoint();
-      out.x = point.x;
-      out.y = point.y;
-      return out;
-    },
-    subscribe(listener) {
-      const primaryId = () => screen.getPrimaryDisplay().id;
-      // Electron passes (event, display) for each display change; adapt that into a ScreenChangeEvent.
+  });
+  const change = createEntity({
+    subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void) {
       const makeHandler =
         (kind: ScreenChangeKind) =>
         (...args: unknown[]): void => {
           const display = args[1] as ElectronDisplay | undefined;
-          const event: ScreenChangeEvent = {
+          listener({
             kind,
-            screen: display
-              ? fillScreenInfo({} as ScreenInfo, display, display.id === primaryId())
-              : ({} as ScreenInfo),
+            screen:
+              display === undefined
+                ? emptyScreenInfo()
+                : fillScreenInfo(emptyScreenInfo(), display, display.id === screen.getPrimaryDisplay().id),
             changedMetrics:
               kind === 'ScreenMetricsChanged'
                 ? { bounds: true, workArea: true, scaleFactor: true, orientation: true }
                 : null,
-          };
-          listener(event);
+          });
         };
-      const onAdded = makeHandler('ScreenAdded');
-      const onRemoved = makeHandler('ScreenRemoved');
-      const onMetrics = makeHandler('ScreenMetricsChanged');
-      screen.on('display-added', onAdded);
-      screen.on('display-removed', onRemoved);
-      screen.on('display-metrics-changed', onMetrics);
+      const added = makeHandler('ScreenAdded');
+      const removed = makeHandler('ScreenRemoved');
+      const metrics = makeHandler('ScreenMetricsChanged');
+      screen.on('display-added', added);
+      screen.on('display-removed', removed);
+      screen.on('display-metrics-changed', metrics);
       return () => {
-        screen.removeListener('display-added', onAdded);
-        screen.removeListener('display-removed', onRemoved);
-        screen.removeListener('display-metrics-changed', onMetrics);
+        screen.removeListener('display-added', added);
+        screen.removeListener('display-removed', removed);
+        screen.removeListener('display-metrics-changed', metrics);
       };
     },
-  } satisfies ScreenBackend);
+  });
+  return { change, query };
+}
+
+function emptyScreenInfo(): ScreenInfo {
+  return createEntity({
+    id: 0,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    workWidth: 0,
+    workHeight: 0,
+    scaleFactor: 1,
+    isPrimary: false,
+    rotation: -1,
+    orientation: 'Landscape' as ScreenOrientation,
+    refreshRate: -1,
+    colorDepth: -1,
+    pixelDepth: -1,
+    physicalWidth: -1,
+    physicalHeight: -1,
+    isHdr: false,
+    colorSpace: 'srgb' as ScreenColorSpace,
+    maxLuminance: -1,
+    depthPerComponent: -1,
+    dpi: -1,
+    label: '',
+    internal: false,
+    touchSupport: 'unknown',
+    monochrome: false,
+  });
 }
 
 function fillScreenInfo(out: ScreenInfo, display: Readonly<ElectronDisplay>, isPrimary: boolean): ScreenInfo {
-  out.id = display.id;
-  out.x = display.bounds.x;
-  out.y = display.bounds.y;
-  out.width = display.bounds.width;
-  out.height = display.bounds.height;
-  out.workWidth = display.workArea.width;
-  out.workHeight = display.workArea.height;
-  out.scaleFactor = display.scaleFactor;
-  out.isPrimary = isPrimary;
+  const rotation = display.rotation ?? -1;
+  const colorDepth = display.colorDepth ?? -1;
+  Object.assign(out, {
+    id: display.id,
+    x: display.bounds.x,
+    y: display.bounds.y,
+    width: display.bounds.width,
+    height: display.bounds.height,
+    workWidth: display.workArea.width,
+    workHeight: display.workArea.height,
+    scaleFactor: display.scaleFactor,
+    isPrimary,
+    rotation,
+    orientation: orientationFor(display, rotation),
+    refreshRate: display.displayFrequency ?? -1,
+    colorDepth,
+    pixelDepth: colorDepth,
+    physicalWidth: Math.round(display.bounds.width * display.scaleFactor),
+    physicalHeight: Math.round(display.bounds.height * display.scaleFactor),
+    isHdr: false,
+    colorSpace: normalizeColorSpace(display.colorSpace),
+    maxLuminance: -1,
+    depthPerComponent: colorDepth > 0 ? Math.floor(colorDepth / 3) : -1,
+    dpi: display.scaleFactor > 0 ? Math.round(display.scaleFactor * 96) : -1,
+    label: display.label ?? '',
+    internal: display.internal ?? false,
+    touchSupport: display.touchSupport ?? 'unknown',
+    monochrome: display.monochrome ?? false,
+  });
   return out;
+}
+
+function normalizeColorSpace(value: string | undefined): ScreenColorSpace {
+  if (value === 'display-p3' || value === 'rec2020' || value === 'srgb') return value;
+  return 'srgb';
+}
+
+function orientationFor(display: Readonly<ElectronDisplay>, rotation: number): ScreenOrientation {
+  if (rotation === 90) return 'Portrait';
+  if (rotation === 180) return 'LandscapeFlipped';
+  if (rotation === 270) return 'PortraitFlipped';
+  return display.bounds.height > display.bounds.width ? 'Portrait' : 'Landscape';
 }
