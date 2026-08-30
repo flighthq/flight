@@ -27,26 +27,26 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     applyBlendMode: null,
   });
 
-  // Runtime (package-private GPU) fields live on the runtime object stored under EntityRuntimeKey,
-  // mirroring what createGlRenderState does in production.
   const runtime = createGlRenderStateRuntime(createGlContextState(gl));
-  Object.assign(runtime, {
+  Object.assign(runtime.context, {
     currentBlendSignature: null,
-    currentFramebuffer: null,
-    currentMaskDepth: 0,
     currentShader: { locations: shaderLoc, program: shaderLoc.program },
-    currentScissorRect: null,
     currentTextureRealization: null,
-    flushPendingDraws: null,
-    renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
     textureSourcePremultipliedTextureCache: new WeakMap(),
     textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
     textureSourceStraightTextureCache: new WeakMap(),
     textureSourceStraightSrgbTextureCache: new WeakMap(),
-    defaultBitmapShader: { locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() },
     quadVertexBuffer: {} as WebGLBuffer,
     quadIndexBuffer: {} as WebGLBuffer,
+  });
+  Object.assign(runtime, {
+    currentFramebuffer: null,
+    currentMaskDepth: 0,
+    currentScissorRect: null,
+    flushPendingDraws: null,
+    renderTargetViewport: null,
+    defaultBitmapShader: { locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() },
     quadVertexData: new Float32Array(16),
     matrixArray: new Float32Array(9),
     scissorStack: [],

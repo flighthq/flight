@@ -157,6 +157,6 @@ describe('getGlScene3DRuntime', () => {
     expect(stateRuntime.registries.modifierSnippetRevision).toBe(modifierSnippetRevision);
     expect(stateRuntime.registries.pbrExtensions).toBe(pbrExtensions);
     expect(stateRuntime.registries.pbrExtensionRevision).toBe(pbrExtensionRevision);
-    expect(stateRuntime.sceneMeshUploadCache).toBe(scene.uploadCache);
+    expect(stateRuntime.context.sceneMeshUploadCache).toBe(scene.uploadCache);
   });
 });

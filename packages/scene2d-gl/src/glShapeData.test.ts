@@ -96,7 +96,7 @@ describe('destroyGlShapeData', () => {
     const data = emptyData();
     const surface = acquireGlShapeRasterSurface(data)!;
     const texture = {} as WebGLTexture;
-    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     cache.set(surface.image, { texture } as never);
     const order: string[] = [];
     vi.mocked(gl.deleteTexture).mockImplementation(() => order.push('texture'));

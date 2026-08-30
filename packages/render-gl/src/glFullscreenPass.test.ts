@@ -82,13 +82,13 @@ describe('clearGlRenderTarget', () => {
   it('invalidates cached texture and blend-mode bindings', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
-    runtime.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
+    runtime.context.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
+    runtime.context.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
 
     clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer));
 
-    expect(runtime.currentTextureRealization).toBeNull();
-    expect(runtime.currentBlendSignature).toBeNull();
+    expect(runtime.context.currentTextureRealization).toBeNull();
+    expect(runtime.context.currentBlendSignature).toBeNull();
   });
 
   it('skips rebinding when the target framebuffer is already current', () => {
@@ -197,7 +197,7 @@ describe('drawGlFullscreenPass', () => {
 
     expect(blendSpy).toHaveBeenCalledWith(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     expect(blendEquationSpy).toHaveBeenCalledWith(gl.FUNC_ADD);
-    expect(getGlRenderStateRuntime(state).currentBlendSignature).toEqual({
+    expect(getGlRenderStateRuntime(state).context.currentBlendSignature).toEqual({
       dst: gl.ONE_MINUS_SRC_ALPHA,
       equation: gl.FUNC_ADD,
       src: gl.ONE,
@@ -217,7 +217,7 @@ describe('drawGlFullscreenPass', () => {
     expect(blendSpy).toHaveBeenCalledWith(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);
     expect(blendSpy).toHaveBeenLastCalledWith(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     expect(blendEquationSpy).toHaveBeenLastCalledWith(gl.FUNC_ADD);
-    expect(getGlRenderStateRuntime(state).currentBlendSignature).toEqual({
+    expect(getGlRenderStateRuntime(state).context.currentBlendSignature).toEqual({
       dst: gl.ONE_MINUS_SRC_ALPHA,
       equation: gl.FUNC_ADD,
       src: gl.ONE,

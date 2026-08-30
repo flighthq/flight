@@ -51,7 +51,7 @@ describe('bindGlUnlitSurface', () => {
     const texture = createTexture({ dimension: '2d', source: image });
     texture.sampler.mipmaps = false;
     registerGlImageTextureResolver(state);
-    getGlRenderStateRuntime(state).anisotropyExt = null;
+    getGlRenderStateRuntime(state).context.anisotropyExt = null;
 
     bindGlUnlitSurface(state, program, COLOR, 1, texture, 0.5);
 
@@ -65,7 +65,7 @@ describe('bindGlUnlitSurface', () => {
     const texture = createRenderTexture({ height: 16, width: 16 });
     texture.sampler.mipmaps = false;
     registerGlRenderTextureResolver(state);
-    getGlRenderStateRuntime(state).anisotropyExt = null;
+    getGlRenderStateRuntime(state).context.anisotropyExt = null;
     const uploads = gl.calls.filter((call) => call.name === 'texImage2D').length;
 
     bindGlUnlitSurface(state, program, COLOR, 1, texture, 0.5);
@@ -87,7 +87,7 @@ describe('bindGlUnlitSurface', () => {
     advanceVideoTexture(videoMap);
     registerGlImageTextureResolver(state);
     registerGlImageTextureResolver(state);
-    getGlRenderStateRuntime(state).anisotropyExt = null;
+    getGlRenderStateRuntime(state).context.anisotropyExt = null;
 
     bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);
 
@@ -109,7 +109,7 @@ describe('bindGlUnlitSurface', () => {
     advanceVideoTexture(videoMap);
     registerGlImageTextureResolver(state);
     registerGlImageTextureResolver(state);
-    getGlRenderStateRuntime(state).anisotropyExt = null;
+    getGlRenderStateRuntime(state).context.anisotropyExt = null;
     bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);
     const uploads = gl.calls.filter((c) => c.name === 'texImage2D').length;
     bindGlUnlitSurface(state, program, COLOR, 1, videoMap, 0.5);

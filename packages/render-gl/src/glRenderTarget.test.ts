@@ -74,9 +74,9 @@ describe('createGlRenderTarget', () => {
   it('resets currentTextureRealization to null after creation', () => {
     const { state } = makeState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
+    runtime.context.currentTextureRealization = { straightAlpha: false, texture: {} as WebGLTexture };
     createGlRenderTarget(state, { width: 32, height: 32 });
-    expect(runtime.currentTextureRealization).toBeNull();
+    expect(runtime.context.currentTextureRealization).toBeNull();
   });
 
   it("defaults colorSpace to 'srgb' when the descriptor omits it", () => {

@@ -10,13 +10,13 @@ describe('createExternalGlTexture', () => {
   it('replaces a prior straight-alpha texture shadow atomically', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTextureRealization = { straightAlpha: true, texture: state.gl.createTexture()! };
+    runtime.context.currentTextureRealization = { straightAlpha: true, texture: state.gl.createTexture()! };
     const handle = state.gl.createTexture()!;
     const texture = createExternalGlTexture(state, handle, { height: 16, width: 32 });
 
     expect(resolveGlTexture(state, texture, true, 'srgb')).toBe(handle);
-    expect(runtime.currentTextureRealization?.texture).toBe(handle);
-    expect(runtime.currentTextureRealization?.straightAlpha).toBe(false);
+    expect(runtime.context.currentTextureRealization?.texture).toBe(handle);
+    expect(runtime.context.currentTextureRealization?.straightAlpha).toBe(false);
   });
 
   it('resolves a borrowed handle and forgets it without deleting the allocation', () => {

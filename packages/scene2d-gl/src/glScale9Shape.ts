@@ -61,7 +61,7 @@ export function createGlScale9ShapeData(_state: GlRenderState, _source: Renderab
 export function destroyGlScale9ShapeData(state: GlRenderState, data: RendererData): void {
   const { surface } = getGlScale9ShapeData(data);
   if (surface === null) return;
-  const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
   const entry = cache.get(surface.image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);

@@ -69,7 +69,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
     advanceVideoTexture(material.baseColorMap);
     registerGlUnlitMaterial(state);
     registerGlImageTextureResolver(state);
-    getGlRenderStateRuntime(state).anisotropyExt = null;
+    getGlRenderStateRuntime(state).context.anisotropyExt = null;
     unlitGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
     expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });
@@ -81,7 +81,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
     material.baseColorMap.sampler.mipmaps = false;
     registerGlUnlitMaterial(state);
     registerGlRenderTextureResolver(state);
-    getGlRenderStateRuntime(state).anisotropyExt = null;
+    getGlRenderStateRuntime(state).context.anisotropyExt = null;
     const uploads = gl.calls.filter((call) => call.name === 'texImage2D').length;
 
     unlitGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());

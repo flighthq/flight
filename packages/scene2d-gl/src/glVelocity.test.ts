@@ -181,7 +181,9 @@ describe('renderGlVelocity', () => {
     expect(enabled.has(gl.BLEND)).toBe(true);
     expect(Array.from(viewport)).toEqual([7, 8, 320, 240]);
     expect(Array.from(clearColor)).toEqual([0.25, 0.5, 0.75, 1]);
-    expect(getGlRenderStateRuntime(state).currentShader?.program).toBe(vi.mocked(gl.useProgram).mock.calls.at(-1)?.[0]);
+    expect(getGlRenderStateRuntime(state).context.currentShader?.program).toBe(
+      vi.mocked(gl.useProgram).mock.calls.at(-1)?.[0],
+    );
   });
 
   it('dispatches the registered writer for a moving node without throwing', () => {

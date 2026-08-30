@@ -51,7 +51,7 @@ export function clearGlRenderTexture(state: GlRenderState, renderTexture: Render
 }
 
 export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Readonly<RenderTexture>): void {
-  const entries = getGlRenderStateRuntime(state).glRenderTextureCache;
+  const entries = getGlRenderStateRuntime(state).context.glRenderTextureCache;
   const entry = entries?.get(renderTexture);
   if (entry === undefined) return;
   destroyGlRenderTarget(state, entry.target);
@@ -209,11 +209,11 @@ function matchesGlRenderTextureAllocation(
 }
 
 function getEntries(state: GlRenderState): WeakMap<RenderTexture, GlRenderTextureEntry> {
-  return (getGlRenderStateRuntime(state).glRenderTextureCache ??= new WeakMap());
+  return (getGlRenderStateRuntime(state).context.glRenderTextureCache ??= new WeakMap());
 }
 
 function getEntry(state: GlRenderState, renderTexture: Readonly<RenderTexture>): GlRenderTextureEntry | undefined {
-  return getGlRenderStateRuntime(state).glRenderTextureCache?.get(renderTexture);
+  return getGlRenderStateRuntime(state).context.glRenderTextureCache?.get(renderTexture);
 }
 
 function notifyGuard(state: GlRenderState, renderTexture: Readonly<RenderTexture>): void {

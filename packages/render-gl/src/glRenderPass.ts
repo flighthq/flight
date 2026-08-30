@@ -226,7 +226,7 @@ function clearGlRenderPass(
     gl.clearBufferfi(gl.DEPTH_STENCIL, 0, target.clearDepth, 0);
   }
 
-  getGlRenderStateRuntime(state).currentBlendSignature = null;
+  getGlRenderStateRuntime(state).context.currentBlendSignature = null;
 }
 
 function isGlColorAttachmentPreserved(preserve: boolean | ReadonlyArray<boolean>, index: number): boolean {

@@ -41,9 +41,9 @@ describe('renderGlBackground', () => {
   it('invalidates currentBlendSignature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
+    runtime.context.currentBlendSignature = { dst: 0, equation: 0, src: 0 };
     renderGlBackground(state);
-    expect(runtime.currentBlendSignature).toBeNull();
+    expect(runtime.context.currentBlendSignature).toBeNull();
   });
 
   it('passes fractional RGBA values through unchanged', () => {

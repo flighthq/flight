@@ -151,8 +151,8 @@ describe('createGlContextState', () => {
     const runtimeA = getGlRenderStateRuntime(stateA);
     const runtimeB = getGlRenderStateRuntime(stateB);
 
-    runtimeA.currentShader = { locations: null, program: {} as WebGLProgram };
-    expect(runtimeB.currentShader).toBe(runtimeA.currentShader);
+    runtimeA.context.currentShader = { locations: null, program: {} as WebGLProgram };
+    expect(runtimeB.context.currentShader).toBe(runtimeA.context.currentShader);
   });
 });
 
@@ -197,7 +197,7 @@ describe('createGlOffscreenRenderState', () => {
       registry: 'GlColorAdjustmentFeatureGuard',
       shape: 'slot',
     };
-    getGlRenderStateRuntime(screen).glRenderTextureCache = new WeakMap();
+    getGlRenderStateRuntime(screen).context.glRenderTextureCache = new WeakMap();
 
     const offscreen = createGlOffscreenRenderState(screen);
     const screenRuntime = getGlRenderStateRuntime(screen);
@@ -208,8 +208,8 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.textureSourcePremultipliedTextureCache).toBe(
       screenRuntime.textureSourcePremultipliedTextureCache,
     );
-    expect(offscreenRuntime.glRenderTextureCache).toBe(screenRuntime.glRenderTextureCache);
-    expect(offscreenRuntime.quadIndexBuffer).toBe(screenRuntime.quadIndexBuffer);
+    expect(offscreenRuntime.context.glRenderTextureCache).toBe(screenRuntime.context.glRenderTextureCache);
+    expect(offscreenRuntime.context.quadIndexBuffer).toBe(screenRuntime.context.quadIndexBuffer);
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
@@ -272,8 +272,8 @@ describe('createGlOffscreenRenderState', () => {
     expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')?.runner).toBe(effectRunner);
     expect(getPaddingResolver(offscreen, 'acme.Effect')).toBe(paddingResolver);
 
-    screenRuntime.currentShader = { locations: null, program: {} as WebGLProgram };
-    expect(offscreenRuntime.currentShader).toBe(screenRuntime.currentShader);
+    screenRuntime.context.currentShader = { locations: null, program: {} as WebGLProgram };
+    expect(offscreenRuntime.context.currentShader).toBe(screenRuntime.context.currentShader);
   });
 
   it('requires explicit re-copy for registrations added after derivation', () => {
@@ -337,19 +337,19 @@ describe('createGlRenderState', () => {
   it('initializes runtime currentBlendSignature to null', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).currentBlendSignature).toBeNull();
+    expect(getGlRenderStateRuntime(state).context.currentBlendSignature).toBeNull();
   });
 
   it('initializes runtime currentShader to null', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).currentShader).toBeNull();
+    expect(getGlRenderStateRuntime(state).context.currentShader).toBeNull();
   });
 
   it('initializes runtime currentTextureRealization to null', () => {
     const { gl } = makeContext();
     const state = createGlRenderState(gl);
-    expect(getGlRenderStateRuntime(state).currentTextureRealization).toBeNull();
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization).toBeNull();
   });
 
   it('enables blending during initialization', () => {
@@ -408,11 +408,11 @@ describe('createGlRenderState', () => {
     const runtimeA = getGlRenderStateRuntime(stateA);
     const runtimeB = getGlRenderStateRuntime(stateB);
 
-    runtimeA.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
-    expect(runtimeB.currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
+    runtimeA.context.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
+    expect(runtimeB.context.currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
 
-    runtimeB.currentBlendSignature = { dst: 4, equation: 5, src: 6 };
-    expect(runtimeA.currentBlendSignature).toEqual({ dst: 4, equation: 5, src: 6 });
+    runtimeB.context.currentBlendSignature = { dst: 4, equation: 5, src: 6 };
+    expect(runtimeA.context.currentBlendSignature).toEqual({ dst: 4, equation: 5, src: 6 });
   });
 
   it('keeps separate context tiers when two states are built from the same raw GL', () => {
@@ -422,8 +422,8 @@ describe('createGlRenderState', () => {
     const runtimeA = getGlRenderStateRuntime(stateA);
     const runtimeB = getGlRenderStateRuntime(stateB);
 
-    runtimeA.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
-    expect(runtimeB.currentBlendSignature).toBeNull();
+    runtimeA.context.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
+    expect(runtimeB.context.currentBlendSignature).toBeNull();
   });
 });
 
@@ -434,8 +434,8 @@ describe('createGlRenderStateFromContextState', () => {
     const first = createGlRenderStateFromContextState(contextState);
     const second = createGlRenderStateFromContextState(contextState);
 
-    getGlRenderStateRuntime(first).currentBlendSignature = { dst: 1, equation: 2, src: 3 };
-    expect(getGlRenderStateRuntime(second).currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
+    getGlRenderStateRuntime(first).context.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
+    expect(getGlRenderStateRuntime(second).context.currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
   });
 
   it('builds a render state whose context tier is shared with siblings from the same context state', () => {
@@ -447,8 +447,8 @@ describe('createGlRenderStateFromContextState', () => {
     expect(stateB.gl).toBe(gl);
     const runtimeA = getGlRenderStateRuntime(stateA);
     const runtimeB = getGlRenderStateRuntime(stateB);
-    runtimeA.currentBlendSignature = { dst: 7, equation: 8, src: 9 };
-    expect(runtimeB.currentBlendSignature).toEqual({ dst: 7, equation: 8, src: 9 });
+    runtimeA.context.currentBlendSignature = { dst: 7, equation: 8, src: 9 };
+    expect(runtimeB.context.currentBlendSignature).toEqual({ dst: 7, equation: 8, src: 9 });
   });
 });
 
@@ -723,20 +723,20 @@ describe('invalidateGlRenderStateCache', () => {
 
     // Simulate a full frame of render-gl activity plus a sibling renderer (scene-gl) binding raw GL
     // state the cache never observed: the cache now points at bindings that are no longer current.
-    runtime.currentShader = { locations: null, program: {} as WebGLProgram };
-    runtime.currentTextureRealization = { straightAlpha: true, texture: {} as WebGLTexture };
+    runtime.context.currentShader = { locations: null, program: {} as WebGLProgram };
+    runtime.context.currentTextureRealization = { straightAlpha: true, texture: {} as WebGLTexture };
     runtime.currentFramebuffer = {} as WebGLFramebuffer;
-    runtime.currentBlendSignature = { dst: gl.ONE, equation: gl.FUNC_ADD, src: gl.ONE };
+    runtime.context.currentBlendSignature = { dst: gl.ONE, equation: gl.FUNC_ADD, src: gl.ONE };
     runtime.currentMaskDepth = 3;
     runtime.currentScissorRect = { x: 0, y: 0, width: 1, height: 1 };
     runtime.renderTargetViewport = { height: 4, width: 4, x: 0, y: 0 };
 
     invalidateGlRenderStateCache(state);
 
-    expect(runtime.currentShader).toBeNull();
-    expect(runtime.currentTextureRealization).toBeNull();
+    expect(runtime.context.currentShader).toBeNull();
+    expect(runtime.context.currentTextureRealization).toBeNull();
     expect(runtime.currentFramebuffer).toBeNull();
-    expect(runtime.currentBlendSignature).toBeNull();
+    expect(runtime.context.currentBlendSignature).toBeNull();
     expect(runtime.currentMaskDepth).toBe(0);
     expect(runtime.currentScissorRect).toBeNull();
     expect(runtime.renderTargetViewport).toBeNull();

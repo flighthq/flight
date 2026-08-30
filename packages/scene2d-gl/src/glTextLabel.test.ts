@@ -119,7 +119,7 @@ describe('defaultGlTextLabelRenderer', () => {
   it('removes the GPU cache entry before returning the node surface to its creator', () => {
     const order: string[] = [];
     const { state, gl } = createGlState();
-    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     installTestRaster2DSurfaceProvider((surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
@@ -153,7 +153,7 @@ describe('drawGlTextLabel', () => {
 
     const firstSurface = (firstData as unknown as { surface: Raster2DSurface }).surface;
     const secondSurface = (secondData as unknown as { surface: Raster2DSurface }).surface;
-    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const firstImage = firstSurface.image;
     expect(firstSurface).not.toBe(secondSurface);
     expect(firstSurface.image).not.toBe(secondSurface.image);
