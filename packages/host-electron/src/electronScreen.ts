@@ -1,18 +1,20 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  ElectronApi,
+  ElectronDisplay,
+  Entity,
   ScreenBackend,
   ScreenChangeEvent,
   ScreenChangeKind,
   ScreenInfo,
-  ElectronApi,
-  ElectronDisplay,
 } from '@flighthq/types/contract';
 
 // Maps Flight's ScreenBackend onto Electron's `screen` module. Enumeration writes into caller-owned
 // `out` values so hot paths allocate nothing. subscribe wires all three of Electron's display change
 // events to one listener and returns an unsubscribe that removes all three.
-export function createElectronScreenBackend(electron: ElectronApi): ScreenBackend {
+export function createElectronScreenBackend(electron: ElectronApi): ScreenBackend & Entity {
   const screen = electron.screen;
-  return {
+  return createEntity({
     getScreens(out) {
       const displays = screen.getAllDisplays();
       const primaryId = screen.getPrimaryDisplay().id;
@@ -63,7 +65,7 @@ export function createElectronScreenBackend(electron: ElectronApi): ScreenBacken
         screen.removeListener('display-metrics-changed', onMetrics);
       };
     },
-  };
+  } satisfies ScreenBackend);
 }
 
 function fillScreenInfo(out: ScreenInfo, display: Readonly<ElectronDisplay>, isPrimary: boolean): ScreenInfo {

@@ -1,4 +1,5 @@
 import type { ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronShortcutBackend } from './electronShortcut';
 
@@ -23,6 +24,10 @@ function fakeElectron(): { electron: ElectronApi; registered: Map<string, () => 
 }
 
 describe('createElectronShortcutBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronShortcutBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('registers and reports a shortcut, invoking its listener', () => {
     const fake = fakeElectron();
     const backend = createElectronShortcutBackend(fake.electron);

@@ -1,4 +1,5 @@
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronAppBackend } from './electronApp';
 
@@ -63,6 +64,10 @@ function fakeElectron(): {
 }
 
 describe('createElectronAppBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronAppBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('delegates identity and lifecycle to electron.app', () => {
     const { electron } = fakeElectron();
     const backend = createElectronAppBackend(electron);

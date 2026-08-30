@@ -1,4 +1,5 @@
 import type { PlatformInfo, ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronPlatformBackend } from './electronPlatform';
 
@@ -11,6 +12,10 @@ function fakeElectron(): ElectronApi {
 }
 
 describe('createElectronPlatformBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronPlatformBackend(fakeElectron())).toBe(true);
+  });
+
   it('fills platform info from process and electron locale', () => {
     const backend = createElectronPlatformBackend(fakeElectron());
     const out = {} as PlatformInfo;

@@ -1,4 +1,5 @@
 import type { ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronStorageBackend } from './electronStorage';
 
@@ -24,6 +25,10 @@ function fakeElectron(initial?: Record<string, string>): {
 }
 
 describe('createElectronStorageBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronStorageBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('clear removes all keys and persists', () => {
     const { electron } = fakeElectron({ a: '1' });
     const backend = createElectronStorageBackend(electron);

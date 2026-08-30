@@ -1,4 +1,5 @@
 import type { ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronProtocolBackend } from './electronProtocol';
 
@@ -38,6 +39,10 @@ function fakeElectron(): {
 }
 
 describe('createElectronProtocolBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronProtocolBackend(fakeElectron().electron)).toBe(true);
+  });
+
   it('registers, queries, and unregisters a scheme', () => {
     const fake = fakeElectron();
     const backend = createElectronProtocolBackend(fake.electron);

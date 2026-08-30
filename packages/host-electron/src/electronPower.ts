@@ -1,13 +1,14 @@
-import type { PowerBackend, PowerIdleState, ElectronApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ElectronApi, Entity, PowerBackend, PowerIdleState } from '@flighthq/types/contract';
 
 // Maps Flight's PowerBackend onto Electron's powerMonitor and powerSaveBlocker. The main process has
 // no battery-level reading, so getStatus reports batteryLevel -1 and infers charging from the AC/
 // battery flag. setKeepAwake holds a single display-sleep blocker id across calls.
-export function createElectronPowerBackend(electron: ElectronApi): PowerBackend {
+export function createElectronPowerBackend(electron: ElectronApi): PowerBackend & Entity {
   const powerMonitor = electron.powerMonitor;
   const powerSaveBlocker = electron.powerSaveBlocker;
   let blockerId = -1;
-  return {
+  return createEntity({
     destroy() {
       if (blockerId >= 0) {
         powerSaveBlocker.stop(blockerId);
@@ -87,7 +88,7 @@ export function createElectronPowerBackend(electron: ElectronApi): PowerBackend 
         return false;
       }
     },
-  };
+  } satisfies PowerBackend);
 }
 
 function toIdleState(state: 'active' | 'idle' | 'locked' | 'unknown'): PowerIdleState {

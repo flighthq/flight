@@ -1,4 +1,5 @@
 import type { ElectronApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronShellBackend } from './electronShell';
 
@@ -7,6 +8,10 @@ function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
 }
 
 describe('createElectronShellBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createElectronShellBackend(fakeElectron({}))).toBe(true);
+  });
+
   it('openExternal returns true on success and false on throw', async () => {
     const ok = createElectronShellBackend(fakeElectron({ openExternal: async () => {} }));
     expect(await ok.openExternal('https://example.test')).toBe(true);

@@ -1,15 +1,23 @@
-import type { UpdateInfo, UpdaterBackend, UpdaterConfig, UpdaterError, ElectronApi } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  ElectronApi,
+  Entity,
+  UpdateInfo,
+  UpdaterBackend,
+  UpdaterConfig,
+  UpdaterError,
+} from '@flighthq/types/contract';
 
 // Maps Flight's UpdaterBackend onto Electron's built-in autoUpdater (Squirrel). The built-in updater
 // auto-downloads on check and emits no progress event, so downloadUpdate folds into checkForUpdates
 // and subscribeDownloadProgress is inert. Channels, config, signature verification, cancel, rollback,
 // staging, and verification are electron-updater concepts the built-in updater lacks — they are honest
 // no-ops / inert subscriptions here. electron-updater would expose the richer surface.
-export function createElectronUpdaterBackend(electron: ElectronApi): UpdaterBackend {
+export function createElectronUpdaterBackend(electron: ElectronApi): UpdaterBackend & Entity {
   const autoUpdater = electron.autoUpdater;
   let channel = '';
   let config: UpdaterConfig = { allowPrerelease: false, autoDownload: true, autoInstallOnAppQuit: true };
-  return {
+  return createEntity({
     setFeedUrl(url) {
       autoUpdater.setFeedURL({ url });
     },
@@ -94,7 +102,7 @@ export function createElectronUpdaterBackend(electron: ElectronApi): UpdaterBack
       // No explicit verification event in the built-in updater; inert unsubscribe.
       return () => {};
     },
-  };
+  } satisfies UpdaterBackend);
 }
 
 // Electron emits (event, releaseNotes, releaseName, releaseDate) for update-available/downloaded. The
