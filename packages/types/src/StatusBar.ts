@@ -37,18 +37,44 @@ export interface StatusBarStyleEntry {
   visible?: boolean;
 }
 
-export interface StatusBarBackend {
-  // Fills `out` with the current status bar state snapshot and returns it.
-  getInfo(out: StatusBarInfo): StatusBarInfo;
-  // `color` is a packed RGBA integer (0xRRGGBBAA, Flight convention). `animated` requests a smooth
-  // transition on native hosts; web ignores it.
-  setBackgroundColor(color: number, animated?: boolean): void;
-  setOverlaysContent(overlay: boolean): void;
-  setStyle(style: StatusBarStyle): void;
-  setVisible(visible: boolean, animation?: StatusBarAnimation): void;
+export interface StatusBarChangeBackend {
   // Registers a listener invoked on any OS-driven status bar change; returns an unsubscribe function.
   subscribe(listener: () => void): () => void;
 }
+
+export interface StatusBarInfoBackend {
+  // Fills `out` with the current status bar state snapshot and returns it.
+  getInfo(out: StatusBarInfo): StatusBarInfo;
+}
+
+export interface StatusBarOverlaysBackend {
+  setOverlaysContent(overlay: boolean): void;
+}
+
+export interface StatusBarStyleBackend {
+  setStyle(style: StatusBarStyle): void;
+}
+
+export interface StatusBarColorBackend {
+  // `color` is a packed RGBA integer (0xRRGGBBAA, Flight convention). `animated` requests a smooth
+  // transition on native hosts; web ignores it.
+  setBackgroundColor(color: number, animated?: boolean): void;
+}
+
+export interface StatusBarVisibilityBackend {
+  setVisible(visible: boolean, animation?: StatusBarAnimation): void;
+}
+
+// Full native-provider convenience shape. Host capability slots use the narrow interfaces above so a
+// provider never has to claim an operation it cannot perform.
+export interface StatusBarBackend
+  extends
+    StatusBarChangeBackend,
+    StatusBarInfoBackend,
+    StatusBarOverlaysBackend,
+    StatusBarStyleBackend,
+    StatusBarColorBackend,
+    StatusBarVisibilityBackend {}
 
 // Status bar event entity. Enable delivery with attachStatusBar; the signals stay inert until then.
 export interface StatusBar {

@@ -55,7 +55,7 @@ import type {
 import type { DeviceBackend } from './Device';
 import type { Entity } from './Entity';
 import type { DirectoryOpenDialogBackend, FileOpenDialogBackend, FileSaveDialogBackend } from './FileDialogBackend';
-import type { FileSystemBackend } from './FileSystem';
+import type { FileSystemHostBackend } from './FileSystem';
 import type { FontLoadingBackend } from './FontLoadingBackend';
 import type { FullscreenBackend } from './FullscreenBackend';
 import type { GeolocationBackend } from './Geolocation';
@@ -134,7 +134,14 @@ import type {
 } from './Shell';
 import type { ShortcutQueryBackend, ShortcutTriggerBackend } from './Shortcut';
 import type { SocketBackend } from './Socket';
-import type { StatusBarBackend } from './StatusBar';
+import type {
+  StatusBarChangeBackend,
+  StatusBarColorBackend,
+  StatusBarInfoBackend,
+  StatusBarOverlaysBackend,
+  StatusBarStyleBackend,
+  StatusBarVisibilityBackend,
+} from './StatusBar';
 import type {
   StorageBackend,
   StorageChangeBackend,
@@ -379,7 +386,7 @@ export interface HostShortcutCapabilities {
 
 export interface HostStorageCapabilities {
   readonly change?: StorageChangeBackend;
-  readonly fileSystem?: FileSystemBackend;
+  readonly fileSystem?: FileSystemHostBackend;
   readonly local?: StorageBackend;
   readonly persistenceQuery?: StoragePersistenceQueryBackend;
   readonly persistenceRequest?: StoragePersistenceRequestBackend;
@@ -423,7 +430,12 @@ export interface HostTrayCapabilities {
 
 export interface HostUiCapabilities {
   readonly fullscreen?: FullscreenBackend;
-  readonly statusBar?: StatusBarBackend;
+  readonly statusBarChange?: StatusBarChangeBackend;
+  readonly statusBarColor?: StatusBarColorBackend;
+  readonly statusBarInfo?: StatusBarInfoBackend;
+  readonly statusBarOverlays?: StatusBarOverlaysBackend;
+  readonly statusBarStyle?: StatusBarStyleBackend;
+  readonly statusBarVisibility?: StatusBarVisibilityBackend;
 }
 
 export interface HostUpdaterCapabilities {
@@ -807,7 +819,7 @@ export interface HasNotificationScheduling {
 }
 
 export interface HasStorageFileSystem {
-  readonly storage: { readonly fileSystem: FileSystemBackend };
+  readonly storage: { readonly fileSystem: FileSystemHostBackend };
 }
 
 export interface HasPowerBatteryHealth {
@@ -972,8 +984,34 @@ export interface HasShellTrash {
   readonly shell: { readonly trash: ShellTrashBackend };
 }
 
-export interface HasUiStatusBar {
-  readonly ui: { readonly statusBar: StatusBarBackend };
+export interface HasUiStatusBarChange {
+  readonly ui: { readonly statusBarChange: StatusBarChangeBackend };
+}
+
+export interface HasUiStatusBarColor {
+  readonly ui: { readonly statusBarColor: StatusBarColorBackend };
+}
+
+export interface HasUiStatusBarInfo {
+  readonly ui: { readonly statusBarInfo: StatusBarInfoBackend };
+}
+
+export interface HasUiStatusBarOverlays {
+  readonly ui: { readonly statusBarOverlays: StatusBarOverlaysBackend };
+}
+
+export interface HasUiStatusBarStyle {
+  readonly ui: { readonly statusBarStyle: StatusBarStyleBackend };
+}
+
+export type HasUiStatusBarStyleStack = HasUiStatusBarColor &
+  HasUiStatusBarInfo &
+  HasUiStatusBarOverlays &
+  HasUiStatusBarStyle &
+  HasUiStatusBarVisibility;
+
+export interface HasUiStatusBarVisibility {
+  readonly ui: { readonly statusBarVisibility: StatusBarVisibilityBackend };
 }
 
 export interface HasTrayLifecycle {
