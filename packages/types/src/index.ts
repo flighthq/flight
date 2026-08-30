@@ -627,7 +627,6 @@ export * from './SketchEffect';
 export * from './SmaaEffect';
 export * from './Snapshot';
 export * from './Socket';
-export * from './SoftKeyboardEasingKind';
 export * from './SphereCollider';
 export * from './Physics2D';
 export * from './Physics3D';
