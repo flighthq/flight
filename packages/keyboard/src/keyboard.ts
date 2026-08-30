@@ -3,26 +3,30 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   SoftKeyboard,
-  SoftKeyboardBackend,
+  SoftKeyboardAccessoryBarBackend,
+  SoftKeyboardAttachResult,
+  SoftKeyboardChangeBackend,
   SoftKeyboardInfo,
+  SoftKeyboardInfoBackend,
   SoftKeyboardResizeMode,
+  SoftKeyboardResizeModeWriteBackend,
+  SoftKeyboardScrollAssistBackend,
+  SoftKeyboardSetterResult,
+  SoftKeyboardStyleBackend,
   SoftKeyboardStyleKind,
+  SoftKeyboardVisibilityBackend,
+  SoftKeyboardVisibilityResult,
 } from '@flighthq/types/contract';
 
-// Begins delivering on-screen keyboard geometry changes to `keyboard`'s signals by subscribing to
-// the active backend. On each raw geometry notification the core reads getInfo, compares height and
-// visibility against the prior snapshot, and emits only the truthful derived edge: onShow when
-// height transitions from 0 to positive, onHide when positive to 0, onResize when positive changes.
-// Idempotent: a prior subscription is torn down first. Returns null when acquisition fails
-// (sentinel, no window, or native listener attachment rejection). Pair with
-// detachSoftKeyboard/disposeSoftKeyboard.
-export async function attachSoftKeyboard(keyboard: SoftKeyboard): Promise<boolean> {
+export async function attachSoftKeyboard(keyboard: SoftKeyboard): Promise<SoftKeyboardAttachResult> {
   detachSoftKeyboard(keyboard);
-  const backend = getSoftKeyboardBackend();
-  let prevHeight = backend.getInfo(_scratch).height;
-  const unsubscribe = await backend.subscribe(() => {
-    const info = backend.getInfo(_scratch);
-    const nowHeight = info.height;
+  const change = getSoftKeyboardChangeBackend();
+  const info = getSoftKeyboardInfoBackend();
+  if (change === null || info === null) return 'no-provider';
+  let prevHeight = info.getInfo(_scratch).height;
+  const unsubscribe = await change.subscribe(() => {
+    const nowInfo = info.getInfo(_scratch);
+    const nowHeight = nowInfo.height;
     const wasVisible = prevHeight > 0;
     const nowVisible = nowHeight > 0;
     if (nowVisible && !wasVisible) {
@@ -36,9 +40,9 @@ export async function attachSoftKeyboard(keyboard: SoftKeyboard): Promise<boolea
       emitSignal(keyboard.onResize, nowHeight);
     }
   });
-  if (unsubscribe === null) return false;
+  if (unsubscribe === null) return 'acquisition-failed';
   _subscriptions.set(keyboard, unsubscribe);
-  return true;
+  return 'ok';
 }
 
 export function createSoftKeyboard(): SoftKeyboard & Entity {
@@ -49,7 +53,6 @@ export function createSoftKeyboard(): SoftKeyboard & Entity {
   } satisfies SoftKeyboard);
 }
 
-// Stops delivery to `keyboard` and forgets its subscription. Safe to call when not attached.
 export function detachSoftKeyboard(keyboard: SoftKeyboard): void {
   const unsubscribe = _subscriptions.get(keyboard);
   if (unsubscribe !== undefined) {
@@ -58,105 +61,192 @@ export function detachSoftKeyboard(keyboard: SoftKeyboard): void {
   }
 }
 
-// Releases `keyboard` for garbage collection by detaching its backend subscription.
 export function disposeSoftKeyboard(keyboard: SoftKeyboard): void {
   detachSoftKeyboard(keyboard);
 }
 
-export function getSoftKeyboardBackend(): SoftKeyboardBackend {
-  return _custom ?? _host ?? _sentinel;
+export function getSoftKeyboardAccessoryBarBackend(): SoftKeyboardAccessoryBarBackend | null {
+  return _customAccessoryBar ?? _hostAccessoryBar;
 }
 
-// Returns the current on-screen keyboard height in CSS pixels without allocating. 0 when hidden.
+export function getSoftKeyboardChangeBackend(): SoftKeyboardChangeBackend | null {
+  return _customChange ?? _hostChange;
+}
+
 export function getSoftKeyboardHeight(): number {
-  return getSoftKeyboardBackend().getInfo(_scratch).height;
+  const info = getSoftKeyboardInfoBackend();
+  if (info === null) return 0;
+  return info.getInfo(_scratch).height;
 }
 
-// Fills `out` with the current on-screen keyboard snapshot and returns it.
 export function getSoftKeyboardInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
-  return getSoftKeyboardBackend().getInfo(out);
-}
-
-export function hasSoftKeyboardBackend(): boolean {
-  return _custom !== null || _host !== null;
-}
-
-// `ok` means the provider accepted/completed the API call, not that OS policy visibly changed.
-export async function hideSoftKeyboard(): Promise<boolean> {
-  return getSoftKeyboardBackend().hide();
-}
-
-export function installSoftKeyboardHostBackend(backend: SoftKeyboardBackend): void {
-  if (_host !== null) return;
-  _host = backend;
-}
-
-export function isSoftKeyboardVisible(): boolean {
-  return getSoftKeyboardBackend().getInfo(_scratch).visible;
-}
-
-export function resetSoftKeyboardBackendForTest(): void {
-  _custom = null;
-  _host = null;
-}
-
-// `ok` means the provider accepted/completed the API call, not that OS policy visibly changed.
-export async function setSoftKeyboardAccessoryBarVisible(visible: boolean): Promise<boolean> {
-  const backend = getSoftKeyboardBackend();
-  if (backend.setAccessoryBarVisible === undefined) return false;
-  return backend.setAccessoryBarVisible(visible);
-}
-
-export function setSoftKeyboardBackend(backend: SoftKeyboardBackend | null): void {
-  _custom = backend;
-}
-
-// `ok` means the provider accepted/completed the API call, not that OS policy visibly changed.
-export async function setSoftKeyboardResizeMode(mode: SoftKeyboardResizeMode): Promise<boolean> {
-  const backend = getSoftKeyboardBackend();
-  if (backend.setResizeMode === undefined) return false;
-  return backend.setResizeMode(mode);
-}
-
-// `ok` means the provider accepted/completed the API call, not that OS policy visibly changed.
-export async function setSoftKeyboardScrollAssistEnabled(enabled: boolean): Promise<boolean> {
-  const backend = getSoftKeyboardBackend();
-  if (backend.setScrollAssistEnabled === undefined) return false;
-  return backend.setScrollAssistEnabled(enabled);
-}
-
-// `ok` means the provider accepted/completed the API call, not that OS policy visibly changed.
-export async function setSoftKeyboardStyle(style: SoftKeyboardStyleKind): Promise<boolean> {
-  const backend = getSoftKeyboardBackend();
-  if (backend.setStyle === undefined) return false;
-  return backend.setStyle(style);
-}
-
-// `ok` means the provider accepted/completed the API call, not that OS policy visibly changed.
-export async function showSoftKeyboard(): Promise<boolean> {
-  return getSoftKeyboardBackend().show();
-}
-
-let _custom: SoftKeyboardBackend | null = null;
-let _host: SoftKeyboardBackend | null = null;
-const _sentinel: SoftKeyboardBackend = {
-  getInfo(out) {
+  const info = getSoftKeyboardInfoBackend();
+  if (info === null) {
     out.visible = false;
     out.height = 0;
     out.x = 0;
     out.y = 0;
     out.width = 0;
     return out;
-  },
-  subscribe() {
-    return Promise.resolve(null);
-  },
-  show() {
-    return Promise.resolve(false);
-  },
-  hide() {
-    return Promise.resolve(false);
-  },
-};
+  }
+  return info.getInfo(out);
+}
+
+export function getSoftKeyboardInfoBackend(): SoftKeyboardInfoBackend | null {
+  return _customInfo ?? _hostInfo;
+}
+
+export function getSoftKeyboardResizeModeWriteBackend(): SoftKeyboardResizeModeWriteBackend | null {
+  return _customResizeModeWrite ?? _hostResizeModeWrite;
+}
+
+export function getSoftKeyboardScrollAssistBackend(): SoftKeyboardScrollAssistBackend | null {
+  return _customScrollAssist ?? _hostScrollAssist;
+}
+
+export function getSoftKeyboardStyleBackend(): SoftKeyboardStyleBackend | null {
+  return _customStyle ?? _hostStyle;
+}
+
+export function getSoftKeyboardVisibilityBackend(): SoftKeyboardVisibilityBackend | null {
+  return _customVisibility ?? _hostVisibility;
+}
+
+export async function hideSoftKeyboard(): Promise<SoftKeyboardVisibilityResult> {
+  const backend = getSoftKeyboardVisibilityBackend();
+  if (backend === null) return 'runtime-unavailable';
+  return backend.hide();
+}
+
+export function installSoftKeyboardAccessoryBarHostBackend(backend: SoftKeyboardAccessoryBarBackend): void {
+  if (_hostAccessoryBar !== null) return;
+  _hostAccessoryBar = backend;
+}
+
+export function installSoftKeyboardChangeHostBackend(backend: SoftKeyboardChangeBackend): void {
+  if (_hostChange !== null) return;
+  _hostChange = backend;
+}
+
+export function installSoftKeyboardInfoHostBackend(backend: SoftKeyboardInfoBackend): void {
+  if (_hostInfo !== null) return;
+  _hostInfo = backend;
+}
+
+export function installSoftKeyboardResizeModeWriteHostBackend(backend: SoftKeyboardResizeModeWriteBackend): void {
+  if (_hostResizeModeWrite !== null) return;
+  _hostResizeModeWrite = backend;
+}
+
+export function installSoftKeyboardScrollAssistHostBackend(backend: SoftKeyboardScrollAssistBackend): void {
+  if (_hostScrollAssist !== null) return;
+  _hostScrollAssist = backend;
+}
+
+export function installSoftKeyboardStyleHostBackend(backend: SoftKeyboardStyleBackend): void {
+  if (_hostStyle !== null) return;
+  _hostStyle = backend;
+}
+
+export function installSoftKeyboardVisibilityHostBackend(backend: SoftKeyboardVisibilityBackend): void {
+  if (_hostVisibility !== null) return;
+  _hostVisibility = backend;
+}
+
+export function isSoftKeyboardVisible(): boolean {
+  const info = getSoftKeyboardInfoBackend();
+  if (info === null) return false;
+  return info.getInfo(_scratch).visible;
+}
+
+export function resetSoftKeyboardBackendForTest(): void {
+  _customAccessoryBar = null;
+  _customChange = null;
+  _customInfo = null;
+  _customResizeModeWrite = null;
+  _customScrollAssist = null;
+  _customStyle = null;
+  _customVisibility = null;
+  _hostAccessoryBar = null;
+  _hostChange = null;
+  _hostInfo = null;
+  _hostResizeModeWrite = null;
+  _hostScrollAssist = null;
+  _hostStyle = null;
+  _hostVisibility = null;
+}
+
+export function setSoftKeyboardAccessoryBarBackend(backend: SoftKeyboardAccessoryBarBackend | null): void {
+  _customAccessoryBar = backend;
+}
+
+export async function setSoftKeyboardAccessoryBarVisible(visible: boolean): Promise<SoftKeyboardSetterResult> {
+  const backend = getSoftKeyboardAccessoryBarBackend();
+  if (backend === null) return 'operation-unavailable';
+  return backend.setAccessoryBarVisible(visible);
+}
+
+export function setSoftKeyboardChangeBackend(backend: SoftKeyboardChangeBackend | null): void {
+  _customChange = backend;
+}
+
+export function setSoftKeyboardInfoBackend(backend: SoftKeyboardInfoBackend | null): void {
+  _customInfo = backend;
+}
+
+export async function setSoftKeyboardResizeMode(mode: SoftKeyboardResizeMode): Promise<SoftKeyboardSetterResult> {
+  const backend = getSoftKeyboardResizeModeWriteBackend();
+  if (backend === null) return 'operation-unavailable';
+  return backend.setResizeMode(mode);
+}
+
+export function setSoftKeyboardResizeModeWriteBackend(backend: SoftKeyboardResizeModeWriteBackend | null): void {
+  _customResizeModeWrite = backend;
+}
+
+export function setSoftKeyboardScrollAssistBackend(backend: SoftKeyboardScrollAssistBackend | null): void {
+  _customScrollAssist = backend;
+}
+
+export async function setSoftKeyboardScrollAssistEnabled(enabled: boolean): Promise<SoftKeyboardSetterResult> {
+  const backend = getSoftKeyboardScrollAssistBackend();
+  if (backend === null) return 'operation-unavailable';
+  return backend.setScrollAssistEnabled(enabled);
+}
+
+export async function setSoftKeyboardStyle(style: SoftKeyboardStyleKind): Promise<SoftKeyboardSetterResult> {
+  const backend = getSoftKeyboardStyleBackend();
+  if (backend === null) return 'operation-unavailable';
+  return backend.setStyle(style);
+}
+
+export function setSoftKeyboardStyleBackend(backend: SoftKeyboardStyleBackend | null): void {
+  _customStyle = backend;
+}
+
+export function setSoftKeyboardVisibilityBackend(backend: SoftKeyboardVisibilityBackend | null): void {
+  _customVisibility = backend;
+}
+
+export async function showSoftKeyboard(): Promise<SoftKeyboardVisibilityResult> {
+  const backend = getSoftKeyboardVisibilityBackend();
+  if (backend === null) return 'runtime-unavailable';
+  return backend.show();
+}
+
+let _customAccessoryBar: SoftKeyboardAccessoryBarBackend | null = null;
+let _customChange: SoftKeyboardChangeBackend | null = null;
+let _customInfo: SoftKeyboardInfoBackend | null = null;
+let _customResizeModeWrite: SoftKeyboardResizeModeWriteBackend | null = null;
+let _customScrollAssist: SoftKeyboardScrollAssistBackend | null = null;
+let _customStyle: SoftKeyboardStyleBackend | null = null;
+let _customVisibility: SoftKeyboardVisibilityBackend | null = null;
+let _hostAccessoryBar: SoftKeyboardAccessoryBarBackend | null = null;
+let _hostChange: SoftKeyboardChangeBackend | null = null;
+let _hostInfo: SoftKeyboardInfoBackend | null = null;
+let _hostResizeModeWrite: SoftKeyboardResizeModeWriteBackend | null = null;
+let _hostScrollAssist: SoftKeyboardScrollAssistBackend | null = null;
+let _hostStyle: SoftKeyboardStyleBackend | null = null;
+let _hostVisibility: SoftKeyboardVisibilityBackend | null = null;
 const _scratch: SoftKeyboardInfo = { visible: false, height: 0, x: 0, y: 0, width: 0 };
 const _subscriptions = new WeakMap<SoftKeyboard, () => void>();

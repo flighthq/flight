@@ -1,6 +1,12 @@
 import type { SoftKeyboardInfo } from '@flighthq/types/contract';
 
-import { createWebSoftKeyboardBackend, enableHostWebSoftKeyboard, resetHostWebKeyboardForTest } from './webKeyboard';
+import {
+  createWebSoftKeyboardChangeBackend,
+  createWebSoftKeyboardInfoBackend,
+  createWebSoftKeyboardVisibilityBackend,
+  enableHostWebSoftKeyboard,
+  resetHostWebKeyboardForTest,
+} from './webKeyboard';
 
 type VirtualKeyboardStub = {
   boundingRect: DOMRect;
@@ -38,63 +44,11 @@ function blankInfo(): SoftKeyboardInfo {
   return { visible: false, height: 0, x: 0, y: 0, width: 0 };
 }
 
-describe('createWebSoftKeyboardBackend', () => {
-  it('reads info without throwing', () => {
-    const out = blankInfo();
-    expect(typeof createWebSoftKeyboardBackend().getInfo(out).visible).toBe('boolean');
-  });
-
-  it('returns rect fields with height 0 when no keyboard is present', () => {
-    const out = blankInfo();
-    createWebSoftKeyboardBackend().getInfo(out);
-    expect(out.height).toBe(0);
-    expect(out.x).toBe(0);
-    expect(out.y).toBe(0);
-    expect(out.width).toBe(0);
-  });
-
+describe('createWebSoftKeyboardChangeBackend', () => {
   it('subscribe returns a cleanup function', async () => {
-    const cleanup = await createWebSoftKeyboardBackend().subscribe(() => {});
+    const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
     if (cleanup !== null) {
       expect(() => cleanup()).not.toThrow();
-    }
-  });
-
-  it('show and hide return booleans without throwing', async () => {
-    const backend = createWebSoftKeyboardBackend();
-    const showResult = await backend.show();
-    const hideResult = await backend.hide();
-    expect(typeof showResult).toBe('boolean');
-    expect(typeof hideResult).toBe('boolean');
-  });
-
-  it('infers height from a visualViewport shrink relative to window.innerHeight', () => {
-    const restore = stubVisualViewport({ height: 600 });
-    try {
-      stubWindowMetrics(900, 375);
-      const out = blankInfo();
-      createWebSoftKeyboardBackend().getInfo(out);
-      expect(out.visible).toBe(true);
-      expect(out.height).toBe(300);
-      expect(out.width).toBe(375);
-      expect(out.y).toBe(600);
-    } finally {
-      restore();
-    }
-  });
-
-  it('reports no keyboard when the visualViewport has not shrunk', () => {
-    const restore = stubVisualViewport({ height: 900 });
-    try {
-      stubWindowMetrics(900, 375);
-      const out = blankInfo();
-      createWebSoftKeyboardBackend().getInfo(out);
-      expect(out.visible).toBe(false);
-      expect(out.height).toBe(0);
-      expect(out.width).toBe(0);
-      expect(out.y).toBe(0);
-    } finally {
-      restore();
     }
   });
 
@@ -112,7 +66,7 @@ describe('createWebSoftKeyboardBackend', () => {
     const restore = stubVisualViewport(viewport as unknown as VisualViewport);
     try {
       let fires = 0;
-      const cleanup = await createWebSoftKeyboardBackend().subscribe(() => fires++);
+      const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
       expect(events.has('resize')).toBe(true);
       expect(events.has('scroll')).toBe(true);
       events.get('resize')!();
@@ -127,29 +81,8 @@ describe('createWebSoftKeyboardBackend', () => {
   it('subscribe returns null when visualViewport is absent', async () => {
     const restore = stubVisualViewport(null);
     try {
-      const cleanup = await createWebSoftKeyboardBackend().subscribe(() => {});
+      const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => {});
       expect(cleanup).toBeNull();
-    } finally {
-      restore();
-    }
-  });
-
-  it('prefers the VirtualKeyboard API for geometry when present', () => {
-    const restore = stubVirtualKeyboard({
-      boundingRect: { height: 280, width: 320, x: 5, y: 620 } as DOMRect,
-      addEventListener() {},
-      removeEventListener() {},
-      show() {},
-      hide() {},
-    });
-    try {
-      const out = blankInfo();
-      createWebSoftKeyboardBackend().getInfo(out);
-      expect(out.height).toBe(280);
-      expect(out.width).toBe(320);
-      expect(out.x).toBe(5);
-      expect(out.y).toBe(620);
-      expect(out.visible).toBe(true);
     } finally {
       restore();
     }
@@ -170,7 +103,7 @@ describe('createWebSoftKeyboardBackend', () => {
     });
     try {
       let fires = 0;
-      const cleanup = await createWebSoftKeyboardBackend().subscribe(() => fires++);
+      const cleanup = await createWebSoftKeyboardChangeBackend().subscribe(() => fires++);
       expect(events.has('geometrychange')).toBe(true);
       events.get('geometrychange')!();
       expect(fires).toBe(1);
@@ -180,8 +113,77 @@ describe('createWebSoftKeyboardBackend', () => {
       restore();
     }
   });
+});
 
-  it('drives show/hide through VirtualKeyboard API when present', async () => {
+describe('createWebSoftKeyboardInfoBackend', () => {
+  it('reads info without throwing', () => {
+    const out = blankInfo();
+    expect(typeof createWebSoftKeyboardInfoBackend().getInfo(out).visible).toBe('boolean');
+  });
+
+  it('returns rect fields with height 0 when no keyboard is present', () => {
+    const out = blankInfo();
+    createWebSoftKeyboardInfoBackend().getInfo(out);
+    expect(out.height).toBe(0);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(0);
+    expect(out.width).toBe(0);
+  });
+
+  it('infers height from a visualViewport shrink relative to window.innerHeight', () => {
+    const restore = stubVisualViewport({ height: 600 });
+    try {
+      stubWindowMetrics(900, 375);
+      const out = blankInfo();
+      createWebSoftKeyboardInfoBackend().getInfo(out);
+      expect(out.visible).toBe(true);
+      expect(out.height).toBe(300);
+      expect(out.width).toBe(375);
+      expect(out.y).toBe(600);
+    } finally {
+      restore();
+    }
+  });
+
+  it('reports no keyboard when the visualViewport has not shrunk', () => {
+    const restore = stubVisualViewport({ height: 900 });
+    try {
+      stubWindowMetrics(900, 375);
+      const out = blankInfo();
+      createWebSoftKeyboardInfoBackend().getInfo(out);
+      expect(out.visible).toBe(false);
+      expect(out.height).toBe(0);
+      expect(out.width).toBe(0);
+      expect(out.y).toBe(0);
+    } finally {
+      restore();
+    }
+  });
+
+  it('prefers the VirtualKeyboard API for geometry when present', () => {
+    const restore = stubVirtualKeyboard({
+      boundingRect: { height: 280, width: 320, x: 5, y: 620 } as DOMRect,
+      addEventListener() {},
+      removeEventListener() {},
+      show() {},
+      hide() {},
+    });
+    try {
+      const out = blankInfo();
+      createWebSoftKeyboardInfoBackend().getInfo(out);
+      expect(out.height).toBe(280);
+      expect(out.width).toBe(320);
+      expect(out.x).toBe(5);
+      expect(out.y).toBe(620);
+      expect(out.visible).toBe(true);
+    } finally {
+      restore();
+    }
+  });
+});
+
+describe('createWebSoftKeyboardVisibilityBackend', () => {
+  it('returns ok when VirtualKeyboard API is present', async () => {
     let shown = false;
     let hidden = false;
     const restore = stubVirtualKeyboard({
@@ -196,9 +198,9 @@ describe('createWebSoftKeyboardBackend', () => {
       },
     });
     try {
-      const backend = createWebSoftKeyboardBackend();
-      expect(await backend.show()).toBe(true);
-      expect(await backend.hide()).toBe(true);
+      const backend = createWebSoftKeyboardVisibilityBackend();
+      expect(await backend.show()).toBe('ok');
+      expect(await backend.hide()).toBe('ok');
       expect(shown).toBe(true);
       expect(hidden).toBe(true);
     } finally {
@@ -206,10 +208,10 @@ describe('createWebSoftKeyboardBackend', () => {
     }
   });
 
-  it('show/hide return false without VirtualKeyboard API', async () => {
-    const backend = createWebSoftKeyboardBackend();
-    expect(await backend.show()).toBe(false);
-    expect(await backend.hide()).toBe(false);
+  it('returns operation-failed without VirtualKeyboard API', async () => {
+    const backend = createWebSoftKeyboardVisibilityBackend();
+    expect(await backend.show()).toBe('operation-failed');
+    expect(await backend.hide()).toBe('operation-failed');
   });
 });
 

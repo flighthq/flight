@@ -298,7 +298,7 @@ export interface CapacitorHapticsPlugin {
 }
 
 // `@capacitor/keyboard` — the soft keyboard. Show/hide and the setters are async fire-and-forget; the
-// sync SoftKeyboardBackend.getInfo reads a local mirror kept fresh by the plugin's will/did show/hide
+// sync SoftKeyboardInfoBackend.getInfo reads a local mirror kept fresh by the plugin's will/did show/hide
 // events. `mode`/`style` are Capacitor's enums ('none' | 'body' | 'ionic' | 'native'; 'DARK' | 'LIGHT' |
 // 'DEFAULT').
 export interface CapacitorKeyboardPlugin {

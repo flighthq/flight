@@ -40,7 +40,15 @@ import type { ImageBackend } from './Image';
 import type { InputIngressBackend } from './InputIngressBackend';
 import type { InputTargetBackend } from './InputTargetBackend';
 import type { IpcBackend } from './Ipc';
-import type { SoftKeyboardBackend } from './Keyboard';
+import type {
+  SoftKeyboardAccessoryBarBackend,
+  SoftKeyboardChangeBackend,
+  SoftKeyboardInfoBackend,
+  SoftKeyboardResizeModeWriteBackend,
+  SoftKeyboardScrollAssistBackend,
+  SoftKeyboardStyleBackend,
+  SoftKeyboardVisibilityBackend,
+} from './Keyboard';
 import type { LifecycleBackend } from './Lifecycle';
 import type { LogTransportBackend } from './Log';
 import type { LoopBackend } from './LoopBackend';
@@ -169,7 +177,13 @@ export interface HostInputCapabilities {
   readonly haptics?: HapticsBackend;
   readonly ingress?: InputIngressBackend;
   readonly pointerLock?: InputPointerLockBackend;
-  readonly softKeyboard?: SoftKeyboardBackend;
+  readonly softKeyboardAccessoryBar?: SoftKeyboardAccessoryBarBackend;
+  readonly softKeyboardChange?: SoftKeyboardChangeBackend;
+  readonly softKeyboardInfo?: SoftKeyboardInfoBackend;
+  readonly softKeyboardResizeModeWrite?: SoftKeyboardResizeModeWriteBackend;
+  readonly softKeyboardScrollAssist?: SoftKeyboardScrollAssistBackend;
+  readonly softKeyboardStyle?: SoftKeyboardStyleBackend;
+  readonly softKeyboardVisibility?: SoftKeyboardVisibilityBackend;
   readonly target?: InputTargetBackend;
 }
 
@@ -402,6 +416,34 @@ export interface HasInputPointerLock {
 
 export interface HasInputTargetPreparation {
   readonly input: { readonly target: InputTargetBackend };
+}
+
+export interface HasSoftKeyboardAccessoryBar {
+  readonly input: { readonly softKeyboardAccessoryBar: SoftKeyboardAccessoryBarBackend };
+}
+
+export interface HasSoftKeyboardChange {
+  readonly input: { readonly softKeyboardChange: SoftKeyboardChangeBackend };
+}
+
+export interface HasSoftKeyboardInfo {
+  readonly input: { readonly softKeyboardInfo: SoftKeyboardInfoBackend };
+}
+
+export interface HasSoftKeyboardResizeModeWrite {
+  readonly input: { readonly softKeyboardResizeModeWrite: SoftKeyboardResizeModeWriteBackend };
+}
+
+export interface HasSoftKeyboardScrollAssist {
+  readonly input: { readonly softKeyboardScrollAssist: SoftKeyboardScrollAssistBackend };
+}
+
+export interface HasSoftKeyboardStyle {
+  readonly input: { readonly softKeyboardStyle: SoftKeyboardStyleBackend };
+}
+
+export interface HasSoftKeyboardVisibility {
+  readonly input: { readonly softKeyboardVisibility: SoftKeyboardVisibilityBackend };
 }
 
 export interface HasMediaAudioCodec {

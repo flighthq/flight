@@ -3,7 +3,11 @@ import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
-import { getSoftKeyboardBackend, setSoftKeyboardBackend } from '@flighthq/keyboard/contract';
+import {
+  getSoftKeyboardInfoBackend,
+  getSoftKeyboardVisibilityBackend,
+  resetSoftKeyboardBackendForTest,
+} from '@flighthq/keyboard/contract';
 import { getStatusBarBackend, setStatusBarBackend } from '@flighthq/statusbar/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
@@ -68,7 +72,7 @@ afterEach(() => {
   setDeviceBackend(null);
   setFileSystemBackend(null);
   setGeolocationBackend(null);
-  setSoftKeyboardBackend(null);
+  resetSoftKeyboardBackendForTest();
   setStatusBarBackend(null);
 });
 
@@ -124,7 +128,8 @@ describe('registerCapacitorBackends', () => {
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.scheduling.scheduleNotification).toBeTypeOf('function');
     expect(host.share.content.canShareContent({ text: 'ready' })).toBe(true);
-    expect(getSoftKeyboardBackend()).not.toBeNull();
+    expect(getSoftKeyboardInfoBackend()).not.toBeNull();
+    expect(getSoftKeyboardVisibilityBackend()).not.toBeNull();
     expect(getStatusBarBackend()).not.toBeNull();
   });
 

@@ -5,7 +5,6 @@ export {
   disposeSoftKeyboard,
   getSoftKeyboardHeight,
   getSoftKeyboardInfo,
-  hasSoftKeyboardBackend,
   hideSoftKeyboard,
   isSoftKeyboardVisible,
   setSoftKeyboardAccessoryBarVisible,

@@ -3,7 +3,15 @@ import { setDeviceBackend } from '@flighthq/device/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { setGeolocationBackend } from '@flighthq/geolocation/contract';
-import { setSoftKeyboardBackend } from '@flighthq/keyboard/contract';
+import {
+  setSoftKeyboardAccessoryBarBackend,
+  setSoftKeyboardChangeBackend,
+  setSoftKeyboardInfoBackend,
+  setSoftKeyboardResizeModeWriteBackend,
+  setSoftKeyboardScrollAssistBackend,
+  setSoftKeyboardStyleBackend,
+  setSoftKeyboardVisibilityBackend,
+} from '@flighthq/keyboard/contract';
 import { setStatusBarBackend } from '@flighthq/statusbar/contract';
 import type {
   CapacitorApi,
@@ -31,7 +39,15 @@ import { createCapacitorMessageDialogBackend, createCapacitorPromptDialogBackend
 import { createCapacitorFileSystemBackend } from './capacitorFileSystem';
 import { createCapacitorGeolocationBackend } from './capacitorGeolocation';
 import { createCapacitorHapticsBackend } from './capacitorHaptics';
-import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
+import {
+  createCapacitorSoftKeyboardAccessoryBarBackend,
+  createCapacitorSoftKeyboardChangeBackend,
+  createCapacitorSoftKeyboardInfoBackend,
+  createCapacitorSoftKeyboardResizeModeWriteBackend,
+  createCapacitorSoftKeyboardScrollAssistBackend,
+  createCapacitorSoftKeyboardStyleBackend,
+  createCapacitorSoftKeyboardVisibilityBackend,
+} from './capacitorKeyboard';
 import { createCapacitorNotificationCapabilities } from './capacitorNotification';
 import { createCapacitorShareContentBackend } from './capacitorShare';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
@@ -103,7 +119,13 @@ export function registerCapacitorBackends(capacitor: CapacitorApi): CapacitorHos
   setDeviceBackend(createCapacitorDeviceBackend(capacitor));
   setFileSystemBackend(createCapacitorFileSystemBackend(capacitor));
   setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));
-  setSoftKeyboardBackend(createCapacitorKeyboardBackend(capacitor));
+  setSoftKeyboardAccessoryBarBackend(createCapacitorSoftKeyboardAccessoryBarBackend(capacitor));
+  setSoftKeyboardChangeBackend(createCapacitorSoftKeyboardChangeBackend(capacitor));
+  setSoftKeyboardInfoBackend(createCapacitorSoftKeyboardInfoBackend(capacitor));
+  setSoftKeyboardResizeModeWriteBackend(createCapacitorSoftKeyboardResizeModeWriteBackend(capacitor));
+  setSoftKeyboardScrollAssistBackend(createCapacitorSoftKeyboardScrollAssistBackend(capacitor));
+  setSoftKeyboardStyleBackend(createCapacitorSoftKeyboardStyleBackend(capacitor));
+  setSoftKeyboardVisibilityBackend(createCapacitorSoftKeyboardVisibilityBackend(capacitor));
   setStatusBarBackend(createCapacitorStatusBarBackend(capacitor));
   return capacitorHost(capacitor);
 }
