@@ -12,6 +12,7 @@ import type {
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+  WgpuDeviceRuntime,
   WgpuDeviceState,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
@@ -82,9 +83,9 @@ export async function createWgpuAcquisitionFromCanvasElement(
 }
 
 export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
-  const deviceRuntime: WgpuDeviceRuntime = { device, fields: {}, references: 0, teardowns: [] };
-  _deviceStateToRuntime.set(deviceRuntime as WgpuDeviceState, deviceRuntime);
-  return deviceRuntime as WgpuDeviceState;
+  const deviceRuntime = createMinimalDeviceRuntime(device);
+  _deviceStateToRuntime.set(deviceRuntime as unknown as WgpuDeviceState, deviceRuntime);
+  return deviceRuntime as unknown as WgpuDeviceState;
 }
 
 /**
@@ -232,12 +233,24 @@ function initializeWgpuRenderState(
 
   const runtime = createWgpuRenderStateRuntimeWithHost(acquisition, hostBackend);
   state[EntityRuntimeKey] = runtime;
+
+  const ctx = runtime.context;
+  ctx.uniformBindGroupLayout = uniformBindGroupLayout;
+  ctx.textureBindGroupLayout = textureBindGroupLayout;
+  ctx.pipelineCache = new Map();
+  ctx.linearSampler = linearSampler;
+  ctx.nearestSampler = nearestSampler;
+  ctx.samplerCache = new Map();
+  ctx.mipmapPipelineCache = new Map();
+  ctx.textureCache = new WeakMap();
+  ctx.textureSourcePremultipliedTextureCache = new WeakMap();
+  ctx.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
+  ctx.textureSourceStraightTextureCache = new WeakMap();
+  ctx.textureSourceStraightSrgbTextureCache = new WeakMap();
+
   runtime.surfaceAntialiasEnabled = options.antialias ?? false;
   runtime.currentBlendMode = null;
   runtime.currentRenderTarget = null;
-
-  runtime.uniformBindGroupLayout = uniformBindGroupLayout;
-  runtime.textureBindGroupLayout = textureBindGroupLayout;
   runtime.uniformBuffer = uniformBuffer;
   runtime.uniformData = uniformData;
   runtime.uniformDataU32 = uniformDataU32;
@@ -245,19 +258,8 @@ function initializeWgpuRenderState(
   runtime.uniformStride = uniformStride;
   runtime.uniformBindGroup = uniformBindGroup;
   runtime.matrixArray = new Float32Array(9);
-
-  runtime.pipelineCache = new Map();
-  runtime.linearSampler = linearSampler;
-  runtime.nearestSampler = nearestSampler;
-  runtime.samplerCache = new Map();
   runtime.mipmapDegradedGuard = null;
   runtime.mipmapGenerator = null;
-  runtime.mipmapPipelineCache = new Map();
-  runtime.textureCache = new WeakMap();
-  runtime.textureSourcePremultipliedTextureCache = new WeakMap();
-  runtime.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
-  runtime.textureSourceStraightTextureCache = new WeakMap();
-  runtime.textureSourceStraightSrgbTextureCache = new WeakMap();
   runtime.defaultBitmapShader = null;
 
   runtime.particleInstanceBuffer = null;
@@ -274,8 +276,6 @@ function initializeWgpuRenderState(
   runtime.quadBatchWriterTexture = null;
   runtime.quadBatchWriterSampler = null;
   runtime.quadBatchWriterSmoothing = null;
-  // Color-adjustment fold state (mode/data + the folded module) is not allocated here: it is owned by
-  // the opt-in registerWgpuColorAdjustmentMaterialFeature, so a state that never tints carries none of it.
   runtime.quadBatchWriterBufferPool = [];
   runtime.quadBatchWriterBufferCursor = 0;
 
@@ -328,12 +328,12 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
     slot.instanceBuffer?.destroy();
     slot.materialBuffer?.destroy();
   }
-  const deviceRuntime = getWgpuDeviceRuntime(runtime);
-  deviceRuntime.references--;
-  if (deviceRuntime.references === 0) {
-    const device = deviceRuntime.device;
-    for (const teardown of deviceRuntime.teardowns) teardown(device);
-    deviceRuntime.teardowns.length = 0;
+  const ctx = runtime.context;
+  ctx.references--;
+  if (ctx.references === 0) {
+    const device = ctx.device;
+    for (const teardown of ctx.teardowns) teardown(device);
+    ctx.teardowns.length = 0;
   }
   const ownership = _acquisitionByStateRuntime.get(runtime);
   if (ownership !== undefined) {
@@ -385,14 +385,14 @@ function createWgpuRenderStateRuntimeInternal(
   };
   let deviceRuntime: WgpuDeviceRuntime;
   if (sharedRuntime !== undefined) {
-    deviceRuntime = getWgpuDeviceRuntime(sharedRuntime);
+    deviceRuntime = sharedRuntime.context;
     const parentOwnership = _acquisitionByStateRuntime.get(sharedRuntime);
     if (parentOwnership !== undefined) {
       parentOwnership.references++;
       _acquisitionByStateRuntime.set(runtime, parentOwnership);
     }
   } else if (acquisition !== null) {
-    deviceRuntime = { device: acquisition.device, fields: {}, references: 0, teardowns: [] };
+    deviceRuntime = createMinimalDeviceRuntime(acquisition.device);
     if (hostBackend !== null) {
       _acquisitionByStateRuntime.set(runtime, { acquisition, hostBackend, references: 1 });
     }
@@ -402,17 +402,7 @@ function createWgpuRenderStateRuntimeInternal(
     throw new Error('WgpuRenderState runtime requires a device state, shared runtime, or acquisition');
   }
   deviceRuntime.references++;
-  _deviceRuntimeByStateRuntime.set(runtime, deviceRuntime);
-  for (const key of WGPU_DEVICE_RUNTIME_KEYS) {
-    Object.defineProperty(runtime, key, {
-      configurable: true,
-      enumerable: true,
-      get: () => deviceRuntime.fields[key],
-      set: (value: unknown) => {
-        (deviceRuntime.fields as Partial<Record<WgpuDeviceRuntimeKey, unknown>>)[key] = value;
-      },
-    });
-  }
+  runtime.context = deviceRuntime;
   return runtime;
 }
 
@@ -468,7 +458,8 @@ export function getWgpuSampler(
     (SAMPLER_WRAP_BITS[wrapV] << 4) |
     ((effectiveMipmapFilter === undefined ? 0 : SAMPLER_MIPMAP_BITS[effectiveMipmapFilter]) << 6) |
     (anisotropy << 8);
-  let sampler = runtime.samplerCache.get(key);
+  const cache = runtime.context.samplerCache;
+  let sampler = cache.get(key);
   if (sampler === undefined) {
     const descriptor: GPUSamplerDescriptor = {
       minFilter: effectiveMinFilter,
@@ -479,7 +470,7 @@ export function getWgpuSampler(
     if (effectiveMipmapFilter !== undefined) descriptor.mipmapFilter = effectiveMipmapFilter;
     if (anisotropy > 1) descriptor.maxAnisotropy = anisotropy;
     sampler = state.device.createSampler(descriptor);
-    runtime.samplerCache.set(key, sampler);
+    cache.set(key, sampler);
   }
   return sampler;
 }
@@ -489,9 +480,7 @@ export function isWgpuSupported(): boolean {
 }
 
 export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (device: GPUDevice) => void): void {
-  const runtime = getWgpuRenderStateRuntime(state);
-  const deviceRuntime = getWgpuDeviceRuntime(runtime);
-  deviceRuntime.teardowns.push(teardown);
+  getWgpuRenderStateRuntime(state).context.teardowns.push(teardown);
 }
 
 // The caller's own teardown for an acquisition they own. Unconditional by design: the caller is asking.
@@ -510,6 +499,7 @@ function initializeOffscreenWgpuRuntime(
   runtime: WgpuRenderStateRuntime,
   screenRuntime: WgpuRenderStateRuntime,
 ): void {
+  const ctx = runtime.context;
   const ringByteSize = screenRuntime.uniformStride * RING_SLOT_COUNT;
   const uniformBuffer = state.device.createBuffer({
     size: ringByteSize,
@@ -518,15 +508,13 @@ function initializeOffscreenWgpuRuntime(
   const uniformData = new Float32Array(ringByteSize / 4);
   runtime.currentBlendMode = null;
   runtime.currentRenderTarget = null;
-  runtime.uniformBindGroupLayout = screenRuntime.uniformBindGroupLayout;
-  runtime.textureBindGroupLayout = screenRuntime.textureBindGroupLayout;
   runtime.uniformBuffer = uniformBuffer;
   runtime.uniformData = uniformData;
   runtime.uniformDataU32 = new Uint32Array(uniformData.buffer);
   runtime.uniformOffset = 0;
   runtime.uniformStride = screenRuntime.uniformStride;
   runtime.uniformBindGroup = state.device.createBindGroup({
-    layout: runtime.uniformBindGroupLayout,
+    layout: ctx.uniformBindGroupLayout,
     entries: [{ binding: 0, resource: { buffer: uniformBuffer, size: UNIFORM_BYTE_SIZE } }],
   });
   runtime.matrixArray = new Float32Array(9);
@@ -572,56 +560,33 @@ function initializeOffscreenWgpuRuntime(
   runtime.renderTargetStack = [];
 }
 
-type WgpuDeviceRuntimeKey = (typeof WGPU_DEVICE_RUNTIME_KEYS)[number];
-type WgpuDeviceRuntime = {
-  device: GPUDevice;
-  fields: Partial<Pick<WgpuRenderStateRuntime, WgpuDeviceRuntimeKey>>;
-  references: number;
-  teardowns: Array<(device: GPUDevice) => void>;
-};
 type WgpuAcquisitionOwnership = {
   acquisition: Readonly<WgpuHostAcquisition>;
   hostBackend: WgpuHostBackend;
   references: number;
 };
 
-function getWgpuDeviceRuntime(runtime: WgpuRenderStateRuntime): WgpuDeviceRuntime {
-  const deviceRuntime = _deviceRuntimeByStateRuntime.get(runtime);
-  if (deviceRuntime === undefined) throw new Error('WgpuRenderState runtime has no device tier');
-  return deviceRuntime;
+function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
+  return {
+    device,
+    references: 0,
+    teardowns: [],
+    uniformBindGroupLayout: null as unknown as GPUBindGroupLayout,
+    textureBindGroupLayout: null as unknown as GPUBindGroupLayout,
+    pipelineCache: new Map(),
+    linearSampler: null as unknown as GPUSampler,
+    nearestSampler: null as unknown as GPUSampler,
+    samplerCache: new Map(),
+    mipmapPipelineCache: new Map(),
+    textureCache: new WeakMap(),
+    textureSourcePremultipliedTextureCache: new WeakMap(),
+    textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
+    textureSourceStraightTextureCache: new WeakMap(),
+    textureSourceStraightSrgbTextureCache: new WeakMap(),
+  };
 }
 
-// These values are pure functions of (GPUDevice, source data). Pass/encoder, uniform-ring, proxy,
-// traversal, batch, and clip state remain local to each WgpuRenderState.
-const WGPU_DEVICE_RUNTIME_KEYS = [
-  'uniformBindGroupLayout',
-  'textureBindGroupLayout',
-  'pipelineCache',
-  'linearSampler',
-  'nearestSampler',
-  'samplerCache',
-  'mipmapPipelineCache',
-  'textureCache',
-  'textureSourcePremultipliedTextureCache',
-  'textureSourcePremultipliedSrgbTextureCache',
-  'textureSourceStraightTextureCache',
-  'textureSourceStraightSrgbTextureCache',
-  'videoTextureCache',
-  'videoSrgbTextureCache',
-  'wgpuExternalTextureCache',
-  'wgpuRenderTextureCache',
-  'sceneMeshUploadCache',
-  'standardMaterialModule',
-  'colorScaleBiasModule',
-  'packedTintModule',
-  'colorMatrixModule',
-  'shapeMeshColorScaleBiasPipelines',
-  'particleResources',
-  'quadBatchResources',
-] as const satisfies ReadonlyArray<keyof WgpuRenderStateRuntime>;
-
 const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();
-const _deviceRuntimeByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuDeviceRuntime>();
 const _deviceStateToRuntime = new WeakMap<WgpuDeviceState, WgpuDeviceRuntime>();
 const _destroyedStates = new WeakSet<WgpuRenderState>();
 
