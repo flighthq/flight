@@ -1,18 +1,23 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { installSoftKeyboardHostBackend } from '@flighthq/keyboard/contract';
-import type { Entity, SoftKeyboardBackend, SoftKeyboardInfo } from '@flighthq/types/contract';
+import {
+  installSoftKeyboardChangeHostBackend,
+  installSoftKeyboardInfoHostBackend,
+  installSoftKeyboardVisibilityHostBackend,
+} from '@flighthq/keyboard/contract';
+import type {
+  Entity,
+  SoftKeyboardChangeBackend,
+  SoftKeyboardInfo,
+  SoftKeyboardInfoBackend,
+  SoftKeyboardVisibilityBackend,
+  SoftKeyboardVisibilityResult,
+} from '@flighthq/types/contract';
+import type { EntityRuntimeKey } from '@flighthq/types/contract';
 
-export function createWebSoftKeyboardBackend(): SoftKeyboardBackend & Entity {
+type OmitRuntime<T> = Omit<T, typeof EntityRuntimeKey>;
+
+export function createWebSoftKeyboardChangeBackend(): SoftKeyboardChangeBackend & Entity {
   return createEntity({
-    getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
-      const geo = getWebKeyboardGeometry();
-      out.height = geo.height;
-      out.visible = geo.height > 0;
-      out.x = geo.x;
-      out.y = geo.y;
-      out.width = geo.width;
-      return out;
-    },
     async subscribe(listener: () => void): Promise<(() => void) | null> {
       if (typeof window === 'undefined') return null;
       const virtualKeyboard = getVirtualKeyboard();
@@ -29,25 +34,46 @@ export function createWebSoftKeyboardBackend(): SoftKeyboardBackend & Entity {
         viewport.removeEventListener('scroll', listener);
       };
     },
-    async show(): Promise<boolean> {
+  } satisfies OmitRuntime<SoftKeyboardChangeBackend>);
+}
+
+export function createWebSoftKeyboardInfoBackend(): SoftKeyboardInfoBackend & Entity {
+  return createEntity({
+    getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
+      const geo = getWebKeyboardGeometry();
+      out.height = geo.height;
+      out.visible = geo.height > 0;
+      out.x = geo.x;
+      out.y = geo.y;
+      out.width = geo.width;
+      return out;
+    },
+  } satisfies OmitRuntime<SoftKeyboardInfoBackend>);
+}
+
+export function createWebSoftKeyboardVisibilityBackend(): SoftKeyboardVisibilityBackend & Entity {
+  return createEntity({
+    async show(): Promise<SoftKeyboardVisibilityResult> {
       const vk = getVirtualKeyboard();
-      if (vk === null) return false;
+      if (vk === null) return 'operation-failed';
       vk.show();
-      return true;
+      return 'ok';
     },
-    async hide(): Promise<boolean> {
+    async hide(): Promise<SoftKeyboardVisibilityResult> {
       const vk = getVirtualKeyboard();
-      if (vk === null) return false;
+      if (vk === null) return 'operation-failed';
       vk.hide();
-      return true;
+      return 'ok';
     },
-  } satisfies SoftKeyboardBackend);
+  } satisfies OmitRuntime<SoftKeyboardVisibilityBackend>);
 }
 
 export function enableHostWebSoftKeyboard(): void {
   if (_enabled) return;
   _enabled = true;
-  installSoftKeyboardHostBackend(createWebSoftKeyboardBackend());
+  installSoftKeyboardInfoHostBackend(createWebSoftKeyboardInfoBackend());
+  installSoftKeyboardChangeHostBackend(createWebSoftKeyboardChangeBackend());
+  installSoftKeyboardVisibilityHostBackend(createWebSoftKeyboardVisibilityBackend());
 }
 
 export function resetHostWebKeyboardForTest(): void {

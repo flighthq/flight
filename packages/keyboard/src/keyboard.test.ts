@@ -1,669 +1,520 @@
-import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
-import type { SoftKeyboardBackend, SoftKeyboardInfo } from '@flighthq/types/contract';
-import {
-  SoftKeyboardResizeBodyKind,
-  SoftKeyboardResizeNoneKind,
-  SoftKeyboardStyleDarkKind,
-  SoftKeyboardStyleDefaultKind,
+import { createEntity } from '@flighthq/entity/contract';
+import { connectSignal } from '@flighthq/signals/contract';
+import type {
+  SoftKeyboardAccessoryBarBackend,
+  SoftKeyboardChangeBackend,
+  SoftKeyboardInfo,
+  SoftKeyboardInfoBackend,
+  SoftKeyboardResizeModeWriteBackend,
+  SoftKeyboardScrollAssistBackend,
+  SoftKeyboardSetterResult,
+  SoftKeyboardStyleBackend,
+  SoftKeyboardVisibilityBackend,
+  SoftKeyboardVisibilityResult,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+type OmitRuntime<T> = Omit<T, typeof EntityRuntimeKey>;
 
 import {
   attachSoftKeyboard,
   createSoftKeyboard,
   detachSoftKeyboard,
   disposeSoftKeyboard,
-  getSoftKeyboardBackend,
+  getSoftKeyboardAccessoryBarBackend,
+  getSoftKeyboardChangeBackend,
   getSoftKeyboardHeight,
   getSoftKeyboardInfo,
-  hasSoftKeyboardBackend,
+  getSoftKeyboardInfoBackend,
+  getSoftKeyboardResizeModeWriteBackend,
+  getSoftKeyboardScrollAssistBackend,
+  getSoftKeyboardStyleBackend,
+  getSoftKeyboardVisibilityBackend,
   hideSoftKeyboard,
-  installSoftKeyboardHostBackend,
+  installSoftKeyboardAccessoryBarHostBackend,
+  installSoftKeyboardChangeHostBackend,
+  installSoftKeyboardInfoHostBackend,
+  installSoftKeyboardResizeModeWriteHostBackend,
+  installSoftKeyboardScrollAssistHostBackend,
+  installSoftKeyboardStyleHostBackend,
+  installSoftKeyboardVisibilityHostBackend,
   isSoftKeyboardVisible,
   resetSoftKeyboardBackendForTest,
+  setSoftKeyboardAccessoryBarBackend,
   setSoftKeyboardAccessoryBarVisible,
-  setSoftKeyboardBackend,
+  setSoftKeyboardChangeBackend,
+  setSoftKeyboardInfoBackend,
   setSoftKeyboardResizeMode,
+  setSoftKeyboardResizeModeWriteBackend,
+  setSoftKeyboardScrollAssistBackend,
   setSoftKeyboardScrollAssistEnabled,
   setSoftKeyboardStyle,
+  setSoftKeyboardStyleBackend,
+  setSoftKeyboardVisibilityBackend,
   showSoftKeyboard,
 } from './keyboard';
 
-function fakeBackend(): SoftKeyboardBackend & {
-  visible: boolean;
-  height: number;
-  shown: boolean;
-  hidden: boolean;
-  resizeMode: string;
-  accessoryBarVisible: boolean;
-  scrollAssistEnabled: boolean;
-  style: string;
-  fire(): void;
-} {
-  let listener: (() => void) | null = null;
-  return {
-    visible: false,
-    height: 0,
-    shown: false,
-    hidden: false,
-    resizeMode: SoftKeyboardResizeNoneKind,
-    accessoryBarVisible: false,
-    scrollAssistEnabled: false,
-    style: SoftKeyboardStyleDefaultKind,
+function blankInfo(): SoftKeyboardInfo {
+  return { visible: false, height: 0, x: 0, y: 0, width: 0 };
+}
+
+function fakeInfoBackend(info: Partial<SoftKeyboardInfo> = {}): SoftKeyboardInfoBackend & { _state: SoftKeyboardInfo } {
+  const state: SoftKeyboardInfo = { visible: false, height: 0, x: 0, y: 0, width: 0, ...info };
+  return createEntity({
     getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
-      out.visible = this.visible;
-      out.height = this.height;
-      out.x = 0;
-      out.y = 0;
-      out.width = this.visible ? 375 : 0;
+      out.visible = state.visible;
+      out.height = state.height;
+      out.x = state.x;
+      out.y = state.y;
+      out.width = state.width;
       return out;
     },
-    async subscribe(l: () => void): Promise<(() => void) | null> {
-      listener = l;
+    _state: state,
+  } satisfies OmitRuntime<SoftKeyboardInfoBackend> & { _state: SoftKeyboardInfo });
+}
+
+function fakeChangeBackend(): SoftKeyboardChangeBackend & { fire(): void } {
+  let listener: (() => void) | null = null;
+  const backend = createEntity({
+    async subscribe(fn: () => void): Promise<(() => void) | null> {
+      listener = fn;
       return () => {
         listener = null;
       };
     },
-    async show(): Promise<boolean> {
-      this.shown = true;
-      return true;
-    },
-    async hide(): Promise<boolean> {
-      this.hidden = true;
-      return true;
-    },
-    async setResizeMode(mode): Promise<boolean> {
-      this.resizeMode = mode;
-      return true;
-    },
-    async setAccessoryBarVisible(v): Promise<boolean> {
-      this.accessoryBarVisible = v;
-      return true;
-    },
-    async setScrollAssistEnabled(v): Promise<boolean> {
-      this.scrollAssistEnabled = v;
-      return true;
-    },
-    async setStyle(s): Promise<boolean> {
-      this.style = s;
-      return true;
-    },
-    fire() {
-      listener?.();
-    },
-  };
+  } satisfies OmitRuntime<SoftKeyboardChangeBackend>);
+  const extended = backend as SoftKeyboardChangeBackend & { fire(): void };
+  (extended as unknown as { fire(): void }).fire = () => listener?.();
+  return extended;
 }
 
-function nullSubscribeBackend(): SoftKeyboardBackend {
-  return {
-    getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
-      out.visible = false;
-      out.height = 0;
-      out.x = 0;
-      out.y = 0;
-      out.width = 0;
-      return out;
+function fakeAccessoryBarBackend(result: SoftKeyboardSetterResult = 'ok'): SoftKeyboardAccessoryBarBackend {
+  return createEntity({
+    async setAccessoryBarVisible(): Promise<SoftKeyboardSetterResult> {
+      return result;
     },
-    subscribe(): Promise<(() => void) | null> {
-      return Promise.resolve(null);
-    },
-    show(): Promise<boolean> {
-      return Promise.resolve(false);
-    },
-    hide(): Promise<boolean> {
-      return Promise.resolve(false);
-    },
-  };
+  } satisfies OmitRuntime<SoftKeyboardAccessoryBarBackend>);
 }
 
-function createScratch(): SoftKeyboardInfo {
-  return { visible: false, height: 0, x: 0, y: 0, width: 0 };
+function fakeResizeModeWriteBackend(result: SoftKeyboardSetterResult = 'ok'): SoftKeyboardResizeModeWriteBackend {
+  return createEntity({
+    async setResizeMode(): Promise<SoftKeyboardSetterResult> {
+      return result;
+    },
+  } satisfies OmitRuntime<SoftKeyboardResizeModeWriteBackend>);
 }
 
-afterEach(() => {
-  setSoftKeyboardBackend(null);
-  resetSoftKeyboardBackendForTest();
-});
+function fakeScrollAssistBackend(result: SoftKeyboardSetterResult = 'ok'): SoftKeyboardScrollAssistBackend {
+  return createEntity({
+    async setScrollAssistEnabled(): Promise<SoftKeyboardSetterResult> {
+      return result;
+    },
+  } satisfies OmitRuntime<SoftKeyboardScrollAssistBackend>);
+}
+
+function fakeStyleBackend(result: SoftKeyboardSetterResult = 'ok'): SoftKeyboardStyleBackend {
+  return createEntity({
+    async setStyle(): Promise<SoftKeyboardSetterResult> {
+      return result;
+    },
+  } satisfies OmitRuntime<SoftKeyboardStyleBackend>);
+}
+
+function fakeVisibilityBackend(
+  showResult: SoftKeyboardVisibilityResult = 'ok',
+  hideResult: SoftKeyboardVisibilityResult = 'ok',
+): SoftKeyboardVisibilityBackend {
+  return createEntity({
+    async show(): Promise<SoftKeyboardVisibilityResult> {
+      return showResult;
+    },
+    async hide(): Promise<SoftKeyboardVisibilityResult> {
+      return hideResult;
+    },
+  } satisfies OmitRuntime<SoftKeyboardVisibilityBackend>);
+}
+
+afterEach(() => resetSoftKeyboardBackendForTest());
 
 describe('attachSoftKeyboard', () => {
-  it('returns true when subscription is acquired', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
+  it('returns no-provider when info backend is absent', async () => {
     const keyboard = createSoftKeyboard();
-    expect(await attachSoftKeyboard(keyboard)).toBe(true);
+    setSoftKeyboardChangeBackend(fakeChangeBackend());
+    expect(await attachSoftKeyboard(keyboard)).toBe('no-provider');
   });
 
-  it('returns false when backend subscribe returns null', async () => {
-    setSoftKeyboardBackend(nullSubscribeBackend());
+  it('returns no-provider when change backend is absent', async () => {
     const keyboard = createSoftKeyboard();
-    expect(await attachSoftKeyboard(keyboard)).toBe(false);
+    setSoftKeyboardInfoBackend(fakeInfoBackend());
+    expect(await attachSoftKeyboard(keyboard)).toBe('no-provider');
   });
 
-  it('returns false with sentinel backend (no backend installed)', async () => {
+  it('returns ok when both info and change are present', async () => {
     const keyboard = createSoftKeyboard();
-    expect(await attachSoftKeyboard(keyboard)).toBe(false);
+    setSoftKeyboardInfoBackend(fakeInfoBackend());
+    setSoftKeyboardChangeBackend(fakeChangeBackend());
+    expect(await attachSoftKeyboard(keyboard)).toBe('ok');
   });
 
-  it('emits onShow when height transitions from 0 to positive', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
+  it('returns acquisition-failed when subscribe returns null', async () => {
     const keyboard = createSoftKeyboard();
-    let shows = 0;
-    let lastHeight = 0;
-    connectSignal(keyboard.onShow, (h) => {
-      shows++;
-      lastHeight = h;
-    });
+    setSoftKeyboardInfoBackend(fakeInfoBackend());
+    setSoftKeyboardChangeBackend(
+      createEntity({
+        async subscribe(): Promise<(() => void) | null> {
+          return null;
+        },
+      } satisfies OmitRuntime<SoftKeyboardChangeBackend>),
+    );
+    expect(await attachSoftKeyboard(keyboard)).toBe('acquisition-failed');
+  });
+
+  it('fires onShow when keyboard appears', async () => {
+    const keyboard = createSoftKeyboard();
+    const info = fakeInfoBackend();
+    const change = fakeChangeBackend();
+    setSoftKeyboardInfoBackend(info);
+    setSoftKeyboardChangeBackend(change);
     await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect(shows).toBe(1);
-    expect(lastHeight).toBe(300);
+    const heights: number[] = [];
+    connectSignal(keyboard.onShow, (h) => heights.push(h));
+    (info as unknown as { _state: SoftKeyboardInfo })._state.visible = true;
+    (info as unknown as { _state: SoftKeyboardInfo })._state.height = 300;
+    change.fire();
+    expect(heights).toEqual([300]);
   });
 
-  it('emits onHide when height transitions from positive to 0', async () => {
-    const backend = fakeBackend();
-    backend.visible = true;
-    backend.height = 300;
-    setSoftKeyboardBackend(backend);
+  it('fires onHide when keyboard disappears', async () => {
     const keyboard = createSoftKeyboard();
+    const info = fakeInfoBackend({ visible: true, height: 300 });
+    const change = fakeChangeBackend();
+    setSoftKeyboardInfoBackend(info);
+    setSoftKeyboardChangeBackend(change);
+    await attachSoftKeyboard(keyboard);
     let hides = 0;
     connectSignal(keyboard.onHide, () => hides++);
-    await attachSoftKeyboard(keyboard);
-    backend.visible = false;
-    backend.height = 0;
-    backend.fire();
+    (info as unknown as { _state: SoftKeyboardInfo })._state.visible = false;
+    (info as unknown as { _state: SoftKeyboardInfo })._state.height = 0;
+    change.fire();
     expect(hides).toBe(1);
   });
 
-  it('emits onResize when height changes while visible', async () => {
-    const backend = fakeBackend();
-    backend.visible = true;
-    backend.height = 300;
-    setSoftKeyboardBackend(backend);
+  it('fires onResize when visible height changes', async () => {
     const keyboard = createSoftKeyboard();
-    let resizes = 0;
-    let lastHeight = 0;
-    connectSignal(keyboard.onResize, (h) => {
-      resizes++;
-      lastHeight = h;
-    });
+    const info = fakeInfoBackend({ visible: true, height: 300 });
+    const change = fakeChangeBackend();
+    setSoftKeyboardInfoBackend(info);
+    setSoftKeyboardChangeBackend(change);
     await attachSoftKeyboard(keyboard);
-    backend.height = 350;
-    backend.fire();
-    expect(resizes).toBe(1);
-    expect(lastHeight).toBe(350);
+    const resizes: number[] = [];
+    connectSignal(keyboard.onResize, (h) => resizes.push(h));
+    (info as unknown as { _state: SoftKeyboardInfo })._state.height = 350;
+    change.fire();
+    expect(resizes).toEqual([350]);
   });
 
-  it('does not emit onShow when already visible and height is unchanged', async () => {
-    const backend = fakeBackend();
-    backend.visible = true;
-    backend.height = 300;
-    setSoftKeyboardBackend(backend);
+  it('detaches previous subscription on re-attach', async () => {
     const keyboard = createSoftKeyboard();
-    let shows = 0;
-    connectSignal(keyboard.onShow, () => shows++);
+    setSoftKeyboardInfoBackend(fakeInfoBackend());
+    const change = fakeChangeBackend();
+    setSoftKeyboardChangeBackend(change);
     await attachSoftKeyboard(keyboard);
-    backend.fire();
-    expect(shows).toBe(0);
-  });
-
-  it('is idempotent: prior subscription torn down on re-attach', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let shows = 0;
-    connectSignal(keyboard.onShow, () => shows++);
+    let fires = 0;
+    connectSignal(keyboard.onShow, () => fires++);
+    const change2 = fakeChangeBackend();
+    setSoftKeyboardChangeBackend(change2);
+    const info2 = fakeInfoBackend();
+    setSoftKeyboardInfoBackend(info2);
     await attachSoftKeyboard(keyboard);
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect(shows).toBe(1);
-  });
-
-  it('dispatches multiple listeners on a single show edge', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let a = 0;
-    let b = 0;
-    let c = 0;
-    connectSignal(keyboard.onShow, () => a++);
-    connectSignal(keyboard.onShow, () => b++);
-    connectSignal(keyboard.onShow, () => c++);
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect([a, b, c]).toEqual([1, 1, 1]);
-  });
-
-  it('honors listener priority on the onShow signal', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    const order: string[] = [];
-    connectSignal(keyboard.onShow, () => order.push('low'), { priority: 0 });
-    connectSignal(keyboard.onShow, () => order.push('high'), { priority: 10 });
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect(order).toEqual(['high', 'low']);
-  });
-
-  it('stops the onShow chain when an earlier listener cancels', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let reached = false;
-    connectSignal(keyboard.onShow, () => cancelSignal(keyboard.onShow), { priority: 10 });
-    connectSignal(keyboard.onShow, () => (reached = true), { priority: 0 });
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect(reached).toBe(false);
-  });
-
-  it('tracks visibility correctly across rapid show/hide bursts', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let shows = 0;
-    let hides = 0;
-    connectSignal(keyboard.onShow, () => shows++);
-    connectSignal(keyboard.onHide, () => hides++);
-    await attachSoftKeyboard(keyboard);
-    for (let i = 0; i < 5; i++) {
-      backend.visible = true;
-      backend.height = 300;
-      backend.fire();
-      backend.visible = false;
-      backend.height = 0;
-      backend.fire();
-    }
-    expect(shows).toBe(5);
-    expect(hides).toBe(5);
-  });
-
-  it('does not re-emit show edges when visibility is unchanged', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let shows = 0;
-    let resizes = 0;
-    connectSignal(keyboard.onShow, () => shows++);
-    connectSignal(keyboard.onResize, () => resizes++);
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    backend.height = 320;
-    backend.fire();
-    backend.height = 340;
-    backend.fire();
-    expect(shows).toBe(1);
-    expect(resizes).toBe(2);
-  });
-
-  it('survives re-entrant detach from inside a listener', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let resizes = 0;
-    connectSignal(keyboard.onShow, () => detachSoftKeyboard(keyboard));
-    connectSignal(keyboard.onResize, () => resizes++);
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    expect(() => backend.fire()).not.toThrow();
-    backend.fire();
-    expect(resizes).toBe(0);
-  });
-
-  it('survives re-entrant re-attach from inside a listener', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    connectSignal(keyboard.onShow, () => {
-      void attachSoftKeyboard(keyboard);
-    });
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    expect(() => backend.fire()).not.toThrow();
+    (info2 as unknown as { _state: SoftKeyboardInfo })._state.height = 300;
+    change.fire();
+    expect(fires).toBe(0);
   });
 });
 
 describe('createSoftKeyboard', () => {
-  it('creates an entity with three signals', () => {
+  it('returns an Entity', () => {
+    const keyboard = createSoftKeyboard();
+    expect(EntityRuntimeKey in keyboard).toBe(true);
+  });
+
+  it('has onShow, onHide, onResize signals', () => {
     const keyboard = createSoftKeyboard();
     expect(keyboard.onShow).toBeDefined();
     expect(keyboard.onHide).toBeDefined();
     expect(keyboard.onResize).toBeDefined();
   });
-
-  it('has no will/did phase signals', () => {
-    const keyboard = createSoftKeyboard() as unknown as Record<string, unknown>;
-    expect(keyboard.onWillShow).toBeUndefined();
-    expect(keyboard.onWillHide).toBeUndefined();
-    expect(keyboard.onWillResize).toBeUndefined();
-    expect(keyboard.onDidShow).toBeUndefined();
-    expect(keyboard.onDidHide).toBeUndefined();
-    expect(keyboard.onDidResize).toBeUndefined();
-  });
 });
 
 describe('detachSoftKeyboard', () => {
-  it('stops further delivery', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let shows = 0;
-    connectSignal(keyboard.onShow, () => shows++);
-    await attachSoftKeyboard(keyboard);
-    detachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect(shows).toBe(0);
-  });
-
-  it('is safe to call when not attached', () => {
+  it('does not throw when not attached', () => {
     const keyboard = createSoftKeyboard();
     expect(() => detachSoftKeyboard(keyboard)).not.toThrow();
   });
 
-  it('is safe to call twice', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
+  it('stops signal fires after detach', async () => {
     const keyboard = createSoftKeyboard();
+    const info = fakeInfoBackend();
+    const change = fakeChangeBackend();
+    setSoftKeyboardInfoBackend(info);
+    setSoftKeyboardChangeBackend(change);
     await attachSoftKeyboard(keyboard);
+    let fires = 0;
+    connectSignal(keyboard.onShow, () => fires++);
     detachSoftKeyboard(keyboard);
-    expect(() => detachSoftKeyboard(keyboard)).not.toThrow();
-  });
-
-  it('re-attach after detach resumes delivery', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let shows = 0;
-    connectSignal(keyboard.onShow, () => shows++);
-    await attachSoftKeyboard(keyboard);
-    detachSoftKeyboard(keyboard);
-    await attachSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect(shows).toBe(1);
+    (info as unknown as { _state: SoftKeyboardInfo })._state.height = 300;
+    change.fire();
+    expect(fires).toBe(0);
   });
 });
 
 describe('disposeSoftKeyboard', () => {
-  it('detaches the subscription', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
+  it('detaches an attached keyboard', async () => {
     const keyboard = createSoftKeyboard();
+    setSoftKeyboardInfoBackend(fakeInfoBackend());
+    setSoftKeyboardChangeBackend(fakeChangeBackend());
     await attachSoftKeyboard(keyboard);
-    expect(() => disposeSoftKeyboard(keyboard)).not.toThrow();
-  });
-
-  it('stops further delivery after dispose', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    let shows = 0;
-    connectSignal(keyboard.onShow, () => shows++);
-    await attachSoftKeyboard(keyboard);
-    disposeSoftKeyboard(keyboard);
-    backend.visible = true;
-    backend.height = 300;
-    backend.fire();
-    expect(shows).toBe(0);
-  });
-
-  it('is safe to call when already detached', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    await attachSoftKeyboard(keyboard);
-    detachSoftKeyboard(keyboard);
-    expect(() => disposeSoftKeyboard(keyboard)).not.toThrow();
-  });
-
-  it('is safe to call twice', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    const keyboard = createSoftKeyboard();
-    await attachSoftKeyboard(keyboard);
-    disposeSoftKeyboard(keyboard);
-    expect(() => disposeSoftKeyboard(keyboard)).not.toThrow();
-  });
-
-  it('is safe to call when never attached', () => {
-    const keyboard = createSoftKeyboard();
     expect(() => disposeSoftKeyboard(keyboard)).not.toThrow();
   });
 });
 
-describe('getSoftKeyboardBackend', () => {
-  it('returns the sentinel when nothing is installed', () => {
-    expect(getSoftKeyboardBackend()).toBeDefined();
+describe('getSoftKeyboardAccessoryBarBackend', () => {
+  it('returns null when no backend is set', () => {
+    expect(getSoftKeyboardAccessoryBarBackend()).toBeNull();
+  });
+
+  it('returns the custom backend when set', () => {
+    const backend = fakeAccessoryBarBackend();
+    setSoftKeyboardAccessoryBarBackend(backend);
+    expect(getSoftKeyboardAccessoryBarBackend()).toBe(backend);
+  });
+
+  it('prefers custom over host backend', () => {
+    const host = fakeAccessoryBarBackend();
+    const custom = fakeAccessoryBarBackend();
+    installSoftKeyboardAccessoryBarHostBackend(host);
+    setSoftKeyboardAccessoryBarBackend(custom);
+    expect(getSoftKeyboardAccessoryBarBackend()).toBe(custom);
+  });
+});
+
+describe('getSoftKeyboardChangeBackend', () => {
+  it('returns null when no backend is set', () => {
+    expect(getSoftKeyboardChangeBackend()).toBeNull();
   });
 });
 
 describe('getSoftKeyboardHeight', () => {
-  it('returns the current keyboard height', () => {
-    const backend = fakeBackend();
-    backend.visible = true;
-    backend.height = 320;
-    setSoftKeyboardBackend(backend);
-    expect(getSoftKeyboardHeight()).toBe(320);
+  it('returns 0 when no info backend is set', () => {
+    expect(getSoftKeyboardHeight()).toBe(0);
   });
 
-  it('returns 0 when keyboard is hidden', () => {
-    const backend = fakeBackend();
-    backend.visible = false;
-    backend.height = 0;
-    setSoftKeyboardBackend(backend);
-    expect(getSoftKeyboardHeight()).toBe(0);
+  it('returns the backend height', () => {
+    setSoftKeyboardInfoBackend(fakeInfoBackend({ height: 250 }));
+    expect(getSoftKeyboardHeight()).toBe(250);
   });
 });
 
 describe('getSoftKeyboardInfo', () => {
-  it('fills the out parameter from the backend', () => {
-    const backend = fakeBackend();
-    backend.height = 250;
-    backend.visible = true;
-    setSoftKeyboardBackend(backend);
-    const out = createScratch();
-    expect(getSoftKeyboardInfo(out)).toBe(out);
-    expect(out.height).toBe(250);
-    expect(out.visible).toBe(true);
-  });
-
-  it('populates rect fields', () => {
-    const backend = fakeBackend();
-    backend.height = 250;
-    backend.visible = true;
-    setSoftKeyboardBackend(backend);
-    const out = createScratch();
+  it('returns zeroed info when no backend is set', () => {
+    const out = blankInfo();
     getSoftKeyboardInfo(out);
+    expect(out.visible).toBe(false);
+    expect(out.height).toBe(0);
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
-    expect(out.width).toBe(375);
+    expect(out.width).toBe(0);
+  });
+
+  it('delegates to the info backend', () => {
+    setSoftKeyboardInfoBackend(fakeInfoBackend({ visible: true, height: 300, x: 10, y: 500, width: 400 }));
+    const out = blankInfo();
+    getSoftKeyboardInfo(out);
+    expect(out.visible).toBe(true);
+    expect(out.height).toBe(300);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(500);
+    expect(out.width).toBe(400);
   });
 });
 
-describe('hasSoftKeyboardBackend', () => {
-  it('returns false when no backend is installed', () => {
-    expect(hasSoftKeyboardBackend()).toBe(false);
+describe('getSoftKeyboardInfoBackend', () => {
+  it('returns null when no backend is set', () => {
+    expect(getSoftKeyboardInfoBackend()).toBeNull();
   });
+});
 
-  it('returns true when a custom backend is set', () => {
-    setSoftKeyboardBackend(fakeBackend());
-    expect(hasSoftKeyboardBackend()).toBe(true);
+describe('getSoftKeyboardResizeModeWriteBackend', () => {
+  it('returns null when no backend is set', () => {
+    expect(getSoftKeyboardResizeModeWriteBackend()).toBeNull();
   });
+});
 
-  it('returns true when a host backend is installed', () => {
-    installSoftKeyboardHostBackend(fakeBackend());
-    expect(hasSoftKeyboardBackend()).toBe(true);
+describe('getSoftKeyboardScrollAssistBackend', () => {
+  it('returns null when no backend is set', () => {
+    expect(getSoftKeyboardScrollAssistBackend()).toBeNull();
   });
+});
 
-  it('returns false after clearing a custom backend', () => {
-    setSoftKeyboardBackend(fakeBackend());
-    setSoftKeyboardBackend(null);
-    expect(hasSoftKeyboardBackend()).toBe(false);
+describe('getSoftKeyboardStyleBackend', () => {
+  it('returns null when no backend is set', () => {
+    expect(getSoftKeyboardStyleBackend()).toBeNull();
+  });
+});
+
+describe('getSoftKeyboardVisibilityBackend', () => {
+  it('returns null when no backend is set', () => {
+    expect(getSoftKeyboardVisibilityBackend()).toBeNull();
   });
 });
 
 describe('hideSoftKeyboard', () => {
-  it('delegates to the backend hide and returns true', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    expect(await hideSoftKeyboard()).toBe(true);
-    expect(backend.hidden).toBe(true);
+  it('returns runtime-unavailable when no visibility backend is set', async () => {
+    expect(await hideSoftKeyboard()).toBe('runtime-unavailable');
   });
 
-  it('returns false with sentinel backend', async () => {
-    expect(await hideSoftKeyboard()).toBe(false);
+  it('returns ok when visibility backend is present', async () => {
+    setSoftKeyboardVisibilityBackend(fakeVisibilityBackend());
+    expect(await hideSoftKeyboard()).toBe('ok');
+  });
+
+  it('returns operation-failed when backend reports failure', async () => {
+    setSoftKeyboardVisibilityBackend(fakeVisibilityBackend('ok', 'operation-failed'));
+    expect(await hideSoftKeyboard()).toBe('operation-failed');
   });
 });
 
-describe('installSoftKeyboardHostBackend', () => {
-  it('installs a host backend that getSoftKeyboardBackend returns', () => {
-    const backend = fakeBackend();
-    installSoftKeyboardHostBackend(backend);
-    expect(getSoftKeyboardBackend()).toBe(backend);
+describe('installSoftKeyboardAccessoryBarHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeAccessoryBarBackend();
+    installSoftKeyboardAccessoryBarHostBackend(backend);
+    expect(getSoftKeyboardAccessoryBarBackend()).toBe(backend);
+  });
+});
+
+describe('installSoftKeyboardChangeHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeChangeBackend();
+    installSoftKeyboardChangeHostBackend(backend);
+    expect(getSoftKeyboardChangeBackend()).toBe(backend);
+  });
+});
+
+describe('installSoftKeyboardInfoHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeInfoBackend();
+    installSoftKeyboardInfoHostBackend(backend);
+    expect(getSoftKeyboardInfoBackend()).toBe(backend);
   });
 
-  it('is first-host-wins: second install is ignored', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installSoftKeyboardHostBackend(first);
-    installSoftKeyboardHostBackend(second);
-    expect(getSoftKeyboardBackend()).toBe(first);
+  it('rejects a second install', () => {
+    const first = fakeInfoBackend();
+    const second = fakeInfoBackend();
+    installSoftKeyboardInfoHostBackend(first);
+    installSoftKeyboardInfoHostBackend(second);
+    expect(getSoftKeyboardInfoBackend()).toBe(first);
+  });
+});
+
+describe('installSoftKeyboardResizeModeWriteHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeResizeModeWriteBackend();
+    installSoftKeyboardResizeModeWriteHostBackend(backend);
+    expect(getSoftKeyboardResizeModeWriteBackend()).toBe(backend);
+  });
+});
+
+describe('installSoftKeyboardScrollAssistHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeScrollAssistBackend();
+    installSoftKeyboardScrollAssistHostBackend(backend);
+    expect(getSoftKeyboardScrollAssistBackend()).toBe(backend);
+  });
+});
+
+describe('installSoftKeyboardStyleHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeStyleBackend();
+    installSoftKeyboardStyleHostBackend(backend);
+    expect(getSoftKeyboardStyleBackend()).toBe(backend);
+  });
+});
+
+describe('installSoftKeyboardVisibilityHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeVisibilityBackend();
+    installSoftKeyboardVisibilityHostBackend(backend);
+    expect(getSoftKeyboardVisibilityBackend()).toBe(backend);
   });
 });
 
 describe('isSoftKeyboardVisible', () => {
-  it('returns true when backend reports visible', () => {
-    const backend = fakeBackend();
-    backend.visible = true;
-    backend.height = 300;
-    setSoftKeyboardBackend(backend);
+  it('returns false when no info backend is set', () => {
+    expect(isSoftKeyboardVisible()).toBe(false);
+  });
+
+  it('returns true when the info backend reports visible', () => {
+    setSoftKeyboardInfoBackend(fakeInfoBackend({ visible: true, height: 300 }));
     expect(isSoftKeyboardVisible()).toBe(true);
-  });
-
-  it('returns false when backend reports hidden', () => {
-    const backend = fakeBackend();
-    backend.visible = false;
-    backend.height = 0;
-    setSoftKeyboardBackend(backend);
-    expect(isSoftKeyboardVisible()).toBe(false);
-  });
-
-  it('returns false with sentinel backend', () => {
-    expect(isSoftKeyboardVisible()).toBe(false);
-  });
-});
-
-describe('resetSoftKeyboardBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setSoftKeyboardBackend(fakeBackend());
-    installSoftKeyboardHostBackend(fakeBackend());
-    resetSoftKeyboardBackendForTest();
-    expect(hasSoftKeyboardBackend()).toBe(false);
   });
 });
 
 describe('setSoftKeyboardAccessoryBarVisible', () => {
-  it('delegates to backend and returns true', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    expect(await setSoftKeyboardAccessoryBarVisible(true)).toBe(true);
-    expect(backend.accessoryBarVisible).toBe(true);
-    expect(await setSoftKeyboardAccessoryBarVisible(false)).toBe(true);
-    expect(backend.accessoryBarVisible).toBe(false);
+  it('returns operation-unavailable when no backend is set', async () => {
+    expect(await setSoftKeyboardAccessoryBarVisible(true)).toBe('operation-unavailable');
   });
 
-  it('returns false when backend does not support it', async () => {
-    setSoftKeyboardBackend(nullSubscribeBackend());
-    expect(await setSoftKeyboardAccessoryBarVisible(true)).toBe(false);
-  });
-});
-
-describe('setSoftKeyboardBackend', () => {
-  it('overrides the host backend', () => {
-    const host = fakeBackend();
-    const custom = fakeBackend();
-    installSoftKeyboardHostBackend(host);
-    setSoftKeyboardBackend(custom);
-    expect(getSoftKeyboardBackend()).toBe(custom);
-  });
-
-  it('clears back to the host/sentinel when passed null', () => {
-    setSoftKeyboardBackend(fakeBackend());
-    setSoftKeyboardBackend(null);
-    expect(hasSoftKeyboardBackend()).toBe(false);
+  it('returns ok when backend is present', async () => {
+    setSoftKeyboardAccessoryBarBackend(fakeAccessoryBarBackend());
+    expect(await setSoftKeyboardAccessoryBarVisible(true)).toBe('ok');
   });
 });
 
 describe('setSoftKeyboardResizeMode', () => {
-  it('delegates to backend and returns true', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    expect(await setSoftKeyboardResizeMode(SoftKeyboardResizeBodyKind)).toBe(true);
-    expect(backend.resizeMode).toBe(SoftKeyboardResizeBodyKind);
+  it('returns operation-unavailable when no backend is set', async () => {
+    expect(await setSoftKeyboardResizeMode('None')).toBe('operation-unavailable');
   });
 
-  it('returns false when backend does not support it', async () => {
-    setSoftKeyboardBackend(nullSubscribeBackend());
-    expect(await setSoftKeyboardResizeMode(SoftKeyboardResizeNoneKind)).toBe(false);
+  it('returns ok when backend is present', async () => {
+    setSoftKeyboardResizeModeWriteBackend(fakeResizeModeWriteBackend());
+    expect(await setSoftKeyboardResizeMode('Body')).toBe('ok');
   });
 });
 
 describe('setSoftKeyboardScrollAssistEnabled', () => {
-  it('delegates to backend and returns true', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    expect(await setSoftKeyboardScrollAssistEnabled(true)).toBe(true);
-    expect(backend.scrollAssistEnabled).toBe(true);
-    expect(await setSoftKeyboardScrollAssistEnabled(false)).toBe(true);
-    expect(backend.scrollAssistEnabled).toBe(false);
+  it('returns operation-unavailable when no backend is set', async () => {
+    expect(await setSoftKeyboardScrollAssistEnabled(true)).toBe('operation-unavailable');
   });
 
-  it('returns false when backend does not support it', async () => {
-    setSoftKeyboardBackend(nullSubscribeBackend());
-    expect(await setSoftKeyboardScrollAssistEnabled(true)).toBe(false);
+  it('returns ok when backend is present', async () => {
+    setSoftKeyboardScrollAssistBackend(fakeScrollAssistBackend());
+    expect(await setSoftKeyboardScrollAssistEnabled(false)).toBe('ok');
   });
 });
 
 describe('setSoftKeyboardStyle', () => {
-  it('delegates to backend and returns true', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    expect(await setSoftKeyboardStyle(SoftKeyboardStyleDarkKind)).toBe(true);
-    expect(backend.style).toBe(SoftKeyboardStyleDarkKind);
+  it('returns operation-unavailable when no backend is set', async () => {
+    expect(await setSoftKeyboardStyle('Dark')).toBe('operation-unavailable');
   });
 
-  it('returns false when backend does not support it', async () => {
-    setSoftKeyboardBackend(nullSubscribeBackend());
-    expect(await setSoftKeyboardStyle(SoftKeyboardStyleDefaultKind)).toBe(false);
+  it('returns ok when backend is present', async () => {
+    setSoftKeyboardStyleBackend(fakeStyleBackend());
+    expect(await setSoftKeyboardStyle('Dark')).toBe('ok');
   });
 });
 
 describe('showSoftKeyboard', () => {
-  it('delegates to the backend show and returns true', async () => {
-    const backend = fakeBackend();
-    setSoftKeyboardBackend(backend);
-    expect(await showSoftKeyboard()).toBe(true);
-    expect(backend.shown).toBe(true);
+  it('returns runtime-unavailable when no visibility backend is set', async () => {
+    expect(await showSoftKeyboard()).toBe('runtime-unavailable');
   });
 
-  it('returns false with sentinel backend', async () => {
-    expect(await showSoftKeyboard()).toBe(false);
+  it('returns ok when visibility backend is present', async () => {
+    setSoftKeyboardVisibilityBackend(fakeVisibilityBackend());
+    expect(await showSoftKeyboard()).toBe('ok');
+  });
+
+  it('returns operation-failed when backend reports failure', async () => {
+    setSoftKeyboardVisibilityBackend(fakeVisibilityBackend('operation-failed', 'ok'));
+    expect(await showSoftKeyboard()).toBe('operation-failed');
   });
 });

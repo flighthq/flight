@@ -1,7 +1,15 @@
 import type { CapacitorApi, SoftKeyboardInfo } from '@flighthq/types/contract';
 import { EntityRuntimeKey, SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
 
-import { createCapacitorKeyboardBackend } from './capacitorKeyboard';
+import {
+  createCapacitorSoftKeyboardAccessoryBarBackend,
+  createCapacitorSoftKeyboardChangeBackend,
+  createCapacitorSoftKeyboardInfoBackend,
+  createCapacitorSoftKeyboardResizeModeWriteBackend,
+  createCapacitorSoftKeyboardScrollAssistBackend,
+  createCapacitorSoftKeyboardStyleBackend,
+  createCapacitorSoftKeyboardVisibilityBackend,
+} from './capacitorKeyboard';
 
 function fakeCapacitor() {
   const calls: Array<{ method: string; arg?: unknown }> = [];
@@ -42,44 +50,39 @@ function blankInfo(): SoftKeyboardInfo {
   return { visible: false, height: 0, x: 0, y: 0, width: 0 };
 }
 
-describe('createCapacitorKeyboardBackend', () => {
+describe('createCapacitorSoftKeyboardAccessoryBarBackend', () => {
   it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorKeyboardBackend(fakeCapacitor().capacitor)).toBe(true);
+    expect(EntityRuntimeKey in createCapacitorSoftKeyboardAccessoryBarBackend(fakeCapacitor().capacitor)).toBe(true);
   });
 
-  it('maps show/hide onto the plugin and returns true', async () => {
+  it('returns ok on success', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorKeyboardBackend(capacitor);
-    expect(await backend.show()).toBe(true);
-    expect(await backend.hide()).toBe(true);
-    expect(calls.map((c) => c.method)).toEqual(['show', 'hide']);
+    const backend = createCapacitorSoftKeyboardAccessoryBarBackend(capacitor);
+    expect(await backend.setAccessoryBarVisible(true)).toBe('ok');
+    expect(calls[0].arg).toEqual({ isVisible: true });
   });
 
-  it('maps setters onto the plugin and returns true', async () => {
-    const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorKeyboardBackend(capacitor);
-    expect(await backend.setResizeMode?.(SoftKeyboardResizeBodyKind)).toBe(true);
-    expect(await backend.setScrollAssistEnabled?.(false)).toBe(true);
-    expect(calls.map((c) => c.method)).toEqual(['setResizeMode', 'setScroll']);
-    expect(calls[0].arg).toEqual({ mode: 'body' });
-    expect(calls[1].arg).toEqual({ isDisabled: true });
+  it('returns operation-failed on plugin rejection', async () => {
+    const failCapacitor = {
+      keyboard: {
+        async setAccessoryBarVisible() {
+          throw new Error('unavailable');
+        },
+        async addListener() {
+          return { async remove() {} };
+        },
+      },
+    } as unknown as CapacitorApi;
+    expect(await createCapacitorSoftKeyboardAccessoryBarBackend(failCapacitor).setAccessoryBarVisible(true)).toBe(
+      'operation-failed',
+    );
   });
+});
 
-  it('tracks the keyboard mirror from will-show/will-hide events', async () => {
-    const { capacitor, fire } = fakeCapacitor();
-    const backend = createCapacitorKeyboardBackend(capacitor);
-    await Promise.resolve();
-    fire('keyboardWillShow', { keyboardHeight: 320 });
-    const shown = backend.getInfo(blankInfo());
-    expect(shown.visible).toBe(true);
-    expect(shown.height).toBe(320);
-    fire('keyboardWillHide');
-    expect(backend.getInfo(blankInfo()).visible).toBe(false);
-  });
-
+describe('createCapacitorSoftKeyboardChangeBackend', () => {
   it('subscribe returns a cleanup function and fires on will events', async () => {
     const { capacitor, fire } = fakeCapacitor();
-    const backend = createCapacitorKeyboardBackend(capacitor);
+    const backend = createCapacitorSoftKeyboardChangeBackend(capacitor);
     let fires = 0;
     const cleanup = await backend.subscribe(() => fires++);
     expect(cleanup).not.toBeNull();
@@ -92,18 +95,116 @@ describe('createCapacitorKeyboardBackend', () => {
   it('subscribe returns null when listener attachment fails', async () => {
     const failCapacitor = {
       keyboard: {
-        async show() {},
-        async hide() {},
         async addListener() {
           throw new Error('not available');
         },
       },
     } as unknown as CapacitorApi;
-    const backend = createCapacitorKeyboardBackend(failCapacitor);
-    expect(await backend.subscribe(() => {})).toBeNull();
+    expect(await createCapacitorSoftKeyboardChangeBackend(failCapacitor).subscribe(() => {})).toBeNull();
+  });
+});
+
+describe('createCapacitorSoftKeyboardInfoBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createCapacitorSoftKeyboardInfoBackend(fakeCapacitor().capacitor)).toBe(true);
   });
 
-  it('show returns false when plugin rejects', async () => {
+  it('tracks the keyboard mirror from will-show/will-hide events', async () => {
+    const { capacitor, fire } = fakeCapacitor();
+    const backend = createCapacitorSoftKeyboardInfoBackend(capacitor);
+    await Promise.resolve();
+    fire('keyboardWillShow', { keyboardHeight: 320 });
+    const shown = backend.getInfo(blankInfo());
+    expect(shown.visible).toBe(true);
+    expect(shown.height).toBe(320);
+    fire('keyboardWillHide');
+    expect(backend.getInfo(blankInfo()).visible).toBe(false);
+  });
+});
+
+describe('createCapacitorSoftKeyboardResizeModeWriteBackend', () => {
+  it('returns ok on success and maps the mode', async () => {
+    const { capacitor, calls } = fakeCapacitor();
+    const backend = createCapacitorSoftKeyboardResizeModeWriteBackend(capacitor);
+    expect(await backend.setResizeMode(SoftKeyboardResizeBodyKind)).toBe('ok');
+    expect(calls[0].arg).toEqual({ mode: 'body' });
+  });
+
+  it('returns operation-failed on plugin rejection', async () => {
+    const failCapacitor = {
+      keyboard: {
+        async setResizeMode() {
+          throw new Error('unavailable');
+        },
+        async addListener() {
+          return { async remove() {} };
+        },
+      },
+    } as unknown as CapacitorApi;
+    expect(await createCapacitorSoftKeyboardResizeModeWriteBackend(failCapacitor).setResizeMode('None')).toBe(
+      'operation-failed',
+    );
+  });
+});
+
+describe('createCapacitorSoftKeyboardScrollAssistBackend', () => {
+  it('returns ok on success', async () => {
+    const { capacitor, calls } = fakeCapacitor();
+    const backend = createCapacitorSoftKeyboardScrollAssistBackend(capacitor);
+    expect(await backend.setScrollAssistEnabled(false)).toBe('ok');
+    expect(calls[0].arg).toEqual({ isDisabled: true });
+  });
+
+  it('returns operation-failed on plugin rejection', async () => {
+    const failCapacitor = {
+      keyboard: {
+        async setScroll() {
+          throw new Error('unavailable');
+        },
+        async addListener() {
+          return { async remove() {} };
+        },
+      },
+    } as unknown as CapacitorApi;
+    expect(await createCapacitorSoftKeyboardScrollAssistBackend(failCapacitor).setScrollAssistEnabled(true)).toBe(
+      'operation-failed',
+    );
+  });
+});
+
+describe('createCapacitorSoftKeyboardStyleBackend', () => {
+  it('returns ok on success', async () => {
+    const { capacitor, calls } = fakeCapacitor();
+    const backend = createCapacitorSoftKeyboardStyleBackend(capacitor);
+    expect(await backend.setStyle('Dark')).toBe('ok');
+    expect(calls[0].arg).toEqual({ style: 'DARK' });
+  });
+
+  it('returns operation-failed on plugin rejection', async () => {
+    const failCapacitor = {
+      keyboard: {
+        async setStyle() {
+          throw new Error('unavailable');
+        },
+        async addListener() {
+          return { async remove() {} };
+        },
+      },
+    } as unknown as CapacitorApi;
+    expect(await createCapacitorSoftKeyboardStyleBackend(failCapacitor).setStyle('Dark')).toBe('operation-failed');
+  });
+});
+
+describe('createCapacitorSoftKeyboardVisibilityBackend', () => {
+  it('returns ok when show/hide succeed', async () => {
+    const { capacitor, calls } = fakeCapacitor();
+    const backend = createCapacitorSoftKeyboardVisibilityBackend(capacitor);
+    expect(await backend.show()).toBe('ok');
+    expect(await backend.hide()).toBe('ok');
+    expect(calls.map((c) => c.method)).toEqual(['show', 'hide']);
+  });
+
+  it('returns operation-failed when show rejects', async () => {
     const failCapacitor = {
       keyboard: {
         async show() {
@@ -115,11 +216,10 @@ describe('createCapacitorKeyboardBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    const backend = createCapacitorKeyboardBackend(failCapacitor);
-    expect(await backend.show()).toBe(false);
+    expect(await createCapacitorSoftKeyboardVisibilityBackend(failCapacitor).show()).toBe('operation-failed');
   });
 
-  it('hide returns false when plugin rejects', async () => {
+  it('returns operation-failed when hide rejects', async () => {
     const failCapacitor = {
       keyboard: {
         async show() {},
@@ -131,7 +231,6 @@ describe('createCapacitorKeyboardBackend', () => {
         },
       },
     } as unknown as CapacitorApi;
-    const backend = createCapacitorKeyboardBackend(failCapacitor);
-    expect(await backend.hide()).toBe(false);
+    expect(await createCapacitorSoftKeyboardVisibilityBackend(failCapacitor).hide()).toBe('operation-failed');
   });
 });
