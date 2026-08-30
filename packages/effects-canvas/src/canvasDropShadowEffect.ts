@@ -48,7 +48,10 @@ export function applyDropShadowEffectToCanvas(
     return;
   }
 
-  const pool = maybeEffect === undefined ? createCanvasRenderTargetPool() : (poolOrEffect as CanvasRenderTargetPool);
+  const pool =
+    maybeEffect === undefined
+      ? createCanvasRenderTargetPool(source.surface.creator)
+      : (poolOrEffect as CanvasRenderTargetPool);
   applyDropShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 

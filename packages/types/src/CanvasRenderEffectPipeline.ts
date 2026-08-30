@@ -1,4 +1,5 @@
 import type { CanvasRenderState } from './CanvasRenderState';
+import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { ColorLutCache } from './ColorLutCache';
 import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
@@ -32,6 +33,7 @@ export type CanvasRenderEffectRunner = (
 // target pool. Each acquire returns a canvas sized to the requested descriptor; each must be matched by
 // a release so the canvas can be reused next frame without reallocating.
 export interface CanvasRenderTargetPool {
+  readonly creator: Readonly<CanvasRenderSurfaceCreator>;
   free: CanvasRenderTarget[];
   inUse: CanvasRenderTarget[];
 }

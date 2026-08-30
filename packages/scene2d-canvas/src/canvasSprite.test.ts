@@ -10,11 +10,11 @@ import {
 import { SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
 import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
 
 function makeState() {
   const state = createCanvasRenderState(document.createElement('canvas'));
@@ -76,7 +76,7 @@ describe('drawCanvasSprite', () => {
   it('draws a populated render Texture through the same Sprite path', () => {
     const state = makeState();
     const texture = createRenderTexture({ height: 24, width: 48 });
-    renderIntoCanvasRenderTexture(state, texture, () => {});
+    renderIntoCanvasRenderTexture(state, state, texture, () => {});
     const draw = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
     expect(draw).toHaveBeenCalledOnce();

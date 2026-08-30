@@ -1,7 +1,7 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createTextLabel } from '@flighthq/text/contract';
 
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasTestSupport';
 import { drawCanvasTextLabel } from './canvasTextLabel';
 
 function makeState() {

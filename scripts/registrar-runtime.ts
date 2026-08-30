@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { createAssetLibrary } from '@flighthq/assets/contract';
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
 import { createPhysics2DWorld } from '@flighthq/physics2d/contract';
 import {
   copyAllRenderersFromRenderState,
@@ -11,9 +12,12 @@ import {
   createRenderState,
 } from '@flighthq/render/contract';
 import {
+  createCanvasPipeline,
   createCanvasRenderState,
+  createCanvasRenderSurface,
   createCanvasTextureResolvers,
-  copyCanvasRenderStateRegistrations,
+  getCanvasRenderStateRuntime,
+  scene2dCanvasPipeline,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
 import { createScene2DDocumentImporterRegistry } from '@flighthq/scene2d-resources/contract';
@@ -820,7 +824,7 @@ async function prepareArgument(
     return rootArgument(
       parameter,
       state,
-      () => createGlOffscreenRenderState(state),
+      () => createGlOffscreenRenderState(state.contextState, state.pipeline),
       () => createGlState().state,
     );
   }
@@ -833,12 +837,7 @@ async function prepareArgument(
     return rootArgument(
       parameter,
       state,
-      () => {
-        const derived = createCanvasProbeState();
-        copyCanvasRenderStateRegistrations(derived, state);
-        copyAllRenderersFromRenderState(derived, state);
-        return derived;
-      },
+      () => createCanvasProbeState(createCanvasPipeline({ ...getCanvasRenderStateRuntime(state).registries })),
       createCanvasProbeState,
     );
   }
@@ -1151,14 +1150,18 @@ function packageSourceFiles(packageName: string): string[] {
     .map((entry) => join(sourceDir, entry.name));
 }
 
-function createCanvasProbeState() {
+function createCanvasProbeState(pipeline = scene2dCanvasPipeline) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
-  return createCanvasRenderState(canvas);
+  return createCanvasRenderState(
+    createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
+    pipeline,
+    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  );
 }
 
 function createCanvasTextureResolversForProbe() {
-  const resolvers = createCanvasTextureResolvers();
+  const resolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
   resolvers.registry = new Map();
   return resolvers;
 }

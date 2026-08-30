@@ -1,4 +1,3 @@
-import { createCanvasRenderState, createCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
 import type { BevelEffect, CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import {
@@ -7,6 +6,7 @@ import {
   defaultCanvasBevelEffectRunner,
   registerCanvasBevelEffect,
 } from './canvasBevelEffect';
+import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
@@ -17,7 +17,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     target.canvas.id = id;
     return target;
   });
-  return { pool: { free: [...targets].reverse(), inUse: [] }, targets };
+  return { pool: { creator: canvasTestSurfaceCreator, free: [...targets].reverse(), inUse: [] }, targets };
 }
 
 const SCRATCH = ['blurred', 'lit', 'shade', 'side', 'tinted', 'band'];

@@ -6,6 +6,7 @@ export * from './webAudio';
 export * from './webAudioDevice';
 export * from './webBitmapEncode';
 export * from './webBitmapReadback';
+export * from './webCanvasRenderSurface';
 export * from './webClipboard';
 export * from './webConnectivity';
 export * from './webCursor';

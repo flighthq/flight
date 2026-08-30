@@ -83,6 +83,7 @@ export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFi
     if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
     const pattern = createGradientPattern(
       context,
+      state.canvasTextureResolvers,
       gradientType,
       colors,
       alphas,
@@ -353,6 +354,7 @@ export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientSty
     const focalPointRatio = buf[i + 7] as number;
     const pattern = createGradientPattern(
       context,
+      state.canvasTextureResolvers,
       gradientType,
       colors,
       alphas,

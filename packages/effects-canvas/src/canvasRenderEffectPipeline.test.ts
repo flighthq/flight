@@ -1,7 +1,7 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import {
   acquireCanvasRenderTarget,
   beginCanvasRenderEffectPipeline,
@@ -37,7 +37,7 @@ describe('createCanvasRenderTargetPool', () => {
   });
 
   it('returns a pool with empty free and inUse lists', () => {
-    const pool = createCanvasRenderTargetPool();
+    const pool = createCanvasRenderTargetPool(canvasTestSurfaceCreator);
     expect(pool.free).toEqual([]);
     expect(pool.inUse).toEqual([]);
   });
@@ -94,7 +94,7 @@ describe('releaseCanvasRenderTarget', () => {
   });
 
   it('moves an acquired target back to the free list', () => {
-    const pool = createCanvasRenderTargetPool();
+    const pool = createCanvasRenderTargetPool(canvasTestSurfaceCreator);
     const target = acquireCanvasRenderTarget(pool, 16, 16);
     expect(pool.inUse).toContain(target);
     releaseCanvasRenderTarget(pool, target);

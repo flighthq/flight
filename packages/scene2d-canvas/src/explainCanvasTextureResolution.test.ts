@@ -1,9 +1,9 @@
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
-import { registerCanvasTextureResolver } from './canvasTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
+import { registerCanvasTextureResolver } from './canvasTestSupport';
 import { explainCanvasTextureResolution } from './explainCanvasTextureResolution';
 
 describe('explainCanvasTextureResolution', () => {

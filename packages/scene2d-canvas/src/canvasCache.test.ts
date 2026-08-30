@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { getRegistryTableEntry, hasRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
@@ -10,17 +10,17 @@ import {
   destroyCanvasRenderCacheTarget,
   enableCanvasRenderCache,
   ensureCanvasRenderCacheTarget,
-  getCanvasRenderCacheScreenState,
   getCanvasRenderCacheTarget,
   refreshCanvasRenderCache,
   releaseCanvasRenderCache,
 } from './canvasCache';
 import {
-  copyCanvasRenderStateRegistrations,
+  acquireTestCanvasRenderSurface,
   createCanvasRenderState,
+  createCanvasTextureResolvers,
   destroyCanvasRenderState,
   getCanvasRenderStateRuntime,
-} from './canvasRenderState';
+} from './canvasTestSupport';
 
 function makeCanvasState(options = {}) {
   const canvas = document.createElement('canvas');
@@ -33,11 +33,39 @@ function makeCacheNode(source: unknown): any {
   return { source, kind: RenderCacheKind, transform2D: createMatrix(), alpha: 1, blendMode: null };
 }
 
+function makeCacheState(ownerState: ReturnType<typeof makeCanvasState>, options = {}) {
+  const ownerRuntime = getCanvasRenderStateRuntime(ownerState);
+  return createCanvasCacheState(
+    ownerState,
+    acquireTestCanvasRenderSurface(),
+    ownerState.pipeline,
+    createCanvasTextureResolvers(),
+    {
+      backgroundColor: ownerState.backgroundColor,
+      imageSmoothingEnabled: ownerRuntime.imageSmoothingEnabled,
+      imageSmoothingQuality: ownerRuntime.imageSmoothingQuality,
+      pixelRatio: ownerState.pixelRatio,
+      roundPixels: ownerState.roundPixels,
+      sceneGraphSyncPolicy: ownerState.sceneGraphSyncPolicy,
+      ...options,
+    },
+  );
+}
+
+function makeOffscreenState(ownerState: ReturnType<typeof makeCanvasState>, options = {}) {
+  return createCanvasOffscreenRenderState(
+    acquireTestCanvasRenderSurface(),
+    ownerState.pipeline,
+    createCanvasTextureResolvers(),
+    options,
+  );
+}
+
 describe('createCanvasCacheState', () => {
   it('copies the screen state renderers', () => {
     const screen = makeCanvasState();
     enableCanvasRenderCache(screen);
-    const cacheState = createCanvasCacheState(screen);
+    const cacheState = makeCacheState(screen);
     expect(getRegistryTableEntry(getCanvasRenderStateRuntime(cacheState).registries.renderers, RenderCacheKind)).toBe(
       defaultCanvasRenderCacheRenderer,
     );
@@ -45,7 +73,7 @@ describe('createCanvasCacheState', () => {
 
   it('propagates pixel ratio and scene graph sync policy without sharing node maps', () => {
     const screen = makeCanvasState({ pixelRatio: 3, sceneGraphSyncPolicy: 'refreshDerivedState' });
-    const cacheState = createCanvasCacheState(screen);
+    const cacheState = makeCacheState(screen);
     expect(cacheState.pixelRatio).toBe(3);
     expect(cacheState.sceneGraphSyncPolicy).toBe('refreshDerivedState');
     expect(getCanvasRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
@@ -53,43 +81,41 @@ describe('createCanvasCacheState', () => {
     );
   });
 
-  it('snapshots registration policy and requires explicit re-copy for later entries', () => {
+  it('takes immutable registration policy from the explicit pipeline', () => {
     const screen = makeCanvasState();
     const screenRuntime = getCanvasRenderStateRuntime(screen);
-    const firstRunner = vi.fn();
-    const laterRunner = vi.fn();
-    screenRuntime.registries.renderEffects = withRegistryTableEntry(
-      screenRuntime.registries.renderEffects,
-      'acme.First',
-      firstRunner as never,
-    );
-    const cacheState = createCanvasCacheState(screen);
+    const cacheState = makeCacheState(screen);
     const cacheRuntime = getCanvasRenderStateRuntime(cacheState);
 
+    expect(cacheState.pipeline).toBe(screen.pipeline);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
     expect(cacheRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
-    expect(getRegistryTableEntry(cacheRuntime.registries.renderEffects, 'acme.First')).toBe(firstRunner);
+  });
 
-    screenRuntime.registries.renderEffects = withRegistryTableEntry(
-      screenRuntime.registries.renderEffects,
-      'acme.Later',
-      laterRunner as never,
-    );
-    expect(hasRegistryTableEntry(cacheRuntime.registries.renderEffects, 'acme.Later')).toBe(false);
+  it('releases the cache state and every target with its explicit owner', () => {
+    const screen = makeCanvasState();
+    const cacheState = makeCacheState(screen);
+    const target = ensureCanvasRenderCacheTarget(screen, createRenderCache(), 16, 24);
 
-    copyCanvasRenderStateRegistrations(cacheState, screen);
-    expect(getRegistryTableEntry(cacheRuntime.registries.renderEffects, 'acme.Later')).toBe(laterRunner);
+    destroyCanvasRenderState(screen);
+
+    expect(cacheState.canvas.width).toBe(0);
+    expect(cacheState.canvas.height).toBe(0);
+    expect(target.canvas.width).toBe(0);
+    expect(target.canvas.height).toBe(0);
   });
 });
 
 describe('createCanvasOffscreenRenderState', () => {
   it('does not reach ambient document state during construction', () => {
     const screen = makeCanvasState();
+    const surface = acquireTestCanvasRenderSurface();
+    const resolvers = createCanvasTextureResolvers();
     const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'document')!;
     Object.defineProperty(globalThis, 'document', { configurable: true, value: undefined });
 
     try {
-      expect(() => createCanvasOffscreenRenderState(screen)).not.toThrow();
+      expect(() => createCanvasOffscreenRenderState(surface, screen.pipeline, resolvers)).not.toThrow();
     } finally {
       Object.defineProperty(globalThis, 'document', documentDescriptor);
     }
@@ -97,7 +123,7 @@ describe('createCanvasOffscreenRenderState', () => {
 
   it('releases the owned backing store when destroyed', () => {
     const screen = makeCanvasState();
-    const offscreen = createCanvasOffscreenRenderState(screen);
+    const offscreen = makeOffscreenState(screen);
     offscreen.canvas.width = 17;
     offscreen.canvas.height = 19;
 
@@ -107,11 +133,11 @@ describe('createCanvasOffscreenRenderState', () => {
     expect(offscreen.canvas.height).toBe(0);
   });
 
-  it('creates an independent host canvas linked to the screen target owner', () => {
+  it('creates an independent host canvas without a hidden owner link', () => {
     const screen = makeCanvasState();
-    const offscreen = createCanvasOffscreenRenderState(screen);
+    const offscreen = makeOffscreenState(screen);
     expect(offscreen.canvas).not.toBe(screen.canvas);
-    expect(getCanvasRenderCacheScreenState(offscreen)).toBe(screen);
+    expect(getCanvasRenderCacheTarget(offscreen, createRenderCache())).toBeNull();
   });
 });
 
@@ -193,16 +219,6 @@ describe('ensureCanvasRenderCacheTarget', () => {
   });
 });
 
-describe('getCanvasRenderCacheScreenState', () => {
-  it('resolves a cache render state to the screen state that owns shared targets', () => {
-    const screen = makeCanvasState();
-    const cacheState = createCanvasCacheState(screen);
-
-    expect(getCanvasRenderCacheScreenState(cacheState)).toBe(screen);
-    expect(getCanvasRenderCacheScreenState(screen)).toBe(screen);
-  });
-});
-
 describe('getCanvasRenderCacheTarget', () => {
   it('returns null before a target is allocated', () => {
     const state = makeCanvasState();
@@ -220,10 +236,10 @@ describe('getCanvasRenderCacheTarget', () => {
 describe('refreshCanvasRenderCache', () => {
   it('bakes on the first call and allocates the target on the screen state', () => {
     const screen = makeCanvasState();
-    const cacheState = createCanvasCacheState(screen);
+    const cacheState = makeCacheState(screen);
     const cache = createRenderCache();
     const obj = createDisplayObject();
-    const rebaked = refreshCanvasRenderCache(cacheState, cache, obj, { padding: 5 });
+    const rebaked = refreshCanvasRenderCache(screen, cacheState, cache, obj, { padding: 5 });
     expect(rebaked).toBe(true);
     const target = getCanvasRenderCacheTarget(screen, cache);
     expect(target).not.toBeNull();
@@ -233,38 +249,40 @@ describe('refreshCanvasRenderCache', () => {
 
   it('always rebakes under the refreshDerivedState policy', () => {
     const screen = makeCanvasState({ sceneGraphSyncPolicy: 'refreshDerivedState' });
-    const cacheState = createCanvasCacheState(screen);
+    const cacheState = makeCacheState(screen);
     const cache = createRenderCache();
     const obj = createDisplayObject();
-    refreshCanvasRenderCache(cacheState, cache, obj, { padding: 5 });
-    expect(refreshCanvasRenderCache(cacheState, cache, obj, { padding: 5 })).toBe(true);
+    refreshCanvasRenderCache(screen, cacheState, cache, obj, { padding: 5 });
+    expect(refreshCanvasRenderCache(screen, cacheState, cache, obj, { padding: 5 })).toBe(true);
   });
 
   it('skips the bake under requiresInvalidation when nothing changed', () => {
     const screen = makeCanvasState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
-    const cacheState = createCanvasCacheState(screen);
+    const cacheState = makeCacheState(screen);
     const cache = createRenderCache();
     const obj = createDisplayObject();
-    refreshCanvasRenderCache(cacheState, cache, obj, { padding: 5 });
-    expect(refreshCanvasRenderCache(cacheState, cache, obj, { padding: 5 })).toBe(false);
+    refreshCanvasRenderCache(screen, cacheState, cache, obj, { padding: 5 });
+    expect(refreshCanvasRenderCache(screen, cacheState, cache, obj, { padding: 5 })).toBe(false);
   });
 
   it('does not create render nodes on the screen state', () => {
     const screen = makeCanvasState();
-    const cacheState = createCanvasCacheState(screen);
+    const cacheState = makeCacheState(screen);
     const cache = createRenderCache();
     const obj = createDisplayObject();
-    refreshCanvasRenderCache(cacheState, cache, obj);
+    refreshCanvasRenderCache(screen, cacheState, cache, obj);
     expect(getRenderProxy2D(screen, obj)).toBeUndefined();
   });
 });
 
 describe('releaseCanvasRenderCache', () => {
-  it('drops the target for the cache', () => {
+  it('destroys and drops the target for the cache', () => {
     const state = makeCanvasState();
     const cache = createRenderCache();
-    ensureCanvasRenderCacheTarget(state, cache, 8, 8);
+    const target = ensureCanvasRenderCacheTarget(state, cache, 8, 8);
     releaseCanvasRenderCache(state, cache);
     expect(getCanvasRenderCacheTarget(state, cache)).toBeNull();
+    expect(target.canvas.width).toBe(0);
+    expect(target.canvas.height).toBe(0);
   });
 });

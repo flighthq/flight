@@ -1,13 +1,28 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   CanvasTextureResolver,
   CanvasTextureResolvers,
+  CanvasRenderSurface,
+  CanvasRenderSurfaceCreator,
+  CanvasRenderSurfaceOptions,
   RenderState,
   Texture,
   TextureSourceKind,
 } from '@flighthq/types/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
+
+import { acquireCanvasRenderSurface, destroyCanvasRenderSurface } from './canvasRenderSurface';
+
+export function acquireCanvasTextureResolverSurface(
+  resolvers: CanvasTextureResolvers,
+  options: Readonly<CanvasRenderSurfaceOptions>,
+): CanvasRenderSurface | null {
+  const surface = acquireCanvasRenderSurface(resolvers.surfaceCreator, options);
+  if (surface !== null) _ownedSurfaces.get(resolvers)?.add(surface);
+  return surface;
+}
 
 // Points a resolution set's miss seam at a render state's emitter, so misses it reports arrive through
 // the diagnostics the caller already enabled on that state.
@@ -27,8 +42,24 @@ export function connectCanvasTextureResolverMisses(resolvers: CanvasTextureResol
 
 // A fresh, empty resolution set. Nothing is registered: what a set can resolve is exactly what the
 // caller installs on it, which is what makes a rasterizer's capability inspectable rather than implied.
-export function createCanvasTextureResolvers(): CanvasTextureResolvers {
-  return { registry: null, registryMiss: null };
+export function createCanvasTextureResolvers(
+  surfaceCreator: Readonly<CanvasRenderSurfaceCreator>,
+): CanvasTextureResolvers {
+  const resolvers = createEntity({ registry: null, registryMiss: null, surfaceCreator }) as CanvasTextureResolvers;
+  resolvers[EntityRuntimeKey] = { binding: null };
+  _ownedSurfaces.set(resolvers, new Set());
+  return resolvers;
+}
+
+export function destroyCanvasTextureResolvers(resolvers: CanvasTextureResolvers): void {
+  const surfaces = _ownedSurfaces.get(resolvers);
+  if (surfaces === undefined) return;
+  _ownedSurfaces.delete(resolvers);
+  for (const surface of surfaces) destroyCanvasRenderSurface(surface);
+  surfaces.clear();
+  resolvers.registry?.clear();
+  resolvers.registry = null;
+  resolvers.registryMiss = null;
 }
 
 export function registerCanvasTextureResolver(
@@ -55,3 +86,5 @@ export function resolveCanvasTexture(
   }
   return resolver(resolvers, texture);
 }
+
+const _ownedSurfaces = new WeakMap<CanvasTextureResolvers, Set<CanvasRenderSurface>>();

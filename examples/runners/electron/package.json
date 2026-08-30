@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@flighthq/host-electron": "*",
+    "@flighthq/host-web": "*",
     "@flighthq/sdk": "*"
   },
   "devDependencies": {

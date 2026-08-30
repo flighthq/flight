@@ -2,9 +2,9 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createTexture } from '@flighthq/texture/contract';
 import type { Image } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
-import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
+import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTestSupport';
 import {
   areCanvasTextureResolverGuardsEnabled,
   enableCanvasTextureResolverGuards,

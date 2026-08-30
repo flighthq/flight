@@ -3,7 +3,7 @@ import type { CanvasRenderState } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { renderCanvasBackground } from './canvasBackground';
-import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
+import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasTestSupport';
 
 function makeState(): { canvas: HTMLCanvasElement; state: CanvasRenderState } {
   const canvas = document.createElement('canvas');

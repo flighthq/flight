@@ -1,47 +1,29 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createKeyedTable } from '@flighthq/registry/contract';
 import {
-  copyRenderStateRegistrations,
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   destroyRenderState,
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type {
+  CanvasPipeline,
   CanvasRenderOptions,
+  CanvasRenderSurface,
   CanvasRenderState,
   CanvasRenderStateRuntime,
   CanvasTextureResolvers,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCanvasTextureResolvers } from './canvasTextureResolver';
-
-// Explicit snapshot re-copy for policy that is meaningful to a derived Canvas pipeline. Resource
-// caches remain state-local. Mutable legacy maps are cloned; persistent tables may share immutable
-// snapshots through distinct aggregates, so later replacements still diverge between render states.
-export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, source: CanvasRenderState): void {
-  const targetRuntime = getCanvasRenderStateRuntime(target);
-  const sourceRuntime = getCanvasRenderStateRuntime(source);
-  target.applyBlendMode = source.applyBlendMode;
-  target.canvasCssFilterResolver = source.canvasCssFilterResolver;
-  targetRuntime.canvasTextureResolvers.registry = copyMap(sourceRuntime.canvasTextureResolvers.registry);
-  targetRuntime.registries = {
-    materialRenderers: sourceRuntime.registries.materialRenderers,
-    renderEffects: sourceRuntime.registries.renderEffects,
-    renderers: targetRuntime.registries.renderers,
-    strokeTessellator: targetRuntime.registries.strokeTessellator,
-  };
-  copyRenderStateRegistrations(target, source);
-}
+import { destroyCanvasRenderSurface } from './canvasRenderSurface';
+import { destroyCanvasTextureResolvers } from './canvasTextureResolver';
 
 export function createCanvasRenderState(
-  canvas: HTMLCanvasElement,
+  surface: CanvasRenderSurface,
+  pipeline: Readonly<CanvasPipeline>,
+  canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  const context = canvas.getContext('2d', options.contextAttributes || undefined);
-  if (!context) throw new Error('Failed to get context for canvas.');
-
   const state = _createRenderState({
     pixelRatio: options.pixelRatio ?? 1,
     renderTransform2D: options.renderTransform ?? createMatrix(),
@@ -53,24 +35,25 @@ export function createCanvasRenderState(
 
   // canvas/context/contextAttributes are readonly handles on the entity; written once here at the
   // construction boundary.
-  state.applyBlendMode = null;
+  state.applyBlendMode = pipeline.registries.blendModeApplication ?? null;
   state.canvasCssFilterResolver = null;
-  (state as { canvas: HTMLCanvasElement }).canvas = canvas;
-  (state as { context: CanvasRenderingContext2D }).context = context;
-  (state as { contextAttributes: CanvasRenderingContext2DSettings }).contextAttributes = context.getContextAttributes();
+  (state as { canvas: HTMLCanvasElement }).canvas = surface.canvas;
+  (state as { context: CanvasRenderingContext2D }).context = surface.context;
+  (state as { contextAttributes: CanvasRenderingContext2DSettings }).contextAttributes = surface.contextAttributes;
+  (state as { pipeline: Readonly<CanvasPipeline> }).pipeline = pipeline;
+  (state as { surface: CanvasRenderSurface }).surface = surface;
 
-  const runtime = createCanvasRenderStateRuntime();
+  const runtime = createCanvasRenderStateRuntime(pipeline, canvasTextureResolvers);
   state[EntityRuntimeKey] = runtime;
   // The state owns a resolution set and points its miss seam at its own emitter. The closure reads the
   // emitter at call time, so enabling the guards later still reports through it.
-  runtime.canvasTextureResolvers = createCanvasTextureResolvers();
   runtime.canvasTextureResolvers.registryMiss = (registry, kind) => runtime.registryMiss?.(registry, kind);
   runtime.currentBlendMode = null;
   runtime.imageSmoothingEnabled = options.imageSmoothingEnabled ?? true;
   runtime.imageSmoothingQuality = options.imageSmoothingQuality ?? 'high';
 
-  context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
-  context.imageSmoothingQuality = runtime.imageSmoothingQuality;
+  surface.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
+  surface.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
   return state;
 }
 
@@ -78,18 +61,26 @@ export function createCanvasRenderState(
 // attaches one to each state under EntityRuntimeKey and populates its fields;
 // getCanvasRenderStateRuntime reads it back. The render path writes the returned object every frame,
 // so the return is intentionally mutable (not Readonly).
-export function createCanvasRenderStateRuntime(): CanvasRenderStateRuntime {
+export function createCanvasRenderStateRuntime(
+  pipeline: Readonly<CanvasPipeline>,
+  canvasTextureResolvers: CanvasTextureResolvers,
+): CanvasRenderStateRuntime {
   const runtime = createRenderStateRuntime() as CanvasRenderStateRuntime;
-  runtime.registries = {
-    renderEffects: createKeyedTable('CanvasRenderEffect', 'Unregistered'),
-    renderers: runtime.registries.renderers,
-    strokeTessellator: runtime.registries.strokeTessellator,
-  };
+  runtime.registries = { ...pipeline.registries };
+  runtime.canvasTextureResolvers = canvasTextureResolvers;
+  runtime.teardowns = [];
   return runtime;
 }
 
 export function destroyCanvasRenderState(state: CanvasRenderState): void {
+  if (_destroyedStates.has(state)) return;
+  _destroyedStates.add(state);
+  const runtime = getCanvasRenderStateRuntime(state);
+  for (const teardown of [...runtime.teardowns]) teardown(state);
+  runtime.teardowns.length = 0;
   destroyRenderState(state);
+  destroyCanvasTextureResolvers(runtime.canvasTextureResolvers);
+  destroyCanvasRenderSurface(state.surface);
 }
 
 // Resolves the package-private 2D-canvas runtime attached to a CanvasRenderState. Mutable by design:
@@ -98,12 +89,17 @@ export function getCanvasRenderStateRuntime(state: CanvasRenderState): CanvasRen
   return state[EntityRuntimeKey] as CanvasRenderStateRuntime;
 }
 
-function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> | undefined {
-  return source === null || source === undefined ? undefined : new Map(source);
-}
-
 // The state's own resolution set, which a shape rasterizer on another backend can share so both resolve
 // one Texture through one transcode cache.
 export function getCanvasRenderStateTextureResolvers(state: CanvasRenderState): CanvasTextureResolvers {
   return getCanvasRenderStateRuntime(state).canvasTextureResolvers;
 }
+
+export function registerCanvasRenderStateTeardown(
+  state: CanvasRenderState,
+  teardown: (state: CanvasRenderState) => void,
+): void {
+  getCanvasRenderStateRuntime(state).teardowns.push(teardown);
+}
+
+const _destroyedStates = new WeakSet<CanvasRenderState>();

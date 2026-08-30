@@ -1,7 +1,10 @@
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   createCanvasRenderState,
+  createCanvasRenderSurface,
   createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
   createDomRenderState,
   defaultCanvasShapeCommands,
   defaultCanvasTextureShapeCommands,
@@ -27,6 +30,7 @@ import {
   registerRenderer,
   renderDomBackground,
   renderDomScene2D,
+  scene2dCanvasPipeline,
   RichTextKind,
   Scale9ShapeKind,
   ShapeKind,
@@ -101,7 +105,12 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
 // texture fills. It resolves its pixels through a CanvasRenderState of its own, so the resolvers
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
-  const resolverState = createCanvasRenderState(document.createElement('canvas'));
+  const canvas = document.createElement('canvas');
+  const resolverState = createCanvasRenderState(
+    createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas),
+    scene2dCanvasPipeline,
+    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  );
   registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);

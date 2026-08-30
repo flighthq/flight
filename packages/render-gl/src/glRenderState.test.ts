@@ -41,6 +41,7 @@ import {
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
   registerGlContextTeardown,
+  registerGlRenderStateTeardown,
 } from './glRenderState';
 import { ensureDefaultGlBitmapShader } from './glShader';
 import { makeGL } from './glTestHelper';
@@ -832,5 +833,19 @@ describe('registerGlContextTeardown', () => {
     destroyGlRenderState(state);
     expect(teardown).toHaveBeenCalledOnce();
     expect(teardown).toHaveBeenCalledWith(gl);
+  });
+});
+
+describe('registerGlRenderStateTeardown', () => {
+  it('pushes a callback that fires on state teardown', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl);
+    const teardown = vi.fn();
+    registerGlRenderStateTeardown(state, teardown);
+
+    destroyGlRenderState(state);
+
+    expect(teardown).toHaveBeenCalledOnce();
+    expect(teardown).toHaveBeenCalledWith(state);
   });
 });

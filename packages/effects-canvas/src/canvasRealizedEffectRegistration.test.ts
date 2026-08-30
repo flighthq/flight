@@ -1,8 +1,7 @@
-import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
-
 import { defaultCanvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
 import { defaultCanvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
 import { defaultCanvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
+import { createCanvasRenderState } from './canvasEffectTestSupport';
 import { defaultCanvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
 import { defaultCanvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
 import { defaultCanvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';

@@ -17,6 +17,7 @@ export * from './canvasMaterials';
 export * from './canvasParticleEmitter2D';
 export * from './canvasQuadBatch';
 export * from './canvasRenderState';
+export * from './canvasRenderSurface';
 export * from './canvasRenderTarget';
 export * from './canvasRenderTexture';
 export * from './canvasRenderTexturePool';

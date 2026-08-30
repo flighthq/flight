@@ -1,5 +1,4 @@
-import { createCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
-
+import { createCanvasRenderTarget } from './canvasEffectTestSupport';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
 
 function entry(ramp: Readonly<Uint8ClampedArray>, index: number): number[] {

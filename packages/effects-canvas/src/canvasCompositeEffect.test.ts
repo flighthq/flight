@@ -1,4 +1,3 @@
-import { createCanvasRenderState, createCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderState, CanvasRenderTarget, CompositeEffect } from '@flighthq/types/contract';
 
 import { registerCanvasBlendEffectBackdrop } from './canvasBlendEffect';
@@ -8,6 +7,7 @@ import {
   getCanvasCompositeEffectOperation,
   registerCanvasCompositeEffect,
 } from './canvasCompositeEffect';
+import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Draw-contract assertions rather than pixels, for the reason spelled out in canvasBlendEffect.test.ts:
@@ -121,7 +121,7 @@ describe('defaultCanvasCompositeEffectRunner', () => {
     const drawn = recordDraws(dest);
 
     defaultCanvasCompositeEffectRunner(
-      { state, source, dest, pool: { free: [], inUse: [] } },
+      { state, source, dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] } },
       compositeEffect({ operator: 'DestinationOver', backdropKey: 'scene' }),
     );
 

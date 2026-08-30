@@ -68,7 +68,7 @@ appendShapeRectangle(foreground, 520, 400, 120, 50);
 appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
 
-renderIntoCanvasRenderTexture(state, renderTexture, (canvasState) => {
+renderIntoCanvasRenderTexture(state, state, renderTexture, (canvasState) => {
   const context = canvasState.context;
   context.fillStyle = '#05070d';
   context.fillRect(0, 0, NODE_WIDTH, NODE_HEIGHT);

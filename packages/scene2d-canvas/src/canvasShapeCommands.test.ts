@@ -29,7 +29,7 @@ import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver
 import { renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
-import { createCanvasTextureResolvers } from './canvasTextureResolver';
+import { createCanvasTextureResolvers } from './canvasTestSupport';
 
 // Commands are registered per render state, so each target carries its own set — there is no global
 // to fall back on, and a bare state replays nothing.

@@ -11,11 +11,11 @@ import type { TextureSource } from '@flighthq/types/contract';
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { explainCanvasImageSource } from './canvasImageSource';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
-import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
+import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTestSupport';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
 function makeState() {
@@ -92,7 +92,7 @@ describe('registerCanvasRenderTextureResolver', () => {
     const state = makeState();
     const other = makeState();
     const texture = createRenderTexture({ height: 8, width: 8 });
-    renderIntoCanvasRenderTexture(state, texture, () => {});
+    renderIntoCanvasRenderTexture(state, state, texture, () => {});
     registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
     expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture)).toBeInstanceOf(
       HTMLCanvasElement,
@@ -137,7 +137,7 @@ describe('resolveCanvasTexture', () => {
 
     const renderTexture = createRenderTexture({ height: 8, width: 8 });
     expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), renderTexture)).toBeNull();
-    renderIntoCanvasRenderTexture(state, renderTexture, () => {});
+    renderIntoCanvasRenderTexture(state, state, renderTexture, () => {});
     expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), renderTexture)).toBeInstanceOf(
       HTMLCanvasElement,
     );

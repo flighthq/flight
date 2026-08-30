@@ -1,6 +1,6 @@
-import { createCanvasRenderState, createCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool, GradientGlowEffect } from '@flighthq/types/contract';
 
+import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
 import {
   applyGradientGlowEffectToCanvas,
   defaultCanvasGradientGlowEffectRunner,
@@ -16,7 +16,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     target.canvas.id = id;
     return target;
   });
-  return { pool: { free: [...targets].reverse(), inUse: [] }, targets };
+  return { pool: { creator: canvasTestSurfaceCreator, free: [...targets].reverse(), inUse: [] }, targets };
 }
 
 function recordAll(log: string[], targets: readonly Readonly<CanvasRenderTarget>[]): void {

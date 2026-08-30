@@ -28,7 +28,6 @@ import { MorphShapeKind, RenderRegistry, ShapeKind } from '@flighthq/types/contr
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { createCanvasRenderState } from './canvasRenderState';
 import {
   defaultCanvasMorphShapeRenderer,
   defaultCanvasShapeRenderer,
@@ -37,7 +36,8 @@ import {
 } from './canvasShape';
 import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
-import { createCanvasTextureResolvers } from './canvasTextureResolver';
+import { createCanvasRenderState } from './canvasTestSupport';
+import { createCanvasTextureResolvers } from './canvasTestSupport';
 
 // Commands are registered per render state, so each target here carries its own set — there is no
 // global to fall back on, and a state built without this helper draws nothing.

@@ -48,7 +48,10 @@ export function applyOuterGlowEffectToCanvas(
     return;
   }
 
-  const pool = maybeEffect === undefined ? createCanvasRenderTargetPool() : (poolOrEffect as CanvasRenderTargetPool);
+  const pool =
+    maybeEffect === undefined
+      ? createCanvasRenderTargetPool(source.surface.creator)
+      : (poolOrEffect as CanvasRenderTargetPool);
   applyOuterGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 

@@ -1,7 +1,10 @@
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
+  createCanvasRenderSurface,
+  createCanvasTextureResolvers,
   createMatrix,
   defaultCanvasParticleEmitter2DRenderer,
   defaultCanvasQuadBatchRenderer,
@@ -30,6 +33,7 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
   RichTextKind,
+  scene2dCanvasPipeline,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
@@ -44,15 +48,24 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createCanvasElement(width, height, pixelRatio);
+  const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = createCanvasRenderState(canvas, {
-    pixelRatio,
-    backgroundColor: options.background,
-    contextAttributes: options.contextAttributes ?? { alpha: false },
-    sceneGraphSyncPolicy: options.syncPolicy,
-  });
+  const state = createCanvasRenderState(
+    createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
+      contextAttributes: options.contextAttributes ?? { alpha: false },
+      height,
+      pixelRatio,
+      width,
+    }),
+    scene2dCanvasPipeline,
+    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+    {
+      backgroundColor: options.background,
+      pixelRatio,
+      sceneGraphSyncPolicy: options.syncPolicy,
+    },
+  );
 
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.

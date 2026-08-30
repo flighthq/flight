@@ -4,8 +4,8 @@ import { addTextureAtlasRegion, createTextureAtlasFromImageResource } from '@fli
 import { createTilemap, setTilemapTile } from '@flighthq/tilemap/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { createCanvasRenderState } from './canvasRenderState';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
+import { createCanvasRenderState } from './canvasTestSupport';
 import { drawCanvasTilemap } from './canvasTilemap';
 
 function makeState() {

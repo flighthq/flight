@@ -1,98 +1,21 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
-import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
-import {
-  enableColorAdjustmentGuards,
-  enableColorAdjustments,
-  getColorAdjustmentUnsupportedGuard,
-  prepareScene2DRender,
-  registerRenderer,
-} from '@flighthq/render/contract';
+import { prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { CanvasRenderOptions, RenderRootGuard } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import type { CanvasRenderOptions } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { registerCanvasMaterialRenderer } from './canvasMaterialRegistry';
 import {
-  copyCanvasRenderStateRegistrations,
   createCanvasRenderState,
   createCanvasRenderStateRuntime,
+  createCanvasTextureResolvers,
   destroyCanvasRenderState,
   getCanvasRenderStateRuntime,
   getCanvasRenderStateTextureResolvers,
-} from './canvasRenderState';
-
-describe('copyCanvasRenderStateRegistrations', () => {
-  it('shares persistent snapshots through distinct aggregates and then diverges', () => {
-    const source = createCanvasRenderState(document.createElement('canvas'));
-    const target = createCanvasRenderState(document.createElement('canvas'));
-    const runner = vi.fn();
-    const replacement = vi.fn();
-    const materialRenderer = { getState: vi.fn(() => ({})) };
-    const renderRootGuard: RenderRootGuard = vi.fn();
-    const sourceRuntime = getCanvasRenderStateRuntime(source);
-    sourceRuntime.registries.renderEffects = withRegistryTableEntry(
-      sourceRuntime.registries.renderEffects,
-      'acme.Effect',
-      runner as never,
-    );
-    registerCanvasMaterialRenderer(source, 'acme.Material', materialRenderer);
-    enableColorAdjustments(source);
-    enableColorAdjustmentGuards(source);
-    sourceRuntime.registries.renderRootGuard = {
-      entry: { state: RegistryEntryState.Bound, value: renderRootGuard },
-      onMiss: 'Disabled',
-      registry: 'RenderRootGuard',
-      shape: 'slot',
-    };
-
-    copyCanvasRenderStateRegistrations(target, source);
-
-    const targetRuntime = getCanvasRenderStateRuntime(target);
-    expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
-    expect(targetRuntime.registries.colorAdjustments).toBe(sourceRuntime.registries.colorAdjustments);
-    expect(targetRuntime.registries.colorAdjustments?.entry?.state).toBe(RegistryEntryState.Bound);
-    expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(
-      sourceRuntime.registries.colorAdjustmentUnsupportedGuard,
-    );
-    expect(getColorAdjustmentUnsupportedGuard(target)).not.toBeNull();
-    const sharedGuardSnapshot = targetRuntime.registries.colorAdjustmentUnsupportedGuard;
-    sourceRuntime.registries.colorAdjustmentUnsupportedGuard = undefined;
-    expect(getColorAdjustmentUnsupportedGuard(source)).toBeNull();
-    expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedGuardSnapshot);
-    expect(getColorAdjustmentUnsupportedGuard(target)).not.toBeNull();
-    expect(targetRuntime.registries.renderRootGuard).toBe(sourceRuntime.registries.renderRootGuard);
-    expect(
-      getRegistryTableEntry(
-        targetRuntime.registries.renderRootGuard!,
-        targetRuntime.registries.renderRootGuard!.registry,
-      ),
-    ).toBe(renderRootGuard);
-    const sharedRootGuardSnapshot = targetRuntime.registries.renderRootGuard;
-    sourceRuntime.registries.renderRootGuard = undefined;
-    expect(sourceRuntime.registries.renderRootGuard).toBeUndefined();
-    expect(targetRuntime.registries.renderRootGuard).toBe(sharedRootGuardSnapshot);
-    expect(
-      getRegistryTableEntry(
-        targetRuntime.registries.renderRootGuard!,
-        targetRuntime.registries.renderRootGuard!.registry,
-      ),
-    ).toBe(renderRootGuard);
-    expect(targetRuntime.registries.materialRenderers).toBe(sourceRuntime.registries.materialRenderers);
-    expect(targetRuntime.registries.renderEffects).toBe(sourceRuntime.registries.renderEffects);
-    expect(getRegistryTableEntry(targetRuntime.registries.materialRenderers!, 'acme.Material')).toBe(materialRenderer);
-    expect(getRegistryTableEntry(targetRuntime.registries.renderEffects, 'acme.Effect')).toBe(runner);
-
-    sourceRuntime.registries.renderEffects = withRegistryTableEntry(
-      sourceRuntime.registries.renderEffects,
-      'acme.Effect',
-      replacement as never,
-    );
-    expect(getRegistryTableEntry(sourceRuntime.registries.renderEffects, 'acme.Effect')).toBe(replacement);
-    expect(getRegistryTableEntry(targetRuntime.registries.renderEffects, 'acme.Effect')).toBe(runner);
-  });
-});
+  registerCanvasRenderStateTeardown,
+} from './canvasTestSupport';
+import { scene2dCanvasPipeline } from './scene2dCanvasPipeline';
 
 describe('createCanvasRenderState', () => {
   it('creates state with a valid context and canvas', () => {
@@ -111,7 +34,7 @@ describe('createCanvasRenderState', () => {
 
 describe('createCanvasRenderStateRuntime', () => {
   it('allocates an entity runtime', () => {
-    const runtime = createCanvasRenderStateRuntime();
+    const runtime = createCanvasRenderStateRuntime(scene2dCanvasPipeline, createCanvasTextureResolvers());
     expect(runtime).not.toBeNull();
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
@@ -125,6 +48,16 @@ describe('createCanvasRenderStateRuntime', () => {
 });
 
 describe('destroyCanvasRenderState', () => {
+  it('does not destroy a caller-owned primary surface', () => {
+    const canvas = document.createElement('canvas');
+    const state = createCanvasRenderState(canvas);
+
+    destroyCanvasRenderState(state);
+
+    expect(canvas.width).not.toBe(0);
+    expect(canvas.height).not.toBe(0);
+  });
+
   it('destroys renderer data owned by the offscreen traversal state', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const root = createDisplayObject();
@@ -148,6 +81,18 @@ describe('getCanvasRenderStateRuntime', () => {
     const runtime = getCanvasRenderStateRuntime(state);
     runtime.currentBlendMode = null;
     expect(getCanvasRenderStateRuntime(state).currentBlendMode).toBeNull();
+  });
+});
+
+describe('getCanvasRenderStateTextureResolvers', () => {
+  it('hands back the one set the state owns, so a rasterizer can share its transcode cache', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+
+    const resolvers = getCanvasRenderStateTextureResolvers(state);
+
+    expect(resolvers).toBe(getCanvasRenderStateTextureResolvers(state));
+    registerCanvasBitmapTextureResolver(resolvers);
+    expect(resolvers.registry?.size).toBe(1);
   });
 });
 
@@ -296,14 +241,16 @@ it('should handle missing imageSmoothingQuality and imageSmoothingEnabled in opt
   expect(renderer.context.imageSmoothingQuality).toBe('high');
 });
 
-describe('getCanvasRenderStateTextureResolvers', () => {
-  it('hands back the one set the state owns, so a rasterizer can share its transcode cache', () => {
+describe('registerCanvasRenderStateTeardown', () => {
+  it('runs state-owned teardown exactly once during destruction', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
+    const teardown = vi.fn();
+    registerCanvasRenderStateTeardown(state, teardown);
 
-    const resolvers = getCanvasRenderStateTextureResolvers(state);
+    destroyCanvasRenderState(state);
+    destroyCanvasRenderState(state);
 
-    expect(resolvers).toBe(getCanvasRenderStateTextureResolvers(state));
-    registerCanvasBitmapTextureResolver(resolvers);
-    expect(resolvers.registry?.size).toBe(1);
+    expect(teardown).toHaveBeenCalledOnce();
+    expect(teardown).toHaveBeenCalledWith(state);
   });
 });

@@ -1,3 +1,4 @@
+import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -5,6 +6,8 @@ import {
   appendShapeRectangle,
   createCanvasElement,
   createCanvasRenderState,
+  createCanvasRenderSurface,
+  createCanvasTextureResolvers,
   createDisplayObject,
   createShape,
   defaultCanvasShapeCommands,
@@ -15,6 +18,7 @@ import {
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
+  scene2dCanvasPipeline,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -28,10 +32,19 @@ declare global {
 
 // ── Flight scene (the renderer is a normal browser context, so it uses the web canvas renderer) ──
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(1024, 560, pixelRatio);
+const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 1024, 560, pixelRatio);
 document.body.appendChild(canvas);
 
-const state = createCanvasRenderState(canvas, { backgroundColor: 0x1d1f23ff });
+const state = createCanvasRenderState(
+  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
+    height: canvas.height / pixelRatio,
+    pixelRatio,
+    width: canvas.width / pixelRatio,
+  }),
+  scene2dCanvasPipeline,
+  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
+  { backgroundColor: 0x1d1f23ff },
+);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 

@@ -1,5 +1,4 @@
-import { createCanvasRenderTarget } from '@flighthq/scene2d-canvas/contract';
-
+import { createCanvasRenderTarget } from './canvasEffectTestSupport';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
