@@ -18,6 +18,7 @@ import type {
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
   WgpuHostBackend,
+  WgpuOffscreenRenderStateResult,
   WgpuPresentationSurface,
   WgpuRenderOptions,
   WgpuRenderState,
@@ -25,6 +26,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
+import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
 import { warmWgpuPipelines } from './wgpuDraw';
 import { getWgpuHostBackend } from './wgpuHost';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
@@ -59,7 +61,11 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
     renderEffects: sourceRuntime.registries.renderEffects,
     renderers: targetRuntime.registries.renderers,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
-    strokeTessellator: targetRuntime.registries.strokeTessellator,
+    // INHERIT the source's tessellator. This previously named the target's own table, which read as a
+    // deliberate keep-own policy and was then overwritten by copyRenderStateRegistrations two lines
+    // below — so the code stated one policy and did the opposite. Inheriting is correct because
+    // `StrokeTessellator` requires a shareable implementation; it is not merely what already happened.
+    strokeTessellator: sourceRuntime.registries.strokeTessellator,
     textureResolvers: sourceRuntime.registries.textureResolvers,
     velocityWriters: sourceRuntime.registries.velocityWriters,
   };
@@ -97,7 +103,12 @@ export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
  * stack, and render transform. Immutable pipelines/layouts/samplers plus uploaded textures and render
  * texture realizations share a device tier. Registrations are a creation-time snapshot.
  */
-export function createWgpuOffscreenRenderState(screenState: WgpuRenderState): WgpuRenderState {
+export function createWgpuOffscreenRenderState(screenState: WgpuRenderState): WgpuOffscreenRenderStateResult {
+  // A dead device cannot back a new pipeline. Report it rather than throwing: losing a device is an
+  // expected outcome, not API misuse, and the caller needs the reason to decide what to do next.
+  const lost = getWgpuRenderStateRuntime(screenState).context.lost;
+  if (lost !== null) return { reason: 'device-lost', info: lost };
+
   const state = _createRenderState({
     allowSmoothing: screenState.allowSmoothing,
     backgroundColor: screenState.backgroundColor,
@@ -123,7 +134,7 @@ export function createWgpuOffscreenRenderState(screenState: WgpuRenderState): Wg
   copyAllRenderersFromRenderState(state, screenState);
   copyWgpuRenderStateRegistrations(state, screenState);
   warmWgpuPipelines(state);
-  return state;
+  return { reason: 'ok', state };
 }
 
 // Synchronous: with the handles already in hand there is nothing left to await. Everything asynchronous
@@ -575,9 +586,11 @@ export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition
 }
 
 function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
-  return {
+  const runtime: WgpuDeviceRuntime = {
     binding: null,
     device,
+    lost: null,
+    signals: null,
     references: 0,
     teardowns: [],
     uniformBindGroupLayout: null as unknown as GPUBindGroupLayout,
@@ -593,6 +606,10 @@ function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
     textureSourceStraightTextureCache: new WeakMap(),
     textureSourceStraightSrgbTextureCache: new WeakMap(),
   };
+  // One observer per physical device, attached here — the single place a device tier is built — and
+  // therefore before any render state is published on it.
+  observeWgpuDeviceLoss(runtime);
+  return runtime;
 }
 
 const _acquisitionByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuAcquisitionOwnership>();

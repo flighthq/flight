@@ -39,6 +39,18 @@ export interface WgpuRenderState extends RenderState {
   readonly surface: WgpuPresentationSurface;
 }
 
+/**
+ * The outcome of deriving a second render pipeline over an existing one.
+ *
+ * Method-tight: `reason` names what happened, and the payload for each arm is exactly what that arm
+ * can supply. A dead GPUDevice cannot back a new pipeline, and that is an expected outcome rather
+ * than a programmer error — so it is reported, not thrown. `info` is the device's own loss report,
+ * carried through unchanged; nothing here claims a device can be rebuilt or recovered.
+ */
+export type WgpuOffscreenRenderStateResult =
+  | { readonly reason: 'device-lost'; readonly info: GPUDeviceLostInfo }
+  | { readonly reason: 'ok'; readonly state: WgpuRenderState };
+
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries extends RenderRegistries {

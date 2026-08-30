@@ -16,6 +16,7 @@ import {
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
+  WgpuOffscreenRenderStateResult,
   RenderEffectPaddingResolver,
   RenderRootGuard,
   RenderState,
@@ -55,6 +56,13 @@ import {
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 import { registerWgpuTextureResolver } from './wgpuTextureResolver';
 
+// createWgpuOffscreenRenderState reports a method-tight outcome because a lost device cannot back a
+// derived pipeline. These tests all run on a live fake device, so anything but `ok` is a test bug.
+function unwrapOffscreen(result: WgpuOffscreenRenderStateResult): WgpuRenderState {
+  if (result.reason !== 'ok') throw new Error(`expected an offscreen state, got ${result.reason}`);
+  return result.state;
+}
+
 beforeAll(() => {
   installWgpuMock();
 });
@@ -77,7 +85,7 @@ function registerPaddingResolver(state: RenderState, kind: string, resolver: Ren
 describe('copyWgpuRenderStateRegistrations', () => {
   it('copies late Wgpu registrations only when explicitly requested', async () => {
     const screen = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(screen);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
     const materialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
     const decoder = vi.fn(() => new Uint8ClampedArray(4));
@@ -193,8 +201,8 @@ describe('createWgpuDeviceState', () => {
 describe('createWgpuOffscreenRenderState', () => {
   it('resolves late screen blend-mode wiring explicitly until locally overridden', async () => {
     const screen = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(screen);
-    const nested = createWgpuOffscreenRenderState(offscreen);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
+    const nested = unwrapOffscreen(createWgpuOffscreenRenderState(offscreen));
     const screenHook = vi.fn();
     const laterScreenHook = vi.fn();
     const offscreenHook = vi.fn();
@@ -263,7 +271,7 @@ describe('createWgpuOffscreenRenderState', () => {
     );
     getWgpuRenderStateRuntime(screen).context.wgpuRenderTextureCache = new WeakMap();
 
-    const offscreen = createWgpuOffscreenRenderState(screen);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
     const screenRuntime = getWgpuRenderStateRuntime(screen);
     const offscreenRuntime = getWgpuRenderStateRuntime(offscreen);
 
@@ -325,6 +333,8 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.modifierSnippetRevision).toBe(screenRuntime.registries.modifierSnippetRevision);
     expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
+    // Policy, stated: a derived pipeline INHERITS the source's stroke tessellator. Correct only
+    // because StrokeTessellator requires a shareable implementation — see its contract in `types`.
     expect(offscreenRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
@@ -340,7 +350,7 @@ describe('createWgpuOffscreenRenderState', () => {
 
   it('owns an independent encoder and proxy tree', async () => {
     const screen = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(screen);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
     const root = createDisplayObject();
     registerRenderer(offscreen, root.kind, { createData: () => createEntity({}), submit: vi.fn() });
     prepareScene2DRender(offscreen, root);
@@ -362,7 +372,7 @@ describe('createWgpuOffscreenRenderState', () => {
       destroyData,
       submit: vi.fn(),
     });
-    const offscreen = createWgpuOffscreenRenderState(screen);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
     prepareScene2DRender(offscreen, root);
     const screenDestroy = vi.spyOn(getWgpuRenderStateRuntime(screen).uniformBuffer, 'destroy');
     const offscreenDestroy = vi.spyOn(getWgpuRenderStateRuntime(offscreen).uniformBuffer, 'destroy');
@@ -376,7 +386,7 @@ describe('createWgpuOffscreenRenderState', () => {
 
   it('requires explicit re-copy for renderers and padding registered after derivation', async () => {
     const screen = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(screen);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
     const renderer = { createData: () => null, submit: vi.fn() };
     const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
     registerRenderer(screen, 'acme.LateNode', renderer);
@@ -432,7 +442,7 @@ describe('createWgpuRenderState', () => {
 
     try {
       const state = createWgpuRenderState(acquisition);
-      const offscreen = createWgpuOffscreenRenderState(state);
+      const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(state));
       expect(state.context).toBe(acquisition.context);
       expect(state.device).toBe(acquisition.device);
       expect(state.format).toBe(acquisition.format);
@@ -624,7 +634,7 @@ describe('createWgpuRenderStateRuntime', () => {
 describe('destroyWgpuRenderState', () => {
   it('releases a Flight-owned acquisition once after its last derived state', async () => {
     const state = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(state);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(state));
     const unconfigure = vi.spyOn(state.context, 'unconfigure');
     const destroy = vi.spyOn(state.device, 'destroy');
 
@@ -656,7 +666,7 @@ describe('destroyWgpuRenderState', () => {
 
   it('shares the device tier across screen and offscreen states', async () => {
     const state = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(state);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(state));
     const runtime = getWgpuRenderStateRuntime(state);
     const offscreenRuntime = getWgpuRenderStateRuntime(offscreen);
 
@@ -670,7 +680,7 @@ describe('destroyWgpuRenderState', () => {
 
   it('invokes registered teardown callbacks when the last reference is destroyed', async () => {
     const state = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(state);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(state));
     const teardown = vi.fn();
     registerWgpuDeviceTeardown(state, teardown);
 
@@ -684,7 +694,7 @@ describe('destroyWgpuRenderState', () => {
 
   it('does not invoke teardowns when references remain', async () => {
     const state = await createWgpuRenderStateForTest();
-    createWgpuOffscreenRenderState(state);
+    unwrapOffscreen(createWgpuOffscreenRenderState(state));
     const teardown = vi.fn();
     registerWgpuDeviceTeardown(state, teardown);
 
@@ -923,7 +933,7 @@ describe('wgpu acquisition lifecycle', () => {
       setWgpuHostBackend(backend);
 
       const state = createWgpuRenderState(acquisition);
-      const offscreen = createWgpuOffscreenRenderState(state);
+      const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(state));
       const first = destroyOffscreenFirst ? offscreen : state;
       const second = destroyOffscreenFirst ? state : offscreen;
 
@@ -945,7 +955,7 @@ describe('wgpu acquisition lifecycle', () => {
       setWgpuHostBackend(backend);
 
       const state = createWgpuRenderState(acquisition);
-      const offscreen = createWgpuOffscreenRenderState(state);
+      const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(state));
       destroyWgpuRenderState(destroyOffscreenFirst ? offscreen : state);
       destroyWgpuRenderState(destroyOffscreenFirst ? state : offscreen);
 

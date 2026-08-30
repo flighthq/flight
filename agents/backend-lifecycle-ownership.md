@@ -819,6 +819,24 @@ justify it.
 The removed aggregate `IpcBackend` also leaves the operation-seam subject population. That is a removed
 subject, not permission to drop a surviving interface's seam.
 
+### 2026-08-30 — WGPU device loss is observed at the tier that owns the device
+
+Loss is a property of the **device**, not of a render state, so the terminal fact and its signal live on
+`WgpuDeviceRuntime` beside the other device-scoped resources it owns. One observer per physical device
+is attached in `createMinimalDeviceRuntime`, the single place a device tier is built, so aliases inherit
+it without a reverse device-to-state index.
+
+Three lifecycle consequences follow:
+
+- `device.lost` is a resolution report and also resolves for Flight's own `device.destroy()`. Reason
+  `'destroyed'` is recorded but not announced; only unexpected loss reaches `onDeviceLost`.
+- Late attachment cannot miss a loss because `GPUDevice.lost` resolves once and remains resolved.
+- The observer captures only the device runtime; capturing a state would retain that state and its GPU
+  resources for the device lifetime.
+
+Ownership remains independent: loss releases nothing, while `destroyWgpuRenderState` still decrements
+device-tier and acquisition references. A lost device is released by whoever owns it.
+
 ## Review checklist for the remaining slices
 
 For each of the three missing whole-backend hooks, tests must cover replacement with a different

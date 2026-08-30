@@ -3,6 +3,7 @@ import type { ExternalTexture } from './ExternalTexture';
 import type { Image } from './Image';
 import type { RenderTexture } from './RenderTexture';
 import type { TextureSource } from './TextureSource';
+import type { WgpuDeviceSignals } from './WgpuDeviceSignals';
 import type { WgpuParticleResources } from './WgpuParticleResources';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
 import type { WgpuShapeMeshPipeline } from './WgpuRenderState';
@@ -13,6 +14,12 @@ export interface WgpuDeviceRuntime extends EntityRuntime {
   readonly device: GPUDevice;
   references: number;
   teardowns: Array<(device: GPUDevice) => void>;
+
+  // Terminal once set: a lost GPUDevice never comes back, so this is written exactly once and every
+  // state sharing the tier reads the same value. Holds BOTH an unexpected loss and the 'destroyed'
+  // resolution Flight's own release causes; only the former reaches signals.onDeviceLost.
+  lost: GPUDeviceLostInfo | null;
+  signals: WgpuDeviceSignals | null;
 
   uniformBindGroupLayout: GPUBindGroupLayout;
   textureBindGroupLayout: GPUBindGroupLayout;

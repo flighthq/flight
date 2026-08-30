@@ -11,7 +11,12 @@ import {
   isWgpuRenderTextureReady,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { RenderEffect, WgpuRenderEffectRunner } from '@flighthq/types/contract';
+import type {
+  WgpuOffscreenRenderStateResult,
+  WgpuRenderState,
+  RenderEffect,
+  WgpuRenderEffectRunner,
+} from '@flighthq/types/contract';
 
 import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { getWgpuRenderEffectRunner, registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
@@ -20,6 +25,13 @@ import {
   explainWgpuRenderEffectApplication,
   setWgpuRenderEffectApplicationGuard,
 } from './wgpuRenderTextureEffect';
+
+// createWgpuOffscreenRenderState reports a method-tight outcome because a lost device cannot back a
+// derived pipeline. These tests all run on a live fake device, so anything but `ok` is a test bug.
+function unwrapOffscreen(result: WgpuOffscreenRenderStateResult): WgpuRenderState {
+  if (result.reason !== 'ok') throw new Error(`expected an offscreen state, got ${result.reason}`);
+  return result.state;
+}
 
 beforeAll(() => installWgpuMock());
 
@@ -117,7 +129,7 @@ describe('offscreen effect registration snapshots', () => {
     const first: WgpuRenderEffectRunner = vi.fn();
     const later: WgpuRenderEffectRunner = vi.fn();
     registerWgpuRenderEffect(screen, 'acme.First', first);
-    const offscreen = createWgpuOffscreenRenderState(screen);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(screen));
     registerWgpuRenderEffect(screen, 'acme.Later', later);
 
     expect(getWgpuRenderEffectRunner(offscreen, 'acme.First')).toBe(first);

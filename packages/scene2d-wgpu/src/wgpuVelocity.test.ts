@@ -7,7 +7,13 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type {
+  WgpuOffscreenRenderStateResult,
+  WgpuRenderState,
+  QuadBatchRuntime,
+  TextureAtlas,
+  TextureAtlasRegion,
+} from '@flighthq/types/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity/contract';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -22,6 +28,13 @@ import {
   registerWgpuVelocityWriter,
   renderWgpuVelocity,
 } from './wgpuVelocity';
+
+// createWgpuOffscreenRenderState reports a method-tight outcome because a lost device cannot back a
+// derived pipeline. These tests all run on a live fake device, so anything but `ok` is a test bug.
+function unwrapOffscreen(result: WgpuOffscreenRenderStateResult): WgpuRenderState {
+  if (result.reason !== 'ok') throw new Error(`expected an offscreen state, got ${result.reason}`);
+  return result.state;
+}
 
 beforeAll(() => {
   installWgpuMock();
@@ -132,7 +145,7 @@ describe('registerWgpuVelocityWriter', () => {
 
     registerWgpuVelocityWriter(state, kind, defaultWgpuNode2DVelocityWriter);
     const registered = getWgpuRenderStateRuntime(state).registries.velocityWriters;
-    const offscreen = createWgpuOffscreenRenderState(state);
+    const offscreen = unwrapOffscreen(createWgpuOffscreenRenderState(state));
     registerWgpuVelocityWriter(state, kind, replacement);
 
     expect(registered).not.toBe(before);
