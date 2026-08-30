@@ -760,3 +760,21 @@ Construction performs no runtime probe and no hardware acquisition. The access p
 with `sysex: false`. System-exclusive input is discarded, system-exclusive output is rejected before the
 native provider, and no software scheduler is introduced. Electron, Tauri, and Capacitor retain empty MIDI
 groups until real providers exist.
+
+## 21. APP and PROTOCOL explicit-Host correction (2026-08-30)
+
+The historical rows above classified the old broad Web factories correctly: their sentinel-majority
+aggregates were not valid Host providers. The surviving genuine operations are now split into narrow,
+truthful slots rather than deleted with those aggregates.
+
+`webHost.app` publishes exactly `badge`, `focus`, `locale`, `name`, `quit`, `ready`, and `relaunch`, in
+addition to the separately owned application loop/exit/visibility slots already composed into the
+same top-level group. It does not claim dock, login-item, path, single-instance, visibility commands,
+or native application events. `createWebAppCapabilities` returns these Entity providers for explicit
+Host composition; there is no Web enabler or ambient APP selection state.
+
+`webHost.protocol` publishes exactly `launch` and `registration`. Browser registration uses
+`navigator.registerProtocolHandler` and keeps only the schemes this provider successfully registered;
+launch reads the explicit redirect payload. Default-handler queries/removal, unregistration, and live
+OS opens are structurally absent. PROTOCOL is a promoted top-level group rather than an APP child, and
+there is no ambient resolver or inert pending/open provider.
