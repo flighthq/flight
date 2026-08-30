@@ -14,6 +14,12 @@ by: builder5
 Every item below was re-checked against `packages/application/src/` and `packages/types/src/` on
 2026-08-08. A file:line here is a claim about this tree, not about a session.
 
+- **`application-runtime-side-tables`.** `_applicationObservers`, `_applicationLoopState`, and
+  `_mainWindows` are keyed by `Application` identity and hold ongoing per-Application runtime state
+  and cleanup, not derived memoization caches. Now that `Application` is an Entity, these hand-rolled
+  identity maps are analogous to the resolved render runtime pattern and should later move behind
+  Entity runtime slots and `getRuntime`. This follow-up deliberately does not migrate them in the
+  Entity-closure slice.
 - **No guard module and no `explain*` query.** `packages/application/src/` is four source files
   (`application.ts`, `window.ts`, `applicationRenderView.ts`, `contract.ts`); there is no
   `enableApplicationGuards.ts`, and `application` does not appear in the enabler census in
@@ -45,6 +51,9 @@ Every item below was re-checked against `packages/application/src/` and `package
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-29** — `Application` and `createApplication` now satisfy the Entity constructor
+  invariant; the three identity-keyed runtime side tables remain filed as
+  `application-runtime-side-tables` rather than expanding this closure slice.
 - **2026-08-29** — Pointer-lock request/exit now return method-tight reason outcomes and transfer or
   clear exact provider provenance only on `ok`; Web observes modern/legacy settlement without silent
   unknown-target acquisition. `ApplicationWindow` and `createApplicationWindow` now satisfy the

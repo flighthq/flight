@@ -1,4 +1,5 @@
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ApplicationExitBackend, ApplicationVisibilityBackend, LoopBackend } from '@flighthq/types/contract';
 
 import {
@@ -162,6 +163,11 @@ describe('attachApplicationLifecycle', () => {
 });
 
 describe('createApplication', () => {
+  it('creates an Entity-backed application identity', () => {
+    const app = createApplication();
+    expect(EntityRuntimeKey in app).toBe(true);
+  });
+
   it('returns signals with no side effects', () => {
     const host = createExitTestHost();
     const app = createApplication();

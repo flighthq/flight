@@ -23,7 +23,6 @@
     "@flighthq/adjustments createTintAdjustment",
     "@flighthq/app createApp",
     "@flighthq/app createAppLoginItem",
-    "@flighthq/application createApplication",
     "@flighthq/assets createAssetLibrary",
     "@flighthq/audio createAudioResource",
     "@flighthq/audio createAudioResourceFailure",

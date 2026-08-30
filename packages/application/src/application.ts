@@ -1,9 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Application,
   ApplicationLoopOptions,
   ApplicationStepOptions,
   ApplicationWindow,
+  EntityWithoutRuntime,
   HasAppExitSubscription,
   HasAppLoop,
   HasAppVisibilityQuery,
@@ -60,7 +62,7 @@ export function attachApplicationLifecycle(app: Application, win: ApplicationWin
 }
 
 export function createApplication(): Application {
-  return {
+  return createEntity<EntityWithoutRuntime<Application>>({
     deltaTime: 0,
     elapsedTime: 0,
     frameCount: 0,
@@ -74,7 +76,7 @@ export function createApplication(): Application {
     onRender: createSignal(),
     onUpdate: createSignal(),
     windows: [],
-  };
+  });
 }
 
 export function detachApplicationExit(app: Application): void {
