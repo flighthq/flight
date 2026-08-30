@@ -3,6 +3,13 @@ import type { AppBackend } from './App';
 import type { ApplicationExitBackend } from './ApplicationExitBackend';
 import type { ApplicationVisibilityBackend } from './ApplicationVisibilityBackend';
 import type { WindowBackend } from './ApplicationWindow';
+import type {
+  InputDropFileBackend,
+  InputFocusBackend,
+  InputPointerLockBackend,
+  RenderContextBackend,
+  RenderSurfaceBackend,
+} from './ApplicationWindowTargetBackend';
 import type { AudioBackend } from './AudioBackend';
 import type { AudioDeviceBackend } from './AudioDeviceBackend';
 import type { BidiClassBackend } from './Bidi';
@@ -124,12 +131,17 @@ export interface HostGraphicsCapabilities {
   readonly bitmapReadback?: BitmapReadbackBackend;
   readonly image?: ImageBackend;
   readonly pathBoolean?: PathBooleanBackend;
+  readonly renderContext?: RenderContextBackend;
+  readonly renderSurface?: RenderSurfaceBackend;
   readonly wgpuHost?: WgpuHostBackend;
 }
 
 export interface HostInputCapabilities {
+  readonly dropFile?: InputDropFileBackend;
+  readonly focus?: InputFocusBackend;
   readonly haptics?: HapticsBackend;
   readonly ingress?: InputIngressBackend;
+  readonly pointerLock?: InputPointerLockBackend;
   readonly softKeyboard?: SoftKeyboardBackend;
   readonly target?: InputTargetBackend;
 }
@@ -294,8 +306,24 @@ export interface HasGraphicsPathBoolean {
   readonly graphics: { readonly pathBoolean: PathBooleanBackend };
 }
 
+export interface HasGraphicsRenderContextSubscription {
+  readonly graphics: { readonly renderContext: RenderContextBackend };
+}
+
+export interface HasGraphicsRenderSurface {
+  readonly graphics: { readonly renderSurface: RenderSurfaceBackend };
+}
+
 export interface HasGraphicsWgpuHost {
   readonly graphics: { readonly wgpuHost: WgpuHostBackend };
+}
+
+export interface HasInputDropFileSubscription {
+  readonly input: { readonly dropFile: InputDropFileBackend };
+}
+
+export interface HasInputFocusSubscription {
+  readonly input: { readonly focus: InputFocusBackend };
 }
 
 export interface HasInputHaptics {
@@ -304,6 +332,10 @@ export interface HasInputHaptics {
 
 export interface HasInputIngress {
   readonly input: { readonly ingress: InputIngressBackend };
+}
+
+export interface HasInputPointerLock {
+  readonly input: { readonly pointerLock: InputPointerLockBackend };
 }
 
 export interface HasInputSoftKeyboard {
@@ -504,10 +536,6 @@ export interface HasWindowOpen {
 
 export interface HasWindowOrientationSubscription {
   readonly window: WindowBackend & Required<Pick<WindowBackend, 'subscribeOrientation'>>;
-}
-
-export interface HasWindowPointerLockExit {
-  readonly window: WindowBackend & Required<Pick<WindowBackend, 'exitPointerLock'>>;
 }
 
 export interface HasWindowResizeSubscription {

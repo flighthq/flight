@@ -392,6 +392,18 @@ An enumerated list reads as complete whether or not it was derived completely, a
 
 **R18 — A signal is a Host event slot only if a *backend* emits it.** If core emits it around its own dispatch, it is a core signal belonging to the owning package's `enable*` group and never to the Host — putting it in the Host would assert that hosts must supply it, which is false, and a future host author would try to implement it. Menu's `onContextMenuOpen`/`onContextMenuClose` are emitted by the core dispatcher around its own popup call, so they stay core signals; `onMenuItemHighlight` is emitted from the DOM overlay that R3 moves into `host-web`, so it becomes a Web-only Host slot. **Determine the emitter *after* the slice's move, not before** — for a domain mid-migration the emitter's current file is not evidence, and ruling on today's location would have placed highlight in the wrong layer. Module-scoped signal state (`_menuSignals`) is explicitly fine: the model permits module-scoped allocation/identity and guard enable flags, and targets module-scoped *capabilities*.
 
+**Application target R16/R18 census — 2026-08-29 append.** The retained raw-target population was derived as exactly five exported application functions: `attachWindowDropFile`, `attachWindowFocus`, `attachWindowRenderContext`, `attachWindowRenderState`, and `lockApplicationPointer` (with the paired global `exitApplicationPointerLock` command). After moving DOM work to `host-web`, emitter and shape classify them as follows:
+
+| Surface | Post-move emitter/shape | Host slot |
+| --- | --- | --- |
+| drop file | backend emits paths; application forwards them to the core-owned `ApplicationWindow.onDropFile` signal | `input.dropFile` event |
+| focus/blur | backend emits target focus transitions; application forwards them to the two core-owned window signals | `input.focus` event |
+| render-context loss/restoration | backend emits surface context transitions; application forwards them to the two core-owned window signals | `graphics.renderContext` event |
+| render-state resize | core `ApplicationWindow.onResize` emits; its listener issues a bounded backing-store sizing command | `graphics.renderSurface` command only; **no Host resize event slot** |
+| pointer lock | request/exit are commands with one provider-global active lock | `input.pointerLock` command |
+
+The three event slots remain separate from both command slots under R16 even though Web realizes all five through one opaque `InputTargetHandle` mapping. Multi-capability use is expressed as the explicit intersection of their five `Has*` traits; no aggregate slot hides that cost.
+
 ### First inventories — what they changed
 
 Two domain inventories (`window`, `dialog`) and the GL/WGPU context inventory landed 2026-08-29 and each overturned something this record proposed. All three are ruled; none is open.

@@ -79,6 +79,7 @@ export * from './Application';
 export * from './ApplicationLoopOptions';
 export * from './ApplicationRenderView';
 export * from './ApplicationWindow';
+export * from './ApplicationWindowTargetBackend';
 export * from './AreaLight';
 export * from './AsepriteSchema';
 export * from './Assets';

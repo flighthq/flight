@@ -105,7 +105,7 @@ describe('webFullscreenBackend', () => {
 });
 
 describe('webWindowBackend', () => {
-  it('adapter-roster axis: publishes the 10 P1 operations plus the six narrow R6 capabilities', () => {
+  it('adapter-roster axis: publishes the 10 P1 operations plus the five retained window subscriptions', () => {
     expect(
       Object.keys(webWindowBackend)
         .filter((operation) => operation !== 'attach')
@@ -113,7 +113,6 @@ describe('webWindowBackend', () => {
     ).toEqual([
       'center',
       'close',
-      'exitPointerLock',
       'focus',
       'getBounds',
       'open',
@@ -215,15 +214,6 @@ describe('webWindowBackend', () => {
     expect(listener).toHaveBeenCalledTimes(2);
     expect(listener).toHaveBeenNthCalledWith(1, false);
     expect(listener).toHaveBeenNthCalledWith(2, true);
-  });
-
-  it('delegates pointer-lock exit to the browser document', async () => {
-    const exitPointerLock = vi.fn();
-    Object.defineProperty(document, 'exitPointerLock', { configurable: true, value: exitPointerLock });
-
-    await webWindowBackend.exitPointerLock();
-
-    expect(exitPointerLock).toHaveBeenCalledOnce();
   });
 
   it('detaches a host-owned page window without closing it', () => {

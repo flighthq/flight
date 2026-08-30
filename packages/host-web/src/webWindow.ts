@@ -15,7 +15,6 @@ type WebWindowBackend = WindowBackend &
       WindowBackend,
       | 'attach'
       | 'close'
-      | 'exitPointerLock'
       | 'open'
       | 'subscribeClose'
       | 'subscribeMove'
@@ -44,11 +43,6 @@ export const webWindowBackend: WebWindowBackend = {
   },
   close(win) {
     detachWebWindow(win, true);
-  },
-  exitPointerLock() {
-    if (typeof document === 'undefined' || typeof document.exitPointerLock !== 'function') return Promise.resolve();
-    document.exitPointerLock();
-    return Promise.resolve();
   },
   focus(win) {
     const handle = getWebWindowHandle(win);

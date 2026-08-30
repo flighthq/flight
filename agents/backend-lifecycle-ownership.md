@@ -644,6 +644,22 @@ and `AudioDeviceBackend` as row 22. The four new GC rows (17–20) and the three
 move the live denominator from 43 to 50 and this bucket from 16 to 20. The structural lifecycle
 census should therefore report five whole-backend hooks among 50 interfaces.
 
+### 2026-08-29 application target append
+
+The historical population above intentionally remains intact. Immediately before the application
+target slice, the derived structural census reported **5 of 70** backends with a whole-backend hook.
+The slice adds the following five seams and the post-slice census reports **5 of 75**: five new
+per-target/event-or-command backends, no removed seam, no newly declared whole-backend hook, and no
+regression. Every provider value and the shared opaque `InputTargetHandle` is an `Entity`.
+
+| # | Backend | Exact resource bracket and provenance | Result |
+| ---: | --- | --- | --- |
+| 23 | `InputDropFileBackend` | `subscribe(target, listener)` returns the exact release for the target's drag/drop listeners. `attachWindowDropFile` stores that release on its `ApplicationWindow`; replacement, detach, terminal close, and disposal invoke it without consulting a later Host. | **Owned.** Provider-A → provider-B replacement tests prove A releases before B attaches, and the Web release removes the exact two listeners idempotently. |
+| 24 | `InputFocusBackend` | `subscribe(target, onFocus, onBlur)` returns one release covering both target listeners. The application observer table retains the originating release. | **Owned.** Replacement/detach route to the creator; Web teardown removes both exact callbacks and repeated release is inert. |
+| 25 | `InputPointerLockBackend` | A successful `request(target)` records that exact backend as the owner of the provider-global pointer lock. `exitApplicationPointerLock` uses the recorded owner even when passed another Host and clears provenance only after successful exit. | **Owned by explicit release.** The provider-A request/provider-B exit test proves A receives both commands; a rejected request does not overwrite an earlier successful origin, and a rejected exit retains it for retry. |
+| 26 | `RenderContextBackend` | `subscribe(target, onLost, onRestored)` owns Web context-loss/restoration listeners and returns their exact release. `attachWindowRenderContext` stores the origin release in the window observer table. | **Owned.** Replacement/detach/disposal cannot redirect cleanup; Web teardown removes both exact canvas listeners idempotently. |
+| 27 | `RenderSurfaceBackend` | `resize(target, pixelWidth, pixelHeight)` is a bounded command over an opaque provider-bound target. `attachWindowRenderState` captures both the originating backend and target in its core `ApplicationWindow.onResize` connection; detach/disposal removes that connection. | **Owned by core connection and keyed handle.** Later Host selection cannot reroute an attached resize command. The target mapping is weak/GC-managed and backing-store dimensions are durable surface state, not a borrowed lease to restore on detach. |
+
 ## Review checklist for the remaining slices
 
 For each of the three missing whole-backend hooks, tests must cover replacement with a different

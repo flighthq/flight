@@ -2,6 +2,11 @@ import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flig
 import type {
   ApplicationWindow,
   FullscreenTargetHandle,
+  HasGraphicsRenderContextSubscription,
+  HasGraphicsRenderSurface,
+  HasInputDropFileSubscription,
+  HasInputFocusSubscription,
+  HasInputPointerLock,
   HasInputTargetPreparation,
   HasUiFullscreen,
   HasUiFullscreenSubscription,
@@ -10,9 +15,9 @@ import type {
   HasWindowMoveSubscription,
   HasWindowOpen,
   HasWindowOrientationSubscription,
-  HasWindowPointerLockExit,
   HasWindowResizeSubscription,
   HasWindowVisibilitySubscription,
+  InputPointerLockBackend,
   InputTargetHandle,
   Matrix,
   NativeWindowHandle,
@@ -69,35 +74,34 @@ export function attachWindowClose(host: HasWindowCloseSubscription, win: Applica
   );
 }
 
-export function attachWindowDropFile(win: ApplicationWindow, element: HTMLElement): void {
+export function attachWindowDropFile(
+  host: HasInputDropFileSubscription,
+  win: ApplicationWindow,
+  target: InputTargetHandle,
+): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kDropFile)?.();
-  const onDragOver = (e: DragEvent) => e.preventDefault();
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    for (const file of Array.from(e.dataTransfer?.files ?? [])) {
-      emitSignal(win.onDropFile, file.name);
-    }
-  };
-  element.addEventListener('dragover', onDragOver);
-  element.addEventListener('drop', onDrop);
-  observers.set(kDropFile, () => {
-    element.removeEventListener('dragover', onDragOver);
-    element.removeEventListener('drop', onDrop);
-  });
+  observers.set(
+    kDropFile,
+    host.input.dropFile.subscribe(target, (path) => emitSignal(win.onDropFile, path)),
+  );
 }
 
-export function attachWindowFocus(win: ApplicationWindow, element: HTMLElement): void {
+export function attachWindowFocus(
+  host: HasInputFocusSubscription,
+  win: ApplicationWindow,
+  target: InputTargetHandle,
+): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kFocus)?.();
-  const onFocus = () => emitSignal(win.onFocusIn);
-  const onBlur = () => emitSignal(win.onFocusOut);
-  element.addEventListener('focus', onFocus);
-  element.addEventListener('blur', onBlur);
-  observers.set(kFocus, () => {
-    element.removeEventListener('focus', onFocus);
-    element.removeEventListener('blur', onBlur);
-  });
+  observers.set(
+    kFocus,
+    host.input.focus.subscribe(
+      target,
+      () => emitSignal(win.onFocusIn),
+      () => emitSignal(win.onFocusOut),
+    ),
+  );
 }
 
 export function attachWindowFullscreen(host: HasUiFullscreenSubscription, win: ApplicationWindow): void {
@@ -136,20 +140,21 @@ export function attachWindowOrientation(host: HasWindowOrientationSubscription, 
   );
 }
 
-export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCanvasElement): void {
+export function attachWindowRenderContext(
+  host: HasGraphicsRenderContextSubscription,
+  win: ApplicationWindow,
+  target: InputTargetHandle,
+): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderContext)?.();
-  const onContextLost = (e: Event) => {
-    e.preventDefault();
-    emitSignal(win.onRenderContextLost);
-  };
-  const onContextRestored = () => emitSignal(win.onRenderContextRestored);
-  canvas.addEventListener('webglcontextlost', onContextLost);
-  canvas.addEventListener('webglcontextrestored', onContextRestored);
-  observers.set(kRenderContext, () => {
-    canvas.removeEventListener('webglcontextlost', onContextLost);
-    canvas.removeEventListener('webglcontextrestored', onContextRestored);
-  });
+  observers.set(
+    kRenderContext,
+    host.graphics.renderContext.subscribe(
+      target,
+      () => emitSignal(win.onRenderContextLost),
+      () => emitSignal(win.onRenderContextRestored),
+    ),
+  );
 }
 
 // Binds a canvas render state to the window's size and devicePixelRatio: sizes the canvas backing
@@ -158,12 +163,21 @@ export function attachWindowRenderContext(win: ApplicationWindow, canvas: HTMLCa
 // — it is the source of the size/DPI updates this reacts to. The render state must have an
 // initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
 // device transform (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
-export function attachWindowRenderState(win: ApplicationWindow, state: RenderState, canvas: HTMLCanvasElement): void {
+export function attachWindowRenderState(
+  host: HasGraphicsRenderSurface,
+  win: ApplicationWindow,
+  state: RenderState,
+  target: InputTargetHandle,
+): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kRenderState)?.();
+  const renderSurface = host.graphics.renderSurface;
   const apply = (): void => {
-    canvas.width = Math.round(win.width * win.devicePixelRatio);
-    canvas.height = Math.round(win.height * win.devicePixelRatio);
+    renderSurface.resize(
+      target,
+      Math.round(win.width * win.devicePixelRatio),
+      Math.round(win.height * win.devicePixelRatio),
+    );
     if (state.renderTransform2D !== null) computeWindowDeviceTransform(win, state.renderTransform2D);
   };
   apply();
@@ -342,8 +356,11 @@ export function exitApplicationFullscreen(host: HasUiFullscreen): Promise<boolea
 }
 
 // Releases the host's active Pointer Lock, restoring cursor movement.
-export function exitApplicationPointerLock(host: HasWindowPointerLockExit): Promise<void> {
-  return host.window.exitPointerLock();
+export function exitApplicationPointerLock(host: HasInputPointerLock): Promise<void> {
+  const backend = _pointerLockBackend ?? host.input.pointerLock;
+  return backend.exit().then(() => {
+    if (_pointerLockBackend === backend) _pointerLockBackend = null;
+  });
 }
 
 // Briefly flashes the window frame to attract attention. Native hosts may implement it via the
@@ -374,14 +391,15 @@ export function hideWindow(host: WindowOperationHost<'hide'>, win: ApplicationWi
   host.window.hide(win);
 }
 
-// Requests Pointer Lock on an element, hiding and confining the cursor so raw mouse deltas are
+// Requests Pointer Lock on an opaque target, hiding and confining the cursor so raw mouse deltas are
 // delivered via pointermove events. Returns a promise that resolves on success or rejects if the
-// browser denies (requires a prior user gesture). Use exitApplicationPointerLock to release.
-export function lockApplicationPointer(element: HTMLElement): Promise<void> {
-  if (typeof element.requestPointerLock !== 'function') return Promise.resolve();
-  const result = element.requestPointerLock();
-  // requestPointerLock returns a Promise in newer browsers and undefined in older ones.
-  return (result instanceof Promise ? result : Promise.resolve()) as Promise<void>;
+// host denies (web requires a prior user gesture). Successful acquisition pins its eventual exit to
+// this exact provider even if the caller later supplies a different Host.
+export function lockApplicationPointer(host: HasInputPointerLock, target: InputTargetHandle): Promise<void> {
+  const backend = host.input.pointerLock;
+  return backend.request(target).then(() => {
+    _pointerLockBackend = backend;
+  });
 }
 
 // Maximizes the window. Updates state and emits onMaximize when the state changes.
@@ -658,6 +676,7 @@ const _applicationWindowObservers = new WeakMap<ApplicationWindow, Map<symbol, (
 
 const _terminalWindows = new WeakSet<ApplicationWindow>();
 const _windowBackends = new WeakMap<ApplicationWindow, Required<Pick<WindowBackend, 'close'>>>();
+let _pointerLockBackend: InputPointerLockBackend | null = null;
 
 function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
   let observers = _applicationWindowObservers.get(win);

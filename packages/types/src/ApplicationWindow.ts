@@ -159,6 +159,4 @@ export interface WindowBackend {
   ): () => void;
   // Registers activation visibility changes; true means active/visible.
   subscribeVisibility?(listener: (visible: boolean) => void): () => void;
-  // Releases the host's active pointer lock. Request remains element-targeted and explicit.
-  exitPointerLock?(): Promise<void>;
 }
