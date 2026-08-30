@@ -1,0 +1,149 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { describe, expect, it } from 'vitest';
+
+import * as hostWebContract from '../packages/host-web/src/contract';
+import * as hostWebPublic from '../packages/host-web/src/index';
+
+const root = process.cwd();
+const HOST_GROUPS = [
+  'accessibility',
+  'app',
+  'clipboard',
+  'connectivity',
+  'dialog',
+  'graphics',
+  'input',
+  'ipc',
+  'media',
+  'menu',
+  'midi',
+  'net',
+  'notification',
+  'power',
+  'protocol',
+  'screen',
+  'share',
+  'shell',
+  'shortcut',
+  'storage',
+  'system',
+  'text',
+  'tray',
+  'ui',
+  'updater',
+  'window',
+] as const;
+
+const WRAPPERS = [
+  {
+    file: 'webHostAccessibility.ts',
+    group: 'accessibility',
+    imports: ['@flighthq/entity/contract', './webAccessibility'],
+    name: 'webHostAccessibility',
+    slots: ['provider'],
+  },
+  {
+    file: 'webHostClipboard.ts',
+    group: 'clipboard',
+    imports: ['@flighthq/entity/contract', './webClipboard'],
+    name: 'webHostClipboard',
+    slots: ['change', 'formats', 'image', 'text'],
+  },
+  {
+    file: 'webHostConnectivity.ts',
+    group: 'connectivity',
+    imports: ['@flighthq/entity/contract', './webConnectivity'],
+    name: 'webHostConnectivity',
+    slots: ['change', 'reachability', 'status'],
+  },
+  {
+    file: 'webHostDialog.ts',
+    group: 'dialog',
+    imports: ['@flighthq/entity/contract', './webDialog'],
+    name: 'webHostDialog',
+    slots: ['directoryOpen', 'fileOpen', 'fileSave', 'message', 'prompt'],
+  },
+  {
+    file: 'webHostGraphics.ts',
+    group: 'graphics',
+    imports: ['@flighthq/entity/contract', './webInputTarget'],
+    name: 'webHostGraphics',
+    slots: ['renderContext', 'renderSurface'],
+  },
+  {
+    file: 'webHostInput.ts',
+    group: 'input',
+    imports: ['@flighthq/entity/contract', './webHaptics', './webInputTarget', './webKeyboard'],
+    name: 'webHostInput',
+    slots: [
+      'dropFile',
+      'focus',
+      'haptics',
+      'pointerLock',
+      'softKeyboardChange',
+      'softKeyboardInfo',
+      'softKeyboardVisibility',
+      'target',
+    ],
+  },
+  {
+    file: 'webHostMenu.ts',
+    group: 'menu',
+    imports: ['@flighthq/entity/contract', './webMenu'],
+    name: 'webHostMenu',
+    slots: ['highlight', 'popup'],
+  },
+  {
+    file: 'webHostShare.ts',
+    group: 'share',
+    imports: ['@flighthq/entity/contract', './webShare'],
+    name: 'webHostShare',
+    slots: ['content', 'files'],
+  },
+  {
+    file: 'webHostShell.ts',
+    group: 'shell',
+    imports: ['@flighthq/entity/contract', './webShell'],
+    name: 'webHostShell',
+    slots: ['external'],
+  },
+] as const;
+
+describe('host-Web group wrapper boundaries', () => {
+  it.each(WRAPPERS)('$name is a public Entity Host with only its truthful Has* slots', (spec) => {
+    const wrapper = requiredValue<Record<PropertyKey, any>>(hostWebContract, spec.name);
+
+    expect(Reflect.get(hostWebPublic, spec.name)).toBe(wrapper);
+    expect(EntityRuntimeKey in wrapper).toBe(true);
+    expect(wrapper[EntityRuntimeKey]).toBeUndefined();
+    expect(Object.keys(wrapper[spec.group]).sort()).toEqual(spec.slots);
+    expect(requiredValue<Record<string, unknown>>(hostWebContract, 'webHost')[spec.group]).toBe(wrapper[spec.group]);
+    for (const group of HOST_GROUPS) {
+      if (group !== spec.group) expect(wrapper[group]).toEqual({});
+    }
+  });
+
+  it.each(WRAPPERS)('$file is isolated to createHost and its own group backends', (spec) => {
+    const path = resolve(root, 'packages/host-web/src', spec.file);
+    expect(existsSync(path), `${spec.file} source`).toBe(true);
+    if (!existsSync(path)) return;
+    const source = readFileSync(path, 'utf8');
+
+    expect(collectImportSpecifiers(source).sort()).toEqual([...spec.imports].sort());
+    expect(source).toContain(`export const ${spec.name} = createHost({`);
+    expect(source).toMatch(new RegExp(`\\b${spec.group}: \\{`));
+  });
+});
+
+function collectImportSpecifiers(source: string): string[] {
+  return Array.from(source.matchAll(/\bfrom\s+['"]([^'"]+)['"]/g), (match) => match[1]!);
+}
+
+function requiredValue<Type>(module: object, name: string): Type {
+  const value = Reflect.get(module, name);
+  expect(value, `${name} export`).not.toBeUndefined();
+  return value as Type;
+}
