@@ -52,6 +52,7 @@
   "tween:canvas": 21111,
   "video:canvas": 10765,
   "flight-diagnostics:canvas": 1519,
+  "host-web-full:canvas": 7110,
   "layout:canvas": 1234,
   "layout:canvas:all": 4452,
   "scene2d-embedded-png:canvas": 3449,
