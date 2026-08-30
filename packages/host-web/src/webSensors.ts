@@ -1,13 +1,6 @@
-import { createWebSensorsBackend, installSensorsHostBackend } from '@flighthq/sensors/contract';
+import { createWebSensorsBackend } from '@flighthq/sensors/contract';
+import type { SensorsBackend } from '@flighthq/types/contract';
 
-export function enableHostWebSensors(): void {
-  if (_enabled) return;
-  _enabled = true;
-  installSensorsHostBackend(createWebSensorsBackend());
-}
-
-export function resetHostWebSensorsForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;
+// Published on the Host rather than installed into the sensors package, so a caller selects this
+// provider by passing the host that carries it.
+export const webSensorsBackend: SensorsBackend = createWebSensorsBackend();

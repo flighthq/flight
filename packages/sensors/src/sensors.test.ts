@@ -1,5 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
+  HasSystemSensors,
   AmbientLightReading,
   MotionReading,
   OrientationReading,
@@ -30,7 +31,6 @@ import {
   createWebSensorsBackend,
   detachSensors,
   disposeSensors,
-  getSensorsBackend,
   getSensorsPermissionState,
   hasAccelerometer,
   hasAmbientLightSensor,
@@ -43,11 +43,6 @@ import {
   hasProximitySensor,
   isSensorsSupported,
   requestSensorsPermission,
-  setSensorsBackend,
-  explainSensorsBackend,
-  installSensorsHostBackend,
-  observeSensorsHostResult,
-  resetSensorsBackendForTest,
 } from './sensors';
 
 function fakeBackend(): SensorsBackend & {
@@ -178,18 +173,20 @@ function fakeBackend(): SensorsBackend & {
   };
 }
 
-afterEach(() => setSensorsBackend(null));
+function hostOf(backend: SensorsBackend): HasSystemSensors {
+  return { system: { sensors: backend } } as HasSystemSensors;
+}
 
 describe('attachSensors', () => {
   it('emits onAccelerometer and onGyroscope from the motion stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let accel = 0;
     let gyro = 0;
     connectSignal(sensors.onAccelerometer, () => accel++);
     connectSignal(sensors.onGyroscope, () => gyro++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireMotion(createMotionReading(), createRotationRateReading());
     expect(accel).toBe(1);
     expect(gyro).toBe(1);
@@ -197,100 +194,100 @@ describe('attachSensors', () => {
 
   it('emits onOrientation from the orientation stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let orient = 0;
     connectSignal(sensors.onOrientation, () => orient++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireOrientation(createOrientationReading());
     expect(orient).toBe(1);
   });
 
   it('emits onMagnetometer from the magnetometer stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let magnet = 0;
     connectSignal(sensors.onMagnetometer, () => magnet++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireMagnetometer(createMotionReading());
     expect(magnet).toBe(1);
   });
 
   it('emits onLinearAcceleration from the linear acceleration stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let count = 0;
     connectSignal(sensors.onLinearAcceleration, () => count++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireLinearAcceleration(createMotionReading());
     expect(count).toBe(1);
   });
 
   it('emits onGravity from the gravity stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let count = 0;
     connectSignal(sensors.onGravity, () => count++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireGravity(createMotionReading());
     expect(count).toBe(1);
   });
 
   it('emits onAbsoluteOrientation from the absolute orientation stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let count = 0;
     connectSignal(sensors.onAbsoluteOrientation, () => count++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireAbsoluteOrientation(createOrientationReading());
     expect(count).toBe(1);
   });
 
   it('emits onAmbientLight from the ambient light stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let count = 0;
     connectSignal(sensors.onAmbientLight, () => count++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireAmbientLight(createAmbientLightReading());
     expect(count).toBe(1);
   });
 
   it('emits onProximity from the proximity stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let count = 0;
     connectSignal(sensors.onProximity, () => count++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireProximity(createProximityReading());
     expect(count).toBe(1);
   });
 
   it('emits onQuaternion from the quaternion stream', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let count = 0;
     connectSignal(sensors.onQuaternion, () => count++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     backend.fireQuaternion(createQuaternionReading());
     expect(count).toBe(1);
   });
 
   it('is idempotent: re-attach tears down the prior subscription', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let count = 0;
     connectSignal(sensors.onAccelerometer, () => count++);
-    attachSensors(sensors);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
+    attachSensors(host, sensors);
     backend.fireMotion(createMotionReading(), createRotationRateReading());
     // Only one subscription should be active.
     expect(count).toBe(1);
@@ -621,11 +618,11 @@ describe('createWebSensorsBackend', () => {
 describe('detachSensors', () => {
   it('stops further delivery', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
     let accel = 0;
     connectSignal(sensors.onAccelerometer, () => accel++);
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     detachSensors(sensors);
     backend.fireMotion(createMotionReading(), createRotationRateReading());
     expect(accel).toBe(0);
@@ -640,213 +637,116 @@ describe('detachSensors', () => {
 describe('disposeSensors', () => {
   it('detaches the subscriptions without throwing', () => {
     const backend = fakeBackend();
-    setSensorsBackend(backend);
+    const host = hostOf(backend);
     const sensors = createSensors();
-    attachSensors(sensors);
+    attachSensors(host, sensors);
     expect(() => disposeSensors(sensors)).not.toThrow();
-  });
-});
-
-describe('explainSensorsBackend', () => {
-  afterEach(() => resetSensorsBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetSensorsBackendForTest();
-    const explanation = explainSensorsBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setSensorsBackend(fakeBackend());
-    expect(explainSensorsBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installSensorsHostBackend(fakeBackend());
-    expect(explainSensorsBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installSensorsHostBackend(fakeBackend());
-    installSensorsHostBackend(fakeBackend());
-    expect(explainSensorsBackend().conflict).toBe(true);
-  });
-});
-
-describe('getSensorsBackend', () => {
-  it('falls back to a web backend when none is installed', () => {
-    expect(getSensorsBackend()).not.toBeNull();
   });
 });
 
 describe('getSensorsPermissionState', () => {
   it('returns a valid permission state string', async () => {
-    setSensorsBackend(fakeBackend());
-    const state = await getSensorsPermissionState();
+    const host = hostOf(fakeBackend());
+    const state = await getSensorsPermissionState(host);
     expect(['granted', 'denied', 'prompt', 'unsupported']).toContain(state);
   });
 });
 
 describe('hasAccelerometer', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasAccelerometer()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasAccelerometer(host)).toBe('boolean');
   });
 
   it('returns true when the backend reports motion support', () => {
-    setSensorsBackend(fakeBackend());
-    expect(hasAccelerometer()).toBe(true);
+    const host = hostOf(fakeBackend());
+    expect(hasAccelerometer(host)).toBe(true);
   });
 });
 
 describe('hasAmbientLightSensor', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasAmbientLightSensor()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasAmbientLightSensor(host)).toBe('boolean');
   });
 });
 
 describe('hasBarometer', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasBarometer()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasBarometer(host)).toBe('boolean');
   });
 });
 
 describe('hasGravitySensor', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasGravitySensor()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasGravitySensor(host)).toBe('boolean');
   });
 
   it('returns true when the backend reports gravity support', () => {
-    setSensorsBackend(fakeBackend());
-    expect(hasGravitySensor()).toBe(true);
+    const host = hostOf(fakeBackend());
+    expect(hasGravitySensor(host)).toBe(true);
   });
 });
 
 describe('hasGyroscope', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasGyroscope()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasGyroscope(host)).toBe('boolean');
   });
 });
 
 describe('hasLinearAccelerationSensor', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasLinearAccelerationSensor()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasLinearAccelerationSensor(host)).toBe('boolean');
   });
 
   it('returns true when the backend reports linear acceleration support', () => {
-    setSensorsBackend(fakeBackend());
-    expect(hasLinearAccelerationSensor()).toBe(true);
+    const host = hostOf(fakeBackend());
+    expect(hasLinearAccelerationSensor(host)).toBe(true);
   });
 });
 
 describe('hasMagnetometer', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasMagnetometer()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasMagnetometer(host)).toBe('boolean');
   });
 });
 
 describe('hasOrientationSensor', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasOrientationSensor()).toBe('boolean');
+    const host = hostOf(fakeBackend());
+    expect(typeof hasOrientationSensor(host)).toBe('boolean');
   });
 });
 
 describe('hasProximitySensor', () => {
   it('returns a boolean', () => {
-    setSensorsBackend(fakeBackend());
-    expect(typeof hasProximitySensor()).toBe('boolean');
-  });
-});
-
-describe('installSensorsHostBackend', () => {
-  afterEach(() => resetSensorsBackendForTest());
-
-  it('installs a host backend that getSensorsBackend returns', () => {
-    const backend = fakeBackend();
-    installSensorsHostBackend(backend);
-    expect(getSensorsBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installSensorsHostBackend(first);
-    installSensorsHostBackend(second);
-    expect(getSensorsBackend()).toBe(first);
-    expect(explainSensorsBackend().conflict).toBe(true);
+    const host = hostOf(fakeBackend());
+    expect(typeof hasProximitySensor(host)).toBe('boolean');
   });
 });
 
 describe('isSensorsSupported', () => {
   it('returns true when the fake backend reports motion support', () => {
-    setSensorsBackend(fakeBackend());
-    expect(isSensorsSupported()).toBe(true);
+    const host = hostOf(fakeBackend());
+    expect(isSensorsSupported(host)).toBe(true);
   });
 
   it('returns false when the backend reports no motion support', () => {
     const backend = fakeBackend();
     vi.spyOn(backend, 'isMotionSupported').mockReturnValue(false);
-    setSensorsBackend(backend);
-    expect(isSensorsSupported()).toBe(false);
-  });
-});
-
-describe('observeSensorsHostResult', () => {
-  afterEach(() => resetSensorsBackendForTest());
-
-  it('records a successful observation', () => {
-    installSensorsHostBackend(fakeBackend());
-    observeSensorsHostResult('getPermissionState', true);
-    const explanation = explainSensorsBackend();
-    expect(explanation.operation).toBe('getPermissionState');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installSensorsHostBackend(fakeBackend());
-    observeSensorsHostResult('getPermissionState', false);
-    expect(explainSensorsBackend().viability).toBe('runtime-api-unavailable');
+    const host = hostOf(backend);
+    expect(isSensorsSupported(host)).toBe(false);
   });
 });
 
 describe('requestSensorsPermission', () => {
   it('delegates to the backend', async () => {
-    setSensorsBackend(fakeBackend());
-    expect(await requestSensorsPermission()).toBe(true);
-  });
-});
-
-describe('resetSensorsBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setSensorsBackend(fakeBackend());
-    installSensorsHostBackend(fakeBackend());
-    observeSensorsHostResult('getPermissionState', true);
-    resetSensorsBackendForTest();
-    expect(explainSensorsBackend().layer).toBe('host-not-enabled');
-    expect(explainSensorsBackend().conflict).toBe(false);
-    expect(explainSensorsBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('setSensorsBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setSensorsBackend(fakeBackend());
-    setSensorsBackend(null);
-    expect(getSensorsBackend()).not.toBeNull();
-  });
-
-  it('installs a custom backend that is returned by getSensorsBackend', () => {
-    const backend = fakeBackend();
-    setSensorsBackend(backend);
-    expect(getSensorsBackend()).toBe(backend);
+    const host = hostOf(fakeBackend());
+    expect(await requestSensorsPermission(host)).toBe(true);
   });
 });

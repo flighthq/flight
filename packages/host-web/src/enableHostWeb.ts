@@ -11,7 +11,6 @@ import { enableHostWebImage } from './webImage';
 import { enableHostWebMediaFileCapture } from './webMediaFileCapture';
 import { enableHostWebPlatform } from './webPlatform';
 import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
-import { enableHostWebSensors } from './webSensors';
 import { enableHostWebVideoCapability } from './webVideoCapability';
 
 export function enableHostWeb(): void {
@@ -27,7 +26,6 @@ export function enableHostWeb(): void {
   enableHostWebImage();
   enableHostWebPlatform();
   enableHostWebRaster2DSurface();
-  enableHostWebSensors();
   enableHostWebVideoCapability();
   enableHostWebMediaFileCapture();
 }

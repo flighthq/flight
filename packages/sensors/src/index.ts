@@ -1,5 +1,4 @@
 export {
-  explainSensorsBackend,
   attachSensors,
   computeEulerFromQuaternion,
   computeGravityFromOrientation,

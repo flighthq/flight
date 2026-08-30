@@ -9,7 +9,7 @@ function hostWith(backend: Partial<SensorsBackend>): HasSystemSensors {
 describe('getSensorsPermissionState', () => {
   it('reads the permission state from the host it is given', async () => {
     const host = hostWith({ getPermissionState: () => Promise.resolve('granted') });
-    expect(await getSensorsPermissionState(host, 'accelerometer')).toBe('granted');
+    expect(await getSensorsPermissionState(host, 'motion')).toBe('granted');
   });
 
   // Two hosts, two answers. Before the migration both calls resolved one process-wide backend, so the
@@ -17,8 +17,8 @@ describe('getSensorsPermissionState', () => {
   it('keeps two hosts independent', async () => {
     const granted = hostWith({ getPermissionState: () => Promise.resolve('granted') });
     const denied = hostWith({ getPermissionState: () => Promise.resolve('denied') });
-    expect(await getSensorsPermissionState(granted, 'accelerometer')).toBe('granted');
-    expect(await getSensorsPermissionState(denied, 'accelerometer')).toBe('denied');
+    expect(await getSensorsPermissionState(granted, 'motion')).toBe('granted');
+    expect(await getSensorsPermissionState(denied, 'motion')).toBe('denied');
   });
 });
 
