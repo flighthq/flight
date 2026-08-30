@@ -75,11 +75,11 @@ describe('drawGlShapeMeshes', () => {
 
   it('records the mesh program as currentShader so content draws re-bind', () => {
     const { state } = createGlState();
-    expect(getGlRenderStateRuntime(state).currentShader).toBeNull();
+    expect(getGlRenderStateRuntime(state).context.currentShader).toBeNull();
 
     drawGlShapeMeshes(state, makeProxy(), [TRIANGLE]);
 
-    expect(getGlRenderStateRuntime(state).currentShader).not.toBeNull();
+    expect(getGlRenderStateRuntime(state).context.currentShader).not.toBeNull();
   });
 
   it('uploads premultiplied color (color * alpha) for the standard blend', () => {

@@ -30,13 +30,13 @@ describe('bindGlRenderTexture', () => {
 
     expect(texture).not.toBeNull();
     expect(gl.texImage2D).toHaveBeenCalledTimes(uploads);
-    expect(getGlRenderStateRuntime(state).currentTextureRealization?.texture).toBe(texture);
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization?.texture).toBe(texture);
   });
 
   it('uses the null sentinel before the first render', () => {
     const { state } = createRenderTextureState();
     expect(bindGlRenderTexture(state, createRenderTexture({ height: 8, width: 8 }))).toBeNull();
-    expect(getGlRenderStateRuntime(state).currentTextureRealization).toBeNull();
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization).toBeNull();
   });
 });
 

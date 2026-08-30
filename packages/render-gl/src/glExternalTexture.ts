@@ -39,7 +39,9 @@ export function createExternalGlTexture(
 
 export function disposeExternalGlTexture(state: GlRenderState, texture: Readonly<Texture>): boolean {
   const source = getExternalTextureSource(texture);
-  return source === null ? false : (getGlRenderStateRuntime(state).glExternalTextureCache?.delete(source) ?? false);
+  return source === null
+    ? false
+    : (getGlRenderStateRuntime(state).context.glExternalTextureCache?.delete(source) ?? false);
 }
 
 function resolveExternalGlTexture(state: GlRenderState, texture: Readonly<TextureLike>): GlTextureRealization | null {

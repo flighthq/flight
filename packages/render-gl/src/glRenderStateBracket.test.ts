@@ -280,12 +280,12 @@ function applyTestGlState(fixture: StatefulGl, values: Readonly<TestGlState>): v
   setCapability(gl, gl.SCISSOR_TEST, values.scissorTest);
   gl.scissor(values.scissorBox[0], values.scissorBox[1], values.scissorBox[2], values.scissorBox[3]);
   gl.viewport(values.viewport[0], values.viewport[1], values.viewport[2], values.viewport[3]);
-  runtime.currentBlendSignature = values.blendSignature;
+  runtime.context.currentBlendSignature = values.blendSignature;
   runtime.currentFramebuffer = values.framebuffer;
   runtime.currentRenderTarget = values.currentRenderTarget;
-  runtime.currentShader = values.program === null ? null : { locations: null, program: values.program };
+  runtime.context.currentShader = values.program === null ? null : { locations: null, program: values.program };
   runtime.currentScissorRect = values.scissorRect;
-  runtime.currentTextureRealization =
+  runtime.context.currentTextureRealization =
     values.texture === null ? null : { straightAlpha: values.straightAlpha, texture: values.texture };
   runtime.renderTargetViewport = values.renderTargetViewport;
 }
@@ -480,13 +480,13 @@ function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>)
   expect(gl.isEnabled(gl.SCISSOR_TEST)).toBe(expected.scissorTest);
   expect(parameters.get(gl.SCISSOR_BOX)).toEqual(expected.scissorBox);
   expect(parameters.get(gl.VIEWPORT)).toEqual(expected.viewport);
-  expect(runtime.currentBlendSignature).toEqual(expected.blendSignature);
+  expect(runtime.context.currentBlendSignature).toEqual(expected.blendSignature);
   expect(runtime.currentFramebuffer).toBe(expected.framebuffer);
   expect(runtime.currentRenderTarget).toBe(expected.currentRenderTarget);
-  expect(runtime.currentShader?.program ?? null).toBe(expected.program);
+  expect(runtime.context.currentShader?.program ?? null).toBe(expected.program);
   expect(runtime.currentScissorRect).toBe(expected.scissorRect);
-  expect(runtime.currentTextureRealization?.texture ?? null).toBe(expected.texture);
-  expect(runtime.currentTextureRealization?.straightAlpha ?? false).toBe(expected.straightAlpha);
+  expect(runtime.context.currentTextureRealization?.texture ?? null).toBe(expected.texture);
+  expect(runtime.context.currentTextureRealization?.straightAlpha ?? false).toBe(expected.straightAlpha);
   expect(runtime.renderTargetViewport).toBe(expected.renderTargetViewport);
 }
 

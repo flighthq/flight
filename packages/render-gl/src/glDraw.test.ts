@@ -125,7 +125,7 @@ describe('applyGlBlendMode', () => {
   it('does not call blendFunc when blend mode has not changed', () => {
     const { state, gl } = createGlState();
     registerDefaultGlBlendModes(state);
-    getGlRenderStateRuntime(state).currentBlendSignature = {
+    getGlRenderStateRuntime(state).context.currentBlendSignature = {
       dst: gl.ONE_MINUS_SRC_ALPHA,
       equation: gl.FUNC_ADD,
       src: gl.ONE,
@@ -212,7 +212,7 @@ describe('applyGlBlendMode', () => {
     const { state, gl } = createGlState();
     registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Add);
-    expect(getGlRenderStateRuntime(state).currentBlendSignature).toEqual({
+    expect(getGlRenderStateRuntime(state).context.currentBlendSignature).toEqual({
       dst: gl.ONE,
       equation: gl.FUNC_ADD,
       src: gl.ONE,
@@ -348,7 +348,7 @@ describe('bindGlCompressedImageTexture', () => {
     bindGlCompressedImageTexture(state, image);
     expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
     expect(gl.texImage2D).toHaveBeenCalled();
-    expect(getGlRenderStateRuntime(state).currentTextureRealization?.straightAlpha).toBe(true);
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization?.straightAlpha).toBe(true);
   });
 
   it('preserves straight-alpha sampling on a cache hit', () => {
@@ -360,9 +360,9 @@ describe('bindGlCompressedImageTexture', () => {
     );
     const image = compressedBc3Image();
     bindGlCompressedImageTexture(state, image);
-    getGlRenderStateRuntime(state).currentTextureRealization = null;
+    getGlRenderStateRuntime(state).context.currentTextureRealization = null;
     bindGlCompressedImageTexture(state, image);
-    expect(getGlRenderStateRuntime(state).currentTextureRealization?.straightAlpha).toBe(true);
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization?.straightAlpha).toBe(true);
   });
 
   it('skips the image when no compressed uploader is registered', () => {
@@ -451,10 +451,10 @@ describe('bindGlTexture', () => {
     const img = document.createElement('img');
     const texture = bindGlTexture(state, img);
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTextureRealization = null;
+    runtime.context.currentTextureRealization = null;
     bindGlTexture(state, img);
     expect(gl.bindTexture).toHaveBeenCalledWith((gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D, texture);
-    expect(getGlRenderStateRuntime(state).currentTextureRealization?.texture).toBe(texture);
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization?.texture).toBe(texture);
   });
 
   it('rebinds a cached texture even when it is already current, for multi-unit correctness', () => {
@@ -612,7 +612,7 @@ describe('bindGlTextureRealization', () => {
     expect(bindGlTextureRealization(state, { straightAlpha: true, texture })).toBe(texture);
 
     expect(gl.bindTexture).toHaveBeenLastCalledWith(gl.TEXTURE_2D, texture);
-    expect(getGlRenderStateRuntime(state).currentTextureRealization).toEqual({ straightAlpha: true, texture });
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization).toEqual({ straightAlpha: true, texture });
   });
 
   it('unbinds and invalidates the texture realization together', () => {
@@ -622,7 +622,7 @@ describe('bindGlTextureRealization', () => {
     expect(bindGlTextureRealization(state, null)).toBeNull();
 
     expect(gl.bindTexture).toHaveBeenLastCalledWith(gl.TEXTURE_2D, null);
-    expect(getGlRenderStateRuntime(state).currentTextureRealization).toBeNull();
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization).toBeNull();
   });
 });
 
@@ -764,7 +764,7 @@ describe('createGlTexture', () => {
   it('stores the new texture as currentTexture on state', () => {
     const { state } = createGlState();
     const texture = createGlTexture(state);
-    expect(getGlRenderStateRuntime(state).currentTextureRealization?.texture).toBe(texture);
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization?.texture).toBe(texture);
   });
 });
 
@@ -929,7 +929,7 @@ describe('setGlQuadMatrixFromOffset', () => {
     const runtime = getGlRenderStateRuntime(state);
     setGlQuadMatrixFromOffset(state, 1, 0, 0, 1, 0, 0, 10, 20);
     expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(
-      runtime.currentShader!.locations!.locMatrix,
+      runtime.context.currentShader!.locations!.locMatrix,
       false,
       runtime.matrixArray,
     );
@@ -953,7 +953,7 @@ describe('updateGlTexture', () => {
     const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
     const canvas = document.createElement('canvas');
-    getGlRenderStateRuntime(state).currentTextureRealization = null;
+    getGlRenderStateRuntime(state).context.currentTextureRealization = null;
     updateGlTexture(state, texture, canvas);
     expect(gl.bindTexture).toHaveBeenCalledWith((gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D, texture);
   });
@@ -962,17 +962,17 @@ describe('updateGlTexture', () => {
     const { state } = createGlState();
     const texture = {} as WebGLTexture;
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentTextureRealization = null;
+    runtime.context.currentTextureRealization = null;
     updateGlTexture(state, {} as WebGLTexture, document.createElement('canvas'));
     updateGlTexture(state, texture, document.createElement('canvas'));
     // The last call should have updated currentTexture
-    expect(getGlRenderStateRuntime(state).currentTextureRealization?.texture).toBe(texture);
+    expect(getGlRenderStateRuntime(state).context.currentTextureRealization?.texture).toBe(texture);
   });
 
   it('rebinds even when the texture is already current (currentTexture is unit-blind)', () => {
     const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
-    getGlRenderStateRuntime(state).currentTextureRealization = { straightAlpha: false, texture };
+    getGlRenderStateRuntime(state).context.currentTextureRealization = { straightAlpha: false, texture };
     updateGlTexture(state, texture, document.createElement('canvas'));
     // Never skip on currentTexture: the active unit may have changed since it was set, so uploading
     // without rebinding could target the wrong texture.
@@ -982,7 +982,7 @@ describe('updateGlTexture', () => {
   it('always calls texImage2D to upload canvas data', () => {
     const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
-    getGlRenderStateRuntime(state).currentTextureRealization = { straightAlpha: false, texture };
+    getGlRenderStateRuntime(state).context.currentTextureRealization = { straightAlpha: false, texture };
     updateGlTexture(state, texture, document.createElement('canvas'));
     expect(gl.texImage2D).toHaveBeenCalled();
   });
@@ -990,7 +990,7 @@ describe('updateGlTexture', () => {
   it('sets premultiply alpha before uploading', () => {
     const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
-    getGlRenderStateRuntime(state).currentTextureRealization = { straightAlpha: false, texture };
+    getGlRenderStateRuntime(state).context.currentTextureRealization = { straightAlpha: false, texture };
     updateGlTexture(state, texture, document.createElement('canvas'));
     expect(gl.pixelStorei).toHaveBeenCalledWith(
       (gl as unknown as { UNPACK_PREMULTIPLY_ALPHA_WEBGL: number }).UNPACK_PREMULTIPLY_ALPHA_WEBGL,
@@ -1003,7 +1003,7 @@ describe('useGlProgram', () => {
   it('calls useProgram when no program is active', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentShader = null;
+    runtime.context.currentShader = null;
     useGlProgram(state);
     expect(gl.useProgram).toHaveBeenCalledWith(runtime.defaultBitmapShader!.program);
   });
@@ -1011,7 +1011,7 @@ describe('useGlProgram', () => {
   it('does not call useProgram when program is already active', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentShader = {
+    runtime.context.currentShader = {
       locations: runtime.defaultBitmapShader!.locations,
       program: runtime.defaultBitmapShader!.program,
     };
@@ -1022,9 +1022,9 @@ describe('useGlProgram', () => {
   it('stores the program as the current shader after activation', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentShader = null;
+    runtime.context.currentShader = null;
     useGlProgram(state);
-    expect(getGlRenderStateRuntime(state).currentShader?.program).toBe(runtime.defaultBitmapShader!.program);
+    expect(getGlRenderStateRuntime(state).context.currentShader?.program).toBe(runtime.defaultBitmapShader!.program);
   });
 
   it('uses the registered bitmap shader program and locations', () => {
@@ -1041,7 +1041,7 @@ describe('useGlProgram', () => {
     useGlProgram(state);
 
     expect(gl.useProgram).toHaveBeenCalledWith(shader.program);
-    expect(runtime.currentShader?.locations).toBe(shader.locations);
-    expect(runtime.currentShader?.program).toBe(shader.program);
+    expect(runtime.context.currentShader?.locations).toBe(shader.locations);
+    expect(runtime.context.currentShader?.program).toBe(shader.program);
   });
 });

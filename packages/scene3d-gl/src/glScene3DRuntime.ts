@@ -104,10 +104,13 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
   if (scene === undefined) {
     // The runtime accessor routes this slot to the context tier. A derived state must retain the map
     // already installed by its primary instead of replacing it with a state-local upload identity.
-    let uploadCache = stateRuntime.sceneMeshUploadCache as WeakMap<MeshGeometry, GlMeshUpload> | null | undefined;
+    let uploadCache = stateRuntime.context.sceneMeshUploadCache as
+      | WeakMap<MeshGeometry, GlMeshUpload>
+      | null
+      | undefined;
     if (uploadCache == null) {
       uploadCache = new WeakMap();
-      stateRuntime.sceneMeshUploadCache = uploadCache as unknown as WeakMap<object, object>;
+      stateRuntime.context.sceneMeshUploadCache = uploadCache as unknown as WeakMap<object, object>;
     }
     scene = {
       activeBlendedRun: false,

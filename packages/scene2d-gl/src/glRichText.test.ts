@@ -86,7 +86,7 @@ describe('destroyGlRichTextData', () => {
   it('removes the GPU cache entry before returning the node surface to its creator', () => {
     const order: string[] = [];
     const { state, gl } = createGlState();
-    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     installTestRaster2DSurfaceProvider((surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
@@ -131,7 +131,7 @@ describe('drawGlRichText', () => {
 
     const firstOwned = firstData as unknown as { surface: Raster2DSurface };
     const secondOwned = secondData as unknown as { surface: Raster2DSurface };
-    const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const firstSurface = firstOwned.surface;
     const firstImage = firstSurface.image;
     expect(firstOwned.surface).not.toBe(secondOwned.surface);

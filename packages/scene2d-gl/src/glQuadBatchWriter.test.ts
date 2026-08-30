@@ -261,7 +261,7 @@ describe('setGlQuadBatchWorldAndTexture', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const straightAlphaLocation = {} as WebGLUniformLocation;
-    runtime.currentTextureRealization = { straightAlpha: true, texture: state.gl.createTexture()! };
+    runtime.context.currentTextureRealization = { straightAlpha: true, texture: state.gl.createTexture()! };
 
     setGlQuadBatchWorldAndTexture(state, {} as WebGLUniformLocation, {} as WebGLUniformLocation, straightAlphaLocation);
 
@@ -275,6 +275,6 @@ describe('useGlQuadBatchProgram', () => {
     const program = {} as WebGLProgram;
     useGlQuadBatchProgram(state, program);
     expect(gl.useProgram).toHaveBeenCalledWith(program);
-    expect(getGlRenderStateRuntime(state).currentShader?.program).toBe(program);
+    expect(getGlRenderStateRuntime(state).context.currentShader?.program).toBe(program);
   });
 });

@@ -47,7 +47,7 @@ export function createGlRichTextData(_state: GlRenderState, _source: Renderable)
 export function destroyGlRichTextData(state: GlRenderState, data: RendererData): void {
   const { surface } = data as unknown as GlRichTextData;
   if (surface === null) return;
-  const cache = getGlRenderStateRuntime(state).textureSourcePremultipliedTextureCache;
+  const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
   const entry = cache.get(surface.image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
