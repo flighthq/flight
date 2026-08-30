@@ -6,7 +6,13 @@ import { webAccessibilityBackend } from './webAccessibility';
 import { webApplicationExitBackend } from './webApplicationExit';
 import { webClipboardBackend } from './webClipboard';
 import { webConnectivityBackend } from './webConnectivity';
-import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
+import {
+  webDirectoryOpenDialogBackend,
+  webFileOpenDialogBackend,
+  webFileSaveDialogBackend,
+  webMessageDialogBackend,
+  webPromptDialogBackend,
+} from './webDialog';
 import { webHapticsBackend } from './webHaptics';
 import {
   webInputDropFileBackend,
@@ -47,7 +53,9 @@ export const webHost = createEntity({
     status: webConnectivityBackend,
   },
   dialog: {
-    file: webFileDialogBackend,
+    directoryOpen: webDirectoryOpenDialogBackend,
+    fileOpen: webFileOpenDialogBackend,
+    fileSave: webFileSaveDialogBackend,
     message: webMessageDialogBackend,
     prompt: webPromptDialogBackend,
   },

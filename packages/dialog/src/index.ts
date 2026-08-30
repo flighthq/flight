@@ -1,6 +1,6 @@
 export {
-  getWebDirectorySystemHandle,
-  getWebFileSystemHandle,
+  createFileDialogHandle,
+  getFileDialogHandleOperations,
   showConfirmDialog,
   showErrorBox,
   showErrorDialog,

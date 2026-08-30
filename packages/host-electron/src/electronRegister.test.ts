@@ -53,7 +53,9 @@ describe('registerElectronBackends', () => {
     const host = registerElectronBackends(fakeElectron());
     expect(host.media).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
-    expect(host.dialog.file.openFile).toBeTypeOf('function');
+    expect(host.dialog.directoryOpen.open).toBeTypeOf('function');
+    expect(host.dialog.fileOpen.open).toBeTypeOf('function');
+    expect(host.dialog.fileSave.save).toBeTypeOf('function');
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.close.closeNotification).toBeTypeOf('function');

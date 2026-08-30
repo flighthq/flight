@@ -105,6 +105,9 @@ describe('capacitorHost', () => {
     expect(host.connectivity.change).toBe(host.connectivity.status);
     expect(host.connectivity.reachability).toBeUndefined();
     expect(host.dialog.message).toBeDefined();
+    expect('directoryOpen' in host.dialog).toBe(false);
+    expect('fileOpen' in host.dialog).toBe(false);
+    expect('fileSave' in host.dialog).toBe(false);
     expect(host.input.haptics).toBeDefined();
     expect(host.notification.delivery).toBeDefined();
     expect(host.share.content).toBeDefined();

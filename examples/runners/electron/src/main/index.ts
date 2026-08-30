@@ -57,7 +57,12 @@ function loadRenderer(win: ApplicationWindow): void {
 // these over IPC (see preload); each handler is a plain Flight capability call that, thanks to
 // registerElectronBackends, is now serviced by Electron.
 function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): void {
-  ipcMain.handle('flight:openFileDialog', () => showOpenFileDialog(host, { title: 'Pick a file' }));
+  ipcMain.handle('flight:openFileDialog', async () => {
+    const result = await showOpenFileDialog(host, {});
+    // Entity runtime identity is process-local and deliberately never serialized. The harness bridge
+    // exposes path/name DTO strings, matching the preload contract exactly.
+    return result.outcome === 'selected' ? result.handles.map((handle) => handle.path ?? handle.name) : [];
+  });
   ipcMain.handle('flight:readClipboard', () => readClipboardText(host));
   ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) => writeClipboardText(host, String(text)));
   ipcMain.handle('flight:notify', (_event: unknown, body: unknown) =>

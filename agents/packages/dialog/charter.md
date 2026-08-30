@@ -15,13 +15,16 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Native host dialogs — file open, file save, directory pick, and the message family (message / info / warning / error / confirm / prompt / error-box) — exposed as flat free functions over a swappable `DialogBackend`. The package owns file/directory _selection_, never byte I/O: a picker yields a `FileDialogHandle` (an opaque reference to the chosen file/directory), and reading or writing those bytes is `@flighthq/filesystem`'s job via the bridge accessors (`getWebFileSystemHandle` / `getWebDirectorySystemHandle`). The web backend reaches for the File System Access API first and treats `<input type=file>` / `<input webkitdirectory>` as explicit, named fallbacks.
+Native host dialogs — file open, file save, directory pick, and the message family (message / info / warning / error / confirm / prompt / error-box) — exposed as flat free functions over explicit Host capability slots. The package owns file/directory _selection_, never byte I/O: a picker yields a `FileDialogHandle` Entity, and reading or writing those bytes is `@flighthq/filesystem`'s job through provider-neutral operations on that Entity runtime. Web file providers live in `@flighthq/host-web`; the legacy file-input fallback retains the selected `File`, while a legacy directory surrogate is deliberately absent.
 
 ## Decisions
 
 - **[2026-07-02] Fix empty-accept edge case in `buildFileSystemAccessTypes`.** When all MIME types are wildcards, `buildFileSystemAccessTypes` produces `{ accept: {} }` which the File System Access API rejects. Guard against this — treat it as a bug fix.
+- **[2026-08-30] File-picker slots and outcomes are method-tight.** `dialog.fileOpen`, `dialog.directoryOpen`, and `dialog.fileSave` are independent W/E/T slots and absent on Capacitor. Selected results are nonempty; cancellation, runtime absence, reliable security denial, and operation failure remain distinct.
+- **[2026-08-30] `FileDialogHandle` is Entity currency across cells.** Provider-neutral runtime operations travel with the handle; a serialized path/name DTO is deliberately not a handle and gains no runtime authority.
+- **[2026-08-30] Picker providers own no durable descriptor.** Calls settle their transient UI, and filesystem owns each writable it opens. No provider-wide destroy or handle dispose is invented.
 
 ## Open directions
 
-1. **Handle as cross-cell currency.** "Dialog never gains `readFile`/`writeFile`; the handle is the currency" is load-bearing for the I/O story. Should be promoted to a blessed Decision.
-2. **The `filesystem` -> `dialog` dependency direction.** `@flighthq/filesystem` imports `getWebFileSystemHandle` from dialog. Sound (I/O domain depends on handle-source domain), but it is a real coupling between two platform cells that should be a recorded Decision.
+No open direction is recorded for the file-picker slice. Message and prompt option uniformity remains a
+separate capability decision.

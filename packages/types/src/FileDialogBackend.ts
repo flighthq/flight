@@ -1,10 +1,20 @@
-import type { FileDialogHandle } from './Dialog';
-import type { OpenDirectoryDialogOptions } from './Dialog';
-import type { OpenFileDialogOptions } from './Dialog';
-import type { SaveFileDialogOptions } from './Dialog';
+import type {
+  DirectoryOpenDialogResult,
+  FileOpenDialogResult,
+  FileSaveDialogResult,
+  OpenFileDialogOptions,
+  SaveFileDialogOptions,
+} from './Dialog';
+import type { Entity } from './Entity';
 
-export interface FileDialogBackend {
-  openDirectory(options: Readonly<OpenDirectoryDialogOptions>): Promise<FileDialogHandle[]>;
-  openFile(options: Readonly<OpenFileDialogOptions>): Promise<FileDialogHandle[]>;
-  saveFile(options: Readonly<SaveFileDialogOptions>): Promise<FileDialogHandle | null>;
+export interface DirectoryOpenDialogBackend extends Entity {
+  open(): Promise<DirectoryOpenDialogResult>;
+}
+
+export interface FileOpenDialogBackend extends Entity {
+  open(options: Readonly<OpenFileDialogOptions>): Promise<FileOpenDialogResult>;
+}
+
+export interface FileSaveDialogBackend extends Entity {
+  save(options: Readonly<SaveFileDialogOptions>): Promise<FileSaveDialogResult>;
 }

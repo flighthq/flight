@@ -120,7 +120,7 @@ export interface CapacitorDeviceInfo {
 
 // `@capacitor/dialog` — native message/confirm/prompt dialogs. `alert` is a single-button
 // acknowledgement; `confirm` and `prompt` return a value. There is no native file picker here, so a
-// Capacitor host advertises message and prompt dialog capabilities but omits dialog.file.
+// Capacitor host advertises message and prompt dialog capabilities but omits every file-dialog slot.
 export interface CapacitorDialogPlugin {
   alert(options: Readonly<CapacitorDialogAlertOptions>): Promise<void>;
   confirm(options: Readonly<CapacitorDialogConfirmOptions>): Promise<CapacitorDialogConfirmResult>;

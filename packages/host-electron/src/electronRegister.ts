@@ -14,7 +14,9 @@ import type {
   HasClipboardFormats,
   HasClipboardImage,
   HasClipboardText,
-  HasDialogFile,
+  HasDialogDirectoryOpen,
+  HasDialogFileOpen,
+  HasDialogFileSave,
   HasDialogMessage,
   HasNotificationAction,
   HasNotificationClick,
@@ -36,7 +38,12 @@ import type {
 
 import { createElectronAppBackend } from './electronApp';
 import { createElectronClipboardBackend } from './electronClipboard';
-import { createElectronFileDialogBackend, createElectronMessageDialogBackend } from './electronDialog';
+import {
+  createElectronDirectoryOpenDialogBackend,
+  createElectronFileOpenDialogBackend,
+  createElectronFileSaveDialogBackend,
+  createElectronMessageDialogBackend,
+} from './electronDialog';
 import { createElectronIpcBackend } from './electronIpc';
 import { createElectronMenuBackends } from './electronMenu';
 import { createElectronNotificationCapabilities } from './electronNotification';
@@ -56,7 +63,9 @@ type ElectronHost = Host &
   HasClipboardFormats &
   HasClipboardImage &
   HasClipboardText &
-  HasDialogFile &
+  HasDialogDirectoryOpen &
+  HasDialogFileOpen &
+  HasDialogFileSave &
   HasDialogMessage &
   HasNotificationAction &
   HasNotificationClick &
@@ -91,7 +100,9 @@ export function registerElectronBackends(
 ): ElectronHost {
   const clipboard = createElectronClipboardBackend(electron);
   const dialog = {
-    file: createElectronFileDialogBackend(electron),
+    directoryOpen: createElectronDirectoryOpenDialogBackend(electron),
+    fileOpen: createElectronFileOpenDialogBackend(electron),
+    fileSave: createElectronFileSaveDialogBackend(electron),
     message: createElectronMessageDialogBackend(electron),
   };
   const notification = createElectronNotificationCapabilities(electron);

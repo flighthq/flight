@@ -1,5 +1,5 @@
+import { createFileDialogHandle } from '@flighthq/dialog/contract';
 import type {
-  FileDialogHandle,
   FileEntry,
   FilePermissions,
   FileStat,
@@ -704,20 +704,29 @@ describe('readDialogHandleBinaryFile', () => {
   it('reads from handle.path via the backend when path is non-null', async () => {
     setFileSystemBackend(fakeBackend());
     await writeBinaryFile('/tmp/data.bin', new Uint8Array([4, 5, 6]));
-    const handle: FileDialogHandle = { kind: 'File', name: 'data.bin', path: '/tmp/data.bin' };
+    const handle = createFileDialogHandle('File', 'data.bin', '/tmp/data.bin');
     expect(Array.from((await readDialogHandleBinaryFile(handle)) ?? [])).toEqual([4, 5, 6]);
   });
 
-  it('returns null when path is null and no web handle is registered', async () => {
-    const handle: FileDialogHandle = { kind: 'File', name: 'test.bin', path: null };
+  it('returns null when path is null and no runtime read operation is present', async () => {
+    const handle = createFileDialogHandle('File', 'test.bin', null);
     expect(await readDialogHandleBinaryFile(handle)).toBeNull();
+  });
+
+  it('reads through provider-neutral Entity runtime operations', async () => {
+    const handle = createFileDialogHandle('File', 'runtime.bin', null, {
+      async readBinary() {
+        return new Uint8Array([4, 3, 2, 1]);
+      },
+    });
+    expect(Array.from((await readDialogHandleBinaryFile(handle)) ?? [])).toEqual([4, 3, 2, 1]);
   });
 
   it('delegates to the fake backend for path-based reads', async () => {
     const backend = fakeBackend();
     setFileSystemBackend(backend);
     await backend.writeBinaryFile('file.bin', new Uint8Array([1, 2]));
-    const handle: FileDialogHandle = { kind: 'File', name: 'file.bin', path: 'file.bin' };
+    const handle = createFileDialogHandle('File', 'file.bin', 'file.bin');
     expect(Array.from((await readDialogHandleBinaryFile(handle)) ?? [])).toEqual([1, 2]);
   });
 });
@@ -726,23 +735,35 @@ describe('readDialogHandleTextFile', () => {
   it('reads from handle.path via the backend when path is non-null', async () => {
     setFileSystemBackend(fakeBackend());
     await writeTextFile('doc.txt', 'hello world');
-    const handle: FileDialogHandle = { kind: 'File', name: 'doc.txt', path: 'doc.txt' };
+    const handle = createFileDialogHandle('File', 'doc.txt', 'doc.txt');
     expect(await readDialogHandleTextFile(handle)).toBe('hello world');
   });
 
-  it('returns null when path is null and no web handle is registered', async () => {
-    const handle: FileDialogHandle = { kind: 'File', name: 'unknown.txt', path: null };
+  it('returns null when path is null and no runtime read operation is present', async () => {
+    const handle = createFileDialogHandle('File', 'unknown.txt', null);
     expect(await readDialogHandleTextFile(handle)).toBeNull();
+  });
+
+  it('never reads unrelated backend contents that share an unregistered dialog handle basename', async () => {
+    setFileSystemBackend(fakeBackend());
+    await writeTextFile('collision.txt', 'unrelated OPFS text');
+    await writeBinaryFile('collision.bin', new Uint8Array([9, 8, 7]));
+
+    const textHandle = createFileDialogHandle('File', 'collision.txt', null);
+    const binaryHandle = createFileDialogHandle('File', 'collision.bin', null);
+
+    expect(await readDialogHandleTextFile(textHandle)).toBeNull();
+    expect(await readDialogHandleBinaryFile(binaryHandle)).toBeNull();
   });
 
   it('reads a file using a path-based dialog handle (cellular round-trip)', async () => {
     // This test simulates the full round-trip: a dialog handle with a real path (as produced by
     // native Electron/Tauri backends) is passed to readDialogHandleTextFile which delegates to the
-    // active filesystem backend. On web, path is null and getWebFileSystemHandle provides the handle.
+    // active filesystem backend. On web, path is null and Entity runtime operations provide access.
     setFileSystemBackend(fakeBackend());
     await writeTextFile('picked.txt', 'content');
     // Simulate a dialog handle as returned by a native backend (path is non-null on native).
-    const handle: FileDialogHandle = { kind: 'File', name: 'picked.txt', path: 'picked.txt' };
+    const handle = createFileDialogHandle('File', 'picked.txt', 'picked.txt');
     expect(await readDialogHandleTextFile(handle)).toBe('content');
   });
 });
@@ -935,13 +956,13 @@ describe('writeBinaryFileChunks', () => {
 describe('writeDialogHandleBinaryFile', () => {
   it('writes to handle.path via the backend when path is non-null', async () => {
     setFileSystemBackend(fakeBackend());
-    const handle: FileDialogHandle = { kind: 'File', name: 'out.bin', path: 'out.bin' };
+    const handle = createFileDialogHandle('File', 'out.bin', 'out.bin');
     expect(await writeDialogHandleBinaryFile(handle, new Uint8Array([7, 8, 9]))).toBe(true);
     expect(Array.from((await readBinaryFile('out.bin')) ?? [])).toEqual([7, 8, 9]);
   });
 
-  it('returns false when path is null and no web handle is registered', async () => {
-    const handle: FileDialogHandle = { kind: 'File', name: 'out.bin', path: null };
+  it('returns false when path is null and no runtime write operation is present', async () => {
+    const handle = createFileDialogHandle('File', 'out.bin', null);
     expect(await writeDialogHandleBinaryFile(handle, new Uint8Array([1]))).toBe(false);
   });
 });
@@ -949,14 +970,26 @@ describe('writeDialogHandleBinaryFile', () => {
 describe('writeDialogHandleTextFile', () => {
   it('writes to handle.path via the backend when path is non-null', async () => {
     setFileSystemBackend(fakeBackend());
-    const handle: FileDialogHandle = { kind: 'File', name: 'out.txt', path: 'out.txt' };
+    const handle = createFileDialogHandle('File', 'out.txt', 'out.txt');
     expect(await writeDialogHandleTextFile(handle, 'saved content')).toBe(true);
     expect(await readTextFile('out.txt')).toBe('saved content');
   });
 
-  it('returns false when path is null and no web handle is registered', async () => {
-    const handle: FileDialogHandle = { kind: 'File', name: 'out.txt', path: null };
+  it('returns false when path is null and no runtime write operation is present', async () => {
+    const handle = createFileDialogHandle('File', 'out.txt', null);
     expect(await writeDialogHandleTextFile(handle, 'data')).toBe(false);
+  });
+
+  it('writes through provider-neutral Entity runtime operations', async () => {
+    let stored = '';
+    const handle = createFileDialogHandle('File', 'runtime.txt', null, {
+      async writeText(data) {
+        stored = data;
+        return true;
+      },
+    });
+    expect(await writeDialogHandleTextFile(handle, 'runtime data')).toBe(true);
+    expect(stored).toBe('runtime data');
   });
 });
 
