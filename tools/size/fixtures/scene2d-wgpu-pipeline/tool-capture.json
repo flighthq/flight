@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-wgpu-pipeline-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-wgpu-pipeline",
+      "renderers": ["webgpu"],
+      "routes": {
+        "webgpu": "/"
+      }
+    }
+  ]
+}
