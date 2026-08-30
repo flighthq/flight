@@ -43,9 +43,11 @@ export interface MenuItemTemplate {
 // Merging them would force a provider to present members it cannot honour, which is precisely how the
 // old single MenuBackend let the web backend claim four operations while implementing one.
 //
-// `destroy` is PROVIDER lifecycle — releasing whatever OS handle the provider holds — and is separate
-// from subscription teardown, which is the unsubscribe returned by `subscribe`. Tearing down a
-// subscription must never destroy the provider, and destroying a provider is not a way to unsubscribe.
+// `destroy` appears on the application slot ALONE. Only that provider acquires a whole-provider
+// resource — the installed native menu — which outlives any single call: Electron clears the app menu
+// and Tauri releases its JS-owned state. popup is command-only, and highlight/select hand back a
+// per-subscription unsubscribe that already owns everything they acquired, so a `destroy` on those
+// three would be a teardown obligation no provider implements.
 
 // Installs the application menu bar. Returns false when the install did not take effect. Only hosts with
 // a real native menu bar expose this slot at all; a host without one omits it rather than returning false.
@@ -58,19 +60,16 @@ export interface MenuApplicationBackend {
 // renders the menu itself can observe highlight, which today is the web DOM overlay — native hosts hand
 // the menu to the OS and never see it. `subscribe` returns the unsubscribe for THAT subscription only.
 export interface MenuHighlightBackend {
-  destroy?(): void;
   subscribe(listener: (id: string) => void): () => void;
 }
 
 // Pops up a context menu at (x, y) and resolves the chosen item id, or null when dismissed.
 export interface MenuPopupBackend {
-  destroy?(): void;
   popup(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null>;
 }
 
 // Delivers application menu-bar selections by item id. `subscribe` returns the unsubscribe for THAT
 // subscription only.
 export interface MenuSelectBackend {
-  destroy?(): void;
   subscribe(listener: (id: string) => void): () => void;
 }

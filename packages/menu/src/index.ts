@@ -11,6 +11,7 @@ export {
   attachMenuSelect,
   createMenuHighlight,
   createMenuSelect,
+  destroyMenuApplication,
   detachMenuHighlight,
   detachMenuSelect,
   disposeMenuHighlight,

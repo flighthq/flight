@@ -12,6 +12,7 @@ import {
   acquirePowerKeepAwake,
   attachPower,
   createPower,
+  destroyPowerKeepAwake,
   detachPower,
   disposePower,
   enablePowerSignals,
@@ -190,6 +191,55 @@ describe('createPower', () => {
     const power = createPower();
     expect(EntityRuntimeKey in power).toBe(true);
     expect(power.onChange).toBeNull();
+  });
+});
+
+describe('destroyPowerKeepAwake', () => {
+  // Builds the provider ONCE so two hosts can genuinely alias the same object; spreading it per host
+  // would silently make them distinct and the alias assertion would prove nothing.
+  function keepAwakeProvider(destroy?: () => void): HasPowerKeepAwake['power']['keepAwake'] {
+    return {
+      acquire: async () => ({ reason: 'ok' }) as const,
+      destroy,
+      isActive: () => false,
+      release: async () => ({ reason: 'ok' }) as const,
+    };
+  }
+
+  function keepAwakeHostWith(provider: HasPowerKeepAwake['power']['keepAwake']): HasPowerKeepAwake {
+    return { power: { keepAwake: provider } };
+  }
+
+  // ★ ALIAS SAFETY: two hosts sharing one provider. Destroying twice would double-release an OS lock.
+  it('destroys each distinct provider exactly once, even when hosts alias one', () => {
+    let destroyed = 0;
+    const shared = keepAwakeProvider(() => destroyed++);
+    destroyPowerKeepAwake(keepAwakeHostWith(shared), keepAwakeHostWith(shared));
+    expect(destroyed).toBe(1);
+  });
+
+  it('attempts every provider and rethrows the first error after the siblings run', () => {
+    let secondDestroyed = false;
+    const failing = keepAwakeProvider(() => {
+      throw new Error('first failed');
+    });
+    const healthy = keepAwakeProvider(() => (secondDestroyed = true));
+    expect(() => destroyPowerKeepAwake(keepAwakeHostWith(failing), keepAwakeHostWith(healthy))).toThrow('first failed');
+    expect(secondDestroyed).toBe(true);
+  });
+
+  it('retries a failed obligation and leaves the succeeded one released', () => {
+    let attempts = 0;
+    let healthyDestroyed = 0;
+    const flaky = keepAwakeProvider(() => {
+      attempts++;
+      if (attempts === 1) throw new Error('transient');
+    });
+    const healthy = keepAwakeProvider(() => healthyDestroyed++);
+    expect(() => destroyPowerKeepAwake(keepAwakeHostWith(flaky), keepAwakeHostWith(healthy))).toThrow();
+    expect(() => destroyPowerKeepAwake(keepAwakeHostWith(flaky), keepAwakeHostWith(healthy))).not.toThrow();
+    expect(attempts).toBe(2);
+    expect(healthyDestroyed).toBe(1);
   });
 });
 

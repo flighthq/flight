@@ -14,6 +14,7 @@ import {
   createMenuHighlight,
   createMenuItemTemplate,
   createMenuSelect,
+  destroyMenuApplication,
   detachMenuHighlight,
   detachMenuSelect,
   disposeMenuHighlight,
@@ -179,6 +180,66 @@ describe('createMenuSelect', () => {
     connectSignal(select.onMenuItemSelect, (id) => seen.push(id));
     selectHost().emit('never');
     expect(seen).toEqual([]);
+  });
+});
+
+describe('destroyMenuApplication', () => {
+  function applicationHostWith(provider: { destroy?: () => void; setApplicationMenu: () => boolean }) {
+    return { menu: { application: provider } };
+  }
+
+  it('destroys each distinct provider exactly once, even when hosts alias one', () => {
+    let destroyed = 0;
+    const shared = { destroy: () => destroyed++, setApplicationMenu: () => true };
+    // ★ ALIAS SAFETY: two hosts, ONE provider object. Destroying it twice would clear a successor's menu.
+    destroyMenuApplication(applicationHostWith(shared), applicationHostWith(shared));
+    expect(destroyed).toBe(1);
+  });
+
+  it('never destroys an already-released provider a second time', () => {
+    let destroyed = 0;
+    const provider = { destroy: () => destroyed++, setApplicationMenu: () => true };
+    destroyMenuApplication(applicationHostWith(provider));
+    destroyMenuApplication(applicationHostWith(provider));
+    expect(destroyed).toBe(1);
+  });
+
+  // ★ ATTEMPT-ALL then rethrow: a throwing obligation must not strand its siblings.
+  it('attempts every provider and rethrows the first error after the siblings run', () => {
+    let secondDestroyed = false;
+    const failing = {
+      destroy: () => {
+        throw new Error('first failed');
+      },
+      setApplicationMenu: () => true,
+    };
+    const healthy = { destroy: () => (secondDestroyed = true), setApplicationMenu: () => true };
+    expect(() => destroyMenuApplication(applicationHostWith(failing), applicationHostWith(healthy))).toThrow(
+      'first failed',
+    );
+    expect(secondDestroyed).toBe(true);
+  });
+
+  // ★ RETRY ONLY THE FAILURES: the thrower stays retained, the successes do not.
+  it('retries a failed obligation and leaves the succeeded one released', () => {
+    let attempts = 0;
+    let healthyDestroyed = 0;
+    const flaky = {
+      destroy: () => {
+        attempts++;
+        if (attempts === 1) throw new Error('transient');
+      },
+      setApplicationMenu: () => true,
+    };
+    const healthy = { destroy: () => healthyDestroyed++, setApplicationMenu: () => true };
+    expect(() => destroyMenuApplication(applicationHostWith(flaky), applicationHostWith(healthy))).toThrow();
+    expect(() => destroyMenuApplication(applicationHostWith(flaky), applicationHostWith(healthy))).not.toThrow();
+    expect(attempts).toBe(2);
+    expect(healthyDestroyed).toBe(1);
+  });
+
+  it('tolerates a provider that declares no destroy', () => {
+    expect(() => destroyMenuApplication(applicationHostWith({ setApplicationMenu: () => true }))).not.toThrow();
   });
 });
 

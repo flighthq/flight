@@ -57,19 +57,21 @@ export interface PowerKeepAwakeReleaseResult {
 // optional and a host omits what it cannot do: an absent slot is the honest report, where a stub that
 // answers `false` or returns an inert unsubscribe is indistinguishable from a real implementation.
 //
-// `destroy` on a slot is PROVIDER lifecycle — releasing what the provider holds. It is separate from
-// disposing a consumer's Power entity, which only tears down that consumer's own listeners.
+// `destroy` appears on ONE slot only. A teardown member is declared where a provider acquires a
+// WHOLE-PROVIDER resource that outlives individual operation/subscription cleanup — keepAwake holds an
+// OS lock (a WakeLock sentinel and its release listener on web, a powerSaveBlocker id on electron).
+// Every other slot's subscriptions already return their own unsubscribe and its cached readings live in
+// the provider's own closure, so dropping the provider releases them: declaring `destroy` there would be
+// a teardown obligation with nothing behind it.
 
 // Reads the current power status into `out`. Query only; the matching notification is `change`.
 export interface PowerStatusBackend {
-  destroy?(): void;
   getStatus(out: PowerStatus): PowerStatus;
 }
 
 // Raw "something about power changed" notification. Carries no payload by design — the caller re-reads
 // through the status slot, because no host emits a complete status with its change event.
 export interface PowerChangeBackend {
-  destroy?(): void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -86,7 +88,6 @@ export interface PowerKeepAwakeBackend {
 // System idle queries. Offered only by a host that can really observe idleness; a host that would
 // answer a constant 'Unknown'/-1 omits the slot instead, so nothing polls a value that cannot change.
 export interface PowerIdleBackend {
-  destroy?(): void;
   getIdleState(thresholdSeconds: number): PowerIdleState;
   getIdleTimeSeconds(): number;
 }
@@ -95,7 +96,6 @@ export interface PowerIdleBackend {
 // from one mechanism, and every host offers both or neither. A provider that emitted only one edge would
 // leave a consumer permanently wrong about the state the signal exists to track.
 export interface PowerSessionLockBackend {
-  destroy?(): void;
   subscribeLock(listener: () => void): () => void;
   subscribeUnlock(listener: () => void): () => void;
 }
@@ -103,14 +103,12 @@ export interface PowerSessionLockBackend {
 // Suspend/resume as ONE bracket, for the same reason: they are the two edges of one transition. Web
 // realizes them with the Page Lifecycle 'freeze'/'resume' events; a native host with its OS equivalents.
 export interface PowerSuspensionBackend {
-  destroy?(): void;
   subscribeResume(listener: () => void): () => void;
   subscribeSuspend(listener: () => void): () => void;
 }
 
 // Battery health detail, offered only where the host really reports it.
 export interface PowerBatteryHealthBackend {
-  destroy?(): void;
   getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth;
 }
 
@@ -118,7 +116,6 @@ export interface PowerBatteryHealthBackend {
 // changed: an event whose state the caller cannot then read is not an actionable capability. A host that
 // can signal a change but not report the level omits this slot.
 export interface PowerThermalBackend {
-  destroy?(): void;
   getThermalState(): PowerThermalState;
   subscribeThermalStateChange(listener: (state: PowerThermalState) => void): () => void;
 }

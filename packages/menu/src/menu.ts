@@ -5,6 +5,7 @@ import type {
   HasMenuHighlight,
   HasMenuPopup,
   HasMenuSelect,
+  MenuApplicationBackend,
   MenuHighlight,
   MenuItemTemplate,
   MenuSelect,
@@ -70,6 +71,31 @@ export function createMenuSelect(): MenuSelect {
 // Stops delivery without discarding the entity: runs this entity's own unsubscribe, if it has one.
 // Safe to call when never attached. Does NOT touch the provider — backend teardown is `destroy` on the
 // slot, a separate host/provider lifecycle concern.
+// FINAL RELEASE for the one menu slot that owns a whole-provider resource: the installed native menu.
+// Destroys every DISTINCT application provider exactly once — alias-safe, because two hosts may share
+// one provider object and destroying it twice would clear a successor's menu.
+//
+// Attempt-all: every obligation is tried even after one throws, and the first error is rethrown once the
+// siblings have run. A provider whose destroy threw is RETAINED, so a later call retries only the
+// failures; the ones that succeeded are forgotten and never destroyed twice.
+export function destroyMenuApplication(...hosts: readonly HasMenuApplication[]): void {
+  const pending = new Set<MenuApplicationBackend>();
+  for (const host of hosts) {
+    const provider = host.menu.application;
+    if (!_destroyedApplication.has(provider)) pending.add(provider);
+  }
+  let failure: unknown = null;
+  for (const provider of pending) {
+    try {
+      provider.destroy?.();
+      _destroyedApplication.add(provider);
+    } catch (error) {
+      failure ??= error;
+    }
+  }
+  if (failure !== null) throw failure;
+}
+
 export function detachMenuHighlight(highlight: MenuHighlight): void {
   _highlightUnsubscribe.get(highlight)?.();
   _highlightUnsubscribe.delete(highlight);
@@ -199,3 +225,7 @@ let _menuSignals: MenuSignals | null = null;
 // than in a shared slot, so detaching one never ends another's subscription.
 const _highlightUnsubscribe = new WeakMap<MenuHighlight, () => void>();
 const _selectUnsubscribe = new WeakMap<MenuSelect, () => void>();
+
+// Providers already finally-released. A destroy that THREW is deliberately absent, so the next call
+// retries exactly the failed obligations and never re-destroys a successful one.
+const _destroyedApplication = new WeakSet<MenuApplicationBackend>();

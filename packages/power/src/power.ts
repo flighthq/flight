@@ -3,6 +3,7 @@ import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq
 import type {
   HasPowerIdle,
   HasPowerKeepAwake,
+  PowerKeepAwakeBackend,
   HasPowerStatus,
   HasPowerThermal,
   PowerAttachHost,
@@ -120,6 +121,31 @@ export function createPower(): Power {
 // Stops delivery without discarding the entity. Runs every teardown this entity opened, ATTEMPTING ALL
 // of them: one throwing unsubscribe must not strand the rest. Does not touch the provider — that is
 // `destroy` on the host's slot, a separate lifecycle.
+// FINAL RELEASE for the one power slot that owns a whole-provider resource. Destroys every DISTINCT
+// keep-awake provider exactly once — alias-safe, because two hosts may share one provider object and
+// destroying it twice would double-release an OS lock.
+//
+// Attempt-all: every obligation is tried even after one throws, and the first error is rethrown once the
+// siblings have run. A provider whose destroy threw is RETAINED, so a later call retries only the
+// failures; the ones that succeeded are forgotten and never destroyed twice.
+export function destroyPowerKeepAwake(...hosts: readonly HasPowerKeepAwake[]): void {
+  const pending = new Set<PowerKeepAwakeBackend>();
+  for (const host of hosts) {
+    const provider = host.power.keepAwake;
+    if (!_destroyedKeepAwake.has(provider)) pending.add(provider);
+  }
+  let failure: unknown = null;
+  for (const provider of pending) {
+    try {
+      provider.destroy?.();
+      _destroyedKeepAwake.add(provider);
+    } catch (error) {
+      failure ??= error;
+    }
+  }
+  if (failure !== null) throw failure;
+}
+
 export function detachPower(power: Power): void {
   const teardowns = _subscriptions.get(power);
   if (teardowns === undefined) return;
@@ -242,3 +268,7 @@ let _idlePollingIntervalMs = 5000;
 // Origin-pinned teardown bookkeeping: each entity's own unsubscribes, held beside the entity rather
 // than in a shared slot, so detaching one never ends another's subscriptions.
 const _subscriptions = new WeakMap<Power, (() => void)[]>();
+
+// Providers already finally-released. A destroy that THREW is deliberately absent, so the next call
+// retries exactly the failed obligations and never re-destroys a successful one.
+const _destroyedKeepAwake = new WeakSet<PowerKeepAwakeBackend>();

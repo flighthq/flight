@@ -128,3 +128,40 @@ describe('createElectronPowerBackends', () => {
     expect(slots.idle.getIdleTimeSeconds()).toBe(11);
   });
 });
+
+describe('electron power slot coverage', () => {
+  // ★ EXACT SLOT COVERAGE for E, including the conditional thermal slot.
+  it('offers every slot when the platform reports thermal state', () => {
+    const slots = createElectronPowerBackends(fakeElectron({}).electron);
+    expect(Object.keys(slots).sort()).toEqual([
+      'batteryHealth',
+      'change',
+      'idle',
+      'keepAwake',
+      'sessionLock',
+      'status',
+      'suspension',
+      'thermal',
+    ]);
+  });
+
+  it('drops only the thermal slot when the platform cannot report the level', () => {
+    const slots = createElectronPowerBackends(fakeElectron({ thermal: null }).electron);
+    expect(Object.keys(slots).sort()).toEqual([
+      'batteryHealth',
+      'change',
+      'idle',
+      'keepAwake',
+      'sessionLock',
+      'status',
+      'suspension',
+    ]);
+  });
+
+  it('declares a teardown obligation on keepAwake alone', () => {
+    const slots = createElectronPowerBackends(fakeElectron({}).electron);
+    expect(typeof slots.keepAwake.destroy).toBe('function');
+    expect('destroy' in slots.sessionLock).toBe(false);
+    expect('destroy' in slots.status).toBe(false);
+  });
+});

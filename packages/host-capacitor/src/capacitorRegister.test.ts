@@ -76,6 +76,16 @@ afterEach(() => {
   setStatusBarBackend(null);
 });
 
+describe('capacitor power slot coverage', () => {
+  // ★ EXACT SLOT COVERAGE for C: an EMPTY group, not a guessed or stubbed one. An empty group is
+  // honest and forward-compatible; the named gap lives in agents/upstream-host-requirements.md so an
+  // examined absence stays distinguishable from an unexamined one.
+  it('claims no power capability at all', () => {
+    const host = registerCapacitorBackends(fakeCapacitor());
+    expect(host.power).toEqual({});
+  });
+});
+
 describe('capacitorHost', () => {
   it('exposes the real Capacitor haptics provider', () => {
     const host = capacitorHost(fakeCapacitor());

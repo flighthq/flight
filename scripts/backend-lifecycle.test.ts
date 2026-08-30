@@ -41,6 +41,12 @@ describe('backend provider lifetime census', () => {
   // The current ratchet: every backend that has landed a teardown hook. This list grows as slices land and
   // must never shrink — removing a name here is a regression. Separate from the historical baseline so
   // delta display shows progression (+2 newly enforced) while enforcement gates the full current set.
+  //
+  // ★ 2026-08-30: MenuBackend and PowerBackend are gone as INTERFACES, not as obligations. Both domains
+  // split into per-capability slots, and in each the whole-provider resource landed on exactly one of
+  // them — the installed native menu, and the OS keep-awake lock. The other eleven slots declared no
+  // teardown because they own nothing beyond per-subscription cleanup, so removing the two old names
+  // while adding the two real owners is a rename of the obligation, not a shrink of it.
   const REQUIRED_ENFORCED_NAMES: readonly string[] = [
     'AccessibilityBackend',
     'ConnectivityChangeBackend',
@@ -48,10 +54,7 @@ describe('backend provider lifetime census', () => {
     'MediaSessionActionBackend',
     'MediaSessionBackend',
     'MenuApplicationBackend',
-    'MenuHighlightBackend',
-    'MenuPopupBackend',
-    'MenuSelectBackend',
-    'PowerBackend',
+    'PowerKeepAwakeBackend',
     'ScreenQueryBackend',
     'UpdaterCommandBackend',
   ];
@@ -157,18 +160,9 @@ describe('backend provider lifetime census', () => {
 
   // The ratchet: every backend that DECLARES a whole-backend teardown must have its lifecycle owner name it.
   // That is a wiring check, not a proof that teardown is complete — see the scope caveat below.
-  it('accepts structurally derived explicit Host ownership without hiding inherited Menu debt', () => {
-    expect(report.violations.map((violation) => violation.interfaceName)).toEqual([
-      'MenuApplicationBackend',
-      'MenuHighlightBackend',
-      'MenuPopupBackend',
-      'MenuSelectBackend',
-    ]);
-    expect(report.violations.some((violation) => violation.interfaceName === 'ScreenQueryBackend')).toBe(false);
-    expect(report.violations.some((violation) => violation.interfaceName === 'MediaSessionBackend')).toBe(false);
-    expect(report.violations.some((violation) => violation.interfaceName === 'MediaSessionActionBackend')).toBe(false);
-    expect(report.violations.some((violation) => violation.interfaceName === 'UpdaterCommandBackend')).toBe(false);
-    expect(hasBackendLifecycleFailure(report)).toBe(true);
+  it('reports no unwired teardown among the backends that declare one', () => {
+    expect(report.violations).toEqual([]);
+    expect(hasBackendLifecycleFailure(report)).toBe(false);
   });
 
   // ★ THE SCOPE CAVEAT MUST SURVIVE. The printed number is read as a completeness measure by everyone
@@ -214,10 +208,7 @@ describe('backend provider lifetime census', () => {
       'MediaSessionActionBackend',
       'MediaSessionBackend',
       'MenuApplicationBackend',
-      'MenuHighlightBackend',
-      'MenuPopupBackend',
-      'MenuSelectBackend',
-      'PowerBackend',
+      'PowerKeepAwakeBackend',
       'ScreenQueryBackend',
       'UpdaterCommandBackend',
     ]);
@@ -226,7 +217,7 @@ describe('backend provider lifetime census', () => {
   it('shows progression in the live delta when slices land beyond the historical baseline', () => {
     const delta = compareFloorToReport(HISTORICAL_BASELINE, report);
     expect(delta.enforcedGained).toContain('MenuApplicationBackend');
-    expect(delta.enforcedGained).toContain('PowerBackend');
+    expect(delta.enforcedGained).toContain('PowerKeepAwakeBackend');
     expect(delta.enforcedGained).toContain('ScreenQueryBackend');
     expect(delta.enforcedLost).toEqual([]);
   });
@@ -236,26 +227,26 @@ describe('backend provider lifetime census', () => {
     expect(missing).toEqual([]);
   });
 
-  it('would fail if a Menu facet were removed from the required set but still enforced', () => {
+  it('would fail if MenuApplicationBackend were removed from the required set but still enforced', () => {
     const withoutMenu = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'MenuApplicationBackend');
     expect(withoutMenu).not.toContain('MenuApplicationBackend');
     expect(withoutMenu.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
   });
 
-  it('would fail if PowerBackend were removed from the required set but still enforced', () => {
-    const withoutPower = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'PowerBackend');
-    expect(withoutPower).not.toContain('PowerBackend');
+  it('would fail if PowerKeepAwakeBackend were removed from the required set but still enforced', () => {
+    const withoutPower = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'PowerKeepAwakeBackend');
+    expect(withoutPower).not.toContain('PowerKeepAwakeBackend');
     expect(withoutPower.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
   });
 
   it('would lose progression visibility if historical baseline absorbed Menu and Power', () => {
     const absorbedBaseline: BackendLifecycleFloor = {
-      enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'MenuApplicationBackend', 'PowerBackend'].sort(),
+      enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'MenuApplicationBackend', 'PowerKeepAwakeBackend'].sort(),
       total: HISTORICAL_BASELINE.total,
     };
     const delta = compareFloorToReport(absorbedBaseline, report);
     expect(delta.enforcedGained).not.toContain('MenuApplicationBackend');
-    expect(delta.enforcedGained).not.toContain('PowerBackend');
+    expect(delta.enforcedGained).not.toContain('PowerKeepAwakeBackend');
   });
 });
 
@@ -638,7 +629,7 @@ function collectSetterBodies(): ReadonlyMap<string, string> {
   for (const packageName of packageNames()) {
     for (const file of packageSourceFiles(packageName)) {
       const text = readFileSync(file, 'utf-8');
-      const pattern = /^export function (set\w*Backend)\([^)]*\)[^{]*\{/gm;
+      const pattern = /^export function (set\w*Backend|destroy[A-Z]\w*)\([^)]*\)[^{]*\{/gm;
       let match: RegExpExecArray | null;
       while ((match = pattern.exec(text)) !== null) {
         const open = text.indexOf('{', match.index);
