@@ -90,3 +90,5 @@ Dialog and Notification still map their whole groups because every current host 
 ## Automation boundary
 
 The automatic lane is intentionally non-invasive: provider transitions, app/platform identity, window/screen availability, scheduling, glyph rasterization, and canvas readback. Clipboard mutation, notifications, dialogs, shortcuts, tray interaction, haptics, geolocation permission, lifecycle, and updater behavior belong to explicit interactive/device lanes. Their fake-API behavior remains covered by the colocated `packages/host-*/src/*.test.ts` suites.
+
+Tray provider detection reads the explicit returned Host group. An empty Web/Capacitor group does not count as a provider transition; Electron/Tauri groups do. Native bootstraps map their OS to an injected `DesktopOsProfile` before Host construction, so the probe validates Host × profile coverage without an ambient Tray registry.

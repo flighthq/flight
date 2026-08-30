@@ -1,8 +1,8 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
-import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
+  DesktopOsProfile,
   EntityRuntimeKey,
   HasClipboardText,
   HasDialogDirectoryOpen,
@@ -37,11 +37,13 @@ import { createTauriNotificationCapabilities } from './tauriNotification';
 import { createTauriPlatformBackend } from './tauriPlatform';
 import { makeTauriShellCapabilities } from './tauriShell';
 import { createTauriShortcutQueryBackend, createTauriShortcutTriggerBackend } from './tauriShortcut';
-import { createTauriTrayBackend } from './tauriTray';
+import { createTauriTrayCapabilities } from './tauriTray';
+import type { TauriTrayCapabilitiesFor } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
 
-type TauriHost = Host &
-  HasClipboardText &
+type TauriHost<Profile extends DesktopOsProfile> = Host & {
+  readonly tray: TauriTrayCapabilitiesFor<Profile>;
+} & HasClipboardText &
   HasDialogDirectoryOpen &
   HasDialogFileOpen &
   HasDialogFileSave &
@@ -64,12 +66,15 @@ type TauriHost = Host &
 //
 //   import * as app from '@tauri-apps/api/app';
 //   // …import the other modules/plugins…
-//   registerTauriBackends({ app, window, menu, tray, clipboard, dialog, notification, opener, os, globalShortcut, process });
+//   registerTauriBackends({ app, window, menu, tray, clipboard, dialog, notification, opener, os, globalShortcut, process }, 'macos');
 //
 // Pass the returned host to clipboard, menu, window, dialog, and notification operations. Unmigrated
 // seams Tauri does not cover here (storage, protocol, ipc, power, screen) retain their web
 // defaults because a Tauri app runs in a webview; each set*Backend(null) still reverts one of those.
-export function registerTauriBackends(tauri: TauriApi): TauriHost {
+export function registerTauriBackends<Profile extends DesktopOsProfile>(
+  tauri: TauriApi,
+  profile: Profile,
+): TauriHost<Profile> {
   const clipboard = createTauriClipboardBackend(tauri);
   const dialog = {
     directoryOpen: createTauriDirectoryOpenDialogBackend(tauri),
@@ -85,7 +90,6 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
   const window = createTauriWindowBackend(tauri);
   setPlatformBackend(createTauriPlatformBackend(tauri));
   setAppBackend(createTauriAppBackend(tauri));
-  setTrayBackend(createTauriTrayBackend(tauri));
   return createEntity({
     accessibility: {},
     app: {},
@@ -111,9 +115,10 @@ export function registerTauriBackends(tauri: TauriApi): TauriHost {
     storage: {},
     system: {},
     text: {},
+    tray: createTauriTrayCapabilities(tauri, profile),
     ui: {},
     // This injected Tauri API exposes no updater plugin, so no transaction provider is claimed.
     updater: {},
     window,
-  } satisfies Omit<TauriHost, typeof EntityRuntimeKey>);
+  } satisfies Omit<TauriHost<Profile>, typeof EntityRuntimeKey>);
 }

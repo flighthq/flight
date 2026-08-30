@@ -8,6 +8,7 @@ function fakeElectron(): ElectronApi {
   const image = (dataUrl: string): ElectronNativeImage => ({
     toDataURL: () => dataUrl,
     isEmpty: () => dataUrl === '',
+    setTemplateImage: () => {},
   });
   return {
     clipboard: {

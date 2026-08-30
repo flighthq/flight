@@ -259,6 +259,7 @@ export interface ElectronNativeImageModule {
 export interface ElectronNativeImage {
   toDataURL(): string;
   isEmpty(): boolean;
+  setTemplateImage(isTemplate: boolean): void;
 }
 
 export interface ElectronIpcMain {
@@ -437,6 +438,7 @@ export interface ElectronTray {
   getBounds(): ElectronRectangle;
   isDestroyed(): boolean;
   on(event: string, listener: (...args: unknown[]) => void): void;
+  removeListener(event: string, listener: (...args: unknown[]) => void): void;
   destroy(): void;
 }
 

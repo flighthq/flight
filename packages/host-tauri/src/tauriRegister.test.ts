@@ -1,7 +1,6 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
-import { setTrayBackend } from '@flighthq/tray/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi } from '@flighthq/types/contract';
 
@@ -43,12 +42,11 @@ function fakeTauri(): TauriApi {
 afterEach(() => {
   setPlatformBackend(null);
   setAppBackend(null);
-  setTrayBackend(null);
 });
 
 describe('registerTauriBackends', () => {
   it('routes capability seams to the Tauri backends without throwing', async () => {
-    const host = registerTauriBackends(fakeTauri());
+    const host = registerTauriBackends(fakeTauri(), 'linux');
     expect(host.media).toEqual({});
     expect(host.updater).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
@@ -67,7 +65,7 @@ describe('registerTauriBackends', () => {
   });
 
   it('claims exactly the three genuine Shell slots', () => {
-    const host = registerTauriBackends(fakeTauri());
+    const host = registerTauriBackends(fakeTauri(), 'linux');
     expect(Object.keys(host.shell).sort()).toEqual(['external', 'pathOpen', 'pathReveal']);
     for (const provider of Object.values(host.shell)) expect(EntityRuntimeKey in provider).toBe(true);
   });
@@ -78,7 +76,7 @@ describe('tauri power slot coverage', () => {
   // honest and forward-compatible; the named gap lives in agents/upstream-host-requirements.md so an
   // examined absence stays distinguishable from an unexamined one.
   it('claims no power capability at all', () => {
-    const host = registerTauriBackends(fakeTauri());
+    const host = registerTauriBackends(fakeTauri(), 'linux');
     expect(host.power).toEqual({});
   });
 });
@@ -88,7 +86,7 @@ describe('tauri power slot coverage', () => {
   // honest and forward-compatible; the named gap lives in agents/upstream-host-requirements.md so an
   // examined absence stays distinguishable from an unexamined one.
   it('claims no power capability at all', () => {
-    const host = registerTauriBackends(fakeTauri());
+    const host = registerTauriBackends(fakeTauri(), 'linux');
     expect(host.power).toEqual({});
   });
 });

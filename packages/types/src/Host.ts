@@ -104,7 +104,23 @@ import type { StatusBarBackend } from './StatusBar';
 import type { StorageBackend, StorageChangeBackend } from './Storage';
 import type { TextSegmenterBackend } from './TextSegment';
 import type { TextShaperBackend } from './TextShaper';
-import type { TrayBackend } from './Tray';
+import type {
+  TrayBalloonBackend,
+  TrayBalloonEventsBackend,
+  TrayBoundsBackend,
+  TrayDoubleClickPolicyBackend,
+  TrayDropEventsBackend,
+  TrayImageBackend,
+  TrayInteractionEventsBackend,
+  TrayLifecycleBackend,
+  TrayMenuBackend,
+  TrayMenuSelectionEventsBackend,
+  TrayPopupMenuBackend,
+  TrayPressedImageBackend,
+  TrayTemplateImageBackend,
+  TrayTitleBackend,
+  TrayTooltipBackend,
+} from './Tray';
 import type { UpdaterCommandBackend } from './Updater';
 import type { VideoCapabilityBackend } from './VideoCapabilityBackend';
 import type { WebcamBackend } from './Webcam';
@@ -131,6 +147,7 @@ export interface Host extends Entity {
   readonly storage: HostStorageCapabilities;
   readonly system: HostSystemCapabilities;
   readonly text: HostTextCapabilities;
+  readonly tray: HostTrayCapabilities;
   readonly ui: HostUiCapabilities;
   readonly updater: HostUpdaterCapabilities;
   readonly window: WindowBackend;
@@ -306,10 +323,29 @@ export interface HostTextCapabilities {
   readonly shaper?: TextShaperBackend;
 }
 
+// Tray is top-level because command, query, and event coverage varies independently by native OS
+// profile. The required group is stable; omitted slots mean genuine absence.
+export interface HostTrayCapabilities {
+  readonly balloon?: TrayBalloonBackend;
+  readonly balloonEvents?: TrayBalloonEventsBackend;
+  readonly bounds?: TrayBoundsBackend;
+  readonly doubleClickPolicy?: TrayDoubleClickPolicyBackend;
+  readonly dropEvents?: TrayDropEventsBackend;
+  readonly image?: TrayImageBackend;
+  readonly interactionEvents?: TrayInteractionEventsBackend;
+  readonly lifecycle?: TrayLifecycleBackend;
+  readonly menu?: TrayMenuBackend;
+  readonly menuSelectionEvents?: TrayMenuSelectionEventsBackend;
+  readonly popupMenu?: TrayPopupMenuBackend;
+  readonly pressedImage?: TrayPressedImageBackend;
+  readonly templateImage?: TrayTemplateImageBackend;
+  readonly title?: TrayTitleBackend;
+  readonly tooltip?: TrayTooltipBackend;
+}
+
 export interface HostUiCapabilities {
   readonly fullscreen?: FullscreenBackend;
   readonly statusBar?: StatusBarBackend;
-  readonly tray?: TrayBackend;
 }
 
 export interface HostUpdaterCapabilities {
@@ -722,8 +758,64 @@ export interface HasUiStatusBar {
   readonly ui: { readonly statusBar: StatusBarBackend };
 }
 
-export interface HasUiTray {
-  readonly ui: { readonly tray: TrayBackend };
+export interface HasTrayLifecycle {
+  readonly tray: { readonly lifecycle: TrayLifecycleBackend };
+}
+
+export interface HasTrayImage {
+  readonly tray: { readonly image: TrayImageBackend };
+}
+
+export interface HasTrayTitle {
+  readonly tray: { readonly title: TrayTitleBackend };
+}
+
+export interface HasTrayTooltip {
+  readonly tray: { readonly tooltip: TrayTooltipBackend };
+}
+
+export interface HasTrayMenu {
+  readonly tray: { readonly menu: TrayMenuBackend };
+}
+
+export interface HasTrayTemplateImage {
+  readonly tray: { readonly templateImage: TrayTemplateImageBackend };
+}
+
+export interface HasTrayBounds {
+  readonly tray: { readonly bounds: TrayBoundsBackend };
+}
+
+export interface HasTrayPopupMenu {
+  readonly tray: { readonly popupMenu: TrayPopupMenuBackend };
+}
+
+export interface HasTrayDoubleClickPolicy {
+  readonly tray: { readonly doubleClickPolicy: TrayDoubleClickPolicyBackend };
+}
+
+export interface HasTrayPressedImage {
+  readonly tray: { readonly pressedImage: TrayPressedImageBackend };
+}
+
+export interface HasTrayBalloon {
+  readonly tray: { readonly balloon: TrayBalloonBackend };
+}
+
+export interface HasTrayInteractionEvents {
+  readonly tray: { readonly interactionEvents: TrayInteractionEventsBackend };
+}
+
+export interface HasTrayMenuSelectionEvents {
+  readonly tray: { readonly menuSelectionEvents: TrayMenuSelectionEventsBackend };
+}
+
+export interface HasTrayBalloonEvents {
+  readonly tray: { readonly balloonEvents: TrayBalloonEventsBackend };
+}
+
+export interface HasTrayDropEvents {
+  readonly tray: { readonly dropEvents: TrayDropEventsBackend };
 }
 
 export interface HasWindowAttach {

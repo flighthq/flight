@@ -1,117 +1,240 @@
+import {
+  createTrayIcon,
+  destroyTrayIcon,
+  displayTrayBalloon,
+  onTrayInteraction,
+  onTrayMenuSelection,
+  setTrayIconContextMenu,
+  setTrayIconTemplate,
+} from '@flighthq/tray/contract';
 import type {
-  TrayEventType,
   ElectronApi,
   ElectronMenu,
   ElectronMenuItemOptions,
+  ElectronNativeImage,
   ElectronTray,
+  TrayIconForHost,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { describe, expect, it, vi } from 'vitest';
 
-import { createElectronTrayBackend } from './electronTray';
+import { createElectronTrayCapabilities } from './electronTray';
 
-interface FakeTray extends ElectronTray {
-  icon: string;
-  tooltip: string;
-  title: string;
-  contextMenu: ElectronMenu | null;
-  destroyed: boolean;
-  handlers: Record<string, () => void>;
+interface FakeImage extends ElectronNativeImage {
+  source: string;
+  template: boolean;
 }
 
-function fakeElectron(): {
-  electron: ElectronApi;
-  trays: FakeTray[];
-  built: ElectronMenuItemOptions[][];
-} {
+interface FakeTray extends ElectronTray {
+  destroyed: boolean;
+  destroyFailures: number;
+  handlers: Record<string, Array<(...args: unknown[]) => void>>;
+  image: ElectronNativeImage;
+  menu: ElectronMenu | null;
+  removeFailures: number;
+  title: string;
+  tooltip: string;
+}
+
+function fakeElectron() {
   const trays: FakeTray[] = [];
-  const built: ElectronMenuItemOptions[][] = [];
+  const templates: ElectronMenuItemOptions[][] = [];
+  const decode = (source: string): FakeImage => ({
+    isEmpty: () => source === 'invalid',
+    setTemplateImage(value: boolean) {
+      this.template = value;
+    },
+    source,
+    template: false,
+    toDataURL: () => source,
+  });
   const electron = {
-    Tray: function (this: FakeTray, icon: string) {
-      this.icon = icon;
-      this.tooltip = '';
-      this.title = '';
-      this.contextMenu = null;
+    nativeImage: { createFromDataURL: decode, createFromPath: decode },
+    Menu: {
+      buildFromTemplate(template: ElectronMenuItemOptions[]) {
+        templates.push(template);
+        return { popup() {} };
+      },
+      setApplicationMenu() {},
+    },
+    Tray: function (this: FakeTray, image: ElectronNativeImage) {
       this.destroyed = false;
+      this.destroyFailures = 0;
       this.handlers = {};
-      this.setToolTip = (t: string) => {
-        this.tooltip = t;
-      };
-      this.setTitle = (t: string) => {
-        this.title = t;
-      };
-      this.setContextMenu = (menu: ElectronMenu | null) => {
-        this.contextMenu = menu;
-      };
-      this.on = (event: string, listener: () => void) => {
-        this.handlers[event] = listener;
-      };
+      this.image = image;
+      this.menu = null;
+      this.removeFailures = 0;
+      this.title = '';
+      this.tooltip = '';
       this.destroy = () => {
+        if (this.destroyFailures-- > 0) throw new Error('destroy failed');
         this.destroyed = true;
+      };
+      this.displayBalloon = () => {};
+      this.getBounds = () => ({ height: 4, width: 3, x: 1, y: 2 });
+      this.isDestroyed = () => this.destroyed;
+      this.on = (event, listener) => {
+        (this.handlers[event] ??= []).push(listener);
+      };
+      this.popUpContextMenu = () => {};
+      this.removeBalloon = () => {};
+      this.removeListener = (event, listener) => {
+        if (this.removeFailures-- > 0) throw new Error('remove failed');
+        this.handlers[event] = (this.handlers[event] ?? []).filter((value) => value !== listener);
+      };
+      this.setContextMenu = (menu) => {
+        this.menu = menu;
+      };
+      this.setIgnoreDoubleClickEvents = () => {};
+      this.setImage = (value) => {
+        this.image = value as ElectronNativeImage;
+      };
+      this.setPressedImage = () => {};
+      this.setTitle = (value) => {
+        this.title = value;
+      };
+      this.setToolTip = (value) => {
+        this.tooltip = value;
       };
       trays.push(this);
     },
-    Menu: {
-      buildFromTemplate: (template: ElectronMenuItemOptions[]) => {
-        built.push(template);
-        return { template } as unknown as ElectronMenu;
-      },
-    },
   } as unknown as ElectronApi;
-  return { electron, trays, built };
+  return { electron, templates, trays };
 }
 
-describe('createElectronTrayBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createElectronTrayBackend(fakeElectron().electron)).toBe(true);
+async function acquire<
+  Host extends { tray: { lifecycle: NonNullable<ReturnType<typeof createElectronTrayCapabilities>['lifecycle']> } },
+>(host: Host): Promise<TrayIconForHost<Host>> {
+  const result = await createTrayIcon(host, { icon: 'icon.png' });
+  if (result.outcome !== 'created') throw new Error(result.outcome);
+  return result.tray;
+}
+
+describe('createElectronTrayCapabilities', () => {
+  it('exposes only the slots supported by the injected OS profile', () => {
+    const { electron } = fakeElectron();
+    expect(Object.keys(createElectronTrayCapabilities(electron, 'linux')).sort()).toEqual(
+      [
+        'bounds',
+        'image',
+        'interactionEvents',
+        'lifecycle',
+        'menu',
+        'menuSelectionEvents',
+        'popupMenu',
+        'tooltip',
+      ].sort(),
+    );
+    expect(Object.keys(createElectronTrayCapabilities(electron, 'macos')).sort()).toEqual(
+      [
+        'bounds',
+        'doubleClickPolicy',
+        'dropEvents',
+        'image',
+        'interactionEvents',
+        'lifecycle',
+        'menu',
+        'menuSelectionEvents',
+        'popupMenu',
+        'pressedImage',
+        'templateImage',
+        'title',
+        'tooltip',
+      ].sort(),
+    );
+    expect(Object.keys(createElectronTrayCapabilities(electron, 'windows')).sort()).toEqual(
+      [
+        'balloon',
+        'balloonEvents',
+        'bounds',
+        'image',
+        'interactionEvents',
+        'lifecycle',
+        'menu',
+        'menuSelectionEvents',
+        'popupMenu',
+        'tooltip',
+      ].sort(),
+    );
   });
 
-  it('creates a tray with icon, tooltip, and title and returns a numeric id', () => {
+  it('constructs the native resource before publishing the Entity', async () => {
     const { electron, trays } = fakeElectron();
-    const backend = createElectronTrayBackend(electron);
-    const id = backend.create({ icon: 'i.png', tooltip: 'hello', title: 'T' });
-    expect(typeof id).toBe('number');
-    expect(trays[0].icon).toBe('i.png');
-    expect(trays[0].tooltip).toBe('hello');
-    expect(trays[0].title).toBe('T');
+    const host = { tray: createElectronTrayCapabilities(electron, 'macos') };
+    const result = await createTrayIcon(host, {
+      icon: 'icon.png',
+      iconTemplate: true,
+      title: 'Flight',
+      tooltip: 'Ready',
+    });
+    expect(result.outcome).toBe('created');
+    expect(trays[0].title).toBe('Flight');
+    expect(trays[0].tooltip).toBe('Ready');
+    expect((trays[0].image as FakeImage).template).toBe(true);
   });
 
-  it('destroys a tray and ignores unknown ids', () => {
+  it('keeps one native listener while delivering full pointer payload to multiple subscribers', async () => {
     const { electron, trays } = fakeElectron();
-    const backend = createElectronTrayBackend(electron);
-    const id = backend.create({});
-    backend.destroy(id);
+    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const tray = await acquire(host);
+    const first = vi.fn();
+    const second = vi.fn();
+    onTrayInteraction(tray, first);
+    onTrayInteraction(tray, second);
+    expect(trays[0].handlers.click).toHaveLength(1);
+    trays[0].handlers.click[0]!({ altKey: true, ctrlKey: true, metaKey: true, shiftKey: true }, { x: 7, y: 9 });
+    expect(first).toHaveBeenCalledWith(
+      expect.objectContaining({ altKey: true, position: { x: 7, y: 9 }, type: 'click' }),
+    );
+    expect(second).toHaveBeenCalledOnce();
+  });
+
+  it('routes a menu selection only through that Tray signal', async () => {
+    const { electron, templates } = fakeElectron();
+    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const first = await acquire(host);
+    const second = await acquire(host);
+    const firstIds: string[] = [];
+    const secondIds: string[] = [];
+    onTrayMenuSelection(first, ({ id }) => firstIds.push(id));
+    onTrayMenuSelection(second, ({ id }) => secondIds.push(id));
+    await setTrayIconContextMenu(first, [{ id: 'open', label: 'Open' }]);
+    templates[0][0].click?.();
+    expect(firstIds).toEqual(['open']);
+    expect(secondIds).toEqual([]);
+  });
+
+  it('realizes later template changes through the current native image', async () => {
+    const { electron, trays } = fakeElectron();
+    const host = { tray: createElectronTrayCapabilities(electron, 'macos') };
+    const tray = await acquire(host);
+    expect((await setTrayIconTemplate(tray, true)).outcome).toBe('updated');
+    expect((trays[0].image as FakeImage).template).toBe(true);
+  });
+
+  it('returns invalid-icon without publishing a ghost record', async () => {
+    const { electron, trays } = fakeElectron();
+    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const result = await createTrayIcon(host, { icon: 'invalid' });
+    expect(result.outcome).toBe('invalid-icon');
+    expect(trays).toHaveLength(0);
+    expect(host.tray.lifecycle.list()).toEqual([]);
+  });
+
+  it('attempts listener and native teardown, then retries only failed steps', async () => {
+    const { electron, trays } = fakeElectron();
+    const host = { tray: createElectronTrayCapabilities(electron, 'linux') };
+    const tray = await acquire(host);
+    trays[0].removeFailures = 1;
+    trays[0].destroyFailures = 1;
+    expect((await destroyTrayIcon(tray)).outcome).toBe('tray-destroy-failed');
+    expect((await destroyTrayIcon(tray)).outcome).toBe('destroyed');
     expect(trays[0].destroyed).toBe(true);
-    expect(() => backend.destroy(999)).not.toThrow();
   });
 
-  it('updates tooltip, title, and context menu', () => {
-    const { electron, trays, built } = fakeElectron();
-    const backend = createElectronTrayBackend(electron);
-    const id = backend.create({});
-    backend.setTooltip(id, 'tip');
-    backend.setTitle(id, 'name');
-    backend.setContextMenu(id, [{ id: 'x', label: 'X' }]);
-    expect(trays[0].tooltip).toBe('tip');
-    expect(trays[0].title).toBe('name');
-    expect(trays[0].contextMenu).not.toBeNull();
-    expect(built[built.length - 1][0].id).toBe('x');
-  });
-
-  it('forwards click events to the subscribed listener and stops after unsubscribe', () => {
-    const { electron, trays } = fakeElectron();
-    const backend = createElectronTrayBackend(electron);
-    const id = backend.create({});
-    const events: [number, TrayEventType][] = [];
-    const unsubscribe = backend.subscribe((event) => events.push([event.id, event.type]));
-    trays[0].handlers['click']();
-    trays[0].handlers['right-click']();
-    trays[0].handlers['double-click']();
-    unsubscribe();
-    trays[0].handlers['click']();
-    expect(events).toEqual([
-      [id, 'click'],
-      [id, 'rightClick'],
-      [id, 'doubleClick'],
-    ]);
+  it('owns balloon commands only on the Windows shape', async () => {
+    const { electron } = fakeElectron();
+    const host = { tray: createElectronTrayCapabilities(electron, 'windows') };
+    const tray = await acquire(host);
+    expect((await displayTrayBalloon(tray, { text: 'Done', title: 'Flight' })).outcome).toBe('displayed');
   });
 });

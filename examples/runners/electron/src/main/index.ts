@@ -15,7 +15,7 @@ import {
   getScreens,
   attachMenuSelect,
   createMenuSelect,
-  onTrayEvent,
+  onTrayInteraction,
   openWindow,
   readClipboardText,
   setAppBadgeCount,
@@ -73,7 +73,7 @@ function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): vo
 
 // One-shot demonstration of the OS-integration seams, logged to the terminal so a run visibly proves
 // the Electron backends are wired.
-function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>): void {
+async function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>): Promise<void> {
   console.log('[harness] app:', getAppName(), getAppVersion(), getAppLocale()); // eslint-disable-line
 
   const screens: ScreenInfo[] = [];
@@ -108,15 +108,15 @@ function runOsIntegrationDemo(host: ReturnType<typeof registerElectronBackends>)
     console.log('[harness] clipboard round-trip:', await readClipboardText(host)); // eslint-disable-line
   })();
 
-  try {
-    const tray = createTrayIcon({ tooltip: 'Flight Harness' });
-    if (tray !== null) {
-      setTrayIconTooltip(tray, 'Flight Harness (ready)');
-      onTrayEvent((event) => console.log('[harness] tray event:', event.id, event.type)); // eslint-disable-line
-    }
-  } catch (error) {
-    // Electron's Tray needs a valid icon image; without bundling one this can throw. Non-fatal here.
-    console.warn('[harness] tray unavailable (needs an icon asset):', error); // eslint-disable-line
+  const trayResult = await createTrayIcon(host, {
+    icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    tooltip: 'Flight Harness',
+  });
+  if (trayResult.outcome === 'created') {
+    await setTrayIconTooltip(trayResult.tray, 'Flight Harness (ready)');
+    onTrayInteraction(trayResult.tray, (event) => console.log('[harness] tray event:', event.type)); // eslint-disable-line
+  } else {
+    console.warn('[harness] tray unavailable:', trayResult.outcome); // eslint-disable-line
   }
 }
 
@@ -142,7 +142,7 @@ void app.whenReady().then(() => {
   });
   loadRenderer(mainWindow);
 
-  runOsIntegrationDemo(host);
+  void runOsIntegrationDemo(host);
 
   app.on('activate', () => {
     if (mainWindow !== null && getElectronBrowserWindow(mainWindow) === null) {

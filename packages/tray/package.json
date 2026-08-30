@@ -38,12 +38,14 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/entity": "*",
     "@flighthq/log": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Tray icon and application badge over a swappable web/native backend",
+  "description": "Capability-refined tray icon Entities over explicitly injected host facets",
   "sideEffects": false
 }

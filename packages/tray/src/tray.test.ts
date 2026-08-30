@@ -1,30 +1,48 @@
+import { createEntity } from '@flighthq/entity/contract';
+import { createSignal } from '@flighthq/signals/contract';
 import type {
-  MenuItemTemplate,
-  TrayBackend,
-  TrayBalloonOptions,
-  TrayCapabilities,
-  TrayEventData,
-  TrayEventType,
-  TrayIconOptions,
+  HasTrayBalloon,
+  HasTrayBalloonEvents,
+  HasTrayBounds,
+  HasTrayDoubleClickPolicy,
+  HasTrayDropEvents,
+  HasTrayImage,
+  HasTrayInteractionEvents,
+  HasTrayLifecycle,
+  HasTrayMenu,
+  HasTrayMenuSelectionEvents,
+  HasTrayPopupMenu,
+  HasTrayPressedImage,
+  HasTrayTemplateImage,
+  HasTrayTitle,
+  HasTrayTooltip,
+  RectangleLike,
+  Signal,
+  TrayBalloonEvent,
+  TrayDropEvent,
+  TrayIcon,
+  TrayIconForHost,
+  TrayInteractionEvent,
+  TrayMenuSelectionEvent,
 } from '@flighthq/types/contract';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   createTrayIcon,
   destroyTrayIcon,
   displayTrayBalloon,
-  getTrayBackend,
-  getTrayCapabilities,
   getTrayIconBounds,
-  getTrayIcons,
   getTrayIconTitle,
   getTrayIconTooltip,
+  getTrayIcons,
   isTrayDestroyed,
   isTrayIconAnimating,
-  onTrayEvent,
+  onTrayBalloonEvent,
+  onTrayDrop,
+  onTrayInteraction,
+  onTrayMenuSelection,
   popupTrayContextMenu,
   removeTrayBalloon,
-  setTrayAnimationGuard,
-  setTrayBackend,
   setTrayIcon,
   setTrayIconContextMenu,
   setTrayIconTemplate,
@@ -32,880 +50,424 @@ import {
   setTrayIconTooltip,
   setTrayIgnoreDoubleClickEvents,
   setTrayPressedIcon,
+  setTrayAnimationGuard,
   startTrayIconAnimation,
   stopTrayIconAnimation,
-  explainTrayBackend,
-  installTrayHostBackend,
-  observeTrayHostResult,
-  resetTrayBackendForTest,
 } from './tray';
 
-// Fake backend state per icon.
-interface FakeTray {
-  balloon: TrayBalloonOptions | null;
-  contextMenu: readonly MenuItemTemplate[] | null;
-  destroyed: boolean;
-  icon: string;
-  id: number;
-  ignoreDoubleClick: boolean;
-  isTemplate: boolean;
-  options: TrayIconOptions;
-  pressedIcon: string;
+type TestHost = HasTrayLifecycle &
+  HasTrayImage &
+  HasTrayTitle &
+  HasTrayTooltip &
+  HasTrayMenu &
+  HasTrayTemplateImage &
+  HasTrayBounds &
+  HasTrayPopupMenu &
+  HasTrayDoubleClickPolicy &
+  HasTrayPressedImage &
+  HasTrayBalloon &
+  HasTrayInteractionEvents &
+  HasTrayMenuSelectionEvents &
+  HasTrayBalloonEvents &
+  HasTrayDropEvents;
+
+interface TestState {
+  balloonEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayBalloonEvent>) => void>>;
+  destroyFailures: number;
+  destroyed: WeakSet<TrayIcon>;
+  dropEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayDropEvent>) => void>>;
+  images: string[];
+  interactionEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayInteractionEvent>) => void>>;
+  live: TrayIcon[];
+  menuSelectionEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayMenuSelectionEvent>) => void>>;
   title: string;
   tooltip: string;
 }
 
-// Full fake backend implementing every TrayBackend method for test control.
-function fakeBackend(caps: Partial<TrayCapabilities> = {}): TrayBackend & {
-  capabilities: TrayCapabilities;
-  fireEvent(event: TrayEventData): void;
-  lastPopupPosition: { x: number; y: number } | null;
-  // Every icon written, in order — the animation tests assert on the sequence of writes rather than
-  // the final image, because two competing animations can leave a correct-looking final frame.
-  setIconCalls: string[];
-  trays: Map<number, FakeTray>;
-} {
-  const capabilities: TrayCapabilities = {
-    balloon: caps.balloon ?? true,
-    bounds: caps.bounds ?? true,
-    clickEvents: caps.clickEvents ?? true,
-    dropFiles: caps.dropFiles ?? false,
-    pressedIcon: caps.pressedIcon ?? true,
-    title: caps.title ?? true,
+function testHost(): { host: TestHost; state: TestState } {
+  const state: TestState = {
+    balloonEvents: new WeakMap(),
+    destroyFailures: 0,
+    destroyed: new WeakSet(),
+    dropEvents: new WeakMap(),
+    images: [],
+    interactionEvents: new WeakMap(),
+    live: [],
+    menuSelectionEvents: new WeakMap(),
+    title: '',
+    tooltip: '',
   };
-  let nextId = 1;
-  let eventListener: ((event: Readonly<TrayEventData>) => void) | null = null;
-  const trays = new Map<number, FakeTray>();
-
-  const setIconCalls: string[] = [];
-
-  return {
-    capabilities,
-    trays,
-    setIconCalls,
-    lastPopupPosition: null,
-    create(options) {
-      const id = nextId++;
-      trays.set(id, {
-        balloon: null,
-        contextMenu: null,
-        destroyed: false,
-        icon: options.icon ?? '',
-        id,
-        ignoreDoubleClick: false,
-        isTemplate: options.iconTemplate ?? false,
-        options,
-        pressedIcon: '',
-        title: options.title ?? '',
-        tooltip: options.tooltip ?? '',
-      });
-      return id;
-    },
-    destroy(id) {
-      const tray = trays.get(id);
-      if (tray) tray.destroyed = true;
-    },
-    displayBalloon(id, options) {
-      const tray = trays.get(id);
-      if (tray) tray.balloon = options;
-    },
-    getBounds(id) {
-      if (!trays.has(id)) return null;
-      return { height: 22, width: 22, x: 100, y: 0 };
-    },
-    getCapabilities() {
-      return capabilities;
-    },
-    getTitle(id) {
-      return trays.get(id)?.title ?? '';
-    },
-    getTooltip(id) {
-      return trays.get(id)?.tooltip ?? '';
-    },
-    isDestroyed(id) {
-      const tray = trays.get(id);
-      return tray === undefined || tray.destroyed;
-    },
-    listIds() {
-      return Array.from(trays.keys()).filter((id) => !trays.get(id)!.destroyed);
-    },
-    popUpContextMenu(id, position) {
-      this.lastPopupPosition = position ? { x: position.x, y: position.y } : null;
-    },
-    removeBalloon(id) {
-      const tray = trays.get(id);
-      if (tray) tray.balloon = null;
-    },
-    setContextMenu(id, items) {
-      const tray = trays.get(id);
-      if (tray) tray.contextMenu = items;
-    },
-    setIcon(id, icon) {
-      setIconCalls.push(icon);
-      const tray = trays.get(id);
-      if (tray) tray.icon = icon;
-    },
-    setIgnoreDoubleClickEvents(id, ignore) {
-      const tray = trays.get(id);
-      if (tray) tray.ignoreDoubleClick = ignore;
-    },
-    setPressedIcon(id, icon) {
-      const tray = trays.get(id);
-      if (tray) tray.pressedIcon = icon;
-    },
-    setTemplate(id, isTemplate) {
-      const tray = trays.get(id);
-      if (tray) tray.isTemplate = isTemplate;
-    },
-    setTitle(id, title) {
-      const tray = trays.get(id);
-      if (tray) tray.title = title;
-    },
-    setTooltip(id, tooltip) {
-      const tray = trays.get(id);
-      if (tray) tray.tooltip = tooltip;
-    },
-    subscribe(listener) {
-      eventListener = listener;
-      return () => {
-        eventListener = null;
-      };
-    },
-    fireEvent(event) {
-      eventListener?.(event);
+  const signalFor = <Event extends object>(
+    map: WeakMap<TrayIcon, Signal<(event: Readonly<Event>) => void>>,
+    tray: TrayIcon,
+  ): Signal<(event: Readonly<Event>) => void> | null => map.get(tray) ?? null;
+  const host = {
+    tray: {
+      lifecycle: createEntity({
+        async create(tray: TrayIcon) {
+          state.live.push(tray);
+          state.balloonEvents.set(tray, createSignal());
+          state.dropEvents.set(tray, createSignal());
+          state.interactionEvents.set(tray, createSignal());
+          state.menuSelectionEvents.set(tray, createSignal());
+          return { outcome: 'created' as const };
+        },
+        async destroy(tray: TrayIcon) {
+          if (state.destroyFailures-- > 0) {
+            return { failures: [{ step: 'native-resource' as const }], outcome: 'tray-destroy-failed' as const };
+          }
+          state.destroyed.add(tray);
+          state.live = state.live.filter((item) => item !== tray);
+          return { outcome: 'destroyed' as const };
+        },
+        isDestroyed: (tray: TrayIcon) => state.destroyed.has(tray),
+        list: () => state.live.slice(),
+      }),
+      image: createEntity({
+        async set(_tray: TrayIcon, icon: string) {
+          state.images.push(icon);
+          return { outcome: 'updated' as const };
+        },
+      }),
+      title: createEntity({
+        async get() {
+          return { outcome: 'available' as const, title: state.title };
+        },
+        async set(_tray: TrayIcon, title: string) {
+          state.title = title;
+          return { outcome: 'updated' as const };
+        },
+      }),
+      tooltip: createEntity({
+        async get() {
+          return { outcome: 'available' as const, tooltip: state.tooltip };
+        },
+        async set(_tray: TrayIcon, tooltip: string) {
+          state.tooltip = tooltip;
+          return { outcome: 'updated' as const };
+        },
+      }),
+      menu: createEntity({
+        async set() {
+          return { outcome: 'updated' as const };
+        },
+      }),
+      templateImage: createEntity({
+        async set() {
+          return { outcome: 'updated' as const };
+        },
+      }),
+      bounds: createEntity({
+        async get() {
+          return { bounds: { height: 2, width: 1, x: 3, y: 4 } satisfies RectangleLike, outcome: 'available' as const };
+        },
+      }),
+      popupMenu: createEntity({
+        async popup() {
+          return { outcome: 'shown' as const };
+        },
+      }),
+      doubleClickPolicy: createEntity({
+        async setIgnore() {
+          return { outcome: 'updated' as const };
+        },
+      }),
+      pressedImage: createEntity({
+        async set() {
+          return { outcome: 'updated' as const };
+        },
+      }),
+      balloon: createEntity({
+        async display() {
+          return { outcome: 'displayed' as const };
+        },
+        async remove() {
+          return { outcome: 'removed' as const };
+        },
+      }),
+      interactionEvents: createEntity({
+        getSignal: (tray: TrayIcon) => signalFor(state.interactionEvents, tray),
+      }),
+      menuSelectionEvents: createEntity({
+        getSignal: (tray: TrayIcon) => signalFor(state.menuSelectionEvents, tray),
+      }),
+      balloonEvents: createEntity({ getSignal: (tray: TrayIcon) => signalFor(state.balloonEvents, tray) }),
+      dropEvents: createEntity({ getSignal: (tray: TrayIcon) => signalFor(state.dropEvents, tray) }),
     },
   };
+  return { host: host as TestHost, state };
 }
 
-function makeTrayEvent(overrides: Partial<TrayEventData> = {}): TrayEventData {
-  return {
-    altKey: false,
-    bounds: null,
-    ctrlKey: false,
-    dropFiles: null,
-    dropText: null,
-    id: 1,
-    metaKey: false,
-    position: null,
-    shiftKey: false,
-    type: 'click',
-    ...overrides,
-  };
+async function acquire(host: TestHost): Promise<TrayIconForHost<TestHost>> {
+  const result = await createTrayIcon(host);
+  if (result.outcome !== 'created') throw new Error(result.outcome);
+  return result.tray;
 }
-
-afterEach(() => setTrayBackend(null));
 
 describe('createTrayIcon', () => {
-  it('creates a tray via the active backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ tooltip: 'App' });
-    expect(tray).not.toBeNull();
-    expect(backend.trays.get(tray!.id)!.options.tooltip).toBe('App');
-  });
-
-  it('passes iconTemplate option to backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ icon: 'icon.png', iconTemplate: true });
-    expect(backend.trays.get(tray!.id)!.isTemplate).toBe(true);
-  });
-
-  it('returns null on the web backend (no tray)', () => {
-    expect(createTrayIcon()).toBeNull();
+  it('publishes only after provider acquisition and exposes no public id', async () => {
+    const { host, state } = testHost();
+    const pending = createTrayIcon(host);
+    expect(state.live).toHaveLength(1);
+    const result = await pending;
+    expect(result.outcome).toBe('created');
+    if (result.outcome === 'created') expect('id' in result.tray).toBe(false);
   });
 });
 
 describe('destroyTrayIcon', () => {
-  it('destroys the tray via the active backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    destroyTrayIcon(tray);
-    expect(backend.trays.get(tray.id)!.destroyed).toBe(true);
+  it('retries only a failed native release and is idempotent after success', async () => {
+    const { host, state } = testHost();
+    state.destroyFailures = 1;
+    const tray = await acquire(host);
+    expect((await destroyTrayIcon(tray)).outcome).toBe('tray-destroy-failed');
+    expect((await destroyTrayIcon(tray)).outcome).toBe('destroyed');
+    expect((await destroyTrayIcon(tray)).outcome).toBe('already-destroyed');
   });
 });
 
 describe('displayTrayBalloon', () => {
-  it('passes balloon options to the backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    const opts: TrayBalloonOptions = { title: 'Alert', text: 'Something happened' };
-    displayTrayBalloon(tray, opts);
-    expect(backend.trays.get(tray.id)!.balloon).toStrictEqual(opts);
-  });
-
-  it('accepts optional balloon fields', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    const opts: TrayBalloonOptions = {
-      title: 'Alert',
-      text: 'Body',
-      iconType: 'warning',
-      largeIcon: true,
-      noSound: true,
-      respectQuietTime: true,
-    };
-    displayTrayBalloon(tray, opts);
-    expect(backend.trays.get(tray.id)!.balloon?.iconType).toBe('warning');
-  });
-
-  it('is a no-op on the web backend', () => {
-    expect(() => displayTrayBalloon({ id: 0 }, { title: 'T', text: 'B' })).not.toThrow();
-  });
-});
-
-describe('explainTrayBackend', () => {
-  afterEach(() => resetTrayBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetTrayBackendForTest();
-    const explanation = explainTrayBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setTrayBackend(fakeBackend());
-    expect(explainTrayBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installTrayHostBackend(fakeBackend());
-    expect(explainTrayBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installTrayHostBackend(fakeBackend());
-    installTrayHostBackend(fakeBackend());
-    expect(explainTrayBackend().conflict).toBe(true);
-  });
-});
-
-describe('getTrayBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getTrayBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    expect(getTrayBackend()).toBe(backend);
-  });
-});
-
-describe('getTrayBackend (sentinel)', () => {
-  it('returns sentinels without throwing (web has no tray)', () => {
-    const backend = getTrayBackend();
-    expect(backend.create({})).toBe(-1);
-    expect(() => backend.destroy(0)).not.toThrow();
-    expect(() => backend.setTooltip(0, 'x')).not.toThrow();
-    expect(() => backend.setTitle(0, 'x')).not.toThrow();
-    expect(() => backend.setContextMenu(0, [])).not.toThrow();
-    expect(() => backend.setIcon(0, 'icon.png')).not.toThrow();
-    expect(() => backend.setTemplate(0, true)).not.toThrow();
-    expect(() => backend.setPressedIcon(0, 'pressed.png')).not.toThrow();
-    expect(() => backend.setIgnoreDoubleClickEvents(0, true)).not.toThrow();
-    expect(() => backend.popUpContextMenu(0)).not.toThrow();
-    expect(() => backend.displayBalloon(0, { title: 'T', text: 'B' })).not.toThrow();
-    expect(() => backend.removeBalloon(0)).not.toThrow();
-    expect(backend.getBounds(0)).toBeNull();
-    expect(backend.getTitle(0)).toBe('');
-    expect(backend.getTooltip(0)).toBe('');
-    expect(backend.isDestroyed(0)).toBe(true);
-    expect(backend.listIds()).toEqual([]);
-    expect(typeof backend.subscribe(() => {})).toBe('function');
-  });
-
-  it('sentinel capabilities are all false', () => {
-    const backend = getTrayBackend();
-    const caps = backend.getCapabilities();
-    expect(caps.balloon).toBe(false);
-    expect(caps.bounds).toBe(false);
-    expect(caps.clickEvents).toBe(false);
-    expect(caps.dropFiles).toBe(false);
-    expect(caps.pressedIcon).toBe(false);
-    expect(caps.title).toBe(false);
-  });
-});
-
-describe('getTrayCapabilities', () => {
-  it('returns capabilities from the active backend', () => {
-    const backend = fakeBackend({ balloon: true, bounds: false });
-    setTrayBackend(backend);
-    const caps = getTrayCapabilities();
-    expect(caps.balloon).toBe(true);
-    expect(caps.bounds).toBe(false);
-  });
-
-  it('returns all-false capabilities on web', () => {
-    const caps = getTrayCapabilities();
-    expect(Object.values(caps).every((v) => v === false)).toBe(true);
+  it('owns balloon display on the Tray entity', async () => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    expect((await displayTrayBalloon(tray, { text: 'Done', title: 'Flight' })).outcome).toBe('displayed');
   });
 });
 
 describe('getTrayIconBounds', () => {
-  it('returns bounds from the backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    const bounds = getTrayIconBounds(tray);
-    expect(bounds).not.toBeNull();
-    expect(bounds!.width).toBeGreaterThan(0);
-    expect(bounds!.height).toBeGreaterThan(0);
-  });
-
-  it('returns null on web', () => {
-    expect(getTrayIconBounds({ id: 0 })).toBeNull();
+  it('returns provider bounds', async () => {
+    const { host } = testHost();
+    expect(await getTrayIconBounds(await acquire(host))).toMatchObject({ outcome: 'available', bounds: { width: 1 } });
   });
 });
 
 describe('getTrayIcons', () => {
-  it('returns all live tray icons', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const t1 = createTrayIcon()!;
-    const t2 = createTrayIcon()!;
-    const icons = getTrayIcons();
-    expect(icons.map((t) => t.id)).toContain(t1.id);
-    expect(icons.map((t) => t.id)).toContain(t2.id);
-  });
-
-  it('excludes destroyed tray icons', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const t1 = createTrayIcon()!;
-    destroyTrayIcon(t1);
-    const icons = getTrayIcons();
-    expect(icons.map((t) => t.id)).not.toContain(t1.id);
-  });
-
-  it('returns empty array on web', () => {
-    expect(getTrayIcons()).toEqual([]);
+  it('preserves acquisition order', async () => {
+    const { host } = testHost();
+    const first = await acquire(host);
+    const second = await acquire(host);
+    expect(getTrayIcons(host)).toEqual([first, second]);
   });
 });
 
 describe('getTrayIconTitle', () => {
-  it('returns the current title', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    setTrayIconTitle(tray, 'MyApp');
-    expect(getTrayIconTitle(tray)).toBe('MyApp');
-  });
-
-  it('returns empty string on web', () => {
-    expect(getTrayIconTitle({ id: 0 })).toBe('');
+  it('reads the title', async () => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    await setTrayIconTitle(tray, 'Flight');
+    expect(await getTrayIconTitle(tray)).toEqual({ outcome: 'available', title: 'Flight' });
   });
 });
 
 describe('getTrayIconTooltip', () => {
-  it('returns the current tooltip', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    setTrayIconTooltip(tray, 'Hover tip');
-    expect(getTrayIconTooltip(tray)).toBe('Hover tip');
-  });
-
-  it('returns empty string on web', () => {
-    expect(getTrayIconTooltip({ id: 0 })).toBe('');
-  });
-});
-
-describe('installTrayHostBackend', () => {
-  afterEach(() => resetTrayBackendForTest());
-
-  it('installs a host backend that getTrayBackend returns', () => {
-    const backend = fakeBackend();
-    installTrayHostBackend(backend);
-    expect(getTrayBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installTrayHostBackend(first);
-    installTrayHostBackend(second);
-    expect(getTrayBackend()).toBe(first);
-    expect(explainTrayBackend().conflict).toBe(true);
+  it('reads the tooltip', async () => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    await setTrayIconTooltip(tray, 'Ready');
+    expect(await getTrayIconTooltip(tray)).toEqual({ outcome: 'available', tooltip: 'Ready' });
   });
 });
 
 describe('isTrayDestroyed', () => {
-  it('returns false for a live tray', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
+  it('tracks the pinned lifecycle', async () => {
+    const { host } = testHost();
+    const tray = await acquire(host);
     expect(isTrayDestroyed(tray)).toBe(false);
-  });
-
-  it('returns true after destroyTrayIcon', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    destroyTrayIcon(tray);
+    await destroyTrayIcon(tray);
     expect(isTrayDestroyed(tray)).toBe(true);
-  });
-
-  it('returns true on web (no trays exist)', () => {
-    expect(isTrayDestroyed({ id: 0 })).toBe(true);
   });
 });
 
 describe('isTrayIconAnimating', () => {
-  beforeEach(() => {
+  it('tracks the current animation generation', async () => {
     vi.useFakeTimers();
-  });
-
-  afterEach(() => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    await startTrayIconAnimation(tray, ['a'], 10);
+    expect(isTrayIconAnimating(tray)).toBe(true);
+    stopTrayIconAnimation(tray);
+    expect(isTrayIconAnimating(tray)).toBe(false);
     vi.useRealTimers();
   });
+});
 
-  it('is false before, true during, and false after an animation', () => {
-    setTrayBackend(fakeBackend());
-    const tray = createTrayIcon({ icon: 'a.png' })!;
-    expect(isTrayIconAnimating(tray)).toBe(false);
-    const stop = startTrayIconAnimation(tray, ['a.png', 'b.png'], 100);
-    expect(isTrayIconAnimating(tray)).toBe(true);
-    stop();
-    expect(isTrayIconAnimating(tray)).toBe(false);
-  });
-
-  it('is false for an empty frame list, which starts nothing', () => {
-    setTrayBackend(fakeBackend());
-    const tray = createTrayIcon({ icon: 'a.png' })!;
-    startTrayIconAnimation(tray, [], 100);
-    expect(isTrayIconAnimating(tray)).toBe(false);
-  });
-
-  it('tracks each tray independently', () => {
-    setTrayBackend(fakeBackend());
-    const first = createTrayIcon({ icon: 'a.png' })!;
-    const second = createTrayIcon({ icon: 'b.png' })!;
-    startTrayIconAnimation(first, ['a.png', 'b.png'], 100);
-    expect(isTrayIconAnimating(first)).toBe(true);
-    expect(isTrayIconAnimating(second)).toBe(false);
-    stopTrayIconAnimation(first);
+describe('onTrayBalloonEvent', () => {
+  it('delivers balloon lifecycle independently', async () => {
+    const { host, state } = testHost();
+    const tray = await acquire(host);
+    const listener = vi.fn();
+    expect(onTrayBalloonEvent(tray, listener).outcome).toBe('attached');
+    state.balloonEvents.get(tray)!.emit({ type: 'show' });
+    expect(listener).toHaveBeenCalledWith({ type: 'show' });
   });
 });
 
-describe('observeTrayHostResult', () => {
-  afterEach(() => resetTrayBackendForTest());
-
-  it('records a successful observation', () => {
-    installTrayHostBackend(fakeBackend());
-    observeTrayHostResult('create', true);
-    const explanation = explainTrayBackend();
-    expect(explanation.operation).toBe('create');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installTrayHostBackend(fakeBackend());
-    observeTrayHostResult('create', false);
-    expect(explainTrayBackend().viability).toBe('runtime-api-unavailable');
+describe('onTrayDrop', () => {
+  it('delivers drop data independently', async () => {
+    const { host, state } = testHost();
+    const tray = await acquire(host);
+    const listener = vi.fn();
+    expect(onTrayDrop(tray, listener).outcome).toBe('attached');
+    state.dropEvents.get(tray)!.emit({ files: ['a'], type: 'files' });
+    expect(listener).toHaveBeenCalledWith({ files: ['a'], type: 'files' });
   });
 });
 
-describe('onTrayEvent', () => {
-  it('delivers rich TrayEventData via the active backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    let received: TrayEventData | null = null;
-    onTrayEvent((event) => {
-      received = event;
+describe('onTrayInteraction', () => {
+  it('releases once and destroy releases a remaining subscription', async () => {
+    const { host, state } = testHost();
+    const tray = await acquire(host);
+    const listener = vi.fn();
+    const attached = onTrayInteraction(tray, listener);
+    expect(attached.outcome).toBe('attached');
+    state.interactionEvents.get(tray)!.emit({
+      altKey: false,
+      bounds: null,
+      ctrlKey: false,
+      metaKey: false,
+      position: null,
+      shiftKey: false,
+      type: 'click',
     });
-    const evt = makeTrayEvent({
-      id: 7,
-      type: 'rightClick',
-      bounds: { x: 100, y: 0, width: 22, height: 22 },
-      shiftKey: true,
+    expect(listener).toHaveBeenCalledOnce();
+    if (attached.outcome === 'attached') {
+      expect((await attached.release.release()).outcome).toBe('released');
+      expect((await attached.release.release()).outcome).toBe('already-released');
+    }
+    const destroyReleased = vi.fn();
+    onTrayInteraction(tray, destroyReleased);
+    await destroyTrayIcon(tray);
+    state.interactionEvents.get(tray)!.emit({
+      altKey: false,
+      bounds: null,
+      ctrlKey: false,
+      metaKey: false,
+      position: null,
+      shiftKey: false,
+      type: 'click',
     });
-    backend.fireEvent(evt);
-    expect(received).not.toBeNull();
-    expect(received!.id).toBe(7);
-    expect(received!.type).toBe('rightClick');
-    expect(received!.bounds).toMatchObject({ x: 100, y: 0 });
-    expect(received!.shiftKey).toBe(true);
+    expect(destroyReleased).not.toHaveBeenCalled();
   });
+});
 
-  it('delivers drop events with file payloads', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    let received: TrayEventData | null = null;
-    onTrayEvent((e) => {
-      received = e;
-    });
-    backend.fireEvent(makeTrayEvent({ type: 'dropFiles', dropFiles: ['/path/to/file.txt'] }));
-    expect(received!.dropFiles).toEqual(['/path/to/file.txt']);
-  });
-
-  it('returns an unsubscribe that stops delivery', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    let count = 0;
-    const unsubscribe = onTrayEvent(() => {
-      count += 1;
-    });
-    backend.fireEvent(makeTrayEvent({ type: 'click' }));
-    unsubscribe();
-    backend.fireEvent(makeTrayEvent({ type: 'click' }));
-    expect(count).toBe(1);
-  });
-
-  it('delivers balloon events', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const types: TrayEventType[] = [];
-    onTrayEvent((e) => {
-      types.push(e.type);
-    });
-    backend.fireEvent(makeTrayEvent({ type: 'balloonShow' }));
-    backend.fireEvent(makeTrayEvent({ type: 'balloonClick' }));
-    backend.fireEvent(makeTrayEvent({ type: 'balloonClose' }));
-    expect(types).toEqual(['balloonShow', 'balloonClick', 'balloonClose']);
+describe('onTrayMenuSelection', () => {
+  it('delivers a per-Tray menu id', async () => {
+    const { host, state } = testHost();
+    const tray = await acquire(host);
+    const listener = vi.fn();
+    expect(onTrayMenuSelection(tray, listener).outcome).toBe('attached');
+    state.menuSelectionEvents.get(tray)!.emit({ id: 'open' });
+    expect(listener).toHaveBeenCalledWith({ id: 'open' });
   });
 });
 
 describe('popupTrayContextMenu', () => {
-  it('pops up the context menu without a position', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    popupTrayContextMenu(tray);
-    // No error thrown; position was unset
-    expect(backend.lastPopupPosition).toBeNull();
-  });
-
-  it('pops up the context menu at a given position', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    popupTrayContextMenu(tray, { x: 200, y: 50 });
-    expect(backend.lastPopupPosition).toEqual({ x: 200, y: 50 });
-  });
-
-  it('is a no-op on web', () => {
-    expect(() => popupTrayContextMenu({ id: 0 }, { x: 0, y: 0 })).not.toThrow();
+  it('shows the installed menu', async () => {
+    const { host } = testHost();
+    expect((await popupTrayContextMenu(await acquire(host), { x: 1, y: 2 })).outcome).toBe('shown');
   });
 });
 
 describe('removeTrayBalloon', () => {
-  it('removes the active balloon', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    displayTrayBalloon(tray, { title: 'T', text: 'B' });
-    removeTrayBalloon(tray);
-    expect(backend.trays.get(tray.id)!.balloon).toBeNull();
-  });
-
-  it('is a no-op on web', () => {
-    expect(() => removeTrayBalloon({ id: 0 })).not.toThrow();
-  });
-});
-
-describe('resetTrayBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setTrayBackend(fakeBackend());
-    installTrayHostBackend(fakeBackend());
-    observeTrayHostResult('create', true);
-    resetTrayBackendForTest();
-    expect(explainTrayBackend().layer).toBe('host-not-enabled');
-    expect(explainTrayBackend().conflict).toBe(false);
-    expect(explainTrayBackend().viability).toBe('unobserved');
+  it('owns balloon removal on the Tray entity', async () => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    await displayTrayBalloon(tray, { text: 'Done', title: 'Flight' });
+    expect((await removeTrayBalloon(tray)).outcome).toBe('removed');
   });
 });
 
 describe('setTrayAnimationGuard', () => {
-  afterEach(() => {
+  it('installs and clears the opt-in animation inspection hook', async () => {
+    vi.useFakeTimers();
+    const guard = vi.fn();
+    setTrayAnimationGuard(guard);
+    const { host } = testHost();
+    const tray = await acquire(host);
+    const started = await startTrayIconAnimation(tray, ['a'], 12);
+    expect(guard).toHaveBeenCalledWith(tray, 1, 12);
+    if (started.outcome === 'started') await started.release.release();
     setTrayAnimationGuard(null);
-    setTrayBackend(null);
-  });
-
-  // The seam keeps the message and the @flighthq/log dependency in the separately-importable guard
-  // module; startTrayIconAnimation only calls whatever is installed.
-  it('reports the frame count and interval for each animation start', () => {
-    setTrayBackend(fakeBackend());
-    const seen: Array<[number, number]> = [];
-    setTrayAnimationGuard((_tray, frameCount, intervalMs) => seen.push([frameCount, intervalMs]));
-    const tray = createTrayIcon()!;
-
-    stopTrayIconAnimation(tray);
-    startTrayIconAnimation(tray, ['a', 'b', 'c'], 0);
-    stopTrayIconAnimation(tray);
-
-    expect(seen).toEqual([[3, 0]]);
-  });
-
-  it('stops reporting once cleared with null', () => {
-    setTrayBackend(fakeBackend());
-    let calls = 0;
-    setTrayAnimationGuard(() => (calls += 1));
-    const tray = createTrayIcon()!;
-    startTrayIconAnimation(tray, ['a'], 5);
-    stopTrayIconAnimation(tray);
-    setTrayAnimationGuard(null);
-    startTrayIconAnimation(tray, ['a'], 5);
-    stopTrayIconAnimation(tray);
-
-    expect(calls).toBe(1);
-  });
-});
-
-describe('setTrayBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setTrayBackend(fakeBackend());
-    setTrayBackend(null);
-    expect(getTrayBackend()).not.toBeNull();
+    vi.useRealTimers();
   });
 });
 
 describe('setTrayIcon', () => {
-  it('updates the icon at runtime', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ icon: 'idle.png' })!;
-    setTrayIcon(tray, 'active.png');
-    expect(backend.trays.get(tray.id)!.icon).toBe('active.png');
-  });
-
-  it('is a no-op on web', () => {
-    expect(() => setTrayIcon({ id: 0 }, 'icon.png')).not.toThrow();
+  it('uses the acquired provider facet', async () => {
+    const { host, state } = testHost();
+    expect((await setTrayIcon(await acquire(host), 'icon')).outcome).toBe('updated');
+    expect(state.images).toEqual(['icon']);
   });
 });
 
 describe('setTrayIconContextMenu', () => {
-  it('sets the context menu via the active backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    const items: readonly MenuItemTemplate[] = [{ id: 'quit', label: 'Quit' }];
-    setTrayIconContextMenu(tray, items);
-    expect(backend.trays.get(tray.id)!.contextMenu).toBe(items);
+  it('installs a plain descriptor', async () => {
+    const { host } = testHost();
+    expect((await setTrayIconContextMenu(await acquire(host), [{ id: 'quit', label: 'Quit' }])).outcome).toBe(
+      'updated',
+    );
   });
 });
 
 describe('setTrayIconTemplate', () => {
-  it('marks the icon as a template image', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    setTrayIconTemplate(tray, true);
-    expect(backend.trays.get(tray.id)!.isTemplate).toBe(true);
-  });
-
-  it('clears the template flag', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ iconTemplate: true })!;
-    setTrayIconTemplate(tray, false);
-    expect(backend.trays.get(tray.id)!.isTemplate).toBe(false);
-  });
-
-  it('is a no-op on web', () => {
-    expect(() => setTrayIconTemplate({ id: 0 }, true)).not.toThrow();
+  it('updates template treatment', async () => {
+    const { host } = testHost();
+    expect((await setTrayIconTemplate(await acquire(host), true)).outcome).toBe('updated');
   });
 });
 
 describe('setTrayIconTitle', () => {
-  it('sets the title via the active backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    setTrayIconTitle(tray, 'Hello');
-    expect(backend.trays.get(tray.id)!.title).toBe('Hello');
+  it('updates the title', async () => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    expect((await setTrayIconTitle(tray, 'Flight')).outcome).toBe('updated');
   });
 });
 
 describe('setTrayIconTooltip', () => {
-  it('sets the tooltip via the active backend', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    setTrayIconTooltip(tray, 'Tip');
-    expect(backend.trays.get(tray.id)!.tooltip).toBe('Tip');
+  it('updates the tooltip', async () => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    expect((await setTrayIconTooltip(tray, 'Ready')).outcome).toBe('updated');
   });
 });
 
 describe('setTrayIgnoreDoubleClickEvents', () => {
-  it('sets the ignore double-click flag', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    setTrayIgnoreDoubleClickEvents(tray, true);
-    expect(backend.trays.get(tray.id)!.ignoreDoubleClick).toBe(true);
-  });
-
-  it('is a no-op on web', () => {
-    expect(() => setTrayIgnoreDoubleClickEvents({ id: 0 }, true)).not.toThrow();
+  it('updates the policy', async () => {
+    const { host } = testHost();
+    expect((await setTrayIgnoreDoubleClickEvents(await acquire(host), true)).outcome).toBe('updated');
   });
 });
 
 describe('setTrayPressedIcon', () => {
-  it('sets the pressed icon image', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    setTrayPressedIcon(tray, 'pressed.png');
-    expect(backend.trays.get(tray.id)!.pressedIcon).toBe('pressed.png');
-  });
-
-  it('is a no-op on web', () => {
-    expect(() => setTrayPressedIcon({ id: 0 }, 'pressed.png')).not.toThrow();
+  it('updates the pressed icon', async () => {
+    const { host } = testHost();
+    expect((await setTrayPressedIcon(await acquire(host), 'pressed')).outcome).toBe('updated');
   });
 });
 
 describe('startTrayIconAnimation', () => {
-  beforeEach(() => {
+  it('writes through the origin-pinned image facet', async () => {
     vi.useFakeTimers();
-  });
-
-  afterEach(() => {
+    const { host, state } = testHost();
+    const tray = await acquire(host);
+    const result = await startTrayIconAnimation(tray, ['a', 'b'], 10);
+    expect(result.outcome).toBe('started');
+    await vi.advanceTimersByTimeAsync(10);
+    expect(state.images).toEqual(['a', 'b']);
+    if (result.outcome === 'started') await result.release.release();
     vi.useRealTimers();
-  });
-
-  it('cycles through frames at the given interval', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ icon: 'frame0.png' })!;
-    const frames = ['frame0.png', 'frame1.png', 'frame2.png'];
-    startTrayIconAnimation(tray, frames, 100);
-    // Initial frame set immediately
-    expect(backend.trays.get(tray.id)!.icon).toBe('frame0.png');
-    vi.advanceTimersByTime(100);
-    expect(backend.trays.get(tray.id)!.icon).toBe('frame1.png');
-    vi.advanceTimersByTime(100);
-    expect(backend.trays.get(tray.id)!.icon).toBe('frame2.png');
-    vi.advanceTimersByTime(100);
-    // Wraps around
-    expect(backend.trays.get(tray.id)!.icon).toBe('frame0.png');
-  });
-
-  it('stop function cancels animation', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    const frames = ['a.png', 'b.png'];
-    const stop = startTrayIconAnimation(tray, frames, 50);
-    vi.advanceTimersByTime(50);
-    expect(backend.trays.get(tray.id)!.icon).toBe('b.png');
-    stop();
-    vi.advanceTimersByTime(200);
-    // Frame stays at b.png after stop
-    expect(backend.trays.get(tray.id)!.icon).toBe('b.png');
-  });
-
-  it('returns a no-op stop for empty frames', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-    const stop = startTrayIconAnimation(tray, [], 100);
-    expect(() => stop()).not.toThrow();
   });
 });
 
 describe('stopTrayIconAnimation', () => {
-  beforeEach(() => {
+  it('stops only the current generation', async () => {
     vi.useFakeTimers();
-  });
-
-  afterEach(() => {
+    const { host } = testHost();
+    const tray = await acquire(host);
+    await startTrayIconAnimation(tray, ['a'], 10);
+    expect(stopTrayIconAnimation(tray).outcome).toBe('stopped');
+    expect(stopTrayIconAnimation(tray).outcome).toBe('already-stopped');
     vi.useRealTimers();
-  });
-
-  it('stops the interval so no further frames are written', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ icon: 'frame0.png' })!;
-    startTrayIconAnimation(tray, ['frame0.png', 'frame1.png'], 100);
-    stopTrayIconAnimation(tray);
-    const iconAtStop = backend.trays.get(tray.id)!.icon;
-    vi.advanceTimersByTime(500);
-    expect(backend.trays.get(tray.id)!.icon).toBe(iconAtStop);
-  });
-
-  it('is idempotent and safe on a tray that never animated', () => {
-    setTrayBackend(fakeBackend());
-    const tray = createTrayIcon({ icon: 'a.png' })!;
-    expect(() => {
-      stopTrayIconAnimation(tray);
-      stopTrayIconAnimation(tray);
-    }).not.toThrow();
-  });
-});
-
-describe('tray icon animation lifecycle', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('replaces a running animation instead of running both', () => {
-    // The regression this pins: two starts on one tray left two intervals writing to the same icon on
-    // the same tick — the icon flickered between the two sequences, and the only handle to the first
-    // was a stop function the caller had no reason to still hold.
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ icon: 'a0.png' })!;
-    startTrayIconAnimation(tray, ['a0.png', 'a1.png'], 100);
-    startTrayIconAnimation(tray, ['b0.png', 'b1.png'], 100);
-    backend.setIconCalls.length = 0;
-    vi.advanceTimersByTime(100);
-    expect(backend.setIconCalls).toEqual(['b1.png']);
-  });
-
-  it('stops animating a tray that has been destroyed', () => {
-    // The regression this pins: the interval outlived the icon, calling setIcon on a destroyed tray
-    // forever — and the timer kept its own closure alive, so nothing could collect it.
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ icon: 'a0.png' })!;
-    startTrayIconAnimation(tray, ['a0.png', 'a1.png'], 100);
-    destroyTrayIcon(tray);
-    backend.setIconCalls.length = 0;
-    vi.advanceTimersByTime(500);
-    expect(backend.setIconCalls).toEqual([]);
-    expect(isTrayIconAnimating(tray)).toBe(false);
-  });
-
-  it('a stale stop function cannot cancel the animation that replaced it', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon({ icon: 'a0.png' })!;
-    const staleStop = startTrayIconAnimation(tray, ['a0.png', 'a1.png'], 100);
-    startTrayIconAnimation(tray, ['b0.png', 'b1.png'], 100);
-    staleStop();
-    expect(isTrayIconAnimating(tray)).toBe(true);
-    backend.setIconCalls.length = 0;
-    vi.advanceTimersByTime(100);
-    expect(backend.setIconCalls).toEqual(['b1.png']);
-    stopTrayIconAnimation(tray);
-  });
-});
-
-describe('TrayIcon handle identity', () => {
-  afterEach(() => setTrayBackend(null));
-
-  // Documented contract: handles compare by id, never by identity. Pinned so the doc and the behaviour
-  // cannot drift apart, and so anyone who later interns handles has to change this deliberately rather
-  // than discover it. The working form is the id comparison, and it is asserted alongside the failing
-  // one so the test shows the remedy, not just the trap.
-  it('mints a distinct object per call, so handles compare by id rather than identity', () => {
-    const backend = fakeBackend();
-    setTrayBackend(backend);
-    const tray = createTrayIcon()!;
-
-    const listed = getTrayIcons();
-
-    expect(listed.includes(tray)).toBe(false);
-    expect(listed.some((candidate) => candidate.id === tray.id)).toBe(true);
   });
 });

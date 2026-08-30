@@ -1,51 +1,50 @@
 ---
 package: '@flighthq/tray'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder4
 ---
 
 # tray — Status
 
 > Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
-> Session narration belongs in git, which already carries it with the diff attached.
 
 ## Open
 
-Re-checked against `packages/tray/src/`, `packages/types/src/Tray.ts`, and both native tray hosts on
-2026-08-08. A file:line here is a claim about this tree, not about a session.
+- Additional pointer/drag/Tauri-only event detail is deferred new scope. The shipped event ownership is
+  exactly interaction, per-Tray menu selection, balloon lifecycle, and drops where a provider emits it.
+- Theme-aware light/dark icon pairing remains deferred; icon inputs are plain path/data-URI strings and
+  Tray has no image, platform, notification, shortcut, or menu implementation dependency.
+- The historical `review.md` and `assessment.md` are preserved unchanged as records of their evaluated
+  floors. They describe the retired aggregate design and must not be read as the live API.
 
-- **`TrayEventType` carries seven events**, not the full native set: `balloonClick`, `balloonClose`,
-  `balloonShow`, `click`, `doubleClick`, `dropFiles`, `rightClick` (`types/src/Tray.ts:8-15`). No
-  `middleClick`, no `mouseDown`/`Up`/`Enter`/`Leave`/`Move`, no `dragEnter`/`dragLeave`/`drop`.
-- **`TrayEventData.dropText` has no event that can carry it** (`types/src/Tray.ts:54`): `dropFiles` is
-  the only drop kind in the union, so the field is unreachable by construction.
-- **The rich payload is structurally unreachable on Electron.** `createElectronTrayBackend` wires only
-  `click` / `right-click` / `double-click` (`host-electron/src/electronTray.ts:51-53`), and every
-  emitted event hardcodes all four modifier flags to `false` with `position: null` and both drop
-  fields `null` (`:24-35`). Balloons can be *displayed* but the three `balloon*` events never fire.
-- **`setTrayIconTemplate` cannot work through the Electron seam.** `setTemplate` is a deliberate no-op
-  (`electronTray.ts:118-121`) because template-ness lives on a `nativeImage` while this seam takes
-  string icons; only `TrayIconOptions.iconTemplate` at creation has anywhere to land.
-- **No theme-aware icon pairing exists.** `iconLight` / `iconDark` / `iconDelegate` appear nowhere in
-  `packages/`; `TrayIconOptions` carries only `icon`, `iconTemplate`, `title`, `tooltip`
-  (`types/src/Tray.ts:17-23`). Still a cross-package design question — how a tray learns about theme
-  changes without importing `@flighthq/platform`.
+## Live model
+
+`Host.tray` is required and contains 15 independently optional slots: `lifecycle`, `image`, `title`,
+`tooltip`, `menu`, `templateImage`, `bounds`, `popupMenu`, `doubleClickPolicy`, `pressedImage`,
+`balloon`, `interactionEvents`, `menuSelectionEvents`, `balloonEvents`, and `dropEvents`.
+
+Coverage is Host × injected profile:
+
+| Host/profile | Concrete slots |
+| --- | --- |
+| Web, Capacitor | none (required empty group) |
+| Electron/Linux | lifecycle, image, tooltip, menu, bounds, popupMenu, interactionEvents, menuSelectionEvents |
+| Electron/macOS | Electron/Linux + title, templateImage, doubleClickPolicy, pressedImage, dropEvents |
+| Electron/Windows | Electron/Linux + balloon, balloonEvents |
+| Tauri/Linux | lifecycle, image, title, menu, menuSelectionEvents |
+| Tauri/macOS | lifecycle, image, title, tooltip, menu, templateImage, interactionEvents, menuSelectionEvents |
+| Tauri/Windows | lifecycle, image, tooltip, menu, interactionEvents, menuSelectionEvents |
+
+Creation awaits native acquisition and returns a capability-refined Entity with no public id. Operations
+use captured facet values, animation is Entity-keyed and origin-pinned, menus are generation checked,
+and provider registries preserve acquisition order. Destroy invalidates pending work, stops animation,
+releases subscriptions/menu/native resources attempt-all, retains only failed steps, and is idempotent
+after success. Method-tight outcomes use structural absence instead of `unsupported`; releases report
+`released`, `already-released`, or `release-failed`.
 
 ## Log
 
-<!-- newest entry on top; one dated line each, naming what changed and where to look -->
-
-- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Three recorded claims are **false**. The
-  loudest: "the `TrayBackend` seam is extended but `createElectronTrayBackend` has not been updated" —
-  `host-electron/src/electronTray.ts` implements every method on the seam (`displayBalloon`,
-  `getBounds`, `getCapabilities`, `getTitle`, `getTooltip`, `isDestroyed`, `listIds`,
-  `popUpContextMenu`, `removeBalloon`, `setIcon`, `setIgnoreDoubleClickEvents`, `setPressedIcon`,
-  `setTemplate`) and `electronRegister.ts:54` installs it; Tauri has a tray backend too. Also dropped:
-  `getTrayIconBounds` returning `Readonly<TrayIconBounds>` (no `TrayIconBounds` type exists anywhere —
-  it returns `Readonly<RectangleLike> | null`, `tray.ts:135`), and the seventeen-member `TrayEventType`
-  (seven, per Open above).
-- **2026-06-25** — `getTrayIconBounds` re-pointed at the backend's own return type, and
-  `setTrayIgnoreDoubleClickEvents` covered through its own free function rather than the backend method.
-- **2026-06-24** — Tray matured: rich `TrayEventData` payload replacing `(id, event)`, capability
-  flags, balloons, bounds/title/tooltip getters, runtime icon swap, animation helper, and the
-  `setTrayContextMenu` → `setTrayIconContextMenu` rename that settled the `Tray`/`TrayIcon` prefix.
+- **2026-08-30** — Replaced the aggregate ambient backend with the ratified explicit dependency model;
+  added profile-honest Electron/Tauri facets, empty Web/Capacitor groups, transactional lifecycle tests,
+  structural deletion guards, host-probe/runner migrations, and origin-pinned teardown/animation.
+- **2026-08-08** — Historical status captured the former aggregate backend's fidelity gaps.
