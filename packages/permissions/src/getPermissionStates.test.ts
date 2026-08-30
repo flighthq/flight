@@ -1,5 +1,5 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { Host } from '@flighthq/types/contract';
+import type { Host, StoragePersistenceResult } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getPermissionStates } from './permission';
@@ -116,13 +116,13 @@ describe('getPermissionStates', () => {
   it('captures the persistence-query owner once and preserves repeated entries and order', async () => {
     const events: string[] = [];
     const second = {
-      async getPersistence() {
+      async getPersistence(): Promise<StoragePersistenceResult> {
         events.push('work:second');
         return { outcome: 'persistent' as const, permissionState: 'granted' as const };
       },
     };
     const first = {
-      async getPersistence() {
+      async getPersistence(): Promise<StoragePersistenceResult> {
         events.push('work:first');
         active = second;
         return { outcome: 'best-effort' as const, permissionState: null };

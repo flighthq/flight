@@ -27,6 +27,8 @@ export type PermissionQueryFailureReason = 'operation-failed' | 'runtime-unavail
 // query never returns a plausible state.
 export type PermissionQueryOutcome =
   | { readonly reason: 'ok'; readonly state: PermissionState }
+  // This arm records storage policy state, not a human decision.
+  | { readonly reason: 'best-effort'; readonly state: PermissionState | null }
   | { readonly reason: PermissionQueryFailureReason };
 
 export type PermissionRequestFailureReason =
@@ -42,4 +44,6 @@ export type PermissionRequestOutcome =
   | { readonly reason: 'denied'; readonly state: 'denied' }
   | { readonly reason: 'dismissed'; readonly state: 'prompt' }
   | { readonly reason: 'granted'; readonly state: 'granted' }
+  // This arm records storage policy state, not a human decision.
+  | { readonly reason: 'best-effort'; readonly state: PermissionState | null }
   | { readonly reason: PermissionRequestFailureReason };

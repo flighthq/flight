@@ -4,6 +4,9 @@ import type {
   PermissionQueryOutcome,
   PermissionRequestOutcome,
   PermissionState,
+  StoragePersistenceQueryBackend,
+  StoragePersistenceRequestBackend,
+  StoragePersistenceResult,
 } from '@flighthq/types/contract';
 
 import { PERMISSION_NATIVE_HOLDINGS } from './permissionNativeHoldings';
@@ -28,6 +31,9 @@ export function getPermissionStates(host: Host, names: readonly PermissionName[]
 // denial.
 export function requestPermission(host: Host, name: PermissionName): Promise<PermissionRequestOutcome> {
   if (name === 'notifications') return requestNotificationPermission(captureNotificationPermission(host));
+  if (name === 'persistent-storage') {
+    return requestStoragePersistencePermission(captureStoragePersistenceRequest(host));
+  }
   if (!isInterimPermissionName(name)) return Promise.resolve({ reason: 'unsupported' });
 
   switch (name) {
@@ -37,8 +43,6 @@ export function requestPermission(host: Host, name: PermissionName): Promise<Per
       return requestWebMediaPermission('audio');
     case 'geolocation':
       return requestWebGeolocationPermission();
-    case 'persistent-storage':
-      return requestWebPersistentStoragePermission();
     case 'midi':
       return requestWebMidiPermission();
     case 'screen-wake-lock':
@@ -67,6 +71,7 @@ type NotificationPermissionRequestProjectionOutcome = {
 
 interface PermissionQueryOrigins {
   readonly notification: NotificationPermissionProjectionBackend | null;
+  readonly persistence: StoragePersistenceQueryBackend | null;
   readonly web: WebPermissionQueryOrigin | null;
 }
 
@@ -76,9 +81,13 @@ type WebPermissionQueryOrigin =
 
 function capturePermissionQueryOrigins(host: Host, names: readonly PermissionName[]): PermissionQueryOrigins {
   const needsNotification = names.includes('notifications');
-  const needsWeb = names.some((name) => name !== 'notifications' && isInterimPermissionName(name));
+  const needsPersistence = names.includes('persistent-storage');
+  const needsWeb = names.some(
+    (name) => name !== 'notifications' && name !== 'persistent-storage' && isInterimPermissionName(name),
+  );
   return {
     notification: needsNotification ? captureNotificationPermission(host) : null,
+    persistence: needsPersistence ? captureStoragePersistenceQuery(host) : null,
     web: needsWeb ? captureWebPermissionQueryOrigin() : null,
   };
 }
@@ -88,6 +97,14 @@ function captureNotificationPermission(host: Host): NotificationPermissionProjec
     readonly permission?: NotificationPermissionProjectionBackend;
   };
   return notification.permission ?? null;
+}
+
+function captureStoragePersistenceQuery(host: Host): StoragePersistenceQueryBackend | null {
+  return host.storage.persistenceQuery ?? null;
+}
+
+function captureStoragePersistenceRequest(host: Host): StoragePersistenceRequestBackend | null {
+  return host.storage.persistenceRequest ?? null;
 }
 
 function captureWebPermissionQueryOrigin(): WebPermissionQueryOrigin {
@@ -106,6 +123,7 @@ async function queryPermissionState(
   name: PermissionName,
 ): Promise<PermissionQueryOutcome> {
   if (name === 'notifications') return queryNotificationPermission(origins.notification);
+  if (name === 'persistent-storage') return queryStoragePersistencePermission(origins.persistence);
   if (!isInterimPermissionName(name)) return { reason: 'unsupported' };
   if (origins.web === null) return { reason: 'runtime-unavailable' };
   if (origins.web.reason !== 'ok') return { reason: origins.web.reason };
@@ -114,6 +132,17 @@ async function queryPermissionState(
     return isPermissionState(status.state) ? { reason: 'ok', state: status.state } : { reason: 'operation-failed' };
   } catch (error) {
     return { reason: isUnsupportedPermissionQueryError(error) ? 'unsupported' : 'operation-failed' };
+  }
+}
+
+async function queryStoragePersistencePermission(
+  provider: StoragePersistenceQueryBackend | null,
+): Promise<PermissionQueryOutcome> {
+  if (provider === null) return { reason: 'unsupported' };
+  try {
+    return projectStoragePersistenceQuery(await provider.getPersistence());
+  } catch {
+    return { reason: 'operation-failed' };
   }
 }
 
@@ -151,6 +180,39 @@ async function requestNotificationPermission(
     }
   } catch {
     return { reason: 'operation-failed' };
+  }
+}
+
+async function requestStoragePersistencePermission(
+  provider: StoragePersistenceRequestBackend | null,
+): Promise<PermissionRequestOutcome> {
+  if (provider === null) return { reason: 'unsupported' };
+  try {
+    return projectStoragePersistenceRequest(await provider.requestPersistence());
+  } catch {
+    return { reason: 'operation-failed' };
+  }
+}
+
+function projectStoragePersistenceQuery(result: Readonly<StoragePersistenceResult>): PermissionQueryOutcome {
+  switch (result.outcome) {
+    case 'persistent':
+      return { reason: 'ok', state: 'granted' };
+    case 'best-effort':
+      return { reason: 'best-effort', state: result.permissionState };
+    case 'operation-failed':
+      return { reason: 'operation-failed' };
+  }
+}
+
+function projectStoragePersistenceRequest(result: Readonly<StoragePersistenceResult>): PermissionRequestOutcome {
+  switch (result.outcome) {
+    case 'persistent':
+      return { reason: 'granted', state: 'granted' };
+    case 'best-effort':
+      return { reason: 'best-effort', state: result.permissionState };
+    case 'operation-failed':
+      return { reason: 'operation-failed' };
   }
 }
 
@@ -239,17 +301,6 @@ function requestWebGeolocationPermission(): Promise<PermissionRequestOutcome> {
   });
 }
 
-async function requestWebPersistentStoragePermission(): Promise<PermissionRequestOutcome> {
-  const storage = getWebStorageManager();
-  if (storage === null || typeof storage.persist !== 'function') return { reason: 'runtime-unavailable' };
-  try {
-    return (await storage.persist()) ? { reason: 'granted', state: 'granted' } : { reason: 'denied', state: 'denied' };
-  } catch (error) {
-    const reason = classifyRequestFailure(error);
-    return reason === 'denied' ? { reason, state: 'denied' } : { reason };
-  }
-}
-
 async function requestWebMidiPermission(): Promise<PermissionRequestOutcome> {
   if (typeof navigator === 'undefined') return { reason: 'runtime-unavailable' };
   const request = (navigator as Navigator & { requestMIDIAccess?: () => Promise<unknown> }).requestMIDIAccess;
@@ -306,15 +357,6 @@ function getWebMediaDevices(): MediaDevices | null {
   if (typeof navigator === 'undefined') return null;
   try {
     return navigator.mediaDevices ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function getWebStorageManager(): StorageManager | null {
-  if (typeof navigator === 'undefined') return null;
-  try {
-    return navigator.storage ?? null;
   } catch {
     return null;
   }
