@@ -210,6 +210,14 @@ export interface ElectronDisplay {
   bounds: { x: number; y: number; width: number; height: number };
   workArea: { x: number; y: number; width: number; height: number };
   scaleFactor: number;
+  colorDepth?: number;
+  colorSpace?: string;
+  displayFrequency?: number;
+  internal?: boolean;
+  label?: string;
+  monochrome?: boolean;
+  rotation?: number;
+  touchSupport?: string;
 }
 
 export interface ElectronPowerMonitor {

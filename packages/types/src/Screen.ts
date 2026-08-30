@@ -65,17 +65,14 @@ export interface ScreenQueryBackend extends Entity {
 }
 
 export interface ScreenChangeBackend extends Entity {
-  destroy?(): void;
   subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void): () => void;
 }
 
 export interface ScreenDetailsBackend extends Entity {
-  destroy?(): void;
   queryPermission(): Promise<ScreenPermissionState>;
   request(): Promise<boolean>;
 }
 
 export interface ScreenPermissionChangeBackend extends Entity {
-  destroy?(): void;
   subscribe(listener: (state: ScreenPermissionState) => void): () => void;
 }

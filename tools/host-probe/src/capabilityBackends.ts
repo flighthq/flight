@@ -9,7 +9,6 @@ import { getSoftKeyboardBackend } from '@flighthq/keyboard/contract';
 import { getPlatformBackend } from '@flighthq/platform/contract';
 import { getPowerBackend } from '@flighthq/power/contract';
 import { getProtocolBackend } from '@flighthq/protocol/contract';
-import { getScreenBackend } from '@flighthq/screen/contract';
 import { getShellBackend } from '@flighthq/shell/contract';
 import { getShortcutBackend } from '@flighthq/shortcut/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
@@ -24,7 +23,7 @@ export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unkn
 
 export function captureHostProbeBackends(
   host: Partial<
-    Pick<Host, 'app' | 'clipboard' | 'dialog' | 'input' | 'menu' | 'notification' | 'share' | 'window'>
+    Pick<Host, 'app' | 'clipboard' | 'dialog' | 'input' | 'menu' | 'notification' | 'screen' | 'share' | 'window'>
   > = {},
 ): HostProbeBackendSnapshot {
   return {
@@ -45,7 +44,7 @@ export function captureHostProbeBackends(
     platform: getPlatformBackend(),
     power: getPowerBackend(),
     protocol: getProtocolBackend(),
-    screen: getScreenBackend(),
+    screen: host.screen?.query ?? null,
     share: host.share?.content ?? host.share?.files ?? null,
     shell: getShellBackend(),
     shortcut: getShortcutBackend(),

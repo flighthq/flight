@@ -16,6 +16,7 @@ import {
 } from './webInputTarget';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import { webScreenCapabilities } from './webScreen';
 import { webShareContentBackend, webShareFilesBackend } from './webShare';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
@@ -52,6 +53,7 @@ export const webHost = createEntity({
   menu: { highlight: webMenuHighlightBackend, popup: webMenuPopupBackend },
   net: {},
   notification: webNotificationCapabilities,
+  screen: webScreenCapabilities,
   share: { content: webShareContentBackend, files: webShareFilesBackend },
   storage: {},
   system: {},

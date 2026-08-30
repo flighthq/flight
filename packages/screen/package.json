@@ -38,12 +38,13 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/entity": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Display/monitor enumeration over a swappable web/native backend: geometry, work area, scale factor, primary detection",
+  "description": "Host-explicit display enumeration, geometry, work area, scale factor, and display events",
   "sideEffects": false
 }
