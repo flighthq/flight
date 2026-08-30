@@ -22,10 +22,11 @@ import type {
   HasWindowOpen,
   Host,
   TauriApi,
+  TauriAppCapabilities,
+  TauriTrayCapabilitiesFor,
 } from '@flighthq/types/contract';
 
 import { createTauriAppCapabilities } from './tauriApp';
-import type { TauriAppCapabilities } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
 import {
   createTauriDirectoryOpenDialogBackend,
@@ -39,7 +40,6 @@ import { createTauriPlatformBackend } from './tauriPlatform';
 import { makeTauriShellCapabilities } from './tauriShell';
 import { createTauriShortcutQueryBackend, createTauriShortcutTriggerBackend } from './tauriShortcut';
 import { createTauriTrayCapabilities } from './tauriTray';
-import type { TauriTrayCapabilitiesFor } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
 
 type TauriHost<Profile extends DesktopOsProfile> = Host & {

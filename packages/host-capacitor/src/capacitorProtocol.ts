@@ -2,11 +2,8 @@ import { createEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorPluginListenerHandle,
-  Entity,
-  HostProtocolCapabilities,
+  CapacitorProtocolCapabilities,
 } from '@flighthq/types/contract';
-
-export type CapacitorProtocolCapabilities = Entity & Required<Pick<HostProtocolCapabilities, 'open'>>;
 
 export function createCapacitorProtocolCapabilities(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
   return createEntity({

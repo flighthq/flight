@@ -1,8 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Entity, HostAppCapabilities, TauriApi } from '@flighthq/types/contract';
-
-export type TauriAppCapabilities = Entity &
-  Required<Pick<HostAppCapabilities, 'hide' | 'locale' | 'name' | 'quit' | 'relaunch' | 'show' | 'version'>>;
+import type { TauriApi, TauriAppCapabilities } from '@flighthq/types/contract';
 
 export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilities {
   let locale = '';

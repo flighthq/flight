@@ -1,11 +1,4 @@
-export type PermissionNativeHoldingId = 'clipboard' | 'media' | 'push' | 'wake-lock';
-
-export interface PermissionNativeHolding {
-  readonly futureClaimingDomain: PermissionNativeHoldingId;
-  readonly id: PermissionNativeHoldingId;
-  readonly mode: 'query-and-request' | 'query-only';
-  readonly permissionNames: readonly string[];
-}
+import type { PermissionNativeHolding } from '@flighthq/types/contract';
 
 // These are interim native holdings, not ownership claims. Every row names the domain that must
 // eventually absorb it. Removing a row is progress; adding one requires a new architecture ruling.
