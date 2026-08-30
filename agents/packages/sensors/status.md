@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/sensors'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-30
+by: builder2
 ---
 
 # sensors — Status
@@ -47,6 +47,15 @@ on 2026-08-08. Most of the old log's deferrals had already landed; what survives
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-30** — Migrated to the explicit Host model. `attachSensors`, `getSensorsPermissionState`,
+  `requestSensorsPermission`, `isSensorsSupported` and every `has*` capability query now take
+  `host: HasSystemSensors` and dispatch through `host.system.sensors`. DELETED: `getSensorsBackend`,
+  `setSensorsBackend`, `installSensorsHostBackend`, `explainSensorsBackend`,
+  `observeSensorsHostResult`, `resetSensorsBackendForTest`, the sentinel and its module variables.
+  host-web publishes `webSensorsBackend` on `webHost.system.sensors`; `enableHostWebSensors` is gone.
+  The pure math helpers (`compute*`) and the reading constructors never touched a backend and are
+  unchanged.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 deferral "the higher-order
   fusion math (complementary filter, **world-frame transform**) should be surfaced to the user for a
