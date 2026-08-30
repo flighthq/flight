@@ -39,6 +39,6 @@ export * from './webServiceWorkerNotification';
 export * from './webStatusbar';
 export * from './webStorage';
 export * from './webVideoCapability';
-export * from './webWebcam';
+export * from './webMediaFileCapture';
 export * from './webWindow';
 export * from './webWgpuRenderSurface';

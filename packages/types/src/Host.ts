@@ -51,6 +51,7 @@ import type {
 } from './Keyboard';
 import type { LifecycleBackend } from './Lifecycle';
 import type { LoopBackend } from './LoopBackend';
+import type { MediaFileCaptureBackend } from './MediaFileCapture';
 import type { MediaSessionActionBackend, MediaSessionBackend } from './MediaSession';
 import type { MenuApplicationBackend, MenuHighlightBackend, MenuPopupBackend, MenuSelectBackend } from './Menu';
 import type { MessageDialogBackend } from './MessageDialogBackend';
@@ -123,7 +124,6 @@ import type {
 } from './Tray';
 import type { UpdaterCommandBackend } from './Updater';
 import type { VideoCapabilityBackend } from './VideoCapabilityBackend';
-import type { WebcamBackend } from './Webcam';
 import type { WgpuHostBackend } from './WgpuHost';
 
 export interface Host extends Entity {
@@ -222,7 +222,7 @@ export interface HostMediaCapabilities {
   readonly session?: MediaSessionBackend;
   readonly sessionAction?: MediaSessionActionBackend;
   readonly video?: VideoCapabilityBackend;
-  readonly webcam?: WebcamBackend;
+  readonly mediaFileCapture?: MediaFileCaptureBackend;
 }
 
 // Menu is a top-level group rather than a ui slot: its three capabilities have different provider
@@ -552,8 +552,8 @@ export interface HasMediaVideo {
   readonly media: { readonly video: VideoCapabilityBackend };
 }
 
-export interface HasMediaWebcam {
-  readonly media: { readonly webcam: WebcamBackend };
+export interface HasMediaFileCapture {
+  readonly media: { readonly mediaFileCapture: MediaFileCaptureBackend };
 }
 
 export interface HasNetHttp {

@@ -1,1 +1,6 @@
-export { explainWebcamBackend, recordWebcamVideo, selectWebcamImage, takeWebcamPhoto } from './contract';
+export {
+  explainMediaFileCaptureBackend,
+  recordMediaFileCaptureVideo,
+  selectMediaFileCaptureImage,
+  takeMediaFileCapturePhoto,
+} from './contract';
