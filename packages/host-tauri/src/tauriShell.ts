@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { ShellBackend, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's ShellBackend onto Tauri's async `@tauri-apps/plugin-opener`. Opening a URL or path in
@@ -7,7 +8,7 @@ import type { ShellBackend, TauriApi } from '@flighthq/types/contract';
 // contract sentinels (false / [] / null / no-op).
 export function createTauriShellBackend(tauri: TauriApi): ShellBackend {
   const opener = tauri.opener;
-  return {
+  return createEntity({
     async openExternal(url) {
       try {
         await opener.openUrl(url);
@@ -60,5 +61,5 @@ export function createTauriShellBackend(tauri: TauriApi): ShellBackend {
     beep() {
       // Tauri exposes no system beep; no-op.
     },
-  };
+  });
 }

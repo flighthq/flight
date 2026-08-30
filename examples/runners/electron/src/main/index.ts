@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import { join } from 'node:path';
 
 import { getElectronBrowserWindow, registerElectronBackends } from '@flighthq/host-electron';
-import type { ApplicationWindow, ElectronApi, HasClipboardText, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
+import type { ApplicationWindow, ElectronApi, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
 import {
   createApplicationWindow,
   createMenuItemTemplate,

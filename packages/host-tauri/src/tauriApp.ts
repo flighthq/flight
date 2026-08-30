@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { AppBackend, AppLoginItem, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's AppBackend onto Tauri's `@tauri-apps/api/app` (identity + hide/show) and
@@ -41,7 +42,7 @@ export function createTauriAppBackend(tauri: TauriApi): AppBackend {
     .catch(() => {
       /* leave '' */
     });
-  return {
+  return createEntity({
     addRecentDocument() {
       // No Tauri recent-documents API.
     },
@@ -163,5 +164,5 @@ export function createTauriAppBackend(tauri: TauriApi): AppBackend {
     subscribeSecondInstance() {
       return () => {};
     },
-  };
+  });
 }

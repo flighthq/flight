@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   MenuItemTemplate,
   TrayBackend,
@@ -38,7 +39,7 @@ export function createTauriTrayBackend(tauri: TauriApi): TrayBackend {
       type,
     });
   };
-  return {
+  return createEntity({
     create(options) {
       const id = nextId++;
       const record: TrayRecord = { icon: null, title: options.title ?? '', tooltip: options.tooltip ?? '' };
@@ -137,7 +138,7 @@ export function createTauriTrayBackend(tauri: TauriApi): TrayBackend {
         if (eventListener === listener) eventListener = null;
       };
     },
-  };
+  });
 }
 
 // Maps a Tauri tray pointer event onto Flight's TrayEventType, or null for events with no Flight

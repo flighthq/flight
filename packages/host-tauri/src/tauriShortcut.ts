@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { ShortcutBackend, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's ShortcutBackend onto Tauri's `@tauri-apps/plugin-global-shortcut`. The seam is
@@ -9,7 +10,7 @@ import type { ShortcutBackend, TauriApi } from '@flighthq/types/contract';
 export function createTauriShortcutBackend(tauri: TauriApi): ShortcutBackend {
   const globalShortcut = tauri.globalShortcut;
   const registered = new Set<string>();
-  return {
+  return createEntity({
     getRegistered() {
       return [...registered];
     },
@@ -49,5 +50,5 @@ export function createTauriShortcutBackend(tauri: TauriApi): ShortcutBackend {
         /* nothing registered */
       });
     },
-  };
+  });
 }
