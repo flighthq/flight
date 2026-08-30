@@ -1,14 +1,11 @@
 export {
-  explainShellBackend,
   isShellUrlAllowed,
-  moveItemToTrash,
-  moveItemsToTrash,
+  moveShellItemToTrash,
+  moveShellItemsToTrash,
   openShellExternalUrl,
   openShellPath,
-  openShellPathResult,
   readShellShortcutLink,
-  setShellUrlSchemeAllowlist,
+  revealShellPath,
   shellBeep,
-  showItemInFolder,
   writeShellShortcutLink,
 } from './contract';

@@ -34,7 +34,7 @@ These commands start the matching Vite tool, wait for its local URL, then launch
 
 **Main process** (`src/main/index.ts`):
 
-- `registerElectronBackends(electron)` — swaps every web default for the Electron implementation in one call.
+- `registerElectronBackends(electron, { platform })` — builds the Electron Host from the injected API and platform fact; Shell shortcut links are present only when `platform` is `windows`.
 - Opens the window through Flight's seam (`createApplicationWindow` + `openWindow`), then reaches the real `BrowserWindow` back out with `getElectronBrowserWindow(win)` purely to `loadFile`/`loadURL` the page. Everything else (title/size/state) would go through the Flight window API.
 - OS-integration smoke demo, logged to the terminal: app identity, screen enumeration, app badge, an application menu with an attached `MenuSelect` event entity, a global shortcut, a clipboard round-trip, and a tray icon.
 

@@ -87,10 +87,10 @@ const EXPECTED_AGGREGATE = [
 const EXPECTED_EXPLICIT_HOST = ['MediaSession', 'Power', 'Screen', 'Storage'] as const;
 
 // These are deliberately not part of enableHostWeb(): applications opt into application services,
-// shell chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
+// status chrome, and renderer surfaces explicitly. Keeping the names here turns a newly added web
 // enabler into a reviewable registry change instead of silently treating it as either aggregate or
 // excluded.
-const EXPECTED_EXCLUDED = ['App', 'Protocol', 'Shell', 'StatusBar', 'GlRenderSurface', 'WgpuRenderSurface'] as const;
+const EXPECTED_EXCLUDED = ['App', 'Protocol', 'StatusBar', 'GlRenderSurface', 'WgpuRenderSurface'] as const;
 
 const EXPECTED_FACTORIES = [
   'Accessibility',

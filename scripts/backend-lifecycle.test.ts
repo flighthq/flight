@@ -135,6 +135,33 @@ describe('backend provider lifetime census', () => {
     expect(report.violations.map((violation) => violation.interfaceName)).not.toContain('StorageChangeBackend');
   });
 
+  it('classifies all six bounded Shell providers without false teardown rows', () => {
+    const shellNames = [
+      'ShellBeepBackend',
+      'ShellExternalBackend',
+      'ShellPathOpenBackend',
+      'ShellPathRevealBackend',
+      'ShellShortcutLinkBackend',
+      'ShellTrashBackend',
+    ];
+    const shellEntries = report.entries.filter((entry) => shellNames.includes(entry.interfaceName));
+    expect(shellEntries.map((entry) => entry.interfaceName).sort()).toEqual(shellNames);
+    expect(shellEntries.every((entry) => entry.teardown === null && entry.owner === null && !entry.tearsDown)).toBe(
+      true,
+    );
+    expect(report.violations.filter((violation) => shellNames.includes(violation.interfaceName))).toEqual([]);
+  });
+
+  it('keeps explicit Host-provider release separate from ambient setter replacement', () => {
+    const accessibility = report.entries.find((entry) => entry.interfaceName === 'AccessibilityBackend');
+    expect(accessibility).toMatchObject({
+      owner: 'destroyAccessibility',
+      ownerKind: 'explicit-host-destroy',
+      tearsDown: true,
+    });
+    expect(collectSetterBodies().has('setAccessibilityBackend')).toBe(false);
+  });
+
   // ★ WHY WIDENING THE PARSER LEFT THE LIVE COUNT WHERE IT WAS — stated executably, because a number
   // explained only in prose drifts from the code that produced it.
   //

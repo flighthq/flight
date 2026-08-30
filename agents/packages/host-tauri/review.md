@@ -2,7 +2,7 @@
 package: '@flighthq/host-tauri'
 status: solid
 score: 72
-updated: 2026-07-13
+updated: 2026-08-30
 ingested:
   - status.md
   - source
@@ -18,7 +18,9 @@ ingested:
 
 Ten seam adapters + aggregator, each `createTauri*Backend(tauri)` exported individually (`packages/host-tauri/src/`):
 
-- **`registerTauriBackends(tauri)`** (`tauriRegister.ts`) — installs platform, app, window, dialog, clipboard, menu, tray, shortcut, notification, shell; documents that storage/protocol/updater/ipc/power/screen stay on web defaults (a Tauri app runs in a webview, so e.g. localStorage keeps working).
+- **`registerTauriBackends(tauri)`** (`tauriRegister.ts`) — returns an Entity Host whose Shell group
+  contains exactly external, path-open, and path-reveal Entity providers. Tauri's absent trash,
+  shortcut-link, and beep capabilities are omitted rather than installed as stubs.
 - **`TauriApi`** (`tauriModule.ts`, 304 lines) — the local structural type of the exact Tauri v2 surface used, with an aggregation example, per-module doc comments, and the `Menu.new`-as-quoted-method modeling of Tauri's async static factories. This is the ElectronApi pattern, done thoroughly.
 - **platform** (`tauriPlatform.ts`) — clean sync map over `plugin-os` (sync in v2), out-param fill, `runtime: 'tauri'`.
 - **app** (`tauriApp.ts`) — name/version prefetch-and-cache (async→sync bridge, `''` until resolved), quit/relaunch via `plugin-process`, hide/show, locale via os; the desktop-extras (dock, recent documents, badge, login item, single-instance, lifecycle subscriptions) all report contract sentinels with per-method comments.

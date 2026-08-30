@@ -37,6 +37,8 @@ UI/shell: `@flighthq/accessibility` (ARIA bridge — publishes a canvas UI's rol
 
 App/process: `@flighthq/app` (identity, badge, dock), `@flighthq/protocol` (deep links), `@flighthq/updater`, `@flighthq/ipc`.
 
-Host backends (`host-<runtime>` — not tree-shakable, not re-exported from `@flighthq/sdk`): `@flighthq/host-electron` (passes `electron` explicitly via `registerElectronBackends(electron)`; typed against a local `ElectronApi` interface).
+Host backends (`host-<runtime>` — not tree-shakable, not re-exported from `@flighthq/sdk`):
+`@flighthq/host-electron` (injects `electron` plus required platform configuration through
+`registerElectronBackends(electron, options)`; typed against local `ElectronApi`/options interfaces).
 
 Tooling suite (`tool-*` — the dev/CI sibling of `host-*`: harness/build/test tooling packages, **not re-exported from `@flighthq/sdk`**; opt-in **tooling primitives a harness composes**, while the project's specific harness wiring stays in `scripts/`/`tools/`). Tool runners may depend on Node/Playwright; an explicitly separated page-protocol adapter may run in the browser through a `browser` condition on the same root export. Excluded from the sdk barrel by `scripts/sdk-policy.ts`'s `isSdkBarrelExcludedPackage`. First member: `@flighthq/tool-capture` (deterministic screenshots/logs/status, asserted non-blank readback, DOM/canvas/WebGL/WebGPU parity and regression, synchronized benchmarks, baselines, batch orchestration, and agent eyes; consumes `@flighthq/capture` policy).

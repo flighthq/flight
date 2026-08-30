@@ -11,7 +11,9 @@ A per-method map of every `@flighthq/types` host seam this package implements to
 Grounded in the live `packages/host-electron/src` as of `updated`. Migrated capabilities are returned on
 the explicit Host, while still-ambient packages retain their package-local registration during the
 transition. Storage is backed by `createElectronStorageBackend`; updater is the explicit
-`Host.updater.command` provider described below.
+`Host.updater.command` provider described below. Shell is no longer installed through an ambient seam:
+`registerElectronBackends(electron, options)` composes its explicit Host slots, using
+the required injected `options.platform` fact to omit Windows shortcut links elsewhere.
 
 Legend for the **Status** column:
 
@@ -199,17 +201,16 @@ Live notifications keyed by their resolved id so `close*` can dismiss them.
 | `subscribeClick` / `subscribeAction` / `subscribeDismiss` / `subscribeShow` | `Notification` `click`/`action`/`close`/`show` events | real |
 | `subscribeReply` | inert unsubscribe (no inline text-reply action) | limit |
 
-## shell — `ShellBackend` (electronShell.ts)
+## shell — six explicit capability slots (electronShell.ts)
 
 | Method | Electron call / sentinel | Status |
 | --- | --- | --- |
-| `openExternal` | `shell.openExternal`; `false` on throw | real |
-| `openPath` | `shell.openPath` (`''` success) → `true` | real |
-| `openPathResult` | `shell.openPath` (raw `''`-or-error string) | real |
-| `showItemInFolder` | `shell.showItemInFolder` | real |
-| `moveToTrash` / `moveItemsToTrash` | `shell.trashItem` (per-path for the batch) | real |
-| `readShortcutLink` / `writeShortcutLink` | `shell.readShortcutLink` / `writeShortcutLink` (Windows `.lnk`; `null`/`false` elsewhere) | real (limit off Windows) |
-| `beep` | `shell.beep` | real |
+| `external.open` | awaited `shell.openExternal`; `ok` / `operation-failed` | real |
+| `pathOpen.open` | awaited `shell.openPath`; `ok` or `operation-failed` with its returned/thrown message | real |
+| `pathReveal.reveal` | `shell.showItemInFolder`; `ok` / `operation-failed` | real |
+| `trash.moveToTrash` | awaited `shell.trashItem`; batch projection lives in core | real |
+| `shortcutLink.read` / `write` | `shell.readShortcutLink` / `writeShortcutLink`; slot constructed only when injected platform is Windows | real (Windows only) |
+| `beep.beep` | synchronous `shell.beep` | real |
 
 ## protocol — `ProtocolBackend` (electronProtocol.ts)
 

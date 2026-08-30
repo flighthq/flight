@@ -50,6 +50,9 @@
       "path": "../shell"
     },
     {
+      "path": "../screen"
+    },
+    {
       "path": "../shortcut"
     },
     {

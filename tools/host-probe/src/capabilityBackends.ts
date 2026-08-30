@@ -4,10 +4,8 @@ import { getFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
 import { getIpcBackend } from '@flighthq/ipc/contract';
-import { getSoftKeyboardBackend } from '@flighthq/keyboard/contract';
 import { getPlatformBackend } from '@flighthq/platform/contract';
 import { getProtocolBackend } from '@flighthq/protocol/contract';
-import { getShellBackend } from '@flighthq/shell/contract';
 import { getShortcutBackend } from '@flighthq/shortcut/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
 import { getTrayBackend } from '@flighthq/tray/contract';
@@ -32,6 +30,7 @@ export function captureHostProbeBackends(
       | 'power'
       | 'screen'
       | 'share'
+      | 'shell'
       | 'storage'
       | 'updater'
       | 'window'
@@ -59,9 +58,24 @@ export function captureHostProbeBackends(
     protocol: getProtocolBackend(),
     screen: host.screen?.query ?? null,
     share: host.share?.content ?? host.share?.files ?? null,
-    shell: getShellBackend(),
+    shell:
+      host.shell?.external ??
+      host.shell?.pathOpen ??
+      host.shell?.pathReveal ??
+      host.shell?.trash ??
+      host.shell?.shortcutLink ??
+      host.shell?.beep ??
+      null,
     shortcut: getShortcutBackend(),
-    'soft-keyboard': getSoftKeyboardBackend(),
+    'soft-keyboard':
+      host.input?.softKeyboardInfo ??
+      host.input?.softKeyboardChange ??
+      host.input?.softKeyboardVisibility ??
+      host.input?.softKeyboardResizeModeWrite ??
+      host.input?.softKeyboardStyle ??
+      host.input?.softKeyboardAccessoryBar ??
+      host.input?.softKeyboardScrollAssist ??
+      null,
     statusbar: getStatusBarBackend(),
     storage: host.storage?.local ?? null,
     tray: getTrayBackend(),

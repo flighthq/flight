@@ -40,6 +40,9 @@ _Append-only, dated, blessed rulings._
 - **[2026-08-21] Uncovered seams have no implementation; host-web installation is explicit.** The 2026-07-11 web-default clause is superseded under the no-no-op rule: a capability Tauri does not cover has no host implementation, returns a sentinel with `explain*` reporting `'host-does-not-offer'`, and never silently substitutes web. This is the 2026-08-21 user ruling; rationale is recorded in the [host-web architecture](../../host-web-architecture.md).
 - **[2026-08-30] Updater is an absent explicit slot.** `TauriApi` has no updater-plugin transaction;
   `registerTauriBackends` returns `updater: {}` rather than an ambient/default provider.
+- **[2026-08-30] Shell coverage is an exact explicit Host subset.** Tauri constructs Entity providers for
+  external URLs, path open, and path reveal. Trash, Windows shortcut links, and beep are absent slots;
+  there is no aggregate Shell backend, ambient setter, or unsupported method.
 
 ## Open directions
 

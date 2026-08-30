@@ -143,7 +143,9 @@ Host/OS integration so applications need no escape hatch out of the SDK. Each ca
 - `@flighthq/dialog`: file open/save and message/confirm/prompt dialogs.
 - `@flighthq/filesystem`: file read/write/list/stat and standard directory paths (web backend over OPFS).
 - `@flighthq/notification`: OS notifications and permission.
-- `@flighthq/shell`: open external URLs/paths, reveal in folder, move to trash, beep.
+- `@flighthq/shell`: six explicit `Host.shell` command slots for external URL opening, local-path
+  opening, reveal, trash, Windows shortcut links, and beep. Every operation takes its narrow
+  `HasShell*` trait; URL opening requires a per-call allowed-scheme policy and reports named outcomes.
 - `@flighthq/menu`: native application-menu and context-menu descriptors (native host required to realize).
 - `@flighthq/tray`: system tray / menu-bar icon (icon, tooltip, title, context menu, click events). The application/dock badge lives in `@flighthq/app`, not here.
 - `@flighthq/shortcut`: global OS hotkeys over a swappable web/native `ShortcutBackend`, plus the accelerator value domain: alias-insensitive parsing and normalization, diagnostic parse errors, platform-aware display labels, equality/validation, enumeration/conflict queries, opt-in trigger signals, and enable/suspend commands. The web backend returns unsupported sentinels; Electron and Tauri adapters provide registration, while their native plugins do not currently realize the enable/suspend semantics.
@@ -182,7 +184,12 @@ Inbound host events are delivered through explicit event slots and Entity attach
 
 Host backends (the concrete adapters that fill the seams) are a distinct package class — they carry a host dependency, are not tree-shakable, and are named `host-<runtime>`:
 
-- `@flighthq/host-electron`: Electron main-process implementation of the window/app/dialog/clipboard/menu/tray/shortcut/screen/power/notification/shell/protocol/updater/ipc seams. The consumer passes the `electron` module explicitly — `registerElectronBackends(electron)` — typed against a local `ElectronApi` interface (the exact Electron surface Flight depends on), so the package needs no `electron` dependency and is unit-testable with a fake. Each `createElectron*Backend(electron)` is also exported for granular use. **Not** re-exported from `@flighthq/sdk` (it is an adapter you install in the host process, not app-facing API). Mobile seams and `filesystem` (node `fs`) are out of scope here — a future `host-capacitor` / a node-fs injection covers those. Future siblings: `host-tauri`, `host-capacitor`.
+- `@flighthq/host-electron`: Electron main-process implementation of Flight's host capabilities. The
+  consumer injects the `electron` module and an `ElectronBackendOptions` configuration into
+  `registerElectronBackends`; the required platform fact makes Windows-only Shell shortcut-link
+  presence structural without reading `process.platform` inside capability construction. The local
+  `ElectronApi` facade keeps the package Electron-dependency-free and fake-testable. Not re-exported
+  from `@flighthq/sdk`.
 
 Tooling suite (`tool-*` — the dev/CI sibling of `host-*`: harness/build/test tooling that may carry a Node/Playwright runner plus a browser-side protocol adapter selected through the same root's `browser` condition, and is **not** re-exported from `@flighthq/sdk`):
 

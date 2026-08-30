@@ -2,72 +2,80 @@ import { createEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronShortcutDetails,
-  Entity,
-  ShellBackend,
+  EntityRuntimeKey,
+  HostShellCapabilities,
+  PlatformName,
+  ShellBeepBackend,
+  ShellExternalBackend,
+  ShellPathOpenBackend,
+  ShellPathRevealBackend,
   ShellShortcutLink,
+  ShellShortcutLinkBackend,
+  ShellTrashBackend,
 } from '@flighthq/types/contract';
 
-// Maps Flight's ShellBackend onto Electron's main-process shell module. Async operations resolve to
-// false on failure rather than throwing — these are expected-failure surfaces, not programmer
-// errors. openPath is special: Electron returns '' on success and an error string otherwise.
-export function createElectronShellBackend(electron: ElectronApi): ShellBackend & Entity {
+// Builds Electron's exact Shell capability group. platform is caller-injected because shortcut-link
+// support is a construction-time Windows fact, not something capability resolution reads ambiently.
+export function makeElectronShellCapabilities(
+  electron: ElectronApi,
+  platform: PlatformName,
+): HostShellCapabilities &
+  Required<Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>> {
   const shell = electron.shell;
-  return createEntity({
-    async openExternal(url) {
+  const beep: ShellBeepBackend = createEntity({
+    beep() {
+      shell.beep();
+    },
+  } satisfies Omit<ShellBeepBackend, typeof EntityRuntimeKey>);
+  const external: ShellExternalBackend = createEntity({
+    async open(url) {
       try {
         await shell.openExternal(url);
-        return true;
+        return { reason: 'ok' };
       } catch {
-        return false;
+        return { reason: 'operation-failed' };
       }
     },
-    async openPath(path) {
+  } satisfies Omit<ShellExternalBackend, typeof EntityRuntimeKey>);
+  const pathOpen: ShellPathOpenBackend = createEntity({
+    async open(path) {
       try {
-        const err = await shell.openPath(path);
-        return err === '';
-      } catch {
-        return false;
+        const message = await shell.openPath(path);
+        return message === '' ? { reason: 'ok' } : { message, reason: 'operation-failed' };
+      } catch (error) {
+        return { message: errorMessage(error), reason: 'operation-failed' };
       }
     },
-    async openPathResult(path) {
-      // Electron's openPath returns '' on success and an OS error string on failure — Flight's contract.
-      try {
-        return await shell.openPath(path);
-      } catch {
-        return '';
-      }
-    },
-    async showItemInFolder(path) {
+  } satisfies Omit<ShellPathOpenBackend, typeof EntityRuntimeKey>);
+  const pathReveal: ShellPathRevealBackend = createEntity({
+    async reveal(path) {
       try {
         shell.showItemInFolder(path);
-        return true;
+        return { reason: 'ok' };
       } catch {
-        return false;
+        return { reason: 'operation-failed' };
       }
     },
+  } satisfies Omit<ShellPathRevealBackend, typeof EntityRuntimeKey>);
+  const trash: ShellTrashBackend = createEntity({
     async moveToTrash(path) {
       try {
         await shell.trashItem(path);
-        return true;
+        return { reason: 'ok' };
       } catch {
-        return false;
+        return { reason: 'operation-failed' };
       }
     },
-    async moveItemsToTrash(paths) {
-      // Electron trashes one path at a time; trash each and report per-path success.
-      return Promise.all(
-        paths.map(async (path) => {
-          try {
-            await shell.trashItem(path);
-            return true;
-          } catch {
-            return false;
-          }
-        }),
-      );
-    },
-    async readShortcutLink(shortcutPath) {
-      // Windows .lnk only; throws on other platforms or a missing link — report null.
+  } satisfies Omit<ShellTrashBackend, typeof EntityRuntimeKey>);
+  const shared = { beep, external, pathOpen, pathReveal, trash };
+  if (platform !== 'windows') return shared;
+  return { ...shared, shortcutLink: createElectronShellShortcutLinkBackend(electron) };
+}
+
+function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellShortcutLinkBackend {
+  const shell = electron.shell;
+  return createEntity({
+    async read(shortcutPath) {
       try {
         const details = shell.readShortcutLink(shortcutPath);
         const link: ShellShortcutLink = {
@@ -79,12 +87,12 @@ export function createElectronShellBackend(electron: ElectronApi): ShellBackend 
           iconIndex: details.iconIndex,
           workingDirectory: details.cwd,
         };
-        return link;
-      } catch {
-        return null;
+        return { link, reason: 'ok' };
+      } catch (error) {
+        return { message: errorMessage(error), reason: 'operation-failed' };
       }
     },
-    async writeShortcutLink(shortcutPath, link, operation = 'create') {
+    async write(shortcutPath, link, operation) {
       try {
         const details: ElectronShortcutDetails = {
           target: link.target,
@@ -95,13 +103,14 @@ export function createElectronShellBackend(electron: ElectronApi): ShellBackend 
           iconIndex: link.iconIndex,
           cwd: link.workingDirectory,
         };
-        return shell.writeShortcutLink(shortcutPath, operation, details);
+        return { reason: shell.writeShortcutLink(shortcutPath, operation, details) ? 'ok' : 'operation-failed' };
       } catch {
-        return false;
+        return { reason: 'operation-failed' };
       }
     },
-    beep() {
-      shell.beep();
-    },
-  } satisfies ShellBackend);
+  } satisfies Omit<ShellShortcutLinkBackend, typeof EntityRuntimeKey>);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

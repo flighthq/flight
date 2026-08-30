@@ -119,10 +119,10 @@ export interface TauriNotificationPlugin {
 }
 
 // `@tauri-apps/plugin-opener` — open URLs/paths in the OS default handler and reveal files in the file
-// manager. Backs ShellBackend's open/reveal surface; Tauri has no trash/shortcut-link/beep equivalent.
+// manager. Backs Shell's path/external/reveal slots; Tauri has no trash/shortcut-link/beep equivalent.
 export interface TauriOpenerPlugin {
-  openPath(path: string, openWith?: string): Promise<void>;
-  openUrl(url: string, openWith?: string): Promise<void>;
+  openPath(path: string): Promise<void>;
+  openUrl(url: string): Promise<void>;
   revealItemInDir(path: string): Promise<void>;
 }
 

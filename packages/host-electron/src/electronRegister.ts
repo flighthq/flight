@@ -3,7 +3,6 @@ import { createEntity } from '@flighthq/entity/contract';
 import { setIpcBackend } from '@flighthq/ipc/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setProtocolBackend } from '@flighthq/protocol/contract';
-import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
@@ -31,6 +30,11 @@ import type {
   HasMenuPopup,
   HasMenuSelect,
   HasStorageLocal,
+  HasShellBeep,
+  HasShellExternal,
+  HasShellPathOpen,
+  HasShellPathReveal,
+  HasShellTrash,
   HasWindowAttach,
   HasWindowOpen,
   Host,
@@ -51,7 +55,7 @@ import { createElectronPlatformBackend } from './electronPlatform';
 import { createElectronPowerBackends } from './electronPower';
 import { createElectronProtocolBackend } from './electronProtocol';
 import { createElectronScreenCapabilities } from './electronScreen';
-import { createElectronShellBackend } from './electronShell';
+import { makeElectronShellCapabilities } from './electronShell';
 import { createElectronShortcutBackend } from './electronShortcut';
 import { createElectronStorageBackend } from './electronStorage';
 import { createElectronTrayBackend } from './electronTray';
@@ -80,6 +84,11 @@ type ElectronHost = Host &
   HasScreenQuery &
   HasStorageLocal &
   HasUpdaterCommand &
+  HasShellBeep &
+  HasShellExternal &
+  HasShellPathOpen &
+  HasShellPathReveal &
+  HasShellTrash &
   HasWindowAttach &
   HasWindowOpen;
 
@@ -90,13 +99,13 @@ type ElectronHost = Host &
 //   import * as electron from 'electron';
 //   import * as fs from 'node:fs';
 //   const electronApi: ElectronApi = { ...electron, fs, Tray: electron.Tray as ElectronApi['Tray'] };
-//   registerElectronBackends(electronApi);
+//   registerElectronBackends(electronApi, { platform: 'windows' });
 //
 // Pass the returned host to clipboard, window, dialog, notification, and storage operations. Remaining
 // ambient package seams revert independently; there is no bulk unregister for those independent backends.
 export function registerElectronBackends(
   electron: ElectronApi,
-  options: Readonly<ElectronBackendOptions> = {},
+  options: Readonly<ElectronBackendOptions>,
 ): ElectronHost {
   const clipboard = createElectronClipboardBackend(electron);
   const dialog = {
@@ -111,12 +120,12 @@ export function registerElectronBackends(
   const power = createElectronPowerBackends(electron);
   const storage = createElectronStorageBackend(electron, options.storageFileName);
   const updater = createElectronUpdaterBackend(electron, options.updaterFeedUrl);
+  const shell = makeElectronShellCapabilities(electron, options.platform);
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
   setTrayBackend(createElectronTrayBackend(electron));
   setShortcutBackend(createElectronShortcutBackend(electron));
-  setShellBackend(createElectronShellBackend(electron));
   setProtocolBackend(createElectronProtocolBackend(electron));
   setIpcBackend(createElectronIpcBackend(electron));
   return createEntity({
@@ -134,6 +143,7 @@ export function registerElectronBackends(
     notification,
     screen,
     share: {},
+    shell,
     storage: { local: storage },
     system: {},
     text: {},

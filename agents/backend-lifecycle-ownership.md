@@ -652,7 +652,7 @@ not retain a freeable external object or unbracketed host mutation beyond the li
 | 8 | `PermissionBackend` | One-shot query/request promises returning snapshots. |
 | 9 | `PlatformBackend` | Snapshot query into caller-owned output. |
 | 10 | `ShareContentBackend` / `ShareFilesBackend` | Entity-composed providers with one bounded share-sheet promise per call and no retained host resource. |
-| 11 | `ShellBackend` | Bounded host command promises; no returned live handle. |
+| 11 | `ShellBeepBackend` / `ShellExternalBackend` / `ShellPathOpenBackend` / `ShellPathRevealBackend` / `ShellShortcutLinkBackend` / `ShellTrashBackend` | Entity providers expose only bounded commands and no returned live handle; all six deliberately contribute zero whole-provider teardown rows. |
 | 12 | `StorageBackend` | Synchronous key/value operations. The optional cross-tab listener is package-owned: `disableStorageSignals` invokes the captured unsubscribe, and `setStorageBackend` unsubscribes before rebinding. |
 | 13 | `TextSegmenterBackend` | Pure segmentation result; an `Intl.Segmenter` object is ordinary GC-managed state. |
 | 14 | `TextShaperBackend` | Per-call measurement/shaping with GC-managed font/cache objects and no external handle contract. |

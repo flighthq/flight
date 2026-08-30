@@ -50,7 +50,7 @@ afterEach(() => {
 
 describe('registerElectronBackends', () => {
   it('routes capability seams to the Electron backends without throwing', async () => {
-    const host = registerElectronBackends(fakeElectron());
+    const host = registerElectronBackends(fakeElectron(), { platform: 'linux' });
     expect(host.media).toEqual({});
     expect(EntityRuntimeKey in host).toBe(true);
     expect(host.dialog.directoryOpen.open).toBeTypeOf('function');
@@ -67,5 +67,20 @@ describe('registerElectronBackends', () => {
     expect(host.window.open).toBeTypeOf('function');
     expect(getAppName()).toBe('ElectronApp');
     expect(await readClipboardText(host)).toBe('ELECTRON-TEXT');
+  });
+
+  it('constructs the exact six Shell slots from an injected platform fact', () => {
+    const windowsHost = registerElectronBackends(fakeElectron(), { platform: 'windows' });
+    const linuxHost = registerElectronBackends(fakeElectron(), { platform: 'linux' });
+    expect(Object.keys(windowsHost.shell).sort()).toEqual([
+      'beep',
+      'external',
+      'pathOpen',
+      'pathReveal',
+      'shortcutLink',
+      'trash',
+    ]);
+    expect(Object.keys(linuxHost.shell).sort()).toEqual(['beep', 'external', 'pathOpen', 'pathReveal', 'trash']);
+    for (const provider of Object.values(windowsHost.shell)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 });
