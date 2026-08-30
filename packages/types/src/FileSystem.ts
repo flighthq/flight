@@ -37,6 +37,34 @@ export interface FileSystemUsage {
   quotaBytes: number;
 }
 
+// Honest host-provider surface. Each member is optional because provider coverage varies: Web owns
+// all 21 operations while Capacitor owns only the subset its plugin can actually perform. The seven
+// public absence operations (symlink, permissions, real path, watch, and well-known path lookup) are
+// deliberately not host members; @flighthq/filesystem owns their documented sentinel results.
+export interface FileSystemHostBackend {
+  appendTextFile?(path: string, data: string): Promise<boolean>;
+  canAccessFile?(path: string, mode: 'readable' | 'writable' | 'executable'): Promise<boolean>;
+  copy?(from: string, to: string): Promise<boolean>;
+  directoryExists?(path: string): Promise<boolean>;
+  fileExists?(path: string): Promise<boolean>;
+  getFileSystemUsage?(): Promise<FileSystemUsage | null>;
+  makeDirectory?(path: string): Promise<boolean>;
+  openFileReadStream?(path: string): Promise<ReadableStream<Uint8Array> | null>;
+  openFileWriteStream?(path: string): Promise<WritableStream<Uint8Array> | null>;
+  readBinaryFile?(path: string): Promise<Uint8Array | null>;
+  readBinaryFileRange?(path: string, offset: number, length: number): Promise<Uint8Array | null>;
+  readDirectory?(path: string): Promise<FileEntry[]>;
+  readDirectoryRecursive?(path: string, options?: Readonly<FileWalkOptions>): Promise<readonly FileEntry[]>;
+  readTextFile?(path: string): Promise<string | null>;
+  removeDirectory?(path: string, recursive?: boolean): Promise<boolean>;
+  removeFile?(path: string): Promise<boolean>;
+  rename?(from: string, to: string): Promise<boolean>;
+  statFile?(path: string): Promise<FileStat | null>;
+  writeBinaryFile?(path: string, data: Readonly<Uint8Array>): Promise<boolean>;
+  writeFileAtomic?(path: string, data: Readonly<Uint8Array> | string): Promise<boolean>;
+  writeTextFile?(path: string, data: string): Promise<boolean>;
+}
+
 // Options controlling a recursive directory walk.
 export interface FileWalkOptions {
   // Maximum descent depth; omit (or Infinity) to walk the full tree. Depth 0 = entries directly inside the root.
