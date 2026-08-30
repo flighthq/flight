@@ -1,9 +1,10 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, HostProtocolCapabilities } from '@flighthq/types/contract';
+import type { ElectronApi, Entity, HostProtocolCapabilities } from '@flighthq/types/contract';
 
-export type ElectronProtocolCapabilities = Required<
-  Pick<HostProtocolCapabilities, 'default' | 'open' | 'registration' | 'registrationQuery' | 'unregistration'>
->;
+export type ElectronProtocolCapabilities = Entity &
+  Required<
+    Pick<HostProtocolCapabilities, 'default' | 'open' | 'registration' | 'registrationQuery' | 'unregistration'>
+  >;
 
 export function createElectronProtocolCapabilities(electron: ElectronApi): ElectronProtocolCapabilities {
   const app = electron.app;
@@ -16,7 +17,7 @@ export function createElectronProtocolCapabilities(electron: ElectronApi): Elect
       return succeeded;
     },
   });
-  return {
+  return createEntity({
     default: createEntity({
       isDefault: (scheme: string) => app.isDefaultProtocolClient(scheme),
       removeAsDefault: (scheme: string) => app.removeAsDefaultProtocolClient(scheme),
@@ -42,5 +43,5 @@ export function createElectronProtocolCapabilities(electron: ElectronApi): Elect
         return succeeded;
       },
     }),
-  };
+  });
 }

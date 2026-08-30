@@ -6,6 +6,7 @@ import { createWebProtocolCapabilities } from './webProtocol';
 describe('createWebProtocolCapabilities', () => {
   it('creates only launch and registration as Entities', () => {
     const capabilities = createWebProtocolCapabilities();
+    expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities).sort()).toEqual(['launch', 'registration']);
     expect(EntityRuntimeKey in capabilities.launch).toBe(true);
     expect(EntityRuntimeKey in capabilities.registration).toBe(true);

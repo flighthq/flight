@@ -1,11 +1,11 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { HostProtocolCapabilities } from '@flighthq/types/contract';
+import type { Entity, HostProtocolCapabilities } from '@flighthq/types/contract';
 
-type WebProtocolCapabilities = Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
+type WebProtocolCapabilities = Entity & Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
 
 export function createWebProtocolCapabilities(): WebProtocolCapabilities {
   const registeredSchemes: string[] = [];
-  return {
+  return createEntity({
     launch: createEntity({
       getLaunchUrl: () => {
         if (typeof location === 'undefined') return null;
@@ -33,5 +33,5 @@ export function createWebProtocolCapabilities(): WebProtocolCapabilities {
         }
       },
     }),
-  };
+  });
 }

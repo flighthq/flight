@@ -38,6 +38,7 @@ function fakeTauri() {
 describe('createTauriAppCapabilities', () => {
   it('publishes exactly the seven genuine Entity-backed slots', () => {
     const app = createTauriAppCapabilities(fakeTauri().tauri);
+    expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual(['hide', 'locale', 'name', 'quit', 'relaunch', 'show', 'version']);
     for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });

@@ -2,11 +2,12 @@ import { createEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorPluginListenerHandle,
+  Entity,
   HostAppCapabilities,
   MobileOsProfile,
 } from '@flighthq/types/contract';
 
-type CapacitorCommonAppCapabilities = Required<Pick<HostAppCapabilities, 'activate' | 'name' | 'version'>>;
+type CapacitorCommonAppCapabilities = Entity & Required<Pick<HostAppCapabilities, 'activate' | 'name' | 'version'>>;
 type CapacitorAndroidAppCapabilities = CapacitorCommonAppCapabilities &
   Required<Pick<HostAppCapabilities, 'hide' | 'quit'>>;
 
@@ -40,7 +41,7 @@ export function createCapacitorAppCapabilities(
       version = info.version;
     })
     .catch(() => {});
-  const common: CapacitorCommonAppCapabilities = {
+  const common: CapacitorCommonAppCapabilities = createEntity({
     activate: createEntity({
       subscribe: (listener: () => void) =>
         toCapacitorUnsubscribe(
@@ -51,13 +52,13 @@ export function createCapacitorAppCapabilities(
     }),
     name: createEntity({ getName: () => name }),
     version: createEntity({ getVersion: () => version }),
-  };
+  });
   if (profile === 'ios') return common;
-  return {
+  return createEntity({
     ...common,
     hide: createEntity({ hideApp: () => void capacitor.app.minimizeApp().catch(() => {}) }),
     quit: createEntity({ quit: () => void capacitor.app.exitApp().catch(() => {}) }),
-  };
+  });
 }
 
 function toCapacitorUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {

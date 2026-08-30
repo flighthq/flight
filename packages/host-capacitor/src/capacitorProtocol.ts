@@ -1,16 +1,21 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { CapacitorApi, CapacitorPluginListenerHandle, HostProtocolCapabilities } from '@flighthq/types/contract';
+import type {
+  CapacitorApi,
+  CapacitorPluginListenerHandle,
+  Entity,
+  HostProtocolCapabilities,
+} from '@flighthq/types/contract';
 
-export type CapacitorProtocolCapabilities = Required<Pick<HostProtocolCapabilities, 'open'>>;
+export type CapacitorProtocolCapabilities = Entity & Required<Pick<HostProtocolCapabilities, 'open'>>;
 
 export function createCapacitorProtocolCapabilities(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
-  return {
+  return createEntity({
     open: createEntity({
       subscribe: (listener: (url: string) => void) => {
         return toCapacitorUnsubscribe(capacitor.app.addListener('appUrlOpen', (event) => listener(event.url)));
       },
     }),
-  };
+  });
 }
 
 function toCapacitorUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {

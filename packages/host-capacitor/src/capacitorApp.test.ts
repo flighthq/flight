@@ -37,6 +37,7 @@ function fakeCapacitor() {
 describe('createCapacitorAppCapabilities', () => {
   it('publishes common activation and identity slots on iOS', () => {
     const app = createCapacitorAppCapabilities(fakeCapacitor().capacitor, 'ios');
+    expect(EntityRuntimeKey in app).toBe(true);
     expect(Object.keys(app).sort()).toEqual(['activate', 'name', 'version']);
     for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
