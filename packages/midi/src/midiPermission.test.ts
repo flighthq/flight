@@ -23,5 +23,5 @@ function requiredFunction(name: string): (...args: unknown[]) => unknown {
   const value: unknown = Reflect.get(midi, name);
   expect(value, `${name} export`).toBeTypeOf('function');
   if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
-  return value;
+  return value as (...args: unknown[]) => unknown;
 }
