@@ -1,7 +1,5 @@
 import type { GlyphAtlas, GlyphAtlasEntryExplanation } from '@flighthq/types/contract';
 
-import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
-
 /** Reports why `getGlyphAtlasEntry` returns null for `codepoint`, as plain data.
  *
  *  `getGlyphAtlasEntry` returns a null sentinel for two genuinely different situations — a rasterizer
@@ -9,7 +7,7 @@ import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
  *  the first wants a different font or host, the second a larger atlas. The sentinel cannot carry that
  *  distinction, so this query answers it separately rather than the lookup growing an error type.
  *
- *  Recomputed against the live seams, so it reflects the atlas as it stands now. It rasterizes the
+ *  Recomputed against the backend pinned to this atlas, so it reflects the atlas as it stands now. It rasterizes the
  *  glyph to measure it, which is the same work the lookup does; call it when diagnosing, not per frame.
  *  A cached glyph reports `ok` without re-measuring. */
 export function explainGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: number): GlyphAtlasEntryExplanation {
@@ -30,7 +28,7 @@ export function explainGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: n
     };
   }
 
-  const bitmap = getGlyphRasterizerBackend().rasterize(codepoint, runtime.rasterizeOptions);
+  const bitmap = runtime.rasterizerBackend.rasterize(codepoint, runtime.rasterizeOptions);
   if (bitmap === null) {
     return {
       renderable: false,
