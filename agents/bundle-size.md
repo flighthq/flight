@@ -198,12 +198,12 @@ All values are **unminified tree-shaken gzip** (`npm run size`), advisory only �
 | Pair | Aggregate | Counterpart | Delta | % smaller | Ratio |
 | --- | --- | --- | --- | --- | --- |
 | **Pipeline** (`scene2d-gl-pipeline:webgl` / `scene2d-gl-pipeline-sprite:webgl`) | 43,217 B | 14,271 B | 28,946 B | 67.0% | 3.03× |
-| **webHost** (`host-web-full:canvas` / `host-web-window-only:canvas`) | 12,811 B | 3,391 B | 9,420 B | 73.5% | 3.78× |
+| **webHost** (`host-web-full:canvas` / `host-web-window-only:canvas`) | 15,836 B | 3,391 B | 12,445 B | 78.6% | 4.67× |
 
 Both unminified tree-shaken gzip. The pipeline pair was measured at tree `99091faf5`; the webHost
-aggregate reflects the later Accessibility R3 baseline at `6b6238e9e`.
+aggregate reflects the cumulative Accessibility and Connectivity R3 tree at `07fd87457`.
 
-The observed ratios are 3.03× and 3.78×. Two data points are an observation, not a norm or threshold.
+The observed ratios are 3.03× and 4.67×. Two data points are an observation, not a norm or threshold.
 Future pairs make anomalies visible — a ratio near 1× would mean a single capability drags the aggregate,
 which is a decomposition defect worth investigating.
 
