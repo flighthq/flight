@@ -1,22 +1,22 @@
-import { enableHostWebProtocol, resetHostWebProtocolForTest } from './webProtocol';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { describe, expect, it, vi } from 'vitest';
 
-describe('enableHostWebProtocol', () => {
-  afterEach(() => resetHostWebProtocolForTest());
+import { createWebProtocolCapabilities } from './webProtocol';
 
-  it('does not throw on first call', () => {
-    expect(() => enableHostWebProtocol()).not.toThrow();
+describe('createWebProtocolCapabilities', () => {
+  it('creates only launch and registration as Entities', () => {
+    const capabilities = createWebProtocolCapabilities();
+    expect(Object.keys(capabilities).sort()).toEqual(['launch', 'registration']);
+    expect(EntityRuntimeKey in capabilities.launch).toBe(true);
+    expect(EntityRuntimeKey in capabilities.registration).toBe(true);
   });
 
-  it('is idempotent', () => {
-    enableHostWebProtocol();
-    expect(() => enableHostWebProtocol()).not.toThrow();
-  });
-});
-
-describe('resetHostWebProtocolForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebProtocol();
-    resetHostWebProtocolForTest();
-    expect(() => enableHostWebProtocol()).not.toThrow();
+  it('records only schemes submitted successfully by this provider', () => {
+    const registerProtocolHandler = vi.fn();
+    Object.defineProperty(navigator, 'registerProtocolHandler', { configurable: true, value: registerProtocolHandler });
+    const capabilities = createWebProtocolCapabilities();
+    expect(capabilities.registration.register('flight')).toBe(true);
+    expect(capabilities.registration.getRegisteredSchemes()).toEqual(['flight']);
+    expect(registerProtocolHandler).toHaveBeenCalledExactlyOnceWith('flight', location.origin + '/?url=%s');
   });
 });

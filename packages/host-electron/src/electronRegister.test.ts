@@ -1,4 +1,4 @@
-import { getAppName, setAppBackend } from '@flighthq/app/contract';
+import { getAppName } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
@@ -47,10 +47,6 @@ function fakeElectron(): ElectronApi {
   } as unknown as ElectronApi;
 }
 
-afterEach(() => {
-  setAppBackend(null);
-});
-
 describe('registerElectronBackends', () => {
   it('routes capability seams to the Electron backends without throwing', async () => {
     const host = registerElectronBackends(fakeElectron(), {
@@ -75,7 +71,7 @@ describe('registerElectronBackends', () => {
       value: null,
     });
     expect(host.window.open).toBeTypeOf('function');
-    expect(getAppName()).toBe('ElectronApp');
+    expect(getAppName(host)).toBe('ElectronApp');
     expect(await readClipboardText(host)).toBe('ELECTRON-TEXT');
   });
 

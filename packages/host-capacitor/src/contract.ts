@@ -1,4 +1,5 @@
 export * from './capacitorApp';
+export * from './capacitorProtocol';
 export * from './capacitorClipboard';
 export * from './capacitorConnectivity';
 export * from './capacitorDevice';

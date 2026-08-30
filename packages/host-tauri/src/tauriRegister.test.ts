@@ -1,4 +1,3 @@
-import { setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -41,7 +40,6 @@ function fakeTauri(): TauriApi {
 
 afterEach(() => {
   setPlatformBackend(null);
-  setAppBackend(null);
 });
 
 describe('registerTauriBackends', () => {

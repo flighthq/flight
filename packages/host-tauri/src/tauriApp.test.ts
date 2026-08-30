@@ -1,82 +1,65 @@
 import type { TauriApi } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { describe, expect, it } from 'vitest';
 
-import { createTauriAppBackend } from './tauriApp';
+import { createTauriAppCapabilities } from './tauriApp';
+
+const flush = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+};
 
 function fakeTauri() {
   const calls: string[] = [];
   const tauri = {
     app: {
-      async getName() {
-        return 'FlightApp';
-      },
-      async getVersion() {
-        return '2.3.4';
-      },
-      async hide() {
+      getName: async () => 'FlightApp',
+      getVersion: async () => '2.3.4',
+      hide: async () => {
         calls.push('hide');
       },
-      async show() {
+      show: async () => {
         calls.push('show');
       },
     },
-    os: {
-      arch: () => 'x86_64',
-      locale: async () => 'fr-FR',
-      platform: () => 'linux',
-      version: () => '',
-    },
+    os: { locale: async () => 'fr-FR' },
     process: {
-      async exit() {
+      exit: async () => {
         calls.push('exit');
       },
-      async relaunch() {
+      relaunch: async () => {
         calls.push('relaunch');
       },
     },
   } as unknown as TauriApi;
-  return { tauri, calls };
+  return { calls, tauri };
 }
 
-describe('createTauriAppBackend', () => {
-  it('serves name and version from the prefetch cache once it resolves', async () => {
-    const backend = createTauriAppBackend(fakeTauri().tauri);
-    // The sync getters read '' until the construction-time prefetch settles.
-    expect(backend.getName()).toBe('');
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(backend.getName()).toBe('FlightApp');
-    expect(backend.getVersion()).toBe('2.3.4');
+describe('createTauriAppCapabilities', () => {
+  it('publishes exactly the seven genuine Entity-backed slots', () => {
+    const app = createTauriAppCapabilities(fakeTauri().tauri);
+    expect(Object.keys(app).sort()).toEqual(['hide', 'locale', 'name', 'quit', 'relaunch', 'show', 'version']);
+    for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
-  it('sources locale from the os plugin', async () => {
-    const backend = createTauriAppBackend(fakeTauri().tauri);
-    await Promise.resolve();
-    expect(backend.getLocale()).toBe('fr-FR');
-    expect(backend.getSystemLocale()).toBe('fr-FR');
-    expect(backend.getPreferredSystemLanguages()).toEqual(['fr-FR']);
+  it('serves identity and locale from construction-time prefetches', async () => {
+    const app = createTauriAppCapabilities(fakeTauri().tauri);
+    expect(app.name.getName()).toBe('');
+    await flush();
+    expect(app.name.getName()).toBe('FlightApp');
+    expect(app.version.getVersion()).toBe('2.3.4');
+    expect(app.locale.getLocale()).toBe('fr-FR');
+    expect(app.locale.getPreferredSystemLanguages()).toEqual(['fr-FR']);
   });
 
-  it('fires the process/app control methods', () => {
-    const { tauri, calls } = fakeTauri();
-    const backend = createTauriAppBackend(tauri);
-    backend.quit();
-    backend.relaunch();
-    expect(backend.hideApp()).toBe(true);
-    expect(backend.showApp()).toBe(true);
-    expect(calls).toContain('exit');
-    expect(calls).toContain('relaunch');
-    expect(calls).toContain('hide');
-    expect(calls).toContain('show');
-  });
-
-  it('reports sentinels for the unmapped surface', () => {
-    const backend = createTauriAppBackend(fakeTauri().tauri);
-    expect(backend.bounceDock()).toBe(-1);
-    expect(backend.setBadgeCount(3)).toBe(false);
-    expect(backend.setName('X')).toBe(false);
-    expect(backend.getAppPath()).toBe('');
-    expect(backend.getCommandLine()).toEqual([]);
-    expect(backend.isAppHidden()).toBe(false);
-    expect(typeof backend.subscribeReady(() => {})).toBe('function');
+  it('delegates application controls', async () => {
+    const { calls, tauri } = fakeTauri();
+    const app = createTauriAppCapabilities(tauri);
+    app.quit.quit();
+    app.relaunch.relaunch();
+    app.hide.hideApp();
+    app.show.showApp();
+    await flush();
+    expect(calls).toEqual(['exit', 'relaunch', 'hide', 'show']);
   });
 });

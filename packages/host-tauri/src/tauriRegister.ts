@@ -1,4 +1,3 @@
-import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import type {
@@ -26,7 +25,8 @@ import type {
   TauriApi,
 } from '@flighthq/types/contract';
 
-import { createTauriAppBackend } from './tauriApp';
+import { createTauriAppCapabilities } from './tauriApp';
+import type { TauriAppCapabilities } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
 import {
   createTauriDirectoryOpenDialogBackend,
@@ -44,6 +44,7 @@ import type { TauriTrayCapabilitiesFor } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
 
 type TauriHost<Profile extends DesktopOsProfile> = Host & {
+  readonly app: TauriAppCapabilities;
   readonly tray: TauriTrayCapabilitiesFor<Profile>;
 } & HasClipboardText &
   HasDialogDirectoryOpen &
@@ -80,6 +81,7 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
   profile: Profile,
 ): TauriHost<Profile> {
   const clipboard = createTauriClipboardBackend(tauri);
+  const app = createTauriAppCapabilities(tauri);
   const dialog = {
     directoryOpen: createTauriDirectoryOpenDialogBackend(tauri),
     fileOpen: createTauriFileOpenDialogBackend(tauri),
@@ -93,10 +95,9 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
   const shell = makeTauriShellCapabilities(tauri);
   const window = createTauriWindowBackend(tauri);
   setPlatformBackend(createTauriPlatformBackend(tauri));
-  setAppBackend(createTauriAppBackend(tauri));
   return createEntity({
     accessibility: {},
-    app: {},
+    app,
     clipboard: { text: clipboard },
     connectivity: {},
     dialog,
@@ -112,6 +113,7 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
     // No power provider: Tauri exposes no battery, idle, session-lock, thermal or keep-awake
     // API through the seams this host wires. The group is empty rather than stubbed.
     power: {},
+    protocol: {},
     notification,
     shortcut: { query, trigger },
     screen: {},

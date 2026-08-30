@@ -62,8 +62,8 @@ function installElectronProbe(): HostProbeInstallResult {
     ),
   ];
 
-  const appName = getAppName();
-  const appVersion = getAppVersion();
+  const appName = getAppName(host);
+  const appVersion = getAppVersion(host);
   results.push({
     detail: appName.length > 0 ? `${appName} ${appVersion}`.trim() : 'Electron app identity is empty',
     id: 'runtime.app-identity',

@@ -24,9 +24,9 @@ describe('protocol explicit Host ownership', () => {
   });
 
   it('takes the live-open provider from Host and publishes an Entity', () => {
-    let open: ((url: string) => void) | null = null;
+    const listeners: { open?: (url: string) => void } = {};
     const subscribe = vi.fn((listener: (url: string) => void) => {
-      open = listener;
+      listeners.open = listener;
       return vi.fn();
     });
     const host = { protocol: { open: createEntity({ subscribe }) } };
@@ -35,7 +35,7 @@ describe('protocol explicit Host ownership', () => {
     connectSignal(handler.onOpenUrl, (url) => (received = url));
 
     Reflect.apply(attachProtocolHandler, undefined, [host, handler]);
-    open?.('flight://warm-open');
+    listeners.open?.('flight://warm-open');
 
     expect(subscribe).toHaveBeenCalledOnce();
     expect(received).toBe('flight://warm-open');

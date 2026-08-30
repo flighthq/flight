@@ -1,7 +1,8 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { describe, expect, it } from 'vitest';
 
-import { createCapacitorAppBackend } from './capacitorApp';
+import { createCapacitorAppCapabilities } from './capacitorApp';
 
 const flush = async () => {
   await Promise.resolve();
@@ -10,19 +11,10 @@ const flush = async () => {
 
 function fakeCapacitor() {
   const calls: string[] = [];
-  const listeners = new Map<string, (payload: unknown) => void>();
+  const listeners = new Map<string, (payload: { isActive: boolean }) => void>();
   const capacitor = {
     app: {
-      async getInfo() {
-        return { name: 'FlightApp', id: 'com.flight.app', build: '42', version: '2.3.4' };
-      },
-      async exitApp() {
-        calls.push('exitApp');
-      },
-      async minimizeApp() {
-        calls.push('minimizeApp');
-      },
-      async addListener(eventName: string, listener: (payload: unknown) => void) {
+      addListener: async (eventName: string, listener: (payload: { isActive: boolean }) => void) => {
         listeners.set(eventName, listener);
         return {
           async remove() {
@@ -30,58 +22,54 @@ function fakeCapacitor() {
           },
         };
       },
+      exitApp: async () => {
+        calls.push('exitApp');
+      },
+      getInfo: async () => ({ build: '42', id: 'com.flight.app', name: 'FlightApp', version: '2.3.4' }),
+      minimizeApp: async () => {
+        calls.push('minimizeApp');
+      },
     },
   } as unknown as CapacitorApi;
-  return { capacitor, calls, listeners };
+  return { calls, capacitor, listeners };
 }
 
-describe('createCapacitorAppBackend', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createCapacitorAppBackend(fakeCapacitor().capacitor)).toBe(true);
+describe('createCapacitorAppCapabilities', () => {
+  it('publishes common activation and identity slots on iOS', () => {
+    const app = createCapacitorAppCapabilities(fakeCapacitor().capacitor, 'ios');
+    expect(Object.keys(app).sort()).toEqual(['activate', 'name', 'version']);
+    for (const provider of Object.values(app)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
-  it('serves name and version from the prefetch cache once it resolves', async () => {
-    const backend = createCapacitorAppBackend(fakeCapacitor().capacitor);
-    // The sync getters read '' until the construction-time prefetch settles.
-    expect(backend.getName()).toBe('');
+  it('adds Android-only hide and quit slots', async () => {
+    const { calls, capacitor } = fakeCapacitor();
+    const app = createCapacitorAppCapabilities(capacitor, 'android');
+    expect(Object.keys(app).sort()).toEqual(['activate', 'hide', 'name', 'quit', 'version']);
+    app.hide.hideApp();
+    app.quit.quit();
     await flush();
-    expect(backend.getName()).toBe('FlightApp');
-    expect(backend.getVersion()).toBe('2.3.4');
+    expect(calls).toEqual(['minimizeApp', 'exitApp']);
   });
 
-  it('fires the process/app control methods', () => {
-    const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorAppBackend(capacitor);
-    backend.quit();
-    expect(backend.hideApp()).toBe(true);
-    expect(calls).toContain('exitApp');
-    expect(calls).toContain('minimizeApp');
+  it('serves name and version from the construction-time prefetch', async () => {
+    const app = createCapacitorAppCapabilities(fakeCapacitor().capacitor, 'ios');
+    expect(app.name.getName()).toBe('');
+    await flush();
+    expect(app.name.getName()).toBe('FlightApp');
+    expect(app.version.getVersion()).toBe('2.3.4');
   });
 
-  it('routes activate and open-file through app listeners', async () => {
-    const { capacitor, listeners } = fakeCapacitor();
-    const backend = createCapacitorAppBackend(capacitor);
+  it('translates active app-state changes and removes the listener', async () => {
+    const { calls, capacitor, listeners } = fakeCapacitor();
+    const app = createCapacitorAppCapabilities(capacitor, 'ios');
     let activated = 0;
-    let openedUrl = '';
-    backend.subscribeActivate(() => activated++);
-    backend.subscribeOpenFile((url) => (openedUrl = url));
+    const off = app.activate.subscribe(() => activated++);
     await flush();
     listeners.get('appStateChange')?.({ isActive: false });
-    expect(activated).toBe(0);
     listeners.get('appStateChange')?.({ isActive: true });
     expect(activated).toBe(1);
-    listeners.get('appUrlOpen')?.({ url: 'flight://open' });
-    expect(openedUrl).toBe('flight://open');
-  });
-
-  it('reports sentinels for the desktop-only surface', () => {
-    const backend = createCapacitorAppBackend(fakeCapacitor().capacitor);
-    expect(backend.bounceDock()).toBe(-1);
-    expect(backend.setBadgeCount(3)).toBe(false);
-    expect(backend.setName('X')).toBe(false);
-    expect(backend.showApp()).toBe(false);
-    expect(backend.getLocale()).toBe('');
-    expect(backend.getCommandLine()).toEqual([]);
-    expect(typeof backend.subscribeReady(() => {})).toBe('function');
+    off();
+    await flush();
+    expect(calls).toEqual(['remove:appStateChange']);
   });
 });

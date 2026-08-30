@@ -1,7 +1,5 @@
-import { setAppBackend } from '@flighthq/app/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
-import { setProtocolBackend } from '@flighthq/protocol/contract';
 import type {
   DesktopOsProfile,
   ElectronApi,
@@ -43,7 +41,8 @@ import type {
   Host,
 } from '@flighthq/types/contract';
 
-import { createElectronAppBackend } from './electronApp';
+import { createElectronAppCapabilities } from './electronApp';
+import type { ElectronAppCapabilitiesFor } from './electronApp';
 import { createElectronClipboardBackend } from './electronClipboard';
 import {
   createElectronDirectoryOpenDialogBackend,
@@ -56,7 +55,8 @@ import { createElectronMenuBackends } from './electronMenu';
 import { createElectronNotificationCapabilities } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
 import { createElectronPowerBackends } from './electronPower';
-import { createElectronProtocolBackend } from './electronProtocol';
+import { createElectronProtocolCapabilities } from './electronProtocol';
+import type { ElectronProtocolCapabilities } from './electronProtocol';
 import { createElectronScreenCapabilities } from './electronScreen';
 import { makeElectronShellCapabilities } from './electronShell';
 import { createElectronShortcutQueryBackend, createElectronShortcutTriggerBackend } from './electronShortcut';
@@ -67,6 +67,8 @@ import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
 
 type ElectronHost<Profile extends DesktopOsProfile> = Host & {
+  readonly app: ElectronAppCapabilitiesFor<Profile>;
+  readonly protocol: ElectronProtocolCapabilities;
   readonly tray: ElectronTrayCapabilitiesFor<Profile>;
 } & HasClipboardBookmark &
   HasClipboardFormats &
@@ -134,6 +136,7 @@ export function registerElectronBackends(
   },
 ): ElectronHost<DesktopOsProfile> | ElectronMacosHost {
   const clipboard = createElectronClipboardBackend(electron);
+  const app = createElectronAppCapabilities(electron, options.platform);
   const dialog = {
     directoryOpen: createElectronDirectoryOpenDialogBackend(electron),
     fileOpen: createElectronFileOpenDialogBackend(electron),
@@ -147,16 +150,15 @@ export function registerElectronBackends(
   const trigger = createElectronShortcutTriggerBackend(electron);
   const menu = createElectronMenuBackends(electron);
   const power = createElectronPowerBackends(electron);
+  const protocol = createElectronProtocolCapabilities(electron);
   const storage = createElectronStorageBackend(electron, options.storageFileName);
   const updater = createElectronUpdaterBackend(electron, options.updaterFeedUrl);
   const shell = makeElectronShellCapabilities(electron, options.platform);
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
-  setAppBackend(createElectronAppBackend(electron));
-  setProtocolBackend(createElectronProtocolBackend(electron));
   return createEntity({
     accessibility: {},
-    app: {},
+    app,
     clipboard: {
       bookmark: clipboard,
       formats: clipboard,
@@ -173,6 +175,7 @@ export function registerElectronBackends(
     midi: {},
     net: {},
     power,
+    protocol,
     notification,
     shortcut: { query, trigger },
     screen,

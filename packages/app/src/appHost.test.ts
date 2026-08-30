@@ -33,9 +33,9 @@ describe('app explicit Host ownership', () => {
   });
 
   it('takes event providers from Host and publishes an Entity', () => {
-    let ready: (() => void) | null = null;
+    const listeners: { ready?: () => void } = {};
     const subscribe = vi.fn((listener: () => void) => {
-      ready = listener;
+      listeners.ready = listener;
       return vi.fn();
     });
     const inert = createEntity({ subscribe: () => vi.fn() });
@@ -54,7 +54,7 @@ describe('app explicit Host ownership', () => {
     connectSignal(app.onReady, () => readyCount++);
 
     Reflect.apply(attachApp, undefined, [host, app]);
-    ready?.();
+    listeners.ready?.();
 
     expect(subscribe).toHaveBeenCalledOnce();
     expect(readyCount).toBe(1);

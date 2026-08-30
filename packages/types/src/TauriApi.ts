@@ -41,7 +41,7 @@ export interface TauriApi {
   window: TauriWindowModule;
 }
 
-// `@tauri-apps/api/app` — application identity/control. All async; the sync AppBackend getters are
+// `@tauri-apps/api/app` — application identity/control. All async; the sync app capability getters are
 // filled by prefetching these once at construction and caching the resolved value.
 export interface TauriAppModule {
   getName(): Promise<string>;
@@ -50,7 +50,7 @@ export interface TauriAppModule {
   show(): Promise<void>;
 }
 
-// `@tauri-apps/plugin-process` — process lifecycle. `exit`/`relaunch` back AppBackend.quit/relaunch.
+// `@tauri-apps/plugin-process` — process lifecycle. `exit`/`relaunch` back app quit/relaunch slots.
 export interface TauriProcessPlugin {
   exit(code?: number): Promise<void>;
   relaunch(): Promise<void>;

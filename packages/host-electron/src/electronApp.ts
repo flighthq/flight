@@ -1,168 +1,195 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { AppBackend, AppLoginItem, AppPathKind, ElectronApi, Entity } from '@flighthq/types/contract';
+import type {
+  AppLoginItem,
+  AppPathKind,
+  DesktopOsProfile,
+  ElectronApi,
+  HostAppCapabilities,
+  MenuItemTemplate,
+} from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate';
 
-// Maps Flight's AppBackend onto Electron's `app` module (plus `app.dock` on macOs). Dock-only
-// operations no-op or return -1 where there is no dock. Subscribe methods wire an electron event
-// listener and return an unsubscribe that removes that exact handler; the wrapper adapts Electron's
-// (event, ...) argument shape to Flight's listener signature.
-export function createElectronAppBackend(electron: ElectronApi): AppBackend & Entity {
+type ElectronCommonAppCapabilities = Required<
+  Pick<
+    HostAppCapabilities,
+    | 'allWindowsClosed'
+    | 'focus'
+    | 'locale'
+    | 'name'
+    | 'nameWrite'
+    | 'path'
+    | 'quit'
+    | 'quitRequest'
+    | 'ready'
+    | 'relaunch'
+    | 'secondInstance'
+    | 'singleInstance'
+    | 'version'
+  >
+>;
+type ElectronMacosAppCapabilities = ElectronCommonAppCapabilities &
+  Required<
+    Pick<
+      HostAppCapabilities,
+      | 'activate'
+      | 'activationPolicy'
+      | 'badge'
+      | 'dock'
+      | 'loginItem'
+      | 'openFile'
+      | 'hiddenQuery'
+      | 'hide'
+      | 'recentDocuments'
+      | 'show'
+    >
+  >;
+type ElectronLinuxAppCapabilities = ElectronCommonAppCapabilities & Required<Pick<HostAppCapabilities, 'badge'>>;
+type ElectronWindowsAppCapabilities = ElectronCommonAppCapabilities &
+  Required<Pick<HostAppCapabilities, 'loginItem' | 'recentDocuments' | 'userModelId'>>;
+
+export type ElectronAppCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
+  ? ElectronMacosAppCapabilities
+  : Profile extends 'windows'
+    ? ElectronWindowsAppCapabilities
+    : ElectronLinuxAppCapabilities;
+
+export function createElectronAppCapabilities<Profile extends DesktopOsProfile>(
+  electron: ElectronApi,
+  profile: Profile,
+): ElectronAppCapabilitiesFor<Profile>;
+export function createElectronAppCapabilities(electron: ElectronApi, profile: 'macos'): ElectronMacosAppCapabilities;
+export function createElectronAppCapabilities(
+  electron: ElectronApi,
+  profile: 'windows',
+): ElectronWindowsAppCapabilities;
+export function createElectronAppCapabilities(electron: ElectronApi, profile: 'linux'): ElectronLinuxAppCapabilities;
+export function createElectronAppCapabilities(
+  electron: ElectronApi,
+  profile: DesktopOsProfile,
+): ElectronMacosAppCapabilities | ElectronWindowsAppCapabilities | ElectronLinuxAppCapabilities;
+export function createElectronAppCapabilities(
+  electron: ElectronApi,
+  profile: DesktopOsProfile,
+): ElectronMacosAppCapabilities | ElectronWindowsAppCapabilities | ElectronLinuxAppCapabilities {
   const app = electron.app;
+  const subscribe = (event: string, listener: (...args: unknown[]) => void): (() => void) => {
+    app.on(event, listener);
+    return () => app.removeListener(event, listener);
+  };
+  const common: ElectronCommonAppCapabilities = {
+    allWindowsClosed: createEntity({ subscribe: (listener: () => void) => subscribe('window-all-closed', listener) }),
+    focus: createEntity({ focus: () => app.focus() }),
+    locale: createEntity({
+      getLocale: () => app.getLocale(),
+      getPreferredSystemLanguages: () => app.getPreferredSystemLanguages(),
+      getSystemLocale: () => app.getSystemLocale(),
+    }),
+    name: createEntity({ getName: () => app.getName() }),
+    nameWrite: createEntity({ setName: (name: string) => app.setName(name) }),
+    path: createEntity({
+      getAppDirectoryPath: (kind: AppPathKind) => app.getPath(toElectronPathName(kind)),
+      getAppPath: () => app.getAppPath(),
+      getExecutablePath: () => app.getPath('exe'),
+    }),
+    quit: createEntity({ quit: () => app.quit() }),
+    quitRequest: createEntity({
+      subscribe: (listener: (cancelHost: () => void) => void) => {
+        return subscribe('before-quit', (...args: unknown[]) => {
+          const event = args[0] as { preventDefault?: () => void } | undefined;
+          listener(() => event?.preventDefault?.());
+        });
+      },
+    }),
+    ready: createEntity({ subscribe: (listener: () => void) => subscribe('ready', listener) }),
+    relaunch: createEntity({ relaunch: () => app.relaunch() }),
+    secondInstance: createEntity({
+      subscribe: (listener: (argv: readonly string[]) => void) => {
+        return subscribe('second-instance', (...args: unknown[]) => listener((args[1] as string[]) ?? []));
+      },
+    }),
+    singleInstance: createEntity({
+      hasSingleInstanceLock: () => app.hasSingleInstanceLock(),
+      releaseSingleInstanceLock: () => app.releaseSingleInstanceLock(),
+      requestSingleInstanceLock: () => app.requestSingleInstanceLock(),
+    }),
+    version: createEntity({ getVersion: () => app.getVersion() }),
+  };
+
+  if (profile === 'macos') {
+    const dock = app.dock;
+    if (dock === undefined) throw new Error('Electron macOS app capabilities require app.dock');
+    return {
+      ...common,
+      activate: createEntity({ subscribe: (listener: () => void) => subscribe('activate', listener) }),
+      activationPolicy: createEntity({
+        setActivationPolicy: (policy: 'accessory' | 'prohibited' | 'regular') => app.setActivationPolicy(policy),
+      }),
+      badge: createEntity({ setBadgeCount: (count: number) => app.setBadgeCount(count) }),
+      dock: createEntity({
+        bounceDock: () => dock.bounce(),
+        cancelAttention: (id: number) => dock.cancelBounce(id),
+        cancelDockBounce: (id: number) => dock.cancelBounce(id),
+        requestAttention: (critical: boolean) => dock.bounce(critical ? 'critical' : 'informational'),
+        setDockBadge: (text: string) => dock.setBadge(text),
+        setDockMenu: (items: readonly MenuItemTemplate[]) =>
+          dock.setMenu(electron.Menu.buildFromTemplate(toElectronTemplate(items))),
+      }),
+      loginItem: createElectronLoginItemBackend(electron),
+      openFile: createEntity({
+        subscribe: (listener: (path: string) => void) => {
+          return subscribe('open-file', (...args: unknown[]) => listener(String(args[1] ?? '')));
+        },
+      }),
+      hiddenQuery: createEntity({ isAppHidden: () => app.isHidden() }),
+      hide: createEntity({ hideApp: () => app.hide() }),
+      recentDocuments: createElectronRecentDocumentsBackend(electron),
+      show: createEntity({ showApp: () => app.show() }),
+    };
+  }
+
+  if (profile === 'windows') {
+    return {
+      ...common,
+      loginItem: createElectronLoginItemBackend(electron),
+      recentDocuments: createElectronRecentDocumentsBackend(electron),
+      userModelId: createEntity({ setUserModelId: (id: string) => app.setAppUserModelId(id) }),
+    };
+  }
+
+  return {
+    ...common,
+    badge: createEntity({ setBadgeCount: (count: number) => app.setBadgeCount(count) }),
+  };
+}
+
+function createElectronLoginItemBackend(electron: ElectronApi) {
   return createEntity({
-    addRecentDocument(path) {
-      app.addRecentDocument(path);
-    },
-    bounceDock() {
-      return app.dock?.bounce() ?? -1;
-    },
-    cancelAttention(id) {
-      // App-level attention is a macOS dock bounce; cancel it by request id.
-      app.dock?.cancelBounce(id);
-    },
-    cancelDockBounce(id) {
-      app.dock?.cancelBounce(id);
-    },
-    clearRecentDocuments() {
-      app.clearRecentDocuments();
-    },
-    focus() {
-      app.focus();
-    },
-    getAppDirectoryPath(kind) {
-      return app.getPath(toElectronPathName(kind));
-    },
-    getAppPath() {
-      return app.getAppPath();
-    },
-    getCommandLine() {
-      // Electron exposes no command-line accessor on `app` (it lives on process.argv, outside this
-      // dependency-free facade); report the empty sentinel rather than reaching into Node.
-      return [];
-    },
-    getExecutablePath() {
-      return app.getPath('exe');
-    },
-    getLocale() {
-      return app.getLocale();
-    },
     getLoginItem() {
-      const settings = app.getLoginItemSettings();
-      const out: AppLoginItem = {
-        openAtLogin: settings.openAtLogin,
-        openAsHidden: settings.openAsHidden,
-        path: '',
+      const settings = electron.app.getLoginItemSettings();
+      return {
         args: [],
-      };
-      return out;
-    },
-    getName() {
-      return app.getName();
-    },
-    getPreferredSystemLanguages() {
-      return app.getPreferredSystemLanguages();
-    },
-    getSystemLocale() {
-      return app.getSystemLocale();
-    },
-    getVersion() {
-      return app.getVersion();
-    },
-    hasSingleInstanceLock() {
-      return app.hasSingleInstanceLock();
-    },
-    hideApp() {
-      app.hide();
-      return true;
-    },
-    isAppHidden() {
-      return app.isHidden();
-    },
-    quit() {
-      app.quit();
-    },
-    relaunch() {
-      app.relaunch();
-    },
-    releaseSingleInstanceLock() {
-      app.releaseSingleInstanceLock();
-    },
-    requestAttention(_critical) {
-      // App-level attention maps to a dock bounce on macOS; returns the bounce id (or -1 with no dock).
-      return app.dock?.bounce(_critical ? 'critical' : 'informational') ?? -1;
-    },
-    requestSingleInstanceLock() {
-      return app.requestSingleInstanceLock();
-    },
-    setActivationPolicy(policy) {
-      app.setActivationPolicy(policy);
-    },
-    setBadgeCount(count) {
-      return app.setBadgeCount(count);
-    },
-    setDockBadge(text) {
-      app.dock?.setBadge(text);
-    },
-    setDockMenu(items) {
-      if (!app.dock) return;
-      app.dock.setMenu(electron.Menu.buildFromTemplate(toElectronTemplate(items)));
-    },
-    setLoginItem(settings) {
-      app.setLoginItemSettings({
-        openAtLogin: settings.openAtLogin,
         openAsHidden: settings.openAsHidden,
-        path: settings.path,
+        openAtLogin: settings.openAtLogin,
+        path: '',
+      } satisfies AppLoginItem;
+    },
+    setLoginItem(settings: Parameters<NonNullable<HostAppCapabilities['loginItem']>['setLoginItem']>[0]) {
+      electron.app.setLoginItemSettings({
         args: settings.args ? [...settings.args] : undefined,
+        openAsHidden: settings.openAsHidden,
+        openAtLogin: settings.openAtLogin,
+        path: settings.path,
       });
-      return true;
     },
-    setName(name) {
-      app.setName(name);
-      return true;
-    },
-    setUserModelId(id) {
-      app.setAppUserModelId(id);
-      return true;
-    },
-    showApp() {
-      app.show();
-      return true;
-    },
-    subscribeActivate(listener) {
-      app.on('activate', listener);
-      return () => app.removeListener('activate', listener);
-    },
-    subscribeAllWindowsClosed(listener) {
-      app.on('window-all-closed', listener);
-      return () => app.removeListener('window-all-closed', listener);
-    },
-    subscribeOpenFile(listener) {
-      // Electron passes (event, path); Flight wants just the path.
-      const handler = (...args: unknown[]): void => listener(String(args[1] ?? ''));
-      app.on('open-file', handler);
-      return () => app.removeListener('open-file', handler);
-    },
-    subscribeQuitRequest(listener) {
-      // Electron's 'before-quit' passes (event); event.preventDefault() vetoes the quit, so the host-
-      // cancel callback Flight hands the listener calls preventDefault on that event.
-      const handler = (...args: unknown[]): void => {
-        const event = args[0] as { preventDefault?: () => void } | undefined;
-        listener(() => event?.preventDefault?.());
-      };
-      app.on('before-quit', handler);
-      return () => app.removeListener('before-quit', handler);
-    },
-    subscribeReady(listener) {
-      app.on('ready', listener);
-      return () => app.removeListener('ready', listener);
-    },
-    subscribeSecondInstance(listener) {
-      // Electron passes (event, argv, cwd); Flight wants just argv.
-      const handler = (...args: unknown[]): void => listener((args[1] as string[]) ?? []);
-      app.on('second-instance', handler);
-      return () => app.removeListener('second-instance', handler);
-    },
-  } satisfies AppBackend);
+  });
+}
+
+function createElectronRecentDocumentsBackend(electron: ElectronApi) {
+  return createEntity({
+    addRecentDocument: (path: string) => electron.app.addRecentDocument(path),
+    clearRecentDocuments: () => electron.app.clearRecentDocuments(),
+  });
 }
 
 function toElectronPathName(kind: AppPathKind): string {

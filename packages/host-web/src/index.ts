@@ -1,7 +1,7 @@
 export { enableHostWeb } from './enableHostWeb';
 export { webApplicationExitBackend } from './webApplicationExit';
 export { createWebAccessibilityBackend, webAccessibilityBackend } from './webAccessibility';
-export { enableHostWebApp } from './webApp';
+export { createWebAppCapabilities } from './webApp';
 export { enableHostWebAudio } from './webAudio';
 export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebBitmapEncode } from './webBitmapEncode';
@@ -56,7 +56,7 @@ export {
 } from './webServiceWorkerNotification';
 export { enableHostWebPlatform } from './webPlatform';
 export { webPowerCapabilities } from './webPower';
-export { enableHostWebProtocol } from './webProtocol';
+export { createWebProtocolCapabilities } from './webProtocol';
 export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from './webRaster2DSurface';
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';
 export { enableHostWebSensors } from './webSensors';

@@ -1,77 +1,38 @@
-import { installProtocolHostBackend, observeProtocolHostResult } from '@flighthq/protocol/contract';
-import type { ProtocolBackend } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { HostProtocolCapabilities } from '@flighthq/types/contract';
 
-export function enableHostWebProtocol(): void {
-  if (_enabled) return;
-  _enabled = true;
-  const backend: ProtocolBackend = {
-    drainPendingUrls() {
-      return [];
-    },
-    getLaunchUrl() {
-      if (typeof location === 'undefined') return null;
-      try {
-        const params = new URLSearchParams(location.search);
-        const url = params.get('url');
-        observeProtocolHostResult('getLaunchUrl', true);
-        return url && url.length > 0 ? url : null;
-      } catch {
-        observeProtocolHostResult('getLaunchUrl', false);
-        return null;
-      }
-    },
-    getRegisteredSchemes() {
-      return _registeredSchemes.slice();
-    },
-    isDefault() {
-      return false;
-    },
-    isRegistered() {
-      return false;
-    },
-    register(scheme) {
-      if (typeof navigator === 'undefined' || typeof location === 'undefined') {
-        observeProtocolHostResult('register', false);
-        return false;
-      }
-      const nav = navigator as Navigator & {
-        registerProtocolHandler?: (scheme: string, url: string) => void;
-      };
-      if (typeof nav.registerProtocolHandler !== 'function') {
-        observeProtocolHostResult('register', false);
-        return false;
-      }
-      try {
-        nav.registerProtocolHandler(scheme, location.origin + '/?url=%s');
-        if (!_registeredSchemes.includes(scheme)) _registeredSchemes.push(scheme);
-        observeProtocolHostResult('register', true);
-        return true;
-      } catch {
-        observeProtocolHostResult('register', false);
-        return false;
-      }
-    },
-    removeAsDefault() {
-      return false;
-    },
-    setAsDefault() {
-      return false;
-    },
-    subscribe() {
-      return () => {};
-    },
-    unregister(scheme) {
-      const idx = _registeredSchemes.indexOf(scheme);
-      if (idx >= 0) _registeredSchemes.splice(idx, 1);
-      return false;
-    },
+type WebProtocolCapabilities = Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
+
+export function createWebProtocolCapabilities(): WebProtocolCapabilities {
+  const registeredSchemes: string[] = [];
+  return {
+    launch: createEntity({
+      getLaunchUrl: () => {
+        if (typeof location === 'undefined') return null;
+        try {
+          const url = new URLSearchParams(location.search).get('url');
+          return url && url.length > 0 ? url : null;
+        } catch {
+          return null;
+        }
+      },
+    }),
+    registration: createEntity({
+      getRegisteredSchemes: () => {
+        return registeredSchemes.slice();
+      },
+      register: (scheme: string) => {
+        if (typeof navigator === 'undefined' || typeof location === 'undefined') return false;
+        const registerProtocolHandler = Reflect.get(navigator, 'registerProtocolHandler');
+        if (typeof registerProtocolHandler !== 'function') return false;
+        try {
+          Reflect.apply(registerProtocolHandler, navigator, [scheme, location.origin + '/?url=%s']);
+          if (!registeredSchemes.includes(scheme)) registeredSchemes.push(scheme);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+    }),
   };
-  installProtocolHostBackend(backend);
 }
-
-export function resetHostWebProtocolForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;
-const _registeredSchemes: string[] = [];

@@ -141,8 +141,11 @@ export interface AppVersionBackend extends Entity {
   getVersion(): string;
 }
 
-export interface AppVisibilityCommandBackend extends Entity {
+export interface AppHideBackend extends Entity {
   hideApp(): void;
+}
+
+export interface AppShowBackend extends Entity {
   showApp(): void;
 }
 
