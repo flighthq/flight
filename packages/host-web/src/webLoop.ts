@@ -1,38 +1,19 @@
-import { createWebLoopBackend, installLoopHostBackend, observeLoopHostResult } from '@flighthq/application/contract';
-import type { LoopBackend } from '@flighthq/types/contract';
+import type { ApplicationVisibilityBackend, LoopBackend } from '@flighthq/types/contract';
 
-export function enableHostWebLoop(): void {
-  if (_enabled) return;
-  _enabled = true;
-  const inner = createWebLoopBackend();
-  const backend: LoopBackend = {
-    requestFrame(callback: (time: number) => void): unknown {
-      try {
-        const handle = inner.requestFrame(callback);
-        observeLoopHostResult('requestFrame', true);
-        return handle;
-      } catch {
-        observeLoopHostResult('requestFrame', false);
-        return null;
-      }
-    },
-    cancelFrame(handle: unknown): void {
-      try {
-        inner.cancelFrame(handle);
-        observeLoopHostResult('cancelFrame', true);
-      } catch {
-        observeLoopHostResult('cancelFrame', false);
-      }
-    },
-    now(): number {
-      return inner.now();
-    },
-  };
-  installLoopHostBackend(backend);
-}
+export const webApplicationVisibilityBackend: ApplicationVisibilityBackend = {
+  isVisible() {
+    return typeof document === 'undefined' || !document.hidden;
+  },
+};
 
-export function resetHostWebLoopForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;
+export const webLoopBackend: LoopBackend = {
+  cancelFrame(handle) {
+    cancelAnimationFrame(handle as number);
+  },
+  now() {
+    return performance.now();
+  },
+  requestFrame(callback) {
+    return requestAnimationFrame(callback);
+  },
+};

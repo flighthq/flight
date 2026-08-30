@@ -1,123 +1,48 @@
-import { explainLoopBackend, getLoopBackend, resetLoopBackendForTest } from '@flighthq/application/contract';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { webHost } from './webHost';
+import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 
-import { enableHostWebLoop, resetHostWebLoopForTest } from './webLoop';
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
-describe('enableHostWebLoop', () => {
-  afterEach(() => {
-    resetLoopBackendForTest();
-    resetHostWebLoopForTest();
-    vi.restoreAllMocks();
+describe('webApplicationVisibilityBackend', () => {
+  it('queries the current document visibility', () => {
+    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+    expect(webApplicationVisibilityBackend.isVisible()).toBe(true);
+
+    hidden.mockReturnValue(true);
+    expect(webApplicationVisibilityBackend.isVisible()).toBe(false);
   });
 
-  it('installs a host backend so get returns non-null', () => {
-    enableHostWebLoop();
-    const backend = getLoopBackend();
-    expect(backend).not.toBeNull();
-    expect(backend!.now()).toBeTypeOf('number');
-    expect(explainLoopBackend().layer).toBe('host');
-  });
-
-  it('is idempotent — second call preserves provider identity', () => {
-    enableHostWebLoop();
-    const first = getLoopBackend();
-    enableHostWebLoop();
-    const second = getLoopBackend();
-    expect(first).toBe(second);
-  });
-
-  it('starts unobserved — no viability claimed until a real call', () => {
-    enableHostWebLoop();
-    expect(explainLoopBackend()).toEqual({
-      conflict: false,
-      layer: 'host',
-      operation: null,
-      viability: 'unobserved',
-    });
-  });
-
-  it('observes available after requestFrame call', () => {
-    enableHostWebLoop();
-    const backend = getLoopBackend()!;
-    const handle = backend.requestFrame(() => {});
-    expect(handle).toBeTypeOf('number');
-    expect(explainLoopBackend()).toEqual({
-      conflict: false,
-      layer: 'host',
-      operation: 'requestFrame',
-      viability: 'available',
-    });
-  });
-
-  it('every requestFrame re-observes — not one-shot', () => {
-    enableHostWebLoop();
-    const backend = getLoopBackend()!;
-    backend.requestFrame(() => {});
-    backend.requestFrame(() => {});
-    expect(explainLoopBackend().operation).toBe('requestFrame');
-    expect(explainLoopBackend().viability).toBe('available');
-  });
-
-  it('cancelFrame observes independently from requestFrame', () => {
-    enableHostWebLoop();
-    const backend = getLoopBackend()!;
-    const handle = backend.requestFrame(() => {});
-    expect(explainLoopBackend().operation).toBe('requestFrame');
-    backend.cancelFrame(handle);
-    expect(explainLoopBackend().operation).toBe('cancelFrame');
-    expect(explainLoopBackend().viability).toBe('available');
-  });
-
-  it('loss then recovery — requestFrame failure reverts to available on success', () => {
-    enableHostWebLoop();
-    const backend = getLoopBackend()!;
-    backend.requestFrame(() => {});
-    expect(explainLoopBackend().viability).toBe('available');
-
-    const raf = vi.fn().mockImplementation(() => {
-      throw new Error('rAF unavailable');
-    });
-    vi.stubGlobal('requestAnimationFrame', raf);
-    backend.requestFrame(() => {});
-    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
-    expect(explainLoopBackend().operation).toBe('requestFrame');
-
-    vi.stubGlobal('requestAnimationFrame', vi.fn().mockReturnValue(99));
-    backend.requestFrame(() => {});
-    expect(explainLoopBackend().viability).toBe('available');
-  });
-
-  it('cancelFrame failure observes unavailable', () => {
-    enableHostWebLoop();
-    const backend = getLoopBackend()!;
-    backend.requestFrame(() => {});
-
-    vi.stubGlobal(
-      'cancelAnimationFrame',
-      vi.fn().mockImplementation(() => {
-        throw new Error('cAF unavailable');
-      }),
-    );
-    backend.cancelFrame(1);
-    expect(explainLoopBackend().operation).toBe('cancelFrame');
-    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
-  });
-
-  it('now returns a positive number', () => {
-    enableHostWebLoop();
-    const backend = getLoopBackend()!;
-    expect(backend.now()).toBeGreaterThanOrEqual(0);
+  it('occupies the web host visibility query slot separately from scheduling', () => {
+    expect(webHost.app.visibility).toBe(webApplicationVisibilityBackend);
+    expect(webHost.app.visibility).not.toBe(webHost.app.loop);
   });
 });
 
-describe('resetHostWebLoopForTest', () => {
-  afterEach(resetLoopBackendForTest);
+describe('webLoopBackend', () => {
+  it('delegates frame scheduling and cancellation to the browser', () => {
+    const callback = vi.fn();
+    const request = vi.fn().mockReturnValue(42);
+    const cancel = vi.fn();
+    vi.stubGlobal('requestAnimationFrame', request);
+    vi.stubGlobal('cancelAnimationFrame', cancel);
 
-  it('clears the enabler flag so a subsequent enable re-installs', () => {
-    enableHostWebLoop();
-    resetHostWebLoopForTest();
-    resetLoopBackendForTest();
-    enableHostWebLoop();
-    expect(explainLoopBackend().layer).toBe('host');
+    const handle = webLoopBackend.requestFrame(callback);
+    webLoopBackend.cancelFrame(handle);
+
+    expect(request).toHaveBeenCalledWith(callback);
+    expect(handle).toBe(42);
+    expect(cancel).toHaveBeenCalledWith(42);
+  });
+
+  it('reads the browser clock', () => {
+    vi.spyOn(performance, 'now').mockReturnValue(12.5);
+    expect(webLoopBackend.now()).toBe(12.5);
+  });
+
+  it('occupies the explicit web host scheduling slot', () => {
+    expect(webHost.app.loop).toBe(webLoopBackend);
   });
 });

@@ -20,13 +20,11 @@ describe('root README contracts', () => {
 
   it('keeps the application-loop example wired to the explicit web host', () => {
     const animationSection = readme.slice(readme.indexOf('### Animation'), readme.indexOf('### Interaction'));
-    const enableIndex = animationSection.indexOf('enableHostWebLoop();');
-    const startIndex = animationSection.indexOf('startApplicationLoop(app);');
+    const startIndex = animationSection.indexOf('startApplicationLoop(webHost, app);');
 
     expect(animationSection).toContain('npm install @flighthq/host-web');
-    expect(animationSection).toContain("import { enableHostWebLoop } from '@flighthq/host-web';");
-    expect(enableIndex).toBeGreaterThan(-1);
-    expect(startIndex).toBeGreaterThan(enableIndex);
+    expect(animationSection).toContain("import { webHost } from '@flighthq/host-web';");
+    expect(startIndex).toBeGreaterThan(-1);
   });
 
   it('does not promise implicit platform backends', () => {

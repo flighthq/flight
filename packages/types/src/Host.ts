@@ -1,6 +1,7 @@
 import type { AccessibilityBackend } from './Accessibility';
 import type { AppBackend } from './App';
 import type { ApplicationExitBackend } from './ApplicationExitBackend';
+import type { ApplicationVisibilityBackend } from './ApplicationVisibilityBackend';
 import type { WindowBackend } from './ApplicationWindow';
 import type { AudioBackend } from './AudioBackend';
 import type { AudioDeviceBackend } from './AudioDeviceBackend';
@@ -93,6 +94,7 @@ export interface HostAppCapabilities {
   readonly protocol?: ProtocolBackend;
   readonly shortcut?: ShortcutBackend;
   readonly updater?: UpdaterBackend;
+  readonly visibility?: ApplicationVisibilityBackend;
 }
 
 export interface HostDialogCapabilities {
@@ -211,6 +213,10 @@ export interface HasAppShortcut {
 
 export interface HasAppUpdater {
   readonly app: { readonly updater: UpdaterBackend };
+}
+
+export interface HasAppVisibilityQuery {
+  readonly app: { readonly visibility: ApplicationVisibilityBackend };
 }
 
 export interface HasDialogFile {

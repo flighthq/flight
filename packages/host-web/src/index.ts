@@ -20,7 +20,7 @@ export { webHapticsBackend } from './webHaptics';
 export { enableHostWebImage } from './webImage';
 export { enableHostWebSoftKeyboard } from './webKeyboard';
 export { enableHostWebLifecycle } from './webLifecycle';
-export { enableHostWebLoop } from './webLoop';
+export { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 export { enableHostWebMediaSession } from './webMediasession';
 export { enableHostWebMenu } from './webMenu';
 export { enableHostWebPermission } from './webPermissions';

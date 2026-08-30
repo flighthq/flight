@@ -50,10 +50,9 @@ One genuine gap blocks a complete host, and it is not Lime-specific:
 1. **Which subset Lime serves.** Should be declared up front rather than discovered from what
    compiles, so the sentinel-returning remainder is a decision instead of an omission.
 2. **The frame driver is already inverted** — `LoopBackend` (`requestFrame` / `cancelFrame` / `now`)
-   exists for exactly this, and a native host drives the same callbacks from its own loop. Note that
-   `stepApplicationLoop` is a *second* path that never emits `onFixedUpdate`
-   (`agents/packages/application/review.md` gap 1); a Lime host should drive `setLoopBackend`, not
-   `step`.
+   and the distinct application-visibility query exist for exactly this, and a native host supplies
+   both slots while driving the same callbacks from its own loop. A Lime host should pass its Host
+   value to `startApplicationLoop`, not use deterministic `stepApplicationLoop` as its frame driver.
 3. **Verification is downstream.** Nothing here imports a real host runtime — the existing
    `host-*` tests run against fakes satisfying the seam. Conformance against real Lime belongs in
    `flight-hx`.

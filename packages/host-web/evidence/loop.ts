@@ -1,5 +1,4 @@
 import { startApplicationLoop } from '@flighthq/application';
-import { enableHostWebLoop } from '@flighthq/host-web';
+import { webLoopBackend } from '@flighthq/host-web';
 
-enableHostWebLoop();
-(globalThis as Record<string, unknown>).__evidence = startApplicationLoop;
+(globalThis as Record<string, unknown>).__evidence = { startApplicationLoop, webLoopBackend };

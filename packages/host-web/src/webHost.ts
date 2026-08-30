@@ -5,6 +5,7 @@ import type { Host } from '@flighthq/types/contract';
 import { webApplicationExitBackend } from './webApplicationExit';
 import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 import { webHapticsBackend } from './webHaptics';
+import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webFullscreenBackend, webWindowBackend } from './webWindow';
 
 // The explicit web host grows capability-by-capability as ambient backend domains migrate. Empty
@@ -12,7 +13,11 @@ import { webFullscreenBackend, webWindowBackend } from './webWindow';
 // still live behind the legacy registration path.
 export const webHost = createEntity({
   accessibility: {},
-  app: { exit: webApplicationExitBackend },
+  app: {
+    exit: webApplicationExitBackend,
+    loop: webLoopBackend,
+    visibility: webApplicationVisibilityBackend,
+  },
   dialog: {
     file: webFileDialogBackend,
     message: webMessageDialogBackend,

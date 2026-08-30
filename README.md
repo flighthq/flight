@@ -81,14 +81,14 @@ The same scene renders through DOM, WebGL2, or WebGPU by creating the matching r
 
 ### Animation
 
-The application package provides a request-animation-frame loop with typed update and render signals. Host implementations are explicit; in a browser, install `@flighthq/host-web` and enable its loop backend before starting the application:
+The application package provides a request-animation-frame loop with typed update and render signals. Host implementations are explicit; in a browser, pass the web host when starting the application:
 
 ```sh
 npm install @flighthq/host-web
 ```
 
 ```ts
-import { enableHostWebLoop } from '@flighthq/host-web';
+import { webHost } from '@flighthq/host-web';
 import {
   connectSignal,
   createApplication,
@@ -114,8 +114,7 @@ connectSignal(app.onRender, () => {
   }
 });
 
-enableHostWebLoop();
-startApplicationLoop(app);
+startApplicationLoop(webHost, app);
 ```
 
 ### Interaction

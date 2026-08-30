@@ -1,6 +1,5 @@
-import { getLoopBackend } from '@flighthq/application/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
-import { createWebCursorBackend, enableHostWebGlyphRasterizer, enableHostWebLoop, webHost } from '@flighthq/host-web';
+import { createWebCursorBackend, enableHostWebGlyphRasterizer, webHost } from '@flighthq/host-web';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';
@@ -8,7 +7,6 @@ import type { HostProbeInstallResult, HostProbeResult } from '#host-probe/contra
 
 export async function installWebHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
   enableHostWebGlyphRasterizer();
-  enableHostWebLoop();
   const results = await Promise.all([probeWebCursor(), probeWebGlyphRasterizer(), probeWebLoop()]);
   const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(webHost));
   if (results[0]?.status === 'pass') changedCapabilities.push('cursor');
@@ -39,10 +37,7 @@ async function probeWebGlyphRasterizer(): Promise<HostProbeResult> {
 }
 
 async function probeWebLoop(): Promise<HostProbeResult> {
-  const backend = getLoopBackend();
-  if (backend === null) {
-    return { detail: 'Loop provider is null', id: 'runtime.loop', kind: 'runtime', status: 'fail' };
-  }
+  const backend = webHost.app.loop;
   const frameTime = await new Promise<number | null>((resolve) => {
     const timeout = setTimeout(() => resolve(null), 2_000);
     backend.requestFrame((time) => {

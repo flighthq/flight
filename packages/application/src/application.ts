@@ -4,9 +4,9 @@ import type {
   ApplicationLoopOptions,
   ApplicationStepOptions,
   ApplicationWindow,
-  BackendExplanation,
   HasAppExitSubscription,
-  LoopBackend,
+  HasAppLoop,
+  HasAppVisibilityQuery,
 } from '@flighthq/types/contract';
 
 const DEFAULT_BACKGROUND_FRAME_RATE = 0; // 0 = disabled; use same rate when in background
@@ -77,20 +77,6 @@ export function createApplication(): Application {
   };
 }
 
-export function createWebLoopBackend(): LoopBackend {
-  return {
-    requestFrame(callback: (time: number) => void): unknown {
-      return requestAnimationFrame(callback);
-    },
-    cancelFrame(handle: unknown): void {
-      cancelAnimationFrame(handle as number);
-    },
-    now(): number {
-      return performance.now();
-    },
-  };
-}
-
 export function detachApplicationExit(app: Application): void {
   const observers = getApplicationObservers(app);
   observers.get(kExit)?.();
@@ -112,31 +98,6 @@ export function enableApplicationLifecycleSignals(app: Application): void {
   if (app.onDeactivate === null) app.onDeactivate = createSignal();
   if (app.onError === null) app.onError = createSignal();
   if (app.onFixedUpdate === null) app.onFixedUpdate = createSignal();
-}
-
-export function explainLoopBackend(): BackendExplanation {
-  if (_loopCustom !== null) {
-    return {
-      conflict: _loopHostConflict,
-      layer: 'custom',
-      operation: null,
-      viability: 'unobserved',
-    };
-  }
-  if (_loopHost !== null) {
-    return {
-      conflict: _loopHostConflict,
-      layer: 'host',
-      operation: _loopHostObservation !== null ? _loopHostObservation.operation : null,
-      viability: _loopHostObservation !== null ? _loopHostObservation.viability : 'unobserved',
-    };
-  }
-  return {
-    conflict: false,
-    layer: 'host-not-enabled',
-    operation: null,
-    viability: 'unobserved',
-  };
 }
 
 // Iterates over all registered application windows, calling fn for each. Does not allocate.
@@ -177,27 +138,8 @@ export function getApplicationWindows(app: Readonly<Application>): readonly Appl
   return app.windows.slice();
 }
 
-export function getLoopBackend(): LoopBackend | null {
-  return _loopCustom ?? _loopHost ?? null;
-}
-
-export function installLoopHostBackend(backend: LoopBackend): void {
-  if (_loopHost !== null) {
-    if (_loopHost !== backend) _loopHostConflict = true;
-    return;
-  }
-  _loopHost = backend;
-}
-
 export function isApplicationRunning(app: Readonly<Application>): boolean {
   return app.isRunning;
-}
-
-export function observeLoopHostResult(operation: 'cancelFrame' | 'requestFrame', succeeded: boolean): void {
-  _loopHostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
 }
 
 export function pauseApplicationLoop(app: Application): void {
@@ -212,13 +154,6 @@ export function pauseApplicationLoop(app: Application): void {
 export function registerApplicationWindow(app: Application, win: ApplicationWindow): void {
   if (app.windows.includes(win)) return;
   app.windows.push(win);
-}
-
-export function resetLoopBackendForTest(): void {
-  _loopCustom = null;
-  _loopHost = null;
-  _loopHostConflict = false;
-  _loopHostObservation = null;
 }
 
 export function resumeApplicationLoop(app: Application): void {
@@ -242,19 +177,18 @@ export function setApplicationMainWindow(app: Application, win: ApplicationWindo
   _mainWindows.set(app, win);
 }
 
-export function setLoopBackend(backend: LoopBackend | null): void {
-  _loopCustom = backend;
-}
-
-export function startApplicationLoop(app: Application, options: Readonly<ApplicationLoopOptions> = {}): void {
+export function startApplicationLoop(
+  host: HasAppLoop & HasAppVisibilityQuery,
+  app: Application,
+  options: Readonly<ApplicationLoopOptions> = {},
+): void {
   const observers = getApplicationObservers(app);
   // Stop any existing loop first (idempotent restart).
   observers.get(kLoop)?.();
   observers.delete(kPaused);
 
-  const resolved = getLoopBackend();
-  if (resolved === null) return;
-  const backend: LoopBackend = resolved;
+  const backend = host.app.loop;
+  const visibility = host.app.visibility;
   const maxDeltaTime = options.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
   const targetFrameRate = options.targetFrameRate ?? 0;
   const backgroundFrameRate = options.backgroundFrameRate ?? DEFAULT_BACKGROUND_FRAME_RATE;
@@ -283,7 +217,7 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
     loopState.lastTime = time;
 
     // Determine the effective frame interval for this tick (background throttle or normal cap).
-    const activeInterval = app.isRunning && bgInterval > 0 && !_isApplicationVisible() ? bgInterval : frameInterval;
+    const activeInterval = app.isRunning && bgInterval > 0 && !visibility.isVisible() ? bgInterval : frameInterval;
 
     // Frame-rate cap: skip this tick if we haven't reached the target interval. The first tick
     // always emits so the app receives an immediate first frame regardless of targetFrameRate.
@@ -363,14 +297,6 @@ const _lifecycleKeys = new WeakMap<ApplicationWindow, symbol>();
 const _mainWindows = new WeakMap<Application, ApplicationWindow>();
 
 const ROLLING_FPS_WINDOW = 60;
-
-let _loopCustom: LoopBackend | null = null;
-let _loopHost: LoopBackend | null = null;
-let _loopHostConflict = false;
-let _loopHostObservation: {
-  operation: 'cancelFrame' | 'requestFrame';
-  viability: 'available' | 'runtime-api-unavailable';
-} | null = null;
 
 interface LoopState {
   fixedAccumulator: number;
@@ -480,12 +406,6 @@ function getApplicationObservers(app: Application): Map<symbol, () => void> {
     _applicationObservers.set(app, observers);
   }
   return observers;
-}
-
-// Returns true when the page is currently visible (document.hidden === false). Guarded for
-// non-browser (jsdom / headless) environments where document may not have hidden.
-function _isApplicationVisible(): boolean {
-  return typeof document === 'undefined' || !document.hidden;
 }
 
 function recordFpsSample(state: LoopState, delta: number): void {
