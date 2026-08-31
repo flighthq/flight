@@ -4,6 +4,7 @@ import type { SurfaceMaterial } from './SurfaceMaterial';
 // a packed sRgb-albedo RGBA multiplier over the interpolated vertex color. No maps. Full
 // fidelity on every backend.
 export interface VertexColorMaterial extends SurfaceMaterial {
+  readonly kind: typeof VertexColorMaterialKind;
   tint: number;
 }
 

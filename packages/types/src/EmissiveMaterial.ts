@@ -5,6 +5,7 @@ import type { Texture } from './Texture';
 // modulates it, and `emissiveStrength` scales linear radiance — values > 1 drive bloom on GPU
 // backends. Full fidelity on every backend.
 export interface EmissiveMaterial extends SurfaceMaterial {
+  readonly kind: typeof EmissiveMaterialKind;
   emissive: number;
   emissiveMap: Texture | null;
   emissiveStrength: number;

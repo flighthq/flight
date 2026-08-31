@@ -5,6 +5,7 @@ import type { Texture } from './Texture';
 // are packed sRgb-albedo RGBA (with their maps); `shininess` is the specular exponent;
 // `normalMap`/`normalScale` perturb the surface normal.
 export interface PhongMaterial extends SurfaceMaterial {
+  readonly kind: typeof PhongMaterialKind;
   diffuse: number;
   diffuseMap: Texture | null;
   normalMap: Texture | null;

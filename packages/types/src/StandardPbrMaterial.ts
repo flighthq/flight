@@ -27,6 +27,8 @@ export interface StandardPbrMaterialProperties {
 
 // Core glTF metallic-roughness PBR material: the StandardPbrMaterialProperties block plus the
 // shared surface trailer and its kind.
-export interface StandardPbrMaterial extends SurfaceMaterial, StandardPbrMaterialProperties {}
+export interface StandardPbrMaterial extends SurfaceMaterial, StandardPbrMaterialProperties {
+  readonly kind: typeof StandardPbrMaterialKind;
+}
 
 export const StandardPbrMaterialKind = 'StandardPbrMaterial';

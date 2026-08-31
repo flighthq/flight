@@ -4,6 +4,7 @@ import type { SurfaceMaterial } from './SurfaceMaterial';
 // depth-of-field/velocity passes. `near`/`far` set the linearization range when the material is
 // used as a standalone depth-visualization; the depth pass supplies the camera range otherwise.
 export interface DepthMaterial extends SurfaceMaterial {
+  readonly kind: typeof DepthMaterialKind;
   far: number;
   near: number;
 }

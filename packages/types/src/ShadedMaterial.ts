@@ -21,6 +21,7 @@ import type { Texture } from './Texture';
 // ShadedMaterial instance across nodes batches them by feature-set; a different feature-set breaks
 // the batch (a different compiled program).
 export interface ShadedMaterial extends SurfaceMaterial {
+  readonly kind: typeof ShadedMaterialKind;
   diffuse: number;
   diffuseMap: Texture | null;
   modifiers: readonly Modifier[];
