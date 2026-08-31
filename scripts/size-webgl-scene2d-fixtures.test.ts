@@ -224,12 +224,16 @@ const profiles = [
 ] as const;
 
 describe('WebGL Scene2D size fixtures', () => {
-  it('discovers one WebGL size case per isolated feature', () => {
+  it('discovers one WebGL size case per isolated feature and only marks DisplayObject as size-only', () => {
     const keys = collectSizeCases(fixturesDirectory)
       .map(getSizeCaseKey)
       .filter((key) => profiles.some((profile) => key === `${profile.name}:webgl`));
+    const sizeOnlyNames = profiles
+      .filter((profile) => 'sizeOnly' in profile && profile.sizeOnly === true)
+      .map((profile) => profile.name);
 
     expect(keys).toEqual(profiles.map((profile) => `${profile.name}:webgl`).sort());
+    expect(sizeOnlyNames).toEqual(['scene2d-gl-pipeline-displayobject']);
   });
 
   for (const profile of profiles) {
