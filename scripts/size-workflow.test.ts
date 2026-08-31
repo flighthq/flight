@@ -16,6 +16,7 @@ describe('minified size workflow', () => {
     };
     const commands = workflow.jobs['size-minified'].steps.flatMap((step) => step.run ?? []);
 
-    expect(commands).toContain('npm run size:minified -- --fixtures');
+    expect(commands).toContain('npm run size:minified');
+    expect(commands).not.toContain('npm run size:minified -- --fixtures');
   });
 });

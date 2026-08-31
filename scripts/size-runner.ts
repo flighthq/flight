@@ -42,11 +42,10 @@ export interface SizeBaselineOrigin {
 
 export interface RunSizeOptions {
   root?: string;
-  examplesDir?: string;
+  fixturesDir?: string;
   baselineFile?: string;
   updateBaseline?: boolean;
-  exampleFilters?: string[];
-  fixturesOnly?: boolean;
+  caseFilters?: string[];
   onResult?: (result: Readonly<SizeResult>) => void;
   renderFilters?: string[];
 }
@@ -61,22 +60,14 @@ export function parseFilter(value: string | undefined): string[] {
 }
 
 export function collectSizeCases(
-  examplesDir: string,
-  exampleFilters: string[] = [],
+  fixturesDir: string,
+  caseFilters: string[] = [],
   renderFilters: string[] = [],
-  fixturesOnly = false,
 ): SizeCase[] {
-  const fixturesDir = resolve(examplesDir, '..', '..', 'tools', 'size', 'fixtures');
-  return (fixturesOnly ? [fixturesDir] : [examplesDir, fixturesDir])
-    .filter(existsSync)
-    .flatMap((directory) => collectSizeCasesFromDirectory(directory, exampleFilters, renderFilters));
+  return existsSync(fixturesDir) ? collectSizeCasesFromDirectory(fixturesDir, caseFilters, renderFilters) : [];
 }
 
-function collectSizeCasesFromDirectory(
-  directory: string,
-  exampleFilters: string[],
-  renderFilters: string[],
-): SizeCase[] {
+function collectSizeCasesFromDirectory(directory: string, caseFilters: string[], renderFilters: string[]): SizeCase[] {
   const cases = readdirSync(directory, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(resolve(directory, d.name, 'package.json')))
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -90,11 +81,10 @@ function collectSizeCasesFromDirectory(
         .filter((tc) => {
           const normalizedName = `${tc.name}${tc.variant === null ? '' : `:${tc.variant}`}`.toLowerCase();
           const normalizedRender = tc.render.toLowerCase();
-          const exampleMatches =
-            exampleFilters.length === 0 || exampleFilters.some((query) => normalizedName.includes(query));
+          const caseMatches = caseFilters.length === 0 || caseFilters.some((query) => normalizedName.includes(query));
           const renderMatches =
             renderFilters.length === 0 || renderFilters.some((query) => normalizedRender.includes(query));
-          return exampleMatches && renderMatches;
+          return caseMatches && renderMatches;
         });
     });
   return cases.sort((a, b) => {
@@ -319,15 +309,14 @@ export function didSizeChecksPass(results: readonly Readonly<Pick<SizeResult, 'p
 
 export async function runSizeChecks({
   root = process.cwd(),
-  examplesDir = resolve(root, 'examples', 'packages'),
+  fixturesDir = resolve(root, 'tools', 'size', 'fixtures'),
   baselineFile = resolve(root, 'tools', 'size', 'size.baseline.json'),
   updateBaseline = false,
-  exampleFilters = [],
-  fixturesOnly = false,
+  caseFilters = [],
   onResult,
   renderFilters = [],
 }: RunSizeOptions): Promise<{ results: SizeResult[]; pendingBaseline: Record<string, number>; baselineFile: string }> {
-  const cases = collectSizeCases(examplesDir, exampleFilters, renderFilters, fixturesOnly);
+  const cases = collectSizeCases(fixturesDir, caseFilters, renderFilters);
   const baseline = readBaseline(baselineFile);
   const baselineOrigins = readSizeBaselineOrigins(root, baselineFile);
   const pendingBaseline = { ...baseline };
