@@ -503,6 +503,24 @@ describe('Scene2D root fidelity', () => {
       reason: FlightDocumentRefusalReason.RootKindMismatch,
     });
   });
+
+  it('passes a genuinely empty resource map to a root-dimension probe', () => {
+    const schemas = createTestSchemas();
+    let resourceKeys: string[] | null = null;
+    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, Node3DKind, {
+      createNode: (_fields, resources) => {
+        resourceKeys = Object.keys(resources);
+        return createNode3D() as unknown as NodeAny;
+      },
+      fields: [],
+      kind: Node3DKind,
+      writeNodeFields: () => true,
+    });
+
+    explainFlightDocumentRefusal(rootDocument2D(Node3DKind, {}), 'Scene2D', schemas);
+
+    expect(resourceKeys).toEqual([]);
+  });
 });
 
 function rootDocument2D(kind: string, fields: Record<string, unknown>): FlightDocument {

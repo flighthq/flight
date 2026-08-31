@@ -676,6 +676,24 @@ describe('Scene3D root fidelity', () => {
       reason: FlightDocumentRefusalReason.RootKindMismatch,
     });
   });
+
+  it('passes a genuinely empty resource map to a root-dimension probe', () => {
+    const schemas = createTestSchemas();
+    let resourceKeys: string[] | null = null;
+    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, DisplayObjectKind, {
+      createNode: (_fields, resources) => {
+        resourceKeys = Object.keys(resources);
+        return createDisplayObject() as unknown as NodeAny;
+      },
+      fields: [],
+      kind: DisplayObjectKind,
+      writeNodeFields: () => true,
+    });
+
+    explainFlightDocumentScene3DRefusal(rootDocument3D(DisplayObjectKind, {}, schemas), schemas);
+
+    expect(resourceKeys).toEqual([]);
+  });
 });
 
 describe('Scene3DDocumentCamera', () => {
