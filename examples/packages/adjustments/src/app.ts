@@ -49,8 +49,13 @@ root.scaleY = scale;
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
 const captureMode = captureWindow.__flightCapture === true;
 
-// Slider state.
-let brightness = captureMode ? 24 : 0;
+// Slider state. `brightness` is normalized-linear, the unit `createBrightnessColorMatrix` documents:
+// the amount lands in the matrix's offset column, which is added to channels already scaled to 0..1.
+// This example drove it on a -128..128 scale, so the capture default of 24 pinned every channel at 1
+// and the "After matrix" row rendered eight white squares with #ffffff under them, whatever the other
+// three sliders said. The matrix readout above it was correct the whole time, which is what made the
+// mismatch easy to miss.
+let brightness = captureMode ? 0.1 : 0;
 let contrast = captureMode ? 1.2 : 1;
 let hueRotation = captureMode ? 30 : 0;
 let saturation = captureMode ? 0.75 : 1;
@@ -109,7 +114,7 @@ function createSlider(labelText: string, min: number, max: number, step: number,
 }
 
 // Create sliders in HTML overlay above the canvas.
-const brightnessSlider = createSlider('Brightness', -128, 128, 1, brightness);
+const brightnessSlider = createSlider('Brightness', -1, 1, 0.01, brightness);
 const contrastSlider = createSlider('Contrast', 0, 3, 0.01, contrast);
 const hueSlider = createSlider('Hue Rotate', -180, 180, 1, hueRotation);
 const saturationSlider = createSlider('Saturation', 0, 3, 0.01, saturation);
