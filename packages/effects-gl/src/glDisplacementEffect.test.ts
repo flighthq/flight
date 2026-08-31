@@ -5,35 +5,25 @@ import {
   createGlContextFromCanvasElement,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { DisplacementEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
-
-const programMock = vi.hoisted(() => ({
-  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
-const glMock = vi.hoisted(() => ({
-  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
-  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
-}));
-
-vi.mock('./glEffectProgramCache', () => programMock);
-
-vi.mock('@flighthq/render-gl/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-gl/contract')) as Record<string, unknown>;
-  return {
-    ...actual,
-    drawGlFullscreenPass: vi.fn((_state, _program, _textures, _dest, setUniforms) => {
-      setUniforms({ ...glMock, getUniformLocation: (_program: unknown, name: string) => name }, { program: {} });
-    }),
-  };
-});
 
 import {
   applyDisplacementEffectToGl,
   defaultGlDisplacementEffectRunner,
   registerGlDisplacementEffect,
 } from './glDisplacementEffect';
+import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+
+const programMock = {
+  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
+};
+const glMock = {
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
+};
 
 const SOURCE_WIDTH = 128;
 const SOURCE_HEIGHT = 64;
@@ -42,6 +32,24 @@ beforeEach(() => {
   programMock.getGlEffectProgram.mockClear();
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(programMock.getGlEffectProgram as never);
+  // Partial: only drawGlFullscreenPass is spied; the rest of render-gl stays real.
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _program: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms(
+      { ...glMock, getUniformLocation: (_program: unknown, name: string) => name } as never,
+      { program: {} } as never,
+    );
+  }) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function apply(effect: Readonly<Partial<DisplacementEffect>> = {}): void {

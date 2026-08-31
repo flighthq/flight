@@ -2,41 +2,38 @@ import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
+import * as textlayout from '@flighthq/textlayout/contract';
 import type { Raster2DSurface, RendererData, RenderProxy2D, TextLabel } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
+import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
 
 // @flighthq/textlayout.computeTextLayout is stubbed to emit one deterministic glyph group.
-//
-// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
-// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
-// dance bought by hand comes from the platform here, with no hook, and the stub cannot reach the real
-// text-layout consumers. The dance was not merely redundant: it rebuilt the subject's entire transitive
-// module graph inside a FIXED `beforeAll` deadline, which is unbounded work against a fixed clock and
-// the shape of flake tiering exists to remove.
-vi.mock('@flighthq/textlayout/contract', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    computeTextLayout: vi.fn((result: { groups: object[] }, params: { formatRanges: Array<{ format: object }> }) => {
-      result.groups.push({
-        offsetX: 0,
-        offsetY: 0,
-        width: 50,
-        ascent: 12,
-        descent: 4,
-        format: params.formatRanges[0]?.format ?? {},
-        startIndex: 0,
-        endIndex: 5,
-      });
-    }),
-  };
+beforeEach(() => {
+  vi.spyOn(textlayout, 'computeTextLayout').mockImplementation(((
+    result: { groups: object[] },
+    params: { formatRanges: Array<{ format: object }> },
+  ) => {
+    result.groups.push({
+      offsetX: 0,
+      offsetY: 0,
+      width: 50,
+      ascent: 12,
+      descent: 4,
+      format: params.formatRanges[0]?.format ?? {},
+      startIndex: 0,
+      endIndex: 5,
+    });
+  }) as never);
 });
 
-import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
+afterEach(() => {
+  vi.restoreAllMocks();
+  resetRaster2DSurfaceProviderForTest();
+});
 
 function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
   const canvas = document.createElement('canvas');
@@ -98,10 +95,6 @@ function installTestRaster2DSurfaceProvider(
     destroyRaster2DSurface,
   });
 }
-
-afterEach(() => {
-  resetRaster2DSurfaceProviderForTest();
-});
 
 describe('defaultGlTextLabelRenderer', () => {
   it('declares BatchFormat.Quad', () => {

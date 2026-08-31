@@ -1,14 +1,5 @@
-import { installWgpuMock } from '@flighthq/render-wgpu/contract';
+import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
-
-const runtimeMock = vi.hoisted(() => ({ current: null as unknown }));
-
-// Partial, not wholesale: `installWgpuMock` must stay real, and only the runtime accessor is replaced so
-// the command encoder and render-pass slots can be observed.
-vi.mock('@flighthq/render-wgpu/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-wgpu/contract')) as Record<string, unknown>;
-  return { ...actual, getWgpuRenderStateRuntime: () => runtimeMock.current };
-});
 
 import {
   clearWgpuEffectTarget,
@@ -20,7 +11,18 @@ import {
   getWgpuEffectPassState,
 } from './wgpuEffectPass';
 
-beforeAll(() => installWgpuMock());
+let runtimeMockCurrent: unknown = null;
+
+beforeAll(() => renderWgpuContract.installWgpuMock());
+
+beforeEach(() => {
+  vi.spyOn(renderWgpuContract, 'getWgpuRenderStateRuntime').mockImplementation((() => runtimeMockCurrent) as never);
+});
+
+afterEach(() => {
+  runtimeMockCurrent = null;
+  vi.restoreAllMocks();
+});
 
 interface Recorded {
   bindGroups: { dynamicOffsets: number[] | undefined; group: unknown; index: number }[];
@@ -47,7 +49,7 @@ function createHarness(): { recorded: Recorded; state: WgpuRenderState } {
       return pass;
     }),
   };
-  runtimeMock.current = {
+  runtimeMockCurrent = {
     canvasTextureView: { id: 'canvasView' },
     commandEncoder,
     renderPass: null,
@@ -338,7 +340,7 @@ describe('getWgpuEffectPassState', () => {
   // AGENTS.md reserves throwing for exactly this, and the message names the call that was missed.
   it('throws when there is no active command encoder', () => {
     const harness = createHarness();
-    (runtimeMock.current as { commandEncoder: unknown }).commandEncoder = null;
+    (runtimeMockCurrent as { commandEncoder: unknown }).commandEncoder = null;
 
     expect(() => getWgpuEffectPassState(harness.state).beginPass(createTarget('dest'), 'load')).toThrow(
       'renderWgpuBackground',

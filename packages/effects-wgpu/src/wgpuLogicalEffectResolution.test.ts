@@ -1,43 +1,45 @@
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
+
 // This file is in REGISTRY_ISOLATED_TESTS because its two top-level mocks replace shared effect-pass
 // modules for every table row. The private registry makes the hoisted form file-scoped without rebuilding
 // the full effects graph through resetModules plus dynamic imports for each test.
-const recorded = vi.hoisted(() => ({ uniforms: [] as number[][] }));
-const passMock = vi.hoisted(() => {
-  const recordUniforms = (setUniforms: (f32: Float32Array) => void): void => {
-    const f32 = new Float32Array(8);
-    setUniforms(f32);
-    recorded.uniforms.push([...f32]);
-  };
+let recorded = { uniforms: [] as number[][] };
 
-  return {
-    createWgpuDualSourceEffectPipeline: vi.fn(() => ({})),
-    drawWgpuDualSourceEffectPass: vi.fn(
-      (
-        _state: unknown,
-        _firstSource: unknown,
-        _secondSource: unknown,
-        _dest: unknown,
-        _pipeline: unknown,
-        setUniforms: (f32: Float32Array) => void,
-      ) => recordUniforms(setUniforms),
-    ),
-    drawWgpuEffectPass: vi.fn(
-      (
-        _state: unknown,
-        _source: unknown,
-        _dest: unknown,
-        _pipeline: unknown,
-        setUniforms: (f32: Float32Array) => void,
-      ) => recordUniforms(setUniforms),
-    ),
-  };
+const recordUniforms = (setUniforms: (f32: Float32Array) => void): void => {
+  const f32 = new Float32Array(8);
+  setUniforms(f32);
+  recorded.uniforms.push([...f32]);
+};
+
+beforeEach(() => {
+  recorded = { uniforms: [] };
+
+  vi.spyOn(wgpuEffectPassModule, 'createWgpuDualSourceEffectPipeline').mockImplementation((() => ({})) as never);
+
+  vi.spyOn(wgpuEffectPassModule, 'drawWgpuDualSourceEffectPass').mockImplementation(((
+    _state: unknown,
+    _firstSource: unknown,
+    _secondSource: unknown,
+    _dest: unknown,
+    _pipeline: unknown,
+    setUniforms: (f32: Float32Array) => void,
+  ) => recordUniforms(setUniforms)) as never);
+
+  vi.spyOn(wgpuEffectPassModule, 'drawWgpuEffectPass').mockImplementation(((
+    _state: unknown,
+    _source: unknown,
+    _dest: unknown,
+    _pipeline: unknown,
+    setUniforms: (f32: Float32Array) => void,
+  ) => recordUniforms(setUniforms)) as never);
+
+  vi.spyOn(wgpuEffectProgramCacheModule, 'getWgpuEffectPipeline').mockImplementation((() => ({})) as never);
 });
-const pipelineMock = vi.hoisted(() => ({ getWgpuEffectPipeline: vi.fn(() => ({})) }));
 
-vi.mock('./wgpuEffectPass', () => passMock);
-vi.mock('./wgpuEffectProgramCache', () => pipelineMock);
+afterEach(() => vi.restoreAllMocks());
 
 import { applyCrtEffectToWgpu } from './wgpuCrtEffect';
 import { applyDirectionalBlurEffectToWgpu } from './wgpuDirectionalBlurEffect';

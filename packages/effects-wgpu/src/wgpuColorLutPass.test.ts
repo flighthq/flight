@@ -1,11 +1,10 @@
 import { installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-const passStateMock = vi.hoisted(() => ({
-  EFFECT_VERTEX_WGSL: 'VERTEX_WGSL\n',
-  getWgpuEffectPassState: vi.fn(() => passState),
-}));
-const passState = vi.hoisted(() => ({
+import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+
+const passState = {
   acquireSlot: vi.fn(() => 256),
   beginPass: vi.fn((_dest: unknown, loadOp: string) => {
     recorded.loadOps.push(loadOp);
@@ -25,23 +24,27 @@ const passState = vi.hoisted(() => ({
     write(f32);
     recorded.uniforms.push([...f32]);
   }),
-}));
-const recorded = vi.hoisted(() => ({
+};
+const recorded = {
   bindGroups: [] as { group: unknown; index: number }[],
   draws: [] as number[],
   loadOps: [] as string[],
   pipelines: [] as unknown[],
   shaderCode: [] as string[],
   uniforms: [] as number[][],
-}));
-
-vi.mock('./wgpuEffectPass', () => passStateMock);
-
-import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
+};
 
 // The WebGPU flag enums are type-level only in @webgpu/types, so jsdom has no runtime values for the
 // usage and visibility bits this module ORs together.
 beforeAll(() => installWgpuMock());
+
+beforeEach(() => {
+  vi.spyOn(wgpuEffectPassModule, 'getWgpuEffectPassState').mockReturnValue(passState as never);
+  // eslint-disable-next-line no-import-assign -- replacing a non-function export for test; works on Vite SSR namespaces
+  Object.defineProperty(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL', { value: 'VERTEX_WGSL\n', configurable: true });
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 function createHarness(): {
   createTexture: ReturnType<typeof vi.fn>;

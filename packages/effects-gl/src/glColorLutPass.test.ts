@@ -1,19 +1,30 @@
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { ColorLut, GlColorLutTextureCache, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({
-  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
-
-vi.mock('./glEffectProgramCache', () => programMock);
-
-vi.mock('@flighthq/render-gl/contract', () => ({
-  drawGlFullscreenPass: vi.fn((state, _program, _textures, _dest, setUniforms) => {
-    setUniforms((state as { gl: unknown }).gl, { program: {} });
-  }),
-}));
-
 import { applyColorLutPassToGl } from './glColorLutPass';
+import * as glEffectProgramCache from './glEffectProgramCache';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+
+const programMock = {
+  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
+};
+
+beforeEach(() => {
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(programMock.getGlEffectProgram as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    state: never,
+    _program: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms((state as { gl: unknown }).gl as never, { program: {} } as never);
+  }) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // Records the LUT bytes, the sampler parameters, and the texture-unit traffic — a lookup table is its
 // contents, how it is filtered, AND which unit it ends up bound to.

@@ -1,39 +1,43 @@
-vi.mock('@flighthq/render-wgpu/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    releaseWgpuRenderTarget: vi.fn(),
-  };
-});
-
-vi.mock('./wgpuEffectBlitShader', () => ({
-  applyWgpuEffectBlitOffsetPass: vi.fn(),
-  applyWgpuEffectBlitPass: vi.fn(),
-  applyWgpuEffectErasePass: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectBoxBlur', () => ({
-  applyWgpuEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectPass', () => ({
-  clearWgpuEffectTarget: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectTintShader', () => ({
-  applyWgpuEffectTintPass: vi.fn(),
-}));
+import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 
 import {
   applyDropShadowEffectToWgpu,
   defaultWgpuDropShadowEffectRunner,
   registerWgpuDropShadowEffect,
 } from './wgpuDropShadowEffect';
-import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
+import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader';
+import * as wgpuEffectBoxBlurMod from './wgpuEffectBoxBlur';
+import * as wgpuEffectPassMod from './wgpuEffectPass';
+import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader';
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderWgpuContract, 'acquireWgpuRenderTarget').mockImplementation(((
+    _state: unknown,
+    _pool: unknown,
+    descriptor: Record<string, unknown>,
+  ) => ({
+    ...descriptor,
+    id: `scratch-${nextTargetId++}`,
+    texture: {},
+  })) as never);
+  vi.spyOn(renderWgpuContract, 'releaseWgpuRenderTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectBlitShaderMod, 'applyWgpuEffectBlitOffsetPass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectBlitShaderMod, 'applyWgpuEffectBlitPass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectBlitShaderMod, 'applyWgpuEffectErasePass').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectBoxBlurMod, 'applyWgpuEffectBoxBlur').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectPassMod, 'clearWgpuEffectTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectTintShaderMod, 'applyWgpuEffectTintPass').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('applyDropShadowEffectToWgpu', () => {
   it('is a function', () => {
@@ -46,8 +50,8 @@ describe('applyDropShadowEffectToWgpu', () => {
 
     applyDropShadowEffectToWgpu(createState(), source, dest, createPool(), { kind: 'DropShadowEffect' });
 
-    expect(applyWgpuEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyWgpuEffectErasePass).not.toHaveBeenCalled();
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('hides the source when sourceMode is hide', () => {
@@ -59,8 +63,8 @@ describe('applyDropShadowEffectToWgpu', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyWgpuEffectErasePass).not.toHaveBeenCalled();
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('erases the source silhouette when sourceMode is knockout', () => {
@@ -72,8 +76,8 @@ describe('applyDropShadowEffectToWgpu', () => {
       sourceMode: 'knockout',
     });
 
-    expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyWgpuEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
   });
 });
 
@@ -81,10 +85,6 @@ describe('defaultWgpuDropShadowEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuDropShadowEffectRunner).toBe('function');
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
 });
 
 function createState(): never {

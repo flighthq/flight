@@ -1,19 +1,30 @@
-const mockState = vi.hoisted(() => ({
-  uniformSnapshots: [] as number[][],
-}));
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
+import * as wgpuEffectPassMod from './wgpuEffectPass';
 
-vi.mock('./wgpuEffectPass', () => ({
-  createWgpuEffectPipeline: vi.fn(() => ({ blendMode: 'replace', pipeline: {} })),
-  drawWgpuEffectPass: vi.fn((_state, _source, _dest, _pipeline, setUniforms) => {
+const uniformSnapshots: number[][] = [];
+
+beforeEach(() => {
+  uniformSnapshots.length = 0;
+
+  vi.spyOn(wgpuEffectPassMod, 'createWgpuEffectPipeline').mockReturnValue({
+    blendMode: 'replace',
+    pipeline: {},
+  } as never);
+  vi.spyOn(wgpuEffectPassMod, 'drawWgpuEffectPass').mockImplementation(((
+    _state: unknown,
+    _source: unknown,
+    _dest: unknown,
+    _pipeline: unknown,
+    setUniforms: Function,
+  ) => {
     const f32 = new Float32Array(16);
     const i32 = new Int32Array(f32.buffer);
     setUniforms(f32, i32);
-    mockState.uniformSnapshots.push(Array.from(f32));
-  }),
-}));
+    uniformSnapshots.push(Array.from(f32));
+  }) as never);
+});
 
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
+afterEach(() => vi.restoreAllMocks());
 
 describe('applyWgpuEffectBoxBlur', () => {
   it('is a function', () => {
@@ -28,12 +39,16 @@ describe('applyWgpuEffectBoxBlur', () => {
       passes: 1,
     });
 
-    expect(createWgpuEffectPipeline).toHaveBeenCalledWith(expect.anything(), expect.any(String), 'replace');
-    expect(mockState.uniformSnapshots[0]![4]).toBeCloseTo(0.1);
-    expect(mockState.uniformSnapshots[0]![5]).toBeCloseTo(0.2);
-    expect(mockState.uniformSnapshots[0]![6]).toBeCloseTo(0.3);
-    expect(mockState.uniformSnapshots[0]![7]).toBeCloseTo(0.4);
-    expect(mockState.uniformSnapshots[0]![9]).toBe(1);
+    expect(wgpuEffectPassMod.createWgpuEffectPipeline).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(String),
+      'replace',
+    );
+    expect(uniformSnapshots[0]![4]).toBeCloseTo(0.1);
+    expect(uniformSnapshots[0]![5]).toBeCloseTo(0.2);
+    expect(uniformSnapshots[0]![6]).toBeCloseTo(0.3);
+    expect(uniformSnapshots[0]![7]).toBeCloseTo(0.4);
+    expect(uniformSnapshots[0]![9]).toBe(1);
   });
 
   it('uses the replacement blur pipeline for zero-radius copies', () => {
@@ -45,16 +60,11 @@ describe('applyWgpuEffectBoxBlur', () => {
       passes: 1,
     });
 
-    expect(drawWgpuEffectPass).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(drawWgpuEffectPass).mock.calls[0]![2]).toBe(dest);
-    expect(mockState.uniformSnapshots[0]![8]).toBe(0);
-    expect(mockState.uniformSnapshots[0]![9]).toBe(0);
+    expect(wgpuEffectPassMod.drawWgpuEffectPass).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(wgpuEffectPassMod.drawWgpuEffectPass).mock.calls[0]![2]).toBe(dest);
+    expect(uniformSnapshots[0]![8]).toBe(0);
+    expect(uniformSnapshots[0]![9]).toBe(0);
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  mockState.uniformSnapshots.length = 0;
 });
 
 function createState(): never {

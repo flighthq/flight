@@ -1,29 +1,41 @@
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-const passMock = vi.hoisted(() => ({
-  createWgpuEffectPipeline: vi.fn((_state: unknown, wgsl: string, blend?: string) => ({ blend, wgsl })),
-  drawWgpuEffectPass: vi.fn(
-    (_state: unknown, source: unknown, dest: unknown, pipeline: unknown, setUniforms: (f32: Float32Array) => void) => {
-      const f32 = new Float32Array(4);
-      setUniforms(f32);
-      recorded.draws.push({ dest, pipeline, source, uniforms: [...f32] });
-    },
-  ),
-}));
-const recorded = vi.hoisted(() => ({
-  draws: [] as { dest: unknown; pipeline: unknown; source: unknown; uniforms: number[] }[],
-}));
-
-vi.mock('./wgpuEffectPass', () => passMock);
-
 import {
   applyWgpuEffectBlitOffsetPass,
   applyWgpuEffectBlitPass,
   applyWgpuEffectErasePass,
 } from './wgpuEffectBlitShader';
+import * as wgpuEffectPassMod from './wgpuEffectPass';
+
+const recorded = {
+  draws: [] as { dest: unknown; pipeline: unknown; source: unknown; uniforms: number[] }[],
+};
 
 const SOURCE_WIDTH = 64;
 const SOURCE_HEIGHT = 32;
+
+beforeEach(() => {
+  recorded.draws.length = 0;
+
+  vi.spyOn(wgpuEffectPassMod, 'createWgpuEffectPipeline').mockImplementation(((
+    _state: unknown,
+    wgsl: string,
+    blend?: string,
+  ) => ({ blend, wgsl })) as never);
+  vi.spyOn(wgpuEffectPassMod, 'drawWgpuEffectPass').mockImplementation(((
+    _state: unknown,
+    source: unknown,
+    dest: unknown,
+    pipeline: unknown,
+    setUniforms: (f32: Float32Array) => void,
+  ) => {
+    const f32 = new Float32Array(4);
+    setUniforms(f32);
+    recorded.draws.push({ dest, pipeline, source, uniforms: [...f32] });
+  }) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 function createState(): WgpuRenderState {
   return {} as unknown as WgpuRenderState;
@@ -35,7 +47,7 @@ function createTarget(id: string): WgpuRenderTarget {
 
 function reset(): void {
   recorded.draws.length = 0;
-  passMock.createWgpuEffectPipeline.mockClear();
+  vi.mocked(wgpuEffectPassMod.createWgpuEffectPipeline).mockClear();
 }
 
 function offsetFor(dx: number, dy: number): readonly number[] {
@@ -99,7 +111,7 @@ describe('applyWgpuEffectBlitOffsetPass', () => {
     applyWgpuEffectBlitOffsetPass(state, source, dest, 1, 1);
     applyWgpuEffectBlitOffsetPass(state, source, dest, 2, 2);
 
-    expect(passMock.createWgpuEffectPipeline).toHaveBeenCalledTimes(1);
+    expect(wgpuEffectPassMod.createWgpuEffectPipeline).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -127,7 +139,7 @@ describe('applyWgpuEffectBlitPass', () => {
     applyWgpuEffectBlitOffsetPass(state, source, dest, 1, 1);
 
     expect(new Set(recorded.draws.map((draw) => draw.pipeline)).size).toBe(3);
-    expect(passMock.createWgpuEffectPipeline).toHaveBeenCalledTimes(3);
+    expect(wgpuEffectPassMod.createWgpuEffectPipeline).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -140,7 +152,7 @@ describe('applyWgpuEffectErasePass', () => {
 
     applyWgpuEffectErasePass(createState(), createTarget('source'), createTarget('dest'));
 
-    expect(passMock.createWgpuEffectPipeline.mock.calls[0]![2]).toBe('erase');
+    expect(vi.mocked(wgpuEffectPassMod.createWgpuEffectPipeline).mock.calls[0]![2]).toBe('erase');
   });
 
   it('binds the mask as its source', () => {

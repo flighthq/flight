@@ -1,5 +1,3 @@
-vi.mock('./glSsaoEffect', () => ({ applySsaoEffectToGl: vi.fn() }));
-
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -14,7 +12,15 @@ import {
   registerGlContactShadowsEffect,
 } from './glContactShadowsEffect';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
-import { applySsaoEffectToGl } from './glSsaoEffect';
+import * as glSsaoEffect from './glSsaoEffect';
+
+beforeEach(() => {
+  vi.spyOn(glSsaoEffect, 'applySsaoEffectToGl').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('applyContactShadowsEffectToGl', () => {
   it('maps the contact descriptor into the shared local-occlusion realization', () => {
@@ -25,12 +31,17 @@ describe('applyContactShadowsEffectToGl', () => {
       samples: 24,
     });
 
-    expect(applySsaoEffectToGl).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything(), {
-      intensity: 0.75,
-      kind: 'SsaoEffect',
-      radius: 3,
-      samples: 24,
-    });
+    expect(glSsaoEffect.applySsaoEffectToGl).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      {
+        intensity: 0.75,
+        kind: 'SsaoEffect',
+        radius: 3,
+        samples: 24,
+      },
+    );
   });
 });
 

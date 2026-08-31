@@ -1,20 +1,35 @@
-const glMock = vi.hoisted(() => ({
+import * as renderGlContract from '@flighthq/render-gl/contract';
+
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
+
+const glMock = {
   ONE: 1,
   ZERO: 0,
   blendFunc: vi.fn(),
   uniform1f: vi.fn(),
   uniform2f: vi.fn(),
   uniform4f: vi.fn(),
-}));
+};
 
-vi.mock('@flighthq/render-gl/contract', () => ({
-  compileGlFullscreenProgram: vi.fn(() => ({ program: {}, vao: {} })),
-  drawGlFullscreenPass: vi.fn((_state, _loc, _textures, _dest, setUniforms) => {
+beforeEach(() => {
+  vi.spyOn(renderGlContract, 'compileGlFullscreenProgram').mockImplementation(((_gl: unknown, _source: string) => ({
+    program: {},
+    vao: {},
+  })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _loc: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
     setUniforms(glMock as never, {} as never);
-  }),
-}));
+  }) as never);
+});
 
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('applyGlEffectBoxBlur', () => {
   it('is a function', () => {
@@ -33,10 +48,6 @@ describe('applyGlEffectBoxBlur', () => {
     expect(glMock.uniform1f).toHaveBeenCalledWith('u_useEdgeColor', 1);
     expect(glMock.blendFunc).toHaveBeenCalledWith(glMock.ONE, glMock.ZERO);
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
 });
 
 function createState(): never {

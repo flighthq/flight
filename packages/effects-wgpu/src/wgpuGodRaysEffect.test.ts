@@ -1,35 +1,8 @@
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { GodRaysEffect, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-const passMock = vi.hoisted(() => ({
-  drawWgpuEffectPass: vi.fn(
-    (
-      _state: unknown,
-      _source: unknown,
-      _dest: unknown,
-      _pipeline: unknown,
-      setUniforms: (f32: Float32Array) => void,
-    ) => {
-      const f32 = new Float32Array(8);
-      setUniforms(f32);
-      recorded.uniforms.push([...f32]);
-    },
-  ),
-}));
-const pipelineMock = vi.hoisted(() => ({
-  getWgpuEffectPipeline: vi.fn((_state: unknown, key: string, wgsl: string, blend: string) => {
-    recorded.pipelines.push({ blend, key, wgsl });
-    return { pipeline: {} };
-  }),
-}));
-const recorded = vi.hoisted(() => ({
-  pipelines: [] as { blend: string; key: string; wgsl: string }[],
-  uniforms: [] as number[][],
-}));
-
-vi.mock('./wgpuEffectPass', () => passMock);
-vi.mock('./wgpuEffectProgramCache', () => pipelineMock);
-
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
 import {
   applyGodRaysEffectToWgpu,
   defaultWgpuGodRaysEffectRunner,
@@ -37,7 +10,38 @@ import {
 } from './wgpuGodRaysEffect';
 import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
+const recorded = {
+  pipelines: [] as { blend: string; key: string; wgsl: string }[],
+  uniforms: [] as number[][],
+};
+
 beforeAll(() => installWgpuMock());
+
+beforeEach(() => {
+  vi.spyOn(wgpuEffectPassModule, 'drawWgpuEffectPass').mockImplementation(((
+    _state: unknown,
+    _source: unknown,
+    _dest: unknown,
+    _pipeline: unknown,
+    setUniforms: (f32: Float32Array) => void,
+  ) => {
+    const f32 = new Float32Array(8);
+    setUniforms(f32);
+    recorded.uniforms.push([...f32]);
+  }) as never);
+
+  vi.spyOn(wgpuEffectProgramCacheModule, 'getWgpuEffectPipeline').mockImplementation(((
+    _state: unknown,
+    key: string,
+    wgsl: string,
+    blend: string,
+  ) => {
+    recorded.pipelines.push({ blend, key, wgsl });
+    return { pipeline: {} };
+  }) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 function apply(effect: Readonly<Partial<GodRaysEffect>> = {}): readonly number[] {
   recorded.pipelines.length = 0;

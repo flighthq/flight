@@ -1,4 +1,4 @@
-import type * as FlightNodeModule from '@flighthq/node/contract';
+import * as flightNode from '@flighthq/node/contract';
 import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
@@ -10,21 +10,23 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
 
-// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
-// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
-// dance bought by hand comes from the platform here, with no hook. The dance was not merely redundant:
-// it rebuilt the subject's entire transitive module graph inside a FIXED `beforeAll` deadline, which is
-// unbounded work against a fixed clock and the shape of flake that tiering exists to remove.
-vi.mock('@flighthq/node/contract', async (importOriginal) => ({
-  ...(await importOriginal<typeof FlightNodeModule>()),
-  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-  getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
-    source?.data?.version ?? 0,
-}));
-
 import { defaultGlMeshShapeRenderer, drawGlMeshShape } from './glMeshShapeRenderer';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { createGlState } from './glTestHelper';
+
+beforeEach(() => {
+  vi.spyOn(flightNode, 'getNodeLocalBoundsRectangle').mockImplementation((() => ({
+    x: 0,
+    y: 0,
+    width: 64,
+    height: 48,
+  })) as never);
+  vi.spyOn(flightNode, 'getNodeLocalContentRevision').mockImplementation(
+    ((source: { data?: { version?: number } } | null | undefined) => source?.data?.version ?? 0) as never,
+  );
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 function makeShapeData() {
   return { surface: null, lastContentId: -1, lastPixelRatio: 0, lastW: 0, lastH: 0, meshVersion: -1, meshes: null };

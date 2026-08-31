@@ -1,30 +1,40 @@
 // The edge color is the one part of this runner with a channel ORDER to get wrong, and it carried a
 // packing — 0xAARRGGBB, alpha in the high byte — that no other color in the SDK used. The uniform
 // assertion below is what makes the order a fact rather than a reading of four shift expressions.
-const glMock = vi.hoisted(() => ({
-  getUniformLocation: vi.fn((_program: unknown, name: string) => name),
-  uniform1f: vi.fn(),
-  uniform1fv: vi.fn(),
-  uniform1i: vi.fn(),
-  uniform2f: vi.fn(),
-  uniform4f: vi.fn(),
-}));
-
-vi.mock('@flighthq/render-gl/contract', () => ({
-  drawGlFullscreenPass: vi.fn((_state, _program, _textures, _dest, setUniforms) => {
-    setUniforms(glMock as never, { program: {} } as never);
-  }),
-}));
-
-vi.mock('./glEffectProgramCache', () => ({
-  getGlEffectProgram: vi.fn(() => ({ program: {} })),
-}));
+import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import {
   applyConvolutionEffectToGl,
   defaultGlConvolutionEffectRunner,
   registerGlConvolutionEffect,
 } from './glConvolutionEffect';
+import * as glEffectProgramCache from './glEffectProgramCache';
+
+const glMock = {
+  getUniformLocation: vi.fn((_program: unknown, name: string) => name),
+  uniform1f: vi.fn(),
+  uniform1fv: vi.fn(),
+  uniform1i: vi.fn(),
+  uniform2f: vi.fn(),
+  uniform4f: vi.fn(),
+};
+
+beforeEach(() => {
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _program: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms(glMock as never, { program: {} } as never);
+  }) as never);
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation((() => ({ program: {} })) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const target = { height: 4, texture: {}, width: 4 } as never;
 

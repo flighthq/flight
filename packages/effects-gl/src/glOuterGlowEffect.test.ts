@@ -1,35 +1,37 @@
-vi.mock('@flighthq/render-gl/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    clearGlRenderTarget: vi.fn(),
-    releaseGlRenderTarget: vi.fn(),
-  };
-});
+import * as renderGlContract from '@flighthq/render-gl/contract';
 
-vi.mock('./glEffectBlitShader', () => ({
-  applyGlEffectBlitPass: vi.fn(),
-  applyGlEffectErasePass: vi.fn(),
-}));
-
-vi.mock('./glEffectBoxBlur', () => ({
-  applyGlEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./glEffectTintShader', () => ({
-  applyGlEffectTintPass: vi.fn(),
-}));
-
-import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
+import * as glEffectBlitShader from './glEffectBlitShader';
+import * as glEffectBoxBlur from './glEffectBoxBlur';
+import * as glEffectTintShader from './glEffectTintShader';
 import {
   applyOuterGlowEffectToGl,
   defaultGlOuterGlowEffectRunner,
   registerGlOuterGlowEffect,
 } from './glOuterGlowEffect';
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(
+    (_state: never, _pool: never, descriptor: never) =>
+      ({ ...(descriptor as Record<string, unknown>), id: `scratch-${nextTargetId++}`, texture: {} }) as never,
+  );
+  vi.spyOn(renderGlContract, 'clearGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBlitShader, 'applyGlEffectBlitPass').mockImplementation((() => {}) as never);
+  vi.spyOn(glEffectBlitShader, 'applyGlEffectErasePass').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBoxBlur, 'applyGlEffectBoxBlur').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectTintShader, 'applyGlEffectTintPass').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('applyOuterGlowEffectToGl', () => {
   it('is a function', () => {
@@ -42,8 +44,8 @@ describe('applyOuterGlowEffectToGl', () => {
 
     applyOuterGlowEffectToGl(createState(), source, dest, createPool(), { kind: 'OuterGlowEffect' });
 
-    expect(applyGlEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyGlEffectErasePass).not.toHaveBeenCalled();
+    expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('hides the source when sourceMode is hide', () => {
@@ -55,8 +57,8 @@ describe('applyOuterGlowEffectToGl', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyGlEffectErasePass).not.toHaveBeenCalled();
+    expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('erases the source silhouette when sourceMode is knockout', () => {
@@ -68,8 +70,8 @@ describe('applyOuterGlowEffectToGl', () => {
       sourceMode: 'knockout',
     });
 
-    expect(applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyGlEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
   });
 });
 
@@ -77,10 +79,6 @@ describe('defaultGlOuterGlowEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlOuterGlowEffectRunner).toBe('function');
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
 });
 
 function createState(): never {

@@ -5,35 +5,44 @@ import {
   createGlContextFromCanvasElement,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({
-  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
-const glMock = vi.hoisted(() => ({
-  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
-  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
-}));
-
-vi.mock('./glEffectProgramCache', () => programMock);
-
-// Partial, not wholesale: `createGlRenderState` and the runtime accessor the registry reaches through
-// must stay real, or the registration test below would be asserting against a mock of itself.
-vi.mock('@flighthq/render-gl/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-gl/contract')) as Record<string, unknown>;
-  return {
-    ...actual,
-    drawGlFullscreenPass: vi.fn((_state, _program, _textures, _dest, setUniforms) => {
-      setUniforms({ ...glMock, getUniformLocation: (_p: unknown, name: string) => name }, { program: {} });
-    }),
-  };
-});
-
+import * as glEffectProgramCache from './glEffectProgramCache';
 import { applyGodRaysEffectToGl, defaultGlGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
+const glMock = {
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
+};
+
+beforeEach(() => {
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(((
+    _state: unknown,
+    _key: string,
+    _source: string,
+  ) => ({ program: {} })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _program: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms(
+      { ...glMock, getUniformLocation: (_p: unknown, name: string) => name } as never,
+      { program: {} } as never,
+    );
+  }) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 function apply(effect: Readonly<Partial<GodRaysEffect>> = {}): void {
-  programMock.getGlEffectProgram.mockClear();
+  vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
   const target = { height: 64, texture: {}, width: 64 } as unknown as GlRenderTarget;
@@ -56,21 +65,9 @@ function scalarUniform(name: string): number {
 }
 
 describe('applyGodRaysEffectToGl', () => {
-  // ★ THE DEFECT THIS REPLACES A `typeof` CHECK FOR. `GodRaysEffect.centerY` is declared screen space —
-  // top-left origin, 0 = top — and this pass reads a BOTTOM-left-origin texcoord, so the value has to be
-  // flipped at this seam. It was forwarded untouched, which put the Gl light 120 px below the Wgpu one
-  // for the same descriptor. The type is `number` either way, and a light at 0.5 is its own mirror, so
-  // neither a type check nor a centred scene can see it.
-  //
-  // MEASURED against the defect, by restoring c1dcc6c9b^'s exact line into this runner — 4 of 8 failed:
-  //   AssertionError: expected 0.2 to be close to 0.8, received difference is 0.6000000000000001
-  //   AssertionError: expected 0.9 to be close to 0.1, received difference is 0.8
-  //   AssertionError: expected 0.2 to be greater than 0.8
-  //   AssertionError: expected 0.25 to be close to 0.75, received difference is 0.5
   it('flips a top-left centerY into this backend bottom-left texcoord space', () => {
     apply({ centerX: 0.25, centerY: 0.2 });
 
-    // 0.2 down from the top is 0.8 up from the bottom. X needs no conversion and must not get one.
     expect(lightPosition()[0]).toBeCloseTo(0.25, 6);
     expect(lightPosition()[1]).toBeCloseTo(0.8, 6);
   });
@@ -81,8 +78,6 @@ describe('applyGodRaysEffectToGl', () => {
     expect(lightPosition()[1]).toBeCloseTo(0.1, 6);
   });
 
-  // The ordering claim, which is what stops a conversion that merely offsets from passing the two above:
-  // a light higher in screen space must end up higher in texcoord space, for every pair.
   it('maps a higher light to a larger texcoord than a lower one', () => {
     apply({ centerY: 0.2 });
     const high = lightPosition()[1]!;
@@ -107,20 +102,18 @@ describe('applyGodRaysEffectToGl', () => {
     expect(scalarUniform('u_exposure')).toBe(0.6);
   });
 
-  // The sample count is baked into the shader, so it belongs to the program key rather than a uniform —
-  // a fractional or zero count would otherwise compile a program with a broken loop bound.
   it('rounds the sample count into the program key and floors it at one', () => {
     apply({ samples: 12.4 });
-    expect(programMock.getGlEffectProgram.mock.calls[0]![1]).toBe('atmospheric.godRays.12');
+    expect(vi.mocked(glEffectProgramCache.getGlEffectProgram).mock.calls[0]![1]).toBe('atmospheric.godRays.12');
 
     apply({ samples: 0 });
-    expect(programMock.getGlEffectProgram.mock.calls[0]![1]).toBe('atmospheric.godRays.1');
+    expect(vi.mocked(glEffectProgramCache.getGlEffectProgram).mock.calls[0]![1]).toBe('atmospheric.godRays.1');
   });
 });
 
 describe('defaultGlGodRaysEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
-    programMock.getGlEffectProgram.mockClear();
+    vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
     glMock.uniform2f.mockClear();
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
 

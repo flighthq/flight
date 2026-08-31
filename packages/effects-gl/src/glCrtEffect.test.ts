@@ -5,26 +5,29 @@ import {
   createGlContextFromCanvasElement,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { CrtEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+
+import { applyCrtEffectToGl, defaultGlCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
+import * as glEffectProgramCache from './glEffectProgramCache';
+import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
 // The shader is a module-private string, so it is read back from the argument the effect hands the
 // program cache — the exact text that would be compiled — rather than exported for the test's benefit.
-const programMock = vi.hoisted(() => ({
+const programMock = {
   getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
+};
 
-vi.mock('./glEffectProgramCache', () => programMock);
-
-// Partial, not wholesale: `createGlRenderState` and the runtime accessor the registry reaches through
-// must stay real, or the registration test below would be asserting against a mock of itself.
-vi.mock('@flighthq/render-gl/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-gl/contract')) as Record<string, unknown>;
-  return { ...actual, drawGlFullscreenPass: vi.fn() };
+beforeEach(() => {
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(programMock.getGlEffectProgram as never);
+  // Partial: only drawGlFullscreenPass is spied; the rest of render-gl stays real.
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation((() => {}) as never);
 });
 
-import { applyCrtEffectToGl, defaultGlCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // The scanline pattern is periodic in the row, so a phase read at one texcoord is the whole claim: at
 // half a scanline DOWN FROM THE TOP the sine is at its positive peak and the line is at full brightness.

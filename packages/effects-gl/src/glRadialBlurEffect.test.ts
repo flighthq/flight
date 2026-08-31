@@ -5,30 +5,10 @@ import {
   createGlContextFromCanvasElement,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, RadialBlurEffect } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({
-  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
-const glMock = vi.hoisted(() => ({
-  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
-  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
-}));
-
-vi.mock('./glEffectProgramCache', () => programMock);
-
-// Partial, not wholesale: `createGlRenderState` and the runtime accessor the registry reaches through
-// must stay real, or the registration test below would be asserting against a mock of itself.
-vi.mock('@flighthq/render-gl/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-gl/contract')) as Record<string, unknown>;
-  return {
-    ...actual,
-    drawGlFullscreenPass: vi.fn((_state, _program, _textures, _dest, setUniforms) => {
-      setUniforms({ ...glMock, getUniformLocation: (_p: unknown, name: string) => name }, { program: {} });
-    }),
-  };
-});
-
+import * as glEffectProgramCache from './glEffectProgramCache';
 import {
   applyRadialBlurEffectToGl,
   defaultGlRadialBlurEffectRunner,
@@ -36,8 +16,37 @@ import {
 } from './glRadialBlurEffect';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
+const glMock = {
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
+};
+
+beforeEach(() => {
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(((
+    _state: unknown,
+    _key: string,
+    _source: string,
+  ) => ({ program: {} })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _program: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms(
+      { ...glMock, getUniformLocation: (_p: unknown, name: string) => name } as never,
+      { program: {} } as never,
+    );
+  }) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 function apply(effect: Readonly<Partial<RadialBlurEffect>> = {}): void {
-  programMock.getGlEffectProgram.mockClear();
+  vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
   const target = { height: 64, texture: {}, width: 64 } as unknown as GlRenderTarget;
@@ -114,10 +123,10 @@ describe('applyRadialBlurEffectToGl', () => {
   // — so the cache key must not vary with the descriptor.
   it('compiles one program for the effect regardless of the descriptor', () => {
     apply({ samples: 8 });
-    const first = programMock.getGlEffectProgram.mock.calls[0]![1];
+    const first = vi.mocked(glEffectProgramCache.getGlEffectProgram).mock.calls[0]![1];
     apply({ samples: 32 });
 
-    expect(programMock.getGlEffectProgram.mock.calls[0]![1]).toBe(first);
+    expect(vi.mocked(glEffectProgramCache.getGlEffectProgram).mock.calls[0]![1]).toBe(first);
     expect(first).toBe('radialBlur');
   });
 });

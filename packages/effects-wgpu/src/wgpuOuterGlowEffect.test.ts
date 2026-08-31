@@ -1,38 +1,34 @@
-vi.mock('@flighthq/render-wgpu/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    releaseWgpuRenderTarget: vi.fn(),
-  };
-});
+import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 
-vi.mock('./wgpuEffectBlitShader', () => ({
-  applyWgpuEffectBlitPass: vi.fn(),
-  applyWgpuEffectErasePass: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectBoxBlur', () => ({
-  applyWgpuEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectPass', () => ({
-  clearWgpuEffectTarget: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectTintShader', () => ({
-  applyWgpuEffectTintPass: vi.fn(),
-}));
-
-import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
+import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
+import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
 import {
   applyOuterGlowEffectToWgpu,
   defaultWgpuOuterGlowEffectRunner,
   registerWgpuOuterGlowEffect,
 } from './wgpuOuterGlowEffect';
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((_state, _pool, descriptor) => ({
+    ...(descriptor as object),
+    id: `scratch-${nextTargetId++}`,
+    texture: {},
+  })) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectBlitPass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectErasePass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectBoxBlurModule, 'applyWgpuEffectBoxBlur').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectPassModule, 'clearWgpuEffectTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectTintShaderModule, 'applyWgpuEffectTintPass').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('applyOuterGlowEffectToWgpu', () => {
   it('is a function', () => {
@@ -45,8 +41,8 @@ describe('applyOuterGlowEffectToWgpu', () => {
 
     applyOuterGlowEffectToWgpu(createState(), source, dest, createPool(), { kind: 'OuterGlowEffect' });
 
-    expect(applyWgpuEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyWgpuEffectErasePass).not.toHaveBeenCalled();
+    expect(wgpuEffectBlitShaderModule.applyWgpuEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(wgpuEffectBlitShaderModule.applyWgpuEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('hides the source when sourceMode is hide', () => {
@@ -58,8 +54,12 @@ describe('applyOuterGlowEffectToWgpu', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyWgpuEffectErasePass).not.toHaveBeenCalled();
+    expect(wgpuEffectBlitShaderModule.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(
+      expect.anything(),
+      source,
+      dest,
+    );
+    expect(wgpuEffectBlitShaderModule.applyWgpuEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('erases the source silhouette when sourceMode is knockout', () => {
@@ -71,8 +71,12 @@ describe('applyOuterGlowEffectToWgpu', () => {
       sourceMode: 'knockout',
     });
 
-    expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyWgpuEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(wgpuEffectBlitShaderModule.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(
+      expect.anything(),
+      source,
+      dest,
+    );
+    expect(wgpuEffectBlitShaderModule.applyWgpuEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
   });
 });
 
@@ -80,10 +84,6 @@ describe('defaultWgpuOuterGlowEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuOuterGlowEffectRunner).toBe('function');
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
 });
 
 function createState(): never {

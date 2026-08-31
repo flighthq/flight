@@ -1,13 +1,19 @@
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
-// The cache's whole job is deciding when NOT to call this, so it has to be observable.
-const renderGlMock = vi.hoisted(() => ({
-  compileGlFullscreenProgram: vi.fn((_gl: unknown, source: string) => ({ program: { source }, textures: [] })),
-}));
-
-vi.mock('@flighthq/render-gl/contract', () => renderGlMock);
-
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
+
+beforeEach(() => {
+  // The cache's whole job is deciding when NOT to call this, so it has to be observable.
+  vi.spyOn(renderGlContract, 'compileGlFullscreenProgram').mockImplementation(((_gl: unknown, source: string) => ({
+    program: { source },
+    textures: [],
+  })) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // A distinct object per call, so "same context" and "same program" are identity questions the cache can
 // actually get wrong — two fakes that compared equal would hide a cache keyed by the wrong thing.
@@ -36,25 +42,25 @@ describe('getGlEffectProgram', () => {
   // discriminating case is one I had to invent, and the measured output recorded per test came from
   // mutating the shipped code deliberately, not from a line git already had.
   it('compiles a key once per context and hands back the same program', () => {
-    renderGlMock.compileGlFullscreenProgram.mockClear();
+    vi.mocked(renderGlContract.compileGlFullscreenProgram).mockClear();
     const state = createState(createContext());
 
     const first = getGlEffectProgram(state, 'blur', 'SOURCE_A');
     const second = getGlEffectProgram(state, 'blur', 'SOURCE_A');
 
     expect(second).toBe(first);
-    expect(renderGlMock.compileGlFullscreenProgram).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(renderGlContract.compileGlFullscreenProgram)).toHaveBeenCalledTimes(1);
   });
 
   it('compiles each key separately, so two recipes never share one program', () => {
-    renderGlMock.compileGlFullscreenProgram.mockClear();
+    vi.mocked(renderGlContract.compileGlFullscreenProgram).mockClear();
     const state = createState(createContext());
 
     const blur = getGlEffectProgram(state, 'blur', 'SOURCE_A');
     const bloom = getGlEffectProgram(state, 'bloom', 'SOURCE_B');
 
     expect(bloom).not.toBe(blur);
-    expect(renderGlMock.compileGlFullscreenProgram).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(renderGlContract.compileGlFullscreenProgram)).toHaveBeenCalledTimes(2);
   });
 
   // ★ CONSTRUCTED CASE: keyed by CONTEXT, not by state and not globally. A WebGL program belongs to the
@@ -70,39 +76,39 @@ describe('getGlEffectProgram', () => {
   // later test compiles for the first time are already present. Recorded rather than trimmed, because a
   // failure count that does not match the prediction is a signal about the cause, not noise.
   it('gives each context its own program, since a program cannot cross contexts', () => {
-    renderGlMock.compileGlFullscreenProgram.mockClear();
+    vi.mocked(renderGlContract.compileGlFullscreenProgram).mockClear();
     const first = getGlEffectProgram(createState(createContext()), 'blur', 'SOURCE_A');
     const second = getGlEffectProgram(createState(createContext()), 'blur', 'SOURCE_A');
 
     expect(second).not.toBe(first);
-    expect(renderGlMock.compileGlFullscreenProgram).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(renderGlContract.compileGlFullscreenProgram)).toHaveBeenCalledTimes(2);
   });
 
   // Two states over ONE context share the cache — the direction the WeakMap keying buys, and the reason
   // it is keyed by `state.gl` rather than by `state`.
   it('shares one program across two states on the same context', () => {
-    renderGlMock.compileGlFullscreenProgram.mockClear();
+    vi.mocked(renderGlContract.compileGlFullscreenProgram).mockClear();
     const gl = createContext();
 
     const first = getGlEffectProgram(createState(gl), 'blur', 'SOURCE_A');
     const second = getGlEffectProgram(createState(gl), 'blur', 'SOURCE_A');
 
     expect(second).toBe(first);
-    expect(renderGlMock.compileGlFullscreenProgram).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(renderGlContract.compileGlFullscreenProgram)).toHaveBeenCalledTimes(1);
   });
 
   // The stated limit of the contract, asserted so nobody assumes otherwise: the KEY identifies the
   // program, not the source text. An effect that varies its shader must vary its key too — which is
   // exactly what glGodRaysEffect does by baking the sample count into `atmospheric.godRays.<n>`.
   it('ignores a changed source under a key it has already compiled', () => {
-    renderGlMock.compileGlFullscreenProgram.mockClear();
+    vi.mocked(renderGlContract.compileGlFullscreenProgram).mockClear();
     const state = createState(createContext());
 
     const first = getGlEffectProgram(state, 'blur', 'SOURCE_A');
     const second = getGlEffectProgram(state, 'blur', 'SOURCE_B_DIFFERENT');
 
     expect(second).toBe(first);
-    expect(renderGlMock.compileGlFullscreenProgram).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(renderGlContract.compileGlFullscreenProgram)).toHaveBeenCalledTimes(1);
   });
 });
 

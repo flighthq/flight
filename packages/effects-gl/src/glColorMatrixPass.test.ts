@@ -1,20 +1,34 @@
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({
-  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
-const glMock = vi.hoisted(() => ({ uniform1fv: vi.fn((_location: unknown, _value: Float32Array) => {}) }));
-
-vi.mock('./glEffectProgramCache', () => programMock);
-
-vi.mock('@flighthq/render-gl/contract', () => ({
-  drawGlFullscreenPass: vi.fn((_state, _program, _textures, _dest, setUniforms) => {
-    setUniforms({ ...glMock, getUniformLocation: (_p: unknown, name: string) => name }, { program: {} });
-  }),
-}));
-
 import { applyColorMatrixPassToGl } from './glColorMatrixPass';
+import * as glEffectProgramCache from './glEffectProgramCache';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+
+const programMock = {
+  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
+};
+const glMock = { uniform1fv: vi.fn((_location: unknown, _value: Float32Array) => {}) };
+
+beforeEach(() => {
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(programMock.getGlEffectProgram as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _program: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms(
+      { ...glMock, getUniformLocation: (_p: unknown, name: string) => name } as never,
+      { program: {} } as never,
+    );
+  }) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function apply(matrix: ReadonlyArray<number>): void {
   programMock.getGlEffectProgram.mockClear();
