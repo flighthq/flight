@@ -28,6 +28,8 @@
     "tools/review/src/requiredReferenceImageCells.ts",
     "tools/review/src/requestSupersede.ts",
     "tools/review/src/reviewFilter.ts",
+    "tools/review/src/reviewManifest.ts",
+    "tools/review/src/reviewManifestPlugin.ts",
     "tools/review/src/reviewOrder.ts"
   ],
   "exclude": ["node_modules", "dist", ".claude", "examples/runners"]
