@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-gl-pipeline-richtext-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-gl-pipeline-richtext",
+      "renderers": ["webgl"],
+      "routes": {
+        "webgl": "/"
+      }
+    }
+  ]
+}

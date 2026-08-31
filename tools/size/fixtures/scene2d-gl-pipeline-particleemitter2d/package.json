@@ -1,0 +1,8 @@
+{
+  "name": "scene2d-gl-pipeline-particleemitter2d-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "scene2d-gl-pipeline-particleemitter2d"
+  }
+}

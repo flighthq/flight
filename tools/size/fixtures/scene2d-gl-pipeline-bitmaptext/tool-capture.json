@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-gl-pipeline-bitmaptext-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-gl-pipeline-bitmaptext",
+      "renderers": ["webgl"],
+      "routes": {
+        "webgl": "/"
+      }
+    }
+  ]
+}
