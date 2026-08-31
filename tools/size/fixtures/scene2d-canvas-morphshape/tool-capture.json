@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-canvas-morphshape-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-canvas-morphshape",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
