@@ -1,4 +1,10 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  clearLogOnceKeys,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
 import {
@@ -48,7 +54,10 @@ function messageOf(entry: Readonly<LogEntry>): string {
   return typeof data === 'string' ? data : String(data.message);
 }
 
-beforeEach(clearPools);
+beforeEach(() => {
+  clearLogOnceKeys();
+  clearPools();
+});
 
 afterEach(() => {
   disableGeometryPoolGuards();

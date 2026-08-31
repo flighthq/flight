@@ -1,5 +1,5 @@
 import { setVector3 } from '@flighthq/geometry/contract';
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
 import type { LogEntry } from '@flighthq/types/contract';
@@ -7,6 +7,8 @@ import { afterEach, describe, expect, test } from 'vitest';
 
 import { areSkeleton3DGuardsEnabled, disableSkeleton3DGuards, enableSkeleton3DGuards } from './enableSkeleton3DGuards';
 import { createSkeleton3D, setSkeleton3DBindPose } from './skeleton3d';
+
+beforeEach(() => clearLogOnceKeys());
 
 describe('areSkeleton3DGuardsEnabled', () => {
   test('reports whether the guards are installed', () => {

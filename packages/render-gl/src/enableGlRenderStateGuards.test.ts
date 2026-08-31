@@ -1,4 +1,4 @@
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
@@ -16,6 +16,8 @@ function createState() {
   const contextState = createGlContextState(createGlContextFromCanvasElement(canvas));
   return createGlRenderState(contextState, createGlPipeline(createEmptyGlRegistries()));
 }
+
+beforeEach(() => clearLogOnceKeys());
 
 describe('areGlRenderStateGuardsEnabled', () => {
   it('reports whether the state-local multiple-root guard is installed', () => {

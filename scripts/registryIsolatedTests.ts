@@ -105,34 +105,14 @@ export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
   { path: 'packages/scene3d-resources/src/threeDsLoad.test.ts', reason: 'mocks-modules' },
   { path: 'packages/tool-capture/src/captureServer.test.ts', reason: 'mocks-modules' },
   // Asserts that importing @flighthq/shape registers nothing — the side-effect-free-import guarantee
-  // that `registerDefaultShapeBoundsCommands` exists as an explicit entry point to protect. It failed
-  // and then passed across two whole-repo runs whose only difference was a markdown edit, because the
-  // shared tier let file scheduling decide it.
+  // that `registerDefaultShapeBoundsCommands` exists as an explicit entry point to protect. The
+  // registry is process-global with no reset, so "nothing is registered" can only be asserted in a
+  // process nobody else has touched.
   { path: 'packages/shape/src/registerDefaultShapeBoundsCommands.test.ts', reason: 'process-global-registry' },
-  // logOnce keys are process-global with no reset path in production. Tests that assert a logOnce
-  // warning fired (entry count > 0) fail if a prior file in the same worker already consumed the key.
-  { path: 'packages/bitmapfont/src/enableBitmapFontGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/camera/src/enableCameraGuards.test.ts', reason: 'process-global-registry' },
-  {
-    path: 'packages/collision/src/registerBuiltInCollisionPairTests3D.test.ts',
-    reason: 'process-global-registry',
-  },
-  { path: 'packages/effects-gl/src/enableGlRenderEffectGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/effects-wgpu/src/enableWgpuRenderEffectGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/geometry/src/enableGeometryPoolGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/glyphatlas/src/enableGlyphAtlasGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/log/src/log.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/node/src/enableNodeGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/physics3d-abi/src/referencePhysics3DAbi.test.ts', reason: 'process-global-registry' },
+  // Asserts that the collision support registry is empty before registration — verifying the
+  // explain-collision diagnostic for the state a caller who forgot to register is in. The registry is
+  // process-global with no reset, so the empty claim requires an untouched process.
   { path: 'packages/physics3d/src/explainPhysics3DCollision.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/render-gl/src/enableGlRenderStateGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/render-wgpu/src/wgpuHost.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/scene3d/src/enableScene3DGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/scene3d-gl/src/enableGlScene3DDeformGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/shortcut/src/enableShortcutGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/skeleton2d/src/enableSkeleton2DGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/skeleton3d/src/enableSkeleton3DGuards.test.ts', reason: 'process-global-registry' },
-  { path: 'packages/tray/src/enableTrayGuards.test.ts', reason: 'process-global-registry' },
 ];
 
 /** Every isolated path, in the form the Vitest project globs consume. */

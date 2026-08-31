@@ -1,4 +1,4 @@
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { BitmapFontData, LogEntry } from '@flighthq/types/contract';
 
@@ -8,6 +8,7 @@ import { disableBitmapFontGuards, enableBitmapFontGuards } from './enableBitmapF
 let entries: LogEntry[];
 
 beforeEach(() => {
+  clearLogOnceKeys();
   entries = [];
   setLogSink((entry) => entries.push(entry));
 });
