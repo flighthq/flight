@@ -151,11 +151,15 @@ describe('size-only control fixture', () => {
 
   // It still has to run the real pre-render path, or it would measure a scene nobody prepares and the
   // subtraction would credit the features with substrate the floor never paid for.
+  //
+  // ★ MATCHED AS CALLS, NOT AS NAMES. A bare `toContain('prepareScene2DRender')` is satisfied by the
+  // import statement alone, so deleting the call site left this test green — the fixture would import
+  // the update pass, never run it, and still claim to be the floor for scenes that do.
   it('still drives the pre-render pass it is the floor for', () => {
     for (const fixture of CONTROL_FIXTURES) {
       const source = fixtureSource(fixture);
-      expect(source, `${fixture} must run the update pass`).toContain('prepareScene2DRender');
-      expect(source, `${fixture} must draw the background`).toContain('renderCanvasBackground');
+      expect(source, `${fixture} must run the update pass`).toMatch(/\bprepareScene2DRender\s*\(/u);
+      expect(source, `${fixture} must draw the background`).toMatch(/\brenderCanvasBackground\s*\(/u);
     }
   });
 
