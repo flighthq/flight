@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-canvas-tilemap-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-canvas-tilemap",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
