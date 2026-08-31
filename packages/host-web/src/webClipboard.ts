@@ -24,55 +24,100 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
     return new Blob([data], { type: format });
   }
 
-  return createEntity({
-    async readFormat(format) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.read !== 'function') return '';
-      try {
-        const items = await cb.read();
-        for (const item of items) {
-          if (item.types.includes(format)) {
-            const blob = await item.getType(format);
-            if (format.startsWith('image/')) return readBlobAsDataUrl(blob);
-            return blob.text();
-          }
+  async function readFormat(format: string): Promise<string> {
+    const cb = getWebClipboard();
+    if (cb === null || typeof cb.read !== 'function') return '';
+    try {
+      const items = await cb.read();
+      for (const item of items) {
+        if (item.types.includes(format)) {
+          const blob = await item.getType(format);
+          if (format.startsWith('image/')) return readBlobAsDataUrl(blob);
+          return blob.text();
         }
-      } catch {
-        return '';
       }
+    } catch {
       return '';
-    },
-    async writeFormat(format, data) {
-      const cb = getWritableWebClipboard();
-      if (cb === null) return false;
-      try {
-        const blob = await blobFromFormatData(format, data);
-        await cb.write([new ClipboardItem({ [format]: blob })]);
-        return true;
-      } catch {
-        return false;
+    }
+    return '';
+  }
+
+  async function writeFormat(format: string, data: string): Promise<boolean> {
+    const cb = getWritableWebClipboard();
+    if (cb === null) return false;
+    try {
+      const blob = await blobFromFormatData(format, data);
+      await cb.write([new ClipboardItem({ [format]: blob })]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function getFormats(): Promise<string[]> {
+    const cb = getWebClipboard();
+    if (cb === null || typeof cb.read !== 'function') return [];
+    try {
+      const items = await cb.read();
+      const out: string[] = [];
+      for (const item of items) {
+        for (const type of item.types) {
+          if (!out.includes(type)) out.push(type);
+        }
       }
-    },
+      return out;
+    } catch {
+      return [];
+    }
+  }
+
+  async function readText(): Promise<string> {
+    const cb = getWebClipboard();
+    if (cb === null || typeof cb.readText !== 'function') return '';
+    try {
+      return await cb.readText();
+    } catch {
+      return '';
+    }
+  }
+
+  async function writeText(text: string): Promise<boolean> {
+    const cb = getWebClipboard();
+    if (cb === null || typeof cb.writeText !== 'function') return false;
+    try {
+      await cb.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function readImage(): Promise<string> {
+    const cb = getWebClipboard();
+    if (cb === null || typeof cb.read !== 'function') return '';
+    try {
+      const items = await cb.read();
+      for (const item of items) {
+        const type = item.types.find((candidate) => candidate.startsWith('image/'));
+        if (type !== undefined) {
+          const blob = await item.getType(type);
+          return readBlobAsDataUrl(blob);
+        }
+      }
+    } catch {
+      return '';
+    }
+    return '';
+  }
+
+  return createEntity({
+    readFormat,
+    writeFormat,
     async hasFormat(format) {
-      const formats = await this.getFormats();
+      const formats = await getFormats();
       return formats.includes(format);
     },
-    async getFormats() {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.read !== 'function') return [];
-      try {
-        const items = await cb.read();
-        const out: string[] = [];
-        for (const item of items) {
-          for (const type of item.types) {
-            if (!out.includes(type)) out.push(type);
-          }
-        }
-        return out;
-      } catch {
-        return [];
-      }
-    },
+    getFormats,
     async writeItems(items) {
       const cb = getWritableWebClipboard();
       if (cb === null) return false;
@@ -104,51 +149,18 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
         return {};
       }
     },
-    async readText() {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.readText !== 'function') return '';
-      try {
-        return await cb.readText();
-      } catch {
-        return '';
-      }
-    },
-    async writeText(text) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.writeText !== 'function') return false;
-      try {
-        await cb.writeText(text);
-        return true;
-      } catch {
-        return false;
-      }
-    },
+    readText,
+    writeText,
     async readHtml() {
-      return this.readFormat(ClipboardFormatHtml);
+      return readFormat(ClipboardFormatHtml);
     },
     async writeHtml(html) {
-      return this.writeFormat(ClipboardFormatHtml, html);
+      return writeFormat(ClipboardFormatHtml, html);
     },
     async hasText() {
-      return (await this.readText()).length > 0;
+      return (await readText()).length > 0;
     },
-    async readImage() {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.read !== 'function') return '';
-      try {
-        const items = await cb.read();
-        for (const item of items) {
-          const type = item.types.find((candidate) => candidate.startsWith('image/'));
-          if (type !== undefined) {
-            const blob = await item.getType(type);
-            return readBlobAsDataUrl(blob);
-          }
-        }
-      } catch {
-        return '';
-      }
-      return '';
-    },
+    readImage,
     async writeImage(dataUrl) {
       const cb = getWritableWebClipboard();
       if (cb === null) return false;
@@ -162,16 +174,16 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
       }
     },
     async hasImage() {
-      return (await this.readImage()).length > 0;
+      return (await readImage()).length > 0;
     },
     async readRTF() {
-      return this.readFormat(ClipboardFormatRtf);
+      return readFormat(ClipboardFormatRtf);
     },
     async writeRTF(rtf) {
-      return this.writeFormat(ClipboardFormatRtf, rtf);
+      return writeFormat(ClipboardFormatRtf, rtf);
     },
     async clear() {
-      return this.writeText('');
+      return writeText('');
     },
     subscribe(callback) {
       if (typeof window === 'undefined') return;
