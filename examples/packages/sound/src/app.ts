@@ -20,8 +20,8 @@ import {
   createShape,
   createTextLabel,
   getAudioDeviceBackend,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
   playAudioResource,
   registerDefaultHitTests,
   routeAudioChannelToMixerBus,
@@ -516,18 +516,11 @@ connectInteractionSignal(interactionManager, musicPanTrack, 'onPointerDown', (da
 });
 
 function updateStatus(text: string): void {
-  if (statusLabel.data.text !== text) {
-    statusLabel.data.text = text;
-    invalidateNodeAppearance(statusLabel);
-  }
+  setTextLabelString(statusLabel, text);
 }
 
 function updateMasterValueLabel(): void {
-  const text = Math.round(masterGain * 100) + '%';
-  if (masterValueLabel.data.text !== text) {
-    masterValueLabel.data.text = text;
-    invalidateNodeAppearance(masterValueLabel);
-  }
+  setTextLabelString(masterValueLabel, Math.round(masterGain * 100) + '%');
 }
 
 function enterFrame(): void {

@@ -10,6 +10,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   resizeQuadBatch,
+  setTextLabelString,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
@@ -133,8 +134,7 @@ function enterFrame(): void {
     }
   }
 
-  countLabel.data.text = posX.length + ' shapes';
-  invalidateNodeAppearance(countLabel);
+  setTextLabelString(countLabel, posX.length + ' shapes');
 
   frameCount++;
   const now = performance.now();

@@ -12,8 +12,8 @@ import {
   createInputManager,
   createShape,
   createTextLabel,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
 } from '@flighthq/sdk';
 import {
   captureInteractionPointer,
@@ -282,28 +282,16 @@ function updateHud(): void {
     }
   }
   const overlapText = 'Overlaps: ' + (overlaps.length === 0 ? 'none' : overlaps.join(', '));
-  if (hudOverlapLabel.data.text !== overlapText) {
-    hudOverlapLabel.data.text = overlapText;
-    invalidateNodeAppearance(hudOverlapLabel);
-  }
+  setTextLabelString(hudOverlapLabel, overlapText);
 
   const eventText = 'Event: ' + lastEventType;
-  if (hudEventLabel.data.text !== eventText) {
-    hudEventLabel.data.text = eventText;
-    invalidateNodeAppearance(hudEventLabel);
-  }
+  setTextLabelString(hudEventLabel, eventText);
 
   const hoverText = 'Hovered: ' + hoveredName;
-  if (hudHoverLabel.data.text !== hoverText) {
-    hudHoverLabel.data.text = hoverText;
-    invalidateNodeAppearance(hudHoverLabel);
-  }
+  setTextLabelString(hudHoverLabel, hoverText);
 
   const dragText = 'Drag: ' + dragStatus;
-  if (hudDragLabel.data.text !== dragText) {
-    hudDragLabel.data.text = dragText;
-    invalidateNodeAppearance(hudDragLabel);
-  }
+  setTextLabelString(hudDragLabel, dragText);
 }
 
 function enterFrame(): void {

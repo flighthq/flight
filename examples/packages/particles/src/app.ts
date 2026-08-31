@@ -11,6 +11,7 @@ import {
   createTextureAtlas,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
   updateParticleEmitter2D,
 } from '@flighthq/sdk';
 import {
@@ -236,8 +237,7 @@ function enterFrame(): void {
 
   // Update the particle count label.
   const total = fireEmitter.data.particleCount + snowEmitter.data.particleCount;
-  countLabel.data.text = `${total} particles`;
-  invalidateNodeAppearance(countLabel);
+  setTextLabelString(countLabel, `${total} particles`);
 
   render(root);
   if (!captureMode) requestAnimationFrame(enterFrame);

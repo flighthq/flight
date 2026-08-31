@@ -13,6 +13,7 @@ import {
   createTextLabel,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
 } from '@flighthq/sdk';
 import {
   createSpatialIndex2D,
@@ -218,8 +219,7 @@ function updateModeLabel(resultCount: number): void {
     ray: 'Ray',
     region: 'Region',
   };
-  modeLabel.data.text = 'Mode: ' + modeNames[activeMode] + '  Hits: ' + resultCount;
-  invalidateNodeAppearance(modeLabel);
+  setTextLabelString(modeLabel, 'Mode: ' + modeNames[activeMode] + '  Hits: ' + resultCount);
 }
 
 let lastTime = performance.now();

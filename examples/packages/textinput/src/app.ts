@@ -13,6 +13,7 @@ import {
   createTextLabel,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
   startApplicationLoop,
 } from '@flighthq/sdk';
 import {
@@ -288,8 +289,7 @@ function updateHud(): void {
     }
   }
 
-  hudText.data.text = text;
-  invalidateNodeAppearance(hudText);
+  setTextLabelString(hudText, text);
 }
 
 // Focus the first field on startup.

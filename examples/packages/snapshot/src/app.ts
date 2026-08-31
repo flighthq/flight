@@ -13,6 +13,7 @@ import {
   createTextLabel,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
 } from '@flighthq/sdk';
 import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/sdk/game';
 
@@ -164,12 +165,10 @@ function startInterpolation(): void {
 let statusTimeout = 0;
 
 function showStatus(message: string): void {
-  statusLabel.data.text = message;
-  invalidateNodeAppearance(statusLabel);
+  setTextLabelString(statusLabel, message);
   clearTimeout(statusTimeout);
   statusTimeout = window.setTimeout(() => {
-    statusLabel.data.text = '';
-    invalidateNodeAppearance(statusLabel);
+    setTextLabelString(statusLabel, '');
   }, 2000);
 }
 
@@ -326,11 +325,7 @@ function enterFrame(): void {
   }
   drawSlotIndicators(uiOverlay);
 
-  const scoreText = `Score: ${renderState.player.score}`;
-  if (scoreLabel.data.text !== scoreText) {
-    scoreLabel.data.text = scoreText;
-    invalidateNodeAppearance(scoreLabel);
-  }
+  setTextLabelString(scoreLabel, `Score: ${renderState.player.score}`);
 
   render(root);
   if (!captureMode) requestAnimationFrame(enterFrame);

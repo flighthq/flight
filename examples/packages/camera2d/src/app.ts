@@ -25,6 +25,7 @@ import {
   createVector2,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
 } from '@flighthq/sdk';
 import { updateCamera2DFollow } from '@flighthq/sdk/game';
 
@@ -454,10 +455,11 @@ function enterFrame(): void {
   appendShapeEndFill(visibleBoundsShape);
   invalidateNodeAppearance(visibleBoundsShape);
 
-  cameraLabel.data.text = `Camera2D: (${camera.x.toFixed(0)}, ${camera.y.toFixed(0)})  Zoom: ${camera.zoom.toFixed(2)}`;
-  invalidateNodeAppearance(cameraLabel);
-  playerLabel.data.text = `Player: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`;
-  invalidateNodeAppearance(playerLabel);
+  setTextLabelString(
+    cameraLabel,
+    `Camera2D: (${camera.x.toFixed(0)}, ${camera.y.toFixed(0)})  Zoom: ${camera.zoom.toFixed(2)}`,
+  );
+  setTextLabelString(playerLabel, `Player: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`);
 
   render(root);
   requestAnimationFrame(enterFrame);
