@@ -1,0 +1,8 @@
+{
+  "name": "scene3d-gl-camera-mesh-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "scene3d-gl-camera-mesh"
+  }
+}

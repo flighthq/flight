@@ -1,0 +1,12 @@
+{
+  "subject": "scene3d-wgpu-camera-mesh-size-fixture",
+  "entries": [
+    {
+      "name": "scene3d-wgpu-camera-mesh",
+      "renderers": ["webgpu"],
+      "routes": {
+        "webgpu": "/"
+      }
+    }
+  ]
+}

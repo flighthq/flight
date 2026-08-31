@@ -1,0 +1,12 @@
+{
+  "subject": "scene3d-gl-textured-mesh-size-fixture",
+  "entries": [
+    {
+      "name": "scene3d-gl-textured-mesh",
+      "renderers": ["webgl"],
+      "routes": {
+        "webgl": "/"
+      }
+    }
+  ]
+}
