@@ -34,8 +34,8 @@ export interface FastSizeDelta {
 /**
  * Cases are grouped into one esbuild invocation per distinct build configuration.
  * esbuild parses each input once per invocation no matter how many entry points
- * reach it, and every example reaches ~1,200 of the same ~1,500 source modules —
- * so grouping is what removes the redundant parsing, not any per-case cleverness.
+ * reach it, and the fixtures reach many of the same source modules — so grouping
+ * is what removes the redundant parsing, not any per-case cleverness.
  *
  * The grouping axes mirror buildSample's per-case flags, which are build-wide in
  * esbuild and therefore cannot share an invocation: the renderer (the ./render
@@ -78,7 +78,7 @@ export function createFlightResolvePlugin(render: string, stubDiagnostics: boole
 
       build.onLoad({ filter: /\.ts$/ }, (args) => {
         const source = readFileSync(args.path, 'utf-8');
-        if (!stubDiagnostics) return { contents: source, loader: 'ts' };
+        if (!stubDiagnostics || !SIZE_RENDER_SOURCE.test(args.path)) return { contents: source, loader: 'ts' };
         return { contents: stubFlightDiagnostics(source), loader: 'ts' };
       });
     },
@@ -87,7 +87,10 @@ export function createFlightResolvePlugin(render: string, stubDiagnostics: boole
 
 export function stubFlightDiagnostics(source: string): string {
   if (!source.includes('enableFlightDiagnostics(')) return source;
-  return source.replace(/\benableFlightDiagnostics\(([^;\n]+)\);/g, (_statement, state: string) => `void (${state});`);
+  return source.replace(
+    /\benableFlightDiagnostics\(([\s\S]*?)\n?\);/g,
+    (_statement, state: string) => `void (${state.replace(/,\s*$/, '')});`,
+  );
 }
 
 /**
@@ -97,7 +100,7 @@ export function stubFlightDiagnostics(source: string): string {
  * Unminified on purpose. This number answers "how much code did this keep",
  * which is a tree-shaking question, and esbuild and Rollup agree on it far more
  * closely than their minifiers agree with each other. It is NOT a shipping size
- * and must never be reported as one — `npm run size` owns that claim.
+ * and must never be reported as one — `npm run size:minified` owns that claim.
  */
 export async function measureFastSizes(cases: readonly Readonly<SizeCase>[]): Promise<Record<string, FastSize>> {
   const sizes: Record<string, FastSize> = {};
@@ -229,3 +232,4 @@ const FAST_SIZE_NOISE_BYTES = 32;
 const FAST_SIZE_NOISE_PERCENT = 0.25;
 const FLIGHT_DIAGNOSTICS_VARIANT = 'diagnostics';
 const LOG_CONSOLE_SAMPLE = 'log-console';
+const SIZE_RENDER_SOURCE = /[\\/]src[\\/]render\.(?:dom|canvas|webgl|webgpu)\.ts(?:$|\?)/;

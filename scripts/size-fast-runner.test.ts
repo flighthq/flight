@@ -22,7 +22,7 @@ import {
 import type { SizeCase } from './size-runner';
 
 function createCase(overrides: Partial<SizeCase> = {}): SizeCase {
-  return { name: 'sample', render: 'canvas', root: '/repo/examples/packages/sample', variant: null, ...overrides };
+  return { name: 'sample', render: 'canvas', root: '/repo/tools/size/fixtures/sample', variant: null, ...overrides };
 }
 
 const temporaryDirectories: string[] = [];
@@ -164,6 +164,21 @@ describe('stubFlightDiagnostics', () => {
 
   test('leaves source without the call untouched', () => {
     expect(stubFlightDiagnostics('const x = 1;')).toBe('const x = 1;');
+  });
+
+  test('replaces a multiline call with a trailing argument comma', () => {
+    const source = [
+      'enableFlightDiagnostics(',
+      '  createCanvasRenderState(',
+      '    surface,',
+      '    pipeline,',
+      '  ),',
+      ');',
+    ].join('\n');
+
+    expect(stubFlightDiagnostics(source)).toBe(
+      ['void (', '  createCanvasRenderState(', '    surface,', '    pipeline,', '  ));'].join('\n'),
+    );
   });
 });
 

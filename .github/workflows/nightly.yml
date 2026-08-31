@@ -4,9 +4,9 @@ name: Nightly Quality
 # legs on every PR — so nightly does NOT repeat them. Nightly holds only work that does not belong
 # on the PR path: full coverage thresholds, API-surface generation, and the minified bundle size.
 #
-# Size is split across the two paths on cost. Per-PR runs `npm run size`, an unminified esbuild
-# sweep that finishes in about a minute and reports advisory tree-shaking deltas. The terser-minified
-# sweep — the number that is actually shipped — takes roughly ten minutes and runs here.
+# Size is split across the two paths on cost. Per-PR runs `npm run size`, a fast unminified esbuild
+# sweep that reports advisory tree-shaking deltas. The terser-minified sweep — the number that is
+# actually shipped — takes about a minute across the dedicated fixture corpus and runs here.
 #
 # Nightly does NOT own promotion to main — promote.yml does, triggered per-commit by CI going
 # green. Promotion used to live here so it could inherit the coverage + api gates, but that
@@ -95,7 +95,7 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      - run: npm run size:minified -- --fixtures
+      - run: npm run size:minified
 
   api:
     name: API generation
