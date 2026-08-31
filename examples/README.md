@@ -18,4 +18,4 @@ npm run examples:electron
 
 The equivalent explicit development commands are `dev:examples`, `dev:examples:web` and `dev:examples:electron`.
 
-There are currently 41 TypeScript examples under `packages/`, each available through the web and Electron runners.
+There are currently 33 TypeScript examples under `packages/`, each available through the web and Electron runners.
