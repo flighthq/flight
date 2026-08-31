@@ -82,9 +82,5 @@ export function getSafeAreaInsets(host: HasSystemDevice, out: SafeAreaInsets): S
 }
 
 export function refreshDeviceInfo(host: HasSystemDevice): void {
-  const backend = host.system.device;
-  const maybeRefreshable = backend as unknown as { refresh?: () => void };
-  if (typeof maybeRefreshable.refresh === 'function') {
-    maybeRefreshable.refresh();
-  }
+  host.system.device.refresh?.();
 }

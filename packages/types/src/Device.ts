@@ -51,4 +51,5 @@ export interface DeviceBackend {
   getId(): string;
   getInfo(out: DeviceInfo): DeviceInfo;
   getSafeAreaInsets(out: SafeAreaInsets): SafeAreaInsets;
+  refresh?(): void;
 }
