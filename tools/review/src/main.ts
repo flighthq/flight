@@ -277,6 +277,21 @@ function testAttentionGroup(t: ReviewTest): AttentionGroup {
   return resolveReviewAttentionGroup(reviewableCells(t.cells));
 }
 
+function firstAttentionCell(t: ReviewTest): ReviewCell | null {
+  const cells = reviewableCells(t.cells);
+  const group = resolveReviewAttentionGroup(cells);
+  switch (group) {
+    case 'differs':
+      return cells.find((c) => c.commissionState === 'differs' && c.holdReason === null) ?? null;
+    case 'changed':
+      return cells.find((c) => c.changed === true && c.holdReason === null) ?? null;
+    case 'not-commissioned':
+      return cells.find((c) => c.commissionState === 'not-commissioned' && c.holdReason === null) ?? null;
+    default:
+      return null;
+  }
+}
+
 // The labels say what the GATE does with each group, because that is the question a reviewer opens the
 // tool holding. "Differs" and "Not commissioned" are the two shapes the gate fails on; "Held" is the one
 // that looks like them and passes.
@@ -1271,7 +1286,10 @@ function saveState(): void {
 function selectTest(t: ReviewTest): void {
   selectedKey = testKey(t);
   const selected = selectedReviewableCell(t.cells, selectedRenderer);
-  if (selected?.renderer !== selectedRenderer) {
+  const attentionCell = firstAttentionCell(t);
+  if (attentionCell && selected?.commissionState !== attentionCell.commissionState) {
+    selectedRenderer = attentionCell.renderer;
+  } else if (selected?.renderer !== selectedRenderer) {
     selectedRenderer = selected?.renderer ?? '';
   }
   showCurrent();
