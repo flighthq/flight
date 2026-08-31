@@ -149,11 +149,16 @@ describe('canvas size fixture isolation', () => {
 
   // Registering a resolver is what makes a texture-sampling feature actually draw, so this is checked
   // in both directions rather than as a "does not reach" rule.
+  //
+  // ★ MATCHED AS A CALL. Testing for the bare name is satisfied by the import statement, so deleting
+  // the registration left this green — the fixture would import the resolver, never register it, draw
+  // nothing, and still report a plausible size. That is the failure this assertion exists to catch, so
+  // matching the name would have made it decorative.
   it('registers the image texture resolver exactly when its feature samples a texture', () => {
     for (const fixture of FEATURE_FIXTURES) {
-      const source = fixtureSource(fixture);
+      const registers = /\bregisterCanvasImageTextureResolver\s*\(/u.test(fixtureSource(fixture));
       const expected = (TEXTURE_FIXTURES as readonly string[]).includes(fixture);
-      expect(source.includes('registerCanvasImageTextureResolver'), `${fixture} texture resolver`).toBe(expected);
+      expect(registers, `${fixture} texture resolver`).toBe(expected);
     }
   });
 
