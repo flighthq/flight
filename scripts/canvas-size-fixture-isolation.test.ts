@@ -6,14 +6,44 @@ import { describe, expect, it } from 'vitest';
 // The per-feature Canvas size fixtures. Each measures the container-only floor plus exactly ONE
 // feature, so a marginal feature cost is (fixture − the size-only control). That subtraction is only
 // meaningful while each fixture stays isolated, which is what this file guards.
-const FEATURE_FIXTURES = ['scene2d-canvas-shape', 'scene2d-canvas-text', 'scene2d-canvas-transform'] as const;
+const FEATURE_FIXTURES = [
+  'scene2d-canvas-bitmaptext',
+  'scene2d-canvas-morphshape',
+  'scene2d-canvas-particleemitter2d',
+  'scene2d-canvas-quadbatch',
+  'scene2d-canvas-richtext',
+  'scene2d-canvas-scale9shape',
+  'scene2d-canvas-shape',
+  'scene2d-canvas-text',
+  'scene2d-canvas-tilemap',
+  'scene2d-canvas-transform',
+] as const;
 
 // The renderer each drawing fixture is allowed to bind. The size-only control binds none, but that is
 // NOT listed here — it is derived from its declared kind, so the manifest stays the single source.
 const ALLOWED_RENDERER: Record<string, readonly string[]> = {
+  'scene2d-canvas-bitmaptext': ['defaultCanvasBitmapTextRenderer'],
+  'scene2d-canvas-morphshape': ['defaultCanvasMorphShapeRenderer'],
+  'scene2d-canvas-particleemitter2d': ['defaultCanvasParticleEmitter2DRenderer'],
+  'scene2d-canvas-quadbatch': ['defaultCanvasQuadBatchRenderer'],
+  'scene2d-canvas-richtext': ['defaultCanvasRichTextRenderer'],
+  'scene2d-canvas-scale9shape': ['defaultCanvasScale9ShapeRenderer'],
   'scene2d-canvas-shape': ['defaultCanvasShapeRenderer'],
   'scene2d-canvas-text': ['defaultCanvasTextLabelRenderer'],
+  'scene2d-canvas-tilemap': ['defaultCanvasTilemapRenderer'],
 };
+
+// Exactly the fixtures whose feature samples a texture, and which therefore register the one image
+// texture resolver. Listing the permitted set both ways round is deliberate: a vector fixture that
+// grows a resolver is measuring texture upload it does not use, and a texture fixture that LOSES its
+// resolver silently draws nothing while still reporting a plausible size — the more dangerous of the
+// two, because the number stays believable.
+const TEXTURE_FIXTURES = [
+  'scene2d-canvas-bitmaptext',
+  'scene2d-canvas-particleemitter2d',
+  'scene2d-canvas-quadbatch',
+  'scene2d-canvas-tilemap',
+] as const;
 
 // Aggregates whose whole purpose is to bind everything at once. A per-feature fixture that reaches one
 // stops measuring its feature and starts measuring the aggregate.
@@ -115,6 +145,36 @@ describe('canvas size fixture isolation', () => {
         expect(source, `${fixture} must not reach ${foreign}`).not.toContain(`@flighthq/${foreign}`);
       }
     }
+  });
+
+  // Registering a resolver is what makes a texture-sampling feature actually draw, so this is checked
+  // in both directions rather than as a "does not reach" rule.
+  it('registers the image texture resolver exactly when its feature samples a texture', () => {
+    for (const fixture of FEATURE_FIXTURES) {
+      const source = fixtureSource(fixture);
+      const expected = (TEXTURE_FIXTURES as readonly string[]).includes(fixture);
+      expect(source.includes('registerCanvasImageTextureResolver'), `${fixture} texture resolver`).toBe(expected);
+    }
+  });
+
+  // The glyph seam has a static half (bitmapfont) and a dynamic half (glyphatlas). A BitmapText fixture
+  // that reached the rasterizer would price a feature it does not use, and the two are easy to confuse
+  // because both satisfy GlyphSource.
+  it('reaches only the static half of the glyph seam', () => {
+    for (const fixture of FEATURE_FIXTURES) {
+      expect(fixtureSource(fixture), `${fixture} must not reach the dynamic glyph atlas`).not.toContain(
+        '@flighthq/glyphatlas',
+      );
+    }
+  });
+
+  // The emitter fixture measures the drawable node, not the headless simulation that can drive it.
+  it('measures the particle emitter node without the particle simulation', () => {
+    const source = fixtureSource('scene2d-canvas-particleemitter2d');
+    expect(source).toContain('@flighthq/particleemitter');
+    expect(source, 'the emitter fixture must not pull in the headless simulation').not.toMatch(
+      /@flighthq\/particles'/u,
+    );
   });
 
   it('declares canvas as its only capture renderer', () => {
