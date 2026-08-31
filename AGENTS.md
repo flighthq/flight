@@ -65,6 +65,7 @@ Flight is MIT, copyright as stated in the root `LICENSE.md` — the operative te
 - Return sentinel values (`null`, `false`, or `-1`) for expected failure cases — missing results, invalid lookups. Throw only for programmer errors: precondition violations that represent API misuse and should never occur in correct code. Do not validate internal invariants that correct usage cannot reach, and do not introduce error-wrapping types.
 - Diagnostics follow the inversion rule: core modules expose seams, never messages. Caller-facing warnings live in separately-importable guard modules (`enable*Guards`) emitting through `@flighthq/log`, and every silent sentinel gets a shakeable `explain*` query returning plain data. A comment that warns the caller about misuse is a missing guard, not a comment. Full rules in [diagnostics](agents/conventions/diagnostics.md).
 - Mutation visibility follows the invalidation doctrine: **identities are compared** (reference-shaped fields are re-read at kind-dispatched or pull seams — bare assignment is the API), **payloads are versioned** (`version` fields bumped by `invalidate<Type>` verbs, fan-out to all sharers), and **intermediate renders are invalidated** (`invalidateNodeLocalContent` for kinds that rasterize their own payload). Transforms recompute by default — no invalidation needed for motion; dirty-tracking is opt-in. Full rules, including when a `set*` export earns its existence, in [invalidation](agents/conventions/invalidation.md).
+- Dependencies are explicit: every function takes what it needs as arguments. No `set*Backend` singletons, no module-scoped mutable state that functions reach for, no `Object.defineProperty` indirection for shared state. The host is a value you pass; a missing capability is a compile-time type error. Entity is the base type for every SDK object — `create*` always returns Entity; descriptors, options bags, and type-only constructs are not. See [explicit dependency model](agents/explicit-dependency-model.md).
 - Use signals (`@flighthq/signals`) when an event may have multiple listeners, requires priority ordering, or supports cancellation — loose notification across the public API. Users opt into specific signal groups via `enable*` functions (for example `enableNode2DSignals`), which is when the associated cost is assumed. These functions live in the package that owns the entity, not in `@flighthq/signals`. Use direct callbacks for strict internal wiring where a single callsite is guaranteed and loose dispatch is unnecessary.
 
 ## Source Style
@@ -100,8 +101,8 @@ Run these at the points listed; skipping them causes cascading failures. Full de
 
 - **After any edit session, before committing** — `npm run fix`.
 - **After package-level changes** (manifests, workspace references, exports, build targets) — `npm run packages:check`.
-- **After adding, removing, or renaming an exported function** — `npm run exports:check`, `npm run order`, `npm run api:check`.
-- **After an effect runner/registrar or backend renderer changes** — `npm run reachability:check`.
+- **After adding, removing, or renaming an exported function** — `npm run exports:check` (every export needs a colocated test), `npm run order`, `npm run api:check`.
+- **After an effect runner/registrar or backend renderer changes** — `npm run reachability:check`. Accept census changes with `npm run reachability:registrars:baseline`, lane drift with `npm run reachability:baseline`.
 - **After changing imports or test `describe` blocks** — `npm run order`.
 - **After adding or renaming an exported `register*` function** — `npm run backend-prefix:check`.
 - **After adding source** — `npm run portable:check`.
@@ -109,8 +110,9 @@ Run these at the points listed; skipping them causes cascading failures. Full de
 - **After changing functional scenes or baselines** — `npm run support` and `npm run evidence:check`.
 - **While iterating** — closest meaningful tests, then `npm run check <package>` and `npm run test <package>`.
 - **Before handoff** — `npm run check <package>` and `npm run test <package>` for every affected package. Add bare `npm run check` when changes cross package boundaries.
-- **When your change touches rendering** — the relevant render gate, scoped to the affected scene.
+- **When your change touches rendering** — the relevant render gate, scoped to the affected scene. `test:functional:smoke` / `:parity` are environment-independent; `test:functional:regression` is only valid where its baselines were captured.
 - **When adding a new package** — copy the shape from a nearby package, then `npm run packages:check`.
+- **Before changing a subsystem's shape** — check [architecture records](agents/index.md#architecture-records) for governing decisions.
 
 ## Domain Conventions
 
