@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/color": "*",
+    "@flighthq/entity": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-canvas": "*",
     "@flighthq/geometry": "*",
@@ -59,7 +60,6 @@
   },
   "devDependencies": {
     "@flighthq/bitmaptext": "*",
-    "@flighthq/entity": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",

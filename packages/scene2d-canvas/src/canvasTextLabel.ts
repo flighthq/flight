@@ -1,4 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
@@ -16,12 +17,12 @@ import type {
 import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';
 
-interface CanvasTextLabelData {
+interface CanvasTextLabelData extends RendererData {
   lastContentId: number;
 }
 
 function createCanvasTextLabelData(_state: CanvasRenderState, _source: Renderable): RendererData {
-  return { lastContentId: -1 } as unknown as RendererData;
+  return createEntity({ lastContentId: -1 });
 }
 
 export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
@@ -37,7 +38,7 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
   setCanvasTransform(state, context, renderProxy.transform2D);
 
   const version = getNodeLocalContentRevision(source);
-  const textData = renderProxy.rendererData as unknown as CanvasTextLabelData | null;
+  const textData = renderProxy.rendererData as CanvasTextLabelData | null;
   const needsLayout = textData === null || version !== textData.lastContentId;
 
   const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);

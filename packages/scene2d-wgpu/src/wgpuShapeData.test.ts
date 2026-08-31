@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
@@ -51,7 +52,7 @@ afterEach(() => {
 });
 
 function emptyData(): WgpuShapeRendererData {
-  return {
+  return createEntity({
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,
@@ -69,7 +70,7 @@ function emptyData(): WgpuShapeRendererData {
       colorScaleBiasUniformBuffers: [],
       colorScaleBiasBindGroups: [],
     },
-  };
+  });
 }
 
 describe('acquireWgpuShapeRasterSurface', () => {

@@ -1,5 +1,6 @@
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { Raster2DSurface } from './Raster2DSurface';
+import type { RendererData } from './RendererData';
 
 // Renderer-private scratch for a Shape node on the WebGL backend, held in the opaque RendererData slot.
 // It lives in the header layer because the three shape strategies — mesh-only, raster-only, and the
@@ -8,7 +9,7 @@ import type { Raster2DSurface } from './Raster2DSurface';
 //
 // The two halves are independent: `meshes` caches the tessellated form (null when some region has none),
 // and `surface` plus the last* fields cache the rasterized form. A strategy touches only its own half.
-export interface GlShapeRendererData {
+export interface GlShapeRendererData extends RendererData {
   surface: Raster2DSurface | null;
   lastContentId: number;
   lastPixelRatio: number;
