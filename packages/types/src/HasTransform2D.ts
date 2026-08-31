@@ -27,4 +27,4 @@ export interface HasTransform2DRuntime extends EntityRuntime {
   worldMatrix: Matrix | null;
 }
 
-export type Transform2DNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasTransform2D>;
+export type Transform2DNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasTransform2D;

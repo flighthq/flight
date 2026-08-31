@@ -9,4 +9,4 @@ export interface HasMaterial {
   materialData: MaterialData | null;
 }
 
-export type MaterialNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasMaterial>;
+export type MaterialNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasMaterial;

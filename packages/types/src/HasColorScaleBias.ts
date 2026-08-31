@@ -12,4 +12,4 @@ export interface HasColorScaleBias {
   colorScaleBias: ColorScaleBias | null;
 }
 
-export type ColorScaleBiasNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasColorScaleBias>;
+export type ColorScaleBiasNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasColorScaleBias;

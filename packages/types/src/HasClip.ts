@@ -11,4 +11,4 @@ export interface HasClip extends Entity {
   clip: ClipRegion | null;
 }
 
-export type ClipNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasClip>;
+export type ClipNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasClip;

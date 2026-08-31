@@ -16,7 +16,7 @@ export interface HasBoundsRectangleRuntime extends EntityRuntime {
   worldBoundsRectangle: Rectangle | null;
 }
 
-export type BoundsNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasBoundsRectangle>;
+export type BoundsNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasBoundsRectangle;
 export type BoundsNodeAny = NodeAny & HasBoundsRectangle;
 
-export type Spatial2DNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasBoundsRectangle & HasTransform2D>;
+export type Spatial2DNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasBoundsRectangle & HasTransform2D;
