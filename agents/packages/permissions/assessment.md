@@ -44,3 +44,4 @@ _None open._ The ratified explicit-Host facade slice is complete.
 ## Approved
 
 _Empty — no additional implementation is authorized by this record._
+_Empty — awaiting the user's verbal gate._

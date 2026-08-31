@@ -21,6 +21,7 @@ On-screen (soft) keyboard integration — the platform-integration event capabil
 
 - **[2026-08-30] Direct host witness dispatch (v3).** Every operation takes a `Has*` witness; no ambient `get/setSoftKeyboardBackend`. Will/did signal pairs, `SoftKeyboardTransition`, `SoftKeyboardEasingKind`, and `createSoftKeyboardTransition` all deleted. Subscribe returns typed `SoftKeyboardChangeSubscription` (result + unsubscribe) instead of nullable cleanup. Host packages (`host-web`, `host-capacitor`) export factory functions and do not depend on `@flighthq/keyboard`.
 - **[2026-07-02] ~~Latent bug: `transition.height` frozen at 0 before fire.~~** Resolved by deletion: the will/did signal split and `SoftKeyboardTransition` no longer exist. The three current signals (`onShow`/`onHide`/`onResize`) fire after the change with the measured height, so the freeze-at-0 scenario is eliminated.
+- **[2026-07-02] Latent bug: `transition.height` frozen at 0 before fire.** The will-phase `SoftKeyboardTransition` carries `height` but it is frozen at 0 at the point the signal fires, before the browser has computed the final geometry. Noted as a latent bug that will manifest on native hosts where the will-phase height prediction is meaningful. Not web-fixable (the browser does not expose the target height before animation); document the limitation and fix when native backends land.
 
 ## Open directions
 
