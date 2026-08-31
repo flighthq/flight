@@ -11,6 +11,7 @@ import {
   createTextLabel,
   createTween,
   createTweenManager,
+  createTweenTimer,
   easeInCubic,
   easeInElastic,
   easeInExponential,
@@ -27,7 +28,6 @@ import {
   easeOutQuadratic,
   easeOutSine,
   invalidateNodeLocalTransform,
-  invalidateNodeRender,
   stepApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
@@ -41,9 +41,12 @@ const ROWS = 5;
 const CELL_WIDTH = CANVAS_WIDTH / COLUMNS;
 const CELL_HEIGHT = CANVAS_HEIGHT / ROWS;
 const CIRCLE_RADIUS = 8;
-const TWEEN_DURATION = 1500;
+const TWEEN_DURATION = 3200;
+const TRACK_STAGGER = 110;
+const END_HOLD = 900;
 const TRACK_MARGIN = 20;
 const FRAME_DELTA = 1000 / 60;
+const CAPTURE_PREVIEW_TIME = 1900;
 const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
 const easings: ReadonlyArray<{ readonly name: string; readonly ease: EasingFunction }> = [
@@ -69,12 +72,21 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-function startTween(circle: ReturnType<typeof createShape>, startX: number, endX: number, ease: EasingFunction): void {
+function startTween(
+  circle: ReturnType<typeof createShape>,
+  startX: number,
+  endX: number,
+  ease: EasingFunction,
+  delay = 0,
+): void {
   circle.x = startX;
   invalidateNodeLocalTransform(circle);
-  const tween = createTween(manager, circle, TWEEN_DURATION, { x: endX }, { ease });
-  connectSignal(tween.onComplete, () => startTween(circle, startX, endX, ease));
-  connectSignal(tween.onUpdate, () => invalidateNodeRender(circle));
+  const tween = createTween(manager, circle, TWEEN_DURATION, { x: endX }, { delay, ease });
+  connectSignal(tween.onComplete, () => {
+    const hold = createTweenTimer(manager, END_HOLD);
+    connectSignal(hold.onComplete, () => startTween(circle, startX, endX, ease));
+  });
+  connectSignal(tween.onUpdate, () => invalidateNodeLocalTransform(circle));
 }
 
 for (let i = 0; i < easings.length; i++) {
@@ -104,7 +116,7 @@ for (let i = 0; i < easings.length; i++) {
   invalidateNodeLocalTransform(circle);
   addNodeChild(root, circle);
 
-  startTween(circle, trackStartX, trackEndX, easings[i].ease);
+  startTween(circle, trackStartX, trackEndX, easings[i].ease, i * TRACK_STAGGER);
 }
 
 const app = createApplication();
@@ -116,7 +128,14 @@ connectSignal(app.onRender, () => {
 let frame = 0;
 
 function enterFrame(): void {
-  stepApplicationLoop(app, frame === 0 ? 0 : FRAME_DELTA);
+  if (frame === 0 && captureMode) {
+    stepApplicationLoop(app, CAPTURE_PREVIEW_TIME, {
+      fixedTimeStep: 0,
+      maxDeltaTime: CAPTURE_PREVIEW_TIME,
+    });
+  } else {
+    stepApplicationLoop(app, frame === 0 ? 0 : FRAME_DELTA);
+  }
   frame++;
   if (!captureMode) requestAnimationFrame(enterFrame);
 }
