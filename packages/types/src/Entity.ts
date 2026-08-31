@@ -5,6 +5,7 @@ export interface Entity {
 export type EntityWithoutRuntime<Type extends Entity> = Omit<Type, typeof EntityRuntimeKey>;
 export interface EntityRuntime {
   binding: object | null;
+  uid: string | null;
 }
 export const EntityRuntimeKey = Symbol.for('EntityRuntime');
 

@@ -1,1 +1,1 @@
-export {} from './contract';
+export { getEntityUid, setEntityUid } from './contract';

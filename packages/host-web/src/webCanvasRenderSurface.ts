@@ -17,7 +17,7 @@ export function createWebCanvasRenderSurfaceCreator(): CanvasRenderSurfaceCreato
       canvas.height = 0;
     },
   });
-  creator[EntityRuntimeKey] = { binding: null };
+  creator[EntityRuntimeKey] = { binding: null, uid: null };
   return creator;
 }
 

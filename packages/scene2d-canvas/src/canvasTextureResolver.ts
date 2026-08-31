@@ -46,7 +46,7 @@ export function createCanvasTextureResolvers(
   surfaceCreator: Readonly<CanvasRenderSurfaceCreator>,
 ): CanvasTextureResolvers {
   const resolvers = createEntity({ registry: null, registryMiss: null, surfaceCreator }) as CanvasTextureResolvers;
-  resolvers[EntityRuntimeKey] = { binding: null };
+  resolvers[EntityRuntimeKey] = { binding: null, uid: null };
   _ownedSurfaces.set(resolvers, new Set());
   return resolvers;
 }

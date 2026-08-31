@@ -5,7 +5,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createCanvasPipeline(registries: Readonly<CanvasRenderRegistries>): CanvasPipeline {
   const pipeline = createEntity({ registries }) as CanvasPipeline;
-  pipeline[EntityRuntimeKey] = { binding: null };
+  pipeline[EntityRuntimeKey] = { binding: null, uid: null };
   return pipeline;
 }
 

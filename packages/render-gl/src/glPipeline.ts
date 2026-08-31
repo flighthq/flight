@@ -27,7 +27,7 @@ export function createEmptyGlRegistries(): GlRenderRegistries {
 
 export function createGlPipeline(registries: Readonly<GlRenderRegistries>): GlPipeline {
   const pipeline = createEntity({ registries }) as GlPipeline;
-  pipeline[EntityRuntimeKey] = { binding: null };
+  pipeline[EntityRuntimeKey] = { binding: null, uid: null };
   return pipeline;
 }
 

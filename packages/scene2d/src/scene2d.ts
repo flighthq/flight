@@ -30,6 +30,7 @@ export function createScene2D(
 export function createScene2DRuntime(): Scene2DRuntime {
   return {
     binding: null,
+    uid: null,
     scene2dSignals: null,
   };
 }
