@@ -1,5 +1,9 @@
 import { createRectangle } from '@flighthq/geometry';
-import { createWebGlRenderSurfaceProvider, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import {
+  createWebGlRenderSurfaceProvider,
+  enableHostWebRaster2DSurface,
+  webCanvasRenderSurfaceCreator,
+} from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -26,6 +30,7 @@ import { RegistryEntryState, Scale9ShapeKind } from '@flighthq/types';
 
 const canvas = createWebGlRenderSurfaceProvider().createRenderSurface(400, 300, 1);
 if (canvas === null) throw new Error('The WebGL Scale9Shape size fixture requires a canvas render surface.');
+enableHostWebRaster2DSurface();
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
