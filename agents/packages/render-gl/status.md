@@ -14,11 +14,6 @@ by: builder
 Every item was re-checked against `packages/render-gl/src/` (and `packages/types/src/`) on 2026-08-08.
 A file:line here is a claim about this tree, not about a session.
 
-- **`drawGlFullscreenPass` never owns the `BLEND` enable bit.** (Its depth twin is now fixed — see the
-  2026-08-31 log entry — which makes this the surviving instance of the same ownership gap.) It sets the equation and factors twice —
-  before the draw (`glFullscreenPass.ts:94-95`) and again after (`:101-102`) — but relies on the one
-  `gl.enable(gl.BLEND)` in `createGlRenderState`. A caller that disables blending
-  gets silently unblended output. Changing the ownership touches every caller of a shared primitive.
 - **The `internal.ts`-style entity cast is still in `createGlRenderState`** —
   `(state as { canvas })` / `(state as { gl })` at `glRenderState.ts:61-62` and `:108-109`. AGENTS.md calls
   the pattern legacy; the runtime-slot fix relocates `canvas`/`gl` off the readonly entity into
@@ -50,10 +45,22 @@ A file:line here is a claim about this tree, not about a session.
   `FRONT_FACE`, so a host context set to CW got CCW handed back. One failure mode, three sightings,
   all found while looking for something else.
   THE SWEEP IS CHECKABLE BY CONSTRUCTION, which is why it is worth doing deliberately rather than
-  waiting for the next accident: the bracket's own saved-field list IS the inventory. A FOURTH sighting
-  landed on 2026-08-31 and it was the most expensive yet — depth state inherited by the fullscreen
-  present pass froze every 3D WebGL example on its first frame, in the open, past every gate, for as
-  long as nobody dragged one. It is question (a) applied to the first entry in the list below. For every piece
+  waiting for the next accident: the bracket's own saved-field list IS the inventory.
+
+  **THE SWEEP WAS RUN on 2026-08-31 and is closed — do not re-run it blind, read this instead.** Four
+  defects, all in the 2026-08-31 log below. Three were question (a) in `drawGlFullscreenPass`, which now
+  owns blend-enable, depth, and cull-face rather than inheriting them; one was question (c), the bracket
+  saving only 3 texture units while the draw path binds 14. What remains open after it: `frontFace` is
+  restored per mesh draw rather than owned by the pass, which is now belt-and-braces rather than load-
+  bearing; `clearGlRenderPass` leaves `depthMask` true; and `drawGlFullscreenPass` leaves unit 0 active.
+  All three were examined and judged benign — recorded so the next reader knows they were looked at.
+
+  Two things the sweep taught that the questions above do not say. **Every one of these is invisible to a
+  capture**, because they void a draw rather than error it, and three of the four had zero effect on any
+  functional baseline. **And the test double hid two of them**: `DEPTH_WRITEMASK` and `TEXTURE0` were
+  missing from the fake's constant table, so state assertions silently compared `undefined === undefined`
+  and the pre-existing texture-unit test had been vacuous since it was written. Check that the fake
+  models a piece of state before trusting a test that asserts about it. For every piece
   of fixed-function state the draw path touches — depth test/mask/func, cull enable and mode, front
   face, blend enable/func/equation, scissor, viewport, stencil, colour mask, program, VAO, framebuffer,
   texture units — ask three questions. (a) Is it SET when it needs to be, or inherited by luck from
@@ -134,6 +141,16 @@ A file:line here is a claim about this tree, not about a session.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-31** — Fixed-function ownership sweep, three more defects. `drawGlFullscreenPass` now owns
+  the `BLEND` enable bit (it set factors but not the bit, and `drawGlScene3D` ends a blended-subset pass
+  with `gl.disable(gl.BLEND)` and never re-enables, so a present or effect pass after a 3D scene
+  composited unblended) and `CULL_FACE` (the quad survived only because it is wound CCW and
+  `glMeshProgram` restores FRONT_FACE per draw — its own comment records that a CW leak blanks the
+  frame). `GL_RENDER_STATE_TEXTURE_UNIT_COUNT` 3 -> 14: the bracket promised to hand a host its context
+  back but saved only the 2D pipeline's units, while PBR binds through 6, shadow/IBL 8-11 and skin
+  palettes 12-13. Also added `TEXTURE0`/`ACTIVE_TEXTURE`/`DEPTH_WRITEMASK` to the shared WebGL2 fake,
+  without which those units all collapsed onto one `NaN` key and the assertions proved nothing.
 
 - **2026-08-31** — `drawGlFullscreenPass` now owns depth: it disables the depth test and depth writes
   around its draw and restores them (`glFullscreenPass.ts`). It had inherited whatever the previous draw
