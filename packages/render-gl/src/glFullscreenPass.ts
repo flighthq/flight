@@ -92,33 +92,51 @@ export function drawGlFullscreenPass(
   gl.activeTexture(gl.TEXTURE0);
   runtime.context.currentTextureRealization = null;
 
-  runtime.context.currentBlendSignature = null;
-  applyGlBlendMode(state, null);
-
-  // A fullscreen pass covers its whole destination, so the destination's depth buffer is not its
-  // business — and depending on it is a trap, because the DEFAULT framebuffer is the one surface
-  // nothing clears between frames. A 3D scene leaves GL_DEPTH_TEST enabled with GL_LESS and depth
-  // writes on; the present quad then passed on the first frame, wrote its own depth, and was rejected
-  // at that same depth on every frame after it. The canvas held frame one forever while the scene kept
-  // drawing correctly behind it, which is why nothing errored and every static capture still matched.
+  // The fixed-function state this quad's result depends on, owned rather than inherited. Everything
+  // below was previously whatever the last draw happened to leave, and each one has a way to silently
+  // void the pass rather than error:
   //
-  // Owned here rather than at the call sites for the same reason this function already owns the blend
-  // signature and its own VAO: the hazard belongs to the pass, and every caller would otherwise have to
-  // remember it. Restored afterwards because the pass runs mid-frame — an effect chain puts several of
-  // these between scene draws, and a 3D draw resuming with depth silently off would z-fight itself.
+  // BLEND — `applyGlBlendMode` sets the equation and factors but never the enable bit, so the pass took
+  // it from the single `gl.enable(gl.BLEND)` in `createGlRenderState`. `drawGlScene3D` ends its
+  // blended-subset pass with `gl.disable(gl.BLEND)` and never re-enables it, so a present or effect pass
+  // after a 3D scene composited unblended while its factors said otherwise.
+  //
+  // DEPTH — a 3D scene leaves GL_DEPTH_TEST on with GL_LESS and depth writes on, and the DEFAULT
+  // framebuffer is the one surface nothing clears between frames. The present quad passed on frame one,
+  // wrote its own depth, and was rejected at that same depth forever after: the canvas froze on frame
+  // one while the scene kept drawing correctly behind it.
+  //
+  // CULL_FACE — the quad is wound CCW and survived an inherited cull only because `glMeshProgram`
+  // restores FRONT_FACE to CCW after every mesh draw. Its comment records what happens otherwise: a CW
+  // winding left behind a mirrored mesh culls this pass and the frame comes back blank. Disabling the
+  // capability here retires that cross-package invariant instead of depending on it.
+  //
+  // All three are restored afterwards, because the pass runs mid-frame: an effect chain puts several of
+  // these between scene draws, and a 3D draw resuming with depth or culling silently off renders wrong.
+  const blendEnabled = gl.isEnabled(gl.BLEND);
+  const cullFaceEnabled = gl.isEnabled(gl.CULL_FACE);
   const depthTestEnabled = gl.isEnabled(gl.DEPTH_TEST);
   const depthWriteEnabled = gl.getParameter(gl.DEPTH_WRITEMASK) !== false;
+  if (!blendEnabled) gl.enable(gl.BLEND);
+  if (cullFaceEnabled) gl.disable(gl.CULL_FACE);
   if (depthTestEnabled) gl.disable(gl.DEPTH_TEST);
   if (depthWriteEnabled) gl.depthMask(false);
+
+  runtime.context.currentBlendSignature = null;
+  applyGlBlendMode(state, null);
 
   setUniforms(gl, program);
   drawGlFullscreenQuad(state, program);
 
-  if (depthWriteEnabled) gl.depthMask(true);
-  if (depthTestEnabled) gl.enable(gl.DEPTH_TEST);
-
   runtime.context.currentBlendSignature = null;
   applyGlBlendMode(state, null);
+  // Restored after the trailing blend-mode apply so the caller gets back the enable bit it had. The
+  // blend FACTORS are deliberately left at NORMAL — that is this function's pre-existing contract,
+  // tracked through `currentBlendSignature`; the host bracket is what restores factors at the boundary.
+  if (depthWriteEnabled) gl.depthMask(true);
+  if (depthTestEnabled) gl.enable(gl.DEPTH_TEST);
+  if (cullFaceEnabled) gl.enable(gl.CULL_FACE);
+  if (!blendEnabled) gl.disable(gl.BLEND);
 
   // Unbind the sampled inputs. A fullscreen pass frequently reads a render target's own texture and
   // presents it; leaving that texture bound lets the NEXT draw that renders back into that target form
