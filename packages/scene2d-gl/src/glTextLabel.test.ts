@@ -2,8 +2,8 @@ import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
-import type { Raster2DSurface, RenderProxy2D, TextLabel } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import type { Raster2DSurface, RendererData, RenderProxy2D, TextLabel } from '@flighthq/types/contract';
+import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
@@ -112,6 +112,11 @@ describe('defaultGlTextLabelRenderer', () => {
     expect(typeof defaultGlTextLabelRenderer.createData).toBe('function');
   });
 
+  it('creates RendererData with an entity runtime slot', () => {
+    const data = defaultGlTextLabelRenderer.createData!(createGlState().state, createTextLabel())!;
+    expect(EntityRuntimeKey in data).toBe(true);
+  });
+
   it('has a submit function pointing to drawGlTextLabel', () => {
     expect(defaultGlTextLabelRenderer.submit).toBe(drawGlTextLabel);
   });
@@ -127,7 +132,7 @@ describe('defaultGlTextLabelRenderer', () => {
     registerGlStandardMaterial(state);
     const data = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
     drawGlTextLabel(state, makeTextProxy('owned', data));
-    const surface = (data as unknown as { surface: Raster2DSurface }).surface;
+    const surface = (data as RendererData & { surface: Raster2DSurface }).surface;
     const entry = cache.get(surface.image)!;
     vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
       if (texture === entry.texture) order.push('texture');

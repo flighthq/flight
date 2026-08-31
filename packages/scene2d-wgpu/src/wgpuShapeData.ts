@@ -26,7 +26,7 @@ export function acquireWgpuShapeRasterSurface(data: WgpuShapeRendererData): Rast
 // Shared by all three shape strategies so a node keeps one cache whichever one draws it. Both halves
 // start empty: nothing is allocated until a strategy needs it.
 export function createWgpuShapeData(_state: RenderState, _source: Renderable): RendererData {
-  return createWgpuRendererData<WgpuShapeRendererData>({
+  return createWgpuRendererData({
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,

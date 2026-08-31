@@ -1,8 +1,9 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createTextLabel } from '@flighthq/text/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasTestSupport';
-import { drawCanvasTextLabel } from './canvasTextLabel';
+import { defaultCanvasTextLabelRenderer, drawCanvasTextLabel } from './canvasTextLabel';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -12,6 +13,11 @@ function makeState() {
 }
 
 describe('drawCanvasTextLabel', () => {
+  it('creates RendererData with an entity runtime slot', () => {
+    const data = defaultCanvasTextLabelRenderer.createData!(makeState(), createTextLabel())!;
+    expect(EntityRuntimeKey in data).toBe(true);
+  });
+
   it('does not throw when text is empty', () => {
     const state = makeState();
     const node = createTextLabel();

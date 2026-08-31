@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import type {
@@ -24,7 +25,7 @@ export function acquireGlShapeRasterSurface(data: GlShapeRendererData): Raster2D
 // Shared by all three shape strategies so a node keeps one cache whichever one draws it. Both halves
 // start empty: nothing is allocated until a strategy needs it.
 export function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
-  return toGlShapeRendererData({
+  return createEntity({
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,
@@ -50,12 +51,10 @@ export function destroyGlShapeData(state: GlRenderState, data: RendererData): vo
   destroyRaster2DSurface(surface);
 }
 
-// RendererData is opaque by design, so the two casts that reinterpret it live here as a named pair
-// rather than being scattered at every callsite.
 export function getGlShapeData(data: RendererData): GlShapeRendererData {
-  return data as unknown as GlShapeRendererData;
+  return data as GlShapeRendererData;
 }
 
 export function toGlShapeRendererData(data: GlShapeRendererData): RendererData {
-  return data as unknown as RendererData;
+  return data;
 }

@@ -35,12 +35,12 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
-interface WgpuRichTextData {
+interface WgpuRichTextData extends RendererData {
   surface: Raster2DSurface | null;
 }
 
 export function createWgpuRichTextData(_state: RenderState, _source: Renderable): RendererData {
-  return createWgpuRendererData<WgpuRichTextData>({ surface: null });
+  return createWgpuRendererData({ surface: null });
 }
 
 // Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to

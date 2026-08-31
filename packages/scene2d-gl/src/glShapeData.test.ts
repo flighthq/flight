@@ -1,7 +1,9 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import type { GlShapeRendererData } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   acquireGlShapeRasterSurface,
@@ -15,7 +17,15 @@ import { createGlState } from './glTestHelper';
 const destroySurface = vi.fn();
 
 function emptyData(): GlShapeRendererData {
-  return { surface: null, lastContentId: -1, lastPixelRatio: 0, lastW: 0, lastH: 0, meshVersion: -1, meshes: null };
+  return createEntity({
+    surface: null,
+    lastContentId: -1,
+    lastPixelRatio: 0,
+    lastW: 0,
+    lastH: 0,
+    meshVersion: -1,
+    meshes: null,
+  });
 }
 
 beforeEach(() => {
@@ -80,6 +90,7 @@ describe('createGlShapeData', () => {
     expect(data.surface).toBeNull();
     expect(data.meshes).toBeNull();
     expect(data.meshVersion).toBe(-1);
+    expect(EntityRuntimeKey in data).toBe(true);
   });
 });
 

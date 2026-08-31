@@ -1,8 +1,9 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { RendererData } from '@flighthq/types/contract';
 
 /**
- * Casts `data` to `RendererData` for storage in a renderer's `createData` return value.
- * Use in `createData` implementations to avoid the repeated `as unknown as RendererData` double cast:
+ * Adds the Entity runtime slot required by `RendererData` to renderer-private state.
+ * Use in `createData` implementations so the stored value satisfies the public contract:
  *
  * ```ts
  * function createWgpuFooData(...): RendererData {
@@ -10,8 +11,8 @@ import type { RendererData } from '@flighthq/types/contract';
  * }
  * ```
  */
-export function createWgpuRendererData<T extends object>(data: T): RendererData {
-  return data as unknown as RendererData;
+export function createWgpuRendererData<T extends object>(data: T): T & RendererData {
+  return createEntity(data);
 }
 
 /**
@@ -26,6 +27,6 @@ export function createWgpuRendererData<T extends object>(data: T): RendererData 
  * }
  * ```
  */
-export function getWgpuRendererData<T extends object>(data: RendererData | null): T | null {
-  return data as unknown as T | null;
+export function getWgpuRendererData<T extends object>(data: RendererData | null): (T & RendererData) | null {
+  return data as (T & RendererData) | null;
 }

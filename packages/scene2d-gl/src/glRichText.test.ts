@@ -4,6 +4,7 @@ import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from 
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import type { Raster2DSurface, RendererData, RenderProxy2D, RichText } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createGlRichTextData,
@@ -67,8 +68,11 @@ afterEach(() => {
 describe('createGlRichTextData', () => {
   it('starts without a raster surface until the node first draws', () => {
     const { state } = createGlState();
-    const data = createGlRichTextData(state, createRichText()) as unknown as { surface: Raster2DSurface | null };
+    const data = createGlRichTextData(state, createRichText()) as RendererData & {
+      surface: Raster2DSurface | null;
+    };
     expect(data.surface).toBeNull();
+    expect(EntityRuntimeKey in data).toBe(true);
   });
 });
 
@@ -95,7 +99,7 @@ describe('destroyGlRichTextData', () => {
     const proxy = makeRichTextNode(data);
     (proxy.source as RichText).data.text = 'owned';
     drawGlRichText(state, proxy);
-    const surface = (data as unknown as { surface: Raster2DSurface }).surface;
+    const surface = (data as RendererData & { surface: Raster2DSurface }).surface;
     const entry = cache.get(surface.image)!;
     vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
       if (texture === entry.texture) order.push('texture');
@@ -110,7 +114,7 @@ describe('destroyGlRichTextData', () => {
   it('is a no-op when no surface was allocated', () => {
     const { state, gl } = createGlState();
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
-    destroyGlRichTextData(state, { surface: null } as unknown as RendererData);
+    destroyGlRichTextData(state, createGlRichTextData(state, createRichText()));
     expect(deleteSpy).not.toHaveBeenCalled();
   });
 });
@@ -129,8 +133,8 @@ describe('drawGlRichText', () => {
     drawGlRichText(state, first);
     drawGlRichText(state, second);
 
-    const firstOwned = firstData as unknown as { surface: Raster2DSurface };
-    const secondOwned = secondData as unknown as { surface: Raster2DSurface };
+    const firstOwned = firstData as RendererData & { surface: Raster2DSurface };
+    const secondOwned = secondData as RendererData & { surface: Raster2DSurface };
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const firstSurface = firstOwned.surface;
     const firstImage = firstSurface.image;

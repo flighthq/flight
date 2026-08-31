@@ -29,7 +29,7 @@ import {
 } from './wgpuQuadBatchWriter';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 
-interface WgpuTextLabelData {
+interface WgpuTextLabelData extends RendererData {
   // Allocated on first draw so a node created before its host provider is enabled can recover. Once
   // acquired, the surface and its uploadable Image identity remain stable for the node's lifetime.
   surface: Raster2DSurface | null;
@@ -43,7 +43,7 @@ interface WgpuTextLabelData {
 }
 
 function createWgpuTextLabelData(_state: RenderState, _source: Renderable): RendererData {
-  return createWgpuRendererData<WgpuTextLabelData>({
+  return createWgpuRendererData({
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,

@@ -7,6 +7,7 @@ import {
 } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 import type { Raster2DSurface } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   acquireGlScale9ShapeRasterSurface,
@@ -204,5 +205,6 @@ describe('getGlScale9ShapeData', () => {
     const rendererData = createGlScale9ShapeData(state, createScale9Shape(grid))!;
 
     expect(getGlScale9ShapeData(rendererData).surface).toBeNull();
+    expect(EntityRuntimeKey in rendererData).toBe(true);
   });
 });

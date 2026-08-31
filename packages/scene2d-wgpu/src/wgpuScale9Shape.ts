@@ -26,7 +26,7 @@ import { getWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 // Scale9 rasterizes its remapped shape commands into a per-node 2D surface at the scaled size, uploads
 // that surface's stable Image through the shared texture cache, and draws a quad with the scale stripped
 // from the transform (the size is already baked into the texture). Mirrors the Gl Scale9 renderer.
-interface WgpuScale9ShapeData {
+interface WgpuScale9ShapeData extends RendererData {
   lastH: number;
   lastScaleX: number;
   lastScaleY: number;
@@ -46,7 +46,7 @@ export function acquireWgpuScale9ShapeRasterSurface(data: WgpuScale9ShapeData): 
 }
 
 export function createWgpuScale9ShapeData(_state: RenderState, _source: Renderable): RendererData {
-  return createWgpuRendererData<WgpuScale9ShapeData>({
+  return createWgpuRendererData({
     lastH: 0,
     lastScaleX: -1,
     lastScaleY: -1,

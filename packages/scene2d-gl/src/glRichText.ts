@@ -1,5 +1,6 @@
 ﻿import { computeRgbHexString } from '@flighthq/color/contract';
 import { computeRgbaCssString } from '@flighthq/color/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
@@ -34,18 +35,18 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
-interface GlRichTextData {
+interface GlRichTextData extends RendererData {
   surface: Raster2DSurface | null;
 }
 
 export function createGlRichTextData(_state: GlRenderState, _source: Renderable): RendererData {
-  return { surface: null } as unknown as RendererData;
+  return createEntity({ surface: null });
 }
 
 // Remove the GPU realization while its Image key is still valid, then return the raster allocation to
 // the provider that created it. A node that never rasterized owns neither resource.
 export function destroyGlRichTextData(state: GlRenderState, data: RendererData): void {
-  const { surface } = data as unknown as GlRichTextData;
+  const { surface } = data as GlRichTextData;
   if (surface === null) return;
   const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
   const entry = cache.get(surface.image);
@@ -80,7 +81,7 @@ export function drawGlRichTextWithOverlay(
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
   if (renderProxy.rendererData === null) return;
-  const richTextData = renderProxy.rendererData as unknown as GlRichTextData;
+  const richTextData = renderProxy.rendererData as GlRichTextData;
   const surface = acquireGlRichTextRasterSurface(richTextData);
   if (surface === null) return;
 

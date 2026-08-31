@@ -1,4 +1,5 @@
-﻿import { invalidateImageResource } from '@flighthq/image/contract';
+﻿import { createEntity } from '@flighthq/entity/contract';
+import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
@@ -24,7 +25,7 @@ import { buildGlScale9Mapper } from './glScale9Mapper';
 import { drawGlShape } from './glShape';
 import { getGlShapeRasterizer } from './glShapeRasterizer';
 
-interface GlScale9ShapeData {
+interface GlScale9ShapeData extends RendererData {
   lastH: number;
   lastScaleX: number;
   lastScaleY: number;
@@ -46,7 +47,7 @@ export function acquireGlScale9ShapeRasterSurface(data: GlScale9ShapeData): Rast
 }
 
 export function createGlScale9ShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
-  return toGlScale9ShapeData({
+  return createEntity({
     lastH: 0,
     lastScaleX: -1,
     lastScaleY: -1,
@@ -167,11 +168,7 @@ export const defaultGlScale9ShapeRenderer: Scene2DRenderer = {
 };
 
 export function getGlScale9ShapeData(data: RendererData): GlScale9ShapeData {
-  return data as unknown as GlScale9ShapeData;
-}
-
-function toGlScale9ShapeData(data: GlScale9ShapeData): RendererData {
-  return data as unknown as RendererData;
+  return data as GlScale9ShapeData;
 }
 
 function setStrippedGlMatrixFromValues(

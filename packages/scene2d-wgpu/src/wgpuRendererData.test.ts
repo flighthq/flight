@@ -1,10 +1,14 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 
 describe('createWgpuRendererData', () => {
-  it('returns the input data cast to RendererData', () => {
+  it('adds the RendererData entity slot to the input object', () => {
     const data = { x: 1, y: 2 };
     const result = createWgpuRendererData(data);
     expect(result).toBe(data);
+    expect(EntityRuntimeKey in result).toBe(true);
+    expect(result[EntityRuntimeKey]).toBeUndefined();
   });
 
   it('round-trips through getWgpuRendererData', () => {

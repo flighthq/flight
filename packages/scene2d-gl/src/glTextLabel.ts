@@ -1,4 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
@@ -27,11 +28,8 @@ import {
   recordGlQuadBatchColorScaleBias,
 } from './glQuadBatchWriter';
 
-// Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
-// carries no EntityRuntimeKey), so the slot is read and written through the typed accessor pair
-// below — getGlTextLabelData / toGlTextLabelRendererData — which confine the single unavoidable cast
-// to one named site instead of scattering it at every callsite.
-interface GlTextLabelData {
+// Renderer-private scratch state stored as an Entity in the opaque RendererData slot.
+interface GlTextLabelData extends RendererData {
   // Allocated on first draw so a node created before its host provider is enabled can recover. Once
   // acquired, the surface and its uploadable Image identity remain stable for the node's lifetime.
   surface: Raster2DSurface | null;
@@ -45,15 +43,11 @@ interface GlTextLabelData {
 }
 
 function getGlTextLabelData(data: RendererData): GlTextLabelData {
-  return data as unknown as GlTextLabelData;
-}
-
-function toGlTextLabelRendererData(data: GlTextLabelData): RendererData {
-  return data as unknown as RendererData;
+  return data as GlTextLabelData;
 }
 
 function createGlTextLabelData(_state: GlRenderState, _source: Renderable): RendererData {
-  return toGlTextLabelRendererData({
+  return createEntity({
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,
