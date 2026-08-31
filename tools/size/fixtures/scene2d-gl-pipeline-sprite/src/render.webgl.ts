@@ -1,9 +1,10 @@
+import { createWebGlRenderSurfaceProvider } from '@flighthq/host-web';
+import { createImageResourceFromCanvas } from '@flighthq/image';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import {
   createEmptyGlRegistries,
-  createGlCanvasElement,
   createGlContextFromCanvasElement,
   createGlContextState,
   createGlPipeline,
@@ -14,9 +15,11 @@ import {
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { defaultGlSpriteRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { createTexture } from '@flighthq/texture';
 import { RegistryEntryState, SpriteKind } from '@flighthq/types';
 
-const canvas = createGlCanvasElement(400, 300, 1);
+const canvas = createWebGlRenderSurfaceProvider().createRenderSurface(400, 300, 1);
+if (canvas === null) throw new Error('The WebGL size fixture requires a canvas render surface.');
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
@@ -42,12 +45,20 @@ registerGlStandardMaterial(state);
 
 const root = createDisplayObject();
 const sprite = createSprite();
-sprite.x = 60;
-sprite.y = 40;
+const source = document.createElement('canvas');
+source.width = 64;
+source.height = 64;
+const sourceContext = source.getContext('2d');
+if (sourceContext === null) throw new Error('The WebGL Sprite fixture requires a 2D texture source.');
+sourceContext.fillStyle = '#ff4d67';
+sourceContext.fillRect(0, 0, source.width, source.height);
+sprite.data.texture = createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) });
+sprite.x = 80;
+sprite.y = 70;
 addNodeChild(root, sprite);
 
 prepareScene2DRender(state, root);
 renderGlBackground(state);
 renderGlScene2D(state, root);
 
-Reflect.set(globalThis, '__flightScene2dGlPipelineSprite', { registries, root });
+Reflect.set(globalThis, '__flightScene2dGlPipelineSprite', { registries, root, sprite });

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true
+  },
+  "include": [
+    "fixtures/scene2d-gl-pipeline-sprite/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-shape/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-quadbatch/src/**/*.ts"
+  ]
+}

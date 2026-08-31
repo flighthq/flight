@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-gl-pipeline-quadbatch-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-gl-pipeline-quadbatch",
+      "renderers": ["webgl"],
+      "routes": {
+        "webgl": "/"
+      }
+    }
+  ]
+}
