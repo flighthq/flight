@@ -43,6 +43,12 @@ export interface BitmapTextPage {
 }
 
 export interface BitmapTextRuntime extends Node2DRuntime {
+  // The `GlyphSource.getGlyphLayoutVersion()` the baked page regions were built against, stamped by
+  // `updateBitmapText`. `-1` before the first layout, which is why a never-updated node reads stale.
+  // `isBitmapTextGlyphLayoutStale` compares it to the source's current version, and
+  // `refreshBitmapTextGlyphLayout` re-lays-out when they differ — without it, a repack that relocated
+  // the glyphs leaves these pages sampling whatever now occupies their rects.
+  glyphLayoutVersion: number;
   // Cached local bounds of the laid-out text, written by `updateBitmapText` and copied out by
   // `computeBitmapTextLocalBoundsRectangle`. Null before the first layout.
   localBoundsRectangle: Rectangle | null;

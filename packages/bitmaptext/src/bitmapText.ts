@@ -69,6 +69,9 @@ export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): 
 
 export function createBitmapTextRuntime(): BitmapTextRuntime {
   const runtime = createNode2DRuntime(defaultMethods) as BitmapTextRuntime;
+  // -1 is below every real version, so a node that has never been laid out reads stale and one
+  // `refreshBitmapTextGlyphLayout` brings it up — no separate "was it ever updated" flag.
+  runtime.glyphLayoutVersion = -1;
   runtime.localBoundsRectangle = null;
   runtime.pages = [];
   return runtime;
@@ -86,6 +89,17 @@ export function getBitmapTextBounds(source: Readonly<BitmapText>): Rectangle {
 // yields exactly one; the array is never empty after construction.
 export function getBitmapTextPages(source: Readonly<BitmapText>): readonly BitmapTextPage[] {
   return (getNode2DRuntime(source) as BitmapTextRuntime).pages;
+}
+
+// True when the page regions baked by the last `updateBitmapText` no longer describe the glyphs they
+// were built for, because the bound glyph source has repacked since. Rects that have gone stale stay
+// well-formed — they simply cover other glyphs now — so this version comparison is the only way to
+// tell, and it is the check `refreshBitmapTextGlyphLayout` performs. A node that has never been laid
+// out reads true; a node with no glyph source, or one bound to a static font, reads false forever.
+export function isBitmapTextGlyphLayoutStale(source: Readonly<BitmapText>): boolean {
+  const glyphSource = source.data.glyphSource;
+  if (glyphSource === null) return false;
+  return (getNode2DRuntime(source) as BitmapTextRuntime).glyphLayoutVersion !== glyphSource.getGlyphLayoutVersion();
 }
 
 // Grows each page's quad arrays to hold at least `glyphCapacity` glyph quads without reallocating during

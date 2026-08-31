@@ -240,6 +240,67 @@ function expectNoOverlap(entries: readonly Readonly<GlyphEntry>[]): void {
   }
 }
 
+describe('repack layout version', () => {
+  afterEach(() => setGlyphRasterizerBackend(null));
+
+  // The repack is the moment a rect stops meaning what it did: survivors move and the dropped glyphs'
+  // space is handed on. Nothing else about the atlas reports it — the entry objects are mutated in
+  // place, and the atlas image is the same object it always was.
+  it('bumps once per repack the packer performs', () => {
+    const { backend } = createMockRasterizerBackend(() => ({ height: 8, width: 8 }));
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 8, height: 32, padding: 1, width: 32 });
+
+    for (let cp = 65; cp < 74; cp++) getGlyphAtlasEntry(atlas, cp);
+    // Nine 8x8 glyphs fill a 32x32 atlas exactly, so nothing has had to move yet.
+    expect(atlas.runtime.layoutVersion).toBe(0);
+
+    getGlyphAtlasEntry(atlas, 74);
+    expect(atlas.runtime.layoutVersion).toBe(1);
+    getGlyphAtlasEntry(atlas, 75);
+    expect(atlas.runtime.layoutVersion).toBe(2);
+  });
+
+  // Eviction alone leaves the freed pixels untouched — shelf cursors only advance — so a rect handed
+  // out before it is still correct to draw. Bumping here would make every budgeted atlas look like it
+  // relocates constantly, and consumers would re-bake for nothing.
+  it('does not bump for an eviction that no repack follows', () => {
+    const { backend } = createMockRasterizerBackend(() => ({ height: 8, width: 8 }));
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 8, height: 256, maxGlyphs: 2, width: 256 });
+
+    getGlyphAtlasEntry(atlas, 65);
+    getGlyphAtlasEntry(atlas, 66);
+    getGlyphAtlasEntry(atlas, 67);
+
+    expect(atlas.runtime.entries.size).toBe(2);
+    expect(atlas.runtime.layoutVersion).toBe(0);
+  });
+
+  // The version must survive a repack that happens to put a survivor back where it was: the atlas
+  // cannot know which consumer baked which rect, so "did anything move" is not the question it answers.
+  it('bumps even when a survivor lands back on its own coordinates', () => {
+    const { backend } = createMockRasterizerBackend(() => ({ height: 8, width: 8 }));
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 8, height: 32, padding: 1, width: 32 });
+
+    for (let cp = 65; cp < 74; cp++) getGlyphAtlasEntry(atlas, cp);
+    // Touch every glyph but the last so the eviction takes the HIGHEST codepoint. The repack re-places
+    // survivors by descending height then ascending codepoint, so dropping the last one leaves the rest
+    // in the slots they already held.
+    for (let cp = 65; cp < 73; cp++) getGlyphAtlasEntry(atlas, cp);
+    const survivor = getGlyphAtlasEntry(atlas, 65)!;
+    const x = survivor.x;
+    const y = survivor.y;
+
+    getGlyphAtlasEntry(atlas, 74);
+
+    expect(survivor.x).toBe(x);
+    expect(survivor.y).toBe(y);
+    expect(atlas.runtime.layoutVersion).toBe(1);
+  });
+});
+
 describe('retained-byte and area budgets', () => {
   afterEach(() => setGlyphRasterizerBackend(null));
 

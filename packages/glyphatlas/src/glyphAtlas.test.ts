@@ -1,7 +1,13 @@
 import type { GlyphRasterizeOptions, GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createGlyphAtlas, deriveGlyphMetricsFromFontSize, disposeGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
+import {
+  createGlyphAtlas,
+  deriveGlyphMetricsFromFontSize,
+  disposeGlyphAtlas,
+  getGlyphAtlasBitmap,
+  getGlyphAtlasLayoutVersion,
+} from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 import { setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
@@ -108,6 +114,15 @@ describe('disposeGlyphAtlas', () => {
     getGlyphAtlasEntry(atlas, 65);
     expect(calls).toEqual([65, 65]);
   });
+
+  // The packer restarts over pixels dispose does not clear, so the next glyph may claim space a rect
+  // handed out earlier still names. Consumers that baked those rects only learn from the version.
+  it('bumps the layout version, since every rect it handed out is now reusable space', () => {
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, width: 128 });
+    const before = getGlyphAtlasLayoutVersion(atlas);
+    disposeGlyphAtlas(atlas);
+    expect(getGlyphAtlasLayoutVersion(atlas)).not.toBe(before);
+  });
 });
 
 function createMockRasterizerBackend(): { backend: GlyphRasterizerBackend; calls: number[] } {
@@ -125,5 +140,34 @@ describe('getGlyphAtlasBitmap', () => {
   it('returns the atlas backing bitmap', () => {
     const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 32, width: 32 });
     expect(getGlyphAtlasBitmap(atlas)).toBe(atlas.runtime.bitmap);
+  });
+});
+
+describe('getGlyphAtlasLayoutVersion', () => {
+  afterEach(() => setGlyphRasterizerBackend(null));
+
+  // Appending into free space is the common case and must not look like a relocation: a consumer that
+  // re-baked on every new glyph would re-lay-out its text on the first frame of every new character.
+  it('does not move when a glyph is appended into free space', () => {
+    const { backend } = createMockRasterizerBackend();
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, width: 128 });
+
+    const before = getGlyphAtlasLayoutVersion(atlas);
+    getGlyphAtlasEntry(atlas, 65);
+    getGlyphAtlasEntry(atlas, 66);
+    expect(getGlyphAtlasLayoutVersion(atlas)).toBe(before);
+  });
+
+  // The dirty region and the layout version answer different questions — which PIXELS changed, and
+  // whether the RECTS still mean what they did. An appended glyph moves the first and not the second.
+  it('is independent of the dirty region', () => {
+    const { backend } = createMockRasterizerBackend();
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, width: 128 });
+
+    getGlyphAtlasEntry(atlas, 65);
+    expect(atlas.runtime.dirty).toBe(true);
+    expect(getGlyphAtlasLayoutVersion(atlas)).toBe(0);
   });
 });

@@ -34,6 +34,7 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
       dirtyMinX: 0,
       dirtyMinY: 0,
       entries: new Map(),
+      layoutVersion: 0,
       lru: new Map(),
       maxArea: options.maxArea ?? 0,
       maxBytes: options.maxBytes ?? 0,
@@ -77,12 +78,24 @@ export function disposeGlyphAtlas(atlas: GlyphAtlas): void {
   runtime.shelves.length = 0;
   runtime.packBottom = runtime.padding;
   runtime.dirty = false;
+  // The packer restarts at the top over pixels this does not clear, so every rect handed out before
+  // now describes space the next glyph may claim.
+  runtime.layoutVersion++;
 }
 
 // The atlas's backing bitmap — the pixels a renderer uploads to a GPU texture. Use
 // `getGlyphAtlasDirtyRegion` to upload only the changed sub-rect.
 export function getGlyphAtlasBitmap(atlas: Readonly<GlyphAtlas>): Bitmap {
   return atlas.runtime.bitmap;
+}
+
+// The revision of this atlas's glyph placement — the `GlyphSource.getGlyphLayoutVersion` seam for a
+// dynamic atlas. It changes when a repack relocates or drops cached glyphs, or a dispose resets the
+// packer; a consumer that baked `GlyphEntry` rects re-reads them when it changes. Distinct from the
+// dirty region, which reports which PIXELS to re-upload: an atlas can be dirty with every rect still
+// valid (a glyph appended into free space), and after a repack it is both.
+export function getGlyphAtlasLayoutVersion(atlas: Readonly<GlyphAtlas>): number {
+  return atlas.runtime.layoutVersion;
 }
 
 // Asks this atlas's bound backend to measure the font, falling back to the size heuristic when it

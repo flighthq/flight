@@ -20,6 +20,12 @@ export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): Gly
     getGlyphKerning(left, right) {
       return getBitmapFontKerning(font, left, right);
     },
+    getGlyphLayoutVersion() {
+      // A pre-baked font never relocates a glyph — its pages are authored, not packed at runtime — so
+      // the placement revision is a constant and a consumer that bakes these rects never re-bakes.
+      // This is the whole reason the seam reports a number rather than the consumer polling rects.
+      return 0;
+    },
     getGlyphMetrics() {
       return getBitmapFontMetrics(font);
     },

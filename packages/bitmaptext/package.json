@@ -40,6 +40,7 @@
   "dependencies": {
     "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",

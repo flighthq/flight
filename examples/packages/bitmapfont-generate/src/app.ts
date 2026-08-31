@@ -10,7 +10,12 @@ import {
   invalidateNodeLocalTransform,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
-import { createBitmapText, getBitmapTextPages, updateBitmapText } from '@flighthq/sdk/text';
+import {
+  createBitmapText,
+  getBitmapTextPages,
+  refreshBitmapTextGlyphLayout,
+  updateBitmapText,
+} from '@flighthq/sdk/text';
 import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
@@ -33,11 +38,17 @@ const captureWindow = window as typeof window & { __flightCapture?: boolean };
 setGlyphRasterizerBackend(
   captureWindow.__flightCapture ? createStubGlyphRasterizerBackend() : createWebGlyphRasterizerBackend(),
 );
+// MITIGATION, not the fix. The four strings below use ~53 distinct glyphs at 52px, which a 512x256
+// atlas can only hold by evicting and repacking — correct, but it makes every frame of this example
+// depend on the repack path. Sizing the atlas to hold the whole working set keeps the example about
+// what it demonstrates. The correctness fix is the layout-version seam: `refreshBitmapTextGlyphLayout`
+// below re-bakes any node a repack moved, and is what an app with a genuinely unbounded glyph set
+// relies on.
 const atlas = createGlyphAtlas({
   fontFamily: 'sans-serif',
   fontSize: 52,
-  width: 512,
-  height: 256,
+  width: 1024,
+  height: 512,
   padding: 2,
 });
 const glyphSource = createGlyphSourceFromGlyphAtlas(atlas);
@@ -76,6 +87,12 @@ addText('0123456789  Lazy • Packed • Reused', 36, 318, 0x06d6a0ff, {
   wrapWidth: 700,
 });
 
+// Each `addText` above laid out against the atlas as it stood at that moment, and every later string
+// rasterized more glyphs into it. Had any of those insertions repacked, the earlier nodes' baked
+// regions would now cover other glyphs — so re-bake anything the atlas moved before its pixels are
+// frozen. This is a no-op when nothing repacked, which is what the sizing above arranges.
+for (const bitmapText of bitmapTexts) refreshBitmapTextGlyphLayout(bitmapText);
+
 // Materialize the completed CPU atlas once so every backend consumes the same uploadable image.
 // The atlas remains the source of glyph metrics and regions; only its finalized pixels are adapted.
 enableHostWebImage();
@@ -98,8 +115,9 @@ if (atlasImage === null) {
   });
   atlasPreview.x = 536;
   atlasPreview.y = 438;
-  atlasPreview.scaleX = 0.42;
-  atlasPreview.scaleY = 0.42;
+  // Half the previous scale, so the doubled atlas above previews at the same on-screen footprint.
+  atlasPreview.scaleX = 0.21;
+  atlasPreview.scaleY = 0.21;
   invalidateNodeLocalTransform(atlasPreview);
   addNodeChild(root, atlasPreview);
   enterFrame();

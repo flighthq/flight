@@ -18,6 +18,19 @@ describe('createGlyphSourceFromBitmapFont', () => {
     expect(source.getGlyphMetrics()).toEqual({ ascent: 8, descent: 2, lineGap: 1 });
   });
 
+  // The static half of the seam: a pre-baked font's pages are authored, so no lookup can relocate a
+  // glyph and a consumer that bakes these rects never has to re-bake. Holding the version constant
+  // across lookups is what lets `refreshBitmapTextGlyphLayout` cost a static font nothing.
+  it('holds the layout version constant, because a pre-baked font never relocates a glyph', () => {
+    const font = createBitmapFont(sampleFontData());
+    const source = createGlyphSourceFromBitmapFont(font);
+
+    const before = source.getGlyphLayoutVersion();
+    source.getGlyphEntry(65);
+    source.getGlyphEntry(0x1f600);
+    expect(source.getGlyphLayoutVersion()).toBe(before);
+  });
+
   it('pairs page 0 with the font atlas image and has no other page', () => {
     const image = {} as Image;
     const font = createBitmapFont({ ...sampleFontData(), pages: [createTextureAtlasFromImageResource(image)] });

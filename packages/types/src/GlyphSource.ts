@@ -23,6 +23,20 @@ export interface GlyphSource {
   // The horizontal kerning adjustment between an adjacent left/right glyph pair, in pixels. 0 when
   // the source carries no kerning.
   getGlyphKerning(left: number, right: number): number;
+  // The revision of the source's glyph PLACEMENT — the atlas rects `getGlyphEntry` hands out. It is
+  // bumped whenever a rect previously returned stops describing that glyph's pixels, which for a
+  // dynamic atlas is every repack: eviction frees logical slots, and the repack that reclaims them
+  // moves the survivors and re-uses the dropped glyphs' space. A consumer that BAKES rects — a
+  // BitmapText's per-page `TextureAtlas` regions — samples the wrong pixels from that moment on, and
+  // nothing about the atlas image or the entry object changes to reveal it: the rect is still a valid
+  // rect, now over another glyph. Stamping this number alongside the baked rects and comparing it
+  // later is how that consumer learns to re-bake (`refreshBitmapTextGlyphLayout`).
+  //
+  // This is the tier-2 versioned-payload shape from the invalidation doctrine, and it is versioned
+  // rather than compared because of fan-out: one atlas backs every BitmapText bound to it, and no
+  // caller has to enumerate them. A static source (a pre-baked bitmap font) never relocates a glyph,
+  // so it returns a constant.
+  getGlyphLayoutVersion(): number;
   // The source's shared line metrics (ascent/descent/lineGap).
   getGlyphMetrics(): Readonly<GlyphMetrics>;
 }
@@ -142,6 +156,13 @@ export interface GlyphAtlasRuntime {
   // cache. Iteration order is insertion order, so the first key is the eviction candidate. The value
   // carries nothing; only key order matters.
   lru: Map<number, true>;
+  // Bumped by every event that invalidates a rect this atlas already handed out: a repack (which
+  // relocates survivors, drops the ones that no longer fit, and re-uses the freed space) and a
+  // dispose (which resets the packer over pixels it does not clear). Read through
+  // `getGlyphAtlasLayoutVersion` and the `GlyphSource.getGlyphLayoutVersion` seam. It is NOT bumped by
+  // eviction alone: shelf cursors only advance, so an evicted glyph's pixels stay untouched — and
+  // therefore still correct to draw — until a repack reclaims them.
+  layoutVersion: number;
   maxArea: number;
   maxBytes: number;
   maxGlyphs: number;

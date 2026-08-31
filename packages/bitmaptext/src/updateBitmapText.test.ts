@@ -2,14 +2,22 @@ import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
   createStubGlyphRasterizerBackend,
+  getGlyphAtlasBitmap,
   setGlyphRasterizerBackend,
 } from '@flighthq/glyphatlas/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { GlyphEntry, GlyphSource, Image } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import type {
+  Bitmap,
+  GlyphAtlas,
+  GlyphEntry,
+  GlyphRasterizerBackend,
+  GlyphSource,
+  Image,
+} from '@flighthq/types/contract';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { createBitmapText, getBitmapTextBounds, getBitmapTextPages } from './bitmapText';
-import { updateBitmapText } from './updateBitmapText';
+import { createBitmapText, getBitmapTextBounds, getBitmapTextPages, isBitmapTextGlyphLayoutStale } from './bitmapText';
+import { refreshBitmapTextGlyphLayout, setBitmapTextLayoutGuard, updateBitmapText } from './updateBitmapText';
 
 // A deterministic single-page glyph source: every visible glyph is 6x8 with advance 10 and bearingY 8
 // (so line tops sit at y=0), a space advances 5 with no pixels, and the pair (A, B) kerns by -2. All
@@ -28,6 +36,7 @@ function createTestGlyphSource(): GlyphSource {
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: (l, r) => kerning.get((l << 16) | r) ?? 0,
+    getGlyphLayoutVersion: () => 0,
     getGlyphMetrics: () => ({ ascent: 8, descent: 2, lineGap: 0 }),
   };
 }
@@ -44,12 +53,172 @@ function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: Image; p
     getGlyphAtlasImage: (page = 0) => (page === 0 ? page0Image : page === 1 ? page1Image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,
+    getGlyphLayoutVersion: () => 0,
     getGlyphMetrics: () => ({ ascent: 8, descent: 2, lineGap: 0 }),
   };
   return { source, page0Image, page1Image };
 }
 
+// Rasterizes every glyph as a solid block whose RED channel IS the codepoint, so a rect in the atlas
+// bitmap identifies which glyph actually occupies it. That is the oracle this file needs: after a
+// repack every rect is still a well-formed rect over real pixels, so only reading the pixels can tell a
+// correct region from one that now covers the wrong glyph. Codepoints stay under 0x100 for the channel
+// to hold them exactly.
+function createCodepointColorRasterizerBackend(size: number): GlyphRasterizerBackend {
+  return {
+    rasterize(codepoint) {
+      const pixels = new Uint8ClampedArray(size * size * 4);
+      for (let i = 0; i < size * size; i++) {
+        pixels[i * 4] = codepoint;
+        pixels[i * 4 + 3] = 0xff;
+      }
+      return { advance: size, bearingX: 0, bearingY: size, height: size, pixels, width: size };
+    },
+  };
+}
+
+// The codepoint whose pixels sit at `region`'s top-left in the atlas bitmap, per the rasterizer above.
+function readGlyphCodepointAtRegion(bitmap: Readonly<Bitmap>, x: number, y: number): number {
+  return bitmap.data[(y * bitmap.width + x) * 4];
+}
+
+// An atlas small enough that a modest run of glyphs exhausts it and forces the evict-then-repack path
+// that relocates everything already cached — the situation `refreshBitmapTextGlyphLayout` exists for.
+function createRepackingGlyphAtlas(): GlyphAtlas {
+  return createGlyphAtlas({
+    fontFamily: 'codepoint-color',
+    fontSize: 8,
+    height: 32,
+    padding: 1,
+    rasterizerBackend: createCodepointColorRasterizerBackend(8),
+    width: 32,
+  });
+}
+
+describe('refreshBitmapTextGlyphLayout', () => {
+  // The defect this whole seam exists for: a repack relocates and re-uses atlas space, so a node laid
+  // out BEFORE it keeps regions that now cover other glyphs. Nothing about the node, the entry object,
+  // or the atlas image changes to reveal it — the pixels under the baked rect are the only witness.
+  it('re-bakes regions that a repack left covering the wrong glyphs', () => {
+    const atlas = createRepackingGlyphAtlas();
+    const source = createGlyphSourceFromGlyphAtlas(atlas);
+    const text = createBitmapText(source, { text: 'A' });
+    updateBitmapText(text);
+
+    const baked = getBitmapTextPages(text)[0].atlas.regions[0];
+    const bitmap = getGlyphAtlasBitmap(atlas);
+    expect(readGlyphCodepointAtRegion(bitmap, baked.x, baked.y)).toBe(0x41);
+
+    // Fill the atlas from elsewhere — a second text node, a direct lookup, any other consumer of the
+    // same atlas would do. 'A' is the least recently used, so it is evicted and its space handed on.
+    for (let codepoint = 0x42; codepoint <= 0x5a; codepoint++) source.getGlyphEntry(codepoint);
+
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(true);
+    expect(readGlyphCodepointAtRegion(bitmap, baked.x, baked.y)).not.toBe(0x41);
+
+    expect(refreshBitmapTextGlyphLayout(text)).toBe(true);
+    const rebaked = getBitmapTextPages(text)[0].atlas.regions[0];
+    expect(readGlyphCodepointAtRegion(bitmap, rebaked.x, rebaked.y)).toBe(0x41);
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
+  });
+
+  it('does nothing and reports nothing done when the glyph placement has not moved', () => {
+    const atlas = createRepackingGlyphAtlas();
+    const text = createBitmapText(createGlyphSourceFromGlyphAtlas(atlas), { text: 'A' });
+    updateBitmapText(text);
+    const before = getBitmapTextPages(text)[0].atlas.regions[0];
+
+    expect(refreshBitmapTextGlyphLayout(text)).toBe(false);
+    expect(getBitmapTextPages(text)[0].atlas.regions[0]).toBe(before);
+  });
+
+  it('lays out a node that has never been laid out', () => {
+    const atlas = createRepackingGlyphAtlas();
+    const text = createBitmapText(createGlyphSourceFromGlyphAtlas(atlas), { text: 'A' });
+
+    expect(refreshBitmapTextGlyphLayout(text)).toBe(true);
+    expect(getBitmapTextPages(text)[0].instanceCount).toBe(1);
+  });
+
+  // Fan-out is the reason the seam versions rather than the consumer comparing rects: one atlas backs
+  // every node bound to it, and the node that triggered the repack must not be the only one repaired.
+  it('repairs every node sharing the atlas, not only the one that forced the repack', () => {
+    const atlas = createRepackingGlyphAtlas();
+    const source = createGlyphSourceFromGlyphAtlas(atlas);
+    const first = createBitmapText(source, { text: 'A' });
+    updateBitmapText(first);
+
+    const second = createBitmapText(source, { text: 'BCDEFGHIJKLMNOPQRSTUVWXYZ' });
+    updateBitmapText(second);
+
+    expect(isBitmapTextGlyphLayoutStale(first)).toBe(true);
+    refreshBitmapTextGlyphLayout(first);
+    const bitmap = getGlyphAtlasBitmap(atlas);
+    const region = getBitmapTextPages(first)[0].atlas.regions[0];
+    expect(readGlyphCodepointAtRegion(bitmap, region.x, region.y)).toBe(0x41);
+  });
+});
+
+describe('setBitmapTextLayoutGuard', () => {
+  afterEach(() => setBitmapTextLayoutGuard(null));
+
+  it('reports the reason and the passes spent when a layout cannot settle', () => {
+    const seen: [string, number][] = [];
+    setBitmapTextLayoutGuard((reason, attempts) => seen.push([reason, attempts]));
+    const source = createGlyphSourceFromGlyphAtlas(createRepackingGlyphAtlas());
+
+    updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
+
+    expect(seen).toEqual([['layout-did-not-converge', 3]]);
+  });
+
+  it('stays silent for a layout that settles', () => {
+    const seen: string[] = [];
+    setBitmapTextLayoutGuard((reason) => seen.push(reason));
+    const source = createGlyphSourceFromGlyphAtlas(createRepackingGlyphAtlas());
+
+    updateBitmapText(createBitmapText(source, { text: 'AB' }));
+
+    expect(seen).toEqual([]);
+  });
+
+  it('stops reporting once cleared with null', () => {
+    let calls = 0;
+    setBitmapTextLayoutGuard(() => (calls += 1));
+    const source = createGlyphSourceFromGlyphAtlas(createRepackingGlyphAtlas());
+
+    updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
+    setBitmapTextLayoutGuard(null);
+    updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
+
+    expect(calls).toBe(1);
+  });
+});
+
 describe('updateBitmapText', () => {
+  // A repack can land DURING a layout — a glyph late in the string evicting one placed early in it —
+  // and the pass that saw both placements is wrong about the first. The retry is what makes a single
+  // `updateBitmapText` call self-consistent rather than merely detectably stale afterwards.
+  it('re-runs a layout that a repack invalidated mid-pass, so every baked region is coherent', () => {
+    const atlas = createRepackingGlyphAtlas();
+    const source = createGlyphSourceFromGlyphAtlas(atlas);
+    // Fill most of the atlas with glyphs this text does not use, so laying it out has to evict and
+    // repack partway through — over the glyphs the same pass already placed.
+    for (let codepoint = 0x61; codepoint <= 0x66; codepoint++) source.getGlyphEntry(codepoint);
+    const text = createBitmapText(source, { text: 'ABCDEF' });
+    updateBitmapText(text);
+
+    const bitmap = getGlyphAtlasBitmap(atlas);
+    const page = getBitmapTextPages(text)[0];
+    expect(page.instanceCount).toBeGreaterThan(0);
+    for (let id = 0; id < page.atlas.regions.length; id++) {
+      const region = page.atlas.regions[id];
+      const codepoint = readGlyphCodepointAtRegion(bitmap, region.x, region.y);
+      expect(codepoint).toBe(0x41 + id);
+    }
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
+  });
+
   it('emits non-empty glyph quads end-to-end from a stub-fed glyph atlas (headless, issue #8)', () => {
     // The real headless path: glyphatlas → GlyphSource → bitmaptext, with the deterministic stub
     // rasterizer standing in for a web font that is unavailable in jsdom/CI. Proves BitmapText renders

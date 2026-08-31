@@ -171,6 +171,12 @@ function _placeGlyphOnShelf(
 // packing), re-blits its pixels, and updates its entry's position in place. A survivor that no
 // longer fits is dropped. The whole atlas is marked dirty since glyphs have moved.
 function _repackGlyphAtlas(runtime: GlyphAtlasRuntime): void {
+  // Bumped first, and unconditionally: from here on every rect this atlas handed out is suspect, and
+  // that is true whether a survivor moved, a survivor happened to land back on its old coordinates, or
+  // a dropped glyph's space was handed to another glyph. The version is the one signal a consumer that
+  // baked rects can compare — the entry objects themselves are mutated in place and reveal nothing.
+  runtime.layoutVersion++;
+  _entryGuard?.('repack', runtime.entries.size);
   runtime.shelves.length = 0;
   runtime.packBottom = runtime.padding;
   runtime.bitmap.data.fill(0);
@@ -231,9 +237,13 @@ function _releaseGlyphBudget(runtime: GlyphAtlasRuntime, codepoint: number): voi
 
 /** Installs the glyph-atlas guard, or clears it with `null`. The seam exists so the messages and the
  *  `@flighthq/log` dependency live in the separately-importable guard module rather than on this hot
- *  path; not importing that module costs production nothing. Called by `enableGlyphAtlasGuards`. */
-export function setGlyphAtlasEntryGuard(guard: ((reason: string, codepoint: number) => void) | null): void {
+ *  path; not importing that module costs production nothing. Called by `enableGlyphAtlasGuards`.
+ *
+ *  `subject` is the codepoint for the glyph-scoped reasons and the surviving glyph count for `repack`,
+ *  which is not about one glyph. The seam carries the number and never the noun: which one it is
+ *  follows from `reason`, and naming it is the guard module's job along with the wording. */
+export function setGlyphAtlasEntryGuard(guard: ((reason: string, subject: number) => void) | null): void {
   _entryGuard = guard;
 }
 
-let _entryGuard: ((reason: string, codepoint: number) => void) | null = null;
+let _entryGuard: ((reason: string, subject: number) => void) | null = null;
