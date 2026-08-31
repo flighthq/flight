@@ -1,10 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { drawGlLinearToSrgbPass, LINEAR_TO_SRGB_FRAGMENT_SRC } from './glLinearToSrgbPass';
 import { createGlState } from './glTestHelper';
 
 function makeTarget(framebuffer: WebGLFramebuffer, texture: WebGLTexture, width = 32, height = 16): GlRenderTarget {
-  return {
+  return createEntity({
     requestedAxes: {
       width,
       height,
@@ -32,7 +33,7 @@ function makeTarget(framebuffer: WebGLFramebuffer, texture: WebGLTexture, width 
     depthTexture: null,
     colorRenderbuffers: [],
     depthStencilRenderbuffer: null,
-  };
+  });
 }
 
 describe('drawGlLinearToSrgbPass', () => {

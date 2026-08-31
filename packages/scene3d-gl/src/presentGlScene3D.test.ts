@@ -1,4 +1,5 @@
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
@@ -23,7 +24,7 @@ function makeCamera(): Camera3D {
 }
 
 function makeTarget(): GlRenderTarget {
-  return {
+  return createEntity({
     requestedAxes: {
       width: 256,
       height: 256,
@@ -51,7 +52,7 @@ function makeTarget(): GlRenderTarget {
     depthTexture: null,
     colorRenderbuffers: [],
     depthStencilRenderbuffer: { id: 'sceneDepth' } as unknown as WebGLRenderbuffer,
-  };
+  });
 }
 
 const LIGHTS: Scene3DLightsLike = {

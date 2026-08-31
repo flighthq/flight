@@ -1,6 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -48,6 +49,13 @@ describe('createGlRenderTarget', () => {
     const target = createGlRenderTarget(state, { width: 128, height: 64 });
     expect(target.width).toBe(128);
     expect(target.height).toBe(64);
+  });
+
+  it('returns an Entity-backed render target', () => {
+    const { state } = makeState();
+    const target = createGlRenderTarget(state, { width: 128, height: 64 });
+    expect(Object.hasOwn(target, EntityRuntimeKey)).toBe(true);
+    expect(target[EntityRuntimeKey]).toBeUndefined();
   });
 
   it('enforces a minimum size of 1', () => {

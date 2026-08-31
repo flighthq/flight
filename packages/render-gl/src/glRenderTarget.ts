@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
@@ -18,6 +19,15 @@ import type {
 import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader';
+
+interface GlRenderTargetStorage extends RenderTargetAxes {
+  framebuffer: WebGLFramebuffer;
+  resolveFramebuffer: WebGLFramebuffer | null;
+  textures: WebGLTexture[];
+  depthTexture: WebGLTexture | null;
+  colorRenderbuffers: WebGLRenderbuffer[];
+  depthStencilRenderbuffer: WebGLRenderbuffer | null;
+}
 
 /**
  * Allocates a render target realizing `descriptor`'s axes (format, MSAA sampleCount, MRT
@@ -54,8 +64,7 @@ export function createGlRenderTarget(
   const effective = resolveEffectiveGlRenderTargetAxes(gl, requested, formatPolicy);
   if (effective === null) return null;
 
-  const target: GlRenderTarget = {
-    requestedAxes: copyRenderTargetAxes(requested),
+  const storage: GlRenderTargetStorage = {
     width: effective.width,
     height: effective.height,
     format: effective.format,
@@ -63,19 +72,36 @@ export function createGlRenderTarget(
     colorFormats: [...effective.colorFormats],
     depth: effective.depth,
     colorSpace: effective.colorSpace,
-    clearColors: [...requested.clearColors],
-    clearDepth: requested.clearDepth,
     sampleCount: effective.sampleCount,
     framebuffer: gl.createFramebuffer()!,
     resolveFramebuffer: null,
     textures: [],
-    texture: null as unknown as WebGLTexture,
     depthTexture: null,
     colorRenderbuffers: [],
     depthStencilRenderbuffer: null,
   };
 
-  allocateGlRenderTargetStorage(state, target);
+  const texture = allocateGlRenderTargetStorage(state, storage);
+  const target = createEntity({
+    requestedAxes: copyRenderTargetAxes(requested),
+    width: storage.width,
+    height: storage.height,
+    format: storage.format,
+    colorAttachments: storage.colorAttachments,
+    colorFormats: [...storage.colorFormats],
+    depth: storage.depth,
+    colorSpace: storage.colorSpace,
+    clearColors: [...requested.clearColors],
+    clearDepth: requested.clearDepth,
+    sampleCount: storage.sampleCount,
+    framebuffer: storage.framebuffer,
+    resolveFramebuffer: storage.resolveFramebuffer,
+    textures: storage.textures,
+    texture,
+    depthTexture: storage.depthTexture,
+    colorRenderbuffers: storage.colorRenderbuffers,
+    depthStencilRenderbuffer: storage.depthStencilRenderbuffer,
+  });
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   bindGlTextureRealization(state, null);
@@ -195,7 +221,7 @@ export function resizeGlRenderTarget(
   target.requestedAxes = copyRenderTargetAxes(requested);
   setGlRenderTargetAxes(target, effective);
 
-  allocateGlRenderTargetStorage(state, target);
+  target.texture = allocateGlRenderTargetStorage(state, target);
   const runtime = getGlRenderStateRuntime(state);
   // Storage allocation binds the target while attaching its new textures/renderbuffers. Match the
   // creation contract by restoring the caller's tracked framebuffer before returning; otherwise a
@@ -284,7 +310,7 @@ export function resolveGlRenderTargetAxes(
 
 // Allocates color textures/renderbuffers (and the resolve FBO for MSAA) plus optional depth into the
 // already-created `target.framebuffer`. Shared by create and resize.
-function allocateGlRenderTargetStorage(state: GlRenderState, target: GlRenderTarget): void {
+function allocateGlRenderTargetStorage(state: GlRenderState, target: GlRenderTargetStorage): WebGLTexture {
   const gl = state.gl;
   const { width: w, height: h, sampleCount, colorAttachments: attachments, colorFormats, depth } = target;
   const multisampled = sampleCount > 1;
@@ -313,7 +339,7 @@ function allocateGlRenderTargetStorage(state: GlRenderState, target: GlRenderTar
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, texture, 0);
     target.textures.push(texture);
   }
-  target.texture = target.textures[0];
+  const texture = target.textures[0]!;
   if (attachments > 1) gl.drawBuffers(buildDrawBuffers(gl, attachments));
 
   // MSAA color renderbuffers go on the draw framebuffer; resolve FBO holds the textures above.
@@ -355,6 +381,7 @@ function allocateGlRenderTargetStorage(state: GlRenderState, target: GlRenderTar
 
   gl.bindRenderbuffer(gl.RENDERBUFFER, null);
   gl.bindTexture(gl.TEXTURE_2D, null);
+  return texture;
 }
 
 function buildDrawBuffers(gl: GlContext, count: number): number[] {

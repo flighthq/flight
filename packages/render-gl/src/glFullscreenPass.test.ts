@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget, compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
@@ -14,7 +15,7 @@ void main() {
 }`;
 
 function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlRenderTarget {
-  return {
+  return createEntity({
     requestedAxes: {
       width,
       height,
@@ -42,7 +43,7 @@ function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlR
     depthTexture: null,
     colorRenderbuffers: [],
     depthStencilRenderbuffer: null,
-  };
+  });
 }
 
 describe('clearGlRenderTarget', () => {

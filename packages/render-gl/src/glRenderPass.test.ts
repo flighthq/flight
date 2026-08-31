@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -10,7 +11,7 @@ import { createGlState } from './glTestHelper';
 
 function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
   const texture = { id: 'c0' } as unknown as WebGLTexture;
-  return {
+  return createEntity({
     requestedAxes: {
       width: 32,
       height: 16,
@@ -39,7 +40,7 @@ function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
     colorRenderbuffers: [],
     depthStencilRenderbuffer: { id: 'depth' } as unknown as WebGLRenderbuffer,
     ...overrides,
-  };
+  });
 }
 
 describe('beginGlRenderPass', () => {
