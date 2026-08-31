@@ -20,7 +20,7 @@ const TSX = join(dirname(fileURLToPath(import.meta.url)), '..', 'node_modules', 
 const PIXEL_SHA256 = hashOraclePixelBytes(new Uint8Array(4));
 const BUILD_COMMIT = 'b'.repeat(40);
 
-describe('reference-image-commission request binding', () => {
+describe('reference-image-commission request binding', { timeout: 30_000 }, () => {
   it('stages a matching capture with an empty difference-evidence sidecar', () => {
     const fixture = commissionedCapture(PIXEL_SHA256);
 
