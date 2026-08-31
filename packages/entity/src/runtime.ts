@@ -4,7 +4,6 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 export function createEntityRuntime(): EntityRuntime {
   return {
     binding: null,
-    uid: null,
   };
 }
 

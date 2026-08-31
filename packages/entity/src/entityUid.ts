@@ -5,7 +5,7 @@ import { createEntityRuntime } from './runtime';
 
 export function getEntityUid(source: Entity): string {
   const runtime = ensureEntityRuntime(source);
-  if (runtime.uid !== null) return runtime.uid;
+  if (runtime.uid !== undefined) return runtime.uid;
   const uid = generateEntityUid();
   runtime.uid = uid;
   return uid;

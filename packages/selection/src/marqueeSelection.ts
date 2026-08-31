@@ -22,7 +22,6 @@ export function createMarqueeSelection(): MarqueeSelection {
   const runtime = {
     active: false,
     binding: null,
-    uid: null,
     rectangle: createRectangle(),
     startX: 0,
     startY: 0,

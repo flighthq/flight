@@ -37,7 +37,6 @@ export function createSelectionState<NodeType extends HierarchyNodeAny = Hierarc
   const runtime = {
     activeNode: null,
     binding: null,
-    uid: null,
     selectedNodeSet: new Set<NodeType>(),
     selectedNodes: [],
     signals: {
