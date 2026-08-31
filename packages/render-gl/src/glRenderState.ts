@@ -30,6 +30,7 @@ export function createGlContextState(gl: GlContext): GlContextState {
 
   const contextRuntime: GlContextRuntime = {
     binding: null,
+    uid: null,
     colorAdjustmentResources: null,
     currentBlendSignature: null,
     currentShader: null,

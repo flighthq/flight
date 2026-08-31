@@ -16,7 +16,7 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = {
-  [EntityRuntimeKey]: { binding: null },
+  [EntityRuntimeKey]: { binding: null, uid: null },
   createRenderSurface(width, height, pixelRatio) {
     const canvas = globalThis.document.createElement('canvas');
     canvas.style.width = `${width}px`;

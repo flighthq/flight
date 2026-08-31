@@ -126,6 +126,7 @@ export function createGizmoState<NodeType extends HierarchyNodeAny>(
   const handleRoot = createDisplayObject({ name: 'GizmoHandleRoot' });
   const runtime: GizmoRuntime<NodeType> = {
     binding: null,
+    uid: null,
     bounds: createRectangle(),
     camera: options.camera,
     cleanups: [],

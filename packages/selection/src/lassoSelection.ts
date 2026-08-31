@@ -23,6 +23,7 @@ export function createLassoSelection(): LassoSelection {
   const runtime = {
     active: false,
     binding: null,
+    uid: null,
     path: { commands: [], data: [], winding: 'evenOdd' },
   } satisfies LassoSelectionRuntime;
   selection[EntityRuntimeKey] = runtime;
