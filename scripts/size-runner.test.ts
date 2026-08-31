@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,11 +41,55 @@ describe('collectSizeCases', () => {
     expect(diagnosticsCases.map((item) => item.variant)).toEqual([null, 'diagnostics']);
   });
 
+  test('discovers dom sprite, shape, and text fixtures', () => {
+    const domKeys = collectSizeCases(fixturesDirectory)
+      .map(getSizeCaseKey)
+      .filter((key) => key.startsWith('scene2d-dom-'));
+    expect(domKeys).toEqual(['scene2d-dom-shape:dom', 'scene2d-dom-sprite:dom', 'scene2d-dom-text:dom']);
+  });
+
   test('does not discover example packages outside the fixture directory', () => {
     const keys = collectSizeCases(fixturesDirectory).map(getSizeCaseKey);
 
     expect(keys).not.toContain('adjustments:canvas');
     expect(keys).not.toContain('shapes:webgl');
+  });
+});
+
+function extractImportSpecifiers(filePath: string): string[] {
+  const source = readFileSync(filePath, 'utf-8');
+  return [...source.matchAll(/from\s+'(@flighthq\/[^']+)'/g)].map((m) => m[1]!);
+}
+
+describe('dom fixture import structure', () => {
+  test('dom-sprite imports no aggregate webHost or unrelated renderer packages', () => {
+    const specifiers = extractImportSpecifiers(resolve(fixturesDirectory, 'scene2d-dom-sprite/src/render.dom.ts'));
+    expect(specifiers).not.toContain('@flighthq/sdk');
+    expect(specifiers.filter((s) => s === '@flighthq/host-web')).toHaveLength(0);
+    expect(specifiers).not.toContain('@flighthq/scene2d-canvas');
+    expect(specifiers).not.toContain('@flighthq/scene2d-gl');
+    expect(specifiers).not.toContain('@flighthq/scene2d-wgpu');
+  });
+
+  test('dom-shape imports webCanvasRenderSurfaceCreator but not aggregate webHost', () => {
+    const source = readFileSync(resolve(fixturesDirectory, 'scene2d-dom-shape/src/render.dom.ts'), 'utf-8');
+    expect(source).toContain('webCanvasRenderSurfaceCreator');
+    expect(source).not.toContain('webHost');
+    const specifiers = extractImportSpecifiers(resolve(fixturesDirectory, 'scene2d-dom-shape/src/render.dom.ts'));
+    expect(specifiers).not.toContain('@flighthq/sdk');
+    expect(specifiers).not.toContain('@flighthq/scene2d-gl');
+    expect(specifiers).not.toContain('@flighthq/scene2d-wgpu');
+  });
+
+  test('dom-text imports no host-web, no texture resolver, no canvas or gpu packages', () => {
+    const specifiers = extractImportSpecifiers(resolve(fixturesDirectory, 'scene2d-dom-text/src/render.dom.ts'));
+    expect(specifiers).not.toContain('@flighthq/sdk');
+    expect(specifiers).not.toContain('@flighthq/host-web');
+    expect(specifiers).not.toContain('@flighthq/texture');
+    expect(specifiers).not.toContain('@flighthq/image');
+    expect(specifiers).not.toContain('@flighthq/scene2d-canvas');
+    expect(specifiers).not.toContain('@flighthq/scene2d-gl');
+    expect(specifiers).not.toContain('@flighthq/scene2d-wgpu');
   });
 });
 
