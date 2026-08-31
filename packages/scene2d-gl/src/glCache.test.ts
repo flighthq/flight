@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import type * as GlRenderGlModule from '@flighthq/render-gl/contract';
 import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
@@ -9,7 +10,7 @@ import type * as GlQuadBatchWriterModule from './glQuadBatchWriter';
 
 // The GL render-target lifecycle (@flighthq/render-gl) and the two local collaborators
 // ./glQuadBatchWriter and ./glNode2D are stubbed so cache orchestration can be unit-tested without a real
-// GL pipeline: createGlRenderTarget returns a plain descriptor, and the composite, batch-flush and
+// GL pipeline: createGlRenderTarget returns a minimal target entity, and the composite, batch-flush and
 // subtree-render calls become spies for the call and ordering assertions below.
 //
 // ★ HOISTED MOCKS, NOT HAND-ROLLED ONES. This file is in REGISTRY_ISOLATED_TESTS, so it already runs with
@@ -30,7 +31,7 @@ vi.mock('@flighthq/render-gl/contract', async (importOriginal) => {
     setGlRenderTransform2D: vi.fn(),
     createGlRenderTarget: vi.fn((_state: unknown, descriptor: { width: number; height: number }): GlRenderTarget => {
       const texture = {} as WebGLTexture;
-      return {
+      return createEntity({
         requestedAxes: {
           width: descriptor.width,
           height: descriptor.height,
@@ -58,7 +59,7 @@ vi.mock('@flighthq/render-gl/contract', async (importOriginal) => {
         sampleCount: 1,
         width: descriptor.width,
         height: descriptor.height,
-      };
+      });
     }),
     destroyGlRenderTarget: vi.fn(),
     drawGlRenderTargetResult: vi.fn(),

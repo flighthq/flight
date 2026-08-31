@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { presentGlRenderTarget } from './glPresentRenderTarget';
@@ -5,7 +6,7 @@ import { createGlState } from './glTestHelper';
 
 function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlRenderTarget {
   const format = colorSpace === 'linear' ? 'rgba16f' : 'rgba8';
-  return {
+  return createEntity({
     requestedAxes: {
       width: 32,
       height: 16,
@@ -33,7 +34,7 @@ function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlRen
     depthTexture: null,
     colorRenderbuffers: [],
     depthStencilRenderbuffer: null,
-  };
+  });
 }
 
 describe('presentGlRenderTarget', () => {
