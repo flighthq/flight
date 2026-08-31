@@ -1,0 +1,12 @@
+{
+  "subject": "scene3d-wgpu-particle-emitter-size-fixture",
+  "entries": [
+    {
+      "name": "scene3d-wgpu-particle-emitter",
+      "renderers": ["webgpu"],
+      "routes": {
+        "webgpu": "/"
+      }
+    }
+  ]
+}
