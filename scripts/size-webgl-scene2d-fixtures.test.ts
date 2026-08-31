@@ -238,13 +238,14 @@ describe('WebGL Scene2D size fixtures', () => {
 
       it('declares captureability honestly', () => {
         const packageJson = JSON.parse(readFileSync(resolve(directory, 'package.json'), 'utf8'));
+        const isSizeOnly = 'sizeOnly' in profile && profile.sizeOnly === true;
         expect(packageJson.flightSize).toEqual({
-          ...(profile.sizeOnly === true ? { kind: 'size-only-control' } : {}),
+          ...(isSizeOnly ? { kind: 'size-only-control' } : {}),
           name: profile.name,
         });
 
         const captureManifestPath = resolve(directory, 'tool-capture.json');
-        if (profile.sizeOnly === true) {
+        if (isSizeOnly) {
           expect(existsSync(captureManifestPath)).toBe(false);
           return;
         }
