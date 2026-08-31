@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-dom-sprite-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-dom-sprite",
+      "renderers": ["dom"],
+      "routes": {
+        "dom": "/"
+      }
+    }
+  ]
+}
