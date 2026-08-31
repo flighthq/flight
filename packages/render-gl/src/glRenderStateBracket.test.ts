@@ -214,6 +214,31 @@ describe('popGlRenderState', () => {
     expect(fixture.parameters.get(fixture.gl.ACTIVE_TEXTURE)).toBe(savedActiveTexture);
   });
 
+  // The bracket's saved-field list is the inventory of what Flight promises to hand back, so a unit the
+  // draw path binds but the bracket skips is a silent hole. The count was written for the 2D pipeline's
+  // units 0-2 and never revisited when the 3D path arrived: `glPbrStandardBlock` binds through unit 6,
+  // `glLitProgram` the shadow map and IBL set at 8-11, and `glMeshProgram` the skin palettes at 12-13.
+  // A host that had its own texture on any of those got it back pointing at Flight's.
+  it('restores a texture unit above the 2D range, which the 3D draw path binds', () => {
+    const fixture = createStatefulGl();
+    applyTestGlState(fixture, OUTER_STATE);
+    const savedActiveTexture = fixture.parameters.get(fixture.gl.ACTIVE_TEXTURE);
+    const hostTexture = { name: 'host-skin-palette-texture' } as unknown as WebGLTexture;
+    // 13 is the highest unit any Flight GL path binds (SKIN_NORMAL_PALETTE_TEXTURE_UNIT).
+    const textureUnit = fixture.gl.TEXTURE0 + 13;
+    fixture.gl.activeTexture(textureUnit);
+    fixture.gl.bindTexture(fixture.gl.TEXTURE_2D, hostTexture);
+    fixture.gl.activeTexture(savedActiveTexture as number);
+    pushGlRenderState(fixture.state);
+
+    fixture.gl.activeTexture(textureUnit);
+    fixture.gl.bindTexture(fixture.gl.TEXTURE_2D, { name: 'flight-texture' } as unknown as WebGLTexture);
+    popGlRenderState(fixture.state);
+
+    expect(fixture.textureBindings.get(textureUnit)).toBe(hostTexture);
+    expect(fixture.parameters.get(fixture.gl.ACTIVE_TEXTURE)).toBe(savedActiveTexture);
+  });
+
   it('restores nested pushes in last-in-first-out order', () => {
     const fixture = createStatefulGl();
     applyTestGlState(fixture, OUTER_STATE);
@@ -295,6 +320,7 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
   const { gl, state } = fixture;
   Object.assign(gl, {
     ACTIVE_TEXTURE: 0x84e0,
+    TEXTURE0: 0x84c0,
     BLEND_DST_ALPHA: 0x80ca,
     BLEND_DST_RGB: 0x80c8,
     BLEND_EQUATION_ALPHA: 0x883d,

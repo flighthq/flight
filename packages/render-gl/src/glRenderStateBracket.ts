@@ -236,5 +236,11 @@ function restoreGlCapability(gl: GlContext, capability: GLenum, enabled: boolean
 // The fixed-function state stack is keyed by render state, matching the render-pass bracket: two
 // render states sharing a GL context still have independent ownership/nesting scopes.
 const _renderStateStack = new WeakMap<GlRenderState, SavedGlRenderState[]>();
-// The 2D GL pipelines use units 0-2: the primary image plus two auxiliary effect inputs.
-const GL_RENDER_STATE_TEXTURE_UNIT_COUNT = 3;
+// Every texture unit any Flight GL path binds, because this list IS the promise that a host gets its
+// context back as it left it — a unit bound during a draw but missing here is handed back pointing at
+// Flight's texture, silently. 3 was correct when only the 2D pipelines existed (primary image plus two
+// auxiliary effect inputs) and went stale when the 3D path arrived: `glPbrStandardBlock` binds through
+// unit 6, `glLitProgram` the shadow map and IBL set at 8-11, and `glMeshProgram` the skin palettes at
+// 12-13, the highest. It cannot be derived here — those constants live in `scene3d-gl`, which depends
+// on this package and not the other way round — so adding a unit above 13 anywhere means raising this.
+const GL_RENDER_STATE_TEXTURE_UNIT_COUNT = 14;

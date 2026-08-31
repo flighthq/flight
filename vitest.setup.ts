@@ -139,6 +139,9 @@ function installCanvas2dRoundRectValidation(): void {
 
 const GL_CONSTANTS: Record<string, number> = {
   TEXTURE_2D: 0x0de1,
+  TEXTURE0: 0x84c0,
+  ACTIVE_TEXTURE: 0x84e0,
+  TEXTURE_BINDING_2D: 0x8069,
   TEXTURE_MIN_FILTER: 0x2801,
   TEXTURE_MAG_FILTER: 0x2800,
   TEXTURE_WRAP_S: 0x2802,

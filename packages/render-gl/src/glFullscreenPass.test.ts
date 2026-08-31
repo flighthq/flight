@@ -184,6 +184,84 @@ describe('drawGlFullscreenPass', () => {
     expect(gl.getParameter(gl.DEPTH_WRITEMASK)).toBe(false);
   });
 
+  // The depth defect's surviving twin. `applyGlBlendMode` sets the equation and factors but never the
+  // BLEND enable bit, which the pass inherited from whatever ran before — in practice from the single
+  // `gl.enable(gl.BLEND)` in `createGlRenderState`. That is not a safe thing to inherit: `drawGlScene3D`
+  // ends a blended subset pass with `gl.disable(gl.BLEND)` and never re-enables it, so a present or
+  // effect pass following a 3D scene composited with blending silently off.
+  it('draws with blending enabled even when the caller left it disabled', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.disable(gl.BLEND);
+    let blendAtDraw: boolean | null = null;
+    vi.spyOn(gl, 'drawElements').mockImplementation(() => {
+      blendAtDraw = gl.isEnabled(gl.BLEND);
+    });
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(blendAtDraw).toBe(true);
+  });
+
+  it('restores a caller that had blending disabled', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.disable(gl.BLEND);
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(gl.isEnabled(gl.BLEND)).toBe(false);
+  });
+
+  it('leaves blending enabled for a caller that already had it on', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.enable(gl.BLEND);
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(gl.isEnabled(gl.BLEND)).toBe(true);
+  });
+
+  // The quad currently survives an inherited CULL_FACE only because it happens to be wound CCW and the
+  // mesh path happens to restore FRONT_FACE to CCW after every draw. `glMeshProgram` says so in its own
+  // comment — leaving CW set behind a mirrored mesh "culls that pass and the whole frame comes back
+  // blank", which is a defect this repo has already had once. Owning the bit here retires that
+  // cross-package invariant: no winding convention or inherited cull state can drop a fullscreen quad.
+  it('draws with face culling off, whatever the caller left enabled', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.enable(gl.CULL_FACE);
+    let cullAtDraw: boolean | null = null;
+    vi.spyOn(gl, 'drawElements').mockImplementation(() => {
+      cullAtDraw = gl.isEnabled(gl.CULL_FACE);
+    });
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(cullAtDraw).toBe(false);
+  });
+
+  it('restores a caller that had face culling enabled', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.enable(gl.CULL_FACE);
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(gl.isEnabled(gl.CULL_FACE)).toBe(true);
+  });
+
+  it('leaves face culling off for a caller that already had it off', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.disable(gl.CULL_FACE);
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(gl.isEnabled(gl.CULL_FACE)).toBe(false);
+  });
+
   it('binds the destination framebuffer and sets its viewport', () => {
     const { state, gl } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
