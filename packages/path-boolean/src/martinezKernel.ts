@@ -48,7 +48,7 @@ interface SweepEvent {
   x: number;
   y: number;
   left: boolean;
-  otherEvent: SweepEvent;
+  otherEvent: SweepEvent | null;
   isSubject: boolean;
   id: number;
   windingDelta: number;
@@ -138,7 +138,7 @@ function buildArrangement(
       if (next !== null) possibleIntersection(event, next, heap);
       if (prev !== null) possibleIntersection(prev, event, heap);
     } else {
-      const leftEvent = event.otherEvent;
+      const leftEvent = getOtherEvent(event);
       const index = findStatus(status, leftEvent);
       if (index !== -1) {
         const prev = index > 0 ? status[index - 1] : null;
@@ -209,7 +209,7 @@ function createEvent(x: number, y: number, isSubject: boolean): SweepEvent {
     x,
     y,
     left: false,
-    otherEvent: null as unknown as SweepEvent,
+    otherEvent: null,
     isSubject,
     id: nextEventId++,
     windingDelta: 0,
@@ -218,16 +218,9 @@ function createEvent(x: number, y: number, isSubject: boolean): SweepEvent {
 
 // Reshapes the arrangement so two status-neighbor segments only ever meet at shared endpoints.
 function possibleIntersection(le1: SweepEvent, le2: SweepEvent, heap: EventHeap): void {
-  const inter = segmentIntersection(
-    le1.x,
-    le1.y,
-    le1.otherEvent.x,
-    le1.otherEvent.y,
-    le2.x,
-    le2.y,
-    le2.otherEvent.x,
-    le2.otherEvent.y,
-  );
+  const le1Other = getOtherEvent(le1);
+  const le2Other = getOtherEvent(le2);
+  const inter = segmentIntersection(le1.x, le1.y, le1Other.x, le1Other.y, le2.x, le2.y, le2Other.x, le2Other.y);
   if (inter === null) return;
 
   if (inter.length === 1) {
@@ -241,19 +234,20 @@ function possibleIntersection(le1: SweepEvent, le2: SweepEvent, heap: EventHeap)
   // Collinear overlap: split each segment at the other's strictly-interior endpoints. Remaining overlap
   // on the freshly-created halves is resolved when those halves become status neighbors and are tested.
   divideIfInterior(le1, le2.x, le2.y, heap);
-  divideIfInterior(le1, le2.otherEvent.x, le2.otherEvent.y, heap);
+  divideIfInterior(le1, le2Other.x, le2Other.y, heap);
   divideIfInterior(le2, le1.x, le1.y, heap);
-  divideIfInterior(le2, le1.otherEvent.x, le1.otherEvent.y, heap);
+  divideIfInterior(le2, le1Other.x, le1Other.y, heap);
 }
 
 function divideIfInterior(le: SweepEvent, x: number, y: number, heap: EventHeap): void {
-  if (pointStrictlyInside(le.x, le.y, le.otherEvent.x, le.otherEvent.y, x, y)) divideSegment(le, x, y, heap);
+  const other = getOtherEvent(le);
+  if (pointStrictlyInside(le.x, le.y, other.x, other.y, x, y)) divideSegment(le, x, y, heap);
 }
 
 // Splits `le` at interior point (x, y): the left half keeps `le` as its left endpoint; a fresh left
 // event opens the right half. Both halves inherit the ring orientation, so their winding deltas match.
 function divideSegment(le: SweepEvent, x: number, y: number, heap: EventHeap): void {
-  const right = le.otherEvent;
+  const right = getOtherEvent(le);
   const newRight = createEvent(x, y, le.isSubject);
   const newLeft = createEvent(x, y, le.isSubject);
   newRight.left = false;
@@ -268,10 +262,8 @@ function divideSegment(le: SweepEvent, x: number, y: number, heap: EventHeap): v
 }
 
 function pointOnEndpoint(le: SweepEvent, x: number, y: number): boolean {
-  return (
-    (approxEqual(le.x, x) && approxEqual(le.y, y)) ||
-    (approxEqual(le.otherEvent.x, x) && approxEqual(le.otherEvent.y, y))
-  );
+  const other = getOtherEvent(le);
+  return (approxEqual(le.x, x) && approxEqual(le.y, y)) || (approxEqual(other.x, x) && approxEqual(other.y, y));
 }
 
 function pointStrictlyInside(lx: number, ly: number, rx: number, ry: number, x: number, y: number): boolean {
@@ -309,13 +301,15 @@ function compareSegments(le1: SweepEvent, le2: SweepEvent): number {
   if (le1 === le2) return 0;
   const a1x = le1.x;
   const a1y = le1.y;
-  const a2x = le1.otherEvent.x;
-  const a2y = le1.otherEvent.y;
+  const le2Other = getOtherEvent(le2);
+  const le1Other = getOtherEvent(le1);
+  const a2x = le1Other.x;
+  const a2y = le1Other.y;
   const s1 = signedArea(a1x, a1y, a2x, a2y, le2.x, le2.y);
-  const s2 = signedArea(a1x, a1y, a2x, a2y, le2.otherEvent.x, le2.otherEvent.y);
+  const s2 = signedArea(a1x, a1y, a2x, a2y, le2Other.x, le2Other.y);
 
   if (s1 !== 0 || s2 !== 0) {
-    if (a1x === le2.x && a1y === le2.y) return isBelow(le1, le2.otherEvent.x, le2.otherEvent.y) ? -1 : 1;
+    if (a1x === le2.x && a1y === le2.y) return isBelow(le1, le2Other.x, le2Other.y) ? -1 : 1;
     if (a1x === le2.x) return a1y < le2.y ? -1 : 1;
     if (compareEvents(le1, le2) === 1) return isBelow(le2, a1x, a1y) ? 1 : -1;
     return isBelow(le1, le2.x, le2.y) ? -1 : 1;
@@ -328,9 +322,10 @@ function compareSegments(le1: SweepEvent, le2: SweepEvent): number {
 
 // True when segment `le` passes strictly below point (x, y).
 function isBelow(le: SweepEvent, x: number, y: number): boolean {
+  const other = getOtherEvent(le);
   return le.left
-    ? signedArea(le.x, le.y, le.otherEvent.x, le.otherEvent.y, x, y) > 0
-    : signedArea(le.otherEvent.x, le.otherEvent.y, le.x, le.y, x, y) > 0;
+    ? signedArea(le.x, le.y, other.x, other.y, x, y) > 0
+    : signedArea(other.x, other.y, le.x, le.y, x, y) > 0;
 }
 
 // Priority order of two events: by x, then y, then right-endpoint-before-left, then by slope, then a
@@ -340,10 +335,19 @@ function compareEvents(e1: SweepEvent, e2: SweepEvent): number {
   if (e1.y !== e2.y) return e1.y < e2.y ? -1 : 1;
   if (e1 === e2) return 0;
   if (e1.left !== e2.left) return e1.left ? 1 : -1;
-  const area = signedArea(e1.x, e1.y, e1.otherEvent.x, e1.otherEvent.y, e2.otherEvent.x, e2.otherEvent.y);
-  if (area !== 0) return isBelow(e1, e2.otherEvent.x, e2.otherEvent.y) ? -1 : 1;
+  const e1Other = getOtherEvent(e1);
+  const e2Other = getOtherEvent(e2);
+  const area = signedArea(e1.x, e1.y, e1Other.x, e1Other.y, e2Other.x, e2Other.y);
+  if (area !== 0) return isBelow(e1, e2Other.x, e2Other.y) ? -1 : 1;
   if (e1.isSubject !== e2.isSubject) return e1.isSubject ? -1 : 1;
   return e1.id < e2.id ? -1 : 1;
+}
+
+function getOtherEvent(event: SweepEvent): SweepEvent {
+  if (event.otherEvent === null) {
+    throw new Error('Sweep event entered the Martinez queue before its endpoint pair was linked');
+  }
+  return event.otherEvent;
 }
 
 function pointOrder(ax: number, ay: number, bx: number, by: number): number {
