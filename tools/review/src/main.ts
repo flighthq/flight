@@ -1,5 +1,4 @@
-// @ts-expect-error -- virtual module typed below
-import { tests as _tests } from 'virtual:review-manifest';
+import { tests } from 'virtual:review-manifest';
 
 import { parseReviewApprovals, serializeReviewApprovals } from './approvalState';
 import {
@@ -9,7 +8,6 @@ import {
   reviewableCells,
   selectedReviewableCell,
 } from './cellRole';
-import type { ReviewCellRole } from './cellRole';
 import {
   isReviewCommissionEligible,
   reviewCommissionIneligibility,
@@ -20,6 +18,8 @@ import { reviewMissingReferenceMessage } from './commissionState';
 import type { ReviewCommissionState as CommissionState } from './commissionState';
 import { createReviewCommissionPayloadCell, markReviewCommissionRequested } from './referenceImageCommission';
 import { filterReviewItems } from './reviewFilter';
+import { parseReviewManifest } from './reviewManifest';
+import type { ReviewCell, ReviewTest } from './reviewManifest';
 import {
   orderReviewItems,
   resolveReviewAttentionGroup,
@@ -28,70 +28,9 @@ import {
 } from './reviewOrder';
 import type { ReviewAttentionGroup as AttentionGroup } from './reviewOrder';
 
-interface ReviewCellProvenance {
-  hostInstanceId: string | null;
-  environmentId: string | null;
-}
-
-interface ReviewBuildProvenance {
-  commit: string | null;
-  dirty: string[];
-  dirtyOmitted: number;
-}
-
-type ParityStatus = 'passed' | 'failed' | 'no-data';
-
-/** Serialized server result; policy behavior remains exclusively in scripts/reference-image-tolerance.ts. */
-interface ReviewReferenceImageComparison {
-  fraction: number;
-  maxChannelDelta: number;
-  dimensionMismatch: boolean;
-}
-
-interface ReviewReferenceImageTolerance {
-  channelTolerance: number;
-  comparisonPolicyId: string;
-  gateOnMaxChannelDelta: boolean;
-  maxChannelDelta: number;
-  maxFraction: number;
-  overridden: boolean;
-  reason: string | null;
-  scene: string;
-}
-
-interface ReviewCell {
-  renderer: string;
-  role: ReviewCellRole;
-  state: 'ready' | 'error';
-  error: string | null;
-  changed: boolean | null;
-  hash: string | null;
-  referencePixelSha256: string | null;
-  provenance: ReviewCellProvenance | null;
-  build: ReviewBuildProvenance | null;
-  commissionState: CommissionState | null;
-  comparisonPolicy: ReviewReferenceImageTolerance | null;
-  referenceComparison: ReviewReferenceImageComparison | null;
-  referenceComparisonMatches: boolean | null;
-  referenceComparisonMeasured: boolean;
-  referenceComparisonProblem: string | null;
-  holdReason: string | null;
-  parityStatus: ParityStatus;
-}
-
-interface ReviewTest {
-  tool: string;
-  name: string;
-  cells: ReviewCell[];
-  expectedImageDescription?: string;
-  sourceHasDescription: boolean;
-  toleranceWritable: boolean;
-  withheldReason?: string;
-}
-
 const STORAGE_KEY = 'review-selected';
 const APPROVALS_STORAGE_KEY = 'review-approvals';
-const allTests = _tests as ReviewTest[];
+const allTests = parseReviewManifest(tests);
 
 for (const t of allTests) {
   const reviewable = reviewableCells(t.cells);
