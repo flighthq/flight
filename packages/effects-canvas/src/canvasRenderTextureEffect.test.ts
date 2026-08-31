@@ -31,7 +31,7 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
     registerCanvasRenderEffect(state, 'acme.Second', second);
 
     expect(
-      applyCanvasRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
+      applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
         { kind: 'acme.First' },
         { kind: 'acme.Second' },
       ]),
@@ -53,7 +53,7 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
     writeCanvasRenderTextureTarget(state, source, () => {});
 
     expect(
-      applyCanvasRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [{ kind: 'acme.Missing' }]),
+      applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [{ kind: 'acme.Missing' }]),
     ).toBe(false);
     expect(isCanvasRenderTextureReady(state, dest)).toBe(false);
   });

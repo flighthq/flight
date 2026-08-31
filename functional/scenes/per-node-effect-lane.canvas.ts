@@ -215,6 +215,7 @@ function captureSubtree(): {
       });
       if (
         !applyCanvasRenderEffectsToRenderTexture(
+          state,
           offscreenState,
           pool,
           sourceTexture,
