@@ -113,12 +113,17 @@ export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
   // warning fired (entry count > 0) fail if a prior file in the same worker already consumed the key.
   { path: 'packages/bitmapfont/src/enableBitmapFontGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/camera/src/enableCameraGuards.test.ts', reason: 'process-global-registry' },
+  {
+    path: 'packages/collision/src/registerBuiltInCollisionPairTests3D.test.ts',
+    reason: 'process-global-registry',
+  },
   { path: 'packages/effects-gl/src/enableGlRenderEffectGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/effects-wgpu/src/enableWgpuRenderEffectGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/geometry/src/enableGeometryPoolGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/glyphatlas/src/enableGlyphAtlasGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/log/src/log.test.ts', reason: 'process-global-registry' },
   { path: 'packages/node/src/enableNodeGuards.test.ts', reason: 'process-global-registry' },
+  { path: 'packages/physics3d-abi/src/referencePhysics3DAbi.test.ts', reason: 'process-global-registry' },
   { path: 'packages/physics3d/src/explainPhysics3DCollision.test.ts', reason: 'process-global-registry' },
   { path: 'packages/render-gl/src/enableGlRenderStateGuards.test.ts', reason: 'process-global-registry' },
   { path: 'packages/render-wgpu/src/wgpuHost.test.ts', reason: 'process-global-registry' },
