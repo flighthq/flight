@@ -25,6 +25,7 @@ import {
   createSphereMeshGeometry,
   createStandardPbrMaterial,
   createStandardPbrMaterialProperties,
+  createTorusMeshGeometry,
   createWrappedDiffusePbrExtension,
   createBitmap,
   createTexture,
@@ -622,6 +623,22 @@ for (let index = 0; index < entries.length; index++) {
   meshes.push(mesh);
 }
 
+// Which sphere is selected has to be readable from the render itself, not only from the panel. A size
+// bump alone is not that: at the scale this grid is drawn, 1.16x is a couple of pixels and a reader
+// comparing two spheres cannot tell. Recolouring the selected sphere is not available either — each
+// sphere IS the material being shown, so tinting it would destroy the thing the reader came to see.
+//
+// So the mark is separate geometry: an unlit torus, bright against the dark background and lit by
+// nothing, surrounding the selected sphere without touching it. The generator lays the torus out in
+// the XY plane, which is the plane this grid sits in, so it reads as a ring from every angle the orbit
+// allows. Sized against the layout rather than by eye: sphere radius 0.68 at SELECTED_MESH_SCALE, grid
+// pitch 1.75 x 1.65, so the tube clears the scaled sphere and stays inside half the tighter pitch.
+const SELECTED_MESH_SCALE = 1.08;
+const selectionRing = createMesh(createTorusMeshGeometry(0.8, 0.042, 12, 64), [
+  createUnlitMaterial({ baseColor: 0x7ef7c8ff }),
+]);
+addNodeChild(scene, selectionRing);
+
 const camera = createCamera3D({
   far: 60,
   near: 0.1,
@@ -815,13 +832,18 @@ function formatControlValue(value: number, step: number): string {
 
 function updateSelection(): void {
   for (let index = 0; index < meshes.length; index++) {
-    const scaleValue = index === selectedIndex ? 1.16 : 1;
+    const scaleValue = index === selectedIndex ? SELECTED_MESH_SCALE : 1;
     const mesh = meshes[index];
     mesh.scale.x = scaleValue;
     mesh.scale.y = scaleValue;
     mesh.scale.z = scaleValue;
     invalidateNodeLocalTransform(mesh);
   }
+  const selectedMesh = meshes[selectedIndex];
+  selectionRing.position.x = selectedMesh.position.x;
+  selectionRing.position.y = selectedMesh.position.y;
+  selectionRing.position.z = selectedMesh.position.z;
+  invalidateNodeLocalTransform(selectionRing);
 }
 
 function selectMaterial(index: number): void {
