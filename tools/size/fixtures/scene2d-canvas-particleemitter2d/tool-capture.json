@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-canvas-particleemitter2d-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-canvas-particleemitter2d",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
