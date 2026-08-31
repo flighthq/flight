@@ -94,11 +94,18 @@ const APPROVALS_STORAGE_KEY = 'review-approvals';
 const allTests = _tests as ReviewTest[];
 
 for (const t of allTests) {
-  for (const cell of t.cells) {
-    if (cell.referenceComparisonMatches === true && cell.commissionState === 'differs') {
-      // eslint-disable-next-line no-console
-      console.warn('[review] inconsistency:', t.tool, t.name, cell.renderer, cell);
-    }
+  const reviewable = reviewableCells(t.cells);
+  const group = resolveReviewAttentionGroup(reviewable);
+  if (group !== 'included' && group !== 'requested') {
+    const cells = reviewable.map((c) => ({
+      renderer: c.renderer,
+      commission: c.commissionState,
+      changed: c.changed,
+      matches: c.referenceComparisonMatches,
+      fraction: c.referenceComparison?.fraction ?? null,
+    }));
+    // eslint-disable-next-line no-console
+    console.warn(`[review] ${t.name} → ${group}`, cells);
   }
 }
 
