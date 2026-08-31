@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "flightSize": {
+    "kind": "size-only-control",
     "name": "scene2d-canvas-transform"
   }
 }
