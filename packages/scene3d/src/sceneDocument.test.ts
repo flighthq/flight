@@ -37,7 +37,7 @@ describe('createScene3DFromDocument', () => {
   });
 
   it('builds a mesh node from a document mesh, resolving materials by index', () => {
-    const material = createStandardPbrMaterial() as unknown as MaterialLike;
+    const material = createStandardPbrMaterial();
     const document = emptyDocument();
     document.materials = [material];
     document.meshes = [{ geometry: triangleGeometry(), materials: [0] }];
@@ -49,6 +49,24 @@ describe('createScene3DFromDocument', () => {
     expect(roots).toHaveLength(1);
     expect(isMesh(roots[0] as Node3D)).toBe(true);
     expect((roots[0] as unknown as Mesh).materials[0]).toBe(material);
+  });
+
+  it('materializes a structural document material as a distinct entity-backed live material', () => {
+    const material: MaterialLike = { kind: 'test.StructuralMaterial', name: 'structural' };
+    expect(EntityRuntimeKey in material).toBe(false);
+    const document = emptyDocument();
+    document.materials = [material];
+    document.meshes = [{ geometry: triangleGeometry(), materials: [0] }];
+    document.nodes = [{ children: [], kind: MeshKind, mesh: 0, transform: createTransform3D() }];
+    document.scenes = [{ rootNodes: [0] }];
+
+    const scene = createScene3DFromDocument(document);
+    const mesh = getNodeChildren(scene.root)[0] as unknown as Mesh;
+    const liveMaterial = mesh.materials[0]!;
+    expect(liveMaterial).not.toBe(material);
+    expect(EntityRuntimeKey in liveMaterial).toBe(true);
+    expect(liveMaterial.kind).toBe(material.kind);
+    expect(liveMaterial.name).toBe(material.name);
   });
 
   it('wires child index lists into the built hierarchy', () => {
