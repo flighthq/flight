@@ -50,5 +50,13 @@
   "scene2d-wgpu-pipeline-scale9shape:webgpu": 26408,
   "scene2d-wgpu-pipeline-shape:webgpu": 22234,
   "scene2d-wgpu-pipeline-textlabel:webgpu": 18872,
-  "scene2d-wgpu-pipeline-tilemap:webgpu": 15832
+  "scene2d-wgpu-pipeline-tilemap:webgpu": 15832,
+  "scene2d-gl-pipeline-bitmaptext:webgl": 10879,
+  "scene2d-gl-pipeline-displayobject:webgl": 5867,
+  "scene2d-gl-pipeline-morphshape:webgl": 17174,
+  "scene2d-gl-pipeline-particleemitter2d:webgl": 9422,
+  "scene2d-gl-pipeline-richtext:webgl": 12697,
+  "scene2d-gl-pipeline-scale9shape:webgl": 18854,
+  "scene2d-gl-pipeline-textlabel:webgl": 11731,
+  "scene2d-gl-pipeline-tilemap:webgl": 9428
 }
