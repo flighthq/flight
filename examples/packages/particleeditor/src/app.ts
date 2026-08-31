@@ -19,6 +19,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   particleColorCurveFromKeyframes,
+  setTextLabelString,
   updateParticleEmitter2D,
 } from '@flighthq/sdk';
 import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/sdk/animation';
@@ -387,8 +388,7 @@ function enterFrame(): void {
   updateParticleEmitter2D(emitter, simState, config, dt);
   invalidateNodeAppearance(emitter);
 
-  countLabel.data.text = `${emitter.data.particleCount} particles`;
-  invalidateNodeAppearance(countLabel);
+  setTextLabelString(countLabel, `${emitter.data.particleCount} particles`);
 
   render(root);
   requestAnimationFrame(enterFrame);

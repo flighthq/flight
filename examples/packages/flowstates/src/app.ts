@@ -6,9 +6,9 @@ import {
   createDisplayObject,
   createShape,
   createTextLabel,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   removeNodeChildren,
+  setTextLabelString,
 } from '@flighthq/sdk';
 import {
   clearFlowStack,
@@ -55,8 +55,7 @@ function createLabel(text: string, x: number, y: number, size: number, color: nu
 }
 
 function updateLabel(label: Node2D, text: string): void {
-  (label as ReturnType<typeof createTextLabel>).data.text = text;
-  invalidateNodeAppearance(label);
+  setTextLabelString(label as ReturnType<typeof createTextLabel>, text);
 }
 
 // Each flow state owns a container of display objects. The container is created in onEnter and

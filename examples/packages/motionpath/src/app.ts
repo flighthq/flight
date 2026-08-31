@@ -11,9 +11,9 @@ import {
   createDisplayObject,
   createShape,
   createTextLabel,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   RAD_TO_DEG,
+  setTextLabelString,
 } from '@flighthq/sdk';
 import {
   createMotionPath,
@@ -119,8 +119,7 @@ function createLabel(text: string, x: number, y: number, size: number, color: nu
 }
 
 function updateLabel(label: Node2D, text: string): void {
-  (label as ReturnType<typeof createTextLabel>).data.text = text;
-  invalidateNodeAppearance(label);
+  setTextLabelString(label as ReturnType<typeof createTextLabel>, text);
 }
 
 const titleLabel = createLabel('Motion Path', 20, 10, 24, 0xffffffff);

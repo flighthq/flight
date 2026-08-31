@@ -20,6 +20,7 @@ import {
   defaultGlQuadBatchRenderer,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
   prepareScene2DRender,
   QuadBatchKind,
   registerGlImageTextureResolver,
@@ -113,8 +114,7 @@ let clickCount = 0;
 producerCanvas.addEventListener('click', () => {
   clickCount++;
   phaseOffset += 17;
-  liveEventLabel.data.text = `native canvas clicks: ${clickCount}`;
-  invalidateNodeAppearance(liveEventLabel);
+  setTextLabelString(liveEventLabel, `native canvas clicks: ${clickCount}`);
 });
 
 let frame = 0;

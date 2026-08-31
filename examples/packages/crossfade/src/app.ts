@@ -10,8 +10,8 @@ import {
   createDisplayObject,
   createShape,
   createTextLabel,
-  invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  setTextLabelString,
 } from '@flighthq/sdk';
 import {
   advanceAnimationLayerStack,
@@ -250,10 +250,12 @@ function updateFrame(): void {
   invalidateNodeLocalTransform(leftLeg);
   invalidateNodeLocalTransform(rightLeg);
   invalidateNodeLocalTransform(barFill);
-  status.data.text = isAnimationStateMachineTransitioning(stateMachine)
-    ? `Idle -> locomotion  ${(stateMachine.transitionWeight * 100).toFixed(0)}%`
-    : 'Locomotion | walk/run + masked body accent';
-  invalidateNodeAppearance(status);
+  setTextLabelString(
+    status,
+    isAnimationStateMachineTransitioning(stateMachine)
+      ? `Idle -> locomotion  ${(stateMachine.transitionWeight * 100).toFixed(0)}%`
+      : 'Locomotion | walk/run + masked body accent',
+  );
 }
 
 let lastTime = performance.now();
