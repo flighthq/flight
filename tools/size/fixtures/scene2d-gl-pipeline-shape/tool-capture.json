@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-gl-pipeline-shape-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-gl-pipeline-shape",
+      "renderers": ["webgl"],
+      "routes": {
+        "webgl": "/"
+      }
+    }
+  ]
+}
