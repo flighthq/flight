@@ -733,6 +733,7 @@ export * from './TextInputState';
 export * from './TextItem';
 export * from './TextJustification';
 export * from './TextLabel';
+export * from './TextLabelContentExplanation';
 export * from './TextLayout';
 export * from './TextLineMetrics';
 export * from './TextListMarker';

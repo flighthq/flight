@@ -142,6 +142,7 @@ export function createRichTextRuntime(): RichTextRuntime {
   out.buildTextLayoutParams = buildRichTextLayoutParams;
   out.textLayout = null;
   out.textLayoutUsingContentId = -1;
+  out.textLayoutUsingText = null;
   out.richTextContent = null;
   out.selectionBeginIndex = 0;
   out.selectionEndIndex = 0;

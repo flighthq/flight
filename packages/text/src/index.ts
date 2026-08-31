@@ -1,6 +1,9 @@
 export {
   appendRichTextString,
   appendTextLabelString,
+  disableTextLabelGuards,
+  enableTextLabelGuards,
+  explainTextLabelContent,
   buildRichTextLayoutParams,
   clearRichTextFormatRanges,
   computeNativeTextLocalBoundsRectangle,
