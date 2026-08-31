@@ -758,7 +758,7 @@ canvas.addEventListener('click', (event: MouseEvent) => {
   const picked = pickScene3D(scene, camera, screenX, screenY, hit, {
     predicate: (mesh) => pickableMeshes.has(mesh),
   })?.node;
-  if (picked === undefined) return;
+  if (picked == null) return;
   const index = meshes.indexOf(picked);
   if (index >= 0) selectMaterial(index);
 });

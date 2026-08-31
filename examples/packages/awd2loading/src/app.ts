@@ -1,4 +1,4 @@
-import type { ImportDiagnostic, Scene3DLightsLike } from '@flighthq/sdk';
+import type { ImportDiagnostic, Scene3DLightsLike, ShadedMaterial } from '@flighthq/sdk';
 import {
   createCamera3D,
   createPerspectiveProjection,
@@ -35,7 +35,7 @@ const importedMeshes = getNodeChildren(documentScene3D.root).filter(isMesh);
 for (const mesh of importedMeshes) {
   const material = mesh.materials[0];
   if (material?.kind === ShadedMaterialKind) {
-    material.modifiers = [
+    (material as ShadedMaterial).modifiers = [
       createRimModifier({
         color: 0x49d8ffff,
         intensity: 0.72,
