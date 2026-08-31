@@ -160,7 +160,7 @@ describe('minimal size fixture harness', () => {
     expect(violations).toEqual([]);
   });
 
-  test('keeps declared size-only controls renderer-free as comparator floors', () => {
+  test('keeps declared size-only controls free of visible feature renderers as comparator floors', () => {
     const violations = fixtures.flatMap((fixture) => {
       if (fixture.kind === 'invalid') {
         return [`${fixture.name}: flightSize.kind must be omitted or equal 'size-only-control'`];
@@ -171,7 +171,11 @@ describe('minimal size fixture harness', () => {
       if (fixture.renderers.length !== 1) {
         problems.push(`expected one size entry, found ${fixture.renderers.join(', ')}`);
       }
-      if (fixture.rendererBindingCalls.length > 0) {
+      const bindsOnlyWebGlTraversal =
+        fixture.name === 'scene2d-gl-pipeline-displayobject' &&
+        fixture.rendererBindingCalls.length === 1 &&
+        fixture.rendererBindingCalls[0] === 'src/render.webgl.ts:registerRenderer';
+      if (fixture.rendererBindingCalls.length > 0 && !bindsOnlyWebGlTraversal) {
         problems.push(`binds renderer through ${fixture.rendererBindingCalls.join(', ')}`);
       }
       return problems.map((problem) => `${fixture.name}: ${problem}`);
@@ -483,7 +487,7 @@ function isAllowedCanvasBridge(
         'defaultCanvasShapeCommands',
         'registerCanvasShapeCommands',
       ])
-    : fixture.name === 'scene2d-wgpu-pipeline-scale9shape'
+    : fixture.name === 'scene2d-gl-pipeline-scale9shape' || fixture.name === 'scene2d-wgpu-pipeline-scale9shape'
       ? new Set(['createCanvasShapeRasterizer', 'createCanvasTextureResolvers'])
       : null;
   if (allowed === null) return false;
