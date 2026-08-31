@@ -10,12 +10,12 @@ import { webDeviceBackend } from './webDevice';
 import { webDialogHost } from './webDialogHost';
 import { webFileSystemBackend } from './webFilesystem';
 import { webGraphicsHost } from './webGraphicsHost';
+import { webHostNet } from './webHostNet';
 import { webInputHost } from './webInputHost';
 import { webLifecycleBackend } from './webLifecycle';
 import { webApplicationVisibilityBackend, webLoopBackend } from './webLoop';
 import { webMediaSessionActionBackend, webMediaSessionBackend } from './webMediasession';
 import { webMenuHost } from './webMenuHost';
-import { webNetBackend } from './webNet';
 import { webPlatformBackend } from './webPlatform';
 import { webPowerCapabilities } from './webPower';
 import { createWebProtocolCapabilities } from './webProtocol';
@@ -23,7 +23,6 @@ import { webScreenCapabilities } from './webScreen';
 import { webSensorsBackend } from './webSensors';
 import { webShareHost } from './webShareHost';
 import { webShellHost } from './webShellHost';
-import { webSocketBackend } from './webSocket';
 import { webStatusBarColorBackend } from './webStatusbar';
 import { webStorageBackend } from './webStorage';
 import { createWebWindowStoragePersistenceCapabilities } from './webStoragePersistence';
@@ -69,7 +68,7 @@ export const webHost = createHost({
   menu: webMenuHost.menu,
   // MIDI access may prompt and enumerate hardware, so only the injected profile factories claim it.
   midi: {},
-  net: { http: webNetBackend, socket: webSocketBackend },
+  net: webHostNet.net,
   power: webPowerCapabilities,
   protocol: webProtocolCapabilities,
   // Notification construction is execution-context-specific (page vs Service Worker) and requires an
