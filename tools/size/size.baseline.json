@@ -58,5 +58,11 @@
   "scene2d-gl-pipeline-richtext:webgl": 12697,
   "scene2d-gl-pipeline-scale9shape:webgl": 18854,
   "scene2d-gl-pipeline-textlabel:webgl": 11731,
-  "scene2d-gl-pipeline-tilemap:webgl": 9428
+  "scene2d-gl-pipeline-tilemap:webgl": 9428,
+  "scene3d-gl-billboard:webgl": 17868,
+  "scene3d-gl-node:webgl": 11599,
+  "scene3d-gl-particle-emitter:webgl": 12533,
+  "scene3d-wgpu-billboard:webgpu": 25072,
+  "scene3d-wgpu-node:webgpu": 13411,
+  "scene3d-wgpu-particle-emitter:webgpu": 18111
 }

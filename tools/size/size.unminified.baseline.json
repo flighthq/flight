@@ -41,7 +41,10 @@
   "scene2d-gl-pipeline-sprite:webgl": 15082,
   "scene2d-gl-pipeline-textlabel:webgl": 19382,
   "scene2d-gl-pipeline-tilemap:webgl": 15531,
+  "scene3d-gl-billboard:webgl": 29627,
   "scene3d-gl-camera-mesh:webgl": 30223,
+  "scene3d-gl-node:webgl": 19753,
+  "scene3d-gl-particle-emitter:webgl": 21356,
   "scene3d-gl-textured-mesh:webgl": 27943,
   "scene3d-gl-untextured-mesh:webgl": 27138,
   "scene2d-wgpu-pipeline:webgpu": 45335,
@@ -56,7 +59,10 @@
   "scene2d-wgpu-pipeline-sprite:webgpu": 20105,
   "scene2d-wgpu-pipeline-textlabel:webgpu": 25327,
   "scene2d-wgpu-pipeline-tilemap:webgpu": 20099,
+  "scene3d-wgpu-billboard:webgpu": 35952,
   "scene3d-wgpu-camera-mesh:webgpu": 36529,
+  "scene3d-wgpu-node:webgpu": 22765,
+  "scene3d-wgpu-particle-emitter:webgpu": 24408,
   "scene3d-wgpu-textured-mesh:webgpu": 35094,
   "scene3d-wgpu-untextured-mesh:webgpu": 33447
 }
