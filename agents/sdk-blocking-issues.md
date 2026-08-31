@@ -1,59 +1,33 @@
 # SDK Issues Blocking AwayJS Example Parity
 
-Discovered during side-by-side comparison of all 26 AwayJS examples (Flight vs AwayJS original).
+Discovered during side-by-side comparison of the Flight and AwayJS examples. Re-audited against the
+current repository on 2026-08-31.
 
-## 1. AWD parser does not extract embedded textures/materials
+## Open blockers
 
-**Package:** `@flighthq/scene3d-formats` — `awdParse.ts`
-**Impact:** `intermediate-awd-viewer` (shambler model renders as untextured gray instead of detailed textured skin)
+None of the eight originally recorded SDK blockers remains open.
 
-`createScene3DFromAwd` extracts geometry and skeleton data but has zero texture/material handling — no matches for `texture`, `diffuseMap`, `bitmap`, `image`, or `embed` in the parser. AWD files can embed textures and material definitions. Without this, every AWD model requires manual material/texture assignment in example code, and models with embedded-only textures (no separate image files on disk) cannot be textured at all.
+## Closure audit
 
-## 2. `drawGlScene` does not draw `ParticleEmitter3D` nodes
-
-**Package:** `@flighthq/scene3d-gl` — `drawGlScene.ts`
-**Impact:** `intermediate-particle-explosions`, `basic-fire`
-
-`drawGlScene` only handles `Mesh` nodes. 3D particle emitters require a separate `drawGlSceneParticleEmitters(state, scene, camera, lights)` call. This is a footgun — users must know to call both functions. Every example that uses 3D particles needs this second call or particles are invisible.
-
-## 3. No per-particle color support in 3D particle emitter
-
-**Package:** `@flighthq/particles` / `@flighthq/particleemitter`
-**Impact:** `intermediate-particle-explosions` (particles render white instead of matching source image pixel colors)
-
-`emitParticleBurst3D(emitter, state, config, count, x, y, z)` only accepts position. The example samples pixel colors from browser logo images but has no way to pass per-particle color/tint to the emitter. The AwayJS original renders colored particles matching the Chrome/Firefox/Safari/IE logos.
-
-## 4. Blinn-Phong shading does not support multi-pass / night-side lighting
-
-**Package:** `@flighthq/scene3d-gl`
-**Impact:** `intermediate-globe` (dark globe missing night city lights, atmosphere halo, specular water reflection)
-
-The AwayJS globe uses `CompositeDiffuseMethod` with a separate night-side texture (city lights), `SimpleWaterNormalMethod` for ocean specular, and a `FresnelSpecularMethod` for atmospheric rim. Flight's single-pass Blinn-Phong cannot replicate this. The globe renders correctly but looks significantly darker and less detailed than the AwayJS version.
-
-## 5. ColorTransform does not work on GPU-tessellated solid fills (Shape Path A)
-
-**Package:** `@flighthq/scene2d-gl` — `glShape.ts` / `glShapeMesh.ts`
-**Impact:** `graphics-drawing` (required workaround: rewrote example to use direct fill colors instead of colorTransform)
-
-Shape rendering has two paths: Path A (solid fills → GPU tessellated mesh via `glShapeMesh.ts`, only applies `u_color` uniform, ignores colorTransform) and Path B (gradients/bitmaps → raster to canvas, uploads texture, uses quad batch which respects colorTransform). `registerGlColorAdjustmentMaterialFeature(state)` only affects Path B. This means `createColorTransform` cannot be used to tint solid-fill shapes.
-
-## 6. OBJ/3DS parsers create nested hierarchy that's easy to miss
-
-**Package:** `@flighthq/scene3d-formats` — `objParse.ts`, `threeDsParse.ts`
-**Impact:** `obj-loader-master-chief`, `aircraft-demo`, `basic-load-3ds` (all required `forEachNodeDescendant` workaround)
-
-`createScene3DFromObj` wraps meshes inside `Node3D` groups (from `g`/`o` directives). `createScene3DFrom3ds` wraps named meshes in `Node3D` wrappers (line ~349-351). In both cases, `getNodeChildren(scene)` returns wrapper nodes with `geometry: null`, not actual `Mesh` nodes. Users must use `forEachNodeDescendant` to find actual meshes. This is a documentation/API discoverability issue — the returned scene's immediate children are NOT the meshes.
-
-## 7. Linear HDR pipeline requires significant lighting intensity tuning
-
-**Package:** `@flighthq/scene3d-gl` (Blinn-Phong / PBR materials)
-**Impact:** Nearly every 3D example needed manual intensity adjustment
-
-Flight outputs linear HDR radiance and applies gamma correction. AwayJS works in sRGB space. This means AwayJS lighting values cannot be reused — directional lights typically need 3-8x intensity, ambient needs 1.5-2x. The `awd-suzanne` example was overexposed at intensity 8 (clipped to white) but underlit at AwayJS-equivalent values. There's no guidance or conversion helper for porting lighting values from sRGB-space engines.
-
-## 8. BitmapText / GlyphAtlas does not render in headless Chromium
-
-**Package:** `@flighthq/glyphatlas` / `@flighthq/bitmaptext`
-**Impact:** `basic-generate-fnt` (blank gray background, no text visible)
-
-`loadFontFromUrl` and `createGlyphAtlas` complete without errors, the atlas canvas is created (2048x2048), but no glyphs appear in the rendered output. The `createWebGlyphRasterizerBackend` uses OffscreenCanvas `fillText` which may not have access to the loaded font in headless Chromium. Works in a real browser. This may not be a bug per se, but it means BitmapText cannot be tested in CI/headless environments.
+1. **AWD texture and material import:** closed. The active API is
+   `createScene3DFromAwd2` in `packages/scene3d-formats/src/awd2Parse.ts`; it imports embedded and
+   external textures, material blocks, and shaded-material assignments. The former references to
+   `awdParse.ts` and `createScene3DFromAwd` were stale names.
+2. **GL ParticleEmitter3D traversal:** closed. `drawGlScene3D` includes
+   `drawGlScene3DParticleEmitter3Ds`; callers no longer need a second draw call for ordinary scene
+   traversal.
+3. **Per-particle 3D color:** closed. Particle state and configuration carry color buffers, curves,
+   start/end values, and variance, with setters and tinted-burst coverage.
+4. **Globe shading composition:** closed. The Modifier tier composes animated normals,
+   facing-gated masked emissive lighting, Fresnel rim, and environment reflection. The WebGL and
+   WebGPU `shading-globe` functional scenes provide end-to-end evidence.
+5. **GL tessellated-shape color adjustment:** closed. `glShapeMesh.ts` consumes the registered GL
+   color-adjustment material feature for solid-fill meshes.
+6. **OBJ/3DS root discoverability:** closed. The scene assemblers expose imported meshes directly
+   under the scene root; parser tests assert the direct-root projection.
+7. **Lighting intensity portability:** closed. `packages/lighting/src/lightIntensity.ts` provides
+   exposure scaling, photometric-unit conversion, and conversion to the renderer's linear intensity
+   scale, with tests.
+8. **Headless BitmapText output:** closed for the reported blank-output defect. Committed Canvas,
+   WebGL, and WebGPU `bitmapfont-generate` captures are nonblank. Real host-font fidelity remains a
+   separate portability concern; it is not the former SDK blocker.
