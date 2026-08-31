@@ -1,4 +1,4 @@
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, test } from 'vitest';
@@ -11,12 +11,14 @@ import {
   getFlightDiagnosticsSizeDelta,
   getSizeCaseKey,
   parseSizeBaselineOrigins,
+  readBaseline,
 } from './size-runner';
 
 // These read the size-case declarations off disk and assert nothing that requires a bundle, so they
 // belong in the ordinary suite rather than in `tools/size`, whose config exists to buy a node
 // environment and a 300s timeout for real builds. The build-dependent assertions stay there.
 const examplesDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'examples/packages');
+const fixturesDirectory = resolve(examplesDirectory, '..', '..', 'tools', 'size', 'fixtures');
 
 describe('collectSizeCases', () => {
   test('collects aggregate and sprite comparator pairs for scene2d pipelines', () => {
@@ -33,6 +35,14 @@ describe('collectSizeCases', () => {
     ]);
   });
 
+  test('can restrict collection to dedicated fixtures', () => {
+    const cases = collectSizeCases(examplesDirectory, [], [], true);
+
+    expect(cases.length).toBeGreaterThan(0);
+    expect(cases.every((sizeCase) => sizeCase.root.startsWith(fixturesDirectory + sep))).toBe(true);
+    expect(cases.some((sizeCase) => sizeCase.name === 'adjustments')).toBe(false);
+  });
+
   test('orders the canonical release target before its diagnostics variant', () => {
     const diagnosticsCases = collectSizeCases(examplesDirectory).filter((item) => item.name === 'flight-diagnostics');
     expect(diagnosticsCases.map((item) => item.variant)).toEqual([null, 'diagnostics']);
@@ -41,6 +51,17 @@ describe('collectSizeCases', () => {
   test('preserves the declared renderer order', () => {
     const adjustmentCases = collectSizeCases(examplesDirectory).filter((item) => item.name === 'adjustments');
     expect(adjustmentCases.map((item) => item.render)).toEqual(['dom', 'canvas', 'webgl', 'webgpu']);
+  });
+});
+
+describe('dedicated size fixture gate', () => {
+  test('has a shipping baseline for every fixture case', () => {
+    const baseline = readBaseline(resolve(fixturesDirectory, '..', 'size.baseline.json'));
+    const missing = collectSizeCases(examplesDirectory, [], [], true)
+      .map(getSizeCaseKey)
+      .filter((key) => baseline[key] === undefined);
+
+    expect(missing).toEqual([]);
   });
 });
 

@@ -131,12 +131,20 @@
   "materialshowcase:webgpu": 47105,
   "awd2loading:webgl": 45736,
   "awd2loading:webgpu": 46063,
-  "flight-diagnostics:canvas": 848,
-  "flight-diagnostics:canvas:diagnostics": 3105,
+  "flight-diagnostics:canvas": 12080,
+  "flight-diagnostics:canvas:diagnostics": 14128,
+  "host-web-full:canvas": 19576,
+  "host-web-window-only:canvas": 2368,
   "log-console:canvas": 343,
   "cross-backend-embed:dom": 15431,
   "layout:canvas": 647,
   "layout:canvas:all": 2735,
   "swf-import:canvas": 33993,
-  "scene2d-embedded-png:canvas": 1831
+  "scene2d-canvas-pipeline:canvas": 15414,
+  "scene2d-canvas-pipeline-sprite:canvas": 5244,
+  "scene2d-embedded-png:canvas": 1831,
+  "scene2d-gl-pipeline:webgl": 25986,
+  "scene2d-gl-pipeline-sprite:webgl": 8630,
+  "scene2d-wgpu-pipeline:webgpu": 27787,
+  "scene2d-wgpu-pipeline-sprite:webgpu": 11912
 }

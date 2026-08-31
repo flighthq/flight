@@ -176,7 +176,7 @@ function printUsage(): void {
   console.log('');
   console.log('Measures tree-shaken UNMINIFIED gzip size for every example and reports what moved');
   console.log('against the committed baseline. Advisory, never gates. For the shipping number see');
-  console.log('`npm run size:minified` — which takes ~10 minutes and is the nightly job.');
+  console.log('`npm run size:minified -- --fixtures` — the dedicated corpus gated nightly.');
   console.log('');
   console.log('  npm run size                    compare this tree against the committed baseline');
   console.log('  npm run size shapes             only cases matching a filter');

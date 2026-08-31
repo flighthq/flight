@@ -11,8 +11,8 @@ The subject splits by what the number *means*, and the two are not interchangeab
 | pipeline | esbuild, **unminified**, tree-shaken | Rollup + terser (`passes: 3`, property mangling) |
 | answers | *how much code did this keep* | *how many bytes does this ship* |
 | baseline | `tools/size/size.unminified.baseline.json` | `tools/size/size.baseline.json` |
-| cost | ~1 minute cold, ~3s from cache | ~10 minutes |
-| where | every PR, and while you work | nightly |
+| cost | ~1 minute cold, ~3s from cache | ~10 minutes full; ~1 minute fixtures |
+| where | every PR, and while you work | nightly (fixtures only) |
 | gates | never — always exits 0 | fails a case over its pin |
 
 **Only `size:minified` produces a shipping number.** The unminified figure runs about 1.58× larger
@@ -74,7 +74,8 @@ Four names, two subjects. Each check **reads** under its bare name and **writes*
 - `npm run size report=json` — machine-readable, carrying both `raw` and `gzip` bytes per case.
 - `npm run size:baseline` — rewrite the unminified baseline.
 - `npm run size:minified` — the terser sweep. Interactively it refuses a bare full run and tells you
-  the cost; pass a filter or `-- --yes`. Also takes `report=json` and `output=<path>` (which prints
+  the cost; pass a filter or `-- --yes`. `-- --fixtures` restricts it to the dedicated size corpus,
+  which is what nightly gates. Also takes `report=json` and `output=<path>` (which prints
   `SIZE_REPORT_PATH:<path>`).
 - `npm run size:minified:baseline` — rewrite the shipping pins. **Not an agent's call.** See below.
 - `npm run size:minified flight-diagnostics log-console` — build the release-stub/diagnostics pair,
@@ -187,7 +188,7 @@ A fixture is missing if a registry family has no dedicated measurement — no fi
 
 ### Transition
 
-The existing 7 fixtures stay as-is. New fixtures are added as the explicit dependency model lands — each new const (`scene2dGlPipeline`, `webHost`, manual pipeline variants) gets a size fixture on arrival. Example-derived measurements remain in the baseline as a secondary signal but are no longer the primary cost surface. Examples are free to import `@flighthq/sdk`, `webHost`, and other convenience consts for clarity without distorting the size story.
+The existing fixtures stay as-is. New fixtures are added as the explicit dependency model lands — each new const (`scene2dGlPipeline`, `webHost`, manual pipeline variants) gets a size fixture on arrival. The nightly shipping gate measures only this dedicated corpus. Example-derived measurements remain in the unminified report as a secondary signal but no longer define the shipping-size gate. Examples are free to import `@flighthq/sdk`, `webHost`, and other convenience consts for clarity without distorting the size story.
 
 ## Paired comparisons — aggregate vs single-capability
 

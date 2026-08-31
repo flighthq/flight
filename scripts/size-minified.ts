@@ -10,6 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 interface ParsedArgs {
   exampleFilters: string[];
+  fixturesOnly: boolean;
   renderFilters: string[];
   report: string | null;
   outputPath: string | null;
@@ -26,8 +27,8 @@ if (options.help) {
 
 // A full sweep is ~10 minutes of terser, and a script name cannot carry that.
 // An interactive caller usually wants `npm run size` and has no way to learn the
-// cost except by paying it once, so the tool says it. CI and the nightly job are
-// not on a TTY and run unguarded.
+// cost except by paying it once, so the tool says it. Noninteractive callers
+// that deliberately request the full corpus still run unguarded.
 if (process.stdout.isTTY && rawArgs.length === 0 && process.env.UPDATE_BASELINE !== '1') {
   console.log(pc.yellow('size:minified builds every case through terser — roughly 10 minutes for the full sweep.'));
   console.log(`Most size questions are answered in about a minute by ${pc.bold('npm run size')}.`);
@@ -42,7 +43,9 @@ const updateBaseline = process.env.UPDATE_BASELINE === '1';
 const report = options.report ?? (options.outputPath ? 'json' : null);
 const outputPath = options.outputPath;
 const standardOutput = !outputPath && report !== 'json';
-const sizeCases = standardOutput ? collectSizeCases(examplesDir, options.exampleFilters, options.renderFilters) : [];
+const sizeCases = standardOutput
+  ? collectSizeCases(examplesDir, options.exampleFilters, options.renderFilters, options.fixturesOnly)
+  : [];
 const printProgress = standardOutput ? createProgressivePrinter(sizeCases) : null;
 
 if (standardOutput && sizeCases.length === 0) {
@@ -55,6 +58,7 @@ const { results, pendingBaseline } = await runSizeChecks({
   baselineFile,
   updateBaseline,
   exampleFilters: options.exampleFilters,
+  fixturesOnly: options.fixturesOnly,
   onResult: (result) => printProgress?.(result),
   renderFilters: options.renderFilters,
 });
@@ -88,6 +92,7 @@ process.exit(passed ? 0 : 1);
 function parseArgs(args: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     exampleFilters: [],
+    fixturesOnly: false,
     renderFilters: [],
     report: null,
     outputPath: null,
@@ -102,6 +107,11 @@ function parseArgs(args: string[]): ParsedArgs {
 
     // Consumed by the cost guard above; not an example filter.
     if (arg === '--yes') continue;
+
+    if (arg === '--fixtures') {
+      parsed.fixturesOnly = true;
+      continue;
+    }
 
     if (arg.startsWith('render=')) {
       parsed.renderFilters.push(arg.slice('render='.length));
@@ -198,13 +208,14 @@ function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (
 }
 
 function printUsage(): void {
-  console.log('Usage: npm run size:minified [filters...] [--yes] [report=json] [output=path]');
+  console.log('Usage: npm run size:minified [filters...] [--fixtures] [--yes] [report=json] [output=path]');
   console.log('');
-  console.log('The shipping number: every case built and minified through terser. ~10 minutes for');
-  console.log('the full sweep, which is why it is the nightly job. For a one-minute tree-shaking read');
-  console.log('while you work, use `npm run size`.');
+  console.log('The shipping number: selected cases built and minified through terser. The full');
+  console.log('example + fixture sweep takes ~10 minutes; nightly gates only `--fixtures`. For a');
+  console.log('one-minute tree-shaking read while you work, use `npm run size`.');
   console.log('');
   console.log('  npm run size:minified shapes');
+  console.log('  npm run size:minified -- --fixtures');
   console.log('  npm run size:minified -- --yes');
   console.log('  npm run size:minified shapes report=json');
   console.log('  npm run size:minified shapes output=size-report.json');
