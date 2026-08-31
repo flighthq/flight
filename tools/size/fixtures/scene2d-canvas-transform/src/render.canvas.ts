@@ -32,6 +32,13 @@ import {
 //
 // `renderCanvasScene2D` is still called on purpose: traversing a hierarchy that resolves no renderer
 // is the path being measured, and skipping the call would measure a scene nobody draws.
+//
+// ★ SIZE-ONLY, AND DELIBERATELY NOT CAPTURABLE. This fixture carries no tool-capture.json. Registering
+// no renderer means it draws only the background, and tool-capture rejects that as blank — "the
+// decoded screenshot is blank (coverage at or below the empty-frame threshold), so its digest would be
+// a well-formed hash of no render". That guard is correct and this fixture genuinely has nothing to
+// show. Giving it content to satisfy capture would mean registering a renderer, which is exactly the
+// thing it exists to exclude — it would stop being the floor the other fixtures subtract.
 
 const canvas = document.createElement('canvas');
 canvas.width = 400;

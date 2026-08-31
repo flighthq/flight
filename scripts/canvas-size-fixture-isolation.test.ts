@@ -20,6 +20,9 @@ const ALLOWED_RENDERER: Record<string, readonly string[]> = {
 // stops measuring its feature and starts measuring the aggregate.
 const AGGREGATES = ['scene2dCanvasPipeline', 'canvasShapeCommandTable', 'enableHostWeb'] as const;
 
+// The subset that draws something and therefore has a capture manifest.
+const CAPTURABLE_FIXTURES = ['scene2d-canvas-shape', 'scene2d-canvas-text'] as const;
+
 const FIXTURES_DIR = resolve('tools', 'size', 'fixtures');
 
 // ★ COMMENTS ARE STRIPPED BEFORE MATCHING. These fixtures document what they deliberately avoid —
@@ -79,8 +82,11 @@ describe('canvas size fixture isolation', () => {
     }
   });
 
+  // Only the drawing fixtures carry a capture manifest. scene2d-canvas-transform registers no renderer,
+  // so it draws only the background and tool-capture rejects the frame as blank — correctly, since a
+  // digest of an empty frame is a well-formed hash of no render. It is a size-only fixture.
   it('declares canvas as its only capture renderer', () => {
-    for (const fixture of FEATURE_FIXTURES) {
+    for (const fixture of CAPTURABLE_FIXTURES) {
       const manifest = JSON.parse(readFileSync(join(FIXTURES_DIR, fixture, 'tool-capture.json'), 'utf8')) as {
         entries: readonly { name: string; renderers: readonly string[] }[];
       };
@@ -96,5 +102,17 @@ describe('canvas size fixture isolation', () => {
     const source = fixtureSource('scene2d-canvas-transform');
     expect(source).not.toMatch(/\bdefaultCanvas\w+Renderer\b/u);
     expect(source).toContain('prepareScene2DRender');
+  });
+
+  // Guards the pairing itself: a fixture that draws nothing must not claim a capture manifest, and a
+  // drawing fixture must have one. Getting this backwards produces either a permanently failing
+  // capture or a silently uncaptured scene.
+  it('gives a capture manifest to exactly the fixtures that draw', () => {
+    for (const fixture of FEATURE_FIXTURES) {
+      const hasManifest = readdirSync(join(FIXTURES_DIR, fixture)).includes('tool-capture.json');
+      expect(hasManifest, `${fixture} manifest presence`).toBe(
+        (CAPTURABLE_FIXTURES as readonly string[]).includes(fixture),
+      );
+    }
   });
 });
