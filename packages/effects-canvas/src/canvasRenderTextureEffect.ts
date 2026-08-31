@@ -7,7 +7,8 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 // caller supplies one distinct scratch lease; parity chooses the first destination so the final
 // registered operation always publishes `dest`.
 export function applyCanvasRenderEffectsToRenderTexture(
-  state: CanvasRenderState,
+  ownerState: CanvasRenderState,
+  effectState: CanvasRenderState,
   pool: CanvasRenderTexturePool,
   source: Readonly<RenderTexture>,
   dest: RenderTexture,
@@ -17,10 +18,10 @@ export function applyCanvasRenderEffectsToRenderTexture(
   if (source === dest || source === scratch || dest === scratch) {
     throw new Error('applyCanvasRenderEffectsToRenderTexture: source, destination, and scratch must be distinct');
   }
-  const sourceTarget = getCanvasRenderTextureTarget(state, source);
+  const sourceTarget = getCanvasRenderTextureTarget(ownerState, source);
   if (sourceTarget === null) return false;
   const operations = effects.flatMap((effect) => {
-    const runner = getCanvasRenderEffectRunner(state, effect.kind);
+    const runner = getCanvasRenderEffectRunner(effectState, effect.kind);
     return runner === null ? [] : [{ effect, runner }];
   });
   if (operations.length === 0) return false;
@@ -30,10 +31,13 @@ export function applyCanvasRenderEffectsToRenderTexture(
     const operation = operations[index];
     const remaining = operations.length - index;
     const output = remaining % 2 === 1 ? dest : scratch;
-    writeCanvasRenderTextureTarget(state, output, (target) => {
-      operation.runner({ state, source: current, dest: target, pool: pool.effectTargets }, operation.effect);
+    writeCanvasRenderTextureTarget(ownerState, output, (target) => {
+      operation.runner(
+        { state: effectState, source: current, dest: target, pool: pool.effectTargets },
+        operation.effect,
+      );
     });
-    current = getCanvasRenderTextureTarget(state, output)!;
+    current = getCanvasRenderTextureTarget(ownerState, output)!;
   }
   return true;
 }
