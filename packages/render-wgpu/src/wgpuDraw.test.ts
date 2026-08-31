@@ -30,7 +30,7 @@ import {
   warmWgpuPipelines,
 } from './wgpuDraw';
 import { registerWgpuMipmapGeneration } from './wgpuMipmap';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(() => {
@@ -476,7 +476,8 @@ describe('resolveWgpuSmoothingBindGroup', () => {
     const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
 
     state.allowSmoothing = true;
-    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindings.get(runtime.context.linearSampler));
+    const resources = getWgpuRenderStateDeviceResources(state);
+    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindings.get(resources.linearSampler));
   });
 
   // ★ FALSIFIER, defect 6 arm B — a cached bind group must not carry the creating state's smoothing.
@@ -497,7 +498,7 @@ describe('resolveWgpuSmoothingBindGroup', () => {
     const unsmoothed = resolveWgpuSmoothingBindGroup(state, entry, null);
 
     expect(unsmoothed).not.toBe(smoothed);
-    expect(unsmoothed).toBe(entry.bindings.get(runtime.context.nearestSampler));
+    expect(unsmoothed).toBe(entry.bindings.get(getWgpuRenderStateDeviceResources(state).nearestSampler));
     // Flipping back returns the first group rather than building a third — the policy selects a binding,
     // it does not mint one per draw.
     state.allowSmoothing = true;
@@ -510,11 +511,12 @@ describe('resolveWgpuSmoothingBindGroup', () => {
     const entry = bindWgpuBitmapTexture(state, bitmap(4, 1));
 
     // External/video sources fix their own filtering; the global policy must not override it.
-    entry.sampler = runtime.context.nearestSampler;
+    const resources = getWgpuRenderStateDeviceResources(state);
+    entry.sampler = resources.nearestSampler;
     state.allowSmoothing = true;
-    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindings.get(runtime.context.nearestSampler));
+    expect(resolveWgpuSmoothingBindGroup(state, entry, null)).toBe(entry.bindings.get(resources.nearestSampler));
     // A per-bitmap override still wins, as it always did.
-    expect(resolveWgpuSmoothingBindGroup(state, entry, true)).toBe(entry.bindings.get(runtime.context.linearSampler));
+    expect(resolveWgpuSmoothingBindGroup(state, entry, true)).toBe(entry.bindings.get(resources.linearSampler));
   });
 
   it('builds and caches distinct LINEAR and NEAREST variants for true/false', async () => {
@@ -524,7 +526,7 @@ describe('resolveWgpuSmoothingBindGroup', () => {
     const createBindGroup = vi.spyOn(state.device, 'createBindGroup');
 
     resolveWgpuSmoothingBindGroup(state, entry, true);
-    expect(entry.bindings.get(runtime.context.linearSampler)).toBeDefined();
+    expect(entry.bindings.get(getWgpuRenderStateDeviceResources(state).linearSampler)).toBeDefined();
     expect(createBindGroup).toHaveBeenCalledTimes(1);
 
     // Second smoothed bind reuses the cached variant — no new bind group.
@@ -533,7 +535,7 @@ describe('resolveWgpuSmoothingBindGroup', () => {
 
     // The unsmoothed variant is a separate cached bind group.
     resolveWgpuSmoothingBindGroup(state, entry, false);
-    expect(entry.bindings.get(runtime.context.nearestSampler)).toBeDefined();
+    expect(entry.bindings.get(getWgpuRenderStateDeviceResources(state).nearestSampler)).toBeDefined();
     expect(createBindGroup).toHaveBeenCalledTimes(2);
   });
 

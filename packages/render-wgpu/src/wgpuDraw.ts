@@ -12,7 +12,6 @@ import type {
   RenderProxy2D,
   WgpuTextureSourceTextureEntry,
   WgpuRenderState,
-  WgpuRenderStateRuntime,
   WgpuTextureEntry,
   WgpuVideoTextureEntry,
 } from '@flighthq/types/contract';
@@ -20,7 +19,7 @@ import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
 import { retireWgpuTexture } from './wgpuBackground';
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
-import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
 
 export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode | null): void {
@@ -207,8 +206,9 @@ export function bindWgpuTexture(
 
 // The sampler the state's CURRENT draw policy selects. Read per draw and never stored on a resource:
 // `allowSmoothing` is mutable and shared, so a value captured at upload time goes stale silently.
-function getWgpuDrawPolicySampler(state: WgpuRenderState, runtime: WgpuRenderStateRuntime): GPUSampler {
-  return state.allowSmoothing ? runtime.context.linearSampler : runtime.context.nearestSampler;
+function getWgpuDrawPolicySampler(state: WgpuRenderState): GPUSampler {
+  const resources = getWgpuRenderStateDeviceResources(state);
+  return state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
 }
 
 // The group(1) bind group for this entry's view sampled with `sampler`, built once per sampler and
@@ -332,7 +332,7 @@ export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Re
 
 function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
   return state.device.createBindGroup({
-    layout: getWgpuRenderStateRuntime(state).context.textureBindGroupLayout,
+    layout: getWgpuRenderStateDeviceResources(state).textureBindGroupLayout,
     entries: [
       { binding: 0, resource: view },
       { binding: 1, resource: sampler },
@@ -442,13 +442,13 @@ export function resolveWgpuSmoothingBindGroup(
   entry: WgpuTextureEntry,
   smoothing: boolean | null,
 ): GPUBindGroup {
-  const runtime = getWgpuRenderStateRuntime(state);
+  const resources = getWgpuRenderStateDeviceResources(state);
   const sampler =
     smoothing === null
-      ? (entry.sampler ?? getWgpuDrawPolicySampler(state, runtime))
+      ? (entry.sampler ?? getWgpuDrawPolicySampler(state))
       : smoothing
-        ? runtime.context.linearSampler
-        : runtime.context.nearestSampler;
+        ? resources.linearSampler
+        : resources.nearestSampler;
   return resolveWgpuTextureBinding(state, entry, sampler);
 }
 

@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 interface WgpuCompressedFormatInfo {
   blockHeight: number;
@@ -170,8 +170,8 @@ function uploadWgpuCompressedImage(
   const texture = uploadWgpuCompressedTextureContainer(state, container, compressed.payload, fallback, colorSpace);
   if (texture === null) return null;
   const view = texture.createView();
-  const runtime = getWgpuRenderStateRuntime(state);
-  const sampler = state.allowSmoothing ? runtime.context.linearSampler : runtime.context.nearestSampler;
+  const resources = getWgpuRenderStateDeviceResources(state);
+  const sampler = state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
   return {
     bindings: new Map(),
     mipLevelCount: container.mipLevels,

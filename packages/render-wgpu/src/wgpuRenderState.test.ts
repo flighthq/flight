@@ -48,6 +48,7 @@ import {
   getWgpuColorAdjustmentMaterialFeature,
   getWgpuColorAdjustmentMaterialFeatureGuard,
   getWgpuDeviceRuntime,
+  getWgpuRenderStateDeviceResources,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   isWgpuSupported,
@@ -163,6 +164,11 @@ describe('createWgpuDeviceState', () => {
     const runtimeB = createWgpuRenderStateRuntime(deviceState);
     runtimeA.context.standardMaterialModule = {} as GPUShaderModule;
     expect(runtimeB.context.standardMaterialModule).toBe(runtimeA.context.standardMaterialModule);
+  });
+
+  it('represents device-native resources as absent before the first render state initializes them', () => {
+    const runtime = getWgpuDeviceRuntime(createWgpuDeviceState({} as GPUDevice));
+    expect(runtime.resources).toBeNull();
   });
 });
 
@@ -653,13 +659,14 @@ describe('createWgpuRenderStateRuntime', () => {
     const runtimeA = createWgpuRenderStateRuntime(deviceState);
     const runtimeB = createWgpuRenderStateRuntime(deviceState);
 
-    const sampler = {} as GPUSampler;
-    runtimeA.context.linearSampler = sampler;
-    expect(runtimeB.context.linearSampler).toBe(sampler);
-
-    const sampler2 = {} as GPUSampler;
-    runtimeB.context.linearSampler = sampler2;
-    expect(runtimeA.context.linearSampler).toBe(sampler2);
+    const resources = {
+      linearSampler: {} as GPUSampler,
+      nearestSampler: {} as GPUSampler,
+      textureBindGroupLayout: {} as GPUBindGroupLayout,
+      uniformBindGroupLayout: {} as GPUBindGroupLayout,
+    };
+    runtimeA.context.resources = resources;
+    expect(runtimeB.context.resources).toBe(resources);
   });
 
   it('keeps separate device tiers when two runtimes are built from different WgpuDeviceStates', () => {
@@ -721,9 +728,8 @@ describe('destroyWgpuRenderState', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const offscreenRuntime = getWgpuRenderStateRuntime(offscreen);
 
-    const sampler = {} as GPUSampler;
-    runtime.context.linearSampler = sampler;
-    expect(offscreenRuntime.context.linearSampler).toBe(sampler);
+    const resources = runtime.context.resources;
+    expect(offscreenRuntime.context.resources).toBe(resources);
 
     destroyWgpuRenderState(offscreen);
     destroyWgpuRenderState(state);
@@ -816,6 +822,21 @@ describe('getWgpuDeviceRuntime', () => {
   it('resolves the same runtime object on repeated calls', () => {
     const deviceState = createWgpuDeviceState({} as GPUDevice);
     expect(getWgpuDeviceRuntime(deviceState)).toBe(getWgpuDeviceRuntime(deviceState));
+  });
+});
+
+describe('getWgpuRenderStateDeviceResources', () => {
+  it('returns the initialized device-native resource block without placeholders', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const resources = getWgpuRenderStateDeviceResources(state);
+
+    expect(resources.linearSampler).toBeDefined();
+    expect(resources.nearestSampler).toBeDefined();
+    expect(resources.textureBindGroupLayout).toBeDefined();
+    expect(resources.uniformBindGroupLayout).toBeDefined();
+    expect(getWgpuRenderStateDeviceResources(state)).toBe(resources);
+
+    destroyWgpuRenderState(state);
   });
 });
 

@@ -1,6 +1,7 @@
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   getWgpuBlendState,
+  getWgpuRenderStateDeviceResources,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   resolveWgpuTexture,
@@ -357,7 +358,6 @@ function drawParticleEmitter3DNode(
   // Resolve the group(1) texture + sampler. The atlas Texture uploads (once, cached) to its GPU view for
   // the textured pipeline; the untextured variant still needs the slot filled, so a 1x1 white dummy is
   // bound (never sampled — HAS_TEXTURE=0 gates it off). Both use the shared linear sampler.
-  const runtime = getWgpuRenderStateRuntime(state);
   const textureView = textureEntry?.view ?? ensureDummyTextureView(state);
   const textureBindGroup = state.device.createBindGroup({
     layout: resources.textureLayout,
@@ -380,7 +380,7 @@ function drawParticleEmitter3DNode(
                   : undefined,
                 atlasTexture.sampler.anisotropy,
               )
-            : runtime.context.linearSampler,
+            : getWgpuRenderStateDeviceResources(state).linearSampler,
       },
     ],
   });
