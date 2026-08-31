@@ -46,6 +46,7 @@ export interface RunSizeOptions {
   baselineFile?: string;
   updateBaseline?: boolean;
   exampleFilters?: string[];
+  fixturesOnly?: boolean;
   onResult?: (result: Readonly<SizeResult>) => void;
   renderFilters?: string[];
 }
@@ -63,9 +64,10 @@ export function collectSizeCases(
   examplesDir: string,
   exampleFilters: string[] = [],
   renderFilters: string[] = [],
+  fixturesOnly = false,
 ): SizeCase[] {
   const fixturesDir = resolve(examplesDir, '..', '..', 'tools', 'size', 'fixtures');
-  return [examplesDir, fixturesDir]
+  return (fixturesOnly ? [fixturesDir] : [examplesDir, fixturesDir])
     .filter(existsSync)
     .flatMap((directory) => collectSizeCasesFromDirectory(directory, exampleFilters, renderFilters));
 }
@@ -321,10 +323,11 @@ export async function runSizeChecks({
   baselineFile = resolve(root, 'tools', 'size', 'size.baseline.json'),
   updateBaseline = false,
   exampleFilters = [],
+  fixturesOnly = false,
   onResult,
   renderFilters = [],
 }: RunSizeOptions): Promise<{ results: SizeResult[]; pendingBaseline: Record<string, number>; baselineFile: string }> {
-  const cases = collectSizeCases(examplesDir, exampleFilters, renderFilters);
+  const cases = collectSizeCases(examplesDir, exampleFilters, renderFilters, fixturesOnly);
   const baseline = readBaseline(baselineFile);
   const baselineOrigins = readSizeBaselineOrigins(root, baselineFile);
   const pendingBaseline = { ...baseline };
