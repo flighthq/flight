@@ -1,9 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import ts from 'typescript';
 import { describe, expect, test } from 'vitest';
 
+import { getCaptureEntryRoute } from '../packages/tool-capture/src/captureEntries';
+import { readCaptureManifest } from '../packages/tool-capture/src/captureManifest';
 import type { SizeResult } from './size-runner';
 import {
   collectSizeCases,
@@ -25,7 +28,7 @@ describe('collectSizeCases', () => {
   test('collects aggregate and sprite comparator pairs for scene2d pipelines', () => {
     const pipelineKeys = collectSizeCases(fixturesDirectory)
       .map(getSizeCaseKey)
-      .filter((key) => key.startsWith('scene2d-') && key.includes('-pipeline'));
+      .filter((key) => /^scene2d-(?:canvas|gl|wgpu)-pipeline(?:-sprite)?:/.test(key));
     expect(pipelineKeys).toEqual([
       'scene2d-canvas-pipeline:canvas',
       'scene2d-canvas-pipeline-sprite:canvas',
@@ -100,6 +103,126 @@ describe('dedicated size fixture gate', () => {
     for (const name of ['size.baseline.json', 'size.unminified.baseline.json']) {
       expect(Object.keys(readBaseline(resolve(fixturesDirectory, '..', name))).sort()).toEqual(fixtureKeys);
     }
+  });
+});
+
+describe('minimal size fixture harness', () => {
+  const fixtures = collectMinimalCaptureFixtures(fixturesDirectory);
+
+  test('discovers every non-aggregate feature fixture', () => {
+    expect(fixtures.map((fixture) => fixture.name)).toEqual(
+      expect.arrayContaining([
+        'host-web-window-only',
+        'scene2d-canvas-pipeline-sprite',
+        'scene2d-gl-pipeline-sprite',
+        'scene2d-wgpu-pipeline-sprite',
+      ]),
+    );
+  });
+
+  test('has one feature-oriented entry per fixture', () => {
+    const violations = fixtures
+      .filter((fixture) => fixture.kind === 'feature')
+      .flatMap((fixture) => {
+        const entryNames = fixture.manifest?.entries.map((entry) => entry.name) ?? [];
+        return entryNames.length === 1 && entryNames[0] === fixture.name
+          ? []
+          : [
+              `${fixture.name}: expected one capture entry named '${fixture.name}', found ${JSON.stringify(entryNames)}`,
+            ];
+      });
+
+    expect(violations).toEqual([]);
+  });
+
+  test('maps the sole render entry through a valid tool-capture route', () => {
+    const violations = fixtures
+      .filter((fixture) => fixture.kind === 'feature')
+      .flatMap((fixture) => {
+        if (fixture.renderers.length !== 1) {
+          return [`${fixture.name}: expected one render.<renderer>.ts entry, found ${fixture.renderers.join(', ')}`];
+        }
+        const renderer = fixture.renderers[0];
+        const entry = fixture.manifest?.entries[0];
+        if (entry === undefined || entry.renderers.length !== 1 || entry.renderers[0] !== renderer) {
+          return [
+            `${fixture.name}: capture renderer ${JSON.stringify(entry?.renderers ?? [])} does not match render.${renderer}.ts`,
+          ];
+        }
+        const route = getCaptureEntryRoute(entry, renderer, fixture.manifest?.subject ?? 'size-fixture');
+        return route === '/' ? [] : [`${fixture.name}: expected renderer route '/', found '${route}'`];
+      });
+
+    expect(violations).toEqual([]);
+  });
+
+  test('keeps declared size-only controls renderer-free as comparator floors', () => {
+    const violations = fixtures.flatMap((fixture) => {
+      if (fixture.kind === 'invalid') {
+        return [`${fixture.name}: flightSize.kind must be omitted or equal 'size-only-control'`];
+      }
+      if (fixture.kind !== 'size-only-control') return [];
+      const problems: string[] = [];
+      if (fixture.manifest !== null) problems.push('must not have tool-capture.json');
+      if (fixture.renderers.length !== 1) {
+        problems.push(`expected one size entry, found ${fixture.renderers.join(', ')}`);
+      }
+      if (fixture.rendererBindingCalls.length > 0) {
+        problems.push(`binds renderer through ${fixture.rendererBindingCalls.join(', ')}`);
+      }
+      return problems.map((problem) => `${fixture.name}: ${problem}`);
+    });
+
+    expect(violations).toEqual([]);
+  });
+
+  test('does not import the aggregate webHost', () => {
+    const violations = fixtures.flatMap((fixture) =>
+      fixture.imports
+        .filter(
+          (item) =>
+            (item.specifier === '@flighthq/host-web' || item.specifier.startsWith('@flighthq/host-web/')) &&
+            (item.importedNames.includes('webHost') || item.importedNames.includes('*')),
+        )
+        .map((item) => `${fixture.name}: ${item.file} imports ${item.importedNames.join(', ')} from ${item.specifier}`),
+    );
+
+    expect(violations).toEqual([]);
+  });
+
+  test('limits the DOM shape Canvas bridge to its exact rasterization symbols', () => {
+    const fixture = fixtures.find((item) => item.name === 'scene2d-dom-shape');
+    const bridgeImports = (fixture?.imports ?? [])
+      .filter((item) => item.specifier === '@flighthq/host-web' || item.specifier === '@flighthq/scene2d-canvas')
+      .flatMap((item) => item.importedNames.map((name) => `${item.specifier}:${name}`))
+      .sort();
+
+    expect(bridgeImports).toEqual([
+      '@flighthq/host-web:webCanvasRenderSurfaceCreator',
+      '@flighthq/scene2d-canvas:createCanvasShapeRasterizer',
+      '@flighthq/scene2d-canvas:createCanvasTextureResolvers',
+      '@flighthq/scene2d-canvas:defaultCanvasShapeCommands',
+      '@flighthq/scene2d-canvas:registerCanvasShapeCommands',
+    ]);
+  });
+
+  test('keeps DOM, Canvas, WebGL and WebGPU renderer families isolated', () => {
+    const violations = fixtures.flatMap((fixture) => {
+      if (fixture.renderers.length !== 1) return [];
+      const renderer = fixture.renderers[0];
+      const forbidden = forbiddenImportFamilies(renderer);
+      return fixture.imports
+        .map((item) => ({ ...item, family: importFamily(item.specifier) }))
+        .filter(
+          (item) =>
+            item.family !== null && forbidden.includes(item.family) && !isAllowedDomShapeCanvasBridge(fixture, item),
+        )
+        .map(
+          (item) => `${fixture.name}: render.${renderer}.ts corpus imports ${item.family} package ${item.specifier}`,
+        );
+    });
+
+    expect(violations).toEqual([]);
   });
 });
 
@@ -181,3 +304,184 @@ describe('parseSizeBaselineOrigins', () => {
     });
   });
 });
+
+const aggregateCaptureFixtures = new Set([
+  'host-web-full',
+  'scene2d-canvas-pipeline',
+  'scene2d-gl-pipeline',
+  'scene2d-wgpu-pipeline',
+]);
+
+// These predate the visual fixture contract and measure non-rendering or aggregate import subjects. New
+// fixtures are deliberately not opt-in: unless named as an aggregate ceiling above, every new directory
+// joins the minimal harness and therefore has to supply one renderer entry plus capture evidence.
+const legacyNonCaptureFixtures = new Set([
+  'flight-diagnostics-enabled',
+  'flight-diagnostics-release',
+  'layout-all',
+  'layout-anchor',
+  'log-console',
+  'scene2d-embedded-png',
+  'swf-import',
+]);
+
+type FixtureRenderer = 'canvas' | 'dom' | 'webgl' | 'webgpu';
+type ImportFamily = 'canvas' | 'dom' | 'webgl' | 'webgpu';
+
+interface FixtureImport {
+  file: string;
+  importedNames: string[];
+  specifier: string;
+}
+
+interface MinimalCaptureFixture {
+  imports: FixtureImport[];
+  kind: 'feature' | 'invalid' | 'size-only-control';
+  manifest: ReturnType<typeof readCaptureManifest> | null;
+  name: string;
+  rendererBindingCalls: string[];
+  renderers: FixtureRenderer[];
+}
+
+function collectMinimalCaptureFixtures(directory: string): MinimalCaptureFixture[] {
+  return readdirSync(directory, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isDirectory() && !aggregateCaptureFixtures.has(entry.name) && !legacyNonCaptureFixtures.has(entry.name),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((entry) => {
+      const fixtureDirectory = join(directory, entry.name);
+      const sourceDirectory = join(fixtureDirectory, 'src');
+      const packageJson = JSON.parse(readFileSync(join(fixtureDirectory, 'package.json'), 'utf8')) as {
+        flightSize?: { kind?: unknown };
+      };
+      const sizeKind = packageJson.flightSize?.kind;
+      const renderers = readdirSync(sourceDirectory)
+        .map((name) => /^render\.(canvas|dom|webgl|webgpu)\.ts$/.exec(name)?.[1] ?? null)
+        .filter((renderer): renderer is FixtureRenderer => renderer !== null)
+        .sort();
+      return {
+        imports: typescriptFiles(fixtureDirectory).flatMap((file) => collectFixtureImports(file, fixtureDirectory)),
+        kind: sizeKind === undefined ? 'feature' : sizeKind === 'size-only-control' ? sizeKind : 'invalid',
+        manifest: existsSync(join(fixtureDirectory, 'tool-capture.json'))
+          ? readCaptureManifest(join(fixtureDirectory, 'tool-capture.json'))
+          : null,
+        name: entry.name,
+        rendererBindingCalls: typescriptFiles(fixtureDirectory).flatMap((file) =>
+          collectRendererBindingCalls(file, fixtureDirectory),
+        ),
+        renderers,
+      };
+    });
+}
+
+function typescriptFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) return typescriptFiles(path);
+      return entry.isFile() && /\.tsx?$/.test(entry.name) ? [path] : [];
+    })
+    .sort();
+}
+
+function collectFixtureImports(file: string, sourceDirectory: string): FixtureImport[] {
+  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const imports: FixtureImport[] = [];
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) continue;
+    if (statement.moduleSpecifier === undefined || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    const importedNames: string[] = [];
+    if (ts.isImportDeclaration(statement)) {
+      const bindings = statement.importClause?.namedBindings;
+      if (bindings !== undefined && ts.isNamespaceImport(bindings)) importedNames.push('*');
+      if (bindings !== undefined && ts.isNamedImports(bindings)) {
+        importedNames.push(...bindings.elements.map((element) => (element.propertyName ?? element.name).text));
+      }
+      if (statement.importClause?.name !== undefined) importedNames.push('default');
+    } else if (statement.exportClause === undefined) {
+      importedNames.push('*');
+    } else if (ts.isNamedExports(statement.exportClause)) {
+      importedNames.push(
+        ...statement.exportClause.elements.map((element) => (element.propertyName ?? element.name).text),
+      );
+    }
+    imports.push({
+      file: file.slice(sourceDirectory.length + 1),
+      importedNames,
+      specifier: statement.moduleSpecifier.text,
+    });
+  }
+  return imports;
+}
+
+function collectRendererBindingCalls(file: string, sourceDirectory: string): string[] {
+  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const registrationNames = new Set<string>();
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    if (
+      statement.moduleSpecifier.text !== '@flighthq/render' &&
+      !statement.moduleSpecifier.text.startsWith('@flighthq/render/')
+    ) {
+      continue;
+    }
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings === undefined || !ts.isNamedImports(bindings)) continue;
+    for (const element of bindings.elements) {
+      const importedName = (element.propertyName ?? element.name).text;
+      if (importedName === 'registerRenderer' || importedName === 'registerRenderers') {
+        registrationNames.add(element.name.text);
+      }
+    }
+  }
+
+  const calls: string[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && registrationNames.has(node.expression.text)) {
+      calls.push(`${file.slice(sourceDirectory.length + 1)}:${node.expression.text}`);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return calls;
+}
+
+function importFamily(specifier: string): ImportFamily | null {
+  const match = /^@flighthq\/([^/]+)(?:\/|$)/.exec(specifier);
+  const packageName = match?.[1];
+  if (packageName === undefined) return null;
+  if (packageName.endsWith('-dom')) return 'dom';
+  if (packageName.endsWith('-canvas')) return 'canvas';
+  if (packageName.endsWith('-gl')) return 'webgl';
+  if (packageName.endsWith('-wgpu')) return 'webgpu';
+  return null;
+}
+
+function isAllowedDomShapeCanvasBridge(
+  fixture: Readonly<MinimalCaptureFixture>,
+  item: Readonly<FixtureImport & { family: ImportFamily | null }>,
+): boolean {
+  if (fixture.name !== 'scene2d-dom-shape' || item.specifier !== '@flighthq/scene2d-canvas') return false;
+  const allowed = new Set([
+    'createCanvasShapeRasterizer',
+    'createCanvasTextureResolvers',
+    'defaultCanvasShapeCommands',
+    'registerCanvasShapeCommands',
+  ]);
+  return item.importedNames.length > 0 && item.importedNames.every((name) => allowed.has(name));
+}
+
+function forbiddenImportFamilies(renderer: FixtureRenderer): ImportFamily[] {
+  switch (renderer) {
+    case 'dom':
+      return ['canvas', 'webgl', 'webgpu'];
+    case 'canvas':
+      return ['webgl', 'webgpu'];
+    case 'webgl':
+      return ['canvas', 'webgpu'];
+    case 'webgpu':
+      return ['canvas', 'webgl'];
+  }
+}
