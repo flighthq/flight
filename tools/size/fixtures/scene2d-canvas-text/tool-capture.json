@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-canvas-text-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-canvas-text",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
