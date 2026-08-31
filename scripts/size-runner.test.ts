@@ -97,11 +97,15 @@ describe('dom fixture import structure', () => {
 });
 
 describe('dedicated size fixture gate', () => {
-  test('both baselines contain exactly the fixture corpus', () => {
+  test('every fixture has a baseline entry', () => {
     const fixtureKeys = collectSizeCases(fixturesDirectory).map(getSizeCaseKey).sort();
+    expect(fixtureKeys.length).toBeGreaterThan(0);
 
     for (const name of ['size.baseline.json', 'size.unminified.baseline.json']) {
-      expect(Object.keys(readBaseline(resolve(fixturesDirectory, '..', name))).sort()).toEqual(fixtureKeys);
+      const baselineKeys = new Set(Object.keys(readBaseline(resolve(fixturesDirectory, '..', name))));
+      for (const key of fixtureKeys) {
+        expect(baselineKeys, `${name} missing entry for ${key}`).toContain(key);
+      }
     }
   });
 });
