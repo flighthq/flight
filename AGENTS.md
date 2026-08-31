@@ -4,7 +4,7 @@ This repository is a TypeScript monorepo for a tree-shakable graphics and applic
 
 This document should stay useful, not ornamental. Prefer making architecture and API behavior obvious in source, tests, manifests, and generated API output; use this file for project-level rules that are hard to infer from one or two files. Read it once at the start of each session, and revisit the relevant section when a task touches package shape, exports, examples, rendering, graph internals, or publishing.
 
-**This file is read in full at the start of every agent session, and must stay under 40,000 characters** — enforced by `npm run docs:check`, which warns within 2% of the limit. That budget is what keeps it a map. Detail belongs in the linked docs under [`agents/`](agents/): when a section here grows past a trigger plus the rule it enforces, move the elaboration into the domain doc that owns it and leave the pointer. Prose added here is paid for by every session, whether or not the task touches that domain.
+**This file is read in full at the start of every agent session, and must stay under 30,000 characters** — enforced by `npm run docs:check`. Every line here is paid for by every session. Domain-specific content — architecture records, reference docs, trigger lists ("before touching X, read Y") — belongs in [`agents/index.md`](agents/index.md) and the docs it indexes, not here. Adding a line to this file requires removing an equivalent one; the test is: would an agent on an unrelated task violate this without knowing the domain existed?
 
 ## Pre-Release Status and API Philosophy
 
@@ -14,9 +14,7 @@ Agent sessions are a direct part of shaping this API. The goal is not to impleme
 
 The cellular architecture supports this directly: each package grows — more renderers, more filter types, more graph families — without coupling to the rest of the SDK. A well-bounded feature is one a user can import in isolation and understand in full, and the module graph and tree-shaking enforce that. If adding something forces a user to pull in unrelated weight, the boundary is wrong or the abstraction is premature. See [Composition and Complexity](#composition-and-complexity). Approach every feature as if it is the final shape.
 
-Unless a task specifies otherwise, the goal when working on a feature area is to bring it to AAA completeness — implemented using industry-recognized terms and patterns, canonical in scope and naming. When a package is labeled `particles`, an agent should expect to find — and build toward — everything a developer would look for in a mature particles library: emitters, spawn rules, lifetime, forces, blending, pooling. Packages are mature sub-libraries throughout, not thin stubs. A feature area that is partially built is unfinished work, not a design choice.
-
-Gaps in completeness found during a task are added to the current task list and addressed in-session by default. Gaps that cross package boundaries, require a design decision, or are too large for the current scope are surfaced to the user as a suggestion rather than acted on autonomously.
+Unless a task specifies otherwise, bring feature areas to AAA completeness — industry-recognized terms and patterns, canonical scope and naming. A partially built feature area is unfinished work, not a design choice. Gaps found during a task are addressed in-session by default; gaps that cross package boundaries or require a design decision are surfaced to the user.
 
 ## Design posture
 
@@ -98,65 +96,33 @@ This is the same force as the cellular architecture and the bundle invariant abo
 
 ## Checkpoints
 
-Run these at the points listed; skipping them causes cascading failures slower to debug than the check itself. What each command actually does is in [commands](agents/commands.md).
+Run these at the points listed; skipping them causes cascading failures. Full details in [commands](agents/commands.md).
 
-- **After any edit session, before committing** — `npm run fix` (runs `lint:fix`, `order:fix`, `format`).
-- **After package-level changes** (manifests, workspace references, exports, build targets, side-effect behavior) — `npm run packages:check`. Fix everything it reports before moving on.
-- **After adding, removing, or renaming an exported function** — `npm run exports:check` (every export needs a colocated test), `npm run order` (`order:fix` rewrites), and `npm run api:check` (signatures and naming symmetry — plain `npm run api` only prints and enforces nothing).
-- **After an effect runner/registrar or backend renderer changes** — `npm run reachability:check` gates the effects inverse and registrar identities, and reports lane drift. Accept census changes with `npm run reachability:registrars:baseline`, lane drift with `npm run reachability:baseline`.
+- **After any edit session, before committing** — `npm run fix`.
+- **After package-level changes** (manifests, workspace references, exports, build targets) — `npm run packages:check`.
+- **After adding, removing, or renaming an exported function** — `npm run exports:check`, `npm run order`, `npm run api:check`.
+- **After an effect runner/registrar or backend renderer changes** — `npm run reachability:check`.
 - **After changing imports or test `describe` blocks** — `npm run order`.
-- **After adding or renaming an exported `register*` function** — `npm run backend-prefix:check`. The backend token prefixes the type; see [file naming](agents/conventions/file-naming.md).
-- **After adding source** — `npm run portable:check`; see the lowerable subset and escape process in [commands](agents/commands.md#checkpoints-in-detail) and [portability](agents/portability.md).
-- **After changes that may affect tree-shaking** (examples, package exports, barrels, renderer registration, dependencies) — `npm run size`.
-- **After changing functional scenes or adding, removing, or re-capturing functional baselines** — `npm run support` regenerates the backend support matrix from current scene realizations plus committed fingerprints; `support:check` fails if the committed matrix is stale. Run `npm run evidence:check` alongside it so a changed fingerprint, screenshot hash, or pixel-oracle export cannot drift from the evidence manifest. A baseline is capture evidence, not by itself a support claim.
-- **While iterating** — the closest meaningful tests (a touched test file, a package workspace, a Vitest project filter), then `npm run check <package>` and `npm run test <package>` for the package you touched. A selector that runs no test files or tests is unconfigured, not clean, and fails loudly.
-- **Before handoff** — `npm run check <package>` and `npm run test <package>` for every affected package on the final tree. Add the bare whole-repo `npm run check` when a change crosses package boundaries or affects shared contracts, manifests, exports, build structure, or repository-wide tooling. Run the bare whole-repo `npm run test` only for broadly cross-cutting behavior or when explicitly requested; integration/CI runs it once for the combined tree, and the full render matrix is likewise CI's job (see [commands](agents/commands.md#checkpoints-in-detail)).
-- **When your change touches rendering** — the render gate relevant to it, scoped to the affected scene. `test:functional:smoke` / `:parity` are environment-independent and yours to run; `test:functional:regression` is only valid where its baselines were captured.
-- **When adding a new package** — copy the shape from a nearby package, then `npm run packages:check`. A package may spawn focused neighbours with a `-subpackage` suffix (`@flighthq/spritesheet-formats` beside `@flighthq/spritesheet`) when the scope is clearly bounded and both stay tree-shakable.
-
-The API-query and live-server command surface is in [commands](agents/commands.md#orientation-commands).
+- **After adding or renaming an exported `register*` function** — `npm run backend-prefix:check`.
+- **After adding source** — `npm run portable:check`.
+- **After changes that may affect tree-shaking** — `npm run size`.
+- **After changing functional scenes or baselines** — `npm run support` and `npm run evidence:check`.
+- **While iterating** — closest meaningful tests, then `npm run check <package>` and `npm run test <package>`.
+- **Before handoff** — `npm run check <package>` and `npm run test <package>` for every affected package. Add bare `npm run check` when changes cross package boundaries.
+- **When your change touches rendering** — the relevant render gate, scoped to the affected scene.
+- **When adding a new package** — copy the shape from a nearby package, then `npm run packages:check`.
 
 ## Domain Conventions
 
-Decisions and procedures that are easy to violate and only matter inside one domain live outside this map, so it stays a map. Each entry below names the moment to open it; the doc itself carries the content. Consult the relevant one when a task enters that domain, not every session.
+Architecture records, reference docs, plans, and reviews live in [`agents/index.md`](agents/index.md) — consult the relevant entry when a task enters a domain. That index carries the "before touching X, read Y" triggers for every subsystem; records marked **unratified** are proposals an agent should read but not build on as settled.
 
-**What earns a place in this file.** Every agent reads it in full, so an entry must be something an agent could violate _without knowing it had entered the domain_. Three consequences, and they are the rules for editing this file:
+This file carries only rules an agent could violate _without knowing it had entered the domain_. New domain-specific content goes in `agents/index.md` or the domain doc that owns it, not here.
 
-- A rule stated above carries its own pointer at the point of the rule. That placement beats a second copy in a list, so rules are **not** repeated down here.
-- Anything whose audience is one role — plans, reviews, in-flight direction, open questions — goes in [`agents/index.md`](agents/index.md), not here.
-- **How far along a piece of work is never belongs here.** A status copy in this file is a second source that goes stale silently and is then trusted by every session; progress lives in the linked doc's own header, the package cell's `status.md`, or the generated work index. `unratified` is the one allowed marker, because it changes what an agent may do rather than reporting how far along the work is.
+**Package TODO index** — the index of actionable work, weakest first. Generated, never committed: run `node agents/packages/todo.mjs` to write `agents/packages/TODO.md`, then start there and read only the named cell (architecture in [packages/index.md](agents/packages/index.md)).
 
-**Reference docs** (`agents/`) — declarative knowledge, read to _know_:
+**Skills** (`.claude/skills/`) — procedures, _invoked to do_:
 
-- [functional cell rules](functional/README.md) — before adding a functional scene, adding a backend variant, declaring a backend unsupported, or changing a scene's antialiasing. A scene's cells must all show the SAME THING; controls are baked into the scene, never given a cell of their own.
-- [registration model](agents/registration-model.md) — before answering a consumer question about registration or backend capability. The two public doors, the register-means-real-implementation rule, and the DOM batch-kind exclusions.
-- [npm script naming](agents/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, collapse aliases, and the `smoke`/`parity`/`regression` vocabulary.
-- [packaging & publishing](agents/packaging.md) — the published package shape, enforced by `npm run packages:check`, not memory.
-- **package TODO index** — the index of actionable work, weakest first. Generated, never committed: run `node agents/packages/todo.mjs` to write `agents/packages/TODO.md`, then start there and read only the named cell (architecture in [packages/index.md](agents/packages/index.md)).
-
-**Architecture records** — the design decisions behind a subsystem, read before changing its shape. Each doc states its own status in its header; the trigger below is the durable part. An entry marked **unratified** is a proposal awaiting a ruling — read it before working in that area, but do not build on it as settled.
-
-- [effect / adjustment / material architecture](agents/effect-adjustment-architecture.md) — before adding an image operation or touching the adjustments/effects boundary. The three-tier Material / Adjustment / Effect model.
-- [material modifier model](agents/material-modifier-model.md) — before touching how node color relates to materials, adding a color-remap op, or extending per-object tint. Color adjustment is a material _feature_, not a shading family.
-- [effect recipe model](agents/effect-recipe-model.md) — **unratified.** Before adding a field to an effect descriptor, changing how a chain sequences passes, or adding an effect runner. Who turns an effect intent into passes, and the `strength` definition.
-- [texture source model](agents/texture-source-model.md) — before touching `Texture`, `TextureSource`, `ImageBacking`, or `TextureAtlas` internals, or any `create*Texture` / `create*Image*` constructor. The flat `Texture`-over-`TextureSource` model.
-- [render backend support](agents/render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. The narrative behind the generated [support matrix](agents/support-matrix.md) and the [render architecture](agents/render-architecture.md) gaps.
-- [timeline cue model](agents/timeline-cue-model.md) — before adding anything that fires on frame entry, giving an importer a `FrameScript`, or touching `swfFrameAction.ts`. Authored cues are plain kind-dispatched data on the source; importers emit zero closures.
-- [loader progress currencies](agents/loader-progress-currencies.md) — **unratified.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. The three currencies, and where two of them contradict each other.
-- [render view model](agents/render-view-model.md) — **unratified.** Before touching `ApplicationRenderView`, `application-gl`, or the `render` sub-target Directed item. Extracting a windowless `RenderView` into `render`.
-- [draw order model](agents/draw-order-model.md) — before adding an ordering field to a node, giving a format importer its own child-reordering pass, or deciding where a draw-order timeline binds. Child order is the only order; ordering is a caller-owned `NodeOrderList`.
-- [collision support registry](agents/collision-support-registry.md) — before adding a collision shape, touching a dispatcher, or renaming for 3D. The support-function core and the 2D/3D boundary.
-- [spatial dimension seams](agents/spatial-dimension-seams.md) — before adding a 3D broadphase backend or widening `SpatialAabb2D`. Two suffixed seams, one policy layer.
-- [texture color space](agents/texture-color-space-model.md) — **unratified.** Before touching `Texture.colorSpace`, the `resolveGl*/resolveWgpu*Texture` resolvers, or adding a color-space-aware op to the 2D path. Where Flight decodes and where it encodes.
-- [host-web architecture](agents/host-web-architecture.md) — before touching `webHost`, `web*Backend` consts, the capability/host boundary, or the Host trait system. The domain census, extraction plan, and types spine.
-- [upstream host requirements](agents/upstream-host-requirements.md) — **unratified.** Before working on backend lifecycle, partial composition, operation availability, or any new host package (`host-node`, `host-lime`). Feedback from flight-hx identifying gaps in the host seam.
-- [explicit dependency model](agents/explicit-dependency-model.md) — the active build. Before adding module-scoped global state, `register*` functions that mutate shared state, `set*Backend` singletons, `Object.defineProperty` indirection for shared state, or any ambient dependency a function reaches for without taking as an argument. Entity is the base type for every SDK object: `create*` always returns Entity, while descriptors, options bags, and type-only constructs are not.
-
-The full `agents/` library — plans, reviews, breadth analyses, and every record not triggered by a rule above — is indexed in [`agents/index.md`](agents/index.md). Read it when you need a doc you could not reach from this map.
-
-**Skills** (`.claude/skills/`) — procedures, _invoked to do_. Each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
-
-- [`functional-test`](.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test: the `createFunctionalTarget` single-`app.ts` pattern, the `kinds` declaration, and the capture→baseline loop.
+- [`functional-test`](.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test.
 - [`visual-capture`](.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples and functional tests.
 
 ## Core Patterns
@@ -204,34 +170,24 @@ See [testing conventions](agents/conventions/testing.md) for the full rules, Web
 
 ## Package Map
 
-Package names grouped by domain, `@flighthq/` prefix omitted. For what each package owns and where its boundary sits, read the [package catalog](agents/packages/catalog.md); for per-package detail and API surface, the [package map](agents/packages/map.md). `npm run api <name>` queries exported signatures directly.
+Package names grouped by domain, `@flighthq/` prefix omitted. For boundaries and ownership, read the [package catalog](agents/packages/catalog.md); for API surface, the [package map](agents/packages/map.md). `npm run api <name>` queries signatures. [Feature lookup](agents/feature-lookup.md) maps a keyword to its owning package.
 
-Core: `types` (the header layer — every exported type in the SDK), `entity`, `geometry` (rectangles, vectors, matrices, quaternions, bounding volumes, ray intersection, pools), `math` (scalar utilities), `color` (packed-RGBA, sRGB↔linear, HSL/HSV/OkLab), `compression` (the one decompressor registry every container format resolves through), `layout` (headless anchor/flex/grid resolution), `abc` (AVM2 bytecode container parsing — carried by SWF, never executed), `node` (graph hierarchy, transforms, bounds, appearance), `signals`.
+Core: `types`, `entity`, `geometry`, `math`, `color`, `compression`, `layout`, `abc`, `node`, `signals`.
 
-Scene graph: `scene2d` (`Node2D` nodes rooted at the `Scene2D` world, including `Sprite`), `text`, `quadbatch` (packed instanced-quad buffer), `tilemap` (tile-id grid over a tileset), `scene3d`, `clip`, `path` (vector-path geometry kernel), `shape` (retained vector command recorder), `interaction` (hit testing, pointer dispatch, overlap), plus the codec neighbors `path-formats` (SVG `d`), `path-boolean` (CSG + offset/simplify), `shape-formats`, `scene2d-formats` (SVG documents), and the standalone `swf` import domain.
+Scene graph: `scene2d`, `text`, `quadbatch`, `tilemap`, `scene3d`, `clip`, `path`, `shape`, `interaction`, plus codecs `path-formats`, `path-boolean`, `shape-formats`, `scene2d-formats`, and `swf`.
 
-Rendering: `render` (registration, state/queue, update pipeline), the backend cores `render-gl` / `render-wgpu`, the 2D leaf renderers `scene2d-canvas` / `scene2d-dom` / `scene2d-gl` / `scene2d-wgpu`, the 3D forward renderers `scene3d-gl` / `scene3d-wgpu`, the three image-operation tiers `materials` + `shading` / `adjustments` / `effects` with `effects-gl` / `effects-wgpu` / `effects-canvas` execution, plus `velocity`, `bitmap` (offscreen pixel manipulation), and `capture` (render-verification policy and baselines).
+Rendering: `render`, `render-gl` / `render-wgpu`, 2D renderers (`scene2d-canvas` / `-dom` / `-gl` / `-wgpu`), 3D renderers (`scene3d-gl` / `-wgpu`), image operations (`materials` + `shading` / `adjustments` / `effects` with `effects-gl` / `-wgpu` / `-canvas`), `velocity`, `bitmap`, `capture`.
 
-3D data primitives: `mesh`, `lighting`, `texture`, `camera` (3D projection/frustum **and** the 2D `Camera2D` — the former `camera2d` package is absorbed here) with `camera-controls` (2D follow, 3D orbit/fly), `animation`, `skeleton3d`, `picking`, `scene3d-formats` (glTF/USD/OBJ/3DS/MD5/AWD2).
+3D data: `mesh`, `lighting`, `texture`, `camera` (3D and 2D), `camera-controls`, `animation`, `skeleton3d`, `picking`, `scene3d-formats`.
 
-Resources: `image`, `image-codec`, `font`, `video`, `audio`, `binpack`, `textureatlas`, `loader`, `assets`, the codecs `texture-formats` / `textureatlas-formats` / `tilemap-formats`, the staged scene acquisition layers `scene2d-resources` / `scene3d-resources`, and `importdiagnostics` (the shared structured-diagnostics seam for every `*-formats` importer).
+Resources: `image`, `image-codec`, `font`, `video`, `audio`, `binpack`, `textureatlas`, `loader`, `assets`, codecs (`texture-formats` / `textureatlas-formats` / `tilemap-formats`), `scene2d-resources` / `scene3d-resources`, `importdiagnostics`.
 
-Animation and simulation: `spritesheet`, `spritesheet-formats`, `particles` (headless sim) with `particleemitter` (display node) and `particles-formats`, `timeline` with `movieclip`, `tween`, `motionpath`, `clock`, `easing`, `spring`, plus `skeleton2d` + `skeleton2d-formats` (2D bone rigs, alongside the 3D `skeleton3d`).
+Animation and simulation: `spritesheet` / `spritesheet-formats`, `particles` / `particleemitter` / `particles-formats`, `timeline` / `movieclip`, `tween`, `motionpath`, `clock`, `easing`, `spring`, `skeleton2d` / `skeleton2d-formats`.
 
-Game: `collision` (2D/3D narrow phase + contact manifolds), `physics2d` / `physics3d` (rigid-body dynamics), `physics2d-abi` / `physics3d-abi` (persistent handle/buffer execution contracts), `spatial` (2D/3D broadphase indices), `flow` (mode/screen state stack), `statechart` (concurrent data-only guarded state graphs), `snapshot` (frozen recoverable state).
+Game: `collision`, `physics2d` / `physics3d`, `physics2d-abi` / `physics3d-abi`, `spatial`, `flow`, `statechart`, `snapshot`.
 
-Input and text: `input`, `textinput`, `textlayout`, `textshaper` with `textshaper-canvas`, `textsegment`, `textbidi` (bidi itemization), `text-markup` (markup → rich text), `glyphatlas` (dynamic) and `bitmapfont` + `bitmapfont-formats` (static) behind the shared `GlyphSource` seam, `bitmaptext`.
+Input and text: `input`, `textinput`, `textlayout`, `textshaper` / `textshaper-canvas`, `textsegment`, `textbidi`, `text-markup`, `glyphatlas`, `bitmapfont` / `bitmapfont-formats`, `bitmaptext`.
 
-Application: `application` (main loop and windowing) with `application-gl` (the WebGL `ApplicationRenderView` assembly), `intl`, `log`, `debug`, `useragent`, `xml`, `media`, `mediasession` (OS now-playing/transport), `sdk` (convenience barrel).
+Application: `application` / `application-gl`, `intl`, `log`, `debug`, `useragent`, `xml`, `media`, `mediasession`, `sdk`.
 
-**Platform Integration Suite** — flat free functions that take a host object constrained by trait interfaces (`HasNetHttp`, `HasMediaAudioDevice`, etc.). Web backends are available as const imports from `@flighthq/host-web` — either the whole-store `webHost` or individual backends (`webNetBackend`, `webAudioDeviceBackend`). Native hosts (`limeHost`, `tauriHost`) provide the same trait-satisfying shape. No `set*Backend`, no `enableHostWeb*()`, no sentinels, no precedence model — the host is a value you pass, and a missing capability is a compile-time type error. See [explicit dependency model](agents/explicit-dependency-model.md).
-
-- OS and device: `platform`, `screen`, `device`, `storage`, `net` (HTTP), `socket` (persistent connections), `connectivity`, `permissions`, `midi` (split explicit-Host query/access with origin-pinned ports), `power`, `lifecycle`, `keyboard`, `sensors`.
-- UI and shell: `accessibility`, `clipboard`, `dialog`, `filesystem`, `notification`, `shell`, `menu`, `tray`, `shortcut`, `share`, `haptics`, `geolocation`, `webcam`, `statusbar`.
-- App and process: `app`, `protocol`, `updater`, `ipc`.
-
-Two package families are deliberately outside the `@flighthq/sdk` barrel and not tree-shakable: host backends (`host-<runtime>`: `host-electron`, `host-tauri`, `host-capacitor`) and the dev/CI tooling suite (`tool-*`: `tool-capture`, `tool-registry`). `scripts/sdk-policy.ts` enforces the exclusion.
-
-## Feature Lookup
-
-[feature lookup](agents/feature-lookup.md) maps a feature keyword — shadows, bloom, blend modes, skinning, tilemap, glTF, collision, text input — to the package that owns it and the backends carrying it. Start there when you know what you want but not where it lives.
+Platform: `platform`, `screen`, `device`, `storage`, `net`, `socket`, `connectivity`, `permissions`, `midi`, `power`, `lifecycle`, `keyboard`, `sensors`, `accessibility`, `clipboard`, `dialog`, `filesystem`, `notification`, `shell`, `menu`, `tray`, `shortcut`, `share`, `haptics`, `geolocation`, `webcam`, `statusbar`, `app`, `protocol`, `updater`, `ipc`. Host backends (`host-web`, `host-electron`, `host-tauri`, `host-capacitor`) and dev tooling (`tool-capture`, `tool-registry`) are outside `@flighthq/sdk`. See [explicit dependency model](agents/explicit-dependency-model.md).

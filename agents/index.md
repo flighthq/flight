@@ -1,19 +1,16 @@
 # The `agents/` Library
 
 The codebase map is **[`AGENTS.md`](../AGENTS.md)** at the repository root — read that first; it is the
-one file every agent reads in full. This file is the **index of everything the map does not carry**.
+one file every agent reads in full. This file indexes **everything else**: architecture records with
+domain-entry triggers ("before touching X, read Y"), reference docs, plans, reviews, and work in flight.
 
-The split is deliberate. `AGENTS.md` is read in full by every agent on every task — the one fixing a
-single bug, the one dividing work among builders, the one integrating, the one setting direction. So it
-holds only what an agent could violate _without knowing it had entered the domain_. Everything else lives
-here and is read on purpose: material for one role, background behind a decision, and the current state
-of work in flight.
+**Before changing a subsystem's shape, scan the [architecture records](#architecture-records) below.**
+Each entry names the moment to open it. `AGENTS.md` carries only rules an agent could violate _without
+knowing the domain existed_; domain-specific triggers live here.
 
 **Status lives in the doc, not in the index.** Each document below states its own status in its own
 header, where the reader who opens it will see it. Do not copy that status into this file or into
-`AGENTS.md` — a second copy goes stale silently and is then trusted. Where a design is unratified in a
-way that changes whether an agent may build on it, `AGENTS.md` says so with the stable word
-`unratified` and nothing more specific.
+`AGENTS.md` — a second copy goes stale silently and is then trusted.
 
 ## Reached from a rule in the map
 
@@ -28,7 +25,8 @@ only so the library is complete.
 [validation](conventions/validation.md).
 
 **Rule references** — [anti-goals](anti-goals.md), [bundle size](bundle-size.md),
-[commands](commands.md), [feature lookup](feature-lookup.md), [packaging](packaging.md),
+[commands](commands.md), [feature lookup](feature-lookup.md),
+[functional cell rules](../functional/README.md), [packaging](packaging.md),
 [portability substrate](portability.md), [registration model](registration-model.md).
 
 **Package knowledge** — [package cells](packages/index.md) (the per-package
@@ -40,8 +38,10 @@ charter / review / assessment / status architecture), [catalog](packages/catalog
 
 ## Architecture records
 
-The design behind a subsystem, read before changing its shape. The ones with a live trigger — "before
-touching X" — are also listed in `AGENTS.md`; the rest are background you reach from here.
+The design behind a subsystem, read before changing its shape. Each entry names its trigger — "before
+touching X" — so you know when to read it. An entry marked **unratified** is a proposal: read it before
+working in that area, but do not build on it as settled. New architecture records go here, not in
+`AGENTS.md`.
 
 - [3D materials & lighting](3d-materials-architecture.md) — the canonical 3D material and light model.
 - [3D pipeline](3d-pipeline-architecture.md) — the 3D draw pipeline end to end.
@@ -55,25 +55,25 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [collision support registry](collision-support-registry.md) — **ratified 2026-08-20.** replacing the O(N²) pair matrix with a support-function core; where genericity stops, and how the 2D/3D boundary is carried when there is no graph to enforce it.
 - [dom screenshot / fingerprint divergence](dom-screenshot-fingerprint-divergence.md) — DOM captures produce two different artifacts for the regression gate and human review; the gate is blind to screenshot-only defects.
 - [document audio resources](document-audio-resources.md) — a document carries audio bytes on the image lane's terms, never playback.
-- [draw order model](draw-order-model.md) — child order is the only order; the caller-owned `NodeOrderList`.
+- [draw order model](draw-order-model.md) — before adding an ordering field to a node or a child-reordering pass. Child order is the only order; the caller-owned `NodeOrderList`.
 - [bounded expected-image descriptions](functional-bounded-descriptions.md) — functional scenes whose expected picture is genuinely undecided, and therefore cannot be commissioned as a permanent reference.
-- [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
+- [effect / adjustment / material](effect-adjustment-architecture.md) — before adding an image operation or touching the adjustments/effects boundary. The three-tier Material / Adjustment / Effect model.
 - [effect-pass UV origin](effect-uv-origin-architecture.md) — the GL/WGPU positional-UV sweep and the proposed sampler-local normalization seam.
-- [host-web architecture](host-web-architecture.md) — extracting web backends into `@flighthq/host-web`; the 38-row census, precedence model, and types spine.
+- [host-web architecture](host-web-architecture.md) — before touching `webHost`, `web*Backend` consts, or the capability/host boundary. The domain census, extraction plan, and types spine.
 - [host-web document-absence outcomes](host-web-no-dom-outcomes.md) — the post-Accessibility R17 census of nine provider operations whose no-DOM outcome remains silent.
-- [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
-- [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
+- [loader progress currencies](loader-progress-currencies.md) — **unratified.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. Item count vs weighted fraction vs bytes.
+- [material modifier model](material-modifier-model.md) — before touching how node color relates to materials or adding a color-remap op. Color adjustment is a material _feature_, not a shading family.
 - [physics3d solver abstraction](physics3d-solver-abstraction.md) — **ratified 2026-08-20.** sequential impulses first; the four data-model obligations that keep XPBD possible, and why a `SolverBackend` interface is not one of them.
 - [parity skip declaration model](parity-skip-declaration-model.md) — **unratified.** what a parity skip must record, and the reference-to-all-pairs demotion it hides.
 - [effect recipe model](effect-recipe-model.md) — **unratified.** who turns an effect intent into passes; the `strength` definition.
 - [morph-target animation](morph-target-animation.md) — the blend-shape deformer and the GPU path.
 - [read integrity](read-integrity.md) — the axes a format reader must hold.
 - [render architecture](render-architecture.md) — the render and scene architecture in full.
-- [render backend support](render-backend-support.md) — the narrative behind the generated [support matrix](support-matrix.md).
+- [render backend support](render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. The narrative behind the generated [support matrix](support-matrix.md).
 - [render oracle calibration record](render-reference-image-calibration-record.md) — the committed cross-host calibration result that rules §10 contingently, and which of its fields are measured rather than inferred.
 - [reference-image rename](reference-image-rename.md) — **ratified, ready to dispatch.** retiring "oracle" as an unqualified term: the three-bucket partition, the exclusion list, and why a blanket rename corrupts the largest population.
 - [render oracle repository](render-reference-image-repository.md) — **proposal.** blessed reference images for a full-resolution regression tier, and the measured reason they are not stored in git.
-- [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
+- [render view model](render-view-model.md) — **unratified.** Before touching `ApplicationRenderView`, `application-gl`, or the `render` sub-target. Extracting a windowless `RenderView`.
 - [runtime package review](runtime-package-review.md) — why the runtime facade and substrate packages were considered and declined, and why ambient language facilities remain distinct from host code.
 - [server-side architecture](server-side-architecture.md) — **proposal.** the layered package plan that completes Flight's server story: `host-node` → `tool-pipeline` → `serialize` → `sync` + `authority` → `render-cpu`. Builds on [cloud & distributed breadth](breadth-cloud-distributed.md).
 - [registration lifecycle](registration-lifecycle.md) — **unratified.** how a file's contents become the exact `register*` calls that draw it: requirement sets, the source-derived catalog, and the generated registries module.
@@ -92,8 +92,8 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [swf video import](swf-video-import-proposal.md) — **proposal.** what a DefineVideoStream import may honestly claim at each stage.
 - [timeline source model](timeline-source-model.md) — dictionary vs sequence, and where playback vocabulary lives.
 - [texture color space](texture-color-space-model.md) — **unratified.** the decode landed, the encode did not.
-- [timeline cue model](timeline-cue-model.md) — authored frame cues as plain kind-dispatched data, not closures.
-- [texture source model](texture-source-model.md) — the flat `Texture`-over-`TextureSource` model.
+- [timeline cue model](timeline-cue-model.md) — before adding anything that fires on frame entry or giving an importer a `FrameScript`. Authored cues are plain kind-dispatched data; importers emit zero closures.
+- [texture source model](texture-source-model.md) — before touching `Texture`, `TextureSource`, `ImageBacking`, or `TextureAtlas` internals. The flat `Texture`-over-`TextureSource` model.
 - [texture / surface / resource](texture-surface-resource.md) — the boundary between the three.
 - [version-keyed import model](version-keyed-import-model.md) — compatibility-field gates vs probe+registry for version-dependent wire layouts.
 - [basis transcode](basis-transcode.md) — Basis-Universal texture transcode.
