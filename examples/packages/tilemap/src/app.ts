@@ -1,96 +1,181 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
+  createCamera2D,
   createDisplayObject,
   createImageResource,
-  createTilemap,
+  createMatrix,
+  createPixelArtSampler,
+  createSprite,
   createTexture,
   createTextureAtlasFromGrid,
+  createTilemap,
+  createVector2,
+  getCamera2DViewMatrix,
+  getTilemapColumnRowAtPoint,
+  getTilemapTile,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
+  unprojectCamera2DPoint,
+  zoomCamera2DAtScreenPoint,
 } from '@flighthq/sdk';
-import { buildTilemapLayersFromTiled, parseTiledTmj } from '@flighthq/sdk/formats';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
 const TILE_SIZE = 32;
 const TILE_COUNT = 8;
-const MAP_COLUMNS = 25;
-const MAP_ROWS = 19;
+const MAP_COLUMNS = 72;
+const MAP_ROWS = 54;
+const MAP_WIDTH = MAP_COLUMNS * TILE_SIZE;
+const MAP_HEIGHT = MAP_ROWS * TILE_SIZE;
+const CAMERA_SPEED = 520;
+const MIN_ZOOM = 0.55;
+const MAX_ZOOM = 2.4;
+
+const TILE_NAMES = ['meadow', 'water', 'shore', 'rock', 'trail', 'snow', 'lava', 'forest'] as const;
+const TILE_COLORS: readonly (readonly [string, string])[] = [
+  ['#3f8f4f', '#27713a'],
+  ['#2474cc', '#1659aa'],
+  ['#d9b85d', '#ad8c3e'],
+  ['#68717d', '#454d58'],
+  ['#9b6b43', '#724a2f'],
+  ['#e8edf2', '#bcc8d2'],
+  ['#dc3c20', '#ffb31a'],
+  ['#235d39', '#123d28'],
+];
+
+function createTilesetCanvas(): HTMLCanvasElement {
+  const surface = document.createElement('canvas');
+  surface.width = TILE_SIZE * TILE_COUNT;
+  surface.height = TILE_SIZE;
+  const context = surface.getContext('2d')!;
+
+  for (let id = 0; id < TILE_COUNT; id++) {
+    const x = id * TILE_SIZE;
+    const [base, accent] = TILE_COLORS[id];
+    context.fillStyle = base;
+    context.fillRect(x, 0, TILE_SIZE, TILE_SIZE);
+    context.strokeStyle = accent;
+    context.lineWidth = 1.5;
+
+    if (id === 0) {
+      context.fillStyle = accent;
+      for (let row = 0; row < 4; row++) {
+        for (let column = 0; column < 4; column++) {
+          context.fillRect(x + 4 + column * 8 + (row & 1) * 2, 4 + row * 8, 2, 4);
+        }
+      }
+    } else if (id === 1) {
+      for (let row = 0; row < 3; row++) {
+        const y = 7 + row * 10;
+        context.beginPath();
+        context.moveTo(x, y);
+        context.quadraticCurveTo(x + 8, y - 4, x + 16, y);
+        context.quadraticCurveTo(x + 24, y + 4, x + 32, y);
+        context.stroke();
+      }
+    } else if (id === 2) {
+      context.fillStyle = accent;
+      for (let dot = 0; dot < 10; dot++) {
+        context.fillRect(x + 3 + ((dot * 11) % 27), 3 + ((dot * 7) % 25), 2, 2);
+      }
+    } else if (id === 3 || id === 5) {
+      context.beginPath();
+      context.moveTo(x + 2, 9);
+      context.lineTo(x + 12, 5);
+      context.lineTo(x + 22, 11);
+      context.lineTo(x + 31, 7);
+      context.moveTo(x + 4, 25);
+      context.lineTo(x + 15, 18);
+      context.lineTo(x + 28, 24);
+      context.stroke();
+    } else if (id === 4) {
+      context.beginPath();
+      context.moveTo(x, 20);
+      context.bezierCurveTo(x + 8, 8, x + 22, 27, x + 32, 12);
+      context.lineWidth = 5;
+      context.stroke();
+    } else if (id === 6) {
+      context.fillStyle = accent;
+      for (let spark = 0; spark < 8; spark++) {
+        context.fillRect(x + 4 + ((spark * 13) % 25), 4 + ((spark * 9) % 23), 3, 3);
+      }
+    } else {
+      context.fillStyle = accent;
+      for (let tree = 0; tree < 4; tree++) {
+        const treeX = x + 5 + (tree % 2) * 15;
+        const treeY = 5 + Math.floor(tree / 2) * 15;
+        context.beginPath();
+        context.moveTo(treeX + 5, treeY);
+        context.lineTo(treeX, treeY + 10);
+        context.lineTo(treeX + 10, treeY + 10);
+        context.closePath();
+        context.fill();
+      }
+    }
+
+    context.strokeStyle = 'rgba(10, 24, 34, 0.16)';
+    context.lineWidth = 1;
+    context.strokeRect(x + 0.5, 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+  }
+
+  return surface;
+}
+
+function createTerrainTiles(): Int16Array {
+  const tiles = new Int16Array(MAP_COLUMNS * MAP_ROWS);
+  for (let row = 0; row < MAP_ROWS; row++) {
+    for (let column = 0; column < MAP_COLUMNS; column++) {
+      const nx = (column - MAP_COLUMNS * 0.5) / (MAP_COLUMNS * 0.5);
+      const ny = (row - MAP_ROWS * 0.5) / (MAP_ROWS * 0.5);
+      const elevation =
+        0.94 - Math.sqrt(nx * nx + ny * ny * 1.22) + Math.sin(column * 0.27) * 0.08 + Math.cos(row * 0.31) * 0.07;
+      const moisture = Math.sin(column * 0.19 + row * 0.11) + Math.cos(row * 0.23 - column * 0.07);
+      let tile = elevation < 0.08 ? 1 : elevation < 0.17 ? 2 : elevation > 0.71 ? 5 : elevation > 0.55 ? 3 : 0;
+
+      if (tile === 0 && moisture > 0.9) tile = 7;
+      const trailRow = MAP_ROWS * 0.58 + Math.sin(column * 0.16) * 3.5;
+      if (tile !== 1 && tile !== 6 && Math.abs(row - trailRow) < 1.15) tile = 4;
+
+      const craterX = column - MAP_COLUMNS * 0.58;
+      const craterY = row - MAP_ROWS * 0.37;
+      const craterDistance = Math.sqrt(craterX * craterX + craterY * craterY);
+      if (craterDistance < 3.2) tile = 6;
+      else if (craterDistance < 5.1) tile = 3;
+
+      tiles[row * MAP_COLUMNS + column] = tile;
+    }
+  }
+  return tiles;
+}
+
+function createSelectionCanvas(): HTMLCanvasElement {
+  const surface = document.createElement('canvas');
+  surface.width = TILE_SIZE;
+  surface.height = TILE_SIZE;
+  const context = surface.getContext('2d')!;
+  context.fillStyle = 'rgba(255, 224, 96, 0.2)';
+  context.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+  context.strokeStyle = '#ffe45e';
+  context.lineWidth = 3;
+  context.strokeRect(1.5, 1.5, TILE_SIZE - 3, TILE_SIZE - 3);
+  return surface;
+}
 
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const TILE_COLORS: [string, string][] = [
-  ['#3a7d44', '#2d6535'], // grass
-  ['#2563eb', '#1d4ed8'], // water
-  ['#d4a843', '#b8922e'], // sand
-  ['#6b7280', '#4b5563'], // stone
-  ['#8b5e3c', '#6d4a2e'], // dirt
-  ['#e8e8e8', '#d1d5db'], // snow
-  ['#dc2626', '#ea580c'], // lava
-  ['#1f2937', '#111827'], // void
-];
+const world = createDisplayObject();
+addNodeChild(root, world);
 
-function createTilesetCanvas(): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = TILE_SIZE * TILE_COUNT;
-  c.height = TILE_SIZE;
-  const ctx = c.getContext('2d')!;
-
-  for (let i = 0; i < TILE_COUNT; i++) {
-    const x = i * TILE_SIZE;
-    const [base, accent] = TILE_COLORS[i];
-
-    ctx.fillStyle = base;
-    ctx.fillRect(x, 0, TILE_SIZE, TILE_SIZE);
-
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 1;
-
-    if (i === 0) {
-      for (let dy = 4; dy < TILE_SIZE; dy += 8) {
-        for (let dx = 4; dx < TILE_SIZE; dx += 8) {
-          ctx.fillStyle = accent;
-          ctx.fillRect(x + dx, dy, 2, 3);
-        }
-      }
-    } else if (i === 1) {
-      ctx.beginPath();
-      for (let w = 0; w < 3; w++) {
-        const wy = 8 + w * 10;
-        ctx.moveTo(x, wy);
-        ctx.quadraticCurveTo(x + 8, wy - 4, x + 16, wy);
-        ctx.quadraticCurveTo(x + 24, wy + 4, x + 32, wy);
-      }
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    } else if (i === 3) {
-      ctx.beginPath();
-      ctx.moveTo(x + 4, 4);
-      ctx.lineTo(x + 28, 8);
-      ctx.moveTo(x + 2, 16);
-      ctx.lineTo(x + 30, 20);
-      ctx.moveTo(x + 6, 26);
-      ctx.lineTo(x + 26, 30);
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    } else if (i === 6) {
-      ctx.fillStyle = '#fbbf24';
-      for (let s = 0; s < 4; s++) {
-        const sx = x + 4 + (s % 2) * 16 + Math.sin(s * 2.1) * 4;
-        const sy = 4 + Math.floor(s / 2) * 16 + Math.cos(s * 1.7) * 4;
-        ctx.fillRect(sx, sy, 3, 3);
-      }
-    }
-  }
-
-  return c;
-}
-
-const tilesetCanvas = createTilesetCanvas();
-const imageResource = createImageResource(tilesetCanvas);
+const texture = createTexture({
+  dimension: '2d',
+  sampler: createPixelArtSampler(),
+  source: createImageResource(createTilesetCanvas()),
+});
 const atlas = createTextureAtlasFromGrid(
   {
     columns: TILE_COUNT,
@@ -101,83 +186,165 @@ const atlas = createTextureAtlasFromGrid(
     imageWidth: TILE_SIZE * TILE_COUNT,
     rows: 1,
   },
-  createTexture({ dimension: '2d', source: imageResource }),
+  texture,
 );
+const tilemap = createTilemap({
+  data: {
+    atlas,
+    columns: MAP_COLUMNS,
+    rows: MAP_ROWS,
+    tileHeight: TILE_SIZE,
+    tileWidth: TILE_SIZE,
+    tiles: createTerrainTiles(),
+  },
+});
+addNodeChild(world, tilemap);
 
-// Author the terrain as Tiled's one-based global tile IDs, then consume it through the same TMJ
-// parser and projection API used for a map loaded from disk.
-const tiledGids: number[] = [];
-for (let row = 0; row < MAP_ROWS; row++) {
-  for (let col = 0; col < MAP_COLUMNS; col++) {
-    let id: number;
-    const heightNoise = Math.sin(col * 0.4) * 1.5 + Math.cos(col * 0.7 + 1) * 1;
+const cursor = createSprite({
+  data: {
+    texture: createTexture({
+      dimension: '2d',
+      sampler: createPixelArtSampler(),
+      source: createImageResource(createSelectionCanvas()),
+    }),
+  },
+});
+addNodeChild(world, cursor);
 
-    if (row < 3 + heightNoise) {
-      id = 5; // snow
-    } else if (row < 5 + heightNoise) {
-      id = 3; // stone
-    } else if (row < 14 + heightNoise * 0.5) {
-      id = 0; // grass
-      if ((col + row) % 7 === 0) id = 4; // occasional dirt
-    } else if (row < 15 + heightNoise * 0.3) {
-      id = 2; // sand
-    } else {
-      id = 1; // water
-      if (row === MAP_ROWS - 1 && col % 5 === 2) id = 7; // deep void
-    }
+const camera = createCamera2D(CANVAS_WIDTH, CANVAS_HEIGHT, {
+  x: MAP_WIDTH * 0.5,
+  y: MAP_HEIGHT * 0.48,
+  zoom: 1,
+});
+const viewMatrix = createMatrix();
+const worldPoint = createVector2();
+const pickedCell = createVector2();
+const keysDown = new Set<string>();
+const hud = document.getElementById('hud');
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
 
-    // Place a lava pool near center.
-    const cx = MAP_COLUMNS / 2;
-    const cy = 8;
-    const dist = Math.sqrt((col - cx) ** 2 + (row - cy) ** 2);
-    if (dist < 2.5) id = 6;
+let pointerScreenX = CANVAS_WIDTH * 0.5;
+let pointerScreenY = CANVAS_HEIGHT * 0.5;
+let dragging = false;
+let dragPointerId = -1;
+let previousPointerX = 0;
+let previousPointerY = 0;
+let previousTime = performance.now();
 
-    tiledGids.push(id + 1);
+function clampCamera(): void {
+  const halfWidth = CANVAS_WIDTH / (camera.zoom * 2);
+  const halfHeight = CANVAS_HEIGHT / (camera.zoom * 2);
+  camera.x = Math.max(halfWidth, Math.min(MAP_WIDTH - halfWidth, camera.x));
+  camera.y = Math.max(halfHeight, Math.min(MAP_HEIGHT - halfHeight, camera.y));
+}
+
+function updateCursor(): void {
+  unprojectCamera2DPoint(camera, pointerScreenX, pointerScreenY, worldPoint);
+  const picked = getTilemapColumnRowAtPoint(pickedCell, tilemap, worldPoint.x, worldPoint.y);
+  cursor.visible = picked;
+  invalidateNodeAppearance(cursor);
+  if (!picked) {
+    if (hud !== null) hud.textContent = 'WASD / arrows pan • drag to explore • wheel zoom • no tile selected';
+    return;
+  }
+
+  const column = pickedCell.x;
+  const row = pickedCell.y;
+  cursor.x = column * TILE_SIZE;
+  cursor.y = row * TILE_SIZE;
+  invalidateNodeLocalTransform(cursor);
+  const tile = getTilemapTile(tilemap, column, row);
+  if (hud !== null) {
+    hud.textContent = `WASD / arrows pan • drag to explore • wheel zoom • ${TILE_NAMES[tile]} (${column}, ${row})`;
   }
 }
 
-const tiledMap = parseTiledTmj(
-  JSON.stringify({
-    height: MAP_ROWS,
-    infinite: false,
-    layers: [
-      {
-        data: tiledGids,
-        height: MAP_ROWS,
-        id: 1,
-        name: 'terrain',
-        type: 'tilelayer',
-        width: MAP_COLUMNS,
-      },
-    ],
-    orientation: 'orthogonal',
-    renderorder: 'right-down',
-    tiledversion: '1.10.2',
-    tileheight: TILE_SIZE,
-    tilesets: [{ firstgid: 1, source: 'terrain.tsj' }],
-    tilewidth: TILE_SIZE,
-    type: 'map',
-    version: '1.10',
-    width: MAP_COLUMNS,
-  }),
-);
-if (tiledMap === null) throw new Error('Unable to parse bundled terrain.tmj');
+function updateCamera(deltaTime: number): void {
+  let horizontal = 0;
+  let vertical = 0;
+  if (keysDown.has('a') || keysDown.has('arrowleft')) horizontal -= 1;
+  if (keysDown.has('d') || keysDown.has('arrowright')) horizontal += 1;
+  if (keysDown.has('w') || keysDown.has('arrowup')) vertical -= 1;
+  if (keysDown.has('s') || keysDown.has('arrowdown')) vertical += 1;
+  if (horizontal !== 0 && vertical !== 0) {
+    horizontal *= Math.SQRT1_2;
+    vertical *= Math.SQRT1_2;
+  }
+  camera.x += (horizontal * CAMERA_SPEED * deltaTime) / camera.zoom;
+  camera.y += (vertical * CAMERA_SPEED * deltaTime) / camera.zoom;
+  clampCamera();
 
-const tilemapLayers = buildTilemapLayersFromTiled(tiledMap, 0, () => ({
-  atlas,
-  tileHeight: TILE_SIZE,
-  tileWidth: TILE_SIZE,
-}));
-if (tilemapLayers === null || tilemapLayers.length !== 1) {
-  throw new Error('Unable to project terrain.tmj into a Flight tilemap');
+  getCamera2DViewMatrix(camera, viewMatrix);
+  world.scaleX = viewMatrix.a;
+  world.skewY = viewMatrix.b;
+  world.skewX = viewMatrix.c;
+  world.scaleY = viewMatrix.d;
+  world.x = viewMatrix.tx;
+  world.y = viewMatrix.ty;
+  invalidateNodeLocalTransform(world);
 }
 
-const tilemap = createTilemap({ data: tilemapLayers[0] });
-addNodeChild(root, tilemap);
+function updatePointerScreenPosition(event: PointerEvent | WheelEvent): void {
+  const bounds = canvas.getBoundingClientRect();
+  pointerScreenX = ((event.clientX - bounds.left) / bounds.width) * CANVAS_WIDTH;
+  pointerScreenY = ((event.clientY - bounds.top) / bounds.height) * CANVAS_HEIGHT;
+}
 
-function enterFrame(): void {
+window.addEventListener('keydown', (event: KeyboardEvent) => {
+  keysDown.add(event.key.toLowerCase());
+});
+window.addEventListener('keyup', (event: KeyboardEvent) => {
+  keysDown.delete(event.key.toLowerCase());
+});
+
+canvas.addEventListener('pointerdown', (event: PointerEvent) => {
+  dragging = true;
+  dragPointerId = event.pointerId;
+  previousPointerX = event.clientX;
+  previousPointerY = event.clientY;
+  canvas.setPointerCapture(event.pointerId);
+  updatePointerScreenPosition(event);
+});
+canvas.addEventListener('pointermove', (event: PointerEvent) => {
+  updatePointerScreenPosition(event);
+  if (!dragging || event.pointerId !== dragPointerId) return;
+  const bounds = canvas.getBoundingClientRect();
+  camera.x -= ((event.clientX - previousPointerX) * CANVAS_WIDTH) / (bounds.width * camera.zoom);
+  camera.y -= ((event.clientY - previousPointerY) * CANVAS_HEIGHT) / (bounds.height * camera.zoom);
+  previousPointerX = event.clientX;
+  previousPointerY = event.clientY;
+  clampCamera();
+});
+canvas.addEventListener('pointerup', (event: PointerEvent) => {
+  if (event.pointerId !== dragPointerId) return;
+  dragging = false;
+  dragPointerId = -1;
+  canvas.releasePointerCapture(event.pointerId);
+});
+canvas.addEventListener('pointercancel', () => {
+  dragging = false;
+  dragPointerId = -1;
+});
+canvas.addEventListener(
+  'wheel',
+  (event: WheelEvent) => {
+    event.preventDefault();
+    updatePointerScreenPosition(event);
+    const zoomFactor = Math.exp(-event.deltaY * 0.001);
+    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camera.zoom * zoomFactor));
+    zoomCamera2DAtScreenPoint(camera, pointerScreenX, pointerScreenY, zoom);
+    clampCamera();
+  },
+  { passive: false },
+);
+
+function enterFrame(now: number): void {
+  const deltaTime = captureMode ? 1 / 60 : Math.min((now - previousTime) / 1000, 0.05);
+  previousTime = now;
+  updateCamera(deltaTime);
+  updateCursor();
   render(root as Node2D);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);

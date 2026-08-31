@@ -4,9 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tilemap</title>
+    <style>
+      html,
+      body {
+        background: #0d1722;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        cursor: grab;
+        display: block;
+      }
+
+      canvas:active {
+        cursor: grabbing;
+      }
+
+      #hud {
+        backdrop-filter: blur(8px);
+        background: rgba(6, 16, 24, 0.82);
+        border: 1px solid rgba(255, 228, 94, 0.45);
+        border-radius: 6px;
+        color: #f6f2da;
+        font: 13px/1.4 monospace;
+        left: 12px;
+        padding: 8px 10px;
+        pointer-events: none;
+        position: absolute;
+        top: 12px;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="hud">WASD / arrows pan • drag to explore • wheel zoom</div>
     <script type="module" src="/src/app.ts"></script>
   </body>
 </html>
