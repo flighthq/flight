@@ -14,7 +14,8 @@ by: builder
 Every item was re-checked against `packages/render-gl/src/` (and `packages/types/src/`) on 2026-08-08.
 A file:line here is a claim about this tree, not about a session.
 
-- **`drawGlFullscreenPass` never owns the `BLEND` enable bit.** It sets the equation and factors twice —
+- **`drawGlFullscreenPass` never owns the `BLEND` enable bit.** (Its depth twin is now fixed — see the
+  2026-08-31 log entry — which makes this the surviving instance of the same ownership gap.) It sets the equation and factors twice —
   before the draw (`glFullscreenPass.ts:94-95`) and again after (`:101-102`) — but relies on the one
   `gl.enable(gl.BLEND)` in `createGlRenderState`. A caller that disables blending
   gets silently unblended output. Changing the ownership touches every caller of a shared primitive.
@@ -49,7 +50,10 @@ A file:line here is a claim about this tree, not about a session.
   `FRONT_FACE`, so a host context set to CW got CCW handed back. One failure mode, three sightings,
   all found while looking for something else.
   THE SWEEP IS CHECKABLE BY CONSTRUCTION, which is why it is worth doing deliberately rather than
-  waiting for the next accident: the bracket's own saved-field list IS the inventory. For every piece
+  waiting for the next accident: the bracket's own saved-field list IS the inventory. A FOURTH sighting
+  landed on 2026-08-31 and it was the most expensive yet — depth state inherited by the fullscreen
+  present pass froze every 3D WebGL example on its first frame, in the open, past every gate, for as
+  long as nobody dragged one. It is question (a) applied to the first entry in the list below. For every piece
   of fixed-function state the draw path touches — depth test/mask/func, cull enable and mode, front
   face, blend enable/func/equation, scissor, viewport, stencil, colour mask, program, VAO, framebuffer,
   texture units — ask three questions. (a) Is it SET when it needs to be, or inherited by luck from
@@ -130,6 +134,17 @@ A file:line here is a claim about this tree, not about a session.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-31** — `drawGlFullscreenPass` now owns depth: it disables the depth test and depth writes
+  around its draw and restores them (`glFullscreenPass.ts`). It had inherited whatever the previous draw
+  left, so after a 3D scene the present quad ran under `GL_LESS` with writes on, against the DEFAULT
+  framebuffer — the one surface nothing clears between frames. Frame one passed and wrote its own depth;
+  every frame after it was rejected at that same depth. Result: every 3D WebGL example (materialshowcase,
+  scene-picking, scene3d, scene-fire) rendered frame one and froze, with the scene still drawing
+  correctly behind a stale canvas. No GL error, no exception, and every static capture matched, because a
+  capture only samples the opening frames — the exact window in which the defect does not yet exist. The
+  WebGPU path cannot have this shape: its fullscreen pipeline declares no `depthStencil`, and WebGPU
+  depth state is per-pipeline rather than inheritable context state.
 
 - **2026-08-30** — `GlPipeline` Entity landed: `createGlPipeline`, `createEmptyGlRegistries`, `getGlPipelineRegistries` — the backend core's immutable pipeline primitive, consumed by `scene2dGlPipeline` and future GL assemblies.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 "Pass 2 / 91-100" inventory
