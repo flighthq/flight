@@ -167,14 +167,16 @@ describe('isBitmapTextGlyphLayoutStale', () => {
     expect(isBitmapTextGlyphLayoutStale(createBitmapText(null, { text: 'AB' }))).toBe(false);
   });
 
-  // Rebinding is a different source with its own version numbering, so the stamp from the old one
-  // cannot be trusted to describe the new one even when the two numbers happen to match.
-  it('reads stale again after the glyph source is rebound', () => {
+  // Version numbering is per source, so a stamp from one source says nothing about another and this
+  // query does NOT detect a rebind: two sources at version 0 compare equal. That is why
+  // `setBitmapTextGlyphSource` documents an explicit `updateBitmapText` afterwards rather than leaving
+  // the rebind to the refresh path. Asserted so a later reader does not mistake the gap for coverage.
+  it('does not report a rebound glyph source as stale', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
-    setBitmapTextGlyphSource(text, null);
-    expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
+
     setBitmapTextGlyphSource(text, createTestGlyphSource());
+
     expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
   });
 });

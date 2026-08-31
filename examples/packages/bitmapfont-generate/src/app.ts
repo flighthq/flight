@@ -38,17 +38,18 @@ const captureWindow = window as typeof window & { __flightCapture?: boolean };
 setGlyphRasterizerBackend(
   captureWindow.__flightCapture ? createStubGlyphRasterizerBackend() : createWebGlyphRasterizerBackend(),
 );
-// MITIGATION, not the fix. The four strings below use ~53 distinct glyphs at 52px, which a 512x256
-// atlas can only hold by evicting and repacking — correct, but it makes every frame of this example
-// depend on the repack path. Sizing the atlas to hold the whole working set keeps the example about
-// what it demonstrates. The correctness fix is the layout-version seam: `refreshBitmapTextGlyphLayout`
-// below re-bakes any node a repack moved, and is what an app with a genuinely unbounded glyph set
-// relies on.
+// MITIGATION, not the fix. The four strings below need ~53 distinct glyphs at 52px, and 512x256 held
+// about 90 — enough for the uniform blocks the capture rasterizer produces, but a thin margin against
+// a real font whose descenders and wide glyphs pack far less evenly. This size holds roughly 150, so
+// the example does not depend on the repack path to be correct. The correctness fix is the
+// layout-version seam: `refreshBitmapTextGlyphLayout` below re-bakes any node a repack moved, and is
+// what an app with a genuinely unbounded glyph set relies on. Kept only as large as that margin needs,
+// because the atlas preview at the bottom right is meant to show a working atlas, not empty space.
 const atlas = createGlyphAtlas({
   fontFamily: 'sans-serif',
   fontSize: 52,
-  width: 1024,
-  height: 512,
+  width: 640,
+  height: 320,
   padding: 2,
 });
 const glyphSource = createGlyphSourceFromGlyphAtlas(atlas);
@@ -115,9 +116,9 @@ if (atlasImage === null) {
   });
   atlasPreview.x = 536;
   atlasPreview.y = 438;
-  // Half the previous scale, so the doubled atlas above previews at the same on-screen footprint.
-  atlasPreview.scaleX = 0.21;
-  atlasPreview.scaleY = 0.21;
+  // Scaled down in step with the enlarged atlas above, so the preview keeps its on-screen footprint.
+  atlasPreview.scaleX = 0.34;
+  atlasPreview.scaleY = 0.34;
   invalidateNodeLocalTransform(atlasPreview);
   addNodeChild(root, atlasPreview);
   enterFrame();
