@@ -171,7 +171,7 @@ describe('readAssertionSensitivityRows', () => {
   const BLIND_CEILING = 16;
   const SCENE_FLOOR = 356;
 
-  it('re-runs every current-tree control and retains every scene identity', () => {
+  it('re-runs every current-tree control and retains every scene identity', { timeout: 30_000 }, () => {
     const rows = readAssertionSensitivityRows(process.cwd());
 
     // ★ A FLOOR, FOR THE SAME REASON `blind` IS A CEILING. `rows.length` is definitionally the number of

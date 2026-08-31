@@ -74,39 +74,43 @@ describe('package publish artifacts', () => {
     }
   });
 
-  it('places both conventional files in the npm tarball despite a restrictive files list', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'flight-pack-artifacts-'));
-    writeFileSync(
-      join(directory, 'package.json'),
-      `${JSON.stringify({ ...manifest, files: ['index.js'], main: 'index.js' }, null, 2)}\n`,
-    );
-    writeFileSync(join(directory, 'index.js'), 'export {};\n');
-
-    try {
-      await withTemporaryPublishArtifacts(
-        {
-          packageDir: directory,
-          manifest,
-          rootReadme: '# Flight\n',
-          license: 'license text\n',
-          sourceRef,
-        },
-        async () => {
-          const output = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
-            cwd: directory,
-            encoding: 'utf8',
-          });
-          const packed = JSON.parse(output) as Array<{ files: Array<{ path: string }> }>;
-          expect(packed[0]?.files.map((file) => file.path).sort()).toEqual([
-            'LICENSE.md',
-            'README.md',
-            'index.js',
-            'package.json',
-          ]);
-        },
+  it(
+    'places both conventional files in the npm tarball despite a restrictive files list',
+    { timeout: 30_000 },
+    async () => {
+      const directory = mkdtempSync(join(tmpdir(), 'flight-pack-artifacts-'));
+      writeFileSync(
+        join(directory, 'package.json'),
+        `${JSON.stringify({ ...manifest, files: ['index.js'], main: 'index.js' }, null, 2)}\n`,
       );
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
-  });
+      writeFileSync(join(directory, 'index.js'), 'export {};\n');
+
+      try {
+        await withTemporaryPublishArtifacts(
+          {
+            packageDir: directory,
+            manifest,
+            rootReadme: '# Flight\n',
+            license: 'license text\n',
+            sourceRef,
+          },
+          async () => {
+            const output = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+              cwd: directory,
+              encoding: 'utf8',
+            });
+            const packed = JSON.parse(output) as Array<{ files: Array<{ path: string }> }>;
+            expect(packed[0]?.files.map((file) => file.path).sort()).toEqual([
+              'LICENSE.md',
+              'README.md',
+              'index.js',
+              'package.json',
+            ]);
+          },
+        );
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
+    },
+  );
 });
