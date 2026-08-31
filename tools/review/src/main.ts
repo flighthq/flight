@@ -285,7 +285,7 @@ function currentCellIndex(): number {
 function testStatus(t: ReviewTest): 'error' | 'changed' | 'pass' {
   const cells = reviewableCells(t.cells);
   if (cells.some((c) => c.state === 'error')) return 'error';
-  if (cells.some((c) => c.changed)) return 'changed';
+  if (cells.some((c) => c.changed && c.commissionState !== 'included')) return 'changed';
   return 'pass';
 }
 
@@ -300,7 +300,7 @@ function firstAttentionCell(t: ReviewTest): ReviewCell | null {
     case 'differs':
       return cells.find((c) => c.commissionState === 'differs' && c.holdReason === null) ?? null;
     case 'changed':
-      return cells.find((c) => c.changed === true && c.holdReason === null) ?? null;
+      return cells.find((c) => c.changed === true && c.holdReason === null && c.commissionState !== 'included') ?? null;
     case 'not-commissioned':
       return cells.find((c) => c.commissionState === 'not-commissioned' && c.holdReason === null) ?? null;
     default:

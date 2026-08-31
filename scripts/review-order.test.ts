@@ -91,9 +91,18 @@ describe('resolveReviewAttentionGroup', () => {
     ).toBe('held');
   });
 
+  it('does not promote a changed cell whose reference comparison already passes', () => {
+    expect(resolveReviewAttentionGroup([cell({ changed: true })])).toBe('included');
+    expect(resolveReviewAttentionGroup([cell({ changed: true, commissionState: 'not-commissioned' })])).toBe('changed');
+  });
+
   it('does not let a held cell raise a scene into changed', () => {
-    expect(resolveReviewAttentionGroup([cell({ changed: true })])).toBe('changed');
-    expect(resolveReviewAttentionGroup([cell({ changed: true, holdReason: 'known drift' })])).toBe('held');
+    expect(resolveReviewAttentionGroup([cell({ changed: true, commissionState: 'not-commissioned' })])).toBe('changed');
+    expect(
+      resolveReviewAttentionGroup([
+        cell({ changed: true, commissionState: 'not-commissioned', holdReason: 'known drift' }),
+      ]),
+    ).toBe('held');
   });
 
   it('leaves settled scenes where they were', () => {

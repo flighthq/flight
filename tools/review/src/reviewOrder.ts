@@ -32,7 +32,8 @@ export function resolveReviewAttentionGroup(cells: readonly ReviewAttentionCell[
   const differing = cells.filter((cell) => cell.commissionState === 'differs');
   const openDiffering = differing.filter((cell) => cell.holdReason === null);
   if (openDiffering.length > 0) return 'differs';
-  if (cells.some((cell) => cell.changed === true && cell.holdReason === null)) return 'changed';
+  if (cells.some((cell) => cell.changed === true && cell.holdReason === null && cell.commissionState !== 'included'))
+    return 'changed';
   const uncommissioned = cells.filter((cell) => cell.commissionState === 'not-commissioned');
   if (uncommissioned.some((cell) => cell.holdReason === null)) return 'not-commissioned';
   // Everything that would have drawn attention is held. Reported rather than hidden: the user's rule is
