@@ -40,7 +40,7 @@ describe('copyOrbitCameraController', () => {
   it('copies value state without sharing target or replacing runtime state', () => {
     const source = createOrbitCameraController({ azimuth: 0.2, distance: 4, target: createVector3(1, 2, 3) });
     const out = createOrbitCameraController();
-    const runtime = { binding: null, uid: null };
+    const runtime = { binding: null };
     out[EntityRuntimeKey] = runtime;
     copyOrbitCameraController(out, source);
 

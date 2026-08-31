@@ -201,7 +201,6 @@ function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof En
   const runtime: MeshGeometryRuntime = {
     attributeDataView: null,
     binding: null,
-    uid: null,
     // -1 unless the caller supplied bounds up front: authored bounds are trusted at the version they
     // were computed for, so ensureMeshGeometryBounds does not re-sweep a geometry that arrived with a
     // correct box. Anything else recomputes on the first bounds query.

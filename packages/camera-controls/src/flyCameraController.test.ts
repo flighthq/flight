@@ -38,7 +38,7 @@ describe('copyFlyCameraController', () => {
   it('copies value state without sharing position or replacing runtime state', () => {
     const source = createFlyCameraController({ pitch: 0.2, position: createVector3(1, 2, 3), yaw: 0.4 });
     const out = createFlyCameraController();
-    const runtime = { binding: null, uid: null };
+    const runtime = { binding: null };
     out[EntityRuntimeKey] = runtime;
     copyFlyCameraController(out, source);
 

@@ -5,10 +5,10 @@ import { getEntityUid, setEntityUid } from './entityUid';
 import { createEntityRuntime } from './runtime';
 
 describe('getEntityUid', () => {
-  it('returns null uid on an untouched runtime before any access', () => {
+  it('has no uid property on an untouched runtime before any access', () => {
     const entity = createEntity();
     entity[EntityRuntimeKey] = createEntityRuntime();
-    expect(entity[EntityRuntimeKey]!.uid).toBeNull();
+    expect('uid' in entity[EntityRuntimeKey]!).toBe(false);
   });
 
   it('lazily generates a uid on first access', () => {

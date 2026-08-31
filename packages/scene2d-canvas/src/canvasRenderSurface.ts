@@ -58,7 +58,7 @@ function finishCanvasRenderSurface(
       width: options.width ?? canvas.width,
     }),
   }) as CanvasRenderSurface;
-  surface[EntityRuntimeKey] = { binding: null, uid: null };
+  surface[EntityRuntimeKey] = { binding: null };
   return surface;
 }
 

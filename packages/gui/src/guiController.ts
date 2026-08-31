@@ -84,7 +84,6 @@ export function createGuiControllerRuntime<Runtime extends object>(
   return {
     ...fields,
     binding: null,
-    uid: null,
     cleanups: [],
     disposed: false,
     hitStates: new Map(),

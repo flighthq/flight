@@ -484,7 +484,6 @@ export function releaseWgpuAcquisition(acquisition: Readonly<WgpuHostAcquisition
 function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
   const runtime: WgpuDeviceRuntime = {
     binding: null,
-    uid: null,
     device,
     lost: null,
     signals: null,

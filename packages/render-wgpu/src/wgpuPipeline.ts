@@ -23,7 +23,7 @@ export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
 
 export function createWgpuPipeline(registries: Readonly<WgpuRenderRegistries>): WgpuPipeline {
   const pipeline = createEntity({ registries }) as WgpuPipeline;
-  pipeline[EntityRuntimeKey] = { binding: null, uid: null };
+  pipeline[EntityRuntimeKey] = { binding: null };
   return pipeline;
 }
 
