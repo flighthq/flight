@@ -6,7 +6,6 @@ import { join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
-import type { ReferenceImageCellComparison } from '../../scripts/reference-image-compare';
 import { decodeOraclePng, hashOraclePixelBytes } from '../../scripts/reference-image-png';
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import {
@@ -15,13 +14,11 @@ import {
   readReferenceImageToleranceCatalog,
   resolveReferenceImageTolerance,
   writeReferenceImageSceneTolerance,
-  type ResolvedReferenceImageTolerance,
   type ReferenceImageSceneTolerance,
   type ReferenceImageToleranceCatalog,
 } from '../../scripts/reference-image-tolerance';
 import { workspacePackages } from '../../scripts/workspaces';
 import { isReviewableCell, reviewableCells, reviewCellRole } from './src/cellRole';
-import type { ReviewCellRole } from './src/cellRole';
 import type { ReviewCommissionState as CommissionState } from './src/commissionState';
 import { recordReviewHoldReleases, recordReviewHolds } from './src/holdLedger';
 import type { ReviewHoldLedger } from './src/holdLedger';
@@ -32,6 +29,15 @@ import {
 } from './src/referenceImageCommission';
 import { readRequiredReferenceImageCells } from './src/requiredReferenceImageCells';
 import type { ReviewCoverageManifest } from './src/requiredReferenceImageCells';
+import type {
+  ReviewBuildProvenance,
+  ReviewCell,
+  ReviewCellProvenance,
+  ReviewParityStatus,
+  ReviewReferenceImageComparison,
+  ReviewTest,
+} from './src/reviewManifest';
+import { createReviewManifestPlugin, REVIEW_MANIFEST_RESOLVED_ID } from './src/reviewManifestPlugin';
 import {
   sourceContainsExpectedDescription,
   sourceDeclaresFunctionalBackendControl,
@@ -48,49 +54,6 @@ const reviewArtifactFiles = [
 const TOOL_ORDER = ['functional', 'examples', 'reference'];
 const RENDERER_ORDER = ['dom', 'canvas', 'webgl', 'webgpu', 'control'];
 const EXCLUDE_TOOLS = new Set(['site']);
-
-interface ReviewCellProvenance {
-  hostInstanceId: string | null;
-  environmentId: string | null;
-}
-
-interface ReviewBuildProvenance {
-  commit: string | null;
-  dirty: string[];
-  dirtyOmitted: number;
-}
-
-type ParityStatus = 'passed' | 'failed' | 'no-data';
-
-interface ReviewCell {
-  renderer: string;
-  role: ReviewCellRole;
-  state: 'ready' | 'error';
-  error: string | null;
-  changed: boolean | null;
-  hash: string | null;
-  referencePixelSha256: string | null;
-  provenance: ReviewCellProvenance | null;
-  build: ReviewBuildProvenance | null;
-  commissionState: CommissionState | null;
-  comparisonPolicy: ResolvedReferenceImageTolerance | null;
-  referenceComparison: ReferenceImageCellComparison | null;
-  referenceComparisonMatches: boolean | null;
-  referenceComparisonMeasured: boolean;
-  referenceComparisonProblem: string | null;
-  holdReason: string | null;
-  parityStatus: ParityStatus;
-}
-
-interface ReviewTest {
-  tool: string;
-  name: string;
-  cells: ReviewCell[];
-  expectedImageDescription?: string;
-  sourceHasDescription: boolean;
-  toleranceWritable: boolean;
-  withheldReason?: string;
-}
 
 const lockPath = join(projectRoot, 'scripts', 'reference-image-lock.json');
 const heldPath = join(projectRoot, 'scripts', 'reference-image-held.json');
@@ -242,8 +205,8 @@ function readRequestedCells(): Map<string, string> {
   return requested;
 }
 
-function readParityStatuses(): Map<string, ParityStatus> {
-  const statuses = new Map<string, ParityStatus>();
+function readParityStatuses(): Map<string, ReviewParityStatus> {
+  const statuses = new Map<string, ReviewParityStatus>();
   if (!existsSync(artifactsDir)) return statuses;
 
   for (const toolDir of readdirSync(artifactsDir, { withFileTypes: true })) {
@@ -510,7 +473,7 @@ function discoverReviewTests(): ReviewTest[] {
         const imageKey = `${tool}/${name}/${renderer}`;
         const comparisonPolicy =
           role === 'reviewable' ? resolveReferenceImageTolerance(toleranceCatalog, imageKey) : null;
-        let referenceComparison: ReferenceImageCellComparison | null = null;
+        let referenceComparison: ReviewReferenceImageComparison | null = null;
         let referenceComparisonMatches: boolean | null = null;
         let referenceComparisonMeasured = false;
         let referenceComparisonProblem: string | null = null;
@@ -563,7 +526,7 @@ function discoverReviewTests(): ReviewTest[] {
               )
             : null;
         const holdReason = role === 'reviewable' ? (held.get(imageKey) ?? null) : null;
-        const parityStatus: ParityStatus = parity.get(imageKey) ?? 'no-data';
+        const parityStatus: ReviewParityStatus = parity.get(imageKey) ?? 'no-data';
         if (
           role === 'reviewable' &&
           (commissionState === 'differs' || commissionState === 'not-commissioned' || changed === true)
@@ -632,18 +595,10 @@ function readToleranceCatalogOrThrow(): ReferenceImageToleranceCatalog {
 }
 
 function reviewPlugin(): Plugin[] {
+  const manifestPlugin = createReviewManifestPlugin(discoverReviewTests);
   return [
     {
-      name: 'review:manifest',
-
-      resolveId(source) {
-        if (source === 'virtual:review-manifest') return '\0virtual:review-manifest';
-      },
-
-      load(id) {
-        if (id !== '\0virtual:review-manifest') return;
-        return `export const tests = ${JSON.stringify(discoverReviewTests())};`;
-      },
+      ...manifestPlugin,
 
       configureServer(server) {
         if (existsSync(artifactsDir)) {
@@ -652,7 +607,7 @@ function reviewPlugin(): Plugin[] {
           server.watcher.add(reviewArtifactFiles);
           const refresh = (file: string) => {
             if (!file.endsWith('screenshot.png') && !file.endsWith('status.json')) return;
-            const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+            const mod = server.moduleGraph.getModuleById(REVIEW_MANIFEST_RESOLVED_ID);
             if (mod) server.moduleGraph.invalidateModule(mod);
             server.ws.send({ type: 'full-reload' });
           };
@@ -670,7 +625,7 @@ function reviewPlugin(): Plugin[] {
           if (!file.startsWith(requestsDir) || !file.endsWith('.json')) return;
           const request = readOracleRequest(file);
           if ('problems' in request) return;
-          const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+          const mod = server.moduleGraph.getModuleById(REVIEW_MANIFEST_RESOLVED_ID);
           if (mod) server.moduleGraph.invalidateModule(mod);
           server.ws.send({
             type: 'custom',
@@ -686,7 +641,7 @@ function reviewPlugin(): Plugin[] {
         // time we hear about it, so this invalidates and reloads rather than sending a targeted update.
         server.watcher.on('unlink', (file: string) => {
           if (!file.startsWith(requestsDir) || !file.endsWith('.json')) return;
-          const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+          const mod = server.moduleGraph.getModuleById(REVIEW_MANIFEST_RESOLVED_ID);
           if (mod) server.moduleGraph.invalidateModule(mod);
           server.ws.send({ type: 'full-reload' });
         });
@@ -694,7 +649,7 @@ function reviewPlugin(): Plugin[] {
         server.watcher.add(tolerancePaths.manifestPath);
         server.watcher.on('change', (file: string) => {
           if (file !== tolerancePaths.manifestPath) return;
-          const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+          const mod = server.moduleGraph.getModuleById(REVIEW_MANIFEST_RESOLVED_ID);
           if (mod) server.moduleGraph.invalidateModule(mod);
           server.ws.send({ type: 'full-reload' });
         });
@@ -858,7 +813,7 @@ function reviewPlugin(): Plugin[] {
                 // Tell every connected review client exactly which cells changed. The requesting client
                 // also patches from this response, so neither path relies on a file-watcher race and no
                 // page teardown destroys review context.
-                const manifestModule = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+                const manifestModule = server.moduleGraph.getModuleById(REVIEW_MANIFEST_RESOLVED_ID);
                 if (manifestModule) server.moduleGraph.invalidateModule(manifestModule);
                 server.ws.send({
                   type: 'custom',
@@ -995,7 +950,7 @@ function reviewPlugin(): Plugin[] {
                   return;
                 }
 
-                const manifestModule = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+                const manifestModule = server.moduleGraph.getModuleById(REVIEW_MANIFEST_RESOLVED_ID);
                 if (manifestModule) server.moduleGraph.invalidateModule(manifestModule);
                 server.ws.send({ type: 'full-reload' });
                 res.setHeader('Content-Type', 'application/json');
