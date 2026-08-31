@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-gl-pipeline-textlabel-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-gl-pipeline-textlabel",
+      "renderers": ["webgl"],
+      "routes": {
+        "webgl": "/"
+      }
+    }
+  ]
+}

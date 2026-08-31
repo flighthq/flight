@@ -5,8 +5,16 @@
     "noEmit": true
   },
   "include": [
+    "fixtures/scene2d-gl-pipeline-bitmaptext/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-displayobject/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-morphshape/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-particleemitter2d/src/**/*.ts",
     "fixtures/scene2d-gl-pipeline-sprite/src/**/*.ts",
     "fixtures/scene2d-gl-pipeline-shape/src/**/*.ts",
-    "fixtures/scene2d-gl-pipeline-quadbatch/src/**/*.ts"
+    "fixtures/scene2d-gl-pipeline-quadbatch/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-richtext/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-scale9shape/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-textlabel/src/**/*.ts",
+    "fixtures/scene2d-gl-pipeline-tilemap/src/**/*.ts"
   ]
 }

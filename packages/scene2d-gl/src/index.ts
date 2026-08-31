@@ -4,6 +4,7 @@ export {
   defaultGlBitmapTextRenderer,
   defaultGlMeshShapeRenderer,
   defaultGlMorphShapeRenderer,
+  defaultGlScene2DRenderer,
   defaultGlNode2DVelocityWriter,
   defaultGlParticleEmitter2DRenderer,
   defaultGlParticleEmitter2DVelocityWriter,
