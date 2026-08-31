@@ -1,4 +1,10 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  clearLogOnceKeys,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -24,6 +30,8 @@ import {
 } from './glRenderEffectPipeline';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
 import { applyGlRenderEffectsToRenderTexture } from './glRenderTextureEffect';
+
+beforeEach(() => clearLogOnceKeys());
 
 describe('areGlRenderEffectGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', () => {

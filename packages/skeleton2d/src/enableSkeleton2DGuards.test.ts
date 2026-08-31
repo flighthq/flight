@@ -1,4 +1,4 @@
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
 import { disableSkeleton2DGuards, enableSkeleton2DGuards } from './enableSkeleton2DGuards';
@@ -10,6 +10,7 @@ import { reportSkeleton2DCoercedInterpolation, reportSkeleton2DDeformLengthMisma
 const entries: LogEntry[] = [];
 
 beforeEach(() => {
+  clearLogOnceKeys();
   entries.length = 0;
   setLogSink((entry) => void entries.push(entry));
 });

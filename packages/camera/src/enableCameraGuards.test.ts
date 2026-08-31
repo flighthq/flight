@@ -1,5 +1,5 @@
 import { createMatrix4, createRectangle } from '@flighthq/geometry/contract';
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { Camera2D, LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 
@@ -8,6 +8,8 @@ import { createCamera2D } from './camera2d';
 import { areCameraGuardsEnabled, disableCameraGuards, enableCameraGuards } from './enableCameraGuards';
 import { createPerspectiveProjection } from './projection';
 import { getCamera2DVisibleBounds } from './visibleBounds';
+
+beforeEach(() => clearLogOnceKeys());
 
 describe('areCameraGuardsEnabled', () => {
   test('reports whether the guards are installed', () => {

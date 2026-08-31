@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry, TrayIcon } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,6 +9,7 @@ import { createTrayIcon, destroyTrayIcon, startTrayIconAnimation } from './tray'
 let entries: LogEntry[];
 
 beforeEach(() => {
+  clearLogOnceKeys();
   vi.useFakeTimers();
   entries = [];
   setLogSink((entry) => entries.push(entry));

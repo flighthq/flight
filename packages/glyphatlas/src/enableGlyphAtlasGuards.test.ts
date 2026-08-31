@@ -1,4 +1,4 @@
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { GlyphRasterizerBackend, LogEntry } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -10,6 +10,7 @@ import { setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 let entries: LogEntry[];
 
 beforeEach(() => {
+  clearLogOnceKeys();
   entries = [];
   setLogSink((entry) => entries.push(entry));
 });

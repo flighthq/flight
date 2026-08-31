@@ -1,5 +1,5 @@
 import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity/contract';
-import { setLogSink } from '@flighthq/log/contract';
+import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { HasTransform2D, HasTransform2DRuntime, LogEntry, Node } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 
@@ -8,6 +8,8 @@ import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransfor
 import { reparentNode } from './hierarchy';
 import { createNode } from './node';
 import { invalidateNodeLocalTransform } from './revision';
+
+beforeEach(() => clearLogOnceKeys());
 
 describe('areNodeGuardsEnabled', () => {
   test('reports whether the guards are installed', () => {
