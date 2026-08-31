@@ -1,0 +1,4 @@
+{
+  "subject": "scene2d-wgpu-pipeline-richtext-size-fixture",
+  "entries": [{ "name": "scene2d-wgpu-pipeline-richtext", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }]
+}

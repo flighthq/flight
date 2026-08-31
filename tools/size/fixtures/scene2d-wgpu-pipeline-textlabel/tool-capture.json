@@ -1,0 +1,4 @@
+{
+  "subject": "scene2d-wgpu-pipeline-textlabel-size-fixture",
+  "entries": [{ "name": "scene2d-wgpu-pipeline-textlabel", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }]
+}

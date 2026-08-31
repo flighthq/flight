@@ -1,0 +1,6 @@
+{
+  "subject": "scene2d-wgpu-pipeline-particleemitter2d-size-fixture",
+  "entries": [
+    { "name": "scene2d-wgpu-pipeline-particleemitter2d", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }
+  ]
+}

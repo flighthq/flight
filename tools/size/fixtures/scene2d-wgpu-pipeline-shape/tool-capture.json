@@ -1,0 +1,4 @@
+{
+  "subject": "scene2d-wgpu-pipeline-shape-size-fixture",
+  "entries": [{ "name": "scene2d-wgpu-pipeline-shape", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }]
+}
