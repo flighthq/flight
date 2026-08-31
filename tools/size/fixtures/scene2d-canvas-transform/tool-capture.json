@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-canvas-transform-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-canvas-transform",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
