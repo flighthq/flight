@@ -220,7 +220,7 @@ describe('testAabbAabbCollision3D', () => {
     expect([out.normalX, out.normalY, out.normalZ]).toEqual([0, -1, 0]);
   });
 
-  it('treats a shared face as not overlapping', () => {
+  it('reports a shared face as overlapping with zero depth', () => {
     const out = createCollisionManifold3D();
     expect(
       testAabbAabbCollision3D(
@@ -228,8 +228,12 @@ describe('testAabbAabbCollision3D', () => {
         { maxX: 2, maxY: 1, maxZ: 1, minX: 1, minY: 0, minZ: 0 },
         out,
       ),
-    ).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, normalZ: 0, overlapping: false });
+    ).toBe(true);
+    expect(out.depth).toBe(0);
+    expect(out.normalX).toBe(-1);
+    expect(out.normalY).toBe(0);
+    expect(out.normalZ).toBe(0);
+    expect(out.overlapping).toBe(true);
   });
 
   it('separates on every axis independently', () => {
@@ -271,11 +275,14 @@ describe('testBoxBoxCollision3D', () => {
     expect(out.normalZ).toBeCloseTo(0, 12);
   });
 
-  it('treats touching as separated and clears a previous answer', () => {
+  it('reports touching as overlapping with zero depth', () => {
     const out = createCollisionManifold3D();
-    expect(testBoxBoxCollision3D(createBox3D(), createBox3D({ x: 1.5 }), out)).toBe(true);
-    expect(testBoxBoxCollision3D(createBox3D(), createBox3D({ x: 2 }), out)).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, normalZ: 0, overlapping: false });
+    expect(testBoxBoxCollision3D(createBox3D(), createBox3D({ x: 2 }), out)).toBe(true);
+    expect(out.depth).toBe(0);
+    expect(out.normalX).toBe(-1);
+    expect(out.normalY).toBe(0);
+    expect(out.normalZ).toBe(0);
+    expect(out.overlapping).toBe(true);
   });
 
   it('normalizes scaled quaternion inputs before constructing axes', () => {

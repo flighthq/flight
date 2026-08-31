@@ -31,11 +31,11 @@ export function testAabbAabbCollision3D(
   if (!isValidAabb3D(a) || !isValidAabb3D(b)) return clearAndMiss(out);
 
   const overlapX = Math.min(a.maxX - b.minX, b.maxX - a.minX);
-  if (overlapX <= 0) return clearAndMiss(out);
+  if (overlapX < 0) return clearAndMiss(out);
   const overlapY = Math.min(a.maxY - b.minY, b.maxY - a.minY);
-  if (overlapY <= 0) return clearAndMiss(out);
+  if (overlapY < 0) return clearAndMiss(out);
   const overlapZ = Math.min(a.maxZ - b.minZ, b.maxZ - a.minZ);
-  if (overlapZ <= 0) return clearAndMiss(out);
+  if (overlapZ < 0) return clearAndMiss(out);
 
   // The sign comes from which side A's centre sits on, not from which overlap term was smaller: the two
   // terms are equal when the boxes are concentric on that axis, and reading the sign off the comparison
@@ -121,8 +121,12 @@ export function testBoxBoxCollision3D(
       b.halfZ * Math.abs(axisX * boxAxesB[6] + axisY * boxAxesB[7] + axisZ * boxAxesB[8]);
     const centreProjection = deltaX * axisX + deltaY * axisY + deltaZ * axisZ;
     const overlap = radiusA + radiusB - Math.abs(centreProjection);
-    if (overlap <= 0) return clearAndMiss(out);
-    if (overlap < bestDepth) {
+    if (overlap < 0) return clearAndMiss(out);
+    // Face axes (0-5) are preferred over edge crosses (6+) by a small relative bias. Near-degenerate
+    // edge crosses from nearly-parallel face pairs produce overlaps close to a face overlap; without
+    // bias, the minimum can flip between face and edge each frame, destabilising the contact normal.
+    const effective = axis >= 6 ? overlap * (1 + BOX_EDGE_BIAS) : overlap;
+    if (effective < bestDepth) {
       const sign = centreProjection < 0 ? -1 : 1;
       bestDepth = overlap;
       bestNormalX = axisX * sign;
@@ -602,6 +606,7 @@ function clamp01(value: number): number {
 
 const RELATIVE_EPSILON = 1e-12;
 const BOX_PARALLEL_AXIS_EPSILON = 1e-12;
+const BOX_EDGE_BIAS = 5e-3;
 const boxAxesA = new Float64Array(9);
 const boxAxesB = new Float64Array(9);
 const boxSatAxes = new Float64Array(45);
