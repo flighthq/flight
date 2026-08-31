@@ -229,7 +229,7 @@ The repository also keeps reliability concerns visible in the design: imports ar
 
 ## Examples
 
-The gallery includes focused examples for shapes, bitmaps, text, interaction, animation, tilemaps, particles, collision, application flow, audio/video, file-format loading, and a growing set of 3D scenes covering primitives, shading, skyboxes, skeletal animation, picking, fire, explosions, and a globe. Where a capability is shared, the gallery lets you switch the same scene among supported renderers.
+The gallery includes focused examples for shapes, text, interaction, animation, tilemaps, particles, collision, application flow, audio/video, file-format loading, and 3D scenes covering materials, picking, and fire. Where a capability is shared, the gallery lets you switch the same scene among supported renderers.
 
 Build a specific example:
 
@@ -243,7 +243,7 @@ Run a renderer-specific example dev server:
 npm run dev:canvas --workspace=examples/packages/shapes
 npm run dev:dom --workspace=examples/packages/shapes
 npm run dev:webgl --workspace=examples/packages/shapes
-npm run dev:webgpu --workspace=examples/packages/scene-primitives
+npm run dev:webgpu --workspace=examples/packages/scene3d
 ```
 
 ## Repository

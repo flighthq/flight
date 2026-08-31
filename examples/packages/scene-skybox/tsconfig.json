@@ -1,8 +1,0 @@
-{
-  "extends": "../../../tsconfig.base.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": ["src/**/*.ts", "vite.config.ts"],
-  "references": [{ "path": "../../../packages/sdk" }]
-}
