@@ -71,8 +71,12 @@ export function updateBitmapText(bitmapText: BitmapText): void {
       return;
     }
   }
-  // Out of passes. The last layout is the best available and some of its rects are already wrong; the
-  // stamp records what it was built against so the next refresh tries again rather than reading clean.
+  // Out of passes. The last layout is the best available and some of its rects are already wrong, and
+  // the current version is still what gets stamped: another pass would reach the same place, so leaving
+  // the node marked stale would only re-lay-out it every frame forever. The atlas is too small for this
+  // string, which is a sizing decision the caller has to make — hence the guard rather than a retry
+  // budget. A node here does come right on its own if the atlas stops repacking, because the version
+  // then holds still and the next refresh's single pass sees one placement.
   runtime.glyphLayoutVersion = glyphSource.getGlyphLayoutVersion();
   _layoutGuard?.('layout-did-not-converge', BITMAP_TEXT_LAYOUT_ATTEMPTS);
 }
