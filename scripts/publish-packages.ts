@@ -159,6 +159,23 @@ const candidates = manifests.filter(({ pkg }) => {
 // One batched pass instead of a serial `npm view` per package. Skipped entirely on --dry-run, which
 // uploads nothing and so has no reason to ask the registry what already exists.
 const registryState = dryRun ? new Map<string, RegistryEntry>() : await readRegistryState(candidates);
+
+// In a locked-version monorepo, superseding any package supersedes the whole graph. A new package
+// (no dist-tag yet) would otherwise slip through and publish at a lower version than its siblings,
+// creating an inconsistent dependency graph: its pinned deps reference the lower version, but a
+// consumer resolving those deps via the dist-tag gets the higher one. The publish is all-or-nothing
+// at the graph level, not per-package.
+let graphSuperseded = false;
+let graphSupersededBy: string | undefined;
+for (const { pkg } of candidates) {
+  const state = registryState.get(pkg.name);
+  if (state?.tagVersion !== undefined && isSnapshotVersionSuperseded(pkg.version, state.tagVersion)) {
+    graphSuperseded = true;
+    graphSupersededBy = state.tagVersion;
+    break;
+  }
+}
+
 const queue = candidates.filter(({ pkg }) => {
   const id = `${pkg.name}@${pkg.version}`;
   const state = registryState.get(pkg.name);
@@ -166,11 +183,8 @@ const queue = candidates.filter(({ pkg }) => {
     skipped.push(`${id} (already published)`);
     return false;
   }
-  // Refuses to drag the dist-tag backwards when this build reaches the publish step after a newer
-  // one already landed. Skipping is not a loss: the newer snapshot on the tag is a superset of this
-  // commit's work, and npm cannot publish without also moving the tag.
-  if (state?.tagVersion !== undefined && isSnapshotVersionSuperseded(pkg.version, state.tagVersion)) {
-    skipped.push(`${id} (superseded — \`${targetTag}\` is already at ${state.tagVersion})`);
+  if (graphSuperseded) {
+    skipped.push(`${id} (superseded — \`${targetTag}\` is already at ${graphSupersededBy})`);
     return false;
   }
   return true;
