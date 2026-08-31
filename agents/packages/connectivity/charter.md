@@ -37,6 +37,8 @@ after reading and diffing status. The package is not an HTTP/fetch/socket transp
 - **[2026-08-29] Status snapshots are query values, not created identities.**
   `createConnectivityStatus` is deleted: no user constructs a status object as an SDK identity. Backends
   fill query/out snapshots, while package-private sentinel allocation supports internal reads.
+- **[2026-07-02] Fix: `detectConnectivityReachability` fallback allocates a fresh web backend per call.** When a native backend lacking `detectReachability` is installed, the fallback builds `createWebConnectivityBackend()` on every probe. This is a bug — cache the fallback backend or require the native backend to implement the method.
+- **[2026-07-02] Fix: `anyAbortSignal` leaks listeners.** The abort-signal combiner does not clean up listeners. Fix as a bug.
 
 ## Open directions
 

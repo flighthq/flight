@@ -37,6 +37,7 @@ Every operation returns a method-tight reason envelope with `reason` as its sole
 - **[2026-08-30] Bucket policy is not a broader storage claim.** Electron, Tauri, and Capacitor do not
   supply these slots. Quota, KV operations, IndexedDB, and OPFS remain outside the persistence-policy
   capability.
+- **[2026-07-02] Signal opt-in convention applies.** Per the shared principles, signals (if any) should use `enable*Signals` gates rather than eager allocation. No package-specific exceptions.
 
 ## Open directions
 
