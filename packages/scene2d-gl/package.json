@@ -59,6 +59,7 @@
   },
   "devDependencies": {
     "@flighthq/bitmaptext": "*",
+    "@flighthq/entity": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",
