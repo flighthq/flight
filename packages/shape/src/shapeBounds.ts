@@ -273,18 +273,19 @@ function createShapeBoundsSegment(): ShapeBoundsSegment {
 }
 
 function createShapeCommandArgumentCursor(commands: readonly ShapeCommandToken[]): ShapeCommandArgumentCursorInternal {
-  return {
+  const cursor: ShapeCommandArgumentCursorInternal = {
     argumentCount: 0,
     argumentOffset: 0,
     commands,
     get length() {
-      return this.argumentCount;
+      return cursor.argumentCount;
     },
     getArgument(relativeIndex) {
-      if (relativeIndex < 0 || relativeIndex >= this.argumentCount) return undefined;
-      return this.commands[this.argumentOffset + relativeIndex];
+      if (relativeIndex < 0 || relativeIndex >= cursor.argumentCount) return undefined;
+      return cursor.commands[cursor.argumentOffset + relativeIndex];
     },
   };
+  return cursor;
 }
 
 function cubicShapeBoundsCurveTo(
