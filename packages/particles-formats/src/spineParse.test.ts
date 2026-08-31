@@ -66,7 +66,7 @@ describe('parseSpineParticle', () => {
     it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
       const result = parseSpineParticle(SPARK_JSON);
       expect(typeof result.maxParticles).toBe('number');
-      expect((result as unknown as Record<string, unknown>).document).toBeUndefined();
+      expect('document' in result).toBe(false);
     });
 
     it('parses maxParticles', () => {
@@ -143,6 +143,41 @@ describe('parseSpineParticle', () => {
       expect(() => parseSpineParticle('null')).toThrow(/expected a JSON object/);
       expect(() => parseSpineParticle('"a string"')).toThrow(/expected a JSON object/);
       expect(() => parseSpineParticle('[1,2,3]')).toThrow(/expected a JSON object/);
+    });
+
+    it('rejects a null tint keyframe at the format boundary', () => {
+      expect(() => parseSpineParticle(JSON.stringify({ continuous: true, tint: [null] }))).toThrow(
+        'Invalid Spine particle document: tint[0] must be a JSON object',
+      );
+    });
+
+    it('rejects a null alpha keyframe at the format boundary', () => {
+      expect(() => parseSpineParticle(JSON.stringify({ alpha: [null], continuous: true }))).toThrow(
+        'Invalid Spine particle document: alpha[0] must be a JSON object',
+      );
+    });
+
+    it('rejects a non-string image entry instead of asserting the array type', () => {
+      expect(() => parseSpineParticleDocument(JSON.stringify({ continuous: true, images: [7] }))).toThrow(
+        'Invalid Spine particle document: images[0] must be a string',
+      );
+    });
+
+    it('accepts valid nested keyframes and image entries', () => {
+      const { config, document } = parseSpineParticleDocument(
+        JSON.stringify({
+          alpha: [{ alpha: 0.75, time: 0 }],
+          continuous: true,
+          images: ['particle.png'],
+          tint: [{ color: '336699', time: 0 }],
+        }),
+      );
+
+      expect(config.alphaStart).toBe(0.75);
+      expect(config.colorStartB).toBeCloseTo(0.6);
+      expect(document.alpha).toEqual([{ alpha: 0.75, time: 0 }]);
+      expect(document.images).toEqual(['particle.png']);
+      expect(document.tint).toEqual([{ color: '336699', time: 0 }]);
     });
 
     it('falls back to safe channel values for an unparseable tint color (no NaN)', () => {

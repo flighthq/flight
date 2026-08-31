@@ -448,4 +448,36 @@ describe('parseParticleConfigDocument', () => {
     const truncated = '{ "gravityModifier": 0.5, "looping"';
     expect(() => parseParticleConfigDocument(truncated)).not.toThrow();
   });
+
+  for (const malformed of [
+    {
+      field: 'tint',
+      message: 'Invalid Spine particle document: tint[0] must be a JSON object',
+      value: [null],
+    },
+    {
+      field: 'alpha',
+      message: 'Invalid Spine particle document: alpha[0] must be a JSON object',
+      value: [null],
+    },
+    {
+      field: 'images',
+      message: 'Invalid Spine particle document: images[0] must be a string',
+      value: [7],
+    },
+  ]) {
+    it(`reports a Spine parse refusal for malformed ${malformed.field} entries`, () => {
+      const text = JSON.stringify({ continuous: true, [malformed.field]: malformed.value });
+
+      expect(() => parseParticleConfig(text)).not.toThrow();
+      const result = parseParticleConfigDocument(text);
+      expect(result.format).toBe(SpineParticleFormatKind);
+      expect(result.diagnostics).toContainEqual({
+        detail: { message: malformed.message },
+        kind: 'particles.parse-error',
+        origin: 'parseParticleConfigDocument',
+        severity: ImportDiagnosticSeverity.Reject,
+      });
+    });
+  }
 });

@@ -29,38 +29,32 @@ function parseSpineJson(json: string): Record<string, unknown> {
   let raw: unknown;
   try {
     raw = JSON.parse(json);
-  } catch (e) {
-    throw new Error(`Invalid Spine particle JSON: ${(e as Error).message}`);
+  } catch (error) {
+    throw new Error(`Invalid Spine particle JSON: ${error instanceof Error ? error.message : String(error)}`);
   }
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+  if (!isUnknownRecord(raw)) {
     throw new Error(
       `Invalid Spine particle document: expected a JSON object, got ${raw === null ? 'null' : Array.isArray(raw) ? 'array' : typeof raw}`,
     );
   }
-  return raw as Record<string, unknown>;
+  validateSpineNestedEntries(raw);
+  return raw;
 }
 
 function rangeMid(obj: unknown, def = 0): number {
-  if (obj != null && typeof obj === 'object') {
-    const o = obj as Record<string, unknown>;
-    const lo = typeof o.low === 'number' ? o.low : def;
-    const hi = typeof o.high === 'number' ? o.high : def;
+  if (isUnknownRecord(obj)) {
+    const lo = typeof obj.low === 'number' ? obj.low : def;
+    const hi = typeof obj.high === 'number' ? obj.high : def;
     return (lo + hi) * 0.5;
   }
   return def;
 }
 function rangeLow(obj: unknown, def = 0): number {
-  if (obj != null && typeof obj === 'object') {
-    const o = obj as Record<string, unknown>;
-    return typeof o.low === 'number' ? o.low : def;
-  }
+  if (isUnknownRecord(obj)) return typeof obj.low === 'number' ? obj.low : def;
   return def;
 }
 function rangeHigh(obj: unknown, def = 0): number {
-  if (obj != null && typeof obj === 'object') {
-    const o = obj as Record<string, unknown>;
-    return typeof o.high === 'number' ? o.high : def;
-  }
+  if (isUnknownRecord(obj)) return typeof obj.high === 'number' ? obj.high : def;
   return def;
 }
 function hexToRgb(hex: string): [number, number, number] {
@@ -74,22 +68,59 @@ function hexToRgb(hex: string): [number, number, number] {
   return [channel(0), channel(2), channel(4)];
 }
 function firstTintColor(arr: unknown): [number, number, number] {
-  return hexToRgb(
-    Array.isArray(arr) && arr.length > 0
-      ? (((arr[0] as Record<string, unknown>).color as string) ?? 'ffffff')
-      : 'ffffff',
-  );
+  if (!Array.isArray(arr) || arr.length === 0) return [1, 1, 1];
+  const keyframe = requireSpineRecord(arr[0], 'tint[0]');
+  return hexToRgb(typeof keyframe.color === 'string' ? keyframe.color : 'ffffff');
 }
 function lastTintColor(arr: unknown): [number, number, number] {
   if (!Array.isArray(arr) || arr.length === 0) return [1, 1, 1];
-  return hexToRgb(((arr[arr.length - 1] as Record<string, unknown>).color as string) ?? 'ffffff');
+  const keyframe = requireSpineRecord(arr[arr.length - 1], `tint[${arr.length - 1}]`);
+  return hexToRgb(typeof keyframe.color === 'string' ? keyframe.color : 'ffffff');
 }
 function firstAlpha(arr: unknown): number {
-  return Array.isArray(arr) && arr.length > 0 ? (((arr[0] as Record<string, unknown>).alpha as number) ?? 1) : 1;
+  if (!Array.isArray(arr) || arr.length === 0) return 1;
+  const keyframe = requireSpineRecord(arr[0], 'alpha[0]');
+  return typeof keyframe.alpha === 'number' ? keyframe.alpha : 1;
 }
 function lastAlpha(arr: unknown): number {
   if (!Array.isArray(arr) || arr.length === 0) return 0;
-  return ((arr[arr.length - 1] as Record<string, unknown>).alpha as number) ?? 0;
+  const keyframe = requireSpineRecord(arr[arr.length - 1], `alpha[${arr.length - 1}]`);
+  return typeof keyframe.alpha === 'number' ? keyframe.alpha : 0;
+}
+
+function invalidSpineEntry(path: string, expected: string): never {
+  throw new Error(`Invalid Spine particle document: ${path} must be ${expected}`);
+}
+
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function requireSpineRecord(value: unknown, path: string): Record<string, unknown> {
+  if (!isUnknownRecord(value)) invalidSpineEntry(path, 'a JSON object');
+  return value;
+}
+
+function readSpineImages(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const images: string[] = [];
+  for (let i = 0; i < value.length; i++) {
+    const image = value[i];
+    if (typeof image !== 'string') invalidSpineEntry(`images[${i}]`, 'a string');
+    images.push(image);
+  }
+  return images;
+}
+
+function validateSpineNestedEntries(raw: Readonly<Record<string, unknown>>): void {
+  validateSpineRecordEntries(raw.tint, 'tint');
+  validateSpineRecordEntries(raw.alpha, 'alpha');
+  readSpineImages(raw.images);
+}
+
+function validateSpineRecordEntries(value: unknown, path: string): void {
+  if (!Array.isArray(value)) return;
+  for (let i = 0; i < value.length; i++) requireSpineRecord(value[i], `${path}[${i}]`);
 }
 
 // ─── Shared raw → config mapping ─────────────────────────────────────────────
@@ -160,10 +191,9 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
 function collectSpineDiagnostics(raw: Record<string, unknown>): ImportDiagnostic[] {
   const diagnostics: ImportDiagnostic[] = [];
   const nonZeroRange = (key: string): boolean => {
-    const o = raw[key];
-    if (o == null || typeof o !== 'object') return false;
-    const r = o as Record<string, unknown>;
-    return (typeof r.low === 'number' && r.low !== 0) || (typeof r.high === 'number' && r.high !== 0);
+    const range = raw[key];
+    if (!isUnknownRecord(range)) return false;
+    return (typeof range.low === 'number' && range.low !== 0) || (typeof range.high === 'number' && range.high !== 0);
   };
   if (nonZeroRange('lifeOffset')) {
     reportImportDiagnostic(
@@ -200,9 +230,9 @@ function tintKeyframesToCurve(arr: unknown): ParticleCurve | null {
   if (!Array.isArray(arr) || arr.length <= 2) return null;
   const keys: ColorKeyframe[] = [];
   for (let i = 0; i < arr.length; i++) {
-    const k = arr[i] as Record<string, unknown>;
-    const [r, g, b] = hexToRgb(typeof k.color === 'string' ? k.color : 'ffffff');
-    keys.push({ time: typeof k.time === 'number' ? k.time : i / (arr.length - 1), r, g, b });
+    const keyframe = requireSpineRecord(arr[i], `tint[${i}]`);
+    const [r, g, b] = hexToRgb(typeof keyframe.color === 'string' ? keyframe.color : 'ffffff');
+    keys.push({ time: typeof keyframe.time === 'number' ? keyframe.time : i / (arr.length - 1), r, g, b });
   }
   return particleColorCurveFromKeyframes(keys);
 }
@@ -211,10 +241,10 @@ function alphaKeyframesToCurve(arr: unknown): ParticleCurve | null {
   if (!Array.isArray(arr) || arr.length <= 2) return null;
   const keys: CurveKeyframe[] = [];
   for (let i = 0; i < arr.length; i++) {
-    const k = arr[i] as Record<string, unknown>;
+    const keyframe = requireSpineRecord(arr[i], `alpha[${i}]`);
     keys.push({
-      time: typeof k.time === 'number' ? k.time : i / (arr.length - 1),
-      value: typeof k.alpha === 'number' ? k.alpha : 1,
+      time: typeof keyframe.time === 'number' ? keyframe.time : i / (arr.length - 1),
+      value: typeof keyframe.alpha === 'number' ? keyframe.alpha : 1,
     });
   }
   return particleCurveFromKeyframes(keys);
@@ -228,47 +258,54 @@ function spineBlendMode(mode: string): ParticleBlendMode | null {
   return null;
 }
 
+function spineDocumentBlendMode(value: unknown): SpineParticleDocument['blendMode'] {
+  if (value === 'additive' || value === 'multiply' || value === 'screen') return value;
+  return 'normal';
+}
+
+function spineSpawnShape(value: unknown): SpineParticleDocument['spawnShape'] {
+  if (value === 'ellipse' || value === 'line') return value;
+  return 'point';
+}
+
 // ─── Document construction (load path only) ──────────────────────────────────
 
 function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
-  const s = (k: string, def: string) => (typeof raw[k] === 'string' ? (raw[k] as string) : def);
-  const n = (k: string, def: number) => (typeof raw[k] === 'number' ? (raw[k] as number) : def);
-  const b = (k: string, def: boolean) => (typeof raw[k] === 'boolean' ? (raw[k] as boolean) : def);
-  const rv = (obj: unknown, lo = 0, hi = 0) => ({
-    low:
-      obj != null && typeof obj === 'object' && typeof (obj as Record<string, unknown>).low === 'number'
-        ? ((obj as Record<string, unknown>).low as number)
-        : lo,
-    high:
-      obj != null && typeof obj === 'object' && typeof (obj as Record<string, unknown>).high === 'number'
-        ? ((obj as Record<string, unknown>).high as number)
-        : hi,
+  const s = (key: string, fallback: string): string => {
+    const value = raw[key];
+    return typeof value === 'string' ? value : fallback;
+  };
+  const n = (key: string, fallback: number): number => {
+    const value = raw[key];
+    return typeof value === 'number' ? value : fallback;
+  };
+  const b = (key: string, fallback: boolean): boolean => {
+    const value = raw[key];
+    return typeof value === 'boolean' ? value : fallback;
+  };
+  const rv = (obj: unknown, low = 0, high = 0) => ({
+    high: rangeHigh(obj, high),
+    low: rangeLow(obj, low),
   });
   const tintKfs = (arr: unknown): SpineTintKeyframe[] =>
     Array.isArray(arr)
-      ? arr.map((k) => ({
-          time:
-            typeof (k as Record<string, unknown>).time === 'number'
-              ? ((k as Record<string, unknown>).time as number)
-              : 0,
-          color:
-            typeof (k as Record<string, unknown>).color === 'string'
-              ? ((k as Record<string, unknown>).color as string)
-              : 'ffffff',
-        }))
+      ? arr.map((value, index) => {
+          const keyframe = requireSpineRecord(value, `tint[${index}]`);
+          return {
+            color: typeof keyframe.color === 'string' ? keyframe.color : 'ffffff',
+            time: typeof keyframe.time === 'number' ? keyframe.time : 0,
+          };
+        })
       : [{ time: 0, color: 'ffffff' }];
   const alphaKfs = (arr: unknown): SpineAlphaKeyframe[] =>
     Array.isArray(arr)
-      ? arr.map((k) => ({
-          time:
-            typeof (k as Record<string, unknown>).time === 'number'
-              ? ((k as Record<string, unknown>).time as number)
-              : 0,
-          alpha:
-            typeof (k as Record<string, unknown>).alpha === 'number'
-              ? ((k as Record<string, unknown>).alpha as number)
-              : 1,
-        }))
+      ? arr.map((value, index) => {
+          const keyframe = requireSpineRecord(value, `alpha[${index}]`);
+          return {
+            alpha: typeof keyframe.alpha === 'number' ? keyframe.alpha : 1,
+            time: typeof keyframe.time === 'number' ? keyframe.time : 0,
+          };
+        })
       : [
           { time: 0, alpha: 1 },
           { time: 1, alpha: 0 },
@@ -284,7 +321,7 @@ function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
     lifeOffset: rv(raw.lifeOffset, 0, 0),
     x: rv(raw.x, 0, 0),
     y: rv(raw.y, 0, 0),
-    spawnShape: s('spawnShape', 'point') as SpineParticleDocument['spawnShape'],
+    spawnShape: spineSpawnShape(raw.spawnShape),
     spawnWidth: rv(raw.spawnWidth, 0, 0),
     spawnHeight: rv(raw.spawnHeight, 0, 0),
     velocity: rv(raw.velocity, 50, 150),
@@ -296,9 +333,9 @@ function rawToDocument(raw: Record<string, unknown>): SpineParticleDocument {
     scaleEnd: rv(raw.scaleEnd, 0, 0),
     tint: tintKfs(raw.tint),
     alpha: alphaKfs(raw.alpha),
-    blendMode: s('blendMode', 'normal') as SpineParticleDocument['blendMode'],
+    blendMode: spineDocumentBlendMode(raw.blendMode),
     premultiplied: b('premultiplied', false),
-    images: Array.isArray(raw.images) ? (raw.images as string[]) : [],
+    images: readSpineImages(raw.images),
   };
 }
 
