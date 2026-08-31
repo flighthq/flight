@@ -16,6 +16,9 @@
       "path": "../color"
     },
     {
+      "path": "../entity"
+    },
+    {
       "path": "../scene2d"
     },
     {
