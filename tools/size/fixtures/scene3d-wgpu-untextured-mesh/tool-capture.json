@@ -1,0 +1,12 @@
+{
+  "subject": "scene3d-wgpu-untextured-mesh-size-fixture",
+  "entries": [
+    {
+      "name": "scene3d-wgpu-untextured-mesh",
+      "renderers": ["webgpu"],
+      "routes": {
+        "webgpu": "/"
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "subject": "scene3d-gl-camera-mesh-size-fixture",
+  "entries": [
+    {
+      "name": "scene3d-gl-camera-mesh",
+      "renderers": ["webgl"],
+      "routes": {
+        "webgl": "/"
+      }
+    }
+  ]
+}
