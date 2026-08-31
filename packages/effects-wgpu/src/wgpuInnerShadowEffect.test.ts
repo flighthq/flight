@@ -1,41 +1,43 @@
-vi.mock('@flighthq/render-wgpu/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    releaseWgpuRenderTarget: vi.fn(),
-  };
-});
+import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 
-vi.mock('./wgpuEffectBlitShader', () => ({
-  applyWgpuEffectBlitOffsetPass: vi.fn(),
-  applyWgpuEffectBlitPass: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectBoxBlur', () => ({
-  applyWgpuEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectPass', () => ({
-  clearWgpuEffectTarget: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectTintShader', () => ({
-  applyWgpuEffectInnerClipPass: vi.fn(),
-  applyWgpuEffectInvertTintPass: vi.fn(),
-}));
-
-import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import { applyWgpuEffectInnerClipPass } from './wgpuEffectTintShader';
+import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader';
+import * as wgpuEffectBoxBlurMod from './wgpuEffectBoxBlur';
+import * as wgpuEffectPassMod from './wgpuEffectPass';
+import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader';
 import {
   applyInnerShadowEffectToWgpu,
   defaultWgpuInnerShadowEffectRunner,
   registerWgpuInnerShadowEffect,
 } from './wgpuInnerShadowEffect';
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderWgpuContract, 'acquireWgpuRenderTarget').mockImplementation(((
+    _state: unknown,
+    _pool: unknown,
+    descriptor: Record<string, unknown>,
+  ) => ({
+    ...descriptor,
+    id: `scratch-${nextTargetId++}`,
+    texture: {},
+  })) as never);
+  vi.spyOn(renderWgpuContract, 'releaseWgpuRenderTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectBlitShaderMod, 'applyWgpuEffectBlitOffsetPass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectBlitShaderMod, 'applyWgpuEffectBlitPass').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectBoxBlurMod, 'applyWgpuEffectBoxBlur').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectPassMod, 'clearWgpuEffectTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectTintShaderMod, 'applyWgpuEffectInnerClipPass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectTintShaderMod, 'applyWgpuEffectInvertTintPass').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('applyInnerShadowEffectToWgpu', () => {
   it('is a function', () => {
@@ -48,8 +50,8 @@ describe('applyInnerShadowEffectToWgpu', () => {
 
     applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), { kind: 'InnerShadowEffect' });
 
-    expect(applyWgpuEffectBlitPass).toHaveBeenCalledTimes(2);
-    expect(applyWgpuEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenCalledTimes(2);
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
   });
 
   it('omits the source composite when sourceMode is hide', () => {
@@ -61,9 +63,9 @@ describe('applyInnerShadowEffectToWgpu', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyWgpuEffectBlitPass).toHaveBeenCalledTimes(1);
-    expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    const finalComposite = vi.mocked(applyWgpuEffectBlitPass).mock.calls[0];
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenCalledTimes(1);
+    expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    const finalComposite = vi.mocked(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).mock.calls[0];
     expect(finalComposite[1]).not.toBe(source);
     expect(finalComposite[2]).toBe(dest);
   });
@@ -78,7 +80,7 @@ describe('applyInnerShadowEffectToWgpu', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyWgpuEffectBoxBlur).toHaveBeenCalledWith(
+    expect(wgpuEffectBoxBlurMod.applyWgpuEffectBoxBlur).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       expect.anything(),
@@ -96,7 +98,7 @@ describe('applyInnerShadowEffectToWgpu', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyWgpuEffectInnerClipPass).toHaveBeenCalledWith(
+    expect(wgpuEffectTintShaderMod.applyWgpuEffectInnerClipPass).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       source,
@@ -109,10 +111,6 @@ describe('defaultWgpuInnerShadowEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuInnerShadowEffectRunner).toBe('function');
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
 });
 
 function createState(): never {

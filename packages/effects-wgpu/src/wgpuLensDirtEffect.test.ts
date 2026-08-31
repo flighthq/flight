@@ -1,39 +1,39 @@
-vi.mock('@flighthq/render-wgpu/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    releaseWgpuRenderTarget: vi.fn(),
-  };
-});
+import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 
-vi.mock('./wgpuBlurEffect', () => ({
-  applyGaussianBlurToWgpu: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectPass', () => ({
-  createWgpuDualSourceEffectPipeline: vi.fn(() => ({ pipeline: {} })),
-  drawWgpuDualSourceEffectPass: vi.fn(),
-  drawWgpuEffectPass: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectProgramCache', () => ({
-  getWgpuEffectPipeline: vi.fn((_state, key) => ({ key })),
-}));
-
-import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
-
-import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
-import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import * as wgpuBlurEffectModule from './wgpuBlurEffect';
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
 import {
   applyLensDirtEffectToWgpu,
   defaultWgpuLensDirtEffectRunner,
   registerWgpuLensDirtEffect,
 } from './wgpuLensDirtEffect';
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+    _state: never,
+    _pool: never,
+    descriptor: never,
+  ) => ({
+    ...(descriptor as object),
+    id: `scratch-${nextTargetId++}`,
+    texture: {},
+  })) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuBlurEffectModule, 'applyGaussianBlurToWgpu').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectPassModule, 'createWgpuDualSourceEffectPipeline').mockReturnValue({ pipeline: {} } as never);
+  vi.spyOn(wgpuEffectPassModule, 'drawWgpuDualSourceEffectPass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectPassModule, 'drawWgpuEffectPass').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectProgramCacheModule, 'getWgpuEffectPipeline').mockImplementation(((_state: never, key: string) => ({
+    key,
+  })) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('applyLensDirtEffectToWgpu', () => {
   it('is a function', () => {
@@ -53,13 +53,33 @@ describe('applyLensDirtEffectToWgpu', () => {
       threshold: 0.45,
     });
 
-    expect(acquireWgpuRenderTarget).toHaveBeenCalledTimes(3);
-    const [bright, blurred, temp] = vi.mocked(acquireWgpuRenderTarget).mock.results.map((result) => result.value!);
-    expect(getWgpuEffectPipeline).toHaveBeenCalledWith(state, 'lens.lensDirt.bright', expect.any(String), 'replace');
-    expect(drawWgpuEffectPass).toHaveBeenCalledWith(state, source, bright, expect.anything(), expect.any(Function));
-    expect(applyGaussianBlurToWgpu).toHaveBeenCalledWith(state, bright, blurred, temp, { blurX: 8, blurY: 8 });
-    expect(createWgpuDualSourceEffectPipeline).toHaveBeenCalledWith(state, expect.any(String), 'replace');
-    expect(drawWgpuDualSourceEffectPass).toHaveBeenCalledWith(
+    expect(renderWgpuContractModule.acquireWgpuRenderTarget).toHaveBeenCalledTimes(3);
+    const [bright, blurred, temp] = vi
+      .mocked(renderWgpuContractModule.acquireWgpuRenderTarget)
+      .mock.results.map((result) => result.value!);
+    expect(wgpuEffectProgramCacheModule.getWgpuEffectPipeline).toHaveBeenCalledWith(
+      state,
+      'lens.lensDirt.bright',
+      expect.any(String),
+      'replace',
+    );
+    expect(wgpuEffectPassModule.drawWgpuEffectPass).toHaveBeenCalledWith(
+      state,
+      source,
+      bright,
+      expect.anything(),
+      expect.any(Function),
+    );
+    expect(wgpuBlurEffectModule.applyGaussianBlurToWgpu).toHaveBeenCalledWith(state, bright, blurred, temp, {
+      blurX: 8,
+      blurY: 8,
+    });
+    expect(wgpuEffectPassModule.createWgpuDualSourceEffectPipeline).toHaveBeenCalledWith(
+      state,
+      expect.any(String),
+      'replace',
+    );
+    expect(wgpuEffectPassModule.drawWgpuDualSourceEffectPass).toHaveBeenCalledWith(
       state,
       source,
       blurred,
@@ -67,16 +87,19 @@ describe('applyLensDirtEffectToWgpu', () => {
       expect.anything(),
       expect.any(Function),
     );
-    expect(releaseWgpuRenderTarget).toHaveBeenNthCalledWith(1, pool, bright);
-    expect(releaseWgpuRenderTarget).toHaveBeenNthCalledWith(2, pool, blurred);
-    expect(releaseWgpuRenderTarget).toHaveBeenNthCalledWith(3, pool, temp);
+    expect(renderWgpuContractModule.releaseWgpuRenderTarget).toHaveBeenNthCalledWith(1, pool, bright);
+    expect(renderWgpuContractModule.releaseWgpuRenderTarget).toHaveBeenNthCalledWith(2, pool, blurred);
+    expect(renderWgpuContractModule.releaseWgpuRenderTarget).toHaveBeenNthCalledWith(3, pool, temp);
 
     const brightUniforms = new Float32Array(4);
-    vi.mocked(drawWgpuEffectPass).mock.calls[0]![4](brightUniforms, new Int32Array(brightUniforms.buffer));
+    vi.mocked(wgpuEffectPassModule.drawWgpuEffectPass).mock.calls[0]![4](
+      brightUniforms,
+      new Int32Array(brightUniforms.buffer),
+    );
     expect(brightUniforms[0]).toBeCloseTo(0.45);
     expect([...brightUniforms.slice(1)]).toEqual([0, 0, 0]);
     const compositeUniforms = new Float32Array(4);
-    vi.mocked(drawWgpuDualSourceEffectPass).mock.calls[0]![5](
+    vi.mocked(wgpuEffectPassModule.drawWgpuDualSourceEffectPass).mock.calls[0]![5](
       compositeUniforms,
       new Int32Array(compositeUniforms.buffer),
     );
@@ -88,10 +111,6 @@ describe('defaultWgpuLensDirtEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuLensDirtEffectRunner).toBe('function');
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
 });
 
 function createPool(): never {

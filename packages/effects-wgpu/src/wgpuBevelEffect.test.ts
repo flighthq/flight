@@ -1,71 +1,83 @@
+import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { BevelEffect, WgpuRenderState, WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types/contract';
 
-const passMock = vi.hoisted(() => ({
-  clearWgpuEffectTarget: vi.fn(),
-  createWgpuDualSourceEffectPipeline: vi.fn(() => ({ pipeline: {} })),
-  drawWgpuDualSourceEffectPass: vi.fn(
-    (
-      _state: unknown,
-      _field: unknown,
-      _source: unknown,
-      _dest: unknown,
-      _pipeline: unknown,
-      setUniforms: (f32: Float32Array) => void,
-    ) => {
-      const f32 = new Float32Array(12);
-      setUniforms(f32);
-      recorded.composites.push([...f32]);
-    },
-  ),
-}));
-const blitMock = vi.hoisted(() => ({
-  applyWgpuEffectBlitPass: vi.fn(() => recorded.calls.push('blit')),
-  applyWgpuEffectErasePass: vi.fn(() => recorded.calls.push('erase')),
-}));
-const blurMock = vi.hoisted(() => ({
-  applyWgpuEffectBoxBlur: vi.fn((_state: unknown, _s: unknown, _d: unknown, _t: unknown, options: unknown) => {
-    recorded.blurs.push(options);
-  }),
-}));
-const tintMock = vi.hoisted(() => ({
-  applyWgpuEffectTintPass: vi.fn(
-    (_state: unknown, _source: unknown, _dest: unknown, color: number, alpha: number, strength: number) => {
-      recorded.tints.push([color, alpha, strength]);
-    },
-  ),
-}));
-const targetMock = vi.hoisted(() => ({
-  acquireWgpuRenderTarget: vi.fn((_state: unknown, _pool: unknown, descriptor: unknown) => {
-    const target = { ...(descriptor as object), id: `scratch-${recorded.acquired.length}`, view: {} };
-    recorded.acquired.push(target);
-    return target;
-  }),
-  releaseWgpuRenderTarget: vi.fn((_pool: unknown, target: unknown) => recorded.released.push(target)),
-}));
-const recorded = vi.hoisted(() => ({
+import { applyBevelEffectToWgpu, defaultWgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
+import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
+import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
+import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+
+const recorded = {
   acquired: [] as unknown[],
   blurs: [] as unknown[],
   calls: [] as string[],
   composites: [] as number[][],
   released: [] as unknown[],
   tints: [] as (number | undefined)[][],
-}));
-
-vi.mock('./wgpuEffectBlitShader', () => blitMock);
-vi.mock('./wgpuEffectBoxBlur', () => blurMock);
-vi.mock('./wgpuEffectPass', () => passMock);
-vi.mock('./wgpuEffectTintShader', () => tintMock);
-
-vi.mock('@flighthq/render-wgpu/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-wgpu/contract')) as Record<string, unknown>;
-  return { ...actual, ...targetMock };
-});
-
-import { applyBevelEffectToWgpu, defaultWgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+};
 
 beforeAll(() => installWgpuMock());
+
+beforeEach(() => {
+  vi.spyOn(wgpuEffectPassModule, 'clearWgpuEffectTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(wgpuEffectPassModule, 'createWgpuDualSourceEffectPipeline').mockImplementation((() => ({
+    pipeline: {},
+  })) as never);
+  vi.spyOn(wgpuEffectPassModule, 'drawWgpuDualSourceEffectPass').mockImplementation(((
+    _state: unknown,
+    _field: unknown,
+    _source: unknown,
+    _dest: unknown,
+    _pipeline: unknown,
+    setUniforms: (f32: Float32Array) => void,
+  ) => {
+    const f32 = new Float32Array(12);
+    setUniforms(f32);
+    recorded.composites.push([...f32]);
+  }) as never);
+
+  vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectBlitPass').mockImplementation((() =>
+    recorded.calls.push('blit')) as never);
+  vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectErasePass').mockImplementation((() =>
+    recorded.calls.push('erase')) as never);
+
+  vi.spyOn(wgpuEffectBoxBlurModule, 'applyWgpuEffectBoxBlur').mockImplementation(((
+    _state: unknown,
+    _s: unknown,
+    _d: unknown,
+    _t: unknown,
+    options: unknown,
+  ) => {
+    recorded.blurs.push(options);
+  }) as never);
+
+  vi.spyOn(wgpuEffectTintShaderModule, 'applyWgpuEffectTintPass').mockImplementation(((
+    _state: unknown,
+    _source: unknown,
+    _dest: unknown,
+    color: number,
+    alpha: number,
+    strength: number,
+  ) => {
+    recorded.tints.push([color, alpha, strength]);
+  }) as never);
+
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+    _state: unknown,
+    _pool: unknown,
+    descriptor: unknown,
+  ) => {
+    const target = { ...(descriptor as object), id: `scratch-${recorded.acquired.length}`, view: {} };
+    recorded.acquired.push(target);
+    return target;
+  }) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation(((_pool: unknown, target: unknown) =>
+    recorded.released.push(target)) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 const SOURCE_WIDTH = 100;
 const SOURCE_HEIGHT = 50;

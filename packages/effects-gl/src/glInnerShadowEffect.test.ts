@@ -1,40 +1,42 @@
-vi.mock('@flighthq/render-gl/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    clearGlRenderTarget: vi.fn(),
-    compileGlFullscreenProgram: vi.fn(() => ({ program: {}, vao: {} })),
-    drawGlFullscreenPass: vi.fn(),
-    releaseGlRenderTarget: vi.fn(),
-  };
-});
+import * as renderGlContract from '@flighthq/render-gl/contract';
 
-vi.mock('./glEffectBlitShader', () => ({
-  applyGlEffectBlitOffsetPass: vi.fn(),
-  applyGlEffectBlitPass: vi.fn(),
-}));
-
-vi.mock('./glEffectBoxBlur', () => ({
-  applyGlEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./glEffectTintShader', () => ({
-  applyGlEffectInvertTintPass: vi.fn(),
-}));
-
-import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-
-import { applyGlEffectBlitPass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
+import * as glEffectBlitShader from './glEffectBlitShader';
+import * as glEffectBoxBlur from './glEffectBoxBlur';
+import * as glEffectTintShader from './glEffectTintShader';
 import {
   applyInnerShadowEffectToGl,
   defaultGlInnerShadowEffectRunner,
   registerGlInnerShadowEffect,
 } from './glInnerShadowEffect';
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(
+    (_state: never, _pool: never, descriptor: never) =>
+      ({ ...(descriptor as Record<string, unknown>), id: `scratch-${nextTargetId++}`, texture: {} }) as never,
+  );
+  vi.spyOn(renderGlContract, 'clearGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'compileGlFullscreenProgram').mockImplementation((() => ({
+    program: {},
+    vao: {},
+  })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBlitShader, 'applyGlEffectBlitOffsetPass').mockImplementation((() => {}) as never);
+  vi.spyOn(glEffectBlitShader, 'applyGlEffectBlitPass').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBoxBlur, 'applyGlEffectBoxBlur').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectTintShader, 'applyGlEffectInvertTintPass').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('applyInnerShadowEffectToGl', () => {
   it('is a function', () => {
@@ -47,8 +49,8 @@ describe('applyInnerShadowEffectToGl', () => {
 
     applyInnerShadowEffectToGl(createState(), source, dest, createPool(), { kind: 'InnerShadowEffect' });
 
-    expect(applyGlEffectBlitPass).toHaveBeenCalledTimes(2);
-    expect(applyGlEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledTimes(2);
+    expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
   });
 
   it('omits the source composite when sourceMode is hide', () => {
@@ -60,9 +62,9 @@ describe('applyInnerShadowEffectToGl', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyGlEffectBlitPass).toHaveBeenCalledTimes(1);
-    expect(applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    const finalComposite = vi.mocked(applyGlEffectBlitPass).mock.calls[0];
+    expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledTimes(1);
+    expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    const finalComposite = vi.mocked(glEffectBlitShader.applyGlEffectBlitPass).mock.calls[0];
     expect(finalComposite[1]).not.toBe(source);
     expect(finalComposite[2]).toBe(dest);
   });
@@ -77,7 +79,7 @@ describe('applyInnerShadowEffectToGl', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyGlEffectBoxBlur).toHaveBeenCalledWith(
+    expect(glEffectBoxBlur.applyGlEffectBoxBlur).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       expect.anything(),
@@ -96,8 +98,8 @@ describe('applyInnerShadowEffectToGl', () => {
       sourceMode: 'hide',
     });
 
-    expect(drawGlFullscreenPass).toHaveBeenCalledTimes(1);
-    expect(drawGlFullscreenPass).toHaveBeenNthCalledWith(
+    expect(renderGlContract.drawGlFullscreenPass).toHaveBeenCalledTimes(1);
+    expect(renderGlContract.drawGlFullscreenPass).toHaveBeenNthCalledWith(
       1,
       expect.anything(),
       expect.anything(),
@@ -107,7 +109,7 @@ describe('applyInnerShadowEffectToGl', () => {
     );
 
     const gl = { ONE: 1, ZERO: 0, blendFunc: vi.fn() };
-    const setClipUniforms = vi.mocked(drawGlFullscreenPass).mock.calls[0][4];
+    const setClipUniforms = vi.mocked(renderGlContract.drawGlFullscreenPass).mock.calls[0][4];
     setClipUniforms(gl as never, {} as never);
 
     expect(gl.blendFunc).toHaveBeenCalledWith(gl.ONE, gl.ZERO);
@@ -118,10 +120,6 @@ describe('defaultGlInnerShadowEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlInnerShadowEffectRunner).toBe('function');
   });
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
 });
 
 function createState(): never {

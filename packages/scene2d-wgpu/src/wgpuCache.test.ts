@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
+import * as renderWgpu from '@flighthq/render-wgpu/contract';
 import {
   createRenderCache,
   createRenderState,
@@ -21,138 +21,6 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
-import type * as WgpuNode2DModule from './wgpuNode2D';
-import type * as WgpuQuadBatchWriterModule from './wgpuQuadBatchWriter';
-
-// The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
-// ./wgpuQuadBatchWriter and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested without a
-// real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite, batch-flush
-// and subtree-render calls become spies for the call and ordering assertions below.
-//
-// ★ HOISTED MOCKS, NOT HAND-ROLLED ONES. This file is in REGISTRY_ISOLATED_TESTS, so it already runs with
-// its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import dance
-// bought by hand comes from the platform here, with no hook, and these stubs cannot reach the real
-// render-wgpu / scene2d-wgpu consumers. The dance was not merely redundant: it rebuilt the subject's
-// entire transitive module graph inside a FIXED `beforeAll` deadline — three modules plus everything they
-// import — which is unbounded work against a fixed clock and the shape of flake tiering exists to remove.
-//
-// ★ THE FRAME STUBS REACH THROUGH `actual`, NOT THROUGH AN OUTER BINDING. A hoisted factory runs during
-// this file's own import phase, so closing over a module-scope `const` declared below it would be a
-// temporal-dead-zone trap that only fires once the import order changes. `actual` is in hand already.
-vi.mock('./wgpuQuadBatchWriter', async (importOriginal) => {
-  const actual = await importOriginal<typeof WgpuQuadBatchWriterModule>();
-  return { ...actual, flushWgpuQuadBatchWriter: vi.fn() };
-});
-vi.mock('@flighthq/render-wgpu/contract', async (importOriginal) => {
-  const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
-  const render = await import('@flighthq/render/contract');
-  const types = await import('@flighthq/types/contract');
-  const beginWgpuFrame = vi.fn((state: WgpuRenderState) => {
-    actual.getWgpuRenderStateRuntime(state).commandEncoder = {} as GPUCommandEncoder;
-  });
-  const submitWgpuRenderPass = vi.fn((state: WgpuRenderState) => {
-    actual.getWgpuRenderStateRuntime(state).commandEncoder = null;
-  });
-  return {
-    ...actual,
-    beginWgpuFrame,
-    beginWgpuRenderPass: vi.fn(),
-    createWgpuOffscreenRenderState: vi.fn((deviceState, pipeline, options = {}) => {
-      const state = render.createRenderState({
-        allowSmoothing: options.imageSmoothingEnabled ?? true,
-        pixelRatio: options.pixelRatio ?? 1,
-        roundPixels: options.roundPixels ?? false,
-        sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
-      }) as WgpuRenderState;
-      Object.assign(state, {
-        applyBlendMode: null,
-        device: deviceState.device,
-        deviceState,
-        format: options.format ?? 'bgra8unorm',
-        pipeline,
-      });
-      const runtime = actual.createWgpuRenderStateRuntime(deviceState, pipeline);
-      state[types.EntityRuntimeKey] = runtime;
-      Object.assign(runtime, {
-        commandEncoder: null,
-        currentBlendMode: null,
-        currentMaskDepth: 0,
-        currentRenderTarget: null,
-        depthStencilTexture: null,
-        particleInstanceBuffer: null,
-        quadBatchWriterBufferPool: [],
-        renderPass: null,
-        retiredBuffers: [],
-        retiredTextures: [],
-        surfaceAntialiasTexture: null,
-        uniformBuffer: { destroy: vi.fn() } as unknown as GPUBuffer,
-        uniformData: new Float32Array(0),
-        uniformOffset: 0,
-      });
-      return state;
-    }),
-    setWgpuRenderTransform2D: vi.fn(),
-    createWgpuRenderTarget: vi.fn(
-      (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
-        bindings: new Map(),
-        mipLevelCount: 1,
-        colorSpace: 'srgb',
-        depthStencilTexture: {} as GPUTexture,
-        depthStencilView: {} as GPUTextureView,
-        texture: {} as GPUTexture,
-        view: {} as GPUTextureView,
-        format: 'bgra8unorm',
-        sampleCount: 1,
-        clearColors: [],
-        clearDepth: 1,
-        width,
-        height,
-      }),
-    ),
-    destroyWgpuRenderTarget: vi.fn(),
-    drawWgpuRenderTargetResult: vi.fn(),
-    endWgpuRenderPass: vi.fn(),
-    resizeWgpuRenderTarget: vi.fn((_state: unknown, target: WgpuRenderTarget, width: number, height: number) => {
-      target.width = width;
-      target.height = height;
-    }),
-    submitWgpuRenderPass,
-    withWgpuFrameBorrow: vi.fn((owner: WgpuRenderState, borrower: WgpuRenderState, callback: () => unknown) => {
-      const ownerRuntime = actual.getWgpuRenderStateRuntime(owner);
-      const borrowerRuntime = actual.getWgpuRenderStateRuntime(borrower);
-      const ownsFrame = ownerRuntime.commandEncoder === null;
-      if (ownsFrame) beginWgpuFrame(owner);
-      borrowerRuntime.commandEncoder = ownerRuntime.commandEncoder;
-      try {
-        return callback();
-      } finally {
-        borrowerRuntime.commandEncoder = null;
-        if (ownsFrame) submitWgpuRenderPass(owner);
-      }
-    }),
-  };
-});
-vi.mock('./wgpuNode2D', async (importOriginal) => {
-  const actual = await importOriginal<typeof WgpuNode2DModule>();
-  return { ...actual, renderWgpuScene2D: vi.fn() };
-});
-
-import {
-  beginWgpuFrame,
-  createEmptyWgpuRegistries,
-  createWgpuDeviceState,
-  createWgpuPipeline,
-  createWgpuRenderStateRuntime,
-  destroyWgpuRenderState,
-  destroyWgpuRenderTarget,
-  drawWgpuRenderTargetResult,
-  getWgpuMaterialRenderer,
-  getWgpuRenderStateRuntime,
-  registerWgpuMaterialRenderer,
-  resolveWgpuApplyBlendMode,
-  submitWgpuRenderPass,
-} from '@flighthq/render-wgpu/contract';
-
 import {
   createWgpuCacheState,
   defaultWgpuRenderCacheRenderer,
@@ -162,14 +30,120 @@ import {
   refreshWgpuRenderCache,
   releaseWgpuRenderCache,
 } from './wgpuCache';
-import { renderWgpuScene2D } from './wgpuNode2D';
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import * as wgpuNode2D from './wgpuNode2D';
+import * as wgpuQuadBatchWriter from './wgpuQuadBatchWriter';
+
+// The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
+// ./wgpuQuadBatchWriter and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested without a
+// real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite, batch-flush
+// and subtree-render calls become spies for the call and ordering assertions below.
+beforeEach(() => {
+  vi.spyOn(wgpuQuadBatchWriter, 'flushWgpuQuadBatchWriter').mockImplementation((() => {}) as never);
+
+  const beginWgpuFrameSpy = vi.spyOn(renderWgpu, 'beginWgpuFrame').mockImplementation(((state: WgpuRenderState) => {
+    renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = {} as GPUCommandEncoder;
+  }) as never);
+  const submitWgpuRenderPassSpy = vi.spyOn(renderWgpu, 'submitWgpuRenderPass').mockImplementation(((
+    state: WgpuRenderState,
+  ) => {
+    renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = null;
+  }) as never);
+  vi.spyOn(renderWgpu, 'beginWgpuRenderPass').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpu, 'createWgpuOffscreenRenderState').mockImplementation(((
+    deviceState: any,
+    pipeline: any,
+    options: any = {},
+  ) => {
+    const state = createRenderState({
+      allowSmoothing: options.imageSmoothingEnabled ?? true,
+      pixelRatio: options.pixelRatio ?? 1,
+      roundPixels: options.roundPixels ?? false,
+      sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
+    }) as WgpuRenderState;
+    Object.assign(state, {
+      applyBlendMode: null,
+      device: deviceState.device,
+      deviceState,
+      format: options.format ?? 'bgra8unorm',
+      pipeline,
+    });
+    const runtime = renderWgpu.createWgpuRenderStateRuntime(deviceState, pipeline);
+    state[EntityRuntimeKey] = runtime;
+    Object.assign(runtime, {
+      commandEncoder: null,
+      currentBlendMode: null,
+      currentMaskDepth: 0,
+      currentRenderTarget: null,
+      depthStencilTexture: null,
+      particleInstanceBuffer: null,
+      quadBatchWriterBufferPool: [],
+      renderPass: null,
+      retiredBuffers: [],
+      retiredTextures: [],
+      surfaceAntialiasTexture: null,
+      uniformBuffer: { destroy: vi.fn() } as unknown as GPUBuffer,
+      uniformData: new Float32Array(0),
+      uniformOffset: 0,
+    });
+    return state;
+  }) as never);
+  vi.spyOn(renderWgpu, 'setWgpuRenderTransform2D').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpu, 'createWgpuRenderTarget').mockImplementation(
+    ((_state: unknown, width: number, height: number): WgpuRenderTarget => ({
+      bindings: new Map(),
+      mipLevelCount: 1,
+      colorSpace: 'srgb',
+      depthStencilTexture: {} as GPUTexture,
+      depthStencilView: {} as GPUTextureView,
+      texture: {} as GPUTexture,
+      view: {} as GPUTextureView,
+      format: 'bgra8unorm',
+      sampleCount: 1,
+      clearColors: [],
+      clearDepth: 1,
+      width,
+      height,
+    })) as never,
+  );
+  vi.spyOn(renderWgpu, 'destroyWgpuRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpu, 'drawWgpuRenderTargetResult').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpu, 'endWgpuRenderPass').mockImplementation((() => {}) as never);
+  vi.spyOn(renderWgpu, 'resizeWgpuRenderTarget').mockImplementation(((
+    _state: unknown,
+    target: WgpuRenderTarget,
+    width: number,
+    height: number,
+  ) => {
+    target.width = width;
+    target.height = height;
+  }) as never);
+  vi.spyOn(renderWgpu, 'withWgpuFrameBorrow').mockImplementation(((
+    owner: WgpuRenderState,
+    borrower: WgpuRenderState,
+    callback: () => unknown,
+  ) => {
+    const ownerRuntime = renderWgpu.getWgpuRenderStateRuntime(owner);
+    const borrowerRuntime = renderWgpu.getWgpuRenderStateRuntime(borrower);
+    const ownsFrame = ownerRuntime.commandEncoder === null;
+    if (ownsFrame) beginWgpuFrameSpy(owner);
+    borrowerRuntime.commandEncoder = ownerRuntime.commandEncoder;
+    try {
+      return callback();
+    } finally {
+      borrowerRuntime.commandEncoder = null;
+      if (ownsFrame) submitWgpuRenderPassSpy(owner);
+    }
+  }) as never);
+  vi.spyOn(wgpuNode2D, 'renderWgpuScene2D').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 function fakeScreen(options = {}): WgpuPresentationRenderState {
   const state = createRenderState(options) as unknown as WgpuPresentationRenderState;
   const device = {} as GPUDevice;
-  const deviceState = createWgpuDeviceState(device);
-  const pipeline = createWgpuPipeline(createEmptyWgpuRegistries());
+  const deviceState = renderWgpu.createWgpuDeviceState(device);
+  const pipeline = renderWgpu.createWgpuPipeline(renderWgpu.createEmptyWgpuRegistries());
   Object.assign(state, {
     context: {} as GPUCanvasContext,
     device,
@@ -178,8 +152,8 @@ function fakeScreen(options = {}): WgpuPresentationRenderState {
     pipeline,
     surface: { height: 600, width: 800 },
   });
-  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(deviceState, pipeline);
-  const runtime = getWgpuRenderStateRuntime(state);
+  state[EntityRuntimeKey] = renderWgpu.createWgpuRenderStateRuntime(deviceState, pipeline);
+  const runtime = renderWgpu.getWgpuRenderStateRuntime(state);
   runtime.commandEncoder = null;
   runtime.currentBlendMode = null;
   return state;
@@ -189,7 +163,7 @@ function createCacheState(screen: WgpuPresentationRenderState): WgpuRenderState 
   return createWgpuCacheState(
     screen,
     screen.deviceState,
-    createWgpuPipeline(getWgpuRenderStateRuntime(screen).registries),
+    renderWgpu.createWgpuPipeline(renderWgpu.getWgpuRenderStateRuntime(screen).registries),
     {
       format: screen.format,
       imageSmoothingEnabled: screen.allowSmoothing,
@@ -208,25 +182,25 @@ describe('createWgpuCacheState', () => {
   it('does not destroy a uniform buffer owned by the screen state', () => {
     const screen = fakeScreen();
     const destroyUniformBuffer = vi.fn();
-    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    const screenRuntime = renderWgpu.getWgpuRenderStateRuntime(screen);
     screenRuntime.uniformBuffer = { destroy: destroyUniformBuffer } as unknown as GPUBuffer;
     screenRuntime.quadBatchWriterBufferPool = [];
 
     const cacheState = createCacheState(screen);
-    destroyWgpuRenderState(cacheState);
+    renderWgpu.destroyWgpuRenderState(cacheState);
 
     expect(destroyUniformBuffer).not.toHaveBeenCalled();
   });
 
   it('does not retain the device tier when an owned cache state is left undisposed', () => {
     const screen = fakeScreen();
-    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    const screenRuntime = renderWgpu.getWgpuRenderStateRuntime(screen);
     const teardown = vi.fn();
     screenRuntime.context.teardowns.push(teardown);
     screenRuntime.quadBatchWriterBufferPool = [];
 
     createCacheState(screen);
-    destroyWgpuRenderState(screen);
+    renderWgpu.destroyWgpuRenderState(screen);
 
     expect(teardown).toHaveBeenCalledOnce();
   });
@@ -241,14 +215,14 @@ describe('createWgpuCacheState', () => {
 
     expect(cacheState.applyBlendMode).toBeNull();
     expect(Object.getOwnPropertyDescriptor(cacheState, 'applyBlendMode')?.get).toBeUndefined();
-    expect(resolveWgpuApplyBlendMode(cacheState)).toBeNull();
+    expect(renderWgpu.resolveWgpuApplyBlendMode(cacheState)).toBeNull();
     screen.applyBlendMode = screenHook;
     expect(cacheState.applyBlendMode).toBeNull();
-    expect(resolveWgpuApplyBlendMode(cacheState)).toBe(screenHook);
+    expect(renderWgpu.resolveWgpuApplyBlendMode(cacheState)).toBe(screenHook);
 
     cacheState.applyBlendMode = cacheHook;
     screen.applyBlendMode = laterScreenHook;
-    expect(resolveWgpuApplyBlendMode(cacheState)).toBe(cacheHook);
+    expect(renderWgpu.resolveWgpuApplyBlendMode(cacheState)).toBe(cacheHook);
   });
 
   it('copies renderers and shares the GPU device but keeps its own node map', () => {
@@ -262,7 +236,7 @@ describe('createWgpuCacheState', () => {
     };
     const colorAdjustmentFeatureGuard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
     const renderRootGuard: RenderRootGuard = vi.fn();
-    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    const screenRuntime = renderWgpu.getWgpuRenderStateRuntime(screen);
     screenRuntime.registries.colorAdjustments = {
       entry: { state: RegistryEntryState.Bound, value: resolver },
       onMiss: 'Disabled',
@@ -290,21 +264,21 @@ describe('createWgpuCacheState', () => {
     enableColorAdjustmentGuards(screen);
     enableWgpuRenderCache(screen);
     const cacheState = createCacheState(screen);
-    expect(getWgpuRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+    expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
       value: defaultWgpuRenderCacheRenderer,
     });
     expect((cacheState as any).device).toBe((screen as any).device);
-    expect(getWgpuRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
-      getWgpuRenderStateRuntime(screen).renderProxyMap,
+    expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
+      renderWgpu.getWgpuRenderStateRuntime(screen).renderProxyMap,
     );
-    expect(getWgpuRenderStateRuntime(cacheState).registries.colorAdjustments).toBe(
+    expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.colorAdjustments).toBe(
       screenRuntime.registries.colorAdjustments,
     );
-    expect(getWgpuRenderStateRuntime(cacheState).registries.colorAdjustmentFeature).toBe(
+    expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.colorAdjustmentFeature).toBe(
       screenRuntime.registries.colorAdjustmentFeature,
     );
-    const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
+    const cacheRuntime = renderWgpu.getWgpuRenderStateRuntime(cacheState);
     expect(cacheRuntime.registries.colorAdjustmentFeatureGuard).toBe(
       screenRuntime.registries.colorAdjustmentFeatureGuard,
     );
@@ -343,11 +317,11 @@ describe('createWgpuCacheState', () => {
     const screen = fakeScreen();
     const first: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
     const replacement: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
-    registerWgpuMaterialRenderer(screen, 'acme.Material', first);
+    renderWgpu.registerWgpuMaterialRenderer(screen, 'acme.Material', first);
 
     const cacheState = createCacheState(screen);
-    const screenRuntime = getWgpuRenderStateRuntime(screen);
-    const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
+    const screenRuntime = renderWgpu.getWgpuRenderStateRuntime(screen);
+    const cacheRuntime = renderWgpu.getWgpuRenderStateRuntime(cacheState);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
     expect(cacheRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
     expect(cacheRuntime.registries.compressedTextureDecoder).toBe(screenRuntime.registries.compressedTextureDecoder);
@@ -360,12 +334,12 @@ describe('createWgpuCacheState', () => {
     expect(cacheRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
     expect(cacheRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(cacheRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
-    expect(getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
+    expect(renderWgpu.getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
 
-    registerWgpuMaterialRenderer(screen, 'acme.Material', replacement);
+    renderWgpu.registerWgpuMaterialRenderer(screen, 'acme.Material', replacement);
 
-    expect(getWgpuMaterialRenderer(screen, 'acme.Material')).toBe(replacement);
-    expect(getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
+    expect(renderWgpu.getWgpuMaterialRenderer(screen, 'acme.Material')).toBe(replacement);
+    expect(renderWgpu.getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
   });
 });
 
@@ -373,7 +347,7 @@ describe('defaultWgpuRenderCacheRenderer', () => {
   it('does nothing when no cache is attached to the source', () => {
     const state = fakeScreen();
     defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
-    expect(drawWgpuRenderTargetResult).not.toHaveBeenCalled();
+    expect(renderWgpu.drawWgpuRenderTargetResult).not.toHaveBeenCalled();
   });
 
   it('composites the cache target attached to the source node', () => {
@@ -383,7 +357,12 @@ describe('defaultWgpuRenderCacheRenderer', () => {
     useRenderCache(state, obj, cache);
     const target = ensureWgpuRenderCacheTarget(state, cache, 16, 16);
     defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    expect(drawWgpuRenderTargetResult).toHaveBeenCalledWith(state, expect.anything(), target, expect.anything());
+    expect(renderWgpu.drawWgpuRenderTargetResult).toHaveBeenCalledWith(
+      state,
+      expect.anything(),
+      target,
+      expect.anything(),
+    );
   });
 
   it('flushes pending batched geometry before the immediate composite', () => {
@@ -396,9 +375,9 @@ describe('defaultWgpuRenderCacheRenderer', () => {
     // The composite draws an immediate quad outside the quad-batch writer; geometry submitted earlier in
     // the walk must be drained first, or the immediate quad interleaves with the un-flushed batch's
     // instance buffer and bind-group state and corrupts it.
-    expect(flushWgpuQuadBatchWriter).toHaveBeenCalledWith(state);
-    expect((flushWgpuQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
-      (drawWgpuRenderTargetResult as any).mock.invocationCallOrder[0],
+    expect(wgpuQuadBatchWriter.flushWgpuQuadBatchWriter).toHaveBeenCalledWith(state);
+    expect((wgpuQuadBatchWriter.flushWgpuQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
+      (renderWgpu.drawWgpuRenderTargetResult as any).mock.invocationCallOrder[0],
     );
   });
 });
@@ -407,7 +386,7 @@ describe('enableWgpuRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableWgpuRenderCache(state);
-    expect(getWgpuRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+    expect(renderWgpu.getWgpuRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
       value: defaultWgpuRenderCacheRenderer,
     });
@@ -440,17 +419,17 @@ describe('ensureWgpuRenderCacheTarget', () => {
 
   it('enumerates and destroys every owned target during state teardown', () => {
     const state = fakeScreen();
-    const runtime = getWgpuRenderStateRuntime(state);
+    const runtime = renderWgpu.getWgpuRenderStateRuntime(state);
     runtime.quadBatchWriterBufferPool = [];
     const firstCache = createRenderCache();
     const secondCache = createRenderCache();
     const first = ensureWgpuRenderCacheTarget(state, firstCache, 8, 8);
     const second = ensureWgpuRenderCacheTarget(state, secondCache, 16, 16);
 
-    destroyWgpuRenderState(state);
+    renderWgpu.destroyWgpuRenderState(state);
 
-    expect(destroyWgpuRenderTarget).toHaveBeenCalledWith(state, first);
-    expect(destroyWgpuRenderTarget).toHaveBeenCalledWith(state, second);
+    expect(renderWgpu.destroyWgpuRenderTarget).toHaveBeenCalledWith(state, first);
+    expect(renderWgpu.destroyWgpuRenderTarget).toHaveBeenCalledWith(state, second);
     expect(getWgpuRenderCacheTarget(state, firstCache)).toBeNull();
     expect(getWgpuRenderCacheTarget(state, secondCache)).toBeNull();
   });
@@ -474,22 +453,22 @@ describe('refreshWgpuRenderCache', () => {
     const screen = fakeScreen();
     const cacheState = createCacheState(screen);
     refreshWgpuRenderCache(screen, cacheState, createRenderCache(), createDisplayObject(), { padding: 5 });
-    expect(beginWgpuFrame).toHaveBeenCalledWith(screen);
-    expect(submitWgpuRenderPass).toHaveBeenCalledWith(screen);
-    expect(getWgpuRenderStateRuntime(screen).commandEncoder).toBeNull();
+    expect(renderWgpu.beginWgpuFrame).toHaveBeenCalledWith(screen);
+    expect(renderWgpu.submitWgpuRenderPass).toHaveBeenCalledWith(screen);
+    expect(renderWgpu.getWgpuRenderStateRuntime(screen).commandEncoder).toBeNull();
   });
 
   it('records into an active application frame without submitting it', () => {
     const screen = fakeScreen();
     const encoder = {} as GPUCommandEncoder;
-    getWgpuRenderStateRuntime(screen).commandEncoder = encoder;
+    renderWgpu.getWgpuRenderStateRuntime(screen).commandEncoder = encoder;
     const cacheState = createCacheState(screen);
-    vi.mocked(beginWgpuFrame).mockClear();
-    vi.mocked(submitWgpuRenderPass).mockClear();
+    vi.mocked(renderWgpu.beginWgpuFrame).mockClear();
+    vi.mocked(renderWgpu.submitWgpuRenderPass).mockClear();
     refreshWgpuRenderCache(screen, cacheState, createRenderCache(), createDisplayObject(), { padding: 5 });
-    expect(beginWgpuFrame).not.toHaveBeenCalled();
-    expect(submitWgpuRenderPass).not.toHaveBeenCalled();
-    expect(getWgpuRenderStateRuntime(screen).commandEncoder).toBe(encoder);
+    expect(renderWgpu.beginWgpuFrame).not.toHaveBeenCalled();
+    expect(renderWgpu.submitWgpuRenderPass).not.toHaveBeenCalled();
+    expect(renderWgpu.getWgpuRenderStateRuntime(screen).commandEncoder).toBe(encoder);
   });
 
   it('bakes on the first call and allocates the target on the screen state', () => {
@@ -499,7 +478,7 @@ describe('refreshWgpuRenderCache', () => {
     const obj = createDisplayObject();
     const rebaked = refreshWgpuRenderCache(screen, cacheState, cache, obj, { padding: 5 });
     expect(rebaked).toBe(true);
-    expect(renderWgpuScene2D).toHaveBeenCalled();
+    expect(wgpuNode2D.renderWgpuScene2D).toHaveBeenCalled();
     const target = getWgpuRenderCacheTarget(screen, cache);
     expect(target).not.toBeNull();
     expect(target!.width).toBe(10);
@@ -521,7 +500,7 @@ describe('releaseWgpuRenderCache', () => {
     const cache = createRenderCache();
     const target = ensureWgpuRenderCacheTarget(state, cache, 8, 8);
     releaseWgpuRenderCache(state, cache);
-    expect(destroyWgpuRenderTarget).toHaveBeenCalledWith(state, target);
+    expect(renderWgpu.destroyWgpuRenderTarget).toHaveBeenCalledWith(state, target);
     expect(getWgpuRenderCacheTarget(state, cache)).toBeNull();
   });
 });

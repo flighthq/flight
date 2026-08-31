@@ -1,5 +1,3 @@
-vi.mock('./wgpuSsaoEffect', () => ({ applySsaoEffectToWgpu: vi.fn() }));
-
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 
 import {
@@ -8,11 +6,17 @@ import {
   registerWgpuContactShadowsEffect,
 } from './wgpuContactShadowsEffect';
 import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
-import { applySsaoEffectToWgpu } from './wgpuSsaoEffect';
+import * as wgpuSsaoEffectMod from './wgpuSsaoEffect';
 
 beforeAll(() => {
   installWgpuMock();
 });
+
+beforeEach(() => {
+  vi.spyOn(wgpuSsaoEffectMod, 'applySsaoEffectToWgpu').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('applyContactShadowsEffectToWgpu', () => {
   it('maps the contact descriptor into the shared local-occlusion realization', () => {
@@ -23,12 +27,17 @@ describe('applyContactShadowsEffectToWgpu', () => {
       samples: 24,
     });
 
-    expect(applySsaoEffectToWgpu).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything(), {
-      intensity: 0.75,
-      kind: 'SsaoEffect',
-      radius: 3,
-      samples: 24,
-    });
+    expect(wgpuSsaoEffectMod.applySsaoEffectToWgpu).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      {
+        intensity: 0.75,
+        kind: 'SsaoEffect',
+        radius: 3,
+        samples: 24,
+      },
+    );
   });
 });
 

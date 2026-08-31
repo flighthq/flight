@@ -2,48 +2,18 @@
 // same arithmetic BitmapBevelOptions has always used offscreen. The composite shader still takes RGB plus
 // one alpha, so the split happens in the runner — which makes the uniform the only place the migration is
 // observable, and the reason this file mocks the draw seam rather than asserting on pixels.
-const glMock = vi.hoisted(() => ({
+import * as renderGlContract from '@flighthq/render-gl/contract';
+
+import { applyBevelEffectToGl, defaultGlBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
+import * as glEffectBlitShaderMod from './glEffectBlitShader';
+import * as glEffectBoxBlurMod from './glEffectBoxBlur';
+import * as glEffectTintShaderMod from './glEffectTintShader';
+
+const glMock = {
   uniform1f: vi.fn(),
   uniform2f: vi.fn(),
   uniform4f: vi.fn(),
-}));
-
-vi.mock('@flighthq/render-gl/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    clearGlRenderTarget: vi.fn(),
-    compileGlFullscreenProgram: vi.fn(() => ({
-      locHighlight: 'u_highlight',
-      locShadow: 'u_shadow',
-      program: {},
-    })),
-    drawGlFullscreenPass: vi.fn((_state, _loc, _textures, _dest, setUniforms) => {
-      setUniforms(glMock as never, {} as never);
-    }),
-    releaseGlRenderTarget: vi.fn(),
-  };
-});
-
-vi.mock('./glEffectBlitShader', () => ({
-  applyGlEffectBlitOffsetPass: vi.fn(),
-  applyGlEffectBlitPass: vi.fn(),
-  applyGlEffectErasePass: vi.fn(),
-}));
-
-vi.mock('./glEffectBoxBlur', () => ({
-  applyGlEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./glEffectTintShader', () => ({
-  applyGlEffectTintPass: vi.fn(),
-}));
-
-import { applyBevelEffectToGl, defaultGlBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
+};
 
 // The runner caches its compiled locations per `state.gl`, and looks the uniform names up itself, so the
 // fake context must answer getUniformLocation with the name — which is also what makes the assertions
@@ -51,6 +21,50 @@ import { applyBevelEffectToGl, defaultGlBevelEffectRunner, registerGlBevelEffect
 const state = { gl: { getUniformLocation: (_program: unknown, name: string) => name } } as never;
 const target = { height: 4, texture: {}, width: 4 } as never;
 const pool = { free: [], inUse: [] } as never;
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(((
+    _state: unknown,
+    _pool: unknown,
+    descriptor: unknown,
+  ) => ({
+    ...(descriptor as object),
+    id: `scratch-${nextTargetId++}`,
+    texture: {},
+  })) as never);
+  vi.spyOn(renderGlContract, 'clearGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'compileGlFullscreenProgram').mockImplementation(((_gl: unknown, _source: string) => ({
+    locHighlight: 'u_highlight',
+    locShadow: 'u_shadow',
+    program: {},
+  })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _loc: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms(glMock as never, {} as never);
+  }) as never);
+  vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBlitShaderMod, 'applyGlEffectBlitOffsetPass').mockImplementation((() => {}) as never);
+  vi.spyOn(glEffectBlitShaderMod, 'applyGlEffectBlitPass').mockImplementation((() => {}) as never);
+  vi.spyOn(glEffectBlitShaderMod, 'applyGlEffectErasePass').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBoxBlurMod, 'applyGlEffectBoxBlur').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectTintShaderMod, 'applyGlEffectTintPass').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function uniformFor(name: string): readonly number[] {
   const call = glMock.uniform4f.mock.calls.find((entry) => entry[0] === name);

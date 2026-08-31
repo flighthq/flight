@@ -1,3 +1,4 @@
+import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type {
   GradientBevelEffect,
@@ -6,7 +7,30 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
-const passState = vi.hoisted(() => ({
+import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
+import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
+import * as wgpuEffectGradientRampModule from './wgpuEffectGradientRamp';
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
+import {
+  applyGradientBevelEffectToWgpu,
+  defaultWgpuGradientBevelEffectRunner,
+  registerWgpuGradientBevelEffect,
+} from './wgpuGradientBevelEffect';
+import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+
+const recorded = {
+  acquired: [] as unknown[],
+  calls: [] as string[],
+  passes: [] as { bindGroups: number[]; dest: unknown; loadOp: string }[],
+  ramps: [] as { alphas: unknown; colors: unknown; ratios: unknown }[],
+  released: [] as unknown[],
+  slots: [] as number[],
+  tints: [] as number[][],
+  uniforms: [] as number[][],
+};
+
+const passState = {
   acquireSlot: vi.fn(() => recorded.slots.push(recorded.slots.length * 256) && recorded.slots.at(-1)!),
   beginPass: vi.fn((dest: unknown, loadOp: string) => {
     recorded.passes.push({ bindGroups: [], dest, loadOp });
@@ -27,70 +51,61 @@ const passState = vi.hoisted(() => ({
     write(f32);
     recorded.uniforms.push([...f32]);
   }),
-}));
-const passMock = vi.hoisted(() => ({
-  clearWgpuEffectTarget: vi.fn(() => recorded.calls.push('clear')),
-  EFFECT_VERTEX_WGSL: 'VERTEX\n',
-  getWgpuEffectPassState: vi.fn(() => passState),
-}));
-const blitMock = vi.hoisted(() => ({
-  applyWgpuEffectBlitPass: vi.fn((_state: unknown, source: { id?: string }) =>
-    recorded.calls.push(`blit:${source.id ?? 'scratch'}`),
-  ),
-  applyWgpuEffectErasePass: vi.fn(() => recorded.calls.push('erase')),
-}));
-const blurMock = vi.hoisted(() => ({ applyWgpuEffectBoxBlur: vi.fn() }));
-const rampMock = vi.hoisted(() => ({
-  getWgpuEffectGradientRampTexture: vi.fn((_state: unknown, colors: unknown, alphas: unknown, ratios: unknown) => {
+};
+
+beforeAll(() => installWgpuMock());
+
+beforeEach(() => {
+  vi.spyOn(wgpuEffectPassModule, 'clearWgpuEffectTarget').mockImplementation((() =>
+    recorded.calls.push('clear')) as never);
+  vi.spyOn(wgpuEffectPassModule, 'getWgpuEffectPassState').mockReturnValue(passState as never);
+  // eslint-disable-next-line no-import-assign -- replacing a non-function export for test; works on Vite SSR namespaces
+  Object.defineProperty(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL', { value: 'VERTEX\n', configurable: true });
+
+  vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectBlitPass').mockImplementation(((
+    _state: unknown,
+    source: { id?: string },
+  ) => recorded.calls.push(`blit:${source.id ?? 'scratch'}`)) as never);
+  vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectErasePass').mockImplementation((() =>
+    recorded.calls.push('erase')) as never);
+
+  vi.spyOn(wgpuEffectBoxBlurModule, 'applyWgpuEffectBoxBlur').mockImplementation((() => {}) as never);
+
+  vi.spyOn(wgpuEffectGradientRampModule, 'getWgpuEffectGradientRampTexture').mockImplementation(((
+    _state: unknown,
+    colors: unknown,
+    alphas: unknown,
+    ratios: unknown,
+  ) => {
     recorded.ramps.push({ alphas, colors, ratios });
     return { createView: () => ({ id: 'rampView' }) };
-  }),
-}));
-const tintMock = vi.hoisted(() => ({
-  applyWgpuEffectTintPass: vi.fn(
-    (_state: unknown, _source: unknown, _dest: unknown, color: number, alpha: number, strength: number) => {
-      recorded.tints.push([color, alpha, strength]);
-    },
-  ),
-}));
-const targetMock = vi.hoisted(() => ({
-  acquireWgpuRenderTarget: vi.fn((_state: unknown, _pool: unknown, descriptor: object) => {
+  }) as never);
+
+  vi.spyOn(wgpuEffectTintShaderModule, 'applyWgpuEffectTintPass').mockImplementation(((
+    _state: unknown,
+    _source: unknown,
+    _dest: unknown,
+    color: number,
+    alpha: number,
+    strength: number,
+  ) => {
+    recorded.tints.push([color, alpha, strength]);
+  }) as never);
+
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+    _state: unknown,
+    _pool: unknown,
+    descriptor: object,
+  ) => {
     const target = { ...descriptor, id: `scratch-${recorded.acquired.length}`, view: {} };
     recorded.acquired.push(target);
     return target;
-  }),
-  releaseWgpuRenderTarget: vi.fn((_pool: unknown, target: unknown) => recorded.released.push(target)),
-}));
-const recorded = vi.hoisted(() => ({
-  acquired: [] as unknown[],
-  calls: [] as string[],
-  passes: [] as { bindGroups: number[]; dest: unknown; loadOp: string }[],
-  ramps: [] as { alphas: unknown; colors: unknown; ratios: unknown }[],
-  released: [] as unknown[],
-  slots: [] as number[],
-  tints: [] as number[][],
-  uniforms: [] as number[][],
-}));
-
-vi.mock('./wgpuEffectBlitShader', () => blitMock);
-vi.mock('./wgpuEffectBoxBlur', () => blurMock);
-vi.mock('./wgpuEffectGradientRamp', () => rampMock);
-vi.mock('./wgpuEffectPass', () => passMock);
-vi.mock('./wgpuEffectTintShader', () => tintMock);
-
-vi.mock('@flighthq/render-wgpu/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-wgpu/contract')) as Record<string, unknown>;
-  return { ...actual, ...targetMock };
+  }) as never);
+  vi.spyOn(renderWgpuContractModule, 'releaseWgpuRenderTarget').mockImplementation(((_pool: unknown, target: unknown) =>
+    recorded.released.push(target)) as never);
 });
 
-import {
-  applyGradientBevelEffectToWgpu,
-  defaultWgpuGradientBevelEffectRunner,
-  registerWgpuGradientBevelEffect,
-} from './wgpuGradientBevelEffect';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
-
-beforeAll(() => installWgpuMock());
+afterEach(() => vi.restoreAllMocks());
 
 const SOURCE_WIDTH = 100;
 const SOURCE_HEIGHT = 50;

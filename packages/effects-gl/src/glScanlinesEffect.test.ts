@@ -5,27 +5,10 @@ import {
   createGlContextFromCanvasElement,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({
-  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
-const glMock = vi.hoisted(() => ({
-  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
-}));
-
-vi.mock('./glEffectProgramCache', () => programMock);
-
-vi.mock('@flighthq/render-gl/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-gl/contract')) as Record<string, unknown>;
-  return {
-    ...actual,
-    drawGlFullscreenPass: vi.fn((_state, _program, _textures, _dest, setUniforms) => {
-      setUniforms({ ...glMock, getUniformLocation: (_program: unknown, name: string) => name }, { program: {} });
-    }),
-  };
-});
-
+import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 import {
   applyScanlinesEffectToGl,
@@ -34,9 +17,34 @@ import {
 } from './glScanlinesEffect';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
+const glMock = {
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+};
+
 beforeEach(() => {
-  programMock.getGlEffectProgram.mockClear();
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(((
+    _state: unknown,
+    _key: string,
+    _source: string,
+  ) => ({ program: {} })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _program: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    setUniforms(
+      { ...glMock, getUniformLocation: (_program: unknown, name: string) => name } as never,
+      { program: {} } as never,
+    );
+  }) as never);
+  vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
   glMock.uniform1f.mockClear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function apply(effect: Readonly<Partial<ScanlinesEffect>> = {}): void {
@@ -49,7 +57,7 @@ function apply(effect: Readonly<Partial<ScanlinesEffect>> = {}): void {
 
 function lineAtImageY(imageY: number, count: number): number {
   apply();
-  const source = programMock.getGlEffectProgram.mock.calls[0]![2] as string;
+  const source = vi.mocked(glEffectProgramCache.getGlEffectProgram).mock.calls[0]![2] as string;
   const expression = extractGlslExpression(source, /float line = ([^;]+);/);
   return evaluateGlslScalarExpression(expression, {
     'v_texCoord.y': 1 - imageY,

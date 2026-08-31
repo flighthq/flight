@@ -5,32 +5,10 @@ import {
   createGlContextFromCanvasElement,
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({
-  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
-}));
-const glMock = vi.hoisted(() => ({
-  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
-  uniform3f: vi.fn((_location: unknown, _x: number, _y: number, _z: number) => {}),
-}));
-const drawCalls = vi.hoisted(() => ({ inputs: [] as unknown[][] }));
-
-vi.mock('./glEffectProgramCache', () => programMock);
-
-// Partial, not wholesale: `createGlRenderState` and the runtime accessor the registry reaches through
-// must stay real, or the registration test below would be asserting against a mock of itself.
-vi.mock('@flighthq/render-gl/contract', async () => {
-  const actual = (await vi.importActual('@flighthq/render-gl/contract')) as Record<string, unknown>;
-  return {
-    ...actual,
-    drawGlFullscreenPass: vi.fn((_state, _program, textures, _dest, setUniforms) => {
-      drawCalls.inputs.push(textures as unknown[]);
-      setUniforms({ ...glMock, getUniformLocation: (_p: unknown, name: string) => name }, { program: {} });
-    }),
-  };
-});
-
+import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 import {
   applyScreenSpaceFogEffectToGl,
@@ -39,8 +17,39 @@ import {
 } from './glScreenSpaceFogEffect';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
+const glMock = {
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+  uniform3f: vi.fn((_location: unknown, _x: number, _y: number, _z: number) => {}),
+};
+const drawCalls = { inputs: [] as unknown[][] };
+
+beforeEach(() => {
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(((
+    _state: unknown,
+    _key: string,
+    _source: string,
+  ) => ({ program: {} })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _program: never,
+    textures: unknown[],
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
+    drawCalls.inputs.push(textures);
+    setUniforms(
+      { ...glMock, getUniformLocation: (_p: unknown, name: string) => name } as never,
+      { program: {} } as never,
+    );
+  }) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 function apply(effect: Readonly<Partial<ScreenSpaceFogEffect>> = {}, depthTexture: WebGLTexture | null = null): void {
-  programMock.getGlEffectProgram.mockClear();
+  vi.mocked(glEffectProgramCache.getGlEffectProgram).mockClear();
   glMock.uniform1f.mockClear();
   glMock.uniform3f.mockClear();
   drawCalls.inputs.length = 0;
@@ -55,7 +64,7 @@ function apply(effect: Readonly<Partial<ScreenSpaceFogEffect>> = {}, depthTextur
 // the depth arm assigns `fog` too, and matching the first assignment would measure the wrong path.
 function proxyFogExpression(): string {
   apply();
-  const source = programMock.getGlEffectProgram.mock.calls[0]![2] as string;
+  const source = vi.mocked(glEffectProgramCache.getGlEffectProgram).mock.calls[0]![2] as string;
   return extractGlslExpression(source, /} else \{[\S\s]*?fog = ([^;]+);/);
 }
 

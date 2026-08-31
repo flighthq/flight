@@ -1,33 +1,37 @@
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-const passMock = vi.hoisted(() => ({
-  drawWgpuEffectPass: vi.fn(
-    (
-      _state: unknown,
-      _source: unknown,
-      _dest: unknown,
-      _pipeline: unknown,
-      setUniforms: (f32: Float32Array) => void,
-    ) => {
-      const f32 = new Float32Array(20);
-      setUniforms(f32);
-      uniformState.uploads.push([...f32]);
-    },
-  ),
-}));
-const pipelineMock = vi.hoisted(() => ({
-  getWgpuEffectPipeline: vi.fn((_state: unknown, _key: string, _wgsl: string, _blend: string) => ({ pipeline: {} })),
-}));
-const uniformState = vi.hoisted(() => ({ uploads: [] as number[][] }));
-
-vi.mock('./wgpuEffectPass', () => passMock);
-vi.mock('./wgpuEffectProgramCache', () => pipelineMock);
-
 import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass';
+import * as wgpuEffectPassModule from './wgpuEffectPass';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
+
+const uniformState = { uploads: [] as number[][] };
+
+beforeEach(() => {
+  vi.spyOn(wgpuEffectPassModule, 'drawWgpuEffectPass').mockImplementation(((
+    _state: unknown,
+    _source: unknown,
+    _dest: unknown,
+    _pipeline: unknown,
+    setUniforms: (f32: Float32Array) => void,
+  ) => {
+    const f32 = new Float32Array(20);
+    setUniforms(f32);
+    uniformState.uploads.push([...f32]);
+  }) as never);
+
+  vi.spyOn(wgpuEffectProgramCacheModule, 'getWgpuEffectPipeline').mockImplementation(((
+    _state: unknown,
+    _key: string,
+    _wgsl: string,
+    _blend: string,
+  ) => ({ pipeline: {} })) as never);
+});
+
+afterEach(() => vi.restoreAllMocks());
 
 function packed(matrix: ReadonlyArray<number>): readonly number[] {
   uniformState.uploads.length = 0;
-  pipelineMock.getWgpuEffectPipeline.mockClear();
+  vi.mocked(wgpuEffectProgramCacheModule.getWgpuEffectPipeline).mockClear();
   const target = {} as unknown as WgpuRenderTarget;
   applyColorMatrixPassToWgpu({} as unknown as WgpuRenderState, target, target, matrix);
   return uniformState.uploads[0]!;
@@ -96,7 +100,7 @@ describe('applyColorMatrixPassToWgpu', () => {
   it('compiles one pipeline for every matrix, in replace blend', () => {
     packed(IDENTITY);
 
-    const call = pipelineMock.getWgpuEffectPipeline.mock.calls[0]!;
+    const call = vi.mocked(wgpuEffectProgramCacheModule.getWgpuEffectPipeline).mock.calls[0]!;
     expect(call[1]).toBe('adjustment.colorMatrix');
     expect(call[3]).toBe('replace');
   });

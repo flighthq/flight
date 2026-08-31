@@ -1,30 +1,42 @@
 // This pass is the single decode point for every tinted effect on this backend — drop shadow, outer glow,
 // and the neutral white field the bevels lay down. That is what the piece-4 unification bought: the
 // channel order and the alpha fold are asserted once, here, instead of at each of five call sites.
-const glMock = vi.hoisted(() => ({
+import * as renderGlContract from '@flighthq/render-gl/contract';
+
+import { applyGlEffectInvertTintPass, applyGlEffectTintPass } from './glEffectTintShader';
+
+const glMock = {
   ONE: 1,
   ZERO: 0,
   blendFunc: vi.fn(),
   uniform1f: vi.fn(),
   uniform3f: vi.fn(),
-}));
+};
 
-vi.mock('@flighthq/render-gl/contract', () => ({
-  compileGlFullscreenProgram: vi.fn(() => ({
+const state = { gl: { getUniformLocation: (_program: unknown, name: string) => name } } as never;
+const target = { height: 4, texture: {}, width: 4 } as never;
+
+beforeEach(() => {
+  vi.spyOn(renderGlContract, 'compileGlFullscreenProgram').mockImplementation(((_gl: unknown, _source: string) => ({
     locAlpha: 'u_alpha',
     locColor: 'u_color',
     locStrength: 'u_strength',
     program: {},
-  })),
-  drawGlFullscreenPass: vi.fn((_state, _loc, _textures, _dest, setUniforms) => {
+  })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    _state: never,
+    _loc: never,
+    _textures: never,
+    _dest: never,
+    setUniforms: (gl: never, program: never) => void,
+  ) => {
     setUniforms(glMock as never, {} as never);
-  }),
-}));
+  }) as never);
+});
 
-import { applyGlEffectInvertTintPass, applyGlEffectTintPass } from './glEffectTintShader';
-
-const state = { gl: { getUniformLocation: (_program: unknown, name: string) => name } } as never;
-const target = { height: 4, texture: {}, width: 4 } as never;
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('applyGlEffectInvertTintPass', () => {
   it('is a function', () => {

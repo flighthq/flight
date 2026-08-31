@@ -1,37 +1,38 @@
-vi.mock('@flighthq/render-gl/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    clearGlRenderTarget: vi.fn(),
-    releaseGlRenderTarget: vi.fn(),
-  };
-});
-
-vi.mock('./glEffectBlitShader', () => ({
-  applyGlEffectBlitOffsetPass: vi.fn(),
-  applyGlEffectBlitPass: vi.fn(),
-  applyGlEffectErasePass: vi.fn(),
-}));
-
-vi.mock('./glEffectBoxBlur', () => ({
-  applyGlEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./glEffectTintShader', () => ({
-  applyGlEffectTintPass: vi.fn(),
-}));
+import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import {
   applyDropShadowEffectToGl,
   defaultGlDropShadowEffectRunner,
   registerGlDropShadowEffect,
 } from './glDropShadowEffect';
-import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
-import { applyGlEffectTintPass } from './glEffectTintShader';
+import * as glEffectBlitShader from './glEffectBlitShader';
+import * as glEffectBoxBlur from './glEffectBoxBlur';
+import * as glEffectTintShader from './glEffectTintShader';
+
+let nextTargetId = 0;
+
+beforeEach(() => {
+  nextTargetId = 0;
+
+  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(
+    (_state: never, _pool: never, descriptor: never) =>
+      ({ ...(descriptor as Record<string, unknown>), id: `scratch-${nextTargetId++}`, texture: {} }) as never,
+  );
+  vi.spyOn(renderGlContract, 'clearGlRenderTarget').mockImplementation((() => {}) as never);
+  vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBlitShader, 'applyGlEffectBlitOffsetPass').mockImplementation((() => {}) as never);
+  vi.spyOn(glEffectBlitShader, 'applyGlEffectBlitPass').mockImplementation((() => {}) as never);
+  vi.spyOn(glEffectBlitShader, 'applyGlEffectErasePass').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectBoxBlur, 'applyGlEffectBoxBlur').mockImplementation((() => {}) as never);
+
+  vi.spyOn(glEffectTintShader, 'applyGlEffectTintPass').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('applyDropShadowEffectToGl', () => {
   it('is a function', () => {
@@ -44,24 +45,18 @@ describe('applyDropShadowEffectToGl', () => {
 
     applyDropShadowEffectToGl(createState(), source, dest, createPool(), { kind: 'DropShadowEffect' });
 
-    expect(applyGlEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyGlEffectErasePass).not.toHaveBeenCalled();
+    expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
   });
 
-  // Piece 3 landed this as a split at the call site, because the tint pass still spoke 24-bit RGB and was
-  // shared with effects that had not migrated. Now that every one of them carries packed RGBA, the pass
-  // itself folds the color's alpha and the call site hands the value over untouched — one decode point
-  // instead of five, and this assertion is what pins which of the two contracts is live.
   it('hands the packed color and the effect alpha to the tint pass without splitting either', () => {
-    vi.mocked(applyGlEffectTintPass).mockClear();
-
     applyDropShadowEffectToGl(createState(), createTarget('source'), createTarget('dest'), createPool(), {
       alpha: 0.5,
       color: 0x9d55ff80,
       kind: 'DropShadowEffect',
     });
 
-    const call = vi.mocked(applyGlEffectTintPass).mock.calls[0]!;
+    const call = vi.mocked(glEffectTintShader.applyGlEffectTintPass).mock.calls[0]!;
     expect(call[3]).toBe(0x9d55ff80);
     expect(call[4]).toBeCloseTo(0.5, 5);
   });
@@ -75,8 +70,8 @@ describe('applyDropShadowEffectToGl', () => {
       sourceMode: 'hide',
     });
 
-    expect(applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyGlEffectErasePass).not.toHaveBeenCalled();
+    expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('erases the source silhouette when sourceMode is knockout', () => {
@@ -88,8 +83,8 @@ describe('applyDropShadowEffectToGl', () => {
       sourceMode: 'knockout',
     });
 
-    expect(applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-    expect(applyGlEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    expect(glEffectBlitShader.applyGlEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);
   });
 });
 
@@ -99,8 +94,10 @@ describe('defaultGlDropShadowEffectRunner', () => {
   });
 });
 
-beforeEach(() => {
-  vi.clearAllMocks();
+describe('registerGlDropShadowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlDropShadowEffect).toBeTypeOf('function');
+  });
 });
 
 function createState(): never {
@@ -114,9 +111,3 @@ function createPool(): never {
 function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
-
-describe('registerGlDropShadowEffect', () => {
-  it('is a separately importable registration primitive', () => {
-    expect(registerGlDropShadowEffect).toBeTypeOf('function');
-  });
-});

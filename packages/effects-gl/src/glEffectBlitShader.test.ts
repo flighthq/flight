@@ -1,26 +1,37 @@
+import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
-
-const renderGlMock = vi.hoisted(() => ({
-  compileGlFullscreenProgram: vi.fn((_gl: unknown, source: string) => ({ program: { source }, textures: [] })),
-  drawGlFullscreenPass: vi.fn(
-    (state: unknown, program: unknown, textures: unknown[], dest: unknown, setUniforms: (gl: unknown) => void) => {
-      recorded.draws.push({ dest, program, textures });
-      setUniforms((state as { gl: unknown }).gl);
-    },
-  ),
-}));
-const recorded = vi.hoisted(() => ({
-  blendFuncs: [] as number[][],
-  draws: [] as { dest: unknown; program: unknown; textures: unknown[] }[],
-  offsets: [] as number[][],
-}));
-
-vi.mock('@flighthq/render-gl/contract', () => renderGlMock);
 
 import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 
 const SOURCE_WIDTH = 64;
 const SOURCE_HEIGHT = 32;
+
+const recorded = {
+  blendFuncs: [] as number[][],
+  draws: [] as { dest: unknown; program: unknown; textures: unknown[] }[],
+  offsets: [] as number[][],
+};
+
+beforeEach(() => {
+  vi.spyOn(renderGlContract, 'compileGlFullscreenProgram').mockImplementation(((_gl: unknown, source: string) => ({
+    program: { source },
+    textures: [],
+  })) as never);
+  vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation(((
+    state: unknown,
+    program: unknown,
+    textures: unknown[],
+    dest: unknown,
+    setUniforms: (gl: unknown) => void,
+  ) => {
+    recorded.draws.push({ dest, program, textures });
+    setUniforms((state as { gl: unknown }).gl);
+  }) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function createState(): GlRenderState {
   return {
@@ -58,7 +69,7 @@ function reset(): void {
   recorded.blendFuncs.length = 0;
   recorded.draws.length = 0;
   recorded.offsets.length = 0;
-  renderGlMock.compileGlFullscreenProgram.mockClear();
+  vi.mocked(renderGlContract.compileGlFullscreenProgram).mockClear();
 }
 
 describe('applyGlEffectBlitOffsetPass', () => {
@@ -130,7 +141,7 @@ describe('applyGlEffectBlitOffsetPass', () => {
     applyGlEffectBlitOffsetPass(state, source, dest, 1, 1);
     applyGlEffectBlitOffsetPass(state, source, dest, 2, 2);
 
-    expect(renderGlMock.compileGlFullscreenProgram).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(renderGlContract.compileGlFullscreenProgram)).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -160,7 +171,7 @@ describe('applyGlEffectBlitPass', () => {
 
     const programs = recorded.draws.map((draw) => draw.program);
     expect(new Set(programs).size).toBe(3);
-    expect(renderGlMock.compileGlFullscreenProgram).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(renderGlContract.compileGlFullscreenProgram)).toHaveBeenCalledTimes(3);
   });
 });
 

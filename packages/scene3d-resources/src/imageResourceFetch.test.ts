@@ -1,18 +1,9 @@
-import type * as ImageModule from '@flighthq/image/contract';
+import * as imageContract from '@flighthq/image/contract';
 import type { ExternalImageResourceReference, Image } from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchWebImageResource, resolveImageResourceUri } from './imageResourceFetch';
-
-const mocks = vi.hoisted(() => ({
-  loadFromUrl: vi.fn<typeof ImageModule.loadImageResourceFromUrl>(),
-}));
-
-vi.mock('@flighthq/image/contract', () => ({
-  loadImageResourceFromBytes: vi.fn(),
-  loadImageResourceFromUrl: mocks.loadFromUrl,
-}));
 
 const fakeImage = { height: 1, width: 1 } as unknown as Image;
 
@@ -27,23 +18,31 @@ function externalRef(uri: string, basePath: string | null): ExternalImageResourc
   };
 }
 
+beforeEach(() => {
+  vi.spyOn(imageContract, 'loadImageResourceFromUrl').mockImplementation((() => {}) as never);
+});
+
 afterEach(() => {
-  mocks.loadFromUrl.mockReset();
+  vi.restoreAllMocks();
 });
 
 describe('fetchWebImageResource', () => {
   it('fetches the resolved URL and returns the decoded image', async () => {
-    mocks.loadFromUrl.mockResolvedValue(fakeImage);
+    vi.mocked(imageContract.loadImageResourceFromUrl).mockResolvedValue(fakeImage);
     const result = await fetchWebImageResource(
       externalRef('leaf.png', 'assets/textures'),
       new AbortController().signal,
     );
-    expect(mocks.loadFromUrl).toHaveBeenCalledWith('assets/textures/leaf.png', undefined, expect.anything());
+    expect(imageContract.loadImageResourceFromUrl).toHaveBeenCalledWith(
+      'assets/textures/leaf.png',
+      undefined,
+      expect.anything(),
+    );
     expect(result).toBe(fakeImage);
   });
 
   it('returns null on a non-abort failure', async () => {
-    mocks.loadFromUrl.mockRejectedValue(new Error('404'));
+    vi.mocked(imageContract.loadImageResourceFromUrl).mockRejectedValue(new Error('404'));
     const result = await fetchWebImageResource(externalRef('missing.png', null), new AbortController().signal);
     expect(result).toBeNull();
   });
@@ -51,7 +50,7 @@ describe('fetchWebImageResource', () => {
   it('rethrows when the signal aborted (a cancellation, not a failure)', async () => {
     const controller = new AbortController();
     controller.abort();
-    mocks.loadFromUrl.mockRejectedValue(new Error('aborted'));
+    vi.mocked(imageContract.loadImageResourceFromUrl).mockRejectedValue(new Error('aborted'));
     await expect(fetchWebImageResource(externalRef('x.png', null), controller.signal)).rejects.toThrow();
   });
 });
