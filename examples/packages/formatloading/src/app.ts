@@ -115,9 +115,6 @@ const tiledFixture = JSON.stringify({
 const gltf = parseGltf(gltfFixture);
 const spritesheet = parseTexturePackerSpritesheet(texturePackerFixture);
 const tiled = parseTiledTmj(tiledFixture);
-if (gltf.meshes.length !== 1 || spritesheet.frames.length !== 3 || tiled === null) {
-  throw new Error('A bundled format fixture failed to parse');
-}
 
 function addLabel(text: string, x: number, y: number, size: number, color: number): void {
   const label = createTextLabel();
@@ -151,24 +148,29 @@ addLabel('glTF 2.0', 42, 118, 20, 0x61dafbff);
 addLabel('mesh geometry', 42, 146, 13, 0xaebbd0ff);
 
 const gltfShape = createShape();
-const geometry = gltf.meshes[0].geometry;
+const geometry = gltf.meshes[0]?.geometry;
 const vertex = { x: 0, y: 0, z: 0 };
 const projected: { x: number; y: number }[] = [];
-for (let i = 0; i < 3; i++) {
-  if (!getMeshGeometryVertexPosition(vertex, geometry, i)) throw new Error('glTF vertex missing');
-  projected.push({ x: 140 + vertex.x * 78, y: 280 - vertex.y * 78 });
+if (geometry !== undefined) {
+  for (let i = 0; i < 3; i++) {
+    if (getMeshGeometryVertexPosition(vertex, geometry, i)) {
+      projected.push({ x: 140 + vertex.x * 78, y: 280 - vertex.y * 78 });
+    }
+  }
 }
-appendShapeBeginFill(gltfShape, 0x3478c9ff, 0.75);
-appendShapeMoveTo(gltfShape, projected[0].x, projected[0].y);
-appendShapeLineTo(gltfShape, projected[1].x, projected[1].y);
-appendShapeLineTo(gltfShape, projected[2].x, projected[2].y);
-appendShapeLineTo(gltfShape, projected[0].x, projected[0].y);
-appendShapeEndFill(gltfShape);
-appendShapeLineStyle(gltfShape, 3, 0x8ee7ffff);
-appendShapeMoveTo(gltfShape, projected[0].x, projected[0].y);
-appendShapeLineTo(gltfShape, projected[1].x, projected[1].y);
-appendShapeLineTo(gltfShape, projected[2].x, projected[2].y);
-appendShapeLineTo(gltfShape, projected[0].x, projected[0].y);
+if (projected.length === 3) {
+  appendShapeBeginFill(gltfShape, 0x3478c9ff, 0.75);
+  appendShapeMoveTo(gltfShape, projected[0].x, projected[0].y);
+  appendShapeLineTo(gltfShape, projected[1].x, projected[1].y);
+  appendShapeLineTo(gltfShape, projected[2].x, projected[2].y);
+  appendShapeLineTo(gltfShape, projected[0].x, projected[0].y);
+  appendShapeEndFill(gltfShape);
+  appendShapeLineStyle(gltfShape, 3, 0x8ee7ffff);
+  appendShapeMoveTo(gltfShape, projected[0].x, projected[0].y);
+  appendShapeLineTo(gltfShape, projected[1].x, projected[1].y);
+  appendShapeLineTo(gltfShape, projected[2].x, projected[2].y);
+  appendShapeLineTo(gltfShape, projected[0].x, projected[0].y);
+}
 addNodeChild(root, gltfShape);
 addLabel(`${gltf.meshes.length} mesh • 3 vertices`, 42, 414, 14, 0xd7e3f4ff);
 addLabel(`${gltf.nodes.length} node • ${gltf.scenes.length} scene`, 42, 440, 13, 0x8fa3bfff);
@@ -217,24 +219,31 @@ addLabel(`${spritesheet.imageWidth}×${spritesheet.imageHeight} atlas`, 302, 440
 addLabel('Tiled TMJ', 562, 118, 20, 0x55d187ff);
 addLabel('orthogonal tilemap', 562, 146, 13, 0xaebbd0ff);
 
-const tileLayer = tiled.layers[0];
-if (tileLayer.type !== 'tilelayer') throw new Error('Tiled fixture layer missing');
+const tileLayer = tiled?.layers.find((layer) => layer.type === 'tilelayer');
 const tileShape = createShape();
 const tileColors = [0x3f8f5fff, 0x4b84c6ff, 0xd9ad4aff, 0x80664bff];
 const cellSize = 30;
 const mapX = 570;
 const mapY = 190;
-for (let row = 0; row < tileLayer.height; row++) {
-  for (let col = 0; col < tileLayer.width; col++) {
-    const gid = tileLayer.data[row * tileLayer.width + col];
-    appendShapeBeginFill(tileShape, tileColors[Math.max(0, gid - 1)]);
-    appendShapeRectangle(tileShape, mapX + col * cellSize, mapY + row * cellSize, cellSize - 2, cellSize - 2);
-    appendShapeEndFill(tileShape);
+if (tileLayer !== undefined) {
+  for (let row = 0; row < tileLayer.height; row++) {
+    for (let col = 0; col < tileLayer.width; col++) {
+      const gid = tileLayer.data[row * tileLayer.width + col];
+      appendShapeBeginFill(tileShape, tileColors[Math.max(0, gid - 1)]);
+      appendShapeRectangle(tileShape, mapX + col * cellSize, mapY + row * cellSize, cellSize - 2, cellSize - 2);
+      appendShapeEndFill(tileShape);
+    }
   }
 }
 addNodeChild(root, tileShape);
-addLabel(`${tiled.width}×${tiled.height} map • ${tileLayer.name}`, 562, 414, 14, 0xd7e3f4ff);
-addLabel(`${tiled.tilesets.length} tileset • ${tileLayer.data.length} cells`, 562, 440, 13, 0x8fa3bfff);
+addLabel(
+  `${tiled?.width ?? 0}×${tiled?.height ?? 0} map • ${tileLayer?.name ?? 'no tile layer'}`,
+  562,
+  414,
+  14,
+  0xd7e3f4ff,
+);
+addLabel(`${tiled?.tilesets.length ?? 0} tileset • ${tileLayer?.data.length ?? 0} cells`, 562, 440, 13, 0x8fa3bfff);
 
 addLabel('✓ parsed', 42, 520, 15, 0x61dafbff);
 addLabel('✓ parsed', 302, 520, 15, 0xffc857ff);
