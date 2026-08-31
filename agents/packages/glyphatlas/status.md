@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/glyphatlas'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-31
+by: builder2
 ---
 
 # glyphatlas — Status
@@ -30,9 +30,25 @@ Most of what this file used to list has landed. Re-checked against `packages/gly
   per (family, size, style, weight) the app actually uses. This is the model, not a defect — it is
   recorded here because callers keep rediscovering it.
 
+- **A repack is a contract event, not just a cost.** `_repackGlyphAtlas` relocates survivors, drops
+  the ones that no longer fit, and hands their space to other glyphs, so every rect the atlas gave out
+  before it is suspect. `runtime.layoutVersion` (read via `getGlyphAtlasLayoutVersion`, forwarded by
+  `GlyphSource.getGlyphLayoutVersion`) is the only signal of that: the entry objects are mutated in
+  place and the atlas bitmap is the same object it always was. Eviction alone does NOT bump it —
+  shelf cursors only advance, so an evicted glyph's pixels are untouched, and therefore still correct
+  to draw, until a repack reclaims them. The dirty region answers a different question: which pixels
+  to re-upload, not whether the rects still mean what they did.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-31** — `layoutVersion` added to the runtime and bumped by `_repackGlyphAtlas`
+  (`glyphAtlasEntry.ts`) and `disposeGlyphAtlas` (`glyphAtlas.ts`), exposed as
+  `getGlyphAtlasLayoutVersion` and through the new `GlyphSource.getGlyphLayoutVersion` seam member.
+  Fixes stale baked regions in `@flighthq/bitmaptext`, which now stamps and compares it. The guard
+  gained a `repack` reason, reported once repacks pass a settling threshold, because a thrashing atlas
+  is not only slow — it invalidates every consumer's baked rects on every repack.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Four of the five open items checked out
   **false**. The most significant: "real canvas line metrics replacing the documented placeholder"

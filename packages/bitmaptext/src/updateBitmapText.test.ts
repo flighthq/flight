@@ -82,6 +82,38 @@ function readGlyphCodepointAtRegion(bitmap: Readonly<Bitmap>, x: number, y: numb
   return bitmap.data[(y * bitmap.width + x) * 4];
 }
 
+// A source that REPLACES 'A' with a relocated entry and bumps its layout version once, on the `nth`
+// glyph lookup — a repack landing part way through a layout, driven at the seam so the moment is exact.
+//
+// Replacing the object rather than moving the one already handed out is the whole point. A repack that
+// only relocates survivors mutates their entries in place, so a pass that captured those references
+// picks the move up for free and never needs re-running. The case that genuinely needs it is a repack
+// that DROPS a glyph: the reference the pass captured is orphaned at its old rect, and the next lookup
+// mints a fresh entry somewhere else. `nth: 0` never fires, for the held-still half of the pair.
+function createMidLayoutRelocatingGlyphSource(nth: number): GlyphSource {
+  const image = {} as Image;
+  const entries = new Map<number, GlyphEntry>();
+  for (let codepoint = 0x41; codepoint <= 0x5a; codepoint++) {
+    entries.set(codepoint, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 });
+  }
+  let lookups = 0;
+  let version = 0;
+  return {
+    getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
+    getGlyphEntry(codepoint) {
+      lookups++;
+      if (lookups === nth) {
+        entries.set(0x41, { ...entries.get(0x41)!, x: RELOCATED_GLYPH_X });
+        version++;
+      }
+      return entries.get(codepoint) ?? null;
+    },
+    getGlyphKerning: () => 0,
+    getGlyphLayoutVersion: () => version,
+    getGlyphMetrics: () => ({ ascent: 8, descent: 2, lineGap: 0 }),
+  };
+}
+
 // An atlas small enough that a modest run of glyphs exhausts it and forces the evict-then-repack path
 // that relocates everything already cached — the situation `refreshBitmapTextGlyphLayout` exists for.
 function createRepackingGlyphAtlas(): GlyphAtlas {
@@ -199,7 +231,37 @@ describe('updateBitmapText', () => {
   // A repack can land DURING a layout — a glyph late in the string evicting one placed early in it —
   // and the pass that saw both placements is wrong about the first. The retry is what makes a single
   // `updateBitmapText` call self-consistent rather than merely detectably stale afterwards.
-  it('re-runs a layout that a repack invalidated mid-pass, so every baked region is coherent', () => {
+  // A pass that read a rect BEFORE the relocation and one that read it after cannot both be right, and
+  // the pass has no way to go back for the ones it already consumed. Re-running is what makes a single
+  // `updateBitmapText` call self-consistent rather than merely detectably stale afterwards.
+  it('re-runs a layout whose glyph placement moved part way through it', () => {
+    const source = createMidLayoutRelocatingGlyphSource(2);
+    const text = createBitmapText(source, { text: 'ABC' });
+
+    updateBitmapText(text);
+
+    // 'A' is the first region baked, and the relocation landed after the pass had already read it.
+    expect(getBitmapTextPages(text)[0].atlas.regions[0].x).toBe(RELOCATED_GLYPH_X);
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
+  });
+
+  it('does not re-run a layout whose glyph placement held still', () => {
+    const source = createMidLayoutRelocatingGlyphSource(0);
+    const text = createBitmapText(source, { text: 'ABC' });
+    const seen: string[] = [];
+    setBitmapTextLayoutGuard((reason) => seen.push(reason));
+
+    updateBitmapText(text);
+
+    expect(getBitmapTextPages(text)[0].atlas.regions[0].x).toBe(0);
+    expect(seen).toEqual([]);
+    setBitmapTextLayoutGuard(null);
+  });
+
+  // The end-to-end companion to the seam-driven pair above, over the real atlas. It passes without the
+  // retry as well — this atlas only relocates, and relocation moves the entry the pass is holding — so
+  // it is here to prove the whole path stays coherent, not to exercise the re-run.
+  it('ends coherent through an atlas that repacks during the layout', () => {
     const atlas = createRepackingGlyphAtlas();
     const source = createGlyphSourceFromGlyphAtlas(atlas);
     // Fill most of the atlas with glyphs this text does not use, so laying it out has to evict and
@@ -415,3 +477,7 @@ describe('updateBitmapText', () => {
     expect(bounds.height).toBe(8);
   });
 });
+
+// Where the mid-layout relocation moves 'A' to — distinct from every rect the source starts with, so
+// a region carrying it can only have come from a pass that ran AFTER the move.
+const RELOCATED_GLYPH_X = 17;

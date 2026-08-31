@@ -46,12 +46,15 @@ export function setBitmapTextLayoutGuard(guard: ((reason: string, attempts: numb
 // advance. Bounds span every drawn glyph across all pages. Tint is the node's own color-adjustment stack,
 // not touched here.
 //
-// A dynamic glyph source can repack DURING this call: rasterizing a glyph late in the string may evict
-// and relocate one placed early in it. So the layout runs against a placement version and repeats while
-// that version moves under it, and the version the winning pass agreed with is what gets stamped for
-// `isBitmapTextGlyphLayoutStale`. Passes are bounded — a string whose glyphs cannot all be resident at
-// once would otherwise evict each other forever — and the guard layer reports a string that never
-// settles.
+// A dynamic glyph source can repack DURING this call: rasterizing a glyph late in the string can evict
+// one placed early in it. A repack that merely relocates a survivor needs nothing from this pass — the
+// atlas moves the same entry object the pass is holding, so the emit below reads the new rect. What
+// this loop exists for is a repack that DROPS a glyph: the entry the pass captured is then orphaned at
+// a rect another glyph has taken over, and only re-running the pass reaches the fresh one. So the
+// layout runs against a placement version and repeats while that version moves under it, and the
+// version the winning pass agreed with is what gets stamped for `isBitmapTextGlyphLayoutStale`. Passes
+// are bounded — a string whose glyphs cannot all be resident at once would otherwise evict each other
+// forever — and the guard layer reports a string that never settles.
 export function updateBitmapText(bitmapText: BitmapText): void {
   const runtime = getNode2DRuntime(bitmapText) as BitmapTextRuntime;
   const glyphSource = bitmapText.data.glyphSource;
