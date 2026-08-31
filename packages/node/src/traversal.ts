@@ -23,8 +23,8 @@ export function findNode<Traits extends object = NodeTraits>(
   const children = getNodeRuntime(source).children;
   if (children === null) return null;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Node<Traits>;
-    if (predicate(child)) return child as NodeOf<Traits>;
+    const child = children[i];
+    if (predicate(child)) return child;
     const found = findNode(child, predicate);
     if (found !== null) return found;
   }
@@ -70,8 +70,8 @@ export function forEachNodeDescendant<Traits extends object = NodeTraits>(
   const children = getNodeRuntime(source).children;
   if (children === null) return;
   for (let i = 0; i < children.length; i++) {
-    callback(children[i] as Node<Traits>);
-    forEachNodeDescendant(children[i] as Node<Traits>, callback);
+    callback(children[i]);
+    forEachNodeDescendant(children[i], callback);
   }
 }
 
@@ -84,7 +84,7 @@ export function getNodeChildren<Traits extends object = NodeTraits>(
 ): readonly NodeOf<Traits>[] {
   const children = getNodeRuntime(source).children;
   if (children === null) return _emptyChildren as readonly NodeOf<Traits>[];
-  return children.slice() as NodeOf<Traits>[];
+  return children.slice();
 }
 
 /**
@@ -108,13 +108,14 @@ export function getNodeDepth<Traits extends object = NodeTraits>(source: Readonl
 export function getNodeNextSibling<Traits extends object = NodeTraits>(
   source: Readonly<Node<Traits>>,
 ): NodeOf<Traits> | null {
-  const parent = getNodeParent(source as Node<Traits>);
+  const sourceNode = source as NodeOf<Traits>;
+  const parent = getNodeParent(sourceNode);
   if (parent === null) return null;
   const siblings = getNodeRuntime(parent).children;
   if (siblings === null) return null;
-  const idx = siblings.indexOf(source as Node<Traits>);
+  const idx = siblings.indexOf(sourceNode);
   if (idx === -1 || idx === siblings.length - 1) return null;
-  return siblings[idx + 1] as NodeOf<Traits>;
+  return siblings[idx + 1];
 }
 
 /**
@@ -124,13 +125,14 @@ export function getNodeNextSibling<Traits extends object = NodeTraits>(
 export function getNodePreviousSibling<Traits extends object = NodeTraits>(
   source: Readonly<Node<Traits>>,
 ): NodeOf<Traits> | null {
-  const parent = getNodeParent(source as Node<Traits>);
+  const sourceNode = source as NodeOf<Traits>;
+  const parent = getNodeParent(sourceNode);
   if (parent === null) return null;
   const siblings = getNodeRuntime(parent).children;
   if (siblings === null) return null;
-  const idx = siblings.indexOf(source as Node<Traits>);
+  const idx = siblings.indexOf(sourceNode);
   if (idx <= 0) return null;
-  return siblings[idx - 1] as NodeOf<Traits>;
+  return siblings[idx - 1];
 }
 
 /**
@@ -146,7 +148,7 @@ export function walkNodeDescendants<Traits extends object = NodeTraits>(
   const children = getNodeRuntime(source).children;
   if (children === null) return true;
   for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Node<Traits>;
+    const child = children[i];
     if (!visit(child)) return false;
     if (!walkNodeDescendants(child, visit)) return false;
   }

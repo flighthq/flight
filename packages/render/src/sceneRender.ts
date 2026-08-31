@@ -24,12 +24,10 @@ import type {
   Camera3D,
   DirectionalLight,
   Frustum,
-  HasAppearance,
   HemisphereLight,
   Matrix4,
   Mesh,
   MeshRuntime,
-  NodeAny,
   PointLight,
   RenderState,
   Scene3DLightBlock,
@@ -188,7 +186,7 @@ export function prepareScene3DRender(
 }
 
 function collectVisibleMeshes(
-  root: Readonly<NodeAny>,
+  root: Readonly<Node3D>,
   frustum: Readonly<Frustum>,
   worldBounds: Aabb,
   out: Mesh[],
@@ -199,9 +197,9 @@ function collectVisibleMeshes(
   let stackLength = 1;
 
   while (stackLength > 0) {
-    const node = stack[--stackLength] as NodeAny;
+    const node = stack[--stackLength];
 
-    if (!node.enabled || !(node as unknown as HasAppearance).visible) {
+    if (!node.enabled || !node.visible) {
       continue;
     }
 
@@ -215,9 +213,8 @@ function collectVisibleMeshes(
       invalidateNodeLocalTransform(node);
     }
 
-    const mesh = node as unknown as Mesh;
-    if (mesh.geometry != null && isMeshVisible(mesh, frustum, worldBounds)) {
-      out.push(mesh);
+    if (isSceneMesh(node) && isMeshVisible(node, frustum, worldBounds)) {
+      out.push(node);
     }
 
     const children = getNodeRuntime(node).children;
@@ -273,7 +270,7 @@ function isMeshVisible(mesh: Readonly<Mesh>, frustum: Readonly<Frustum>, worldBo
   // the shader, so geometry.vertices/bounds stay bind pose and would cull a swung limb wrongly). It is
   // plain data — no skinning code reached from here. Fall back to the geometry's own ensured bounds
   // for rigid and morphed meshes (morph writes real vertices, so those bounds are already posed).
-  const runtime = getNodeRuntime(mesh as NodeAny) as MeshRuntime;
+  const runtime = getNodeRuntime(mesh) as MeshRuntime;
   // A skinned mesh with no posed bounds means the deform pass this one documents as a precondition did
   // not run. Culling then silently uses BIND POSE bounds and a swung limb disappears — a rendering
   // failure with nothing pointing at the missing pass. The comment above stated that requirement to the
@@ -441,5 +438,9 @@ export function setSkinnedMeshBoundsGuard(guard: ((mesh: Readonly<Mesh>) => void
   _skinnedBoundsGuard = guard;
 }
 
-const _collectStack: Readonly<NodeAny>[] = [];
+function isSceneMesh(node: Readonly<Node3D>): node is Mesh {
+  return 'geometry' in node && node.geometry != null;
+}
+
+const _collectStack: Readonly<Node3D>[] = [];
 let _skinnedBoundsGuard: ((mesh: Readonly<Mesh>) => void) | null = null;

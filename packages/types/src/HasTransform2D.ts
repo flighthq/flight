@@ -1,6 +1,6 @@
 import type { Entity, EntityRuntime } from './Entity';
 import type { Matrix } from './Matrix';
-import type { Node, NodeTraits } from './Node';
+import type { NodeOf, NodeTraits } from './Node';
 
 export interface HasTransform2D extends Entity {
   /**
@@ -27,4 +27,4 @@ export interface HasTransform2DRuntime extends EntityRuntime {
   worldMatrix: Matrix | null;
 }
 
-export type Transform2DNode<Traits extends object = NodeTraits> = Node<Traits> & HasTransform2D;
+export type Transform2DNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasTransform2D>;

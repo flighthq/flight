@@ -101,7 +101,7 @@ export function disposeNode<Traits extends object = NodeTraits>(target: Node<Tra
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits>;
 
   // Detach from parent first so the parent's children list stays consistent.
-  const parent = runtime.parent as Node<Traits> | null;
+  const parent = runtime.parent;
   if (parent !== null) {
     removeNodeChild(parent, target);
   }
@@ -110,7 +110,7 @@ export function disposeNode<Traits extends object = NodeTraits>(target: Node<Tra
   const children = runtime.children;
   if (children !== null) {
     // Snapshot to avoid mutation during iteration.
-    const snapshot = children.slice() as Node<Traits>[];
+    const snapshot = children.slice();
     for (let i = 0; i < snapshot.length; i++) {
       disposeNode(snapshot[i]);
     }

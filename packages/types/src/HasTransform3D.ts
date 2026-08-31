@@ -1,6 +1,6 @@
 import type { EntityRuntime } from './Entity';
 import type { Matrix4 } from './Matrix4';
-import type { Node, NodeTraits } from './Node';
+import type { NodeOf, NodeTraits } from './Node';
 import type { Quaternion } from './Quaternion';
 import type { Vector3 } from './Vector3';
 
@@ -25,4 +25,4 @@ export interface HasTransform3DRuntime extends EntityRuntime {
   worldMatrix4: Matrix4 | null;
 }
 
-export type Transform3DNode<Traits extends object = NodeTraits> = Node<Traits> & HasTransform3D;
+export type Transform3DNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasTransform3D>;
