@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-dom-text-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-dom-text",
+      "renderers": ["dom"],
+      "routes": {
+        "dom": "/"
+      }
+    }
+  ]
+}

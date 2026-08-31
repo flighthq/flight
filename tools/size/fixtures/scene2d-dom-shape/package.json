@@ -1,0 +1,8 @@
+{
+  "name": "scene2d-dom-shape-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "scene2d-dom-shape"
+  }
+}
