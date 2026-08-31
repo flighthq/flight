@@ -1,11 +1,13 @@
-﻿import { computeRgbaCssString } from '@flighthq/color/contract';
-import { noopRendererData } from '@flighthq/render/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
+import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasRenderState,
-  Scene2DRenderer,
+  Renderable,
+  RendererData,
   RenderProxy2D,
+  Scene2DRenderer,
   TextFormat,
   TextLabel,
   TextLabelRuntime,
@@ -13,6 +15,14 @@ import type {
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { setCanvasTransform } from './canvasTransform';
+
+interface CanvasTextLabelData {
+  lastContentId: number;
+}
+
+function createCanvasTextLabelData(_state: CanvasRenderState, _source: Renderable): RendererData {
+  return { lastContentId: -1 } as unknown as RendererData;
+}
 
 export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   drawCanvasScene2D(state, renderProxy);
@@ -26,20 +36,28 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
   context.globalAlpha = renderProxy.alpha;
   setCanvasTransform(state, context, renderProxy.transform2D);
 
-  const measure = (t: string, format: TextFormat): number => {
-    context.font = computeTextFormatFontString(format);
-    return context.measureText(t).width;
-  };
+  const version = getNodeLocalContentRevision(source);
+  const textData = renderProxy.rendererData as unknown as CanvasTextLabelData | null;
+  const needsLayout = textData === null || version !== textData.lastContentId;
 
   const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);
-  computeTextLayout(result, {
-    text,
-    formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
-    width: source.data.width,
-    height: source.data.height,
-    measure,
-    verticalAlign: source.data.autoSize === 'none' ? source.data.verticalAlign : 'top',
-  });
+  if (needsLayout) {
+    const measure = (t: string, format: TextFormat): number => {
+      context.font = computeTextFormatFontString(format);
+      return context.measureText(t).width;
+    };
+
+    computeTextLayout(result, {
+      text,
+      formatRanges: [createTextFormatRange(textFormat, 0, text.length)],
+      width: source.data.width,
+      height: source.data.height,
+      measure,
+      verticalAlign: source.data.autoSize === 'none' ? source.data.verticalAlign : 'top',
+    });
+
+    if (textData !== null) textData.lastContentId = version;
+  }
 
   context.textBaseline = 'alphabetic';
   context.textAlign = 'start';
@@ -49,8 +67,6 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
     context.fillStyle = computeRgbaCssString(group.format.color ?? 0x000000ff);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
-    // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.
-    // Subtract 20% so the canvas baseline aligns with the DOM renderer's natural baseline.
     const y = group.offsetY + group.ascent * 0.815;
     context.fillText(slice, x, y);
 
@@ -67,6 +83,6 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
 }
 
 export const defaultCanvasTextLabelRenderer: Scene2DRenderer = {
-  createData: noopRendererData,
+  createData: createCanvasTextLabelData,
   submit: drawCanvasTextLabel,
 };
