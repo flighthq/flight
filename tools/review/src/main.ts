@@ -93,6 +93,15 @@ const STORAGE_KEY = 'review-selected';
 const APPROVALS_STORAGE_KEY = 'review-approvals';
 const allTests = _tests as ReviewTest[];
 
+for (const t of allTests) {
+  for (const cell of t.cells) {
+    if (cell.referenceComparisonMatches === true && cell.commissionState === 'differs') {
+      // eslint-disable-next-line no-console
+      console.warn('[review] inconsistency:', t.tool, t.name, cell.renderer, cell);
+    }
+  }
+}
+
 if (import.meta.hot) {
   import.meta.hot.on('review:commission-requested', (event: { cells: string[] }) => {
     if (markReviewCommissionRequested(allTests, event.cells) > 0) showCurrent();
