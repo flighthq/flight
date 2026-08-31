@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-dom-htmlview-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-dom-htmlview",
+      "renderers": ["dom"],
+      "routes": {
+        "dom": "/"
+      }
+    }
+  ]
+}
