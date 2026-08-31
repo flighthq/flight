@@ -175,6 +175,7 @@ const GL_CONSTANTS: Record<string, number> = {
   LINK_STATUS: 0x8b82,
   BLEND: 0x0be2,
   DEPTH_TEST: 0x0b71,
+  DEPTH_WRITEMASK: 0x0b72,
   STENCIL_TEST: 0x0b90,
   COLOR_CLEAR_VALUE: 0x0c22,
   COLOR_WRITEMASK: 0x0c23,
@@ -447,12 +448,27 @@ function makeGl2Context(): WebGL2RenderingContext {
   // The vector-valued queries return a fixed-length sequence from any real context, so callers index
   // them directly. Returning undefined here would make a faithful caller throw in tests only, which
   // pushes test-shaped defensiveness into production code.
+  // Capability enables and the depth write mask are the one piece of GL state a pass can silently
+  // inherit from whatever drew before it, so the fake tracks them rather than answering undefined.
+  // Without this a test can only assert that enable/disable were CALLED, which cannot express "depth
+  // was off at the moment of the draw" — the property that separates a pass owning its state from one
+  // that happens to run after something else turned it off. Defaults match GL: caps start disabled,
+  // DEPTH_WRITEMASK starts true.
+  const enabledCapabilities = new Set<number>();
+  let depthWriteMask = true;
+  (ctx.enable as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabledCapabilities.add(cap));
+  (ctx.disable as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabledCapabilities.delete(cap));
+  (ctx.isEnabled as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabledCapabilities.has(cap));
+  (ctx.depthMask as ReturnType<typeof vi.fn>).mockImplementation((flag: boolean) => {
+    depthWriteMask = flag;
+  });
   (ctx.getParameter as ReturnType<typeof vi.fn>).mockImplementation((parameter: number) => {
     if (parameter === GL_CONSTANTS.VIEWPORT || parameter === GL_CONSTANTS.SCISSOR_BOX) {
       return new Int32Array([0, 0, 0, 0]);
     }
     if (parameter === GL_CONSTANTS.COLOR_CLEAR_VALUE) return new Float32Array([0, 0, 0, 0]);
     if (parameter === GL_CONSTANTS.COLOR_WRITEMASK) return [true, true, true, true];
+    if (parameter === GL_CONSTANTS.DEPTH_WRITEMASK) return depthWriteMask;
     return undefined;
   });
   (ctx.getAttribLocation as ReturnType<typeof vi.fn>).mockImplementation(() => 0);

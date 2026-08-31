@@ -95,8 +95,27 @@ export function drawGlFullscreenPass(
   runtime.context.currentBlendSignature = null;
   applyGlBlendMode(state, null);
 
+  // A fullscreen pass covers its whole destination, so the destination's depth buffer is not its
+  // business — and depending on it is a trap, because the DEFAULT framebuffer is the one surface
+  // nothing clears between frames. A 3D scene leaves GL_DEPTH_TEST enabled with GL_LESS and depth
+  // writes on; the present quad then passed on the first frame, wrote its own depth, and was rejected
+  // at that same depth on every frame after it. The canvas held frame one forever while the scene kept
+  // drawing correctly behind it, which is why nothing errored and every static capture still matched.
+  //
+  // Owned here rather than at the call sites for the same reason this function already owns the blend
+  // signature and its own VAO: the hazard belongs to the pass, and every caller would otherwise have to
+  // remember it. Restored afterwards because the pass runs mid-frame — an effect chain puts several of
+  // these between scene draws, and a 3D draw resuming with depth silently off would z-fight itself.
+  const depthTestEnabled = gl.isEnabled(gl.DEPTH_TEST);
+  const depthWriteEnabled = gl.getParameter(gl.DEPTH_WRITEMASK) !== false;
+  if (depthTestEnabled) gl.disable(gl.DEPTH_TEST);
+  if (depthWriteEnabled) gl.depthMask(false);
+
   setUniforms(gl, program);
   drawGlFullscreenQuad(state, program);
+
+  if (depthWriteEnabled) gl.depthMask(true);
+  if (depthTestEnabled) gl.enable(gl.DEPTH_TEST);
 
   runtime.context.currentBlendSignature = null;
   applyGlBlendMode(state, null);

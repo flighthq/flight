@@ -133,6 +133,57 @@ describe('compileGlFullscreenProgram', () => {
 });
 
 describe('drawGlFullscreenPass', () => {
+  // The freeze this guards against: a fullscreen pass covers its whole destination, so the
+  // destination's depth buffer is not its business — but nothing was turning depth off. Presenting a
+  // 3D frame leaves GL_DEPTH_TEST enabled with GL_LESS and depth writes on, and the DEFAULT framebuffer
+  // is the one surface nobody clears between frames. So frame one's quad passed, wrote its own depth,
+  // and every frame after it was rejected at the same depth: the canvas kept frame one forever while
+  // the scene behind it went on drawing correctly. Reading the state AT the draw is the whole point —
+  // asserting it around the call would pass against the broken version.
+  it('draws with the depth test and depth writes off', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthMask(true);
+    let depthTestAtDraw: boolean | null = null;
+    let depthWriteAtDraw: unknown = null;
+    vi.spyOn(gl, 'drawElements').mockImplementation(() => {
+      depthTestAtDraw = gl.isEnabled(gl.DEPTH_TEST);
+      depthWriteAtDraw = gl.getParameter(gl.DEPTH_WRITEMASK);
+    });
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(depthTestAtDraw).toBe(false);
+    expect(depthWriteAtDraw).toBe(false);
+  });
+
+  // Restoring matters because the pass is public and runs mid-frame: an effect chain chains several of
+  // these between scene draws, and a 3D draw that resumed with depth silently off would z-fight itself.
+  it('restores the caller depth state it turned off', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthMask(true);
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(gl.isEnabled(gl.DEPTH_TEST)).toBe(true);
+    expect(gl.getParameter(gl.DEPTH_WRITEMASK)).toBe(true);
+  });
+
+  it('leaves depth state alone when the caller already had it off', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    gl.disable(gl.DEPTH_TEST);
+    gl.depthMask(false);
+
+    drawGlFullscreenPass(state, program, [], null, () => {});
+
+    expect(gl.isEnabled(gl.DEPTH_TEST)).toBe(false);
+    expect(gl.getParameter(gl.DEPTH_WRITEMASK)).toBe(false);
+  });
+
   it('binds the destination framebuffer and sets its viewport', () => {
     const { state, gl } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
