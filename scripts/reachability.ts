@@ -63,6 +63,7 @@ const baselinePath = join(root, 'scripts', 'reachability-baseline.json');
 const registrarManifestPath = join(root, 'scripts', 'reachability-registrars.json');
 const checkMode = process.argv.includes('--check');
 const jsonMode = process.argv.includes('--json');
+const verboseMode = process.argv.includes('--verbose');
 const updateMode = process.argv.includes('--update');
 const updateRegistrarManifestMode = process.argv.includes('--update-registrars');
 const selectors = getSelectors();
@@ -75,6 +76,8 @@ if (updateMode && updateRegistrarManifestMode)
 const selected = selectPackages(selectors);
 const sourceFilesByPackage = new Map(selectPackages([]).map((name) => [name, packageSourceFiles(name)]));
 const constants = collectRegistrarKindConstants([...sourceFilesByPackage.values()].flat());
+
+if (!jsonMode) process.stderr.write(`reachability: scanning ${selected.length} packages...\n`);
 
 const violations: ReachabilityViolation[] = [];
 const lanes: ReachabilityLaneEntry[] = [];
@@ -175,41 +178,43 @@ if (!jsonMode) {
     `${pc.green('OK')} ${pc.bold(`${registrarOwnershipSummary.registrars} exported registrars inventoried`)} ${pc.dim(`(${registrarOwnershipSummary.readableRegistrars} readable registrars / ${registrarOwnershipSummary.mappings} mappings, ${mechanisms.length} mechanisms, ${uncatalogued.length} UNCATALOGUED)`)}`,
   );
   printRegistrarManifestDiff(registrarManifestDiff, registrarIdentities.length);
-  console.log(pc.dim('  Caller-supplied kinds belong to the registrar mechanism, not the ownership denominator.'));
-  for (const shape of ['caller-supplied-kind', 'caller-supplied-batch'] as const) {
-    const entries = mechanisms.filter((entry) => entry.mechanismShape === shape);
-    const examples = entries
-      .slice(0, 2)
-      .map((entry) => `${entry.packageName}:${entry.registrar}`)
-      .join(', ');
+  if (!checkMode || verboseMode) {
+    console.log(pc.dim('  Caller-supplied kinds belong to the registrar mechanism, not the ownership denominator.'));
+    for (const shape of ['caller-supplied-kind', 'caller-supplied-batch'] as const) {
+      const entries = mechanisms.filter((entry) => entry.mechanismShape === shape);
+      const examples = entries
+        .slice(0, 2)
+        .map((entry) => `${entry.packageName}:${entry.registrar}`)
+        .join(', ');
+      console.log(
+        `  ${pc.cyan('M.')} ${pc.bold(shape)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
+      );
+    }
     console.log(
-      `  ${pc.cyan('M.')} ${pc.bold(shape)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
+      pc.dim(
+        `  ${uncatalogued.length - excluded.length} recorder misses after excluding ${excluded.length} not-kind-registration rows from the miss denominator`,
+      ),
     );
-  }
-  console.log(
-    pc.dim(
-      `  ${uncatalogued.length - excluded.length} recorder misses after excluding ${excluded.length} not-kind-registration rows from the miss denominator`,
-    ),
-  );
-  for (const bucket of UNCATALOGUED_BUCKETS) {
-    const entries = uncatalogued.filter((entry) => entry.uncataloguedBucket === bucket.bucket);
-    const examples = entries
-      .slice(0, 2)
-      .map((entry) => `${entry.packageName}:${entry.registrar}`)
-      .join(', ');
-    console.log(
-      `  ${pc.yellow(bucket.number)} ${pc.bold(bucket.label)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
-    );
-  }
-  for (const entry of uncatalogued) {
-    console.log(
-      `  ${pc.yellow('!')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim(`[UNCATALOGUED: ${entry.uncataloguedBucket ?? 'missing-classification'}]`)}`,
-    );
-  }
-  for (const entry of mechanisms) {
-    console.log(
-      `  ${pc.cyan('M')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim(`[MECHANISM: ${entry.mechanismShape ?? 'missing-classification'}]`)}`,
-    );
+    for (const bucket of UNCATALOGUED_BUCKETS) {
+      const entries = uncatalogued.filter((entry) => entry.uncataloguedBucket === bucket.bucket);
+      const examples = entries
+        .slice(0, 2)
+        .map((entry) => `${entry.packageName}:${entry.registrar}`)
+        .join(', ');
+      console.log(
+        `  ${pc.yellow(bucket.number)} ${pc.bold(bucket.label)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
+      );
+    }
+    for (const entry of uncatalogued) {
+      console.log(
+        `  ${pc.yellow('!')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim(`[UNCATALOGUED: ${entry.uncataloguedBucket ?? 'missing-classification'}]`)}`,
+      );
+    }
+    for (const entry of mechanisms) {
+      console.log(
+        `  ${pc.cyan('M')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim(`[MECHANISM: ${entry.mechanismShape ?? 'missing-classification'}]`)}`,
+      );
+    }
   }
 
   if (laneDrift.length === 0) {
@@ -218,10 +223,12 @@ if (!jsonMode) {
     console.log(
       `\n${pc.yellow('!')} ${pc.bold(`${laneDrift.length} reachability lane change${laneDrift.length === 1 ? '' : 's'} (non-blocking)`)}`,
     );
-    for (const drift of laneDrift) {
-      console.log(
-        `  ${pc.yellow(laneMarker(drift))} ${pc.white(drift.packageName)} ${pc.bold(drift.symbol)} ${pc.dim(`${formatLane(drift.before)} → ${formatLane(drift.after)}`)}`,
-      );
+    if (!checkMode || verboseMode) {
+      for (const drift of laneDrift) {
+        console.log(
+          `  ${pc.yellow(laneMarker(drift))} ${pc.white(drift.packageName)} ${pc.bold(drift.symbol)} ${pc.dim(`${formatLane(drift.before)} → ${formatLane(drift.after)}`)}`,
+        );
+      }
     }
     console.log(
       pc.dim('  Review the moves, then run npm run reachability:baseline to accept the curated lane placement.'),
@@ -244,7 +251,8 @@ if (checkMode && !jsonMode) {
       '--import',
       'tsx',
       join(root, 'scripts', 'registrar-runtime.ts'),
-      ...(progressToken === undefined ? [] : ['--progress-token', progressToken]),
+      ...(progressToken === undefined ? ['--progress'] : ['--progress-token', progressToken]),
+      ...(checkMode && !verboseMode ? ['--compact'] : []),
     ],
     {
       cwd: root,
