@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuDebugDefineKey,
   WgpuDebugPipeline,
@@ -32,7 +32,6 @@ export function bindWgpuDebugSurface(
   const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
-    const stateRuntime = getWgpuRenderStateRuntime(state);
     const buffer = state.device.createBuffer({
       size: DEBUG_UNIFORM_BYTES,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -41,7 +40,7 @@ export function bindWgpuDebugSurface(
       layout: pipeline.materialBindGroupLayout,
       entries: [
         { binding: 0, resource: { buffer } },
-        { binding: 1, resource: stateRuntime.context.linearSampler },
+        { binding: 1, resource: getWgpuRenderStateDeviceResources(state).linearSampler },
         { binding: 2, resource: ensureWgpuPlaceholderTextureView(state) },
       ],
     });

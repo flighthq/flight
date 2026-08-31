@@ -11,6 +11,7 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuDeviceRuntime,
+  WgpuDeviceRuntimeResources,
   WgpuDeviceState,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
@@ -186,7 +187,7 @@ function initializeWgpuDeviceRenderState(
   const device = deviceState.device;
   const format = options.format ?? 'bgra8unorm';
   const deviceRuntime = getWgpuDeviceRuntime(deviceState);
-  initializeWgpuDeviceRuntime(deviceRuntime);
+  const deviceResources = ensureWgpuDeviceRuntimeResources(deviceRuntime);
 
   const uniformStride = Math.max(256, device.limits.minUniformBufferOffsetAlignment, UNIFORM_BYTE_SIZE);
   const ringByteSize = uniformStride * RING_SLOT_COUNT;
@@ -196,7 +197,7 @@ function initializeWgpuDeviceRenderState(
   });
   const uniformData = new Float32Array(ringByteSize / 4);
   const uniformBindGroup = device.createBindGroup({
-    layout: deviceRuntime.uniformBindGroupLayout,
+    layout: deviceResources.uniformBindGroupLayout,
     entries: [{ binding: 0, resource: { buffer: uniformBuffer, size: UNIFORM_BYTE_SIZE } }],
   });
 
@@ -366,6 +367,10 @@ export function getWgpuDeviceRuntime(deviceState: Readonly<WgpuDeviceState>): Wg
   return deviceState[EntityRuntimeKey] as WgpuDeviceRuntime;
 }
 
+export function getWgpuRenderStateDeviceResources(state: WgpuRenderState): WgpuDeviceRuntimeResources {
+  return ensureWgpuDeviceRuntimeResources(getWgpuRenderStateRuntime(state).context);
+}
+
 // Resolves the package-private GPU runtime attached to a WgpuRenderState. Mutable by design: the
 // render path writes its fields every frame.
 export function getWgpuRenderStateRuntime(state: WgpuRenderState): WgpuRenderStateRuntime {
@@ -442,32 +447,28 @@ const SAMPLER_FILTER_BITS: Record<GPUFilterMode, number> = { nearest: 0, linear:
 const SAMPLER_WRAP_BITS: Record<TextureWrap, number> = { 'clamp-to-edge': 0, 'mirror-repeat': 1, repeat: 2 };
 const SAMPLER_MIPMAP_BITS: Record<GPUMipmapFilterMode, number> = { nearest: 1, linear: 2 };
 
-function initializeWgpuDeviceRuntime(runtime: WgpuDeviceRuntime): void {
-  if ((runtime.uniformBindGroupLayout as GPUBindGroupLayout | null) !== null) return;
+function ensureWgpuDeviceRuntimeResources(runtime: WgpuDeviceRuntime): WgpuDeviceRuntimeResources {
+  if (runtime.resources !== null) return runtime.resources;
   const device = runtime.device;
   const { uniformBindGroupLayout, textureBindGroupLayout } = createWgpuBindGroupLayouts(device);
-  runtime.uniformBindGroupLayout = uniformBindGroupLayout;
-  runtime.textureBindGroupLayout = textureBindGroupLayout;
-  runtime.pipelineCache = new Map();
-  runtime.linearSampler = device.createSampler({
+  const linearSampler = device.createSampler({
     minFilter: 'linear',
     magFilter: 'linear',
     addressModeU: 'clamp-to-edge',
     addressModeV: 'clamp-to-edge',
   });
-  runtime.nearestSampler = device.createSampler({
+  const nearestSampler = device.createSampler({
     minFilter: 'nearest',
     magFilter: 'nearest',
     addressModeU: 'clamp-to-edge',
     addressModeV: 'clamp-to-edge',
   });
-  runtime.samplerCache = new Map();
-  runtime.mipmapPipelineCache = new Map();
-  runtime.textureCache = new WeakMap();
-  runtime.textureSourcePremultipliedTextureCache = new WeakMap();
-  runtime.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
-  runtime.textureSourceStraightTextureCache = new WeakMap();
-  runtime.textureSourceStraightSrgbTextureCache = new WeakMap();
+  return (runtime.resources = {
+    linearSampler,
+    nearestSampler,
+    textureBindGroupLayout,
+    uniformBindGroupLayout,
+  });
 }
 
 type WgpuAcquisitionOwnership = {
@@ -489,11 +490,8 @@ function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
     signals: null,
     references: 0,
     teardowns: [],
-    uniformBindGroupLayout: null as unknown as GPUBindGroupLayout,
-    textureBindGroupLayout: null as unknown as GPUBindGroupLayout,
+    resources: null,
     pipelineCache: new Map(),
-    linearSampler: null as unknown as GPUSampler,
-    nearestSampler: null as unknown as GPUSampler,
     samplerCache: new Map(),
     mipmapPipelineCache: new Map(),
     textureCache: new WeakMap(),

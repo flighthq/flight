@@ -2,6 +2,7 @@ import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import {
   getWgpuBlendState,
+  getWgpuRenderStateDeviceResources,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   resolveWgpuTexture,
@@ -718,7 +719,7 @@ export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGro
 // Because a GPUSampler is immutable and baked into the cached bind group, this reads the descriptor at
 // bind-group creation — the same lifetime as the resolved texture views.
 export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): GPUSampler {
-  if (texture === null) return getWgpuRenderStateRuntime(state).context.linearSampler;
+  if (texture === null) return getWgpuRenderStateDeviceResources(state).linearSampler;
   const sampler = texture.sampler;
   const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
   const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';

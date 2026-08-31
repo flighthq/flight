@@ -1,6 +1,6 @@
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 // Generates the mip chain for an already-uploaded texture by downsampling each level into the next
 // through a cached fullscreen pipeline. WebGPU has no generateMipmap, so lower levels are rendered:
@@ -17,7 +17,7 @@ export function generateWgpuMipmaps(
   const levelCount = getWgpuMipLevelCount(width, height);
   if (levelCount <= 1) return;
   const { device } = state;
-  const runtime = getWgpuRenderStateRuntime(state);
+  const resources = getWgpuRenderStateDeviceResources(state);
   const cached = ensureWgpuMipmapPipeline(state, format);
   const pipeline = cached.pipeline;
   const layout = cached.bindGroupLayout;
@@ -29,7 +29,7 @@ export function generateWgpuMipmaps(
       layout,
       entries: [
         { binding: 0, resource: srcView },
-        { binding: 1, resource: runtime.context.linearSampler },
+        { binding: 1, resource: resources.linearSampler },
       ],
     });
     const pass = encoder.beginRenderPass({

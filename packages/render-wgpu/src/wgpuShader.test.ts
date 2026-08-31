@@ -1,7 +1,7 @@
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { renderWgpuBackground } from './wgpuBackground';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   createWgpuBindGroupLayouts,
   createWgpuPipelineLayout,
@@ -34,8 +34,8 @@ describe('createWgpuPipelineLayout', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const layout = createWgpuPipelineLayout(
       state.device,
-      runtime.context.uniformBindGroupLayout,
-      runtime.context.textureBindGroupLayout,
+      getWgpuRenderStateDeviceResources(state).uniformBindGroupLayout,
+      getWgpuRenderStateDeviceResources(state).textureBindGroupLayout,
     );
     expect(layout).toBeDefined();
   });

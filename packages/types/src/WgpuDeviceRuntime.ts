@@ -21,11 +21,8 @@ export interface WgpuDeviceRuntime extends EntityRuntime {
   lost: GPUDeviceLostInfo | null;
   signals: WgpuDeviceSignals | null;
 
-  uniformBindGroupLayout: GPUBindGroupLayout;
-  textureBindGroupLayout: GPUBindGroupLayout;
+  resources: WgpuDeviceRuntimeResources | null;
   pipelineCache: Map<string, GPURenderPipeline>;
-  linearSampler: GPUSampler;
-  nearestSampler: GPUSampler;
   samplerCache: Map<number, GPUSampler>;
   mipmapPipelineCache: Map<GPUTextureFormat, { bindGroupLayout: GPUBindGroupLayout; pipeline: GPURenderPipeline }>;
   textureCache: WeakMap<CanvasImageSource, WgpuTextureEntry>;
@@ -45,4 +42,14 @@ export interface WgpuDeviceRuntime extends EntityRuntime {
   shapeMeshColorScaleBiasPipelines?: Map<string, WgpuShapeMeshPipeline>;
   particleResources?: WgpuParticleResources;
   quadBatchResources?: WgpuQuadBatchResources;
+}
+
+// Device-native objects allocated together on first rendering use. A device owner may exist before any
+// render state, so the enclosing WgpuDeviceRuntime carries this block as null until the render path asks
+// for it explicitly through getWgpuRenderStateDeviceResources.
+export interface WgpuDeviceRuntimeResources {
+  readonly linearSampler: GPUSampler;
+  readonly nearestSampler: GPUSampler;
+  readonly textureBindGroupLayout: GPUBindGroupLayout;
+  readonly uniformBindGroupLayout: GPUBindGroupLayout;
 }

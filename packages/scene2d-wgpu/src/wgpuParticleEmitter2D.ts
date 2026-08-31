@@ -1,5 +1,6 @@
 import {
   getWgpuRenderStateRuntime,
+  getWgpuRenderStateDeviceResources,
   getWgpuSampler,
   getWgpuSurfaceRenderExtent,
   resolveWgpuApplyBlendMode,
@@ -102,7 +103,7 @@ function ensureParticleResources(state: WgpuRenderState): WgpuParticleResources 
   if (existing !== undefined) return existing;
 
   const { device } = state;
-  const { uniformBindGroupLayout, textureBindGroupLayout } = ctx;
+  const { uniformBindGroupLayout, textureBindGroupLayout } = getWgpuRenderStateDeviceResources(state);
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -202,7 +203,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   const textureEntry = resolveWgpuTexture(state, atlas.texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (textureEntry === null) return;
   const textureBindGroup = state.device.createBindGroup({
-    layout: runtime.context.textureBindGroupLayout,
+    layout: getWgpuRenderStateDeviceResources(state).textureBindGroupLayout,
     entries: [
       { binding: 0, resource: textureEntry.view },
       {

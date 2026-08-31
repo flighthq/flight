@@ -1,6 +1,6 @@
 import type { WgpuPresentationRenderState, WgpuRenderState } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 const SUPERSAMPLE_SCALE = 2;
 
@@ -52,7 +52,7 @@ export function acquireWgpuSurfaceAntialiasView(
     layout: runtime.surfaceAntialiasResolveBindGroupLayout!,
     entries: [
       { binding: 0, resource: view },
-      { binding: 1, resource: runtime.context.linearSampler },
+      { binding: 1, resource: getWgpuRenderStateDeviceResources(state).linearSampler },
     ],
   });
   return view;

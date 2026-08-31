@@ -128,7 +128,10 @@ export function makeWgpuScene3DState(
     },
     createPipelineLayout: record('createPipelineLayout', {}),
     createRenderPipeline: record('createRenderPipeline', {}),
-    createSampler: record('createSampler', {}),
+    createSampler: (...args: unknown[]) => {
+      calls.push({ name: 'createSampler', args });
+      return {};
+    },
     createShaderModule: (descriptor: unknown) => {
       calls.push({ name: 'createShaderModule', args: [descriptor] });
       return {} as GPUShaderModule;

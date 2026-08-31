@@ -3,7 +3,7 @@ import type { WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { resolveWgpuSmoothingBindGroup } from './wgpuDraw';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   getWgpuRenderTargetSupersampleScale,
   beginWgpuRenderPass,
@@ -201,7 +201,7 @@ describe('resizeWgpuRenderTarget', () => {
     const target = createWgpuRenderTarget(state, 64, 64);
     const texture = target.texture;
     const depthStencilTexture = target.depthStencilTexture;
-    const sampler = getWgpuRenderStateRuntime(state).context.linearSampler;
+    const sampler = getWgpuRenderStateDeviceResources(state).linearSampler;
     const bindGroup = resolveWgpuSmoothingBindGroup(state, target, true);
 
     resizeWgpuRenderTarget(state, target, 64, 64);

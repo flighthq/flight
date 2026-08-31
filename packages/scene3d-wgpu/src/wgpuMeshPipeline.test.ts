@@ -2,7 +2,7 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {
   Camera3D,
@@ -728,7 +728,7 @@ describe('ensureWgpuShadowSampleLayout', () => {
 describe('getWgpuMaterialSampler', () => {
   it('returns the shared clamp sampler for a null map', () => {
     const { state } = makeWgpuScene3DState();
-    expect(getWgpuMaterialSampler(state, null)).toBe(getWgpuRenderStateRuntime(state).context.linearSampler);
+    expect(getWgpuMaterialSampler(state, null)).toBe(getWgpuRenderStateDeviceResources(state).linearSampler);
   });
 
   it('derives a wrap- and mip-specific sampler for a tiling map', () => {
@@ -744,7 +744,7 @@ describe('getWgpuMaterialSampler', () => {
 
     // A non-clamp (tiling) map goes through the sampler cache, not the shared clamp sampler, and the
     // derivation is deterministic (same texture → same cached sampler).
-    expect(sampler).not.toBe(getWgpuRenderStateRuntime(state).context.linearSampler);
+    expect(sampler).not.toBe(getWgpuRenderStateDeviceResources(state).linearSampler);
     expect(getWgpuMaterialSampler(state, texture)).toBe(sampler);
   });
 

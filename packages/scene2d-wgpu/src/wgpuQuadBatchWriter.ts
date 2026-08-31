@@ -6,7 +6,11 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-wgpu/contract';
-import { getWgpuRenderStateRuntime, getWgpuSurfaceRenderExtent } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateDeviceResources,
+  getWgpuRenderStateRuntime,
+  getWgpuSurfaceRenderExtent,
+} from '@flighthq/render-wgpu/contract';
 import type {
   ColorScaleBias,
   TintMaterialData,
@@ -87,7 +91,7 @@ export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBa
   if (existing !== undefined) return existing;
 
   const { device } = state;
-  const { uniformBindGroupLayout, textureBindGroupLayout } = ctx;
+  const { uniformBindGroupLayout, textureBindGroupLayout } = getWgpuRenderStateDeviceResources(state);
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }],
@@ -412,7 +416,7 @@ function createWgpuTextureSamplerBindGroup(
         : 'linear'
       : undefined;
   return state.device.createBindGroup({
-    layout: getWgpuRenderStateRuntime(state).context.textureBindGroupLayout,
+    layout: getWgpuRenderStateDeviceResources(state).textureBindGroupLayout,
     entries: [
       { binding: 0, resource: view },
       {

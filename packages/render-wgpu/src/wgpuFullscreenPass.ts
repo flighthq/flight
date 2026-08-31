@@ -1,6 +1,6 @@
 import type { WgpuFullscreenPipeline, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 // Creates a fullscreen-pass pipeline for the given fragment WGSL source and target format.
 // The pipeline expects:
@@ -82,12 +82,12 @@ export function drawWgpuFullscreenPass(
     const uniformBindGroup = setUniforms(state, wgpuPipeline.uniformBindGroupLayout);
     pass.setBindGroup(0, uniformBindGroup);
   }
-  const runtime2 = getWgpuRenderStateRuntime(state);
+  const resources = getWgpuRenderStateDeviceResources(state);
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
     const layout = wgpuPipeline.textureBindGroupLayouts[i];
     if (layout === undefined) continue;
-    const sampler = state.allowSmoothing ? runtime2.context.linearSampler : runtime2.context.nearestSampler;
+    const sampler = state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
     const bindGroup = state.device.createBindGroup({
       layout,
       entries: [

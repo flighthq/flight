@@ -2,7 +2,7 @@ import type { ColorScaleBias, RenderProxy, WgpuRenderState } from '@flighthq/typ
 import { BlendMode } from '@flighthq/types/contract';
 
 import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 // ---- WGSL source ----
 
@@ -237,9 +237,10 @@ export function getWgpuPipeline(
   const stencilFace = buildStencilFaceState(stencilMode);
 
   const { device } = state;
+  const resources = getWgpuRenderStateDeviceResources(state);
   const shaderSrc = isMaskWrite ? MASK_FRAGMENT_SRC : BITMAP_SHADER_SRC;
   const module = device.createShaderModule({ code: shaderSrc });
-  const layout = createWgpuPipelineLayout(device, ctx.uniformBindGroupLayout, ctx.textureBindGroupLayout);
+  const layout = createWgpuPipelineLayout(device, resources.uniformBindGroupLayout, resources.textureBindGroupLayout);
 
   const pipeline = device.createRenderPipeline({
     layout,
