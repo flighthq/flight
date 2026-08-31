@@ -9,7 +9,7 @@ import { collectSizeCases, didSizeChecksPass, getFlightDiagnosticsSizeDelta, run
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 interface ParsedArgs {
-  exampleFilters: string[];
+  caseFilters: string[];
   renderFilters: string[];
   report: string | null;
   outputPath: string | null;
@@ -24,25 +24,14 @@ if (options.help) {
   process.exit(0);
 }
 
-// A full sweep is ~10 minutes of terser, and a script name cannot carry that.
-// An interactive caller usually wants `npm run size` and has no way to learn the
-// cost except by paying it once, so the tool says it. CI and the nightly job are
-// not on a TTY and run unguarded.
-if (process.stdout.isTTY && rawArgs.length === 0 && process.env.UPDATE_BASELINE !== '1') {
-  console.log(pc.yellow('size:minified builds every case through terser — roughly 10 minutes for the full sweep.'));
-  console.log(`Most size questions are answered in about a minute by ${pc.bold('npm run size')}.`);
-  console.log(pc.dim('Filter to a few cases (`npm run size:minified shapes`), or pass --yes for the full sweep.'));
-  process.exit(0);
-}
-
 const root = resolve(__dirname, '..');
-const examplesDir = resolve(root, 'examples', 'packages');
+const fixturesDir = resolve(root, 'tools', 'size', 'fixtures');
 const baselineFile = resolve(root, 'tools', 'size', 'size.baseline.json');
 const updateBaseline = process.env.UPDATE_BASELINE === '1';
 const report = options.report ?? (options.outputPath ? 'json' : null);
 const outputPath = options.outputPath;
 const standardOutput = !outputPath && report !== 'json';
-const sizeCases = standardOutput ? collectSizeCases(examplesDir, options.exampleFilters, options.renderFilters) : [];
+const sizeCases = standardOutput ? collectSizeCases(fixturesDir, options.caseFilters, options.renderFilters) : [];
 const printProgress = standardOutput ? createProgressivePrinter(sizeCases) : null;
 
 if (standardOutput && sizeCases.length === 0) {
@@ -51,10 +40,10 @@ if (standardOutput && sizeCases.length === 0) {
 
 const { results, pendingBaseline } = await runSizeChecks({
   root,
-  examplesDir,
+  fixturesDir,
   baselineFile,
   updateBaseline,
-  exampleFilters: options.exampleFilters,
+  caseFilters: options.caseFilters,
   onResult: (result) => printProgress?.(result),
   renderFilters: options.renderFilters,
 });
@@ -87,7 +76,7 @@ process.exit(passed ? 0 : 1);
 
 function parseArgs(args: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
-    exampleFilters: [],
+    caseFilters: [],
     renderFilters: [],
     report: null,
     outputPath: null,
@@ -99,9 +88,6 @@ function parseArgs(args: string[]): ParsedArgs {
       parsed.help = true;
       continue;
     }
-
-    // Consumed by the cost guard above; not an example filter.
-    if (arg === '--yes') continue;
 
     if (arg.startsWith('render=')) {
       parsed.renderFilters.push(arg.slice('render='.length));
@@ -143,36 +129,36 @@ function parseArgs(args: string[]): ParsedArgs {
       continue;
     }
 
-    parsed.exampleFilters.push(arg);
+    parsed.caseFilters.push(arg);
   }
 
   return parsed;
 }
 
 function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (result: Readonly<SizeResult>) => void {
-  const exampleNames = [...new Set(cases.map((tc) => tc.name))];
-  const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
-  const maxNameLen = Math.max(0, ...exampleNames.map((n) => n.length));
+  const caseNames = [...new Set(cases.map((tc) => tc.name))];
+  const caseBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
+  const maxNameLen = Math.max(0, ...caseNames.map((n) => n.length));
   const maxRenderLen = Math.max(
     8,
     ...cases.map((sizeCase) => `${sizeCase.render}${sizeCase.variant === null ? '' : `:${sizeCase.variant}`}`.length),
   );
   const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 34 };
-  const expectedByExample = new Map<string, number>();
-  const resultsByExample = new Map<string, Readonly<SizeResult>[]>();
+  const expectedByCase = new Map<string, number>();
+  const resultsByCase = new Map<string, Readonly<SizeResult>[]>();
 
   for (const { name } of cases) {
-    expectedByExample.set(name, (expectedByExample.get(name) ?? 0) + 1);
+    expectedByCase.set(name, (expectedByCase.get(name) ?? 0) + 1);
   }
 
   return (result) => {
-    const group = resultsByExample.get(result.name) ?? [];
+    const group = resultsByCase.get(result.name) ?? [];
     group.push(result);
-    resultsByExample.set(result.name, group);
+    resultsByCase.set(result.name, group);
 
-    if (group.length !== expectedByExample.get(result.name)) return;
+    if (group.length !== expectedByCase.get(result.name)) return;
 
-    const bgColor = exampleBgColors[exampleNames.indexOf(result.name) % exampleBgColors.length];
+    const bgColor = caseBgColors[caseNames.indexOf(result.name) % caseBgColors.length];
 
     const lines = group.map((r, i) => {
       const nameCell =
@@ -198,14 +184,13 @@ function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (
 }
 
 function printUsage(): void {
-  console.log('Usage: npm run size:minified [filters...] [--yes] [report=json] [output=path]');
+  console.log('Usage: npm run size:minified [filters...] [report=json] [output=path]');
   console.log('');
-  console.log('The shipping number: every case built and minified through terser. ~10 minutes for');
-  console.log('the full sweep, which is why it is the nightly job. For a one-minute tree-shaking read');
-  console.log('while you work, use `npm run size`.');
+  console.log('The shipping number: dedicated tools/size fixtures built and minified through terser.');
+  console.log('For a faster tree-shaking read while you work, use `npm run size`.');
   console.log('');
-  console.log('  npm run size:minified shapes');
-  console.log('  npm run size:minified -- --yes');
-  console.log('  npm run size:minified shapes report=json');
-  console.log('  npm run size:minified shapes output=size-report.json');
+  console.log('  npm run size:minified');
+  console.log('  npm run size:minified scene2d-gl');
+  console.log('  npm run size:minified scene2d-gl report=json');
+  console.log('  npm run size:minified scene2d-gl output=size-report.json');
 }

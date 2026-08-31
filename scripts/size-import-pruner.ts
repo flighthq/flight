@@ -14,7 +14,7 @@ interface ExportTarget {
 export function createSizeImportPruner(): Plugin {
   // Package checks enforce side-effect-free workspace modules, so the size harness can
   // preserve each named SDK binding while skipping barrels that Rollup would otherwise
-  // parse again for every example/renderer pair.
+  // parse again for every fixture/renderer pair.
   const exportTargets = getSdkExportTargets();
 
   return {
