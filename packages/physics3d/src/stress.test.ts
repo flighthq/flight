@@ -2,6 +2,7 @@ import {
   createCollisionHeightfield3D,
   createCollisionTriangleMesh3D,
   registerBuiltInCollisionFaceQueries3D,
+  registerBuiltInCollisionPairTests3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
 import type { CollisionBuiltInShape3D, Physics3DMaterial, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
@@ -455,6 +456,52 @@ describe('physics3d stress qualification', () => {
       world.solveIslandCursors,
     ];
     for (let i = 0; i < workspace.length; i += 1) expect(retained[i]).toBe(workspace[i]);
+  });
+
+  // Pair test registration persists globally; this test must follow all GJK-path tests.
+  it('converges a 12-high walled pile with specialized pair tests', () => {
+    registerBuiltInCollisionPairTests3D();
+    const world = createPhysics3DWorld();
+    world.gravityY = -10;
+    addSlab(world, 20, 1, 20, -1);
+    for (const [x, z, halfX, halfZ] of [
+      [-1.02, 0, 0.5, 3],
+      [1.02, 0, 0.5, 3],
+      [0, -1.02, 3, 0.5],
+      [0, 1.02, 3, 0.5],
+    ]) {
+      const wall = createRigidBody3D('static');
+      wall.x = x;
+      wall.z = z;
+      wall.y = 10;
+      addPhysics3DBody(world, wall);
+      addPhysics3DCollider(world, wall, createPhysics3DCollider(boxShape(halfX, 11, halfZ), MATERIAL));
+    }
+    const pile: RigidBody3D[] = [];
+    for (let i = 0; i < 12; i += 1) pile.push(addBox(world, 'dynamic', 0, 0.5 + i, 0));
+
+    run(world, 900);
+
+    for (const body of pile) expectFiniteBody(body);
+    for (let i = 1; i < pile.length; i += 1) expect(pile[i].y).toBeGreaterThan(pile[i - 1].y);
+    expect(pile[0].y).toBeGreaterThan(0.4);
+    expect(pile[pile.length - 1].y).toBeGreaterThan(10.2);
+    expect(
+      pile.every((body) => body.sleeping),
+      JSON.stringify(
+        pile.map((body) => [
+          body.y,
+          body.sleeping,
+          body.sleepTimer,
+          body.velocityX,
+          body.velocityY,
+          body.velocityZ,
+          body.angularVelocityX,
+          body.angularVelocityY,
+          body.angularVelocityZ,
+        ]),
+      ),
+    ).toBe(true);
   });
 
   it('keeps a spinning asymmetric body finite, with a drift that halves as the timestep does', () => {
