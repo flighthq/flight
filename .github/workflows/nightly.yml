@@ -4,9 +4,9 @@ name: Nightly Quality
 # legs on every PR — so nightly does NOT repeat them. Nightly holds only work that does not belong
 # on the PR path: full coverage thresholds, API-surface generation, and the minified bundle size.
 #
-# Size is split across the two paths on cost. Per-PR runs `npm run size`, an unminified esbuild
-# sweep that finishes in about a minute and reports advisory tree-shaking deltas. The terser-minified
-# sweep — the number that is actually shipped — takes roughly ten minutes and runs here.
+# Size is split across the two paths on cost. Per-PR runs `npm run size`, a fast unminified esbuild
+# sweep that reports advisory tree-shaking deltas. The terser-minified sweep — the number that is
+# actually shipped — takes about a minute across the dedicated fixture corpus and runs here.
 #
 # Nightly does NOT own promotion to main — promote.yml does, triggered per-commit by CI going
 # green. Promotion used to live here so it could inherit the coverage + api gates, but that
@@ -72,9 +72,10 @@ jobs:
       - uses: ./.github/actions/setup-playwright
       - run: npm run test:coverage
 
-  # The shipping bundle size: every case built through terser, failing when one exceeds its pin in
-  # tools/size/size.baseline.json. It runs here rather than per-PR because a ~10-minute leg on every
-  # push is not worth the latency for a number that moves rarely.
+  # The shipping bundle size: every dedicated tools/size fixture built through terser, failing when
+  # one exceeds its pin in tools/size/size.baseline.json. Examples are demonstrations and may import
+  # whole-store conveniences, so they are deliberately not the cost contract. It runs here rather
+  # than per-PR because the terser leg is not worth adding to every push for a number that moves rarely.
   #
   # Like every job here it is a health signal and blocks no promotion — so moving it off the PR path
   # means shipping size is no longer enforced before a commit reaches main. That is deliberate: the

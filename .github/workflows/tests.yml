@@ -286,8 +286,8 @@ jobs:
 
   # Advisory, not a gate: `npm run size` always exits 0. It reports which bundles moved against the
   # committed unminified baseline so a reviewer sees the tree-shaking delta in the log. The shipping
-  # number is terser-minified and lives in nightly (`size-minified`) — it takes ~10 minutes, and
-  # gating on it would push an author to rewrite the pin to clear the red, laundering the regression.
+  # number is terser-minified and the dedicated fixture corpus lives in nightly (`size-minified`).
+  # Gating on it here would push an author to rewrite the pin to clear the red, laundering the regression.
   size:
     name: Bundle size (advisory)
     needs: changes

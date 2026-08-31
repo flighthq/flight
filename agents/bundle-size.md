@@ -1,6 +1,6 @@
 # Bundle Size
 
-This SDK should behave like a hardware store: a user can import one small tool without pulling in the whole building. Run a size command after changes to examples, package exports, barrels, renderer registration, dependencies, or anything that may affect tree-shaking.
+This SDK should behave like a hardware store: a user can import one small tool without pulling in the whole building. Run a size command after changes to size fixtures, package exports, barrels, renderer registration, dependencies, or anything that may affect tree-shaking.
 
 ## Two numbers, two commands
 
@@ -11,14 +11,14 @@ The subject splits by what the number *means*, and the two are not interchangeab
 | pipeline | esbuild, **unminified**, tree-shaken | Rollup + terser (`passes: 3`, property mangling) |
 | answers | *how much code did this keep* | *how many bytes does this ship* |
 | baseline | `tools/size/size.unminified.baseline.json` | `tools/size/size.baseline.json` |
-| cost | ~1 minute cold, ~3s from cache | ~10 minutes |
+| cost | seconds cold, ~3s from cache | ~1 minute |
 | where | every PR, and while you work | nightly |
 | gates | never — always exits 0 | fails a case over its pin |
 
-**Only `size:minified` produces a shipping number.** The unminified figure runs about 1.58× larger
-(measured range 1.42–1.82 across the 139 cases), so quoting it as bundle cost overstates by half.
-It exists because tree-shaking is the thing most changes actually affect, and esbuild and Rollup
-agree far more closely on *what survived* than their minifiers agree on *how small it packs*.
+**Only `size:minified` produces a shipping number.** The unminified figure is intentionally larger,
+so quoting it as bundle cost overstates what ships. It exists because tree-shaking is the thing most
+changes actually affect, and esbuild and Rollup agree far more closely on *what survived* than their
+minifiers agree on *how small it packs*.
 
 `npm run size` is the one to reach for by default. It compares against its own committed baseline,
 reports in both directions, and suppresses movement below `max(32 B, 0.25%)` — a band set at 3× the
@@ -55,8 +55,8 @@ Two consequences worth knowing when you read a delta:
   reports your change in isolation. It became practical only when the sweep dropped to a minute —
   at ten minutes a run, nobody measured twice, which is how a `+0.02 KB` figure read off a stale pin
   once reached a ruling when the honest isolated number was 19 bytes.
-- **A missing baseline reports `passed`.** A key with no pin has no threshold, so a new fixture enters
-  unbounded and the truthful output would be "no baseline", not a pass.
+- **A missing baseline fails.** A key with no pin has no threshold, so a new fixture cannot enter
+  unbounded; the output reports "no baseline" and requires an intentional pin.
 
 ## The screw and the lawnmower
 
@@ -67,14 +67,14 @@ The store sells both the screw and the lawnmower — granular primitives and ass
 Four names, two subjects. Each check **reads** under its bare name and **writes** under `:baseline`.
 
 - `npm run size` — unminified sweep, reported against the committed unminified baseline.
-- `npm run size collision` — filter by example name. `render=canvas` filters by renderer, and the two
-  combine: `npm run size collision render=webgl`.
+- `npm run size host-web` — filter by fixture name. `render=canvas` filters by renderer, and the two
+  combine: `npm run size scene2d-gl render=webgl`.
 - `npm run size -- --ref=<commit>` — compare against a commit you measured earlier rather than the
   baseline. This is the parent-versus-commit mode; the reference must already be in the cache.
 - `npm run size report=json` — machine-readable, carrying both `raw` and `gzip` bytes per case.
 - `npm run size:baseline` — rewrite the unminified baseline.
-- `npm run size:minified` — the terser sweep. Interactively it refuses a bare full run and tells you
-  the cost; pass a filter or `-- --yes`. Also takes `report=json` and `output=<path>` (which prints
+- `npm run size:minified` — the terser sweep across the dedicated fixture corpus, which is what
+  nightly gates. It also takes fixture-name filters, `report=json`, and `output=<path>` (which prints
   `SIZE_REPORT_PATH:<path>`).
 - `npm run size:minified:baseline` — rewrite the shipping pins. **Not an agent's call.** See below.
 - `npm run size:minified flight-diagnostics log-console` — build the release-stub/diagnostics pair,
@@ -101,26 +101,9 @@ baseline is not a cost claim — nothing quotes it as what the SDK ships — so 
 nothing. It is a record of what the tree currently shakes to, and its diff is the size report a
 reviewer reads. Update it when a change legitimately moves it, the way you would a lockfile.
 
-Measure honestly and say so: `npm run size <example>` for the affected fixture, and
-parent-versus-commit for any figure you intend to report. The unminified sweep is a minute over all
-139 cases and seconds from cache; the terser sweep is the slow one.
-
-### ACCEPTED-BUT-UNWRITTEN — the shape bounds registry, 2026-08-13
-
-**The `shapes` pins in `size.baseline.json` disagree with the tree on purpose. Do not close the gap.**
-The user's instruction is that the baseline number is not to be written, and it outranks any earlier
-ruling; what has to survive is the reasoning, not the number.
-
-Accepted at **net −3,320 gzip**. GL and WGPU pay for cursor/context/traversal machinery they never
-needed — they always called the kernel directly — without the outline-stack removal that pays for it
-on the other three lanes. And **"GL/WGPU barely move" was a design guarantee that turned out wrong as
-stated**, which is the part worth keeping: the pins now record a prediction that failed, and a rewrite
-would erase the evidence that it failed.
-
-This entry exists because **an un-updated pin looks exactly like an overlooked chore.** A future
-reader finds a stale-looking number, one command away from tidy, and no reason not to. The reason is
-here. Nothing in the tooling can express "deliberately not updated" — `size:minified` will keep
-failing these cases nightly, and that red is the intended state, not a task.
+Measure honestly and say so: `npm run size <fixture>` for the affected fixture, and
+parent-versus-commit for any figure you intend to report. Both commands cover the same 15-case fixture
+corpus; the unminified sweep is seconds from cache and the terser sweep is the slower one.
 
 ## Size fixtures vs examples
 
@@ -131,7 +114,7 @@ failing these cases nightly, and that red is the intended state, not a task.
 - Does the **whole-store const** (`webHost`, `scene2dGlPipeline`) cost more than the sum of its parts?
 - Is the cost of a **manual pipeline** with one renderer honest?
 
-These require purpose-built fixtures that control exactly what is imported. Today's 7 dedicated fixtures under `tools/size/fixtures/` are the right shape — the ~132 example-derived measurements become a secondary check (do examples grow unexpectedly?) rather than the primary cost surface.
+These require purpose-built fixtures that control exactly what is imported. The 15 dedicated cases under `tools/size/fixtures/` are the complete size-test corpus. Examples are not measured: they are free to optimize for clarity without acquiring a frozen size contract.
 
 ### Where fixtures live
 
@@ -187,7 +170,7 @@ A fixture is missing if a registry family has no dedicated measurement — no fi
 
 ### Transition
 
-The existing 7 fixtures stay as-is. New fixtures are added as the explicit dependency model lands — each new const (`scene2dGlPipeline`, `webHost`, manual pipeline variants) gets a size fixture on arrival. Example-derived measurements remain in the baseline as a secondary signal but are no longer the primary cost surface. Examples are free to import `@flighthq/sdk`, `webHost`, and other convenience consts for clarity without distorting the size story.
+The existing fixtures stay as-is. New fixtures are added as the explicit dependency model lands — each new const (`scene2dGlPipeline`, `webHost`, manual pipeline variants) gets a size fixture on arrival. Both size commands measure only this dedicated corpus. Examples are free to import `@flighthq/sdk`, `webHost`, and other convenience consts for clarity without distorting the size story.
 
 ## Paired comparisons — aggregate vs single-capability
 
@@ -218,7 +201,7 @@ Each row is one same-program before/after comparison. Values are unminified tree
 
 ## The discipline these numbers protect
 
-- Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small examples larger — unless the size tradeoff is intentional and measured.
+- Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small fixtures larger — unless the size tradeoff is intentional and measured.
 - In examples, prefer small package imports when the example intentionally demonstrates low-level or tree-shaken usage. Use `@flighthq/sdk` only for examples meant to demonstrate application-level convenience.
 - Example render adapters enable authoring diagnostics. The size build replaces only that
   `enableFlightDiagnostics(state)` call with a no-op, so ordinary baselines continue to measure the

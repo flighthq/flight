@@ -45,14 +45,14 @@ const renderFilters = args
   .filter((arg) => arg.startsWith('render='))
   .flatMap((arg) => parseFilter(arg.slice('render='.length)));
 
-const examplesDir = resolve(root, 'examples', 'packages');
+const fixturesDir = resolve(root, 'tools', 'size', 'fixtures');
 
 // Always measure and cache every case. Filters select what to *report*, never what
 // to measure: a partial map written under a whole-tree id would silently answer
 // later unfiltered runs with missing cases, and a partial baseline write would
 // drop every key the filter excluded.
-const allCases = collectSizeCases(examplesDir, [], []);
-const selectedKeys = new Set(collectSizeCases(examplesDir, filters, renderFilters).map(getSizeCaseKey));
+const allCases = collectSizeCases(fixturesDir, [], []);
+const selectedKeys = new Set(collectSizeCases(fixturesDir, filters, renderFilters).map(getSizeCaseKey));
 if (selectedKeys.size === 0) {
   console.log(pc.yellow('No matching size cases were found.'));
   process.exit(0);
@@ -174,12 +174,12 @@ function git(gitArgs: readonly string[]): string | null {
 function printUsage(): void {
   console.log('Usage: npm run size [filters...] [render=<name>] [--ref=<commit>] [report=json]');
   console.log('');
-  console.log('Measures tree-shaken UNMINIFIED gzip size for every example and reports what moved');
-  console.log('against the committed baseline. Advisory, never gates. For the shipping number see');
-  console.log('`npm run size:minified` — which takes ~10 minutes and is the nightly job.');
+  console.log('Measures tree-shaken UNMINIFIED gzip size for every dedicated size fixture and reports');
+  console.log('what moved against the committed baseline. Advisory, never gates. For the shipping');
+  console.log('number see `npm run size:minified` — the same fixture corpus, gated nightly.');
   console.log('');
   console.log('  npm run size                    compare this tree against the committed baseline');
-  console.log('  npm run size shapes             only cases matching a filter');
+  console.log('  npm run size host-web           only fixtures matching a filter');
   console.log('  npm run size -- --ref=HEAD~1    compare against a commit you measured earlier');
   console.log('  npm run size:baseline           rewrite the baseline from this tree');
 }

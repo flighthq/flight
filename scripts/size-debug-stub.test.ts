@@ -9,6 +9,39 @@ describe('createSizeDebugStub', () => {
   test('replaces the authoring diagnostics call in release builds', () => {
     const plugin = createSizeDebugStub();
     const transform = plugin.transform as unknown as (code: string, id: string) => { code: string; map: null } | null;
-    expect(transform('enableFlightDiagnostics(state);', 'render.canvas.ts')?.code).toBe('void (state);');
+    expect(
+      transform('enableFlightDiagnostics(state);', '/repo/examples/packages/example/src/render.canvas.ts')?.code,
+    ).toBe('void (state);');
+  });
+
+  test('replaces a multiline diagnostics call while preserving render-state construction', () => {
+    const plugin = createSizeDebugStub();
+    const transform = plugin.transform as unknown as (code: string, id: string) => { code: string; map: null } | null;
+    const source = [
+      'enableFlightDiagnostics(',
+      '  createCanvasRenderState(',
+      '    createCanvasRenderSurface(canvas),',
+      '    scene2dCanvasPipeline,',
+      '  ),',
+      ');',
+    ].join('\n');
+
+    expect(transform(source, '/repo/tools/size/fixtures/flight-diagnostics/src/render.canvas.ts')?.code).toBe(
+      [
+        'void (',
+        '  createCanvasRenderState(',
+        '    createCanvasRenderSurface(canvas),',
+        '    scene2dCanvasPipeline,',
+        '  ));',
+      ].join('\n'),
+    );
+  });
+
+  test('does not rewrite the diagnostics implementation itself', () => {
+    const plugin = createSizeDebugStub();
+    const transform = plugin.transform as unknown as (code: string, id: string) => { code: string; map: null } | null;
+    const source = 'export function enableFlightDiagnostics(state: RenderState): void { register(state); }';
+
+    expect(transform(source, '/repo/packages/debug/src/debug.ts')).toBeNull();
   });
 });
