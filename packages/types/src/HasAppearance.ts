@@ -22,4 +22,4 @@ export interface HasAppearanceRuntime extends EntityRuntime {
   worldAppearanceId: number;
 }
 
-export type AppearanceNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasAppearance>;
+export type AppearanceNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasAppearance;

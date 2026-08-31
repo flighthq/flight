@@ -19,7 +19,7 @@ export interface NodeTraits {
 export interface Node<Traits extends object = NodeTraits> extends NodeTraits, Entity {
   [EntityRuntimeKey]: NodeRuntime<Traits> | undefined;
 }
-export type NodeOf<Traits extends object> = Node<Traits> & Traits;
+export type NodeOf<Traits extends object> = Node<Traits> & NoInfer<Traits>;
 export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityRuntime, ColorAdjustmentRuntime {
   appearanceId: number;
   boundsUsingLocalBoundsId: number;

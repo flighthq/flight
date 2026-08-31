@@ -9,4 +9,4 @@ export interface HasBlendMode {
   blendMode: BlendMode | null;
 }
 
-export type BlendModeNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasBlendMode>;
+export type BlendModeNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasBlendMode;

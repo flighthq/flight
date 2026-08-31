@@ -25,4 +25,4 @@ export interface HasTransform3DRuntime extends EntityRuntime {
   worldMatrix4: Matrix4 | null;
 }
 
-export type Transform3DNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasTransform3D>;
+export type Transform3DNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasTransform3D;
