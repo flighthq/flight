@@ -1,10 +1,12 @@
 import { createAnimationChannel, createAnimationClip } from '@flighthq/animation/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
+import { createMaterial } from '@flighthq/materials/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type {
   AnimationChannel,
   Material,
+  MaterialLike,
   Mesh,
   Scene3D,
   Scene3DAnimationTarget,
@@ -13,6 +15,7 @@ import type {
   Node3D,
   Skin,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createMesh } from './mesh';
 import { createScene3D } from './scene';
@@ -150,9 +153,7 @@ function attachDocumentAnimations(document: Readonly<Scene3DDocument>, nodes: re
 // document addresses everything by index.
 function buildDocumentNodes(document: Readonly<Scene3DDocument>): Node3D[] {
   const meshes = document.meshes;
-  // A document's materials are stored as plain-data MaterialLike, but the importers fill them with real
-  // entity-backed materials (createStandardPbrMaterial etc.); treat them as Material for assembly.
-  const materials = document.materials as unknown as readonly Material[];
+  const materials = document.materials.map(materializeDocumentMaterial);
   const nodes: Node3D[] = document.nodes.map((node) => buildDocumentNode(node, meshes, materials));
   for (let i = 0; i < document.nodes.length; i++) {
     applyDocumentNodeTransform(nodes[i], document.nodes[i]);
@@ -163,6 +164,19 @@ function buildDocumentNodes(document: Readonly<Scene3DDocument>): Node3D[] {
     }
   }
   return nodes;
+}
+
+// A document accepts serializable MaterialLike literals, while a live Mesh requires Material entities.
+// Preserve an entity supplied by an importer so material sharing and batching identity survive assembly;
+// otherwise copy the structural fields onto the canonical material entity rather than installing the
+// caller's plain document object into the live scene.
+function materializeDocumentMaterial(source: MaterialLike): Material {
+  if (isMaterialEntity(source)) return source;
+  return Object.assign(createMaterial(source.kind), source);
+}
+
+function isMaterialEntity(source: MaterialLike): source is Material {
+  return EntityRuntimeKey in source;
 }
 
 // Builds a single node: a Mesh (with its inline geometry, resolved materials, and morph) when the node
