@@ -66,7 +66,9 @@ function createCaptureVideoResource(): ReturnType<typeof createVideoResource> {
 }
 
 function drawVideoFrame(ctx: CanvasRenderingContext2D, width: number, height: number, frame: number): void {
-  const hue = (frame * 4) % 360;
+  // Keep the generated clip in a calm blue-violet palette. A slow sinusoidal drift still proves
+  // that successive video frames update without the previous full hue-wheel flash every 90 frames.
+  const hue = 218 + Math.sin(frame * 0.025) * 18;
   ctx.fillStyle = `hsl(${hue}, 70%, 30%)`;
   ctx.fillRect(0, 0, width, height);
 
