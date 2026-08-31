@@ -302,9 +302,7 @@ function checkRootKindDimension3D(
 ): FlightDocumentRefusalExplanation | null {
   const schema = getRegistryTableEntry(schemas.nodeSchemas, documentRoot.kind);
   if (schema === null) return null;
-  const probe = schema.createNode(documentRoot.fields, {
-    resolve: () => null,
-  } as unknown as FlightDocumentResourceLookup);
+  const probe = schema.createNode(documentRoot.fields, {});
   if (probe === null) return null;
   const runtime = getEntityRuntime(probe) as Readonly<{ traits?: unknown }> | undefined;
   if (runtime?.traits === Node3DTraitsKey) return null;

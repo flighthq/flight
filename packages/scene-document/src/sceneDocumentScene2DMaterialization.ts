@@ -199,5 +199,5 @@ function checkRootKindDimension(
 }
 
 function createEmptyResourceLookup(): FlightDocumentResourceLookup {
-  return { resolve: () => null } as unknown as FlightDocumentResourceLookup;
+  return {};
 }
