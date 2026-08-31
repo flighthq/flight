@@ -7,11 +7,11 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 357 |
+| able | 359 |
 | blind | 0 |
 | gap | 0 |
 | exempt | 0 |
-| **total** | **357** |
+| **total** | **359** |
 
 `able` means at least one throw threshold depends on a named sample point, spatial bound or
 neighbourhood, or multiple distinct call-site regions. `blind` means its thresholds use only
@@ -20,7 +20,7 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 
 | source | verdict | evidence |
 | --- | --- | --- |
-| `functional/scenes/application-render-view.webgl.ts` | able | L101: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
+| `functional/scenes/application-render-view.webgl.ts` | able | L105: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
 | `functional/scenes/bitmap-color-transform.ts` | able | L96: at samples pixels from a named call site (SOURCE_X + TILE / 2, TILE_Y + TILE / 2) |
 | `functional/scenes/bitmap-downscale-smoothing.canvas.ts` | able | L123: sampleBand samples pixels from a named call site (at, ALIAS_X, ALIAS_Y) |
 | `functional/scenes/bitmap-downscale-smoothing.dom.ts` | able | L121: sampleBand samples pixels from a named call site (at, ALIAS_X, ALIAS_Y) |
@@ -30,215 +30,217 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/bitmap-source-rect.ts` | able | L106: at samples pixels from a named call site (FULL_X + QUAD / 2, FULL_Y + QUAD / 2) |
 | `functional/scenes/bitmap-transform-rotation.canvas.ts` | able | L72: at samples pixels from a named call site (200, 150) |
 | `functional/scenes/bitmap-transparent-compositing.ts` | able | L102: at samples pixels from a named call site (FULL_X + IMG_SIZE / 2, FULL_Y + IMG_SIZE / 2) |
-| `functional/scenes/camera-orthographic.webgl.ts` | able | L151: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
-| `functional/scenes/camera-orthographic.webgpu.ts` | able | L113: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
+| `functional/scenes/camera-orthographic.webgl.ts` | able | L163: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
+| `functional/scenes/camera-orthographic.webgpu.ts` | able | L119: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
 | `functional/scenes/camera2d-viewport.canvas.ts` | able | L89: at samples pixels from a named call site (400, 300) |
 | `functional/scenes/color-adjustment.canvas.ts` | able | L109: at samples pixels from a named call site (REFERENCE_X + REGION / 2, SQUARE_Y + REGION / 2) |
 | `functional/scenes/color-adjustment.webgl.ts` | able | L110: at samples pixels from a named call site (REFERENCE_X + REGION / 2, SQUARE_Y + REGION / 2) |
 | `functional/scenes/color-adjustment.webgpu.ts` | able | L106: at samples pixels from a named call site (REFERENCE_X + REGION / 2, SQUARE_Y + REGION / 2) |
 | `functional/scenes/compressed-texture.webgl.ts` | able | L138: at samples pixels from a named call site (BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2) |
-| `functional/scenes/compressed-texture.webgpu.ts` | able | L139: at samples pixels from a named call site (BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2) |
-| `functional/scenes/effect-bevel.webgl.ts` | able | L152: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + inset \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + BAND ; SQUARE_X + 40 \| SQUARE_Y + SQUARE - BAND \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + SQUARE - inset ; SQUARE_X + inset \| SQUARE_Y + 40 \| SQUARE_X + BAND \| SQUARE_Y + SQUARE - 40) |
-| `functional/scenes/effect-blend-advanced.webgl.ts` | able | L156: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(w * 0.25), Math.floor(h * 0.25)) |
-| `functional/scenes/effect-blend-advanced.webgpu.ts` | able | L131: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width * 0.25), Math.floor(bitmap.height * 0.25)) |
-| `functional/scenes/effect-bloom.canvas.ts` | able | L147: getBitmapPixelRgb is thresholded at named coordinates (Math.round(frame.width * 0.83), Math.round(frame.height * 0.3)) |
-| `functional/scenes/effect-bloom.webgl.ts` | able | L140: getBitmapPixelRgb is thresholded at named coordinates (Math.round(frame.width * 0.83), Math.round(frame.height * 0.3)) |
-| `functional/scenes/effect-bloom.webgpu.ts` | able | L143: getBitmapPixelRgb is thresholded at named coordinates (Math.round(frame.width * 0.83), Math.round(frame.height * 0.3)) |
-| `functional/scenes/effect-bokeh-dof.webgl.ts` | able | L102: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-bokeh-dof.webgpu.ts` | able | L105: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-brightness-contrast.canvas.ts` | able | L103: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-brightness-contrast.webgl.ts` | able | L106: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-brightness-contrast.webgpu.ts` | able | L109: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-camera-motion-blur.webgl.ts` | able | L99: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-camera-motion-blur.webgpu.ts` | able | L100: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-chain.canvas.ts` | able | L166: luminance samples pixels from a named call site (12, 12) |
-| `functional/scenes/effect-chain.webgl.ts` | able | L172: luminance samples pixels from a named call site (12, 12) |
-| `functional/scenes/effect-chain.webgpu.ts` | able | L170: luminance samples pixels from a named call site (12, 12) |
-| `functional/scenes/effect-channel-mixer.webgl.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-channel-mixer.webgpu.ts` | able | L105: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-chromatic-aberration.webgl.ts` | able | L203: getBitmapPixelRgb is thresholded at named coordinates (ix, iy) |
-| `functional/scenes/effect-chromatic-aberration.webgpu.ts` | able | L206: getBitmapPixelRgb is thresholded at named coordinates (ix, iy) |
-| `functional/scenes/effect-color-grade.canvas.ts` | able | L95: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-color-grade.webgl.ts` | able | L98: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-color-grade.webgpu.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-composite.webgpu.ts` | able | L120: sample samples pixels from a named call site (0.25, 0.25) |
-| `functional/scenes/effect-crt.webgl.ts` | able | L110: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-crt.webgpu.ts` | able | L112: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-directional-blur.webgl.ts` | able | L142: meanAt samples pixels from a named call site (PROBE_DX, -PROBE_DY) |
-| `functional/scenes/effect-directional-blur.webgpu.ts` | able | L145: meanAt samples pixels from a named call site (PROBE_DX, -PROBE_DY) |
-| `functional/scenes/effect-displacement.webgl.ts` | able | L100: getBitmapPixelRgb is thresholded at named coordinates (0, 0) |
-| `functional/scenes/effect-displacement.webgpu.ts` | able | L91: getBitmapPixelRgb is thresholded at named coordinates (0, 0) |
-| `functional/scenes/effect-dither.webgl.ts` | able | L107: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-dither.webgpu.ts` | able | L109: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-drop-shadow.webgl.ts` | able | L124: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + SQUARE + 4 \| SQUARE_X + SQUARE \| SQUARE_Y + SQUARE + 36 ; SQUARE_X + 40 \| SQUARE_Y - 36 \| SQUARE_X + SQUARE \| SQUARE_Y - 4 ; SQUARE_X + SQUARE + 4 \| SQUARE_Y + 40 \| SQUARE_X + SQUARE + 36 \| SQUARE_Y + SQUARE) |
-| `functional/scenes/effect-empty-passthrough.canvas.ts` | able | L142: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/effect-empty-passthrough.webgl.ts` | able | L145: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/effect-empty-passthrough.webgpu.ts` | able | L146: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/effect-exposure.webgl.ts` | able | L95: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
-| `functional/scenes/effect-exposure.webgpu.ts` | able | L93: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
-| `functional/scenes/effect-film-grain.canvas.ts` | able | L100: assertRender thresholds spatial neighbourhood order via highFrequency |
-| `functional/scenes/effect-film-grain.webgl.ts` | able | L99: assertRender thresholds spatial neighbourhood order via highFrequency |
-| `functional/scenes/effect-film-grain.webgpu.ts` | able | L100: assertRender thresholds spatial neighbourhood order via highFrequency |
-| `functional/scenes/effect-fxaa.webgl.ts` | able | L96: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-fxaa.webgpu.ts` | able | L93: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-glitch.webgl.ts` | able | L98: getBitmapPixelRgb is compared with a location-indexed expected value |
-| `functional/scenes/effect-glitch.webgpu.ts` | able | L99: getBitmapPixelRgb is compared with a location-indexed expected value |
-| `functional/scenes/effect-god-rays.webgl.ts` | able | L138: brightestY carries a thresholded spatial bound |
-| `functional/scenes/effect-god-rays.webgpu.ts` | able | L135: brightestY carries a thresholded spatial bound |
-| `functional/scenes/effect-gradient-bevel.webgl.ts` | able | L151: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + inset \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + BAND ; SQUARE_X + 40 \| SQUARE_Y + SQUARE - BAND \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + SQUARE - inset ; SQUARE_X + inset \| SQUARE_Y + 40 \| SQUARE_X + BAND \| SQUARE_Y + SQUARE - 40) |
-| `functional/scenes/effect-grayscale.canvas.ts` | able | L97: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-grayscale.webgl.ts` | able | L100: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-grayscale.webgpu.ts` | able | L103: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-halftone.webgl.ts` | able | L94: assertRender thresholds spatial neighbourhood order via highFrequency |
-| `functional/scenes/effect-halftone.webgpu.ts` | able | L96: assertRender thresholds spatial neighbourhood order via highFrequency |
-| `functional/scenes/effect-hue-saturation.canvas.ts` | able | L93: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-hue-saturation.webgl.ts` | able | L96: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-hue-saturation.webgpu.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-inner-shadow.webgl.ts` | able | L123: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + 4 \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + 28 ; SQUARE_X + 40 \| SQUARE_Y + SQUARE - 28 \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + SQUARE - 4 ; SQUARE_X + 4 \| SQUARE_Y + 40 \| SQUARE_X + 28 \| SQUARE_Y + SQUARE - 40) |
-| `functional/scenes/effect-invert.canvas.ts` | able | L93: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-invert.webgl.ts` | able | L96: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-invert.webgpu.ts` | able | L101: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-kuwahara.webgl.ts` | able | L103: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-kuwahara.webgpu.ts` | able | L106: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-lens-distortion.canvas.ts` | able | L107: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
-| `functional/scenes/effect-lens-distortion.webgl.ts` | able | L104: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
-| `functional/scenes/effect-lens-distortion.webgpu.ts` | able | L104: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
-| `functional/scenes/effect-lens-flare.webgl.ts` | able | L141: meanOf samples pixels from a named call site (0, 0, PROBE) |
-| `functional/scenes/effect-lens-flare.webgpu.ts` | able | L139: meanOf samples pixels from a named call site (0, 0, PROBE) |
-| `functional/scenes/effect-lensdirt.webgl.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (blockCx, blockCy) |
-| `functional/scenes/effect-lensdirt.webgpu.ts` | able | L90: getBitmapPixelRgb is thresholded at named coordinates (blockCx, blockCy) |
-| `functional/scenes/effect-lift-gamma-gain.webgl.ts` | able | L137: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/effect-lift-gamma-gain.webgpu.ts` | able | L140: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/effect-lut-grade.webgl.ts` | able | L109: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-lut-grade.webgpu.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-motion-blur.webgl.ts` | able | L167: luminance is checked by a throw threshold inside its sampling loop (frame, cx) |
-| `functional/scenes/effect-motion-blur.webgpu.ts` | able | L170: luminance is checked by a throw threshold inside its sampling loop (frame, cx) |
-| `functional/scenes/effect-msaa-bloom.canvas.ts` | able | L138: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
-| `functional/scenes/effect-msaa-bloom.webgl.ts` | able | L135: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
-| `functional/scenes/effect-msaa-bloom.webgpu.ts` | able | L149: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
-| `functional/scenes/effect-msaa.webgl.ts` | able | L134: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/effect-msaa.webgpu.ts` | able | L146: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/effect-outline.webgl.ts` | able | L117: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (centerX, centerY) |
-| `functional/scenes/effect-outline.webgpu.ts` | able | L125: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (centerX, centerY) |
-| `functional/scenes/effect-pixelate.canvas.ts` | able | L105: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-pixelate.webgl.ts` | able | L107: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-pixelate.webgpu.ts` | able | L110: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-posterize.canvas.ts` | able | L114: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-posterize.webgl.ts` | able | L114: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-posterize.webgpu.ts` | able | L119: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-radial-blur.webgl.ts` | able | L136: countSteepSteps is thresholded across 2 distinct call-site regions (RADIAL_CENTER_Y - 0.06 \| RADIAL_CENTER_Y + 0.06 ; RADIAL_CENTER_Y + 0.06 \| RADIAL_CENTER_Y + 0.18) |
-| `functional/scenes/effect-radial-blur.webgpu.ts` | able | L137: countSteepSteps is thresholded across 2 distinct call-site regions (RADIAL_CENTER_Y - 0.06 \| RADIAL_CENTER_Y + 0.06 ; RADIAL_CENTER_Y + 0.06 \| RADIAL_CENTER_Y + 0.18) |
-| `functional/scenes/effect-scanlines.canvas.ts` | able | L106: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-scanlines.webgl.ts` | able | L107: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-scanlines.webgpu.ts` | able | L109: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-screen-space-fog.webgl.ts` | able | L101: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
-| `functional/scenes/effect-screen-space-fog.webgpu.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
-| `functional/scenes/effect-sepia.canvas.ts` | able | L104: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-sepia.webgl.ts` | able | L107: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-sepia.webgpu.ts` | able | L110: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/effect-sharpen.webgl.ts` | able | L102: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-sharpen.webgpu.ts` | able | L104: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-sketch.webgl.ts` | able | L99: assertRender thresholds spatial neighbourhood order via highFrequency |
-| `functional/scenes/effect-sketch.webgpu.ts` | able | L101: assertRender thresholds spatial neighbourhood order via highFrequency |
-| `functional/scenes/effect-smaa.webgl.ts` | able | L100: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-smaa.webgpu.ts` | able | L97: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-ssao.webgl.ts` | able | L104: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-ssao.webgpu.ts` | able | L102: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-ssr.webgl.ts` | able | L108: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-ssr.webgpu.ts` | able | L106: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-taa.webgl.ts` | able | L109: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-taa.webgpu.ts` | able | L107: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-tilt-shift.canvas.ts` | able | L136: luminance feeds thresholds from 3 distinct sample call sites (x \| y ; x \| y - 1 ; x - 1 \| y) |
-| `functional/scenes/effect-tilt-shift.webgl.ts` | able | L142: luminance feeds thresholds from 3 distinct sample call sites (x \| y ; x \| y - 1 ; x - 1 \| y) |
-| `functional/scenes/effect-tilt-shift.webgpu.ts` | able | L142: luminance feeds thresholds from 3 distinct sample call sites (x \| y ; x \| y - 1 ; x - 1 \| y) |
-| `functional/scenes/effect-tone-map.webgl.ts` | able | L105: getBitmapPixelRgb is thresholded at named coordinates (whiteCx, whiteCy) |
-| `functional/scenes/effect-tone-map.webgpu.ts` | able | L96: getBitmapPixelRgb is thresholded at named coordinates (whiteCx, whiteCy) |
-| `functional/scenes/effect-vignette.canvas.ts` | able | L110: luminanceAt samples pixels from a named call site (Math.round(frame.width / 2), Math.round(frame.height / 2)) |
-| `functional/scenes/effect-vignette.webgl.ts` | able | L112: luminanceAt samples pixels from a named call site (Math.round(frame.width / 2), Math.round(frame.height / 2)) |
-| `functional/scenes/effect-vignette.webgpu.ts` | able | L113: luminanceAt samples pixels from a named call site (Math.round(frame.width / 2), Math.round(frame.height / 2)) |
-| `functional/scenes/effect-white-balance.webgl.ts` | able | L104: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-white-balance.webgpu.ts` | able | L107: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/env-ibl.webgl.ts` | able | L153: getBitmapPixelLuminance is thresholded at named coordinates (metalX, cy) |
-| `functional/scenes/env-ibl.webgpu.ts` | able | L114: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.32), centerY) |
-| `functional/scenes/env-skybox.webgl.ts` | able | L161: getBitmapPixel is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.12)) |
-| `functional/scenes/env-skybox.webgpu.ts` | able | L124: getBitmapPixel is thresholded at named coordinates (Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.12)) |
-| `functional/scenes/light-hemisphere.webgl.ts` | able | L110: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy - offset) |
-| `functional/scenes/light-hemisphere.webgpu.ts` | able | L86: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy - offset) |
-| `functional/scenes/light-many-point.webgl.ts` | able | L184: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/light-many-point.webgpu.ts` | able | L162: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/light-point.webgl.ts` | able | L113: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/light-point.webgpu.ts` | able | L97: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/light-spot.webgl.ts` | able | L137: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/light-spot.webgpu.ts` | able | L111: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-alpha-map-pbr.webgl.ts` | able | L159: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
-| `functional/scenes/material-alpha-map-pbr.webgpu.ts` | able | L156: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
-| `functional/scenes/material-alpha-map.webgl.ts` | able | L147: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
-| `functional/scenes/material-alpha-map.webgpu.ts` | able | L145: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
-| `functional/scenes/material-anisotropy.webgl.ts` | able | L160: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-blend-modes.webgl.ts` | able | L227: assertBlendModeCoverage samples pixels from a named call site (bitmap, '[material-blend-modes/webgl]') |
-| `functional/scenes/material-blend-modes.webgpu.ts` | able | L221: assertBlendModeCoverage samples pixels from a named call site (bitmap, '[material-blend-modes/webgpu]') |
-| `functional/scenes/material-blinn-phong.webgl.ts` | able | L168: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-blinn-phong.webgpu.ts` | able | L165: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-clearcoat.webgl.ts` | able | L155: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-custom-shader.webgl.ts` | able | L132: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
-| `functional/scenes/material-custom-shader.webgpu.ts` | able | L148: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
-| `functional/scenes/material-depth-orthographic.webgl.ts` | able | L101: getBitmapPixelLuminance is thresholded at named coordinates (centerX, centerY) |
-| `functional/scenes/material-depth.webgl.ts` | able | L145: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-depth.webgpu.ts` | able | L142: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-emissive.webgl.ts` | able | L141: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-emissive.webgpu.ts` | able | L138: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-iridescence.webgl.ts` | able | L155: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-lambert.webgl.ts` | able | L151: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-lambert.webgpu.ts` | able | L148: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-matcap.webgl.ts` | able | L144: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-matcap.webgpu.ts` | able | L141: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-normal.webgl.ts` | able | L145: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-normal.webgpu.ts` | able | L142: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-phong.webgl.ts` | able | L168: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-phong.webgpu.ts` | able | L165: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-sheen.webgl.ts` | able | L155: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-specular-glossiness.webgl.ts` | able | L151: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-specular-glossiness.webgpu.ts` | able | L148: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-specular.webgl.ts` | able | L163: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-standard-pbr.webgl.ts` | able | L142: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-standard-pbr.webgpu.ts` | able | L145: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-subsurface.webgl.ts` | able | L145: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-toon.webgl.ts` | able | L143: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-toon.webgpu.ts` | able | L146: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/material-transmission-volume.webgl.ts` | able | L179: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-unlit.webgl.ts` | able | L129: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-unlit.webgpu.ts` | able | L132: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-vertex-color-interpolated.webgl.ts` | able | L168: getBitmapPixelChannel is thresholded at named coordinates (x, y) |
-| `functional/scenes/material-vertex-color.webgl.ts` | able | L133: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-vertex-color.webgpu.ts` | able | L136: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/material-video-map.webgl.ts` | able | L90: sample samples pixels from a named call site (0.35) |
-| `functional/scenes/material-video-map.webgpu.ts` | able | L88: sample samples pixels from a named call site (0.35) |
-| `functional/scenes/material-wireframe.webgl.ts` | able | L155: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (sample.x, sample.y) |
-| `functional/scenes/material-wireframe.webgpu.ts` | able | L158: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (sample.x, sample.y) |
-| `functional/scenes/mesh-cone.webgl.ts` | able | L122: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-cone.webgpu.ts` | able | L125: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-cylinder.webgl.ts` | able | L122: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-cylinder.webgpu.ts` | able | L125: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-geometry.webgl.ts` | able | L119: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-geometry.webgpu.ts` | able | L122: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-hierarchy-parent-transform.webgl.ts` | able | L132: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-hierarchy-parent-transform.webgpu.ts` | able | L135: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-mirrored-facing.webgl.ts` | able | L157: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.25), y) |
-| `functional/scenes/mesh-multiple-depth.webgl.ts` | able | L146: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-multiple-depth.webgpu.ts` | able | L149: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-normal-position-groups.webgl.ts` | able | L119: getBitmapPixelLuminance is thresholded at named coordinates (x - nearOffset, y) |
-| `functional/scenes/mesh-normal-position-groups.webgpu.ts` | able | L114: getBitmapPixelLuminance is thresholded at named coordinates (x - nearOffset, y) |
-| `functional/scenes/mesh-plane.webgl.ts` | able | L121: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-plane.webgpu.ts` | able | L124: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-tangent-mirror-handedness.webgl.ts` | able | L168: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * SAMPLE_FRACTION_LEFT), y) |
-| `functional/scenes/mesh-tangent-mirrored-uv.webgl.ts` | able | L125: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width / 2) - offset, y) |
-| `functional/scenes/mesh-tangent-mirrored-uv.webgpu.ts` | able | L120: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width / 2) - offset, y) |
-| `functional/scenes/mesh-transform-position.webgl.ts` | able | L127: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-transform-position.webgpu.ts` | able | L130: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-transform-rotation.webgl.ts` | able | L132: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-transform-rotation.webgpu.ts` | able | L135: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-transform-scale.webgl.ts` | able | L127: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/mesh-transform-scale.webgpu.ts` | able | L130: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/compressed-texture.webgpu.ts` | able | L145: at samples pixels from a named call site (BITMAP_X + (TEX * SCALE) / 2, BITMAP_Y + (TEX * SCALE) / 2) |
+| `functional/scenes/effect-bevel.webgl.ts` | able | L164: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + inset \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + BAND ; SQUARE_X + 40 \| SQUARE_Y + SQUARE - BAND \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + SQUARE - inset ; SQUARE_X + inset \| SQUARE_Y + 40 \| SQUARE_X + BAND \| SQUARE_Y + SQUARE - 40) |
+| `functional/scenes/effect-blend-advanced.webgl.ts` | able | L168: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(w * 0.25), Math.floor(h * 0.25)) |
+| `functional/scenes/effect-blend-advanced.webgpu.ts` | able | L134: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width * 0.25), Math.floor(bitmap.height * 0.25)) |
+| `functional/scenes/effect-bloom.canvas.ts` | able | L160: getBitmapPixelRgb is thresholded at named coordinates (Math.round(frame.width * 0.83), Math.round(frame.height * 0.3)) |
+| `functional/scenes/effect-bloom.webgl.ts` | able | L152: getBitmapPixelRgb is thresholded at named coordinates (Math.round(frame.width * 0.83), Math.round(frame.height * 0.3)) |
+| `functional/scenes/effect-bloom.webgpu.ts` | able | L149: getBitmapPixelRgb is thresholded at named coordinates (Math.round(frame.width * 0.83), Math.round(frame.height * 0.3)) |
+| `functional/scenes/effect-bokeh-dof.webgl.ts` | able | L114: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-bokeh-dof.webgpu.ts` | able | L111: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-brightness-contrast.canvas.ts` | able | L116: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-brightness-contrast.webgl.ts` | able | L118: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-brightness-contrast.webgpu.ts` | able | L115: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-camera-motion-blur.webgl.ts` | able | L111: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-camera-motion-blur.webgpu.ts` | able | L106: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-chain.canvas.ts` | able | L179: luminance samples pixels from a named call site (12, 12) |
+| `functional/scenes/effect-chain.webgl.ts` | able | L184: luminance samples pixels from a named call site (12, 12) |
+| `functional/scenes/effect-chain.webgpu.ts` | able | L176: luminance samples pixels from a named call site (12, 12) |
+| `functional/scenes/effect-channel-mixer.webgl.ts` | able | L124: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-channel-mixer.webgpu.ts` | able | L111: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-chromatic-aberration.webgl.ts` | able | L215: getBitmapPixelRgb is thresholded at named coordinates (ix, iy) |
+| `functional/scenes/effect-chromatic-aberration.webgpu.ts` | able | L212: getBitmapPixelRgb is thresholded at named coordinates (ix, iy) |
+| `functional/scenes/effect-color-grade.canvas.ts` | able | L108: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-color-grade.webgl.ts` | able | L110: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-color-grade.webgpu.ts` | able | L105: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-composite.webgpu.ts` | able | L123: sample samples pixels from a named call site (0.25, 0.25) |
+| `functional/scenes/effect-crt.webgl.ts` | able | L122: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-crt.webgpu.ts` | able | L118: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-directional-blur.webgl.ts` | able | L154: meanAt samples pixels from a named call site (PROBE_DX, -PROBE_DY) |
+| `functional/scenes/effect-directional-blur.webgpu.ts` | able | L151: meanAt samples pixels from a named call site (PROBE_DX, -PROBE_DY) |
+| `functional/scenes/effect-displacement.webgl.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (0, 0) |
+| `functional/scenes/effect-displacement.webgpu.ts` | able | L97: getBitmapPixelRgb is thresholded at named coordinates (0, 0) |
+| `functional/scenes/effect-dither.webgl.ts` | able | L119: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-dither.webgpu.ts` | able | L115: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-drop-shadow.webgl.ts` | able | L136: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + SQUARE + 4 \| SQUARE_X + SQUARE \| SQUARE_Y + SQUARE + 36 ; SQUARE_X + 40 \| SQUARE_Y - 36 \| SQUARE_X + SQUARE \| SQUARE_Y - 4 ; SQUARE_X + SQUARE + 4 \| SQUARE_Y + 40 \| SQUARE_X + SQUARE + 36 \| SQUARE_Y + SQUARE) |
+| `functional/scenes/effect-empty-passthrough.canvas.ts` | able | L155: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-empty-passthrough.webgl.ts` | able | L157: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-empty-passthrough.webgpu.ts` | able | L152: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-exposure.webgl.ts` | able | L107: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
+| `functional/scenes/effect-exposure.webgpu.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
+| `functional/scenes/effect-film-grain.canvas.ts` | able | L113: assertRender thresholds spatial neighbourhood order via highFrequency |
+| `functional/scenes/effect-film-grain.webgl.ts` | able | L111: assertRender thresholds spatial neighbourhood order via highFrequency |
+| `functional/scenes/effect-film-grain.webgpu.ts` | able | L106: assertRender thresholds spatial neighbourhood order via highFrequency |
+| `functional/scenes/effect-fxaa.webgl.ts` | able | L108: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-fxaa.webgpu.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-glitch.webgl.ts` | able | L110: getBitmapPixelRgb is compared with a location-indexed expected value |
+| `functional/scenes/effect-glitch.webgpu.ts` | able | L105: getBitmapPixelRgb is compared with a location-indexed expected value |
+| `functional/scenes/effect-god-rays.webgl.ts` | able | L150: brightestY carries a thresholded spatial bound |
+| `functional/scenes/effect-god-rays.webgpu.ts` | able | L141: brightestY carries a thresholded spatial bound |
+| `functional/scenes/effect-gradient-bevel.webgl.ts` | able | L163: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + inset \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + BAND ; SQUARE_X + 40 \| SQUARE_Y + SQUARE - BAND \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + SQUARE - inset ; SQUARE_X + inset \| SQUARE_Y + 40 \| SQUARE_X + BAND \| SQUARE_Y + SQUARE - 40) |
+| `functional/scenes/effect-grayscale.canvas.ts` | able | L110: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-grayscale.webgl.ts` | able | L112: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-grayscale.webgpu.ts` | able | L109: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-halftone.webgl.ts` | able | L106: assertRender thresholds spatial neighbourhood order via highFrequency |
+| `functional/scenes/effect-halftone.webgpu.ts` | able | L102: assertRender thresholds spatial neighbourhood order via highFrequency |
+| `functional/scenes/effect-hue-saturation.canvas.ts` | able | L106: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-hue-saturation.webgl.ts` | able | L108: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-hue-saturation.webgpu.ts` | able | L105: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-inner-shadow.webgl.ts` | able | L135: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + 4 \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + 28 ; SQUARE_X + 40 \| SQUARE_Y + SQUARE - 28 \| SQUARE_X + SQUARE - 40 \| SQUARE_Y + SQUARE - 4 ; SQUARE_X + 4 \| SQUARE_Y + 40 \| SQUARE_X + 28 \| SQUARE_Y + SQUARE - 40) |
+| `functional/scenes/effect-invert.canvas.ts` | able | L106: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-invert.webgl.ts` | able | L108: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-invert.webgpu.ts` | able | L107: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-kuwahara.webgl.ts` | able | L115: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-kuwahara.webgpu.ts` | able | L112: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-lens-distortion.canvas.ts` | able | L120: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
+| `functional/scenes/effect-lens-distortion.webgl.ts` | able | L116: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
+| `functional/scenes/effect-lens-distortion.webgpu.ts` | able | L110: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
+| `functional/scenes/effect-lens-flare.webgl.ts` | able | L153: meanOf samples pixels from a named call site (0, 0, PROBE) |
+| `functional/scenes/effect-lens-flare.webgpu.ts` | able | L145: meanOf samples pixels from a named call site (0, 0, PROBE) |
+| `functional/scenes/effect-lensdirt.webgl.ts` | able | L111: getBitmapPixelRgb is thresholded at named coordinates (blockCx, blockCy) |
+| `functional/scenes/effect-lensdirt.webgpu.ts` | able | L96: getBitmapPixelRgb is thresholded at named coordinates (blockCx, blockCy) |
+| `functional/scenes/effect-lift-gamma-gain.webgl.ts` | able | L149: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-lift-gamma-gain.webgpu.ts` | able | L146: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-lut-grade.webgl.ts` | able | L121: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-lut-grade.webgpu.ts` | able | L118: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-motion-blur.webgl.ts` | able | L179: luminance is checked by a throw threshold inside its sampling loop (frame, cx) |
+| `functional/scenes/effect-motion-blur.webgpu.ts` | able | L176: luminance is checked by a throw threshold inside its sampling loop (frame, cx) |
+| `functional/scenes/effect-msaa-bloom.canvas.ts` | able | L151: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
+| `functional/scenes/effect-msaa-bloom.webgl.ts` | able | L147: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
+| `functional/scenes/effect-msaa-bloom.webgpu.ts` | able | L155: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
+| `functional/scenes/effect-msaa.webgl.ts` | able | L146: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-msaa.webgpu.ts` | able | L152: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-outline.webgl.ts` | able | L129: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (centerX, centerY) |
+| `functional/scenes/effect-outline.webgpu.ts` | able | L131: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (centerX, centerY) |
+| `functional/scenes/effect-pixelate.canvas.ts` | able | L118: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-pixelate.webgl.ts` | able | L119: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-pixelate.webgpu.ts` | able | L116: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-posterize.canvas.ts` | able | L127: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-posterize.webgl.ts` | able | L126: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-posterize.webgpu.ts` | able | L125: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-radial-blur.webgl.ts` | able | L148: countSteepSteps is thresholded across 2 distinct call-site regions (RADIAL_CENTER_Y - 0.06 \| RADIAL_CENTER_Y + 0.06 ; RADIAL_CENTER_Y + 0.06 \| RADIAL_CENTER_Y + 0.18) |
+| `functional/scenes/effect-radial-blur.webgpu.ts` | able | L143: countSteepSteps is thresholded across 2 distinct call-site regions (RADIAL_CENTER_Y - 0.06 \| RADIAL_CENTER_Y + 0.06 ; RADIAL_CENTER_Y + 0.06 \| RADIAL_CENTER_Y + 0.18) |
+| `functional/scenes/effect-scanlines.canvas.ts` | able | L119: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-scanlines.webgl.ts` | able | L119: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-scanlines.webgpu.ts` | able | L115: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-screen-space-fog.webgl.ts` | able | L113: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
+| `functional/scenes/effect-screen-space-fog.webgpu.ts` | able | L105: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
+| `functional/scenes/effect-sepia.canvas.ts` | able | L117: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-sepia.webgl.ts` | able | L119: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-sepia.webgpu.ts` | able | L116: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-sharpen.webgl.ts` | able | L114: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-sharpen.webgpu.ts` | able | L110: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-sketch.webgl.ts` | able | L111: assertRender thresholds spatial neighbourhood order via highFrequency |
+| `functional/scenes/effect-sketch.webgpu.ts` | able | L107: assertRender thresholds spatial neighbourhood order via highFrequency |
+| `functional/scenes/effect-smaa.webgl.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-smaa.webgpu.ts` | able | L103: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-ssao.webgl.ts` | able | L116: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-ssao.webgpu.ts` | able | L108: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-ssr.webgl.ts` | able | L120: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-ssr.webgpu.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-taa.webgl.ts` | able | L121: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-taa.webgpu.ts` | able | L113: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-tilt-shift.canvas.ts` | able | L149: luminance feeds thresholds from 3 distinct sample call sites (x \| y ; x \| y - 1 ; x - 1 \| y) |
+| `functional/scenes/effect-tilt-shift.webgl.ts` | able | L154: luminance feeds thresholds from 3 distinct sample call sites (x \| y ; x \| y - 1 ; x - 1 \| y) |
+| `functional/scenes/effect-tilt-shift.webgpu.ts` | able | L148: luminance feeds thresholds from 3 distinct sample call sites (x \| y ; x \| y - 1 ; x - 1 \| y) |
+| `functional/scenes/effect-tone-map.webgl.ts` | able | L117: getBitmapPixelRgb is thresholded at named coordinates (whiteCx, whiteCy) |
+| `functional/scenes/effect-tone-map.webgpu.ts` | able | L102: getBitmapPixelRgb is thresholded at named coordinates (whiteCx, whiteCy) |
+| `functional/scenes/effect-vignette.canvas.ts` | able | L123: luminanceAt samples pixels from a named call site (Math.round(frame.width / 2), Math.round(frame.height / 2)) |
+| `functional/scenes/effect-vignette.webgl.ts` | able | L124: luminanceAt samples pixels from a named call site (Math.round(frame.width / 2), Math.round(frame.height / 2)) |
+| `functional/scenes/effect-vignette.webgpu.ts` | able | L119: luminanceAt samples pixels from a named call site (Math.round(frame.width / 2), Math.round(frame.height / 2)) |
+| `functional/scenes/effect-white-balance.webgl.ts` | able | L116: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/effect-white-balance.webgpu.ts` | able | L113: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/env-ibl.webgl.ts` | able | L165: getBitmapPixelLuminance is thresholded at named coordinates (metalX, cy) |
+| `functional/scenes/env-ibl.webgpu.ts` | able | L120: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.32), centerY) |
+| `functional/scenes/env-skybox.webgl.ts` | able | L173: getBitmapPixel is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.12)) |
+| `functional/scenes/env-skybox.webgpu.ts` | able | L130: getBitmapPixel is thresholded at named coordinates (Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.12)) |
+| `functional/scenes/light-hemisphere.webgl.ts` | able | L122: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy - offset) |
+| `functional/scenes/light-hemisphere.webgpu.ts` | able | L92: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy - offset) |
+| `functional/scenes/light-many-point.webgl.ts` | able | L196: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/light-many-point.webgpu.ts` | able | L168: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/light-point.webgl.ts` | able | L125: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/light-point.webgpu.ts` | able | L100: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/light-spot.webgl.ts` | able | L149: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/light-spot.webgpu.ts` | able | L117: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-alpha-map-pbr.webgl.ts` | able | L171: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
+| `functional/scenes/material-alpha-map-pbr.webgpu.ts` | able | L162: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
+| `functional/scenes/material-alpha-map.webgl.ts` | able | L159: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
+| `functional/scenes/material-alpha-map.webgpu.ts` | able | L151: getBitmapPixelChannel is thresholded at named coordinates (cx - offset, cy) |
+| `functional/scenes/material-anisotropy.webgl.ts` | able | L172: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-blend-modes.webgl.ts` | able | L239: assertBlendModeCoverage samples pixels from a named call site (bitmap, '[material-blend-modes/webgl]') |
+| `functional/scenes/material-blend-modes.webgpu.ts` | able | L227: assertBlendModeCoverage samples pixels from a named call site (bitmap, '[material-blend-modes/webgpu]') |
+| `functional/scenes/material-blinn-phong-maps.webgl.ts` | able | L157: sampleRgb samples pixels from a named call site (0.2) |
+| `functional/scenes/material-blinn-phong-maps.webgpu.ts` | able | L151: sampleRgb samples pixels from a named call site (0.2) |
+| `functional/scenes/material-blinn-phong.webgl.ts` | able | L180: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-blinn-phong.webgpu.ts` | able | L171: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-clearcoat.webgl.ts` | able | L167: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-custom-shader.webgl.ts` | able | L144: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
+| `functional/scenes/material-custom-shader.webgpu.ts` | able | L151: getBitmapPixelLuminance is thresholded at named coordinates (0, 0) |
+| `functional/scenes/material-depth-orthographic.webgl.ts` | able | L113: getBitmapPixelLuminance is thresholded at named coordinates (centerX, centerY) |
+| `functional/scenes/material-depth.webgl.ts` | able | L157: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-depth.webgpu.ts` | able | L148: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-emissive.webgl.ts` | able | L153: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-emissive.webgpu.ts` | able | L144: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-iridescence.webgl.ts` | able | L167: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-lambert.webgl.ts` | able | L163: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-lambert.webgpu.ts` | able | L154: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-matcap.webgl.ts` | able | L156: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-matcap.webgpu.ts` | able | L147: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-normal.webgl.ts` | able | L157: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-normal.webgpu.ts` | able | L148: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-phong.webgl.ts` | able | L180: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-phong.webgpu.ts` | able | L171: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-sheen.webgl.ts` | able | L167: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-specular-glossiness.webgl.ts` | able | L163: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-specular-glossiness.webgpu.ts` | able | L154: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-specular.webgl.ts` | able | L175: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-standard-pbr.webgl.ts` | able | L154: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-standard-pbr.webgpu.ts` | able | L151: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-subsurface.webgl.ts` | able | L157: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-toon.webgl.ts` | able | L155: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-toon.webgpu.ts` | able | L152: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/material-transmission-volume.webgl.ts` | able | L191: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-unlit.webgl.ts` | able | L141: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-unlit.webgpu.ts` | able | L138: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-vertex-color-interpolated.webgl.ts` | able | L180: getBitmapPixelChannel is thresholded at named coordinates (x, y) |
+| `functional/scenes/material-vertex-color.webgl.ts` | able | L145: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-vertex-color.webgpu.ts` | able | L142: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/material-video-map.webgl.ts` | able | L100: sample samples pixels from a named call site (0.35) |
+| `functional/scenes/material-video-map.webgpu.ts` | able | L94: sample samples pixels from a named call site (0.35) |
+| `functional/scenes/material-wireframe.webgl.ts` | able | L167: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (sample.x, sample.y) |
+| `functional/scenes/material-wireframe.webgpu.ts` | able | L164: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (sample.x, sample.y) |
+| `functional/scenes/mesh-cone.webgl.ts` | able | L134: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-cone.webgpu.ts` | able | L131: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-cylinder.webgl.ts` | able | L134: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-cylinder.webgpu.ts` | able | L131: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-geometry.webgl.ts` | able | L131: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-geometry.webgpu.ts` | able | L128: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-hierarchy-parent-transform.webgl.ts` | able | L144: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-hierarchy-parent-transform.webgpu.ts` | able | L141: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-mirrored-facing.webgl.ts` | able | L169: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.25), y) |
+| `functional/scenes/mesh-multiple-depth.webgl.ts` | able | L158: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-multiple-depth.webgpu.ts` | able | L155: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-normal-position-groups.webgl.ts` | able | L131: getBitmapPixelLuminance is thresholded at named coordinates (x - nearOffset, y) |
+| `functional/scenes/mesh-normal-position-groups.webgpu.ts` | able | L120: getBitmapPixelLuminance is thresholded at named coordinates (x - nearOffset, y) |
+| `functional/scenes/mesh-plane.webgl.ts` | able | L133: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-plane.webgpu.ts` | able | L130: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-tangent-mirror-handedness.webgl.ts` | able | L180: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * SAMPLE_FRACTION_LEFT), y) |
+| `functional/scenes/mesh-tangent-mirrored-uv.webgl.ts` | able | L137: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width / 2) - offset, y) |
+| `functional/scenes/mesh-tangent-mirrored-uv.webgpu.ts` | able | L126: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width / 2) - offset, y) |
+| `functional/scenes/mesh-transform-position.webgl.ts` | able | L139: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-transform-position.webgpu.ts` | able | L136: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-transform-rotation.webgl.ts` | able | L144: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-transform-rotation.webgpu.ts` | able | L141: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-transform-scale.webgl.ts` | able | L139: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/mesh-transform-scale.webgpu.ts` | able | L136: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/node-alpha.ts` | able | L76: at samples pixels from a named call site (BOTTOM_X + 40, BOTTOM_Y + 40) |
 | `functional/scenes/node-blend-modes-advanced.canvas.ts` | able | L87: at samples pixels from a named call site (MULTIPLY_X + OVERLAY_W / 2, cy) |
 | `functional/scenes/node-blend-modes-advanced.dom.ts` | able | L90: at samples pixels from a named call site (MULTIPLY_X + OVERLAY_W / 2, cy) |
@@ -253,76 +255,76 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/node-visibility-inheritance.ts` | able | L92: at samples pixels from a named call site (VISIBLE_CHILD_X + SHAPE_W / 2, VISIBLE_CHILD_Y + SHAPE_H / 2) |
 | `functional/scenes/node-visibility.ts` | able | L80: at samples pixels from a named call site (VISIBLE_X + VISIBLE_W / 2, VISIBLE_Y + VISIBLE_H / 2) |
 | `functional/scenes/node-z-order.canvas.ts` | able | L75: at samples pixels from a named call site (60, 60) |
-| `functional/scenes/particle-emitter-3d.webgl.ts` | able | L105: getBitmapPixel is checked by a throw threshold inside its sampling loop (Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5)) |
-| `functional/scenes/particle-emitter-3d.webgpu.ts` | able | L102: getBitmapPixel is checked by a throw threshold inside its sampling loop (Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5)) |
+| `functional/scenes/particle-emitter-3d.webgl.ts` | able | L117: getBitmapPixel is checked by a throw threshold inside its sampling loop (Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5)) |
+| `functional/scenes/particle-emitter-3d.webgpu.ts` | able | L108: getBitmapPixel is checked by a throw threshold inside its sampling loop (Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5)) |
 | `functional/scenes/particle-emitter-color.webgl.ts` | able | L118: at is checked by a throw threshold inside its sampling loop (cx, cy) |
 | `functional/scenes/particle-emitter-color.webgpu.ts` | able | L118: at is checked by a throw threshold inside its sampling loop (cx, cy) |
 | `functional/scenes/particle-emitter.canvas.ts` | able | L131: at is checked by a throw threshold inside its sampling loop (cx, cy) |
 | `functional/scenes/particle-emitter.webgl.ts` | able | L131: at is checked by a throw threshold inside its sampling loop (cx, cy) |
 | `functional/scenes/particle-emitter.webgpu.ts` | able | L131: at is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/particle-motion-blur.webgl.ts` | able | L184: radialMidDim carries a thresholded spatial bound |
-| `functional/scenes/particle-motion-blur.webgpu.ts` | able | L183: radialMidDim carries a thresholded spatial bound |
+| `functional/scenes/particle-motion-blur.webgl.ts` | able | L196: radialMidDim carries a thresholded spatial bound |
+| `functional/scenes/particle-motion-blur.webgpu.ts` | able | L189: radialMidDim carries a thresholded spatial bound |
 | `functional/scenes/path-boolean-difference.canvas.ts` | able | L67: at samples pixels from a named call site (75, 75) |
 | `functional/scenes/path-boolean-intersection.canvas.ts` | able | L67: at samples pixels from a named call site (125, 125) |
 | `functional/scenes/path-boolean-union.canvas.ts` | able | L72: at samples pixels from a named call site (125, 125) |
 | `functional/scenes/path-boolean-xor.canvas.ts` | able | L69: at samples pixels from a named call site (75, 75) |
 | `functional/scenes/per-node-effect-glow-shadow.webgl.ts` | able | L105: at samples pixels from a named call site (glowContentLeft + CONTENT_WIDTH / 2, glowContentTop + CONTENT_HEIGHT / 2) |
-| `functional/scenes/per-node-effect-glow-shadow.webgpu.ts` | able | L107: at samples pixels from a named call site (glowContentLeft + CONTENT_WIDTH / 2, glowContentTop + CONTENT_HEIGHT / 2) |
-| `functional/scenes/per-node-effect-lane.canvas.ts` | able | L153: at samples pixels from a named call site (contentLeft + contentWidth / 2, contentTop + contentHeight / 2) |
+| `functional/scenes/per-node-effect-glow-shadow.webgpu.ts` | able | L114: at samples pixels from a named call site (glowContentLeft + CONTENT_WIDTH / 2, glowContentTop + CONTENT_HEIGHT / 2) |
+| `functional/scenes/per-node-effect-lane.canvas.ts` | able | L169: at samples pixels from a named call site (contentLeft + contentWidth / 2, contentTop + contentHeight / 2) |
 | `functional/scenes/per-node-effect-lane.webgl.ts` | able | L162: at samples pixels from a named call site (contentLeft + contentWidth / 2, contentTop + contentHeight / 2) |
-| `functional/scenes/per-node-effect-lane.webgpu.ts` | able | L160: at samples pixels from a named call site (contentLeft + contentWidth / 2, contentTop + contentHeight / 2) |
+| `functional/scenes/per-node-effect-lane.webgpu.ts` | able | L164: at samples pixels from a named call site (contentLeft + contentWidth / 2, contentTop + contentHeight / 2) |
 | `functional/scenes/quadbatch-grid.canvas.ts` | able | L121: at samples pixels from a named call site (midX, midY) |
 | `functional/scenes/quadbatch-grid.webgl.ts` | able | L121: at samples pixels from a named call site (midX, midY) |
 | `functional/scenes/quadbatch-grid.webgpu.ts` | able | L121: at samples pixels from a named call site (midX, midY) |
 | `functional/scenes/quadbatch-matrix-transform.canvas.ts` | able | L122: at samples pixels from a named call site (A_CENTER_X, A_CENTER_Y) |
 | `functional/scenes/quadbatch-matrix-transform.webgl.ts` | able | L122: at samples pixels from a named call site (A_CENTER_X, A_CENTER_Y) |
 | `functional/scenes/quadbatch-matrix-transform.webgpu.ts` | able | L122: at samples pixels from a named call site (A_CENTER_X, A_CENTER_Y) |
-| `functional/scenes/render-pass-shared-context.webgl.ts` | able | L58: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
-| `functional/scenes/render-pass-viewport.webgl.ts` | able | L151: at samples pixels from a named call site (780, 580) |
-| `functional/scenes/render-target-axes.webgl.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
-| `functional/scenes/render-target-format-policy.webgl.ts` | able | L83: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
+| `functional/scenes/render-pass-shared-context.webgl.ts` | able | L74: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
+| `functional/scenes/render-pass-viewport.webgl.ts` | able | L162: at samples pixels from a named call site (780, 580) |
+| `functional/scenes/render-target-axes.webgl.ts` | able | L111: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
+| `functional/scenes/render-target-format-policy.webgl.ts` | able | L95: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
 | `functional/scenes/render-target-node-2d.canvas.ts` | able | L109: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
 | `functional/scenes/render-target-node-2d.webgl.ts` | able | L126: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
 | `functional/scenes/render-target-node-2d.webgpu.ts` | able | L128: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
 | `functional/scenes/render-texture-sprite-axes.webgl.ts` | able | L106: at samples pixels from a named call site (SPRITE_X + 20, SPRITE_Y + 16) |
 | `functional/scenes/render-texture-sprite-axes.webgpu.ts` | able | L104: at samples pixels from a named call site (SPRITE_X + 20, SPRITE_Y + 16) |
-| `functional/scenes/render-texture.webgl.ts` | able | L126: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.42)) |
+| `functional/scenes/render-texture.webgl.ts` | able | L138: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.42)) |
 | `functional/scenes/rive-import.ts` | able | L21: at samples pixels from a named call site (LEFT_X - 70, CENTER_Y) |
 | `functional/scenes/scale9-stretch.ts` | able | L116: at samples pixels from a named call site (cx, PANEL_Y + inset) |
-| `functional/scenes/scene-morph.webgl.ts` | able | L159: covered samples pixels from a named call site (0.5, 0.5) |
-| `functional/scenes/scene-morph.webgpu.ts` | able | L123: covered samples pixels from a named call site (0.5, 0.5) |
-| `functional/scenes/scene-skin-material-families.webgl.ts` | able | L191: getBitmapPixelLuminance is checked by a throw threshold inside its sampling loop (x, y) |
-| `functional/scenes/scene-skin-morph-compose.webgl.ts` | able | L229: covered samples pixels from a named call site (0.5, 0.82) |
-| `functional/scenes/scene-skin-morph-compose.webgpu.ts` | able | L160: covered samples pixels from a named call site (0.5, 0.82) |
-| `functional/scenes/scene-skin-nonuniform-normals.webgl.ts` | able | L185: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(((x / halfWidth) * 0.5 + 0.5) * bitmap.width), row) |
-| `functional/scenes/scene-skin-nonuniform-normals.webgpu.ts` | able | L178: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(((x / halfWidth) * 0.5 + 0.5) * bitmap.width), row) |
-| `functional/scenes/scene-skin-two-skeletons.webgl.ts` | able | L173: widestRow carries a thresholded spatial bound |
-| `functional/scenes/scene-skin-two-skeletons.webgpu.ts` | able | L179: widestRow carries a thresholded spatial bound |
-| `functional/scenes/scene-skinning.webgl.ts` | able | L210: covered samples pixels from a named call site (0.38, 0.43) |
-| `functional/scenes/scene-skinning.webgpu.ts` | able | L164: covered samples pixels from a named call site (0.38, 0.43) |
-| `functional/scenes/scene-transparent-depth-write.webgl.ts` | able | L118: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (Math.floor(x), cy) |
-| `functional/scenes/scene-transparent-orthographic.webgl.ts` | able | L109: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
-| `functional/scenes/scene-transparent.webgpu.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
-| `functional/scenes/scene2d-cache.ts` | able | L116: at samples pixels from a named call site (MAGENTA_X + RECT_SIZE / 2, MAGENTA_Y + RECT_SIZE / 2) |
-| `functional/scenes/scene2d-clip-contour-hdr.webgl.ts` | able | L118: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/scene2d-clip-contour-hdr.webgpu.ts` | able | L114: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/scene-morph.webgl.ts` | able | L171: covered samples pixels from a named call site (0.5, 0.5) |
+| `functional/scenes/scene-morph.webgpu.ts` | able | L129: covered samples pixels from a named call site (0.5, 0.5) |
+| `functional/scenes/scene-skin-material-families.webgl.ts` | able | L203: getBitmapPixelLuminance is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/scene-skin-morph-compose.webgl.ts` | able | L241: covered samples pixels from a named call site (0.5, 0.82) |
+| `functional/scenes/scene-skin-morph-compose.webgpu.ts` | able | L166: covered samples pixels from a named call site (0.5, 0.82) |
+| `functional/scenes/scene-skin-nonuniform-normals.webgl.ts` | able | L197: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(((x / halfWidth) * 0.5 + 0.5) * bitmap.width), row) |
+| `functional/scenes/scene-skin-nonuniform-normals.webgpu.ts` | able | L181: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(((x / halfWidth) * 0.5 + 0.5) * bitmap.width), row) |
+| `functional/scenes/scene-skin-two-skeletons.webgl.ts` | able | L185: widestRow carries a thresholded spatial bound |
+| `functional/scenes/scene-skin-two-skeletons.webgpu.ts` | able | L182: widestRow carries a thresholded spatial bound |
+| `functional/scenes/scene-skinning.webgl.ts` | able | L222: covered samples pixels from a named call site (0.38, 0.43) |
+| `functional/scenes/scene-skinning.webgpu.ts` | able | L170: covered samples pixels from a named call site (0.38, 0.43) |
+| `functional/scenes/scene-transparent-depth-write.webgl.ts` | able | L130: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (Math.floor(x), cy) |
+| `functional/scenes/scene-transparent-orthographic.webgl.ts` | able | L121: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
+| `functional/scenes/scene-transparent.webgpu.ts` | able | L118: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
+| `functional/scenes/scene2d-cache.ts` | able | L139: at samples pixels from a named call site (MAGENTA_X + RECT_SIZE / 2, MAGENTA_Y + RECT_SIZE / 2) |
+| `functional/scenes/scene2d-clip-contour-hdr.webgl.ts` | able | L130: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
+| `functional/scenes/scene2d-clip-contour-hdr.webgpu.ts` | able | L120: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/scene2d-clip-contour.ts` | able | L96: at samples pixels from a named call site (centroidX, centroidY) |
 | `functional/scenes/scene2d-clip-rect.ts` | able | L75: at samples pixels from a named call site (CLIP_X + CLIP_SIZE / 2, CLIP_Y + CLIP_SIZE / 2) |
-| `functional/scenes/shading-globe.webgl.ts` | able | L184: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
-| `functional/scenes/shading-globe.webgpu.ts` | able | L146: getBitmapPixelLuminance is thresholded at named coordinates (centerX + offset, centerY) |
-| `functional/scenes/shading-normal-map.webgpu.ts` | able | L139: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.43), y) |
-| `functional/scenes/shadow-classic.webgl.ts` | able | L155: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
-| `functional/scenes/shadow-classic.webgpu.ts` | able | L134: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
-| `functional/scenes/shadow-directional.webgl.ts` | able | L166: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
-| `functional/scenes/shadow-directional.webgpu.ts` | able | L134: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
-| `functional/scenes/shadow-sampling-controls.webgl.ts` | able | L121: getBitmapPixelLuminance is thresholded at named coordinates (x, Math.floor(bitmap.height * 0.9)) |
-| `functional/scenes/shadow-sampling-controls.webgpu.ts` | able | L122: getBitmapPixelLuminance is thresholded at named coordinates (x, Math.floor(bitmap.height * 0.9)) |
-| `functional/scenes/shadow-scene-scale.webgl.ts` | able | L134: getBitmapPixelLuminance is thresholded at named coordinates (shadowX, sampleY) |
-| `functional/scenes/shadow-scene-scale.webgpu.ts` | able | L131: getBitmapPixelLuminance is thresholded at named coordinates (shadowX, sampleY) |
-| `functional/scenes/shadow-skin-nonuniform.webgl.ts` | able | L190: getBitmapPixelLuminance is thresholded at named coordinates (0, row) |
-| `functional/scenes/shadow-skin-nonuniform.webgpu.ts` | able | L194: getBitmapPixelLuminance is thresholded at named coordinates (0, row) |
-| `functional/scenes/shadow-skinning.webgl.ts` | able | L172: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.2), Math.floor(bitmap.height * 0.8)) |
-| `functional/scenes/shadow-skinning.webgpu.ts` | able | L174: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.2), Math.floor(bitmap.height * 0.8)) |
+| `functional/scenes/shading-globe.webgl.ts` | able | L196: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
+| `functional/scenes/shading-globe.webgpu.ts` | able | L149: getBitmapPixelLuminance is thresholded at named coordinates (centerX + offset, centerY) |
+| `functional/scenes/shading-normal-map.webgpu.ts` | able | L142: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.43), y) |
+| `functional/scenes/shadow-classic.webgl.ts` | able | L167: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
+| `functional/scenes/shadow-classic.webgpu.ts` | able | L137: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
+| `functional/scenes/shadow-directional.webgl.ts` | able | L178: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
+| `functional/scenes/shadow-directional.webgpu.ts` | able | L137: getBitmapPixelLuminance is thresholded at named coordinates (cx, Math.floor(bitmap.height * 0.9)) |
+| `functional/scenes/shadow-sampling-controls.webgl.ts` | able | L133: getBitmapPixelLuminance is thresholded at named coordinates (x, Math.floor(bitmap.height * 0.9)) |
+| `functional/scenes/shadow-sampling-controls.webgpu.ts` | able | L125: getBitmapPixelLuminance is thresholded at named coordinates (x, Math.floor(bitmap.height * 0.9)) |
+| `functional/scenes/shadow-scene-scale.webgl.ts` | able | L146: getBitmapPixelLuminance is thresholded at named coordinates (shadowX, sampleY) |
+| `functional/scenes/shadow-scene-scale.webgpu.ts` | able | L134: getBitmapPixelLuminance is thresholded at named coordinates (shadowX, sampleY) |
+| `functional/scenes/shadow-skin-nonuniform.webgl.ts` | able | L202: getBitmapPixelLuminance is thresholded at named coordinates (0, row) |
+| `functional/scenes/shadow-skin-nonuniform.webgpu.ts` | able | L197: getBitmapPixelLuminance is thresholded at named coordinates (0, row) |
+| `functional/scenes/shadow-skinning.webgl.ts` | able | L184: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.2), Math.floor(bitmap.height * 0.8)) |
+| `functional/scenes/shadow-skinning.webgpu.ts` | able | L177: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.2), Math.floor(bitmap.height * 0.8)) |
 | `functional/scenes/shape-arc-fill.canvas.ts` | able | L64: at samples pixels from a named call site (CX + 40, CY + 40) |
 | `functional/scenes/shape-circle-fill.canvas.ts` | able | L64: at samples pixels from a named call site (150, 150) |
 | `functional/scenes/shape-curves.ts` | able | L74: at samples pixels from a named call site (CX, CY + 30) |
