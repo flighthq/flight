@@ -33,7 +33,7 @@ without ambient installation or sentinel providers masquerading as support.
 
 ## Decisions
 
-_Append-only, dated, blessed rulings._
+_Append-only, dated, blessed rulings. None recorded yet._
 
 - **[2026-08-30] Global shortcuts are structurally absent.** `webHost.shortcut` is exactly `{}`:
   browsers offer no OS-global trigger registration or native registration-state query. There is no
