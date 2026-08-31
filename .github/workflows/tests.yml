@@ -398,9 +398,12 @@ jobs:
   #
   # This job is safe on pull requests and forks. Reference packs are public HTTPS reads, the job holds no
   # secret, and its token is explicitly read-only. A zero-comparison run is a failure rather than a green
-  # no-op; the lock bounds the capture scope to cells for which reference bytes actually exist.
+  # no-op; the lock bounds the capture scope to cells for which reference bytes actually exist. Like every
+  # other code leg, it waits for changed-area detection and skips a docs-only change.
   reference-image-check:
     name: Reference Images · Check
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
