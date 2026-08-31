@@ -12,6 +12,7 @@
     { "path": "../scene2d" },
     { "path": "../geometry" },
     { "path": "../glyphatlas" },
+    { "path": "../log" },
     { "path": "../node" },
     { "path": "../texture" },
     { "path": "../textureatlas" },
