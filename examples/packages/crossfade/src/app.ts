@@ -26,12 +26,13 @@ import {
   createAnimationStateMachineLayer,
   createAnimationStateMachineState,
   createAnimationTrack,
+  getAnimationStateMachineCurrentState,
   isAnimationStateMachineTransitioning,
   sampleAnimationLayerStack,
   transitionAnimationStateMachine,
 } from '@flighthq/sdk/animation';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const bodyTarget = {};
 const leftLegTarget = {};
@@ -102,9 +103,11 @@ const layers = createAnimationLayerStack([
   createAnimationStateMachineLayer(stateMachine),
   createAnimationBlendTreeLayer(accentTree, { additive: true, channelIndices: [0], weight: 0.5 }),
 ]);
-transitionAnimationStateMachine(stateMachine, 'locomotion', 1.8, (t) => t * t * (3 - 2 * t));
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
-if (captureWindow.__flightCapture) advanceAnimationLayerStack(layers, 0.9);
+if (captureWindow.__flightCapture) {
+  transitionAnimationStateMachine(stateMachine, 'locomotion', 1.8, smoothCrossfade);
+  advanceAnimationLayerStack(layers, 0.9);
+}
 const sample = new Float32Array(4);
 
 let bodyOffset = 0;
@@ -146,6 +149,7 @@ label('IDLE', 86, 390, 14, 0x7086adff);
 label('BLENDED POSE', 330, 390, 14, 0x63e6beff);
 label('WALK/RUN', 644, 390, 14, 0xf0a85bff);
 const status = label('', 250, 438, 15, 0xffffffff);
+label('CLICK THE SCENE TO CROSSFADE', 283, 470, 13, 0x8294b7ff);
 
 function pointFromLeg(x: number, y: number, length: number, angle: number): readonly [number, number] {
   const radians = ((90 + angle) * Math.PI) / 180;
@@ -256,6 +260,17 @@ function updateFrame(): void {
       ? `Idle -> locomotion  ${(stateMachine.transitionWeight * 100).toFixed(0)}%`
       : 'Locomotion | walk/run + masked body accent',
   );
+}
+
+canvas.style.cursor = 'pointer';
+canvas.addEventListener('click', () => {
+  if (isAnimationStateMachineTransitioning(stateMachine)) return;
+  const destination = getAnimationStateMachineCurrentState(stateMachine).name === 'idle' ? 'locomotion' : 'idle';
+  transitionAnimationStateMachine(stateMachine, destination, 1.2, smoothCrossfade);
+});
+
+function smoothCrossfade(t: number): number {
+  return t * t * (3 - 2 * t);
 }
 
 let lastTime = performance.now();
