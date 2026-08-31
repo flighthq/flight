@@ -476,17 +476,16 @@ function isAllowedCanvasBridge(
   item: Readonly<FixtureImport & { family: ImportFamily | null }>,
 ): boolean {
   if (item.specifier !== '@flighthq/scene2d-canvas') return false;
-  const allowed =
-    domShapeCanvasBridgeFixtures.has(fixture.name)
-      ? new Set([
-          'createCanvasShapeRasterizer',
-          'createCanvasTextureResolvers',
-          'defaultCanvasShapeCommands',
-          'registerCanvasShapeCommands',
-        ])
-      : fixture.name === 'scene2d-wgpu-pipeline-scale9shape'
-        ? new Set(['createCanvasShapeRasterizer', 'createCanvasTextureResolvers'])
-        : null;
+  const allowed = domShapeCanvasBridgeFixtures.has(fixture.name)
+    ? new Set([
+        'createCanvasShapeRasterizer',
+        'createCanvasTextureResolvers',
+        'defaultCanvasShapeCommands',
+        'registerCanvasShapeCommands',
+      ])
+    : fixture.name === 'scene2d-wgpu-pipeline-scale9shape'
+      ? new Set(['createCanvasShapeRasterizer', 'createCanvasTextureResolvers'])
+      : null;
   if (allowed === null) return false;
   return item.importedNames.length > 0 && item.importedNames.every((name) => allowed.has(name));
 }

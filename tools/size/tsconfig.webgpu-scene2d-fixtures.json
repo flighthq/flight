@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true
+  },
+  "include": [
+    "fixtures/scene2d-wgpu-pipeline-bitmaptext/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-displayobject/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-morphshape/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-particleemitter2d/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-quadbatch/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-richtext/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-scale9shape/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-shape/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-textlabel/src/**/*.ts",
+    "fixtures/scene2d-wgpu-pipeline-tilemap/src/**/*.ts"
+  ]
+}
