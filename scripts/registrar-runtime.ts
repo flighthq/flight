@@ -414,6 +414,7 @@ const COLLISION_AUDITS = new Map<string, CollisionAudit>([
 async function main(): Promise<void> {
   const jsonMode = process.argv.includes('--json');
   const checkMode = process.argv.includes('--check');
+  const compactMode = process.argv.includes('--compact');
   const progressTokenIndex = process.argv.indexOf('--progress-token');
   const progressToken = progressTokenIndex === -1 ? null : (process.argv[progressTokenIndex + 1] ?? null);
   installDomAndGpuMocks();
@@ -695,31 +696,33 @@ async function main(): Promise<void> {
     console.log(
       `${summary.lost} lost among ${summary.assessedPairs} assessed pairs (${summary.comparablePairs} compared + ${summary.structurallyNotComparable} correctly not-comparable); ${summary.instrumentLimited} not assessed — probe limitation, not a property of the subject; ${summary.collisions} order-independent collision keys (${collisionCoverage.floor ? 'floor, coverage incomplete' : 'complete coverage'})`,
     );
-    console.log(
-      `Probe durations (ms): all n=${timings.all.count} p50=${timings.all.p50Ms} p95=${timings.all.p95Ms} p99=${timings.all.p99Ms} max=${timings.all.maxMs}; fresh children n=${timings.freshProcess.count} p50=${timings.freshProcess.p50Ms} p95=${timings.freshProcess.p95Ms} p99=${timings.freshProcess.p99Ms} max=${timings.freshProcess.maxMs}`,
-    );
-    for (const duration of timings.all.slowest) {
+    if (!compactMode) {
       console.log(
-        `  SLOW ${duration.packageName}:${duration.registrar} ${duration.durationMs} ms [${duration.isolation}]`,
+        `Probe durations (ms): all n=${timings.all.count} p50=${timings.all.p50Ms} p95=${timings.all.p95Ms} p99=${timings.all.p99Ms} max=${timings.all.maxMs}; fresh children n=${timings.freshProcess.count} p50=${timings.freshProcess.p50Ms} p95=${timings.freshProcess.p95Ms} p99=${timings.freshProcess.p99Ms} max=${timings.freshProcess.maxMs}`,
       );
-    }
-    for (const result of results) {
-      if (result.status !== 'PROBED') {
+      for (const duration of timings.all.slowest) {
         console.log(
-          `  ${result.status} ${result.packageName}:${result.registrar} [${result.requiredState ?? 'no named state'}] diffed ${formatDiffedTables(result)}${result.reason === null ? '' : ` — ${result.reason}`}`,
-        );
-        continue;
-      }
-      for (const pair of result.pairs) {
-        console.log(
-          `  ${pair.derivation.toUpperCase()} ${result.packageName}:${result.registrar} -> ${pair.door}(${pair.kind}, ${pair.implementation})${pair.overwrote === null ? '' : ` overwrote ${pair.overwrote}`}`,
+          `  SLOW ${duration.packageName}:${duration.registrar} ${duration.durationMs} ms [${duration.isolation}]`,
         );
       }
-    }
-    for (const collision of collisions) {
-      console.log(
-        `  COLLISION [${collision.classification}; ${collision.implementationRelation} implementation] ${collision.door}(${collision.kind}) claimed by ${collision.claims.map((claim) => `${claim.packageName}:${claim.registrar}`).join(', ')} — ${collision.assessment}`,
-      );
+      for (const result of results) {
+        if (result.status !== 'PROBED') {
+          console.log(
+            `  ${result.status} ${result.packageName}:${result.registrar} [${result.requiredState ?? 'no named state'}] diffed ${formatDiffedTables(result)}${result.reason === null ? '' : ` — ${result.reason}`}`,
+          );
+          continue;
+        }
+        for (const pair of result.pairs) {
+          console.log(
+            `  ${pair.derivation.toUpperCase()} ${result.packageName}:${result.registrar} -> ${pair.door}(${pair.kind}, ${pair.implementation})${pair.overwrote === null ? '' : ` overwrote ${pair.overwrote}`}`,
+          );
+        }
+      }
+      for (const collision of collisions) {
+        console.log(
+          `  COLLISION [${collision.classification}; ${collision.implementationRelation} implementation] ${collision.door}(${collision.kind}) claimed by ${collision.claims.map((claim) => `${claim.packageName}:${claim.registrar}`).join(', ')} — ${collision.assessment}`,
+        );
+      }
     }
   }
 
