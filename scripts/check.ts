@@ -169,10 +169,20 @@ for (const result of results) {
 }
 
 // The summary is the point of running everything: one place that says which gates are red, so a reader
-// does not have to scroll a long log or re-run to discover the next failure.
+// does not have to scroll a long log or re-run to discover the next failure. The failed gates' output
+// is reprinted here — not just their names — so the diagnostics are visible at the bottom of a long CI
+// log without scrolling back through dozens of passing gates to find the red one.
 if (failed.length > 0) {
+  const failedSet = new Set(failed);
   process.stdout.write(`\n${pc.red('✗')} ${pc.bold(`${failed.length} of the check gates failed:`)}\n`);
   for (const label of failed) process.stdout.write(`  ${pc.red('✗')} ${label}\n`);
+  process.stdout.write('\n');
+  for (const result of results) {
+    if (!failedSet.has(result.label)) continue;
+    process.stdout.write(`${pc.red('▶')} ${result.label}\n`);
+    process.stdout.write(result.output);
+    process.stdout.write(`${pc.red('✗')} ${result.label} failed (${formatGateFailure(result)})\n`);
+  }
   process.exit(1);
 }
 
