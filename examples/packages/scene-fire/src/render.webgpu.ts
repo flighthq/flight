@@ -1,4 +1,4 @@
-import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
+import type { Camera3D, Node3D, RenderEffect, Scene3DLightsLike, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
   createWgpuCanvasElement,
@@ -9,7 +9,10 @@ import {
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
   registerStandardWgpuTextureResolvers,
+  registerWgpuBloomEffect,
   registerWgpuStandardPbrMaterial,
+  registerWgpuToneMapEffect,
+  registerWgpuVignetteEffect,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
@@ -28,6 +31,9 @@ export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2
 enableFlightDiagnostics(state);
 registerStandardWgpuTextureResolvers(state);
 registerWgpuStandardPbrMaterial(state);
+registerWgpuBloomEffect(state);
+registerWgpuToneMapEffect(state);
+registerWgpuVignetteEffect(state);
 
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,
@@ -37,11 +43,16 @@ const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state,
 
 export const scale = pixelRatio;
 
-export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
+export function render(
+  scene: Readonly<Node3D>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<Scene3DLightsLike>,
+  effects: readonly RenderEffect[],
+): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(state, scene, camera, lights);
-  endWgpuRenderEffectPipeline(state, pipeline, []);
+  endWgpuRenderEffectPipeline(state, pipeline, effects);
   submitWgpuRenderPass(state);
 }

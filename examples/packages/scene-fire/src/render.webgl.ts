@@ -1,4 +1,4 @@
-import type { Camera3D, GlRenderEffectPipeline, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, Node3D, RenderEffect, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   scene2dGlPipeline,
   createGlContextState,
@@ -10,8 +10,11 @@ import {
   enableFlightDiagnostics,
   endGlRenderEffectPipeline,
   prepareScene3DRender,
+  registerGlBloomEffect,
   registerStandardGlTextureResolvers,
   registerGlStandardPbrMaterial,
+  registerGlToneMapEffect,
+  registerGlVignetteEffect,
   renderGlBackground,
 } from '@flighthq/sdk';
 import { drawGlScene3D } from '@flighthq/sdk/rendering';
@@ -35,6 +38,9 @@ export const state = createGlRenderState(
 enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
 registerGlStandardPbrMaterial(state);
+registerGlBloomEffect(state);
+registerGlToneMapEffect(state);
+registerGlVignetteEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
@@ -44,7 +50,12 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 
 export const scale = pixelRatio;
 
-export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
+export function render(
+  scene: Readonly<Node3D>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<Scene3DLightsLike>,
+  effects: readonly RenderEffect[],
+): void {
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);
   const gl = state.gl;
@@ -53,5 +64,5 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(state, scene, camera, lights);
-  endGlRenderEffectPipeline(state, pipeline, []);
+  endGlRenderEffectPipeline(state, pipeline, effects);
 }
