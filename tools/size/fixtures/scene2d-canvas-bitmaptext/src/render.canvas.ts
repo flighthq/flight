@@ -1,5 +1,5 @@
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
-import { createBitmapText, setBitmapTextText } from '@flighthq/bitmaptext';
+import { createBitmapText, setBitmapTextText, updateBitmapText } from '@flighthq/bitmaptext';
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { createImageResourceFromCanvas } from '@flighthq/image';
 import { addNodeChild } from '@flighthq/node';
@@ -103,6 +103,12 @@ const label = createBitmapText(createGlyphSourceFromBitmapFont(font));
 setBitmapTextText(label, 'FLIT');
 label.x = 60;
 label.y = 40;
+// ★ THE LAYOUT PASS IS EXPLICIT, LIKE EVERY OTHER PASS IN FLIGHT. The renderer draws from the glyph
+// page/instance buffers on the runtime, and `setBitmapTextText` only records the string — nothing
+// lays it out on the caller's behalf. Without this call the node renders a blank frame while still
+// building and still reporting a plausible size, which is exactly the failure a size number cannot
+// show you.
+updateBitmapText(label);
 addNodeChild(root, label);
 
 prepareScene2DRender(state, root);
