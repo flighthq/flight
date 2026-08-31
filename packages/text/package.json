@@ -41,6 +41,7 @@
     "@flighthq/scene2d": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/textlayout": "*",

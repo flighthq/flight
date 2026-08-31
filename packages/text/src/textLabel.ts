@@ -93,6 +93,7 @@ export function createTextLabelRuntime(): TextLabelRuntime {
   out.buildTextLayoutParams = buildTextLabelLayoutParams;
   out.textLayout = null;
   out.textLayoutUsingContentId = -1;
+  out.textLayoutUsingText = null;
   return out;
 }
 

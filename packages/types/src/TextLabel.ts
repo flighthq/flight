@@ -26,6 +26,10 @@ export interface TextLabelRuntime extends Node2DRuntime {
   // *UsingId stamps (e.g. localBoundsUsingLocalBoundsId). ensureTextLayout recomputes the layout
   // when this differs from getNodeLocalContentRevision. -1 until first computed.
   textLayoutUsingContentId: number;
+  // The text string the cached layout was computed from. null until first laid out. Retained so
+  // diagnostic guards can detect bare data.text mutation that bypassed the setter (the revision
+  // stays stale while the live string differs from the one the layout used).
+  textLayoutUsingText: string | null;
 }
 
 export interface TextLabel extends Node2D {
