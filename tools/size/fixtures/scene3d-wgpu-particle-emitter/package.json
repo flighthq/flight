@@ -1,0 +1,8 @@
+{
+  "name": "scene3d-wgpu-particle-emitter-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "scene3d-wgpu-particle-emitter"
+  }
+}

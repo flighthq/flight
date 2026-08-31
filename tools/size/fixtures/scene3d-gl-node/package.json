@@ -1,0 +1,9 @@
+{
+  "name": "scene3d-gl-node-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "scene3d-gl-node"
+  }
+}
