@@ -1,0 +1,12 @@
+{
+  "subject": "scene2d-dom-scale9shape-size-fixture",
+  "entries": [
+    {
+      "name": "scene2d-dom-scale9shape",
+      "renderers": ["dom"],
+      "routes": {
+        "dom": "/"
+      }
+    }
+  ]
+}

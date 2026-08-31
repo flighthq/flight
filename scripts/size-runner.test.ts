@@ -190,20 +190,23 @@ describe('minimal size fixture harness', () => {
     expect(violations).toEqual([]);
   });
 
-  test('limits the DOM shape Canvas bridge to its exact rasterization symbols', () => {
-    const fixture = fixtures.find((item) => item.name === 'scene2d-dom-shape');
-    const bridgeImports = (fixture?.imports ?? [])
-      .filter((item) => item.specifier === '@flighthq/host-web' || item.specifier === '@flighthq/scene2d-canvas')
-      .flatMap((item) => item.importedNames.map((name) => `${item.specifier}:${name}`))
-      .sort();
-
-    expect(bridgeImports).toEqual([
+  test('limits DOM shape Canvas bridge fixtures to their exact rasterization symbols', () => {
+    const expectedBridge = [
       '@flighthq/host-web:webCanvasRenderSurfaceCreator',
       '@flighthq/scene2d-canvas:createCanvasShapeRasterizer',
       '@flighthq/scene2d-canvas:createCanvasTextureResolvers',
       '@flighthq/scene2d-canvas:defaultCanvasShapeCommands',
       '@flighthq/scene2d-canvas:registerCanvasShapeCommands',
-    ]);
+    ];
+    for (const name of domShapeCanvasBridgeFixtures) {
+      const fixture = fixtures.find((item) => item.name === name);
+      const bridgeImports = (fixture?.imports ?? [])
+        .filter((item) => item.specifier === '@flighthq/host-web' || item.specifier === '@flighthq/scene2d-canvas')
+        .flatMap((item) => item.importedNames.map((n) => `${item.specifier}:${n}`))
+        .sort();
+
+      expect(bridgeImports, `${name} canvas bridge`).toEqual(expectedBridge);
+    }
   });
 
   test('keeps DOM, Canvas, WebGL and WebGPU renderer families isolated', () => {
@@ -459,11 +462,17 @@ function importFamily(specifier: string): ImportFamily | null {
   return null;
 }
 
+const domShapeCanvasBridgeFixtures = new Set([
+  'scene2d-dom-morphshape',
+  'scene2d-dom-scale9shape',
+  'scene2d-dom-shape',
+]);
+
 function isAllowedDomShapeCanvasBridge(
   fixture: Readonly<MinimalCaptureFixture>,
   item: Readonly<FixtureImport & { family: ImportFamily | null }>,
 ): boolean {
-  if (fixture.name !== 'scene2d-dom-shape' || item.specifier !== '@flighthq/scene2d-canvas') return false;
+  if (!domShapeCanvasBridgeFixtures.has(fixture.name) || item.specifier !== '@flighthq/scene2d-canvas') return false;
   const allowed = new Set([
     'createCanvasShapeRasterizer',
     'createCanvasTextureResolvers',
