@@ -37,6 +37,8 @@
         top: 18px;
         right: 18px;
         width: 230px;
+        max-width: calc(100vw - 36px);
+        max-height: calc(100vh - 36px);
         box-sizing: border-box;
         padding: 16px;
         border: 1px solid rgb(158 190 255 / 24%);
@@ -44,6 +46,8 @@
         background: rgb(8 13 24 / 88%);
         box-shadow: 0 16px 50px rgb(0 0 0 / 35%);
         backdrop-filter: blur(14px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
       }
 
       .controls h1 {
