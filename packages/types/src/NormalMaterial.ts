@@ -5,6 +5,7 @@ import type { Texture } from './Texture';
 // used by normal-buffer-driven passes. `normalMap` perturbs the geometric normal; `normalScale`
 // scales the tangent-space perturbation.
 export interface NormalMaterial extends SurfaceMaterial {
+  readonly kind: typeof NormalMaterialKind;
   normalMap: Texture | null;
   normalScale: number;
 }

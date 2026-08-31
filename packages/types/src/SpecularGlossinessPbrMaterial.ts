@@ -6,6 +6,7 @@ import type { Texture } from './Texture';
 // `specularGlossinessMap` packs specular in RGB and glossiness in A. `emissive`/`emissiveMap`,
 // `normalMap`/`normalScale`, and `occlusionMap`/`occlusionStrength` match the standard block.
 export interface SpecularGlossinessPbrMaterial extends SurfaceMaterial {
+  readonly kind: typeof SpecularGlossinessPbrMaterialKind;
   diffuse: number;
   diffuseMap: Texture | null;
   emissive: number;

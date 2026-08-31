@@ -8,6 +8,7 @@ import type { Texture } from './Texture';
 // final alpha (the dedicated opacity map, separate from `diffuseMap`'s own alpha); it takes effect
 // only when `alphaMode` is 'blend' or 'mask'.
 export interface BlinnPhongMaterial extends SurfaceMaterial {
+  readonly kind: typeof BlinnPhongMaterialKind;
   alphaMap: Texture | null;
   diffuse: number;
   diffuseMap: Texture | null;

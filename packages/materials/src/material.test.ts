@@ -1,5 +1,5 @@
-import type { StandardPbrMaterial } from '@flighthq/types/contract';
-import { StandardPbrMaterialKind } from '@flighthq/types/contract';
+import type { BlinnPhongMaterial, StandardPbrMaterial } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { cloneMaterial, copyMaterial, createMaterial, equalsMaterial, getMaterialOfKind } from './material';
 import { createStandardPbrMaterial } from './pbrMaterials';
@@ -83,6 +83,14 @@ describe('equalsMaterial', () => {
   it('treats same-kind materials without comparable fields as equal', () => {
     expect(equalsMaterial(createMaterial(TestMaterialKind), createMaterial(TestMaterialKind))).toBe(true);
   });
+
+  it('is symmetric when only one material has an extra field', () => {
+    const a = createMaterial(TestMaterialKind);
+    const b = createMaterial(TestMaterialKind);
+    Object.assign(b, { customValue: 1 });
+    expect(equalsMaterial(a, b)).toBe(false);
+    expect(equalsMaterial(b, a)).toBe(false);
+  });
 });
 
 describe('getMaterialOfKind', () => {
@@ -98,5 +106,13 @@ describe('getMaterialOfKind', () => {
 
   it('returns null for a null material', () => {
     expect(getMaterialOfKind(null, TestMaterialKind)).toBeNull();
+  });
+
+  it('ties a concrete result type to its discriminant', () => {
+    const material = createStandardPbrMaterial();
+    expect(getMaterialOfKind<StandardPbrMaterial>(material, StandardPbrMaterialKind)).toBe(material);
+    // @ts-expect-error A Blinn-Phong result cannot be requested with the standard-PBR discriminant.
+    getMaterialOfKind<BlinnPhongMaterial>(material, StandardPbrMaterialKind);
+    expect(getMaterialOfKind<BlinnPhongMaterial>(material, BlinnPhongMaterialKind)).toBeNull();
   });
 });

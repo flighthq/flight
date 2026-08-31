@@ -30,7 +30,11 @@ export function equalsMaterial(a: Readonly<Material>, b: Readonly<Material>): bo
   if (a.kind !== b.kind) return false;
   const aFields = a as unknown as Record<string, unknown>;
   const bFields = b as unknown as Record<string, unknown>;
-  for (const key of Object.keys(aFields)) {
+  const aKeys = Object.keys(aFields);
+  const bKeys = Object.keys(bFields);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (!Object.hasOwn(bFields, key)) return false;
     if (key === 'kind') continue;
     if (aFields[key] !== bFields[key]) return false;
   }
@@ -42,7 +46,7 @@ export function equalsMaterial(a: Readonly<Material>, b: Readonly<Material>): bo
 // `getMaterialOfKind(mesh.materials[0], BlinnPhongMaterialKind)` yields a `BlinnPhongMaterial | null`
 // to read or re-derive from, without an unchecked `as` at the call site. `kind` is a registry key, so
 // a vendor-prefixed custom kind narrows the same way.
-export function getMaterialOfKind<T extends Material>(material: Readonly<Material> | null, kind: Kind): T | null {
+export function getMaterialOfKind<T extends Material>(material: Readonly<Material> | null, kind: T['kind']): T | null {
   return material !== null && material.kind === kind ? (material as T) : null;
 }
 

@@ -5,6 +5,7 @@ import type { Texture } from './Texture';
 // stylized "lighting" with no scene lights. `matcap` is the capture texture; `tint` is a packed
 // sRgb-albedo RGBA multiplier. Lighting-independent, so full fidelity on every backend.
 export interface MatcapMaterial extends SurfaceMaterial {
+  readonly kind: typeof MatcapMaterialKind;
   matcap: Texture | null;
   tint: number;
 }
