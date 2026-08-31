@@ -49,10 +49,10 @@ import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 // instances file — "instances accumulate, laws do not" — which reached 81,000 characters in one day.
 // The budget never constrained the writing; it relocated it. Both files were deleted 2026-08-08 and
 // their grounded findings moved to the artifacts they describe. Do not add an exempt companion here.
-export const DOC_BUDGETS: readonly DocBudget[] = [{ limit: 40_000, path: 'AGENTS.md' }];
+export const DOC_BUDGETS: readonly DocBudget[] = [{ limit: 30_000, path: 'AGENTS.md' }];
 
-// Fraction of the limit below which the budget warns rather than passes silently. 2% of 40,000 is 800
-// characters — roughly a long paragraph, so the warning lands while one section can still absorb the
+// Fraction of the limit below which the budget warns rather than passes silently. 2% of 30,000 is 600
+// characters — roughly a medium paragraph, so the warning lands while one section can still absorb the
 // cut, instead of when every section would have to.
 export const DOC_BUDGET_WARN_FRACTION = 0.02;
 
