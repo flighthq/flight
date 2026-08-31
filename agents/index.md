@@ -61,6 +61,7 @@ working in that area, but do not build on it as settled. New architecture record
 - [effect-pass UV origin](effect-uv-origin-architecture.md) — the GL/WGPU positional-UV sweep and the proposed sampler-local normalization seam.
 - [host-web architecture](host-web-architecture.md) — before touching `webHost`, `web*Backend` consts, or the capability/host boundary. The domain census, extraction plan, and types spine.
 - [host-web document-absence outcomes](host-web-no-dom-outcomes.md) — the post-Accessibility R17 census of nine provider operations whose no-DOM outcome remains silent.
+- [upstream host requirements](upstream-host-requirements.md) — before extracting host backends, changing backend lifecycle or operation availability, or adding a native host package.
 - [loader progress currencies](loader-progress-currencies.md) — **unratified.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. Item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — before touching how node color relates to materials or adding a color-remap op. Color adjustment is a material _feature_, not a shading family.
 - [physics3d solver abstraction](physics3d-solver-abstraction.md) — **ratified 2026-08-20.** sequential impulses first; the four data-model obligations that keep XPBD possible, and why a `SolverBackend` interface is not one of them.
