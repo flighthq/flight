@@ -141,12 +141,17 @@ export function hasLightInfluenceOnBounds(light: Readonly<Light>, bounds: Readon
 
 // Returns true when the light is configured to cast shadows. Non-shadow-capable light types
 // (AmbientLight, HemisphereLight, Environment) always return false.
+//
+// `Light` declares only `kind`, so the shadow-capable field is not on the base type and a custom light
+// kind may legitimately omit it. The `in` check narrows without asserting a shape the value may not
+// have, and comparing against `true` keeps the declared return type honest for a custom kind whose
+// `castsShadow` is absent or is not a boolean at all.
 export function isLightCastingShadow(light: Readonly<Light>): boolean {
   const kind = light.kind;
   if (kind === AmbientLightKind || kind === HemisphereLightKind || kind === EnvironmentKind) {
     return false;
   }
-  return (light as unknown as Readonly<{ castsShadow: boolean }>).castsShadow;
+  return 'castsShadow' in light && light.castsShadow === true;
 }
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
