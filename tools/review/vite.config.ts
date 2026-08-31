@@ -564,6 +564,14 @@ function discoverReviewTests(): ReviewTest[] {
             : null;
         const holdReason = role === 'reviewable' ? (held.get(imageKey) ?? null) : null;
         const parityStatus: ParityStatus = parity.get(imageKey) ?? 'no-data';
+        if (referenceComparisonMatches === true && commissionState === 'differs') {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[review] ${imageKey}: referenceComparisonMatches=true but commissionState=differs` +
+              ` | lockedHash=${lockedHash} | referencePixelSha256=${referencePixelSha256}` +
+              ` | comparisonProblem=${referenceComparisonProblem}`,
+          );
+        }
         cells.push({
           renderer,
           role,
