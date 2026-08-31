@@ -1,6 +1,6 @@
 import type { Entity, EntityRuntime } from './Entity';
 import type { HasTransform2D } from './HasTransform2D';
-import type { Node, NodeAny, NodeTraits } from './Node';
+import type { NodeAny, NodeOf, NodeTraits } from './Node';
 import type { Rectangle } from './Rectangle';
 
 export interface HasBoundsRectangle extends Entity {}
@@ -16,7 +16,7 @@ export interface HasBoundsRectangleRuntime extends EntityRuntime {
   worldBoundsRectangle: Rectangle | null;
 }
 
-export type BoundsNode<Traits extends object = NodeTraits> = Node<Traits> & HasBoundsRectangle;
+export type BoundsNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasBoundsRectangle>;
 export type BoundsNodeAny = NodeAny & HasBoundsRectangle;
 
-export type Spatial2DNode<Traits extends object = NodeTraits> = Node<Traits> & HasBoundsRectangle & HasTransform2D;
+export type Spatial2DNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasBoundsRectangle & HasTransform2D>;

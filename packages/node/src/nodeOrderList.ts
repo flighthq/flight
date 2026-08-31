@@ -2,6 +2,7 @@ import { emitSignal } from '@flighthq/signals/contract';
 import type {
   Node,
   NodeAny,
+  NodeOf,
   NodeOrderList,
   NodeOrderListEntryVisitor,
   NodeRuntime,
@@ -96,7 +97,7 @@ export function applyNodeOrderList<Traits extends object = NodeTraits>(
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
     if (children[slot] === members[i]) continue;
-    children[slot] = members[i] as Node<Traits>;
+    children[slot] = members[i] as NodeOf<Traits>;
     moved = true;
   }
 
@@ -242,7 +243,7 @@ export function setNodeOrderListFromNodeChildren<Traits extends object = NodeTra
   const children = getNodeRuntime(source).children;
   if (children === null) return;
   for (let i = 0; i < children.length; i++) {
-    addNodeOrderListEntry(list, children[i] as Node<Traits>, i);
+    addNodeOrderListEntry(list, children[i], i);
   }
 }
 

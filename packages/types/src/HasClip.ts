@@ -1,6 +1,6 @@
 import type { ClipRegion } from './ClipRegion';
 import type { Entity } from './Entity';
-import type { Node, NodeTraits } from './Node';
+import type { NodeOf, NodeTraits } from './Node';
 
 export interface HasClip extends Entity {
   /**
@@ -11,4 +11,4 @@ export interface HasClip extends Entity {
   clip: ClipRegion | null;
 }
 
-export type ClipNode<Traits extends object = NodeTraits> = Node<Traits> & HasClip;
+export type ClipNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasClip>;

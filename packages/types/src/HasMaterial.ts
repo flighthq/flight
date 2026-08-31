@@ -1,5 +1,5 @@
 import type { Material, MaterialData } from './Material';
-import type { Node, NodeTraits } from './Node';
+import type { NodeOf, NodeTraits } from './Node';
 
 // Opt-in node trait. A freshly created node has no material (null → StandardMaterialKind, the
 // standard pipeline). `materialData` holds per-node data the material consumes, and is null until
@@ -9,4 +9,4 @@ export interface HasMaterial {
   materialData: MaterialData | null;
 }
 
-export type MaterialNode<Traits extends object = NodeTraits> = Node<Traits> & HasMaterial;
+export type MaterialNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasMaterial>;

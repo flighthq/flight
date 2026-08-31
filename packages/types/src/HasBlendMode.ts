@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { Node, NodeTraits } from './Node';
+import type { NodeOf, NodeTraits } from './Node';
 
 // Per-instance fixed-function compositing over the backdrop for 2D-style nodes (Normal/Add/Multiply/
 // Screen/…). Unlike `alpha`/`visible` it does NOT propagate down the hierarchy — each node composites
@@ -9,4 +9,4 @@ export interface HasBlendMode {
   blendMode: BlendMode | null;
 }
 
-export type BlendModeNode<Traits extends object = NodeTraits> = Node<Traits> & HasBlendMode;
+export type BlendModeNode<Traits extends object = NodeTraits> = NodeOf<Traits & HasBlendMode>;

@@ -1,4 +1,6 @@
 import type { Entity, EntityRuntime } from './Entity';
+import type { EntityRuntimeKey } from './Entity';
+import type { Transform2DNode } from './HasTransform2D';
 import type { Node, NodeAny, NodeRuntime, NodeTraits } from './Node';
 import { NodeKind } from './Node';
 
@@ -84,6 +86,31 @@ describe('Node', () => {
       void _hasLocalTransform;
 
       expect(true).toBe(true);
+    });
+
+    it('preserves the trait intersection for parents and children', () => {
+      interface TestTraits extends NodeTraits {
+        marker: number;
+      }
+
+      type Runtime = NodeRuntime<TestTraits>;
+      type Child = NonNullable<Runtime['children']>[number];
+      type Parent = NonNullable<Runtime['parent']>;
+      const childHasMarker: Child['marker'] = 1;
+      const parentHasMarker: Parent['marker'] = 2;
+      expect(childHasMarker + parentHasMarker).toBe(3);
+    });
+
+    it('preserves caller traits through trait-specific node aliases', () => {
+      interface TestTraits extends NodeTraits {
+        marker: number;
+      }
+
+      type Transformed = Transform2DNode<TestTraits>;
+      type Child = NonNullable<NonNullable<Transformed[typeof EntityRuntimeKey]>['children']>[number];
+      const nodeMarker: Transformed['marker'] = 1;
+      const childMarker: Child['marker'] = 2;
+      expect(nodeMarker + childMarker).toBe(3);
     });
   });
 });

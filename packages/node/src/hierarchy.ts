@@ -34,6 +34,8 @@ export function addNodeChildAt<Traits extends object>(
   index: number,
 ): NodeOf<Traits> {
   const targetRuntime = getNodeRuntime(target) as NodeRuntime<Traits>;
+  const targetNode = target as NodeOf<Traits>;
+  const childNode = child as NodeOf<Traits>;
   let children = targetRuntime.children;
 
   if (!child) {
@@ -51,19 +53,19 @@ export function addNodeChildAt<Traits extends object>(
   }
 
   if (children === null) {
-    children = targetRuntime.children = [] as Node<Traits>[];
+    children = targetRuntime.children = [];
   }
 
   const childRuntime = getNodeRuntime(child) as NodeRuntime<Traits>;
-  const parent = childRuntime.parent as Node<Traits>;
+  const parent = childRuntime.parent;
   let wasChild = false;
 
   if (parent === target) {
-    const i = children!.indexOf(child);
+    const i = children!.indexOf(childNode);
     if (i !== -1) {
       wasChild = true;
       // `index === children.length` means append. An already-last child is therefore unchanged.
-      if (i === Math.min(index, children.length - 1)) return child as NodeOf<Traits>;
+      if (i === Math.min(index, children.length - 1)) return childNode;
       children!.splice(i, 1);
     }
   } else {
@@ -72,21 +74,21 @@ export function addNodeChildAt<Traits extends object>(
     }
   }
 
-  children!.splice(index, 0, child);
+  children!.splice(index, 0, childNode);
   invalidateNodeChildren(targetRuntime);
   if (!wasChild) invalidateNodeWorldBounds(target);
   const targetSignals = targetRuntime.nodeSignals;
   if (targetSignals !== null) emitSignal(targetSignals.onChildrenChanged);
 
   if (parent !== target) {
-    childRuntime.parent = target;
+    childRuntime.parent = targetNode;
     if (targetSignals !== null) emitSignal(targetSignals.onChildAdded, child);
     const childSignals = childRuntime.nodeSignals;
     if (childSignals !== null) emitSignal(childSignals.onParentChanged);
     invalidateNodeParentReference(child);
   }
 
-  return child as NodeOf<Traits>;
+  return childNode;
 }
 
 /**
@@ -125,7 +127,7 @@ export function forEachNodeChild<Traits extends object>(
   const children = getNodeRuntime(source).children;
   if (children === null) return;
   for (let i = 0; i < children.length; i++) {
-    if (callback(children[i] as Node<Traits>, i) === false) return;
+    if (callback(children[i], i) === false) return;
   }
 }
 
@@ -153,7 +155,7 @@ export function getNodeChildAt<Traits extends object>(
 ): NodeOf<Traits> | null {
   const children = getNodeRuntime(source).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return children[index] as NodeOf<Traits>;
+    return children[index];
   }
   return null;
 }
@@ -170,7 +172,7 @@ export function getNodeChildByName<Traits extends object>(
   const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      if (children[i].name === name) return children[i] as NodeOf<Traits>;
+      if (children[i].name === name) return children[i];
     }
   }
   return null;
@@ -206,23 +208,24 @@ export function getNodeCommonAncestor<Traits extends object>(
   b: Readonly<Node<Traits>>,
 ): NodeOf<Traits> | null {
   // Build the ancestor set for `a`, then walk `b`'s chain to find the first match.
-  const aAncestors = new Set<Node<Traits>>();
-  aAncestors.add(a as Node<Traits>);
-  let cur = getNodeParent(a as Node<Traits>);
+  const aAncestors = new Set<NodeOf<Traits>>();
+  const aNode = a as NodeOf<Traits>;
+  aAncestors.add(aNode);
+  let cur = getNodeParent(aNode);
   while (cur !== null) {
     aAncestors.add(cur);
     cur = getNodeParent(cur);
   }
-  let bCur: Node<Traits> | null = b as Node<Traits>;
+  let bCur: NodeOf<Traits> | null = b as NodeOf<Traits>;
   while (bCur !== null) {
-    if (aAncestors.has(bCur)) return bCur as NodeOf<Traits>;
+    if (aAncestors.has(bCur)) return bCur;
     bCur = getNodeParent(bCur);
   }
   return null;
 }
 
 export function getNodeParent<Traits extends object>(source: Readonly<Node<Traits>>): NodeOf<Traits> | null {
-  return getNodeRuntime(source).parent as NodeOf<Traits>;
+  return getNodeRuntime(source).parent;
 }
 
 /**
@@ -236,7 +239,7 @@ export function getNodeRoot<Traits extends object>(source: Readonly<Node<Traits>
     current = parent;
     parent = getNodeParent(current);
   }
-  return current as NodeOf<Traits>;
+  return current;
 }
 
 /**
@@ -264,7 +267,8 @@ export function isNodeAncestorOf<Traits extends object>(
  * Node are decreased by 1.
  **/
 export function removeNodeChild<Traits extends object>(target: Node<Traits>, child: Node<Traits>): NodeOf<Traits> {
-  if (!child) return child;
+  const childNode = child as NodeOf<Traits>;
+  if (!child) return childNode;
   const targetRuntime = getNodeRuntime(target);
   const childRuntime = getNodeRuntime(child) as NodeRuntime<Traits>;
   const children = targetRuntime.children;
@@ -273,7 +277,7 @@ export function removeNodeChild<Traits extends object>(target: Node<Traits>, chi
     const childSignals = childRuntime.nodeSignals;
     if (childSignals !== null) emitSignal(childSignals.onParentChanged);
     invalidateNodeParentReference(child);
-    const i = children.indexOf(child);
+    const i = children.indexOf(childNode);
     if (i !== -1) {
       children.splice(i, 1);
       invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
@@ -285,7 +289,7 @@ export function removeNodeChild<Traits extends object>(target: Node<Traits>, chi
       emitSignal(targetSignals.onChildrenChanged);
     }
   }
-  return child as NodeOf<Traits>;
+  return childNode;
 }
 
 /**
@@ -299,7 +303,7 @@ export function removeNodeChild<Traits extends object>(target: Node<Traits>, chi
 export function removeNodeChildAt<Traits extends object>(target: Node<Traits>, index: number): NodeOf<Traits> | null {
   const children = getNodeRuntime(target).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return removeNodeChild(target, children[index] as NodeOf<Traits>);
+    return removeNodeChild(target, children[index]);
   }
   return null;
 }
@@ -411,14 +415,15 @@ export function setNodeChildIndex<Traits extends object>(
   index: number,
 ): void {
   const targetRuntime = getNodeRuntime(target);
+  const childNode = child as NodeOf<Traits>;
   const children = targetRuntime.children;
   if (children === null) return;
   if (index >= 0 && index <= children.length && getNodeParent(child) === target) {
-    const i = children.indexOf(child);
+    const i = children.indexOf(childNode);
     const destination = Math.min(index, children.length - 1);
     if (i !== -1 && i !== destination) {
       children.splice(i, 1);
-      children.splice(destination, 0, child);
+      children.splice(destination, 0, childNode);
       invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
       const targetSignals = targetRuntime.nodeSignals;
       if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
@@ -448,13 +453,15 @@ export function swapNodeChildren<Traits extends object>(
   child2: Node<Traits>,
 ): void {
   const targetRuntime = getNodeRuntime(target);
+  const firstChildNode = child1 as NodeOf<Traits>;
+  const secondChildNode = child2 as NodeOf<Traits>;
   const children = targetRuntime.children;
   if (children !== null && getNodeParent(child1) === target && getNodeParent(child2) === target) {
-    const index1 = children.indexOf(child1);
-    const index2 = children.indexOf(child2);
+    const index1 = children.indexOf(firstChildNode);
+    const index2 = children.indexOf(secondChildNode);
     if (index1 === index2) return;
-    children[index1] = child2;
-    children[index2] = child1;
+    children[index1] = secondChildNode;
+    children[index2] = firstChildNode;
     invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
     const targetSignals = (getNodeRuntime(target) as NodeRuntime<Traits>).nodeSignals;
     if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
@@ -474,7 +481,7 @@ export function swapNodeChildrenAt<Traits extends object>(target: Node<Traits>, 
   if (index1 < 0 || index2 < 0 || index1 >= len || index2 >= len) {
     throwOutOfBoundsError();
   }
-  const swap = children[index1] as Node<Traits>;
+  const swap = children[index1];
   children[index1] = children[index2];
   children[index2] = swap;
   invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
