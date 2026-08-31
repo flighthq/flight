@@ -94,7 +94,6 @@ export function getMeshSignals(source: Mesh): NodeSignals | null {
 // A node is a Mesh — a drawable leaf, not a transform-only group — when it carries geometry.
 // Robust across custom kinds (a Mesh need not use MeshKind), so the scene render pass discriminates
 // by this rather than by kind symbol.
-export function isMesh(source: any): source is Mesh {
-  // eslint-disable-line
-  return (source as Partial<Mesh>).geometry != null;
+export function isMesh(source: unknown): source is Mesh {
+  return source != null && typeof source === 'object' && (source as Partial<Mesh>).geometry != null;
 }

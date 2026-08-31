@@ -236,12 +236,36 @@ describe('getMeshSignals', () => {
 });
 
 describe('isMesh', () => {
-  it('is true for a node created by createMesh', () => {
-    const mesh = createMesh(createBoxMeshGeometry(), []);
-    expect(isMesh(mesh)).toBe(true);
+  it('is false for null', () => {
+    expect(isMesh(null)).toBe(false);
+  });
+
+  it('is false for undefined', () => {
+    expect(isMesh(undefined)).toBe(false);
+  });
+
+  it('is false for a number', () => {
+    expect(isMesh(42)).toBe(false);
+  });
+
+  it('is false for a string', () => {
+    expect(isMesh('mesh')).toBe(false);
   });
 
   it('is false for a bare Node3D group', () => {
     expect(isMesh(createNode3D())).toBe(false);
+  });
+
+  it('is false for an object with geometry set to null', () => {
+    expect(isMesh({ geometry: null })).toBe(false);
+  });
+
+  it('is false for an object with geometry set to undefined', () => {
+    expect(isMesh({ geometry: undefined })).toBe(false);
+  });
+
+  it('is true for a node created by createMesh', () => {
+    const mesh = createMesh(createBoxMeshGeometry(), []);
+    expect(isMesh(mesh)).toBe(true);
   });
 });
