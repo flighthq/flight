@@ -45,7 +45,7 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/sdk/game';
-import { createNode3D } from '@flighthq/sdk/scene3d';
+import { createNode3D, createScene3DHit, pickScene3D } from '@flighthq/sdk/scene3d';
 
 import { canvas, render, scale, supportsExtendedPbr, supportsVertexColor0 } from './render';
 
@@ -665,11 +665,15 @@ const lights: Scene3DLightsLike = {
 
 let selectedIndex = 0;
 let dragging = false;
+let pointerTravel = 0;
 let previousPointerX = 0;
 let previousPointerY = 0;
+const hit = createScene3DHit();
+const pickableMeshes = new Set(meshes);
 
 canvas.addEventListener('pointerdown', (event: PointerEvent) => {
   dragging = true;
+  pointerTravel = 0;
   previousPointerX = event.clientX;
   previousPointerY = event.clientY;
   canvas.setPointerCapture(event.pointerId);
@@ -677,11 +681,10 @@ canvas.addEventListener('pointerdown', (event: PointerEvent) => {
 
 canvas.addEventListener('pointermove', (event: PointerEvent) => {
   if (!dragging) return;
-  rotateOrbitCameraController(
-    cameraController,
-    -(event.clientX - previousPointerX) * 0.006,
-    (event.clientY - previousPointerY) * 0.006,
-  );
+  const deltaX = event.clientX - previousPointerX;
+  const deltaY = event.clientY - previousPointerY;
+  pointerTravel += Math.hypot(deltaX, deltaY);
+  rotateOrbitCameraController(cameraController, -deltaX * 0.006, deltaY * 0.006);
   previousPointerX = event.clientX;
   previousPointerY = event.clientY;
 });
@@ -689,6 +692,10 @@ canvas.addEventListener('pointermove', (event: PointerEvent) => {
 canvas.addEventListener('pointerup', (event: PointerEvent) => {
   dragging = false;
   canvas.releasePointerCapture(event.pointerId);
+});
+
+canvas.addEventListener('pointercancel', () => {
+  dragging = false;
 });
 
 canvas.addEventListener(
@@ -699,6 +706,24 @@ canvas.addEventListener(
   },
   { passive: false },
 );
+
+const controlsStyle = document.createElement('style');
+controlsStyle.textContent = `
+  .controls { position:fixed; z-index:2; top:18px; right:18px; width:230px; max-width:calc(100vw - 36px);
+    max-height:calc(100vh - 36px); box-sizing:border-box; padding:16px; overflow-y:auto; overscroll-behavior:contain;
+    border:1px solid rgb(158 190 255 / 24%); border-radius:14px; background:rgb(8 13 24 / 88%);
+    box-shadow:0 16px 50px rgb(0 0 0 / 35%); backdrop-filter:blur(14px); color:#edf3ff;
+    font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
+  .controls h1 { margin:0 0 4px; font-size:18px; }
+  .controls p { margin:0 0 14px; color:#93a4c3; font-size:11px; line-height:1.45; }
+  .controls .field { display:grid; gap:6px; margin-top:12px; }
+  .controls .field label { display:flex; justify-content:space-between; color:#c8d5ec; font-size:11px; }
+  .controls select, .controls input { width:100%; box-sizing:border-box; accent-color:#6ee7ff; }
+  .controls select, .controls input[type='color'] { min-height:34px; border:1px solid #31405d; border-radius:7px;
+    color:#edf3ff; background:#111a2c; }
+  .controls .hint { margin-top:14px; padding-top:12px; border-top:1px solid rgb(158 190 255 / 15%); }
+`;
+document.head.appendChild(controlsStyle);
 
 const controls = document.createElement('section');
 controls.className = 'controls';
@@ -718,13 +743,24 @@ const liveControls = document.createElement('div');
 controls.appendChild(liveControls);
 const hint = document.createElement('p');
 hint.className = 'hint';
-hint.textContent = 'Drag to orbit · wheel to zoom · selected sphere is enlarged';
+hint.textContent = 'Click a sphere to inspect · drag to orbit · wheel to zoom';
 controls.appendChild(hint);
 
 selector.addEventListener('change', () => {
-  selectedIndex = selector.selectedIndex;
-  updateSelection();
-  rebuildLiveControls();
+  selectMaterial(selector.selectedIndex);
+});
+
+canvas.addEventListener('click', (event: MouseEvent) => {
+  if (pointerTravel > 5) return;
+  const bounds = canvas.getBoundingClientRect();
+  const screenX = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+  const screenY = 1 - ((event.clientY - bounds.top) / bounds.height) * 2;
+  const picked = pickScene3D(scene, camera, screenX, screenY, hit, {
+    predicate: (mesh) => pickableMeshes.has(mesh),
+  })?.node;
+  if (picked === undefined) return;
+  const index = meshes.indexOf(picked);
+  if (index >= 0) selectMaterial(index);
 });
 
 function appendField(parent: HTMLElement, label: string, input: HTMLElement, value?: HTMLElement): void {
@@ -786,6 +822,13 @@ function updateSelection(): void {
     mesh.scale.z = scaleValue;
     invalidateNodeLocalTransform(mesh);
   }
+}
+
+function selectMaterial(index: number): void {
+  selectedIndex = index;
+  selector.selectedIndex = index;
+  updateSelection();
+  rebuildLiveControls();
 }
 
 updateSelection();

@@ -58,31 +58,32 @@ let saturation = captureMode ? 0.75 : 1;
 // Fused color matrix (recomputed when sliders change).
 let fusedMatrix = createIdentityColorMatrix();
 
+const controlsStyle = document.createElement('style');
+controlsStyle.textContent = `
+  .controls { position:fixed; z-index:2; top:14px; left:max(14px, calc(50% - 386px));
+    width:min(390px, calc(100vw - 28px)); display:grid; grid-template-columns:1fr; gap:6px; padding:10px 12px;
+    box-sizing:border-box; border:1px solid #39405e; border-radius:9px; background:#111426ee;
+    box-shadow:0 10px 30px #0007; color:#d8def2; font:12px monospace; }
+  .controls .field { display:grid; grid-template-columns:88px minmax(90px, 1fr) 48px; gap:8px; align-items:center; }
+  .controls .field input { width:100%; min-width:0; accent-color:#eedd44; }
+  .controls .value { color:#eedd44; text-align:right; font-variant-numeric:tabular-nums; }
+`;
+document.head.appendChild(controlsStyle);
+
+const controls = document.createElement('section');
+controls.className = 'controls';
+const controlsTitle = document.createElement('strong');
+controlsTitle.textContent = 'Color matrix controls';
+controls.appendChild(controlsTitle);
+document.body.appendChild(controls);
+
 // Create an HTML slider with a label and value readout. Returns a function to read the current value.
-function createSlider(
-  labelText: string,
-  min: number,
-  max: number,
-  step: number,
-  initial: number,
-  x: number,
-  y: number,
-): HTMLInputElement {
+function createSlider(labelText: string, min: number, max: number, step: number, initial: number): HTMLInputElement {
   const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = x + 'px';
-  container.style.top = y + 'px';
-  container.style.display = 'flex';
-  container.style.alignItems = 'center';
-  container.style.gap = '8px';
-  container.style.fontFamily = 'monospace';
-  container.style.fontSize = '13px';
-  container.style.color = '#ccc';
+  container.className = 'field';
 
   const label = document.createElement('span');
   label.textContent = labelText;
-  label.style.width = '100px';
-  label.style.textAlign = 'right';
   container.appendChild(label);
 
   const input = document.createElement('input');
@@ -91,12 +92,11 @@ function createSlider(
   input.max = String(max);
   input.step = String(step);
   input.value = String(initial);
-  input.style.width = '200px';
   container.appendChild(input);
 
   const valueDisplay = document.createElement('span');
   valueDisplay.textContent = initial.toFixed(2);
-  valueDisplay.style.width = '60px';
+  valueDisplay.className = 'value';
   container.appendChild(valueDisplay);
 
   input.addEventListener('input', () => {
@@ -104,15 +104,15 @@ function createSlider(
     onSliderChange();
   });
 
-  document.body.appendChild(container);
+  controls.appendChild(container);
   return input;
 }
 
 // Create sliders in HTML overlay above the canvas.
-const brightnessSlider = createSlider('Brightness', -128, 128, 1, brightness, 20, 20);
-const contrastSlider = createSlider('Contrast', 0, 3, 0.01, contrast, 20, 50);
-const hueSlider = createSlider('Hue Rotate', -180, 180, 1, hueRotation, 20, 80);
-const saturationSlider = createSlider('Saturation', 0, 3, 0.01, saturation, 20, 110);
+const brightnessSlider = createSlider('Brightness', -128, 128, 1, brightness);
+const contrastSlider = createSlider('Contrast', 0, 3, 0.01, contrast);
+const hueSlider = createSlider('Hue Rotate', -180, 180, 1, hueRotation);
+const saturationSlider = createSlider('Saturation', 0, 3, 0.01, saturation);
 
 // Matrix display: 4 rows x 5 columns of text labels showing the fused matrix values.
 const matrixLabels: Node2D[] = [];

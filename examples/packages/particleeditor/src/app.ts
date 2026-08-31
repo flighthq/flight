@@ -229,14 +229,37 @@ const controlSections: readonly { readonly heading: string; readonly controls: r
   },
 ];
 
-const controlsDiv =
-  document.getElementById('controls') ??
-  (() => {
-    const div = document.createElement('div');
-    div.id = 'controls';
-    document.body.appendChild(div);
-    return div;
-  })();
+const controlsStyle = document.createElement('style');
+controlsStyle.textContent = `
+  #control-panel { position:fixed; z-index:2; top:12px; right:12px; width:min(280px, calc(100vw - 24px));
+    max-height:calc(100vh - 76px); overflow-y:auto; overscroll-behavior:contain; border:1px solid #363653;
+    border-radius:10px; background:#1a1a2eee; box-shadow:0 12px 36px #0008; }
+  #control-panel summary { position:sticky; top:0; z-index:1; padding:10px 12px; cursor:pointer;
+    background:#24243cee; color:#f0f0ff; font:700 13px system-ui,sans-serif; }
+  #controls h3 { margin:14px 0 6px; color:#aaa; font-size:13px; text-transform:uppercase; letter-spacing:.5px; }
+  #controls h3:first-child { margin-top:0; }
+  #controls label { display:flex; justify-content:space-between; align-items:center; margin:4px 0 1px; font-size:12px; }
+  #controls input[type='range'] { width:100%; margin:0 0 4px; }
+  #controls .value { min-width:40px; color:#888; font-size:11px; text-align:right; font-variant-numeric:tabular-nums; }
+  #controls select { width:100%; margin:0 0 4px; padding:2px 4px; border:1px solid #444; background:#222; color:#eee; }
+  #controls input[type='color'] { width:40px; height:20px; padding:0; border:1px solid #444; background:none; }
+`;
+document.head.appendChild(controlsStyle);
+
+const controlsDiv = (() => {
+  const existing = document.getElementById('controls');
+  if (existing !== null) return existing;
+  const panel = document.createElement('details');
+  panel.id = 'control-panel';
+  panel.open = true;
+  const summary = document.createElement('summary');
+  summary.textContent = 'Particle editor controls';
+  const div = document.createElement('div');
+  div.id = 'controls';
+  panel.append(summary, div);
+  document.body.appendChild(panel);
+  return div;
+})();
 
 controlsDiv.style.backgroundColor = '#1a1a2e';
 controlsDiv.style.color = '#e0e0e0';

@@ -101,10 +101,26 @@ canvas.addEventListener('click', (event: MouseEvent) => {
   tweenToTarget();
 });
 
-// HTML controls for spring presets and parameter display.
+// Compact overlay controls remain reachable when the example is embedded in the explorer runner.
+const controlsStyle = document.createElement('style');
+controlsStyle.textContent = `
+  .controls { position:fixed; z-index:2; top:12px; right:12px; width:min(218px, calc(100vw - 24px));
+    max-height:calc(100vh - 76px); display:grid; gap:6px; padding:12px; overflow-y:auto; box-sizing:border-box;
+    border:1px solid #c5ced9; border-radius:10px; background:#fffffff2; box-shadow:0 10px 30px #2635482b;
+    color:#314156; font:12px system-ui,sans-serif; }
+  .controls button { padding:6px 8px; cursor:pointer; border:1px solid #bcc8d5; border-radius:5px;
+    background:#f8fbff; color:#314156; text-align:left; }
+  .controls button:hover { border-color:#2196f3; }
+  .controls .info { color:#68788d; font-variant-numeric:tabular-nums; }
+  .controls .legend { display:grid; gap:3px; padding-top:6px; border-top:1px solid #dce3eb; }
+`;
+document.head.appendChild(controlsStyle);
+
 const controls = document.createElement('div');
-controls.style.cssText =
-  'font-family:system-ui,sans-serif;font-size:13px;margin:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+controls.className = 'controls';
+const controlsTitle = document.createElement('strong');
+controlsTitle.textContent = 'Spring presets';
+controls.appendChild(controlsTitle);
 
 const presets: Array<{ label: string; frequency: number; dampingRatio: number }> = [
   { dampingRatio: 0.3, frequency: 3, label: 'Underdamped (bouncy)' },
@@ -115,7 +131,7 @@ const presets: Array<{ label: string; frequency: number; dampingRatio: number }>
 ];
 
 const info = document.createElement('span');
-info.style.cssText = 'margin-left:auto;color:#555';
+info.className = 'info';
 
 function updateInfo(): void {
   info.textContent = `frequency: ${springConfig.frequency} Hz  damping: ${springConfig.dampingRatio}`;
@@ -124,7 +140,6 @@ function updateInfo(): void {
 for (const preset of presets) {
   const button = document.createElement('button');
   button.textContent = preset.label;
-  button.style.cssText = 'cursor:pointer;padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:#fff';
   button.addEventListener('click', () => {
     springConfig = createSpringConfig(preset.frequency, preset.dampingRatio);
     updateInfo();
@@ -133,18 +148,16 @@ for (const preset of presets) {
 }
 
 controls.appendChild(info);
-document.body.appendChild(controls);
-
-// Labels under the canvas (plain HTML since no font is loaded for text display objects).
 const labels = document.createElement('div');
-labels.style.cssText = 'font-family:system-ui,sans-serif;font-size:12px;color:#666;margin:2px 0';
+labels.className = 'legend';
 labels.innerHTML =
   '<span style="color:#2196f3">&#9632; Spring (2nd-order, overshoots)</span>' +
   '&nbsp;&nbsp;&nbsp;' +
   '<span style="color:#ff9800">&#9632; Tween (fixed duration)</span>' +
   '&nbsp;&nbsp;&nbsp;' +
-  '<span style="color:#999">Click anywhere to move the target</span>';
-document.body.appendChild(labels);
+  '<span style="color:#999">Click the scene to move the target</span>';
+controls.appendChild(labels);
+document.body.appendChild(controls);
 
 updateInfo();
 
