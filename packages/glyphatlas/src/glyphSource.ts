@@ -1,6 +1,6 @@
 import type { GlyphAtlas, GlyphSource } from '@flighthq/types/contract';
 
-import { getGlyphAtlasBitmap } from './glyphAtlas';
+import { getGlyphAtlasBitmap, getGlyphAtlasLayoutVersion } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics';
 
@@ -20,6 +20,9 @@ export function createGlyphSourceFromGlyphAtlas(atlas: Readonly<GlyphAtlas>): Gl
     },
     getGlyphKerning(left, right) {
       return getGlyphAtlasKerning(atlas, left, right);
+    },
+    getGlyphLayoutVersion() {
+      return getGlyphAtlasLayoutVersion(atlas);
     },
     getGlyphMetrics() {
       return getGlyphAtlasMetrics(atlas);

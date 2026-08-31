@@ -23,6 +23,7 @@ function createTestGlyphSource(): GlyphSource {
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,
+    getGlyphLayoutVersion: () => 0,
     getGlyphMetrics: () => ({ ascent: 8, descent: 2, lineGap: 0 }),
   };
 }

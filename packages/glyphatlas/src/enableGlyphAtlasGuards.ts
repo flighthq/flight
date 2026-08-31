@@ -6,6 +6,7 @@ import { setGlyphAtlasEntryGuard } from './glyphAtlasEntry';
 /** Uninstalls the guard installed by `enableGlyphAtlasGuards`. */
 export function disableGlyphAtlasGuards(): void {
   setGlyphAtlasEntryGuard(null);
+  _repacks = 0;
 }
 
 /**
@@ -23,6 +24,11 @@ export function disableGlyphAtlasGuards(): void {
  * it was evicted mid-repack. One is unremarkable under pressure; a stream of them means the atlas is
  * thrashing and every dropped glyph will be re-rasterized on its next use.
  *
+ * It also reports the repacks themselves once they pass `REPACK_THRASHING_THRESHOLD`, because a repack
+ * is not only a cost: it relocates cached glyphs, so every consumer that baked their rects is stale
+ * until it re-reads `getGlyphAtlasLayoutVersion`. A repack or two while an atlas fills is normal; a
+ * stream of them means the working set does not fit and text is re-laid-out as fast as it is drawn.
+ *
  * Pair with `explainGlyphAtlasEntry` for a pull-style answer about one codepoint. Not importing this
  * module costs production nothing: the messages and the `@flighthq/log` dependency live only here.
  */
@@ -30,7 +36,25 @@ export function enableGlyphAtlasGuards(): void {
   setGlyphAtlasEntryGuard(warnOnGlyphAtlasEntryBlocked);
 }
 
-function warnOnGlyphAtlasEntryBlocked(reason: string, codepoint: number): void {
+function warnOnGlyphAtlasEntryBlocked(reason: string, subject: number): void {
+  if (reason === 'repack') {
+    _repacks++;
+    if (_repacks < REPACK_THRASHING_THRESHOLD) return;
+    logOnce(
+      'glyphatlas:repack-thrashing',
+      LogLevel.Warn,
+      {
+        message:
+          `getGlyphAtlasEntry: the atlas has repacked ${_repacks} times (${subject} glyphs cached), so its ` +
+          'working set does not fit. Every repack relocates cached glyphs and invalidates any baked rects: ' +
+          'consumers must re-read getGlyphAtlasLayoutVersion, and BitmapText nodes must be refreshed with ' +
+          'refreshBitmapTextGlyphLayout. Enlarge the atlas or reduce the font size to stop the churn.',
+      },
+      'glyphatlas',
+    );
+    return;
+  }
+  const codepoint = subject;
   const printable = `U+${codepoint.toString(16).toUpperCase().padStart(4, '0')}`;
   if (reason === 'rasterizer-returned-null') {
     logOnce(
@@ -71,3 +95,13 @@ function warnOnGlyphAtlasEntryBlocked(reason: string, codepoint: number): void {
     'glyphatlas',
   );
 }
+
+// How many repacks count as churn rather than an atlas settling. The first repacks are what filling an
+// atlas looks like — space is reclaimed once and the working set then fits — so warning on one would
+// cry wolf for every app that uses more glyphs than it first cached.
+const REPACK_THRASHING_THRESHOLD = 4;
+
+// Process-wide, not per atlas: the seam carries no atlas identity, and the message is advice about
+// sizing that reads the same however many atlases contributed. Reset by `disableGlyphAtlasGuards` so a
+// test can observe the threshold twice; `logOnce` still suppresses a repeat within one session.
+let _repacks = 0;

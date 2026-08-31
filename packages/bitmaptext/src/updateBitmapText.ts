@@ -13,9 +13,27 @@ import type {
   Rectangle,
 } from '@flighthq/types/contract';
 
-const BITMAP_TEXT_TRANSFORM_STRIDE = 2;
-const CARRIAGE_RETURN = 0x0d;
-const SPACE = 0x20;
+import { isBitmapTextGlyphLayoutStale } from './bitmapText';
+
+// Re-lays-out `bitmapText` when, and only when, its glyph source has repacked since the last layout —
+// the pairing that keeps a dynamic atlas correct. Returns whether it re-laid-out, so a caller can count
+// churn. Call it once per frame per BitmapText bound to a `@flighthq/glyphatlas` source: a repack
+// triggered by ANY consumer of that atlas (another BitmapText adding a glyph, a direct
+// `getGlyphAtlasEntry`) relocates this node's glyphs, and its baked page regions then sample whatever
+// took their place. The comparison is one number against one number, so the frames where nothing
+// repacked cost nothing. A node bound to a static bitmap font never re-lays-out here.
+export function refreshBitmapTextGlyphLayout(bitmapText: BitmapText): boolean {
+  if (!isBitmapTextGlyphLayoutStale(bitmapText)) return false;
+  updateBitmapText(bitmapText);
+  return true;
+}
+
+/** Installs the bitmap-text guard, or clears it with `null`. The seam keeps the wording and the
+ *  `@flighthq/log` dependency in the separately-importable guard module rather than in layout; not
+ *  importing that module costs production nothing. Called by `enableBitmapTextGuards`. */
+export function setBitmapTextLayoutGuard(guard: ((reason: string, attempts: number) => void) | null): void {
+  _layoutGuard = guard;
+}
 
 // Lays out `bitmapText`'s current string and rewrites its `BitmapTextPage` quads: one quad per visible
 // glyph, partitioned by the glyph's atlas page into one page's quads, positioned by the glyph source's
@@ -27,81 +45,33 @@ const SPACE = 0x20;
 // glyphs are skipped. Missing glyphs (`getGlyphEntry` → null) are omitted entirely — no quad and no
 // advance. Bounds span every drawn glyph across all pages. Tint is the node's own color-adjustment stack,
 // not touched here.
+//
+// A dynamic glyph source can repack DURING this call: rasterizing a glyph late in the string may evict
+// and relocate one placed early in it. So the layout runs against a placement version and repeats while
+// that version moves under it, and the version the winning pass agreed with is what gets stamped for
+// `isBitmapTextGlyphLayoutStale`. Passes are bounded — a string whose glyphs cannot all be resident at
+// once would otherwise evict each other forever — and the guard layer reports a string that never
+// settles.
 export function updateBitmapText(bitmapText: BitmapText): void {
-  const data = bitmapText.data;
   const runtime = getNode2DRuntime(bitmapText) as BitmapTextRuntime;
-  const bounds = ensureBoundsRectangle(runtime);
-
-  // Clear every existing page; pages with glyphs this layout are refilled below, pages that fall silent
-  // stay as empty pages drawing nothing.
-  for (const page of runtime.pages) {
-    page.instanceCount = 0;
-    page.atlas.regions.length = 0;
-  }
-
-  const glyphSource = data.glyphSource;
-  if (glyphSource === null || data.text.length === 0) {
-    setEmptyRectangle(bounds);
-    invalidateNodeLocalBounds(bitmapText);
+  const glyphSource = bitmapText.data.glyphSource;
+  if (glyphSource === null) {
+    layoutBitmapTextPages(bitmapText, runtime);
+    runtime.glyphLayoutVersion = -1;
     return;
   }
-
-  const metrics = glyphSource.getGlyphMetrics();
-  const lineAdvance = (metrics.ascent + metrics.descent + metrics.lineGap) * data.lineHeight;
-  const lines = layoutBitmapTextLines(glyphSource, data);
-  const refWidth = data.wrapWidth ?? maxLineWidth(lines);
-  const pages = new Map<number, BitmapTextPageContext>();
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  for (let li = 0; li < lines.length; li++) {
-    const line = lines[li];
-    const baselineY = metrics.ascent + li * lineAdvance;
-    let startX = 0;
-    let gapExtra = 0;
-    if (data.align === 'center') startX = (refWidth - line.width) / 2;
-    else if (data.align === 'right') startX = refWidth - line.width;
-    else if (data.align === 'justify' && data.wrapWidth !== null && !line.paragraphEnd && line.gaps.length > 0) {
-      gapExtra = (data.wrapWidth - line.width) / line.gaps.length;
-    }
-
-    let penX = startX;
-    for (let wi = 0; wi < line.words.length; wi++) {
-      if (wi > 0) penX += line.gaps[wi - 1] + gapExtra;
-      const word = line.words[wi];
-      for (const glyph of word.glyphs) {
-        const entry = glyph.entry;
-        const context = ensureBitmapTextPage(runtime, glyphSource, pages, entry.page);
-        if (context === null) continue;
-        const quadX = penX + glyph.penWithinWord + entry.bearingX;
-        const quadY = baselineY - entry.bearingY;
-        let regionId = context.regionByCodepoint.get(glyph.codepoint);
-        if (regionId === undefined) {
-          addTextureAtlasRegion(context.page.atlas, entry.x, entry.y, entry.width, entry.height);
-          regionId = context.page.atlas.regions.length - 1;
-          context.regionByCodepoint.set(glyph.codepoint, regionId);
-        }
-        appendBitmapTextPageQuad(context.page, regionId, quadX, quadY);
-        if (quadX < minX) minX = quadX;
-        if (quadY < minY) minY = quadY;
-        if (quadX + entry.width > maxX) maxX = quadX + entry.width;
-        if (quadY + entry.height > maxY) maxY = quadY + entry.height;
-      }
-      penX += word.width;
+  for (let attempt = 1; attempt <= BITMAP_TEXT_LAYOUT_ATTEMPTS; attempt++) {
+    const version = glyphSource.getGlyphLayoutVersion();
+    layoutBitmapTextPages(bitmapText, runtime);
+    if (glyphSource.getGlyphLayoutVersion() === version) {
+      runtime.glyphLayoutVersion = version;
+      return;
     }
   }
-
-  if (minX === Infinity) {
-    setEmptyRectangle(bounds);
-  } else {
-    bounds.x = minX;
-    bounds.y = minY;
-    bounds.width = maxX - minX;
-    bounds.height = maxY - minY;
-  }
-  invalidateNodeLocalBounds(bitmapText);
+  // Out of passes. The last layout is the best available and some of its rects are already wrong; the
+  // stamp records what it was built against so the next refresh tries again rather than reading clean.
+  runtime.glyphLayoutVersion = glyphSource.getGlyphLayoutVersion();
+  _layoutGuard?.('layout-did-not-converge', BITMAP_TEXT_LAYOUT_ATTEMPTS);
 }
 
 // Appends one glyph quad (region id + vector2 pen position) to `page`, auto-growing its arrays. The
@@ -234,6 +204,84 @@ function layoutBitmapTextLines(glyphSource: GlyphSource, data: Readonly<BitmapTe
   return lines;
 }
 
+// One layout pass: the glyph placement itself, with no version bookkeeping. Split out from
+// `updateBitmapText` so the retry above re-runs exactly the work a repack invalidated.
+function layoutBitmapTextPages(bitmapText: BitmapText, runtime: BitmapTextRuntime): void {
+  const data = bitmapText.data;
+  const bounds = ensureBoundsRectangle(runtime);
+
+  // Clear every existing page; pages with glyphs this layout are refilled below, pages that fall silent
+  // stay as empty pages drawing nothing.
+  for (const page of runtime.pages) {
+    page.instanceCount = 0;
+    page.atlas.regions.length = 0;
+  }
+
+  const glyphSource = data.glyphSource;
+  if (glyphSource === null || data.text.length === 0) {
+    setEmptyRectangle(bounds);
+    invalidateNodeLocalBounds(bitmapText);
+    return;
+  }
+
+  const metrics = glyphSource.getGlyphMetrics();
+  const lineAdvance = (metrics.ascent + metrics.descent + metrics.lineGap) * data.lineHeight;
+  const lines = layoutBitmapTextLines(glyphSource, data);
+  const refWidth = data.wrapWidth ?? maxLineWidth(lines);
+  const pages = new Map<number, BitmapTextPageContext>();
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    const baselineY = metrics.ascent + li * lineAdvance;
+    let startX = 0;
+    let gapExtra = 0;
+    if (data.align === 'center') startX = (refWidth - line.width) / 2;
+    else if (data.align === 'right') startX = refWidth - line.width;
+    else if (data.align === 'justify' && data.wrapWidth !== null && !line.paragraphEnd && line.gaps.length > 0) {
+      gapExtra = (data.wrapWidth - line.width) / line.gaps.length;
+    }
+
+    let penX = startX;
+    for (let wi = 0; wi < line.words.length; wi++) {
+      if (wi > 0) penX += line.gaps[wi - 1] + gapExtra;
+      const word = line.words[wi];
+      for (const glyph of word.glyphs) {
+        const entry = glyph.entry;
+        const context = ensureBitmapTextPage(runtime, glyphSource, pages, entry.page);
+        if (context === null) continue;
+        const quadX = penX + glyph.penWithinWord + entry.bearingX;
+        const quadY = baselineY - entry.bearingY;
+        let regionId = context.regionByCodepoint.get(glyph.codepoint);
+        if (regionId === undefined) {
+          addTextureAtlasRegion(context.page.atlas, entry.x, entry.y, entry.width, entry.height);
+          regionId = context.page.atlas.regions.length - 1;
+          context.regionByCodepoint.set(glyph.codepoint, regionId);
+        }
+        appendBitmapTextPageQuad(context.page, regionId, quadX, quadY);
+        if (quadX < minX) minX = quadX;
+        if (quadY < minY) minY = quadY;
+        if (quadX + entry.width > maxX) maxX = quadX + entry.width;
+        if (quadY + entry.height > maxY) maxY = quadY + entry.height;
+      }
+      penX += word.width;
+    }
+  }
+
+  if (minX === Infinity) {
+    setEmptyRectangle(bounds);
+  } else {
+    bounds.x = minX;
+    bounds.y = minY;
+    bounds.width = maxX - minX;
+    bounds.height = maxY - minY;
+  }
+  invalidateNodeLocalBounds(bitmapText);
+}
+
 function maxLineWidth(lines: readonly BitmapTextLine[]): number {
   let max = 0;
   for (const line of lines) if (line.width > max) max = line.width;
@@ -282,3 +330,17 @@ interface BitmapTextWord {
   glyphs: BitmapTextGlyph[];
   width: number;
 }
+
+// How many times `updateBitmapText` re-runs a layout that a repack invalidated under it. Two would
+// leave no room to distinguish "the first pass warmed the atlas" from "this string cannot settle";
+// three is one full pass past a warm atlas, and every pass past that is the same evict-repack cycle.
+const BITMAP_TEXT_LAYOUT_ATTEMPTS = 3;
+
+// Two floats (x, y) per glyph quad — the vector2 (translation-only) transform stride the BitmapText
+// renderer reads. Kept internal so callers never hand-write i*2.
+const BITMAP_TEXT_TRANSFORM_STRIDE = 2;
+
+const CARRIAGE_RETURN = 0x0d;
+const SPACE = 0x20;
+
+let _layoutGuard: ((reason: string, attempts: number) => void) | null = null;

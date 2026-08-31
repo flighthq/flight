@@ -74,4 +74,27 @@ describe('enableGlyphAtlasGuards', () => {
     expect(messages()).toContain('larger than the atlas');
     expect(messages()).not.toContain('rasterizer produced nothing');
   });
+
+  // An atlas settling — one or two repacks as it fills, then a working set that fits — is normal, and
+  // warning on it would train the caller to ignore the message that matters.
+  it('says nothing about the first repacks an atlas needs to settle', () => {
+    enableGlyphAtlasGuards();
+    setGlyphRasterizerBackend(backendProducing(8, 8));
+    const atlas = createGlyphAtlas({ fontFamily: 'm', fontSize: 8, height: 32, padding: 1, width: 32 });
+    // Nine 8x8 glyphs fill the atlas exactly; the next two force one repack each.
+    for (let codepoint = 65; codepoint < 76; codepoint++) getGlyphAtlasEntry(atlas, codepoint);
+    expect(atlas.runtime.layoutVersion).toBe(2);
+    expect(messages()).toBe('');
+  });
+
+  it('warns once the repacks pass the point of an atlas settling', () => {
+    enableGlyphAtlasGuards();
+    setGlyphRasterizerBackend(backendProducing(8, 8));
+    const atlas = createGlyphAtlas({ fontFamily: 'm', fontSize: 8, height: 32, padding: 1, width: 32 });
+    for (let codepoint = 65; codepoint < 90; codepoint++) getGlyphAtlasEntry(atlas, codepoint);
+    expect(messages()).toContain('working set does not fit');
+    // The message must name the consumer-visible consequence, not only the cost: a repack invalidates
+    // every baked rect, and a caller who reads this as "slow" will not go looking for stale text.
+    expect(messages()).toContain('refreshBitmapTextGlyphLayout');
+  });
 });

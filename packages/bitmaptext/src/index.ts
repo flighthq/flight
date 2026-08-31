@@ -1,8 +1,12 @@
 export {
   computeBitmapTextLocalBoundsRectangle,
   createBitmapText,
+  disableBitmapTextGuards,
+  enableBitmapTextGuards,
   getBitmapTextBounds,
   getBitmapTextPages,
+  isBitmapTextGlyphLayoutStale,
+  refreshBitmapTextGlyphLayout,
   reserveBitmapText,
   setBitmapTextAlign,
   setBitmapTextGlyphSource,

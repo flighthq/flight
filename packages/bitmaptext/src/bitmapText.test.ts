@@ -11,6 +11,7 @@ import {
   createBitmapTextRuntime,
   getBitmapTextBounds,
   getBitmapTextPages,
+  isBitmapTextGlyphLayoutStale,
   reserveBitmapText,
   setBitmapTextAlign,
   setBitmapTextGlyphSource,
@@ -35,6 +36,7 @@ function createTestGlyphSource(): GlyphSource {
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,
+    getGlyphLayoutVersion: () => 0,
     getGlyphMetrics: () => ({ ascent: 8, descent: 2, lineGap: 0 }),
   };
 }
@@ -125,6 +127,8 @@ describe('createBitmapTextRuntime', () => {
     const runtime = createBitmapTextRuntime();
     expect(runtime.localBoundsRectangle).toBeNull();
     expect(runtime.pages).toEqual([]);
+    // Below every real version, so a node that has never been laid out reads stale.
+    expect(runtime.glyphLayoutVersion).toBe(-1);
   });
 });
 
@@ -146,6 +150,32 @@ describe('getBitmapTextPages', () => {
     const pages = getBitmapTextPages(text);
     expect(pages).toHaveLength(1);
     expect(pages[0].instanceCount).toBe(0);
+  });
+});
+
+describe('isBitmapTextGlyphLayoutStale', () => {
+  it('reads stale before the first layout and settled after it', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(true);
+    updateBitmapText(text);
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
+  });
+
+  // A node with nothing bound has no rects to go stale, so it must not report work to do — otherwise
+  // a per-frame refresh would re-lay-out every empty node in the scene forever.
+  it('reads settled for a node with no glyph source', () => {
+    expect(isBitmapTextGlyphLayoutStale(createBitmapText(null, { text: 'AB' }))).toBe(false);
+  });
+
+  // Rebinding is a different source with its own version numbering, so the stamp from the old one
+  // cannot be trusted to describe the new one even when the two numbers happen to match.
+  it('reads stale again after the glyph source is rebound', () => {
+    const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
+    updateBitmapText(text);
+    setBitmapTextGlyphSource(text, null);
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
+    setBitmapTextGlyphSource(text, createTestGlyphSource());
+    expect(isBitmapTextGlyphLayoutStale(text)).toBe(false);
   });
 });
 
