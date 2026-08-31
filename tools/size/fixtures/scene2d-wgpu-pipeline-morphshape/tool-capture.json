@@ -1,0 +1,4 @@
+{
+  "subject": "scene2d-wgpu-pipeline-morphshape-size-fixture",
+  "entries": [{ "name": "scene2d-wgpu-pipeline-morphshape", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }]
+}

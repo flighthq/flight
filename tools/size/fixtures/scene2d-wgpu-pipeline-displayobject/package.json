@@ -1,0 +1,9 @@
+{
+  "name": "scene2d-wgpu-pipeline-displayobject-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "scene2d-wgpu-pipeline-displayobject"
+  }
+}

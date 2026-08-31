@@ -221,8 +221,7 @@ describe('minimal size fixture harness', () => {
       return fixture.imports
         .map((item) => ({ ...item, family: importFamily(item.specifier) }))
         .filter(
-          (item) =>
-            item.family !== null && forbidden.includes(item.family) && !isAllowedDomShapeCanvasBridge(fixture, item),
+          (item) => item.family !== null && forbidden.includes(item.family) && !isAllowedCanvasBridge(fixture, item),
         )
         .map(
           (item) => `${fixture.name}: render.${renderer}.ts corpus imports ${item.family} package ${item.specifier}`,
@@ -472,17 +471,23 @@ const domShapeCanvasBridgeFixtures = new Set([
   'scene2d-dom-shape',
 ]);
 
-function isAllowedDomShapeCanvasBridge(
+function isAllowedCanvasBridge(
   fixture: Readonly<MinimalCaptureFixture>,
   item: Readonly<FixtureImport & { family: ImportFamily | null }>,
 ): boolean {
-  if (!domShapeCanvasBridgeFixtures.has(fixture.name) || item.specifier !== '@flighthq/scene2d-canvas') return false;
-  const allowed = new Set([
-    'createCanvasShapeRasterizer',
-    'createCanvasTextureResolvers',
-    'defaultCanvasShapeCommands',
-    'registerCanvasShapeCommands',
-  ]);
+  if (item.specifier !== '@flighthq/scene2d-canvas') return false;
+  const allowed =
+    domShapeCanvasBridgeFixtures.has(fixture.name)
+      ? new Set([
+          'createCanvasShapeRasterizer',
+          'createCanvasTextureResolvers',
+          'defaultCanvasShapeCommands',
+          'registerCanvasShapeCommands',
+        ])
+      : fixture.name === 'scene2d-wgpu-pipeline-scale9shape'
+        ? new Set(['createCanvasShapeRasterizer', 'createCanvasTextureResolvers'])
+        : null;
+  if (allowed === null) return false;
   return item.importedNames.length > 0 && item.importedNames.every((name) => allowed.has(name));
 }
 

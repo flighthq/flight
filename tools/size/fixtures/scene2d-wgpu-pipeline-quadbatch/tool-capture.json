@@ -1,0 +1,4 @@
+{
+  "subject": "scene2d-wgpu-pipeline-quadbatch-size-fixture",
+  "entries": [{ "name": "scene2d-wgpu-pipeline-quadbatch", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }]
+}

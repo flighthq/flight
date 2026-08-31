@@ -1,0 +1,4 @@
+{
+  "subject": "scene2d-wgpu-pipeline-bitmaptext-size-fixture",
+  "entries": [{ "name": "scene2d-wgpu-pipeline-bitmaptext", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }]
+}

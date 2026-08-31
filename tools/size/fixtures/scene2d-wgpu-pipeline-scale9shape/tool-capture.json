@@ -1,0 +1,4 @@
+{
+  "subject": "scene2d-wgpu-pipeline-scale9shape-size-fixture",
+  "entries": [{ "name": "scene2d-wgpu-pipeline-scale9shape", "renderers": ["webgpu"], "routes": { "webgpu": "/" } }]
+}
