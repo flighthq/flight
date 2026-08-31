@@ -1,4 +1,4 @@
-import { invalidateNodeAppearance } from '@flighthq/node/contract';
+import { invalidateNodeAppearance, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { setRichTextScrollH, setRichTextScrollV } from '@flighthq/text/contract';
 import { getRichTextSelectionRectangles, TEXT_BOUNDS_GUTTER } from '@flighthq/textlayout/contract';
 import type {
@@ -466,7 +466,7 @@ export function replaceTextInput(
     recordTextInputEdit(state, textBefore, data.text, caretBefore, selectionBefore, options?.mergeKind ?? null);
   }
 
-  invalidateNodeAppearance(source);
+  invalidateNodeLocalContent(source);
 }
 
 // Scrolls the text field so the caret is visible within the given viewport dimensions. Uses the
@@ -626,7 +626,7 @@ function applyHistoryRecord(
   state.caretIndex = clampIndex(caretIndex, text.length);
   state.selectionIndex = clampIndex(selectionIndex, text.length);
   state.desiredCaretX = DESIRED_CARET_X_UNSET;
-  invalidateNodeAppearance(source);
+  invalidateNodeLocalContent(source);
 }
 
 function clampIndex(value: number, length: number): number {
