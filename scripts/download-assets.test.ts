@@ -39,13 +39,19 @@ describe('downloadAssets', () => {
       .mockResolvedValueOnce(new Response(null, { status: 503, statusText: 'Service Unavailable' }))
       .mockResolvedValueOnce(new Response(Uint8Array.from([1, 2, 3])));
     vi.stubGlobal('fetch', fetchMock);
+    let unrelatedIntervalTicks = 0;
+    const unrelatedInterval = setInterval(() => {
+      unrelatedIntervalTicks += 1;
+    }, 100);
 
     const complete = downloadAssets([asset()], targetDir);
     await vi.waitFor(() => expect(console.warn).toHaveBeenCalledOnce());
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(500);
     await complete;
+    clearInterval(unrelatedInterval);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(unrelatedIntervalTicks).toBeGreaterThan(0);
     expect(await readFile(join(targetDir, 'asset.bin'))).toEqual(Buffer.from([1, 2, 3]));
   });
 
@@ -58,7 +64,7 @@ describe('downloadAssets', () => {
 
     const complete = downloadAssets([asset()], targetDir);
     await vi.waitFor(() => expect(console.warn).toHaveBeenCalledOnce());
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(500);
     await complete;
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -71,7 +77,9 @@ describe('downloadAssets', () => {
 
     const completion = expect(downloadAssets([asset()], targetDir)).rejects.toThrow('fetch failed');
     await vi.waitFor(() => expect(console.warn).toHaveBeenCalledOnce());
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await vi.advanceTimersByTimeAsync(2_000);
     await completion;
 
     expect(fetchMock).toHaveBeenCalledTimes(4);
