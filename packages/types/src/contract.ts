@@ -652,6 +652,7 @@ export * from './SignalThrottleOptions';
 export * from './SignalConnection';
 export * from './SignalConnectOptions';
 export * from './SignalScope';
+export * from './SignalTrackedConnectOptions';
 export * from './Skeleton3D';
 export * from './Skeleton3DValidationDiagnostic';
 export * from './Skin';

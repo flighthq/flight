@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal, SignalConnection, SignalConnectOptions } from '@flighthq/types/contract';
+import type { Signal, SignalConnection, SignalTrackedConnectOptions } from '@flighthq/types/contract';
 
 import { connectSignal, disconnectSignal } from './slot';
 
@@ -10,7 +10,7 @@ import { connectSignal, disconnectSignal } from './slot';
 export function connectSignalTracked<T extends (...args: any[]) => void>(
   signal: Signal<T>,
   slot: T,
-  options?: Readonly<SignalConnectOptions>,
+  options?: Readonly<SignalTrackedConnectOptions>,
 ): SignalConnection<T> {
   const connection: SignalConnection<T> = { connected: true, paused: false, signal, slot };
   const once = options?.once ?? false;
@@ -23,6 +23,9 @@ export function connectSignalTracked<T extends (...args: any[]) => void>(
 
   const priority = options?.priority;
   connectSignal(signal, trackedSlot, priority === undefined ? undefined : { priority });
+  // The scope stores handles for signals of every shape, so its element type is the widest slot
+  // signature. The cast is the variance of that container, not a claim about this connection.
+  options?.scope?.connections.push(connection as unknown as SignalConnection<(...args: any[]) => void>);
   return connection;
 }
 
