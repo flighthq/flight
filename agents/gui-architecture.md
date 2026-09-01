@@ -261,12 +261,47 @@ Does not depend on: `render`, `layout`, `application`, `scene2d`, `scene3d`, any
 
 **Out of scope**: rendering, layout resolution, visual creation, theming/skinning (the caller is the skin), animation systems beyond tween, accessibility (a future concern — `accessibility` package exists but the wiring pattern needs design), internationalization.
 
+## Interactive states — document-level visual phases (2026-08-31, user-approved)
+
+Interactive state is a **node capability**, not a separate kind. Any node can carry visual states gated on pointer phase (idle, hover, pressed, disabled). The visual state data lives in the `.flight` document as an optional field on the node — it describes how something *looks* under interaction, not what it *does*. Behavior (click handlers, navigation, state transitions) lives in code.
+
+```yaml
+- kind: DisplayObject
+  id: submit-btn
+  alpha: 1
+  interactiveStates:
+    hover: { alpha: 0.8 }
+    pressed: { scaleX: 0.95, scaleY: 0.95 }
+    disabled: { alpha: 0.4 }
+  transition: { duration: 150, easing: easeOut }
+```
+
+The code side wires behavior onto the node by ID:
+
+```typescript
+onInteractiveActivate(getNodeById(scene, 'submit-btn'), handleSubmit);
+```
+
+This separation keeps the document purely visual — a designer can author and preview interactive states in a GUI editor without touching code. An agent can read and modify them because the field names match the TS types directly (per V1 of scene-document-model).
+
+The `gui` controllers consume interactive state but do not own the primitive. A button controller is a node with interactive state enabled plus a click handler. A scrollbar thumb is a node with interactive state plus drag behavior. The shared primitive is the state tracking; what varies across controllers is composition and wiring.
+
+★ **This replaces the Flash `SimpleButton` model.** Flash's `SimpleButton` was a rigid kind with four hardcoded slots and instant swaps between states — no transitions, unusable for high-quality work. Here, transitions are opt-in data on the node (per G2's ruling that transitions are opt-in, not mandatory), the visual response is expressed as property deltas rather than separate display objects, and any node can participate.
+
+## Package scope — application GUI layer (2026-08-31)
+
+`@flighthq/gui` sits between the platform tier (`menu`, `dialog`, `tray`, `shortcut` — OS-native integration) and a specific editor application. It provides behavioral wiring for **application-level UI**: controllers that any Flight application might need, not just an editor.
+
+The naming convention uses the `Gui` prefix to distinguish from platform-tier types: `GuiDialog` (application-level managed dialog queue) vs `Dialog` (OS-native prompt). `GuiMenu` (in-app context menu with dynamic item registration) vs `Menu` (system menu bar). Types are `GuiButton`, `GuiDialog`, `GuiDockLayout`, `GuiScrollbar`, `GuiToggle`, etc. in `@flighthq/types`.
+
+Scope includes: docking/panel layout, application-level dialogs, in-app context menus, toolbar systems, command palettes — anything an application built on Flight would want that isn't OS-native. Scope excludes: editor-specific patterns (undo/redo history, selection model, collaboration), which remain in flight-editor.
+
 ## Open questions
 
-1. **SplitPane** — should the controller catalog include a split-pane (resizable divider between two content areas)? Common in editors.
-2. **TreeView** — a hierarchical expandable list is essential for an editor's scene tree panel. Should it be a distinct controller or a mode of ListController?
-3. **ColorPicker** — editors need one. Is it a single controller or a composition of Slider + canvas + TextInput controllers?
-4. **PropertyGrid** — an editor's property inspector is a specialized list of label+editor pairs. Controller or composition?
+1. **SplitPane** — RULED YES by G3 (introduces a behavior primitive — divider-drag with min/max constraints).
+2. **TreeView** — RULED YES, its own controller by G3 (expand/collapse is different state, not a flag on a flat list).
+3. **ColorPicker** — RULED NO by G3 (composition of existing primitives; belongs in an example).
+4. **PropertyGrid** — RULED NO by G3 (composition of layout + existing controllers; belongs in an example).
 
 ---
 

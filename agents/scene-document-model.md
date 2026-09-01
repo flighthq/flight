@@ -380,6 +380,56 @@ representable registered fields, resource declarations, metadata, and per-scene 
 - Live resource loading — the document names resources; `loader`/`assets` fetches them. `scene-document` provides the schema, not the I/O.
 - Network synchronization — future `serialize` + `sync` work may handle delta encoding and wire transport. `scene-document` is a persistence format, not a frame-by-frame protocol.
 
+## Layouts — separate document section (2026-08-31, user-approved pilot)
+
+Layouts are a **separate section** in the document, analogous to cameras — spatial policies that reference nodes by ID without being nodes themselves. A layout describes constraint relationships between nodes (flex, grid, docking, pinning); the `@flighthq/layout` package resolves them at runtime.
+
+```yaml
+scenes:
+  - kind: Scene2D
+    scene:
+      kind: DisplayObject
+      children:
+        - kind: DisplayObject
+          id: header
+        - kind: DisplayObject
+          id: sidebar
+        - kind: DisplayObject
+          id: content
+
+layouts:
+  - kind: FlexRow
+    nodes: [header, sidebar, content]
+    gap: 8
+```
+
+Layouts reference nodes **by ID** — explicit, greppable, stable handles that an agent can trace from layout to node definition to code. IDs follow the Flash instance-name precedent (authored in a visual tool, rarely restructured programmatically).
+
+The layout section uses the same constraint types as the TS API, so knowledge carries over between document authoring and code (per V1: the document format is not a new vocabulary).
+
+**Status**: approved for piloting. The exact layout descriptor schema is not yet specified — it follows the same open-registry, kind-tagged pattern as resources (per R1) so layout kinds are extensible and unused ones tree-shake.
+
+## Interactive states on nodes (2026-08-31, user-approved pilot)
+
+Nodes may carry an optional `interactiveStates` field describing visual appearance under pointer phases. This is purely visual data — appearance with conditions — not behavior. The document says how something looks when hovered; the code says what happens when clicked.
+
+```yaml
+- kind: DisplayObject
+  id: submit-btn
+  alpha: 1
+  interactiveStates:
+    hover: { alpha: 0.8 }
+    pressed: { scaleX: 0.95, scaleY: 0.95 }
+    disabled: { alpha: 0.4 }
+  transition: { duration: 150, easing: easeOut }
+```
+
+The field is optional. A node without `interactiveStates` has no visual response to pointer phase — the default. Each phase key maps to a partial property override applied on top of the node's base properties.
+
+The `transition` field is opt-in data (per gui-architecture G2: transitions are opt-in, not mandatory). Without it, state changes apply immediately.
+
+**Status**: approved for piloting as part of the document format. Full schema not yet specified.
+
 ## YAML subset
 
 The format uses a constrained YAML subset for predictability:
