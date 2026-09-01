@@ -323,6 +323,13 @@ describe('setGizmoSnapTranslate', () => {
     setGizmoSnapTranslate(context.state, 0);
     expectTranslationDelta(context, 13, 13);
   });
+
+  it('treats invalid grid increments as disabled', () => {
+    for (const step of [-10, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const context = createTestContext({ snapTranslate: step });
+      expectTranslationDelta(context, -5, -5);
+    }
+  });
 });
 
 describe('setGizmoSpace', () => {
@@ -519,6 +526,48 @@ describe('updateGizmo', () => {
     emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(100, 135));
     expect(translated.mock.calls.at(-1)?.[0]).toBeCloseTo(0, 8);
     expect(translated.mock.calls.at(-1)?.[1]).toBeCloseTo(10, 8);
+  });
+
+  it('snaps the moved selection position to the grid in world and local axes', () => {
+    const node = createTestNode();
+    const context = createTestContext({}, [node]);
+    const translated = vi.fn();
+    connectSignal(getGizmoSignals(context.state).onTranslate, translated);
+    setGizmoSnapTranslate(context.state, 10);
+    context.featuresByNode.set(node, createTestNodeFeatures(-13, 13, 0, 0, -13, 13, 90));
+    context.camera.x = 25;
+    context.camera.y = -40;
+    context.camera.zoom = 2.5;
+    updateGizmo(context.state);
+
+    const xyHandle = getGizmoHandle(context.overlay, 'GizmoTranslateXYHandle');
+    emitSignal(
+      enableInteractionSignals(xyHandle).onPointerDown,
+      createProjectedPointerData(context.camera, { x: -13, y: 13 }),
+    );
+    emitSignal(
+      enableInteractionSignals(xyHandle).onPointerMove,
+      createProjectedPointerData(context.camera, { x: -15, y: 17 }),
+    );
+    expect(translated).toHaveBeenLastCalledWith(-7, 7);
+    emitSignal(
+      enableInteractionSignals(xyHandle).onPointerUp,
+      createProjectedPointerData(context.camera, { x: -15, y: 17 }),
+    );
+
+    setGizmoSpace(context.state, 'local');
+    updateGizmo(context.state);
+    const xHandle = getGizmoHandle(context.overlay, 'GizmoTranslateXHandle');
+    emitSignal(
+      enableInteractionSignals(xHandle).onPointerDown,
+      createProjectedPointerData(context.camera, { x: -13, y: 13 }),
+    );
+    emitSignal(
+      enableInteractionSignals(xHandle).onPointerMove,
+      createProjectedPointerData(context.camera, { x: -13, y: 17 }),
+    );
+    expect(translated.mock.calls.at(-1)?.[0]).toBeCloseTo(0, 8);
+    expect(translated.mock.calls.at(-1)?.[1]).toBeCloseTo(7, 8);
   });
 
   it('supports free and y-axis translation without snapping', () => {

@@ -62,6 +62,11 @@ describe('fract', () => {
 });
 
 describe('roundTo', () => {
+  it('rounds halfway ties away from zero symmetrically', () => {
+    expect(roundTo(5, 10)).toBe(10);
+    expect(roundTo(-5, 10)).toBe(-10);
+    expect(Object.is(roundTo(-4, 10), -0)).toBe(false);
+  });
   it('rounds to the nearest step', () => {
     expect(roundTo(7, 5)).toBe(5);
     expect(roundTo(8, 5)).toBe(10);

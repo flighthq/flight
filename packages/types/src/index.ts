@@ -227,6 +227,7 @@ export * from './FilmEmulationEffect';
 export * from './FilmGrainEffect';
 export * from './FilmicToneMapOptions';
 export * from './FlyCameraController';
+export * from './GizmoAlignment';
 export * from './GizmoState';
 export * from './FocusEventData';
 export * from './FocusManager';

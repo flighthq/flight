@@ -6,7 +6,7 @@ import {
   setNodeHitArea,
   setNodeHitTestEnabled,
 } from '@flighthq/interaction/contract';
-import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
+import { DEG_TO_RAD, RAD_TO_DEG, roundTo } from '@flighthq/math/contract';
 import {
   addNodeChild,
   getNodeParent,
@@ -56,12 +56,16 @@ interface GizmoDrag {
   axisRotation: number;
   handle: GizmoHandleKind;
   mode: GizmoTransformMode;
+  pivotWorldX: number;
+  pivotWorldY: number;
   pivotScreenX: number;
   pivotScreenY: number;
   pointerId: number;
   screenRotation: number;
   startScreenX: number;
   startScreenY: number;
+  startWorldX: number;
+  startWorldY: number;
 }
 
 interface GizmoHandle {
@@ -540,11 +544,11 @@ function setGizmoNodeVisible(node: Node2D, visible: boolean): void {
 }
 
 function snapGizmoDelta(value: number, step: number): number {
-  return step === 0 ? value : Math.round(value / step) * step;
+  return step === 0 ? value : roundTo(value, step);
 }
 
 function snapGizmoScale(value: number, step: number): number {
-  return step === 0 ? value : 1 + Math.round((value - 1) / step) * step;
+  return step === 0 ? value : 1 + roundTo(value - 1, step);
 }
 
 function startGizmoTransform<NodeType extends HierarchyNodeAny>(
@@ -559,16 +563,21 @@ function startGizmoTransform<NodeType extends HierarchyNodeAny>(
     runtime.space === 'local' && active !== null
       ? runtime.features!.getWorldRotation(active)
       : runtime.camera!.rotation * RAD_TO_DEG;
+  unprojectCamera2DPoint(runtime.camera!, data.x, data.y, runtime.scratchPoint);
   runtime.drag = {
     axisRotation,
     handle,
     mode,
+    pivotWorldX: runtime.pivotWorld.x,
+    pivotWorldY: runtime.pivotWorld.y,
     pivotScreenX: runtime.pivotScreen.x,
     pivotScreenY: runtime.pivotScreen.y,
     pointerId: data.pointerId,
     screenRotation: runtime.handleRoot.rotation * DEG_TO_RAD,
     startScreenX: data.x,
     startScreenY: data.y,
+    startWorldX: runtime.scratchPoint.x,
+    startWorldY: runtime.scratchPoint.y,
   };
   emitSignal(runtime.signals.onTransformBegin);
 }
@@ -737,10 +746,9 @@ function updateGizmoTranslation<NodeType extends HierarchyNodeAny>(
   screenX: number,
   screenY: number,
 ): void {
-  unprojectCamera2DPoint(runtime.camera!, drag.startScreenX, drag.startScreenY, runtime.pivotWorld);
   unprojectCamera2DPoint(runtime.camera!, screenX, screenY, runtime.scratchPoint);
-  const deltaX = runtime.scratchPoint.x - runtime.pivotWorld.x;
-  const deltaY = runtime.scratchPoint.y - runtime.pivotWorld.y;
+  const deltaX = runtime.scratchPoint.x - drag.startWorldX;
+  const deltaY = runtime.scratchPoint.y - drag.startWorldY;
   const radians = drag.axisRotation * DEG_TO_RAD;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
@@ -748,8 +756,12 @@ function updateGizmoTranslation<NodeType extends HierarchyNodeAny>(
   let localY = -deltaX * sin + deltaY * cos;
   if (drag.handle === 'translate-x') localY = 0;
   else if (drag.handle === 'translate-y') localX = 0;
-  localX = snapGizmoDelta(localX, runtime.snapTranslate);
-  localY = snapGizmoDelta(localY, runtime.snapTranslate);
+  if (runtime.snapTranslate !== 0) {
+    const pivotLocalX = drag.pivotWorldX * cos + drag.pivotWorldY * sin;
+    const pivotLocalY = -drag.pivotWorldX * sin + drag.pivotWorldY * cos;
+    if (drag.handle !== 'translate-y') localX = roundTo(pivotLocalX + localX, runtime.snapTranslate) - pivotLocalX;
+    if (drag.handle !== 'translate-x') localY = roundTo(pivotLocalY + localY, runtime.snapTranslate) - pivotLocalY;
+  }
   emitSignal(runtime.signals.onTranslate, localX * cos - localY * sin, localX * sin + localY * cos);
 }
 
