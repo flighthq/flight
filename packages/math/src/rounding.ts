@@ -41,12 +41,14 @@ export function fract(value: number): number {
   return value - Math.trunc(value);
 }
 
-/** Round `value` to the nearest multiple of `step`.
+/** Round `value` to the nearest multiple of `step`, with halfway ties away from zero.
  *
  *  `roundTo(7, 5)` → `5`; `roundTo(8, 5)` → `10`. When `step <= 0` the
  *  result is `value`. Also useful as a snap / quantize primitive.
  */
 export function roundTo(value: number, step: number): number {
   if (step <= 0) return value;
-  return Math.round(value / step) * step;
+  const magnitude = Math.round(Math.abs(value) / step) * step;
+  if (magnitude === 0) return 0;
+  return value < 0 ? -magnitude : magnitude;
 }

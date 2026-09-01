@@ -1,3 +1,4 @@
+export { computeGizmoAlignmentDeltas, findGizmoSmartGuides } from './gizmoAlignment';
 export {
   createGizmoState,
   disposeGizmoState,
