@@ -96,7 +96,10 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
   };
   const spriteSchema: FlightDocumentNodeSchema = {
     createNode: (fields: Readonly<FlightDocumentFields>) => applyFields(createSprite(), fields),
-    fields: [],
+    fields: [
+      { defaultValue: 1, name: 'alpha', required: false, validate: (value) => typeof value === 'number' },
+      { defaultValue: 0, name: 'x', required: false, validate: (value) => typeof value === 'number' },
+    ],
     kind: SpriteKind,
     writeNodeFields: () => true,
   };
@@ -104,6 +107,8 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
   nodeSchemas = withRegistryTableEntry(nodeSchemas, DisplayObjectKind, displayObjectSchema);
   nodeSchemas = withRegistryTableEntry(nodeSchemas, SpriteKind, spriteSchema);
   return {
+    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
+    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
     nodeSchemas,
     resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
