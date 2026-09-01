@@ -7,6 +7,7 @@ lastDirection: 2026-07-31
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+dispatchScope: ./dispatch-scope.md
 ---
 
 # signals — Charter
