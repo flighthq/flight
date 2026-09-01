@@ -21,6 +21,7 @@ describe('Signal', () => {
         priorities: [0],
         repeat: [true],
         cancelled: false,
+        depth: 0,
       };
       const signal: Signal<Slot> = { data, emit: (_value) => {} };
       expect(signal.data?.slots.length).toBe(1);
@@ -35,12 +36,31 @@ describe('Signal', () => {
         priorities: [10, 0],
         repeat: [true, false],
         cancelled: false,
+        depth: 0,
       };
 
       expect(data.slots.length).toBe(2);
       expect(data.priorities).toEqual([10, 0]);
       expect(data.repeat).toEqual([true, false]);
       expect(data.cancelled).toBe(false);
+      expect(data.depth).toBe(0);
+    });
+
+    it('admits a null slot as the tombstone for a removed entry', () => {
+      type Slot = () => void;
+      const data: SignalData<Slot> = {
+        slots: [() => {}, null],
+        priorities: [0, 0],
+        repeat: [true, true],
+        cancelled: false,
+        depth: 1,
+      };
+
+      // The dead entry keeps its priority and repeat cells so no index moves while a dispatch holds
+      // a cursor into these arrays.
+      expect(data.slots[1]).toBeNull();
+      expect(data.priorities).toHaveLength(2);
+      expect(data.repeat).toHaveLength(2);
     });
 
     it('types the slots array to the parameterized slot signature', () => {
@@ -50,6 +70,7 @@ describe('Signal', () => {
         priorities: [],
         repeat: [],
         cancelled: false,
+        depth: 0,
       };
       data.slots.push((n) => {
         void n;
