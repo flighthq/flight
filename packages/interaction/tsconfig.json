@@ -11,6 +11,7 @@
   "references": [
     { "path": "../geometry" },
     { "path": "../node" },
+    { "path": "../registry" },
     { "path": "../scene2d" },
     { "path": "../log" },
     { "path": "../path" },

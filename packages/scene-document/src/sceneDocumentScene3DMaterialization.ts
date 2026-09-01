@@ -15,6 +15,7 @@ import type {
   Camera3D,
   FlightDocument,
   FlightDocumentFields,
+  FlightDocumentInteractiveStateBinding,
   FlightDocumentNode,
   FlightDocumentNodeSchema,
   FlightDocumentRefusalExplanation,
@@ -40,20 +41,36 @@ import {
 } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
+import {
+  assertAllInteractiveStateBindingsUsed,
+  createInteractiveStateBindingLookup,
+  isInteractiveStateBindingTargetSupported,
+  readInteractiveStateBindingMetadata,
+} from './sceneDocumentInteractiveStateBindings';
 import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
-import { checkUnregisteredNodeKinds, createSceneRefusal } from './sceneDocumentRefusal';
+import {
+  checkFlightDocumentInteractiveStates,
+  checkFlightDocumentNodeFields,
+  checkUnregisteredNodeKinds,
+  createSceneRefusal,
+} from './sceneDocumentRefusal';
 
 export function createFlightDocumentFromScene3D(
   source: Readonly<Scene3D>,
   cameras: readonly Readonly<Scene3DDocumentCamera>[],
   lights: readonly Readonly<Scene3DDocumentLight>[],
   schemas: Readonly<FlightDocumentSchemaRegistry>,
+  interactiveStateBindings: readonly Readonly<FlightDocumentInteractiveStateBinding<Node3D>>[] = [],
 ): FlightDocumentScene3D {
+  const bindingLookup = createInteractiveStateBindingLookup(interactiveStateBindings);
+  const usedBindings = new Set<Readonly<NodeAny>>();
+  const scene = writeNode(source.root, schemas, bindingLookup, usedBindings);
+  assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
   return {
     cameras: cameras.map((c) => ({ ...c })),
     kind: 'Scene3D',
     lights: lights.map((l) => ({ ...l })),
-    scene: writeNode(source.root, schemas),
+    scene,
   };
 }
 
@@ -70,16 +87,30 @@ export function createFlightDocumentScene3DMaterialization(
   if (duplicateRefusal !== null) return null;
   const unregisteredRefusal = checkUnregisteredNodeKinds(documentScene.scene, schemas, selection.sceneIndex, 'scene');
   if (unregisteredRefusal !== null) return null;
+  const fieldRefusal = checkFlightDocumentNodeFields(documentScene.scene, schemas, selection.sceneIndex, 'scene');
+  if (fieldRefusal !== null) return null;
+  const interactiveRefusal = checkFlightDocumentInteractiveStates(
+    documentScene.scene,
+    'Scene3D',
+    schemas,
+    selection.sceneIndex,
+    'scene',
+  );
+  if (interactiveRefusal !== null) return null;
   const scene = createScene3D();
   const resources = resolveResources(document.resources, resolvers);
   // Same defect as 2D: the authored root's kind and fields were dropped because only its children were
   // materialized, while the writer captured them.
   if (!adoptDocumentRoot3D(scene, documentScene.scene, schemas, resources)) return null;
-  materializeChildren(scene.root, documentScene.scene.children, schemas, resources);
+  const interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node3D>[] = [];
+  if (!appendInteractiveStateBinding(interactiveStateBindings, scene.root, documentScene.scene, schemas)) return null;
+  if (!materializeChildren(scene.root, documentScene.scene.children, schemas, resources, interactiveStateBindings)) {
+    return null;
+  }
   const materializedNodes = getMaterializedNodes(scene.root);
   const cameras = materializeCameras(documentScene.cameras, materializedNodes);
   const lights = materializeLights(documentScene.lights, materializedNodes);
-  return { cameras, lights, scene };
+  return { cameras, interactiveStateBindings, lights, scene };
 }
 
 export function createFlightDocumentScene3DMaterializationFromText(
@@ -105,6 +136,16 @@ export function explainFlightDocumentScene3DRefusal(
   if (lightRefusal !== null) return lightRefusal;
   const unregistered = checkUnregisteredNodeKinds(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
   if (unregistered !== null) return unregistered;
+  const fieldRefusal = checkFlightDocumentNodeFields(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
+  if (fieldRefusal !== null) return fieldRefusal;
+  const interactiveRefusal = checkFlightDocumentInteractiveStates(
+    selection.scene.scene,
+    'Scene3D',
+    schemas,
+    selection.sceneIndex,
+    'scene',
+  );
+  if (interactiveRefusal !== null) return interactiveRefusal;
   return checkRootKindDimension3D(selection.scene.scene, schemas, selection.sceneIndex);
 }
 
@@ -222,15 +263,34 @@ function materializeChildren(
   children: readonly Readonly<FlightDocumentNode>[],
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resources: FlightDocumentResourceLookup,
-): void {
+  interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node3D>[],
+): boolean {
   for (const child of children) {
     const schema = getRegistryTableEntry(schemas.nodeSchemas, child.kind);
     if (schema === null) continue;
     const node = schema.createNode(child.fields, resources);
     if (node === null) continue;
     addNodeChild(parent, node);
-    materializeChildren(node, child.children, schemas, resources);
+    if (!appendInteractiveStateBinding(interactiveStateBindings, node as Node3D, child, schemas)) return false;
+    if (!materializeChildren(node, child.children, schemas, resources, interactiveStateBindings)) return false;
   }
+  return true;
+}
+
+function appendInteractiveStateBinding(
+  out: FlightDocumentInteractiveStateBinding<Node3D>[],
+  node: Node3D,
+  documentNode: Readonly<FlightDocumentNode>,
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
+): boolean {
+  if (documentNode.interactiveStates == null) return true;
+  if (!isInteractiveStateBindingTargetSupported(node, documentNode, schemas)) return false;
+  out.push({
+    interactiveStates: documentNode.interactiveStates,
+    node,
+    transition: documentNode.transition ?? null,
+  });
+  return true;
 }
 
 function resolveResources(
@@ -248,17 +308,25 @@ function resolveResources(
   return out;
 }
 
-function writeNode(source: Readonly<NodeAny>, schemas: Readonly<FlightDocumentSchemaRegistry>): FlightDocumentNode {
+function writeNode(
+  source: Readonly<NodeAny>,
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
+  bindings: ReadonlyMap<Readonly<NodeAny>, Readonly<FlightDocumentInteractiveStateBinding>>,
+  usedBindings: Set<Readonly<NodeAny>>,
+): FlightDocumentNode {
   const fields: FlightDocumentFields = {};
   const schema = getRegistryTableEntry(schemas.nodeSchemas, source.kind);
   if (schema !== null) {
     writeFieldsWithDefaults(fields, source, schema);
   }
   const children = getNodeChildren(source);
+  const metadata = readInteractiveStateBindingMetadata(source, bindings, usedBindings, schemas);
   return {
-    children: children.map((child) => writeNode(child, schemas)),
+    children: children.map((child) => writeNode(child, schemas, bindings, usedBindings)),
     fields,
+    interactiveStates: metadata.interactiveStates,
     kind: source.kind,
+    transition: metadata.transition,
   };
 }
 

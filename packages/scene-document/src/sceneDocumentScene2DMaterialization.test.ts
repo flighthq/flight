@@ -1,4 +1,4 @@
-import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
+import { addNodeChild, getNodeChildren, getNodeRuntime } from '@flighthq/node/contract';
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { createDisplayObject, createScene2D, createSprite } from '@flighthq/scene2d/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
@@ -6,6 +6,7 @@ import { DisplayObjectKind, FlightDocumentRefusalReason, Node3DKind, SpriteKind 
 import type {
   FlightDocument,
   FlightDocumentFields,
+  FlightDocumentInteractiveStates,
   FlightDocumentNodeSchema,
   FlightDocumentResourceDescriptor,
   FlightDocumentResourceLookup,
@@ -67,6 +68,39 @@ describe('createFlightDocumentFromScene2D', () => {
     expect(child.fields['scaleY']).toBe(3);
     expect(child.fields['rotation']).toBe(45);
     expect(child.fields['alpha']).toBe(0.5);
+  });
+
+  it('writes interactive metadata only from explicit bindings', () => {
+    const scene = createScene2D();
+    const states: FlightDocumentInteractiveStates = {
+      disabled: null,
+      hover: { alpha: 0.75, extensions: [] },
+      pressed: null,
+    };
+    const documentWithoutBindings = createFlightDocumentFromScene2D(scene, createTestSchemas());
+    const documentWithBindings = createFlightDocumentFromScene2D(scene, createTestSchemas(), [
+      { interactiveStates: states, node: scene.root, transition: null },
+    ]);
+
+    expect(documentWithoutBindings.scene.interactiveStates).toBeNull();
+    expect(documentWithBindings.scene.interactiveStates).toEqual(states);
+  });
+
+  it('rejects duplicate and foreign explicit bindings', () => {
+    const scene = createScene2D();
+    const states: FlightDocumentInteractiveStates = {
+      disabled: null,
+      hover: { alpha: 0.75, extensions: [] },
+      pressed: null,
+    };
+    const binding = { interactiveStates: states, node: scene.root, transition: null };
+
+    expect(() => createFlightDocumentFromScene2D(scene, createTestSchemas(), [binding, binding])).toThrow(RangeError);
+    expect(() =>
+      createFlightDocumentFromScene2D(scene, createTestSchemas(), [
+        { interactiveStates: states, node: createDisplayObject(), transition: null },
+      ]),
+    ).toThrow(RangeError);
   });
 
   it('serializes children into nested nodes', () => {
@@ -188,6 +222,23 @@ describe('createFlightDocumentScene2DMaterializationFromText', () => {
 });
 
 describe('explainFlightDocumentRefusal', () => {
+  it('allows an omitted required registered field when its runtime default is declared', () => {
+    const document = createTestDocument({
+      backgroundColor: null,
+      kind: 'Scene2D',
+      scene: { children: [], fields: {}, kind: DisplayObjectKind },
+    });
+    const schemas = createTestSchemas();
+    const schema = schemas.nodeSchemas.entries.get(DisplayObjectKind);
+    if (schema?.state !== 'bound') throw new Error('expected DisplayObject schema');
+    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, DisplayObjectKind, {
+      ...schema.value,
+      fields: schema.value.fields.map((field) => (field.name === 'x' ? { ...field, required: true } : field)),
+    });
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toBeNull();
+  });
+
   it('explains a dimension mismatch', () => {
     const document = createTestDocument({
       cameras: [],
@@ -199,6 +250,61 @@ describe('explainFlightDocumentRefusal', () => {
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
     expect(explanation!.path).toBe('scenes[0].kind');
+  });
+
+  it('explains an invalid registered field on a nested node', () => {
+    const document = createTestDocument({
+      backgroundColor: null,
+      kind: 'Scene2D',
+      scene: {
+        children: [{ children: [], fields: { x: 'far' }, kind: SpriteKind }],
+        fields: {},
+        kind: DisplayObjectKind,
+      },
+    });
+    const schemas = createTestSchemas();
+
+    expect(createFlightDocumentScene2DMaterialization(document, schemas)).toBeNull();
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toMatchObject({
+      path: 'scenes[0].scene.children[0].x',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+  });
+
+  it('explains a missing required registered field', () => {
+    const document = createTestDocument({
+      backgroundColor: null,
+      kind: 'Scene2D',
+      scene: { children: [], fields: {}, kind: DisplayObjectKind },
+    });
+    const schemas = createTestSchemas();
+    const schema = schemas.nodeSchemas.entries.get(DisplayObjectKind);
+    if (schema?.state !== 'bound') throw new Error('expected DisplayObject schema');
+    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, DisplayObjectKind, {
+      ...schema.value,
+      fields: schema.value.fields.map((field) => (field.name === 'name' ? { ...field, required: true } : field)),
+    });
+
+    expect(createFlightDocumentScene2DMaterialization(document, schemas)).toBeNull();
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toMatchObject({
+      path: 'scenes[0].scene.name',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+  });
+
+  it('explains an unknown field for a registered node kind', () => {
+    const document = createTestDocument({
+      backgroundColor: null,
+      kind: 'Scene2D',
+      scene: { children: [], fields: { mystery: 1 }, kind: DisplayObjectKind },
+    });
+    const schemas = createTestSchemas();
+
+    expect(createFlightDocumentScene2DMaterialization(document, schemas)).toBeNull();
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toMatchObject({
+      path: 'scenes[0].scene.mystery',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
   });
 
   it('explains an unsupported version', () => {
@@ -366,6 +472,97 @@ describe('model-to-text explain parity', () => {
   });
 });
 
+describe('Scene2D interactive-state materialization', () => {
+  it('returns inert bindings for the exact root and nested live nodes', () => {
+    const document = rootDocument2D(DisplayObjectKind, { alpha: 0.5 });
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { alpha: 0.75, extensions: [] },
+      pressed: null,
+    };
+    document.scenes[0].scene.children = [
+      {
+        children: [],
+        fields: { name: 'nested' },
+        interactiveStates: {
+          disabled: { alpha: 0.25, extensions: [] },
+          hover: null,
+          pressed: null,
+        },
+        kind: DisplayObjectKind,
+        transition: null,
+      },
+    ];
+
+    const materialization = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
+
+    expect(materialization).not.toBeNull();
+    const nested = getNodeChildren(materialization!.scene.root)[0] as Node2D;
+    expect(materialization!.interactiveStateBindings.map((binding) => binding.node)).toEqual([
+      materialization!.scene.root,
+      nested,
+    ]);
+    expect(materialization!.scene.root.alpha).toBe(0.5);
+    expect(getNodeRuntime(materialization!.scene.root).interactionSignals).toBeNull();
+  });
+
+  it('refuses an unregistered extension kind with its exact path', () => {
+    const document = rootDocument2D(DisplayObjectKind, {});
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { extensions: [{ fields: { width: 2 }, kind: 'acme.Outline' }] },
+      pressed: null,
+    };
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas())).toMatchObject({
+      kind: 'acme.Outline',
+      path: 'scenes[0].scene.interactiveStates.hover.extensions[0]',
+      reason: FlightDocumentRefusalReason.InteractiveStateExtensionKindUnregistered,
+    });
+  });
+
+  it('validates registered extension fields through the shared validator', () => {
+    const schemas = createTestSchemas();
+    schemas.interactiveStateExtensionSchemas = withRegistryTableEntry(
+      schemas.interactiveStateExtensionSchemas,
+      'acme.Outline',
+      {
+        createExtension: () => null,
+        fields: [{ name: 'width', required: true, validate: (value) => typeof value === 'number' }],
+        isSupported: () => true,
+        kind: 'acme.Outline',
+      },
+    );
+    const document = rootDocument2D(DisplayObjectKind, {});
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { extensions: [{ fields: { width: 'wide' }, kind: 'acme.Outline' }] },
+      pressed: null,
+    };
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toMatchObject({
+      path: 'scenes[0].scene.interactiveStates.hover.extensions[0].width',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+  });
+
+  it('refuses an unregistered transition kind', () => {
+    const document = rootDocument2D(DisplayObjectKind, {});
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { alpha: 0.8, extensions: [] },
+      pressed: null,
+    };
+    document.scenes[0].scene.transition = { fields: { duration: 100 }, kind: 'acme.Tween' };
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas())).toMatchObject({
+      kind: 'acme.Tween',
+      path: 'scenes[0].scene.transition',
+      reason: FlightDocumentRefusalReason.InteractiveStateTransitionKindUnregistered,
+    });
+  });
+});
+
 function createTestDocument(
   scene: FlightDocumentScene,
   resources: FlightDocumentResourceDescriptor[] = [],
@@ -407,6 +604,8 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
   nodeSchemas = withRegistryTableEntry(nodeSchemas, SpriteKind, spriteSchema);
 
   return {
+    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
+    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
     nodeSchemas,
     resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),

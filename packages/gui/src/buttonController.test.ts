@@ -1,4 +1,6 @@
+import { createNodeInteractiveStateBinding } from '@flighthq/interaction/contract';
 import { connectSignal } from '@flighthq/signals/contract';
+import type { FlightDocumentSchemaRegistry } from '@flighthq/types/contract';
 
 import {
   createButtonController,
@@ -47,6 +49,33 @@ describe('createButtonController', () => {
     for (const apply of applies.splice(0)) apply();
     expect([up.visible, over.visible]).toEqual([false, true]);
   });
+
+  it('explicitly drives one shared interactive-state binding without replacing legacy visuals', () => {
+    const up = createGuiTestNode();
+    const binding = createNodeInteractiveStateBinding(
+      up,
+      {
+        disabled: { alpha: 0.4, extensions: [] },
+        hover: { alpha: 0.8, extensions: [] },
+        pressed: { extensions: [], scaleX: 0.9 },
+      },
+      createEmptySchemas(),
+    )!;
+    const controller = createButtonController({ interactiveStateBinding: binding, upState: up });
+
+    emitGuiPointer(up, 'onPointerOver');
+    expect(up.alpha).toBe(0.8);
+    emitGuiPointer(up, 'onPointerDown');
+    expect(up.scaleX).toBe(0.9);
+
+    setButtonControllerDisabled(controller, true);
+    expect(up.alpha).toBe(0.4);
+    expect(up.scaleX).toBe(1);
+
+    disposeButtonController(controller);
+    expect(up.alpha).toBe(1);
+    expect(up.scaleX).toBe(1);
+  });
 });
 
 describe('disposeButtonController', () => {
@@ -88,3 +117,14 @@ describe('setButtonControllerDisabled', () => {
     expect(clicks).toBe(0);
   });
 });
+
+function createEmptySchemas(): FlightDocumentSchemaRegistry {
+  const table = (registry: string) => ({ entries: new Map(), onMiss: 'none', registry, shape: 'keyed' as const });
+  return {
+    interactiveStateExtensionSchemas: table('flight-document.interactive-state-extension'),
+    interactiveStateTransitionSchemas: table('flight-document.interactive-state-transition'),
+    nodeSchemas: table('flight-document.node'),
+    resourceSchemas: table('flight-document.resource'),
+    shapeCommandSchemas: table('flight-document.shape-command'),
+  };
+}

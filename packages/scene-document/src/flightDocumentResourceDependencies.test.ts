@@ -72,6 +72,8 @@ function createSchemas(...resourceKinds: string[]): FlightDocumentSchemaRegistry
     resourceSchemas = withRegistryTableEntry(resourceSchemas, kind, { fields: [], kind });
   }
   return {
+    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
+    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
     nodeSchemas: createKeyedTable('flight-document.node', 'none'),
     resourceSchemas,
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),

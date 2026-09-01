@@ -13,6 +13,7 @@ import { createNode3D, createScene3D } from '@flighthq/scene3d/contract';
 import type {
   FlightDocument,
   FlightDocumentFields,
+  FlightDocumentInteractiveStates,
   FlightDocumentNodeSchema,
   FlightDocumentResourceDescriptor,
   FlightDocumentResourceLookup,
@@ -76,6 +77,22 @@ describe('createFlightDocumentFromScene3D', () => {
     expect(document.cameras[0].far).toBe(1000);
     expect(document.lights).toHaveLength(1);
     expect(document.lights[0].descriptor.kind).toBe(AmbientLightKind);
+  });
+
+  it('writes interactive metadata only from explicit bindings', () => {
+    const scene = createScene3D();
+    const states: FlightDocumentInteractiveStates = {
+      disabled: { alpha: 0.4, extensions: [] },
+      hover: null,
+      pressed: null,
+    };
+    const documentWithoutBindings = createFlightDocumentFromScene3D(scene, [], [], createTestSchemas());
+    const documentWithBindings = createFlightDocumentFromScene3D(scene, [], [], createTestSchemas(), [
+      { interactiveStates: states, node: scene.root, transition: null },
+    ]);
+
+    expect(documentWithoutBindings.scene.interactiveStates).toBeNull();
+    expect(documentWithBindings.scene.interactiveStates).toEqual(states);
   });
 });
 
@@ -642,6 +659,25 @@ describe('NodeKindUnregistered', () => {
   });
 });
 
+describe('Scene3D interactive-state materialization', () => {
+  it('returns an inert binding for the exact live root', () => {
+    const schemas = createTestSchemas();
+    const document = rootDocument3D(Node3DKind, {}, schemas);
+    document.scenes[0].scene.interactiveStates = {
+      disabled: { alpha: 0.4, extensions: [] },
+      hover: null,
+      pressed: null,
+    };
+
+    const materialization = createFlightDocumentScene3DMaterialization(document, schemas);
+
+    expect(materialization).not.toBeNull();
+    expect(materialization!.interactiveStateBindings).toHaveLength(1);
+    expect(materialization!.interactiveStateBindings[0]?.node).toBe(materialization!.scene.root);
+    expect(materialization!.scene.root.alpha).toBe(1);
+  });
+});
+
 // ★ ROOT-NODE FIDELITY, 3D half. Same defect as 2D: the reader built a fresh container and materialized
 // only the authored root's children, so the root's own kind and fields were dropped while the writer
 // captured them.
@@ -722,7 +758,13 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
       }
       return node;
     },
-    fields: [],
+    fields: [
+      {
+        name: 'positionX',
+        required: false,
+        validate: (value) => typeof value === 'number',
+      },
+    ],
     kind: Node3DKind,
     writeNodeFields: (_out: FlightDocumentFields, _source: Readonly<NodeAny>) => {
       return true;
@@ -733,6 +775,8 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
   nodeSchemas = withRegistryTableEntry(nodeSchemas, Node3DKind, node3DSchema);
 
   return {
+    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
+    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
     nodeSchemas,
     resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
@@ -756,7 +800,13 @@ function rootDocument3D(
       if (typeof nodeFields['name'] === 'string') node.name = nodeFields['name'];
       return node as unknown as NodeAny;
     },
-    fields: [],
+    fields: [
+      {
+        name: 'name',
+        required: false,
+        validate: (value) => typeof value === 'string' || value === null,
+      },
+    ],
     kind: Node3DKind,
     writeNodeFields: () => true,
   });

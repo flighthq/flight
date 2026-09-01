@@ -202,6 +202,8 @@ function createTestSchemas(seenResources: unknown[]): FlightDocumentSchemaRegist
     }),
   );
   return {
+    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
+    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
     nodeSchemas,
     resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
