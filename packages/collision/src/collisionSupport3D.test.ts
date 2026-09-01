@@ -2,6 +2,8 @@ import type { CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  clearCollisionPairTests3D,
+  clearCollisionSupports3D,
   getCollisionPairTest3D,
   getCollisionSupport3D,
   registerBuiltInCollisionSupports3D,
@@ -47,6 +49,28 @@ function createRandom(seed: number): () => number {
     return ((state >>> 0) % 100000) / 100000;
   };
 }
+
+describe('clearCollisionPairTests3D', () => {
+  it('removes all registered pair tests', () => {
+    const test = vi.fn();
+    registerCollisionPairTest3D('sphere', 'sphere', test);
+    expect(getCollisionPairTest3D('sphere', 'sphere')).toBe(test);
+
+    clearCollisionPairTests3D();
+
+    expect(getCollisionPairTest3D('sphere', 'sphere')).toBeNull();
+  });
+});
+
+describe('clearCollisionSupports3D', () => {
+  it('removes all registered support functions', () => {
+    expect(getCollisionSupport3D('sphere')).not.toBeNull();
+
+    clearCollisionSupports3D();
+
+    expect(getCollisionSupport3D('sphere')).toBeNull();
+  });
+});
 
 describe('getCollisionPairTest3D', () => {
   it('returns null for a pair with no registered specialization', () => {

@@ -24,6 +24,14 @@ import type {
 // registers at module load, so a bundle that never calls `registerBuiltInCollisionSupports3D` links no
 // support math.
 
+export function clearCollisionPairTests3D(): void {
+  collisionPairTests3D.clear();
+}
+
+export function clearCollisionSupports3D(): void {
+  collisionSupports3D.clear();
+}
+
 // The specialization registered for this ORDERED pair, or null. The caller tries both orders and
 // negates the normal when the reverse one answers, because a manifold is oriented A-out-of-B.
 export function getCollisionPairTest3D(

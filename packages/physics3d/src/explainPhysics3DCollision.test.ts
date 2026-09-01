@@ -1,4 +1,8 @@
-import { registerBuiltInCollisionSupports3D } from '@flighthq/collision/contract';
+import {
+  clearCollisionPairTests3D,
+  clearCollisionSupports3D,
+  registerBuiltInCollisionSupports3D,
+} from '@flighthq/collision/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainPhysics3DCollision } from './explainPhysics3DCollision';
@@ -10,11 +14,14 @@ import {
   createRigidBody3D,
 } from './world';
 
-// This file asserts the state of the collision support registry BEFORE anything registers, which is the
-// exact state a caller who forgot to register is in — and the state that presents as bodies falling
-// through floors with no error anywhere. That claim only holds in a process nobody else has touched, so
-// the file runs isolated; see `scripts/registryIsolatedTests.ts`. The registering tests come last on
-// purpose: registration is process-global and cannot be undone.
+beforeEach(() => {
+  clearCollisionSupports3D();
+  clearCollisionPairTests3D();
+});
+
+afterEach(() => {
+  registerBuiltInCollisionSupports3D();
+});
 
 function addSphereBody(world: ReturnType<typeof createPhysics3DWorld>, radius = 1): void {
   const body = createRigidBody3D('dynamic');
@@ -52,8 +59,6 @@ describe('explainPhysics3DCollision', () => {
   });
 
   it('reads the WORLD kind, which is what the narrow phase is actually handed', () => {
-    // An `aabb` local shape carries a `box` world shape, so a world of aabb colliders needs the BOX
-    // support registered. Asking about the local kind would report a world ready that is not.
     const world = createPhysics3DWorld();
     const body = createRigidBody3D('dynamic');
     addPhysics3DBody(world, body);
