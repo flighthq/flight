@@ -122,6 +122,8 @@
       "@flighthq/collision/*": ["./packages/collision/src/*"],
       "@flighthq/compression": ["./packages/compression/src/index.ts"],
       "@flighthq/compression/*": ["./packages/compression/src/*"],
+      "@flighthq/encoding": ["./packages/encoding/src/index.ts"],
+      "@flighthq/encoding/*": ["./packages/encoding/src/*"],
       "@flighthq/color": ["./packages/color/src/index.ts"],
       "@flighthq/color/*": ["./packages/color/src/*"],
       "@flighthq/command": ["./packages/command/src/index.ts"],

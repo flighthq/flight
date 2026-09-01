@@ -1,6 +1,7 @@
 export * from '@flighthq/abc';
 export * from '@flighthq/color';
 export * from '@flighthq/compression';
+export * from '@flighthq/encoding';
 export * from '@flighthq/entity';
 export * from '@flighthq/geometry';
 export * from '@flighthq/layout';
