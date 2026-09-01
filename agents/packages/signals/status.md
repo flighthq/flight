@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/signals'
-updated: 2026-08-08
-by: principal
+updated: 2026-09-01
+by: manager
 ---
 
 # signals — Status
@@ -11,44 +11,45 @@ by: principal
 
 ## Open
 
-Every item was re-checked against `packages/signals/src/` and `packages/types/src/Signal*.ts` on
-2026-08-08. A file:line here is a claim about this tree, not about a session. The package is eleven
-exported functions over four files; `SignalData` is the lean parallel-array form
-(`types/src/Signal.ts:8`: `slots` / `priorities` / `repeat` / `cancelled`).
+Re-checked against `packages/signals/src/` and `packages/types/src/Signal*.ts` on 2026-09-01, after
+the tracked-connection/scope commission landed (`9b3d32962`, `aa7a2bc4d`, `48cd6146c`, `5bb7e2d43`).
+A file:line here is a claim about this tree. `SignalData` is `slots: (T | null)[]` / `priorities` /
+`repeat` / `cancelled` / `depth` (`types/src/Signal.ts:12`).
 
-- **`disconnectSignal` during dispatch skips the next slot.** `makeDispatch` walks a live cursor
-  `i` over `data.slots` (`slot.ts:73-87`); `disconnectSignal` splices all four parallel arrays
-  in place (`slot.ts:44-48`). A slot that disconnects a later slot shifts everything down under the
-  cursor, and the shifted-into-position slot is never visited in that pass. There is no `depth`
-  counter and no tombstone discipline to extend — a fix needs a new field on `SignalData`
-  (cross-package, `@flighthq/types`) plus a compaction pass, so it is a dispatch-semantics decision
-  before it is code.
-- **The same cursor hazard reaches `once` slots through nested emits.** A `repeat: false` slot is
-  spliced out at `slot.ts:82-85` after it fires. A re-entrant emit re-traverses the shared arrays
-  from index 0 and may remove an entry below the outer cursor, after which the outer loop's `i`
-  refers to a different slot than the one it just invoked.
-- **`clearSignal` during dispatch does not stop the in-flight walk.** `clearSignal` nulls
-  `signal.data` and restores `nullSignalEmit` (`slot.ts:7-10`), but `makeDispatch` closed over the
-  `data` object (`slot.ts:72`), so the running loop keeps draining the detached array. `cancelSignal`
-  (`emitter.ts:5`) is the only working mid-dispatch stop, and it is a no-op once `data` is null.
-- **`SignalConnection` and `SignalScope` are header types with no implementation here.**
-  `types/src/SignalConnection.ts:11` and `types/src/SignalScope.ts:11` document
-  `connectSignalOnce`, `createSignalScope`, `disconnectSignalScope`, and per-connection
-  pause/resume; none exists in this package, `connectSignal` returns `void` (`slot.ts:12`), and
-  `SignalData` has no `enabled` lane. Either build the handle surface or retire the two types —
-  today the header advertises an API a consumer cannot call.
-- **No introspection or diagnostics surface.** `hasSignalSlots` (`slot.ts:56`) and `isSlotConnected`
-  (`slot.ts:67`) are the whole query surface: no slot count, no live-slot listing, and no
-  `enable*Guards` / `explain*` module, in a package whose failure mode (a silently skipped slot) is
-  exactly what a guard would report.
-- **Deferred and collecting dispatch are absent** — no `emitSignalDeferred`, no `emitSignalCollect`
-  / `CollectableSignal`, no `connectSignalWeak` anywhere in `packages/`. The veto chain
-  `@flighthq/application`'s close-request pattern wants is the concrete consumer for the second;
-  each needs an API-shape ruling (flush point, return-typed signal, GC-timing divergence) first.
+- **`clearSignal` during dispatch still does not stop the in-flight walk, and now nothing does.**
+  `clearSignal` nulls `signal.data` and restores `nullSignalEmit` (`slot.ts:7-10`), but
+  `makeDispatch` closed over the `data` object (`slot.ts:87`), so the running loop keeps draining
+  the detached array. `cancelSignal` sets `data.cancelled` only when `signal.data` is non-null
+  (`emitter.ts:5`), so after a mid-dispatch `clearSignal` it is a no-op and the walk runs to
+  completion. Compaction handles the aliasing correctly — it detaches only while `signal.data === data`
+  (`slot.ts:128`) — so this is a stop-the-dispatch gap, not a corruption. Needs a ruling on whether
+  `clearSignal` mid-dispatch should imply cancel.
+- **No introspection or diagnostics surface.** `hasSignalSlots` (`slot.ts:64`) and `isSlotConnected`
+  (`slot.ts:81`) remain the whole query surface: no live slot count, no connection listing, and no
+  `enable*Guards` / `explain*` module, in a package whose failure mode is a silently skipped or
+  never-fired slot. The tombstone discipline widens this — `isSlotConnected` uses `indexOf`
+  (`slot.ts:82`), which answers correctly but cannot distinguish "never connected" from
+  "tombstoned during the dispatch you are inside".
+- **`review.md` and `assessment.md` are stale on the handle/scope surface.** Both record that
+  `SignalConnection`/`SignalScope` were claimed by an earlier pass but absent from the source tree
+  (`assessment.md` line 31; `review.md`'s 2026-07-31 correction). That is no longer true — the
+  surface is built and blessed by the 2026-09-01 charter Decision. They are stage outputs of surveys
+  that ran before the commission, so they are not edited in place; a re-survey supersedes them.
+- **Deferred, collecting, and weak dispatch are absent and stay absent.** The earlier entry here
+  read them as gaps needing an API-shape ruling. They already have one: charter Decisions #1, #2,
+  and #3 rule out `emitSignalDeferred`, `emitSignalCollect`, and `connectSignalWeak` as blessed
+  non-goals. Not open work.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-09-01** — Tracked connections, scopes, snapshot emission, and tombstone dispatch safety
+  landed; charter Decisions recorded and the dispatch-during-dispatch direction resolved. Three of
+  the four `Open` items above died: `disconnectSignal` no longer skips the shifted slot, `once`
+  slots tombstone instead of splicing under a nested emit, and the header's
+  `SignalConnection`/`SignalScope` types now have an implementation to call. Pause is a wrapper
+  slot, not an `enabled` lane, so `SignalData` kept its three parallel lanes.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract, verified against source. Two headline
   claims died in opposite directions. The 2026-06-24 entry's entire "implemented" list —
