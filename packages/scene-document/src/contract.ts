@@ -1,4 +1,5 @@
 export { explainFlightDocumentText, formatFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
+export { getFlightDocumentResourceDependencies } from './flightDocumentResourceDependencies';
 export {
   createFlightDocumentFromScene2D,
   createFlightDocumentScene2DMaterialization,
