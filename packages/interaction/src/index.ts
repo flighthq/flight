@@ -51,6 +51,7 @@ export {
   hitTestNode2Ds,
   hitTestNode2DsShape,
   hitTestNodeRegion,
+  invalidateInteractionCursor,
   isNodeFocusable,
   isNodeFocused,
   isNodeHitTestEnabled,

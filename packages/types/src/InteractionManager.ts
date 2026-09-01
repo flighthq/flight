@@ -15,6 +15,9 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
   // (not a global) so each manager owns its own canvas's cursor zone. Rollover resolves the innermost
   // ancestor's `NodeInteractionState.cursor` and applies it here.
   cursorBackend: CursorBackend | null;
+  // Last rollover target that drove this manager's cursor. Kept separately from per-pointer state
+  // because one canvas has one cursor even when the manager tracks several pointer identities.
+  cursorTarget: N | null;
   doubleClickDelay: number;
   enabled: boolean;
   pointerCaptures: Map<number, N>;
