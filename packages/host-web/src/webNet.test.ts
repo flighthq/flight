@@ -182,6 +182,73 @@ describe('createWebNetBackend', () => {
     expect(res.statusText).toBe('aborted');
   });
 
+  it('never reaches the transport when the caller signal is already aborted', () => {
+    // The pre-aborted branch is the one a caller hits by passing a signal from a scope torn down
+    // before the request was issued. Asserted through the signal fetch actually receives, so the
+    // check cannot pass by the request merely failing for some other reason.
+    let observedAborted: boolean | null = null;
+    globalThis.fetch = ((_url: string, init: RequestInit) => {
+      const signal = init.signal as AbortSignal;
+      observedAborted = signal.aborted;
+      return Promise.reject(new DOMException('aborted', 'AbortError'));
+    }) as unknown as typeof fetch;
+    const controller = new AbortController();
+    controller.abort();
+    return createWebNetBackend()
+      .sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal })
+      .then((res) => {
+        expect(observedAborted).toBe(true);
+        expect(res.status).toBe(0);
+        expect(res.ok).toBe(false);
+        expect(res.statusText).toBe('aborted');
+      });
+  });
+
+  it('labels a caller abort apart from a timeout even when both are configured', async () => {
+    // A request carrying both timeoutMs and a caller signal must report which one fired. The timeout
+    // here is long enough that only the explicit abort can win, so the case needs no timer to elapse.
+    globalThis.fetch = ((_url: string, init: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        const signal = init.signal as AbortSignal;
+        signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+      })) as unknown as typeof fetch;
+    const controller = new AbortController();
+    const promise = createWebNetBackend().sendNetRequest(
+      { method: 'GET', timeoutMs: 60_000, url: 'u' },
+      { signal: controller.signal },
+    );
+    controller.abort();
+    const res = await promise;
+    expect(res.statusText).toBe('aborted');
+  });
+
+  it('releases its abort listener from the caller signal once the request settles', async () => {
+    // A caller signal outlives the requests made with it — a per-request listener left attached is a
+    // leak that grows with every call and that no behavioural assertion would ever notice.
+    globalThis.fetch = (async () => fakeResponse({ text: 'ok' })) as unknown as typeof fetch;
+    const controller = new AbortController();
+    let attached = 0;
+    const target = controller.signal as AbortSignal & {
+      addEventListener: AbortSignal['addEventListener'];
+      removeEventListener: AbortSignal['removeEventListener'];
+    };
+    const add = target.addEventListener.bind(target);
+    const remove = target.removeEventListener.bind(target);
+    target.addEventListener = ((...args: Parameters<AbortSignal['addEventListener']>) => {
+      attached++;
+      return add(...args);
+    }) as AbortSignal['addEventListener'];
+    target.removeEventListener = ((...args: Parameters<AbortSignal['removeEventListener']>) => {
+      attached--;
+      return remove(...args);
+    }) as AbortSignal['removeEventListener'];
+
+    const backend = createWebNetBackend();
+    await backend.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
+    await backend.sendNetRequest({ method: 'GET', url: 'u' }, { signal: controller.signal });
+    expect(attached).toBe(0);
+  });
+
   it('emits download progress ticks when a progress signal is supplied', async () => {
     globalThis.fetch = (async () =>
       fakeResponse({
