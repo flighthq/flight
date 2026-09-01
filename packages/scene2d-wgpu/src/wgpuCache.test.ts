@@ -118,7 +118,7 @@ beforeEach(() => {
     target.height = height;
   }) as never);
   vi.spyOn(renderWgpu, 'withWgpuFrameBorrow').mockImplementation(((
-    owner: WgpuRenderState,
+    owner: WgpuPresentationRenderState,
     borrower: WgpuRenderState,
     callback: () => unknown,
   ) => {

@@ -15,7 +15,11 @@ let nextTargetId = 0;
 beforeEach(() => {
   nextTargetId = 0;
 
-  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((_state, _pool, descriptor) => ({
+  vi.spyOn(renderWgpuContractModule, 'acquireWgpuRenderTarget').mockImplementation(((
+    _state: never,
+    _pool: never,
+    descriptor: never,
+  ) => ({
     ...(descriptor as object),
     id: `scratch-${nextTargetId++}`,
     texture: {},
