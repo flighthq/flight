@@ -1,0 +1,37 @@
+---
+package: "@flighthq/tokens"
+updated: 2026-09-01
+by: builder2
+---
+
+# tokens — Status
+
+## Open
+
+- **No composite token kind is registered.** The value model already admits one (a mode value is the
+  open `FlightDocumentValue`), and the resolver table is open, so a `Shadow` or `Typography` kind is a
+  registration rather than a format change. Nothing exercises that path yet, so the first composite
+  kind should expect to be the first real test of it.
+- **Aliases are kind-checked only when the WHOLE value is a reference.** A reference nested inside a
+  composite value substitutes without a kind comparison, deliberately: the field it fills is not the
+  token's own semantic type. Unreachable today because every registered kind is scalar; it becomes
+  reachable with the first composite kind, and the rule is stated in
+  `flightDocumentSceneTokens.ts:resolveAlias`.
+- **Token validators run; node and resource field validators still do not.**
+  `FlightDocumentFieldSchema.validate` and the `FieldInvalid` reason are declared in `@flighthq/types`
+  and called from nowhere in the repo. Tokens are the first place a schema-driven validator actually
+  runs, so do not read that as evidence the neighbouring ones work.
+- **Colour values round-trip through the model, not through their spelling.** `formatNumber` emits
+  decimal, so an authored `0x3366ccff` is written back as `862375167`. Pre-existing and equally true
+  of `backgroundColor`; see the charter's Open directions for why it was left alone here.
+- **A substituted scene entry is a materialization input, not a save target.** It keeps its `tokens`
+  section (the palette still round-trips) but its references are gone, so a mode switch must always
+  re-resolve from the ORIGINAL entry. Pinned by `substituteFlightDocumentSceneTokens.test.ts`.
+
+## Log
+
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- 2026-09-01 — pilot landed: kind-tagged token rows on both scene entries (`@flighthq/types`), the
+  `tokens` codec section (`@flighthq/scene-document`), and resolve + substitute here. End-to-end flow
+  from authored text to a materialized node is pinned in `flightDocumentSceneTokenPipeline.test.ts`.

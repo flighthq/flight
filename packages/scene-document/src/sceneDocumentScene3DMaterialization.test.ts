@@ -103,6 +103,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
       kind: 'Scene3D',
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
@@ -125,6 +126,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
       kind: 'Scene3D',
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
@@ -150,6 +152,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
       kind: 'Scene3D',
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
 
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
@@ -183,6 +186,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         fields: {},
         kind: Node3DKind,
       },
+      tokens: [],
     });
 
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
@@ -211,6 +215,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
       kind: 'Scene3D',
       lights: getDocumentLights(authoredLights, transform),
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
 
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
@@ -244,6 +249,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         fields: {},
         kind: Node3DKind,
       },
+      tokens: [],
     });
 
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
@@ -261,6 +267,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         fields: {},
         kind: Node3DKind,
       },
+      tokens: [],
     });
     const schemas = createTestSchemas();
     const result = createFlightDocumentScene3DMaterialization(document, schemas);
@@ -276,6 +283,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
       backgroundColor: null,
       kind: 'Scene2D',
       scene: { children: [], fields: {}, kind: 'DisplayObject' },
+      tokens: [],
     });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
@@ -288,6 +296,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         kind: 'Scene3D',
         lights: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
+        tokens: [],
       }),
       version: 99,
     } as unknown as FlightDocument;
@@ -304,6 +313,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
@@ -318,6 +328,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
@@ -361,6 +372,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       backgroundColor: null,
       kind: 'Scene2D',
       scene: { children: [], fields: {}, kind: 'DisplayObject' },
+      tokens: [],
     });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
@@ -375,6 +387,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
         kind: 'Scene3D',
         lights: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
+        tokens: [],
       }),
       version: 99,
     } as unknown as FlightDocument;
@@ -394,6 +407,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
         { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
@@ -410,6 +424,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
         { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
@@ -423,6 +438,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       kind: 'Scene3D',
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
+      tokens: [],
     });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).toBeNull();
@@ -465,6 +481,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
           { descriptor: createAmbientLight(), transform: createTransform3D() },
         ],
         scene: { children: [], fields: {}, kind: Node3DKind },
+        tokens: [],
       }),
     );
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
@@ -483,6 +500,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
           { descriptor: createDirectionalLight(), transform: createTransform3D() },
         ],
         scene: { children: [], fields: {}, kind: Node3DKind },
+        tokens: [],
       }),
     );
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
@@ -517,6 +535,7 @@ describe('model-to-text explain parity', () => {
           { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
         ],
         scene: { children: [], fields: {}, kind: Node3DKind },
+        tokens: [],
       }),
       expectedReason: FlightDocumentRefusalReason.DuplicateAmbientLight,
       expectedPath: 'scenes[0].lights',
@@ -531,6 +550,7 @@ describe('model-to-text explain parity', () => {
           { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
         ],
         scene: { children: [], fields: {}, kind: Node3DKind },
+        tokens: [],
       }),
       expectedReason: FlightDocumentRefusalReason.DuplicateDirectionalLight,
       expectedPath: 'scenes[0].lights',
@@ -541,6 +561,7 @@ describe('model-to-text explain parity', () => {
         backgroundColor: null,
         kind: 'Scene2D',
         scene: { children: [], fields: {}, kind: 'DisplayObject' },
+        tokens: [],
       }),
       expectedReason: FlightDocumentRefusalReason.StructureInvalid,
       expectedPath: 'scenes[0].kind',
@@ -552,6 +573,7 @@ describe('model-to-text explain parity', () => {
         kind: 'Scene3D',
         lights: [],
         scene: { children: [{ children: [], fields: {}, kind: 'acme.Unknown' }], fields: {}, kind: Node3DKind },
+        tokens: [],
       }),
       expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
       expectedPath: 'scenes[0].scene.children[0]',
@@ -586,6 +608,7 @@ describe('NodeKindUnregistered', () => {
         fields: {},
         kind: Node3DKind,
       },
+      tokens: [],
     });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
@@ -607,6 +630,7 @@ describe('NodeKindUnregistered', () => {
         fields: {},
         kind: Node3DKind,
       },
+      tokens: [],
     });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
@@ -631,6 +655,7 @@ describe('NodeKindUnregistered', () => {
         fields: {},
         kind: Node3DKind,
       },
+      tokens: [],
     });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
@@ -649,6 +674,7 @@ describe('NodeKindUnregistered', () => {
           fields: {},
           kind: Node3DKind,
         },
+        tokens: [],
       }),
     );
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
@@ -813,7 +839,7 @@ function rootDocument3D(
   return {
     defaultScene: 0,
     resources: [],
-    scenes: [{ cameras: [], kind: 'Scene3D', lights: [], scene: { children: [], fields, kind } }],
+    scenes: [{ cameras: [], kind: 'Scene3D', lights: [], scene: { children: [], fields, kind }, tokens: [] }],
     version: 1,
   } as unknown as FlightDocument;
 }

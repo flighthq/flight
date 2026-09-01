@@ -19,6 +19,7 @@ export * from './FlightDocumentResource';
 export * from './FlightDocumentResourceSchema';
 export * from './FlightDocumentSchemaRegistry';
 export * from './FlightDocumentText';
+export * from './FlightDocumentToken';
 export * from './NodeInteractiveStateBinding';
 export * from './SfntTableDirectory';
 export * from './TextShaperCache';

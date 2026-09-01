@@ -7,6 +7,7 @@ import type {
   FlightDocumentInteractiveStateTransitionDescriptor,
 } from './FlightDocumentInteractiveState';
 import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource';
+import type { FlightDocumentToken } from './FlightDocumentToken';
 import type { Node2D } from './Node2D';
 import type { Node3D } from './Node3D';
 import type { Scene2D } from './Scene2D';
@@ -40,6 +41,7 @@ export interface FlightDocumentScene2D {
   backgroundColor: number | null;
   kind: 'Scene2D';
   scene: FlightDocumentNode;
+  tokens: FlightDocumentToken[];
 }
 
 export interface FlightDocumentScene3D {
@@ -47,6 +49,7 @@ export interface FlightDocumentScene3D {
   kind: 'Scene3D';
   lights: Scene3DDocumentLight[];
   scene: FlightDocumentNode;
+  tokens: FlightDocumentToken[];
 }
 
 export interface FlightDocumentScene2DMaterialization {

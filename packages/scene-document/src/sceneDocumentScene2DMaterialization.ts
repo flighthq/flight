@@ -51,6 +51,10 @@ export function createFlightDocumentFromScene2D(
     backgroundColor: source.color,
     kind: 'Scene2D',
     scene,
+    // A live scene carries substituted values, not the references that produced them, so a token
+    // section cannot be recovered by writing one back. Callers that round-trip an authored document
+    // keep its tokens from the parsed entry rather than from the scene.
+    tokens: [],
   };
 }
 

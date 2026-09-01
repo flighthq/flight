@@ -142,6 +142,7 @@ function createMixedDocument(): FlightDocument {
           fields: {},
           kind: DisplayObjectKind,
         },
+        tokens: [],
       },
       {
         cameras: [],
@@ -152,6 +153,7 @@ function createMixedDocument(): FlightDocument {
           fields: {},
           kind: Node3DKind,
         },
+        tokens: [],
       },
     ],
     version: 1,

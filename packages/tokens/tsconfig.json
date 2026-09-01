@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../node" },
+    { "path": "../registry" },
+    { "path": "../scene-document" },
+    { "path": "../scene2d" },
+    { "path": "../types" }
+  ],
+  "include": ["src"]
+}

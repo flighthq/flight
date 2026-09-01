@@ -268,10 +268,12 @@ export function createDocumentRefusal(
     kind: null,
     limit: null,
     line: null,
+    mode: null,
     offset: null,
     path,
     reason,
     resourceKey: null,
+    tokenKey: null,
     version: null,
   };
 }

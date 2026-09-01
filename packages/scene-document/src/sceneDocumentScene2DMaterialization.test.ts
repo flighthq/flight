@@ -120,6 +120,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
       backgroundColor: null,
       kind: 'Scene2D',
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      tokens: [],
     });
     const result = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
@@ -143,6 +144,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
         fields: {},
         kind: DisplayObjectKind,
       },
+      tokens: [],
     });
     const schemas = createTestSchemas();
     const result = createFlightDocumentScene2DMaterialization(document, schemas);
@@ -162,6 +164,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
       kind: 'Scene3D',
       lights: [],
       scene: { children: [], fields: {}, kind: 'Node3D' },
+      tokens: [],
     });
     const result = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
@@ -173,6 +176,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
         backgroundColor: null,
         kind: 'Scene2D',
         scene: { children: [], fields: {}, kind: DisplayObjectKind },
+        tokens: [],
       }),
       version: 99,
     } as unknown as FlightDocument;
@@ -245,6 +249,7 @@ describe('explainFlightDocumentRefusal', () => {
       kind: 'Scene3D',
       lights: [],
       scene: { children: [], fields: {}, kind: 'Node3D' },
+      tokens: [],
     });
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
@@ -313,6 +318,7 @@ describe('explainFlightDocumentRefusal', () => {
         backgroundColor: null,
         kind: 'Scene2D',
         scene: { children: [], fields: {}, kind: DisplayObjectKind },
+        tokens: [],
       }),
       version: 99,
     } as unknown as FlightDocument;
@@ -327,6 +333,7 @@ describe('explainFlightDocumentRefusal', () => {
       backgroundColor: null,
       kind: 'Scene2D',
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      tokens: [],
     });
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).toBeNull();
@@ -441,6 +448,7 @@ describe('model-to-text explain parity', () => {
         kind: 'Scene3D',
         lights: [],
         scene: { children: [], fields: {}, kind: 'Node3D' },
+        tokens: [],
       }),
       expectedReason: FlightDocumentRefusalReason.StructureInvalid,
       expectedPath: 'scenes[0].kind',
@@ -455,6 +463,7 @@ describe('model-to-text explain parity', () => {
           fields: {},
           kind: DisplayObjectKind,
         },
+        tokens: [],
       }),
       expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
       expectedPath: 'scenes[0].scene.children[0]',
@@ -731,6 +740,7 @@ function rootDocument2D(kind: string, fields: Record<string, unknown>): FlightDo
         backgroundColor: null,
         kind: 'Scene2D',
         scene: { children: [], fields, kind },
+        tokens: [],
       },
     ],
     version: 1,

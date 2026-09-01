@@ -45,6 +45,16 @@ export const FlightDocumentRefusalReason = {
   StructureInvalid: 'flight-document.structure.invalid',
   TabCharacter: 'flight-document.syntax.tab-character',
   TagUnsupported: 'flight-document.unsupported.tag',
+  TokenKeyDuplicate: 'flight-document.token.key-duplicate',
+  TokenKeyInvalid: 'flight-document.token.key-invalid',
+  TokenKindMismatch: 'flight-document.token.kind-mismatch',
+  TokenModeInvalid: 'flight-document.token.mode-invalid',
+  TokenModeUnresolved: 'flight-document.token.mode-unresolved',
+  TokenReferenceCycle: 'flight-document.token.reference-cycle',
+  TokenReferenceInvalid: 'flight-document.token.reference-invalid',
+  TokenResolverUnregistered: 'flight-document.token-resolver.unregistered',
+  TokenUnresolved: 'flight-document.token.unresolved',
+  TokenValueInvalid: 'flight-document.token.value-invalid',
   TotalNodesLimitExceeded: 'flight-document.limit.total-nodes',
   TrailingFlowComma: 'flight-document.syntax.trailing-flow-comma',
   TrailingFlowContent: 'flight-document.syntax.trailing-flow-content',
@@ -66,9 +76,14 @@ export interface FlightDocumentRefusalExplanation {
   kind: Kind | null;
   limit: number | null;
   line: number | null;
+  // The token mode being resolved, and the token row a refusal concerns. Both are null outside the
+  // token seams, exactly as resourceKey is null outside resource resolution; the shared kind field
+  // carries a token's kind, so a refusal never needs a third identity slot.
+  mode: string | null;
   offset: number | null;
   path: string;
   reason: FlightDocumentRefusalReason;
   resourceKey: string | null;
+  tokenKey: string | null;
   version: number | null;
 }

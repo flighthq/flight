@@ -310,6 +310,8 @@
       "@flighthq/spritesheet-formats/*": ["./packages/spritesheet-formats/src/*"],
       "@flighthq/bitmap": ["./packages/bitmap/src/index.ts"],
       "@flighthq/bitmap/*": ["./packages/bitmap/src/*"],
+      "@flighthq/tokens": ["./packages/tokens/src/index.ts"],
+      "@flighthq/tokens/*": ["./packages/tokens/src/*"],
       "@flighthq/timeline": ["./packages/timeline/src/index.ts"],
       "@flighthq/timeline/*": ["./packages/timeline/src/*"],
       "@flighthq/timeline-spritesheet": ["./packages/timeline-spritesheet/src/index.ts"],

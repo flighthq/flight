@@ -53,6 +53,50 @@ describe('explainFlightDocumentText', () => {
     });
   });
 
+  it('names an invalid token key against the scene that declares it', () => {
+    const explanation = explainFlightDocumentText(
+      'flight: 1\ndefaultScene: 0\nscenes:\n' +
+        '  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n' +
+        '    tokens:\n      - kind: Color\n        key: "has space"\n        default: 1\n',
+    );
+    expect(explanation?.reason).toBe(FlightDocumentRefusalReason.TokenKeyInvalid);
+    expect(explanation?.path).toBe('scenes[0].tokens[0].key');
+  });
+
+  it('qualifies a token refusal with the scene that declares it, not the token index alone', () => {
+    const explanation = explainFlightDocumentText(
+      'flight: 1\ndefaultScene: 0\nscenes:\n' +
+        '  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n' +
+        '  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n' +
+        '    tokens:\n      - kind: Color\n        key: "9lives"\n        default: 1\n',
+    );
+    expect(explanation?.reason).toBe(FlightDocumentRefusalReason.TokenKeyInvalid);
+    expect(explanation?.path).toBe('scenes[1].tokens[0].key');
+  });
+
+  it('names a duplicate token key rather than keeping the last row', () => {
+    const explanation = explainFlightDocumentText(
+      'flight: 1\ndefaultScene: 0\nscenes:\n' +
+        '  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n' +
+        '    tokens:\n' +
+        '      - kind: Color\n        key: color.primary\n        default: 1\n' +
+        '      - kind: Color\n        key: color.primary\n        default: 2\n',
+    );
+    expect(explanation?.reason).toBe(FlightDocumentRefusalReason.TokenKeyDuplicate);
+    expect(explanation?.tokenKey).toBe('color.primary');
+    expect(explanation?.path).toBe('scenes[0].tokens[1].key');
+  });
+
+  it('refuses a mode named after a structural key it would collide with', () => {
+    const explanation = explainFlightDocumentText(
+      'flight: 1\ndefaultScene: 0\nscenes:\n' +
+        '  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n' +
+        '    tokens:\n      - kind: Color\n        key: color.primary\n        "mode name": 1\n',
+    );
+    expect(explanation?.reason).toBe(FlightDocumentRefusalReason.TokenModeInvalid);
+    expect(explanation?.path).toBe('scenes[0].tokens[0].mode name');
+  });
+
   it('preserves a typed YAML-subset refusal with source position', () => {
     const explanation = explainFlightDocumentText('flight: 1\nanchor: &root value\n');
 
@@ -88,6 +132,7 @@ describe('formatFlightDocumentText', () => {
             fields: {},
             kind: 'DisplayObject',
           },
+          tokens: [],
         },
         {
           cameras: [
@@ -102,6 +147,7 @@ describe('formatFlightDocumentText', () => {
           kind: 'Scene3D',
           lights: [{ descriptor: createAmbientLight({ intensity: 0.4 }), transform: lightTransform }],
           scene: { children: [], fields: {}, kind: 'Node3D' },
+          tokens: [],
         },
       ],
       version: 1,
@@ -149,6 +195,7 @@ describe('formatFlightDocumentText', () => {
             kind: 'DisplayObject',
             transition: { fields: { duration: 150, easing: 'easeOut' }, kind: 'acme.Tween' },
           },
+          tokens: [],
         },
       ],
       version: 1,
@@ -162,6 +209,20 @@ describe('formatFlightDocumentText', () => {
     expect(text).toContain('kind: acme.Outline');
     expect(text).toContain('kind: acme.Tween');
     expect(parseFlightDocumentText(text)).toEqual(document);
+  });
+
+  it('round-trips a token section through text and back', () => {
+    const text =
+      'flight: 1\ndefaultScene: 0\nscenes:\n' +
+      '  - kind: Scene2D\n' +
+      '    scene:\n      kind: DisplayObject\n' +
+      '    tokens:\n' +
+      '      - kind: Color\n        key: color.card\n        default: "$color.background"\n' +
+      '      - kind: Color\n        key: color.background\n        dark: 439812095\n        light: 4294967295\n';
+    const document = parseFlightDocumentText(text);
+    if (document === null) throw new Error('expected the token fixture to parse');
+    expect(formatFlightDocumentText(document)).toBe(text);
+    expect(parseFlightDocumentText(formatFlightDocumentText(document))).toEqual(document);
   });
 });
 
@@ -198,6 +259,28 @@ describe('parseFlightDocumentText', () => {
     expect(document?.scenes.map((scene) => scene.kind)).toEqual(['Scene2D', 'Scene3D']);
     expect(document?.scenes[0].scene.children[0]?.fields['texture']).toBe('shared');
     expect(document?.scenes[1].scene.children[0]?.fields['texture']).toBe('shared');
+  });
+
+  it('reads kind-tagged token rows on the scene entry that declares them', () => {
+    const document = parseFlightDocumentText(
+      'flight: 1\ndefaultScene: 0\nscenes:\n' +
+        '  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n' +
+        '    tokens:\n' +
+        '      - kind: Color\n        key: color.background\n        light: 4294967295\n        dark: 439812095\n' +
+        '      - kind: Number\n        key: space.gutter\n        default: 8\n',
+    );
+    const scene = document?.scenes[0];
+    expect(scene?.tokens).toEqual([
+      { key: 'color.background', kind: 'Color', values: { dark: 439812095, light: 4294967295 } },
+      { key: 'space.gutter', kind: 'Number', values: { default: 8 } },
+    ]);
+  });
+
+  it('leaves tokens empty when a scene entry declares no section', () => {
+    const document = parseFlightDocumentText(
+      'flight: 1\ndefaultScene: 0\nscenes:\n  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n',
+    );
+    expect(document?.scenes[0].tokens).toEqual([]);
   });
 
   it('returns null whenever the explain seam reports a structural refusal', () => {
