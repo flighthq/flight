@@ -174,7 +174,7 @@ See [testing conventions](agents/conventions/testing.md) for the full rules, Web
 
 Package names grouped by domain, `@flighthq/` prefix omitted. For boundaries and ownership, read the [package catalog](agents/packages/catalog.md); for API surface, the [package map](agents/packages/map.md). `npm run api <name>` queries signatures. [Feature lookup](agents/feature-lookup.md) maps a keyword to its owning package.
 
-Core: `types`, `entity`, `geometry`, `math`, `color`, `compression`, `layout`, `abc`, `node`, `signals`.
+Core: `types`, `entity`, `geometry`, `math`, `color`, `compression`, `encoding` (portable UTF-8), `layout`, `abc`, `node`, `signals`.
 
 Scene graph: `scene2d`, `text`, `quadbatch`, `tilemap`, `scene3d`, `clip`, `path`, `shape`, `interaction`, plus codecs `path-formats`, `path-boolean`, `shape-formats`, `scene2d-formats`, and `swf`.
 
