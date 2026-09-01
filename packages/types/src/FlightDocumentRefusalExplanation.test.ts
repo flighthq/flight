@@ -102,4 +102,12 @@ describe('FlightDocumentRefusalReason', () => {
       'flight-document.structure.duplicate-directional-light',
     );
   });
+
+  it('names unresolved and ambiguous layout targets independently', () => {
+    expect(FlightDocumentRefusalReason.LayoutTargetUnresolved).toBe('flight-document.layout-target.unresolved');
+    expect(FlightDocumentRefusalReason.LayoutTargetAmbiguous).toBe('flight-document.layout-target.ambiguous');
+    expect(FlightDocumentRefusalReason.LayoutTargetUnresolved).not.toBe(
+      FlightDocumentRefusalReason.LayoutTargetAmbiguous,
+    );
+  });
 });

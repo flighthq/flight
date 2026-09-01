@@ -28,6 +28,8 @@ export const FlightDocumentRefusalReason = {
   InteractiveStateTargetUnsupported: 'flight-document.interactive-state.target.unsupported',
   InteractiveStateTransitionKindUnregistered: 'flight-document.interactive-state.transition-kind.unregistered',
   KeyCodeUnitsLimitExceeded: 'flight-document.limit.key-code-units',
+  LayoutTargetAmbiguous: 'flight-document.layout-target.ambiguous',
+  LayoutTargetUnresolved: 'flight-document.layout-target.unresolved',
   MixedCollection: 'flight-document.syntax.mixed-collection',
   MultipleRootValues: 'flight-document.syntax.multiple-root-values',
   NestingDepthLimitExceeded: 'flight-document.limit.nesting-depth',

@@ -121,6 +121,7 @@ describe('formatFlightDocumentText', () => {
         {
           backgroundColor: 0x112233ff,
           kind: 'Scene2D',
+          layouts: [],
           scene: {
             children: [
               {
@@ -145,6 +146,7 @@ describe('formatFlightDocumentText', () => {
             },
           ],
           kind: 'Scene3D',
+          layouts: [],
           lights: [{ descriptor: createAmbientLight({ intensity: 0.4 }), transform: lightTransform }],
           scene: { children: [], fields: {}, kind: 'Node3D' },
           tokens: [],
@@ -181,6 +183,7 @@ describe('formatFlightDocumentText', () => {
         {
           backgroundColor: null,
           kind: 'Scene2D',
+          layouts: [],
           scene: {
             children: [],
             fields: { name: 'submit-button' },
@@ -223,6 +226,42 @@ describe('formatFlightDocumentText', () => {
     if (document === null) throw new Error('expected the token fixture to parse');
     expect(formatFlightDocumentText(document)).toBe(text);
     expect(parseFlightDocumentText(formatFlightDocumentText(document))).toEqual(document);
+  });
+
+  it('round-trips scene-local layouts with unknown custom kinds and document-safe styles', () => {
+    const text =
+      'flight: 1\ndefaultScene: 0\nscenes:\n' +
+      '  - kind: Scene2D\n' +
+      '    scene:\n      kind: DisplayObject\n      name: panel\n      children:\n' +
+      '        - kind: DisplayObject\n          name: header\n' +
+      '    layouts:\n' +
+      '      - targets:\n          - panel\n          - header\n' +
+      '        tree:\n          nodes:\n' +
+      '            - kind: acme.Flow\n              parentIndex: -1\n' +
+      '              containerStyle:\n                gap: 8\n                policy:\n                  dense: true\n' +
+      '            - kind: AnchorLayout\n              parentIndex: 0\n' +
+      '              itemStyle:\n                grow: 1\n';
+
+    const document = parseFlightDocumentText(text);
+    expect(document).not.toBeNull();
+    expect(document?.scenes[0].layouts).toEqual([
+      {
+        targets: ['panel', 'header'],
+        tree: {
+          nodes: [
+            {
+              containerStyle: { gap: 8, policy: { dense: true } },
+              itemStyle: null,
+              kind: 'acme.Flow',
+              parentIndex: -1,
+            },
+            { containerStyle: null, itemStyle: { grow: 1 }, kind: 'AnchorLayout', parentIndex: 0 },
+          ],
+        },
+      },
+    ]);
+    expect(formatFlightDocumentText(document!)).toBe(text);
+    expect(parseFlightDocumentText(formatFlightDocumentText(document!))).toEqual(document);
   });
 });
 
@@ -281,6 +320,57 @@ describe('parseFlightDocumentText', () => {
       'flight: 1\ndefaultScene: 0\nscenes:\n  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n',
     );
     expect(document?.scenes[0].tokens).toEqual([]);
+    expect(document?.scenes[0].layouts).toEqual([]);
+  });
+
+  it.each([
+    [
+      'empty descriptor',
+      '    layouts:\n      - targets:\n        tree:\n          nodes:\n',
+      'scenes[0].layouts[0].targets',
+    ],
+    [
+      'target/node count mismatch',
+      '    layouts:\n      - targets:\n          - root\n        tree:\n          nodes:\n            - kind: FlexLayout\n              parentIndex: -1\n            - kind: AnchorLayout\n              parentIndex: 0\n',
+      'scenes[0].layouts[0].targets',
+    ],
+    [
+      'duplicate target',
+      '    layouts:\n      - targets:\n          - root\n          - root\n        tree:\n          nodes:\n            - kind: FlexLayout\n              parentIndex: -1\n            - kind: AnchorLayout\n              parentIndex: 0\n',
+      'scenes[0].layouts[0].targets[1]',
+    ],
+    [
+      'forward parent',
+      '    layouts:\n      - targets:\n          - root\n        tree:\n          nodes:\n            - kind: FlexLayout\n              parentIndex: 0\n',
+      'scenes[0].layouts[0].tree.nodes[0].parentIndex',
+    ],
+    [
+      'fractional parent',
+      '    layouts:\n      - targets:\n          - root\n        tree:\n          nodes:\n            - kind: FlexLayout\n              parentIndex: -0.5\n',
+      'scenes[0].layouts[0].tree.nodes[0].parentIndex',
+    ],
+    [
+      'empty target name',
+      '    layouts:\n      - targets:\n          - ""\n        tree:\n          nodes:\n            - kind: FlexLayout\n              parentIndex: -1\n',
+      'scenes[0].layouts[0].targets[0]',
+    ],
+    [
+      'scalar style',
+      '    layouts:\n      - targets:\n          - root\n        tree:\n          nodes:\n            - kind: FlexLayout\n              parentIndex: -1\n              containerStyle: row\n',
+      'scenes[0].layouts[0].tree.nodes[0].containerStyle',
+    ],
+    [
+      'unknown node key',
+      '    layouts:\n      - targets:\n          - root\n        tree:\n          nodes:\n            - kind: FlexLayout\n              parentIndex: -1\n              resolver: hidden\n',
+      'scenes[0].layouts[0].tree.nodes[0]',
+    ],
+  ])('refuses malformed layout structure: %s', (_label, layoutText, path) => {
+    const text =
+      'flight: 1\ndefaultScene: 0\nscenes:\n  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n' + layoutText;
+    expect(explainFlightDocumentText(text)).toMatchObject({
+      path,
+      reason: FlightDocumentRefusalReason.StructureInvalid,
+    });
   });
 
   it('returns null whenever the explain seam reports a structural refusal', () => {

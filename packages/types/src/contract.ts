@@ -14,6 +14,7 @@ export * from './FlightDocumentFieldSchema';
 export * from './FlightDocumentInteractiveState';
 export * from './FlightDocumentInteractiveStateExtensionSchema';
 export * from './FlightDocumentInteractiveStateTransitionSchema';
+export * from './FlightDocumentLayout';
 export * from './FlightDocumentNodeSchema';
 export * from './FlightDocumentRefusalExplanation';
 export * from './FlightDocumentResource';

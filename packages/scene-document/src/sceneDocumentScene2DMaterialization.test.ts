@@ -112,6 +112,50 @@ describe('createFlightDocumentFromScene2D', () => {
     expect(document.scene.children).toHaveLength(1);
     expect(document.scene.children[0].kind).toBe(SpriteKind);
   });
+
+  it('writes layouts only from explicit inert bindings and preserves unknown kinds and styles', () => {
+    const scene = createScene2D();
+    scene.root.name = 'root';
+    const child = createDisplayObject({ name: 'child' });
+    addNodeChild(scene.root, child);
+    const tree = {
+      nodes: [
+        { containerStyle: { gap: 8 }, itemStyle: null, kind: 'acme.Flow', parentIndex: -1 },
+        { containerStyle: null, itemStyle: { grow: 1 }, kind: 'AnchorLayout', parentIndex: 0 },
+      ],
+    };
+
+    expect(createFlightDocumentFromScene2D(scene, createTestSchemas()).layouts).toEqual([]);
+    expect(
+      createFlightDocumentFromScene2D(scene, createTestSchemas(), [], [{ targets: [scene.root, child], tree }]),
+    ).toMatchObject({ layouts: [{ targets: ['root', 'child'], tree }] });
+  });
+
+  it('rejects foreign, unnamed, ambiguous, and structurally invalid explicit layout bindings', () => {
+    const scene = createScene2D();
+    scene.root.name = 'root';
+    const duplicate = createDisplayObject({ name: 'root' });
+    addNodeChild(scene.root, duplicate);
+    const tree = { nodes: [{ containerStyle: null, itemStyle: null, kind: 'acme.Leaf', parentIndex: -1 }] };
+
+    expect(() =>
+      createFlightDocumentFromScene2D(
+        scene,
+        createTestSchemas(),
+        [],
+        [{ targets: [createDisplayObject({ name: 'foreign' })], tree }],
+      ),
+    ).toThrow(RangeError);
+    expect(() =>
+      createFlightDocumentFromScene2D(scene, createTestSchemas(), [], [{ targets: [createDisplayObject()], tree }]),
+    ).toThrow(RangeError);
+    expect(() =>
+      createFlightDocumentFromScene2D(scene, createTestSchemas(), [], [{ targets: [scene.root], tree }]),
+    ).toThrow(RangeError);
+    expect(() => createFlightDocumentFromScene2D(scene, createTestSchemas(), [], [{ targets: [], tree }])).toThrow(
+      RangeError,
+    );
+  });
 });
 
 describe('createFlightDocumentScene2DMaterialization', () => {
@@ -119,6 +163,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
       tokens: [],
     });
@@ -133,6 +178,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: {
         children: [
           {
@@ -162,6 +208,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: { children: [], fields: {}, kind: 'Node3D' },
       tokens: [],
@@ -175,6 +222,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
       ...createTestDocument({
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: { children: [], fields: {}, kind: DisplayObjectKind },
         tokens: [],
       }),
@@ -182,6 +230,40 @@ describe('createFlightDocumentScene2DMaterialization', () => {
     } as unknown as FlightDocument;
     const result = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
+  });
+
+  it('returns inert index-matched layout bindings without applying rectangles', () => {
+    const document = createTestDocument({
+      backgroundColor: null,
+      kind: 'Scene2D',
+      layouts: [
+        {
+          targets: ['root', 'child'],
+          tree: {
+            nodes: [
+              { containerStyle: { gap: 8 }, itemStyle: null, kind: 'acme.Flow', parentIndex: -1 },
+              { containerStyle: null, itemStyle: { grow: 1 }, kind: 'AnchorLayout', parentIndex: 0 },
+            ],
+          },
+        },
+      ],
+      scene: {
+        children: [{ children: [], fields: { name: 'child', x: 12 }, kind: DisplayObjectKind }],
+        fields: { name: 'root', x: 4 },
+        kind: DisplayObjectKind,
+      },
+      tokens: [],
+    });
+
+    const materialization = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
+
+    expect(materialization).not.toBeNull();
+    expect(materialization!.layoutBindings).toHaveLength(1);
+    expect(materialization!.layoutBindings[0]?.targets[0]).toBe(materialization!.scene.root);
+    expect(materialization!.layoutBindings[0]?.targets[1]).toBe(getNodeChildren(materialization!.scene.root)[0]);
+    expect(materialization!.layoutBindings[0]?.tree).toBe(document.scenes[0].layouts[0]?.tree);
+    expect(materialization!.scene.root.x).toBe(4);
+    expect(getNodeChildren(materialization!.scene.root)[0].x).toBe(12);
   });
 });
 
@@ -230,6 +312,7 @@ describe('explainFlightDocumentRefusal', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
       tokens: [],
     });
@@ -248,6 +331,7 @@ describe('explainFlightDocumentRefusal', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: { children: [], fields: {}, kind: 'Node3D' },
       tokens: [],
@@ -262,6 +346,7 @@ describe('explainFlightDocumentRefusal', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: {
         children: [{ children: [], fields: { x: 'far' }, kind: SpriteKind }],
         fields: {},
@@ -282,6 +367,7 @@ describe('explainFlightDocumentRefusal', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
       tokens: [],
     });
@@ -304,6 +390,7 @@ describe('explainFlightDocumentRefusal', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: { children: [], fields: { mystery: 1 }, kind: DisplayObjectKind },
       tokens: [],
     });
@@ -321,6 +408,7 @@ describe('explainFlightDocumentRefusal', () => {
       ...createTestDocument({
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: { children: [], fields: {}, kind: DisplayObjectKind },
         tokens: [],
       }),
@@ -336,11 +424,52 @@ describe('explainFlightDocumentRefusal', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
       tokens: [],
     });
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).toBeNull();
+  });
+
+  it('distinguishes unresolved and ambiguous layout target names with scene-qualified paths', () => {
+    const unresolved = rootDocument2D(DisplayObjectKind, { name: 'root' });
+    unresolved.scenes[0].layouts = [singleTargetLayout('missing')];
+    expect(createFlightDocumentScene2DMaterialization(unresolved, createTestSchemas())).toBeNull();
+    expect(explainFlightDocumentRefusal(unresolved, 'Scene2D', createTestSchemas())).toMatchObject({
+      path: 'scenes[0].layouts[0].targets[0]',
+      reason: FlightDocumentRefusalReason.LayoutTargetUnresolved,
+    });
+
+    const ambiguous = rootDocument2D(DisplayObjectKind, { name: 'same' });
+    ambiguous.scenes[0].scene.children.push({
+      children: [],
+      fields: { name: 'same' },
+      kind: DisplayObjectKind,
+    });
+    ambiguous.scenes[0].layouts = [singleTargetLayout('same')];
+    expect(createFlightDocumentScene2DMaterialization(ambiguous, createTestSchemas())).toBeNull();
+    expect(explainFlightDocumentRefusal(ambiguous, 'Scene2D', createTestSchemas())).toMatchObject({
+      path: 'scenes[0].layouts[0].targets[0]',
+      reason: FlightDocumentRefusalReason.LayoutTargetAmbiguous,
+    });
+  });
+
+  it('does not resolve a layout target from a different scene entry', () => {
+    const document = rootDocument2D(DisplayObjectKind, { name: 'first' });
+    document.scenes[0].layouts = [singleTargetLayout('second')];
+    document.scenes.push({
+      backgroundColor: null,
+      kind: 'Scene2D',
+      layouts: [],
+      scene: { children: [], fields: { name: 'second' }, kind: DisplayObjectKind },
+      tokens: [],
+    });
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas(), 0)).toMatchObject({
+      path: 'scenes[0].layouts[0].targets[0]',
+      reason: FlightDocumentRefusalReason.LayoutTargetUnresolved,
+    });
   });
 });
 
@@ -450,6 +579,7 @@ describe('model-to-text explain parity', () => {
       document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [],
         scene: { children: [], fields: {}, kind: 'Node3D' },
         tokens: [],
@@ -462,6 +592,7 @@ describe('model-to-text explain parity', () => {
       document: createTestDocument({
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: {
           children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
           fields: {},
@@ -581,6 +712,13 @@ function createTestDocument(
   resources: FlightDocumentResourceDescriptor[] = [],
 ): FlightDocument {
   return { defaultScene: 0, resources, scenes: [scene], version: 1 };
+}
+
+function singleTargetLayout(target: string) {
+  return {
+    targets: [target],
+    tree: { nodes: [{ containerStyle: null, itemStyle: null, kind: 'acme.Leaf', parentIndex: -1 }] },
+  };
 }
 
 function createTestSchemas(): FlightDocumentSchemaRegistry {
@@ -743,6 +881,7 @@ function rootDocument2D(kind: string, fields: Record<string, unknown>): FlightDo
       {
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: { children: [], fields, kind },
         tokens: [],
       },

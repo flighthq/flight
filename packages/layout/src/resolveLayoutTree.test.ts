@@ -1,4 +1,4 @@
-import type { LayoutNode, LayoutTree } from '@flighthq/types/contract';
+import type { FlightDocumentLayoutBinding, LayoutNode, LayoutTree, NodeAny } from '@flighthq/types/contract';
 
 import { createLayoutState, registerLayoutResolver } from './layoutState';
 import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree';
@@ -61,6 +61,25 @@ describe('explainLayoutResolution', () => {
 });
 
 describe('resolveLayoutTree', () => {
+  it('consumes an inert FlightDocument binding without moving kind ownership out of LayoutState', () => {
+    const binding: FlightDocumentLayoutBinding = {
+      targets: [{ name: 'root' } as NodeAny, { name: 'child' } as NodeAny],
+      tree: {
+        nodes: [
+          { containerStyle: null, itemStyle: null, kind: 'acme.Root', parentIndex: -1 },
+          { containerStyle: null, itemStyle: null, kind: 'acme.Leaf', parentIndex: 0 },
+        ],
+      },
+    };
+    const state = createLayoutState();
+
+    expect(resolveLayoutTree(new Float32Array(8), state, binding.tree, new Float32Array(4), 100, 100)).toBe(false);
+    expect(explainLayoutResolution(state, binding.tree, 0)).toMatchObject({
+      kind: 'UnregisteredKind',
+      resolverKind: 'acme.Root',
+    });
+  });
+
   it('writes every root as the available rectangle', () => {
     const out = new Float32Array(8);
     const state = createLayoutState();

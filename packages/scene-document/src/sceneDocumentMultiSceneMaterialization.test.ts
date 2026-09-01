@@ -137,6 +137,7 @@ function createMixedDocument(): FlightDocument {
       {
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: {
           children: [{ children: [], fields: {}, kind: TestScene2DNodeKind }],
           fields: {},
@@ -147,6 +148,7 @@ function createMixedDocument(): FlightDocument {
       {
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [],
         scene: {
           children: [{ children: [], fields: {}, kind: TestScene3DNodeKind }],

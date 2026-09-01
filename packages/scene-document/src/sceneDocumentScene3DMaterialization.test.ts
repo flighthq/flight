@@ -94,6 +94,18 @@ describe('createFlightDocumentFromScene3D', () => {
     expect(documentWithoutBindings.scene.interactiveStates).toBeNull();
     expect(documentWithBindings.scene.interactiveStates).toEqual(states);
   });
+
+  it('writes layouts only from the optional explicit binding argument after interactive bindings', () => {
+    const scene = createScene3D({ name: 'world' });
+    const tree = {
+      nodes: [{ containerStyle: { custom: true }, itemStyle: null, kind: 'acme.World', parentIndex: -1 }],
+    };
+
+    expect(createFlightDocumentFromScene3D(scene, [], [], createTestSchemas()).layouts).toEqual([]);
+    expect(
+      createFlightDocumentFromScene3D(scene, [], [], createTestSchemas(), [], [{ targets: [scene.root], tree }]),
+    ).toMatchObject({ layouts: [{ targets: ['world'], tree }] });
+  });
 });
 
 describe('createFlightDocumentScene3DMaterialization', () => {
@@ -101,6 +113,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
       tokens: [],
@@ -124,6 +137,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         },
       ],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
       tokens: [],
@@ -150,6 +164,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         },
       ],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
       tokens: [],
@@ -174,6 +189,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
         },
       ],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: {
         children: [
@@ -213,6 +229,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: getDocumentLights(authoredLights, transform),
       scene: { children: [], fields: {}, kind: Node3DKind },
       tokens: [],
@@ -237,6 +254,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [{ descriptor: createPointLight(), node: 2, transform }],
       scene: {
         children: [
@@ -261,6 +279,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: {
         children: [{ children: [], fields: {}, kind: Node3DKind }],
@@ -282,6 +301,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: { children: [], fields: {}, kind: 'DisplayObject' },
       tokens: [],
     });
@@ -294,6 +314,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
       ...createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
         tokens: [],
@@ -308,6 +329,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [
         { descriptor: createAmbientLight(), transform: createTransform3D() },
         { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
@@ -323,6 +345,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [
         { descriptor: createDirectionalLight(), transform: createTransform3D() },
         { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
@@ -371,6 +394,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
     const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
+      layouts: [],
       scene: { children: [], fields: {}, kind: 'DisplayObject' },
       tokens: [],
     });
@@ -385,6 +409,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       ...createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
         tokens: [],
@@ -402,6 +427,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [
         { descriptor: createAmbientLight(), transform: createTransform3D() },
         { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
@@ -419,6 +445,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [
         { descriptor: createDirectionalLight(), transform: createTransform3D() },
         { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
@@ -436,6 +463,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
       tokens: [],
@@ -476,6 +504,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
       createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [
           { descriptor: createAmbientLight(), transform: createTransform3D() },
           { descriptor: createAmbientLight(), transform: createTransform3D() },
@@ -495,6 +524,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
       createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [
           { descriptor: createDirectionalLight(), transform: createTransform3D() },
           { descriptor: createDirectionalLight(), transform: createTransform3D() },
@@ -530,6 +560,7 @@ describe('model-to-text explain parity', () => {
       document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [
           { descriptor: createAmbientLight(), transform: createTransform3D() },
           { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
@@ -545,6 +576,7 @@ describe('model-to-text explain parity', () => {
       document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [
           { descriptor: createDirectionalLight(), transform: createTransform3D() },
           { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
@@ -560,6 +592,7 @@ describe('model-to-text explain parity', () => {
       document: createTestDocument({
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: { children: [], fields: {}, kind: 'DisplayObject' },
         tokens: [],
       }),
@@ -571,6 +604,7 @@ describe('model-to-text explain parity', () => {
       document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [],
         scene: { children: [{ children: [], fields: {}, kind: 'acme.Unknown' }], fields: {}, kind: Node3DKind },
         tokens: [],
@@ -596,6 +630,7 @@ describe('NodeKindUnregistered', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: {
         children: [
@@ -618,6 +653,7 @@ describe('NodeKindUnregistered', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: {
         children: [
@@ -643,6 +679,7 @@ describe('NodeKindUnregistered', () => {
     const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: {
         children: [
@@ -668,6 +705,7 @@ describe('NodeKindUnregistered', () => {
       createTestDocument({
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [],
         scene: {
           children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
@@ -701,6 +739,25 @@ describe('Scene3D interactive-state materialization', () => {
     expect(materialization!.interactiveStateBindings).toHaveLength(1);
     expect(materialization!.interactiveStateBindings[0]?.node).toBe(materialization!.scene.root);
     expect(materialization!.scene.root.alpha).toBe(1);
+  });
+});
+
+describe('Scene3D layout materialization', () => {
+  it('returns an inert binding for a named 3D root without consulting a layout resolver', () => {
+    const schemas = createTestSchemas();
+    const document = rootDocument3D(Node3DKind, { name: 'world' }, schemas);
+    document.scenes[0].layouts = [
+      {
+        targets: ['world'],
+        tree: { nodes: [{ containerStyle: { custom: true }, itemStyle: null, kind: 'acme.World', parentIndex: -1 }] },
+      },
+    ];
+
+    const materialization = createFlightDocumentScene3DMaterialization(document, schemas);
+
+    expect(materialization).not.toBeNull();
+    expect(materialization!.layoutBindings[0]?.targets).toEqual([materialization!.scene.root]);
+    expect(materialization!.layoutBindings[0]?.tree).toBe(document.scenes[0].layouts[0]?.tree);
   });
 });
 
@@ -777,6 +834,8 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
   const node3DSchema: FlightDocumentNodeSchema = {
     createNode: (fields: Readonly<FlightDocumentFields>, _resources: FlightDocumentResourceLookup) => {
       const node = createNode3D();
+      const name = fields['name'];
+      if (typeof name === 'string') node.name = name;
       const positionX = fields['positionX'];
       if (typeof positionX === 'number') {
         node.position.x = positionX;
@@ -786,13 +845,19 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
     },
     fields: [
       {
+        name: 'name',
+        required: false,
+        validate: (value) => typeof value === 'string' || value === null,
+      },
+      {
         name: 'positionX',
         required: false,
         validate: (value) => typeof value === 'number',
       },
     ],
     kind: Node3DKind,
-    writeNodeFields: (_out: FlightDocumentFields, _source: Readonly<NodeAny>) => {
+    writeNodeFields: (out: FlightDocumentFields, source: Readonly<NodeAny>) => {
+      if (source.name !== null) out['name'] = source.name;
       return true;
     },
   };
@@ -839,7 +904,9 @@ function rootDocument3D(
   return {
     defaultScene: 0,
     resources: [],
-    scenes: [{ cameras: [], kind: 'Scene3D', lights: [], scene: { children: [], fields, kind }, tokens: [] }],
+    scenes: [
+      { cameras: [], kind: 'Scene3D', layouts: [], lights: [], scene: { children: [], fields, kind }, tokens: [] },
+    ],
     version: 1,
   } as unknown as FlightDocument;
 }

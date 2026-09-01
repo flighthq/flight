@@ -51,6 +51,7 @@ function createDocument(resources: FlightDocumentResourceDescriptor[]): FlightDo
       {
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: { children: [], fields: {}, kind: DisplayObjectKind },
         tokens: [],
       },
