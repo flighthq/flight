@@ -9,15 +9,19 @@ let nextTargetId = 0;
 
 beforeEach(() => {
   nextTargetId = 0;
-  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(((_state, _pool, descriptor) => ({
-    ...descriptor,
+  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(((
+    _state: never,
+    _pool: never,
+    descriptor: never,
+  ) => ({
+    ...(descriptor as Record<string, unknown>),
     id: `scratch-${nextTargetId++}`,
     texture: {},
   })) as never);
   vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation((() => {}) as never);
   vi.spyOn(renderGlContract, 'releaseGlRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(glBlurEffect, 'applyGaussianBlurToGl').mockImplementation((() => {}) as never);
-  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(((_state, key) => ({
+  vi.spyOn(glEffectProgramCache, 'getGlEffectProgram').mockImplementation(((_state: never, key: never) => ({
     program: key,
   })) as never);
 });

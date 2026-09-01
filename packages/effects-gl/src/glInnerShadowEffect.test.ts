@@ -14,10 +14,12 @@ let nextTargetId = 0;
 beforeEach(() => {
   nextTargetId = 0;
 
-  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(
-    (_state: never, _pool: never, descriptor: never) =>
-      ({ ...(descriptor as Record<string, unknown>), id: `scratch-${nextTargetId++}`, texture: {} }) as never,
-  );
+  vi.spyOn(renderGlContract, 'acquireGlRenderTarget').mockImplementation(((
+    _state: never,
+    _pool: never,
+    descriptor: never,
+    _formatPolicy: never,
+  ) => ({ ...(descriptor as Record<string, unknown>), id: `scratch-${nextTargetId++}`, texture: {} })) as never);
   vi.spyOn(renderGlContract, 'clearGlRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(renderGlContract, 'compileGlFullscreenProgram').mockImplementation((() => ({
     program: {},
