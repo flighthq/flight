@@ -126,6 +126,43 @@ describe('formatFlightDocumentText', () => {
     expect(scene3D.lights[0]?.descriptor.kind).toBe('AmbientLight');
     expect(Reflect.get(scene3D.lights[0]?.descriptor ?? {}, 'intensity')).toBe(0.4);
   });
+
+  it('round-trips normalized interactive states and kind-tagged descriptors using the node name field', () => {
+    const document: FlightDocument = {
+      defaultScene: 0,
+      resources: [],
+      scenes: [
+        {
+          backgroundColor: null,
+          kind: 'Scene2D',
+          scene: {
+            children: [],
+            fields: { name: 'submit-button' },
+            interactiveStates: {
+              disabled: { alpha: 0.4, extensions: [] },
+              hover: {
+                alpha: 0.8,
+                extensions: [{ fields: { color: 1722486783, width: 2 }, kind: 'acme.Outline' }],
+              },
+              pressed: { extensions: [], scaleX: 0.95, scaleY: 0.95 },
+            },
+            kind: 'DisplayObject',
+            transition: { fields: { duration: 150, easing: 'easeOut' }, kind: 'acme.Tween' },
+          },
+        },
+      ],
+      version: 1,
+    };
+
+    const text = formatFlightDocumentText(document);
+
+    expect(text).toContain('name: submit-button');
+    expect(text).not.toContain('id:');
+    expect(text).toContain('interactiveStates:');
+    expect(text).toContain('kind: acme.Outline');
+    expect(text).toContain('kind: acme.Tween');
+    expect(parseFlightDocumentText(text)).toEqual(document);
+  });
 });
 
 describe('parseFlightDocumentText', () => {
@@ -175,5 +212,66 @@ describe('parseFlightDocumentText', () => {
 
     expect(parseFlightDocumentText(text)).toBeNull();
     expect(explainFlightDocumentText(text)?.reason).toBe(FlightDocumentRefusalReason.DefaultSceneOutOfRange);
+  });
+
+  it('refuses an orphan transition without interactive states', () => {
+    const text = [
+      'flight: 1',
+      'defaultScene: 0',
+      'scenes:',
+      '  - kind: Scene2D',
+      '    scene:',
+      '      kind: DisplayObject',
+      '      transition:',
+      '        kind: acme.Tween',
+    ].join('\n');
+
+    expect(explainFlightDocumentText(text)).toMatchObject({
+      path: 'scenes[0].scene.transition',
+      reason: FlightDocumentRefusalReason.StructureInvalid,
+    });
+  });
+
+  it('refuses duplicate extension kinds within one phase', () => {
+    const text = [
+      'flight: 1',
+      'defaultScene: 0',
+      'scenes:',
+      '  - kind: Scene2D',
+      '    scene:',
+      '      kind: DisplayObject',
+      '      interactiveStates:',
+      '        hover:',
+      '          extensions:',
+      '            - kind: acme.Outline',
+      '              width: 1',
+      '            - kind: acme.Outline',
+      '              width: 2',
+    ].join('\n');
+
+    expect(explainFlightDocumentText(text)).toMatchObject({
+      kind: 'acme.Outline',
+      path: 'scenes[0].scene.interactiveStates.hover.extensions[1]',
+      reason: FlightDocumentRefusalReason.InteractiveStateExtensionKindDuplicate,
+    });
+  });
+
+  it('refuses 2D transform properties on a 3D interactive state', () => {
+    const text = [
+      'flight: 1',
+      'defaultScene: 0',
+      'scenes:',
+      '  - kind: Scene3D',
+      '    scene:',
+      '      kind: Node3D',
+      '      interactiveStates:',
+      '        pressed:',
+      '          x: 4',
+    ].join('\n');
+
+    expect(explainFlightDocumentText(text)).toMatchObject({
+      path: 'scenes[0].scene.interactiveStates.pressed.x',
+      reason: FlightDocumentRefusalReason.StructureInvalid,
+    });
   });
 });

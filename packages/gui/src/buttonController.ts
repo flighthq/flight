@@ -1,9 +1,11 @@
+import { applyNodeInteractiveStates, disposeNodeInteractiveStateBinding } from '@flighthq/interaction/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   ButtonController,
   ButtonControllerOptions,
   ButtonControllerSignals,
   Node2D,
+  NodeInteractiveStateBinding,
 } from '@flighthq/types/contract';
 
 import {
@@ -19,6 +21,7 @@ import {
 interface ButtonControllerFields {
   disabled: boolean;
   downState: Node2D | null;
+  interactiveStateBinding: NodeInteractiveStateBinding | null;
   over: boolean;
   overState: Node2D | null;
   pressed: boolean;
@@ -31,6 +34,7 @@ export function createButtonController(options: Readonly<ButtonControllerOptions
     {
       disabled: options.disabled ?? false,
       downState: options.downState ?? null,
+      interactiveStateBinding: options.interactiveStateBinding ?? null,
       over: false,
       overState: options.overState ?? null,
       pressed: false,
@@ -79,7 +83,9 @@ export function createButtonController(options: Readonly<ButtonControllerOptions
 export function disposeButtonController(controller: ButtonController): void {
   const runtime = getGuiControllerRuntime<ButtonControllerFields>(controller);
   disposeGuiController(controller, () => {
+    if (runtime.interactiveStateBinding !== null) disposeNodeInteractiveStateBinding(runtime.interactiveStateBinding);
     runtime.downState = null;
+    runtime.interactiveStateBinding = null;
     runtime.overState = null;
     runtime.upState = null;
   });
@@ -109,4 +115,11 @@ function updateButtonControllerVisuals(
   setGuiVisible(runtime, runtime.upState, !down && !over);
   setGuiVisible(runtime, runtime.overState, over);
   setGuiVisible(runtime, runtime.downState, down);
+  if (runtime.interactiveStateBinding !== null) {
+    applyNodeInteractiveStates(runtime.interactiveStateBinding, {
+      disabled: runtime.disabled,
+      hovered: runtime.over,
+      pressed: runtime.pressed,
+    });
+  }
 }

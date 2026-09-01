@@ -11,11 +11,93 @@ import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
+  checkFlightDocumentFields,
+  checkFlightDocumentInteractiveStates,
+  checkFlightDocumentNodeFields,
   checkUnregisteredNodeKinds,
   checkUnregisteredNodeKindsFromRaw,
   createDocumentRefusal,
   createSceneRefusal,
 } from './sceneDocumentRefusal';
+
+describe('checkFlightDocumentFields', () => {
+  it('uses registered validators and rejects unknown fields', () => {
+    const fields = [{ name: 'width', required: true, validate: (value: unknown) => typeof value === 'number' }];
+    expect(checkFlightDocumentFields({ width: 2 }, fields, 0, 'scene')).toBeNull();
+    expect(checkFlightDocumentFields({ width: 'wide' }, fields, 0, 'scene')).toMatchObject({
+      path: 'scenes[0].scene.width',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+    expect(checkFlightDocumentFields({ extra: true, width: 2 }, fields, 0, 'scene')).toMatchObject({
+      path: 'scenes[0].scene.extra',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+  });
+});
+
+describe('checkFlightDocumentInteractiveStates', () => {
+  it('refuses an unregistered transition descriptor', () => {
+    const schemas = createTestSchemas('TestKind');
+    const node: FlightDocumentNode = {
+      children: [],
+      fields: {},
+      interactiveStates: {
+        disabled: null,
+        hover: { alpha: 0.8, extensions: [] },
+        pressed: null,
+      },
+      kind: 'TestKind',
+      transition: { fields: {}, kind: 'acme.Missing' },
+    };
+
+    expect(checkFlightDocumentInteractiveStates(node, 'Scene2D', schemas, 0, 'scene')).toMatchObject({
+      kind: 'acme.Missing',
+      path: 'scenes[0].scene.transition',
+      reason: FlightDocumentRefusalReason.InteractiveStateTransitionKindUnregistered,
+    });
+  });
+
+  it('refuses a property outside the six-field pilot vocabulary', () => {
+    const schemas = createTestSchemas('TestKind');
+    const node: FlightDocumentNode = {
+      children: [],
+      fields: {},
+      interactiveStates: {
+        disabled: null,
+        hover: { extensions: [], rotation: 45 } as unknown as { alpha: number; extensions: [] },
+        pressed: null,
+      },
+      kind: 'TestKind',
+    };
+
+    expect(checkFlightDocumentInteractiveStates(node, 'Scene2D', schemas, 0, 'scene')).toMatchObject({
+      path: 'scenes[0].scene.interactiveStates.hover.rotation',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+  });
+});
+
+describe('checkFlightDocumentNodeFields', () => {
+  it('walks registered nodes recursively', () => {
+    const schemas = createTestSchemas('TestKind');
+    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, 'TestKind', {
+      createNode: () => null,
+      fields: [{ name: 'name', required: true, validate: (value) => typeof value === 'string' }],
+      kind: 'TestKind',
+      writeNodeFields: () => true,
+    });
+    const node: FlightDocumentNode = {
+      children: [{ children: [], fields: { name: 42 }, kind: 'TestKind' }],
+      fields: { name: 'root' },
+      kind: 'TestKind',
+    };
+
+    expect(checkFlightDocumentNodeFields(node, schemas, 1, 'scene')).toMatchObject({
+      path: 'scenes[1].scene.children[0].name',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+  });
+});
 
 describe('checkUnregisteredNodeKinds', () => {
   it('returns null when all kinds are registered', () => {
@@ -136,6 +218,8 @@ function createTestSchemas(registeredKind: string): FlightDocumentSchemaRegistry
   let nodeSchemas = createKeyedTable<FlightDocumentNodeSchema>('flight-document.node', 'none');
   nodeSchemas = withRegistryTableEntry(nodeSchemas, registeredKind, schema);
   return {
+    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
+    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
     nodeSchemas,
     resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),

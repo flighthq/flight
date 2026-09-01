@@ -1,7 +1,14 @@
 import type { Camera3D } from './Camera3D';
 import type { Kind } from './Entity';
 import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
+import type {
+  FlightDocumentInteractiveStateBinding,
+  FlightDocumentInteractiveStates,
+  FlightDocumentInteractiveStateTransitionDescriptor,
+} from './FlightDocumentInteractiveState';
 import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource';
+import type { Node2D } from './Node2D';
+import type { Node3D } from './Node3D';
 import type { Scene2D } from './Scene2D';
 import type { Scene3D } from './Scene3D';
 import type { Scene3DDocumentCamera, Scene3DDocumentLight } from './Scene3DDocument';
@@ -10,7 +17,9 @@ import type { Scene3DLights } from './Scene3DLights';
 export interface FlightDocumentNode {
   children: FlightDocumentNode[];
   fields: FlightDocumentFields;
+  interactiveStates?: FlightDocumentInteractiveStates | null;
   kind: Kind;
+  transition?: FlightDocumentInteractiveStateTransitionDescriptor | null;
 }
 
 // Resources and version belong to the multi-scene container so every scene resolves through one shared
@@ -41,11 +50,13 @@ export interface FlightDocumentScene3D {
 }
 
 export interface FlightDocumentScene2DMaterialization {
+  interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node2D>[];
   scene: Scene2D;
 }
 
 export interface FlightDocumentScene3DMaterialization {
   cameras: Camera3D[];
+  interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node3D>[];
   lights: Scene3DLights;
   scene: Scene3D;
 }

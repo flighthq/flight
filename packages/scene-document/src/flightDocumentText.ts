@@ -2,6 +2,10 @@ import { createTransform3D } from '@flighthq/geometry/contract';
 import type {
   FlightDocument,
   FlightDocumentFields,
+  FlightDocumentInteractiveState,
+  FlightDocumentInteractiveStateExtensionDescriptor,
+  FlightDocumentInteractiveStates,
+  FlightDocumentInteractiveStateTransitionDescriptor,
   FlightDocumentNode,
   FlightDocumentRefusalExplanation,
   FlightDocumentResourceDescriptor,
@@ -132,6 +136,7 @@ function appendNode(lines: string[], node: Readonly<FlightDocumentNode>, indent:
   const prefix = ' '.repeat(indent);
   lines.push(prefix + 'kind: ' + formatString(node.kind));
   appendFields(lines, node.fields, indent, NODE_RESERVED_FIELDS);
+  appendNodeInteractiveMetadata(lines, node, indent);
   if (node.children.length > 0) {
     lines.push(prefix + 'children:');
     for (const child of node.children) appendNodeSequenceItem(lines, child, indent + 2);
@@ -142,10 +147,71 @@ function appendNodeSequenceItem(lines: string[], node: Readonly<FlightDocumentNo
   const prefix = ' '.repeat(indent);
   lines.push(prefix + '- kind: ' + formatString(node.kind));
   appendFields(lines, node.fields, indent + 2, NODE_RESERVED_FIELDS);
+  appendNodeInteractiveMetadata(lines, node, indent + 2);
   if (node.children.length > 0) {
     lines.push(prefix + '  children:');
     for (const child of node.children) appendNodeSequenceItem(lines, child, indent + 4);
   }
+}
+
+function appendInteractiveState(
+  lines: string[],
+  state: Readonly<FlightDocumentInteractiveState>,
+  indent: number,
+): void {
+  const entries = getInteractiveStateEntries(state);
+  if (entries.length === 0 && state.extensions.length === 0) {
+    throw new TypeError('FlightDocument interactive state must not be empty');
+  }
+  for (const [property, value] of entries) appendMappingEntry(lines, property, value, indent);
+  if (state.extensions.length === 0) return;
+  lines.push(' '.repeat(indent) + 'extensions:');
+  for (const extension of state.extensions) {
+    lines.push(' '.repeat(indent + 2) + '- kind: ' + formatString(extension.kind));
+    appendFields(lines, extension.fields, indent + 4, DESCRIPTOR_RESERVED_FIELDS);
+  }
+}
+
+function appendNodeInteractiveMetadata(lines: string[], node: Readonly<FlightDocumentNode>, indent: number): void {
+  const prefix = ' '.repeat(indent);
+  if (node.interactiveStates == null) {
+    if (node.transition != null) throw new TypeError('FlightDocument transition requires interactiveStates');
+    return;
+  }
+  const phases = getInteractiveStatePhases(node.interactiveStates);
+  if (phases.length === 0) throw new TypeError('FlightDocument interactiveStates must not be empty');
+  lines.push(prefix + 'interactiveStates:');
+  for (const [phase, state] of phases) {
+    lines.push(prefix + '  ' + phase + ':');
+    appendInteractiveState(lines, state, indent + 4);
+  }
+  if (node.transition != null) {
+    lines.push(prefix + 'transition:');
+    lines.push(prefix + '  kind: ' + formatString(node.transition.kind));
+    appendFields(lines, node.transition.fields, indent + 2, DESCRIPTOR_RESERVED_FIELDS);
+  }
+}
+
+function getInteractiveStateEntries(
+  state: Readonly<FlightDocumentInteractiveState>,
+): Array<[string, boolean | number]> {
+  const out: Array<[string, boolean | number]> = [];
+  for (const property of INTERACTIVE_STATE_PROPERTIES) {
+    const value = state[property];
+    if (value !== undefined) out.push([property, value]);
+  }
+  return out;
+}
+
+function getInteractiveStatePhases(
+  states: Readonly<FlightDocumentInteractiveStates>,
+): Array<[string, Readonly<FlightDocumentInteractiveState>]> {
+  const out: Array<[string, Readonly<FlightDocumentInteractiveState>]> = [];
+  for (const phase of INTERACTIVE_STATE_PHASES) {
+    const state = states[phase];
+    if (state !== null) out.push([phase, state]);
+  }
+  return out;
 }
 
 function appendObjectEntries(
@@ -459,7 +525,102 @@ function readLight(value: unknown, path: string, context: FlightDocumentTextRead
   return light;
 }
 
-function readNode(value: unknown, path: string, context: FlightDocumentTextReadContext): FlightDocumentNode | null {
+function readInteractiveState(
+  value: unknown,
+  path: string,
+  dimension: 'Scene2D' | 'Scene3D',
+  context: FlightDocumentTextReadContext,
+): FlightDocumentInteractiveState | null {
+  if (!isMapping(value) || !hasOnlyKeys(value, INTERACTIVE_STATE_KEYS)) return refuse(context, path);
+  const state: FlightDocumentInteractiveState = { extensions: [] };
+  for (const property of INTERACTIVE_STATE_PROPERTIES) {
+    const propertyValue = value[property];
+    if (propertyValue === undefined) continue;
+    if (property === 'visible') {
+      if (typeof propertyValue !== 'boolean') return refuse(context, appendPath(path, property));
+    } else if (typeof propertyValue !== 'number' || !Number.isFinite(propertyValue)) {
+      return refuse(context, appendPath(path, property));
+    }
+    if (dimension === 'Scene3D' && INTERACTIVE_STATE_2D_PROPERTIES.includes(property)) {
+      return refuse(context, appendPath(path, property));
+    }
+    Object.assign(state, { [property]: propertyValue });
+  }
+
+  const extensionsRaw = value['extensions'];
+  if (extensionsRaw !== undefined) {
+    if (!Array.isArray(extensionsRaw)) return refuse(context, appendPath(path, 'extensions'));
+    const kinds = new Set<string>();
+    for (let i = 0; i < extensionsRaw.length; i++) {
+      const extensionPath = `${path}.extensions[${i}]`;
+      const extension = readInteractiveStateExtension(extensionsRaw[i], extensionPath, context);
+      if (extension === null) return null;
+      if (kinds.has(extension.kind)) {
+        return refuseWithReason(
+          context,
+          FlightDocumentRefusalReason.InteractiveStateExtensionKindDuplicate,
+          extensionPath,
+          extension.kind,
+        );
+      }
+      kinds.add(extension.kind);
+      state.extensions.push(extension);
+    }
+  }
+  if (getInteractiveStateEntries(state).length === 0 && state.extensions.length === 0) return refuse(context, path);
+  return state;
+}
+
+function readInteractiveStateExtension(
+  value: unknown,
+  path: string,
+  context: FlightDocumentTextReadContext,
+): FlightDocumentInteractiveStateExtensionDescriptor | null {
+  if (!isMapping(value)) return refuse(context, path);
+  const kind = value['kind'];
+  if (typeof kind !== 'string') return refuse(context, appendPath(path, 'kind'));
+  const fields = copyFlightDocumentFields(value, DESCRIPTOR_RESERVED_FIELDS, path, context);
+  return fields === null ? null : { fields, kind };
+}
+
+function readInteractiveStates(
+  value: unknown,
+  path: string,
+  dimension: 'Scene2D' | 'Scene3D',
+  context: FlightDocumentTextReadContext,
+): FlightDocumentInteractiveStates | null {
+  if (!isMapping(value) || !hasOnlyKeys(value, INTERACTIVE_STATE_PHASES)) return refuse(context, path);
+  const states: FlightDocumentInteractiveStates = { disabled: null, hover: null, pressed: null };
+  let count = 0;
+  for (const phase of INTERACTIVE_STATE_PHASES) {
+    const stateRaw = value[phase];
+    if (stateRaw === undefined) continue;
+    const state = readInteractiveState(stateRaw, appendPath(path, phase), dimension, context);
+    if (state === null) return null;
+    states[phase] = state;
+    count++;
+  }
+  return count === 0 ? refuse(context, path) : states;
+}
+
+function readInteractiveStateTransition(
+  value: unknown,
+  path: string,
+  context: FlightDocumentTextReadContext,
+): FlightDocumentInteractiveStateTransitionDescriptor | null {
+  if (!isMapping(value)) return refuse(context, path);
+  const kind = value['kind'];
+  if (typeof kind !== 'string') return refuse(context, appendPath(path, 'kind'));
+  const fields = copyFlightDocumentFields(value, DESCRIPTOR_RESERVED_FIELDS, path, context);
+  return fields === null ? null : { fields, kind };
+}
+
+function readNode(
+  value: unknown,
+  path: string,
+  dimension: 'Scene2D' | 'Scene3D',
+  context: FlightDocumentTextReadContext,
+): FlightDocumentNode | null {
   if (!isMapping(value)) return refuse(context, path);
   const kind = value['kind'];
   if (typeof kind !== 'string') return refuse(context, appendPath(path, 'kind'));
@@ -468,13 +629,31 @@ function readNode(value: unknown, path: string, context: FlightDocumentTextReadC
   if (childrenRaw !== undefined) {
     if (!Array.isArray(childrenRaw)) return refuse(context, appendPath(path, 'children'));
     for (let index = 0; index < childrenRaw.length; index++) {
-      const child = readNode(childrenRaw[index], `${path}.children[${index}]`, context);
+      const child = readNode(childrenRaw[index], `${path}.children[${index}]`, dimension, context);
       if (child === null) return null;
       children.push(child);
     }
   }
+  const interactiveStatesRaw = value['interactiveStates'];
+  let interactiveStates: FlightDocumentInteractiveStates | null = null;
+  if (interactiveStatesRaw !== undefined) {
+    interactiveStates = readInteractiveStates(
+      interactiveStatesRaw,
+      appendPath(path, 'interactiveStates'),
+      dimension,
+      context,
+    );
+    if (interactiveStates === null) return null;
+  }
+  const transitionRaw = value['transition'];
+  if (transitionRaw !== undefined && interactiveStates === null) return refuse(context, appendPath(path, 'transition'));
+  let transition: FlightDocumentInteractiveStateTransitionDescriptor | null = null;
+  if (transitionRaw !== undefined) {
+    transition = readInteractiveStateTransition(transitionRaw, appendPath(path, 'transition'), context);
+    if (transition === null) return null;
+  }
   const fields = copyFlightDocumentFields(value, NODE_RESERVED_FIELDS, path, context);
-  return fields === null ? null : { children, fields, kind };
+  return fields === null ? null : { children, fields, interactiveStates, kind, transition };
 }
 
 function readOptionalIndex(
@@ -564,7 +743,7 @@ function readScene2D(
   if (backgroundColor !== undefined && backgroundColor !== null && typeof backgroundColor !== 'number') {
     return refuse(context, appendPath(path, 'backgroundColor'));
   }
-  const scene = readNode(mapping['scene'], appendPath(path, 'scene'), context);
+  const scene = readNode(mapping['scene'], appendPath(path, 'scene'), 'Scene2D', context);
   if (scene === null) return null;
   return { backgroundColor: backgroundColor ?? null, kind: 'Scene2D', scene };
 }
@@ -595,7 +774,7 @@ function readScene3D(
       lights.push(light);
     }
   }
-  const scene = readNode(mapping['scene'], appendPath(path, 'scene'), context);
+  const scene = readNode(mapping['scene'], appendPath(path, 'scene'), 'Scene3D', context);
   if (scene === null) return null;
   return { cameras, kind: 'Scene3D', lights, scene };
 }
@@ -636,6 +815,19 @@ function refuse(context: FlightDocumentTextReadContext, path: string): null {
   return null;
 }
 
+function refuseWithReason(
+  context: FlightDocumentTextReadContext,
+  reason: typeof FlightDocumentRefusalReason.InteractiveStateExtensionKindDuplicate,
+  path: string,
+  kind: string,
+): null {
+  if (context.refusal === null) {
+    context.refusal = createDocumentRefusal(reason, path);
+    context.refusal.kind = kind;
+  }
+  return null;
+}
+
 function refuseValue(
   context: FlightDocumentTextReadContext,
   reason: typeof FlightDocumentRefusalReason.StructureInvalid,
@@ -652,9 +844,14 @@ function appendPath(path: string, key: string): string {
 const INVALID_FLIGHT_DOCUMENT_VALUE = Symbol('invalid-flight-document-value');
 const INVALID_OPTIONAL_INDEX = Symbol('invalid-flight-document-optional-index');
 const CAMERA_KEYS = ['far', 'name', 'near', 'node', 'projection', 'transform'];
+const DESCRIPTOR_RESERVED_FIELDS = ['kind'];
 const DOCUMENT_KEYS = ['defaultScene', 'flight', 'resources', 'scenes'];
+const INTERACTIVE_STATE_2D_PROPERTIES = ['scaleX', 'scaleY', 'x', 'y'];
+const INTERACTIVE_STATE_KEYS = ['alpha', 'extensions', 'scaleX', 'scaleY', 'visible', 'x', 'y'];
+const INTERACTIVE_STATE_PHASES = ['disabled', 'hover', 'pressed'] as const;
+const INTERACTIVE_STATE_PROPERTIES = ['alpha', 'scaleX', 'scaleY', 'visible', 'x', 'y'] as const;
 const LIGHT_KEYS = ['descriptor', 'name', 'node', 'transform'];
-const NODE_RESERVED_FIELDS = ['children', 'kind'];
+const NODE_RESERVED_FIELDS = ['children', 'interactiveStates', 'kind', 'transition'];
 const ORTHOGRAPHIC_PROJECTION_KEYS = ['halfHeight', 'halfWidth', 'kind'];
 const PERSPECTIVE_PROJECTION_KEYS = ['aspect', 'fovY', 'kind'];
 const QUATERNION_KEYS = ['w', 'x', 'y', 'z'];
