@@ -3,8 +3,10 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export function resolveVitestArguments(arguments_: readonly string[]): string[] {
-  if (arguments_[0] !== 'conformance') return [...arguments_];
-  return ['--project', 'conformance', ...arguments_.slice(1)];
+  if (arguments_[0] === 'conformance') return ['--project', 'conformance', ...arguments_.slice(1)];
+  if (arguments_.includes('--all')) return arguments_.filter((a) => a !== '--all');
+  if (arguments_.some((a) => a === '--project' || a.startsWith('--project='))) return [...arguments_];
+  return ['--project', 'shared', ...arguments_];
 }
 
 function main(): void {

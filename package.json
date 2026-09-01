@@ -184,6 +184,7 @@
     "support": "tsx ./scripts/support.ts",
     "support:check": "tsx ./scripts/support.ts --check",
     "test": "tsx ./scripts/test.ts",
+    "test:all": "tsx ./scripts/test.ts --all",
     "test:baseline": "npm run test:regression:baseline",
     "test:browser": "tsx ./packages/tool-capture/src/bin.ts batch",
     "test:coverage": "vitest run --coverage",
