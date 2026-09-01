@@ -1,5 +1,6 @@
 export * from './buttonController';
 export * from './comboBoxController';
+export * from './guiDialog';
 export {
   createListController,
   disposeListController,

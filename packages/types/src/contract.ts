@@ -607,6 +607,7 @@ export * from './SelectableRichTextManager';
 export * from './ButtonController';
 export * from './ComboBoxController';
 export * from './GuiController';
+export * from './GuiDialog';
 export * from './ListController';
 export * from './ProgressBarController';
 export * from './RadioGroupController';
