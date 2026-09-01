@@ -409,6 +409,42 @@ The layout section uses the same constraint types as the TS API, so knowledge ca
 
 **Status**: approved for piloting. The exact layout descriptor schema is not yet specified — it follows the same open-registry, kind-tagged pattern as resources (per R1) so layout kinds are extensible and unused ones tree-shake.
 
+## Tokens — scene-level metadata (2026-08-31, user-approved pilot)
+
+Tokens are named semantic values with mode variants, declared as a scene-level metadata section. A node property references a token by name (prefixed `$`) instead of carrying a hardcoded value. Resolution is explicit and caller-driven — no implicit binding or observer.
+
+```yaml
+scenes:
+  - kind: Scene2D
+    scene:
+      kind: Shape
+        id: card-bg
+        fill: $color.background
+
+    tokens:
+      color.primary:
+        light: 0x3366ccff
+        dark: 0x99ccffff
+      color.background:
+        light: 0xffffffff
+        dark: 0x1a1a1aff
+```
+
+The code side resolves and applies explicitly:
+
+```typescript
+const resolved = resolveFlightDocumentTokens(document, 'dark');
+applyFlightDocumentTokens(scene, resolved);
+```
+
+No auto-binding, no hidden observer. The caller picks the mode, gets concrete values, and applies them. Switching modes is another resolve + apply call. The `$` prefix is a value reference ("look this up in the token table"), not a live binding.
+
+Tokens follow the same pattern as layouts and cameras: scene-level metadata that references the scene tree, owned and resolved by a dedicated package (`@flighthq/tokens` or similar). The document declares the data; the package provides the resolution API; the caller decides when.
+
+Token features include named values, mode variants (light/dark, responsive), and aliases (one token resolving to another). The full schema is not yet specified — it follows the open-registry, kind-tagged pattern.
+
+**Status**: approved for piloting. Owning package name TBD.
+
 ## Interactive states on nodes (2026-08-31, user-approved pilot)
 
 Nodes may carry an optional `interactiveStates` field describing visual appearance under pointer phases. This is purely visual data — appearance with conditions — not behavior. The document says how something looks when hovered; the code says what happens when clicked.
