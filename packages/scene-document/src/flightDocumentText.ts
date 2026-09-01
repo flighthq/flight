@@ -6,6 +6,8 @@ import type {
   FlightDocumentInteractiveStateExtensionDescriptor,
   FlightDocumentInteractiveStates,
   FlightDocumentInteractiveStateTransitionDescriptor,
+  FlightDocumentLayoutDescriptor,
+  FlightDocumentLayoutNode,
   FlightDocumentNode,
   FlightDocumentRefusalExplanation,
   FlightDocumentResourceDescriptor,
@@ -267,7 +269,42 @@ function appendScene(lines: string[], scene: Readonly<FlightDocumentScene>): voi
   }
   lines.push('    scene:');
   appendNode(lines, scene.scene, 6);
+  appendLayouts(lines, scene.layouts);
   appendTokens(lines, scene.tokens);
+}
+
+function appendLayouts(lines: string[], layouts: readonly Readonly<FlightDocumentLayoutDescriptor>[]): void {
+  if (layouts.length === 0) return;
+  const seenTargets = new Set<string>();
+  lines.push('    layouts:');
+  for (const layout of layouts) {
+    const nodes = layout.tree.nodes;
+    if (nodes.length === 0) throw new RangeError('FlightDocument layout tree must not be empty');
+    if (layout.targets.length !== nodes.length) {
+      throw new RangeError('FlightDocument layout targets must match its tree nodes index-for-index');
+    }
+    lines.push('      - targets:');
+    for (const target of layout.targets) {
+      if (target.length === 0) throw new RangeError('FlightDocument layout target names must not be empty');
+      if (seenTargets.has(target)) throw new RangeError('FlightDocument layout targets must be unique per scene');
+      seenTargets.add(target);
+      lines.push('          - ' + formatString(target));
+    }
+    lines.push('        tree:');
+    lines.push('          nodes:');
+    for (let index = 0; index < nodes.length; index++) appendLayoutNode(lines, nodes[index], index);
+  }
+}
+
+function appendLayoutNode(lines: string[], node: Readonly<FlightDocumentLayoutNode>, index: number): void {
+  if (node.kind.length === 0) throw new RangeError('FlightDocument layout node kinds must not be empty');
+  if (!Number.isInteger(node.parentIndex) || node.parentIndex < -1 || node.parentIndex >= index) {
+    throw new RangeError('FlightDocument layout parentIndex must be -1 or precede its node');
+  }
+  lines.push('            - kind: ' + formatString(node.kind));
+  lines.push('              parentIndex: ' + String(node.parentIndex));
+  if (node.containerStyle !== null) appendMappingEntry(lines, 'containerStyle', node.containerStyle, 14);
+  if (node.itemStyle !== null) appendMappingEntry(lines, 'itemStyle', node.itemStyle, 14);
 }
 
 function appendTokens(lines: string[], tokens: readonly Readonly<FlightDocumentToken>[]): void {
@@ -762,9 +799,11 @@ function readScene2D(
   }
   const scene = readNode(mapping['scene'], appendPath(path, 'scene'), 'Scene2D', context);
   if (scene === null) return null;
+  const layouts = readLayouts(mapping['layouts'], path, context);
+  if (layouts === null) return null;
   const tokens = readTokens(mapping['tokens'], path, context);
   if (tokens === null) return null;
-  return { backgroundColor: backgroundColor ?? null, kind: 'Scene2D', scene, tokens };
+  return { backgroundColor: backgroundColor ?? null, kind: 'Scene2D', layouts, scene, tokens };
 }
 
 function readScene3D(
@@ -795,9 +834,92 @@ function readScene3D(
   }
   const scene = readNode(mapping['scene'], appendPath(path, 'scene'), 'Scene3D', context);
   if (scene === null) return null;
+  const layouts = readLayouts(mapping['layouts'], path, context);
+  if (layouts === null) return null;
   const tokens = readTokens(mapping['tokens'], path, context);
   if (tokens === null) return null;
-  return { cameras, kind: 'Scene3D', lights, scene, tokens };
+  return { cameras, kind: 'Scene3D', layouts, lights, scene, tokens };
+}
+
+function readLayouts(
+  value: unknown,
+  scenePath: string,
+  context: FlightDocumentTextReadContext,
+): FlightDocumentLayoutDescriptor[] | null {
+  if (value === undefined) return [];
+  const layoutsPath = appendPath(scenePath, 'layouts');
+  if (!Array.isArray(value)) return refuse(context, layoutsPath);
+  const layouts: FlightDocumentLayoutDescriptor[] = [];
+  const seenTargets = new Set<string>();
+  for (let layoutIndex = 0; layoutIndex < value.length; layoutIndex++) {
+    const layoutPath = `${layoutsPath}[${layoutIndex}]`;
+    const raw = value[layoutIndex];
+    if (!isMapping(raw) || !hasOnlyKeys(raw, LAYOUT_KEYS)) return refuse(context, layoutPath);
+
+    const targetsPath = appendPath(layoutPath, 'targets');
+    const targetsRaw = raw['targets'];
+    if (!Array.isArray(targetsRaw) || targetsRaw.length === 0) return refuse(context, targetsPath);
+    const targets: string[] = [];
+    for (let targetIndex = 0; targetIndex < targetsRaw.length; targetIndex++) {
+      const targetPath = `${targetsPath}[${targetIndex}]`;
+      const target = targetsRaw[targetIndex];
+      if (typeof target !== 'string' || target.length === 0 || seenTargets.has(target)) {
+        return refuse(context, targetPath);
+      }
+      seenTargets.add(target);
+      targets.push(target);
+    }
+
+    const treePath = appendPath(layoutPath, 'tree');
+    const treeRaw = raw['tree'];
+    if (!isMapping(treeRaw) || !hasOnlyKeys(treeRaw, LAYOUT_TREE_KEYS)) return refuse(context, treePath);
+    const nodesPath = appendPath(treePath, 'nodes');
+    const nodesRaw = treeRaw['nodes'];
+    if (!Array.isArray(nodesRaw) || nodesRaw.length === 0) return refuse(context, nodesPath);
+    const nodes: FlightDocumentLayoutNode[] = [];
+    for (let nodeIndex = 0; nodeIndex < nodesRaw.length; nodeIndex++) {
+      const node = readLayoutNode(nodesRaw[nodeIndex], nodeIndex, `${nodesPath}[${nodeIndex}]`, context);
+      if (node === null) return null;
+      nodes.push(node);
+    }
+    if (targets.length !== nodes.length) return refuse(context, targetsPath);
+    layouts.push({ targets, tree: { nodes } });
+  }
+  return layouts;
+}
+
+function readLayoutNode(
+  value: unknown,
+  index: number,
+  path: string,
+  context: FlightDocumentTextReadContext,
+): FlightDocumentLayoutNode | null {
+  if (!isMapping(value) || !hasOnlyKeys(value, LAYOUT_NODE_KEYS)) return refuse(context, path);
+  const kind = value['kind'];
+  if (typeof kind !== 'string' || kind.length === 0) return refuse(context, appendPath(path, 'kind'));
+  const parentIndex = value['parentIndex'];
+  if (!Number.isInteger(parentIndex) || (parentIndex as number) < -1 || (parentIndex as number) >= index) {
+    return refuse(context, appendPath(path, 'parentIndex'));
+  }
+  const containerStyle = readLayoutStyle(value['containerStyle'], appendPath(path, 'containerStyle'), context);
+  if (containerStyle === INVALID_LAYOUT_STYLE) return null;
+  const itemStyle = readLayoutStyle(value['itemStyle'], appendPath(path, 'itemStyle'), context);
+  if (itemStyle === INVALID_LAYOUT_STYLE) return null;
+  return { containerStyle, itemStyle, kind, parentIndex: parentIndex as number };
+}
+
+function readLayoutStyle(
+  value: unknown,
+  path: string,
+  context: FlightDocumentTextReadContext,
+): FlightDocumentFields | null | typeof INVALID_LAYOUT_STYLE {
+  if (value === undefined || value === null) return null;
+  if (!isMapping(value)) {
+    refuse(context, path);
+    return INVALID_LAYOUT_STYLE;
+  }
+  const fields = copyFlightDocumentFields(value, [], path, context);
+  return fields ?? INVALID_LAYOUT_STYLE;
 }
 
 function readTokens(
@@ -920,6 +1042,7 @@ function appendPath(path: string, key: string): string {
 }
 
 const INVALID_FLIGHT_DOCUMENT_VALUE = Symbol('invalid-flight-document-value');
+const INVALID_LAYOUT_STYLE = Symbol('invalid-layout-style');
 const INVALID_OPTIONAL_INDEX = Symbol('invalid-flight-document-optional-index');
 const CAMERA_KEYS = ['far', 'name', 'near', 'node', 'projection', 'transform'];
 const DESCRIPTOR_RESERVED_FIELDS = ['kind'];
@@ -929,14 +1052,17 @@ const INTERACTIVE_STATE_KEYS = ['alpha', 'extensions', 'scaleX', 'scaleY', 'visi
 const INTERACTIVE_STATE_PHASES = ['disabled', 'hover', 'pressed'] as const;
 const INTERACTIVE_STATE_PROPERTIES = ['alpha', 'scaleX', 'scaleY', 'visible', 'x', 'y'] as const;
 const LIGHT_KEYS = ['descriptor', 'name', 'node', 'transform'];
+const LAYOUT_KEYS = ['targets', 'tree'];
+const LAYOUT_NODE_KEYS = ['containerStyle', 'itemStyle', 'kind', 'parentIndex'];
+const LAYOUT_TREE_KEYS = ['nodes'];
 const NODE_RESERVED_FIELDS = ['children', 'interactiveStates', 'kind', 'transition'];
 const ORTHOGRAPHIC_PROJECTION_KEYS = ['halfHeight', 'halfWidth', 'kind'];
 const PERSPECTIVE_PROJECTION_KEYS = ['aspect', 'fovY', 'kind'];
 const QUATERNION_KEYS = ['w', 'x', 'y', 'z'];
 const RESOURCE_RESERVED_FIELDS = ['key', 'kind'];
 const SAFE_PLAIN_SCALAR_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
-const SCENE_2D_KEYS = ['backgroundColor', 'kind', 'scene', 'tokens'];
-const SCENE_3D_KEYS = ['cameras', 'kind', 'lights', 'scene', 'tokens'];
+const SCENE_2D_KEYS = ['backgroundColor', 'kind', 'layouts', 'scene', 'tokens'];
+const SCENE_3D_KEYS = ['cameras', 'kind', 'layouts', 'lights', 'scene', 'tokens'];
 // A token row flattens its mode variants beside kind and key, exactly as a resource row flattens
 // its fields, so these two names are structural and can never be authored as mode names.
 const TOKEN_RESERVED_FIELDS = ['key', 'kind'];

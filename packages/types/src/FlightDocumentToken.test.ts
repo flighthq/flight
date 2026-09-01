@@ -24,12 +24,14 @@ describe('FlightDocumentToken', () => {
         {
           backgroundColor: null,
           kind: 'Scene2D',
+          layouts: [],
           scene: { children: [], fields: {}, kind: 'DisplayObject' },
           tokens: [{ key: 'color.primary', kind: 'Color', values: { default: 0x3366ccff } }],
         },
         {
           cameras: [],
           kind: 'Scene3D',
+          layouts: [],
           lights: [],
           scene: { children: [], fields: {}, kind: 'Node3D' },
           tokens: [],

@@ -42,12 +42,14 @@ function createDocument(): FlightDocument {
       {
         backgroundColor: null,
         kind: 'Scene2D',
+        layouts: [],
         scene: { children: [], fields: {}, kind: DisplayObjectKind },
         tokens: [],
       },
       {
         cameras: [],
         kind: 'Scene3D',
+        layouts: [],
         lights: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
         tokens: [],

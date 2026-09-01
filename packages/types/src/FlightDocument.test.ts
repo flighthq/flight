@@ -8,6 +8,7 @@ import type {
   FlightDocumentScene3DMaterialization,
 } from './FlightDocument';
 import type { FlightDocumentInteractiveStateBinding } from './FlightDocumentInteractiveState';
+import type { FlightDocumentLayoutBinding, FlightDocumentLayoutDescriptor } from './FlightDocumentLayout';
 import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource';
 import type { Light } from './Light';
 import type { Node2D } from './Node2D';
@@ -27,6 +28,7 @@ describe('FlightDocument', () => {
         {
           backgroundColor: 0x112233ff,
           kind: 'Scene2D',
+          layouts: [],
           scene: {
             children: [{ children: [], fields: { texture: 'shared' }, kind: 'Sprite' }],
             fields: {},
@@ -37,6 +39,7 @@ describe('FlightDocument', () => {
         {
           cameras: [],
           kind: 'Scene3D',
+          layouts: [],
           lights: [],
           scene: {
             children: [{ children: [], fields: { texture: 'shared' }, kind: 'Mesh' }],
@@ -73,16 +76,24 @@ describe('FlightDocumentScene', () => {
 
 describe('FlightDocumentScene2D', () => {
   it('follows Scene2DDocument metadata and has no camera field', () => {
-    expectTypeOf<keyof FlightDocumentScene2D>().toEqualTypeOf<'backgroundColor' | 'kind' | 'scene' | 'tokens'>();
+    expectTypeOf<keyof FlightDocumentScene2D>().toEqualTypeOf<
+      'backgroundColor' | 'kind' | 'layouts' | 'scene' | 'tokens'
+    >();
     expectTypeOf<FlightDocumentScene2D['backgroundColor']>().toEqualTypeOf<number | null>();
+    expectTypeOf<FlightDocumentScene2D['layouts']>().toEqualTypeOf<FlightDocumentLayoutDescriptor[]>();
   });
 });
 
 describe('FlightDocumentScene2DMaterialization', () => {
   it('owns inert interactive-state bindings beside the scene', () => {
-    expectTypeOf<keyof FlightDocumentScene2DMaterialization>().toEqualTypeOf<'interactiveStateBindings' | 'scene'>();
+    expectTypeOf<keyof FlightDocumentScene2DMaterialization>().toEqualTypeOf<
+      'interactiveStateBindings' | 'layoutBindings' | 'scene'
+    >();
     expectTypeOf<FlightDocumentScene2DMaterialization['interactiveStateBindings']>().toEqualTypeOf<
       FlightDocumentInteractiveStateBinding<Node2D>[]
+    >();
+    expectTypeOf<FlightDocumentScene2DMaterialization['layoutBindings']>().toEqualTypeOf<
+      FlightDocumentLayoutBinding<Node2D>[]
     >();
     expectTypeOf<FlightDocumentScene2DMaterialization['scene']>().toEqualTypeOf<Scene2D>();
   });
@@ -90,7 +101,10 @@ describe('FlightDocumentScene2DMaterialization', () => {
 
 describe('FlightDocumentScene3D', () => {
   it('keeps cameras and lights on the 3D scene entry rather than the shared container', () => {
-    expectTypeOf<keyof FlightDocumentScene3D>().toEqualTypeOf<'cameras' | 'kind' | 'lights' | 'scene' | 'tokens'>();
+    expectTypeOf<keyof FlightDocumentScene3D>().toEqualTypeOf<
+      'cameras' | 'kind' | 'layouts' | 'lights' | 'scene' | 'tokens'
+    >();
+    expectTypeOf<FlightDocumentScene3D['layouts']>().toEqualTypeOf<FlightDocumentLayoutDescriptor[]>();
   });
 
   it('uses the existing Scene3DDocument camera array without renamed projection fields', () => {
@@ -113,12 +127,15 @@ describe('FlightDocumentScene3D', () => {
 describe('FlightDocumentScene3DMaterialization', () => {
   it('owns a camera array, runtime lights, and inert interactive-state bindings beside the scene', () => {
     expectTypeOf<keyof FlightDocumentScene3DMaterialization>().toEqualTypeOf<
-      'cameras' | 'interactiveStateBindings' | 'lights' | 'scene'
+      'cameras' | 'interactiveStateBindings' | 'layoutBindings' | 'lights' | 'scene'
     >();
     expectTypeOf<FlightDocumentScene3DMaterialization['cameras']>().toEqualTypeOf<Camera3D[]>();
     expectTypeOf<FlightDocumentScene3DMaterialization['lights']>().toEqualTypeOf<Scene3DLights>();
     expectTypeOf<FlightDocumentScene3DMaterialization['interactiveStateBindings']>().toEqualTypeOf<
       FlightDocumentInteractiveStateBinding<Node3D>[]
+    >();
+    expectTypeOf<FlightDocumentScene3DMaterialization['layoutBindings']>().toEqualTypeOf<
+      FlightDocumentLayoutBinding<Node3D>[]
     >();
     expectTypeOf<FlightDocumentScene3DMaterialization['scene']>().toEqualTypeOf<Scene3D>();
   });

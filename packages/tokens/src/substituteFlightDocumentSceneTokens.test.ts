@@ -112,6 +112,20 @@ describe('substituteFlightDocumentSceneTokens', () => {
     expect(substituteFlightDocumentSceneTokens(scene, resolutionOf(scene))?.tokens).toEqual(scene.tokens);
   });
 
+  it('preserves inert layout metadata while substituting node fields', () => {
+    const scene = sceneWith({ children: [], fields: { fill: '$color.background', name: 'root' }, kind: 'Shape' }, [
+      { key: 'color.background', kind: 'Color', values: { default: 0xffffffff } },
+    ]);
+    scene.layouts.push({
+      targets: ['root'],
+      tree: {
+        nodes: [{ containerStyle: { gap: 8 }, itemStyle: null, kind: 'acme.Flow', parentIndex: -1 }],
+      },
+    });
+
+    expect(substituteFlightDocumentSceneTokens(scene, resolutionOf(scene))?.layouts).toBe(scene.layouts);
+  });
+
   it('resolves an escaped dollar sign to a literal instead of looking it up', () => {
     const scene = sceneWith({ children: [], fields: { text: '$$5.00' }, kind: 'TextLabel' }, []);
     expect(substituteFlightDocumentSceneTokens(scene, resolutionOf(scene))?.scene.fields['text']).toBe('$5.00');
@@ -121,6 +135,7 @@ describe('substituteFlightDocumentSceneTokens', () => {
     const scene: FlightDocumentScene3D = {
       cameras: [],
       kind: 'Scene3D',
+      layouts: [],
       lights: [],
       scene: { children: [], fields: { alpha: '$opacity.dim' }, kind: 'Node3D' },
       tokens: [{ key: 'opacity.dim', kind: 'Number', values: { default: 0.5 } }],
@@ -159,5 +174,5 @@ function resolutionOf(
 }
 
 function sceneWith(scene: FlightDocumentNode, tokens: readonly FlightDocumentToken[]): FlightDocumentScene2D {
-  return { backgroundColor: null, kind: 'Scene2D', scene, tokens: [...tokens] };
+  return { backgroundColor: null, kind: 'Scene2D', layouts: [], scene, tokens: [...tokens] };
 }

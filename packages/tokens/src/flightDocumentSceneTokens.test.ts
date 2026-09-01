@@ -216,6 +216,7 @@ function sceneWith(tokens: readonly FlightDocumentToken[]): FlightDocumentScene2
   return {
     backgroundColor: null,
     kind: 'Scene2D',
+    layouts: [],
     scene: { children: [], fields: {}, kind: 'DisplayObject' },
     tokens: [...tokens],
   };

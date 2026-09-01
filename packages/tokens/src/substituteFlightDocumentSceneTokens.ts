@@ -31,9 +31,9 @@ export function substituteFlightDocumentSceneTokens<T extends Readonly<FlightDoc
 ): T | null {
   const substituted = readSubstitution(scene, resolution);
   if (substituted.scene === null) return null;
-  // The spread carries every dimension-specific section (backgroundColor, or cameras and lights)
-  // unchanged, and only `scene` is replaced; T is preserved by construction rather than by narrowing,
-  // which no assertion in the language can express for a generic spread.
+  // The spread carries every scene-level section (layouts and tokens, plus backgroundColor or cameras
+  // and lights) unchanged, and only `scene` is replaced; T is preserved by construction rather than by
+  // narrowing, which no assertion in the language can express for a generic spread.
   return { ...scene, scene: substituted.scene } as T;
 }
 
