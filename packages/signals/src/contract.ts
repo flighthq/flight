@@ -1,3 +1,4 @@
+export * from './connection';
 export * from './emitter';
 export * from './safe';
 export * from './signal';
