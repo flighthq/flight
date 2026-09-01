@@ -8,6 +8,7 @@ export {
   createSignal,
   disconnectSignal,
   emitSignal,
+  emitSignalSafe,
   hasSignalSlots,
   isSlotConnected,
 } from './contract';
