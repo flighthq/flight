@@ -32,6 +32,7 @@ describe('FlightDocument', () => {
             fields: {},
             kind: 'DisplayObject',
           },
+          tokens: [],
         },
         {
           cameras: [],
@@ -42,6 +43,7 @@ describe('FlightDocument', () => {
             fields: {},
             kind: 'Node3D',
           },
+          tokens: [],
         },
       ],
       version: 1,
@@ -71,7 +73,7 @@ describe('FlightDocumentScene', () => {
 
 describe('FlightDocumentScene2D', () => {
   it('follows Scene2DDocument metadata and has no camera field', () => {
-    expectTypeOf<keyof FlightDocumentScene2D>().toEqualTypeOf<'backgroundColor' | 'kind' | 'scene'>();
+    expectTypeOf<keyof FlightDocumentScene2D>().toEqualTypeOf<'backgroundColor' | 'kind' | 'scene' | 'tokens'>();
     expectTypeOf<FlightDocumentScene2D['backgroundColor']>().toEqualTypeOf<number | null>();
   });
 });
@@ -88,7 +90,7 @@ describe('FlightDocumentScene2DMaterialization', () => {
 
 describe('FlightDocumentScene3D', () => {
   it('keeps cameras and lights on the 3D scene entry rather than the shared container', () => {
-    expectTypeOf<keyof FlightDocumentScene3D>().toEqualTypeOf<'cameras' | 'kind' | 'lights' | 'scene'>();
+    expectTypeOf<keyof FlightDocumentScene3D>().toEqualTypeOf<'cameras' | 'kind' | 'lights' | 'scene' | 'tokens'>();
   });
 
   it('uses the existing Scene3DDocument camera array without renamed projection fields', () => {

@@ -464,6 +464,9 @@
     },
     {
       "path": "../xml"
+    },
+    {
+      "path": "../tokens"
     }
   ],
   "include": ["src"]

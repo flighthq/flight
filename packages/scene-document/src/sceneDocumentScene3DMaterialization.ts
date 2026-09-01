@@ -71,6 +71,8 @@ export function createFlightDocumentFromScene3D(
     kind: 'Scene3D',
     lights: lights.map((l) => ({ ...l })),
     scene,
+    // Same as the 2D writer: substitution is one-way, so a written entry declares no tokens.
+    tokens: [],
   };
 }
 

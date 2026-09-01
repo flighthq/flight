@@ -11,6 +11,8 @@ import type {
   FlightDocumentResourceDescriptor,
   FlightDocumentScene,
   FlightDocumentScene2D,
+  FlightDocumentToken,
+  FlightDocumentTokenValues,
   FlightDocumentScene3D,
   FlightDocumentText,
   FlightDocumentValue,
@@ -265,6 +267,19 @@ function appendScene(lines: string[], scene: Readonly<FlightDocumentScene>): voi
   }
   lines.push('    scene:');
   appendNode(lines, scene.scene, 6);
+  appendTokens(lines, scene.tokens);
+}
+
+function appendTokens(lines: string[], tokens: readonly Readonly<FlightDocumentToken>[]): void {
+  if (tokens.length === 0) return;
+  lines.push('    tokens:');
+  for (const token of tokens) {
+    lines.push('      - kind: ' + formatString(token.kind));
+    lines.push('        key: ' + formatString(token.key));
+    // Mode names are sorted so a formatted document is stable, while the token ROWS keep the order
+    // they were authored in: row order is the author's, mode order is not meaningful.
+    appendFields(lines, token.values, 8, TOKEN_RESERVED_FIELDS);
+  }
 }
 
 function appendSequence(lines: string[], values: readonly unknown[], indent: number): void {
@@ -426,10 +441,12 @@ function readFlightDocumentText(text: FlightDocumentText): FlightDocumentTextRea
         kind: null,
         limit: parsed.limit,
         line: parsed.line,
+        mode: null,
         offset: parsed.offset,
         path: '',
         reason: parsed.kind,
         resourceKey: null,
+        tokenKey: null,
         version: null,
       },
     };
@@ -745,7 +762,9 @@ function readScene2D(
   }
   const scene = readNode(mapping['scene'], appendPath(path, 'scene'), 'Scene2D', context);
   if (scene === null) return null;
-  return { backgroundColor: backgroundColor ?? null, kind: 'Scene2D', scene };
+  const tokens = readTokens(mapping['tokens'], path, context);
+  if (tokens === null) return null;
+  return { backgroundColor: backgroundColor ?? null, kind: 'Scene2D', scene, tokens };
 }
 
 function readScene3D(
@@ -776,7 +795,49 @@ function readScene3D(
   }
   const scene = readNode(mapping['scene'], appendPath(path, 'scene'), 'Scene3D', context);
   if (scene === null) return null;
-  return { cameras, kind: 'Scene3D', lights, scene };
+  const tokens = readTokens(mapping['tokens'], path, context);
+  if (tokens === null) return null;
+  return { cameras, kind: 'Scene3D', lights, scene, tokens };
+}
+
+function readTokens(
+  value: unknown,
+  path: string,
+  context: FlightDocumentTextReadContext,
+): FlightDocumentToken[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) return refuse(context, appendPath(path, 'tokens'));
+  const tokens: FlightDocumentToken[] = [];
+  const seen = new Set<string>();
+  for (let index = 0; index < value.length; index++) {
+    const rowPath = `${path}.tokens[${index}]`;
+    const raw = value[index];
+    if (!isMapping(raw)) return refuse(context, rowPath);
+    const kind = raw['kind'];
+    const key = raw['key'];
+    if (typeof kind !== 'string') return refuse(context, appendPath(rowPath, 'kind'));
+    if (typeof key !== 'string') return refuse(context, appendPath(rowPath, 'key'));
+    if (!SAFE_PLAIN_SCALAR_PATTERN.test(key)) {
+      return refuseToken(context, FlightDocumentRefusalReason.TokenKeyInvalid, appendPath(rowPath, 'key'), key, null);
+    }
+    if (seen.has(key)) {
+      return refuseToken(context, FlightDocumentRefusalReason.TokenKeyDuplicate, appendPath(rowPath, 'key'), key, null);
+    }
+    seen.add(key);
+    const values: FlightDocumentTokenValues = {};
+    for (const mode of Object.keys(raw)) {
+      if (TOKEN_RESERVED_FIELDS.includes(mode)) continue;
+      const modePath = appendPath(rowPath, mode);
+      if (!SAFE_PLAIN_SCALAR_PATTERN.test(mode)) {
+        return refuseToken(context, FlightDocumentRefusalReason.TokenModeInvalid, modePath, key, mode);
+      }
+      const modeValue = copyFlightDocumentValue(raw[mode], modePath, context);
+      if (modeValue === INVALID_FLIGHT_DOCUMENT_VALUE) return null;
+      values[mode] = modeValue;
+    }
+    tokens.push({ key, kind, values });
+  }
+  return tokens;
 }
 
 function readTransform3D(value: unknown, path: string, context: FlightDocumentTextReadContext): Transform3D | null {
@@ -828,6 +889,23 @@ function refuseWithReason(
   return null;
 }
 
+function refuseToken(
+  context: FlightDocumentTextReadContext,
+  reason:
+    | typeof FlightDocumentRefusalReason.TokenKeyDuplicate
+    | typeof FlightDocumentRefusalReason.TokenKeyInvalid
+    | typeof FlightDocumentRefusalReason.TokenModeInvalid,
+  path: string,
+  tokenKey: string,
+  mode: string | null,
+): null {
+  const refusal = createDocumentRefusal(reason, path);
+  refusal.mode = mode;
+  refusal.tokenKey = tokenKey;
+  context.refusal ??= refusal;
+  return null;
+}
+
 function refuseValue(
   context: FlightDocumentTextReadContext,
   reason: typeof FlightDocumentRefusalReason.StructureInvalid,
@@ -857,7 +935,10 @@ const PERSPECTIVE_PROJECTION_KEYS = ['aspect', 'fovY', 'kind'];
 const QUATERNION_KEYS = ['w', 'x', 'y', 'z'];
 const RESOURCE_RESERVED_FIELDS = ['key', 'kind'];
 const SAFE_PLAIN_SCALAR_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
-const SCENE_2D_KEYS = ['backgroundColor', 'kind', 'scene'];
-const SCENE_3D_KEYS = ['cameras', 'kind', 'lights', 'scene'];
+const SCENE_2D_KEYS = ['backgroundColor', 'kind', 'scene', 'tokens'];
+const SCENE_3D_KEYS = ['cameras', 'kind', 'lights', 'scene', 'tokens'];
+// A token row flattens its mode variants beside kind and key, exactly as a resource row flattens
+// its fields, so these two names are structural and can never be authored as mode names.
+const TOKEN_RESERVED_FIELDS = ['key', 'kind'];
 const TRANSFORM_3D_KEYS = ['position', 'rotation', 'scale'];
 const VECTOR_3_KEYS = ['x', 'y', 'z'];

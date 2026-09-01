@@ -136,6 +136,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/tilemap',
     '@flighthq/tilemap-formats',
     '@flighthq/timeline',
+    '@flighthq/tokens',
     '@flighthq/tray',
     '@flighthq/tween',
     '@flighthq/updater',
