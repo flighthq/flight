@@ -231,6 +231,7 @@ describe('explainFlightDocumentRefusal', () => {
       backgroundColor: null,
       kind: 'Scene2D',
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      tokens: [],
     });
     const schemas = createTestSchemas();
     const schema = schemas.nodeSchemas.entries.get(DisplayObjectKind);
@@ -266,6 +267,7 @@ describe('explainFlightDocumentRefusal', () => {
         fields: {},
         kind: DisplayObjectKind,
       },
+      tokens: [],
     });
     const schemas = createTestSchemas();
 
@@ -281,6 +283,7 @@ describe('explainFlightDocumentRefusal', () => {
       backgroundColor: null,
       kind: 'Scene2D',
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      tokens: [],
     });
     const schemas = createTestSchemas();
     const schema = schemas.nodeSchemas.entries.get(DisplayObjectKind);
@@ -302,6 +305,7 @@ describe('explainFlightDocumentRefusal', () => {
       backgroundColor: null,
       kind: 'Scene2D',
       scene: { children: [], fields: { mystery: 1 }, kind: DisplayObjectKind },
+      tokens: [],
     });
     const schemas = createTestSchemas();
 
