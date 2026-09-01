@@ -123,6 +123,7 @@
     "@flighthq/effects-canvas": "*",
     "@flighthq/effects-gl": "*",
     "@flighthq/effects-wgpu": "*",
+    "@flighthq/encoding": "*",
     "@flighthq/entity": "*",
     "@flighthq/filesystem": "*",
     "@flighthq/flow": "*",

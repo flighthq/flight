@@ -23,6 +23,7 @@
     { "path": "./packages/color" },
     { "path": "./packages/command" },
     { "path": "./packages/compression" },
+    { "path": "./packages/encoding" },
     { "path": "./packages/collision" },
     { "path": "./packages/debug" },
     { "path": "./packages/device" },

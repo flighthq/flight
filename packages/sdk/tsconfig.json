@@ -79,6 +79,9 @@
       "path": "../compression"
     },
     {
+      "path": "../encoding"
+    },
+    {
       "path": "../connectivity"
     },
     {

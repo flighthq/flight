@@ -8,6 +8,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/color',
     '@flighthq/compression',
     '@flighthq/easing',
+    '@flighthq/encoding',
     '@flighthq/entity',
     '@flighthq/geometry',
     '@flighthq/image-codec',

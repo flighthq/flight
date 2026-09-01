@@ -35,6 +35,7 @@ export * from '@flighthq/effects';
 export * from '@flighthq/effects-canvas';
 export * from '@flighthq/effects-gl';
 export * from '@flighthq/effects-wgpu';
+export * from '@flighthq/encoding';
 export * from '@flighthq/entity';
 export * from '@flighthq/filesystem';
 export * from '@flighthq/flow';
