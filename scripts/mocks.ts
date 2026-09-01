@@ -43,6 +43,21 @@ const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'w
 // Genuinely-intentional escapes, named with a reason, never silently.
 const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [
   {
+    match: (rel) => rel === 'packages/tool-capture/src/captureServer.test.ts',
+    rule: 'hoisted-mock',
+    why:
+      'This file runs in the tool-capture project (isolate:true, environment:node), not the shared ' +
+      'jsdom project — the vi.mock is contained by the project routing, not by REGISTRY_ISOLATED_TESTS.',
+  },
+  {
+    match: (rel) => rel === 'packages/tool-capture/src/captureServer.test.ts',
+    rule: 'untiered-mock',
+    why:
+      'Isolated by the tool-capture project (isolate:true), not by REGISTRY_ISOLATED_TESTS. The mock ' +
+      'targets node:child_process, a native ESM module with non-configurable exports that vi.spyOn ' +
+      'cannot replace.',
+  },
+  {
     match: (rel) => rel === 'scripts/handRolledHermeticity.test.ts',
     rule: 'untiered-mock',
     why:

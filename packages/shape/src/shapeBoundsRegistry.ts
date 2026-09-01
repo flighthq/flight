@@ -1,5 +1,10 @@
 import type { ShapeBoundsCommand, ShapeCommandKey } from '@flighthq/types/contract';
 
+export function clearShapeBoundsCommands(): void {
+  _commands.clear();
+  _revision++;
+}
+
 export function getShapeBoundsCommand(key: string): Readonly<ShapeBoundsCommand> | null {
   return _commands.get(key) ?? null;
 }

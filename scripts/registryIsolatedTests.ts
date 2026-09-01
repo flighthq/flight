@@ -5,13 +5,11 @@
 //
 // `mocks-modules` — a top-level `vi.mock` registers for the whole worker rather than the file, so it
 //   leaks into every later file importing that module. Most files that formerly needed this have been
-//   migrated to `vi.spyOn` on namespace imports, which replaces a property on the module namespace
-//   object and is restorable via `vi.restoreAllMocks()` in `afterEach`. The remaining entries are cases
-//   where `vi.spyOn` cannot work: native Node.js ESM modules with non-configurable exports, or mocks
-//   whose effect must precede the first import of the subject.
-// `process-global-registry` — the file asserts something about PROCESS state, typically that nothing
-//   has been registered yet. That claim holds only in a process nobody else has touched, so under the
-//   shared tier it is decided by file scheduling rather than by the code.
+//   migrated to `vi.spyOn` on namespace imports, and process-global registries have been given
+//   `clear*` contract APIs so tests can bracket their empty-registry assertions with restore.
+// `process-global-registry` — the file asserts something about PROCESS state that no contract API can
+//   provide: an import-time invariant (importing the module must not register anything). That claim
+//   requires a process whose module graph has not yet loaded the subject.
 
 export type RegistryIsolationReason = 'mocks-modules' | 'process-global-registry';
 
@@ -21,22 +19,11 @@ export interface RegistryIsolatedTest {
 }
 
 export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
-  // Mocks `node:child_process.spawnSync` — a native Node.js ESM module whose exports are
-  // non-configurable, so `vi.spyOn` cannot replace them.
-  { path: 'packages/tool-capture/src/captureServer.test.ts', reason: 'mocks-modules' },
-  // Mocks `registerDefaultShapeBoundsCommands` to test SVG import with incomplete bounds. The mock
-  // must be in place before the subject's first import, and the test also depends on the process-global
-  // shape bounds registry being empty — both require isolation.
-  { path: 'packages/scene2d-formats/src/svgDocumentIncompleteBounds.test.ts', reason: 'mocks-modules' },
   // Asserts that importing @flighthq/shape registers nothing — the side-effect-free-import guarantee
-  // that `registerDefaultShapeBoundsCommands` exists as an explicit entry point to protect. The
-  // registry is process-global with no reset, so "nothing is registered" can only be asserted in a
-  // process nobody else has touched.
+  // that `registerDefaultShapeBoundsCommands` exists as an explicit entry point to protect. This is
+  // an import-time invariant: in a shared worker the module is already loaded, so the assertion is
+  // vacuously decided by file scheduling rather than by the code.
   { path: 'packages/shape/src/registerDefaultShapeBoundsCommands.test.ts', reason: 'process-global-registry' },
-  // Asserts that the collision support registry is empty before registration — verifying the
-  // explain-collision diagnostic for the state a caller who forgot to register is in. The registry is
-  // process-global with no reset, so the empty claim requires an untouched process.
-  { path: 'packages/physics3d/src/explainPhysics3DCollision.test.ts', reason: 'process-global-registry' },
 ];
 
 /** Every isolated path, in the form the Vitest project globs consume. */

@@ -1,12 +1,27 @@
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 
+import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
 import { createShape } from './shape';
 import {
+  clearShapeBoundsCommands,
   getShapeBoundsCommand,
   getShapeBoundsCommandRegistryRevision,
   registerShapeBoundsCommand,
   unregisterShapeBoundsCommand,
 } from './shapeBoundsRegistry';
+
+describe('clearShapeBoundsCommands', () => {
+  it('removes all registered commands and bumps the revision', () => {
+    registerDefaultShapeBoundsCommands();
+    const revision = getShapeBoundsCommandRegistryRevision();
+    expect(getShapeBoundsCommand('moveTo')).not.toBeNull();
+
+    clearShapeBoundsCommands();
+
+    expect(getShapeBoundsCommand('moveTo')).toBeNull();
+    expect(getShapeBoundsCommandRegistryRevision()).toBe(revision + 1);
+  });
+});
 
 describe('getShapeBoundsCommand', () => {
   it('distinguishes an absent key from an explicitly geometry-free command', () => {

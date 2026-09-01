@@ -1,18 +1,17 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
-import type * as ShapeModule from '@flighthq/shape/contract';
-
-// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
-// with its own module registry — the hermeticity the `vi.resetModules()` + `vi.doMock` + dynamic-import
-// dance used to buy by hand comes from the platform, for free and with no hook. The dance was not merely
-// redundant here: it rebuilt the subject's entire transitive module graph inside a FIXED `beforeAll`
-// deadline, which is unbounded work against a fixed clock and the shape of flake that tiering exists to
-// remove.
-vi.mock('@flighthq/shape/contract', async (importOriginal) => {
-  const actual = await importOriginal<typeof ShapeModule>();
-  return { ...actual, registerDefaultShapeBoundsCommands: vi.fn() };
-});
+import * as shapeContract from '@flighthq/shape/contract';
 
 import { createScene2DFromSvgDocument } from './svgDocument';
+
+beforeEach(() => {
+  shapeContract.clearShapeBoundsCommands();
+  vi.spyOn(shapeContract, 'registerDefaultShapeBoundsCommands').mockImplementation((() => {}) as never);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  shapeContract.registerDefaultShapeBoundsCommands();
+});
 
 describe('createScene2DFromSvgDocument incomplete bounds', () => {
   it('rejects a partial child box instead of placing an objectBoundingBox clip from it', () => {
