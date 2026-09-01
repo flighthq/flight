@@ -202,7 +202,7 @@
     "test:functional:regression": "tsx ./packages/tool-capture/src/bin.ts validate --tool=functional --renderer=dom,canvas,webgl,webgpu --no-parity",
     "test:functional:regression:baseline": "tsx ./packages/tool-capture/src/bin.ts validate --tool=functional --renderer=dom,canvas,webgl,webgpu --update-fingerprints",
     "test:functional:smoke": "tsx ./packages/tool-capture/src/bin.ts capture --tool=functional --frames=1 --fail-on-error",
-    "test:host-probe": "npm run test host-probe",
+    "test:host-probe": "npm run test -- --project host-probe",
     "test:host-probe:all": "npm run test:host-probe:web && npm run test:host-probe:electron && npm run test:host-probe:tauri && npm run test:host-probe:capacitor:android && npm run test:host-probe:capacitor:ios",
     "test:host-probe:capacitor:android": "npm run test:e2e:capacitor:android --workspace=@flighthq/tool-host-probe",
     "test:host-probe:capacitor:ios": "npm run test:e2e:capacitor:ios --workspace=@flighthq/tool-host-probe",

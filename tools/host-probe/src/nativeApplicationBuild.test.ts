@@ -39,6 +39,17 @@ describe('Tauri packaging inputs', () => {
 });
 
 describe('native host CI configuration', () => {
+  it('selects the dedicated Vitest project for the contract job', () => {
+    const repositoryRoot = resolve(toolRoot, '../..');
+    const packageJson = JSON.parse(readFileSync(resolve(repositoryRoot, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows/host-matrix.yml'), 'utf8');
+
+    expect(packageJson.scripts['test:host-probe']).toBe('npm run test -- --project host-probe');
+    expect(workflow).toContain('- run: npm run test:host-probe');
+  });
+
   it('uses the Capacitor 8 iOS toolchain and allows slow Android emulator setup', () => {
     const repositoryRoot = resolve(toolRoot, '../..');
     const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows/host-matrix.yml'), 'utf8');
