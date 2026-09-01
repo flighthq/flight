@@ -29,6 +29,7 @@ import {
   dispatchInteractionWheel,
   enableInteractionSignals,
   getInteractionSignals,
+  invalidateInteractionCursor,
   releaseInteractionPointer,
   setInteractionConnectGuard,
 } from './interactionManager';
@@ -128,6 +129,7 @@ describe('createInteractionManager', () => {
     const root = createDisplayObject();
     const manager = createInteractionManager(root);
     expect(manager.enabled).toBe(true);
+    expect(manager.cursorTarget).toBeNull();
     expect(manager.pointerCaptures.size).toBe(0);
     expect(manager.pointerStates.size).toBe(0);
     expect(manager.root).toBe(root);
@@ -588,6 +590,55 @@ describe('getInteractionSignals', () => {
   });
 });
 
+describe('invalidateInteractionCursor', () => {
+  it('applies a cursor written to the current rollover target only when explicitly invalidated', () => {
+    const { applied, child, manager } = createCursorScene();
+
+    setNodeCursor(child, 'pointer');
+    expect(applied).toEqual([]);
+    invalidateInteractionCursor(manager);
+
+    expect(applied).toEqual(['pointer']);
+  });
+
+  it('re-resolves a cursor written to an ancestor of the current rollover target', () => {
+    const { applied, manager, root } = createCursorScene();
+
+    setNodeCursor(root, 'grab');
+    invalidateInteractionCursor(manager);
+
+    expect(applied).toEqual(['grab']);
+  });
+
+  it('keeps the current cursor when an unrelated node changes', () => {
+    const { applied, child, manager, unrelated } = createCursorScene('pointer');
+
+    setNodeCursor(unrelated, 'grab');
+    invalidateInteractionCursor(manager);
+
+    expect(applied).toEqual(['pointer']);
+    expect(child).not.toBe(unrelated);
+  });
+
+  it('clears the backend when the current rollover target cursor is cleared', () => {
+    const { applied, child, manager } = createCursorScene('pointer');
+
+    setNodeCursor(child, null);
+    invalidateInteractionCursor(manager);
+
+    expect(applied).toEqual([null]);
+  });
+
+  it('is idempotent when invalidated repeatedly without another data change', () => {
+    const { applied, manager } = createCursorScene('pointer');
+
+    invalidateInteractionCursor(manager);
+    invalidateInteractionCursor(manager);
+
+    expect(applied).toEqual(['pointer', 'pointer']);
+  });
+});
+
 describe('releaseInteractionPointer', () => {
   it('stops routing pointer events to the captured target', () => {
     const { child, manager } = createHitScene3D();
@@ -624,6 +675,22 @@ function createHitScene3D() {
   setNodeHitTestEnabled(child, true);
   addNodeChild(root, child);
   return { child, manager: createInteractionManager(root), root };
+}
+
+function createCursorScene(cursor: Cursor | null = null) {
+  const root = createDisplayObject();
+  const child = createDisplayObject();
+  const unrelated = createDisplayObject();
+  setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+  setNodeHitTestEnabled(child, true);
+  setNodeCursor(child, cursor);
+  addNodeChild(root, child);
+  addNodeChild(root, unrelated);
+  const applied: (Cursor | null)[] = [];
+  const manager = createInteractionManager(root, { cursorBackend: { setCursor: (value) => applied.push(value) } });
+  dispatchInteractionPointerMove(manager, 50, 50);
+  applied.length = 0;
+  return { applied, child, manager, root, unrelated };
 }
 
 function createInputKeyboardData(key: string, keyCode: number): InputKeyboardData {

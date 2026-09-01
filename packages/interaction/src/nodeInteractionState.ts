@@ -55,7 +55,11 @@ export function isNodeHitTestEnabled(source: Readonly<NodeAny>): boolean {
   return getNodeInteractionState(source)?.hitTestEnabled ?? false;
 }
 
-/** Sets the rollover cursor for this node; `null` clears it (inherits nearest ancestor / default). */
+/**
+ * Sets the node's rollover cursor data; `null` clears it (inherits nearest ancestor / default). This
+ * performs no manager lookup or backend work; cursor application is explicit through
+ * `invalidateInteractionCursor`.
+ */
 export function setNodeCursor(source: NodeAny, cursor: Cursor | null): void {
   enableNodeInteractionState(source).cursor = cursor;
 }

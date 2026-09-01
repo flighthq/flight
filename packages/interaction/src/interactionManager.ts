@@ -132,6 +132,7 @@ export function createInteractionManager<N extends NodeAny>(
 ): InteractionManager<N> {
   return {
     cursorBackend: options.cursorBackend ?? null,
+    cursorTarget: null,
     doubleClickDelay: 500,
     enabled: options.enabled ?? true,
     pointerCaptures: new Map(),
@@ -347,6 +348,11 @@ export function getInteractionSignals<N extends NodeAny>(source: N): Interaction
   return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionSignals;
 }
 
+/** Re-resolves and immediately applies the cursor for the manager's current rollover target. */
+export function invalidateInteractionCursor<N extends NodeAny>(manager: InteractionManager<N>): void {
+  applyInteractionCursor(manager, manager.cursorTarget);
+}
+
 export function releaseInteractionPointer<N extends NodeAny>(manager: InteractionManager<N>, pointerId: number): void {
   manager.pointerCaptures.delete(pointerId);
 }
@@ -403,6 +409,7 @@ function dispatchPointerRolloverChange<N extends NodeAny>(
     emitInteractionSignal(target, manager.root, 'onPointerOver', _pointerData);
   }
 
+  manager.cursorTarget = target;
   applyInteractionCursor(manager, target);
 }
 
