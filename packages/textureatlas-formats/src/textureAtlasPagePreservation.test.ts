@@ -84,18 +84,48 @@ describe('texture atlas page and meta preservation', () => {
     expect(atlas.regions.map((region) => region.pageName)).toEqual(['pages0.png', 'pages1.png']);
   });
 
-  it('leaves the atlas meta at its unknown defaults for a format that carries none', () => {
-    // Starling XML genuinely has no atlas-level metadata. The defaults have to say "unknown" rather
-    // than a plausible-looking zero-by-zero image that a UV caller would divide by.
+  it('keeps the Starling imagePath and leaves the sizes it does not declare unknown', () => {
+    // Starling carries a page filename but no dimensions or scale. The filename is preserved like
+    // every other format's; the sizes stay at "unknown" rather than a plausible-looking zero-by-zero
+    // image that a UV caller would divide by.
     const atlas = createTextureAtlas();
     parseTextureAtlasStarlingXml(
       '<TextureAtlas imagePath="s.png"><SubTexture name="a" x="0" y="0" width="4" height="4"/></TextureAtlas>',
       atlas,
     );
+    expect(atlas.imageName).toBe('s.png');
     expect(atlas.imageWidth).toBe(0);
     expect(atlas.imageHeight).toBe(0);
     expect(atlas.scale).toBe(1);
     expect(atlas.regions[0].pageName).toBeNull();
+  });
+
+  it('clears meta left by a previous parse of a different format', () => {
+    // Every parser resets on the same terms. Without it, a Starling document reparsed into an atlas
+    // that last held a TexturePacker sheet keeps that sheet's size and scale — numbers a UV caller
+    // would divide by and a rescaling caller would multiply by, both silently wrong.
+    const atlas = createTextureAtlas();
+    parseTexturePackerAtlasJson(
+      JSON.stringify({ frames: {}, meta: { image: 'sheet.png', scale: '0.5', size: { h: 128, w: 256 } } }),
+      atlas,
+    );
+    parseTextureAtlasStarlingXml(
+      '<TextureAtlas imagePath="s.png"><SubTexture name="a" x="0" y="0" width="4" height="4"/></TextureAtlas>',
+      atlas,
+    );
+    expect(atlas.imageName).toBe('s.png');
+    expect(atlas.imageWidth).toBe(0);
+    expect(atlas.imageHeight).toBe(0);
+    expect(atlas.scale).toBe(1);
+  });
+
+  it('leaves the Starling image name null when the document declares no imagePath', () => {
+    const atlas = createTextureAtlas();
+    parseTextureAtlasStarlingXml(
+      '<TextureAtlas><SubTexture name="a" x="0" y="0" width="4" height="4"/></TextureAtlas>',
+      atlas,
+    );
+    expect(atlas.imageName).toBeNull();
   });
 
   it('resets stale meta when the same atlas is reparsed', () => {

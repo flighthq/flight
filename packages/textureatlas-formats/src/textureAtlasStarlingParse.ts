@@ -2,6 +2,8 @@ import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
+import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+
 // Populates `atlas.regions` from a Starling / Sparrow XML string.
 // Existing regions are cleared before parsing. Returns `atlas` for convenience.
 //
@@ -10,10 +12,14 @@ import { parseXmlDocument } from '@flighthq/xml/contract';
 // hint would be a second path to a value the caller already supplies at the point of use.
 export function parseTextureAtlasStarlingXml(xml: string, atlas: TextureAtlas): TextureAtlas {
   atlas.regions.length = 0;
+  resetTextureAtlasPageMeta(atlas);
   const root = parseXmlDocument(xml);
   if (!root) return atlas;
   // The TextureAtlas element may be the root or a child.
   const atlasEl = root.name === 'TextureAtlas' ? root : (root.children.find((c) => c.name === 'TextureAtlas') ?? root);
+  // Starling declares its page image in `imagePath` and nothing else about the page: no size, no
+  // scale. Those stay unknown rather than being invented.
+  atlas.imageName = atlasEl.attributes['imagePath'] ?? null;
   let id = 0;
   for (const el of atlasEl.children) {
     if (el.name !== 'SubTexture') continue;
