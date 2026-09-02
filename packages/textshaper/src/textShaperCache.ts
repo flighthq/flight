@@ -1,5 +1,13 @@
-import type { ShapedRun, ShapeRunOptions, TextFormat, TextShaperCache } from '@flighthq/types/contract';
+import type {
+  HasTextShaper,
+  ShapedRun,
+  ShapeRunOptions,
+  TextFormat,
+  TextShaperBackend,
+  TextShaperCache,
+} from '@flighthq/types/contract';
 
+import { getTextShaperBackend } from './textShaper';
 import { shapeTextRun } from './textShaperRun';
 
 // Clears all cached ShapedRuns from `cache`, releasing their references. The cache remains valid
@@ -24,19 +32,36 @@ export function disposeTextShaperCache(cache: TextShaperCache): void {
 // Shapes `text` in `format` with `options`, returning a cached ShapedRun when an equivalent call
 // was made earlier in this cache's lifetime. Calls `shapeTextRun` on miss and stores the result.
 // Returns null when no backend is registered or the backend is advances-only (same as
-// `shapeTextRun`); null results are NOT cached so a later backend registration can succeed.
+// `shapeTextRun`); null results are NOT cached so a later backend registration can succeed. Cache
+// keys include provider identity so callers can safely share a cache while interleaving hosts.
 export function shapeTextRunCached(
   cache: TextShaperCache,
   text: string,
   format: Readonly<TextFormat>,
   options?: Readonly<ShapeRunOptions>,
+  host?: HasTextShaper,
 ): ShapedRun | null {
-  const key = _makeCacheKey(text, format, options);
+  const backend = getTextShaperBackend(host);
+  if (backend === null) return null;
+  const key = `${_getBackendCacheId(backend)}\x00${_makeCacheKey(text, format, options)}`;
   const existing = cache._entries.get(key);
   if (existing !== undefined) return existing;
-  const result = shapeTextRun(text, format, options);
+  const result = shapeTextRun(text, format, options, host);
   if (result !== null) cache._entries.set(key, result);
   return result;
+}
+
+// Backend identity is allocation state, not capability state: it only scopes cached values and
+// never selects a provider. Weak keys avoid retaining host-provided backends after their lifetime.
+const _backendCacheIds = new WeakMap<TextShaperBackend, number>();
+let _nextBackendCacheId = 1;
+
+function _getBackendCacheId(backend: TextShaperBackend): number {
+  const existing = _backendCacheIds.get(backend);
+  if (existing !== undefined) return existing;
+  const id = _nextBackendCacheId++;
+  _backendCacheIds.set(backend, id);
+  return id;
 }
 
 // Builds a stable cache key from the shaping parameters. The key encodes all fields that affect

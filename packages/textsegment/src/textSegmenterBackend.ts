@@ -1,26 +1,38 @@
-import type { TextSegment, TextSegmentGranularity, TextSegmenterBackend } from '@flighthq/types/contract';
+import type {
+  HasTextSegmenter,
+  TextSegment,
+  TextSegmentGranularity,
+  TextSegmenterBackend,
+} from '@flighthq/types/contract';
 
 // Builds the default web backend: a wrapper over the browser-native Intl.Segmenter. It ships no
 // Unicode tables — the engine already carries them — so the common path costs nothing in bundle
 // weight. Intl.Segmenter instances are cached by (locale, granularity) because constructing one is
 // expensive relative to a single segment() call. Where Intl.Segmenter is absent (an old or headless
-// engine), segment() returns [] rather than throwing; install a from-scratch UAX #29 backend via
-// setTextSegmenterBackend for those hosts.
+// engine), segment() returns [] rather than throwing; compose a from-scratch UAX #29 backend into
+// the host for those environments.
 export function createWebTextSegmenterBackend(): TextSegmenterBackend {
   return { segment: segmentWithIntlSegmenter };
 }
 
-// Returns the active segmenter backend, lazily creating the web default the first time so there is
-// always an answer. A native host or a from-scratch UAX #29 backend replaces it via
-// setTextSegmenterBackend; passing null there restores this lazy web default.
-export function getTextSegmenterBackend(): TextSegmenterBackend {
-  if (_backend === null) _backend = createWebTextSegmenterBackend();
-  return _backend;
+// Stable bundled web provider. Hosts can import this directly when composing their explicit
+// capability object; callers that omit a host receive it as the final fallback.
+export const webTextSegmenterBackend: TextSegmenterBackend = createWebTextSegmenterBackend();
+
+// Returns the explicit host's provider when supplied, then the legacy installed backend, and
+// finally the bundled web provider. The explicit dependency always wins, so independent callers
+// can interleave different hosts without mutating shared capability state.
+export function getTextSegmenterBackend(host?: HasTextSegmenter): TextSegmenterBackend {
+  return host?.text.segmenter ?? _backend ?? webTextSegmenterBackend;
 }
 
-// Installs a segmenter backend; pass null to fall back to the lazily-created web default. Last write
-// wins — registering over an existing backend replaces it. Opt-in and side-effect-free at import:
-// nothing installs until a host calls this (or a segment*/boundary query lazily builds the web one).
+/**
+ * Installs the backend used by calls that omit an explicit host; pass null to restore the stable
+ * bundled web default.
+ *
+ * @deprecated Pass a HasTextSegmenter to the segmentation or boundary operation. Retained for
+ * source compatibility until the legacy global path is removed.
+ */
 export function setTextSegmenterBackend(backend: TextSegmenterBackend | null): void {
   _backend = backend;
 }

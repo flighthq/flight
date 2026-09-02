@@ -1,4 +1,4 @@
-import type { ShapedRun, TextShaperBackend } from '@flighthq/types/contract';
+import type { HasTextShaper, ShapedRun, TextShaperBackend } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
 import {
@@ -82,6 +82,15 @@ describe('disposeTextShaperCache', () => {
 });
 
 describe('shapeTextRunCached', () => {
+  it('keeps cache entries isolated when callers interleave explicit hosts', () => {
+    const cache = createTextShaperCache();
+    const first = _hostWithAdvance(1);
+    const second = _hostWithAdvance(2);
+    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first)?.advanceWidth).toBe(1);
+    expect(shapeTextRunCached(cache, 'hi', {}, undefined, second)?.advanceWidth).toBe(2);
+    expect(shapeTextRunCached(cache, 'hi', {}, undefined, first)?.advanceWidth).toBe(1);
+  });
+
   it('returns null when no backend is set', () => {
     const cache = createTextShaperCache();
     expect(shapeTextRunCached(cache, 'hi', {})).toBeNull();
@@ -159,3 +168,14 @@ describe('shapeTextRunCached', () => {
     expect(cache._entries.size).toBe(1);
   });
 });
+
+function _hostWithAdvance(advanceWidth: number): HasTextShaper {
+  return {
+    text: {
+      shaper: {
+        measureText: () => advanceWidth,
+        shapeRun: () => ({ ..._stubRun, advanceWidth }),
+      },
+    },
+  };
+}

@@ -1,3 +1,5 @@
+import type { HasTextSegmenter, TextSegmenterBackend } from '@flighthq/types/contract';
+
 import {
   getNextGraphemeBoundary,
   getNextWordBoundary,
@@ -68,6 +70,15 @@ describe('getPreviousWordBoundary', () => {
 });
 
 describe('getWordRangeAt', () => {
+  it('threads an explicit host through the boundary helper', () => {
+    const explicit: TextSegmenterBackend = {
+      segment: (text) => [{ start: 0, end: text.length, text, isWordLike: true }],
+    };
+    const host: HasTextSegmenter = { text: { segmenter: explicit } };
+    setTextSegmenterBackend({ segment: () => [] });
+    expect(getWordRangeAt('word', 1, undefined, host)).toEqual({ start: 0, end: 4 });
+  });
+
   it('returns the word range under an index', () => {
     expect(getWordRangeAt('foo bar', 1)).toEqual({ start: 0, end: 3 });
   });

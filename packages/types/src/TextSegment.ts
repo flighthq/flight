@@ -1,8 +1,8 @@
-// Unicode text-segmentation seam (UAX #29). Free functions in @flighthq/textsegment delegate to the
-// active TextSegmenterBackend — the default web backend wraps the browser-native Intl.Segmenter, so
-// the common path ships no Unicode tables; a from-scratch UAX #29 backend (headless/native hosts, or
-// a flight-rs table kernel) replaces it via setTextSegmenterBackend. Line breaking (UAX #14) is NOT
-// here: it is a different algorithm Intl.Segmenter does not provide and @flighthq/textlayout owns it.
+// Unicode text-segmentation seam (UAX #29). Free functions in @flighthq/textsegment accept an
+// explicit HasTextSegmenter capability; when omitted, the bundled Intl.Segmenter provider remains
+// the compatibility fallback. A from-scratch UAX #29 backend can be composed by headless/native
+// hosts or a flight-rs table kernel. Line breaking (UAX #14) is NOT here: it is a different
+// algorithm Intl.Segmenter does not provide and @flighthq/textlayout owns it.
 
 // The three UAX #29 boundary families the seam segments a string into. A caret steps by 'grapheme'
 // (an emoji or combining sequence is one unit), word-select extends by 'word', and sentence

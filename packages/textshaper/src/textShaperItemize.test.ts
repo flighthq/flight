@@ -1,4 +1,4 @@
-import type { ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types/contract';
+import type { HasTextShaper, ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
 import { itemizeText, shapeTextRuns } from './textShaperItemize';
@@ -78,6 +78,12 @@ describe('itemizeText', () => {
 });
 
 describe('shapeTextRuns', () => {
+  it('threads an explicit host to every shaped item', () => {
+    const host: HasTextShaper = { text: { shaper: _makeShapingBackend() } };
+    setTextShaperBackend({ measureText: () => 0 });
+    expect(shapeTextRuns('ABسلام', {}, undefined, host)).toHaveLength(2);
+  });
+
   it('returns empty array for empty string', () => {
     expect(shapeTextRuns('', {})).toEqual([]);
   });

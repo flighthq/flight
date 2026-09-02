@@ -1,4 +1,11 @@
-import type { FontMetrics, GlyphExtents, ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types/contract';
+import type {
+  FontMetrics,
+  GlyphExtents,
+  HasTextShaper,
+  ShapedRun,
+  ShapeRunOptions,
+  TextFormat,
+} from '@flighthq/types/contract';
 
 import { getTextShaperBackend } from './textShaper';
 
@@ -23,20 +30,20 @@ export function createShapedRun(): ShapedRun {
   };
 }
 
-export function getCodePointForGlyph(glyphId: number, _format: Readonly<TextFormat>): number {
-  const backend = getTextShaperBackend();
+export function getCodePointForGlyph(glyphId: number, _format: Readonly<TextFormat>, host?: HasTextShaper): number {
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.getCodePointForGlyph) return -1;
   return backend.getCodePointForGlyph(glyphId);
 }
 
-export function getFontMetrics(format: Readonly<TextFormat>): FontMetrics | null {
-  const backend = getTextShaperBackend();
+export function getFontMetrics(format: Readonly<TextFormat>, host?: HasTextShaper): FontMetrics | null {
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.getFontMetrics) return null;
   return backend.getFontMetrics(format);
 }
 
-export function getFontMetricsInto(format: Readonly<TextFormat>, out: FontMetrics): boolean {
-  const metrics = getFontMetrics(format);
+export function getFontMetricsInto(format: Readonly<TextFormat>, out: FontMetrics, host?: HasTextShaper): boolean {
+  const metrics = getFontMetrics(format, host);
   if (metrics === null) return false;
   out.ascent = metrics.ascent;
   out.capHeight = metrics.capHeight;
@@ -49,15 +56,19 @@ export function getFontMetricsInto(format: Readonly<TextFormat>, out: FontMetric
   return true;
 }
 
-export function getFontUnitScale(format: Readonly<TextFormat>): number {
-  const metrics = getFontMetrics(format);
+export function getFontUnitScale(format: Readonly<TextFormat>, host?: HasTextShaper): number {
+  const metrics = getFontMetrics(format, host);
   if (metrics === null) return -1;
   const size = format.size ?? 12;
   return size / metrics.unitsPerEm;
 }
 
-export function getGlyphExtents(glyphId: number, _format: Readonly<TextFormat>): GlyphExtents | null {
-  const backend = getTextShaperBackend();
+export function getGlyphExtents(
+  glyphId: number,
+  _format: Readonly<TextFormat>,
+  host?: HasTextShaper,
+): GlyphExtents | null {
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.getGlyphExtents) return null;
   return backend.getGlyphExtents(glyphId);
 }
@@ -66,8 +77,9 @@ export function getGlyphExtentsBatch(
   glyphIds: ReadonlyArray<number>,
   _format: Readonly<TextFormat>,
   out: GlyphExtents[],
+  host?: HasTextShaper,
 ): number {
-  const backend = getTextShaperBackend();
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.getGlyphExtents) return 0;
   let resolved = 0;
   for (let i = 0; i < glyphIds.length; i++) {
@@ -82,8 +94,13 @@ export function getGlyphExtentsBatch(
   return resolved;
 }
 
-export function getGlyphExtentsInto(glyphId: number, _format: Readonly<TextFormat>, out: GlyphExtents): boolean {
-  const extents = getGlyphExtents(glyphId, _format);
+export function getGlyphExtentsInto(
+  glyphId: number,
+  _format: Readonly<TextFormat>,
+  out: GlyphExtents,
+  host?: HasTextShaper,
+): boolean {
+  const extents = getGlyphExtents(glyphId, _format, host);
   if (extents === null) return false;
   out.height = extents.height;
   out.width = extents.width;
@@ -92,20 +109,29 @@ export function getGlyphExtentsInto(glyphId: number, _format: Readonly<TextForma
   return true;
 }
 
-export function getGlyphIndexForCodePoint(codePoint: number, _format: Readonly<TextFormat>): number {
-  const backend = getTextShaperBackend();
+export function getGlyphIndexForCodePoint(
+  codePoint: number,
+  _format: Readonly<TextFormat>,
+  host?: HasTextShaper,
+): number {
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.getGlyphIndexForCodePoint) return -1;
   return backend.getGlyphIndexForCodePoint(codePoint);
 }
 
-export function getGlyphName(glyphId: number, _format: Readonly<TextFormat>): string {
-  const backend = getTextShaperBackend();
+export function getGlyphName(glyphId: number, _format: Readonly<TextFormat>, host?: HasTextShaper): string {
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.getGlyphName) return '';
   return backend.getGlyphName(glyphId);
 }
 
-export function shapeTextRun(text: string, format: Readonly<TextFormat>, options?: ShapeRunOptions): ShapedRun | null {
-  const backend = getTextShaperBackend();
+export function shapeTextRun(
+  text: string,
+  format: Readonly<TextFormat>,
+  options?: ShapeRunOptions,
+  host?: HasTextShaper,
+): ShapedRun | null {
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.shapeRun) return null;
   return backend.shapeRun(text, format, options);
 }
@@ -115,8 +141,9 @@ export function shapeTextRunInto(
   format: Readonly<TextFormat>,
   out: ShapedRun,
   options?: ShapeRunOptions,
+  host?: HasTextShaper,
 ): boolean {
-  const backend = getTextShaperBackend();
+  const backend = getTextShaperBackend(host);
   if (backend === null || !backend.shapeRun) return false;
   const result = backend.shapeRun(text, format, options);
   const glyphs = out.glyphs;

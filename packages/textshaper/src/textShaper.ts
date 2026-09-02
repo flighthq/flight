@@ -1,5 +1,6 @@
 import type {
   BackendOperationExplanation,
+  HasTextShaper,
   TextFormat,
   TextShaperBackend,
   TextShaperOperation,
@@ -7,45 +8,48 @@ import type {
 
 import { _textShaperBackendHook } from './_textShaperHooks';
 
-// Returns the active text-shaper backend, or null when none has been registered. Unlike the
-// always-on platform capabilities (clipboard, storage), shaping has no light web default that lives
-// here: the canvas backend needs DOM + font-string computation, so it ships in
-// @flighthq/textshaper-canvas and is installed via setTextShaperBackend. This mirrors text-layout's
-// historical measure-provider, which was null until a renderer registered one — callers fall back to
-// leaving text unmeasured until a backend exists. A future @flighthq/textshaper-harfbuzz registers
-// the same way.
-// Which layer implements `operation`. This capability is a SINGLE NULLABLE SLOT — there is no host layer
-// and no sentinel — so the two honest answers are `'custom'` (a backend is installed and provides it) and
-// `'none'` (no backend is installed at all). Reporting `'sentinel'` here would name a fall-through object
-// that does not exist, and inventing a host layer would describe a precedence this package does not have.
-export function explainTextShaperOperation(operation: TextShaperOperation): BackendOperationExplanation {
-  if (_backend !== null && typeof _backend[operation] === 'function') {
-    return { implemented: true, layer: 'custom', operation };
+// Which layer implements `operation`. An explicit host provider wins over the legacy installed
+// backend. There is no sentinel because this package has no light bundled shaper implementation.
+export function explainTextShaperOperation(
+  operation: TextShaperOperation,
+  host?: HasTextShaper,
+): BackendOperationExplanation {
+  const backend = getTextShaperBackend(host);
+  if (backend !== null && typeof backend[operation] === 'function') {
+    return { implemented: true, layer: host === undefined ? 'custom' : 'host', operation };
   }
   return { implemented: false, layer: 'none', operation };
 }
 
-export function getTextShaperBackend(): TextShaperBackend | null {
-  return _backend;
+// Returns the explicit host's shaper when supplied, otherwise the legacy installed backend. Unlike
+// text segmentation, shaping has no light bundled default: the canvas provider needs DOM and font
+// string computation, so callers must compose it into a host or install it through the legacy path.
+export function getTextShaperBackend(host?: HasTextShaper): TextShaperBackend | null {
+  return host?.text.shaper ?? _backend;
 }
 
-// Whether an installed backend implements `operation`. False when nothing is installed, which for this
-// capability is also what the getter reports by returning null.
-export function hasTextShaperOperation(operation: TextShaperOperation): boolean {
-  return explainTextShaperOperation(operation).implemented;
+// Whether the selected backend implements `operation`. False when neither an explicit nor legacy
+// provider supplies it.
+export function hasTextShaperOperation(operation: TextShaperOperation, host?: HasTextShaper): boolean {
+  return explainTextShaperOperation(operation, host).implemented;
 }
 
-// Measures `text` in `format` to its horizontal advance, in pixels, via the active backend. Returns
-// the sentinel -1 when no backend is registered (expected before setup), so callers can distinguish
-// "unmeasurable" from a real zero-width advance.
-export function measureText(text: string, format: Readonly<TextFormat>): number {
-  if (_backend === null) return -1;
-  return _backend.measureText(text, format);
+// Measures `text` in `format` to its horizontal advance, in pixels, via the explicit host or legacy
+// fallback. Returns the sentinel -1 when neither is available, distinguishing "unmeasurable" from a
+// real zero-width advance.
+export function measureText(text: string, format: Readonly<TextFormat>, host?: HasTextShaper): number {
+  const backend = getTextShaperBackend(host);
+  if (backend === null) return -1;
+  return backend.measureText(text, format);
 }
 
-// Installs a text-shaper backend; pass null to clear it. Last write wins — registering over an
-// existing backend replaces it, which is how a host swaps the canvas default for HarfBuzz. Never
-// throws on re-registration.
+/**
+ * Installs the backend used by calls that omit an explicit host; pass null to clear it. Last write
+ * wins and re-registration never throws.
+ *
+ * @deprecated Pass a HasTextShaper to the text-shaping operation. Retained for source compatibility
+ * until the legacy global path is removed.
+ */
 export function setTextShaperBackend(backend: TextShaperBackend | null): void {
   _backend = backend;
   _textShaperBackendHook?.(backend);
