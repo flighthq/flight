@@ -7,7 +7,7 @@ export function areEntityRuntimeGuardsEnabled(): boolean {
 }
 
 // Creates a guarded entity that warns when the runtime slot is written directly rather
-// than through ensureEntityRuntime or attachEntityBinding. Only active when guards are
+// than through a public helper such as attachEntityBinding. Only active when guards are
 // enabled via enableEntityRuntimeGuards.
 export function createGuardedEntity<Type extends object>(entity: Type & Entity): Type & Entity {
   if (!_guardsEnabled || typeof Proxy === 'undefined') return entity;
@@ -15,9 +15,9 @@ export function createGuardedEntity<Type extends object>(entity: Type & Entity):
     set(target, prop, value) {
       if (prop === EntityRuntimeKey && _guardsEnabled) {
         // The write is reported and then ALLOWED: the stack cannot be inspected reliably across
-        // environments, so trusted callers (ensureEntityRuntime, attachEntityBinding) cannot be told apart
-        // from a raw poke. Reporting goes through the seam rather than the console so it uses the standard
-        // sink — see enableEntityRuntimeGuards.
+        // environments, so trusted callers such as attachEntityBinding cannot be told apart from a raw
+        // poke. Reporting goes through the seam rather than the console so it uses the standard sink — see
+        // enableEntityRuntimeGuards.
         _writeGuard?.('runtime-slot');
       }
       (target as unknown as Record<PropertyKey, unknown>)[prop] = value;
