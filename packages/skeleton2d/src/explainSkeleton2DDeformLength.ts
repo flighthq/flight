@@ -20,7 +20,7 @@ export function explainSkeleton2DDeformLength(
   const addressed = weighted ? skin.influences.length / 2 : (vertices?.length ?? 0);
   const offsets = deform === null ? 0 : deform.length;
   return {
-    accepted: deform !== null && offsets >= addressed,
+    accepted: deform !== null && offsets === addressed,
     addressed,
     addressing: weighted ? 'weighted' : 'rigid',
     offsets,
