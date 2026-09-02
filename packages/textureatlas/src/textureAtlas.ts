@@ -4,7 +4,11 @@ import { BitmapTextureSourceKind, CompressedImageTextureSourceKind } from '@flig
 
 export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
   return createEntity({
+    imageHeight: obj?.imageHeight ?? 0,
+    imageName: obj?.imageName ?? null,
+    imageWidth: obj?.imageWidth ?? 0,
     regions: obj?.regions ?? [],
+    scale: obj?.scale ?? 1,
     texture: obj?.texture ?? null,
   });
 }

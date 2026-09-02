@@ -1,14 +1,14 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import type { TextureAtlas, TextureAtlasStarlingParseOptions } from '@flighthq/types/contract';
+import type { TextureAtlas } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 // Populates `atlas.regions` from a Starling / Sparrow XML string.
 // Existing regions are cleared before parsing. Returns `atlas` for convenience.
-export function parseTextureAtlasStarlingXml(
-  xml: string,
-  atlas: TextureAtlas,
-  _options?: TextureAtlasStarlingParseOptions,
-): TextureAtlas {
+//
+// Takes no image-dimension options. Starling XML declares no atlas size, but the one consumer that
+// needs it — getTextureAtlasRegionUv — takes width and height as its own arguments, so a parse-time
+// hint would be a second path to a value the caller already supplies at the point of use.
+export function parseTextureAtlasStarlingXml(xml: string, atlas: TextureAtlas): TextureAtlas {
   atlas.regions.length = 0;
   const root = parseXmlDocument(xml);
   if (!root) return atlas;

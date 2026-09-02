@@ -127,6 +127,7 @@ export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>):
     name: obj?.name ?? null,
     originalHeight: obj?.originalHeight ?? null,
     originalWidth: obj?.originalWidth ?? null,
+    pageName: obj?.pageName ?? null,
     pivotX: obj?.pivotX ?? null,
     pivotY: obj?.pivotY ?? null,
     rotated: obj?.rotated ?? false,

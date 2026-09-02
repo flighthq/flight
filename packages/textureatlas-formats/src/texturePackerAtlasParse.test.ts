@@ -1,10 +1,10 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { TextureAtlasPackerArrayDocument, TextureAtlasPackerHashDocument } from '@flighthq/types/contract';
+import type { TexturePackerAtlasArrayDocument, TexturePackerAtlasHashDocument } from '@flighthq/types/contract';
 
-import { parseTextureAtlasPackerDocument, parseTextureAtlasPackerJson } from './textureAtlasPackerParse';
+import { parseTexturePackerAtlasDocument, parseTexturePackerAtlasJson } from './texturePackerAtlasParse';
 
 // Minimal TexturePacker JSON-Hash fixture
-const HASH_FIXTURE: TextureAtlasPackerHashDocument = {
+const HASH_FIXTURE: TexturePackerAtlasHashDocument = {
   frames: {
     'hero_idle_0.png': {
       frame: { x: 0, y: 0, w: 64, h: 64 },
@@ -34,7 +34,7 @@ const HASH_FIXTURE: TextureAtlasPackerHashDocument = {
 };
 
 // Minimal TexturePacker JSON-Array fixture
-const ARRAY_FIXTURE: TextureAtlasPackerArrayDocument = {
+const ARRAY_FIXTURE: TexturePackerAtlasArrayDocument = {
   frames: [
     {
       filename: 'tile_0.png',
@@ -63,39 +63,39 @@ const ARRAY_FIXTURE: TextureAtlasPackerArrayDocument = {
   },
 };
 
-describe('parseTextureAtlasPackerDocument', () => {
+describe('parseTexturePackerAtlasDocument', () => {
   it('populates regions from a hash-format document', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(HASH_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(HASH_FIXTURE, atlas);
     expect(atlas.regions).toHaveLength(2);
   });
   it('populates regions from an array-format document', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions).toHaveLength(2);
   });
   it('sets region name from the frame key (hash format)', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(HASH_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(HASH_FIXTURE, atlas);
     const names = atlas.regions.map((r) => r.name);
     expect(names).toContain('hero_idle_0.png');
     expect(names).toContain('hero_walk_0.png');
   });
   it('sets region name from filename field (array format)', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions[0].name).toBe('tile_0.png');
     expect(atlas.regions[1].name).toBe('tile_1.png');
   });
   it('assigns sequential ids starting at 0', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions[0].id).toBe(0);
     expect(atlas.regions[1].id).toBe(1);
   });
   it('populates x/y/width/height from the frame rect', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions[0].x).toBe(0);
     expect(atlas.regions[0].y).toBe(0);
     expect(atlas.regions[0].width).toBe(32);
@@ -103,7 +103,7 @@ describe('parseTextureAtlasPackerDocument', () => {
   });
   it('sets trimmed fields when the frame is trimmed', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(HASH_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(HASH_FIXTURE, atlas);
     const trimmed = atlas.regions.find((r) => r.name === 'hero_walk_0.png');
     expect(trimmed).toBeDefined();
     expect(trimmed!.trimmed).toBe(true);
@@ -114,7 +114,7 @@ describe('parseTextureAtlasPackerDocument', () => {
   });
   it('sets null originalWidth/Height when the frame is not trimmed', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(HASH_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(HASH_FIXTURE, atlas);
     const idle = atlas.regions.find((r) => r.name === 'hero_idle_0.png')!;
     expect(idle.trimmed).toBe(false);
     expect(idle.originalWidth).toBeNull();
@@ -122,26 +122,26 @@ describe('parseTextureAtlasPackerDocument', () => {
   });
   it('sets pivot when pivot is present', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(HASH_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(HASH_FIXTURE, atlas);
     const idle = atlas.regions.find((r) => r.name === 'hero_idle_0.png')!;
     expect(idle.pivotX).toBe(0.5);
     expect(idle.pivotY).toBe(0.5);
   });
   it('sets null pivot when pivot is absent', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions[0].pivotX).toBeNull();
     expect(atlas.regions[0].pivotY).toBeNull();
   });
   it('sets rotated on rotated regions', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions[0].rotated).toBe(false);
     expect(atlas.regions[1].rotated).toBe(true);
   });
   it('swaps width/height for rotated regions', () => {
     // Rotated 90°: packed w=32,h=32 with rotation → logical w=h, h=w (same here since square)
-    const rotatedDoc: TextureAtlasPackerArrayDocument = {
+    const rotatedDoc: TexturePackerAtlasArrayDocument = {
       frames: [
         {
           filename: 'rotated.png',
@@ -155,42 +155,42 @@ describe('parseTextureAtlasPackerDocument', () => {
       meta: { app: 'tp', format: 'RGBA8888', image: 'a.png', scale: 1, size: { w: 64, h: 64 }, version: '1.0' },
     };
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(rotatedDoc, atlas);
+    parseTexturePackerAtlasDocument(rotatedDoc, atlas);
     // When rotated: logical width = packed h, logical height = packed w
     expect(atlas.regions[0].width).toBe(40);
     expect(atlas.regions[0].height).toBe(20);
   });
   it('clears existing regions before parsing', () => {
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
-    parseTextureAtlasPackerDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
+    parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions).toHaveLength(2);
   });
   it('returns the atlas for chaining', () => {
     const atlas = createTextureAtlas();
-    const result = parseTextureAtlasPackerDocument(HASH_FIXTURE, atlas);
+    const result = parseTexturePackerAtlasDocument(HASH_FIXTURE, atlas);
     expect(result).toBe(atlas);
   });
 });
 
-describe('parseTextureAtlasPackerJson', () => {
+describe('parseTexturePackerAtlasJson', () => {
   it('returns the atlas unchanged (no throw) on malformed JSON', () => {
     // Malformed JSON must yield the sentinel (atlas with no regions), matching the XML path and the
     // never-throw importer policy — not an uncaught SyntaxError.
     const atlas = createTextureAtlas();
-    expect(() => parseTextureAtlasPackerJson('{ not valid json', atlas)).not.toThrow();
+    expect(() => parseTexturePackerAtlasJson('{ not valid json', atlas)).not.toThrow();
     expect(atlas.regions).toHaveLength(0);
   });
 
   it('parses a JSON string and populates atlas regions', () => {
     const atlas = createTextureAtlas();
     const json = JSON.stringify(ARRAY_FIXTURE);
-    parseTextureAtlasPackerJson(json, atlas);
+    parseTexturePackerAtlasJson(json, atlas);
     expect(atlas.regions).toHaveLength(2);
     expect(atlas.regions[0].name).toBe('tile_0.png');
   });
   it('accepts an optional stripPathPrefix option', () => {
-    const docWithPaths: TextureAtlasPackerHashDocument = {
+    const docWithPaths: TexturePackerAtlasHashDocument = {
       frames: {
         'sprites/hero.png': {
           frame: { x: 0, y: 0, w: 32, h: 32 },
@@ -203,12 +203,12 @@ describe('parseTextureAtlasPackerJson', () => {
       meta: { app: 'tp', format: 'RGBA8888', image: 'a.png', scale: 1, size: { w: 64, h: 64 }, version: '1.0' },
     };
     const atlas = createTextureAtlas();
-    parseTextureAtlasPackerJson(JSON.stringify(docWithPaths), atlas, { stripPathPrefix: true });
+    parseTexturePackerAtlasJson(JSON.stringify(docWithPaths), atlas, { stripPathPrefix: true });
     expect(atlas.regions[0].name).toBe('hero.png');
   });
   it('returns the atlas for chaining', () => {
     const atlas = createTextureAtlas();
-    const result = parseTextureAtlasPackerJson(JSON.stringify(ARRAY_FIXTURE), atlas);
+    const result = parseTexturePackerAtlasJson(JSON.stringify(ARRAY_FIXTURE), atlas);
     expect(result).toBe(atlas);
   });
 });

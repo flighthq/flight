@@ -1,14 +1,20 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 
+import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+
 // Parses a libGDX / Spine text-format atlas string and populates `atlas.regions`.
 // Handles single and multi-page atlases; regions from all pages are concatenated.
 // Existing regions in `atlas` are cleared. Returns `atlas` for convenience.
 export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas): TextureAtlas {
   atlas.regions.length = 0;
+  resetTextureAtlasPageMeta(atlas);
   const lines = text.split(/\r?\n/);
   let i = 0;
   let id = 0;
+  // The page a region belongs to. A multi-page atlas concatenates its regions, so each one has to
+  // carry its own page name or the caller cannot tell which image to sample.
+  let pageName: string | null = null;
   while (i < lines.length) {
     // Skip blank lines (page separator or leading whitespace)
     while (i < lines.length && lines[i].trim() === '') i++;
@@ -16,6 +22,9 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
     // Page header: first non-blank line is the image file name (no colon)
     const maybeImage = lines[i].trim();
     if (!maybeImage.includes(':')) {
+      pageName = maybeImage;
+      // The first page is the atlas's own image; later pages are recorded per region.
+      if (atlas.imageName === null) atlas.imageName = maybeImage;
       i++; // consume image filename
       // Skip page-level key:value pairs
       while (i < lines.length && lines[i].trim() !== '') {
@@ -90,6 +99,7 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
             name,
             originalHeight: trimmed ? origH : null,
             originalWidth: trimmed ? origW : null,
+            pageName,
             pivotX: null,
             pivotY: null,
             rotated,

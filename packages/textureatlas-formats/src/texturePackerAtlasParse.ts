@@ -1,17 +1,19 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type {
   TextureAtlas,
-  TextureAtlasPackerArrayFrame,
-  TextureAtlasPackerDocument,
-  TextureAtlasPackerHashFrame,
-  TextureAtlasPackerParseOptions,
+  TexturePackerAtlasArrayFrame,
+  TexturePackerAtlasDocument,
+  TexturePackerAtlasHashFrame,
+  TexturePackerAtlasParseOptions,
 } from '@flighthq/types/contract';
 
+import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+
 // Convenience variant that accepts an already-parsed object (avoids a redundant JSON.parse).
-export function parseTextureAtlasPackerDocument(
-  doc: TextureAtlasPackerDocument,
+export function parseTexturePackerAtlasDocument(
+  doc: TexturePackerAtlasDocument,
   atlas: TextureAtlas,
-  options?: TextureAtlasPackerParseOptions,
+  options?: TexturePackerAtlasParseOptions,
 ): TextureAtlas {
   applyDocument(atlas, doc, options ?? {});
   return atlas;
@@ -20,14 +22,14 @@ export function parseTextureAtlasPackerDocument(
 // Parses a TexturePacker JSON string and populates `atlas.regions`.
 // Supports both the JSON-hash and JSON-array shapes.
 // Existing regions in `atlas` are cleared. Returns `atlas` for convenience.
-export function parseTextureAtlasPackerJson(
+export function parseTexturePackerAtlasJson(
   json: string,
   atlas: TextureAtlas,
-  options?: TextureAtlasPackerParseOptions,
+  options?: TexturePackerAtlasParseOptions,
 ): TextureAtlas {
-  let doc: TextureAtlasPackerDocument;
+  let doc: TexturePackerAtlasDocument;
   try {
-    doc = JSON.parse(json) as TextureAtlasPackerDocument;
+    doc = JSON.parse(json) as TexturePackerAtlasDocument;
   } catch {
     // Malformed JSON is an expected failure (sentinel, not a throw) — return the atlas unchanged,
     // matching the Starling XML path's `if (!root) return atlas` and the never-throw importer policy.
@@ -41,10 +43,11 @@ export function parseTextureAtlasPackerJson(
 // Existing regions are cleared before parsing.
 function applyDocument(
   atlas: TextureAtlas,
-  doc: TextureAtlasPackerDocument,
-  options: TextureAtlasPackerParseOptions,
+  doc: TexturePackerAtlasDocument,
+  options: TexturePackerAtlasParseOptions,
 ): void {
   atlas.regions.length = 0;
+  applyPageMeta(atlas, doc);
   if (Array.isArray(doc.frames)) {
     for (const entry of doc.frames) {
       applyFrame(atlas, entry.filename, entry, options);
@@ -56,6 +59,16 @@ function applyDocument(
   }
 }
 
+function applyPageMeta(atlas: TextureAtlas, doc: TexturePackerAtlasDocument): void {
+  resetTextureAtlasPageMeta(atlas);
+  const meta = doc.meta;
+  if (meta === undefined) return;
+  atlas.imageName = meta.image ?? null;
+  atlas.imageWidth = meta.size?.w ?? 0;
+  atlas.imageHeight = meta.size?.h ?? 0;
+  atlas.scale = readTextureAtlasScale(meta.scale);
+}
+
 // A frame with no `frame` rect describes no region and is skipped. `sourceSize` and
 // `spriteSourceSize` fall back rather than being dereferenced blind: reading them unguarded threw a
 // raw TypeError out of the parser on any document whose frames were not fully populated, which
@@ -64,8 +77,8 @@ function applyDocument(
 function applyFrame(
   atlas: TextureAtlas,
   name: string,
-  entry: TextureAtlasPackerArrayFrame | TextureAtlasPackerHashFrame,
-  options: TextureAtlasPackerParseOptions,
+  entry: TexturePackerAtlasArrayFrame | TexturePackerAtlasHashFrame,
+  options: TexturePackerAtlasParseOptions,
 ): void {
   const frame = entry.frame;
   if (frame === null || typeof frame !== 'object') return;

@@ -4,7 +4,7 @@ import {
   createSpritesheetData,
   createSpritesheetFrameData,
 } from '@flighthq/spritesheet/contract';
-import { parseTextureAtlasPackerDocument } from '@flighthq/textureatlas-formats/contract';
+import { parseTexturePackerAtlasDocument } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   ImportDiagnostic,
@@ -55,7 +55,7 @@ function metaScale(meta: TexturePackerMeta): number {
 function documentToData(doc: TexturePackerDocument): SpritesheetData {
   // Delegate region geometry to the atlas-formats parser (the TexturePacker document shapes are shared),
   // then layer the spritesheet frame/animation metadata on top — no independent re-parse of the frames.
-  const regions = parseTextureAtlasPackerDocument(doc, createTextureAtlas()).regions;
+  const regions = parseTexturePackerAtlasDocument(doc, createTextureAtlas()).regions;
   const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);
   const frameNames: string[] = regions.map((region) => region.name ?? '');
 
