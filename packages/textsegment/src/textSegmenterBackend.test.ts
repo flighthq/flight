@@ -1,9 +1,15 @@
-import type { TextSegment, TextSegmentGranularity, TextSegmenterBackend } from '@flighthq/types/contract';
+import type {
+  HasTextSegmenter,
+  TextSegment,
+  TextSegmentGranularity,
+  TextSegmenterBackend,
+} from '@flighthq/types/contract';
 
 import {
   createWebTextSegmenterBackend,
   getTextSegmenterBackend,
   setTextSegmenterBackend,
+  webTextSegmenterBackend,
 } from './textSegmenterBackend';
 
 interface RecordingBackend extends TextSegmenterBackend {
@@ -48,9 +54,17 @@ describe('createWebTextSegmenterBackend', () => {
 });
 
 describe('getTextSegmenterBackend', () => {
-  it('lazily falls back to a web backend when none is registered', () => {
+  it('returns an explicit host provider ahead of the legacy backend', () => {
+    const legacy = recordingBackend();
+    const explicit = recordingBackend();
+    const host: HasTextSegmenter = { text: { segmenter: explicit } };
+    setTextSegmenterBackend(legacy);
+    expect(getTextSegmenterBackend(host)).toBe(explicit);
+  });
+
+  it('falls back to the stable bundled web backend when none is registered', () => {
     const backend = getTextSegmenterBackend();
-    expect(backend).not.toBeNull();
+    expect(backend).toBe(webTextSegmenterBackend);
     expect(backend.segment('ab', 'grapheme').length).toBe(2);
   });
 
@@ -69,10 +83,20 @@ describe('setTextSegmenterBackend', () => {
     expect(backend.calls).toEqual([{ text: 'hello', granularity: 'sentence', locale: 'fr' }]);
   });
 
-  it('clears back to the lazy web default when passed null', () => {
+  it('clears back to the stable bundled web default when passed null', () => {
     setTextSegmenterBackend(recordingBackend());
     setTextSegmenterBackend(null);
     // The web default segments a ZWJ cluster as one grapheme; a recording backend would not.
     expect(getTextSegmenterBackend().segment('a👨‍👩‍👧b', 'grapheme').length).toBe(3);
+  });
+});
+
+describe('webTextSegmenterBackend', () => {
+  it('provides the stable bundled Intl fallback', () => {
+    expect(webTextSegmenterBackend.segment('a👨‍👩‍👧b', 'grapheme').map((segment) => segment.text)).toEqual([
+      'a',
+      '👨‍👩‍👧',
+      'b',
+    ]);
   });
 });

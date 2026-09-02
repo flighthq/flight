@@ -1,4 +1,9 @@
-import type { TextSegment, TextSegmentGranularity, TextSegmenterBackend } from '@flighthq/types/contract';
+import type {
+  HasTextSegmenter,
+  TextSegment,
+  TextSegmentGranularity,
+  TextSegmenterBackend,
+} from '@flighthq/types/contract';
 
 import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment';
 import { setTextSegmenterBackend } from './textSegmenterBackend';
@@ -6,6 +11,25 @@ import { setTextSegmenterBackend } from './textSegmenterBackend';
 afterEach(() => setTextSegmenterBackend(null));
 
 describe('segmentGraphemes', () => {
+  it('accepts an optional explicit segmenter host without breaking the existing signature', () => {
+    expectTypeOf(segmentGraphemes).toEqualTypeOf<
+      (text: string, locale?: string, host?: HasTextSegmenter) => readonly TextSegment[]
+    >();
+  });
+
+  it('gives an explicit host precedence over the legacy installed backend', () => {
+    setTextSegmenterBackend(taggingBackend('legacy'));
+    expect(segmentGraphemes('hi', undefined, segmenterHost(taggingBackend('explicit')))[0].text).toBe('explicit');
+  });
+
+  it('isolates callers that interleave different explicit hosts', () => {
+    const first = segmenterHost(taggingBackend('first'));
+    const second = segmenterHost(taggingBackend('second'));
+    expect(segmentGraphemes('hi', undefined, first)[0].text).toBe('first');
+    expect(segmentGraphemes('hi', undefined, second)[0].text).toBe('second');
+    expect(segmentGraphemes('hi', undefined, first)[0].text).toBe('first');
+  });
+
   it('treats a ZWJ family emoji as one grapheme', () => {
     const segments = segmentGraphemes('a👨‍👩‍👧b');
     expect(segments.map((s) => s.text)).toEqual(['a', '👨‍👩‍👧', 'b']);
@@ -32,6 +56,16 @@ describe('segmentGraphemes', () => {
     expect(seenLocale).toBe('de-DE');
   });
 });
+
+function segmenterHost(segmenter: TextSegmenterBackend): HasTextSegmenter {
+  return { text: { segmenter } };
+}
+
+function taggingBackend(tag: string): TextSegmenterBackend {
+  return {
+    segment: () => [{ start: 0, end: tag.length, text: tag }],
+  };
+}
 
 describe('segmentSentences', () => {
   it('splits into sentences', () => {

@@ -7,4 +7,5 @@ export {
   segmentGraphemes,
   segmentSentences,
   segmentWords,
+  webTextSegmenterBackend,
 } from './contract';

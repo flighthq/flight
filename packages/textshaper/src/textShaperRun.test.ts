@@ -1,4 +1,4 @@
-import type { FontMetrics, GlyphExtents, ShapedRun, TextShaperBackend } from '@flighthq/types/contract';
+import type { FontMetrics, GlyphExtents, HasTextShaper, ShapedRun, TextShaperBackend } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
 import {
@@ -290,6 +290,12 @@ describe('getGlyphName', () => {
 });
 
 describe('shapeTextRun', () => {
+  it('uses the explicitly supplied host instead of the legacy installed backend', () => {
+    setTextShaperBackend({ measureText: () => 0 });
+    const host: HasTextShaper = { text: { shaper: _makeFullBackend() } };
+    expect(shapeTextRun('ab', {}, undefined, host)?.glyphCount).toBe(2);
+  });
+
   it('returns null when no backend is set', () => {
     expect(shapeTextRun('hi', {})).toBeNull();
   });
