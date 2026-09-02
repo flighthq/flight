@@ -55,6 +55,7 @@ export {
   isNodeFocusable,
   isNodeFocused,
   isNodeHitTestEnabled,
+  isNodePointerDoubleClickEnabled,
   refreshInteractionSpatialIndex,
   registerSpriteHitTest,
   registerDefaultHitTests,
@@ -69,5 +70,6 @@ export {
   setNodeFocusable,
   setNodeHitArea,
   setNodeHitTestEnabled,
+  setNodePointerDoubleClickEnabled,
   setNodeTabIndex,
 } from './contract';

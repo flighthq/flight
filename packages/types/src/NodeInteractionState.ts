@@ -27,6 +27,9 @@ export interface NodeInteractionState {
   cursor: Cursor | null;
   // Whether this node is a keyboard focus target (a tab stop). Default `false` — focus is opt-in.
   focusable: boolean;
+  // Whether two qualifying pointer clicks dispatch `onPointerDoubleClick`. Default `false` — the
+  // higher-level gesture is opt-in independently of ordinary hit testing and click dispatch.
+  pointerDoubleClickEnabled: boolean;
   // Ordering key a focus/navigation manager uses to sequence tab stops; `-1` means natural order.
   tabIndex: number;
 }

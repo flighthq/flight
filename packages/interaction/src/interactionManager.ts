@@ -26,7 +26,7 @@ import type {
 
 import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests';
 import { findSpatialInteractionTarget } from './interactionSpatialIndex';
-import { getNodeCursor } from './nodeInteractionState';
+import { getNodeCursor, getNodeInteractionState } from './nodeInteractionState';
 
 export function captureInteractionPointer<N extends NodeAny>(
   manager: InteractionManager<N>,
@@ -68,7 +68,7 @@ export function connectInputToInteraction<N extends NodeAny>(
   const onPointerMove = (data: Readonly<InputPointerData>) =>
     dispatchInteractionPointerMove(manager, sx(data.x), sx(data.y), data.button, data);
   const onPointerUp = (data: Readonly<InputPointerData>) =>
-    dispatchInteractionPointerUp(manager, sx(data.x), sx(data.y), data.button, Date.now(), data);
+    dispatchInteractionPointerUp(manager, sx(data.x), sx(data.y), data.button, data.timeStamp, data);
   const onWheel = (data: Readonly<InputPointerData>) =>
     dispatchInteractionWheel(manager, sx(data.x), sx(data.y), data.deltaX, data.deltaY, data);
 
@@ -88,6 +88,7 @@ export function connectInputToInteraction<N extends NodeAny>(
     disconnectSignal(input.onPointerMove, onPointerMove);
     disconnectSignal(input.onPointerUp, onPointerUp);
     disconnectSignal(input.onWheel, onWheel);
+    resetInteractionClickStates(manager);
   };
 }
 
@@ -133,7 +134,8 @@ export function createInteractionManager<N extends NodeAny>(
   return {
     cursorBackend: options.cursorBackend ?? null,
     cursorTarget: null,
-    doubleClickDelay: 500,
+    doubleClickDelay: options.doubleClickDelay ?? 500,
+    doubleClickDistance: options.doubleClickDistance ?? 4,
     enabled: options.enabled ?? true,
     pointerCaptures: new Map(),
     pointerStates: new Map(),
@@ -156,6 +158,7 @@ export function createInteractionSignals(): InteractionSignals {
     onKeyDown: createSignal(),
     onKeyUp: createSignal(),
     onPointerCancel: createSignal(),
+    onPointerDoubleClick: createSignal(),
     onPointerDown: createSignal(),
     onPointerMove: createSignal(),
     onPointerOut: createSignal(),
@@ -220,10 +223,12 @@ export function dispatchInteractionPointerCancel<N extends NodeAny>(
   y: number,
   options?: Readonly<InteractionPointerOptions>,
 ): void {
+  const pointerId = options?.pointerId ?? 0;
+  const existingState = manager.pointerStates.get(pointerId);
+  if (existingState !== undefined) resetInteractionClickState(existingState);
   if (!isPointerSignalNeeded(manager, cancelSignalNames)) return;
 
-  const pointerId = options?.pointerId ?? 0;
-  const state = getInteractionPointerState(manager, pointerId);
+  const state = existingState ?? getInteractionPointerState(manager, pointerId);
   const captured = manager.pointerCaptures.get(pointerId) ?? null;
   const oldTarget = state.pointerOverTarget;
   const target = captured ?? state.pointerDownTarget ?? oldTarget;
@@ -252,6 +257,7 @@ export function dispatchInteractionPointerDown<N extends NodeAny>(
   const pointerId = options?.pointerId ?? 0;
   const state = getInteractionPointerState(manager, pointerId);
   const target = findInteractionTarget(manager, x, y, pointerId);
+  resetPointerDoubleClickIfInvalid(manager, state, target, x, y, button, options?.timeStamp);
   if (target === null) return;
 
   state.pointerDownTarget = target;
@@ -276,6 +282,7 @@ export function dispatchInteractionPointerMove<N extends NodeAny>(
   const state = getInteractionPointerState(manager, pointerId);
   const oldTarget = state.pointerOverTarget;
   const target = findInteractionTarget(manager, x, y, pointerId);
+  resetPointerDoubleClickIfInvalid(manager, state, target, x, y, button, options?.timeStamp);
   if (target === null && oldTarget === null) return;
 
   state.pointerOverTarget = target;
@@ -295,15 +302,17 @@ export function dispatchInteractionPointerUp<N extends NodeAny>(
   x: number,
   y: number,
   button: number = 0,
-  time: number = Date.now(),
+  time?: number,
   options?: Readonly<InteractionPointerOptions>,
 ): void {
   if (!isPointerSignalNeeded(manager, upSignalNames)) return;
 
+  const clickTime = time ?? options?.timeStamp ?? 0;
   const pointerId = options?.pointerId ?? 0;
   const state = getInteractionPointerState(manager, pointerId);
   const downTarget = state.pointerDownTarget;
   const target = findInteractionTarget(manager, x, y, pointerId);
+  resetPointerDoubleClickIfInvalid(manager, state, target, x, y, button, clickTime);
   state.pointerDownTarget = null;
   setPointerData(target ?? downTarget, null, x, y, button, 0, 0, options);
 
@@ -315,15 +324,18 @@ export function dispatchInteractionPointerUp<N extends NodeAny>(
 
   if (target === downTarget) {
     emitInteractionSignal(target, manager.root, 'onClick', _pointerData);
-    if (state.lastClickTarget === target && time - state.lastClickTime <= manager.doubleClickDelay) {
+    const legacyElapsed = clickTime - state.lastClickTime;
+    if (state.lastClickTarget === target && legacyElapsed >= 0 && legacyElapsed <= manager.doubleClickDelay) {
       emitInteractionSignal(target, manager.root, 'onDoubleClick', _pointerData);
       state.lastClickTarget = null;
       state.lastClickTime = -Infinity;
     } else {
       state.lastClickTarget = target;
-      state.lastClickTime = time;
+      state.lastClickTime = clickTime;
     }
+    dispatchPointerDoubleClick(manager, state, target, x, y, button, clickTime);
   } else {
+    resetInteractionClickState(state);
     emitInteractionSignal(downTarget, manager.root, 'onReleaseOutside', _pointerData);
   }
 }
@@ -355,6 +367,8 @@ export function invalidateInteractionCursor<N extends NodeAny>(manager: Interact
 
 export function releaseInteractionPointer<N extends NodeAny>(manager: InteractionManager<N>, pointerId: number): void {
   manager.pointerCaptures.delete(pointerId);
+  const state = manager.pointerStates.get(pointerId);
+  if (state !== undefined) resetInteractionClickState(state);
 }
 
 /**
@@ -508,6 +522,104 @@ function findInteractionTarget<N extends NodeAny>(
   return (manager.precise ? findGraphHitTargetPrecise(root, x, y) : findGraphHitTarget(root, x, y)) as N | null;
 }
 
+function dispatchPointerDoubleClick<N extends NodeAny>(
+  manager: InteractionManager<N>,
+  state: InteractionPointerState<N>,
+  target: N,
+  x: number,
+  y: number,
+  button: number,
+  time: number,
+): void {
+  const interactionState = getNodeInteractionState(target);
+  if (interactionState?.pointerDoubleClickEnabled !== true) {
+    resetPointerDoubleClickState(state);
+    return;
+  }
+
+  if (isPointerDoubleClickCandidateValid(manager, state, target, x, y, button, time)) {
+    resetPointerDoubleClickState(state);
+    emitInteractionSignal(target, manager.root, 'onPointerDoubleClick', _pointerData);
+    return;
+  }
+
+  state.lastPointerClickButton = button;
+  state.lastPointerClickInteractionState = interactionState;
+  state.lastPointerClickTarget = target;
+  state.lastPointerClickTime = time;
+  state.lastPointerClickX = x;
+  state.lastPointerClickY = y;
+}
+
+function isPointerDoubleClickCandidateValid<N extends NodeAny>(
+  manager: InteractionManager<N>,
+  state: InteractionPointerState<N>,
+  target: N | null,
+  x: number,
+  y: number,
+  button: number,
+  time?: number,
+): boolean {
+  if (target === null || state.lastPointerClickTarget !== target || state.lastPointerClickButton !== button) {
+    return false;
+  }
+
+  const interactionState = getNodeInteractionState(target);
+  if (
+    interactionState?.pointerDoubleClickEnabled !== true ||
+    interactionState !== state.lastPointerClickInteractionState
+  ) {
+    return false;
+  }
+
+  const dx = x - state.lastPointerClickX;
+  const dy = y - state.lastPointerClickY;
+  if (dx * dx + dy * dy > manager.doubleClickDistance * manager.doubleClickDistance) return false;
+
+  if (time !== undefined) {
+    const elapsed = time - state.lastPointerClickTime;
+    if (elapsed < 0 || elapsed > manager.doubleClickDelay) return false;
+  }
+
+  return true;
+}
+
+function resetInteractionClickState<N extends NodeAny>(state: InteractionPointerState<N>): void {
+  state.lastClickTarget = null;
+  state.lastClickTime = -Infinity;
+  resetPointerDoubleClickState(state);
+}
+
+function resetInteractionClickStates<N extends NodeAny>(manager: InteractionManager<N>): void {
+  for (const state of manager.pointerStates.values()) resetInteractionClickState(state);
+}
+
+function resetPointerDoubleClickIfInvalid<N extends NodeAny>(
+  manager: InteractionManager<N>,
+  state: InteractionPointerState<N>,
+  target: N | null,
+  x: number,
+  y: number,
+  button: number,
+  time?: number,
+): void {
+  if (
+    state.lastPointerClickTarget !== null &&
+    !isPointerDoubleClickCandidateValid(manager, state, target, x, y, button, time)
+  ) {
+    resetPointerDoubleClickState(state);
+  }
+}
+
+function resetPointerDoubleClickState<N extends NodeAny>(state: InteractionPointerState<N>): void {
+  state.lastPointerClickButton = -1;
+  state.lastPointerClickInteractionState = null;
+  state.lastPointerClickTarget = null;
+  state.lastPointerClickTime = -Infinity;
+  state.lastPointerClickX = 0;
+  state.lastPointerClickY = 0;
+}
+
 function getInteractionPointerState<N extends NodeAny>(
   manager: InteractionManager<N>,
   pointerId: number,
@@ -517,6 +629,12 @@ function getInteractionPointerState<N extends NodeAny>(
     state = {
       lastClickTarget: null,
       lastClickTime: -Infinity,
+      lastPointerClickButton: -1,
+      lastPointerClickInteractionState: null,
+      lastPointerClickTarget: null,
+      lastPointerClickTime: -Infinity,
+      lastPointerClickX: 0,
+      lastPointerClickY: 0,
       pointerDownTarget: null,
       pointerOverTarget: null,
     };
@@ -599,7 +717,10 @@ function isPointerSignalNeeded<N extends NodeAny>(
   manager: InteractionManager<N>,
   names: readonly InteractionSignalName[],
 ): boolean {
-  if (!manager.enabled) return false;
+  if (!manager.enabled) {
+    resetInteractionClickStates(manager);
+    return false;
+  }
   for (const name of names) {
     if (hasInteractionSignalSubscriber(manager, name)) return true;
   }
@@ -730,15 +851,23 @@ type InteractionSignalSlot<Name extends InteractionSignalName> = (value: Interac
 let interactionConnectGuard: InteractionConnectGuard | null = null;
 
 const cancelSignalNames = ['onPointerCancel', 'onPointerOut', 'onPointerRollOut'] as const;
-const downSignalNames = ['onClick', 'onDoubleClick', 'onPointerCancel', 'onPointerDown', 'onReleaseOutside'] as const;
+const downSignalNames = [
+  'onClick',
+  'onDoubleClick',
+  'onPointerCancel',
+  'onPointerDoubleClick',
+  'onPointerDown',
+  'onReleaseOutside',
+] as const;
 const moveSignalNames = [
+  'onPointerDoubleClick',
   'onPointerMove',
   'onPointerOut',
   'onPointerOver',
   'onPointerRollOut',
   'onPointerRollOver',
 ] as const;
-const upSignalNames = ['onClick', 'onDoubleClick', 'onPointerUp', 'onReleaseOutside'] as const;
+const upSignalNames = ['onClick', 'onDoubleClick', 'onPointerDoubleClick', 'onPointerUp', 'onReleaseOutside'] as const;
 
 const _keyboardData: KeyboardEventData = {
   altKey: false,

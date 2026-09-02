@@ -12,6 +12,7 @@ export function createNodeInteractionState(): NodeInteractionState {
     focusable: false,
     hitArea: null,
     hitTestEnabled: false,
+    pointerDoubleClickEnabled: false,
     tabIndex: -1,
   };
 }
@@ -55,6 +56,11 @@ export function isNodeHitTestEnabled(source: Readonly<NodeAny>): boolean {
   return getNodeInteractionState(source)?.hitTestEnabled ?? false;
 }
 
+/** Whether qualifying pointer clicks dispatch a double-click signal. Default `false` (opt-in). */
+export function isNodePointerDoubleClickEnabled(source: Readonly<NodeAny>): boolean {
+  return getNodeInteractionState(source)?.pointerDoubleClickEnabled ?? false;
+}
+
 /**
  * Sets the node's rollover cursor data; `null` clears it (inherits nearest ancestor / default). This
  * performs no manager lookup or backend work; cursor application is explicit through
@@ -81,6 +87,11 @@ export function setNodeHitArea(source: NodeAny, hitArea: HitArea | null): void {
 /** Opts this node into (or out of) hit testing. Default is out — a node is a candidate only once enabled. */
 export function setNodeHitTestEnabled(source: NodeAny, enabled: boolean): void {
   enableNodeInteractionState(source).hitTestEnabled = enabled;
+}
+
+/** Opts this node into (or out of) pointer double-click dispatch. Ordinary clicks are unaffected. */
+export function setNodePointerDoubleClickEnabled(source: NodeAny, enabled: boolean): void {
+  enableNodeInteractionState(source).pointerDoubleClickEnabled = enabled;
 }
 
 /** Sets this node's focus-order key; `-1` means natural order. */

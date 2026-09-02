@@ -4,6 +4,7 @@ import type { InputSignals } from './InputSignals';
 import type { InteractionSignals } from './InteractionSignals';
 import type { KeyboardEventData } from './KeyboardEventData';
 import type { Node, NodeAny, NodeTraits } from './Node';
+import type { NodeInteractionState } from './NodeInteractionState';
 import type { PointerEventData, PointerType } from './PointerEventData';
 import type { SpatialIndex2D } from './Spatial';
 
@@ -18,7 +19,10 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
   // Last rollover target that drove this manager's cursor. Kept separately from per-pointer state
   // because one canvas has one cursor even when the manager tracks several pointer identities.
   cursorTarget: N | null;
+  // Inclusive maximum elapsed time, in input-timestamp units, between qualifying pointer clicks.
   doubleClickDelay: number;
+  // Inclusive maximum distance, in dispatched pointer-coordinate units, between qualifying clicks.
+  doubleClickDistance: number;
   enabled: boolean;
   pointerCaptures: Map<number, N>;
   pointerStates: Map<number, InteractionPointerState<N>>;
@@ -37,6 +41,8 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
 
 export interface InteractionManagerOptions {
   cursorBackend?: CursorBackend | null;
+  doubleClickDelay?: number;
+  doubleClickDistance?: number;
   enabled?: boolean;
   precise?: boolean;
   spatialIndex?: SpatialIndex2D | null;
@@ -56,11 +62,18 @@ export interface InteractionPointerOptions {
   pointerId?: number;
   pointerType?: PointerType;
   shiftKey?: boolean;
+  timeStamp?: number;
 }
 
 export interface InteractionPointerState<N extends NodeAny = Node<NodeTraits>> {
   lastClickTarget: N | null;
   lastClickTime: number;
+  lastPointerClickButton: number;
+  lastPointerClickInteractionState: NodeInteractionState | null;
+  lastPointerClickTarget: N | null;
+  lastPointerClickTime: number;
+  lastPointerClickX: number;
+  lastPointerClickY: number;
   pointerDownTarget: N | null;
   pointerOverTarget: N | null;
 }
