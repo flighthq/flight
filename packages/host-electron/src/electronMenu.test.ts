@@ -1,5 +1,6 @@
 import type { MenuApplicationBackend, MenuPopupBackend, MenuSelectBackend } from '@flighthq/types/contract';
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createElectronMenuBackends } from './electronMenu';
 
@@ -48,6 +49,12 @@ function clickItem(built: ElectronMenuItemOptions[][], id: string): void {
 }
 
 describe('createElectronMenuBackends', () => {
+  it('returns an Entity-composed capability bundle and providers', () => {
+    const capabilities = createElectronMenuBackends(fakeElectron().electron);
+    expect(EntityRuntimeKey in capabilities).toBe(true);
+    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
+  });
+
   it('builds and applies the application menu and reports clicks via subscribeSelect', () => {
     const { electron, built, applied } = fakeElectron();
     const backend = _slots(electron);
