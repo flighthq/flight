@@ -7,23 +7,26 @@ import type { BidiClass, BidiClassBackend } from '@flighthq/types/contract';
 // It is a few KB of range data, not the full Unicode database. Scripts outside these ranges (CJK,
 // Indic, Thaana, N'Ko, Syriac, and the rest of Unicode) are NOT covered here — a codepoint with no
 // range resolves to the safe common default 'L'. Full Unicode coverage (every assigned bidi class +
-// bracket-pairing data) is the designated flight-rs table backend, swapped in via setBidiClassBackend.
+// bracket-pairing data) is the designated flight-rs table backend, passed explicitly to the resolver.
 export function createCompactBidiClassBackend(): BidiClassBackend {
   return { getBidiClass: getCompactBidiClass };
 }
 
-// Returns the active bidi-class backend, lazily creating the compact default the first time so there
-// is always an answer. A full-coverage backend (flight-rs) replaces it via setBidiClassBackend;
-// passing null there restores this lazy compact default.
+// Returns the legacy installed bidi-class backend, lazily creating the compact default the first time
+// so omitted-backend calls always have an answer. New callers pass their backend directly to
+// resolveBidiLevels or getBidiRuns.
 export function getBidiClassBackend(): BidiClassBackend {
   if (_backend === null) _backend = createCompactBidiClassBackend();
   return _backend;
 }
 
-// Installs a bidi-class backend; pass null to fall back to the lazily-created compact default. Last
-// write wins — registering over an existing backend replaces it. Opt-in and side-effect-free at
-// import: nothing installs until a host calls this (or a resolve*/getBidiRuns query lazily builds the
-// compact one).
+/**
+ * Installs the backend used by calls that omit an explicit backend; pass null to restore the lazily
+ * created compact default.
+ *
+ * @deprecated Pass a BidiClassBackend directly to resolveBidiLevels or getBidiRuns. Retained for
+ * source compatibility until the legacy path is removed.
+ */
 export function setBidiClassBackend(backend: BidiClassBackend | null): void {
   _backend = backend;
 }

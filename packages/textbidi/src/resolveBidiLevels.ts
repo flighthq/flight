@@ -1,4 +1,4 @@
-import type { BidiClass, BidiDirection } from '@flighthq/types/contract';
+import type { BidiClass, BidiClassBackend, BidiDirection } from '@flighthq/types/contract';
 
 import { getBidiClassBackend } from './bidiClassBackend';
 
@@ -18,13 +18,19 @@ import { getBidiClassBackend } from './bidiClassBackend';
 //
 // Astral characters occupy two UTF-16 code units; both units are assigned the code point's class and
 // therefore resolve to the same level. `baseDirection` fixes the paragraph level ('ltr' → 0, 'rtl' →
-// 1) or derives it from the first strong character ('auto', rules P2/P3).
-export function resolveBidiLevels(text: string, baseDirection: BidiDirection): Uint8Array {
+// 1) or derives it from the first strong character ('auto', rules P2/P3). Pass `bidiClassBackend`
+// to make class resolution explicit and caller-local; when omitted, the legacy installed backend or
+// compact bundled fallback is used for source compatibility.
+export function resolveBidiLevels(
+  text: string,
+  baseDirection: BidiDirection,
+  bidiClassBackend?: BidiClassBackend,
+): Uint8Array {
   const length = text.length;
   const levels = new Uint8Array(length);
   if (length === 0) return levels;
 
-  const backend = getBidiClassBackend();
+  const backend = bidiClassBackend ?? getBidiClassBackend();
   const original: BidiClass[] = new Array(length);
   for (let i = 0; i < length; i++) {
     const codepoint = text.codePointAt(i) as number;
