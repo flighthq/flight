@@ -46,6 +46,15 @@ describe('cloneSkeleton2D', () => {
     // Buffers are distinct instances.
     expect(c.worldMatrices).not.toBe(s.worldMatrices);
   });
+
+  it('includes skins so getSkeleton2DSkin works on the clone', () => {
+    const s = createSkeleton2D([makeBone({ name: 'root' })], [testSlot('head', 0)]);
+    s.skins = [{ attachments: [{ attachment: testRegion('hat'), name: 'head', slotIndex: 0 }], name: 'goblin' }];
+    const c = cloneSkeleton2D(s);
+    expect(getSkeleton2DSkin(c, 'goblin')).not.toBeNull();
+    expect(getSkeleton2DSkin(c, 'goblin')!.name).toBe('goblin');
+    expect(c.skins).toBe(s.skins);
+  });
 });
 
 describe('computeSkeleton2DBoneMatrices', () => {

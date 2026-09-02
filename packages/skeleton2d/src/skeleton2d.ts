@@ -14,6 +14,7 @@ export function cloneSkeleton2D(skeleton: Readonly<Skeleton2D>): Skeleton2D {
     boneMatrices: skeleton.boneMatrices.slice(),
     bones: skeleton.bones.map((bone) => ({ ...bone })),
     inverseBindMatrices: skeleton.inverseBindMatrices.slice(),
+    skins: skeleton.skins,
     slots:
       skeleton.slots === null || skeleton.slots === undefined ? skeleton.slots : skeleton.slots.map((s) => ({ ...s })),
     worldMatrices: skeleton.worldMatrices.slice(),

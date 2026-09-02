@@ -47,6 +47,14 @@ describe('explainSkeleton2DDeformLength', () => {
     expect(explainSkeleton2DDeformLength(twoBoneSkin, null, new Float32Array(4)).accepted).toBe(true);
   });
 
+  it('rejects a stream longer than the exact expected length', () => {
+    // The deformer uses strict equality (deform.length * 2 === inf.length for weighted,
+    // deform.length === vertices.length for rigid). An oversized stream means the offsets were
+    // sized against a different attachment — the same authoring defect arriving from the other side.
+    expect(explainSkeleton2DDeformLength(twoBoneSkin, null, new Float32Array(5)).accepted).toBe(false);
+    expect(explainSkeleton2DDeformLength(null, new Float32Array(6), new Float32Array(8)).accepted).toBe(false);
+  });
+
   it('prefers the skin when an attachment carries both, matching the primitive dispatch', () => {
     // skinSkeleton2DAttachmentPoints takes the weighted branch whenever a skin is present, so a stale
     // `vertices` alongside it must not change the answer.
