@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../color" },
     { "path": "../geometry" },
     { "path": "../node" },
     { "path": "../registry" },

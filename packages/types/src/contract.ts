@@ -544,6 +544,7 @@ export * from './RenderCacheAdapterSignals';
 export * from './RenderCacheRefreshOptions';
 export * from './RenderDrawContext';
 export * from './RenderEffect';
+export * from './RenderEffectFieldRole';
 export * from './RenderEffectCaptureGeometry';
 export * from './RenderEffectPadding';
 export * from './RenderEffectInput';
