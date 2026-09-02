@@ -1,4 +1,6 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
+  ImportDiagnostic,
   TiledCompression,
   TiledLayer,
   TiledMap,
@@ -15,6 +17,7 @@ import type {
   Vector2Like,
 } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import {
   getXmlElementAttribute,
   getXmlElementChildByName,
@@ -31,26 +34,71 @@ import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
 
 // Parses a standalone TSX tileset document into a `TiledTileset`, or null when the root is not a
 // `<tileset>` element.
-export function parseTiledTileset(text: string, _options?: Readonly<TiledParseOptions>): TiledTileset | null {
+export function parseTiledTileset(
+  text: string,
+  _options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+): TiledTileset | null {
   const root = parseXmlDocument(text);
-  if (root === null || root.name !== 'tileset') return null;
-  return buildTiledTilesetFromXml(root);
+  if (root === null) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'tiled.xml-malformed', 'parseTiledTileset', {
+      path: 'tileset',
+    });
+    return null;
+  }
+  if (root.name !== 'tileset') {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'tiled.root-unexpected', 'parseTiledTileset', {
+      actual: root.name,
+      path: 'tileset',
+    });
+    return null;
+  }
+  return buildTiledTilesetFromXml(root, diagnostics, 'tileset');
 }
 
 // Parses a TMX map document into a faithful `TiledMap`, or null when the root is not a `<map>`
 // element. A compressed tile layer with no `inflate` seam is preserved as an all-zero grid.
-export function parseTiledTmx(text: string, options?: Readonly<TiledParseOptions>): TiledMap | null {
+export function parseTiledTmx(
+  text: string,
+  options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+): TiledMap | null {
   const root = parseXmlDocument(text);
-  if (root === null || root.name !== 'map') return null;
+  if (root === null) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'tiled.xml-malformed', 'parseTiledTmx', {
+      path: 'map',
+    });
+    return null;
+  }
+  if (root.name !== 'map') {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'tiled.root-unexpected', 'parseTiledTmx', {
+      actual: root.name,
+      path: 'map',
+    });
+    return null;
+  }
+  if (diagnostics !== undefined) {
+    reportMissingXmlAttribute(root, 'height', diagnostics, 'parseTiledTmx', 'map');
+    reportMissingXmlAttribute(root, 'tileheight', diagnostics, 'parseTiledTmx', 'map');
+    reportMissingXmlAttribute(root, 'tilewidth', diagnostics, 'parseTiledTmx', 'map');
+    reportMissingXmlAttribute(root, 'width', diagnostics, 'parseTiledTmx', 'map');
+  }
 
   const tilesets: TiledTilesetRef[] = [];
-  for (const element of getXmlElementChildrenByName(root, 'tileset')) {
-    tilesets.push(buildTiledTilesetRefFromXml(element));
+  for (const [index, element] of getXmlElementChildrenByName(root, 'tileset').entries()) {
+    tilesets.push(
+      buildTiledTilesetRefFromXml(element, diagnostics, diagnostics === undefined ? '' : `map.tilesets[${index}]`),
+    );
   }
 
   const layers: TiledLayer[] = [];
   for (const element of root.children) {
-    const layer = buildTiledLayerFromXml(element, options);
+    const layer = buildTiledLayerFromXml(
+      element,
+      options,
+      diagnostics,
+      diagnostics === undefined ? '' : `map.layers[${layers.length}]`,
+    );
     if (layer !== null) layers.push(layer);
   }
 
@@ -113,14 +161,27 @@ function buildTiledLayerBaseFromXml(element: Readonly<XmlElement>): {
 function buildTiledLayerFromXml(
   element: Readonly<XmlElement>,
   options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+  path = '',
 ): TiledLayer | null {
   const base = buildTiledLayerBaseFromXml(element);
   if (element.name === 'layer') {
+    if (diagnostics !== undefined) {
+      reportMissingXmlAttribute(element, 'height', diagnostics, 'buildTiledLayerFromXml', path);
+      reportMissingXmlAttribute(element, 'width', diagnostics, 'buildTiledLayerFromXml', path);
+    }
     const width = attrNumber(element, 'width', 0);
     const height = attrNumber(element, 'height', 0);
     return {
       ...base,
-      data: buildTiledLayerDataFromXml(element, width, height, options),
+      data: buildTiledLayerDataFromXml(
+        element,
+        width,
+        height,
+        options,
+        diagnostics,
+        diagnostics === undefined ? '' : `${path}.data`,
+      ),
       height,
       type: 'tilelayer',
       width,
@@ -140,7 +201,12 @@ function buildTiledLayerFromXml(
   if (element.name === 'group') {
     const layers: TiledLayer[] = [];
     for (const child of element.children) {
-      const layer = buildTiledLayerFromXml(child, options);
+      const layer = buildTiledLayerFromXml(
+        child,
+        options,
+        diagnostics,
+        diagnostics === undefined ? '' : `${path}.layers[${layers.length}]`,
+      );
       if (layer !== null) layers.push(layer);
     }
     return { ...base, layers, type: 'group' };
@@ -156,22 +222,42 @@ function buildTiledLayerDataFromXml(
   width: number,
   height: number,
   options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+  path = '',
 ): Uint32Array {
   const grid = new Uint32Array(width * height);
   const data = getXmlElementChildByName(element, 'data');
-  if (data === null) return grid;
+  if (data === null) {
+    reportMissingRequiredField(diagnostics, 'buildTiledLayerDataFromXml', path);
+    return grid;
+  }
 
   const encoding = getXmlElementAttribute(data, 'encoding');
   let decoded: Uint32Array | null;
   if (encoding === 'csv') {
     decoded = decodeTiledCsvLayer(data.text);
   } else if (encoding === 'base64') {
-    decoded = decodeTiledBase64Layer(
-      data.text,
-      asCompression(getXmlElementAttribute(data, 'compression')),
-      options?.inflate,
-    );
+    const compression = asCompression(getXmlElementAttribute(data, 'compression'));
+    if (compression !== null && options?.inflate === undefined) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'tiled.layer-inflate-unavailable',
+        'buildTiledLayerDataFromXml',
+        { compression, path },
+      );
+    }
+    decoded = decodeTiledBase64Layer(data.text, compression, options?.inflate);
   } else {
+    if (encoding !== null) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'tiled.layer-encoding-invalid',
+        'buildTiledLayerDataFromXml',
+        { encoding, path: `${path}.encoding` },
+      );
+    }
     decoded = Uint32Array.from(
       getXmlElementChildrenByName(data, 'tile').map((tile) => attrNumber(tile, 'gid', 0) >>> 0),
     );
@@ -212,7 +298,16 @@ function buildTiledPropertiesFromXml(element: Readonly<XmlElement>): TiledProper
   });
 }
 
-function buildTiledTilesetFromXml(element: Readonly<XmlElement>): TiledTileset {
+function buildTiledTilesetFromXml(
+  element: Readonly<XmlElement>,
+  diagnostics?: ImportDiagnostic[],
+  path = '',
+): TiledTileset {
+  if (diagnostics !== undefined) {
+    reportMissingXmlAttribute(element, 'name', diagnostics, 'buildTiledTilesetFromXml', path);
+    reportMissingXmlAttribute(element, 'tileheight', diagnostics, 'buildTiledTilesetFromXml', path);
+    reportMissingXmlAttribute(element, 'tilewidth', diagnostics, 'buildTiledTilesetFromXml', path);
+  }
   const image = getXmlElementChildByName(element, 'image');
   return {
     columns: attrNumber(element, 'columns', 0),
@@ -230,12 +325,16 @@ function buildTiledTilesetFromXml(element: Readonly<XmlElement>): TiledTileset {
   };
 }
 
-function buildTiledTilesetRefFromXml(element: Readonly<XmlElement>): TiledTilesetRef {
+function buildTiledTilesetRefFromXml(
+  element: Readonly<XmlElement>,
+  diagnostics?: ImportDiagnostic[],
+  path = '',
+): TiledTilesetRef {
   const source = getXmlElementAttribute(element, 'source');
   return {
     firstGid: attrNumber(element, 'firstgid', 1),
     source,
-    tileset: source !== null ? null : buildTiledTilesetFromXml(element),
+    tileset: source !== null ? null : buildTiledTilesetFromXml(element, diagnostics, path),
   };
 }
 
@@ -269,6 +368,28 @@ function parseTiledPoints(text: string): Vector2Like[] {
     points.push({ x: Number(x) || 0, y: Number(y) || 0 });
   }
   return points;
+}
+
+function reportMissingRequiredField(
+  diagnostics: ImportDiagnostic[] | undefined,
+  origin: string,
+  path: string,
+  field?: string,
+): void {
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'tiled.required-field-missing', origin, {
+    path: field === undefined ? path : `${path}.${field}`,
+  });
+}
+
+function reportMissingXmlAttribute(
+  element: Readonly<XmlElement>,
+  name: string,
+  diagnostics: ImportDiagnostic[] | undefined,
+  origin: string,
+  path: string,
+): void {
+  if (diagnostics === undefined || getXmlElementAttribute(element, name) !== null) return;
+  reportMissingRequiredField(diagnostics, origin, path, name);
 }
 
 function asCompression(value: string | null): TiledCompression | null {

@@ -1,4 +1,6 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
+  ImportDiagnostic,
   TiledCompression,
   TiledLayer,
   TiledMap,
@@ -14,6 +16,7 @@ import type {
   TiledTilesetTileFrame,
   Vector2Like,
 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseTiledColor } from './tiledColor';
 import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
@@ -22,17 +25,45 @@ import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
 // the XML front-end, walking a parsed JSON tree instead of an XML one.
 
 // Parses a standalone TSJ tileset document into a `TiledTileset`, or null on malformed JSON.
-export function parseTiledTilesetJson(text: string, _options?: Readonly<TiledParseOptions>): TiledTileset | null {
+export function parseTiledTilesetJson(
+  text: string,
+  _options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+): TiledTileset | null {
   const root = parseJson(text);
-  if (root === null) return null;
-  return buildTiledTilesetFromJson(root);
+  if (root === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'tiled.json-malformed',
+      'parseTiledTilesetJson',
+      { path: 'tileset' },
+    );
+    return null;
+  }
+  return buildTiledTilesetFromJson(root, diagnostics, 'tileset');
 }
 
 // Parses a TMJ map document into a faithful `TiledMap`, or null on malformed JSON. A compressed tile
 // layer with no `inflate` seam is preserved as an all-zero grid.
-export function parseTiledTmj(text: string, options?: Readonly<TiledParseOptions>): TiledMap | null {
+export function parseTiledTmj(
+  text: string,
+  options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+): TiledMap | null {
   const root = parseJson(text);
-  if (root === null) return null;
+  if (root === null) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'tiled.json-malformed', 'parseTiledTmj', {
+      path: 'map',
+    });
+    return null;
+  }
+  if (diagnostics !== undefined) {
+    reportMissingJsonField(root, 'height', diagnostics, 'parseTiledTmj', 'map');
+    reportMissingJsonField(root, 'tileheight', diagnostics, 'parseTiledTmj', 'map');
+    reportMissingJsonField(root, 'tilewidth', diagnostics, 'parseTiledTmj', 'map');
+    reportMissingJsonField(root, 'width', diagnostics, 'parseTiledTmj', 'map');
+  }
 
   const background = strField(root, 'backgroundcolor');
   return {
@@ -40,7 +71,9 @@ export function parseTiledTmj(text: string, options?: Readonly<TiledParseOptions
     height: numField(root, 'height', 0),
     infinite: boolField(root, 'infinite', false),
     layers: arrayField(root, 'layers')
-      .map((layer) => buildTiledLayerFromJson(layer, options))
+      .map((layer, index) =>
+        buildTiledLayerFromJson(layer, options, diagnostics, diagnostics === undefined ? '' : `map.layers[${index}]`),
+      )
       .filter((layer): layer is TiledLayer => layer !== null),
     orientation: asOrientation(strField(root, 'orientation')),
     properties: buildTiledPropertiesFromJson(root),
@@ -48,7 +81,9 @@ export function parseTiledTmj(text: string, options?: Readonly<TiledParseOptions
     tileHeight: numField(root, 'tileheight', 0),
     tileWidth: numField(root, 'tilewidth', 0),
     tiledVersion: strField(root, 'tiledversion'),
-    tilesets: arrayField(root, 'tilesets').map(buildTiledTilesetRefFromJson),
+    tilesets: arrayField(root, 'tilesets').map((tileset, index) =>
+      buildTiledTilesetRefFromJson(tileset, diagnostics, diagnostics === undefined ? '' : `map.tilesets[${index}]`),
+    ),
     version: stringOr(numOrString(root.version), '1.0'),
     width: numField(root, 'width', 0),
   };
@@ -113,6 +148,8 @@ function buildTiledLayerDataFromJson(
   width: number,
   height: number,
   options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+  path = '',
 ): Uint32Array {
   const grid = new Uint32Array(width * height);
   const data = obj.data;
@@ -120,25 +157,66 @@ function buildTiledLayerDataFromJson(
   if (Array.isArray(data)) {
     decoded = Uint32Array.from(data, (v) => (typeof v === 'number' ? v >>> 0 : 0));
   } else if (typeof data === 'string') {
-    decoded =
-      strField(obj, 'encoding') === 'csv'
-        ? decodeTiledCsvLayer(data)
-        : decodeTiledBase64Layer(data, asCompression(strField(obj, 'compression')), options?.inflate);
+    const encoding = strField(obj, 'encoding');
+    if (encoding === 'csv') {
+      decoded = decodeTiledCsvLayer(data);
+    } else {
+      if (encoding === null) {
+        reportMissingRequiredField(diagnostics, 'buildTiledLayerDataFromJson', path, 'encoding');
+      } else if (encoding !== 'base64') {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'tiled.layer-encoding-invalid',
+          'buildTiledLayerDataFromJson',
+          { encoding, path: `${path}.encoding` },
+        );
+      }
+      const compression = asCompression(strField(obj, 'compression'));
+      if (compression !== null && options?.inflate === undefined) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Recover,
+          'tiled.layer-inflate-unavailable',
+          'buildTiledLayerDataFromJson',
+          { compression, path },
+        );
+      }
+      decoded = decodeTiledBase64Layer(data, compression, options?.inflate);
+    }
+  } else if (data === undefined) {
+    reportMissingRequiredField(diagnostics, 'buildTiledLayerDataFromJson', path);
   }
   if (decoded === null) return grid;
   grid.set(decoded.subarray(0, grid.length));
   return grid;
 }
 
-function buildTiledLayerFromJson(obj: JsonObject, options?: Readonly<TiledParseOptions>): TiledLayer | null {
+function buildTiledLayerFromJson(
+  obj: JsonObject,
+  options?: Readonly<TiledParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+  path = '',
+): TiledLayer | null {
   const base = buildTiledLayerBaseFromJson(obj);
   const type = strField(obj, 'type');
   if (type === 'tilelayer') {
+    if (diagnostics !== undefined) {
+      reportMissingJsonField(obj, 'height', diagnostics, 'buildTiledLayerFromJson', path);
+      reportMissingJsonField(obj, 'width', diagnostics, 'buildTiledLayerFromJson', path);
+    }
     const width = numField(obj, 'width', 0);
     const height = numField(obj, 'height', 0);
     return {
       ...base,
-      data: buildTiledLayerDataFromJson(obj, width, height, options),
+      data: buildTiledLayerDataFromJson(
+        obj,
+        width,
+        height,
+        options,
+        diagnostics,
+        diagnostics === undefined ? '' : `${path}.data`,
+      ),
       height,
       type: 'tilelayer',
       width,
@@ -154,10 +232,26 @@ function buildTiledLayerFromJson(obj: JsonObject, options?: Readonly<TiledParseO
     return {
       ...base,
       layers: arrayField(obj, 'layers')
-        .map((layer) => buildTiledLayerFromJson(layer, options))
+        .map((layer, index) =>
+          buildTiledLayerFromJson(
+            layer,
+            options,
+            diagnostics,
+            diagnostics === undefined ? '' : `${path}.layers[${index}]`,
+          ),
+        )
         .filter((layer): layer is TiledLayer => layer !== null),
       type: 'group',
     };
+  }
+  if (type === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'tiled.required-field-missing',
+      'buildTiledLayerFromJson',
+      { path: `${path}.type` },
+    );
   }
   return null;
 }
@@ -189,7 +283,12 @@ function buildTiledPropertiesFromJson(obj: JsonObject): TiledProperty[] {
   });
 }
 
-function buildTiledTilesetFromJson(obj: JsonObject): TiledTileset {
+function buildTiledTilesetFromJson(obj: JsonObject, diagnostics?: ImportDiagnostic[], path = ''): TiledTileset {
+  if (diagnostics !== undefined) {
+    reportMissingJsonField(obj, 'name', diagnostics, 'buildTiledTilesetFromJson', path);
+    reportMissingJsonField(obj, 'tileheight', diagnostics, 'buildTiledTilesetFromJson', path);
+    reportMissingJsonField(obj, 'tilewidth', diagnostics, 'buildTiledTilesetFromJson', path);
+  }
   return {
     columns: numField(obj, 'columns', 0),
     image: strField(obj, 'image'),
@@ -206,12 +305,12 @@ function buildTiledTilesetFromJson(obj: JsonObject): TiledTileset {
   };
 }
 
-function buildTiledTilesetRefFromJson(obj: JsonObject): TiledTilesetRef {
+function buildTiledTilesetRefFromJson(obj: JsonObject, diagnostics?: ImportDiagnostic[], path = ''): TiledTilesetRef {
   const source = strField(obj, 'source');
   return {
     firstGid: numField(obj, 'firstgid', 1),
     source,
-    tileset: source !== null ? null : buildTiledTilesetFromJson(obj),
+    tileset: source !== null ? null : buildTiledTilesetFromJson(obj, diagnostics, path),
   };
 }
 
@@ -268,6 +367,28 @@ function parsePointsField(obj: JsonObject, key: string): Vector2Like[] | null {
   const value = obj[key];
   if (!Array.isArray(value)) return null;
   return value.filter(isJsonObject).map((point) => ({ x: numField(point, 'x', 0), y: numField(point, 'y', 0) }));
+}
+
+function reportMissingJsonField(
+  obj: JsonObject,
+  key: string,
+  diagnostics: ImportDiagnostic[] | undefined,
+  origin: string,
+  path: string,
+): void {
+  if (diagnostics === undefined || obj[key] !== undefined) return;
+  reportMissingRequiredField(diagnostics, origin, path, key);
+}
+
+function reportMissingRequiredField(
+  diagnostics: ImportDiagnostic[] | undefined,
+  origin: string,
+  path: string,
+  field?: string,
+): void {
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'tiled.required-field-missing', origin, {
+    path: field === undefined ? path : `${path}.${field}`,
+  });
 }
 
 function stringOr(value: string | number | null, fallback: string): string {

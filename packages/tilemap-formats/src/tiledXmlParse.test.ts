@@ -1,4 +1,5 @@
-import type { TiledParseOptions } from '@flighthq/types/contract';
+import type { ImportDiagnostic, TiledParseOptions } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { decodeTiledGid } from './tiledGid';
@@ -110,6 +111,7 @@ function tmxWithData(dataElement: string): string {
 
 describe('parseTiledTileset', () => {
   it('parses a standalone TSX tileset with per-tile animation and properties', () => {
+    const diagnostics: ImportDiagnostic[] = [];
     const tsx = [
       '<tileset name="terrain" tilewidth="16" tileheight="16" tilecount="9" columns="3" spacing="1" margin="2">',
       ' <image source="terrain.png" width="50" height="50"/>',
@@ -119,7 +121,7 @@ describe('parseTiledTileset', () => {
       ' </tile>',
       '</tileset>',
     ].join('\n');
-    const tileset = parseTiledTileset(tsx)!;
+    const tileset = parseTiledTileset(tsx, undefined, diagnostics)!;
     expect(tileset.name).toBe('terrain');
     expect(tileset.image).toBe('terrain.png');
     expect(tileset.imageWidth).toBe(50);
@@ -133,11 +135,52 @@ describe('parseTiledTileset', () => {
       { duration: 100, tileId: 0 },
       { duration: 120, tileId: 1 },
     ]);
+    expect(diagnostics).toEqual([]);
   });
 
   it('returns null when the root is not a tileset', () => {
     expect(parseTiledTileset('<map/>')).toBeNull();
     expect(parseTiledTileset('not xml')).toBeNull();
+  });
+
+  it('reports malformed XML and missing required fields at their exact paths', () => {
+    const malformedDiagnostics: ImportDiagnostic[] = [];
+    expect(parseTiledTileset('not xml', undefined, malformedDiagnostics)).toBeNull();
+    expect(malformedDiagnostics).toEqual([
+      {
+        detail: { path: 'tileset' },
+        kind: 'tiled.xml-malformed',
+        origin: 'parseTiledTileset',
+        severity: ImportDiagnosticSeverity.Reject,
+      },
+    ]);
+
+    const unexpectedRootDiagnostics: ImportDiagnostic[] = [];
+    expect(parseTiledTileset('<map/>', undefined, unexpectedRootDiagnostics)).toBeNull();
+    expect(unexpectedRootDiagnostics).toEqual([
+      {
+        detail: { actual: 'map', path: 'tileset' },
+        kind: 'tiled.root-unexpected',
+        origin: 'parseTiledTileset',
+        severity: ImportDiagnosticSeverity.Reject,
+      },
+    ]);
+
+    const missingDiagnostics: ImportDiagnostic[] = [];
+    const tileset = parseTiledTileset(
+      '<tileset tilewidth="16" tileheight="16" tilecount="1" columns="1"/>',
+      undefined,
+      missingDiagnostics,
+    );
+    expect(tileset?.name).toBe('');
+    expect(missingDiagnostics).toEqual([
+      {
+        detail: { path: 'tileset.name' },
+        kind: 'tiled.required-field-missing',
+        origin: 'buildTiledTilesetFromXml',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
   });
 });
 
@@ -208,16 +251,49 @@ describe('parseTiledTmx', () => {
     const payload = base64Layer([1, 5, 2147483649, 6]);
     const tmx = tmxWithData(`<data encoding="base64" compression="gzip">${payload}</data>`);
 
-    const dropped = parseTiledTmx(tmx)!;
+    const diagnostics: ImportDiagnostic[] = [];
+    const dropped = parseTiledTmx(tmx, undefined, diagnostics)!;
     const droppedLayer = dropped.layers[0];
     if (droppedLayer.type !== 'tilelayer') throw new Error('expected a tile layer');
     expect(Array.from(droppedLayer.data)).toEqual([0, 0, 0, 0]);
+    expect(diagnostics).toEqual([
+      {
+        detail: { compression: 'gzip', path: 'map.layers[0].data' },
+        kind: 'tiled.layer-inflate-unavailable',
+        origin: 'buildTiledLayerDataFromXml',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
 
     const options: TiledParseOptions = { inflate: (bytes) => new Uint8Array(bytes) };
-    const decoded = parseTiledTmx(tmx, options)!;
+    const decodedDiagnostics: ImportDiagnostic[] = [];
+    const decoded = parseTiledTmx(tmx, options, decodedDiagnostics)!;
     const decodedLayer = decoded.layers[0];
     if (decodedLayer.type !== 'tilelayer') throw new Error('expected a tile layer');
     expect(Array.from(decodedLayer.data)).toEqual([1, 5, 2147483649, 6]);
+    expect(decodedDiagnostics).toEqual([]);
+  });
+
+  it('reports invalid layer encoding while preserving the existing XML-tile fallback', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const map = parseTiledTmx(
+      tmxWithData(
+        '<data encoding="invalid"><tile gid="1"/><tile gid="5"/><tile gid="2147483649"/><tile gid="6"/></data>',
+      ),
+      undefined,
+      diagnostics,
+    )!;
+    const layer = map.layers[0];
+    if (layer.type !== 'tilelayer') throw new Error('expected a tile layer');
+    expect(Array.from(layer.data)).toEqual([1, 5, 2147483649, 6]);
+    expect(diagnostics).toEqual([
+      {
+        detail: { encoding: 'invalid', path: 'map.layers[0].data.encoding' },
+        kind: 'tiled.layer-encoding-invalid',
+        origin: 'buildTiledLayerDataFromXml',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
   });
 
   it('parses to a document equivalent to the TMJ form', () => {
@@ -237,5 +313,63 @@ describe('parseTiledTmx', () => {
   it('returns null for malformed input', () => {
     expect(parseTiledTmx('<foo/>')).toBeNull();
     expect(parseTiledTmx('garbage')).toBeNull();
+  });
+
+  it('reports malformed XML and missing required fields at their exact paths', () => {
+    const malformedDiagnostics: ImportDiagnostic[] = [];
+    expect(parseTiledTmx('garbage', undefined, malformedDiagnostics)).toBeNull();
+    expect(malformedDiagnostics).toEqual([
+      {
+        detail: { path: 'map' },
+        kind: 'tiled.xml-malformed',
+        origin: 'parseTiledTmx',
+        severity: ImportDiagnosticSeverity.Reject,
+      },
+    ]);
+
+    const unexpectedRootDiagnostics: ImportDiagnostic[] = [];
+    expect(parseTiledTmx('<tileset/>', undefined, unexpectedRootDiagnostics)).toBeNull();
+    expect(unexpectedRootDiagnostics).toEqual([
+      {
+        detail: { actual: 'tileset', path: 'map' },
+        kind: 'tiled.root-unexpected',
+        origin: 'parseTiledTmx',
+        severity: ImportDiagnosticSeverity.Reject,
+      },
+    ]);
+
+    const missingDiagnostics: ImportDiagnostic[] = [];
+    const map = parseTiledTmx(
+      '<map version="1.10" width="1" height="1" tileheight="16"/>',
+      undefined,
+      missingDiagnostics,
+    );
+    expect(map?.tileWidth).toBe(0);
+    expect(missingDiagnostics).toEqual([
+      {
+        detail: { path: 'map.tilewidth' },
+        kind: 'tiled.required-field-missing',
+        origin: 'parseTiledTmx',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
+
+    const missingLayerDataDiagnostics: ImportDiagnostic[] = [];
+    const mapWithoutLayerData = parseTiledTmx(
+      '<map version="1.10" width="1" height="1" tilewidth="16" tileheight="16"><layer width="1" height="1"/></map>',
+      undefined,
+      missingLayerDataDiagnostics,
+    );
+    const layer = mapWithoutLayerData?.layers[0];
+    if (layer?.type !== 'tilelayer') throw new Error('expected a tile layer');
+    expect(Array.from(layer.data)).toEqual([0]);
+    expect(missingLayerDataDiagnostics).toEqual([
+      {
+        detail: { path: 'map.layers[0].data' },
+        kind: 'tiled.required-field-missing',
+        origin: 'buildTiledLayerDataFromXml',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
   });
 });
