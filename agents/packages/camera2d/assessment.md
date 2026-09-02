@@ -6,7 +6,7 @@ basedOn: ./review.md
 
 # camera2d — Assessment
 
-See [charter](./charter.md) for blessed direction; evidence in [review](./review.md).
+See [charter](./charter.md) for blessed direction. The review this assessment was based on was deleted on 2026-09-02 — `@flighthq/camera2d` has no source here, and its code is surveyed by the receiving cell, [camera](../camera/review.md).
 
 ## Recommended
 
