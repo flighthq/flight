@@ -5,6 +5,7 @@ export * from './particleEmitterConfig';
 export * from './particleEmitterSignals';
 export * from './particleEmitterState';
 export * from './particleObjectsState';
+export * from './particleSpawnOffset';
 export * from './stepParticleObjects';
 export * from './updateParticleObjects';
 export * from './validateParticleEmitterConfig';

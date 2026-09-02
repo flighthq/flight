@@ -7,8 +7,9 @@ import type {
 
 import { sampleParticleCurve } from './curve';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState';
+import { writeParticleSpawnOffset } from './particleSpawnOffset';
 
-const TWO_PI = Math.PI * 2;
+const PARTICLE_SPAWN_OFFSET = [0, 0];
 
 /** True once a finite, non-looping object emitter has finished emitting AND all of
  *  its objects are dead (invisible) — a one-shot effect that is safe to recycle.
@@ -71,8 +72,11 @@ export function updateParticleObjects(
     lifetimes[lt] += deltaTime;
     if (lifetimes[lt] >= lifetimes[lt + 1]) {
       lifetimes[lt + 1] = 0;
-      objects[i].visible = false;
-      onDeath?.();
+      const object = objects[i];
+      const deathX = object.x;
+      const deathY = object.y;
+      object.visible = false;
+      onDeath?.(deathX, deathY, 0);
       continue;
     }
     const vt = i * 2;
@@ -136,18 +140,9 @@ export function updateParticleObjects(
       velocities[vt + 1] =
         Math.sin(angle) * speed + (config.velocityInheritance !== 0 ? emitterVelY * config.velocityInheritance : 0);
 
-      // Spawn position offset from emitter shape
-      let spawnX = 0;
-      let spawnY = 0;
-      if (config.emitterShape === 'circle' && config.emitterRadius > 0) {
-        const r = Math.sqrt(state.random()) * config.emitterRadius;
-        const a = state.random() * TWO_PI;
-        spawnX = Math.cos(a) * r;
-        spawnY = Math.sin(a) * r;
-      } else if (config.emitterShape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
-        spawnX = (state.random() - 0.5) * config.emitterWidth;
-        spawnY = (state.random() - 0.5) * config.emitterHeight;
-      }
+      writeParticleSpawnOffset(PARTICLE_SPAWN_OFFSET, 0, config, state.random);
+      const spawnX = PARTICLE_SPAWN_OFFSET[0];
+      const spawnY = PARTICLE_SPAWN_OFFSET[1];
 
       const spawnScale = config.scaleMin + state.random() * (config.scaleMax - config.scaleMin);
       scales[i] = spawnScale;
@@ -163,7 +158,7 @@ export function updateParticleObjects(
       obj.alpha = hasAlphaCurve ? sampleParticleCurve(alphaCurve, 0) : config.alphaStart;
       obj.visible = true;
       toSpawn--;
-      onSpawn?.(spawnX, spawnY);
+      onSpawn?.(spawnX, spawnY, 0);
     }
   }
 

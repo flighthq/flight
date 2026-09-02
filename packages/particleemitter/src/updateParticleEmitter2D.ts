@@ -5,6 +5,7 @@ import {
   getParticleEmitterSignals,
   sampleParticleColorCurve,
   sampleParticleCurve,
+  writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
 import type {
   Node2D,
@@ -19,6 +20,7 @@ import { reserveParticleEmitter2D } from './particleEmitter';
 export type { ParticleEmitterCallbacks };
 
 const PARTICLE_TRANSFORM_STRIDE = 4; // must match ./particleEmitter
+const PARTICLE_SPAWN_OFFSET = [0, 0];
 const TWO_PI = Math.PI * 2;
 
 /** True once a finite, non-looping emitter has finished emitting AND all of its
@@ -354,15 +356,9 @@ export function updateParticleEmitter2D(
         vy = Math.sin(angle) * speed;
         vz = 0;
 
-        if (shape === 'circle' && config.emitterRadius > 0) {
-          const r = Math.sqrt(state.random()) * config.emitterRadius;
-          const a = state.random() * TWO_PI;
-          spawnX = Math.cos(a) * r;
-          spawnY = Math.sin(a) * r;
-        } else if (shape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
-          spawnX = (state.random() - 0.5) * config.emitterWidth;
-          spawnY = (state.random() - 0.5) * config.emitterHeight;
-        }
+        writeParticleSpawnOffset(PARTICLE_SPAWN_OFFSET, 0, config, state.random);
+        spawnX = PARTICLE_SPAWN_OFFSET[0];
+        spawnY = PARTICLE_SPAWN_OFFSET[1];
       }
 
       // World-space: transform spawn position and velocity into world space,

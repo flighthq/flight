@@ -3,6 +3,7 @@ import {
   ensureParticleEmitterStateCapacity,
   sampleParticleColorCurve,
   sampleParticleCurve,
+  writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
 import type { ParticleEmitter3D } from '@flighthq/types/contract';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types/contract';
@@ -10,6 +11,7 @@ import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/type
 import { reserveParticleEmitter3D } from './particleEmitter3D';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
+const PARTICLE_SPAWN_OFFSET = [0, 0];
 const TWO_PI = Math.PI * 2;
 
 export function emitParticleBurst3D(
@@ -152,14 +154,10 @@ export function emitParticleBurst3D(
         spawnX += (random() - 0.5) * config.emitterWidth;
         spawnY += (random() - 0.5) * config.emitterHeight;
         spawnZ += (random() - 0.5) * config.emitterDepth;
-      } else if (shape === 'circle' && config.emitterRadius > 0) {
-        const r = Math.sqrt(random()) * config.emitterRadius;
-        const a = random() * TWO_PI;
-        spawnX += Math.cos(a) * r;
-        spawnY += Math.sin(a) * r;
-      } else if (shape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
-        spawnX += (random() - 0.5) * config.emitterWidth;
-        spawnY += (random() - 0.5) * config.emitterHeight;
+      } else {
+        writeParticleSpawnOffset(PARTICLE_SPAWN_OFFSET, 0, config, random);
+        spawnX += PARTICLE_SPAWN_OFFSET[0];
+        spawnY += PARTICLE_SPAWN_OFFSET[1];
       }
     }
 

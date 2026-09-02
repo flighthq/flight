@@ -187,6 +187,71 @@ describe('updateParticleObjects', () => {
     }
   });
 
+  it('spawns objects on the line emitter boundary', () => {
+    const objects = [makeObject()];
+    const state = createParticleObjectsState(1, () => 0);
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      emitterShape: 'line',
+      emitterWidth: 80,
+    });
+    updateParticleObjects(objects, state, config, 1);
+    expect(objects[0].x).toBe(-40);
+    expect(objects[0].y).toBe(0);
+  });
+
+  it('spawns objects on the ring emitter boundary', () => {
+    const objects = Array.from({ length: 20 }, makeObject);
+    const state = createParticleObjectsState(20, createRandomSource(12345));
+    const config = createParticleEmitterConfig({
+      spawnRate: 20,
+      maxParticles: 20,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      emitterShape: 'ring',
+      emitterRadius: 50,
+    });
+    updateParticleObjects(objects, state, config, 1);
+    for (const obj of objects) {
+      expect(Math.sqrt(obj.x * obj.x + obj.y * obj.y)).toBeCloseTo(50, 4);
+    }
+  });
+
+  it.each([
+    ['line', { emitterWidth: 0 }],
+    ['ring', { emitterRadius: 0 }],
+  ] as const)('treats a degenerate %s emitter as a point without consuming a shape sample', (emitterShape, size) => {
+    const objects = [makeObject()];
+    let randomCalls = 0;
+    const state = createParticleObjectsState(1, () => {
+      randomCalls++;
+      return 0.25;
+    });
+    const config = createParticleEmitterConfig({
+      ...size,
+      emitterShape,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      regionIdMax: 0,
+      regionIdMin: 0,
+      scaleMax: 1,
+      scaleMin: 1,
+      spawnRate: 1,
+      speedMax: 0,
+      speedMin: 0,
+      spread: 0,
+    });
+    updateParticleObjects(objects, state, config, 1);
+    expect([objects[0].x, objects[0].y]).toEqual([0, 0]);
+    expect(randomCalls).toBe(4);
+  });
+
   it('fires a one-shot burst on first frame', () => {
     const objects = Array.from({ length: 30 }, makeObject);
     const state = createParticleObjectsState(30);
@@ -216,6 +281,36 @@ describe('updateParticleObjects', () => {
       },
     });
     expect(count).toBe(2);
+  });
+
+  it('uses the shared 3D callback payload for object spawns and deaths', () => {
+    const objects = [makeObject()];
+    const state = createParticleObjectsState(1, () => 0);
+    const config = createParticleEmitterConfig({
+      duration: 1,
+      emitterShape: 'line',
+      emitterWidth: 20,
+      lifetimeMax: 0.5,
+      lifetimeMin: 0.5,
+      loop: false,
+      spawnRate: 1,
+      speedMax: 0,
+      speedMin: 0,
+    });
+    const spawns: number[][] = [];
+    const deaths: number[][] = [];
+    const callbacks = {
+      onDeath: (x: number, y: number, z: number): void => {
+        deaths.push([x, y, z]);
+      },
+      onSpawn: (x: number, y: number, z: number): void => {
+        spawns.push([x, y, z]);
+      },
+    };
+    updateParticleObjects(objects, state, config, 1, { callbacks });
+    expect(spawns).toEqual([[-10, 0, 0]]);
+    updateParticleObjects(objects, state, config, 0.6, { callbacks });
+    expect(deaths).toEqual([[-10, 0, 0]]);
   });
 
   it('ignores a zero-deltaTime frame: no spawning or velocity corruption', () => {

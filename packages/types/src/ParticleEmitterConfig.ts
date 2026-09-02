@@ -1,6 +1,6 @@
 import type { ParticleCurve } from './ParticleCurve';
 
-export type ParticleEmitterShape = 'box' | 'circle' | 'cone3d' | 'point' | 'rect' | 'sphere';
+export type ParticleEmitterShape = 'box' | 'circle' | 'cone3d' | 'line' | 'point' | 'rect' | 'ring' | 'sphere';
 
 /** Blend mode hint stored in the config for round-tripping through format parsers.
  *  Apply it to the emitter node (e.g. `emitter.blendMode = BlendMode.Add`) after
