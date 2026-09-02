@@ -17,6 +17,7 @@ import {
   resumeAudioChannel,
   setAudioChannelCurrentTime,
   setAudioChannelGain,
+  setAudioChannelPan,
   setAudioChannelPlaybackRate,
   stopAudioChannel,
 } from './audioChannel';
@@ -92,6 +93,7 @@ function createWebMockBackend() {
       }),
       resumeDevice: vi.fn(),
       setSourceGain: vi.fn(),
+      setSourcePan: vi.fn(),
       setSourcePlaybackRate: vi.fn(),
       startSource: vi.fn((source: AudioSourceHandle) => {
         const srcNode = new MockAudioBufferSourceNode();
@@ -203,6 +205,7 @@ describe('fadeAudioChannelGain', () => {
       }),
       resumeDevice: vi.fn(),
       setSourceGain: vi.fn(),
+      setSourcePan: vi.fn(),
       setSourcePlaybackRate: vi.fn(),
       startSource: vi.fn(),
       stopSource: vi.fn(),
@@ -389,6 +392,74 @@ describe('setAudioChannelGain', () => {
     expect(setAudioChannelGain(channel, 0.25)).toBe(0.25);
     expect(channel.gain).toBe(0.25);
     expect(webMock.backend.setSourceGain).toHaveBeenCalledWith(expect.anything(), 0.25);
+  });
+});
+
+describe('setAudioChannelPan', () => {
+  it('starts a channel centred', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    expect(channel.pan).toBe(0);
+    expect(webMock.backend.setSourcePan).toHaveBeenCalledWith(1, 0);
+  });
+
+  it('places a channel hard left and hard right', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    expect(setAudioChannelPan(channel, -1)).toBe(-1);
+    expect(webMock.backend.setSourcePan).toHaveBeenLastCalledWith(1, -1);
+    expect(setAudioChannelPan(channel, 1)).toBe(1);
+    expect(webMock.backend.setSourcePan).toHaveBeenLastCalledWith(1, 1);
+    expect(channel.pan).toBe(1);
+  });
+
+  it('clamps beyond the stereo range and reports the value it applied', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    expect(setAudioChannelPan(channel, -4)).toBe(-1);
+    expect(channel.pan).toBe(-1);
+    expect(webMock.backend.setSourcePan).toHaveBeenLastCalledWith(1, -1);
+    expect(setAudioChannelPan(channel, 4)).toBe(1);
+    expect(channel.pan).toBe(1);
+    // The clamped value reaches the device, not the value the caller asked for: the channel field and
+    // the transport must never disagree about where the sound is.
+    expect(webMock.backend.setSourcePan).toHaveBeenLastCalledWith(1, 1);
+  });
+
+  it('takes a live change while the channel is playing', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    setAudioChannelPan(channel, 0.5);
+    expect(isAudioChannelPlaying(channel)).toBe(true);
+    expect(webMock.backend.setSourcePan).toHaveBeenLastCalledWith(1, 0.5);
+  });
+
+  it('records the pan on a stopped channel and applies it to the next source', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    stopAudioChannel(channel);
+    setAudioChannelPan(channel, -0.25);
+    expect(channel.pan).toBe(-0.25);
+    resumeAudioChannel(channel);
+    expect(webMock.backend.setSourcePan).toHaveBeenLastCalledWith(2, -0.25);
+  });
+
+  it('survives a backend with no web node access', () => {
+    const plainMock = {
+      createBuffer: vi.fn().mockReturnValue(1),
+      createDevice: vi.fn().mockReturnValue(1),
+      createSource: vi.fn(() => 1 as unknown as AudioSourceHandle),
+      destroyBuffer: vi.fn(),
+      destroyDevice: vi.fn(),
+      destroySource: vi.fn(),
+      getDeviceTime: vi.fn(() => 0),
+      onSourceEnded: vi.fn(),
+      resumeDevice: vi.fn(),
+      setSourceGain: vi.fn(),
+      setSourcePan: vi.fn(),
+      setSourcePlaybackRate: vi.fn(),
+      startSource: vi.fn(),
+      stopSource: vi.fn(),
+    };
+    setAudioDeviceBackend(plainMock);
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    expect(setAudioChannelPan(channel, 0.75)).toBe(0.75);
+    expect(plainMock.setSourcePan).toHaveBeenLastCalledWith(1, 0.75);
   });
 });
 

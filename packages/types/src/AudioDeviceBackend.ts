@@ -17,6 +17,9 @@ export interface AudioDeviceBackend {
   onSourceEnded(source: AudioSourceHandle, callback: (() => void) | null): void;
   resumeDevice(device: AudioDeviceHandle): void;
   setSourceGain(source: AudioSourceHandle, gain: number): void;
+  // Stereo placement in -1..1. A backend with no stereo stage implements it as a no-op rather than
+  // refusing, so a caller never has to ask whether panning is available before setting it.
+  setSourcePan(source: AudioSourceHandle, pan: number): void;
   setSourcePlaybackRate(source: AudioSourceHandle, rate: number): void;
   startSource(source: AudioSourceHandle, offset: number): void;
   stopSource(source: AudioSourceHandle): void;

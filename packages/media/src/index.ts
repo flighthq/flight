@@ -40,6 +40,7 @@ export {
   setAudioBusPan,
   setAudioChannelCurrentTime,
   setAudioChannelGain,
+  setAudioChannelPan,
   setAudioChannelPlaybackRate,
   setAudioDeviceBackend,
   setAudioMixerMasterGain,

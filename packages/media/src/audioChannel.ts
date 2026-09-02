@@ -116,6 +116,7 @@ export function playAudioResource(
     gain: options?.gain ?? 1,
     length: buf.duration * 1000,
     loops: options?.loops ?? 0,
+    pan: 0,
     playbackRate: options?.playbackRate ?? 1,
     source,
     state: 'stopped',
@@ -156,6 +157,18 @@ export function setAudioChannelGain(channel: AudioChannel, value: number): numbe
     getAudioDeviceBackend().setSourceGain(runtime.sourceHandle, value);
   }
   return channel.gain;
+}
+
+// Clamped rather than assigned as given, following setAudioChannelCurrentTime: pan is the other
+// setter with a bounded domain, and the returned value is the one that actually reached the device so
+// the channel field and the transport can never disagree about where the sound is.
+export function setAudioChannelPan(channel: AudioChannel, value: number): number {
+  channel.pan = clamp(value, -1, 1);
+  const runtime = channelRuntime.get(channel);
+  if (runtime !== undefined && runtime.sourceHandle !== INVALID_SOURCE) {
+    getAudioDeviceBackend().setSourcePan(runtime.sourceHandle, channel.pan);
+  }
+  return channel.pan;
 }
 
 export function setAudioChannelPlaybackRate(channel: AudioChannel, value: number): number {
@@ -226,6 +239,7 @@ function startAudioChannel(channel: AudioChannel): void {
   const sourceHandle = backend.createSource(runtime.device, runtime.bufferHandle);
 
   backend.setSourceGain(sourceHandle, channel.gain);
+  backend.setSourcePan(sourceHandle, channel.pan);
   backend.onSourceEnded(sourceHandle, () => completeAudioChannel(channel));
 
   runtime.sourceHandle = sourceHandle;

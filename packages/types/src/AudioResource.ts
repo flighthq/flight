@@ -7,6 +7,9 @@ export interface AudioChannel {
   gain: number;
   length: number;
   loops: number;
+  // Stereo placement: -1 hard left, 0 centre, 1 hard right. Clamped to that range by
+  // setAudioChannelPan, the way currentTime is clamped to its own bounded domain.
+  pan: number;
   playbackRate: number;
   source: AudioResource;
   state: AudioChannelState;
