@@ -101,6 +101,7 @@ export * from './BevelEffect';
 export * from './Bidi';
 export * from './Billboard';
 export * from './BinPack';
+export * from './BitmapDisplacementEffect';
 export * from './BitmapFont';
 export * from './BitmapFontSummary';
 export * from './BitmapFontGlyphExplanation';

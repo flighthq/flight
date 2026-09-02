@@ -231,6 +231,12 @@
     },
     {
       "packageName": "effects-gl",
+      "symbol": "defaultGlBitmapDisplacementEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
       "symbol": "defaultGlBlendEffectRunner",
       "dot": true,
       "contract": true
@@ -502,6 +508,12 @@
     {
       "packageName": "effects-gl",
       "symbol": "registerGlBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlBitmapDisplacementEffect",
       "dot": true,
       "contract": true
     },
@@ -789,6 +801,12 @@
     },
     {
       "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuBitmapDisplacementEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
       "symbol": "defaultWgpuBlendEffectRunner",
       "dot": true,
       "contract": true
@@ -1048,6 +1066,12 @@
     {
       "packageName": "effects-wgpu",
       "symbol": "registerWgpuBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuBitmapDisplacementEffect",
       "dot": true,
       "contract": true
     },
@@ -1504,7 +1528,7 @@
     {
       "packageName": "scene2d-gl",
       "symbol": "defaultGlScene2DRenderer",
-      "dot": false,
+      "dot": true,
       "contract": true
     },
     {

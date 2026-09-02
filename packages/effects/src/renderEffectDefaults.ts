@@ -59,6 +59,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     sourceMode: 'draw',
     strength: 1,
   },
+  BitmapDisplacementEffect: { componentX: 0, componentY: 1, edgeMode: 'wrap', scaleX: 0, scaleY: 0 },
   BlendEffect: { opacity: 1 },
   BloomEffect: { brightness: 1, mipCount: 0, passes: 1, radius: 8, threshold: 0.8, thresholdKnee: 0.5 },
   BlurEffect: { blurX: 4, blurY: 4 },

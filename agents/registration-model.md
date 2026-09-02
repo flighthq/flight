@@ -107,13 +107,13 @@ looking, rather than by inferring behaviour from the API surface.
 - Neither exists for a kind a backend does not implement. There is nothing to register, and nothing coming
   that a call would unlock.
 
-Measured on 2026-08-19, the per-kind registrar count equals the public runner count on **every** backend —
-46/46 on GL, 44/44 on WGPU, 18/18 on canvas. That one-to-one correspondence is what the reachability
+Measured on 2026-09-01, the per-kind registrar count equals the public runner count on **every** backend —
+47/47 on GL, 45/45 on WGPU, 18/18 on canvas. That one-to-one correspondence is what the reachability
 check enforces: a wrapper exists exactly where a runner does, and the wrapper cannot drift from the runner
 because it is a one-line call to the generic door with that runner. What the correspondence does **not**
 establish is that either one draws anything — that is the shape-versus-behaviour boundary above.
 
-Current coverage, derived from source on 2026-08-19: **GL 46 effect kinds, WGPU 44, canvas 18.** WGPU lacks
+Current coverage, derived from source on 2026-09-01: **GL 47 effect kinds, WGPU 45, canvas 18.** WGPU lacks
 two that GL has (`BokehDepthOfField`, `CustomShader`). Canvas implements the layer-style family
 (`DropShadow`, `OuterGlow`, `InnerGlow`, `InnerShadow`, `Bevel`, `GradientBevel`, `GradientGlow`), plus
 `Blur`/`Bloom`, `Blend`/`Composite`, four stylize kinds (`Pixelate`, `Scanlines`, `FilmGrain`, `Vignette`),

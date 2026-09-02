@@ -9,7 +9,7 @@ import type {
   WgpuRenderTexturePool,
 } from '@flighthq/types/contract';
 
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+import { getWgpuRenderEffectRunner, isWgpuRenderEffectResolvable } from './wgpuRenderEffectRegistry';
 
 // Encodes the registered members of a chain from one completed RenderTexture into another. The
 // caller owns an active command encoder and supplies one distinct scratch lease. Parity chooses the
@@ -27,12 +27,14 @@ export function applyWgpuRenderEffectsToRenderTexture(
   }
   const sourceTarget = getWgpuRenderTextureTarget(state, source);
   const unregisteredKinds: string[] = [];
-  const operations = effects.flatMap((effect) => {
+  const unresolvedIndexes: number[] = [];
+  const operations = effects.flatMap((effect, index) => {
     const runner = getWgpuRenderEffectRunner(state, effect.kind);
     if (runner === null) {
       unregisteredKinds.push(effect.kind);
       return [];
     }
+    if (!isWgpuRenderEffectResolvable(state, effect)) unresolvedIndexes.push(index);
     return [{ effect, runner }];
   });
   // Reported BEFORE either early return, because both of them are the silent cases: a false return that
@@ -44,10 +46,12 @@ export function applyWgpuRenderEffectsToRenderTexture(
     status: getWgpuRenderEffectApplicationStatus(
       effects.length,
       operations.length,
+      unresolvedIndexes.length,
       sourceTarget !== null,
       getWgpuRenderTextureTarget(state, dest) !== null,
     ),
     unregisteredKinds,
+    unresolvedIndexes,
   });
   if (sourceTarget === null) return false;
   if (operations.length === 0) return false;
@@ -82,9 +86,13 @@ export function explainWgpuRenderEffectApplication(
   dest: Readonly<RenderTexture>,
   effects: ReadonlyArray<Readonly<RenderEffect>>,
 ): WgpuRenderEffectApplicationExplanation {
-  const unregisteredKinds = effects
-    .filter((effect) => getWgpuRenderEffectRunner(state, effect.kind) === null)
-    .map((effect) => effect.kind);
+  const unregisteredKinds: string[] = [];
+  const unresolvedIndexes: number[] = [];
+  for (let index = 0; index < effects.length; index++) {
+    const effect = effects[index];
+    if (getWgpuRenderEffectRunner(state, effect.kind) === null) unregisteredKinds.push(effect.kind);
+    else if (!isWgpuRenderEffectResolvable(state, effect)) unresolvedIndexes.push(index);
+  }
   const registeredCount = effects.length - unregisteredKinds.length;
   return {
     registeredCount,
@@ -92,10 +100,12 @@ export function explainWgpuRenderEffectApplication(
     status: getWgpuRenderEffectApplicationStatus(
       effects.length,
       registeredCount,
+      unresolvedIndexes.length,
       getWgpuRenderTextureTarget(state, source) !== null,
       getWgpuRenderTextureTarget(state, dest) !== null,
     ),
     unregisteredKinds,
+    unresolvedIndexes,
   };
 }
 
@@ -112,6 +122,7 @@ export function setWgpuRenderEffectApplicationGuard(
 function getWgpuRenderEffectApplicationStatus(
   requestedCount: number,
   registeredCount: number,
+  unresolvedCount: number,
   sourceAvailable: boolean,
   destinationAvailable: boolean,
 ): WgpuRenderEffectApplicationStatus {
@@ -123,7 +134,8 @@ function getWgpuRenderEffectApplicationStatus(
   if (!sourceAvailable) return 'source-unavailable';
   if (registeredCount === 0) return 'unregistered-effects';
   if (registeredCount < requestedCount) return 'partial-registration';
-  return 'complete';
+  if (unresolvedCount === 0) return 'complete';
+  return unresolvedCount === registeredCount ? 'unresolved-effects' : 'partial-resolution';
 }
 
 function reportWgpuRenderEffectApplication(

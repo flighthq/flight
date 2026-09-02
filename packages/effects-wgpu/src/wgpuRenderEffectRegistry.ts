@@ -1,6 +1,11 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
+import type {
+  RenderEffect,
+  WgpuRenderEffectResolver,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Wgpu runner — the material-renderer
@@ -13,7 +18,7 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 
 export function getWgpuRenderEffectRunner(state: WgpuRenderState, kind: string): WgpuRenderEffectRunner | null {
   const entry = getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  return entry?.state === RegistryEntryState.Bound ? entry.value.runner : null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Symmetric with
@@ -26,7 +31,21 @@ export function hasWgpuRenderEffectRunner(state: WgpuRenderState, kind: string):
   );
 }
 
-export function registerWgpuRenderEffect(state: WgpuRenderState, kind: string, runner: WgpuRenderEffectRunner): void {
+export function isWgpuRenderEffectResolvable(state: WgpuRenderState, effect: Readonly<RenderEffect>): boolean {
+  const entry = getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(effect.kind);
+  if (entry?.state !== RegistryEntryState.Bound) return false;
+  return entry.value.isResolvable === undefined || entry.value.isResolvable(state, effect);
+}
+
+export function registerWgpuRenderEffect(
+  state: WgpuRenderState,
+  kind: string,
+  runner: WgpuRenderEffectRunner,
+  isResolvable?: WgpuRenderEffectResolver,
+): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, runner);
+  runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, {
+    isResolvable,
+    runner,
+  });
 }

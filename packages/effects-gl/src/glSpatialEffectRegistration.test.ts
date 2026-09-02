@@ -13,6 +13,7 @@ import * as publicEffects from './index';
 describe('GL effect registration', () => {
   it.each([
     ['BevelEffect', 'registerGlBevelEffect', 'defaultGlBevelEffectRunner'],
+    ['BitmapDisplacementEffect', 'registerGlBitmapDisplacementEffect', 'defaultGlBitmapDisplacementEffectRunner'],
     ['BlendEffect', 'registerGlBlendEffect', 'defaultGlBlendEffectRunner'],
     ['BloomEffect', 'registerGlBloomEffect', 'defaultGlBloomEffectRunner'],
     ['BlurEffect', 'registerGlBlurEffect', 'defaultGlBlurEffectRunner'],

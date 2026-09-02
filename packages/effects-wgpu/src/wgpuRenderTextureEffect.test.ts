@@ -105,10 +105,27 @@ describe('explainWgpuRenderEffectApplication', () => {
       requestedCount: 2,
       status: 'partial-registration',
       unregisteredKinds: ['test.explain-missing'],
+      unresolvedIndexes: [],
     });
-    // No resolvability field: WGPU has no resolver half to registration, so a field mirroring GL's
-    // unresolvedIndexes could never be non-empty. Its absence is the contract, not an omission.
-    expect('unresolvedIndexes' in explanation).toBe(false);
+  });
+
+  it('names a registered effect whose instance cannot resolve', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pool = createWgpuRenderTexturePool();
+    const source = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
+    const dest = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
+    writeWgpuRenderTextureTarget(state, source, () => {});
+    registerWgpuRenderEffect(state, 'test.explain-unresolved', vi.fn(), () => false);
+
+    expect(
+      explainWgpuRenderEffectApplication(state, source, dest, [{ kind: 'test.explain-unresolved' }]),
+    ).toMatchObject({
+      registeredCount: 1,
+      requestedCount: 1,
+      status: 'unresolved-effects',
+      unregisteredKinds: [],
+      unresolvedIndexes: [0],
+    });
   });
 });
 
