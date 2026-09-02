@@ -1,80 +1,121 @@
 ---
 package: '@flighthq/effects'
 status: solid
-score: 92
-updated: 2026-08-25
+score: 85
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
   - source
-  - changes.patch
-  - charter.md
 ---
 
-# effects — Review
-
-Evidence: incoming bundle `builder-67dc46d64` (`head/packages/effects/`, `changes.patch`). Prior `reviews/depth/effects.md` does not exist in this tree (mid-migration), so this survey is grounded directly in source and the as-claimed `status.md`. All status claims below were verified against the diff and source unless noted.
+# effects -- Review
 
 ## Verdict
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
-
-
-**solid — 90/100.** A broad, well-built catalog of substrate-agnostic effect _intents_ plus a deep bench of canonical, deterministic recipe math. The descriptor layer is mature and contract-clean; the math layer is the standout — Oklab (Ottosson), ACES/Hable/AgX/Reinhard tone maps, separable Gaussian, Sobel, thin-lens CoC, Halton SSAO kernel — all named to their references, alias-safe, zero-alloc. What holds it short of _authoritative_ is not breadth but a few correctness and structural sharp edges (a color-aware-lerp bug, three parallel hand-maintained kind tables, an entirely TODO charter) and the fact that no backend consumes the new base-contract fields yet, so `enabled`/`intensity` are inert.
+**solid -- 85/100.** A broad, well-structured catalog of 54 substrate-agnostic effect descriptors plus deep, reference-grade recipe math. The descriptor layer satisfies Flight conventions cleanly: plain data, open `kind` contracts, `Readonly` parameters, `sideEffects: false`, no throws. The math layer is the standout -- Gaussian, ACES/Hable/AgX/Reinhard tone maps, Halton SSAO, thin-lens CoC, Sobel, W3C blend math, Kuwahara, god-rays, Bayer dither -- all named to their references, alias-safe, zero-alloc. What holds it short of authoritative: the defaults table drifts from its type definitions, `lerpRenderEffect` corrupts packed-color fields and has no external consumer, the ratified per-kind handler registration has not been built, and two continuous-pointwise ops remain here after the adjustments split.
 
 ## Present capabilities
 
-Verified counts: **69 source files (68 + `index.ts`), 68 colocated `*.test.ts`, 291 tests**, matching the status doc exactly. No top-level side effects (`sideEffects: false` honored), no `throw` statements anywhere (sentinel discipline clean), single root `.` export.
+**76 source files, 74 colocated test files, 382 test cases.** `sideEffects: false` honored. Zero `throw` statements (sentinel discipline clean). Two export lanes (`.` and `./contract`) correctly structured.
 
-**Descriptor catalog (52 effects).** One `create<Name>Effect` factory per kind, each a thin constructor over a `@flighthq/types` interface (`{ kind: 'X', ...options }`, `Omit<X, 'kind'>` options). Spans color grade (ColorGrade, LiftGammaGain, LookupTableGrade, WhiteBalance, BrightnessContrast, HueSaturation, ChannelMixer, Exposure, ToneMap), blurs (Gaussian-family via Directional/Radial/Motion/CameraMotion, Bokeh DoF, TiltShift), bloom/HDR (Bloom, AutoExposure, GodRays, LensFlare, LensDirt), screen-space 3D (Ssao, Ssr, ContactShadows, VolumetricLight, ScreenSpaceFog), AA (Fxaa, Smaa, Taa), stylize (Kuwahara, Halftone, Dither, Posterize, Pixelate, Crt, Scanlines, Sketch, Outline, Glitch, FilmGrain, FilmEmulation), lens (BarrelDistortion, LensDistortion, ChromaticAberration, PanniniProjection, Displacement, Vignette), plus accessibility (ColorBlindSimulation) and the escape hatch (CustomShader). This is at or beyond the AAA bar for a post-process catalog.
+**Descriptor catalog (54 `create*Effect` factories).** One per kind, each a thin constructor over a `@flighthq/types` interface (`{ kind: 'X', ...options }`, `Readonly<Omit<X, 'kind'>>` options). Spans:
 
-**Recipe math (substrate-agnostic, the real depth).** Each module is shared so GL/WGPU/Canvas backends derive identical parameters:
+- Blurs: `BlurEffect` (separable Gaussian), `DirectionalBlurEffect`, `RadialBlurEffect`, `MotionBlurEffect`, `CameraMotionBlurEffect`, `BokehDepthOfFieldEffect`, `TiltShiftEffect`
+- Bloom/HDR: `BloomEffect`, `AutoExposureEffect`, `GodRaysEffect`, `LensFlareEffect`, `LensDirtEffect`, `VolumetricLightEffect`, `ToneMapEffect`
+- Screen-space 3D: `SsaoEffect`, `SsrEffect`, `ContactShadowsEffect`, `ScreenSpaceFogEffect`
+- AA: `FxaaEffect`, `SmaaEffect`, `TaaEffect`
+- Compositing: `BlendEffect`, `CompositeEffect`, `DropShadowEffect`, `InnerShadowEffect`, `InnerGlowEffect`, `OuterGlowEffect`, `BevelEffect`, `GradientBevelEffect`, `GradientGlowEffect`
+- Lens: `BarrelDistortionEffect`, `LensDistortionEffect`, `ChromaticAberrationEffect`, `PanniniProjectionEffect`, `DisplacementEffect`, `BitmapDisplacementEffect`, `VignetteEffect`
+- Stylize: `KuwaharaEffect`, `HalftoneEffect`, `DitherEffect`, `PosterizeEffect`, `PixelateEffect`, `CrtEffect`, `ScanlinesEffect`, `SketchEffect`, `OutlineEffect`, `GlitchEffect`, `FilmGrainEffect`, `FilmEmulationEffect`, `MedianEffect`, `SharpenEffect`, `ConvolutionEffect`
+- Escape hatch: `CustomShaderEffect`
+- Candidates for re-sort: `WhiteBalanceEffect`, `ToneMapEffect` (see Gaps)
 
-- `gaussianMath` — sigma↔radius, normalized 1D separable kernel, pass count.
-- `colorTemperatureMath` — Tanner-Helland Kelvin→RGB, white-balance multipliers.
-- `colorScienceMath` — Rec.709/2020 luma, sRGB⇄linear (IEC 61966-2-1), HSL⇄RGB, Oklab⇄RGB (Ottosson).
-- `toneMapMath` — Reinhard/extended-Reinhard, Narkowicz ACES, Hable Uncharted2, Uchimura filmic, AgX, exposure scale, ACES in/out matrices.
-- `bloomMath`, `cdlMath` (ASC CDL + lift/gamma/gain bridge), `lutMath` (3D→2D strip), `depthMath` (linear depth, thin-lens CoC, Halton SSAO kernel), `stylizeMath` (Bayer, halftone, CRT mask, scanlines), `kuwaharaMath` (anisotropic Papari/Petkov variant), `godRaysMath` (Duda/Nunnally radial blur + normalization), `edgeDetectMath` (Sobel + outline/sketch param derivation).
+**Recipe math modules (substrate-agnostic, zero-alloc):**
 
-**Pipeline-support data layer.** `renderEffectInputs` (`getRenderEffectInputs`, `RENDER_EFFECT_KINDS`, `getRenderEffectKinds`) promotes the `[HDR]/[DEPTH]/[MOTION]/[TEMPORAL]` doc tags into queryable data; `renderEffectValidation.validateRenderEffectList` returns the first unsatisfied input (sentinel `null`, skips `enabled === false`); `renderEffectDefaults` (`getRenderEffectDefaults`, `normalizeRenderEffect`) holds a 50-kind default table with a tested zero-preserving (`!== undefined`) merge; `renderEffectInterpolation` (`canLerpRenderEffects`, `lerpRenderEffect`) for tween/timeline animation.
+- `gaussianMath.ts` -- sigma-radius conversion, normalized 1D kernel, pass count (`computeGaussianRadiusFromSigma`, `computeGaussianSigmaFromRadius`, `computeSeparableBlurPassCount`, `createGaussianKernelWeights`)
+- `gaussianKernel.ts` -- precomputed kernel weight tables (`computeGaussianKernelWeights`, `getGaussianKernelSize`)
+- `linearSampledGaussian.ts` -- bilinear-tap-optimized Gaussian (`computeLinearSampledGaussian`, `getLinearSampledGaussianTapCount`)
+- `boxBlurMath.ts` -- box-blur radius/pass (`computeBoxBlurRadius`, `computeBoxBlurPassRadius`)
+- `blurDownsample.ts` -- mip-level resolution for downsample blur (`getBlurDownsampleLevel`, `getBlurResidualSigma`)
+- `toneMapMath.ts` -- Reinhard, extended Reinhard, Narkowicz ACES, Hable Uncharted2, Lottes filmic (with `FilmicToneMapOptions`), Sobotka AgX (with `AgxToneMapOptions`), exposure scale, ACES I/O matrices
+- `colorTemperatureMath.ts` -- Tanner-Helland Kelvin-to-RGB, white-balance multipliers
+- `depthMath.ts` -- linear depth from nonlinear, thin-lens CoC, Halton SSAO sample kernel
+- `godRaysMath.ts` -- Duda/Nunnally radial-blur accumulation, light center, sample weights, step size
+- `kuwaharaMath.ts` -- anisotropic Papari/Petkov variant: Gaussian sector weights, sector offsets, pixel counts
+- `edgeDetectMath.ts` -- Sobel 3x3, outline/sketch parameter derivation
+- `stylizeMath.ts` -- CRT mask, halftone cell, scanline, Bayer ordered-dither matrix
+- `blendModeMath.ts` -- W3C compositing spec: 9 separable modes, 4 non-separable HSL modes, dispatch
+- `compositeOperatorMath.ts` -- Porter-Duff factor derivation
+- `bloomEffect.ts` -- bloom threshold, intensity, blur radius
 
-**Contract-clean base type.** `RenderEffect` in `@flighthq/types` is an _open base contract_ (`kind` + optional `enabled`/`intensity`), explicitly not a closed union — a new effect extends it and registers a runner, with no central switch to edit. `RenderEffectInput`, `CdlValues`, `MotionBlurTarget` all correctly homed in `@flighthq/types`.
+**Pipeline-support layer:**
+
+- `renderEffectInputs.ts` -- `getRenderEffectInputs` (per-kind required buffers: HDR/Depth/Motion/Temporal), `getRenderEffectKinds` (53-kind catalog), `RENDER_EFFECT_KINDS` array
+- `renderEffectDefaults.ts` -- `getRenderEffectDefaults`, `normalizeRenderEffect` (52-kind default table)
+- `renderEffectValidation.ts` -- `validateRenderEffectList` (sentinel null on first unsatisfied input)
+- `renderEffectInterpolation.ts` -- `canLerpRenderEffects`, `lerpRenderEffect` (runtime type introspection, snaps booleans/strings/arrays at t=0.5)
+- `renderEffectPadding.ts` -- `computeRenderEffectPadding`, `explainRenderEffectPadding`, `registerRenderEffectPaddingResolver`, `getGaussianRenderEffectPadding`, `getDirectionalRenderEffectPadding` -- the state-scoped padding registry with registry-miss signal integration
+- `renderEffectCaptureGeometry.ts` -- `computeRenderEffectCaptureGeometry` (substrate-independent capture bounds for 2D subtree effect chains)
+
+**Padding resolvers registered per-kind (19 effects):** Blur, Bevel, BitmapDisplacement, Bloom, BokehDoF, ContactShadows, Convolution, DirectionalBlur, Displacement, DropShadow, Glitch, GradientBevel, GradientGlow, InnerGlow, InnerShadow, Median, OuterGlow, Outline, TiltShift. Each effect file exports `register*EffectPaddingResolver(state)` and a standalone `get*EffectPadding(effect)` for direct use.
 
 ## Gaps
 
-- **`lerpRenderEffect` corrupts packed-color fields.** The lerp introspects field types at runtime and treats every `number` as a scalar to interpolate linearly. Packed-RGBA fields (`VignetteEffect.color`, `OutlineEffect.color`, `ColorGrade.shadows/midtones/highlights = 0x808080ff`, `LiftGammaGain.*`, `VolumetricLight.lightColor`) are numbers too, so animating between two colors lerps the _integer_ `0x000000ff → 0xffffffff` — channels bleed across byte boundaries and produce garbage intermediate colors. There is no per-channel unpack/lerp/repack path and no field-role metadata to distinguish a color from a scalar. This is the most consequential correctness gap.
-- **Three parallel hand-maintained kind tables + 52 factory files.** `RENDER_EFFECT_KINDS` (52), `RENDER_EFFECT_INPUTS`, and `DEFAULTS` (50) are independent literal tables that must be kept in sync by hand, on top of the 52 `create*Effect` files. Already drifting: `ChannelMixerEffect` and `CustomShaderEffect` are in the catalog but absent from `DEFAULTS` (CustomShader is documented as intentional; ChannelMixer reads as an omission, not a decision). Nothing mechanically guarantees a new effect lands in all four places. See _Contract & docs fit_ — this is the fork-B/registry question.
-- **No backend consumes the new base fields.** `enabled` and `intensity` exist on `RenderEffect` and are honored by `validateRenderEffectList`, but no recipe in `@flighthq/render` or the `effects-*` backends reads them yet, so the dry-wet mix and skip flag are inert end-to-end. Flagged in status as cross-package; recorded here as a real gap, not closed.
-- **Approximate operators left hardcoded.** `computeFilmicToneMap` (Uchimura GT) and `computeAgxToneMap` bake their parameter sets; no `FilmicToneMapOptions`/`AgxToneMapOptions` to tune them. AgX is the scalar-sigmoid approximation, not the full matrix+curve. Honest comments note this; acceptable for now.
-- **No serialization/versioning.** No `serializeRenderEffect`/`deserializeRenderEffect` tied to the scene-migration model in `conventions/types-layout.md`. Structural clone likely suffices today, but the versioned-migration hook is absent.
-- **Rust mirror not started.** `crates/flighthq-effects` was not touched; the deterministic math here is the easiest conformance target in the SDK (no GPU, headlessly fingerprintable) and is the obvious next conformance beachhead.
-- **Catalog-completeness nits.** `AutoExposureEffect` vs a distinct `EyeAdaptationEffect` (histogram eye-adaptation) is unresolved; `lerpRenderEffect` does not interpolate readonly arrays (`BloomEffect.mipWeights`) — documented as by-design but a real animation limitation.
+1. **Defaults table drifts from type definitions.** `BloomEffect` defaults include `brightness`, `mipCount`, and `thresholdKnee` -- none of these are fields on `packages/types/src/BloomEffect.ts` (which has `threshold`, `intensity`, `radius`, `passes`). `SsrEffect` defaults include `maxSteps` and `thickness` -- absent from the type (which has `maxDistance`, `resolution`, `steps`). `MotionBlurEffect` defaults include `shutterAngle` and `target` -- absent from the type (which has `intensity`, `samples`). `getRenderEffectDefaults` and `normalizeRenderEffect` have no caller outside their own test -- the table was never wired into any pipeline, so the drift started wrong rather than accumulating.
+
+2. **`lerpRenderEffect` corrupts packed-color fields and has no consumer.** The lerp introspects field types at runtime and treats every `number` as a scalar to lerp linearly. Packed-RGBA fields (`VignetteEffect.color`, `OutlineEffect.color`, `VolumetricLightEffect.lightColor`, etc.) are numbers, so animating between two colors lerps the integer -- channels bleed across byte boundaries producing garbage intermediate colors. There is no per-channel unpack/lerp/repack path and no field-role metadata to distinguish a color from a scalar. Furthermore, `lerpRenderEffect` has zero external consumers: only `packages/effects/src/` itself and its test import it; `tween` and `timeline` -- the packages it was built for -- never do.
+
+3. **`CompositeEffect` missing from `RENDER_EFFECT_KINDS`.** The `createCompositeEffect` factory exists and is exported from `index.ts`, but `'CompositeEffect'` does not appear in the `RENDER_EFFECT_KINDS` array (`renderEffectInputs.ts`). This makes the catalog incomplete: `getRenderEffectKinds()` returns 53 kinds while 54 factories are exported.
+
+4. **Per-kind handler registration not built.** The charter's Decision [2026-07-02] ratifies dissolving the three parallel hand-maintained tables (`RENDER_EFFECT_KINDS`, `RENDER_EFFECT_INPUTS`, `DEFAULTS`) into per-kind handler companions registered on pipeline state. This has not happened. The only registration system currently built is the padding resolver registry (`renderEffectPadding.ts`), which implements the pattern the charter describes. The defaults, inputs, and kinds tables remain central and manual.
+
+5. **`RenderEffect` base type carries only `kind`.** The charter's Decision [2026-07-02] states backends must honor `enabled === false` (skip the pass) and `intensity` (dry-wet mix). However, `RenderEffect` at `packages/types/src/RenderEffect.ts` has no `enabled` or `intensity` field -- only `kind: Kind`. These are per-descriptor fields the backends read individually. The charter describes them as base-contract obligations, but the contract does not carry them.
+
+6. **Two continuous-pointwise ops remain after the adjustments split.** The charter's "What it is" section (fork H ruling) states pointwise ops migrate to `@flighthq/adjustments`. `whiteBalanceEffect.ts` is exactly linear (its matrix builder already lives in `adjustments/src/colorMatrixMath.ts`), and `toneMapEffect.ts` is continuous pointwise and LUT-bakeable. Both are still in `effects`. Status.md flags this correctly; the migration is incomplete.
+
+7. **`computeExposureScale` unit mismatch with runners.** `toneMapMath.ts:33` defines `computeExposureScale(exposure)` as EV stops (neutral at 0, returns `2^exposure`), tested accordingly. However, it has no consumer outside its test -- the backends take `exposure` as a raw linear multiplier (neutral at 1). The function survives because `1.0` looks neutral in both interpretations.
+
+8. **`BloomEffect.passes` read by nothing.** Declared at `packages/types/src/BloomEffect.ts:8`, present in the defaults table, but no bloom runner in any backend reads `.passes`. An accepted-and-discarded field that typechecks and renders plausibly.
+
+9. **No realization registry.** The ratified architecture calls for a `(kind, backend)` registry plus `explainEffectRealization` to provide backend coverage as queryable data. Neither name exists in the tree; backend coverage is only discoverable by grepping each backend package.
+
+10. **No serialization/versioning.** No `serializeRenderEffect` / `deserializeRenderEffect`. The charter defers this to the SDK-wide serialization story (Decision [2026-07-02]).
 
 ## Charter contradictions
 
-None — but only because the charter is almost entirely `TODO`. _What it is_ is a seeded one-liner; _North star_, _Boundaries_, _Decisions_, _Open directions_ are all empty. There is no stated principle for the code to contradict. Against the codebase-map fallback (AAA completeness, plain-data-over-runtime, open contracts, sentinels, out-params, full names) the package is strongly aligned: descriptors are plain data, the base is an open contract not a closed union, math is out-param/alias-safe, names are unabbreviated and reference-grade. The `lerpRenderEffect` color bug is the one place the _plain-value color convention_ ("packed RGBA, one consistent convention") is silently violated in behavior — it treats the convention's integers as opaque scalars.
+**One substantive contradiction, two tensions:**
+
+- **Contradiction: base-contract `enabled`/`intensity` stated as decided but absent from the type.** Decision [2026-07-02] says "the base contract defines these fields" and "backends must honor" them. The actual `RenderEffect` type has only `kind`. The charter states a fact about the contract that is not true of the code.
+
+- **Tension: per-kind handler registration decided but not built.** Decision [2026-07-02] ratifies dissolving central tables into per-kind handler companions. The padding resolver is the only registry actually implemented; the defaults, inputs, and kinds remain central tables. This is not a contradiction (the decision does not claim it is done), but the gap between the ratified architecture and the current code is substantial.
+
+- **Tension: "52-kind catalog" count in charter is stale.** The charter's "What it is" says "52 effect kinds" and notes this "will drop as the pointwise kinds move." The pointwise ops have moved: the actual count is 54 factories (53 in `RENDER_EFFECT_KINDS` due to the missing `CompositeEffect`). The text acknowledges staleness but has not been updated.
 
 ## Contract & docs fit
 
-**Lives up to the contract — strongly.**
+**Lives up to the contract -- strongly.**
 
-- `@flighthq/types`-first: every descriptor interface, `RenderEffectInput`, `CdlValues`, `MotionBlurTarget` are in `@flighthq/types`; the package imports them, never redefines.
-- Full unabbreviated names; `get*`/`is*`/`has*` and `create*`/`compute*` verbs used correctly; `compute*`/`get*` math writes to `out`, alias-safety asserted in comments and (per status) tested.
-- Sentinels not throws (verified: zero `throw`); single root export; `sideEffects: false` with no top-level execution.
-- Open base contract for `RenderEffect` is exactly the fork-B "registry/open-contract by default" shape.
+- `@flighthq/types`-first: every descriptor interface (`BlurEffect`, `BloomEffect`, etc.), `RenderEffectInput`, `CompositeOperator`, `AgxToneMapOptions`, `FilmicToneMapOptions` all defined in `@flighthq/types`. The package imports them, never redefines.
+- Full unabbreviated names throughout: `computeGaussianRadiusFromSigma`, `computeRenderEffectCaptureGeometry`, `getDirectionalRenderEffectPadding`. `get*`/`compute*`/`create*`/`is*` verbs used correctly.
+- Math functions write to `out` parameters, are explicitly documented as alias-safe, and are zero-allocation in hot paths.
+- Sentinels not throws: zero `throw` statements in 76 source files. `getRenderEffectDefaults` returns `{}` for unknown kinds, `normalizeRenderEffect` returns `false`, `validateRenderEffectList` returns the failing input or `null`.
+- `sideEffects: false`, no top-level execution, no module-scoped mutable state (scratch objects in `renderEffectCaptureGeometry.ts` are module-private and at file bottom per convention).
+- Open base contract for `RenderEffect`: new effects extend it with a literal `kind` and register a runner. No central union to edit.
+- Two export lanes correctly configured in `package.json` (`.` and `./contract`).
 
-**Candidate contract/doc revisions (user's gate, not acted on):**
+**Candidate contract/doc revisions (user's gate):**
 
-- **Package Map line is stale.** `agents/index.md` does not list `@flighthq/effects` in its Package Map at all (it lists `filters`/`filters-gl` but not `effects` or the `effects-*` backends). A 52-effect, 291-test package is missing from the map — a candidate Map addition.
-- **Fork B (closed-union vs open-registry) applies _inside_ the package.** The base type is open, but the support layer (`DEFAULTS`, `RENDER_EFFECT_INPUTS`, `RENDER_EFFECT_KINDS`) re-introduces three closed, hand-maintained `kind`-keyed tables — the exact "closed switch that should be a registry" drift the structural-forks doc warns about. Worth a decision: co-locate defaults/inputs with each effect (a small per-kind descriptor record the factory and tables derive from) so adding an effect touches one file, vs. keeping central tables. This is a design fork, not a sweep.
-- **Charter is a stub** (see below) — the highest-leverage doc gap for this cell.
+- The Package Map in `AGENTS.md` lists effects in the Rendering group parenthetically: `image operations (materials + shading / adjustments / effects with effects-gl / -wgpu / -canvas)`. This is accurate but terse for a 54-effect, 382-test, 15-math-module package. Not missing, but undersized for the package's weight.
 
 ## Candidate open directions
 
-Each is a question the empty charter forced this review to assume; they feed the charter's Open directions for the user to settle:
+Each is a question the charter does not fully answer that this review had to assume or flag:
 
-1. **Where does the effects boundary end?** Effects holds _intents + recipe math_ but no backend execution (the `effects-gl`/`effects-wgpu`/`effects-canvas` packages do). Is the math layer permanently in `effects` (shared substrate), or does some of it belong in a `render`-adjacent home? State the data-vs-execution line as a Boundary.
-2. **Is the central-table model blessed or a registry target?** (Fork B applied internally, above.) The charter should rule whether per-kind metadata co-locates with the factory or stays in central tables.
-3. **Color-aware interpolation as a stated requirement.** Does `effects` own correct animated interpolation of its descriptors (requiring packed-color awareness / per-field role metadata), or is interpolation a tween/timeline concern that consumes a lower-level helper? The current bug is a symptom of this being undecided.
-4. **`enabled`/`intensity` ownership of the dry-wet contract.** The base contract defines them; the charter should state that backends _must_ honor them and that effects owns the contract (so the cross-package wiring is a tracked obligation, not an open TODO).
-5. **Serialization/versioning posture.** Does `effects` own `serialize/deserializeRenderEffect` against the scene-migration model, or defer to a generic scene serializer? A Boundary call.
-6. **Catalog scope ceiling.** Is 52 the intended ceiling, or are EyeAdaptation, parameterized filmic/AgX, and similar canonical-but-missing pieces in scope? A North-star "what AAA means here" line would settle the completeness nits without a per-effect debate.
+1. **Should `whiteBalanceEffect` and `toneMapEffect` migrate to `adjustments`?** The fork H ruling says pointwise ops move. Both are continuous pointwise. `whiteBalanceEffect.ts` has no recipe math in this package (its math is already in `adjustments`); `toneMapEffect.ts` is a 5-line factory. But ToneMap requires `[HDR]` input, which is an effect pipeline concern. The charter should settle whether HDR-dependent pointwise ops stay here or move.
+
+2. **Should the defaults table be maintained or dissolved?** It has no consumer outside its test and drifts from the type definitions. The per-kind handler registration decision (2026-07-02) implies dissolving it, but it has not been removed or migrated. The charter should state whether it is dead code to remove or a placeholder for the registration migration.
+
+3. **What is the completion bar for padding resolvers?** 19 of 54 effects have padding resolvers. Many of the remaining 35 are full-screen effects (tone map, FXAA, film grain) that genuinely have zero footprint. But some spatial effects lack resolvers -- is the intent that every spatial effect must register one, or only effects with non-trivial footprints?
+
+4. **`strength` semantics across effects.** The status.md notes that `strength` has a ratified meaning (post-operator coverage gain, clamped) but no shared primitive for backends to reach for. Several effects carry `strength` fields (Bevel, DropShadow, OuterGlow, InnerGlow, GradientGlow, GradientBevel, InnerShadow, Sketch). Is a shared `applyEffectStrength` helper in scope for `effects`, or does each backend implement it independently?

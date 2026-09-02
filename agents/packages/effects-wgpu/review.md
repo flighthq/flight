@@ -1,88 +1,116 @@
 ---
 package: '@flighthq/effects-wgpu'
 status: solid
-score: 91
-updated: 2026-08-25
+score: 72
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
   - source
-  - changes.patch (builder-67dc46d64)
 ---
 
 # effects-wgpu — Review
 
-> **2026-07-31 correction.** This review records a superseded implementation. WGPU still
-> has 44 realized kinds, but it is not the historical 44-kind set: identity TAA/SSR and the
-> depthless whole-frame BokehDepthOfField blur were deleted in `6ecb599d8`, while genuine
-> kinds landed elsewhere. Batch/category registrar APIs were retired in `2a7ac8bff`;
-> registration is per kind. Use the charter and source-derived reachability inventory for
-> the current set.
-
 ## Verdict
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
-
-
-`solid — 88/100`. This is the WebGPU/WGSL backend for the substrate-agnostic full-screen post-process pipeline, and it is a mature, well-architected leaf renderer: a per-state registry, a ping-pong pipeline orchestrator, a per-state compiled-pipeline cache, 44 effect runners spanning six taxonomy bands, and two genuinely industry-grade multi-pass recipes (mip-chain bloom, three-pass SMAA) added this pass. It is in near-perfect structural lockstep with its `effects-gl` sibling. It is held back from "authoritative" by three things: an 8-effect coverage gap behind the agnostic descriptor layer (shared with `effects-gl`), depth/velocity G-buffers still fed `null` (cross-package blocker), and a thin behavioral test floor — most runners have "is a function" smoke tests only.
+`solid — 72/100`. A mature, well-structured WebGPU backend for the substrate-agnostic post-process pipeline: a per-state registry, a ping-pong pipeline orchestrator with adjustment fusion, a compiled-pipeline cache, a guard module, a RenderTexture-to-RenderTexture bridge, and 45 per-kind runner/registrar pairs. The infrastructure is the strongest part of the package and satisfies every codebase-map convention cleanly. The score is held back by three things: two of the 45 runners are acknowledged stand-ins under real names (SSAO is luminance-variation, SMAA is a single-pass blur), the depth G-buffer is fed `null` (cross-package blocker degrading every depth-sensitive recipe), and the per-effect test floor is almost entirely smoke tests with no uniform-packing or orchestration assertions.
 
 ## Present capabilities
 
-Verified against `incoming/builder-67dc46d64/head/packages/effects-wgpu/`:
+All claims grounded in `packages/effects-wgpu/src/`.
 
 **Core infrastructure.**
 
-- `wgpuRenderEffectRegistry.ts` — per-`WgpuRenderState` `Map<kind, runner>` over a `WeakMap`: `registerWgpuRenderEffect`, `getWgpuRenderEffectRunner` (sentinel `null`), `hasWgpuRenderEffectRunner` (added this pass, symmetric with `hasGlRenderEffectRunner`). This is fork B done right: registry dispatch, no monolithic `switch`, last-write-wins so a user can swap a runner, unused recipes tree-shake.
-- `wgpuRenderEffectPipeline.ts` — `create/begin/end/destroyWgpuRenderEffectPipeline` plus `setWgpuRenderEffectVelocityTexture`. `end*` ping-pongs two pooled scratch targets across the per-frame `RenderEffect[]`, skips unregistered kinds silently, and presents via a `replace`-blend fullscreen pass. Allocation is explicit and pooled (`acquire*`/`release*` bracketed correctly, including the early-return `scene === null` guard). `destroy*` (not `dispose*`) is the right verb — it frees GPU targets + pool.
-- `wgpuEffectProgramCache.ts` — `getWgpuEffectPipeline(state, key, wgsl, blend)`, a per-state `WeakMap<state, Map<key, pipeline>>` keeping compiled pipelines off the render-state runtime type. Mirrors `effects-gl`'s `getGlEffectProgram`.
+- `wgpuRenderEffectRegistry.ts` — per-`WgpuRenderState` registry via `@flighthq/registry`: `registerWgpuRenderEffect`, `getWgpuRenderEffectRunner` (sentinel `null`), `hasWgpuRenderEffectRunner`, `isWgpuRenderEffectResolvable`. Registry dispatch, no monolithic `switch`, last-write-wins, unused recipes tree-shake. The `isResolvable` seam allows per-instance resolution gating (used by `BitmapDisplacementEffect`).
 
-**Effect library — 44 runners**, each `apply<Name>EffectToWgpu` + `defaultWgpu<Name>EffectRunner`, organized into six registrant bands in `wgpuRenderEffectRegistrants.ts` (`registerAntialiasing/Bloom/Blur/Color/ScreenSpace/StylizeWgpuRenderEffects`, plus `registerStandardWgpuRenderEffects` composing all). The band taxonomy matches `effects-gl` one-for-one after this pass's GL taxonomy reconciliation.
+- `wgpuRenderEffectPipeline.ts` — `create/begin/end/destroyWgpuRenderEffectPipeline` plus `setWgpuRenderEffectVelocityTexture`. `end*` walks the per-frame `ReadonlyArray<RenderEffect | Adjustment>` across two pooled scratch targets, fuses consecutive pointwise adjustments (matrix-tier into one `applyColorMatrixPassToWgpu`, LUT-tier into one `applyColorLutPassToWgpu`), skips unregistered kinds through the diagnostics seam, and presents the final result via a `replace`-blend fullscreen pass with an sRGB or linear-to-sRGB conversion. Allocation is explicit and pooled (`acquire*`/`release*` bracketed correctly). `destroy*` frees GPU targets, pool, and LUT cache. Two diagnostics seams: `setWgpuRenderEffectPipelineSkipGuard` (unregistered kind) and `setWgpuRenderEffectPipelineSampleCountGuard` (sample-count substitution).
 
-**Two flagship recipes added this pass (both verified in source):**
+- `wgpuEffectProgramCache.ts` — `getWgpuEffectPipeline(state, key, wgsl, blend)`, a per-state `WeakMap<state, Map<key, pipeline>>` that compiles and caches WGSL pipelines.
 
-- `wgpuBloomEffect.ts` — full CoD/Unreal mip-chain: Karis-average bright-pass (firefly suppression), Jimenez-2014 13-tap downsample chain (≤6 levels), 3×3 tent-filter upsample accumulate, additive composite, with a single-level Gaussian fallback below 16×16. Shaders are correct and the pooled mip targets are all released. This is real, not a stub.
-- `wgpuSmaaEffect.ts` (~12.7KB) — three-pass SMAA (edge detect → analytical-area blend-weight → neighborhood blend), with the runner path threading the pipeline's persistent pool to avoid per-frame pool churn (`applySmaaEffectWithPoolToWgpu`). The deliberate analytical-area choice (vs the ~89KB precomputed LUT) is documented in the status and reasonable for bundle size.
+- `wgpuEffectPass.ts` — the low-level draw primitive: shared fullscreen-quad vertex shader (`EFFECT_VERTEX_WGSL`), a 512-slot ring buffer for per-pass uniforms, texture bind-group cache keyed by `GPUTextureView`, and three blend modes (premultiplied, replace, erase). `drawWgpuEffectPass` (single source) and `drawWgpuDualSourceEffectPass` (two sources for blend/composite). `createWgpuEffectPipeline`/`createWgpuDualSourceEffectPipeline` compile pipelines with per-format variants for HDR targets. `getWgpuEffectPassState` exposes the infrastructure to effects needing custom bind groups.
 
-**Sibling parity.** `effects-wgpu` and `effects-gl` each ship exactly 44 runners over identical kind keys and identical band groupings — the "same agnostic `RenderEffect[]` drives both backends through their registries" claim holds. The HDR-target format selection (`'rgba16f'` → `'rgba16float'`) is actually present in the wgpu pipeline and _absent_ from the gl pipeline, so wgpu slightly leads gl here.
+- `wgpuEffectTexelScale.ts` — `getWgpuEffectLogicalResolution` and `getWgpuRenderTargetTexelScale`, used to keep descriptor distances in logical pixels across supersampled scratch targets. The logical/physical distinction is well-tested: 11 effects use logical resolution, FXAA and SMAA correctly use physical resolution.
 
-**Status-doc verification.** The status doc's structural claims check out against the diff: the registry/pipeline/cache files, the band registrants, `hasWgpuRenderEffectRunner` + its tests, and the bloom + SMAA rewrites are all present as described. One correction: the doc repeatedly says "45 effects / all 45 runners," but there are **44** runner files (and 44 registrations across the bands). The "45" figure is off by one — likely a stale count.
+- `wgpuColorMatrixPass.ts` — generic pointwise 4x5 color-matrix pass for fused adjustment runs.
+
+- `wgpuColorLutPass.ts` — 3D LUT color-grading pass for LUT-tier adjustment fusion.
+
+- `wgpuRenderTextureEffect.ts` — `applyWgpuRenderEffectsToRenderTexture`, the explicit RenderTexture-to-RenderTexture bridge for per-node capture lanes. Caller-owned source/destination/scratch leases, deterministic final-destination parity, rich `WgpuRenderEffectApplicationExplanation` status reporting. Separate `explainWgpuRenderEffectApplication` query for pre-flight diagnostics. Guard seam via `setWgpuRenderEffectApplicationGuard`.
+
+- Shared WGSL utilities: `wgpuEffectBlitShader.ts` (copy pass), `wgpuEffectBoxBlur.ts` (separable box blur), `wgpuEffectGradientRamp.ts` (gradient ramp texture), `wgpuEffectTintShader.ts` (tint overlay).
+
+**Guard module.**
+
+- `enableWgpuRenderEffectGuards.ts` — `enableWgpuRenderEffectGuards`/`disableWgpuRenderEffectGuards`/`areWgpuRenderEffectGuardsEnabled`. Installs `@flighthq/log`-based `logOnce` reporters for: unregistered effect kind skipped in the pipeline, sample-count substitution, and the full `WgpuRenderEffectApplicationExplanation` covering partial-registration, source-unavailable, partial-resolution, stale-destination, and unresolved-effects. The diagnostics follow the inversion rule: core stays message-free, the guard module is separately importable.
+
+**Effect library — 45 runners**, each `apply<Name>EffectToWgpu` + `defaultWgpu<Name>EffectRunner` + `registerWgpu<Name>Effect`:
+
+Bevel, BitmapDisplacement, Blend, Bloom, Blur, CameraMotionBlur, ChromaticAberration, Composite, ContactShadows, Convolution, Crt, DirectionalBlur, Displacement, Dither, DropShadow, FilmGrain, Fxaa, Glitch, GodRays, GradientBevel, GradientGlow, Halftone, InnerGlow, InnerShadow, Kuwahara, LensDirt, LensDistortion, LensFlare, Median, MotionBlur, OuterGlow, Outline, Pixelate, Posterize, RadialBlur, Scanlines, ScreenSpaceFog, Sharpen, Sketch, Smaa, Ssao, TiltShift, ToneMap, Vignette, WhiteBalance.
+
+Registration is per-kind; there are no batch/band registrars.
+
+**Notable multi-pass recipes:**
+
+- `wgpuBloomEffect.ts` — bright-pass (luminance threshold) into Gaussian blur (via `applyGaussianBlurToWgpu`) into additive composite via a dual-source pipeline. Three pooled scratch targets, all released. Uses the shared `computeBloomThreshold`/`computeBloomIntensity`/`computeBloomBlurRadius` from `@flighthq/effects`.
+
+- `wgpuBlendEffect.ts` — W3C straight-color advanced blend over a registered backdrop. 13 blend modes (Overlay through Lighten), HSL modes (Hue, Saturation, Color, Luminosity). Dual-source pipeline. The backdrop registry is shared with `wgpuCompositeEffect.ts`.
+
+- `wgpuCompositeEffect.ts` — all 11 Porter-Duff coverage operators via the same backdrop registry.
+
+- `wgpuBevelEffect.ts` — multi-pass spatial effect: blur, tint, angle-based highlight/shadow, composite.
+
+**Sibling parity.** WGPU has 45 runners; GL has 47. The two GL-only effects are `BokehDepthOfField` (depth-dependent, deliberately deleted from WGPU) and `CustomShader` (a user-supplied shader seam, an open direction in the charter). Every other kind key matches one-for-one. HDR target-format selection (`'rgba16f'` to `'rgba16float'`) is present on WGPU and absent from GL, so WGPU slightly leads on target format.
 
 ## Gaps
 
-1. **8-effect coverage gap behind the agnostic descriptor layer.** The agnostic `effects` package now exports 52 effect descriptors; both backends implement 44. Missing from `effects-wgpu` (and equally from `effects-gl`): `AutoExposure`, `BarrelDistortion`, `ContactShadows`, `CustomShader`, `FilmEmulation`, `PanniniProjection`, `VolumetricLight` (`ColorBlindSimulation` has since moved to the Adjustment family and is no longer an effect at all — it is not a missing runner, and looking for it here sends a reader to the wrong package). These descriptor + math files were added to the agnostic package _in this same patch_, so the descriptor layer raced ahead of both backends. `CustomShader` is the most architecturally interesting (a user-supplied WGSL/GLSL pass — the seam to settle); the rest are concrete recipes. Not a wgpu-specific regression (gl is equally behind), but it is the clearest distance-to-AAA: a runner with no backend is a descriptor a user can build into a chain that silently no-ops.
+1. **SSAO is a luminance-variation stand-in.** `wgpuSsaoEffect.ts:7-11` documents this explicitly: it darkens by local luminance variation instead of depth-derived occlusion. The blocker is upstream: `getWgpuRenderTargetDepthTexture` does not exist in `render-wgpu`, so no depth data reaches any effect. The SSAO runner accepts `radius`/`intensity` from the descriptor but ignores `samples` and `bias`. The charter's North star principle 4 ("Real recipes, not stubs") names this kind of gap directly.
 
-2. **Depth/velocity G-buffers fed `null`.** `endWgpuRenderEffectPipeline` hard-codes `sceneDepthTexture: null` and passes the (unset) velocity texture, so SSAO, ScreenSpaceFog, BokehDepthOfField, SSR, MotionBlur, CameraMotionBlur, and TAA all run their color-only fallback — seven recipes that exist but cannot reach their real algorithm. The status doc correctly scopes this as a `render-wgpu` cross-package prerequisite (`getWgpuRenderTargetDepthTexture`, a sampleable depth attachment, a velocity bookkeeping pass). This is the single highest-leverage unblock, but it is a design decision crossing the package boundary — surfaced, not actionable here.
+2. **SMAA is a single-pass edge-aware blur, not full SMAA.** `wgpuSmaaEffect.ts:8-9` documents this: "Full SMAA needs separate edge-detection and blend-weight passes against precomputed area/search lookup textures; this single-pass approximation softens detected edges only." The implementation is ~70 lines sampling four cardinal neighbors. This is the second runner that is a stand-in under the real name, in tension with North star principle 4.
 
-3. **TAA has no history buffer.** Real TAA needs a retained `historyTarget` on the pipeline (a `@flighthq/types` change touching both gl and wgpu pipelines). Until then `applyTaaEffectToWgpu` is a passthrough/jitter approximation. First effect with cross-frame retained state — warrants a design pass.
+3. **No depth G-buffer (cross-package blocker).** `beginWgpuRenderEffectPipeline` feeds `sceneDepthTexture: null` to every runner. Effects with depth-dependent algorithms (SSAO, ScreenSpaceFog, CameraMotionBlur, MotionBlur, ContactShadows) run color-only fallback paths. The status correctly identifies this as a `render-wgpu` prerequisite.
 
-4. **Thin behavioral test floor.** `exports:check` is satisfied — every export has a colocated test — but most effect tests are `expect(typeof applyXToWgpu).toBe('function')` smoke tests (SMAA, grayscale, and most of the 44 confirm this pattern). The registry and registrants tests are real assertions; the per-effect tests are not. jsdom cannot run WGSL, so true verification belongs to the functional/parity render gates — which for wgpu do not yet exist (no functional scenes, no Rust crate). The result is a 44-recipe library whose pixel behavior is effectively unverified in CI. This is the realistic ceiling on the score.
+4. **`BloomEffect.passes` is accepted and discarded.** The `passes` field is declared in the descriptor at `packages/types/src/BloomEffect.ts:8` but read by no runner in WGPU, GL, or Canvas. A descriptor field no backend reads is dead API surface.
 
-5. **No Rust mirror, no functional scenes.** `flighthq-effects-wgpu` and `effect-*` functional scenes are Gold scope per the status. The WGSL bodies are plain string constants (extractable as shared constants), but the port is correctly deferred until depth/velocity/TAA settle the pipeline shape.
+5. **`strength` is applied before the spatial operator, not after.** The status documents this at `wgpuEffectTintShader.ts:24` and notes it is identical across GL/Canvas/WGPU legs. The shared fix is a post-operator coverage-gain pass per the unratified `effect-recipe-model`.
+
+6. **Two GL-only effects.** `BokehDepthOfField` was deliberately deleted (depth-dependent, depthless version was a misimplementation). `CustomShader` is an open direction: whether WGPU must expose a user-supplied-WGSL seam.
+
+7. **No chain validation.** `validateWgpuRenderEffectChain` and `RenderEffectChainHint` do not exist. A chain with unresolvable or conflicting effects is discovered only at draw time via the guard seam.
+
+8. **Thin per-effect test floor.** Most effect test files (e.g. `wgpuVignetteEffect.test.ts`) contain only `expect(typeof applyXToWgpu).toBe('function')` smoke tests. The infrastructure tests (registry, pipeline, RenderTexture bridge) and the cross-cutting tests (`wgpuSpatialEffectRegistration.test.ts` verifying all 45 registrations; `wgpuLogicalEffectResolution.test.ts` verifying logical/physical uniform packing for 13 effects) are substantive. The per-effect gap is that uniform-packing correctness, parameter handling, and multi-pass orchestration are unasserted for the remaining ~30 effects. jsdom cannot verify pixel output, but it can verify that the right uniforms reach the right slots — the `wgpuLogicalEffectResolution.test.ts` pattern proves this is feasible.
 
 ## Charter contradictions
 
-None — the charter is a stub (What-it-is seeded from the prior depth review; North star, Boundaries, Decisions, Open directions all `TODO`). There is nothing blessed to contradict. Judged against the codebase-map AAA fallback, the package is strongly compliant: registry-over-switch, explicit pooled allocation, `destroy*`/`release*` used correctly, `Readonly<>` on inputs, sentinel-returning lookups, full unabbreviated names, single root export, `sideEffects: false`, no top-level registration.
+1. **Runner count.** The charter's Decisions section records "WGPU has 44 realized built-ins" (2026-07-31). The source and the registration test (`wgpuSpatialEffectRegistration.test.ts`) show 45 runners. ContactShadows appears to have landed after the decision was written. Not a design contradiction, but the charter's count is stale by one.
+
+2. **Status claims no guard module.** The status's Open section states "No guard module. `effects-gl` carries `enableGlRenderEffectGuards`; `enableWgpuRenderEffectGuards` does not exist." The guard module exists at `enableWgpuRenderEffectGuards.ts`, is exported from both lanes, and has a colocated test. The status is factually wrong on this point.
+
+Apart from these, the source aligns well with the charter:
+- North star 1 (backend, not redefinition): no descriptors or math defined here; all come from `effects`/`types`.
+- North star 2 (registry by default): registry dispatch, per-state, last-write-wins, tree-shakable.
+- North star 3 (explicit pooled GPU ownership): create/destroy lifecycle, acquire/release pool brackets.
+- North star 5 (conformance-ready value seam): WGSL bodies are plain string constants, all inputs are data-shaped.
 
 ## Contract & docs fit
 
 **Lives up to the contract (a):**
 
-- Types-first: runners consume `WgpuRenderEffectContext`/`WgpuRenderEffectRunner`/ `WgpuRenderEffectPipeline` from `@flighthq/types`; no cross-package types defined inline.
-- Naming: every export carries the full type word (`applyBloomEffectToWgpu`, `getWgpuRenderEffectRunner`), `has*` for the boolean, `register*` for opt-in, `destroy*` for the GPU-resource teardown. Globally unique, greppable.
-- Sentinels not throws (`getWgpuRenderEffectRunner` → `null`; `end*` skips unknown kinds); single `.` export; `"sideEffects": false`; import-side-effect-free (registration is opt-in via the band helpers). Exports alphabetized in `index.ts`. Dependencies are tight and correct (`effects`, `filters`, `filters-wgpu`, `geometry`, `render-wgpu`, `types`).
+- Types-first: all types imported from `@flighthq/types/contract`; no exported types defined inline.
+- Naming: every export carries the full unabbreviated type name (`applyBloomEffectToWgpu`, `getWgpuRenderEffectRunner`, `hasWgpuRenderEffectRunner`, `registerWgpuBlurEffect`, `destroyWgpuRenderEffectPipeline`). Globally unique, greppable.
+- Export lanes: `index.ts` is a curated re-export of `contract.ts`; `contract.ts` re-exports all source modules via `export *`. Infrastructure (effect pass, program cache, color matrix/LUT passes, shared shaders) is on the contract lane only, keeping the public lane focused on runners and pipeline.
+- Sentinels not throws: `getWgpuRenderEffectRunner` returns `null`, pipeline skips unregistered kinds silently, `applyWgpuRenderEffectsToRenderTexture` returns `boolean`. The one `throw` in `wgpuEffectPass.ts:180` is a precondition violation (no active command encoder), correctly a programmer error.
+- Diagnostics inversion: guard module separately importable, core message-free, guard reporters keyed by kind for deduplication via `logOnce`.
+- `sideEffects: false`, no top-level registration.
+- Dependencies are tight: `adjustments`, `color`, `effects`, `geometry`, `log`, `render-wgpu`, `registry`, `types`.
 
 **Candidate revisions to the contract / admin docs (b):**
 
-- **Type homing.** `RenderEffectPipelineOptions` — a _substrate-agnostic_ type — lives in `types/src/GlRenderEffectPipeline.ts` and is imported by the wgpu pipeline type from that gl-named file. A type shared by both backends homed under one backend's filename is a mis-home; it reads as "the gl pipeline owns the options." Candidate: move it to its own `RenderEffectPipelineOptions.ts` (filename = type name, per the types-layout convention). Low-risk, cross-package (touches `@flighthq/types`), so surfaced not acted on.
-- **Package Map silence.** The codebase-map Package Map lists `@flighthq/effects` indirectly but does not enumerate the `effects` / `effects-gl` / `effects-wgpu` / `effects-canvas` family the way it enumerates `filters` / `filters-gl`. Given this is now a four-package, 52-descriptor subject, a Package Map line for the effects family (and the descriptor-vs-backend split) is a candidate addition — it would also make the 8-effect backend gap visible at the map level.
-- **`render-backend-support.md`** documents blend/stroke/text gaps per backend but says nothing about the post-process _effects_ coverage per backend. Given depth/velocity is null on wgpu (7 recipes in fallback) and 8 descriptors have no backend at all, an "effects support" row mirroring the existing feature-support matrix is a candidate addition.
+- **Type homing.** `RenderEffectPipelineOptions` is a substrate-agnostic type living in `types/src/GlRenderEffectPipeline.ts`. A type shared by both backends homed under one backend's filename is a mis-home. Candidate: move to its own `RenderEffectPipelineOptions.ts`. The charter's Open directions already note this.
+- **Charter runner count.** The Decisions entry "WGPU has 44 realized built-ins" should read 45 (ContactShadows landed). A factual correction to a Decisions entry.
+- **Status guard-module claim.** The status's Open section claims no guard module exists. The claim should be removed — the module exists, is tested, and is exported.
 
 ## Candidate open directions
 
-The charter is silent on every durable question; each below is a candidate Open direction for the direction pass:
+The charter already carries a thorough set of open directions. One new candidate surfaced by this review:
 
-- **North star / bar.** Is the bar "1:1 algorithmic parity with effects-gl" (lockstep, same recipes, same kinds — which the code currently honors), or "best WGSL recipe per effect even where it diverges from gl" (compute-shader bloom/SSAO, half-res HDR — which would break lockstep)? The HDR format asymmetry already hints the second is creeping in. This decides whether divergence is a bug or a feature.
-- **The 8 missing effects.** Are `AutoExposure`/`ContactShadows`/`VolumetricLight`/etc. in scope for the backends, or agnostic-descriptor-only for now? And is `CustomShader` a user-supplied-WGSL seam this package must expose (a real API-shape decision), distinct from the fixed recipes?
-- **Depth/velocity G-buffer.** Blessing the `render-wgpu` depth/velocity attachment work is the keystone unblocking 7 recipes; it needs a cross-package go-ahead and a symmetric gl/wgpu design.
-- **TAA cross-frame state.** Whether to add `historyTarget` to the shared pipeline type (and how `destroy*` frees it) — the first retained-state effect, a design fork.
-- **Bundle posture.** Is the analytical-SMAA / no-LUT, no-`rgba16float`-by-default stance the blessed default, with HDR/LUT variants as opt-ins? The status proposes `rgba16float` as a future default — that is a bundle-and-quality tradeoff the charter should rule on.
-- **Test floor.** Is "is a function" + registry assertions an accepted floor for a GPU package whose real verification lives in the (not-yet-built) functional/parity gates, or should there be a uniform-packing / chain-orchestration unit assertion tier that jsdom _can_ run?
+- **Stand-in recipes vs. North star principle 4.** The SSAO luminance-variation stand-in and the single-pass SMAA approximation are both registered under the real effect names and documented as approximations. North star principle 4 says "A registered runner is a parameter-responsive realization of the named effect, not an identity copy or a different algorithm under the requested name." The SSAO stand-in is explicitly a different algorithm (luminance variation, not depth-derived occlusion), and the SMAA is a different algorithm (single-pass blur, not three-pass edge-detect/blend-weight/neighborhood). Should these be renamed to reflect what they actually do, removed until the real algorithm is feasible, or accepted as interim approximations that do not violate principle 4 because they are documented? The charter is silent on this specific tension.

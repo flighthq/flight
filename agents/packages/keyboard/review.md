@@ -1,58 +1,139 @@
 ---
 package: '@flighthq/keyboard'
 status: solid
-score: 80
-updated: '2026-07-13'
+score: 72
+updated: '2026-09-02'
 ingested:
   - status.md
   - charter.md
   - source (packages/keyboard/src)
-  - packages/types/src/Keyboard.ts, SoftKeyboardEasingKind.ts
-  - packages/keyboard/README.md
+  - packages/types/src/Keyboard.ts
+  - packages/types/src/Host.ts (HasSoftKeyboard* witnesses)
+  - agents/packages/platform-integration.md
 ---
 
 # keyboard — Review
 
 ## Verdict
 
-**`solid` — 80/100.** The prior review (2026-06-25, 45/partial) was a merge-gate review of an integration slice that carried the keyboard source upgrade without its `@flighthq/types` companion and therefore did not compile. **That blocker is resolved:** `packages/types/src/Keyboard.ts` now declares the full surface the source was written against — `SoftKeyboardInfo` with `x`/`y`/`width` rect fields, `SoftKeyboardPhase`, `SoftKeyboardTransition`, the phase+transition `subscribe` signature, the seven optional native-control backend methods, and the 9-signal `SoftKeyboard` — with `SoftKeyboardEasingKind.ts` alongside. Everything compiles and every claim of the earlier standalone 90-scoring read is verified in source, with the caveats below.
+**`solid` — 72/100.** The 2026-08-30 v3 rewrite replaced the entire surface: the will/did signal pairs, `SoftKeyboardTransition`, `SoftKeyboardEasingKind`, and the ambient `get/setSoftKeyboardBackend` pattern are all deleted. In their place is a clean direct-dispatch architecture where every operation takes a `Has*` host witness and dispatches through `host.input.slot.operation()`. The result is a smaller, more coherent package (13 exports, 22 tests, 3 signals) that implements the explicit dependency model faithfully. Held below 80: eager signal allocation violates the shared platform-integration `enable*Signals` principle, a visibility-semantics gap between `attachSoftKeyboard` and `isSoftKeyboardVisible`, thin kind-constant vocabulary, and missing diagnostics.
 
-Judged against this package's own charter boundary (the global soft keyboard; per-field IME/input traits belong to `@flighthq/textinput`, raw key events to `@flighthq/input`), the surface is close to the industry-reference shape (Capacitor's Keyboard plugin): show/hide, visibility + height + frame rect, will/did lifecycle signals with transition metadata, and the native-control quartet (resize mode, style, accessory bar, scroll assist). The web backend is a genuine reference implementation — Chromium VirtualKeyboard API with `visualViewport` fallback — and the seam is shaped so native hosts can hit full fidelity (will-phase with real timing, rect geometry, all control methods). Held below 90: the easing tier is a dead type-only placeholder, the kind-const vocabulary is thinner than the status log claims, and no native backend has ever exercised the will-phase/control paths.
+The prior review (2026-07-13, solid/80) is **fully stale** — it describes a 20-export, 60-test, 9-signal surface with `getSoftKeyboardBackend`/`setSoftKeyboardBackend`/`createWebSoftKeyboardBackend` and will/did phases. None of that exists anymore.
 
 ## Present capabilities (verified against source)
 
-20 exports in `packages/keyboard/src/keyboard.ts`, 60 tests, `describe` blocks alphabetized 1:1 with exports, plus a package README (functions table, nine-signal table, capability matrix, keyboard-aware-layout recipe):
+Source is a single file: `packages/keyboard/src/keyboard.ts` (119 lines). 13 exports via `index.ts` re-exporting from `contract.ts`. All 22 tests pass.
 
-- **Entity quartet:** `createSoftKeyboard` (9 inert signals), `attachSoftKeyboard` (idempotent; will-phase dispatches `onWillShow`/`onWillHide`/`onWillResize` with the transition, did-phase dispatches `onDidResize`+`onResize` and the show/hide edge pairs with alias co-emission; visibility edge tracked across phases), `detachSoftKeyboard`, `disposeSoftKeyboard`. Subscriptions in a `WeakMap`.
-- **Snapshot reads:** `getSoftKeyboardInfo(out)` (alias-safe out-param), `getSoftKeyboardHeight()` (zero-alloc via module scratch), allocators `createSoftKeyboardInfo` / `createSoftKeyboardTransition`.
-- **Control:** `showSoftKeyboard` / `hideSoftKeyboard` — real operations when `navigator.virtualKeyboard` exists, documented no-ops otherwise.
-- **Native-control extensions:** `get/setSoftKeyboardResizeMode`, `setSoftKeyboardStyle`, `is/setSoftKeyboardAccessoryBarVisible`, `is/setSoftKeyboardScrollAssistEnabled` — each a flat delegation to an optional backend method with a sentinel (`SoftKeyboardResizeNoneKind` / `false`) or no-op fallback. Never throws.
-- **Backend seam:** `getSoftKeyboardBackend` / `setSoftKeyboardBackend` / `createWebSoftKeyboardBackend`. Web geometry prefers the VirtualKeyboard `boundingRect`, falls back to `visualViewport` shrink inference; emits `'did'` only with `durationSeconds: 0`; SSR-safe (guards on `window`/`navigator`, degrades to height 0 and no-op subscribe).
+### Entity lifecycle quartet
 
-Test depth is real: multi-listener dispatch, signal priority ordering, `cancelSignal` chains, will→did ordering, rapid show/hide bursts, re-entrant detach/re-attach, both web geometry paths (VirtualKeyboard and visualViewport stubs), and the show/hide VirtualKeyboard drive.
+- **`createSoftKeyboard()`** — allocates an `Entity` with three signals: `onShow`, `onHide`, `onResize`. Uses `createEntity` from `@flighthq/entity/contract` and `createSignal` from `@flighthq/signals/contract`.
+- **`attachSoftKeyboard(host, keyboard)`** — takes `HasSoftKeyboardChange & HasSoftKeyboardInfo`. Calls `detachSoftKeyboard` first (idempotent re-attach). Subscribes to the change backend; on each change notification, reads the info backend into a module-level scratch object and computes visibility edges from height transitions. Fires `onShow(height)` on 0-to-positive, `onHide()` on positive-to-0, `onResize(height)` on positive-to-different-positive. Returns `SoftKeyboardAttachResult` (`'ok'` | `'acquisition-failed'`). Subscription stored in a `WeakMap`.
+- **`detachSoftKeyboard(keyboard)`** — calls the stored unsubscribe function if present. Safe on never-attached keyboards.
+- **`disposeSoftKeyboard(keyboard)`** — delegates to `detachSoftKeyboard`. No signal teardown.
 
-The 2026-07-02 charter Decision (document the `transition.height` frozen-at-0 limitation) is **implemented**: `keyboard.ts` carries the durable comment stating the web backend fires `'did'` only and that native hosts emitting `'will'` must populate `transition.height`.
+### Snapshot reads
 
-## Gaps (AAA-depth judgment)
+- **`getSoftKeyboardInfo(host, out)`** — out-parameter delegation to `host.input.softKeyboardInfo.getInfo(out)`. Returns the `out` object.
+- **`getSoftKeyboardHeight(host)`** — zero-alloc convenience; reads via module-level `_scratch` and returns `.height`.
+- **`isSoftKeyboardVisible(host)`** — reads via `_scratch` and returns `.visible`.
 
-1. **The easing tier is a dead placeholder.** `SoftKeyboardEasingKind` (5 kinds, closed union) exists in types but nothing references it: `SoftKeyboardTransition` has no `easing` field and the keyboard package never imports it. Either wire it (adds the field + the kind vocabulary native backends populate) or remove it — a typed symbol with zero consumers is header noise. Charter Open direction (the `@flighthq/easing`-dependency question only arises if a kind→curve lookup is wanted; the field itself needs no dependency).
-2. **Kind-const vocabulary is thinner than the status log claims.** Source ships only `SoftKeyboardResizeNoneKind`/`SoftKeyboardResizeBodyKind` and `SoftKeyboardStyleDefaultKind`/`SoftKeyboardStyleDarkKind`. The claimed `SoftKeyboardResizeNativeKind`, `SoftKeyboardResizeIonicKind`, and `SoftKeyboardStyleLightKind` do **not** exist. The Capacitor-vocabulary coverage (`native`, `ionic` resize modes; `light` style) is incomplete — small, but exactly what a native backend will reach for first.
-3. **No native backend proof.** The will-phase path, `transition.height`, `senderless` rect semantics for floating/split keyboards, and all seven control methods have only ever run against fakes. The seam looks right; fidelity is unproven until a `host-*` backend lands (cross-package).
-4. **Types layout deviation.** `SoftKeyboardTransition`, `SoftKeyboardResizeMode`, `SoftKeyboardStyleKind`, `SoftKeyboardPhase`, `SoftKeyboardInfo`, `SoftKeyboardBackend`, and `SoftKeyboard` all live in one `Keyboard.ts` rather than one-concept-per-file (only `SoftKeyboardEasingKind` got its own file). The status log's claim of four separate type files is false in the current tree. Consistent with other platform-suite headers, but noted against the types-layout convention.
-5. **No diagnostics layer.** The many silent no-ops (unsupported control methods, SSR degradation, VirtualKeyboard-absent show/hide) have no `explain*`/`enable*Guards` seams. Suite-wide pattern.
+### Visibility control
 
-Resolved-in-source since the last review, worth recording: `SoftKeyboardResizeMode` and `SoftKeyboardStyleKind` are now **open** string types (`= string`) with const kinds — the charter's open-vs-closed question (fork B) is de facto answered *open* for those two, while `SoftKeyboardEasingKind` remains a closed union. If that split is intentional, the charter should bless it; if not, it is drift.
+- **`showSoftKeyboard(host)`** — takes `HasSoftKeyboardVisibility`, delegates to `host.input.softKeyboardVisibility.show()`. Returns `SoftKeyboardVisibilityResult`.
+- **`hideSoftKeyboard(host)`** — same pattern, `.hide()`.
+
+### Native-control extensions
+
+- **`setSoftKeyboardAccessoryBarVisible(host, visible)`** — takes `HasSoftKeyboardAccessoryBar`.
+- **`setSoftKeyboardResizeMode(host, mode)`** — takes `HasSoftKeyboardResizeModeWrite`.
+- **`setSoftKeyboardScrollAssistEnabled(host, enabled)`** — takes `HasSoftKeyboardScrollAssist`.
+- **`setSoftKeyboardStyle(host, style)`** — takes `HasSoftKeyboardStyle`.
+
+All four return `Promise<SoftKeyboardSetterResult>` (`'ok'` | `'operation-unavailable'` | `'operation-failed'`).
+
+### Types surface (`@flighthq/types`)
+
+Types in `Keyboard.ts`: `SoftKeyboardInfo` (5 fields: visible, height, x, y, width), `SoftKeyboard` (3 signal fields), `SoftKeyboardResizeMode` (open `string` alias, 2 constants: `None`, `Body`), `SoftKeyboardStyleKind` (open `string` alias, 2 constants: `Default`, `Dark`), three result unions with const companions, `SoftKeyboardChangeSubscription`, and seven backend entity interfaces (`SoftKeyboardInfoBackend`, `SoftKeyboardChangeBackend`, `SoftKeyboardVisibilityBackend`, `SoftKeyboardResizeModeWriteBackend`, `SoftKeyboardStyleBackend`, `SoftKeyboardAccessoryBarBackend`, `SoftKeyboardScrollAssistBackend`).
+
+Seven `Has*` witness types in `Host.ts` (lines 699-733): one per backend interface, each nesting the backend under `readonly input`.
+
+### Host backend coverage
+
+- **`host-web`** (`webKeyboard.ts`) provides `createWebSoftKeyboardInfoBackend`, `createWebSoftKeyboardChangeBackend`, `createWebSoftKeyboardVisibilityBackend` — three of seven capabilities. Integrated via `webInputHost.ts`.
+- **`host-capacitor`** (`capacitorKeyboard.ts`) provides all seven factory functions. Both tested independently; neither depends on `@flighthq/keyboard`.
+
+### Test coverage
+
+22 tests in `keyboard.test.ts`. `describe` blocks alphabetized and mirror all 13 export names. Coverage profile:
+
+- `attachSoftKeyboard`: 5 tests — ok result, acquisition-failed, onShow/onHide/onResize signal dispatch via inline fake backends with captured listeners.
+- `createSoftKeyboard`: 1 test — entity identity and signal presence.
+- `detachSoftKeyboard`: 1 test — safe on never-attached.
+- `disposeSoftKeyboard`: 1 test — safe on never-attached.
+- `getSoftKeyboardHeight`: 2 tests — positive height, zero.
+- `getSoftKeyboardInfo`: 1 test — out-parameter identity and field values.
+- `hideSoftKeyboard`: 2 tests — ok and operation-failed.
+- `isSoftKeyboardVisible`: 2 tests — true and false.
+- `setSoftKeyboardAccessoryBarVisible`: 2 tests — ok and operation-failed.
+- `setSoftKeyboardResizeMode`: 1 test — ok only.
+- `setSoftKeyboardScrollAssistEnabled`: 1 test — ok only.
+- `setSoftKeyboardStyle`: 1 test — ok only.
+- `showSoftKeyboard`: 2 tests — ok and operation-failed.
+
+## Gaps
+
+1. **Eager signal allocation violates the platform-integration shared principle.** The shared charter decision ([2026-07-02]) states: "Use `enable*Signals` gates — do not eagerly allocate signals in `create*` functions." `createSoftKeyboard()` at `keyboard.ts:51-55` allocates all three signals unconditionally. The `power` package demonstrates the correct pattern: `createPower` leaves signals null, `enablePowerSignals` allocates them on demand. No `enableSoftKeyboardSignals` function exists. Already recorded in `status.md` Open section.
+
+2. **Visibility-semantics gap between `attachSoftKeyboard` and `isSoftKeyboardVisible`.** `attachSoftKeyboard` derives visibility from `height > 0` (lines 32-33: `const wasVisible = prevHeight > 0; const nowVisible = nowHeight > 0;`), ignoring the `visible` field entirely. `isSoftKeyboardVisible` reads `info.visible` from the backend (line 83). A backend that reports `visible: true` with `height: 0` (a plausible state during keyboard animation) would be visible according to `isSoftKeyboardVisible` but invisible to `attachSoftKeyboard`'s signal logic. Either both should use the same authority, or the divergence should be documented as intentional.
+
+3. **Kind-constant vocabulary is thin.** `SoftKeyboardResizeMode` has only `None` and `Body`; missing at minimum `Native` and `Ionic` (Capacitor's four values). `SoftKeyboardStyleKind` has only `Default` and `Dark`; missing `Light`. The types are open (`= string`) so this does not block native backends, but the missing constants mean no type-safe names for common native configurations.
+
+4. **Setter delegate tests cover only the success path.** `setSoftKeyboardResizeMode`, `setSoftKeyboardScrollAssistEnabled`, and `setSoftKeyboardStyle` each have a single test for the `'ok'` result. The `'operation-failed'` and `'operation-unavailable'` paths are untested. Compare `hideSoftKeyboard` and `setSoftKeyboardAccessoryBarVisible`, which test both ok and operation-failed.
+
+5. **`disposeSoftKeyboard` does not tear down signals.** It delegates to `detachSoftKeyboard` (unsubscribes from the host) but does not disconnect signal listeners from `onShow`/`onHide`/`onResize`. A disposed keyboard's signals remain live and reachable. Whether this is correct depends on whether the caller is expected to discard the keyboard reference (GC handles it via `WeakMap`) or whether `dispose*` should sever signal connections. The codebase convention says `dispose*` releases what keeps an entity reachable; signals with connected listeners are exactly that.
+
+6. **No diagnostics layer.** No `enableSoftKeyboardGuards`, no `explainSoftKeyboardAttachResult`, no `explainSoftKeyboardSetterResult`. Silent sentinel returns from every setter and the visibility control have no shakeable explanation companion. Suite-wide gap, not keyboard-specific.
+
+7. **Per-field keyboard attributes remain unbuilt and unowned.** `setSoftKeyboardType`, `setSoftKeyboardReturnKey`, `setSoftKeyboardAutoCapitalize`, `setSoftKeyboardAutoCorrect`, `setSoftKeyboardSpellCheck` — none exist. The keyboard/textinput boundary is an open direction. Cross-package.
+
+8. **No safe-area coordination.** Combining `getSoftKeyboardHeight` with `@flighthq/device`'s safe-area insets is left entirely to the caller. Cross-package design surface.
 
 ## Charter contradictions
 
-None of substance. The What-it-is paragraph matches source exactly (including the 20-export shape and the input-package boundary). One nuance: Open direction 3 ("open vs closed kinds — resolve per fork B") is now half-resolved in source (gap 5 note above) without a charter Decision recording it.
+1. **Shared principle violation (eager signals).** The platform-integration shared charter ([2026-07-02]) explicitly requires `enable*Signals` gates. `createSoftKeyboard` eagerly allocates all three signals. This is the only direct contradiction against the charter or its shared principles.
+
+2. **Open direction partially resolved without a Decision.** Charter Open direction 2 asks whether `SoftKeyboardResizeMode` and `SoftKeyboardStyleKind` should be open or closed kinds. Source resolves this as open (`= string` aliases with const companions). No `Decisions` entry records this choice. The resolved-in-source state is coherent; it needs a charter entry to be blessed.
+
+No other contradictions. The What-it-is paragraph, the v3 Decision, and the package boundary (not physical keys, not per-field IME) all match source exactly.
 
 ## Contract & docs fit
 
-- **Envelope:** front matter valid; `crate: flighthq-keyboard` — no Rust crate exists (cross-worktree conformance gap).
-- **Self-descriptions:** `package.json` description ("visibility, height, and show/hide/resize signals") omits the frame rect, will/did phases, and the native-control quartet — mildly stale. `agents/packages/map.md` line ("on-screen keyboard visibility/height") is similarly understated. Shared-doc edits, out of sweep scope; README is current and accurate.
-- **README precedent:** this package and `device` set the platform-suite README convention siblings lack.
+- **Two blessed lanes:** `.` (`index.ts`) and `./contract` (`contract.ts`) — correct. `index.ts` re-exports from `contract.ts`; `contract.ts` re-exports from `keyboard.ts`. No banned subpaths.
+- **`sideEffects: false`:** declared in `package.json` — correct. No top-level registration.
+- **Types in `@flighthq/types`:** all interfaces and type aliases live in `Keyboard.ts` and `Host.ts`. No inline type definitions in the keyboard package.
+- **Entity-based creation:** `createSoftKeyboard` returns `SoftKeyboard & Entity` via `createEntity` — correct.
+- **Full unabbreviated names:** every export uses `SoftKeyboard` unabbreviated — correct.
+- **Out-parameter pattern:** `getSoftKeyboardInfo(host, out)` — correct. However, the function delegates directly to the backend's `getInfo(out)` without reading into locals first, so alias safety depends on the backend implementation.
+- **Sentinel returns, no throws:** all functions return typed result unions or plain values. No `throw` statements — correct.
+- **SDK barrel:** `packages/sdk/src/index.ts:59` re-exports `@flighthq/keyboard` — correct.
+- **`package.json` description** ("visibility, height, and show/hide/resize signals over a swappable web/native backend") references the old swappable-backend model; the v3 rewrite uses direct host witness dispatch. Mildly stale.
+- **Prior review/assessment staleness:** the assessment (`2026-07-07`) recommends documenting `transition.height` limitation — that type no longer exists. The approved item is obsolete by deletion.
+
+### Candidate contract/doc revisions
+
+- `package.json` description should reference the `Has*` witness dispatch model, not "swappable web/native backend."
+- `assessment.md`'s sole recommended and approved item (document `transition.height`) is obsolete — `SoftKeyboardTransition` was deleted in the v3 rewrite.
 
 ## Candidate open directions
 
-Carried from charter (all still live): the keyboard↔textinput boundary for per-field traits; easing wiring-or-removal (gap 1); the kind open/closed blessing (see above); safe-area/`@flighthq/device` coordination. Add: completing the Capacitor kind vocabulary (gap 2 — a types-package edit) and the first native backend realization (gap 3).
+Carried from charter (all still live):
+
+- The keyboard/textinput boundary for per-field traits.
+- Safe-area/`@flighthq/device` coordination.
+- Open vs closed kinds for `SoftKeyboardResizeMode` and `SoftKeyboardStyleKind` — de facto resolved as open in source; needs a charter Decision to bless.
+
+New from this review:
+
+- The eager-signal-allocation pattern: should keyboard adopt the `enable*Signals` gate per the shared principle, or does the three-signal-always shape warrant an exception?
+- Visibility authority: should `attachSoftKeyboard`'s signal logic use the `visible` field rather than deriving visibility from `height > 0`?
+- `disposeSoftKeyboard` signal teardown: should disposal disconnect signal listeners, or is GC-via-WeakMap sufficient?

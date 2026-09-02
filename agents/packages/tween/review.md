@@ -1,77 +1,88 @@
 ---
 package: '@flighthq/tween'
 status: solid
-score: 68
-updated: 2026-07-13
+score: 65
+updated: 2026-09-02
 ingested:
   - charter.md
   - status.md
-  - review.md (2026-06-24, continuity)
   - assessment.md
   - source
 ---
 
 # tween — Review
 
-Evidence: the live worktree `packages/tween/src/` (8 source files, 7 colocated test files, 116 `it`s) plus `packages/types/src/Tween*.ts` / `StopTweenOptions.ts` / `TweenPropertyDetail.ts`, judged against the fully-authored charter (2026-07-02, six blessed decisions). Supersedes the 2026-06-24 review, which scored the **incoming bundle** `builder-67dc46d64` at 76 — a surface that was never fully merged. This is the central fact of this re-review: commit `06a0c480` ("recover lost source") restored `tweenProgress.ts`, `tweenStagger.ts`, and the manager-introspection quartet, but the bundle's `createTweenFrom`/`createTweenFromTo`, relative values (`TweenPropertyValue`, `resolvePropertyEndValue`), `onStart`, `repeatDelay`, and per-tween/per-manager `timeScale` **do not exist in the live tree**. The 2026-06-25 status entry flagged exactly this divergence; it is still true today.
+Evidence: the live worktree `packages/tween/src/` (8 source files, 7 colocated test files, 118 `it`s across 1,754 lines) plus `packages/types/src/Tween*.ts` / `StopTweenOptions.ts` / `TweenPropertyDetail.ts` (7 type files), judged against the charter (2026-07-02, six blessed decisions) and the status rewrite (2026-08-08). Supersedes the 2026-07-13 review (68/100).
 
 ## Verdict
 
-`solid — 68/100`. A clean, well-tested single-property tweener with manager scoping, scrubbing, stagger, and introspection — but the live surface is materially smaller than the one the review-of-record described, and several capabilities the charter explicitly places in scope (relative values, `timeScale`, `onStart`, from/fromTo) are absent. The 2026-07-02 Approved sweep landed in full (verified below). The score drops from 76 not because work regressed since that number was earned, but because that number was earned by a bundle that never fully landed; 68 is the live tree's distance to the charter's authoritative bar.
-
-## Approved-sweep verification (2026-07-02, items 1–4)
-
-All four landed:
-
-1. **`onYoyo` signal** — `Tween.onYoyo: Signal<() => void>` in `types/src/Tween.ts`, created in `makeTween`, emitted at the `reflect` flip in `updateTween`, three tests in `updateTweens.test.ts` (flip emits, no-reflect does not, emits each cycle).
-2. **Unit-agnostic time docs** — durable comments atop the public `createTween` overload (`tween.ts:33-36`) and atop `updateTweens` (`updateTweens.ts:60-64`).
-3. **`seekTween`-to-end pin** — comments on `seekTween`/`setTweenProgress` (`tweenProgress.ts:40-41,78`) plus tests: fires `onComplete` at exact `delay + duration`, does not fire just before the end, fires at `setTweenProgress(tween, 1)` (`tweenProgress.test.ts:121-186`).
-4. **`onComplete` doc fix** — `types/src/Tween.ts` now reads "Fires once when the tween finishes its final cycle (after all repeats)."
+`solid -- 65/100`. The live surface is a clean, well-tested single-property tweener with manager scoping, scrub/seek, stagger, and introspection. What it ships is well built. But the gap between the charter's blessed scope and the live code has widened since the last review: `@flighthq/clock` now exists and the charter gate for clock integration has opened, yet tween still consumes raw `deltaTime`. The value-interpolator seam -- the charter's keystone decision -- remains unstarted, and the lost-bundle features (`createTweenFrom`/`createTweenFromTo`, relative values, `onStart`, `repeatDelay`, `timeScale`) remain absent. Two unit-naming issues (`seekTween`'s `timeSeconds` parameter, `TweenStaggerOptions.each` doc citing "seconds") contradict the unit-agnostic contract that the package's own durable comments establish. The `createColorTween` proxy bug persists. The score drops from 68 because the clock gate opening is a new gap measured against the charter, and the stale naming/doc issues remain unfixed.
 
 ## Present capabilities (verified against live source)
 
-- **Creation** (`tween.ts`): `createTween` with the manager-bound/default-manager overload pair (brand-checked via `TweenManager.__brand`); `applyTween` (instant set + overlap cancel); `createTweenTimer` (`timer.ts`, empty-target duration timer). Options: `delay`, `ease`, `overwrite` (default true, per-property overlap cancel in `registerTween`), `reflect`, `repeat` (-1 = infinite), `reverse`, `smartRotation` (shortest-path ±180° in `initializeTween`), `snapping` (integer round).
-- **Manager** (`tweenManager.ts`): `createTweenManager` (default ease `easeOutExponential`), exported `defaultManager` module singleton. Scope verbs: `pauseTween`/`pauseTweens`/`pauseAllTweens`, `resumeTween`/`resumeTweens`/`resumeAllTweens`, `stopTween` (singular, added `cfc5c53c`, with `StopTweenOptions.complete`/`sendEvent`), `stopTweens`/`stopAllTweens`, `resetAllTweens`, `completeTween`.
-- **Introspection** (`tween.ts`): `getActiveTweenCount`, `getTweensOf` (→ `[]` sentinel), `hasTweensOf`, `killTweensOfProperty` (no-op when none match).
-- **Update** (`updateTweens.ts`): `updateTweens` compacts completed tweens in place (reverse-walk `splice`, drops empty target lists) and drives `updateTween`: delay phase, ease, reverse, reflect flip + `onYoyo`, repeat decrement + `onRepeat`, `onComplete`.
-- **Scrub family** (`tweenProgress.ts`): `getTweenProgress`, `invalidateTween` (GSAP `invalidate`), `restartTween(includeDelay?)`, `seekTween` (clamped absolute-time jump, alias-safe via buffered `writes[]`), `setTweenProgress` (0..1, delegates to `seekTween`).
-- **Stagger** (`tweenStagger.ts`): `createTweenStagger` with `each`, `from` (`'start' | 'center' | 'end' | number`), `staggerEase`; `computeStaggerDelay` covers all four modes; `[]` on empty input.
-- **Color** (`colorTween.ts`): `createColorTween` interpolates 0xRRGGBB in float `{r,g,b}` space, writes the rounded packed int via an `onUpdate` listener — domain-correct math, proxy-registration bug below.
-- **Signals**: `onUpdate`/`onComplete`/`onRepeat`/`onYoyo` are unconditional entity fields — matches the blessed "signals are fundamental" decision (no `enable*` gate).
-- **Tests**: 116 `it`s across 7 files (tween 40, updateTweens 28, tweenProgress 22, stagger 10, manager 6, color 5, timer 5), covering scrub pins, stagger modes, overlap-overwrite, infinite repeat, smartRotation.
+- **Creation** (`tween.ts`): `createTween` with the manager-bound/default-manager overload pair (brand-checked via `TweenManager.__brand`); `applyTween` (instant property set + overlap cancel); `createTweenTimer` (`timer.ts`, empty-target duration timer). Options: `delay`, `ease`, `overwrite` (default true, per-property overlap cancel in `registerTween`), `reflect`, `repeat` (-1 = infinite), `reverse`, `smartRotation` (shortest-path within +-180 degrees in `initializeTween`), `snapping` (integer round).
+- **Manager** (`tweenManager.ts`): `createTweenManager` (default ease `easeOutExponential`), `defaultManager` module-level singleton (contract-only -- not in `index.ts`). Scope verbs: `pauseTween`/`pauseTweens`/`pauseAllTweens`, `resumeTween`/`resumeTweens`/`resumeAllTweens`, `stopTween` (with `StopTweenOptions.complete`/`sendEvent`), `stopTweens`/`stopAllTweens`, `resetAllTweens`, `completeTween` (in `updateTweens.ts`).
+- **Introspection** (`tween.ts`): `getActiveTweenCount`, `getTweensOf` (sentinel `[]`), `hasTweensOf` (sentinel `false`), `killTweensOfProperty` (no-op when none match). Sentinels match charter North star #4.
+- **Update** (`updateTweens.ts`): `updateTweens` compacts completed tweens via reverse-walk `splice`, drops empty target lists, and drives `updateTween`: delay phase, ease application, reverse, reflect flip + `onYoyo` emission, repeat decrement + `onRepeat`, `onComplete`.
+- **Scrub family** (`tweenProgress.ts`): `getTweenProgress` (0..1), `invalidateTween` (GSAP `invalidate` -- contract-only, absent from `index.ts`), `restartTween(includeDelay?)`, `seekTween` (clamped absolute-time jump, alias-safe via buffered `writes[]`), `setTweenProgress` (0..1, delegates to `seekTween`).
+- **Stagger** (`tweenStagger.ts`): `createTweenStagger` with `each`, `from` (`'start' | 'center' | 'end' | number`), `staggerEase`. Private `computeStaggerDelay` handles all four `from` modes. Empty input returns `[]`.
+- **Color** (`colorTween.ts`): `createColorTween` interpolates 0xRRGGBB in float `{r,g,b}` space, writes the rounded packed int back via an `onUpdate` listener. Domain-correct math; proxy-registration bug documented below.
+- **Signals**: `onUpdate`/`onComplete`/`onRepeat`/`onYoyo` are unconditional entity fields created in `makeTween`. This matches the blessed "signals are fundamental" decision (charter Decision #3) -- no `enable*` gate. `onStart` is named in the charter's core signal contract but is absent from the live surface.
+- **Export lanes**: `index.ts` re-exports 26 symbols from `contract.ts`. `contract.ts` re-exports all 7 source modules. `invalidateTween` is contract-only (available to other `@flighthq/*` packages but not in the public API). `defaultManager` is also contract-only. `internal.ts` (`initializeTween`) is correctly excluded from both barrels.
+- **Tests**: 118 `it`s across 7 files (tween 40, updateTweens 30, tweenProgress 22, stagger 10, manager 6, color 5, timer 5). Coverage includes scrub-to-end completion pins, all four stagger modes, overlap-overwrite semantics, infinite repeat, `smartRotation` shortest-path, zero-duration edge case, negative `deltaTime` guard, `stopTween` with `complete`/`sendEvent` combinations, and `completeTween` on uninitialized tweens.
 
 ## Gaps (vs the charter's in-scope list and the GSAP-class bar)
 
-- **The value-interpolator seam** (charter Decision #1, the keystone) does not exist — no `TweenInterpolatorKind`/`TweenInterpolator`/`registerTweenInterpolator`. Everything below the fold (per-property easing, keyframes, geometry bridge, color adapter) waits on it.
-- **`createColorTween` proxy bug still live** (`colorTween.ts:27-37`): the tween registers under the internal `{r,g,b}` components object, so `stopTweens`/`getTweensOf`/`hasTweensOf`/`killTweensOfProperty` keyed by the user's target all miss it. Charter Decision #2 already blesses the fix (retire into a seam adapter).
-- **Lost-bundle features, all charter-in-scope, all absent live**: relative values (`"+=N"`/`"-=N"`/`"*=N"` via `TweenPropertyValue`), `createTweenFrom`/`createTweenFromTo`, `onStart` (named in Decision #3's core signal contract and Boundaries), `repeatDelay`, per-tween + per-manager `timeScale` (named in Boundaries). These were built, reviewed, and scored in bundle `67dc46d64` but never merged; restoring them is recovery, not new design — except `timeScale`, which now collides with the clock question below.
-- **No single-object sequencing** — no `createTweenSequence`/`createTweenParallel`, position params, or labels, despite Decision #4 blessing tween as their home.
-- **No per-property easing, no keyframes/waypoints** — both sequenced behind the seam.
-- **`@flighthq/clock` now exists** (built, in the Package Map) but tween still consumes raw `deltaTime`; the charter says tween "will consume `@flighthq/clock` once that package exists" — that gate has opened and the integration is unstarted. This also reframes `timeScale` restoration: Decision #5 treats per-entity `timeScale` as the decomposition smell clock replaces.
-- **Snapping/overshoot coarse** — boolean integer round only (charter Open direction #5).
-- **Hot-path allocation** — `makeTween`'s `Object.keys().map()`, `seekTween`'s per-call `writes[]`, `splice` compaction, no pooling (charter Open direction #6, Gold-tier).
-- **No `-formats` neighbor, no Rust crate** — both correctly parked (consumer-gated; TS-leads posture per Decision #6).
+- **The value-interpolator seam** (charter Decision #1, the keystone) does not exist. No `TweenInterpolatorKind`, `TweenInterpolator`, or `registerTweenInterpolator` type or function anywhere in `packages/`. Per-property easing, keyframes, the geometry bridge, and the color adapter retirement all wait on it.
+- **`createColorTween` proxy bug** (`colorTween.ts:22-37`): `createTween` is called with the internal `{ r, g, b }` components object as the target, not the user's object. The manager keys the tween by this proxy, so `stopTweens(manager, userTarget)`, `getTweensOf(manager, userTarget)`, `hasTweensOf(manager, userTarget)`, and `killTweensOfProperty(manager, key)` all miss color tweens. Charter Decision #2 blesses the fix (retire into a seam adapter); the seam is the prerequisite.
+- **Lost-bundle features, all charter-in-scope, all absent**: relative values (`"+=N"`/`"-=N"`/`"*=N"` via `TweenPropertyValue`), `createTweenFrom`/`createTweenFromTo`, `onStart` signal (named in Decision #3's core signal contract and the Boundaries list), `repeatDelay`, per-tween + per-manager `timeScale`. These were built and reviewed in a bundle that never fully merged. `timeScale` now collides with the clock question below.
+- **`@flighthq/clock` integration not started.** The clock package now exists with `createClock`, `advanceClock`, hierarchical scale/pause, and `onTick`. The charter states tween "will consume `@flighthq/clock` for time source abstraction once that package exists" -- that gate is now open. `updateTweens` still takes raw `deltaTime`. Decision #5 identified per-entity `timeScale` as the decomposition smell clock removes, yet neither path (per-entity `timeScale` or clock adoption) has advanced.
+- **No single-object sequencing** -- `createTweenSequence`, `createTweenParallel`, position parameters, and labels are all absent despite Decision #4 placing them in tween's scope.
+- **No per-property easing, no keyframes/waypoints** -- both depend on the seam and per-property detail that does not exist.
+- **Snapping/overshoot coarse** -- boolean integer round only (`snapping: true` calls `Math.round`). No per-property snap increment, no `clampOvershoot` guard. Charter Open direction #5.
+- **Hot-path allocation** -- `makeTween` builds `properties` via `Object.keys(propertyMap).map()` (two temporary arrays); `seekTween` allocates a `writes[]` array plus one `{ key, value }` object per property on every call; `updateTweens` compacts via `list.splice(i, 1)` (O(n) per removal). No pooling. Charter Open direction #6 (Gold-tier, after the seam settles).
 
 ## Charter contradictions
 
-No live code violates a blessed Decision or Boundary. But the charter **describes a surface the code does not have**: Boundaries list relative values, `timeScale`, and from/fromTo as in-scope-present-tense, North star #4 cites `resolvePropertyEndValue`'s throw behavior, and Decision #3 names `onStart` in the core signal contract — none of these exist in the live tree. The charter was authored against the reviewed bundle, so it is ahead of `main`. Worth a one-line charter note (user's gate) or simply closing the gap by restoring the features. The `defaultManager` singleton remains an Open direction (#1), not a violation.
+No live code contradicts a blessed Decision in behavior. However, the charter's text describes a surface the code does not have:
+
+- **Boundaries list** relative values, `timeScale`, `createTweenFrom`/`createTweenFromTo` as in-scope present tense. None exist.
+- **North star #4** cites `resolvePropertyEndValue`'s throw behavior. No such function exists.
+- **Decision #3** names `onStart` in the core signal contract. The type and implementation have four signals; `onStart` is not among them.
+- **Charter intro** says tween "will consume `@flighthq/clock`...once that package exists." Clock exists. Tween has no clock dependency.
+- **`defaultManager` singleton** (`tweenManager.ts:12`) -- `createTweenManager()` called at module top level, producing a module-scoped mutable `Map`. Charter Open direction #1 acknowledges this tension with the "no magic" rule. It is cheap and arguably side-effect-free (allocates an empty `Map` + function reference), but it is shared mutable state in a `"sideEffects": false` package. Not a violation (it is an acknowledged open direction), but the convention question remains unresolved.
 
 ## Contract & docs fit
 
-**Lives up to the contract:** full unabbreviated names throughout; sentinels for expected-missing (`getTweensOf` → `[]`, `hasTweensOf` → `false`, `killTweensOfProperty`/`pauseTweens`/`stopTweens` no-op); free functions over plain-data entities; types-first (`Tween`/`TweenManager`/`TweenOptions`/`TweenPropertyDetail`/`StopTweenOptions` all in `@flighthq/types`); `sideEffects: false`, single `.` export, deps exactly `easing`/`signals`/`types`; `internal.ts` correctly outside the barrel; `seekTween` documents and honors alias-safety.
+**Consistent with the codebase contract:**
 
-**Candidate revisions:**
+- Full unabbreviated type names in every exported function name (`createTweenManager`, `killTweensOfProperty`, `getActiveTweenCount`, `createTweenStagger`).
+- Sentinels for expected-missing cases: `getTweensOf` returns `[]`, `hasTweensOf` returns `false`, `killTweensOfProperty` / `pauseTweens` / `stopTweens` no-op silently.
+- Free functions over plain-data entities with no class hierarchies.
+- All types (`Tween`, `TweenManager`, `TweenOptions`, `TweenPropertyDetail`, `TweenStaggerOptions`, `StopTweenOptions`, `TweenManagerOptions`, `NumericProps`) live in `@flighthq/types`.
+- `sideEffects: false` declared; two export lanes (`.` and `./contract`); deps exactly `easing`/`signals`/`types`.
+- `internal.ts` excluded from both barrels.
+- `seekTween` documents and honors alias-safety (reads all start/change into a buffer before writing target).
+- `Readonly<T>` applied to all options-bag parameters and `propertyMap` inputs.
 
-- **`seekTween(tween, timeSeconds)` parameter name contradicts the unit-agnostic contract** the same file's neighbors document. Rename to `time` (positional — non-breaking).
-- **Stale comment**: the `updateTweens` unit-agnostic comment (`updateTweens.ts:61`) cites `repeatDelay` among the duration fields, but no `repeatDelay` exists in the live surface. Fix the word or restore the feature.
-- **`Tween<any>` looseness** — `tweens: Map<object, Tween<any>[]>` leaks `any` into `getTweensOf` and the scope verbs; two files carry `eslint-disable no-explicit-any`. Prior review's note stands.
-- **Package Map**: `agents/index.md` lists `@flighthq/tween` with **no parenthetical description** — every neighbor in the Animation/simulation line has one. `agents/packages/map.md:89` ("tween managers, tweens, and timers") undersells the scrub/stagger/introspection surface. Both are candidate one-line refreshes.
-- **`agents/packages/TODO.md:575`** flags tween "needs re-review (review 2026-06-24 < status 2026-06-25)" — resolved by this review; regenerate the index.
+**Issues to address:**
+
+- **`seekTween(tween, timeSeconds)` parameter name** (`tweenProgress.ts:49`) contradicts the unit-agnostic time contract that the same file's JSDoc and `updateTweens.ts:60-64`'s durable comment establish. Rename to `time`.
+- **`TweenStaggerOptions.each` doc** (`types/src/TweenStaggerOptions.ts:5`) reads "Delay in seconds between each target's tween start." The "in seconds" wording contradicts the unit-agnostic contract. Should read "Delay between each target's tween start" (unit matches whatever `updateTweens` receives).
+- **Stale comment** in `updateTweens.ts:61` cites `repeatDelay` among the unit-agnostic fields. No `repeatDelay` exists on `Tween`, `TweenOptions`, or anywhere in the live surface.
+- **`Tween<any>` looseness** -- `tweens: Map<object, Tween<any>[]>` in `TweenManager` leaks `any` into `getTweensOf`, the scope verbs, and the scrub family; two source files carry `eslint-disable no-explicit-any`. Whether `Tween<object>` or `Tween<unknown>` would serve instead is an unresolved surface-shape question (assessment backlog item).
+- **`completeTween` lives in `updateTweens.ts`** rather than alongside the other single-tween verbs (`stopTween`, `pauseTween`, `resumeTween`) in `tween.ts`. File placement is an organizational choice, not a bug, but the asymmetry is noticeable -- every other single-tween lifecycle verb is in `tween.ts`.
 
 ## Candidate open directions
 
-Most former questions were settled by the 2026-07-02 direction session. New or reopened:
+1. **Interpolator seam build.** The keystone: `TweenInterpolatorKind` + `TweenInterpolator` registry, color as first adapter, numeric zero-overhead path. Unblocks per-property easing, keyframes, geometry bridge, and retires the `createColorTween` proxy bug. The single highest-leverage remaining piece. Design session needed for the type shape, registration API, and performance contract.
 
-1. **Recover vs. rebuild the lost bundle features.** Restore `from`/`fromTo`, relative values, `onStart`, `repeatDelay` from the `67dc46d64` shape as-is, or fold them into the interpolator-seam build? Restoration is sweep-shaped; the seam is the keystone — sequencing is the user's call.
-2. **`timeScale` vs. `@flighthq/clock`.** Clock now exists. Does tween still grow per-tween/per-manager `timeScale` (Boundaries say yes) or skip straight to clock adoption (Decision #5 calls per-entity `timeScale` the smell clock removes)? The two blessed texts now point different directions.
-3. **Charter drift note.** Whether to annotate the charter that its Boundaries describe the target surface (bundle shape), not the live tree, until restoration lands.
+2. **Recover lost-bundle features.** `createTweenFrom`/`createTweenFromTo`, relative values, `onStart`, `repeatDelay`. These are charter-in-scope and were previously built. Whether to restore as-is or fold into the seam build is a sequencing decision.
+
+3. **`timeScale` vs `@flighthq/clock` adoption.** Clock now exists with hierarchical scale/pause. Charter Decision #5 treats per-entity `timeScale` as the decomposition smell clock removes. Two paths: (a) add `timeScale` to `Tween`/`TweenManager` as a near-term completeness measure, then migrate to clock; (b) skip `timeScale` and integrate clock directly. The charter's Boundaries (which list `timeScale` in scope) and Decision #5 (which calls it a smell) currently point in opposite directions.
+
+4. **Single-object sequencing.** `createTweenSequence`/`createTweenParallel` with position parameters and labels. Blessed by Decision #4 as tween's responsibility. Whether it shares a sequencing primitive with `@flighthq/timeline` is an open design question.
+
+5. **Unit-naming cleanup.** Rename `seekTween`'s `timeSeconds` parameter to `time`; fix `TweenStaggerOptions.each` doc to drop "in seconds"; remove `repeatDelay` from the `updateTweens` comment. All three are one-line changes that bring docs and parameter names in line with the established unit-agnostic contract.
+
+6. **`defaultManager` ruling.** The module-level singleton is an acknowledged open direction. Ruling needed: keep it (GSAP global-timeline convention), remove it (strict "no magic" rule), or gate it behind an explicit `getDefaultTweenManager()` accessor.

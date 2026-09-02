@@ -1,87 +1,159 @@
 ---
 package: '@flighthq/xml'
 status: solid
-score: 74
-updated: 2026-07-30
+score: 75
+updated: 2026-09-02
 ingested:
   - charter.md
   - status.md
   - source
   - tests
   - types
-  - prior review (2026-07-09 refresh)
+  - consumer packages
+  - prior review (2026-07-30)
+  - prior assessment (2026-07-30)
 ---
 
 # xml — Review
 
 ## Verdict
 
-**Solid for its described lightweight scope — 74/100.** The prior partial-45 review is stale against
-the live package. Quoted `>` characters, ordinary internal DOCTYPE subsets, the tree-building package
-description, and four element-query helpers all landed in the July implementation. `XmlElement` now
-lives in `@flighthq/types`, and later SVG work added ordered mixed content. The package is a coherent
-one-shot tree parser for Flight's XML-backed formats; the score remains bounded because its charter has
-never settled whether that deliberately narrow ceiling is durable or the broad `xml` name promises a
-serializer, validation, and namespace-aware growth.
+**Solid within its deliberately narrow scope -- 75/100.** The package is a coherent one-shot tree
+parser serving Flight's XML-backed format readers (texture atlases, tilemap formats, bitmap font
+definitions, plist files, SVG import). Six exported functions span document parsing, attribute
+parsing, and element querying. All exports are covered by colocated tests, `XmlElement` lives in
+`@flighthq/types`, the two blessed export lanes are correct, the package is import-side-effect-free,
+and every intra-SDK consumer imports through the `./contract` lane. The score is bounded by an
+undirected charter -- the broad `xml` name suggests a full XML library, but the implementation is a
+parse-only utility with no serializer, no namespace resolution, and no structured diagnostics. That
+ceiling is defensible for a format-reader helper; it is not yet blessed as durable by the charter.
 
 ## Present capabilities
 
-- Six public functions cover document and attribute parsing plus string/number attribute lookup and
-  first/all direct-child lookup. All implementation exports are public and have colocated coverage.
-- `parseXmlDocument` builds an `XmlElement` tree with both element-only `children` and source-ordered
-  mixed `content`. The `text` projection concatenates trimmed direct-text nodes for data-oriented
-  consumers.
-- Opening tags accept single- and double-quoted attributes, `>` inside either quote style, self-closing
-  elements, namespaced or punctuation-bearing names, and the five predefined plus numeric entity
-  references.
-- Prolog processing removes XML declarations, processing instructions, comments, and DOCTYPE declarations.
-  CDATA contributes literal ordered text without treating its markup-like contents as elements.
-- `XmlElement` lives in `@flighthq/types`; package consumers use the contract lane, the package is
-  import-side-effect-free, and the XML workspace has two source modules and 39 tests.
+- **Six public functions**, identical across both export lanes (`index.ts` re-exports from
+  `contract.ts`):
+  - `parseXmlDocument` -- builds an `XmlElement` tree from an XML string, returning null when no
+    element is found.
+  - `parseXmlAttributes` -- parses an attribute string into a `Record<string, string>` with entity
+    decoding.
+  - `getXmlElementAttribute` -- returns a named attribute value or null.
+  - `getXmlElementAttributeNumber` -- returns a named attribute parsed as a finite number, or null.
+  - `getXmlElementChildByName` -- returns the first direct child matching a tag name, or null.
+  - `getXmlElementChildrenByName` -- returns all direct children matching a tag name in document
+    order.
 
-## Stale-cell audit and live fixes
+- **Parsing features**: double- and single-quoted attribute values; `>` inside quoted attribute
+  values treated as data; self-closing elements; namespaced and punctuation-bearing element/attribute
+  names (`my-tag.v2`, `data_key`, `xml:lang`); the five predefined XML entities plus decimal and hex
+  numeric character references; general entities declared in a DOCTYPE's internal subset (expanded
+  into the source before tree-building); XML declaration and processing instruction stripping;
+  comment stripping (CDATA-aware -- comments inside CDATA are literal text); DOCTYPE stripping with
+  quote-aware internal-subset scanning; CDATA as literal ordered text.
 
-The four Recommended items were already substantially complete:
+- **Mixed content model**: `XmlElement` carries both element-only `children` and source-ordered
+  `content` (interleaved text and element nodes). The convenience `text` projection concatenates
+  trimmed direct text nodes for data-oriented consumers.
 
-- `69fd6414f` made opening-tag scanning quote-aware, handled ordinary internal DOCTYPE subsets, replaced
-  the inaccurate "pull-style" package description with the tree-building model, and added
-  `getXmlElementAttribute`, `getXmlElementAttributeNumber`, `getXmlElementChildByName`, and
-  `getXmlElementChildrenByName`.
-- `21f6a1a18` moved `XmlElement` into the header package, resolving the old cross-package type-home concern.
-- `d6d5b4c9a` and `a49c5dad4` added ordered mixed content and entity decoding for text nodes.
+- **Safety bounds**: element nesting capped at 256 (`MAX_XML_ELEMENT_DEPTH`); entity expansion
+  capped by both pass count (8) and budget (`src.length * 16 + 65536`). Both are sentinel-returning
+  rather than throwing.
 
-The audit found that the DOCTYPE fix still relied on a non-quote-aware regular expression. A `]` inside
-an entity value ended its internal-subset match early, while a `>` inside a quoted external identifier
-ended a flat declaration early; both cases caused the document parser to return `null`. `f8c479d03`
-replaces the expression with a quote-aware, subset-depth scanner and covers both cases.
+- **Type home**: `XmlElement` is an interface in `@flighthq/types`, exported through both its `.`
+  and `./contract` lanes. The xml package imports it from `@flighthq/types/contract`.
 
-Two adjacent claimed-capability defects were also live. CDATA preprocessing injected its payload back
-into the markup stream, turning literal `<tag>` text into a child and deleting comment syntax inside the
-section; `2cf87d1b8` parses CDATA in place as raw ordered text. Out-of-range numeric references reached
-`String.fromCodePoint` and threw instead of preserving an unsupported reference; `fabcc6c9d` restores
-the package's sentinel-friendly behavior.
+- **Consumer adoption**: five format packages consume `@flighthq/xml/contract` --
+  `tilemap-formats`, `bitmapfont-formats`, `spritesheet-formats`, `textureatlas-formats`, and
+  `scene2d-formats`. The SDK barrel re-exports the full surface. `tilemap-formats` and
+  `bitmapfont-formats` use all four query helpers extensively; `spritesheet-formats`,
+  `textureatlas-formats`, and `scene2d-formats` import only `parseXmlDocument` and access attributes
+  and children directly.
 
-## Remaining depth
+- **Test coverage**: two test files with 7 `describe` blocks and 50 test cases (including 3 from an
+  `it.each` parameterized block). Coverage spans attribute parsing, entity decoding, document
+  structure, self-closing tags, deep nesting, depth limits, mixed content, CDATA, comments, XML
+  declarations, DOCTYPE stripping (including quoted-subset edge cases), general entity expansion
+  (nested, self-referential, budget-capped), and the four query helpers.
 
-- Structural parsing is deliberately tolerant: it does not match opening and closing names, reject
-  multiple roots, or report malformed-input positions. Callers cannot distinguish no root from a
-  malformed document.
-- Namespace prefixes survive lexically, but namespace declarations are not resolved and callers cannot
-  query local name or namespace URI.
-- DTD declarations are skipped and custom entities are not expanded. This is appropriate for the
-  lightweight format-reader scope but must remain explicit if the charter blesses that ceiling.
-- `content` preserves mixed order, while the convenience `text` projection trims each direct text node
-  before concatenation. Consumers needing exact whitespace must use `content`.
-- There is no serializer/builder, streaming event tier, schema/DTD validation, XPath-style traversal, or
-  structured parse diagnostic. Whether the first four belong here is a direction decision, not a
-  sweep-safe implementation task.
-- Existing format consumers have not consistently adopted the query helpers and still contain local
-  child/attribute filtering. Migration is optional cross-package cleanup; it does not change the XML API.
+- **Package manifest**: `sideEffects: false`, sole dependency is `@flighthq/types`, two export
+  conditions (`.` and `./contract`) with types-first resolution. Description accurately presents the
+  tree-building model.
 
-## Charter and boundary conclusion
+## Gaps
 
-No named direction has settled the scope fork. The package description truthfully presents a lightweight
-tree-building parser, and the shipped implementation is solid within that boundary, but the charter
-remains a scaffold. A direction session should either bless parse-only, data-oriented XML as the durable
-ceiling or choose the staged full-library path. Until then, serializer, validation, namespaces, and
-streaming stay backlog rather than inferred work.
+- **No serializer.** There is no way to produce XML from an `XmlElement` tree. Consumers needing
+  round-trip or XML generation have no path in this package.
+
+- **No namespace resolution.** Prefixed names are kept verbatim (`svg:rect` is a distinct tag name
+  from `rect`). There is no prefix-to-URI binding, no local-name extraction, and `xmlns` is treated
+  as an ordinary attribute. The SVG importer in `scene2d-formats` works around this with its own
+  `localName` helper (`svgDocument.ts:854`).
+
+- **No structured parse diagnostics.** `parseXmlDocument` returns null for both "no element found"
+  and "malformed input" -- callers cannot distinguish the two. Entity expansion budget exhaustion is
+  silent with no `explain*` query. The diagnostics convention calls for an `explain*` function for
+  every silent sentinel, but none exists here.
+
+- **No well-formedness checking.** Opening and closing tag names are not matched; multiple root
+  elements silently return only the first; attribute uniqueness is not enforced (last-write wins via
+  `Record` assignment). This is intentional tolerance, not a defect, but it means the parser cannot
+  validate input.
+
+- **Uneven query-helper adoption by consumers.** `textureatlas-formats` and `spritesheet-formats`
+  use `children.find()` and direct `.attributes[]` access instead of the query helpers. This is
+  optional cross-package cleanup and does not affect the XML API itself, but it does mean those
+  consumers bypass the null-returning sentinel contract the helpers provide.
+
+- **Text-node whitespace is lossy by design.** The `text` projection trims each direct text node
+  before concatenation. Consumers needing exact whitespace must use `content`. There is no mode to
+  preserve original whitespace in `text`.
+
+## Charter contradictions
+
+The charter body is scaffold -- its North star, Boundaries, Decisions, and Open directions sections
+are all empty or TODO. The `What it is` section, seeded from the prior review, describes the package
+as "XML parsing -- turning XML text into a traversable document model (and, in an authoritative
+library, serializing back, streaming, and validating)." The parenthetical implies a growth path the
+implementation has not taken and no direction session has blessed. The package description in
+`package.json` is internally consistent and accurately describes the lightweight tree-building
+scope. The charter neither contradicts the implementation nor blesses its current ceiling.
+
+## Contract & docs fit
+
+- **Export lanes**: correct. `contract.ts` is the full surface; `index.ts` re-exports from it.
+  Both lanes export the same six functions. All intra-SDK consumers import from `./contract`.
+- **Type home**: `XmlElement` lives in `@flighthq/types` with no inline type exports in the xml
+  package. Verified -- `grep` for `export interface|type|enum` in `packages/xml/src/` returns
+  nothing.
+- **sideEffects**: declared `false`; verified -- no module-level side effects in either source file.
+- **Readonly usage**: query helpers accept `Readonly<XmlElement>` parameters. `expandXmlEntities`
+  accepts `Readonly<Record<string, string>>` for its entity map.
+- **Sentinel convention**: all query helpers return null for missing values. `parseXmlDocument`
+  returns null for unparseable input. Out-of-range numeric references pass through as literal text
+  rather than throwing.
+- **Test colocations**: `xmlParse.test.ts` beside `xmlParse.ts`, `xmlQuery.test.ts` beside
+  `xmlQuery.ts`. `describe` blocks are alphabetized and mirror exported names.
+- **No TODO/FIXME in source**: verified.
+- **status.md**: current as of 2026-08-08. All five Open items verified against source.
+
+## Candidate open directions
+
+1. **Charter direction session.** The foundational question: bless parse-only data-oriented XML as
+   the durable ceiling (rename or accept the broad `xml` package name), or stage growth toward
+   serializer, namespace resolution, positioned diagnostics, and optional streaming.
+
+2. **`explain*` query for entity-expansion budget exhaustion.** The diagnostics convention requires
+   a shakeable `explain*` function for every silent sentinel. Entity expansion that exhausts its
+   budget currently keeps partial output with no caller-visible signal.
+
+3. **`explain*` query for parse failure.** `parseXmlDocument` returning null for both "empty input"
+   and "malformed document" violates the explain convention. An `explainXmlParseResult` returning
+   structured data (no-element-found vs. depth-exceeded vs. malformed) would let callers distinguish
+   failure modes without the parser throwing.
+
+4. **Consumer migration to query helpers.** `textureatlas-formats` and `spritesheet-formats` still
+   use `children.find()` and direct attribute access. Migrating them to the query helpers is
+   optional cross-package cleanup that could happen when those packages are next in scope.
+
+5. **Strict well-formedness mode.** An opt-in mode that validates tag matching, attribute
+   uniqueness, and single-root constraint would serve consumers that need input validation without
+   changing the tolerant default.

@@ -1,91 +1,77 @@
 ---
 package: '@flighthq/surface-rs'
 status: solid
-score: 72
-updated: 2026-06-25
+score: 65
+updated: 2026-09-02
 ingested:
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
-  - head/packages/surface-rs/src
-  - head/packages/bitmap/src (the dependency this delta is judged against)
-  - changes.patch (packages/surface-rs slice)
   - charter.md
+  - status.md
+  - assessment.md
+  - packages/bitmap/ (upstream shadow target, local and live)
+  - packages/surface-rs/ (absent — confirmed spun out)
+  - scripts/ (no remaining references)
 ---
 
-> **Historical — package spun out to `flight-rs` (2026-07-10).** This merge-gate review predates the spin-out and refers to `packages/surface-rs/` code that no longer lives in this monorepo. Kept for design/history; not an actionable local gate. See charter for the spin-out note.
+> **Spun-out cell — no local source.** `packages/surface-rs/` and `crates/` are absent from this monorepo; the code lives in `flight-rs`. This review surveys the cell's documentation health, its relationship to the upstream `@flighthq/bitmap` it shadows, and the accuracy of the prior review and assessment findings. There is no local source to survey; the score reflects the cell's documentary state and the upstream-tracking posture.
 
-# Review: @flighthq/surface-rs (merge gate — integration-b2824e3d8 vs approved origin/main)
+# Review: @flighthq/surface-rs
 
 ## Verdict
 
-`solid — 72/100` **as a merge candidate** (the package itself is authoritative; the **delta** is not yet fit to merge). This review judges only the head-vs-base delta under `integration-b2824e3d8/`, as a gate into the approved baseline (`origin/main` eb73c3d74). The baseline is the blessed floor and is not under review.
+`solid — 65/100`. The cell is well-documented: the charter captures the pure-shadow posture, the five design pillars, the boundary between in-scope and out-of-scope work, and four recorded decisions. The status file accurately describes the spun-out disposition. The previous review (merge-gate, pre-spin-out) and assessment are preserved as history and remain internally consistent.
 
-The delta is overwhelmingly good test-hardening — a mechanical shadow-coverage gate, per-enum discriminant cardinality tests, palette-map all-null coverage, aliased-in-place version tests, wasm-memory-growth stability tests, sub-region and zero-area edge cases, and durable cross-language drift comments. If that were all, this would merge clean at ~94.
+The score is lower than the prior review's 72 for two reasons. First, the cell is now a reference-only artifact with no local code to validate — the contract discipline (byte-exact conformance, signature parity, discriminant-map drift guards) is entirely in `flight-rs` and no gate in this repo can verify it. Second, the prior review identified three concrete defects (the `floodFillBitmap` 5-arg divergence, two non-compiling test call sites, and a false durable comment) whose resolution status is unknown from this repo's vantage point. The assessment recommended reverting those, but whether the work landed in `flight-rs` is not observable here.
 
-It does **not** merge clean because the delta also changed `floodFillBitmap`'s public signature and rewrote two test call sites to a **`@flighthq/bitmap` signature that does not exist in this integration head**. The surface-rs change was authored against an intended upstream change (`floodFillBitmap(..., visited)` / `scrollBitmap(..., scratch)`) that **did not land** in `@flighthq/bitmap` within this same tree. The result is a binding that mismatches its own dependency and a test that cannot compile. This is a hard merge-gate failure (standards 6 and 7), not a style nit, and it is squarely in the delta — base was correct.
+## Present capabilities
 
-## What the delta gets right (approve-as-is)
+**As a cell in this monorepo**, surface-rs provides:
 
-- **`wasm shadow conformance` gate** — `b2824e3d8:packages/surface-rs/src/surfaceWasm.test.ts` adds `EXPECTED_WASM_SHADOWS` and asserts every name is exported from `surfaceWasm` and is a **distinct function object** from the `@flighthq/bitmap` reference (`expect(rsFn, ...).not.toBe(refFn)`). A future surface export that surface-rs forgets to shadow, or one that silently falls through to JS, turns this red mechanically. Correct shape for keeping a drop-in honest over time.
-- **`wasm discriminant map cardinality`** — seven describe blocks, one per discriminant family, each iterating every variant and asserting byte-exact (or hit-count / `expectByteClose`) agreement with the reference: `BlendMode` (15), `BitmapBevelType` (3), `BitmapConvolutionEdge` (3), `BitmapDisplacementMapMode` (4), `PixelOrder` (4), `BitmapResizeMode` (3), `ThresholdOperation` (6). The type imports resolve correctly (`BitmapBevelType` et al. are re-exported via `export * from './surfaceBevel'` in the surface barrel), so these typecheck.
-- **Discriminant-drift comments** — `b2824e3d8:packages/surface-rs/src/surfaceWasm.ts` (the `878a883,896` hunk) names the exact Rust `*_from_u8` decode function each `repr(u8)` map must track, and the `BlendMode` Normal=10-via-`_`-wildcard note. This is a durable semantic comment that closes the prior "silent cross-language drift" hazard without a code generator. Good.
-- **Palette-map all-null + alpha-only tests**, **aliased-in-place version tests** (`flipBitmapHorizontal`/`Vertical`/`rotateBitmap180` with `region===region` must not bump `version`; distinct surfaces must), **wasm memory-growth stability** (repeated large `gaussianBlurBitmap`/`medianBitmap`/`convolveBitmap` calls do not throw — guards the `asUint8` detach-on-growth regression), **sub-region marshalling**, and **zero-area region** edge cases. All additive, all sharpen the conformance harness, none touch hot loops or bundle shape.
+- A charter with clear vision, boundaries, five decisions, and five open directions — one of the more thoroughly documented cells.
+- A status file rewritten to the Open + Log contract (2026-08-08), accurately stating the spun-out disposition and the zero-local-code reality.
+- A historical merge-gate review (pre-spin-out) documenting the wasm shadow conformance gate, discriminant-map cardinality tests, palette-map coverage, aliased-in-place tests, wasm memory-growth stability tests, and three blocking defects.
+- An assessment derived from that review with two recommended items and a five-item backlog, all coherent with the charter.
 
-## What blocks the merge (must fix before merge)
+**What the package provides when built (in `flight-rs`)**, per the charter:
 
-### 1. `floodFillBitmap` signature now diverges from `@flighthq/bitmap` — drop-in parity broken (standard 6, charter violation)
+- Wasm-backed drop-in shadow of `@flighthq/bitmap`, re-exporting its full API and selectively replacing bulk per-pixel operations with Rust/wasm implementations.
+- Discriminant maps between TS string unions and Rust `repr(u8)` enums.
+- A conformance test suite asserting byte-exact parity with JS reference (53 expected shadows at last count).
+- Lazy wasm module loading (base64-embedded, no top-level instantiation).
 
-`b2824e3d8:packages/surface-rs/src/surfaceWasm.ts` (hunk `489c489,493`):
+## Gaps
 
-```ts
-// `visited` matches the `@flighthq/bitmap` signature (a caller-provided scratch
-// buffer the JS implementation uses to track filled pixels). ...
-export function floodFillBitmap(out: Bitmap, x: number, y: number, color: number, _visited: Uint8Array): void {
-```
+1. **No local verification gate for upstream signature drift.** The charter's pure-shadow rule requires surface-rs to track `@flighthq/bitmap` signatures. When `bitmap` changes a function signature in this repo, nothing here gates or even warns about the downstream obligation in `flight-rs`. The status file notes this ("a `bitmap` edit here has a downstream obligation ... that no gate in this repo can see") but no mechanism addresses it.
 
-The comment's central claim is **false in this tree**. The actual reference, `b2824e3d8:head/packages/bitmap/src/bitmapFill.ts:35`, is unchanged from base:
+2. **Prior review defects unresolvable from this repo.** The three defects the prior review identified — `floodFillBitmap` 5-arg vs 4-arg divergence, two non-compiling reference call sites in tests, and a false durable comment — are `flight-rs` concerns. Their resolution is not observable here, and the assessment's recommended items remain in an indeterminate state.
 
-```ts
-export function floodFillBitmap(out: Bitmap, x: number, y: number, color: number): void {
-```
+3. **Hidden-state removal blocked on upstream.** The charter decision (2026-07-03) records that `floodFillBitmap`, `scrollBitmap`, and `medianBitmap` carry module-level mutable buffers in `@flighthq/bitmap`, and the fix must originate upstream. Verified: `bitmapFill.ts` still uses a module-level `_floodFillVisited` buffer and `floodFillBitmap` remains 4-arg; `scrollBitmap` in `bitmapTransform.ts` remains 3-arg. The hidden state is still present upstream, so the charter's upstream-first constraint is still active.
 
-— four parameters, using a module-level `_floodFillVisited` buffer (`bitmapFill.ts:4`). `changes.patch` does **not** touch `packages/bitmap/src/bitmapFill.ts` at all. So the delta took a 4-arg, signature-identical override and made it a **5-arg override of a 4-arg function**. The charter is explicit that surface-rs provides "byte-for-byte-compatible, **identical-signature** implementations ... while re-exporting the rest of the surface API unchanged." A 5-vs-4 parameter mismatch is the exact failure mode the package exists to avoid: a consumer that swaps `@flighthq/bitmap` for `@flighthq/surface-rs` now sees a _different_ `floodFillBitmap` arity. **Revert this signature to `(out, x, y, color)`** unless and until the matching `@flighthq/bitmap` change actually lands in the same merge.
+4. **Rename pending.** The `@flighthq/surface-rs` to `@flighthq/bitmap-rs` rename (and `flighthq-surface-wasm` to `flighthq-bitmap-wasm`) is recorded as pending in `flight-rs`. The cell documents this clearly but cannot track its completion.
 
-### 2. The test will not compile — excess args to the reference (standard 7: "compiles")
+5. **`scripts/docs.ts` reference gone.** Status says "one comment in `scripts/docs.ts`" references the package outside `agents/`. Verified: no `scripts/docs.ts` file or any script file contains `surface-rs`, `bitmap-rs`, `surface-wasm`, or `bitmap-wasm`. The reference has been cleaned up (or `docs.ts` was restructured) since status was last written. The status claim is stale on this point.
 
-`tsconfig.base.json` sets `strict: true` and `surface-rs/tsconfig.json` includes `src` (so `tsc -b` typechecks `src/*.test.ts`, per the codebase-map testing rules). Two new/edited call sites pass **excess arguments** to reference functions that have no such parameter:
+## Charter contradictions
 
-- `b2824e3d8:packages/surface-rs/src/surfaceWasm.test.ts` (floodFill hunk):
-  ```ts
-  reference.floodFillBitmap(refSurface, 4, 4, 0xff8800ff, refVisited);
-  ```
-  but `@flighthq/bitmap`'s `floodFillBitmap` takes 4 args → `TS2554: Expected 4 arguments, but got 5`.
-- `b2824e3d8:packages/surface-rs/src/surfaceWasm.test.ts` (scroll hunk `755c865,866`):
-  ```ts
-  const scratch = new Uint8ClampedArray(refSurface.width * refSurface.height * 4);
-  reference.scrollBitmap(refSurface, 2, -1, scratch);
-  ```
-  but `b2824e3d8:head/packages/bitmap/src/surfaceTransform.ts:145` is `scrollBitmap(out, dx, dy)` (3 args, unchanged from base; not touched by `changes.patch`) → `TS2554: Expected 3 arguments, but got 4`.
+None found. The charter, status, prior review, and assessment are internally consistent. The charter's spun-out notice accurately describes the disposition. The `spunOut: flight-rs` front-matter marker, the `crate: null` declaration, and the `draft: false` state are all correct.
 
-Both are excess-argument errors against `strict` TS, so the package fails `tsc -b` / `npm run check`. Note the surface-rs `scrollBitmap` _export_ is unchanged (still 3-arg, correct) — only the **test's reference call** was wrongly given a 4th arg, so this is a test-only fix for scroll, and a signature-revert + test fix for flood-fill.
+One minor tension: the charter says "this cell is kept for reference" and the CONTRACT.md says "a `spunOut:` cell keeps whichever of the four it accumulated while its code did live here" — which permits but does not require the review and assessment to stay current. Writing a review of a cell with no local code is inherently limited to documentary audit, which is what this review is.
 
-### 3. Durable comment asserts a falsehood (standard 6 hygiene)
+## Contract and docs fit
 
-Even setting aside arity, the `_visited` comment ("matches the `@flighthq/bitmap` signature") is a durable semantic comment that is wrong against the code in the same tree. Durable comments must explain what the code _is_; this one mis-states the dependency. If the upstream change is intended, the correct sequence is to land it in `@flighthq/bitmap` first (or in the same commit), not to assert it from the binding side.
+- **Front matter** — charter, status, review, and assessment all carry valid YAML with correct `package` values. Charter has all required keys including `spunOut`, `crate: null`, and pointer fields.
+- **Export lanes** — not applicable (no local code).
+- **`sideEffects: false`** — not applicable (no local `package.json`).
+- **Two-lane export structure** — not applicable.
+- **Type home rule** — not applicable.
+- **Status contract** — the status file has the correct `## Open` / `## Log` structure, is well under 6,000 characters, and the Open section is rewritten in present tense describing current reality.
+- **No stale references outside `agents/`** — verified. No `scripts/`, `package.json`, `tsconfig`, or source file in this monorepo references `surface-rs`, `bitmap-rs`, `surface-wasm`, or `bitmap-wasm`.
 
-## Standards scorecard (delta only)
+## Candidate open directions
 
-1. **Composition / bedrock** — PASS. No new fused subject, no config-gated branch; the additions are tests + comments.
-2. **Naming clarity** — PASS. `_visited` underscore-prefixed unused param is idiomatic; `EXPECTED_WASM_SHADOWS` is self-identifying.
-3. **Tree-shaking / bundle invariant** — PASS. `sideEffects: false`, single `.` export, no eager registration; no new shared-hot-loop branch. Test-only growth does not ship.
-4. **Registry vs closed union** — N/A to the delta (the discriminant maps mirror closed Rust enums by design; no new closed switch over a _growing_ family was introduced).
-5. **Subject triad + plurality** — N/A; no format/backend code moved or split.
-6. **Contract hygiene** — **FAIL** (defects 1 + 3). Signature parity with `@flighthq/bitmap` is the package's contract, and the delta breaks it for `floodFillBitmap`; the explanatory comment is false against the tree.
-7. **Tests & honesty** — **FAIL** (defect 2). The new tests are excellent in intent but two call sites do not compile against the reference in this head; `tsc -b` would reject them. Once defects 1–2 are fixed, this axis flips to a strong PASS — the harness additions are the best part of the delta.
+1. **Cross-repo signature-drift gate.** The charter identifies signature parity as the core contract, and the status identifies the absence of any local enforcement. A lightweight gate — even a generated checklist triggered when `bitmap` exports change, naming the downstream obligation in `flight-rs` — would close the gap without requiring build wiring for code that does not live here. This is the single highest-value improvement for this cell's role in the monorepo.
 
-## Self-check (objections re-audited, ungrounded ones dropped)
+2. **Status staleness on the `scripts/docs.ts` claim.** The status file's Open section says `scripts/docs.ts` carries a reference. This is no longer true. A minor status rewrite would keep the file accurate.
 
-- _Kept:_ defects 1–3 are grounded in cited head hunks and verified against the **unchanged** `@flighthq/bitmap` source in the same tree (`bitmapFill.ts:35`, `bitmapTransform.ts:145`, both absent from `changes.patch`). They critique the delta, not the approved base — base's `floodFillBitmap` was the correct 4-arg override.
-- _Dropped:_ a first pass flagged the `_visited` param as a `noUnusedParameters` violation. Dropped — `tsconfig.base.json` does not set `noUnusedParameters`, and the param is underscore-prefixed regardless. The compile failure is the excess-arg `TS2554` on the **reference** calls, not the unused param.
-- _Dropped:_ a concern that the new discriminant-cardinality `type` imports (`BitmapBevelType` etc.) might not resolve from `@flighthq/bitmap`. Verified they are re-exported via the surface barrel's `export *`; the imports are fine.
-- _Pre-release latitude applied:_ there is no back-compat duty here, so the fix is a clean revert/realign, not a shim. The objection survives latitude because a non-compiling, dependency-mismatched binding is a defect regardless of compat obligations.
+3. **Assessment item resolution tracking.** The assessment's two Recommended items and five Backlog items are all `flight-rs` work. Whether to close them here (marking them as `flight-rs`-owned and outside this repo's pipeline) or to keep them as cross-repo obligations is a disposition question for the user.
+
+4. **Charter rename update.** When the `surface-rs` to `bitmap-rs` rename lands in `flight-rs`, this cell's charter, status, review, and assessment should reflect the new names. The cell folder itself (`agents/packages/surface-rs/`) may or may not rename depending on whether the monorepo convention tracks the current or historical package name for spun-out cells.

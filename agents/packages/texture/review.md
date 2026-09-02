@@ -1,77 +1,244 @@
 ---
 package: '@flighthq/texture'
 status: solid
-score: 80
-updated: 2026-08-25
+score: 76
+updated: 2026-09-02
 ingested:
-  - status.md
-  - reviews/depth/texture.md
-  - source
-  - changes.patch
   - charter.md
-  - 'base=origin/main(eb73c3d74)'
-  - 'evidence=integration-b2824e3d8 delta'
+  - status.md
+  - assessment.md
+  - source
+  - tests
+  - types
 ---
 
-# texture — Review (merge gate: integration-b2824e3d8 → origin/main)
+# Review: @flighthq/texture
 
-> Harsh merge-gate survey. Judges **only the delta** — `incoming/integration-b2824e3d8/head/packages/texture/` vs the approved `origin/main` base `eb73c3d74` (`.../base/packages/texture/`), plus the `packages/texture/` hunks of `incoming/integration-b2824e3d8/changes.patch` (the texture diff lands in `committed.patch`). The base is the blessed floor and is **not** under review. Findings cite `b2824e3d8:<path>` with a quoted snippet. This survey supersedes the prior depth review (`reviews/depth/texture.md`, 62/100) as the new baseline.
+**Evidence and population.** Full re-review of `packages/texture/src/` (7 source files, 7 colocated
+test files, 2181 total lines), the type surface in `packages/types/src/` (Texture, Sampler,
+TextureSource, TextureUvTransform, CubeTexture, RenderTexture, RenderTarget, VoxelGrid,
+TextureCubeFace, TextureSourceKind, TextureDimension, CreateTextureOptions, CreateCubeTextureOptions,
+CreateRenderTextureOptions, ExternalTexture), `package.json`, `index.ts`, and `contract.ts`. Exports
+counted from the public barrel; claims verified against source line numbers.
 
 ## Verdict
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+**solid -- 76/100.** The prior review's compile blocker (missing `CubeFace*` constants in
+`@flighthq/types`) is fully resolved: `TextureCubeFace.ts` defines all six and the contract barrel
+exports them. The stale `@flighthq/resources` dependency is gone. The package now ships a clean,
+well-shaped descriptor layer: 54 exported symbols from the public lane across six functional domains
+(Texture, CubeTexture, RenderTexture, Sampler, VideoTexture, VoxelGrid) plus color-space derivation.
+Construction, cloning, copying, equality, UV-matrix composition, and sampler presets are all present
+and alias-safe. 107 test cases across 7 test files provide solid coverage of the core 2D and cube
+paths.
 
+The score rises from 58 to 76 because the hard blocker is gone and the existing surface is
+contract-clean. Three things hold it below 85: the `'3d'` and `'2d-array'` texture dimensions
+have zero dedicated test coverage despite being modeled in the `createTexture` switch; the
+`invalidateTexture` verb is absent (version is bumped inline by three separate mutators, against
+the invalidation doctrine); and the video-texture surface carries four pass-through aliases that add
+names without behavior.
 
-**REVISE — blocked. 58/100.** The delta is a large, well-shaped symmetry build (base: 9 exports across three files → head: 27 exports) with clean naming, tree-shaking, `out`-param alias-safety, and colocated tests. But it ships **broken as integrated**: the cube-texture surface consumes `CubeFace*` constants from `@flighthq/types` that the head bundle **never defines**, so `tsc -b` (which typechecks `src/*.test.ts`) fails to compile and `setCubeTextureFace`'s own doc-comment points users at non-existent symbols. This is a single, mechanical, cross-package blocker — not a design flaw — but it gates the merge.
+## Present capabilities
 
-## The blocker — references to undefined `@flighthq/types` symbols
+The public lane (`index.ts`) exports 54 symbols (all functions). The contract lane (`contract.ts`)
+re-exports everything via `export *` from 6 modules plus the 3 color-space functions. Dependencies:
+`@flighthq/entity`, `@flighthq/geometry`, `@flighthq/types`. `sideEffects: false` declared. No
+renderer registration, no module-level mutable state. Two blessed export lanes with no other subpaths.
 
-`b2824e3d8:packages/texture/src/cubeTexture.test.ts:2` (an added line, `committed.patch:46380`):
+### Texture descriptor (`texture.ts`, 402 lines)
 
-```ts
-import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types';
-```
+- `createTexture` -- four-way constructor for all texture dimensions: `'2d'` (default), `'2d-array'`,
+  `'3d'`, and `'cube'`. Default state: null source, `'srgb'` color space, identity UV transform, and
+  default sampler. Clones supplied sampler and UV vectors rather than aliasing. Attaches texture to an
+  optional `ImageResourceReference` for loader tracking.
+- `createTexture2D` -- dedicated two-dimensional leaf; `createTexture` composes it for its own 2D case,
+  ensuring a single definition of what a 2D texture is.
+- `cloneTexture` -- deep-clones sampler and UV vectors while sharing the source reference. Returns the
+  correct dimension variant via a four-way switch.
+- `copyTexture` -- in-place field copy preserving the out entity's sampler and UV-vector identities.
+  Reads all scalar inputs into locals before any write (alias-safe when `out === source`). Throws on
+  dimension mismatch (programmer error, not expected failure).
+- `equalsTexture` -- full structural comparison including color space, flip flags, UV transform, sampler
+  state, source references, and version. Returns false for null/undefined operands.
+- `getTextureWidth`, `getTextureHeight` -- dimension queries from the active source; `-1` when unbound.
+- `getTextureUvMatrix` -- composes the KHR_texture_transform fields (scale, rotate, translate, flip)
+  into a column-major 3x3 matrix suitable for GL/WGSL `mat3` uniform upload. Out-param form;
+  reads all texture fields into locals before writing `out.m`.
+- `getTextureInverseUvMatrix` -- composed as forward matrix followed by `inverseMatrix3`.
+- `transformTextureUv` -- inline single-point UV transform without matrix allocation; verified to agree
+  with `getTextureUvMatrix` in tests.
+- `getTextureSource`, `getTextureSourceKind` -- first active source and its open-registry kind key.
+  Array and cube textures yield their first non-null slot.
+- `hasTextureSource`, `isTextureReady`, `hasTextureUvTransform` -- boolean readiness and identity gates.
+- `setTextureSource` -- binds or clears a 2D texture's source with u32 version bump. No-op when
+  reference is unchanged. Throws on non-2D textures.
+- `setTextureFlip`, `setTextureUvOffset`, `setTextureUvRotation`, `setTextureUvScale` -- in-place UV
+  mutators.
+- `setTextureUvFromPixelRect` -- normalizes a pixel rectangle against source dimensions.
+- `resetTextureUvTransform` -- restores identity UV transform without touching source, color space,
+  sampler, or version.
 
-and `b2824e3d8:packages/texture/src/cubeTexture.test.ts:163`:
+### Cube texture (`cubeTexture.ts`, 58 lines)
 
-```ts
-setCubeTextureFace(cube, CubeFacePositiveX, fakeFace);
-expect(cube.faces[CubeFacePositiveX]).toBe(fakeFace);
-```
+- `createCubeTexture` -- delegates to `createTexture({ dimension: 'cube' })` with default six-null
+  face array. Copies supplied sources array and sampler rather than aliasing.
+- `cloneCubeTexture`, `copyCubeTexture`, `equalsCubeTexture` -- thin typed wrappers over the
+  universal Texture equivalents.
+- `getCubeTextureFaceSize` -- returns width of the first non-null face, or `-1`.
+- `isCubeTextureComplete` -- true when all six face slots are non-null.
+- `setCubeTextureFace` -- binds or clears a single face slot by index with version bump. No-op when
+  reference is unchanged.
 
-None of `CubeFacePositiveX`, `CubeFaceNegativeX`, `CubeFacePositiveY` (nor the other three faces) exist anywhere in the head bundle. The `@flighthq/types` barrel (`head/packages/types/src/index.ts:47`) does only `export * from './CubeTexture'`, and `CubeTexture.ts` defines just the interface — no face-index constants. A whole-tree grep for `CubeFace` / `PositiveX` / `NegativeX` finds matches **only** inside `packages/texture/` (the import, the usages, and a doc-comment). The patch contains **no** file-add hunk for `packages/types/src/CubeFace.ts` and **no** `export const CubeFacePositiveX` definition; the only `CubeFace.ts` strings in `changes.patch` are inside the worker's own `status.md` / `review.md` _prose_ (`changes.patch:81779`, `:81711`) claiming the file was added.
+### Render texture (`renderTexture.ts`, 44 lines)
 
-Consequences, all delta-introduced (the base `cubeTexture.test.ts` had no such import):
+- `createRenderTexture` -- constructs a `Texture2D` with a `RenderTarget` source inline. Default
+  color space is `'linear'` (not `'srgb'`). Supports all `RenderTargetDescriptor` axes
+  (format, colorAttachments, colorFormats, sampleCount, depth, clearColors, clearDepth) plus
+  sampling/UV overrides. Copies sampler and UV values without aliasing.
 
-- **Does not compile.** `tsc -b` typechecks colocated `*.test.ts`; three imported symbols are undefined. `npm run check` / `npm run exports:check` would fail on this package.
-- **Dishonest docs.** `b2824e3d8:packages/texture/src/cubeTexture.ts:82-85` instructs users to "Use the CubeFace\* constants from @flighthq/types (CubeFacePositiveX = 0, …)" — a documented API contract that resolves to nothing. The worker `status.md` claims "All 54 tests pass" and `review.md` claims the consts "are exported from the types barrel (`@flighthq/types` `index.ts:66`, `:439`)" — both false against the integrated tree.
+### Sampler (`sampler.ts`, 83 lines)
 
-The same class of defect blocks the sibling `@flighthq/resources` delta in this integration (impl referencing `@flighthq/types` fields the bundle never added), so this is an integration-wide ingest slippage, not a one-off. The fix is small (define the six `CubeFace*` constants in `@flighthq/types` — ideally a `CubeFace.ts` per the worker's intent — and barrel-export them), but it lands in a **different package**, so it is a merge directive, not a within-`texture` sweep.
+- `createSampler` -- default state: clamp-to-edge, linear mag, linear-mipmap-linear min, mipmaps on,
+  anisotropy 1. Accepts partial overrides.
+- `cloneSampler`, `copySampler`, `equalsSampler` -- full create/clone/copy/equals quartet.
+- Named presets: `createAnisotropicSampler(level)`, `createClampLinearSampler()`,
+  `createPixelArtSampler()`, `createTilingSampler()` -- thin compositions over `createSampler`.
 
-## Axis-by-axis (the delta against the seven standards)
+### Video texture (`videoTexture.ts`, 126 lines)
 
-1. **Composition / bedrock — PASS.** Each new function is a bedrock primitive over the `Texture` / `CubeTexture` / `Sampler` value: per-field `equals*`, `get*Width/Height/FaceSize`, in-place `set*` mutators, and the `getTextureUvMatrix` compose. No config-gated branches, no fused subjects. The sampler presets (`createAnisotropicSampler`, `createClampLinearSampler`, `createPixelArtSampler`, `createTilingSampler`, `b2824e3d8:packages/texture/src/sampler.ts:31-65`) are thin named compositions over `createSampler` — assemblies that do not tax the primitive.
+- `createVideoTexture` -- wraps a `VideoResource`'s borrowed host element in an `Image` source and
+  returns a universal `Texture2D`. Initial version is `0xffffffff` (the u32 predecessor of 0).
+- `advanceVideoTexture` -- bumps both the `Image` source and `Texture` version, updates video
+  dimensions from the element. Returns new version (wraps to 0 on first call).
+- `destroyVideoTexture` -- nulls the source and resets the version. Idempotent.
+- `isVideoTextureFrameReady` -- true when the element has `readyState >= HAVE_CURRENT_DATA` and
+  non-zero dimensions.
+- `getVideoTextureWidth`, `getVideoTextureHeight` -- from the element's `videoWidth`/`videoHeight`.
+- `setVideoTextureSource` -- replaces the host handle and resets the version.
+- `resetVideoTextureFrame` -- resets the version sentinel so the next advance re-uploads everywhere.
+- `cloneVideoTexture`, `copyVideoTexture`, `getVideoTextureUvMatrix`,
+  `getVideoTextureInverseUvMatrix` -- pass-throughs to the universal Texture equivalents,
+  labelled "compatibility entry" in source comments.
 
-2. **Naming clarity — PASS.** Full unabbreviated type words throughout (`getTextureUvMatrix`, `getCubeTextureFaceSize`, `setCubeTextureFace`, `equalsCubeTexture`), correct `get*` / `is*` prefixes (`isCubeTextureComplete`, `isTextureReady`), and `equals*` matching the SDK's existing `equalsSampler` convention. `uvOffset/uvRotation/uvScale` are the KHR_texture_transform vocabulary a reader expects.
+### Voxel grid (`voxelGrid.ts`, 6 lines)
 
-3. **Tree-shaking / bundle invariant — PASS.** `package.json` is **byte-identical** to base (no delta): `"sideEffects": false`, single root `.` export, no per-file subpaths. No top-level side effects; presets and equals helpers tree-shake independently. No new dependency was added by the delta.
+- `invalidateVoxelGrid` -- advances the u32 version counter so every Texture sampling this shared
+  source re-uploads. The only VoxelGrid export in this package.
 
-4. **Registry vs closed union (fork B) — N/A / PASS.** `setCubeTextureFace` takes a numeric `faceIndex` (intended to be a named constant), not a closed `switch (kind)`. No handler family here.
+### Color-space derivation (`textureColorSpace.ts`, 46 lines)
 
-5. **Subject triad + plurality guard — PASS.** No format/backend code mis-homed into `texture`. The worker correctly _deferred_ `@flighthq/texture-formats` (KTX2/Basis) behind the unresolved `ImageResource.compressed` slot rather than splitting prematurely (`status.md`).
+- `shouldDecodeTextureOnSample` -- true only for sRGB content in a linear working space, the one
+  direction GPU hardware decodes for free.
+- `shouldPremultiplyTextureOnUpload` -- exact inverse: upload-time premultiply is valid only when
+  no decode runs afterward.
+- `getTextureSampleColorSpace` -- returns `'srgb'` or `'linear'` as the sample format the backend
+  should select.
 
-6. **Contract hygiene — MOSTLY PASS, one cross-package crack.**
-   - `out`-params are alias-safe: `copyTexture` (`texture.ts:24-34`) and `copyCubeTexture` (`cubeTexture.ts:20-37`) read every input into locals before writing — and both have explicit aliased-out tests (`texture.test.ts:67`, `cubeTexture.test.ts:59`). `getTextureUvMatrix` reads all texture fields into locals before writing `out.m` (`texture.ts:81-99`).
-   - Sentinels correct: `-1` for unbound size (`getTextureHeight/Width`, `getCubeTextureFaceSize`), `false` for null operands in every `equals*`.
-   - `Readonly<>` defaults are respected on inputs.
-   - **Crack:** `CubeTexture.faces` is typed `readonly (ImageResource | null)[]`, yet the new mutators cast it away — `b2824e3d8:packages/texture/src/cubeTexture.ts:30` (`const faces = out.faces as (ImageResource | null)[]`) and `:87` (`(cube.faces as (ImageResource | null)[])[faceIndex] = image`). The cast is documented and runtime-correct (the array is always freshly `slice()`d), but a package that owns in-place face mutators writing through a `readonly` field is a types-shape question for the charter, not a clean final shape. Route to Open directions; not a merge blocker.
+## Gaps
 
-7. **Tests & honesty — FAIL (compile) / otherwise strong.** Tests are colocated, `describe` blocks alphabetized and mirroring exports across all three files, and cover the per-field `equals*` false-matrix, null/undefined operands, and both distinct-out and aliased-out `copy*` cases. But the suite **cannot compile** (the `CubeFace*` import), and the worker's `status.md` "54 tests pass" / "fields added to @flighthq/types" claims are unverifiable-to-false against the head tree. Honesty fails at the continuity-log level even though the test _intent_ is sound.
+- **No tests for `'3d'` dimension.** `createTexture({ dimension: '3d' })` and its branches in
+  `cloneTexture`, `copyTexture`, and `equalsTextureContent` are entirely untested. The switch arm
+  exists in source (`texture.ts:54`, `:93`, `:129`) but no test file exercises it.
+- **Minimal tests for `'2d-array'` dimension.** Only `getTextureSource` tests touch `'2d-array'`
+  (`texture.test.ts:344`, `:352`). The `cloneTexture`, `copyTexture`, and `equalsTexture` code paths
+  for this dimension are untested.
+- **No `invalidateTexture` verb.** Version is bumped inline by `setTextureSource` (`texture.ts:304`),
+  `setCubeTextureFace` (`cubeTexture.ts:57`), and `advanceVideoTexture` (`videoTexture.ts:15`). The
+  invalidation doctrine specifies `invalidate<Type>` as the canonical verb; callers who write
+  `texture.source` directly and need to signal the change have no exported invalidation function.
+- **No `createVoxelGrid`.** `invalidateVoxelGrid` is the package's only VoxelGrid export. No
+  constructor for a 3D texture's source exists anywhere in the repo. A `'3d'` texture's source can
+  only be hand-assembled as a literal, missing the entity identity `createEntity` would provide.
+- **Four video pass-through aliases.** `cloneVideoTexture`, `copyVideoTexture`,
+  `getVideoTextureInverseUvMatrix`, and `getVideoTextureUvMatrix` delegate entirely to the
+  universal Texture equivalents with no added behavior. They are exported from both barrels,
+  doubling names for one behavior.
+- **`equalsTexture` compares `version`.** The comparison at `texture.ts:180` means two textures
+  describing identical visual state but carrying different revision counters compare unequal. The
+  `version` field is a dirty-bit for GPU cache invalidation, not semantic state. Whether this is
+  intentional or a defect depends on whether `equals` is meant as "same GPU upload" or "same
+  visual appearance."
+- **No guard or `explain*` module.** The `-1` sentinel from `getTextureWidth`/`getTextureHeight`
+  (`texture.ts:188`, `:248`) and the `null` from `getTextureSourceKind` (`texture.ts:209`) have no
+  pull query for diagnostics.
+- **No `Texture.format` or `mipPolicy`.** Upload format and mip generation policy are each backend's
+  decision. The descriptor carries no hint for the GPU layer.
+- **`videoTexture.ts` references `HTMLVideoElement` directly** (`videoTexture.ts:110`, `:119`)
+  including `readyState` and `videoWidth`/`videoHeight`, coupling the implementation to browser DOM
+  types. This is a portability concern for the C/C++ trajectory.
+- **`renderTexture.ts` constructs a `RenderTarget` via inline `createEntity`** rather than a
+  dedicated `createRenderTarget` function. The render target is an entity (carries runtime) but has
+  no constructor outside this inline usage.
 
-## Pre-existing, not delta (do not block)
+## Charter contradictions
 
-- **`@flighthq/resources` is an unused dependency** in `package.json` — no `packages/texture/src/` file imports it. But `package.json` is **identical** between base and head (no hunk in `changes.patch`), so this is an `origin/main` carry-over, not a delta regression. The worker's own `assessment.md` wrongly elevates it to a "must-fix" for this change; that critiques the approved base. Note it as an optional post-merge cleanup only.
+- **Charter open direction 3 (Texture2DArray and 3D volume textures) is partially stale.** The
+  charter states "Neither is modeled." In fact, both `'2d-array'` and `'3d'` are modeled as
+  `Texture` union variants (`packages/types/src/Texture.ts:40-48`) and handled by `createTexture`,
+  `cloneTexture`, `copyTexture`, and `equalsTexture`. The charter should be updated to reflect that
+  these dimensions exist in the type and constructor but lack dedicated test coverage and higher-level
+  surface (`createTexture2DArray`, `createTexture3D`, `createVoxelGrid`).
+- **Charter open direction 5 (unused `@flighthq/resources` dependency) is resolved.** The dependency
+  no longer appears in `package.json`. The charter should remove this direction.
+- **Charter boundary scope lists `CubeFace*` constants as in scope.** They are correctly defined in
+  `@flighthq/types/src/TextureCubeFace.ts` and not in this package, consistent with the types-home
+  rule. The charter's wording is accurate (they are "in scope" as consumed identifiers, defined in
+  types per convention).
 
-## Score rationale
+## Contract & docs fit
 
-Naming, composition, tree-shaking, and `out`-param hygiene are all merge-clean, and the new surface is the right symmetric build (create/clone/copy/equals quartets, size accessors, readiness gates, uv-matrix compose, sampler presets) — easily a 78-80 on shape alone. The hard compile blocker (undefined cross-package symbols, broken `tsc -b`, dishonest docs) caps it at **58 (REVISE-blocked)**: a one-line-of-types fix away from mergeable, but unmergeable until that fix lands.
+- **Export lanes** -- public barrel is a curated explicit list of 54 symbols; contract re-exports
+  everything via `export *` from 6 modules plus the 3 color-space functions from
+  `textureColorSpace.ts`. No other subpaths. Both lanes are correct.
+- **Naming** -- all exported functions carry the full unabbreviated type name (`getTextureUvMatrix`,
+  `getCubeTextureFaceSize`, `equalsCubeTexture`, `advanceVideoTexture`). `get*`/`set*`/`has*`/
+  `is*`/`create*`/`clone*`/`copy*`/`equals*`/`destroy*`/`reset*`/`invalidate*` verbs match the SDK
+  conventions. `transformTextureUv` uses the verb-first pattern.
+- **Allocation** -- `create*`/`clone*` allocate. `copy*`/`set*` write in place. `getTextureUvMatrix`
+  and `getTextureInverseUvMatrix` use out-param form. `transformTextureUv` takes scalar inputs and
+  writes to a Vector2 out-param.
+- **Out-parameter safety** -- `copyTexture` (`texture.ts:69-102`) reads all scalar fields into locals
+  (`colorSpace`, `flipX`, `flipY`, `uvRotation`, `version`) before writing any output field, and
+  delegates `copySampler`/`copyVector2` for compound fields. Tests explicitly cover the aliased
+  case (`texture.test.ts:113-128`, `cubeTexture.test.ts:59-69`, `sampler.test.ts:44-51`).
+  `getTextureUvMatrix` reads all texture fields into locals before writing `out.m`.
+- **Sentinels** -- `-1` for unbound dimensions (`getTextureWidth`, `getTextureHeight`,
+  `getCubeTextureFaceSize`, `getVideoTextureWidth`, `getVideoTextureHeight`), `null` for
+  `getTextureSource`/`getTextureSourceKind`, `false` for null/undefined operands in all `equals*`
+  functions. Throws only for programmer errors (`copyTexture` dimension mismatch,
+  `setTextureSource` on non-2D).
+- **Readonly<>** -- applied consistently on input parameters across all source files (48 total
+  `Readonly<` usages across the 4 main source files). Mutable outputs are named `out` or `texture`.
+- **Version/invalidation** -- version is bumped with u32 wrapping (`(v + 1) >>> 0`) in `setTextureSource`,
+  `setCubeTextureFace`, and `advanceVideoTexture`. The `invalidateVoxelGrid` function uses the
+  `invalidate<Type>` naming convention. The absence of `invalidateTexture` is the gap noted above.
+- **Testing** -- one test file per source file, colocated in `src/`. 107 test cases across 7 files.
+  `describe` blocks are alphabetized and mirror exported function names. Alias-safe copy tested
+  explicitly. `expectTypeOf` used for constructor return types. Module-scope fake objects at the top,
+  no structural divider comments.
+- **sideEffects** -- `false` declared and no module-level side effects observed. No top-level
+  `registerRenderer` calls. `HAVE_CURRENT_DATA` and `INITIAL_VIDEO_VERSION` are file-bottom
+  constants per the source-style convention.
+- **Types in `@flighthq/types`** -- all types are imported from `@flighthq/types/contract`. The
+  implementation package exports functions only.
+
+## Candidate open directions
+
+1. **Dedicated constructors for non-2D dimensions.** `createTexture2DArray`,
+   `createTexture3D`/`createVolumeTexture`, and `createVoxelGrid` would bring the `'2d-array'` and
+   `'3d'` paths to the same maturity as the 2D and cube paths, each with their own test coverage.
+2. **`invalidateTexture` verb.** A single exported verb for direct-write version bumping would unify
+   the three inline `(version + 1) >>> 0` sites and align with the invalidation doctrine.
+3. **Resolve `equalsTexture` version semantics.** Decide whether `equals` means "same GPU upload
+   identity" (include version) or "same visual state" (exclude it). The current behavior is
+   internally consistent but undocumented as a design choice.
+4. **Video pass-through consolidation.** Evaluate whether the four video aliases earn their export
+   slots or whether callers should use the universal Texture functions directly.
+5. **Guard module for sentinels.** An `enableTextureGuards` or `explainTextureWidth` pull query would
+   make the `-1` / `null` sentinels diagnosable per the diagnostics convention.
+6. **Video texture portability.** `HTMLVideoElement` access in `videoTexture.ts` ties the
+   implementation to browser DOM. A host-abstracted video handle (via the `VideoResource` already
+   in scope) would bring this closer to the C/C++ portability goal.
+7. **Render target constructor.** A `createRenderTarget` function would give the RenderTarget source
+   its own construction path rather than being assembled inline in `createRenderTexture`.

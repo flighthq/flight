@@ -1,81 +1,248 @@
 ---
 package: '@flighthq/scene2d-dom'
 status: solid
-score: 92
-updated: 2026-08-25
+score: 72
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
+  - assessment.md
+  - public-lane-audit.md
   - source
-  - changes.patch
 ---
 
-# scene2d-dom — Review
+# scene2d-dom -- Review
 
 ## Verdict
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+`solid -- 72/100`. The core DOM rendering loop is clean, well-factored, and covers the full
+intended 2D leaf set. The opt-in seam architecture works, the reconciler is correct, and HiDPI
+is handled properly for canvas-backed paths. Test coverage is comprehensive (30 test files,
+~2500 lines for ~1950 lines of source).
 
+The score drops from the prior review's 89/92 because that review's "Present capabilities"
+section described several features verified against source that do not exist in the current
+tree and never did. Specifically: `enableDomAccessibility` / `getDomAccessibilityDescriptor` /
+`setDomAccessibilityDescriptor` (the accessibility seam), `hasDomCssFilterEquivalent` (CSS
+filter equivalence query), `getDomSvgColorMatrixFilter` / `releaseDomSvgColorMatrixFilter` /
+`domSvgFilter.ts` (the SVG color-matrix exact-filter path), and
+`defaultDomDisplayObjectRenderer` (actually named `defaultDomScene2DRenderer`). The
+`public-lane-audit.md` (ingested this pass) independently confirms all of these are absent. The
+prior review's claimed 27 test files covering accessibility/SVG-filter modules likewise cannot
+be verified.
 
-`solid — 89/100`. A mature, well-factored DOM renderer that covers the full 2D display-object set (shape, bitmap, scale9, rich/label/native text, video, html-view, render cache, clip) plus the one capability that is DOM's alone — accessibility — and now exact-fidelity color-matrix filtering via injected SVG `<feColorMatrix>`. The opt-in `enable*` seam pattern is applied consistently and the package tree-shakes cleanly. The remaining distance to "authoritative" is a small set of named, mostly-deferred gaps (sprite-graph decision, raster-filter wiring, a HiDPI follow-up) plus two minor naming/convention drifts — none structural.
-
-The worker status doc (starting 87, est. 92) is **as-claimed**; this pass verified every claim listed below against `changes.patch` and the head source. All checked out. I land the score at 89: the implemented work is real and clean, but the est. 92 over-counts because the headline sprite-graph and raster-fallback items remain deferred, and a functional-test scene for the DOM-only features (custom caret, accessibility DOM inspection, blend fidelity) still does not exist.
+What remains is a well-built DOM renderer with no accessibility seam and no DOM-native filter
+path beyond raw CSS strings -- the two capabilities the charter identifies as this backend's
+defining value. The implementation that _is_ present is clean; the gap is in features, not
+quality.
 
 ## Present capabilities
 
-Grounded in `67dc46d64:packages/scene2d-dom/src/`.
+Verified against `packages/scene2d-dom/src/` on 2026-09-02. File contents read in full.
 
-- **Full 2D leaf coverage.** `defaultDom*Renderer` objects exist for every display-object primitive: `Shape` (`domShape.ts`), `Bitmap` (`domBitmap.ts`), `Scale9Shape` (`domScale9Shape.ts` + `domScale9Mapper.ts`), `RichText`/`TextLabel`/`NativeText` (`domRichText.ts`, `domTextLabel.ts`, `domNativeText.ts`), `Video` (`domVideo.ts`), `HtmlView` (`htmlView.ts`), render cache (`domCache.ts`), and a no-op container renderer `defaultDomDisplayObjectRenderer` (`domDisplayObject.ts`) added this pass for cross-backend symmetry with `defaultCanvasDisplayObjectRenderer`.
-- **Reconciling render loop.** `renderDomDisplayObject` walks the display list with an explicit stack, ping-pong order lists (`domOrderList`/`domNextOrderList` on the runtime tier), and a structure-change check (`hasDomStructureChanged` → `reconcileDomContainer`). Element placement is centralized in the loop via `setDomRendererElement`/`domCurrentElement`, never in individual draw functions — a clean ownership boundary.
-- **Opt-in capability seams**, all consistent: `enableDomBlendModeSupport`, `enableDomCssFilterSupport`, `enableDomClipSupport`, `enableDomRenderCache`, `enableDomAccessibility`, and the (intentionally global) `enableDomTextInput`. Each installs a nullable hook on `DomRenderState` / `DomRenderStateRuntime`, so a state that never opts in pulls none of the module — verified by the `domCssFilterResolver`/`applyAccessibility`/`applyBlendMode` null-until-enabled fields in `types/src/DomRenderState.ts`.
-- **Accessibility seam (DOM-unique).** `enableDomAccessibility` + `get/setDomAccessibilityDescriptor` bind a shared `AccessibilityDescriptor` (`label`/`role`/`tabFocusable`, homed in `@flighthq/types`) per render proxy via a `WeakMap`, applied in `applyDomStyle` after blend/filter. Objects without a descriptor get `aria-hidden="true"`. Per-state isolation is achieved correctly through render-proxy keying (same pattern as the CSS-filter binding).
-- **Blend-mode fidelity contract.** `domMaterials.ts` carries an auditable `DOM_BLEND_MODE` map (intent → `mix-blend-mode`) and a parallel `DOM_BLEND_MODE_FIDELITY` table, surfaced via `getDomBlendModeFidelity(blendMode): DomBlendModeFidelity` (`'exact' | 'approximate' | 'unsupported'`, homed in types). Lets a caller detect lossy modes before committing to the DOM path.
-- **CSS-filter equivalence + exact SVG color-matrix path.** `hasDomCssFilterEquivalent` reports the native-CSS set (`Blur`, `DropShadow`, `OuterGlow` → `drop-shadow(0 0 …)`). `domSvgFilter.ts` adds the DOM-native exact path for `ColorMatrixFilter`: `getDomSvgColorMatrixFilter` injects a `<filter>`/ `<feColorMatrix>` into a shared hidden `<svg>` at `document.body`, converts the 0–255 offset column to SVG's 0–1, sets `color-interpolation-filters: sRGB`, returns `url(#id)` (or `null` under SSR), with `releaseDomSvgColorMatrixFilter(id)` to remove the node. No GPU readback, no rasterization.
-- **HiDPI shape rasterization.** `drawDomShape` now sizes its backing `<canvas>` at physical pixels (`w*pixelRatio × h*pixelRatio`), constrains via CSS, and `ctx.scale(pr, pr)` after each resize — bringing it to parity with the canvas backend's `createCanvasElement`.
-- **Configurable caret styling.** `drawDomTextInputOverlay` reads `input.caretColor`/`input.caretWidth` from `TextInputState` (now in `@flighthq/types`, configurable at `enableTextInput` time) instead of the removed hardcoded module constants — light-on-dark fields can set a contrasting caret.
-- **Tests.** 27 files / ~200 tests per the status doc; the touched files (`domAccessibility`, `domSvgFilter`, `domCSSFilterBinding`, `domMaterials`, `domShape`, `domTextInput`, `domTextHelpers`, `domDisplayObject`, `domRichText`) all carry colocated tests, satisfying `exports:check` for the new exports.
+- **Full 2D leaf renderer coverage.** Nine `Scene2DRenderer` objects spanning the intended leaf
+  set: `defaultDomShapeRenderer` + `defaultDomMorphShapeRenderer` (alias, `domShape.ts`),
+  `defaultDomSpriteRenderer` (`domSprite.ts` -- handles Image, Video, and canvas-backed
+  cropped-source paths), `defaultDomScale9ShapeRenderer` (`domScale9Shape.ts`),
+  `defaultDomRichTextRenderer` (`domRichText.ts`), `defaultDomTextLabelRenderer`
+  (`domTextLabel.ts`), `defaultDomNativeTextRenderer` (`domNativeText.ts`),
+  `defaultDomHtmlViewRenderer` (`domHtmlView.ts`), `defaultDomScene2DRenderer` (no-op
+  container, `domNode2D.ts`), and `defaultDomRenderCacheRenderer` (`domCache.ts`). No
+  separate Video renderer -- video textures route through the sprite renderer as
+  `HTMLVideoElement` sources via `renderSpriteAsVideo`.
+
+- **DOM reconciliation.** `renderDomScene2D` (`domNode2D.ts`) walks the display list with an
+  explicit stack, ping-pong order lists (`domOrderList`/`domNextOrderList`), and a
+  structure-change detector (`hasDomStructureChanged` -> `reconcileDomContainer`). Element
+  placement is centralized via `setDomRendererElement` / `domCurrentElement`; individual draw
+  functions never touch the DOM tree structure.
+
+- **Six opt-in capability seams.** `enableDomBlendModeSupport(state)`,
+  `enableDomCssFilterSupport(state)`, `enableDomClipSupport(state)`,
+  `enableDomRenderCache(state)`, `enableDomTextInput()` (global, no state param), and
+  `enableDomTextureResolverGuards(state)`. Each installs a nullable hook or registers a
+  handler; a state that never opts in pulls none of the capability module.
+
+- **Blend-mode fidelity table.** `DOM_BLEND_MODE` (`domMaterials.ts:9-27`) maps the full W3C
+  `mix-blend-mode` set including `AdvancedBlendMode`. `getDomBlendModeFidelity` surfaces
+  per-mode fidelity classification (`'exact' | 'approximate' | 'unsupported'`). Every entry
+  in the table is `'exact'` except `BlendMode.Add` which is `'approximate'` (mapped to
+  `screen`). The `'unsupported'` arm is unreachable via the built-in table.
+
+- **CSS filter binding.** `setDomCssFilter(state, node, filter)` stores a raw CSS filter
+  string per render proxy via a `WeakMap`; `enableDomCssFilterSupport(state)` installs the
+  resolver. The binding is per-state via render-proxy keying. This is a raw-string escape
+  hatch, not a portable descriptor path.
+
+- **Clip support.** Rect clips via AABB intersection + CSS `polygon()`, contour path clips via
+  CSS `clip-path: polygon()` / `path()` with winding-rule support (`domClipRectangle.ts`,
+  `domClipContours.ts`). CSS limitation documented: a contour clip overrides stacked rect
+  clips for that element (cannot intersect heterogeneous clip types in one CSS property).
+
+- **Render cache.** `ensureDomRenderCacheTarget` allocates a `CanvasRenderTarget` per
+  `RenderCache`, pre-styled for DOM placement. The draw function
+  (`drawDomRenderCache`) reads the target canvas and places it with transform/alpha/blend.
+  `releaseDomRenderCache` tears down via `destroyCanvasRenderTarget`.
+
+- **Text input overlay.** `enableDomTextInput()` registers a selection-highlight + blinking-
+  caret overlay into the RichText renderer. Caret color and width read from
+  `TextInputState.caretColor` / `caretWidth`. CSS `@keyframes` injection is guarded by
+  `_keyframesInjected` and element-id check.
+
+- **HiDPI.** Canvas-backed paths (shape, scale9, sprite crop) size backing canvases at
+  `width * pixelRatio`, constrain CSS dimensions to logical pixels, and scale the context.
+  Verified in `domShape.ts:57-64`, `domScale9Shape.ts:68-76`, `domSprite.ts:80-87`.
+
+- **Texture resolution.** `registerDomTextureResolver(state, sourceKind, resolver)` implements
+  a keyed registry; `registerDomBitmapTextureResolver` and `registerDomImageTextureResolver`
+  are the two built-in resolvers. `explainDomTextureResolution` and
+  `enableDomTextureResolverGuards` provide the diagnostic seam.
+
+- **Shape rasterizer registry.** `registerDomShapeRasterizer(state, rasterizer)` installs a
+  `ShapeRasterizer` via a slot registry; `getDomShapeRasterizer` reads it. Shape and scale9
+  renderers report a registry miss when absent rather than silently dropping the fill.
+
+- **Package structure.** Two export lanes (`.` via `index.ts`, `./contract` via `contract.ts`),
+  `"sideEffects": false`, no top-level registration or DOM mutation at import time. Module-
+  level state (`_svgContainer`-style lazy init, `_measureCtx`, `_domTextInputOverlay`) is
+  initialized only on first use.
 
 ## Gaps
 
-What a fully authoritative DOM backend in this codebase would still have:
+What a complete DOM renderer per the charter's north star and AAA expectations would still need:
 
-- **Sprite-graph kinds unrendered (the headline gap).** No `drawDomSprite`/`drawDomTilemap`/QuadBatch renderer; `render-backend-support.md` confirms Sprite/QuadBatch/Tilemap = ✗ on DOM. This is a real cross-package design fork (does DOM get a canvas-element-backed sprite renderer, or formally skip the atlas-batch family?) — correctly deferred to the user, not decided autonomously.
-- **Raster-filter fallback not wired.** `hasDomCssFilterEquivalent` now _detects_ unsupported filters, but `enableDomRasterFilterSupport(state)` — routing those subtrees through `ensureDomRenderCacheTarget` to rasterize the filter exactly as the canvas backend does — does not exist. The pieces (`ensureDomRenderCacheTarget`) are present; only the wiring remains.
-- **HiDPI follow-up for `drawDomBitmap`.** The canvas-backed bitmap path (bitmaps with a `sourceRectangle`) still sizes its backing canvas at logical pixels — the same fix applied to `drawDomShape` should follow. Self-contained.
-- **Further SVG exact-filter paths.** `ConvolutionFilter` → `<feConvolveMatrix>` and `DisplacementMapFilter` → `<feDisplacementMap>` could follow the color-matrix pattern for exact fidelity; only color-matrix exists today.
-- **Per-instance ColorTransform tint.** Not on DOM (node-level material only), per `render-backend-support.md` gap #4 — shared cross-backend gap, not DOM-specific.
-- **Native form-control text input.** `enableDomNativeTextInput` (real `<input>`/`<textarea>` for IME, autofill, mobile keyboard) is absent; the overlay path is authoritative. Gold-tier, needs `@flighthq/keyboard`.
-- **Full accessibility tree.** Per-object descriptors exist; a coherent `getDomAccessibilityTree` with landmark roles, reading order, focus management, and live regions does not. Larger effort.
-- **No DOM functional-test scene.** The DOM-only behaviors (custom caret color, accessibility-descriptor emission inspected in the DOM, blend-mode fidelity vs canvas) are not exercised by `tests/functional`; jsdom unit tests cannot stand in for these.
-- **Reconciler not benchmarked at scale.** Correct but no `DocumentFragment` batching / element pooling / `rAF` alignment / `will-change`/`contain` hints. Gold-tier perf.
+- **No accessibility seam (charter north star #3).** `enableDomAccessibility`,
+  `getDomAccessibilityDescriptor`, `setDomAccessibilityDescriptor`, and an
+  `applyAccessibility` slot on `DomRenderState` have zero occurrences in `packages/`. The
+  `AccessibilityDescriptor` type exists in `@flighthq/types` (`label`, `role`,
+  `tabFocusable`) but has no consumer in any package. Per-object ARIA is the charter's floor;
+  the full tree (landmarks, focus order, live regions) is the ceiling. Neither is built.
+  This is the headline gap: accessibility is called out as DOM's "unique value" in the
+  charter.
+
+- **No CSS-filter-equivalence query.** `hasDomCssFilterEquivalent` does not exist. There is no
+  function that reports which effect descriptors can be realized natively via CSS
+  `filter`/SVG `<fe*>` versus requiring rasterization. The only filter door is
+  `setDomCssFilter` -- a hand-written CSS string.
+
+- **No SVG exact-filter path.** `domSvgFilter.ts` does not exist. No
+  `getDomSvgColorMatrixFilter`, `releaseDomSvgColorMatrixFilter`, or `<feColorMatrix>`
+  injection. The color-matrix-to-SVG-filter path described in the prior review and assessment
+  was never built, confirmed by `public-lane-audit.md:46-51`.
+
+- **No raster-filter fallback wiring.** `enableDomRasterFilterSupport(state)` does not exist.
+  The render-cache target plumbing (`ensureDomRenderCacheTarget`) is present, but no seam
+  routes CSS-unsupported filter subtrees through it.
+
+- **No `explainDomScene2DCoverage`.** `scene2d-canvas` and `scene2d-gl` each wrap
+  `explainScene2DCoverage`/`hasScene2DCoverage` from `@flighthq/render`; DOM's diagnostic
+  surface stops at `explainDomTextureResolution` and `explainDomImageSource`.
+
+- **`getDomBlendModeFidelity` return type unsound for open string family.** `BlendMode` is an
+  open string family, but `DOM_BLEND_MODE_FIDELITY` is typed as `Record<BlendMode,
+  DomBlendModeFidelity>` -- a bare index with no fallback. A vendor-prefixed or unknown mode
+  returns `undefined`, violating the declared `DomBlendModeFidelity` return type. The
+  `'unsupported'` arm is unreachable: every table entry is `'exact'` or `'approximate'`.
+
+- **`enable*` naming inconsistency.** Three carry `Support` suffix
+  (`enableDomBlendModeSupport`, `enableDomClipSupport`, `enableDomCssFilterSupport`) and
+  three do not (`enableDomRenderCache`, `enableDomTextInput`,
+  `enableDomTextureResolverGuards`).
+
+- **`enableDomTextInput` global asymmetry.** Takes no `state` parameter; writes a
+  module-global overlay slot via `registerDomTextInputOverlay`. Two render states cannot
+  differ in text-input behavior. The only stateless seam of the six.
+
+- **Two unused manifest dependencies.** `@flighthq/log` appears only in
+  `enableDomTextureResolverGuards.test.ts` (test-only usage); `@flighthq/signals` appears in
+  no source or test file. Both are listed in `dependencies`.
+
+- **No DOM functional-test scene.** DOM-only behaviors (custom caret color, blend-mode
+  fidelity, clip-path contour rendering) are not exercised by `tests/functional`; jsdom unit
+  tests cannot fully stand in for live-DOM rendering tests.
+
+- **`releaseDomRenderCache` verb drift.** Uses `release*` without an `acquire*` partner. The
+  teardown calls `destroyCanvasRenderTarget` (frees a resource), which reads more like
+  `destroy*` per the design constraints. The allocator is `ensureDomRenderCacheTarget`, not
+  `acquire*`.
 
 ## Charter contradictions
 
-None — the charter (`charter.md`) is an unedited stub (all four sections `_TODO_`), so there is no stated North star, Boundary, or Decision for the code to contradict. Judged against the codebase-map AAA fallback, the package is in strong standing. The silences are collected as candidate Open directions below.
+The charter (now populated with north star, boundaries, and decisions) sets expectations the
+source does not meet:
+
+- **North star #1 ("DOM-native first").** The only CSS-filter door is a raw string
+  (`setDomCssFilter`). No CSS-filter-equivalence query exists; no SVG `<fe*>` exact path
+  exists. The charter positions DOM-native effects as what makes this backend worth having,
+  but the implementation provides only the plumbing for callers who already know the CSS.
+
+- **North star #3 ("Accessibility is this backend's unique value").** No accessibility seam of
+  any kind has been implemented. The `AccessibilityDescriptor` type exists in
+  `@flighthq/types` but nothing in any package reads or applies it.
+
+- **North star #4 ("Opt-in seams, side-effect-free import").** The six seams are real and
+  tree-shake correctly. However, `enableDomTextInput` breaks the `enable*Support(state)`
+  symmetry (global, not state-scoped). The charter calls this out in open direction #5 as
+  needing an explicit ruling.
+
+- **Boundary: "The full 2D display-object leaf set."** Met for the intended set (per the
+  charter's explicit exclusion of batch kinds and the registration model decision).
 
 ## Contract & docs fit
 
-**Lives up to the contract — strongly:**
+**Matches the contract:**
 
-- Cross-package types are `@flighthq/types`-first: `AccessibilityDescriptor`, `DomBlendModeFidelity`, `DomRenderState.applyAccessibility`, and `TextInputState.caretColor/caretWidth` were all added to the header layer, not inlined.
-- Full unabbreviated, backend-prefixed names throughout; the `escapeHtmlString → escapeDomHtmlString` rename this pass fixes the one generic name and satisfies the globally-unique root-export rule.
-- Sentinels-not-throws: `getDomSvgColorMatrixFilter` returns `null` under SSR; `getDomAccessibilityDescriptor` returns `undefined` for an unbound proxy; `release*` no-ops on a missing id.
-- Single root `.` export, `"sideEffects": false`, no top-level registration — `enable*`/`register*` functions gate every effect. `domSvgFilter`'s module-level `_svgContainer`/`_nextFilterId` are lazily initialized (no DOM write at import), keeping the side-effect-free invariant.
-- `Readonly<>` applied to descriptor/filter/matrix inputs.
-- `crate: null` is correct: per `rust/index.md`, `scene2d-dom` is intentionally **not** ported (its substrate, the DOM tree, does not exist in the Rust box).
+- Cross-package types homed in `@flighthq/types`: `DomRenderState`, `DomRenderStateRuntime`,
+  `DomBlendModeFidelity`, `DomRenderOptions`, `DomClipEntry`, `DomClipContourEntry`,
+  `DomClipHooks`, `DomScene2DRectangle`, `DomTextureResolver`, `AccessibilityDescriptor`.
+- Two export lanes: `.` (public) and `./contract` (full surface). `getDomCssFilter` correctly
+  lives in contract-only (render-proxy argument is internal plumbing). `getDomShapeRasterizer`
+  and `registerDomShapeRasterizer` are exported from both `.` and `./contract`.
+- `"sideEffects": false` is accurate: no top-level registration, no DOM mutation at import.
+  Module-level lazy state (`_measureCtx`, `_domTextInputOverlay`, `_keyframesInjected`) only
+  initializes on first function call.
+- Full unabbreviated, backend-prefixed names throughout. `escapeDomHtmlString` is the
+  renamed form (was `escapeHtmlString`).
+- Sentinels not throws: `resolveDomTexture` returns `null` on missing resolver or source,
+  `getDomShapeRasterizer` returns `null` on missing registration, `getDomRenderCacheTarget`
+  returns `null` on missing cache.
+- `Readonly<>` applied to geometry, texture, and descriptor inputs where present.
+- `crate: null` is correct per the charter: DOM substrate does not exist in the Rust box.
 
-**Candidate contract/doc revisions (user's gate, not mine):**
+**Candidate contract/doc revisions (user's gate):**
 
-- **Package Map is stale.** Both the live and bundle `agents/index.md` still list the concrete renderers as `@flighthq/render-canvas`, `@flighthq/render-dom`, `@flighthq/render-webgl`. The `<subject>-<backend>` reorg (`scene2d-dom`, etc., per `rust/index.md` and `render-backend-support.md`) has landed in code but the TS Package Map has no `scene2d-dom` line. The map should be updated to the `scene2d-<backend>` naming.
-- **`release*` verb drift.** `releaseDomSvgColorMatrixFilter` and `releaseDomRenderCache` use `release*`, which the design constraints reserve for pool/cache **`acquire`/`release` brackets**. Neither has an `acquire*` partner (the SVG filter's allocator is `getDomSvgColorMatrixFilter`; the cache uses `ensureDomRenderCacheTarget`). `releaseDomSvgColorMatrixFilter` removes a DOM node — a teardown that reads more like `disposeDom*`/`removeDom*` under the `dispose*` (detach-and-release-to-GC) vs `destroy*` (free-a-resource-now) split. Worth a naming-convention check across the renderer packages.
-- **`get`/`release` allocation bracket.** `getDomSvgColorMatrixFilter` _allocates_ a `<filter>` DOM node but is named `get*` (a getter prefix per the source-style rules), with the lifecycle obligation documented only in the doc comment. The allocation is real (each call injects one node and the caller must release). A name that signals allocation (e.g. `createDom*`/`acquireDom*` paired with a true `release*`) would better match the explicit-allocation constraint. Flag for the convention pass.
+- **`releaseDomRenderCache` verb.** Uses `release*` without `acquire*` partner. The function
+  calls `destroyCanvasRenderTarget` (immediate GPU/canvas resource teardown), which better
+  fits `destroy*` per the dispose/destroy split. Worth addressing in a cross-renderer naming
+  pass.
+
+- **Unused dependencies.** `@flighthq/signals` and `@flighthq/log` can be moved to
+  `devDependencies` (log) or removed (signals) without affecting any source file.
 
 ## Candidate open directions
 
-The charter is silent on all of these; each is something I had to assume against the AAA fallback to review, and each is a question for the user to settle into the charter:
+The charter already enumerates open directions #1-10. Those remain relevant and are not
+repeated here. This section adds observations from the current source that the charter does
+not cover:
 
-1. **Sprite-graph on DOM — the package's defining boundary.** Does `scene2d-dom` render the atlas-batch family (Sprite/Tilemap/QuadBatch) via a canvas-element delegation, or is the DOM backend formally 2D-display-object-only with Sprite kinds silently skipped? This is the single decision that most shapes the package's identity and should be a Boundary in the charter.
-2. **Filter strategy boundary.** How far does DOM chase exact fidelity (the SVG `<fe*>` path: color-matrix → convolution → displacement) vs. falling back to canvas rasterization via the render cache? Where is the line between "native-CSS/SVG exact" and "rasterize"?
-3. **Accessibility ambition.** Is per-object ARIA the intended ceiling, or is a full accessibility tree (`getDomAccessibilityTree`, landmarks, focus order, live regions) in scope? This is DOM's unique value proposition and deserves an explicit North-star stance.
-4. **Native form controls vs. overlay text input.** Is the canvas-overlay caret the authoritative text path, or should DOM eventually back editable text with real `<input>`/`<textarea>` for IME/mobile?
-5. **`enableDomTextInput` global-not-state-scoped asymmetry.** Intentional (the overlay is stateless), but it breaks the `enable*Support(state)` symmetry of every other seam. Bless it explicitly or reconcile it.
-6. **Reconciler performance posture.** Is "correct, unoptimized" acceptable as the charter's bar, or is scale (1000+ nodes, fragment batching, element pooling) an in-scope goal?
+1. **The accessibility gap is the single most consequential open item.** It is the charter's
+   north star #3, DOM's stated unique value, and zero lines of implementation exist. The
+   `AccessibilityDescriptor` type header is ready; the consumer (an `applyAccessibility` slot,
+   `enableDomAccessibility` seam, per-proxy descriptor binding via `WeakMap`) is unbuilt. This
+   is the item that most determines whether the package earns its charter.
+
+2. **CSS-filter-equivalence + SVG exact path as a unit.** `hasDomCssFilterEquivalent` and
+   `getDomSvgColorMatrixFilter` / `<feColorMatrix>` injection are described together in the
+   charter and prior review but neither exists. They form a natural unit: the equivalence query
+   tells callers which effects the DOM backend realizes natively; the SVG path is the
+   mechanism for the non-CSS-expressible-but-SVG-expressible subset (color matrix, convolution,
+   displacement). Building one without the other is incomplete.
+
+3. **`getDomBlendModeFidelity` soundness.** The return type claims `DomBlendModeFidelity` for
+   any `BlendMode`, but the backing record only covers the built-in set. A vendor-prefixed mode
+   silently returns `undefined`. Either the return type should be
+   `DomBlendModeFidelity | undefined`, or the function should return `'unsupported'` as the
+   fallback for unlisted modes.
+
+4. **`enable*` suffix normalization.** Three seams use `Support`, three do not. A convention
+   pass should pick one shape and apply it to all six.

@@ -1,70 +1,68 @@
 ---
 package: '@flighthq/updater'
-status: partial
-score: 38
-updated: 2026-06-25
+status: strong
+score: 85
+updated: 2026-09-02
 ingested:
-  - status.md
-  - reviews/depth/updater.md
-  - source
-  - changes.patch
+  - packages/updater/src/updater.ts
+  - packages/updater/src/updater.test.ts
+  - packages/updater/src/index.ts
+  - packages/updater/src/contract.ts
+  - packages/updater/package.json
+  - packages/types/src/Updater.ts
+  - packages/types/src/Host.ts (updater sections)
+  - packages/host-electron/src/electronUpdater.ts
+  - packages/host-electron/src/electronUpdater.test.ts
+  - host-web, host-tauri, host-capacitor updater grep
   - charter.md
+  - assessment.md
+  - status.md
+  - prior review (2026-06-25)
 ---
 
-# updater — Review
+# updater -- Review
 
-Merge-gate review of the `@flighthq/updater` **delta** in integration bundle `b2824e3d8`, judged against the approved baseline `base = origin/main (eb73c3d74)`. The baseline is the blessed floor and is not under review. Evidence is the head-vs-base delta under `incoming/integration-b2824e3d8/` plus the `packages/updater/` (and adjacent) hunks of `incoming/integration-b2824e3d8/changes.patch`. Findings reference `b2824e3d8:<path>`.
-
-This is a **re-baseline**. The prior live `review.md`/`assessment.md` were written against an earlier, _complete_ bundle (`67dc46d64`) in which the matching `@flighthq/types/src/Updater.ts` rewrite landed alongside the package source — that bundle scored `solid — 86`. **The `b2824e3d8` integration delta is a different, broken artifact:** it carries the updater source rewrite but **not** the type changes the rewrite depends on. The design it implements is good; the bundle as assembled does not compile.
+Full re-review of the live `packages/updater/` source and its type contract in `@flighthq/types/src/Updater.ts`, read from the current worktree on 2026-09-02. Supersedes the 2026-06-25 review (`partial -- 38`), which rejected a bundle where the type contract had not landed alongside the source rewrite. The type contract is now present and the package compiles.
 
 ## Verdict
 
-`partial — 38/100` as a **merge candidate**. **REJECT for merge as-is.** The score is not a judgement of the design (the design, if its types landed, is the `solid — 86` shape the prior review described). It is a judgement of _this bundle's mergeability_: the delta references a cross-package type contract that is absent from the same tree, so `@flighthq/updater` cannot typecheck or build. A merge gate rejects code that does not compile, regardless of intent.
+`strong -- 85/100`. The 2026-08-30 rewrite reduced the package to one explicit Squirrel transaction -- three exported functions, zero signals, zero configuration surface. `checkForAppUpdate` is an awaited check that returns a discriminated outcome; `installDownloadedUpdate` is a provider-pinned install that rejects handles not originating from a completed check; `destroyUpdater` tears down the provider synchronously. The type contract in `Updater.ts` is tight: `UpdaterCommandBackend` is an Entity with three methods (`check`, `destroy`, `install`), `DownloadedUpdate` is an Entity carrying frozen metadata with null for every unknown field, and `AppUpdateCheckOutcome` / `AppUpdateInstallOutcome` are closed discriminated unions. The module-level `_downloadOwners` WeakMap is the sole mutable state and serves a legitimate origin-pinning purpose. What keeps it from the 90s: the WeakMap is module-scoped mutable state (not passed as an argument), the `assertSyncVoid` type-level guard is unexported but clever enough to warrant a comment, and the guard/explain diagnostic layer is absent.
 
-## The blocking finding: the type contract did not land
+## Present capabilities
 
-The head source rewrite imports a new, richer type surface from `@flighthq/types`, but `@flighthq/types/src/Updater.ts` was **not** changed in this bundle and still carries the base (6-signal, no-config) shape.
+- **Awaited Squirrel check transaction.** `checkForAppUpdate(host)` takes `HasUpdaterCommand` (the narrowed capability witness from `Host.ts`), delegates to `host.updater.command.check()`, and normalizes every outcome into frozen singleton sentinels (`CHECK_IN_PROGRESS`, `NOT_AVAILABLE`, `OPERATION_FAILED`) or a frozen `{ reason: 'downloaded', update }` object. Any exception from the backend resolves as `operation-failed`, never throws. A successful download pins the `DownloadedUpdate` handle to its originating provider in the module-level `_downloadOwners` WeakMap; a handle already owned by a different provider returns `operation-failed` rather than accepting a cross-provider install.
+- **Provider-pinned install.** `installDownloadedUpdate(host, update)` retrieves the originating provider from `_downloadOwners`. If the current `host.updater.command` is the same as the origin, the call goes through the host path; if the provider was replaced, the call goes to the original provider directly. An unknown handle (one that never passed through `checkForAppUpdate`) throws `TypeError` -- the only throw in the package, and correct: this is a programmer error (API misuse), not an expected failure. On success the handle is deleted from the map, preventing reuse. Exceptions from the backend resolve as `operation-failed`.
+- **Provider destroy.** `destroyUpdater(host)` calls `host.updater.command.destroy()` and wraps the return in `assertSyncVoid`, a compile-time guard that rejects `Promise<void>` (preventing an accidentally async destroy from silently dropping). The teardown verb is `destroy*`, correct: the Electron backend holds native listeners that must be freed immediately, not deferred to GC.
+- **Frozen metadata with null unknowns.** `UpdateInfo` carries seven readonly nullable fields (`downloadSizeBytes`, `isMandatory`, `minimumOsVersion`, `notes`, `releaseDate`, `sha512`, `version`). The Electron adapter (`createElectronUpdaterBackend`) populates only the three fields Squirrel can prove (`notes`, `releaseDate`, `version`) via `knownString` and sets the rest to `null`. Both the `UpdateInfo` and the `DownloadedUpdate` are `Object.freeze`-d. The test (`electronUpdater.test.ts`) verifies freezing and null propagation for empty/undefined native arguments.
+- **Electron adapter.** `createElectronUpdaterBackend(electron, feedUrl?)` in `host-electron` creates an Entity implementing `UpdaterCommandBackend`. Feed URL is immutable construction-time policy -- set once via `autoUpdater.setFeedURL`, never re-set or exposed. Each `check()` opens a `CheckTransaction` that attaches five native event listeners (`checking-for-update`, `update-available`, `update-not-available`, `update-downloaded`, `error`), all scoped to the transaction and cleaned up on settlement. Concurrent checks return `check-in-progress` without dispatching a second native operation. Partial attach failures roll back all listeners already attached. `destroy()` settles any in-flight transaction as `operation-failed`, removes all provider-scoped listeners, and throws cleanup errors to the caller rather than swallowing them. The adapter carries 7 test cases covering the full transaction lifecycle: feed policy, downloaded metadata extraction, not-available/error classification, concurrent-check deduplication, partial attach rollback, remove-failure retry, and in-flight destroy settlement.
+- **Host integration.** `HasUpdaterCommand` in `Host.ts` narrows to `{ updater: { command: UpdaterCommandBackend } }`. `HostUpdaterCapabilities` declares `command` as optional. Electron fills it; web, Tauri, and Capacitor set `updater: {}` (empty capability group), each with an explanatory comment that their injected APIs provide no Squirrel-compatible transaction.
+- **Package shape.** Two-lane exports: `index.ts` re-exports from `contract.ts`; `contract.ts` re-exports from `updater.ts`. Both lanes carry the same three functions -- no contract-only exports, correct for a leaf package with no intra-SDK-only API. `sideEffects: false`. Single dependency: `@flighthq/types` at `*`. No `@flighthq/entity` dependency (entity creation lives in `host-electron`, not here). No signals dependency. Exported in the `@flighthq/sdk` barrel at line 149.
+- **Test coverage.** Three `describe` blocks in `updater.test.ts` mirror the three exports 1:1, alphabetized. Six `it()` cases: awaited check (1), error suppression (1), provider-only destroy (1), origin-pinning across Host replacement (1), unknown-handle rejection (1), export surface assertion (1). The export surface assertion explicitly verifies that both `index` and `contract` carry exactly `['checkForAppUpdate', 'destroyUpdater', 'installDownloadedUpdate']`. Tests construct `DownloadedUpdate` with `EntityRuntimeKey` and full `UpdateInfo` shapes, using `Object.freeze` to match production behavior. The `FakeBackend` records call counts for `check`, `destroy`, and `install` to assert delegation correctness.
 
-- **`b2824e3d8:packages/updater/src/updater.ts:2-9`** imports `UpdateInfo, UpdaterBackend, UpdaterConfig, UpdaterSignatureConfig, UpdaterState` from `@flighthq/types`.
-- **`b2824e3d8:packages/updater/src/updater.test.ts:2`** imports `UpdateInfo, UpdateProgress, UpdaterBackend, UpdaterError` from `@flighthq/types`.
-- But `head/packages/types/src/Updater.ts` is **byte-identical to base** (verified by `diff base head` → IDENTICAL). It defines only `UpdateInfo { version; notes; releaseDate }`, a 6-signal `AppUpdater`, and a 10-method `UpdaterBackend`. It does **not** define `UpdaterConfig`, `UpdaterState`, `UpdaterSignatureConfig`, `UpdaterError`, `UpdateProgress`, any `*Phase`/`*Kind`, or `UpdateInfo.stagedRolloutPercent`.
-- The `changes.patch` file list confirms the omission: under `packages/`, only `updater/src/updater.ts`, `updater/src/updater.test.ts`, and `host-electron/src/electronNotification.{ts,test.ts}` are touched. **`packages/types/src/Updater.ts` is not in the patch**, and neither is `host-electron/src/electronUpdater.ts` (which the prior review claimed was rewritten to the 22-method backend).
+## Gaps
 
-Consequences in the delta, all grounded:
+1. **Module-scoped mutable state.** `_downloadOwners` is a `WeakMap` at module scope. The design constraints state "no module-scoped mutable state that functions reach for." The WeakMap serves a legitimate purpose (origin-pinning that must survive across separate `checkForAppUpdate` and `installDownloadedUpdate` calls without the caller holding a handle to it), but it is still a hidden dependency: two `checkForAppUpdate` calls from different parts of an app share the same map implicitly. An explicit `UpdaterSession` value or an out-parameter approach would align with the explicit-dependency model, though for a three-function package the practical cost is low.
+2. **No guard/explain diagnostic layer.** `installDownloadedUpdate` throws `TypeError` for an unknown handle, and the check returns `operation-failed` for cross-provider and exception cases. There is no shakeable `explainAppUpdateCheckFailure` or `enableUpdaterGuards` companion. The diagnostics convention calls for every silent sentinel to have an `explain*` query returning plain data. The throw for unknown handles is correct (programmer error), but the silent `operation-failed` outcomes from cross-provider mismatch, backend exception, and unknown discriminant are indistinguishable to the caller without an explain layer.
+3. **`assertSyncVoid` is unexported and uncommented.** The type-level guard at line 64-67 is a clever trick that rejects `any` and `Promise<void>` at compile time to prevent accidentally dropping a promise from `destroy()`. It has no JSDoc or comment explaining why it exists. It is also unique to this package -- if this pattern is reusable, it belongs in a shared utility; if not, the reasoning for its constraints should be documented inline.
+4. **Default discriminant maps to `operation-failed`.** The `default` arm in `checkForAppUpdate` (line 33) maps any unrecognized `reason` to `operation-failed`. This is defensive against future outcome additions in the type contract, but it silently collapses new outcomes that might warrant distinct handling. An exhaustive check (`const _exhaustive: never = outcome`) would surface type-contract expansion at compile time.
 
-1. **Missing-symbol compile errors.** Every import on `updater.ts:2-9` and `updater.test.ts:2` of `UpdaterConfig`/`UpdaterState`/`UpdaterSignatureConfig`/`UpdaterError`/`UpdateProgress` resolves to nothing — `tsc -b` fails before any logic is reached.
-2. **`UpdateInfo.stagedRolloutPercent` does not exist.** `b2824e3d8:packages/updater/src/updater.ts:231-232` (`isAppUpdateEligible`) reads `info.stagedRolloutPercent`, and `updater.test.ts:38,558,563,569,574` construct `UpdateInfo` literals with `stagedRolloutPercent`/`downloadSizeBytes`/`sha512`/etc. The head `UpdateInfo` has only `version`/`notes`/`releaseDate`, so these are property errors on a type the same tree still defines narrowly.
-3. **`AppUpdater` entity shape mismatch.** `b2824e3d8:packages/updater/src/updater.ts:88-103` (`createAppUpdater`) returns an object with **ten** signals (`onUpdateCancelled`, `onUpdateStaging`, `onUpdateVerified`, `onUpdateRolledBack` in addition to the six), annotated `: AppUpdater`. The head `AppUpdater` (`head/packages/types/src/Updater.ts:10-17`) declares only six — the extra four are excess properties against the declared type.
-4. **`onError` payload mismatch.** `b2824e3d8:packages/updater/src/updater.ts:39-41` does `emitSignal(updater.onError, error)` with a structured `error`, but head `AppUpdater.onError` is `Signal<(message: string) => void>` — an object payload is not assignable to `string`.
-5. **`UpdaterBackend` method mismatch.** The source calls `getUpdaterBackend().cancelDownload()`, `.rollback()`, `.getChannel()`/`.setChannel()`, `.getConfig()`/`.setConfig()`, `.setSignatureConfig()`, and subscribes to `subscribeUpdateCancelled/Staging/Verified/RolledBack` (`updater.ts:43-57, 66-67, 99, 134-149, 218-272`). The head `UpdaterBackend` (`head/packages/types/src/Updater.ts:22-33`) has none of these ten methods. `createWebUpdaterBackend` (`updater.ts:127-181`) returns an object implementing all of them, annotated `: UpdaterBackend` — every added method is excess against the declared interface, and the source's `.cancelDownload()` etc. calls are "property does not exist" errors.
+## Charter contradictions
 
-This is the same _half-landed type change_ disease the sibling `host-electron` brief documents in this bundle (its `requestPermission` retype landed without the matching `@flighthq/types/Notification.ts` change). Here it is worse: essentially the **entire** new type surface the package depends on is missing, not one method.
+None. The charter specifies "one awaited Squirrel check transaction, provider-pinned installation, exact provider teardown, nullable frozen metadata, and empty W/T/C capability groups." All five are realized. The charter's single open direction (non-Squirrel providers requiring separately ruled transaction mappings) remains open and is not contradicted by the current implementation.
 
-## Honesty check: the in-tree review.md is stale and wrong for this bundle
+## Contract & docs fit
 
-`b2824e3d8:agents/packages/updater/review.md` (the doc the integration carries) claims the realized surface was "read from `dist/updater.d.ts`", that `types/src/Updater.ts` "grown from 33 to 116 lines", and that `host-electron`'s `createElectronUpdaterBackend` was rewritten — all describing bundle `67dc46d64`, not `b2824e3d8`. None of those artifacts exist in this bundle's `head`/`changes.patch`. A reviewer trusting that doc would wave through a non-compiling package. The doc must be re-baselined (this review supersedes it).
+- **Two-lane export shape**: satisfied. `index.ts` re-exports from `contract.ts`; `contract.ts` re-exports `updater.ts`. Both lanes carry the same three functions.
+- **Types-first**: satisfied. All types in `@flighthq/types/src/Updater.ts` and `Host.ts`. No exported type definitions in the updater package. `UpdateInfo`, `DownloadedUpdate`, `AppUpdateCheckOutcome`, `AppUpdateInstallOutcome`, `UpdaterCommandBackend`, and `HasUpdaterCommand` are all defined in `@flighthq/types` and imported via the `contract` lane.
+- **`sideEffects: false`**: satisfied. No top-level side effects. The module-level `WeakMap` and frozen sentinels are allocation, not observable side effects.
+- **Naming**: satisfied. All three exports carry the full unabbreviated object word (`AppUpdate`, `Updater`). `checkForAppUpdate` and `installDownloadedUpdate` are descriptive verbs; `destroyUpdater` uses the correct teardown verb (the Electron backend holds native listeners to free).
+- **Readonly**: satisfied. `DownloadedUpdate.info` is `Readonly<UpdateInfo>`. `UpdateInfo` fields are all `readonly`. `AppUpdateCheckOutcome` and `AppUpdateInstallOutcome` branches are `Readonly<{...}>`. The `HasUpdaterCommand` parameter is structurally readonly.
+- **Sentinels vs. throws**: satisfied. `checkForAppUpdate` returns `operation-failed` for all expected failure cases (backend exception, unknown discriminant, cross-provider). `installDownloadedUpdate` throws `TypeError` only for the programmer-error case of an unknown handle.
+- **Entity**: satisfied. `UpdaterCommandBackend` extends `Entity`. `DownloadedUpdate` extends `Entity`. The Electron adapter uses `createEntity` from `@flighthq/entity/contract`.
+- **`status.md` alignment**: the status document's description of "three transaction functions: awaited check, provider-pinned install, and provider destroy" matches the realized surface exactly. The claim that "no duplicate `AppUpdater` event/state/config model remains" is confirmed -- there is no `AppUpdater` type in the current tree, only `UpdaterCommandBackend`.
 
-## What the design gets right (would hold once the types land)
+## Candidate open directions
 
-These are not blockers and are recorded so the rebuild target is clear — they are the strengths the prior `86` review verified, and they survive in the source text here:
-
-- **Naming.** The renames `checkForUpdates → checkForAppUpdate` and `downloadUpdate → downloadAppUpdate` (`updater.ts:72,82,200`) close the base's weakest names by adding the object word; every export carries the full unabbreviated `AppUpdate`/`Updater` word and is `get*`/`is*`/`set*`/`create*`-prefixed correctly.
-- **Teardown verbs.** `disposeAppUpdater` delegates to `detachAppUpdater` (`updater.ts:194-196`) — correct: signals are GC memory, nothing to `destroy`.
-- **Sentinels, not throws.** `getAppUpdaterState` returns a fresh `createUpdaterState()` for an unknown entity (`updater.ts:207-209`); the web backend no-ops and returns inert unsubscribes.
-- **`_setState` alias-safety.** `updater.ts:280-284` reads `prev` from the map before writing `next` — correct out-style discipline for the state reducer.
-- **Tree-shaking posture.** `package.json` keeps a single root `.` export, `"sideEffects": false`, a thin `export * from './updater'` barrel, deps limited to `@flighthq/signals` + `@flighthq/types`, and lazy web-backend creation (no module-top side effect). The delta adds no new dependency and no shared hot-loop branch.
-- **Source order & tests.** Exports are alphabetized; loose module state (`_backend`, `_states`, `_subscriptions`, `_setState`) sits at the bottom; `updater.test.ts` describe blocks are alphabetized and mirror the exports.
-
-## Standards scorecard (the DELTA, as it would build in this tree)
-
-1. **Composition / bedrock** — PASS (design). A flat free-function command surface + an entity-of-signals event surface + a pure `isAppUpdateEligible` leaf; no config-gated mega-function, no fused subjects.
-2. **Naming clarity** — PASS. Full object words, correct verb prefixes; the two renames are net improvements.
-3. **Tree-shaking / bundle invariant** — PASS. Single `.` export, `sideEffects: false`, no eager registration, no new shared branch, no new dependency.
-4. **Registry vs closed union** — N/A / PASS. No `kind` dispatch family here; the lifecycle is a fixed event seam, not a growing handler registry.
-5. **Subject triad + plurality guard** — PASS for what is present; the `-formats` neighbor is correctly _absent_ and parked (an Open direction), not prematurely split.
-6. **Contract hygiene** — **FAIL.** The "types-first in `@flighthq/types`" rule is violated in the worst direction: the implementation was merged _ahead of_ its header. The header is the design surface and it is missing the entire `UpdaterConfig`/`UpdaterState`/`UpdaterSignatureConfig`/`UpdaterError`/`UpdateProgress` contract and the enriched `UpdateInfo`. `Readonly<>`, `dispose*`, and sentinel usage are otherwise correct.
-7. **Tests & honesty** — **FAIL.** The colocated test is well-structured and mirrors exports, but it imports `UpdateProgress`/`UpdaterError` that do not exist in the tree and constructs `UpdateInfo` with absent fields — it **does not compile**. The in-tree `review.md` describes a different bundle. Claims do not match the code as assembled.
-
-## Net
-
-The design is mergeable; **this bundle is not.** The block is mechanical and total: land the `@flighthq/types/src/Updater.ts` rewrite (and the `host-electron/electronUpdater.ts` backend the seam now requires) in the **same** merge, or the package fails `tsc`. Until then, REJECT.
+1. **Explain layer for silent `operation-failed` outcomes.** An `explainAppUpdateCheckOutcome` or `enableUpdaterGuards` function that emits through `@flighthq/log` when a check collapses to `operation-failed` due to cross-provider mismatch, backend exception, or unknown discriminant.
+2. **Exhaustive discriminant check.** Replace the `default: return OPERATION_FAILED` in `checkForAppUpdate` with a `never`-typed exhaustive assertion so that additions to `AppUpdateCheckOutcome` are surfaced at compile time.
+3. **Promote `assertSyncVoid` or document it.** If the pattern is reusable across teardown verbs in other platform packages, extract it to a shared utility. Otherwise, add a comment explaining the `IsAny<T>` trick and why the `destroy()` return type needs compile-time enforcement.

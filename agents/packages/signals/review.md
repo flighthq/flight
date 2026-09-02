@@ -1,101 +1,296 @@
 ---
 package: '@flighthq/signals'
 status: solid
-score: 90
-updated: 2026-07-31
+score: 92
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
-  - reviews/depth/signals.md
+  - dispatch-scope.md
+  - assessment.md
   - source
 ---
 
 # signals — Review
 
-> **2026-07-31 correction.** The connection-handle/scope surface claimed below never
-> existed in tracked package source. In particular, `connectSignalOnce`,
-> `getSignalConnections`, `disconnectSignalConnection`, and
-> `isSignalConnectionActive` are documentation defects rather than retired APIs. Current
-> one-shot behavior is selected with `connectSignal(..., { once: true })`; use the
-> source-derived API inventory for the present surface.
-
-> Evidence: `incoming/builder-67dc46d64/head/packages/signals/` (source + tests), `incoming/builder-67dc46d64/changes.patch` (delta), with cross-package types in `head/packages/types/src/Signal*.ts`. Findings cited as `67dc46d64:<path>`.
+> Evidence: `packages/signals/src/` (8 implementation files, 8 test files, 84
+> tests), `packages/types/src/Signal*.ts` (6 type files). Findings verified
+> against this tree as of 2026-09-02.
 
 ## Verdict
 
-**solid — 90/100.** This pass closes nearly every depth-review gap that mattered: a real `SignalConnection` handle, a first-class `connectSignalOnce`, listener introspection (`getSignalSlotCount`/`hasSignalSlots`/`getSignalConnections`), per-connection pause/resume, scope-based bulk teardown, payload-preserving throttle + debounce, and the `disconnectAllSignals` → `disconnectAllSlots` rename. The work is clean, tree-shakable, well-tested (89 tests across 6 files), and faithful to the codebase's free-function / plain-data / `@flighthq/types`-first philosophy. It is held back from "authoritative" only by one unverified re-entrancy hazard in the dispatch loop, a thin spot in deferred/collect dispatch (deliberately deferred), and an accumulating set of deprecated aliases that pre-release policy says should simply be deleted.
+**solid -- 92/100.** The package delivers its full charter scope: tombstone-safe
+dispatch (`emitSignal`), snapshot emission (`emitSignalSafe`), tracked
+connection handles with pause/resume, scope-based bulk teardown, and temporal
+operators (frame-rate gating, throttle, debounce). The dispatch-during-dispatch
+hazard that held the previous review to 90 is resolved -- the tombstone
+discipline with `depth`-gated compaction is implemented and exercised by nested
+re-entrant emit tests. The `SignalConnection`/`SignalScope` surface that was
+previously claimed but absent is now built and backed by 25 tests across
+`connection.test.ts` and `scope.test.ts`.
 
-The status doc's claimed jump (88 → 93) is largely substantiated against the diff; I land slightly lower at **90** because the headline "re-entrant emit is safe" guarantee is documented but not actually exercised by a nested-emit test, and because two deprecated aliases now carry zero callers yet remain (workaround-accumulation the codebase map explicitly forbids pre-release).
+What keeps the score below authoritative: `clearSignal` mid-dispatch does not
+stop the in-flight walk and cannot be cancelled afterward (a correctness gap
+awaiting a ruling, not a bug in ordinary use), the package has no diagnostics
+surface (`enable*Guards`/`explain*`) despite silent-sentinel failure modes, and
+the throttle/debounce home question remains open (charter Open direction #1).
 
 ## Present capabilities
 
-All grounded in `67dc46d64:packages/signals/src/`.
+All verified against `packages/signals/src/`. The package exports 18 functions
+from its root barrel (`index.ts` re-exports `contract.ts`).
 
 **Core slot/dispatch (`slot.ts`, `signal.ts`, `emitter.ts`, `internal.ts`):**
 
-- `createSignal<T>()` — lazy: `data: null`, `emit: nullSignalEmit`. No arrays until first connect; emitting an empty signal is a genuine no-op, not a guarded branch (`internal.ts`).
-- `connectSignal(signal, slot, options?)` → `SignalConnection<T>`. Priority-ordered linear-scan insert; `{ priority, once }` options. **This returned handle is the defining gap the depth review named, now closed.**
-- `connectSignalOnce(signal, slot, options?)` → handle. First-class named verb; `options` is `Omit<…, 'once'>` so the flag can't be contradicted. Good API hygiene.
-- `disconnectSignal(signal, slot)` — removes _all_ registrations of a slot function (reverse-scan splice); frees `data` to `null` on empty.
-- `disconnectSignalConnection(connection)` → `boolean` — disconnect exactly one registration by handle identity. Idempotent (returns `false` if already gone), tombstone-safe mid-dispatch.
-- `disconnectAllSlots(signal)` — clears all slots, marks every handle `connected: false`, resets to no-op state.
-- `getSignalConnections(signal, out?)` — `out`-param accumulator of live handles; clears `out` first, allocates when omitted. Matches the out-param convention.
-- `getSignalSlotCount(signal)` / `hasSignalSlots(signal)` — hot-path "is anyone listening?" introspection without reaching into `data`.
-- `isSignalConnectionActive(connection)` / `isSlotConnected(signal, slot)` — handle-based and function-identity membership checks.
-- `pauseSignalConnection` / `resumeSignalConnection` — per-connection pause via the `enabled` lane; dispatch checks `data.enabled[i]` before firing.
-- `cancelSignal(signal)` (`emitter.ts`) — sets `cancelled`; the dispatch loop breaks after the current slot.
+- `createSignal<T>()` -- lazy: `data: null`, `emit: nullSignalEmit`. No arrays
+  allocated until first `connectSignal`; emitting an empty signal is a genuine
+  no-op (the `nullSignalEmit` function body is empty), not a guarded branch.
+- `connectSignal(signal, slot, options?)` -- priority-ordered insert via linear
+  scan of `data.priorities`; `{ priority, once }` options. Splices three
+  parallel arrays in lockstep (`slots`, `priorities`, `repeat`).
+- `disconnectSignal(signal, slot)` -- removes all registrations of a slot by
+  reference identity (reverse scan). During a dispatch (`data.depth > 0`), the
+  slot cell is tombstoned (set to `null`) instead of spliced, preserving cursor
+  integrity for all in-flight dispatches. Outside a dispatch, splices
+  immediately. Returns the signal to empty state (`data = null`,
+  `emit = nullSignalEmit`) when the last slot departs and no dispatch is active.
+- `clearSignal(signal)` -- unconditionally nulls `signal.data` and restores
+  `nullSignalEmit`. Does not interact with the `depth`/tombstone discipline.
+- `emitSignal(signal, ...args)` -- delegates to `signal.emit(...)`, which is
+  the dispatch function created by `makeDispatch` when slots are connected, or
+  `nullSignalEmit` when none are.
+- `cancelSignal(signal)` -- sets `data.cancelled = true`; the dispatch loop
+  breaks after the current slot completes. Resets to `false` at the start of
+  each emit. Guards on `signal.data !== null`.
+- `hasSignalSlots(signal)` -- outside dispatch, checks `data.slots.length > 0`.
+  Inside dispatch, scans for non-null entries to exclude tombstones, so a slot
+  that emptied the signal mid-dispatch gets the correct answer.
+- `isSlotConnected(signal, slot)` -- `indexOf` on `data.slots`. Correctly
+  returns `false` for a tombstoned slot (the cell is `null`, not the function).
 
-**Re-entrancy / mutation-during-dispatch (`makeDispatch` in `slot.ts`):** index walk that re-reads `data.slots.length` each iteration, so connect-during-dispatch is visited in the same pass; a `depth` counter guards a tombstone strategy so `disconnectSignalConnection` mid-dispatch nulls the entry and a post-outermost-dispatch cleanup purges tombstones. This is the genuinely hard part of a signal library and the single-level cases are correct and tested.
+**Dispatch loop (`makeDispatch` in `slot.ts`):**
 
-**Scope (`scope.ts`):** `createSignalScope`, `addSignalConnectionToScope`, `connectSignalInScope`, `connectSignalOnceInScope`, `disconnectSignalScope` — the canonical component-teardown bracket. `SignalScope` is plain data (`{ connections: [] }`) in `@flighthq/types`.
+The dispatch function closes over both `signal` and `data`. Each emit:
+1. Resets `data.cancelled` to `false`.
+2. Increments `data.depth`.
+3. Walks `data.slots` with a `while (i < data.slots.length)` loop, skipping
+   `null` (tombstone) entries. Once slots are tombstoned after firing (not
+   spliced), so a nested emit cannot repeat them and the cursor is not skewed.
+4. Decrements `data.depth` on exit. At `depth === 0`, runs `compactSignalData`
+   which purges all tombstones from the three parallel arrays in a single
+   write-pointer pass and detaches the signal if empty.
 
-**Temporal operators (`throttle.ts`):** `connectSignalAtFrameRate` (the renamed tick accumulator), payload-preserving `connectSignalThrottled` and `connectSignalDebounced` with `leading`/`trailing` edge control via `SignalThrottleOptions`. These close the depth review's "throttle is the only temporal operator, and it drops payload" gap.
+Nested re-entrant emit is safe: each emit has its own stack-local `i`, and
+since removal during dispatch is a tombstone (O(1) null write) rather than a
+splice, no cursor in any nesting level is invalidated. Tested explicitly:
+`slot.test.ts` includes "delivers to every slot when a slot re-emits the same
+signal", "removes a once slot exactly once across a re-entrant emit", "gives a
+nested emit its own cursor, unskewed by a disconnect inside it", and "fires a
+once slot exactly once when a nested emit walks past it".
 
-**Types (`@flighthq/types`):** `SignalConnection<T>`, `SignalScope`, and an extended `SignalData<T>` (`enabled[]`, `connections[]`, `depth`) all live in the header layer with JSDoc, exactly as the contract requires. `SignalConnection` defaults its generic to `(...args: any[]) => void` so `SignalScope` can hold heterogeneous handles.
+**Snapshot emission (`safe.ts`):**
 
-**Tests:** 89 across `signal`/`internal`/`emitter`/`slot`/`scope`/`throttle`. `slot.test.ts` carries a dedicated `dispatch ordering and stability` block: connect-during-emit appended-and-fired, disconnect-self, disconnect-next-slot-skipped, double-disconnect sentinel, pause-then-disconnect, no-op-after-`disconnectAllSlots`, and tombstone-purge assertion on `slots.length`. The status doc's pass-2 correction (slots added during dispatch DO fire in-pass) is real and is the assertion in `slots added during dispatch fire in the same pass`.
+- `emitSignalSafe(signal, ...args)` -- copies `slots`, `priorities`, and
+  `repeat` before iterating. Connections added during dispatch wait for a later
+  emission. Once slots are consumed before invocation via `tombstoneOnceSlot`
+  (a linear scan that nulls the slot in the live `data.slots`, preventing a
+  nested safe emission from repeating it). Uses `try/finally` around the
+  dispatch body so `depth` is decremented and compaction runs even if a slot
+  throws. Has its own `compactSignalData` (duplicated from `slot.ts`).
+
+**Tracked connections (`connection.ts`):**
+
+- `connectSignalTracked(signal, slot, options?)` -- wraps the slot in a
+  tracking closure that checks `connection.paused` before calling through,
+  implementing pause as option (b) from `dispatch-scope.md` (wrapper slot, no
+  `SignalData` change). Once connections disconnect themselves inside the wrapper
+  before invoking the real slot, so a paused once connection is not consumed.
+  Returns a `SignalConnection<T>` plain-data handle. If `options.scope` is
+  provided, pushes the connection into the scope's array.
+- `disconnectSignalConnection(connection)` -- idempotent: sets
+  `connection.connected = false` and delegates to `disconnectSignal`. No-op if
+  already disconnected.
+- `pauseSignalConnection(connection)` / `resumeSignalConnection(connection)` --
+  sets `connection.paused`. Guards on `connection.connected`, so pausing or
+  resuming a dead connection is a no-op.
+
+**Scopes (`scope.ts`):**
+
+- `createSignalScope()` -- returns `{ connections: [] }`.
+- `disconnectSignalScope(scope)` -- copies the connections array, empties the
+  scope, then iterates the copy calling `disconnectSignalConnection` on each.
+  Emptying before the loop means a re-entrant call (scope torn down from inside
+  a dispatch that re-triggers teardown) sees nothing to do. Idempotent per
+  member via the idempotent disconnect underneath.
+
+**Temporal operators (`throttle.ts`):**
+
+- `connectSignalAtFrameRate(source, fps, slot)` -- specialized for
+  `(deltaTime: number) => void` frame-tick signals. Accumulates delta time and
+  fires when the period elapses; the slot receives the accumulated delta, not
+  individual source deltas. Returns a cleanup function.
+- `connectSignalThrottled(source, intervalMs, slot, options?)` --
+  payload-preserving throttle with `leading`/`trailing` edge control. Uses
+  `Date.now()` and `setTimeout`.
+- `connectSignalDebounced(source, delayMs, slot, options?)` -- fires after the
+  signal goes quiet for `delayMs`. `leading: true` fires immediately on the
+  first invocation and suppresses until the delay window expires. Uses
+  `Date.now()` and `setTimeout`.
+
+All three return a cleanup function that disconnects the internal handler and
+cancels any pending timer.
+
+**Types (`@flighthq/types`):**
+
+All signal types live in `@flighthq/types` and are exported from both `.` and
+`./contract`:
+- `Signal<T>` -- `{ data: SignalData<T> | null; emit: T }`.
+- `SignalData<T>` -- `{ slots: (T | null)[]; priorities: number[]; repeat: boolean[]; cancelled: boolean; depth: number }`.
+- `SignalConnectOptions` -- `{ once?: boolean; priority?: number }`.
+- `SignalConnection<T>` -- `{ signal; slot; connected; paused }` with JSDoc.
+- `SignalScope` -- `{ connections: SignalConnection[] }` with JSDoc.
+- `SignalThrottleOptions` -- `{ leading?: boolean; trailing?: boolean }`.
+- `SignalTrackedConnectOptions` -- extends `SignalConnectOptions` with
+  `scope?: SignalScope`.
+
+**Tests:** 84 across 8 files. Notable coverage areas:
+- `slot.test.ts` (27 tests): dispatch-mutation block with 10 tests covering
+  disconnect-during-dispatch (earlier, later, self), tombstone compaction,
+  nested re-entrant emit with independent cursors, once-slot tombstoning across
+  nested emits, and introspection correctness mid-dispatch.
+- `connection.test.ts` (11 tests): tracked handle lifecycle, priority
+  interleaving with ordinary slots, once teardown under both `emitSignal` and
+  `emitSignalSafe`, mid-dispatch disconnect.
+- `scope.test.ts` (14 tests): bulk teardown, idempotency, paused member
+  disconnect, already-fired once members, re-entrant scope teardown and
+  reconnect, duplicate listing, interaction with unscoped connections.
+- `safe.test.ts` (7 tests): snapshot isolation (added slots wait, removed
+  slots still fire), nested safe emission with separate snapshots, once-slot
+  consumed before invocation, cancellation reset.
+- `throttle.test.ts` (14 tests): frame-rate accumulation, debounce leading/
+  trailing edges, throttle leading/trailing edges, payload preservation,
+  cleanup, edge cases (both disabled).
+
+**Package manifest:** `sideEffects: false`. Two export lanes (`.` and
+`./contract`). Single dependency: `@flighthq/types`. No top-level side effects.
 
 ## Gaps
 
-Measured against an authoritative signal/slot library and the AAA bar (charter is a stub — see Candidate open directions).
+Measured against the charter scope, codebase conventions, and AAA completeness.
 
-- **Nested re-entrant emit is documented-safe but untested, and has a real hazard.** `connectSignal`'s JSDoc promises "Re-entrant emit on the same signal is safe." No test emits the _same_ signal from within a slot. The dispatch loop removes a spent `once` entry with a direct `data.slots.splice(i, 1)` mid-iteration (`slot.ts:79-81`). That is safe for the loop doing the splicing — it does not advance `i` after removing, so the shifted element is still visited. The hazard is a **nested** emit: if an inner dispatch fires a `once` slot positioned _before_ an outer dispatch's current index, the outer loop's index now points one element too far and silently skips a slot. This is the one correctness concern keeping the package from authoritative; it needs either a nested-emit test that proves safety, or dispatch-depth tracking so a mid-dispatch removal can be deferred.
-  - ⚠ **Revised 2026-08-10 — the original finding cited a `depth`/tombstone contrast that no longer exists.** It read the once-removal against `disconnectSignalConnection`, "which tombstones when `depth > 0`". `slot.ts` has since been rewritten (87 lines, against the 297+ the old citation implies) and carries **no `depth` and no tombstoning at all** — `disconnectSignalConnection` splices directly too (`slot.ts:44-46`). So the asymmetry the finding rested on is gone; what survives is the nested-emit hazard itself, restated above without it. The remedy wording changed for the same reason: there is no tombstone discipline left to extend.
-- **Deferred / async / queued dispatch absent.** No `emitSignalDeferred`. Status doc defers it pending a flush-point design conversation — legitimate, but it is a named domain gap (Qt queued connections, RxJS schedulers).
-- **No return-carrying / collect dispatch.** No `emitSignalCollect` / `CollectableSignal` for accumulator or veto chains. Deferred as an API-shape decision; the concrete consumer (`@flighthq/application` `onCloseRequest` veto) already exists, so this is a live, not hypothetical, gap.
-- **No weak / auto-disposing connection.** No `connectSignalWeak`. Deferred for sound reasons (GC non-determinism, Rust `Weak<>` conformance divergence). Domain-canonical but reasonably parked.
-- **Parallel-array storage is a five-lane footgun.** `SignalData` now has five synchronized arrays (`slots`/`priorities`/`repeat`/`enabled`/`connections`); every insert/splice/tombstone must touch all five in lockstep. Correct today, but the dense-storage / slotmap path the status doc parks is the real fix. Not urgent (perf only matters at hundreds of slots), but it is the structural risk behind the once-splice hazard above.
-- **No `this`/context binding** — deliberate (free-function, C-portable). Now explicitly documented in the `connectSignal` JSDoc, which the depth review asked for. Closed-by-documentation.
+- **`clearSignal` mid-dispatch does not stop the in-flight walk, and
+  `cancelSignal` cannot reach it afterward.** `clearSignal` nulls `signal.data`
+  and restores `nullSignalEmit` (`slot.ts:7-10`), but `makeDispatch` closed
+  over the `data` object (`slot.ts:87`), so the running loop keeps draining the
+  detached array. `cancelSignal` guards on `signal.data !== null`
+  (`emitter.ts:6`), so after a mid-dispatch `clearSignal` it is a no-op.
+  Compaction handles the aliasing correctly -- it checks `signal.data === data`
+  before detaching (`slot.ts:128`). This is a stop-the-dispatch gap, not
+  corruption. Needs a ruling on whether `clearSignal` mid-dispatch should imply
+  cancel (status.md records this as open).
+- **No diagnostics surface.** The codebase convention requires `enable*Guards`
+  modules for caller-facing warnings and `explain*` queries for silent
+  sentinels. The package has several silent sentinels -- `disconnectSignal` on a
+  non-connected slot, `emitSignal` on an empty signal, `cancelSignal` after
+  `clearSignal` -- and none have guard or explain counterparts. The failure mode
+  of a signal system (silently skipped or never-fired slot) is inherently
+  invisible, making this gap more consequential than in most packages.
+- **No slot-count introspection.** `hasSignalSlots` (boolean) is the only
+  listener-count query. There is no `getSignalSlotCount` returning a number and
+  no `getSignalConnections` returning live handles. The charter lists
+  "introspection (`hasSignalSlots`/`isSlotConnected`)" as in scope and both are
+  present, so this is a completeness observation rather than a charter violation.
+  A count function would be useful for diagnostics.
+- **Duplicated `compactSignalData`.** `safe.ts` contains its own copy of the
+  compaction function (lines 47-66) rather than sharing the one in `slot.ts`.
+  The two are identical in logic. This is a minor maintenance risk --
+  a compaction fix in one must be mirrored in the other.
+- **Throttle/debounce use host-time.** `connectSignalThrottled` and
+  `connectSignalDebounced` use `Date.now()` and `setTimeout`, coupling them to
+  the host clock. The charter parks this as Open direction #1 (throttle/debounce
+  home) and it remains unsettled.
 
 ## Charter contradictions
 
-None — the charter (`North star`, `Boundaries`, `Decisions`) is entirely TODO/stub, so there is no stated principle to contradict. The one seeded line ("multi-listener notification with priority ordering, cancellation, and one-shot connections") is fully honored by the code. Every judgement above falls back to the codebase-map AAA standard per the rubric rule; the silences are collected below.
+None. The charter is mature (5 Decisions, 4 Open directions) and the source
+aligns with every stated boundary.
+
+- The void slot contract holds: no return-carrying signals (Decision #2).
+- Dispatch is synchronous-only: no `emitSignalDeferred` (Decision #1).
+- Weak connections are absent (Decision #3).
+- No `this`/context binding.
+- Tombstone dispatch discipline matches the Decision #5 specification exactly:
+  `depth` counter, null-cell tombstoning during dispatch, outermost-exit
+  compaction.
+- Tracked connections use wrapper-slot pause (option (b) from
+  `dispatch-scope.md`), matching Decision #6.
+
+One charter description is stale: Open direction #3 states `SignalThrottleOptions`
+is "declared inline in `throttle.ts` rather than in `@flighthq/types`." This is
+no longer true -- the type is in `packages/types/src/SignalThrottleOptions.ts`
+and `throttle.ts` imports it from `@flighthq/types/contract`. The direction can
+be closed.
 
 ## Contract & docs fit
 
-**Lives up to the contract:**
+**Upheld:**
 
-- **Types-first:** `Signal`, `SignalData`, `SignalConnection`, `SignalScope`, `SignalConnectOptions` all in `@flighthq/types`; the package re-exports them. Header layer is navigable alone.
-- **Full unabbreviated names:** every export carries the `Signal`/`SignalConnection`/`SignalSlot` type word. `disconnectAllSignals` → `disconnectAllSlots` fixes the one naming error the depth review flagged (it clears one signal's _slots_, not many signals).
-- **Out-params:** `getSignalConnections(signal, out?)` follows the clear-then-fill convention.
-- **Sentinels not throws:** `disconnectSignalConnection` returns `false` rather than throwing on double-disconnect; empty-signal ops are no-ops. No error-wrapping types.
-- **Single root export, `sideEffects: false`:** `index.ts` is a thin barrel over five files; `package.json` declares `sideEffects: false` and a single `.` entry. No top-level side effects (no eager registration).
-- **`SignalThrottleOptions` placement — minor deviation.** This interface is declared _inline_ in `throttle.ts` (`67dc46d64:packages/signals/src/throttle.ts:10`), not in `@flighthq/types`. It does not currently cross a package boundary, so it is defensible, but the contract's "shared types belong in `@flighthq/types`" rule and the symmetry with `SignalConnectOptions` (which _is_ in types) argue for moving it. Flag as a small contract-fit drift.
+- **Types-first.** All 7 signal types are in `@flighthq/types` and exported
+  from both `.` and `./contract`. The implementation package exports functions
+  only -- no inline type definitions.
+- **Full unabbreviated names.** Every export carries `Signal`, `Slot`, or
+  `Scope` in its name. No abbreviations.
+- **Two export lanes.** `index.ts` re-exports from `contract.ts`; both exist
+  and are declared in `package.json` exports.
+- **`sideEffects: false`.** No top-level side effects. `nullSignalEmit` is a
+  const, not a registration.
+- **Sentinels not throws.** `disconnectSignalConnection` is idempotent (no-op
+  on dead handle). `cancelSignal` guards on null data. `emitSignal` on an empty
+  signal calls `nullSignalEmit`. No throw for expected failure cases.
+- **Free functions over classes.** Every export is a free function operating on
+  plain-data entities.
+- **Readonly parameters.** `options` parameters use `Readonly<>` wrappers.
+  `hasSignalSlots` and `isSlotConnected` take `Readonly<Signal<T>>`.
+- **Lazy allocation.** `createSignal` allocates only the two-field `Signal`
+  record. `SignalData` arrays are created on first `connectSignal`. A signal
+  that nobody connects costs nothing.
+- **One test file per source file.** All 8 implementation files have a
+  colocated `.test.ts`.
 
-**Where docs/contract are stale against the work (candidate revisions — user's gate):**
+**Stale or incomplete documentation:**
 
-- **Package Map line is now understated.** `index.md`'s `@flighthq/signals` entry still reads "signals support multiple listeners, priority, and cancellation." The package now also offers connection handles, pause/resume, scopes, introspection, and throttle/debounce. Candidate: refresh the Package Map sentence to reflect the handle + scope + temporal surface.
-- ✅ **RESOLVED 2026-08-10 — both aliases are gone.** `disconnectAllSignals` no longer appears in `slot.ts` and `connectSignalAtRate` no longer appears in `throttle.ts`; the recommended deletion was carried out. The finding is kept below for the reasoning, not as outstanding work. **Its two citations are dead** and are left unnumbered rather than repointed, because there is no line to point at.
-- **Deprecated aliases violate the pre-release no-workarounds rule.** `disconnectAllSignals` and `connectSignalAtRate` were kept as `@deprecated` aliases. The codebase map is explicit: "There are no published consumers… do not accumulate workarounds for past choices… rename it, restructure it, or remove it." Pass 2 migrated all in-repo callers off `disconnectAllSignals`, so both aliases now have **zero callers** and exist only to soften a rename that has no audience. Candidate revision: delete both aliases (and their exports/tests) rather than carry them. The status doc itself lists this as a suggested cleanup.
-
-**Rust-crate mirror:** `flighthq-signals` exists; the status doc records the mapping (`connections`→per-slot arena field, `enabled`→flag, `depth`→`Signal` counter, `SignalConnection`→`SlotId`). The Rust port's own signals decision (`Signal<T>` parameterized by _payload_, `Arc<dyn Fn>`) already diverges structurally from the TS function-typed `Signal<T>`; the new handle/pause/scope surface widens what the port must mirror. Out of scope for this review but a real downstream conformance debt.
+- The previous `review.md` (2026-07-31) and `assessment.md` (2026-07-31) cite
+  functions that do not exist in source: `connectSignalOnce`,
+  `getSignalSlotCount`, `getSignalConnections`, `disconnectAllSlots`,
+  `isSignalConnectionActive`. The correction note at the top of the old review
+  partially addresses this but does not cover all phantom names. This review
+  supersedes both.
+- `assessment.md` backlog item "Connection handles, pause/resume, scopes" states
+  "they are not in the source tree." They are now built and blessed by charter
+  Decisions #5 and #6. Superseded.
+- Charter Open direction #3 (`SignalThrottleOptions` placement) describes the
+  type as inline. It is now in `@flighthq/types`. The direction can be resolved.
 
 ## Candidate open directions
 
-The charter is a stub; each item below is a question this review had to assume an answer to, surfaced for the user to settle into the charter's `North star` / `Boundaries` / `Open directions`.
-
-1. **Is synchronous-only dispatch a Boundary, or is `emitSignalDeferred` in scope?** The package leans synchronous-by-design (render-loop intent) but the JSDoc never states it as a boundary. If deferred dispatch is wanted, the flush-point (TS microtask vs. Rust host-driven `flushDeferredSignals`) is a design fork that needs blessing before building.
-2. **Is a return-carrying signal (`emitSignalCollect` / `CollectableSignal`) in scope, or does the void-return contract hold?** A return-typed `Signal` diverges from the strict `void` slot contract. The `@flighthq/application` `onCloseRequest` veto is a concrete consumer pushing on this; decide whether the veto chain lives here or in the caller.
-3. **Weak/auto-disposing connections — in or out?** They carry GC-nondeterminism and a permitted Rust `Weak<>` conformance divergence. Worth a Boundary line either way.
-4. **Storage strategy as a Decision.** Parallel-array vs. dense slotmap is currently an implicit internal choice; given the once-splice hazard it touches correctness, not just perf. Worth recording the intended end-state (and whether the tombstone discipline should extend to once-removal) as a Decision.
-5. **Deprecation policy.** Given pre-release "no backwards-compat obligations," should the package keep _any_ `@deprecated` alias, or always hard-rename? A one-line Decision would settle the recurring alias question for this and future renames.
-6. **Throttle/debounce clock & home.** `connectSignalThrottled`/`Debounced` use `Date.now()`/`setTimeout` — host-time-coupled, unlike the rest of the package. Is wall-clock temporal control a signals-package concern, or does it belong with a timer/tween package? A Boundary line would clarify whether `throttle.ts` is core or a convenience annex.
+1. **`clearSignal` mid-dispatch ruling.** Should `clearSignal` during a dispatch
+   imply `cancelSignal` on the detached data, so the walk stops? Currently the
+   walk runs to completion on the orphaned array. The compaction is correct (it
+   checks `signal.data === data`), so this is not corruption, but it is
+   surprising behavior: a caller who clears a signal expects silence, not a tail
+   of dispatches that finish out. A one-line fix
+   (`data.cancelled = true` in `clearSignal` when `data.depth > 0`) would stop
+   the walk, but it changes observable behavior for any caller relying on
+   clear-then-continue semantics.
+2. **Diagnostics surface.** A `enableSignalGuards` module warning on common
+   misuses (disconnect of a non-connected slot, emit-after-clear, cancel after
+   clear) and `explainSignalState(signal)` returning plain data
+   (slot count, depth, cancelled) would close the diagnostics gap.
+3. **`compactSignalData` deduplication.** The identical compaction in `slot.ts`
+   and `safe.ts` could be extracted to a shared internal module.
+4. **Throttle/debounce home.** Charter Open direction #1. Unsettled; depends on
+   whether a unified time/counter abstraction materializes.
+5. **Storage strategy.** Charter Open direction #2, partially resolved. The
+   three-lane parallel-array insert still splices in lockstep for priority
+   ordering. Not a correctness concern at current slot counts but a structural
+   choice to record as a Decision if it starts to cost.

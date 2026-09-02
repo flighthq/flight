@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/binpack'
 status: solid
-score: 74
-updated: 2026-07-13
+score: 82
+updated: 2026-09-02
 ingested:
   - status.md
   - source
@@ -10,66 +10,106 @@ ingested:
 
 # binpack — Review
 
-_Note: the cell contains only `charter.md`; no `status.md` exists yet, so there was no continuity log to ingest._
-
 ## Verdict
 
-**solid — 74/100.** A textbook-correct, well-commented, well-tested MaxRects (BSSF) one-shot packer that fully delivers the charter's 2026-07-10 Decisions — but it is one heuristic of the two the North star names, with none of the toolkit breadth (heuristic variants, occupancy metrics, `explain*` diagnostics) a mature rectangle-packing library carries.
+**solid — 82/100.** A well-structured, thoroughly tested MaxRects bin packer that now delivers both charter-named heuristics (BSSF and BAF), a shakeable diagnostic layer (`explainUnpackedRectangles`), and an occupancy metric. Every 2026-07-10 Decision is met. The 8-point jump from the prior review reflects the area-fit heuristic, the `explain*` query, `getPackResultOccupancy`, and the 40-seed property-test suite that closed several of the previously reported gaps. What remains is the broader toolkit breadth the North star envisions (Skyline/Guillotine families, online allocation) and the zero-consumer state.
 
 ## Present capabilities
 
-All in one source file, `packages/binpack/src/packRectangles.ts` (single export, ~330 lines, heavily documented with durable semantic comments):
+### Core packer — `packRectangles.ts` (~390 lines, 2 exports)
 
-- **`packRectangles(rects, options?): PackResult`** — the exact signature the charter Decision specifies. MaxRects with the Best-Short-Side-Fit heuristic (`findBestPlacement`: smallest leftover short side, tie-broken by leftover long side, then free-rect order, then unrotated orientation).
-- **MaxRects core** — `splitFreeRectangles` (up to four sub-rectangles per overlapped free rect, using `intersectsRectangle` from `@flighthq/geometry`) and `pruneFreeRectangles` (containment pruning via `isFreeRectangleContained`).
-- **Padding + border, geometrically exact** — the effective-footprint construction (`packIntoBin`: piece inflated by a trailing `padding` gutter, usable region `bin − 2·border + padding`) guarantees ≥ `padding` between neighbors and ≥ `border` from every edge without wasting the last row/column's gutter. The test asserts exact placements (`{x: 4, y: 4}` / `{x: 16, y: 4}` for padding 2 / border 4).
-- **90° rotation** (`allowRotation`) — both orientations scored per free rect; `rotated: true` with swapped `width`/`height` in the placement. Tested in both the fits-only-rotated and grows-instead cases.
-- **Fixed vs growable bin** — fixed bin = exactly `maxWidth × maxHeight` with overflow to `unpacked`; growable bin seeds at `√(totalArea)` (clamped to the largest single piece) and doubles the smaller dimension per retry up to the caps (`DEFAULT_MAX_EXTENT = 16384`). Termination is structural (doubling reaches the cap in log steps).
-- **`powerOfTwo` / `square` finalization** — `finalizeResult`/`ceilToPowerOfTwo`, applied to the tight used extent, with the square-then-pot-then-square dance keeping both constraints simultaneously satisfied.
-- **Determinism** — `sortRectanglesForPacking` is a documented total order (area desc, height desc, width desc, then `compareRectangleId`: numbers before strings, numeric/lexicographic), no `Math.random`/`Date`; the deep-equal-twice test pins it.
-- **Reporting** — placements + tight used `width`/`height` + `unpacked` ids, per the charter's Boundary ("layout, not compositing").
-- **Header-first types** — `RectangleId`, `PackableRectangle`, `PackedRectangle`, `BinPackOptions`, `PackResult` live in `packages/types/src/BinPack.ts` with full per-field doc comments and documented defaults.
-- **Tests** (`packRectangles.test.ts`, 12 cases) — pairwise non-overlap on 20 varied rects, growable no-overflow, fixed-bin overflow accounting (placed + unpacked = total), exact padding/border geometry, pot/square containment, rotation required vs growth instead, determinism, empty input, single rect at border corner, larger-than-fixed-bin and larger-than-growth-cap unpacked.
+- **`packRectangles(rects, options?): PackResult`** — MaxRects with two selectable heuristics via `options.heuristic`:
+  - `'bestShortSideFit'` (default) — smallest leftover short side, tie-broken by leftover long side, then free-rect position, then unrotated orientation. The classic MaxRects default.
+  - `'bestAreaFit'` — smallest leftover area in the free rectangle, tie-broken by short side. Better for uniformly-sized pieces.
+  Both scored in `findBestPlacement`, dispatched by a simple branch in the inner loop — the charter's closed-union rationale ("tight loop in a closed system") is honored.
+- **`BIN_PACK_DEFAULT_MAX_EXTENT`** (16384) — the cap applied when the caller names none. Exported so consumers computing their own usable region use the same number.
+- **`getPackResultOccupancy(result): number`** — fraction of the reported bin covered by placements, in [0,1]. Returns 0 for empty/zero-extent results. Measures the *reported* extent, so power-of-two rounding shows up as waste.
+- **MaxRects internals** — `splitFreeRectangles` (up to four sub-rectangles per overlapped free rect, using `intersectsRectangle` from `@flighthq/geometry`), `pruneFreeRectangles` (containment pruning via `isFreeRectangleContained`). All internal, not exported.
+- **Padding + border** — geometrically exact via the effective-footprint construction in `packIntoBin`: piece inflated by a trailing `padding` gutter, usable region `bin - 2*border + padding`, so the last row/column's gutter costs no real space.
+- **90-degree rotation** (`allowRotation`) — both orientations scored per free rect; `rotated: true` with swapped `width`/`height` in the placement.
+- **Fixed vs growable bin** — fixed bin = exactly `maxWidth x maxHeight` with overflow to `unpacked`; growable bin seeds at `sqrt(totalArea)` (clamped to the largest single piece) and doubles the smaller dimension per retry up to the caps. Termination is structural.
+- **`powerOfTwo` / `square` finalization** — applied to the tight used extent. Square-then-pot-then-square dance keeps both constraints simultaneously satisfied.
+- **Determinism** — `sortRectanglesForPacking` is a documented total order (area desc, height desc, width desc, then `compareRectangleId`: numbers before strings, numeric/lexicographic). No `Math.random`/`Date`.
+- **Degenerate-input handling** — zero or negative dimensions route to `unpacked` rather than producing malformed placements.
+
+### Diagnostic layer — `explainUnpackedRectangles.ts` (~80 lines, 1 export)
+
+- **`explainUnpackedRectangles(rectangles, options?): UnpackedRectangleExplanation[]`** — the shakeable `explain*` companion to the silent `unpacked` sentinel. Re-runs the pack (separate pass, no instrumentation of the hot path) and classifies each failure into one of three `UnpackedRectangleReason` values:
+  - `'regionCollapsed'` — border consumes the caps; checked first so the caller is sent after the border, not the pieces.
+  - `'oversized'` — larger than the usable region in both orientations (rotation counted as a real second chance).
+  - `'binExhausted'` — fits in principle but the bin filled.
+- Reports `usableWidth`/`usableHeight` (net of border) so the caller sees what the piece was measured against.
+- Correctly handles duplicate ids as a multiset (count-based matching, not set membership) — fixed in commit `5979a0e67` after the prior review.
+
+### Types — `@flighthq/types` (`BinPack.ts`, ~100 lines)
+
+All types in the header, per convention: `RectangleId`, `PackableRectangle`, `PackedRectangle`, `BinPackOptions`, `PackResult`, `BinPackHeuristic`, `UnpackedRectangleReason`, `UnpackedRectangleExplanation`. Every field has a doc comment and documented defaults.
+
+### Tests — 29 passing (2 files)
+
+**`packRectangles.test.ts`** (21 tests across 4 `describe` blocks):
+- `BIN_PACK_DEFAULT_MAX_EXTENT` — verifies it is the actual cap the packer applies.
+- `getPackResultOccupancy` — covered fraction of reported extent (rounding waste visible), 0 for empty.
+- `packRectangles` — 20 varied rects with non-overlap + border, growable no-overflow, fixed-bin overflow accounting, exact padding/border geometry, pot/square containment, rotation-required vs growth-instead, determinism, empty input, single rect at border corner, larger-than-fixed and larger-than-growth-cap.
+- `packRectangles edge cases` — degenerate dimensions, duplicate ids placed distinctly, non-integer sizes, border-collapsed usable region, padding larger than pieces.
+- `packRectangles properties` — 40-seed property test exercising both heuristics, with structural invariants: identity multiset accounting (placed + unpacked = input by count), placement size fidelity (rotation metadata correct), occupancy consistency, border respected, pairwise non-overlap with padding gap, determinism.
+
+**`explainUnpackedRectangles.test.ts`** (8 tests across 2 `describe` blocks):
+- Reason classification (oversized vs binExhausted, regionCollapsed, rotation as second chance).
+- Usable-extent reporting (net of border).
+- Cross-check against `packRectangles`: exactly one entry per unpacked piece with duplicate ids, both-fail case, 30-seed agreement check with count-based id comparison.
+
+### Package shape
+
+- `package.json`: deps exactly `geometry` + `types`, `"sideEffects": false`, two export lanes (`.` and `./contract`).
+- `index.ts`: explicit named re-export from contract (`explainUnpackedRectangles`, `getPackResultOccupancy`, `packRectangles`).
+- `contract.ts`: `export *` from the two source files.
+- No side effects, no renderers, no module-level mutable state.
 
 ## Gaps
 
-Measured against a textbook rectangle-packing library (RectangleBinPack / rectpack2D / rectpack):
+Measured against the charter's North star ("the complete rectangle-packing toolkit") and a mature bin-packing library:
 
-1. **One heuristic only.** The North star names "MaxRects family — best-area / best-short-side-fit"; only BSSF exists. Best-Area-Fit (BAF) is charter-named and absent. The wider family — BLSF, Bottom-Left, Contact-Point — is likewise absent (that breadth is Open direction 2 territory).
-2. **No Guillotine or Skyline families.** Skyline (bottom-left / min-waste) is the standard cheap-and-good atlas packer; Guillotine matters for texture-page workloads with split-rule control. Explicitly parked in Open direction 2 (pluggable strategy), so a design question, not a sweep item.
-3. **No online/incremental packing.** One-shot only, per the charter Boundary. Notably, `@flighthq/glyphatlas` — the in-repo dynamic-atlas consumer — rolled its **own** incremental shelf packer (`glyphAtlas.ts` `packBottom` shelf state) and has **no binpack dependency at all**. Real internal demand for Open direction 3 exists, already duplicated once.
-4. **No multi-bin packing.** TexturePacker-style multipage output (spill into bin 2..N instead of `unpacked`) is standard in atlas tooling; `PackResult` has no page concept. Charter is silent — a candidate open direction.
-5. **No occupancy/utilization metric.** Every packing tool reports used-area ÷ bin-area; a caller comparing options (rotation on/off, pot on/off) must recompute it by hand.
-6. **No `explain*` for `unpacked`.** `unpacked` reports *that* an id failed but never *why* (exceeds the cap even rotated, fixed bin full, `maxWidth < 2·border`). Per the diagnostics convention, a silent-ish sentinel wants a shakeable `explain*` query.
-7. **No sort-strategy option.** The input sort is fixed (area desc). rectpack2D-class libraries expose sort-by (perimeter, max-side, width, height, none) since it materially changes results — but the fixed sort is written into a charter Decision, so changing it needs direction, not a sweep.
-8. **Edge cases undefined/untested** — zero- or negative-dimension rectangles, duplicate ids, non-integer sizes, `border` so large the usable region is non-positive (handled: everything → `unpacked`, but untested), padding larger than the pieces. Behavior should be pinned by tests even where the answer is "garbage in, unpacked out".
-9. **No seeded fuzz/property coverage.** The invariants (no pairwise overlap, in-bin, padding/border respected, placed + unpacked = input) are ideal property-test material; path-boolean set the repo precedent.
-10. **Minor allocation slack.** `finalizeResult` re-clones every placement (`{ ...placement }`) even though `packIntoBin`'s array is function-local and fresh — a redundant per-rect allocation against the North star's "allocation-conscious" clause. Cosmetic, not behavioral.
+1. **No Skyline or Guillotine families.** The North star names "MaxRects family" which is delivered, but Open direction 2 gestures at pluggable placement strategies (skyline, guillotine). These are absent and the design seam (strategy registry vs extended union) is unresolved. Not a sweep item.
+2. **No multi-bin/multipage packing.** TexturePacker-style spill into bin 2..N instead of `unpacked`. Charter is silent; `PackResult` has no page concept.
+3. **No online/incremental allocation.** One-shot only, per the charter Boundary. `@flighthq/glyphatlas` rolled its own incremental shelf packer with no binpack dependency — real internal demand for Open direction 3 already exists, duplicated once.
+4. **No sort-strategy option.** Input sort is fixed to area-desc by Decision. Other libraries expose sort-by (perimeter, max-side, width, height, none). Changing this needs direction.
+5. **Zero in-repo consumers outside the sdk barrel re-export.** No package imports `@flighthq/binpack` or calls `packRectangles`. The planned consumer (`glyphatlas`) has its own shelf packer and no dependency on binpack. This is not a code defect but a measure of integration maturity.
+6. **Minor: the `explain*` query re-runs the full pack.** This is by design (keeps the packer loop free of reporting concerns, as the source comment explains), but for large inputs it doubles the work. A future instrumented path could avoid the re-run without contaminating the hot path, though the current approach is clean and correct.
 
 ## Charter contradictions
 
-**None.** The implementation matches every 2026-07-10 Decision precisely — signature, `PackResult` shape, the full options list with the documented defaults (`growable` defaulting true included), deterministic total-order sort, plain-data types in the header. The Boundaries (no pixels, no atlas, one-shot) are respected. The only daylight is North-star *incompleteness* (best-area named but unbuilt), which is a gap, not a contradiction.
+**None.** Every 2026-07-10 Decision is met:
+- `packRectangles(rects, options?): PackResult` — exact signature. The `PackResult` shape matches (`placements`, `width`, `height`, `unpacked`).
+- Full options list with documented defaults (`growable` defaults true, `heuristic` defaults `'bestShortSideFit'`).
+- `BinPackHeuristic` type includes both `'bestAreaFit'` and `'bestShortSideFit'`, both implemented.
+- Plain-data types in `@flighthq/types`.
+- Deterministic for same input + options.
+- Depends on `geometry` + `types` only.
 
-## Contract & docs fit
+The Boundaries (no pixels, no atlas, one-shot, layout not compositing) are respected.
+
+## Contract and docs fit
 
 **Package side — clean:**
 
-- Types-first: all five shared types in `@flighthq/types` (`BinPack.ts`), implementation imports them. ✓
-- Naming: `packRectangles` carries the full subject; internal helpers (`splitFreeRectangles`, `pruneFreeRectangles`, `findBestPlacement`) are self-identifying; no abbreviations. ✓
-- Sentinels-not-throws: no `throw` anywhere; failure is `unpacked`. ✓
-- Single root export (`index.ts` → `./packRectangles`), `"sideEffects": false`, deps exactly `geometry` + `types`, module constants (`DEFAULT_MAX_EXTENT`) at the bottom of the file. ✓
-- `Readonly<>` on inputs throughout, including `readonly Readonly<PackableRectangle>[]`. ✓
-- Tests colocated, one per source file, invariant-based. ✓
-- Rust-crate mirror (`flighthq-binpack` per the charter front matter): not verifiable from this repo (flight-rs is separate); noted, not judged.
+- Types-first: all eight shared types in `@flighthq/types/BinPack.ts`; implementation imports via `@flighthq/types/contract`.
+- Naming: `packRectangles`, `getPackResultOccupancy`, `explainUnpackedRectangles` carry full unabbreviated type names. Internal helpers (`splitFreeRectangles`, `pruneFreeRectangles`, `findBestPlacement`) are self-identifying.
+- Sentinels-not-throws: no `throw` anywhere; failure is `unpacked`.
+- Diagnostics convention: the silent `unpacked` sentinel has its shakeable `explain*` companion (`explainUnpackedRectangles`), separately importable so the packer's bundle pays nothing for it.
+- Two export lanes (`.` public, `./contract` full surface). Both re-export the same three functions + constant.
+- `"sideEffects": false`, deps exactly `geometry` + `types`.
+- `Readonly<>` on all inputs throughout.
+- Tests colocated, one per source file, `describe` blocks mirror exported names.
+- Accessor convention: `getPackResultOccupancy` uses the `get*` prefix.
 
-**Candidate doc revisions (stale admin docs):**
+**Candidate doc revisions:**
 
-1. **Package Map (`agents/index.md`, glyphatlas entry) claims "`@flighthq/binpack`-backed batch repack on eviction".** False today: `packages/glyphatlas` has no binpack dependency and no `packRectangles` call; its repack is a self-owned shelf packer. Either the map should drop the claim or the wiring it describes is future work that never landed — worth the user's call, since it also bears on Open direction 3.
-2. The prompt-level assumption that glyphatlas is a "known consumer" propagates from the same stale line; as of this review binpack has **zero in-repo consumers** outside the sdk barrel re-export.
+1. **Package catalog (`catalog.md`, glyphatlas entry) claims "`@flighthq/binpack`-backed batch repack on eviction."** False: `packages/glyphatlas/` has no binpack dependency and no `packRectangles` call; its repack is a self-owned shelf packer. Either the catalog should drop the claim or the wiring is future work that never landed. (Carried from the prior review; still stale.)
+2. **Package catalog (`catalog.md`, binpack entry) describes "MaxRects (Best-Short-Side-Fit)" only.** The entry does not mention the area-fit heuristic, `getPackResultOccupancy`, or `explainUnpackedRectangles`, all of which landed since the catalog was last written.
 
 ## Candidate open directions
 
 1. **Multi-bin/multipage packing** — charter is silent; result-shape change (`PackResult` gains pages or a `PackResult[]`). Should it be a `packRectanglesIntoBins` sibling, an option, or out of scope?
-2. **Shape of heuristic selection** — Open direction 2 gestures at "pluggable placement strategy"; the concrete fork is closed-union option (`heuristic: 'bestShortSideFit' | …`, cheap, fork-B "tight loop in a closed system") vs a strategy-registry seam (fork-B default once the family grows past MaxRects). Needs settling before Skyline/Guillotine land.
+2. **Shape of heuristic selection** — Open direction 2 gestures at "pluggable placement strategy." The concrete fork is closed-union option (`heuristic: 'bestShortSideFit' | 'bestAreaFit' | ...`, cheap) vs a strategy-registry seam (the codebase-map default once the family grows past MaxRects). Needs settling before Skyline/Guillotine can land.
 3. **Should glyphatlas's shelf packer migrate here** when Open direction 3 (online allocator) is built, making binpack the single packing home? Cross-package; ties to doc revision 1 above.
-4. **Sort strategy as an option** — the fixed sort is a Decision; exposing `sortBy`/`sort: false` would amend it. Worth a ruling only when a consumer needs it.

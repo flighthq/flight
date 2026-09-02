@@ -1,54 +1,71 @@
 ---
 package: '@flighthq/types'
 status: solid
-score: 88
-updated: 2026-07-13
+score: 89
+updated: 2026-09-02
 ingested:
   - charter.md
   - status.md
-  - source (live tree, structural sample of 545 files)
-  - prior review.md (integration-b2824e3d8 merge gate, 2026-06-25)
+  - assessment.md
+  - source (live tree, 957 concept files)
+  - prior review.md (structural survey, 2026-07-13)
   - conventions/types-layout.md
 ---
 
 # types — Review (live tree, structural)
 
-Re-review of the live tree after ~83 commits since the 2026-06-25 merge-gate review. With 545 source files this is a **structural** survey — organization, coverage, naming symmetry, and drift — sampled, not enumerated.
+Re-review of the live tree after significant growth since the 2026-07-13 structural review. The package nearly doubled from 545 to 957 concept files. With 957 source files this is a **structural** survey -- organization, lane compliance, naming symmetry, and drift -- sampled, not enumerated.
 
 ## Verdict
 
-`solid — 88/100`. The header layer is structurally healthy and delivers its defining promise: 544 concept files + a complete barrel (544 `export *` lines, zero orphans, verified mechanically), zero runtime dependencies, no `@flighthq/*` imports anywhere in source (self-contained), `sideEffects: false`. The filters→adjustments/effects dissolution left **no orphaned filter types** — `BitmapFilter` and the filters-era surface are cleanly gone, and the `Adjustment` family (base contract + per-variant files) is textbook layout. All five 2026-07-02 Approved items verified landed. What keeps it from higher: two **orphaned signal types** documenting an API that does not exist, a **casing split between sibling codec vocabularies**, and lowercase Flight-owned kind vocabularies in newer files.
+`solid -- 89/100`. The header layer is structurally healthy and continues to deliver its defining promise: 957 concept files, a complete two-lane barrel (922 public `export *` lines in `index.ts`, 958 contract `export *` lines in `contract.ts`, 36 contract-only types, zero orphans in either lane -- verified mechanically), zero runtime dependencies (only `@webgpu/types` as peer), no `@flighthq/*` imports anywhere in source (self-contained), `sideEffects: false`. The biggest gap from the prior review -- `SignalConnection` and `SignalScope` describing a phantom API -- is **resolved**: `connectSignalTracked`, `createSignalScope`, and `disconnectSignalScope` all exist in `@flighthq/signals` with tests. What keeps it from higher: a **persistent casing split** across kind vocabularies that has had two months to spread without a sweep, a **665-line domain file** (`Collision.ts`) that has grown far past the convention's split threshold with no ruling, and the continuing `RenderViewport2D` Rectangle-duplicate debt.
 
 ## Present capabilities (structural evidence)
 
-- **Barrel completeness — mechanically verified.** Every non-test source file is re-exported from `index.ts`; no dead files.
-- **Entity quartets intact.** Sampled `Bitmap.ts` (`BitmapData`/`BitmapRuntime`/`Bitmap`/`BitmapKind` in one file), `Rectangle.ts` (`Rectangle extends Entity` + `RectangleLike = EntityWithoutRuntime<Rectangle>`). Quartets are never split.
-- **Open contracts + string kinds.** 68 files export `*Kind` constants; ~90 variant files across the Effect/Material/Adjustment families, each 1:1 per-concept; 52 capability `*Backend` seam files. `SpritesheetFormatKind = string` with PascalCase built-ins remains the fork-B exemplar. `BlendMode` was converted to a const namespace + open string (d6927f58) per the types-layout casing rule.
-- **Coverage of new packages is complete.** Every recent package has a header home: `Spring.ts`, `Camera2D.ts`, `Flow.ts`, `Snapshot.ts`, `Spatial.ts`, `Collision.ts`, `Assets.ts`, `GlyphSource`, `MotionPath`, `Clock`, `BinPack`, plus the text-stack additions (`TextDirection.ts`, textbidi, textsegment, markup). The "navigable from types alone" promise holds on sampling.
-- **Contract tests.** 10 type-level test files (`Entity`, `Material`, `RenderEffect`, `Signal`, `Node`, `PartialNode`, `MethodsOf`, `ParticleForce`, `Adjustment`, `Bitmap`) encoding the load-bearing structural invariants — exactly the posture Decision #2 blesses.
-- **Approved items all landed** (verified in source): notification `id` seam; ParticleForce/ParticleCollider "Closed by design" rationale comments; Dom PascalCase filenames; `TextDirection` extracted to its own file (now also `'TopToBottom'`) and referenced from `ShapedRun`/`TextShaper`; `glyphCount` documented ("glyphs may be over-allocated as a reusable buffer").
+- **Barrel completeness -- mechanically verified.** Every non-test source file is re-exported from `contract.ts` (958 lines for 957 concept files). `index.ts` carries 922 of these in the public lane; the remaining 36 are contract-only, primarily render internals (`RenderProxy`, `RenderQueue`, `GlContextState`, `WgpuDeviceState`), host-specific capability generics (`ElectronAppCapabilitiesFor`, `CapacitorAppCapabilitiesFor`, `TauriAppCapabilities`), and selection runtimes. The two-lane split is clean.
+- **Entity quartets intact.** Sampled `Bitmap.ts`, `Notification.ts`, `Mesh.ts` -- all carry their quartet pattern (`*Data`/`*Runtime`/entity/`*Kind`). `Notification` and `ScheduledNotification` are Entity-backed with `id` identity, matching charter Decision on notification identity.
+- **Open contracts + string kinds.** 20 standalone `*Kind` files, plus many more `*Kind` constants inline in their concept files. Sampled `SpritesheetFormatKind`, `TextureKind`, `DisplayObjectKind`, `StandardPbrMaterialKind` -- all PascalCase values as specified. 21 `*Backend` seam files for platform capabilities.
+- **Signal handle surface now backed.** `SignalConnection.ts` documents `connectSignalTracked` (the function that now exists in `@flighthq/signals/src/connection.ts`), and `SignalScope.ts` documents `createSignalScope`/`disconnectSignalScope` (both exported from `@flighthq/signals`). The doc comments in these type files now match the live implementation. This resolves the prior review's top finding.
+- **Coverage of new packages is thorough.** Recent additions verified in source: `FlightDocument` family (11 files: `FlightDocument.ts`, `FlightDocumentLayout.ts`, `FlightDocumentToken.ts`, `FlightDocumentFieldSchema.ts`, `FlightDocumentInteractiveState.ts`, `FlightDocumentResource.ts`, etc.), `GizmoAlignment.ts` and `GizmoState.ts`, `GuiController.ts` and `GuiDialog.ts`, `DisplacementEffect.ts`, `InteractionDispatchLayer` additions in `InteractionManager.ts`. The "navigable from types alone" promise holds on sampling.
+- **Contract tests.** 39 type-level test files (up from 10), covering structural invariants across entities, materials, effects, modifiers, signals, nodes, sprites, layout, and the FlightDocument family. The posture Decision #2 blesses is well-executed.
+- **Header self-containment holds.** `grep -rn '@flighthq/' packages/types/src/` finds only doc comments referencing other packages for context -- no `import` from any `@flighthq/*` package exists in any non-test source file. `package.json` declares no `@flighthq` dependency.
+- **Approved items from assessment all landed.** Notification `id` seam, ParticleForce/ParticleCollider closed-by-design rationale, Dom PascalCase filenames, `TextDirection` extraction, `glyphCount` documentation -- all verified in source.
 
 ## Gaps / drift
 
-1. **Orphaned `SignalConnection.ts` + `SignalScope.ts`.** Zero consumers anywhere in `packages/*/src` outside types itself. Worse than dead weight: their doc comments describe behavior the live `@flighthq/signals` does not have — "A handle returned by `connectSignal` and `connectSignalOnce`" (live `connectSignal` returns `void`; `connectSignalOnce` does not exist). These are residue of the never-landed builder-67dc46d64 handle/scope surface. The header now **lies about the API**. Either the signals package grows handles (a signals charter question) or these files go.
-2. **Sibling codec vocabularies disagree on casing.** `SpritesheetFormatKind*` uses PascalCase values (`'Aseprite'`, `'Starling'`) while `TextureAtlasFormatKind*` uses lowercase (`'aseprite'`, `'starling'`) — the *same external formats* spelled two ways in two neighboring vocabularies. Per types-layout, a Flight-owned enum concept is PascalCase; the lowercase family is the drift.
-3. **Lowercase Flight-owned kind vocabularies in newer files.** `CollisionShapeKind = 'circle' | 'aabb' | 'obb' | …`, `MessageDialogKind = 'info' | …`, `PlatformKind = 'desktop' | …`, `AppPathKind`, `FileSystemPathKind`, `AppLaunchKind`, `SoftKeyboardEasing*Kind` (`'ease'`, `'easeIn'`). Some may pass the "relaying a foreign string" test (a few map to web-platform vocabularies), but `CollisionShapeKind` at least is unambiguously Flight-owned and should be PascalCase per the convention. A per-vocabulary enum-type-vs-string-value adjudication sweep is due.
-4. **Domain-file grouping in the game headers.** `Flow.ts`, `Collision.ts` (84 lines: kind + six shape types + union + manifold), `Spatial.ts`, `Assets.ts` group a whole package's header into one file rather than one concept per file. Defensible under the "finite vocabulary / capability home" allowances and each is well-documented — but `Collision.ts` is at the boundary where the convention would split (each shape is a variant-like concept). An observation, not a violation; worth a ruling before the pattern spreads.
-5. **`RenderViewport2D` Rectangle-duplicate still standing.** Exact `{x, y, width, height}` shape, unchanged since Decision #3 named it consolidation debt. `BitmapRegion` (+`bitmap`) and `TextSelectionRectangle` (+`lineIndex`) add fields so they are legitimate under the Decision — though they re-declare the four fields rather than `extends Rectangle`, likely because `Rectangle extends Entity` and these are plain data; the Decision's "extends" prescription doesn't account for the entity/plain-data split.
-6. **`CollisionObb` abbreviated fields.** `halfW`/`halfH` — the only abbreviated field names found in sampling; the codebase spells out `halfExtents`/`width` elsewhere.
+1. **Sibling codec vocabularies still disagree on casing.** `SpritesheetFormatKind` uses PascalCase values (`'Aseprite'`, `'Starling'`, `'TexturePacker'`) while `TextureAtlasFormatKind` uses lowercase (`'aseprite'`, `'starling'`, `'texturePacker'`) -- the same external formats spelled two ways in neighboring vocabularies. Unchanged since the prior review. Per types-layout, these are serialized kind values and should be PascalCase.
+
+2. **Lowercase Flight-owned kind vocabularies persist and have spread.** `CollisionShapeKind2D` = `'circle' | 'aabb' | 'obb' | 'capsule' | 'polygon' | 'segment' | 'point'`, `PlatformKind` = `'desktop' | 'mobile' | 'web' | 'unknown'`, `MessageDialogKind` = `'info' | 'warning' | 'error' | 'question'`, `AppLaunchKind` = `'cold' | 'warm'`, `FileSystemPathKind` = `'home' | 'documents' | ...`, `AppPathKind` = `'userData' | 'logs' | 'crashDumps'`, `GamepadMappingKind` = `'standard' | 'raw' | ''`, `CanvasImageSourceKind` = `'data' | 'element'`, `DomImageSourceKind` = `'data' | 'element'`. Some may relay foreign strings (GamepadMappingKind mirrors the W3C Gamepad API), but `CollisionShapeKind2D`, `MessageDialogKind`, `AppLaunchKind`, and `AppPathKind` are unambiguously Flight-owned and should be PascalCase per the types-layout casing rule. The sweep has not happened and the inventory has grown since the prior review.
+
+3. **`Collision.ts` has grown to 665 lines.** Up from 84 lines at the prior review, it now carries `CollisionShapeKind2D`, six 2D shape interfaces, the built-in and vendor shape unions, `CollisionManifold2D`, `CollisionRaycastHit2D`, `CollisionSupport2D`, `CollisionTest2D`, `CollisionTestGuard2D`, plus a mirrored 3D set. The types-layout convention specifies one concept per file; at 665 lines with two full dimension families, this file is well past the boundary where the convention would split. `Collision.ts` started as a defensible capability-home grouping when it was small and all-2D -- it is no longer either.
+
+4. **`RenderViewport2D` Rectangle-duplicate still standing.** Exact `{x, y, width, height}` shape with no additional fields, unchanged since charter Decision #3 named it consolidation debt. Cross-package, so not within-types to fix alone.
+
+5. **Header closure remains unenforced.** No `headerClosure.test.ts`, no script rule, no `packages:check` extension validates that no file in `types/src/` imports from `@flighthq/*`. The promise holds by convention -- verified by grep -- but nothing catches the first violation. Status flagged this; charter Open direction #4 describes the enforcement.
+
+6. **`CollisionObb2D` abbreviated fields.** `halfW`/`halfH` remain -- the only abbreviated field names found in sampling. The convention spells out `halfWidth`/`halfHeight` (as seen in `Camera3D.ts:36` and `OrthographicProjectionOptions.ts:3-4` within this same package).
+
+7. **Scene versioning still absent.** `SceneVersion` and `SceneMigration` appear nowhere in `types/src/`. The `Scene3DDocument.ts` IR is complete for import but carries no migration contract.
 
 ## Charter contradictions
 
-None found. The five North-star principles are honored on sampling; Decisions #1–#6 are all realized in source (notification `id`, closed particle unions; the Rectangle posture is *acknowledged debt*, not contradiction). One nuance: Decision #3's "add fields → `extends Rectangle`" is structurally impossible for plain-data (non-entity) region types since `Rectangle extends Entity` — the Decision's prescription needs a footnote, not the code.
+None found. The five North-star principles are honored on sampling. Decisions #1-#6 are all realized in source (notification entity identity, closed particle unions, Signal divergence documented, Rectangle posture acknowledged as debt). The signal-handle gap that nearly bordered on contradiction (types describing a nonexistent API) is resolved -- `SignalConnection` and `SignalScope` now accurately describe the live `@flighthq/signals` surface.
+
+One nuance persists from the prior review: Decision #3's "add fields -> `extends Rectangle`" is structurally awkward for plain-data (non-entity) region types since `Rectangle extends Entity`. The Decision's prescription needs a footnote, not a code change.
 
 ## Contract & docs fit
 
-- **Contract:** zero deps, single `.` export, `sideEffects: false`, no impl leaks (grep-verified no `@flighthq/` imports), filename=type on sampling (apparent mismatches — `Tilemap.ts` leading with `TilemapData`, `Net.ts` with `NetMethod` — are the quartet/capability-home patterns, not violations). Strong fit.
-- **Candidate doc revisions:** (a) the charter says "~478 source files" — now 545; (b) charter Open direction #2 (TextDirection) is done and can be retired; (c) the types-layout doc could record the domain-file allowance boundary the game headers are testing (finding 4).
+- **Contract:** zero `@flighthq` deps, two-lane export (`"."` + `"./contract"`), `sideEffects: false`, `@webgpu/types` as peer only, no impl leaks (grep-verified). Filename=type on sampling; apparent mismatches are quartet/capability-home patterns, not violations. Strong fit.
+- **Candidate doc revisions:** (a) charter says "~478 source files" -- now 957; (b) charter Open direction #2 (TextDirection) was completed and can be retired; (c) status Open bullet on `SignalConnection`/`SignalScope` can be retired (the backing API now exists); (d) the types-layout doc could record a domain-file size boundary the `Collision.ts` growth is testing.
 
 ## Candidate open directions
 
-1. **Signal handle surface: build or delete.** `SignalConnection`/`SignalScope` must stop describing a phantom API. This is really a *signals* charter fork (does the lean core grow handles/scopes?) with a types-side consequence either way.
-2. **Kind-casing adjudication sweep.** Decide per-vocabulary (finding 3) which lowercase unions are Flight-owned enums (→ PascalCase, e.g. `CollisionShapeKind`, one of the two atlas-format vocabularies) vs foreign-string relays (→ keep source form). These are serialized values — a sweep is cheap now and expensive after shipping.
-3. **Domain-file vs per-concept ruling for game headers.** Bless or split the `Flow.ts`/`Collision.ts`/`Spatial.ts`/`Assets.ts` grouping style before more packages copy it.
-4. **Amend Decision #3 for plain-data regions.** Record that non-entity region types re-declare the four fields (cannot `extends Rectangle`), so future reviewers don't flag `BitmapRegion` as debt.
+1. **Kind-casing adjudication sweep.** The inventory of lowercase Flight-owned kind vocabularies has grown since the prior review without a sweep. Each vocabulary needs a per-vocabulary ruling: Flight-owned enum (-> PascalCase, e.g. `CollisionShapeKind2D`, `MessageDialogKind`, `AppLaunchKind`, `AppPathKind`) vs foreign-string relay (-> keep source form, e.g. `GamepadMappingKind`). These are serialized values -- a sweep is cheap now and expensive after shipping.
+
+2. **Split `Collision.ts`.** At 665 lines it is no longer a small capability-home grouping. It carries two full dimension families (2D and 3D) with six shape interfaces each, plus manifolds, raycasts, support functions, and test guards. The types-layout one-concept-per-file convention would split at least the 3D family into a `Collision3D.ts`, and potentially separate shape types into per-shape files. A ruling on the boundary is due before the pattern spreads to other growing domain files.
+
+3. **Header closure enforcement.** Charter Open direction #4. A within-package test or script rule that verifies no `types/src/` file imports from `@flighthq/*`. The promise is structural and load-bearing; it should be self-verifying.
+
+4. **Amend Decision #3 for plain-data regions.** Non-entity region types cannot `extends Rectangle` because `Rectangle extends Entity`. Record that re-declaring the four fields is the expected pattern for non-entity rectangle-shaped types, so reviewers stop flagging `BitmapRegion` as debt.
+
+5. **Retire completed charter Open direction.** Open direction #2 (TextDirection shared type) is done and can be removed from the charter.

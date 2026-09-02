@@ -1,95 +1,134 @@
 ---
 package: '@flighthq/scene2d-canvas'
 status: solid
-score: 92
-updated: 2026-08-25
+score: 78
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
   - source
-  - changes.patch
+  - package.json
+  - assessment.md
 ---
 
 # scene2d-canvas — Review
 
 ## Verdict
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+`solid -- 78/100`. The Canvas 2D leaf renderer for the display-object subject family is well-structured: 12 per-kind renderers over a shared draw-state spine, open registries for shape commands and materials, explicit registration with no top-level side effects, deterministic teardown, and a `CanvasPipeline` entity (`createCanvasPipeline` / `scene2dCanvasPipeline`) that wires the whole assembly. The architectural decisions are sound -- closed blend-mode table for the finite `BlendMode` enum on the hot path, open registries for genuinely extensible axes (shape commands, materials), and side-effect-free tree-shakable exports.
 
-
-`solid — 88/100`. The Canvas 2D leaf renderer for the display-object subject family: a complete, well-factored set of per-kind draw functions over a shared draw-state spine, with explicit registration, an open material/shape-command registry pair, deterministic teardown, and a tidy blend-mode/scale-mode fidelity story. The incoming pass closed the last small contract gaps (naming, destroy verbs, an umbrella registration, a missing test block) and added a real `LineScaleMode 'none'` implementation. The remaining distance to authoritative is feature breadth (dashed strokes, per-axis scale modes, bitmap-fill repeat, render-target readback) plus the absence of cross-backend functional conformance scenes — all of it either cross-package or visual-session work, not within-file debt.
-
-## Status-doc verification (as-claimed → verified)
-
-Every claim in the `builder-67dc46d64` status entry checks out against `changes.patch`:
-
-- **`registerCanvasDisplayObjectRenderers` + `canvasDisplayObjectRendererEntries`** — present in the new `canvasRegistration.ts`, exported from `index.ts`, 11 ordered `[Kind, Renderer]` pairs (Bitmap, DisplayObject, ParticleEmitter, QuadBatch, RichText, Scale9Shape, Shape, Sprite, TextLabel, Tilemap, Video), colocated `canvasRegistration.test.ts` with a count-equality test. Verified.
-- **Blend-mode fidelity** — `canvasMaterials.ts` now maps `Alpha → 'destination-in'`, `Erase → 'destination-out'`; `Invert`/`Shader`/`Subtract` stay `null` with per-line comments and a block comment splitting expressible vs. unsupported. Tests assert all three. Verified.
-- **`enable*` naming unification** — `enableCanvasRenderCache → enableCanvasRenderCacheSupport`, `enableCanvasTextInput → enableCanvasTextInputSupport`, all call sites and tests updated, including a stale comment in `canvasRichText.ts`. Verified.
-- **Mask contract documented** — `drawCanvasRichTextMask` carries the uniform-clip-path explanation; a `drawCanvasRichTextMask` describe block now exercises the no-op. Verified.
-- **`destroyCanvasRenderTarget`** and **`destroyCanvasRenderCacheTarget`** — both collapse the offscreen canvas to 0×0; the cache variant also removes the map entry and is documented as distinct from `releaseCanvasRenderCache` (slot-release, no collapse). Both tested, including the no-target no-op. Verified.
-- **`LineScaleMode 'none'`** — `strokeScaleMode: LineScaleMode` added to `CanvasShapeDrawState` in `@flighthq/types`; `defaultCanvasLineStyle` reads `buf[i+4]` and stores `'none'` vs `'normal'`; `flushCanvasShapePath` divides `strokeWidth` by the mean axis scale from `getTransform()` for `'none'`. `pixelHinting` (`buf[i+3]`) documented as a noted no-op. Two tests (identity, 2× scale). Verified.
-- **Scratch `_drawState`** — `renderCanvasShapeCommands` now resets a module-level scratch via `resetCanvasShapeDrawState` instead of allocating per draw; the `flush` closure is re-bound per reset to capture the current context; non-recursion is documented as the safety precondition. Verified.
-
-No claim was overstated. The status doc's self-estimate (91) is a touch high against the AAA bar (see Gaps); 88 reflects the still-open breadth and the missing visual conformance.
+The distance to authoritative is in three areas: (1) known correctness defects within the package itself (hard-coded image-smoothing restoration, per-frame draw-state allocation, skipped `lineStyle` arguments), (2) feature breadth blocked on upstream `@flighthq/types` / `@flighthq/shape` changes (dashed strokes, per-axis `LineScaleMode`, bitmap-fill repeat), and (3) absence of cross-backend functional conformance scenes to prove rendered-pixel fidelity. The prior review (2026-08-25) scored this package at 92, but that score was based on several false claims inherited from a 2026-06-24 builder pass -- an umbrella `registerCanvasDisplayObjectRenderers`, an `enable*Support` naming unification, a `strokeScaleMode` field on `CanvasShapeDrawState`, and a module-level scratch draw state -- none of which exist in source. The 2026-08-08 status log already corrected these. This review re-grounds every claim against the live source.
 
 ## Present capabilities
 
-Grounded in `incoming/builder-67dc46d64/head/packages/scene2d-canvas/src/`:
+Verified against `packages/scene2d-canvas/src/` as of this review date:
 
-- **Full per-kind renderer set** — `defaultCanvas*Renderer` for Bitmap, DisplayObject, ParticleEmitter, QuadBatch, RichText, Scale9Shape, Shape, Sprite, TextLabel, Tilemap, Video, each a `{ createData, submit }` object. `canvasBitmap.ts` honors `sourceRectangle`, per-bitmap `smoothing` against `state.allowSmoothing`, blend mode, and alpha.
-- **Shape command spine** — `canvasShapeCommands.ts` implements the retained-mode graphics vocabulary as registerable `CanvasShapeCommand` objects (`beginFill`, `beginTextureFill`, `beginGradientFill`, `lineStyle`, `moveTo`/`lineTo`/`curveTo`, fills/winding), dispatched by `renderCanvasShapeCommands` over a shared `CanvasShapeDrawState`; `canvasShapeRegistry.ts` makes the command set open and user-extensible.
-- **Material seam** — `canvasMaterialRegistry.ts` exposes `registerCanvasMaterialRenderer`/`resolveCanvasMaterialRenderer`/`getCanvasMaterialRenderer` over a lazy `materialRendererMap`, with `applyCanvasMaterial` bracketing a save/restore only when a material contributes draw state — the common path pays nothing.
-- **Blend modes** — `canvasMaterials.ts` maps the full `BlendMode` enum to `globalCompositeOperation`, caches the current mode on the runtime to skip redundant context writes, and documents every unsupported mode.
-- **Clipping/masking** — handled uniformly through `canvasClip.ts` / `canvasClipRectangle.ts` (`pushCanvasClipContours`), not per-kind `drawMask`; the canvas backend correctly treats `drawMask` as a no-op satisfying the renderer interface.
-- **Offscreen targets & caching** — `canvasRenderTarget.ts` (`create`/`begin`/`end`/`resize`/`destroy`) and `canvasCache.ts` (`createCanvasCacheState`, `ensure`/`get`/`refresh`/`release`/`destroy` cache targets, `enableCanvasRenderCacheSupport`).
-- **Text** — `canvasRichText.ts` / `canvasTextLabel.ts` / `canvasTextMeasure.ts` render the text spine; `canvasTextInput.ts` installs an opt-in caret/selection overlay (`enableCanvasTextInputSupport`) so a static `RichText` pulls no text-input code.
-- **CSS-filter binding** — `canvasCSSFilterBinding.ts` bridges the filters descriptors to `context.filter`.
-- **Tree-shakable, side-effect-free** — single `.` export, `sideEffects: false`, no top-level registration; every wire-up is an explicit `register*`/`enable*` call.
+- **12 per-kind renderers in `scene2dCanvasPipeline`**: BitmapText, DisplayObject (no-op container), MorphShape (alias of Shape), ParticleEmitter2D, QuadBatch, RenderCache, RichText, Scale9Shape, Shape, Sprite, TextLabel, Tilemap. Each is a `{ createData, submit }` object. The pipeline entity registers all 12 via `withRegistryTableEntry` against `@flighthq/registry`'s `KeyedTable<Renderer>`. No Video renderer exists (the charter names it; the pipeline does not carry it).
 
-Test coverage is dense (status reports 217 across 29 files; the diff adds material/registration/scale-mode/ destroy/rich-text-renderer cases), one colocated file per source file.
+- **`CanvasPipeline` entity**: `createCanvasPipeline` wraps registries in an Entity; `getCanvasPipelineRegistries` reads them back; `createEmptyCanvasRegistries` builds the three registry tables (renderers, renderEffects, strokeTessellator). The `scene2dCanvasPipeline` const is the turnkey assembly with all 12 renderers, the native blend-mode application function, and the 16-command shape-command table.
+
+- **Shape command spine**: 16 commands registered by `canvasShapeCommandTable()` -- 14 in `defaultCanvasShapeCommands` (beginFill, beginGradientFill, cubicCurveTo, curveTo, drawCircle, drawEllipse, drawPath, drawRectangle, drawRoundRectangle, endFill, lineGradientStyle, lineStyle, lineTo, moveTo) plus 2 texture-backed commands in `defaultCanvasTextureShapeCommands` (beginTextureFill, lineTextureStyle). Each carries a `draw` function and paired `fillBounds`/`strokeBounds` functions delegating to `@flighthq/shape`. The command set is extensible through `registerCanvasShapeCommand` / `registerCanvasShapeCommands`.
+
+- **Material seam**: `canvasMaterialRegistry.ts` provides `registerCanvasMaterialRenderer`, `resolveCanvasMaterialRenderer`, `getCanvasMaterialRenderer`, and `applyCanvasMaterial`. The apply function brackets a `save`/`restore` only when a material contributes draw state (composite, filter) -- the common no-material path pays nothing.
+
+- **Blend modes**: `CANVAS_BLEND_MODE` maps `BlendMode` (6 values) and `AdvancedBlendMode` (11 values) to `globalCompositeOperation` strings. `applyCanvasBlendMode` caches the current mode on the runtime to skip redundant context writes. `enableCanvasBlendMode` installs the application function on the state, keeping it tree-shakable.
+
+- **Clipping**: `enableCanvasClip` installs `Scene2DClipHooks` that push/pop rectangular and contour-path clips through `ctx.save()`/`ctx.clip()`/`ctx.restore()`. Uniform bracket -- no per-form dispatch on pop.
+
+- **Render traversal**: `renderCanvasScene2D` implements an iterative depth-first traversal using a stack on the runtime. Resolves clip hooks, CSS filters, and per-kind renderer submission per node.
+
+- **Offscreen targets and caching**: `canvasRenderTarget.ts` provides `create`/`begin`/`end`/`resize`/`destroy` for `CanvasRenderTarget` with a nestable pass stack. `canvasCache.ts` provides `enableCanvasRenderCache`, `createCanvasCacheState`, `refreshCanvasRenderCache`, `ensureCanvasRenderCacheTarget`, `destroyCanvasRenderCacheTarget`, `releaseCanvasRenderCache`. The cache bakes a subtree into an offscreen canvas using a dedicated offscreen render state.
+
+- **Render textures**: `canvasRenderTexture.ts` provides `renderIntoCanvasRenderTexture`, `writeCanvasRenderTextureTarget`, `bindCanvasRenderTexture`, `destroyCanvasRenderTexture`, `explainCanvasRenderTexture`. `canvasRenderTexturePool.ts` provides pooled acquire/release/destroy with leak-safe `withCanvasRenderTextures`.
+
+- **Texture resolution**: `canvasTextureResolver.ts` implements a per-source-kind resolver registry (`registerCanvasTextureResolver`) with typed resolvers for bitmaps (`canvasBitmapTextureResolver.ts`), images (`canvasImageTextureResolver.ts`), and render textures (`canvasRenderTextureResolver.ts`). `connectCanvasTextureResolverMisses` wires a resolver set to a render state's diagnostics emitter. `explainCanvasTextureResolution` returns plain data about a texture's resolution status.
+
+- **CSS filter binding**: `canvasCSSFilterBinding.ts` stores per-render-proxy filter strings in a WeakMap and applies them as `context.filter` around the draw. `enableCanvasCssFilter` installs the resolver on the state -- filter-free states leave it null and the module tree-shakes.
+
+- **Text rendering**: `canvasRichText.ts` renders RichText fields (background, border, text groups with underline/strikethrough, selection highlight, bullet lists, scroll). `canvasTextLabel.ts` renders single-format TextLabel with layout caching keyed by content revision. `canvasTextMeasure.ts` provides measurement. `canvasTextInput.ts` draws the editable-field overlay (caret blink, selection rectangles) and is opt-in through `enableCanvasTextInput`.
+
+- **Shape rasterizer bridge**: `canvasShapeRasterizer.ts` exposes `createCanvasShapeRasterizer` -- builds a `ShapeRasterizer` closure that GPU and DOM backends register to draw fills they cannot tessellate.
+
+- **Diagnostics**: `explainCanvasScene2DCoverage` / `hasCanvasScene2DCoverage` compose the base render coverage check with Canvas-specific material-renderer coverage. `enableCanvasTextureResolverGuards` / `areCanvasTextureResolverGuardsEnabled` delegate to render registry guards.
+
+- **Test coverage**: 44 source files, 44 colocated test files (`contract.ts` and `index.ts` are re-export barrels, correctly untested). Every non-barrel source file has a paired `.test.ts`.
+
+- **Package shape**: two export lanes (`.` and `./contract`), `"sideEffects": false`, `"type": "module"`. The public `.` lane curates 72 exports; `./contract` re-exports everything. `createCanvasShapeRasterizer` is exported only through `index.ts`, not `contract.ts` (intentional: it is public-only, not intra-SDK).
 
 ## Gaps
 
-Measured against the AAA 2D display-object feature target (charter is a stub — see Candidate open directions):
+Verified against the AAA display-object feature target and the charter:
 
-- **Dashed strokes** — no `setLineDash`/`lineDashOffset`; blocked on a `dashPattern`/`dashOffset` field in the `lineStyle` command tuple in `@flighthq/types`+`@flighthq/shape`. Cross-package.
-- **`LineScaleMode 'horizontal'` / `'vertical'`** — fall back to `'normal'`; needs per-axis scale decomposition of the canvas transform. Within-package but a focused item.
-- **`BitmapFillRepeat` / `pixelSnapping`** — `beginTextureFill` takes a boolean `repeat`, not the four-way `repeat`/`no-repeat`/`repeat-x`/`repeat-y`; no pixel-snapping. Needs new types upstream.
-- **Render-target readback** — no `getCanvasRenderTargetImageData` / `readCanvasRenderTargetPixels`; the ownership line with `@flighthq/bitmap` is undecided (raw `ImageData` vs a `CanvasRenderTarget → ImageSource` bridge).
-- **Image-smoothing parity** — smoothing overrides are honored in `drawCanvasBitmap` but not audited across scale-9, tilemap, and pattern fills for consistency.
-- **Cross-backend functional conformance scenes** — none exist for Erase/Alpha blend, scale-mode 'none', or scale-9 smoothing. jsdom unit tests cannot prove the rendered pixels; this is the single largest gap to authoritative and the TS half of the future `rust:skia ~ ts:canvas` pairing.
+- **Image-smoothing restoration is hard-coded to `true`.** Five files (`canvasSprite.ts:33`, `canvasTilemap.ts:61`, `canvasParticleEmitter2D.ts:67`, `canvasBitmapText.ts:67`, `canvasQuadBatch.ts:91`) restore `imageSmoothingEnabled` to `true` after drawing with nearest-filter smoothing disabled. The correct value is `runtime.imageSmoothingEnabled` as set by `createCanvasRenderState` from options. A state created with smoothing off silently gets it back after the first nearest-filter draw. This is a within-package correctness bug.
+
+- **Per-frame `CanvasShapeDrawState` allocation.** `renderCanvasShapeCommands` (`canvasShape.ts:43`) calls `createCanvasShapeDrawState` every invocation, allocating a fresh object with a `flush` closure. For a scene with many shapes this is measurable GC pressure on the hot path. The status doc identifies this; a module-level scratch with per-call reset is the known fix.
+
+- **`lineStyle` drops `pixelHinting` and `scaleMode`.** `defaultCanvasLineStyle` reads `buf[i]` (thickness), `buf[i+1]` (color), `buf[i+2]` (alpha), `buf[i+5]` (caps), `buf[i+6]` (joints), `buf[i+7]` (miterLimit), skipping indices 3 and 4. `CanvasShapeDrawState` (in `@flighthq/types`) has no `strokeScaleMode` field, so all four `LineScaleMode` values render identically. Adding the field is a `@flighthq/types` change; reading and applying it spans both `@flighthq/types` and this package.
+
+- **No dashed strokes.** The `lineStyle` command tuple carries no dash fields, and no source calls `setLineDash`. Blocked on `dashPattern`/`dashOffset` fields in `@flighthq/types` + `@flighthq/shape`.
+
+- **No Video renderer.** The charter lists Video as a node kind this package covers; `scene2dCanvasPipeline` does not register one, and no `canvasVideo.ts` source file exists. Either the charter should drop Video from its kind list, or a renderer must be implemented.
+
+- **Three manifest dependencies unused by source.** `@flighthq/log` appears only in `enableCanvasTextureResolverGuards.test.ts`, `@flighthq/textureatlas` only in `canvasQuadBatch.test.ts` and `canvasTilemap.test.ts`, and `@flighthq/signals` in no file at all. All three should be `devDependencies` (the first two) or removed entirely (`signals`).
+
+- **`BitmapFillRepeat` / `pixelSnapping` absent.** `beginTextureFill` accepts no repeat-mode or pixel-snapping parameters. The four-way repeat union and `pixelSnapping` knob need upstream types.
+
+- **Image-smoothing parity across kinds.** `canvasSprite.ts` checks `texture.sampler.magFilter` to decide smoothing; `canvasBitmapText.ts` uses the coarser `state.allowSmoothing` flag directly. Scale-9, tilemap, and pattern fills have not been audited for consistent behavior.
+
+- **No cross-backend functional conformance scenes.** No functional test scenes exist to verify Canvas rendering of Erase/Alpha blend, scale-mode, scale-9, or any kind against the same scenes rendered by GL/WGPU/DOM backends. jsdom unit tests prove API wiring, not pixel fidelity.
+
+- **`CanvasRenderStateHandles` cast pattern.** Defined identically in both `canvasRenderTarget.ts` and `canvasCache.ts` (a narrow writable view of readonly canvas/context handles). Used at `canvasRenderTarget.ts:42,94,116` and `canvasCache.ts:160`. AGENTS.md names the `state as *Internal` writable-handles pattern as legacy and calls for runtime slots, but the render-target redirection is the one case that genuinely needs to swap handles.
+
+- **`canvasQuadBatch.ts` has commented-out dead code** (lines 94-95: `// popClip(state);` / `// rectanglePool.releaseMatrix(rect);`). Dead comments should be removed.
 
 ## Charter contradictions
 
-None — the charter is an unfilled stub (all four body sections are `TODO`), so there is nothing to contradict. Every judgement above falls back to the codebase-map AAA standard, as the rubric rule prescribes. The absence of a charter is itself the headline finding for the direction pass.
+- **Video kind gap.** The charter's kind list includes "Video" alongside Bitmap, DisplayObject, ParticleEmitter, QuadBatch, RichText, Scale9Shape, Shape, Sprite, TextLabel, and Tilemap. The pipeline does not register a Video renderer and no source file implements one. Either the charter should be updated to drop Video, or the renderer should be added.
 
-## Contract & docs fit
+- **No other contradictions.** The charter otherwise accurately describes the package's scope, boundaries, and non-goals. The pipeline entity (`CanvasPipeline`) and turnkey const (`scene2dCanvasPipeline`) match the charter's "single root export" and "no umbrella registerAll" decisions. The `crate: null` posture matches the host-web-only boundary.
 
-**Lives up to the contract:**
+## Contract and docs fit
 
-- **`@flighthq/types`-first types** — `strokeScaleMode` was added to `CanvasShapeDrawState` _in `@flighthq/types`_, not as a module-local field; the rationale (custom commands registered via `registerCanvasShapeCommand` must be able to read/write it) is sound and matches the header-layer rule. Good catch by the worker.
-- **Full unabbreviated names / global uniqueness** — every export carries `Canvas` + the operated-on type word; no abbreviations.
-- **Teardown verbs** — `destroyCanvasRenderTarget` / `destroyCanvasRenderCacheTarget` correctly use `destroy*` (they free a non-GC compositor/GPU backing store now), kept distinct from `releaseCanvasRenderCache` (`release*` = cache slot bracket). Verb discipline is exactly right.
-- **`enable*Support` naming** — the rename aligns with the SDK-wide `enable*Support` opt-in pattern.
-- **Sentinels not throws** — `resolveCanvasMaterialRenderer`/`getCanvasMaterialRenderer` return `null`; `destroy*` is a no-op on a missing target; nothing throws on expected-absent input.
-- **Single root export, `sideEffects: false`, no top-level registration** — all satisfied.
-- **No Rust crate** — correct and intentional: `crate: null`; the rust map lists `scene2d-canvas` as host-web-only (Canvas2D substrate does not exist in the Rust box; software parity is `scene2d-skia`).
+**Aligned with the codebase contract:**
 
-**Structural-fork fit (no drift):**
+- **Types in `@flighthq/types`.** `CanvasShapeDrawState`, `CanvasRenderState`, `CanvasRenderStateRuntime`, `CanvasPipeline`, `CanvasRenderRegistries`, `CanvasShapeCommand`, `CanvasTextureResolvers`, `CanvasMaterialRenderer`, and all other types used by this package are defined in `@flighthq/types`. No exported types are defined inline.
 
-- The blend-mode map (`CANVAS_BLEND_MODE: Record<BlendMode, …>`) is a **closed record**, but this is the _correct_ exception under fork B, not a registry violation: `BlendMode` is a genuinely closed, finite enum, the lookup sits on a per-draw hot path, and the table is fully auditable. By contrast the genuinely-open axes (materials, shape commands) _are_ open registries (`canvasMaterialRegistry`, `canvasShapeRegistry`). The package draws the open/closed line in the right place.
+- **Full unabbreviated names.** Every export carries `Canvas` + the operated-on type word: `createCanvasPipeline`, `getCanvasPipelineRegistries`, `registerCanvasShapeCommands`, `resolveCanvasMaterialRenderer`, `enableCanvasBlendMode`, etc. No abbreviations.
 
-**Candidate doc revisions (user's gate, not mine):**
+- **Teardown verbs.** `destroyCanvasRenderTarget` / `destroyCanvasRenderCacheTarget` / `destroyCanvasRenderTexture` / `destroyCanvasRenderTexturePool` use `destroy*` correctly (they free non-GC compositor backing stores immediately). `releaseCanvasRenderCache` / `releaseCanvasRenderTexture` use `release*` correctly (cache/pool slot brackets).
 
-- The **live** `agents/index.md` Package Map still lists only `@flighthq/render-canvas`/`render-dom`/`render-webgl` and has no entry for `scene2d-canvas` (or its `scene2d-<backend>` siblings) and no `@flighthq/clip` line. The **bundle's** evolved `index.md` already reflects the `<subject>-<backend>` reorg and adds `@flighthq/clip`. The live map is stale against the shipped shape; the Package Map needs a `scene2d-canvas` entry describing it as the Canvas 2D leaf renderer of the display-object family.
-- The `CONTRACT.md` `crate: null` enumeration already lists `scene2d-canvas` — consistent, no change needed there.
+- **Sentinels not throws.** `resolveCanvasMaterialRenderer`, `getCanvasMaterialRenderer`, `resolveCanvasTexture`, `getCanvasShapeCommand` return `null` for unregistered keys. `destroyCanvasRenderTarget` is a no-op on a destroyed surface. Throws are reserved for programmer errors: `createCanvasElement` on surface acquisition failure, `createCanvasRenderTarget` on surface failure, `releaseCanvasRenderTexture` on a texture not leased from the pool, `assertUsablePool` on a destroyed pool.
+
+- **Side-effect-free.** `"sideEffects": false` declared. No top-level registration. Every wire-up is an explicit `register*`/`enable*` call. The pipeline const is eagerly built but registering it onto a render state is the caller's explicit act.
+
+- **Two export lanes.** `.` (index.ts) curates 72 named exports; `./contract` (contract.ts) re-exports every module. No subpath exports beyond these two.
+
+- **Open/closed line drawn correctly.** `CANVAS_BLEND_MODE` is a closed `Record<BlendMode, ...>` on the per-draw hot path -- `BlendMode` is a finite enum, the table is fully auditable. Shape commands, materials, and texture resolvers are open registries. This matches the "open where the domain is open, closed where it is finite" charter rule.
+
+- **Diagnostics pattern.** `enableCanvasTextureResolverGuards` is a separately importable guard opt-in. `explainCanvasScene2DCoverage` and `explainCanvasTextureResolution` return plain data. `resolveCanvasTexture` reports misses through the `registryMiss` seam rather than logging directly. Aligns with the diagnostics convention.
+
+**Structural observations:**
+
+- `canvasTestSupport.ts` re-exports from `canvasRenderState`, `canvasRenderTarget`, and `canvasTextureResolver` with `export *`, creating test-only convenience wrappers. This file is exported through `contract.ts` but not through `index.ts`. These re-exports mean the contract lane carries test helpers -- acceptable only if other packages' tests genuinely need them; otherwise they should be test-only.
+
+- The `CanvasRenderStateHandles` type is defined identically in two files. A single shared type (or a runtime-slot approach) would eliminate the duplication.
 
 ## Candidate open directions
 
-The charter is silent on all of these; each is a question the direction pass should settle rather than an agent assume:
+These are questions from the charter's Open directions section, verified as still open:
 
-1. **Scope of the Canvas backend vs. `scene2d-skia`.** Is `scene2d-canvas` the _primary_ 2D software path (richest fidelity, owns the 2D feature target), or the _thin host-web_ path with `skia` as the conformance reference? This decides how hard to push canvas-specific fidelity (dashed strokes, per-axis scale modes) vs. deferring to the shared rasterizer.
-2. **Render-target readback ownership.** Does canvas expose raw `ImageData`, or only a `CanvasRenderTarget → ImageSource` bridge into `@flighthq/bitmap`? This is a real API fork that blocks the readback feature and should not be decided silently.
-3. **Fidelity floor for unsupported blend modes.** Is "degrade to normal, document it" the accepted posture for `Invert`/`Shader`/`Subtract`, or should canvas gain a pixel-readback path for at least `Invert`? Today it is documented degradation; the charter should bless or reject that.
-4. **Where cross-backend conformance scenes live and which backends they target.** The blend/scale-mode features are unverified visually; the charter should name the expectation (canvas ↔ dom ↔ gl parity scenes, plus the `rust:skia ~ ts:canvas` cross-impl pairing).
-5. **The line between "Canvas command" extensibility and `@flighthq/shape`.** The open `canvasShapeRegistry` lets users add stroke/fill commands; several deferred features (dash, repeat, pixel-snapping) are blocked on upstream tuple changes. Is the command tuple the right extension surface, or should bitmap-fill/dash be first-class typed fields? A boundary question worth a ruling.
+1. **Scope of the Canvas backend vs. `scene2d-skia`.** Undecided. This gates how hard to push canvas-specific fidelity (dashed strokes, per-axis scale modes) vs. deferring to the shared rasterizer.
+
+2. **Render-target readback ownership.** The 2026-08-08 status log notes that `createBitmapFromCanvas` in `@flighthq/bitmap` reads back via the plain `CanvasRenderTarget.canvas`, settling the ownership line in `@flighthq/bitmap`'s favor. The charter still lists this as open; it may be settled enough to close.
+
+3. **Fidelity floor for unsupported blend modes.** No `BlendMode` values are currently unmappable -- the fixed-function set maps to Canvas natively, and the `AdvancedBlendMode` set also maps natively. The charter's concern about `Invert`/`Shader`/`Subtract` predates the type refactoring that moved those out of `BlendMode` into `CompositeEffect`. This direction may be closeable.
+
+4. **Cross-backend functional conformance scenes.** No scenes exist. This remains the single largest gap to authoritative.
+
+5. **The line between "Canvas command" extensibility and `@flighthq/shape`.** Several features (dash, bitmap-fill repeat, pixel-snapping) are blocked on upstream tuple changes. The boundary question remains open.
+
+6. **`LineScaleMode 'horizontal'` / `'vertical'`.** Still fall back to `'normal'`. No `strokeScaleMode` field exists on `CanvasShapeDrawState` to carry the mode, and `defaultCanvasLineStyle` does not read `buf[i+4]`. Implementing any `LineScaleMode` support requires adding the field to `@flighthq/types` first.
+
+7. **Image-smoothing parity across kinds.** Unaudited. Different kinds use different smoothing decision logic.
+
+8. **Video renderer absence.** The charter names Video; the pipeline omits it.
