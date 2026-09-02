@@ -79,11 +79,23 @@ The package is a **pure, headless value-leaf** — no scene-graph coupling, no d
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
 
+- **[2026-09-01] One contract-only, allocation-free spawn sampler; `(x, y, z)` is the sole callback payload.** Every spawn path resolves its shape offset through a single `writeParticleSpawnOffset(out, offset, config, random)` in `@flighthq/particles`, exported from `contract.ts` only — never from `index.ts`. All five spawn sites share it: `updateParticleObjects` (object pool), `updateParticleEmitter2D`, `updateParticleEmitter3D`, `emitParticleBurst2D`, and `emitParticleBurst3D`. It writes into a caller-owned buffer and allocates nothing.
+
+  Shape behaviour is fixed here. Ring samples the circumference at `emitterRadius`; line samples the origin-centred half-open interval `[-emitterWidth / 2, +emitterWidth / 2)`, half-open to match `RandomSource`'s `[0, 1)`. **Ring and line each take exactly one `RandomSource` draw; circle and rect each take two** — the draw count is per shape, not uniform across shapes, and seeded equivalence depends on knowing which. A zero-size shape collapses to the origin and takes no draw at all, so a degenerate emitter cannot silently consume the sequence.
+
+  `ParticleEmitterCallbacks` is the sole public callback surface: `onSpawn` and `onDeath`, both `(x, y, z)` in world space. The object-pool and 2D paths pass `z = 0` rather than carrying a second 2D-shaped callback.
+
+  **Resolves the ring/line spawn-shape breadth and emission-callback parity items.** Cone, and the format-specific spawn parameters behind it, remain open — see the Open directions.
+
+  **Why:** Three spawn paths had drifted into three samplers, so a seeded run could not be compared across them and each new shape cost three edits. One sampler makes seeded equivalence a property of the package rather than of the path a caller happened to take, and the out-parameter form keeps it off the allocation path in the loop that runs most often. A single `(x, y, z)` callback avoids a parallel 2D callback family that would double the surface for one always-zero component.
+
+  **Boundary worth knowing:** the sampler resolves 2D shapes only. A shape with a 3D interpretation is left at the origin for its caller to handle, so "one sampler" means one sampler for the 2D offset, not for all spawn geometry. Landed in `bcbd5e4b6`.
+
 ## Open directions
 
 1. **`particleemitter` package shape.** The display-object wrapper that consumes the sim and drives a `ParticleEmitter` display object. Needs its own charter: what it wraps, how it bridges sim → display, whether it lives in its own package or in sprite (where it historically lived). Open to its own package.
 
-2. **Sub-emitter design.** On-death / on-collision spawning a child emitter. Needs payload widening (`onSpawn`/`onDeath` from `(x, y)` to `(x, y, vx, vy, index)`), a `'collision'` hook, and config-level child-emitter references. Breaking pre-release change — design before building.
+2. **Sub-emitter design.** On-death / on-collision spawning a child emitter. Needs payload widening — `onSpawn`/`onDeath` are now `(x, y, z)` as of the 2026-09-01 Decision, and a sub-emitter wants velocity and index on top of that — plus a `'collision'` hook and config-level child-emitter references. Breaking pre-release change — design before building.
 
 3. **Exhaustive collision response.** Currently collision is basic. Full taxonomy: `kill`, `bounce`, `stick`, `slide`. Design the response model.
 
