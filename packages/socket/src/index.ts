@@ -10,5 +10,6 @@ export {
   enableSocketSignals,
   explainSocketSendFailure,
   getSocketReadyState,
+  openTcpSocket,
   sendSocketMessage,
 } from './contract';

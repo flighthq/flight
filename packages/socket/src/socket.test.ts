@@ -6,8 +6,11 @@ import type {
   SocketConnection,
   SocketEventSink,
   SocketMessage,
+  TcpSocketConnection,
+  TcpSocketOptions,
 } from '@flighthq/types/contract';
 
+import { openTcpSocket } from './index';
 import {
   attachSocket,
   closeSocket,
@@ -69,6 +72,14 @@ afterEach(() => {
 
 function hostOf(backend: SocketBackend): HasNetSocket {
   return { net: { socket: backend } } as HasNetSocket;
+}
+
+function tcpConnection(): TcpSocketConnection {
+  return {
+    readable: new ReadableStream<Uint8Array>(),
+    writable: new WritableStream<Uint8Array>(),
+    closeTcpSocketConnection(): void {},
+  };
 }
 
 describe('attachSocket', () => {
@@ -379,6 +390,43 @@ describe('getSocketReadyState', () => {
     expect(getSocketReadyState(socket)).toBe('closing');
     fake.sink.handleSocketClose({ code: 1000, reason: '', wasClean: true });
     expect(getSocketReadyState(socket)).toBe('closed');
+  });
+});
+
+describe('openTcpSocket', () => {
+  it('forwards the endpoint unchanged and returns the backend connection by identity', () => {
+    const expected = tcpConnection();
+    const options: TcpSocketOptions = { host: 'db.internal', port: 5432 };
+    const openTcpSocketBackend = vi.fn(() => expected);
+    const backend: SocketBackend = {
+      openSocket: vi.fn(() => null),
+      openTcpSocket: openTcpSocketBackend,
+    };
+
+    expect(openTcpSocket(hostOf(backend), options)).toBe(expected);
+    expect(openTcpSocketBackend).toHaveBeenCalledWith(options);
+  });
+
+  it('returns null when the host carries no socket backend', () => {
+    const host = { net: {} } as HasNetSocket;
+    expect(openTcpSocket(host, { host: 'localhost', port: 9000 })).toBeNull();
+  });
+
+  it('returns null for the web backend without attempting framed openSocket', () => {
+    const backend = createWebSocketBackend();
+    const openSocket = vi.spyOn(backend, 'openSocket');
+
+    expect(openTcpSocket(hostOf(backend), { host: 'localhost', port: 9000 })).toBeNull();
+    expect(openSocket).not.toHaveBeenCalled();
+  });
+
+  it('preserves an explicit null from a backend that cannot open the endpoint', () => {
+    const backend: SocketBackend = {
+      openSocket: vi.fn(() => null),
+      openTcpSocket: vi.fn(() => null),
+    };
+
+    expect(openTcpSocket(hostOf(backend), { host: 'unreachable.internal', port: 22 })).toBeNull();
   });
 });
 

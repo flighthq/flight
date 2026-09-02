@@ -1,12 +1,11 @@
 import type { Signal } from './Signal';
 
 // Bidirectional persistent-connection transport seam — the Flight home for what OpenFL/Lime expose
-// as Socket/WebSocket/XMLSocket. A Socket is an event source (open/message/close/error arrive over
-// time), so it takes the platform suite's event-capability shape: a plain Socket entity plus an
-// opaque SocketRuntime holding the live connection and opt-in signals, driven over a swappable
-// SocketBackend (a WebSocket wrapper on the web, a native TCP/UDP stack elsewhere). Sending and
-// closing are explicit commands. Sibling of @flighthq/net (one-shot request/response); socket is the
-// long-lived channel.
+// as Socket/WebSocket/XMLSocket. The framed Socket entity is an event source (open/message/close/error
+// arrive over time), so it takes the platform suite's event-capability shape: a plain entity plus an
+// opaque SocketRuntime holding the live connection and opt-in signals. Raw TCP is a separate byte-
+// stream connection on the same swappable SocketBackend; it never masquerades as framed Socket state.
+// Sibling of @flighthq/net (one-shot request/response), this package owns long-lived channels.
 
 // The four WebSocket-standard connection phases. Read via getSocketReadyState; driven by the backend
 // through the event sink plus the explicit closeSocket command.
@@ -67,12 +66,30 @@ export interface SocketConnection {
   closeSocketConnection(code?: number, reason?: string): void;
 }
 
+// A raw TCP endpoint. It deliberately has no URL, WebSocket protocols, binary-type selection, or
+// frame options: a TCP connection is a byte stream rather than a framed message transport.
+export interface TcpSocketOptions {
+  host: string;
+  port: number;
+}
+
+// A live raw TCP connection owned by the backend. Incoming and outgoing bytes remain streams so a
+// native provider can preserve ordering and backpressure without inventing WebSocket frame
+// boundaries. This is intentionally separate from SocketConnection: sending frames and closing a
+// WebSocket handshake are incompatible with reading, writing, and closing a TCP byte stream.
+export interface TcpSocketConnection {
+  readonly readable: ReadableStream<Uint8Array>;
+  readonly writable: WritableStream<Uint8Array>;
+  closeTcpSocketConnection(): void;
+}
+
 // The swappable transport seam realized by the web default (createWebSocketBackend) and by native
-// hosts. openSocket opens a connection for the given options and returns a live handle, wiring the
-// transport's open/message/close/error into `events`. Returns null when the transport is unsupported
-// (for example raw TCP on the web backend) — a sentinel, not a throw.
+// hosts. openSocket opens a framed connection for the given options and returns a live handle,
+// wiring the transport's open/message/close/error into `events`. A native backend may additionally
+// expose openTcpSocket; omission means raw TCP is unsupported and @flighthq/socket returns null.
 export interface SocketBackend {
   openSocket(options: Readonly<SocketOptions>, events: Readonly<SocketEventSink>): SocketConnection | null;
+  openTcpSocket?(options: Readonly<TcpSocketOptions>): TcpSocketConnection | null;
 }
 
 // Opaque per-socket runtime: the live connection, the opt-in signal group, the current readyState,

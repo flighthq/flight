@@ -12,6 +12,8 @@ import type {
   SocketReadyState,
   SocketRuntime,
   SocketSignals,
+  TcpSocketConnection,
+  TcpSocketOptions,
 } from '@flighthq/types/contract';
 
 // Resumes delivery of backend events to the socket's signals (idempotent). Pair with detachSocket.
@@ -133,6 +135,13 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
 // The socket's current connection phase, tracked on the runtime from backend events and closeSocket.
 export function getSocketReadyState(socket: Readonly<Socket>): SocketReadyState {
   return socket.runtime.readyState;
+}
+
+// Opens a raw TCP byte stream through the socket provider selected by the caller's host. Browser and
+// other framed-only providers omit openTcpSocket, so unsupported raw TCP returns null without trying
+// openSocket or interpreting the endpoint as a WebSocket URL.
+export function openTcpSocket(host: HasNetSocket, options: Readonly<TcpSocketOptions>): TcpSocketConnection | null {
+  return host.net.socket?.openTcpSocket?.(options) ?? null;
 }
 
 // Sends a text or binary frame over the live connection without mutating or copying either argument.
