@@ -86,12 +86,12 @@ describe('causal limitation prose', () => {
 
   it('fails when effect coverage changes underneath the architecture documents', () => {
     expect([...canvas].sort()).toEqual([...CANVAS_EFFECTS].sort());
-    expect(gl.size).toBe(46);
-    expect(wgpu.size).toBe(44);
+    expect(gl.size).toBe(47);
+    expect(wgpu.size).toBe(45);
 
     const registration = read('agents/registration-model.md');
-    expect(registration).toContain('46/46 on GL, 44/44 on WGPU, 18/18 on canvas');
-    expect(registration).toContain('**GL 46 effect kinds, WGPU 44, canvas 18.**');
+    expect(registration).toContain('47/47 on GL, 45/45 on WGPU, 18/18 on canvas');
+    expect(registration).toContain('**GL 47 effect kinds, WGPU 45, canvas 18.**');
 
     const support = read('agents/render-backend-support.md');
     expect(support).toContain('On Canvas 2D, **18 are realized**');

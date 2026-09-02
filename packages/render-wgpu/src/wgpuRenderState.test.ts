@@ -250,7 +250,7 @@ describe('createWgpuOffscreenRenderState', () => {
     getWgpuRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
       getWgpuRenderStateRuntime(screen).registries.renderEffects,
       'acme.Effect',
-      effectRunner as never,
+      { runner: effectRunner },
     );
     getWgpuRenderStateRuntime(screen).context.wgpuRenderTextureCache = new WeakMap();
 
@@ -325,7 +325,9 @@ describe('createWgpuOffscreenRenderState', () => {
       materialRenderer,
     );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')).toBe(effectRunner);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')).toEqual({
+      runner: effectRunner,
+    });
     expect(getPaddingResolver(offscreen, 'acme.Effect')).toBe(paddingResolver);
   });
 

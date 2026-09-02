@@ -24,7 +24,7 @@ import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
 import type { WgpuParticleResources } from './WgpuParticleResources';
 import type { WgpuPipeline } from './WgpuPipeline';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
-import type { WgpuRenderEffectRunner } from './WgpuRenderEffectPipeline';
+import type { WgpuRenderEffectRegistration } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
 import type { WgpuShapeMesh } from './WgpuShapeMesh';
@@ -78,7 +78,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   // Shader cache identity advances with every snippet-table replacement, including same-kind
   // replacements whose define signature is unchanged but whose emitted source differs.
   modifierSnippetRevision: number;
-  renderEffects: KeyedTable<WgpuRenderEffectRunner>;
+  renderEffects: KeyedTable<WgpuRenderEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
   velocityWriters: KeyedTable<WgpuVelocityWriter>;

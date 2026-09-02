@@ -1,6 +1,7 @@
 export * from './enableGlRenderEffectGuards';
 export * from './glColorMatrixPass';
 export * from './glBevelEffect';
+export * from './glBitmapDisplacementEffect';
 export * from './glBlendEffect';
 export * from './glCompositeEffect';
 export * from './glContactShadowsEffect';

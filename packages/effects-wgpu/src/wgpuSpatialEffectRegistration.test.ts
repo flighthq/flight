@@ -11,6 +11,7 @@ beforeAll(() => {
 describe('WGPU effect registration', () => {
   it.each([
     ['BevelEffect', 'registerWgpuBevelEffect', 'defaultWgpuBevelEffectRunner'],
+    ['BitmapDisplacementEffect', 'registerWgpuBitmapDisplacementEffect', 'defaultWgpuBitmapDisplacementEffectRunner'],
     ['BlendEffect', 'registerWgpuBlendEffect', 'defaultWgpuBlendEffectRunner'],
     ['BloomEffect', 'registerWgpuBloomEffect', 'defaultWgpuBloomEffectRunner'],
     ['BlurEffect', 'registerWgpuBlurEffect', 'defaultWgpuBlurEffectRunner'],

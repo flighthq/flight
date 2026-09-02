@@ -87,6 +87,10 @@
     },
     {
       "packageName": "effects",
+      "registrar": "registerBitmapDisplacementEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
       "registrar": "registerBloomEffectPaddingResolver"
     },
     {
@@ -240,6 +244,10 @@
     {
       "packageName": "effects-gl",
       "registrar": "registerGlBevelEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlBitmapDisplacementEffect"
     },
     {
       "packageName": "effects-gl",
@@ -436,6 +444,10 @@
     {
       "packageName": "effects-wgpu",
       "registrar": "registerWgpuBevelEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuBitmapDisplacementEffect"
     },
     {
       "packageName": "effects-wgpu",

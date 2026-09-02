@@ -4,6 +4,7 @@ export * from './wgpuCompositeEffect';
 export * from './wgpuContactShadowsEffect';
 export * from './wgpuBlendEffect';
 export * from './wgpuBevelEffect';
+export * from './wgpuBitmapDisplacementEffect';
 export * from './wgpuBloomEffect';
 export * from './wgpuBlurEffect';
 export * from './wgpuCameraMotionBlurEffect';

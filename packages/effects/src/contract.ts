@@ -1,6 +1,7 @@
 export * from './autoExposureEffect';
 export * from './barrelDistortionEffect';
 export * from './bevelEffect';
+export * from './bitmapDisplacementEffect';
 export * from './blendEffect';
 export * from './blendModeMath';
 export * from './bloomEffect';
