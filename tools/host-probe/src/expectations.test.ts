@@ -52,12 +52,41 @@ describe('getRequiredHostProbeCapabilities', () => {
     const electron = getRequiredHostProbeCapabilities('electron');
     expect(electron.size).toBe(21);
     expect(electron.has('updater')).toBe(true);
-    expect(getRequiredHostProbeCapabilities('web').has('updater')).toBe(false);
+    expect([...getRequiredHostProbeCapabilities('web')]).toEqual([
+      'accessibility',
+      'app',
+      'clipboard',
+      'connectivity',
+      'cursor',
+      'device',
+      'dialog',
+      'filesystem',
+      'glyph-rasterizer',
+      'haptics',
+      'loop',
+      'menu',
+      'notification.click',
+      'notification.close',
+      'notification.delivery',
+      'notification.dismiss',
+      'notification.lifecycle',
+      'notification.permission',
+      'notification.received',
+      'platform',
+      'power',
+      'protocol',
+      'screen',
+      'share',
+      'shell',
+      'soft-keyboard',
+      'statusbar',
+      'storage',
+      'window',
+    ]);
     expect(getRequiredHostProbeCapabilities('tauri').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('capacitor').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('tauri').size).toBe(12);
     expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(17);
-    expect(getRequiredHostProbeCapabilities('web').size).toBe(19);
   });
 });
 
