@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/webcam'
-status: minimal
+status: stub
 score: 30
 updated: 2026-09-02
 ingested:

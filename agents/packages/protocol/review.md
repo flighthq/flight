@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/protocol'
-status: strong
+status: solid
 score: 88
 updated: 2026-09-02
 ingested:

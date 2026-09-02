@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/screen'
-status: developing
+status: partial
 score: 62
 updated: 2026-09-02
 ingested:

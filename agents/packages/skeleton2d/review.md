@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/skeleton2d'
-status: strong
+status: solid
 score: 78
 updated: 2026-09-02
 ingested:
