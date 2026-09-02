@@ -1,17 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  EasingFunction,
-  NumericProps,
-  StopTweenOptions,
-  Tween,
-  TweenManager,
-  TweenOptions,
-  TweenPropertyDetail,
-} from '@flighthq/types/contract';
+import { emitSignal } from '@flighthq/signals/contract';
+import type { NumericProps, StopTweenOptions, Tween, TweenManager, TweenOptions } from '@flighthq/types/contract';
 
-import { initializeTween } from './internal';
+import { addTweenToManager, hasTweenProperty, initializeTween, makeTween } from './internal';
 import { defaultManager } from './tweenManager';
 
 export function applyTween<T extends object>(
@@ -73,7 +65,7 @@ export function createTween<T extends object>(
   }
 
   const tween = makeTween(target, duration, propertyMap, options, manager.defaultEase);
-  registerTween(manager, tween, options?.overwrite ?? true);
+  addTweenToManager(manager, tween, options?.overwrite ?? true);
   return tween;
 }
 
@@ -99,42 +91,9 @@ function isTweenManager(value: unknown): value is TweenManager {
 export function killTweensOfProperty(manager: TweenManager, key: string): void {
   for (const list of manager.tweens.values()) {
     for (const tween of list) {
-      const p = tween.propertyMap as Record<string, unknown>;
-      if (key in p) tween.complete = true;
+      if (hasTweenProperty(tween, key)) tween.complete = true;
     }
   }
-}
-
-function makeTween<T extends object>(
-  target: T,
-  duration: number,
-  propertyMap: Readonly<NumericProps<T>>,
-  options: Readonly<TweenOptions> | undefined,
-  defaultEase: EasingFunction,
-): Tween<T> {
-  const keys = Object.keys(propertyMap);
-  const properties: TweenPropertyDetail[] = keys.map((key) => ({ change: 0, key, start: 0 }));
-  return {
-    complete: false,
-    delay: options?.delay ?? 0,
-    duration,
-    ease: options?.ease ?? defaultEase,
-    elapsed: 0,
-    initialized: false,
-    onComplete: createSignal(),
-    onRepeat: createSignal(),
-    onUpdate: createSignal(),
-    onYoyo: createSignal(),
-    paused: false,
-    properties,
-    propertyMap,
-    reflect: options?.reflect ?? false,
-    repeat: options?.repeat ?? 0,
-    reverse: options?.reverse ?? false,
-    smartRotation: options?.smartRotation ?? false,
-    snapping: options?.snapping ?? false,
-    target,
-  };
 }
 
 export function pauseAllTweens(manager: TweenManager): void {
@@ -151,29 +110,6 @@ export function pauseTweens(manager: TweenManager, target: object): void {
   const list = manager.tweens.get(target);
   if (list === undefined) return;
   for (const tween of list) tween.paused = true;
-}
-
-function registerTween<T extends object>(manager: TweenManager, tween: Tween<T>, overwrite: boolean): void {
-  let list = manager.tweens.get(tween.target);
-  if (list === undefined) {
-    list = [];
-    manager.tweens.set(tween.target, list);
-  }
-  if (overwrite) {
-    for (let i = list.length - 1; i >= 0; i--) {
-      const existing = list[i];
-      const existingMap = existing.propertyMap as Record<string, unknown>;
-      let overlaps = false;
-      for (const detail of tween.properties) {
-        if (detail.key in existingMap) {
-          overlaps = true;
-          break;
-        }
-      }
-      if (overlaps) existing.complete = true;
-    }
-  }
-  list.push(tween);
 }
 
 export function resetAllTweens(manager: TweenManager): void {
@@ -234,10 +170,9 @@ export function stopTweens(
   for (const tween of list) {
     if (propertyMap !== undefined) {
       const p = propertyMap as Record<string, unknown>;
-      const tweenMap = tween.propertyMap as Record<string, unknown>;
       let overlaps = false;
       for (const key of Object.keys(p)) {
-        if (key in tweenMap) {
+        if (hasTweenProperty(tween, key)) {
           overlaps = true;
           break;
         }
