@@ -41,6 +41,19 @@ describe('computeRenderEffectPadding', () => {
     expect(computeRenderEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
   });
 
+  it('writes into a caller-owned output object when supplied', () => {
+    const out = { bottom: -1, left: -1, right: -1, top: -1 };
+
+    expect(
+      computeRenderEffectPadding(
+        state,
+        [createBlurEffect({ blurX: 2, blurY: 1 }), createBlurEffect({ blurX: 1, blurY: 4 })],
+        out,
+      ),
+    ).toBe(out);
+    expect(out).toEqual({ bottom: 15, left: 9, right: 9, top: 15 });
+  });
+
   it('emits a shared registry miss only when the signal seam is enabled', () => {
     const misses: Array<readonly [RenderRegistry, string]> = [];
     connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {

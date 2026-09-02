@@ -1,6 +1,7 @@
 export {
   blendNonSeparableRgb,
   canLerpRenderEffects,
+  computeRenderEffectCaptureGeometry,
   computeRenderEffectPadding,
   computeAcesToneMap,
   computeAgxToneMap,

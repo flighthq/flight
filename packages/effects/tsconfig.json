@@ -8,6 +8,13 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../registry" }, { "path": "../render" }, { "path": "../signals" }, { "path": "../types" }],
+  "references": [
+    { "path": "../geometry" },
+    { "path": "../node" },
+    { "path": "../registry" },
+    { "path": "../render" },
+    { "path": "../signals" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }

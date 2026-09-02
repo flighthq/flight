@@ -2,10 +2,10 @@ import type { Kind } from './Entity';
 import type { RenderEffect } from './RenderEffect';
 
 export interface RenderEffectPadding {
-  readonly bottom: number;
-  readonly left: number;
-  readonly right: number;
-  readonly top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
 }
 
 export type RenderEffectPaddingResolver = (effect: Readonly<RenderEffect>) => Readonly<RenderEffectPadding>;

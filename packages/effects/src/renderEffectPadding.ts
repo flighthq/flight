@@ -16,7 +16,12 @@ import { RegistryEntryState, RenderRegistry } from '@flighthq/types/contract';
 export function computeRenderEffectPadding(
   state: RenderState,
   effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
+  out?: RenderEffectPadding,
 ): RenderEffectPadding {
+  if (out !== undefined) {
+    writeRenderEffectPadding(out, state, effects, null, getRenderStateRuntime(state).registryMiss);
+    return out;
+  }
   const list = Array.isArray(effects) ? effects : [effects];
   const explanation = explainRenderEffectPadding(state, list);
   const emitMiss = getRenderStateRuntime(state).registryMiss;
@@ -29,28 +34,12 @@ export function explainRenderEffectPadding(
   state: RenderState,
   effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
 ): RenderEffectPaddingExplanation {
-  const list = Array.isArray(effects) ? effects : [effects];
-  const entries = getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries;
-  let bottom = 0;
-  let left = 0;
-  let right = 0;
-  let top = 0;
   const missingKinds: Kind[] = [];
-  for (const effect of list) {
-    const entry = entries?.get(effect.kind);
-    if (entry?.state !== RegistryEntryState.Bound) {
-      if (!missingKinds.includes(effect.kind)) missingKinds.push(effect.kind);
-      continue;
-    }
-    const padding = entry.value(effect);
-    bottom += sanitizePadding(padding.bottom);
-    left += sanitizePadding(padding.left);
-    right += sanitizePadding(padding.right);
-    top += sanitizePadding(padding.top);
-  }
+  const padding: RenderEffectPadding = { bottom: 0, left: 0, right: 0, top: 0 };
+  writeRenderEffectPadding(padding, state, effects, missingKinds, null);
   return {
     missingKinds,
-    padding: { bottom, left, right, top },
+    padding,
     status: missingKinds.length === 0 ? 'complete' : 'missing-resolver',
   };
 }
@@ -96,6 +85,50 @@ export function registerRenderEffectPaddingResolver(
     kind,
     resolver,
   );
+}
+
+function writeRenderEffectPadding(
+  out: RenderEffectPadding,
+  state: RenderState,
+  effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
+  missingKinds: Kind[] | null,
+  emitMiss: ((registry: RenderRegistry, kind: Kind) => void) | null,
+): void {
+  const list = Array.isArray(effects) ? effects : null;
+  const length = list === null ? 1 : list.length;
+  const entries = getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries;
+  let bottom = 0;
+  let left = 0;
+  let right = 0;
+  let top = 0;
+  for (let index = 0; index < length; index++) {
+    const effect = (list === null ? effects : list[index]) as Readonly<RenderEffect>;
+    const entry = entries?.get(effect.kind);
+    if (entry?.state !== RegistryEntryState.Bound) {
+      if (!hasEarlierKind(list, index, effect.kind)) {
+        missingKinds?.push(effect.kind);
+        emitMiss?.(RenderRegistry.EffectPaddingResolver, effect.kind);
+      }
+      continue;
+    }
+    const padding = entry.value(effect);
+    bottom += sanitizePadding(padding.bottom);
+    left += sanitizePadding(padding.left);
+    right += sanitizePadding(padding.right);
+    top += sanitizePadding(padding.top);
+  }
+  out.bottom = bottom;
+  out.left = left;
+  out.right = right;
+  out.top = top;
+}
+
+function hasEarlierKind(effects: ReadonlyArray<Readonly<RenderEffect>> | null, end: number, kind: Kind): boolean {
+  if (effects === null) return false;
+  for (let index = 0; index < end; index++) {
+    if (effects[index]!.kind === kind) return true;
+  }
+  return false;
 }
 
 function sanitizePadding(value: number): number {
