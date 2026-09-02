@@ -6,12 +6,15 @@ import type {
   TextureAtlasAsepriteDocument,
 } from '@flighthq/types/contract';
 
+import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+
 // Convenience variant that accepts an already-parsed Aseprite document object.
 export function parseTextureAtlasAsepriteDocument(
   doc: TextureAtlasAsepriteDocument,
   atlas: TextureAtlas,
 ): TextureAtlas {
   atlas.regions.length = 0;
+  applyAsepritePageMeta(atlas, doc);
   if (Array.isArray(doc.frames)) {
     for (const entry of doc.frames) {
       applyAsepriteFrame(atlas, entry.filename, entry);
@@ -37,6 +40,16 @@ export function parseTextureAtlasAsepriteJson(json: string, atlas: TextureAtlas)
     return atlas;
   }
   return parseTextureAtlasAsepriteDocument(doc, atlas);
+}
+
+function applyAsepritePageMeta(atlas: TextureAtlas, doc: TextureAtlasAsepriteDocument): void {
+  resetTextureAtlasPageMeta(atlas);
+  const meta = doc.meta;
+  if (meta === undefined) return;
+  atlas.imageName = meta.image ?? null;
+  atlas.imageWidth = meta.size?.w ?? 0;
+  atlas.imageHeight = meta.size?.h ?? 0;
+  atlas.scale = readTextureAtlasScale(meta.scale);
 }
 
 // A frame with no `frame` rect describes no region, so it is skipped rather than pushed as a

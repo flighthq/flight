@@ -20,8 +20,8 @@ import {
 
 import { parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse';
 import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse';
-import { parseTextureAtlasPackerJson } from './textureAtlasPackerParse';
 import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse';
+import { parseTexturePackerAtlasJson } from './texturePackerAtlasParse';
 
 // One entry per texture-atlas format: how to recognise it, and how to read it into an atlas.
 interface FormatEntry {
@@ -61,11 +61,11 @@ function getRegistry(): KeyedTable<RegisteredFormatEntry> {
   });
   bindTextureAtlasFormat(TextureAtlasFormatKindStarling, {
     detect: detectStarling,
-    parse: (content, atlas, options) => parseTextureAtlasStarlingXml(content, atlas, options),
+    parse: (content, atlas) => parseTextureAtlasStarlingXml(content, atlas),
   });
   bindTextureAtlasFormat(TextureAtlasFormatKindTexturePacker, {
     detect: detectTexturePacker,
-    parse: (content, atlas, options) => parseTextureAtlasPackerJson(content, atlas, options),
+    parse: (content, atlas, options) => parseTexturePackerAtlasJson(content, atlas, options),
   });
   return _registry;
 }
