@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/particles'
-updated: 2026-08-08
-by: principal
+updated: 2026-09-01
+by: manager
 ---
 
 # particles — Status
@@ -11,25 +11,26 @@ by: principal
 
 ## Open
 
-Every item was re-checked against `packages/particles/src/` (and `packages/types/src/`) on 2026-08-08.
+Every item was re-checked against `packages/particles/src/` (and `packages/types/src/`) on 2026-09-01,
+after the spawn-sampler unification landed in `bcbd5e4b6`.
 A file:line here is a claim about this tree, not about a session.
 
 - **This cell is simulation-only now.** `updateParticleEmitter2D/3D`, `emitParticleBurst*`,
   `prewarmParticleEmitter*`, and `stepParticleEmitter*` live in `@flighthq/particleemitter`, not here.
   `particles` owns config, validation, state, curves, forces, colliders, the object-pool path, and the
   signal group (`contract.ts:1-10`). Claims about the emitter update loop belong in that cell.
-- **The object path honours three of the six spawn shapes.** `ParticleEmitterShape` is
-  `box | circle | cone3d | point | rect | sphere` (`types/src/ParticleEmitterConfig.ts:3`), but
-  `updateParticleObjects` branches on `circle` (`:142`) and `rect` (`:147`) only — `box`, `cone3d`, and
-  `sphere` fall through to a point spawn at the emitter origin with no diagnostic.
+- **Three spawn shapes are still unimplemented, now consistently so.** `ParticleEmitterShape` is
+  `box | circle | cone3d | line | point | rect | ring | sphere`
+  (`types/src/ParticleEmitterConfig.ts:3`). The shared `writeParticleSpawnOffset` resolves `circle`,
+  `line`, `rect`, and `ring`, and `point` is the origin by definition; `box`, `cone3d`, and `sphere`
+  fall through to a point spawn at the emitter origin with no diagnostic. What changed on 2026-09-01
+  is that this is now one fallthrough in one sampler rather than three paths disagreeing — the
+  authored shape is still silently ignored, but it is ignored identically everywhere. The three
+  outstanding shapes are the 3D ones, which the sampler leaves to its caller by design.
 - **`ParticleBurstSchedule` is declared and unconsumed.** `ParticleBurstEntry` /
   `ParticleBurstSchedule` (`types/src/ParticleBurstSchedule.ts:15`) are exported from both `types`
   lanes with zero readers anywhere in `packages/`; the object path still drives bursts from the single
   `burstCount` / `burstInterval` pair (`updateParticleObjects.ts:109-114`).
-- **Two callback shapes disagree.** `ParticleEmitterCallbacks` passes `(x, y, z)` for both hooks, while
-  `ParticleObjectsUpdateOptions.callbacks` inlines a narrower anonymous shape — `onDeath?: () => void`
-  and `onSpawn?: (x, y) => void`. Fired at `updateParticleObjects.ts:75` and `:166`, so an
-  object-pool death reports no position at all, which is what a sub-emitter would need.
 - **Signals are enabled here but fired elsewhere.** `enableParticleEmitterSignals`
   (`particleEmitterSignals.ts:24`) attaches `onEmitterComplete` / `onParticleDeath` /
   `onParticleSpawn` to any `object` through a module symbol; its own doc names
@@ -49,6 +50,12 @@ A file:line here is a claim about this tree, not about a session.
   The collider `switch` at `applyParticleCollisions.ts:89` follows the same closed-union shape.
 
 ## Log
+
+- **2026-09-01** — Spawn sampling unified in `bcbd5e4b6`; charter Decision recorded. Two items here
+  died: the object path no longer has its own spawn branch (all five spawn sites share
+  `writeParticleSpawnOffset`), and the two callback shapes no longer disagree —
+  `ParticleObjectsUpdateOptions.callbacks` is now `ParticleEmitterCallbacks`, so an object-pool death
+  reports position like every other path. The remaining shape gap is `box`/`cone3d`/`sphere`.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 

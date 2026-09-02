@@ -33,8 +33,21 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-10] Numerically stable step, frame-rate independent.** `updateSpring(spring, target, deltaTime)` uses a semi-implicit (or closed-form analytic) integrator that stays stable for stiff springs and large/variable `deltaTime` (no explicit-Euler blow-up). `Spring = { value; velocity }` plain data; the step reads inputs to locals then writes, alias-safe. A `deltaTime <= 0` guard is a no-op.
 - **[2026-07-10] Plain-data state + `out`-param, types in `@flighthq/types`.** `Spring`, `SpringConfig`, and the vector spring shapes live in the header layer; functions carry the `Spring` name (`createSpring`, `updateSpring`, `isSpringSettled`, `setSpringTarget`-style retarget, `resetSpring`, and `updateSpring2D`/`3D`). No stateful class ticking behind a `.update()`.
 
+
+- **[2026-09-01] Impulse, presets, and angle springs are in, and all three keep the existing parameterization.** The 2026-07-10 rulings stand unchanged: `frequency` + `dampingRatio` remains the primary parameterization, and the analytic integrator remains the step. Nothing here re-opens either.
+
+  `applySpringImpulse(spring, velocity)` injects velocity additively, with `applySpringImpulse2D` and `applySpringImpulse3D` mirrors; `resetSpring` likewise mirrors as `resetSpring2D`/`resetSpring3D`. Every one of them mutates the caller's spring in place and allocates nothing. Note the verb is `apply*`, not the `addSpringImpulse` the open direction had sketched — `apply` matches the mutate-in-place shape the rest of the package uses.
+
+  Presets are frozen plain data, not constructors: `SpringPresetBouncy` = `{ dampingRatio: 0.35, frequency: 2 }`, `SpringPresetGentle` = `{ dampingRatio: 0.8, frequency: 1.5 }`, `SpringPresetStiff` = `{ dampingRatio: 1, frequency: 4 }`. Three named points, deliberately, rather than the four the open direction guessed at.
+
+  `updateSpringAngle(spring, target, fullTurn, config, deltaTime)` takes the turn size from the caller — `360` for degrees, `TAU` for radians, `1` for turns — and does no unit conversion of its own, so it does not force the radians/degrees seam either way. It chooses the nearest target within `(-fullTurn / 2, +fullTurn / 2]`, so an exact half-turn tie consistently takes the positive direction, and it leaves the spring on its continuous unwrapped branch so neither value nor velocity jumps at the wrap; presentation-time normalization is the caller's. A non-positive or non-finite `fullTurn` is inert.
+
+  **Resolves the impulse/velocity-injection, spring-presets, and angle-spring directions** — the entire open list as it stood.
+
+  **Why:** All three are small additive controls that the existing parameterization already supports, so none of them needed a new config shape or a second integrator. Taking `fullTurn` as a parameter rather than hard-wiring ±π keeps the angular spring usable from the degrees-based authoring layer without a conversion at the seam, and pinning the tie direction and the unwrapped branch turns two silent behaviours into stated ones. Landed in `c96536bae`.
+
+  **Boundary worth knowing:** the angle spring is scalar only. There is no `updateSpringAngle2D`/`3D`, because an angular spring per component of a 2D or 3D vector is not what a rotation target means.
+
 ## Open directions
 
-1. **Impulse / velocity injection.** `addSpringImpulse(spring, velocity)` for flicks and throws — a small additive control.
-2. **Spring presets.** Named `SpringConfig`s (gentle / wobbly / stiff / slow) as a convenience table.
-3. **Angle springs.** A shortest-path angular spring (wrap at ±π) for rotation targets.
+_None. The impulse, preset, and angle-spring directions all resolved on 2026-09-01; see the Decision above._

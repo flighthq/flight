@@ -31,6 +31,16 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-11] Compact bundled bidi-class table default; full table is a `rust:` backend.** The default ships a small table (common scripts) so the common path works with a few KB, not the full Unicode database. A `getBidiClassBackend`/`setBidiClassBackend` seam lets a complete-coverage backend replace it; that full-table backend is designated for `flight-rs` (Rust) — this repo owns the seam + the compact default + the UAX #9 algorithm.
 - **[2026-07-11] Itemize sibling of `textsegment`, not folded into it.** Segmentation (UAX #29) and bidi (UAX #9) are distinct algorithms with distinct data; they stay separate cells that `textlayout` composes.
 
+- **[2026-09-01] Bidi-class dependencies are explicit caller values; the installed-backend setter is a temporary source-compatible fallback.** This supersedes only the *delivery* wording of the 2026-07-10 decision — how a backend reaches the resolver. The compact-default-plus-`rust:`-full-table ruling itself is unchanged.
+
+  `resolveBidiLevels(text, baseDirection, bidiClassBackend?)` and `getBidiRuns(...)` take the backend as an optional trailing parameter, and an explicitly passed backend always wins. Because it is a caller-local value rather than shared state, two callers interleaving different backends no longer disturb each other. When the argument is omitted, resolution falls back to the legacy installed backend, or to the lazily created compact default if none was installed, so existing call sites keep working unchanged.
+
+  `setBidiClassBackend` is retained, `contract`-only, and marked `@deprecated`; `createCompactBidiClassBackend` and `getBidiClassBackend` are likewise contract-only. The public `index.ts` surface is `resolveBidiLevels`, `getBidiRuns`, and `reorderBidiLine` — an app never sees the setter.
+
+  **Why:** A process-global backend is exactly the ambient dependency the explicit dependency model exists to remove: it makes the result of a pure-looking function depend on who called `set*` last, which is unreproducible under interleaving and does not lower to the port. Passing the backend makes the dependency visible at the call site. Landed in `a3d8f8898`.
+
+  **What is deliberately not finished:** the module-scoped `_backend` still exists behind the deprecated setter. Until it is removed, the omitted-argument path is still ambient — the Decision makes the explicit route available and preferred, not yet exclusive. Removing the global is the remaining step and is recorded in `status.md`.
+
 ## Open directions
 
 1. **`textbidi-data` full-table `rust:` backend.** The complete Unicode bidi-class + bracket-pairing tables as a `flight-rs` backend behind `BidiClassBackend` — the deterministic, full-coverage alternative to the compact default. Marked `rust:` when chartered.
