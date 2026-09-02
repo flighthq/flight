@@ -10,10 +10,12 @@ import {
   getNodeTabIndex,
   isNodeFocusable,
   isNodeHitTestEnabled,
+  isNodePointerDoubleClickEnabled,
   setNodeCursor,
   setNodeFocusable,
   setNodeHitArea,
   setNodeHitTestEnabled,
+  setNodePointerDoubleClickEnabled,
   setNodeTabIndex,
 } from './nodeInteractionState';
 
@@ -24,6 +26,7 @@ describe('createNodeInteractionState', () => {
       focusable: false,
       hitArea: null,
       hitTestEnabled: false,
+      pointerDoubleClickEnabled: false,
       tabIndex: -1,
     });
   });
@@ -93,6 +96,15 @@ describe('isNodeHitTestEnabled', () => {
   });
 });
 
+describe('isNodePointerDoubleClickEnabled', () => {
+  it('defaults to false and reflects the setter', () => {
+    const obj = createDisplayObject();
+    expect(isNodePointerDoubleClickEnabled(obj)).toBe(false);
+    setNodePointerDoubleClickEnabled(obj, true);
+    expect(isNodePointerDoubleClickEnabled(obj)).toBe(true);
+  });
+});
+
 describe('setNodeCursor', () => {
   it('assigns and clears the cursor', () => {
     const obj = createDisplayObject();
@@ -129,6 +141,16 @@ describe('setNodeHitTestEnabled', () => {
     expect(isNodeHitTestEnabled(obj)).toBe(true);
     setNodeHitTestEnabled(obj, false);
     expect(isNodeHitTestEnabled(obj)).toBe(false);
+  });
+});
+
+describe('setNodePointerDoubleClickEnabled', () => {
+  it('opts the node in and out of pointer double clicks', () => {
+    const obj = createDisplayObject();
+    setNodePointerDoubleClickEnabled(obj, true);
+    expect(isNodePointerDoubleClickEnabled(obj)).toBe(true);
+    setNodePointerDoubleClickEnabled(obj, false);
+    expect(isNodePointerDoubleClickEnabled(obj)).toBe(false);
   });
 });
 

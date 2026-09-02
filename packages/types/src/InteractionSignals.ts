@@ -12,6 +12,7 @@ export interface InteractionSignals {
   onKeyDown: Signal<(data: Readonly<KeyboardEventData>) => void>;
   onKeyUp: Signal<(data: Readonly<KeyboardEventData>) => void>;
   onPointerCancel: Signal<(data: Readonly<PointerEventData>) => void>;
+  onPointerDoubleClick: Signal<(data: Readonly<PointerEventData>) => void>;
   onPointerDown: Signal<(data: Readonly<PointerEventData>) => void>;
   onPointerMove: Signal<(data: Readonly<PointerEventData>) => void>;
   onPointerOut: Signal<(data: Readonly<PointerEventData>) => void>;

@@ -2,12 +2,19 @@ import { setRectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
   createNode,
+  disposeNode,
   getNodeLocalBoundsRectangle,
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Cursor, InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types/contract';
+import type {
+  Cursor,
+  InputKeyboardData,
+  InputPointerData,
+  InputSignals,
+  InteractionManagerOptions,
+} from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds } from './hitTests';
@@ -33,7 +40,7 @@ import {
   releaseInteractionPointer,
   setInteractionConnectGuard,
 } from './interactionManager';
-import { setNodeCursor, setNodeHitTestEnabled } from './nodeInteractionState';
+import { setNodeCursor, setNodeHitTestEnabled, setNodePointerDoubleClickEnabled } from './nodeInteractionState';
 
 beforeAll(() => {
   registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
@@ -77,6 +84,40 @@ describe('connectInputToInteraction', () => {
     connectInputToInteraction(input, manager);
     emitSignal(input.onKeyDown, createInputKeyboardData('a', 97));
     expect(received).toBe('a');
+  });
+
+  it('uses input timestamps for double-click qualification', () => {
+    const input = createInputSource();
+    const { child, manager } = createHitScene3D({ doubleClickDelay: 100 });
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    connectInputToInteraction(input, manager);
+    emitSignal(input.onPointerDown, createInputPointerData(50, 50, 1000));
+    emitSignal(input.onPointerUp, createInputPointerData(50, 50, 1000));
+    emitSignal(input.onPointerDown, createInputPointerData(50, 50, 1200));
+    emitSignal(input.onPointerUp, createInputPointerData(50, 50, 1200));
+
+    expect(fired).toBe(0);
+  });
+
+  it('resets pending double clicks when the connection is torn down', () => {
+    const input = createInputSource();
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    const disconnect = connectInputToInteraction(input, manager);
+    emitSignal(input.onPointerDown, createInputPointerData(50, 50, 1000));
+    emitSignal(input.onPointerUp, createInputPointerData(50, 50, 1000));
+    disconnect();
+    connectInputToInteraction(input, manager);
+    emitSignal(input.onPointerDown, createInputPointerData(50, 50, 1100));
+    emitSignal(input.onPointerUp, createInputPointerData(50, 50, 1100));
+
+    expect(fired).toBe(0);
   });
 });
 
@@ -155,6 +196,17 @@ describe('createInteractionManager', () => {
     const backend = { setCursor: () => {} };
     expect(createInteractionManager(root, { cursorBackend: backend }).cursorBackend).toBe(backend);
   });
+
+  it('defaults and configures double-click thresholds', () => {
+    const root = createDisplayObject();
+    const defaults = createInteractionManager(root);
+    expect(defaults.doubleClickDelay).toBe(500);
+    expect(defaults.doubleClickDistance).toBe(4);
+
+    const configured = createInteractionManager(root, { doubleClickDelay: 250, doubleClickDistance: 12 });
+    expect(configured.doubleClickDelay).toBe(250);
+    expect(configured.doubleClickDistance).toBe(12);
+  });
 });
 
 describe('createInteractionSignals', () => {
@@ -166,6 +218,7 @@ describe('createInteractionSignals', () => {
     expect(signals.onKeyDown).toBeDefined();
     expect(signals.onKeyUp).toBeDefined();
     expect(signals.onPointerCancel).toBeDefined();
+    expect(signals.onPointerDoubleClick).toBeDefined();
     expect(signals.onPointerDown).toBeDefined();
     expect(signals.onPointerMove).toBeDefined();
     expect(signals.onPointerOut).toBeDefined();
@@ -533,6 +586,169 @@ describe('dispatchInteractionPointerUp', () => {
     expect(fired).toBe(1);
   });
 
+  it('fires an opted-in pointer double click at the inclusive timing and distance boundaries', () => {
+    const { child, manager } = createHitScene3D({ doubleClickDelay: 100, doubleClickDistance: 5 });
+    const order: string[] = [];
+    const signals = enableInteractionSignals(child);
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(signals.onPointerDown, () => order.push('down'));
+    connectSignal(signals.onPointerUp, () => order.push('up'));
+    connectSignal(signals.onClick, () => order.push('click'));
+    connectSignal(signals.onPointerDoubleClick, () => order.push('doubleClick'));
+
+    dispatchInteractionPointerDown(manager, 20, 20, 0, { timeStamp: 1000 });
+    dispatchInteractionPointerUp(manager, 20, 20, 0, 1000);
+    dispatchInteractionPointerDown(manager, 23, 24, 0, { timeStamp: 1100 });
+    dispatchInteractionPointerUp(manager, 23, 24, 0, 1100);
+
+    expect(order).toEqual(['down', 'up', 'click', 'down', 'up', 'click', 'doubleClick']);
+  });
+
+  it('does not fire after the timing boundary, and treats that click as a new first click', () => {
+    const { child, manager } = createHitScene3D({ doubleClickDelay: 100 });
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    dispatchClick(manager, 50, 50, 1101);
+    expect(fired).toBe(0);
+    dispatchClick(manager, 50, 50, 1201);
+    expect(fired).toBe(1);
+  });
+
+  it('does not fire beyond the distance boundary', () => {
+    const { child, manager } = createHitScene3D({ doubleClickDelay: 100, doubleClickDistance: 5 });
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 20, 20, 1000);
+    dispatchClick(manager, 26, 20, 1050);
+    expect(fired).toBe(0);
+  });
+
+  it('does not pair clicks across different targets or intervening clicks', () => {
+    const { first, manager, second } = createTwoTargetScene();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(first, true);
+    setNodePointerDoubleClickEnabled(second, true);
+    connectSignal(enableInteractionSignals(first).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    dispatchClick(manager, 200, 50, 1100);
+    dispatchClick(manager, 50, 50, 1200);
+    expect(fired).toBe(0);
+  });
+
+  it('does not fire until the target opts in', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    dispatchClick(manager, 50, 50, 1100);
+    expect(fired).toBe(0);
+
+    setNodePointerDoubleClickEnabled(child, true);
+    dispatchClick(manager, 50, 50, 1200);
+    dispatchClick(manager, 50, 50, 1300);
+    expect(fired).toBe(1);
+  });
+
+  it('resets when the target opts out between clicks', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    setNodePointerDoubleClickEnabled(child, false);
+    dispatchClick(manager, 50, 50, 1100);
+    setNodePointerDoubleClickEnabled(child, true);
+    dispatchClick(manager, 50, 50, 1200);
+    expect(fired).toBe(0);
+  });
+
+  it('does not carry a pending click across target disposal', () => {
+    const { child, manager, root } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    disposeNode(child);
+    setNodeHitTestEnabled(child, true);
+    setNodePointerDoubleClickEnabled(child, true);
+    addNodeChild(root, child);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+    dispatchClick(manager, 50, 50, 1100);
+    expect(fired).toBe(0);
+  });
+
+  it('resets after pointer movement exceeds the distance threshold', () => {
+    const { child, manager } = createHitScene3D({ doubleClickDistance: 5 });
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 20, 20, 1000);
+    dispatchInteractionPointerMove(manager, 40, 20, 0, { timeStamp: 1050 });
+    dispatchClick(manager, 20, 20, 1100);
+    expect(fired).toBe(0);
+  });
+
+  it('resets when the pointer moves to another target', () => {
+    const { first, manager, second } = createTwoTargetScene();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(first, true);
+    setNodePointerDoubleClickEnabled(second, true);
+    connectSignal(enableInteractionSignals(first).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    dispatchInteractionPointerMove(manager, 200, 50, 0, { timeStamp: 1050 });
+    dispatchClick(manager, 50, 50, 1100);
+    expect(fired).toBe(0);
+  });
+
+  it('resets on pointer cancellation even without cancel subscribers', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    dispatchInteractionPointerCancel(manager, 50, 50, { timeStamp: 1050 });
+    dispatchClick(manager, 50, 50, 1100);
+    expect(fired).toBe(0);
+  });
+
+  it('resets when an interaction is attempted while the manager is disabled', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    manager.enabled = false;
+    dispatchClick(manager, 50, 50, 1050);
+    manager.enabled = true;
+    dispatchClick(manager, 50, 50, 1100);
+    expect(fired).toBe(0);
+  });
+
+  it('fires only once in a triple-click sequence', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    dispatchClick(manager, 50, 50, 1100);
+    dispatchClick(manager, 50, 50, 1200);
+    expect(fired).toBe(1);
+  });
+
   it('fires onReleaseOutside on the original down target', () => {
     const { child, manager } = createHitScene3D();
     let fired = 0;
@@ -650,6 +866,18 @@ describe('releaseInteractionPointer', () => {
     dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
     expect(fired).toBe(0);
   });
+
+  it('resets a pending pointer double click', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    releaseInteractionPointer(manager, 0);
+    dispatchClick(manager, 50, 50, 1100);
+    expect(fired).toBe(0);
+  });
 });
 
 describe('setInteractionConnectGuard', () => {
@@ -668,13 +896,28 @@ describe('setInteractionConnectGuard', () => {
   });
 });
 
-function createHitScene3D() {
+function createHitScene3D(options: Readonly<InteractionManagerOptions> = {}) {
   const root = createDisplayObject();
   const child = createDisplayObject();
   setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
   setNodeHitTestEnabled(child, true);
   addNodeChild(root, child);
-  return { child, manager: createInteractionManager(root), root };
+  return { child, manager: createInteractionManager(root, options), root };
+}
+
+function createTwoTargetScene() {
+  const root = createDisplayObject();
+  const first = createDisplayObject();
+  const second = createDisplayObject();
+  second.x = 150;
+  invalidateNodeLocalTransform(second);
+  setRectangle(getNodeLocalBoundsRectangle(first), 0, 0, 100, 100);
+  setRectangle(getNodeLocalBoundsRectangle(second), 0, 0, 100, 100);
+  setNodeHitTestEnabled(first, true);
+  setNodeHitTestEnabled(second, true);
+  addNodeChild(root, first);
+  addNodeChild(root, second);
+  return { first, manager: createInteractionManager(root), root, second };
 }
 
 function createCursorScene(cursor: Cursor | null = null) {
@@ -711,7 +954,7 @@ function createInputKeyboardData(key: string, keyCode: number): InputKeyboardDat
   };
 }
 
-function createInputPointerData(x: number, y: number): InputPointerData {
+function createInputPointerData(x: number, y: number, timeStamp: number = 0): InputPointerData {
   return {
     altKey: false,
     button: 0,
@@ -728,13 +971,23 @@ function createInputPointerData(x: number, y: number): InputPointerData {
     shiftKey: false,
     tiltX: 0,
     tiltY: 0,
-    timeStamp: 0,
+    timeStamp,
     twist: 0,
     wheelMode: 'unknown',
     width: 1,
     x,
     y,
   };
+}
+
+function dispatchClick(
+  manager: ReturnType<typeof createHitScene3D>['manager'],
+  x: number,
+  y: number,
+  timeStamp: number,
+): void {
+  dispatchInteractionPointerDown(manager, x, y, 0, { timeStamp });
+  dispatchInteractionPointerUp(manager, x, y, 0, timeStamp);
 }
 
 function createInputSource(): InputSignals {
