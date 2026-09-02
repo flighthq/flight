@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/camera2d'
-status: absorbed
+status: solid
 score: 82
 updated: 2026-09-02
 ingested:

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/sprite'
-status: absorbed
+status: solid
 score: 71
 updated: 2026-09-02
 ingested:

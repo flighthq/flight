@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/updater'
-status: strong
+status: solid
 score: 85
 updated: 2026-09-02
 ingested:
