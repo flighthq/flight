@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSpring2D, isSpring2DSettled, updateSpring2D } from './spring2D';
+import { applySpringImpulse2D, createSpring2D, isSpring2DSettled, resetSpring2D, updateSpring2D } from './spring2D';
 import { createSpringConfig } from './springConfig';
+
+describe('applySpringImpulse2D', () => {
+  it('adds each velocity component without changing either value', () => {
+    const spring = createSpring2D(10, 20, 1, 2);
+
+    applySpringImpulse2D(spring, 3, -5);
+
+    expect(spring.x).toEqual({ value: 10, velocity: 4 });
+    expect(spring.y).toEqual({ value: 20, velocity: -3 });
+  });
+});
 
 describe('createSpring2D', () => {
   it('defaults both axes to value 0 and velocity 0', () => {
@@ -28,6 +39,24 @@ describe('isSpring2DSettled', () => {
     expect(isSpring2DSettled(spring, 10, -6)).toBe(false);
     for (let i = 0; i < 600; i++) updateSpring2D(spring, 10, -6, config, 1 / 60);
     expect(isSpring2DSettled(spring, 10, -6)).toBe(true);
+  });
+});
+
+describe('resetSpring2D', () => {
+  it('mirrors scalar reset for values, explicit velocities, and zero defaults', () => {
+    const spring = createSpring2D(1, 2, 3, 4);
+    const x = spring.x;
+    const y = spring.y;
+
+    resetSpring2D(spring, 10, 20, 30, 40);
+    expect(spring.x).toBe(x);
+    expect(spring.y).toBe(y);
+    expect(spring.x).toEqual({ value: 10, velocity: 30 });
+    expect(spring.y).toEqual({ value: 20, velocity: 40 });
+
+    resetSpring2D(spring, -10, -20);
+    expect(spring.x).toEqual({ value: -10, velocity: 0 });
+    expect(spring.y).toEqual({ value: -20, velocity: 0 });
   });
 });
 

@@ -1,6 +1,12 @@
 import type { Spring2D, SpringConfig } from '@flighthq/types/contract';
 
-import { createSpring, isSpringSettled, updateSpring } from './spring';
+import { applySpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
+
+// Add independent velocity impulses to both axes without allocating or changing either value.
+export function applySpringImpulse2D(spring2D: Spring2D, velocityX: number, velocityY: number): void {
+  applySpringImpulse(spring2D.x, velocityX);
+  applySpringImpulse(spring2D.y, velocityY);
+}
 
 // Allocate a 2D spring as a pair of scalar springs, each at its `value*` (default 0) and `velocity*`
 // (default 0).
@@ -26,6 +32,19 @@ export function isSpring2DSettled(
     isSpringSettled(spring2D.x, targetX, positionEpsilon, velocityEpsilon) &&
     isSpringSettled(spring2D.y, targetY, positionEpsilon, velocityEpsilon)
   );
+}
+
+// Snap both axes to the supplied values and velocities. Velocities default independently to zero,
+// mirroring `resetSpring` while preserving the vector spring's existing axis objects.
+export function resetSpring2D(
+  spring2D: Spring2D,
+  valueX: number,
+  valueY: number,
+  velocityX: number = 0,
+  velocityY: number = 0,
+): void {
+  resetSpring(spring2D.x, valueX, velocityX);
+  resetSpring(spring2D.y, valueY, velocityY);
 }
 
 // Advance both axes of `spring2D` one `deltaTime` step toward (`targetX`, `targetY`) under the same

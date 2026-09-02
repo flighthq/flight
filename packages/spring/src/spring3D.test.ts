@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSpring3D, isSpring3DSettled, updateSpring3D } from './spring3D';
+import { applySpringImpulse3D, createSpring3D, isSpring3DSettled, resetSpring3D, updateSpring3D } from './spring3D';
 import { createSpringConfig } from './springConfig';
+
+describe('applySpringImpulse3D', () => {
+  it('adds each velocity component without changing any value', () => {
+    const spring = createSpring3D(10, 20, 30, 1, 2, 3);
+
+    applySpringImpulse3D(spring, 3, -5, 7);
+
+    expect(spring.x).toEqual({ value: 10, velocity: 4 });
+    expect(spring.y).toEqual({ value: 20, velocity: -3 });
+    expect(spring.z).toEqual({ value: 30, velocity: 10 });
+  });
+});
 
 describe('createSpring3D', () => {
   it('defaults all axes to value 0 and velocity 0', () => {
@@ -32,6 +44,28 @@ describe('isSpring3DSettled', () => {
     expect(isSpring3DSettled(spring, 10, -6, 3)).toBe(false);
     for (let i = 0; i < 600; i++) updateSpring3D(spring, 10, -6, 3, config, 1 / 60);
     expect(isSpring3DSettled(spring, 10, -6, 3)).toBe(true);
+  });
+});
+
+describe('resetSpring3D', () => {
+  it('mirrors scalar reset for values, explicit velocities, and zero defaults', () => {
+    const spring = createSpring3D(1, 2, 3, 4, 5, 6);
+    const x = spring.x;
+    const y = spring.y;
+    const z = spring.z;
+
+    resetSpring3D(spring, 10, 20, 30, 40, 50, 60);
+    expect(spring.x).toBe(x);
+    expect(spring.y).toBe(y);
+    expect(spring.z).toBe(z);
+    expect(spring.x).toEqual({ value: 10, velocity: 40 });
+    expect(spring.y).toEqual({ value: 20, velocity: 50 });
+    expect(spring.z).toEqual({ value: 30, velocity: 60 });
+
+    resetSpring3D(spring, -10, -20, -30);
+    expect(spring.x).toEqual({ value: -10, velocity: 0 });
+    expect(spring.y).toEqual({ value: -20, velocity: 0 });
+    expect(spring.z).toEqual({ value: -30, velocity: 0 });
   });
 });
 

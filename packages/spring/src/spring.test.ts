@@ -1,5 +1,24 @@
-import { createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
+import {
+  applySpringImpulse,
+  createSpring,
+  isSpringSettled,
+  resetSpring,
+  updateSpring,
+  updateSpringAngle,
+} from './spring';
 import { createSpringConfig } from './springConfig';
+
+describe('applySpringImpulse', () => {
+  it('adds velocity without changing position and composes repeated impulses', () => {
+    const spring = createSpring(12, 3);
+
+    applySpringImpulse(spring, 4);
+    applySpringImpulse(spring, -1.5);
+
+    expect(spring.value).toBe(12);
+    expect(spring.velocity).toBe(5.5);
+  });
+});
 
 describe('createSpring', () => {
   it('defaults value and velocity to 0', () => {
@@ -190,5 +209,36 @@ describe('updateSpring', () => {
     // A meaningful step actually moved and imparted velocity.
     expect(spring.value).not.toBe(5);
     expect(spring.velocity).not.toBe(2);
+  });
+});
+
+describe('updateSpringAngle', () => {
+  it('takes the shortest path across a degree seam in both directions', () => {
+    const config = createSpringConfig(2, 1);
+    const forward = createSpring(359);
+    const forwardReference = createSpring(359);
+    updateSpringAngle(forward, 1, 360, config, 1 / 60);
+    updateSpring(forwardReference, 361, config, 1 / 60);
+    expect(forward.value).toBeCloseTo(forwardReference.value, 12);
+    expect(forward.velocity).toBeCloseTo(forwardReference.velocity, 12);
+
+    const reverse = createSpring(1);
+    const reverseReference = createSpring(1);
+    updateSpringAngle(reverse, 359, 360, config, 1 / 60);
+    updateSpring(reverseReference, -1, config, 1 / 60);
+    expect(reverse.value).toBeCloseTo(reverseReference.value, 12);
+    expect(reverse.velocity).toBeCloseTo(reverseReference.velocity, 12);
+  });
+
+  it('uses caller-selected units and resolves exact half-turn ties positively', () => {
+    const config = createSpringConfig(2, 1);
+    const spring = createSpring(0);
+    const reference = createSpring(0);
+
+    updateSpringAngle(spring, -0.5, 1, config, 1 / 60);
+    updateSpring(reference, 0.5, config, 1 / 60);
+
+    expect(spring.value).toBeCloseTo(reference.value, 12);
+    expect(spring.velocity).toBeCloseTo(reference.velocity, 12);
   });
 });

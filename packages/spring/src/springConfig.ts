@@ -1,6 +1,16 @@
 import { TAU } from '@flighthq/math/contract';
 import type { SpringConfig } from '@flighthq/types/contract';
 
+// Frozen plain-data presets: spread one into a mutable object to customize it without changing the
+// shared profile. Bouncy is quick and underdamped for visible overshoot.
+export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.35, frequency: 2 });
+
+// A slower, well-damped profile for soft UI movement with only a restrained overshoot.
+export const SpringPresetGentle: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.8, frequency: 1.5 });
+
+// A high-frequency critical profile for a fast response without overshoot.
+export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 1, frequency: 4 });
+
 // Allocate a `SpringConfig` from the designer-intuitive `frequency` (Hz) and `dampingRatio`
 // (0 undamped, <1 underdamped/overshoots, 1 critical/fastest-no-overshoot, >1 overdamped). This is
 // the primary constructor; use `createSpringConfigFromPhysical` when starting from raw physics.

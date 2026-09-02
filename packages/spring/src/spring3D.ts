@@ -1,6 +1,18 @@
 import type { Spring3D, SpringConfig } from '@flighthq/types/contract';
 
-import { createSpring, isSpringSettled, updateSpring } from './spring';
+import { applySpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
+
+// Add independent velocity impulses to all three axes without allocating or changing their values.
+export function applySpringImpulse3D(
+  spring3D: Spring3D,
+  velocityX: number,
+  velocityY: number,
+  velocityZ: number,
+): void {
+  applySpringImpulse(spring3D.x, velocityX);
+  applySpringImpulse(spring3D.y, velocityY);
+  applySpringImpulse(spring3D.z, velocityZ);
+}
 
 // Allocate a 3D spring as three scalar springs, each at its `value*` (default 0) and `velocity*`
 // (default 0).
@@ -34,6 +46,22 @@ export function isSpring3DSettled(
     isSpringSettled(spring3D.y, targetY, positionEpsilon, velocityEpsilon) &&
     isSpringSettled(spring3D.z, targetZ, positionEpsilon, velocityEpsilon)
   );
+}
+
+// Snap all three axes to the supplied values and velocities. Velocities default independently to
+// zero, mirroring `resetSpring` while preserving the vector spring's existing axis objects.
+export function resetSpring3D(
+  spring3D: Spring3D,
+  valueX: number,
+  valueY: number,
+  valueZ: number,
+  velocityX: number = 0,
+  velocityY: number = 0,
+  velocityZ: number = 0,
+): void {
+  resetSpring(spring3D.x, valueX, velocityX);
+  resetSpring(spring3D.y, valueY, velocityY);
+  resetSpring(spring3D.z, valueZ, velocityZ);
 }
 
 // Advance all three axes of `spring3D` one `deltaTime` step toward (`targetX`, `targetY`, `targetZ`)

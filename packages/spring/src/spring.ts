@@ -1,6 +1,13 @@
 import { approxEqual, approxZero, TAU } from '@flighthq/math/contract';
 import type { Spring, SpringConfig } from '@flighthq/types/contract';
 
+// Add `velocity` to the spring's current velocity without changing its position. This is the
+// allocation-free flick/throw control: repeated impulses compose additively, and the next analytic
+// step carries their combined velocity into the motion.
+export function applySpringImpulse(spring: Spring, velocity: number): void {
+  spring.velocity += velocity;
+}
+
 // Allocate a scalar spring at `value` (default 0) with `velocity` (default 0). This is the only
 // allocating function for scalar springs; `updateSpring`, `resetSpring`, and the settle query all
 // write into or read an existing spring.
@@ -116,6 +123,28 @@ export function updateSpring(spring: Spring, target: number, config: Readonly<Sp
 
   spring.value = target + posPosCoef * c0 + posVelCoef * velocity;
   spring.velocity = velPosCoef * c0 + velVelCoef * velocity;
+}
+
+// Advance an angular spring toward `target` along the shortest wrapped arc. `fullTurn` defines the
+// caller's unit system — use 360 for degrees, `TAU` for radians, or 1 for turns; this function does
+// no unit conversion. The chosen delta is in (-fullTurn / 2, fullTurn / 2], so exact half-turn ties
+// consistently take the positive direction. The spring remains on its continuous, unwrapped branch
+// to avoid position and velocity discontinuities; callers may normalize the value for presentation.
+// A non-positive or non-finite `fullTurn` is an inert sentinel.
+export function updateSpringAngle(
+  spring: Spring,
+  target: number,
+  fullTurn: number,
+  config: Readonly<SpringConfig>,
+  deltaTime: number,
+): void {
+  if (!(fullTurn > 0) || !Number.isFinite(fullTurn)) return;
+
+  const value = spring.value;
+  const halfTurn = fullTurn * 0.5;
+  const wrappedDelta = (((target - value) % fullTurn) + fullTurn) % fullTurn;
+  const shortestDelta = wrappedDelta > halfTurn ? wrappedDelta - fullTurn : wrappedDelta;
+  updateSpring(spring, value + shortestDelta, config, deltaTime);
 }
 
 // Half-width of the damping-ratio band around 1 treated as critically damped. Inside it the
