@@ -1,93 +1,215 @@
 ---
 package: '@flighthq/effects-canvas'
 status: solid
-score: 88
-updated: 2026-07-31
+score: 82
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
-  - reviews/depth/effects-canvas.md
   - source
-  - incoming/builder-67dc46d64
 ---
 
 # Review: @flighthq/effects-canvas
 
-> **2026-07-31 correction.** This review records a superseded implementation. The current
-> package has eight realized runner/registrar pairs: Bloom, Blur, DropShadow, FilmGrain,
-> OuterGlow, Pixelate, Scanlines, and Vignette. The other Canvas effect modules and their
-> apply functions were removed in `6ecb599d8`; unsupported kinds are absent rather than
-> passthrough runners. The category/register-all functions described below did exist, but
-> were retired in `2a7ac8bff`. `CANVAS_RENDER_EFFECT_SUPPORT` and
-> `getCanvasRenderEffectSupport` never existed in package source; those names were
-> documentation defects. Use the charter and source-derived reachability inventory for the
-> current capability set.
-
 ## Verdict
 
-**solid — 88/100.** Canvas 2D realizations of the renderer-agnostic post-process effect set in `@flighthq/effects`: an opt-in offscreen ping-pong pipeline, a render-target pool, a per-state runner registry, and apply-functions for all 44 effect kinds. The headline finding of the prior depth review — **33 of 44 effects were no-op passthroughs** — is now closed: 34 effects are genuinely implemented (real or approximate) and only 10 remain passthrough, each for a documented hard-input reason (depth buffer, velocity buffer, multi-frame history, GPU AA samples, or a missing LUT payload). The infrastructure was already solid; the catalog is now mostly real. Held back from `authoritative` by stale framing in its own docs (the support map and barrel comments), a small dead- code residue, and an unresolved cross-backend support-type naming question.
-
-## What changed since the depth review (48/100 → claimed 92)
-
-The depth review's central charge was that the package "restricts itself to `ctx.filter` CSS strings and draw-op compositing" and wrongly declared everything else "shader-only," omitting `getImageData`/`putImageData`. **That is resolved.** This pass added the missing per-pixel primitive and built the omitted effects on it. Verified against the bundle source (`builder-67dc46d64`):
-
-- `drawCanvasImageDataPass` (`canvasEffectCompositing.ts:64`) — the `getImageData` → per-pixel transform → `putImageData` primitive the depth review asked for, by name.
-- `drawCanvasAccumulationPass` (`:13`) — equal-weight multi-draw accumulation, the shared primitive behind directional/radial blur and god-rays.
-- Real per-pixel effects verified by reading source: `applyPosterizeEffectToCanvas` (channel quantization), `applySharpenEffectToCanvas` (3×3 Laplacian, alias-safe via an `orig` copy), `applyDirectionalBlurEffectToCanvas` (centered multi-draw smear). All three were passthrough stubs in the depth review and are now genuine implementations.
-
-The status doc's claims are **AS-CLAIMED → verified**: the support-map tiers, the real/approximate/passthrough split, the category registrars, and the taxonomy-completeness tests all match source. The one number to correct: the status says "35 real/approximate runners"; the support map is 32 `real` + 2 `approximate` = **34** registered, with 10 passthrough (44 total). The discrepancy is `ScreenSpaceShadowsEffect`, which is in the support map as passthrough but has **no colocated source file** at all (the only kind without one) — counted by neither the registrars nor `exports:check` (no export to bind a test to).
+**solid — 82/100.** Genuine Canvas 2D post-process implementations for 18 effect kinds, backed by
+a clean opt-in pipeline, pooled scratch canvases, a per-state runner registry, and shared compositing
+primitives. Every realized effect has a matching runner/registrar pair; unregistered kinds hit a
+pipeline-level identity copy with no fake passthrough runners — exactly what the charter demands.
+Held back from higher by: stale registration test coverage (the two registration tests cover only 8-9
+of 18 kinds), no guard module for the silent identity-copy path, a `strength` discontinuity shared
+with the GL/WGPU siblings, an orphan type in `@flighthq/types`, export ordering violations in both
+lane files, and a duplicate private helper.
 
 ## Present capabilities
 
-**Infrastructure (all real, grounded in source):**
+### Infrastructure
 
-- Pipeline — `createCanvasRenderEffectPipeline` / `begin*` / `end*` / `destroy*` (`canvasRenderEffectPipeline.ts`). Redirects scene render into an offscreen `CanvasRenderTarget`, ping-pongs two pooled scratch canvases through the registry, then `presentCanvasRenderEffectResult` blits to the main canvas with correct clear-before-draw for transparent scenes. Unregistered kinds are silently skipped (`getCanvasRenderEffectRunner` → `null` → `continue`).
-- Render-target pool — `createCanvasRenderTargetPool`, `acquireCanvasRenderTarget`, `releaseCanvasRenderTarget`. Paired brackets, size-aware reuse, correct ownership.
-- Registry — `registerCanvasRenderEffect` / `getCanvasRenderEffectRunner` / `hasCanvasRenderEffectRunner` over a per-state `WeakMap<state, Map<kind, runner>>`. Opt-in, last-write-wins, no monolithic switch. `hasCanvasRenderEffectRunner` is correctly homed in the registry module (mirrors `hasGlRenderEffectRunner`).
-- Compositing primitives — `drawCanvasEffectPass` (filter + composite-op blit with full state reset), `drawCanvasAccumulationPass`, `drawCanvasImageDataPass`, `passthroughCanvasEffectPass`.
-- Support tiers — `CANVAS_RENDER_EFFECT_SUPPORT` (static map of all 44 kinds) + `getCanvasRenderEffectSupport` (runtime lookup, `'passthrough'` sentinel for unknown kinds). The discoverability gap the depth review flagged ("a consumer cannot discover that `posterize` will silently do nothing") is closed by this lookup.
+- **Pipeline** — `createCanvasRenderEffectPipeline`, `beginCanvasRenderEffectPipeline`,
+  `endCanvasRenderEffectPipeline`, `destroyCanvasRenderEffectPipeline`
+  (`canvasRenderEffectPipeline.ts`). Scene renders into an offscreen `CanvasRenderTarget`; end runs
+  the operation list through the per-state registry, ping-ponging pooled scratch canvases. Supports
+  interleaved `Adjustment` runs: consecutive matrix-tier adjustments fuse into one 4x5 color matrix;
+  runs containing any LUT-tier member bake into one `ColorLut`. Unregistered kinds hit an identity
+  copy (`canvasRenderEffectPipeline.ts:151`) rather than registering fake passthrough runners.
+  `presentCanvasRenderEffectResult` blits the final result with correct clear-before-draw.
+- **Render-target pool** — `createCanvasRenderTargetPool`, `acquireCanvasRenderTarget`,
+  `releaseCanvasRenderTarget`. Paired acquire/release brackets, size-aware resize-or-allocate,
+  correct ownership.
+- **Registry** — `registerCanvasRenderEffect`, `getCanvasRenderEffectRunner`,
+  `hasCanvasRenderEffectRunner` (`canvasRenderEffectRegistry.ts`). Per-state registration via
+  `@flighthq/registry`'s `withRegistryTableEntry`. Opt-in, last-write-wins, no monolithic switch.
+- **Compositing primitives** — `drawCanvasEffectPass` (filter + composite-op blit with full state
+  reset), `drawCanvasAccumulationPass` (multi-draw integration for spatial effects),
+  `drawCanvasImageDataPass` (getImageData/putImageData per-pixel transform),
+  `passthroughCanvasEffectPass` (`canvasEffectCompositing.ts`).
+- **Source-mode compositing** — `clearCanvasTarget`, `compositeCanvasImage`,
+  `compositeCanvasSourceMode`, `drawCanvasTintedAlphaMask`, `drawCanvasInvertedTintedAlphaMask`
+  (`canvasSourceModeCompositing.ts`). Shared by the glow/shadow/bevel family. The inverted mask
+  is built via a full-target fill knocked out by the source — no getImageData round trip.
+- **Gradient ramp** — `buildCanvasGradientRamp`, `applyCanvasGradientRampLookup`
+  (`canvasGradientRamp.ts`). 256-entry RGBA lookup table built from colors/alphas/ratios; the
+  lookup is per-pixel by alpha, not spatial — correctly documented as not a CSS gradient.
+- **Color passes** — `applyColorMatrixPassToCanvas`, `applyColorMatrixToImageDataBytes`
+  (`canvasColorMatrixPass.ts`), `applyColorLutPassToCanvas` (`canvasColorLutPass.ts`). The matrix
+  pass kernel is separately exported for testability without canvas context.
+- **CSS fast paths** — `computeDropShadowEffectCss`, `computeOuterGlowEffectCss`
+  (`canvasEffectDropShadowCss.ts`). Drop shadow and outer glow use `drop-shadow()` CSS filter when
+  sourceMode is `'draw'` and blur is isotropic; non-isotropic or hide/knockout falls through to the
+  full compositing path.
+- **RenderTexture bridge** — `applyCanvasRenderEffectsToRenderTexture`
+  (`canvasRenderTextureEffect.ts`). Per-node effect application against `RenderTexture` leases;
+  ping-pongs dest/scratch so the final operation writes to dest.
 
-**Effect catalog (34 implemented):** color-grade per-pixel (posterize, channel-mixer, lift/gamma/gain, white-balance, dither) and CSS-filter (brightness-contrast, grayscale, invert, sepia, hue-saturation, color-grade); convolution/neighbor (sharpen, outline/Sobel, kuwahara, sketch, halftone); spatial blur (directional, radial, tilt-shift, bloom); stylized screen (chromatic aberration, crt, displacement, film grain, glitch, god-rays, lens-dirt, lens-distortion, lens-flare, pixelate, scanlines, screen-space fog, vignette); and two `approximate` tone/exposure (`applyExposureEffectToCanvas` via CSS `brightness(2^stops)`, `applyToneMapEffectToCanvas`), honestly flagged because 8-bit sRGB has no HDR headroom.
+### Effect catalog (18 runner/registrar pairs)
 
-**Category registrars:** `registerAllCanvasRenderEffects` delegates to four registrars (`registerBlurCanvasRenderEffects`, `registerColorGradeCanvasRenderEffects`, `registerStylizeCanvasRenderEffects`, `registerScreenSpaceCanvasRenderEffects`), each driven by a local kind→runner tuple constant — mirroring the GL registrar design. `registerScreenSpace*` is an intentional no-op (empty tuple) for symmetry with the GL/WGPU equivalents.
+Each kind has a `defaultCanvas<Kind>EffectRunner`, `registerCanvas<Kind>Effect`, and an
+`apply<Kind>EffectToCanvas` function. The apply functions accept explicit source/dest/pool
+parameters; the runner wraps the apply for pipeline dispatch.
 
-**Passthrough set (10, each defensible):** depth-buffer (`BokehDepthOfField`, `Ssao`, `Ssr`, `ScreenSpaceShadows`), velocity-buffer (`CameraMotionBlur`, `MotionBlur` — `MotionBlurEffect` genuinely carries a `scene velocity buffer` semantic in its type, so the depth review's claim that a "screen-space variant" is achievable does not hold against the descriptor), multi-frame history (`Taa`), GPU AA samples (`Fxaa`, `Smaa`), and missing descriptor data (`LookupTableGrade` — descriptor carries only `size`/`strength`, no cube data). Each is documented in-comment with its specific missing input rather than the old "shader-only" hand-wave the depth review criticized. **That comment-rewrite ask is satisfied.**
+| Kind | Technique | File |
+|------|-----------|------|
+| Bevel | Offset blurred silhouette knockout + highlight/shadow tint + bevelType clip | `canvasBevelEffect.ts` |
+| Blend | globalCompositeOperation over registered backdrop | `canvasBlendEffect.ts` |
+| Bloom | Luminance-gate bright pass (ImageData) + CSS blur + additive composite (ImageData) | `canvasBloomEffect.ts` |
+| Blur | CSS `blur()` filter, isotropic (blurX/blurY averaged) | `canvasBlurEffect.ts` |
+| Composite | Porter-Duff via globalCompositeOperation over registered backdrop | `canvasCompositeEffect.ts` |
+| DropShadow | CSS `drop-shadow()` fast path or full tint+blur+offset+sourceMode | `canvasDropShadowEffect.ts` |
+| FilmGrain | Tiled deterministic noise patch + `overlay` composite | `canvasFilmGrainEffect.ts` |
+| GradientBevel | Bevel band + gradient ramp lookup (signed, midpoint-biased) | `canvasGradientBevelEffect.ts` |
+| GradientGlow | Blurred silhouette + gradient ramp lookup by alpha | `canvasGradientGlowEffect.ts` |
+| InnerGlow | Inverted-silhouette tint + blur + destination-in clip + sourceMode | `canvasInnerGlowEffect.ts` |
+| InnerShadow | Inverted-silhouette tint + blur + offset + destination-in clip | `canvasInnerShadowEffect.ts` |
+| LensDistortion | Per-pixel radial polynomial UV remap with bilinear sampling (ImageData) | `canvasLensDistortionEffect.ts` |
+| OuterGlow | CSS `drop-shadow()` fast path or full tint+blur+sourceMode | `canvasOuterGlowEffect.ts` |
+| Pixelate | Downscale + nearest-neighbor upscale | `canvasPixelateEffect.ts` |
+| Posterize | Per-channel `floor(v * levels) / (levels - 1)` in float domain (ImageData) | `canvasPosterizeEffect.ts` |
+| Scanlines | Horizontal darkening bands via `multiply` composite | `canvasScanlinesEffect.ts` |
+| TiltShift | 7-tap vertical blur with smoothstep-ramped radius (ImageData) | `canvasTiltShiftEffect.ts` |
+| Vignette | Radial gradient in unit-square space via `multiply`, smoothstep-sampled stops | `canvasVignetteEffect.ts` |
 
-**Tests:** `canvasRenderEffectRegistration.test.ts` includes the Gold taxonomy-completeness assertion — every non-passthrough kind in the support map is registered after `registerAllCanvasRenderEffects`, and every passthrough kind stays unregistered. This binds the support map and the registrars together so they cannot silently drift. Per-effect tests exist for every source file. (jsdom does not execute canvas draw commands, so unit tests verify math/non-throwing only; the visual gate is the functional baselines.)
+### Tests
+
+Every source file has a colocated `*.test.ts` (30 source files, 30 test files — `contract.ts` and
+`index.ts` are barrel files without dedicated tests, which is standard). Total: ~2,880 test lines
+across 30 files. Per-effect tests verify algorithm math and does-not-throw under jsdom (which
+cannot execute canvas draw commands); visual correctness relies on functional baselines.
+`canvasEffectTestSupport.ts` provides test-only `createCanvasRenderState` and
+`createCanvasRenderTarget` wrappers.
 
 ## Gaps
 
-- **`ScreenSpaceShadowsEffect` has no colocated source file.** Every other of the 44 kinds has a `canvas<Kind>Effect.ts` + test; this one exists only as a passthrough entry in the support map. It is invisible to `exports:check`. Either it needs a passthrough stub file for symmetry, or its support-map entry is the only home and that asymmetry should be conscious.
-- **Approximate tier is shallow (2 of a plausibly larger set).** Only `Exposure` and `ToneMap` are `approximate`. `ToneMap` is registered but its LDR fidelity vs. the GL HDR path is asserted nowhere; a parity note (or an explicit "approximate means X% off" comment) would harden the tier.
-- **`LookupTableGrade` real path blocked on a `@flighthq/types` descriptor change** — needs a `data: Float32Array` (or side-channel) on `LookupTableGradeEffect`; correctly left passthrough. This is a cross-package design decision, not a within-package gap.
-- **Functional-test kind-string bug is upstream, not fixed.** The status notes the `tests/functional/effect-*` canvas render files register with lowercase kinds (`'grayscale'` vs `'GrayscaleEffect'`), so the canvas column of those baselines may apply no effect. That is a cross-package functional-suite fix, correctly surfaced and not acted on — but it means the "visual correctness gate is closed" claim in the status is weaker than stated for the canvas backend until those kind strings are corrected.
+1. **Registration test coverage stale.** `canvasEffectRegistration.test.ts` covers only 9 of 18
+   kinds (Blend, Bloom, Blur, DropShadow, FilmGrain, OuterGlow, Pixelate, Scanlines, Vignette).
+   `canvasRealizedEffectRegistration.test.ts` covers only 8 of 18 (same minus Blend). The 9 newer
+   kinds (Bevel, Composite, GradientBevel, GradientGlow, InnerGlow, InnerShadow, LensDistortion,
+   Posterize, TiltShift) are absent from both registration test matrices.
+
+2. **No guard module.** `effects-gl` has `enableGlRenderEffectGuards.ts`; this package has no
+   `enableCanvasRenderEffectGuards`. The silent identity-copy path for unregistered kinds
+   (`canvasRenderEffectPipeline.ts:151`) has no shakeable diagnostic. Per the diagnostics
+   convention, this silent sentinel needs an `explain*` query or a guard-layer warning.
+
+3. **`strength` discontinuity across the glow/shadow family.** `canvasOuterGlowEffect.ts:76-77`,
+   `canvasDropShadowEffect.ts:80-81`, `canvasInnerGlowEffect.ts:78`, `canvasInnerShadowEffect.ts:75`:
+   `Math.min(1, strength)` for the tint alpha and `Math.max(1, Math.floor(strength))` for the
+   pass count. Values in (1, 2) behave identically to 1.0 — the function is flat, then jumps at
+   integer boundaries. The status correctly flags this. The same pattern exists in GL/WGPU siblings,
+   so the fix is cross-backend.
+
+4. **`CanvasRenderEffectSupport` is an orphan type.** Defined in
+   `packages/types/src/CanvasRenderEffectSupport.ts`, exported from both `types` lanes, consumed by
+   no module in any package. The charter's Open direction 1 asks whether to retire it or build a
+   query; no work has landed either way.
+
+5. **`BloomEffect.passes` is declared but universally ignored.** The field is declared at
+   `packages/types/src/BloomEffect.ts:8` (`passes?: number`); no backend reads it. This is a
+   cross-package types question, not a within-package gap — but it affects the user-facing contract
+   of the bloom recipe.
+
+6. **Duplicate private `cssRgbaFromColor` helper.** The identical function exists independently in
+   both `canvasEffectDropShadowCss.ts:31-36` and `canvasSourceModeCompositing.ts:96-102`. Same
+   signature, same body. One shared internal helper would eliminate the duplication.
+
+7. **29 GL-realized kinds absent.** Of the 47 kinds `effects-gl` implements, 29 have no Canvas
+   runner. Of these, ~8-10 are genuinely impossible on Canvas 2D (need depth buffers, velocity
+   buffers, GPU AA, or shader facilities: BokehDepthOfField, CameraMotionBlur, ContactShadows,
+   CustomShader, FXAA, ScreenSpaceFog, SMAA, SSAO). The remaining ~19-21 (ChromaticAberration,
+   Convolution, CRT, DirectionalBlur, Displacement, BitmapDisplacement, Dither, Glitch, GodRays,
+   Halftone, Kuwahara, LensDirt, LensFlare, Median, MotionBlur, Outline, RadialBlur, Sharpen,
+   Sketch, ToneMap, WhiteBalance) are plausibly Canvas-implementable via ImageData or accumulation
+   passes. The charter says "only implementations Canvas 2D can honestly execute" and
+   "landing a stub to preserve taxonomy symmetry is explicitly out of doctrine," so each new
+   addition requires a tested genuine implementation.
+
+8. **Status stale by 3 effects.** The status (2026-08-08) reports 15 runner/registrar pairs; the
+   source carries 18. LensDistortion, TiltShift, and Posterize landed after the status was written.
 
 ## Charter contradictions
 
-The charter is a **stub** — only "What it is" is seeded; North star, Boundaries, Decisions, and Open directions are all `TODO`. There is no stated principle to contradict. Judged against the fallback codebase-map AAA standard, no violations: naming is fully self-identifying (`apply<Effect>EffectToCanvas`, `defaultCanvas<Effect>EffectRunner`, `acquire/releaseCanvasRenderTarget`), teardown verbs are correct (`destroyCanvasRenderEffectPipeline` correctly reasoned as GC-memory in its comment), out-param/aliasing discipline holds (distinct source/dest targets; `applySharpen` reads an `orig` copy before writing), sentinels-not-throws is honored (`getCanvasRenderEffectRunner` → `null`, `getCanvasRenderEffectSupport` → `'passthrough'`), and `sideEffects: false` with a single root export is intact.
+The charter is mature and specific. Against its stated principles:
+
+- **"Realized or absent, never fake"** — **COMPLIANT.** No passthrough runners exist. Unregistered
+  kinds hit the pipeline identity copy, which is the charter's intended design.
+- **"Exact inverse capability"** — **COMPLIANT.** Each of the 18 kinds has exactly one runner and
+  one registrar; the registrar fronts the named runner. No orphan runners or registrars.
+- **"Opt-in and tree-shakable"** — **COMPLIANT.** Registration is per-kind and per-state. No
+  register-all aggregate, no category registrars, no import-time registration.
+- **"Curated export lanes"** — **MINOR VIOLATION.** The index.ts named export list has alphabetical
+  ordering violations: `defaultCanvasLensDistortionEffectRunner`, `defaultCanvasTiltShiftEffectRunner`,
+  and `defaultCanvasPosterizeEffectRunner` appear after `defaultCanvasPixelateEffectRunner` rather
+  than in their alphabetical positions. The same three are misordered in the `registerCanvas*`
+  block. contract.ts has analogous re-export ordering violations (`canvasColorMatrixPass` before
+  `canvasBevelEffect`, `canvasTiltShiftEffect` between `canvasLensDistortionEffect` and
+  `canvasInnerShadowEffect`, `canvasColorLutPass` at the end). These are likely artifacts of the
+  three effects being appended without re-sorting. `npm run order` would flag this.
+- **"Explicit ownership"** — **COMPLIANT.** Every `acquireCanvasRenderTarget` is matched by a
+  `releaseCanvasRenderTarget` within the same function scope. The bevel effect acquires 6 scratch
+  targets and releases all 6.
 
 ## Contract & docs fit
 
-**Lives up to the contract:**
+**Package lives up to the contract:**
 
-- `CanvasRenderEffectSupport`, `CanvasRenderEffectRunner`, `CanvasRenderTarget`, `CanvasRenderState`, `CanvasRenderEffectPipeline` all live in `@flighthq/types` (header-first). No cross-package type is defined inline.
-- Single `.` export, `sideEffects: false`, full unabbreviated names, opt-in registration (no top-level `registerRenderer`).
-- `crate: null` is correct — the Rust port provides Canvas-2D-equivalent CPU effects via `flighthq-effects-skia` (tiny-skia), not a Canvas emulator. The status's note that `drawCanvasImageDataPass` maps to Pixmap iteration and `drawCanvasAccumulationPass` to multi-draw accumulation is the right conformance seam to record.
+- Types live in `@flighthq/types`: `CanvasRenderEffectRunner`, `CanvasRenderState`,
+  `CanvasRenderTarget`, `CanvasRenderTargetPool`, `CanvasRenderEffectPipeline`, and all effect
+  descriptor interfaces. No types defined inline in this package.
+- Two export lanes: `.` (index.ts, named exports) and `./contract` (contract.ts, `export *`).
+  No other subpaths.
+- `sideEffects: false` declared. No top-level registration, no module-scope mutable state.
+- `crate: null` — correct per charter Decision 2026-07-02 (browser-API-bound).
+- Function names are fully self-identifying: `applyBloomEffectToCanvas`,
+  `registerCanvasDropShadowEffect`, `acquireCanvasRenderTarget`.
+- Sentinels not throws: `getCanvasRenderEffectRunner` returns `null` for unknown kinds;
+  `computeDropShadowEffectCss` returns `null` when the CSS fast path is unavailable.
+- Exception: `applyCanvasRenderEffectsToRenderTexture` throws on aliased source/dest/scratch.
+  This is a precondition violation (programmer error), so it is correct per convention.
 
-**Candidate revisions (user's gate, not mine):**
+**Candidate revisions (user's gate):**
 
-1. **Package Map omits the entire effects family.** `agents/index.md` has no line for `@flighthq/effects`, `effects-canvas`, `effects-gl`, or `effects-wgpu` — yet all four packages exist in the tree. The Map should gain an effects entry (and ideally the `<subject>-<backend>` framing the render reorg established).
-2. **The "not-yet-present `effects-webgl`" framing is stale** in both the charter's seeded "What it is" and the depth review. `effects-gl` and `effects-wgpu` both exist now with 44 effect files each. The charter's identity line should be re-seeded to "the Canvas member of the `effects-<backend>` family" rather than "counterpart to a not-yet-present sibling."
-3. **Self-contradicting barrel comment.** `registerAllCanvasRenderEffects`'s comment claims it "is NOT re-exported from the root barrel by default," but `index.ts` does `export *` from the registration module, so it _is_ exported — and under the SDK's single-root-barrel + `sideEffects:false` rule it tree-shakes identically whether re-exported or not. The comment describes a separate-entry-point model the SDK explicitly rejects; it should be deleted or corrected.
-
-**Cleanliness residue:**
-
-- `canvasSharpenEffect.ts:31-33,54-56` — `cr`/`cg`/`cb` are read from `orig` then never used and `void`-ed away. Dead bindings; violates "leave touched files cleaner." Should be removed.
+1. **Package Map** — the effects family is now correctly listed in AGENTS.md under Rendering:
+   `effects with effects-gl / -wgpu / -canvas`. No revision needed.
+2. **Previous review and assessment are thoroughly stale** — both from 2026-07-31, describing a
+   44-kind support map, category registrars, `registerAllCanvasRenderEffects`, and
+   `CANVAS_RENDER_EFFECT_SUPPORT` — none of which exist in the current tree. This review
+   supersedes that one entirely.
 
 ## Candidate open directions
 
-The charter is a stub, so each of these is a question the review had to assume past — collect them into the charter's Open directions:
+Questions the charter does not answer that the review had to assume past. These feed the charter's
+Open directions section for the user to settle:
 
-1. **Cross-backend support-type naming (fork-adjacent).** `CanvasRenderEffectSupport` is the only backend-specific tier type in `@flighthq/types`. If `effects-gl`/`effects-wgpu` grow `get*RenderEffectSupport`, do they each get a `GlRenderEffectSupport` /`WgpuRenderEffectSupport`, or is there one shared `RenderEffectSupport` alias? Decide before a third copy lands.
-2. **Is the 10-kind passthrough floor permanent, or a build target?** `LookupTableGrade` is one `@flighthq/types` field away from real; the depth/velocity/history set is genuinely impossible on Canvas 2D. The charter should state whether "passthrough for parity" is the accepted terminal state for the impossible set (it should be) and which passthroughs are merely blocked-on-types.
-3. **`CANVAS_RENDER_EFFECT_SUPPORT` as a closed `Record` vs. registry (structural fork B).** The support map is a closed `Readonly<Record<string, …>>` keyed by all 44 built-in kinds — a closed taxonomy in a domain the codebase otherwise drives by open string registries. It is _not_ in a hot loop (lookup is a one-shot per effect), and the taxonomy test pins it to the registrars, so the maintenance risk is bounded — but a user's custom vendor-prefixed effect kind has no support entry and silently reports `'passthrough'`. Worth a conscious ruling: is the support map intentionally closed-to-built-ins (the lean answer, given fork B's "closed is fine when small / not hot"), or should support tier be a registerable property alongside the runner?
-4. **Approximate-tier fidelity contract.** What does `'approximate'` promise a consumer — "looks plausible," or "within a bounded error of the GL path"? This governs whether `ToneMap`/`Exposure` need parity baselines against `effects-gl`.
+1. **Which of the ~19-21 Canvas-feasible GL kinds should be implemented next?** The charter
+   gates new kinds on "a tested implementation," so the work is mechanical — but the priority among
+   DirectionalBlur, Outline, ChromaticAberration, Sharpen, etc. is a product decision the charter
+   does not make. The existing three open directions (orphan type, stub doctrine, approximate-tier
+   fidelity) remain unsettled and may constrain this.
+2. **Should the `strength` model change?** The cross-backend strength discontinuity
+   (flat in (1, 2), jump at integers) is a shared recipe design question. The status references an
+   unratified `effect-recipe-model.md` that proposes a post-operator coverage-gain pass. The charter
+   does not speak to strength semantics beyond "realized or absent."
+3. **Guard module parity.** `effects-gl` has `enableGlRenderEffectGuards`; the charter's
+   diagnostics posture (inversion rule: core exposes seams, guard modules emit warnings) implies
+   `enableCanvasRenderEffectGuards` should exist. The charter is silent on whether Canvas needs
+   its own guard module or whether the pipeline's identity-copy path is self-documenting enough.

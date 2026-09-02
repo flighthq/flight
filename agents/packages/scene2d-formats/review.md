@@ -1,167 +1,394 @@
 ---
 package: '@flighthq/scene2d-formats'
 status: partial
-score: 71
-updated: 2026-08-03
+score: 76
+updated: 2026-09-02
 ingested:
   - status.md
   - charter.md
   - source
   - tests
+  - functional-scenes
+  - coverage-document
+  - assessment.md
 ---
 
-# scene2d-formats — Review
+# scene2d-formats -- Review
 
-Two passes are recorded here. The first, on 2026-08-02, surveyed the **Lottie codec** and is kept
-below unchanged apart from what later work resolved. The second, on 2026-08-03, follows the Rive
-build.
+Three codecs in one target-named package -- SVG, Lottie, and Rive -- each producing Flight
+display-object trees from a different visual-authoring format. This review is measured against
+source in `packages/scene2d-formats/src/` (16,353 lines across 46 files), the 901-line coverage
+document (`agents/scene2d-format-coverage.md`), the seven functional render scenes under
+`functional/scenes/`, and the package types used in `@flighthq/types`.
 
-## Rive, as of 2026-08-03
+## Verdict
 
-Rive went from chartered-but-absent to the cell's **best-verified codec**, and the reason is
-methodological rather than clever: it is the only one measured against real files. Sixty-four
-editor-authored `.riv` assets caught, in order, a container that could not read any real file, a
-missing alternate-key table, a naming bug that left every state machine unnamed, and a binary payload
-being decoded as UTF-8 — none of which the synthetic suites would ever have shown. The other two
-codecs in this cell have still never seen a real asset, and the gap in confidence between them is now
-the most useful thing this review can say.
+The package is the broadest format importer in the SDK and the only one covering three codecs.
+All three produce working display trees; SVG and Rive have multi-backend functional render scenes
+(six SVG scenes, one Rive scene); Lottie has none. The Rive codec is the deepest -- binary
+container, type registry with inheritance, per-artboard display construction, mutable-content
+animation, skeleton, skin, draw order, solo, state machine, layout, and the `Scene2DDocument`
+named-graph output. Lottie is second in breadth -- every standard layer family, analytic easing,
+separated spatial tangents with arc-length parameterization, auto-orientation, and a substantial
+mutable-content binder. SVG covers the static authoring core: paths, shapes, text, gradients,
+transforms, viewBox, defs/use/symbol, CSS selectors, and clip/mask degradation.
 
-Built: container, type registry with inheritance, per-artboard component trees, transforms, path
-geometry with corner rounding, ordered paint, blend modes, clipping, trim, linear animations, assets
-with intact payloads, the state-machine descriptor, single-format text, and a version gate.
+Package shape and contract discipline are sound. Two blessed lanes (`.` and `./contract`),
+`"sideEffects": false`, types in `@flighthq/types`, no `@flighthq/sdk` imports, no top-level
+registration side effects. The description field says "SVG and Lottie" and should be updated to
+include Rive. `@flighthq/image` appears in both `dependencies` and `devDependencies`, which is
+redundant (the runtime import in `riveScene2DDocument.ts` is real). The 20 workspace dependencies
+are all justified by source imports. `@flighthq/layout` is notably absent despite the Rive layout
+module -- `riveLayout.ts` emits layout descriptors through `@flighthq/types` only, correctly
+keeping the package data-only.
 
-**Three items are closed as recorded rather than built**, each needing an answer above this codec —
-draw-order overrides, rig deformation, and the blend-mode shortfall. The charter's open directions now
-carry all three. That is the right disposition: each was measured, and each would have produced
-plausible-but-wrong output if forced.
+Test suite: 356 test cases, 773 assertions, all colocated one-test-per-source. Both Lottie and SVG
+have dedicated conformance test files (1,285 and 658 lines). Every Rive module has its own test
+file. No test uses a real external asset; all fixtures are hand-authored. The coverage document
+records three historic corpus runs (Lottie against lottie-web at `550c1b042`, SVG against W3C at
+`62359229b`, Rive against rive-flutter at `a3707655f`), none of which are reproducible in CI -- they
+are external fetch-on-demand evidence.
 
-**The format's defining hazard is id spaces.** Four distinct ones are in play — `parentId` over
-components, `interpolatorId` over all artboard objects, `assetId` over the asset list by order,
-`styleId` over components — and each had to be established empirically. Anyone adding a fifth should
-assume nothing from its neighbours.
+The score of 76 (up from 71) reflects the SVG functional scenes and steady Lottie conformance
+hardening since the prior review; it is held below 80 by the still-absent Lottie functional scene,
+the unwired Rive skin, the Lottie render-stack gap, and the Rive layout box-model gap.
 
-**What Rive still lacks** is animated geometry and paint (145 of 383 clips carry no channels because
-only transform properties bind), rich text, image wiring onto the `Image` drawable, and the
-`Scene2DDocument` slot output the charter's named-graph mode wants.
+## Present capabilities
 
-## Lottie, as of 2026-08-02
+### SVG codec (`svgDocument.ts`, 1,781 lines)
 
-Survey scoped to the **Lottie codec**, the question the user asked. SVG is characterized only
-where the comparison is load-bearing; it deserves its own pass. The five silent losses below were
-subsequently fixed or recorded, and the coverage document this pass called for now exists.
+Single exported function: `createScene2DFromSvgDocument(source, diagnostics?, options?)`.
 
-## Shape of the cell
+Geometry: paths via `@flighthq/path-formats` (`parseSvgPathData`), `<rect>` with round corners
+(single radius -- elliptical `rx`/`ry` is approximated), `<circle>`, `<ellipse>`, `<line>`,
+`<polygon>`, `<polyline>`.
 
-Two codecs in one package, per the blessed 2026-07-25 "one target package, many source codecs"
-decision: `svgDocument.ts` (1555 lines) and `lottieDocument.ts` (1205 lines). Both reach the
-charter's North star — straight to `Node2D`, no duplicate normalized document. Lottie exports two
-functions, `createScene2DFromLottieDocument` and `applyAnimationClipToLottieDocument`, on both
-blessed lanes, and registers through `registerLottieScene2DDocumentImporter` in `scene2d-resources`.
-The Bodymovin schema lives in `@flighthq/types` with source field names retained, so import does not
-allocate a second document. Package shape, lane discipline, and type home are all correct.
+Paint: solid fill and stroke from presentation attributes and CSS, dashes with `stroke-dasharray`
+and `stroke-dashoffset`, `fill-rule`, `fill-opacity`, `stroke-opacity`, `opacity`, `visibility`,
+`display`. Colour parsing covers `#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb()`, `rgba()`, `hsl()`,
+`hsla()`, percentage alpha, `currentColor`, and a built-in named-colour table.
 
-The breadth genuinely present is real: all baseline layer families, parenting, static and animated
-2D transforms with separated position and hold segments, analytic segment-local cubic-Bezier easing
-with per-component splitting, bezier/rect/ellipse/polystar geometry, fill/stroke/gradient paint
-animated through a format-owned binder, static trim, hard masks to `ClipRegion`, image resolution
-through the injected seam, precomposition offset/stretch folding, and markers as clip events. That
-is a substantial common path, not a stub.
+Gradients: `<linearGradient>` and `<radialGradient>` with `gradientUnits` (objectBoundingBox and
+userSpaceOnUse), `gradientTransform`, `spreadMethod`, stop inheritance from referenced gradients,
+`currentColor` on gradient stops. Focal coordinates (`fx`/`fy`) are parsed but not lowered to
+Flight's gradient matrix.
 
-## The finding that governs the maturity question
+Text: `<text>` and `<tspan>` with font-family, font-size, font-weight, font-style, text-anchor,
+fill, opacity. Multi-run `<tspan>` sequences emit `TextFormatRange`s. Nested `<tspan>` `display`,
+`visibility`, and `opacity` each reach emitted runs.
 
-**Five common-path features are silently lost, and they are undocumented project facts.** Each was
-verified by importing the case and the reduced document side by side and comparing the emitted shape
-command stream — the loss is byte-identical absence, not a subtle divergence:
+Structure: `<g>` groups, nested `<svg>` with viewBox and preserveAspectRatio, `<defs>`, `<use>`,
+`<symbol>` (with viewport), element ID indexing, recursion-guarded reference resolution.
 
-1. **A second fill in one shape group overwrites the first.** `LottieShapeState` holds one `fill`
-   slot, one `stroke` slot, one `gradient` slot. `[rect, redFill, blueFill]` emits a stream
-   *identical* to `[rect, blueFill]`. The red fill is gone, uncrumbed.
-2. **A gradient fill beside a solid fill is dropped.** `renderLottieShapeState` selects fill *or*
-   gradient with `if/else`. `[rect, solidFill, gradientFill]` is identical to `[rect, solidFill]`.
-3. **Polystar corner roundness (`os`, `is`) is never read.** The fields are typed on
-   `LottiePolystarShapeItem` and `createLottiePolystarPath` ignores them; roundness 0 and roundness
-   100 emit identical geometry. A rounded star imports hard-cornered.
-4. **Paint z-order within a group is order-independent.** `renderLottieShapeState` always emits
-   fill, then stroke, then paths, so `[rect, stroke, fill]` and `[rect, fill, stroke]` produce the
-   same stream. Lottie's item order carries stacking intent.
-5. **Text stroke (`sc`/`sw`) and embedded glyph outlines (`chars`) are ignored.** `chars` and
-   `fonts` are typed on `LottieDocument` and read by nothing. `chars` is how real Bodymovin exports
-   ship text that renders without the author's font, so this is a common-path fidelity divergence,
-   not an exotic one.
+Transforms: the full `transform` attribute grammar (matrix, translate, scale, rotate, skewX,
+skewY), decomposed to Flight's Transform2D. The viewBox-to-viewport matrix implements
+preserveAspectRatio including `none`, `xMidYMid`, and alignment variants.
 
-None of these five appear in the charter's predeclared exclusion list (expressions, text animators,
-effect layers, audio, cameras, 3D transforms, exotic mattes, unsupported blend modes, arbitrary time
-remapping, shape modifiers without a Flight equivalent). They are therefore **unnoticed gaps, not
-deliberate deferrals** — the distinction that matters, because the deferrals were declared and these
-were not.
+Clipping: `clipPath` (objectBoundingBox and userSpaceOnUse), with reference resolution, `clip-rule`
+on the path, recursive `<use>` inside `clipPath`. Intersected clips via `intersectClipRegions`.
+Masks (`<mask>`) degrade to hard clip through `createClipRegionFromPath`.
 
-**They are project facts, and their home is a document, not a crumb.**
-[Diagnostics](../../conventions/diagnostics.md#import-diagnostics-asset-facts-not-project-facts)
-settles this: a crumb reports what happened to *this file's data*, and the mechanical test is whether
-a correct, idiomatic file from the format's own authoring tool would trigger it. A designer exporting
-a two-fill group, a rounded star, or stroked text from After Effects produces a perfectly correct
-Bodymovin file, so a crumb for any of the five would be announcing that we have not finished — once
-per import, forever — which is unactionable noise that makes the actionable crumbs harder to see.
-The scene3d sibling records exactly this class in
-[scene3d format coverage](../../scene3d-format-coverage.md). **There is no `scene2d` equivalent.**
-That missing document is the real gap these five expose; what is wrong today is that they are
-recorded nowhere at all.
+CSS: inline style, presentation attributes, `<style>` element with basic selectors (element, `.class`,
+`#id`, attribute, combinations). Specificity and cascade order. `inherit` resolves through the
+ancestry chain.
 
-**A doc conflict this surfaces.** The charter says an unresolvable case "must emit an accurate
-`ImportDiagnostic` Skip crumb rather than silently approximating it." That sentence predates the
-asset-facts-not-project-facts rule and now over-claims — read literally it mandates exactly the
-crumbs the convention forbids. The charter needs the narrower wording.
+Images: `<image>` with `href`/`xlink:href`, resolved through `SvgDocumentImportOptions.resolveImageResource`.
+`preserveAspectRatio` on images reuses the viewport fitting rule.
 
-**And the same rule cuts the other way on what already ships.** Most of the existing
-`lottie.unsupported-*` family fails the same mechanical test: `unsupported-camera-layer`,
-`unsupported-3d-layer`, `unsupported-3d-transform`, `unsupported-skew-axis`, `unsupported-effect`,
-`unsupported-text-animator`, `unsupported-animated-text-document`, `unsupported-matte`,
-`unsupported-soft-mask`, `unsupported-mask-composition`, `unsupported-animated-dash`,
-`unsupported-shape-item`, `trim-individual-approximated` all fire on correct idiomatic exports and
-announce our incompleteness rather than an asset fact. A defensible middle band remains — the
-convention keeps a crumb whose drop is *contingent on an author choice with a next action*, which is
-plausibly `unsupported-expression` (bake it before export), `unsupported-blend-mode` (choose a
-supported mode), and `unsupported-shape-modifier` for the repeater (expand it before export). Only
-six are unambiguous asset facts: `invalid-document`, `unresolved-asset`, `unresolved-image` (the
-caller did not supply the resolver — the archetype of a step the consumer should have performed),
-`recursive-precomposition`, `text-missing-document`, and `incompatible-animated-shape-path`.
+Diagnostics: `svg.invalid-document` (Reject), `svg.unsupported-filter` (Skip),
+`svg.unsupported-element` (Skip for `filter`, `pattern`, `foreignObject`, `script`, `animate*`,
+`set`).
 
-So the diagnostic surface is miscalibrated in both directions at once: it is silent on five real
-losses and loud about roughly a dozen project facts. Neither half is a correctness bug — every
-import produces the same pixels either way — which is why this is a maturity finding rather than a
-defect list.
+**Functional render scenes** (6): `svg-import` (solid fills), `svg-clip-path` (both clip-path unit
+modes), `svg-image` (four-colour orientation test), `svg-preserve-aspect-ratio` (meet vs none),
+`svg-transform` (mirroring via negative scale), `svg-use-symbol` (two-instance scaling). All gate
+Canvas, WebGL, and WebGPU backends.
 
-## Test rigor
+### Lottie codec (`lottieDocument.ts`, 1,735 lines)
 
-12 tests, 39 assertions, all green, and they are honest about what they assert. But every one is a
-hand-authored fixture checked against a hand-written expected value, and the package's own
-scene3d-formats sibling learned the sharper lesson: a synthetic test that encodes the same guess as
-the parser proves nothing. There is no format-derived invariant anywhere in the Lottie suite — no
-analogue of `expectWorldPositionsPreserved`, which re-derives its expectation from the format's own
-relation and is mutation-tested. The five silent drops above all sit inside "covered" areas and the
-suite did not catch them, which is the concrete evidence that fixture-and-expected-value has hit its
-ceiling here.
+Two exported functions: `createScene2DFromLottieDocument(source, diagnostics?, options?)` and
+`applyAnimationClipToLottieDocument(clip, time)`.
 
-Two structural asymmetries with the SVG sibling, both unfavorable to Lottie:
+Layers: shape (3), precomposition (0), image (2), null (3), solid (1), text (5). Audio (6) and
+camera (13) are silently skipped.
 
-- SVG has a dedicated `svgDocumentConformance.test.ts` (531 lines, a systematic matrix). Lottie's
-  census is a `describe` block inside its main test file.
-- Neither codec has a functional render scene — nothing under `functional/scenes` imports either
-  format, so pixel fidelity is unverified on every backend. For a codec whose entire output is
-  visual, that is the widest hole after the crumb gap.
+Transforms: position (vector or separated X/Y), anchor, scale (percent-to-fraction), rotation,
+skew, opacity. Spatial tangents (`to`/`ti`) with 150-sample arc-length parameterization. Combined
+and separated auto-orientation (`ao`). Hold segments.
 
-No real Bodymovin asset has ever been imported. Charter open direction 3 parks this as a post-gate
-checkpoint, which was the right call when the gate was being built; it is now the thing standing
-between "conformant against our own fixtures" and "known to work."
+Geometry: bezier paths, rectangles with corner radius, ellipses, polystars with inner/outer
+roundness and direction (`d: 3` reversal). Static trim.
 
-## Contract fit
+Paint: solid fill and stroke; gradient fill and stroke (linear and radial) with packed colour +
+opacity stops, overall paint opacity, gradient winding (`r`). Dash, cap, join, miter (static and
+animated `ml2`). Multiple fills and strokes are preserved in file order. Every paint applies to
+every path in its group.
 
-Clean on the mechanical surfaces: two lanes, types in `@flighthq/types`, no top-level side effects,
-`Readonly<>` discipline, sentinel returns, no cross-package reach. `applyAnimationClipToLottieDocument`
-correctly keeps playback explicit rather than smuggling in a runtime.
+Animation: analytic segment-local cubic-Bezier easing with per-component splitting; the
+`LottieMutableAnimationTarget` closure writes sampled values into captured state and triggers a
+`rerender()` rebuild of the whole shape command stream. Animated properties include path vertices,
+rectangle/ellipse/polystar geometry, fill/stroke/gradient colour/opacity/width, and mask paths.
 
-One design observation for the charter rather than a defect: the shape-item dispatch is a closed
-`if/else` chain over `ty`, and the structural forks' registry-by-default rule says a growing
-descriptor family should prefer an open registry. The family *is* growing — the unimplemented
-repeater, merge-paths, and rounded-corners modifiers are all `ty` values that a registry would let a
-user supply. This is a Boundary question, not sweep-safe work.
+Blend modes: all 16 mapped -- 5 fixed-function to `BlendMode`, 11 advanced to
+`AdvancedBlendMode` reported in `advancedBlends`.
+
+Other: precomposition `st`/`sr` folding, recursion-guarded references, markers as clip events,
+hidden layers (`hd`) suppress own content while preserving spatial transform for children,
+image resolution through `LottieDocumentImportOptions.resolveImageResource`.
+
+Diagnostics: `lottie.invalid-document` (Reject), `lottie.unresolved-asset` (Drop),
+`lottie.unresolved-image` (Skip), `lottie.recursive-precomposition` (Drop),
+`lottie.text-missing-document` (Drop), `lottie.unsupported-expression` (Skip),
+`lottie.unsupported-shape-modifier` (Skip), `lottie.unsupported-shape-item` (Skip),
+`lottie.incompatible-animated-shape-path` (Drop).
+
+**No functional render scene.** This is the single most consequential test gap in the package.
+
+### Rive codec (15 source files, ~3,900 lines)
+
+Three exported functions: `parseRiveDocument(source, diagnostics?)` (container),
+`createRiveObjectGraph(document, diagnostics?)` (artboard trees),
+`createScene2DFromRiveDocument(source, diagnostics?)` (display trees + animation),
+plus `createScene2DDocumentFromRiveDocument(source, diagnostics?)` (named-graph document),
+`applyAnimationClipToRiveDocument(clip, time)`, `createRiveSkeleton2D(artboard)`, and
+`createRiveSkin2D(artboard, skinnableIndex, boneIndices, points, diagnostics?)`.
+
+Container: `.riv` fingerprint validation, major-version gate (7), LEB128 varint, float32, uint32,
+string, and bytes reading. Field-type table of contents for unknown properties.
+
+Object graph: artboard-scoped component trees with parentId resolution, cycle detection
+(tortoise-and-hare), numbering that starts from the artboard as index 0.
+
+Display construction: every type derived from `Node` becomes a `DisplayObject`; paths contribute
+geometry to their owning shape. Transforms: x (with legacy key), y, rotation (radians to degrees),
+scaleX, scaleY, opacity. Blend modes: 5 fixed-function + 11 advanced.
+
+Geometry: points paths (straight, cubic mirrored, cubic asymmetric, cubic detached vertices with
+polar handles), corner rounding (positive and negative radii with natural rounding), parametric
+paths (rectangle with per-corner radii, ellipse, polygon, star, triangle). Closed-path control.
+Path transforms baked into geometry.
+
+Paint: ordered fill list, ordered stroke list, solid colour (ARGB unpacked), linear and radial
+gradients with stop colours and gradient-overall opacity, fill rule (nonZero/evenOdd), stroke
+thickness, cap, join. Trim (synchronized and sequential modes). Dash (with offset, percentage
+lengths, and wrapped offset).
+
+Animation: `createRiveAnimationClips` reads keyed objects and keyed properties from the stream.
+`KeyFrameDouble` and `KeyFrameColor` are consumed; `KeyFrameBool`, `KeyFrameId`, `KeyFrameString`,
+`KeyFrameUint`, and `KeyFrameCallback` are diagnosed and dropped. Node2D properties (x, y,
+rotation, scaleX, scaleY, opacity) bind through `Node2DAnimationTarget`. Geometry and paint
+properties bind through `RiveMutableTarget` closures that write back onto the core object and
+trigger shape rebuild. Bone properties bind through `createSkeleton2DBoneAnimationTarget` with
+per-axis paths (TranslationX/Y, ScaleX/Y, Rotation). Easing: cubic bezier, three damped-sine
+variants, hold. Custom interpolators. Loop mode, work area, speed metadata.
+
+Skeleton: `createRiveSkeleton2D` flattens artboard bones into a parent-before-child `Skeleton2D`
+array via topological sort by depth. Root bones read x/y; child bones derive position from parent
+bone length. Rive radians are converted to degrees. No shear.
+
+Skin: `createRiveSkin2D` reads Weight/CubicWeight records, unpacks four-byte-per-word influence
+packing, resolves tendon-to-bone indirection (1-indexed tendons), computes inverse-bind offsets in
+each bone's local frame. Returns a `Skin2D` with influence counts and float32 influences.
+
+Clipping: `applyRiveClipping` resolves clipping-shape source references, computes relative
+transforms through the full artboard component tree, transforms clip geometry from source space to
+clipped node space, simplifies per fill rule, and intersects multiple clips per node.
+
+Draw order: `applyRiveDrawOrder` resolves DrawRules/DrawTarget references, validates sibling-ness
+in the display tree, and applies Above/Below through `NodeOrderList`. Cross-parent rules are
+diagnosed as fidelity loss.
+
+Solo: `applyRiveSolo` hides every child but the active one for each Solo node.
+
+Text: `createRiveRichText` builds `RichText` with per-run `TextFormatRange`s, font from asset name,
+variable-font axes (OpenType tags unpacked from uint), colour from style paint child, alignment,
+line height, letter spacing.
+
+Layout: `createRiveLayoutImports` translates Rive LayoutComponent trees into `FlexLayoutContainerStyle`
+and `GridLayoutContainerStyle` descriptors, with `FlexLayoutItemStyle` and `GridLayoutItemStyle` for
+children. Supports flex direction, wrap, justify, align-items, align-self, align-content, gap, and
+grid tracks (repeat, fraction, point, auto). Does not read margin, absolute offset, percentage,
+min/max sizing, or wrapped-line packing.
+
+Assets: `createRiveFileAssets` collects the asset list (order-indexed), with embedded byte payloads.
+
+State machine: `createRiveStateMachines` reads layers, states, transitions (duration, exit time,
+flags, target state), and inputs (bool/number/trigger) as a plain-data descriptor.
+
+Document: `createScene2DDocumentFromRiveDocument` builds the named-graph output with nested-artboard
+slots, image resource references with MIME detection from magic bytes, and texture bindings.
+
+Diagnostics: `rive.invalid-header`, `rive.unsupported-version`, `rive.truncated-object-stream`,
+`rive.unknown-property-width` (all Reject); `rive.component-without-parent`, `rive.unresolved-parent`,
+`rive.parent-cycle`, `rive.path-outside-shape`, `rive.unresolved-clipping-source`,
+`rive.draw-rule-unresolved`, `rive.draw-rule-crosses-parent`, `rive.solo-unresolved-active`,
+`rive.asset-contents-unowned`, `rive.image-mime-type-undetected`, `rive.unresolved-weight-bone`,
+`rive.keyed-object-unbound`, `rive.unrepresentable-bone-scale`, `rive.text-unresolved-style`,
+`rive.state-machine-part-unowned` (all Drop); `rive.nine-slice-substituted`,
+`rive.parametric-path-substituted`, `rive.stroke-cap-substituted`, `rive.stroke-join-substituted`,
+`rive.text-align-substituted`, `rive.animation-loop-substituted` (all Recover);
+`rive.path-kind-unsupported`, `rive.keyframe-kind-unsupported`, `rive.drawable-kind-unsupported`
+(Drop/Skip).
+
+**Functional render scene** (1): `rive-import` generates a `.riv` in memory, imports it, samples
+animation, and asserts gradient fill, second-paint stroke, clipping, corner sign, and gradient output
+across Canvas, WebGL, and WebGPU.
+
+## Gaps
+
+### Cross-codec
+
+1. **Lottie has no functional render scene.** SVG has six, Rive has one, Lottie has zero. Every pixel
+   the Lottie importer produces is verified only through jsdom unit tests that cannot rasterize. This
+   is the widest evidence gap in the package.
+
+2. **No real-asset CI gate.** All three corpus runs are external fetch-on-demand evidence. The Rive
+   corpus has a reproducible recipe (upstream commit + manifest SHA-256); the Lottie and SVG ones
+   have only historical Flight commit pins with no upstream revision or manifest. None is a standing
+   CI check.
+
+### Lottie
+
+3. **Render stack scoping is flat.** Every paint applies to every path in its group. The format
+   specifies that each style scopes over preceding shapes (including nested groups) and that
+   repeated styles render in reverse order. This is explicitly noted in `lottieDocument.ts` as
+   requiring a scoped-stack rewrite and is recorded in `status.md`.
+
+4. **Track mattes (`tt`/`td`/`tp`) are typed and silently dropped.** The boundary types exist on
+   `LottieDocument` but no reader consumes them. `CompositeEffect` supplies operators but no
+   source/target isolation attachment.
+
+5. **Shape-style blend (`bm`) is typed and unread.** The per-style blend consumer requires the
+   scoped render stack above to have a per-paint display target.
+
+6. **Radial gradient highlight (`a`/`h`) is typed and unread.** Requires a focal-point relation.
+
+7. **Text stroke (`sc`/`sw`) and embedded glyph outlines (`chars`/`fonts`) are unread.**
+
+8. **Composed masks, inverted masks, feathered masks are silently dropped.** Only a single
+   additive non-inverted mask is lowered.
+
+9. **Animated trim, repeater, merge paths, round corners are diagnosed and dropped.**
+
+### SVG
+
+10. **Focal coordinates (`fx`/`fy`) on `<radialGradient>` are parsed but not lowered** to the
+    gradient transform matrix.
+
+11. **Elliptical `rx`/`ry` on `<rect>` is approximated** by a single circular radius.
+
+12. **CSS `!important`, descendant/child/sibling selectors, `stop-color`/`stop-opacity` in
+    stylesheets, percentage/relative length units, viewport overflow, and `vector-effect`/`paint-order`
+    are unread.** These are recorded in the assessment's exhaustive table and in the coverage document.
+
+13. **`<switch>`, named colours outside the local table, and paint-server fallback tokens are unread.**
+
+### Rive
+
+14. **`createRiveSkin2D` is exported through `contract.ts` but has zero callers in any production
+    import path.** It is called only from `riveSkin.test.ts`. The skeleton is built and bone animation
+    is wired, but no imported path is deformed by the skin. This is the largest single gap in the Rive
+    codec, measured at 22 of 38 corpus files.
+
+15. **Only `KeyFrameDouble` and `KeyFrameColor` are consumed.** `KeyFrameBool`, `KeyFrameId`,
+    `KeyFrameString`, `KeyFrameUint`, and `KeyFrameCallback` are diagnosed and dropped. At the corpus
+    baseline: 50 Id, 34 Uint, 18 Callback, 13 String, and 8 Bool tracks are unread.
+
+16. **Constraints/IK, data binding, and feather are type-registry entries only.** No importer reads
+    or emits them.
+
+17. **Rive `Mesh`/vertex art is unimported.** `MeshVertex` is registered but a mesh path emits
+    `rive.path-kind-unsupported`.
+
+18. **Layout box model is incomplete.** `riveLayout.ts` reads no margin, absolute offset, percentage,
+    min/max sizing, or wrapped-line packing field.
+
+## Charter contradictions
+
+1. **`package.json` description says "SVG and Lottie documents"** but Rive is a full third codec.
+   The description should say "SVG, Lottie, and Rive documents."
+
+2. **The charter's North star says "output is ordinary Flight data and display nodes, never a live
+   document runtime."** The `LottieMutableAnimationTarget` closures and `RiveMutableTarget` closures
+   capture mutable state and trigger shape rebuilds -- these are not "live document runtime" in the
+   charter's sense (they drive explicit playback, not implicit rendering), but the mechanism is worth
+   naming, since the closures hold writable references to format-specific state that lives across
+   frames. The charter's "explicit caller seam" rule is satisfied because playback requires an
+   explicit `apply*` call.
+
+3. **No contradiction found with the diagnostic calibration.** The prior review's finding about
+   project-fact crumbs has been addressed: the coverage document now records project-level gaps, and
+   the asset-fact/project-fact distinction is stated in its header. The existing crumb set is
+   reasonable: crumbs like `lottie.unsupported-expression` and `rive.keyframe-kind-unsupported` are
+   defensible as author-actionable (bake expressions before export; the keyframe type is a fact about
+   the specific file's authored content).
+
+## Contract & docs fit
+
+**Export lanes:** Two lanes only (`.` and `./contract`), no stray subpath exports. The public lane
+exports 6 functions; the contract lane re-exports everything from 8 modules. Both lanes function as
+documented.
+
+**Type home:** All exported types live in `@flighthq/types`. The source files define no exported
+`interface` or `type` (internal interfaces like `SvgStyle`, `RivePaint`, `RiveTrim` are
+module-private). `import type` is on its own line throughout.
+
+**Side effects:** `"sideEffects": false` in `package.json`. No top-level side effects in source;
+all registration goes through `@flighthq/scene2d-resources`. Module-level scratch objects (`_sampleScratch`,
+`_floatView`, `_bindSpace`) are internal allocation, not observable side effects.
+
+**Readonly:** Function parameters are consistently `Readonly<>` for object types. Out-parameters
+are avoided; functions allocate and return fresh values.
+
+**Sentinel returns:** `parseRiveDocument` returns `null` for untraversable files.
+`createScene2DFromRiveDocument` returns an empty artboard array rather than null on parse failure.
+`createScene2DDocumentFromRiveDocument` returns `null` when no artboards import. These are
+consistent sentinel patterns.
+
+**Diagnostics:** Use `reportImportDiagnostic` from `@flighthq/importdiagnostics/contract` with
+structured severity codes (Reject, Skip, Drop, Recover). No inline warning comments -- gaps are
+in `status.md` or the coverage document.
+
+**Naming:** Exported function names include the full type name (`createScene2DFromSvgDocument`,
+`applyAnimationClipToRiveDocument`, `createRiveObjectGraph`). `get*`, `has*`, and `is*` prefixes
+are used correctly. `readRive*` helpers are module-private.
+
+**Allocation:** `create*` functions allocate; helper functions write into the caller's structures.
+Pool verbs are not used (no hot-path allocation).
+
+**Dependencies:** 20 workspace dependencies, all reachable from source imports. No circular
+dependencies. No `@flighthq/sdk` import. `@flighthq/layout` is correctly absent (layout types
+are consumed via `@flighthq/types`).
+
+**Test alignment:** Every source file has a colocated `.test.ts`. Describe blocks mirror exported
+function names and are alphabetized. SVG and Lottie each have a dedicated conformance test file
+in addition to the main test.
+
+## Candidate open directions
+
+1. **Lottie functional render scene.** The codec's output has never been rasterized in a functional
+   test. Given that SVG now has six scenes and Rive has one, this is the most straightforward
+   evidence gap to close.
+
+2. **Wire the Rive skin into the production import path.** `createRiveSkin2D` works (9 tests, 20
+   assertions) but `createScene2DFromRiveDocument` does not call it. The `PathAttachment2D` deformer
+   exists in `@flighthq/skeleton2d`. The bridge is a display/playback contract between the deformed
+   attachment and the imported display shape.
+
+3. **Lottie render-stack scoping.** The current flat model is documented and measured but produces
+   wrong output for multi-style groups that rely on the scoping order. This is the largest
+   correctness gap in the Lottie codec.
+
+4. **Widen Rive keyframe consumption beyond Double and Color.** The Id, Uint, String, Bool, and
+   Callback types need per-target-family evidence before binding -- the prior assessment's finding
+   that widening without an evidenced target recreates the `KeyFrameColor` scalar-read failure.
+
+5. **Rive layout box model.** Margin, absolute offset, percentage sizing, min/max constraints, and
+   wrapped-line packing are absent.
+
+6. **SVG focal coordinates.** `fx`/`fy` are parsed and stored but need a focal-point relation
+   against the gradient transform to be lowered.
+
+7. **Reproducible corpus baselines.** The Rive corpus has a manifest SHA-256; extending this to
+   Lottie and SVG (with upstream revisions and deterministic fetch recipes) would make all three
+   refreshable rather than historical.

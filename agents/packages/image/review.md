@@ -1,67 +1,154 @@
 ---
 package: '@flighthq/image'
 status: solid
-score: 80
-updated: 2026-08-25
+score: 78
+updated: 2026-09-02
 ingested:
+  - charter.md
+  - status.md
+  - assessment.md
   - source
   - tests
 ---
 
+# image -- Review
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+Full re-review against live source, tests, charter, and status. Supersedes the 2026-08-25 fast re-score and the 2026-07-13 re-verified review.
 
-# image — Review
+**Domain:** Image resource entity lifecycle (create, clone, invalidate), constructors over browser pixel sources, async DOM-based loading (URL/bytes/Base64/Blob), embedded/external image resource reference resolution with failure tracking and retry, and a backend seam for host-swappable image loading. Pixel manipulation (`@flighthq/bitmap`), byte-level decode/encode (`@flighthq/image-codec`), and GPU texture upload (render backends) are explicitly out of scope.
 
-_LIGHT re-verification 2026-07-13 of the 2026-07-03 depth review; exports and loader source re-checked against the live tree. The major event since the last pass: `@flighthq/image-codec` now exists (charter Decision #2 executed) and `detectImageMimeType` has migrated there (Decision #3 executed) — image imports it, no longer defines or exports it._
+**Verdict:** solid -- 78/100
 
-**Domain:** Image resource entity layer — the `ImageResource` lifecycle (create, clone, dispose, invalidate, queries), constructors over browser pixel sources, and async DOM-based loading entry points (URL/bytes/Base64/Blob). Pixel manipulation is explicitly out of scope (owned by `@flighthq/bitmap`), byte↔pixel decode/encode and format identification are now owned by `@flighthq/image-codec`, and GPU texture ownership stays per render state.
-
-**Verdict:** solid — 68/100
-
-Extracted from the dissolved `resources` package, this is the data-primitive layer of the image subject, and within that layer it is genuinely well built: the lifecycle functions carry careful ownership comments (clone shares pixels but gives independent identity/version; dispose releases for GC but does not free GPU textures or close ImageBitmaps), the `ImageResource` type in `@flighthq/types` is thoroughly documented with a reserved `compressed` slot already sketched, and the loader family covers the four canonical inputs with AbortSignal support and correct object-URL cleanup. The charter declares this package at its natural scope ceiling (Decision #1), and with `image-codec` built the biggest prior subject-level gaps (no DOM-free decode/encode direction, sniffer ownership) have moved to the neighbor where the charter routes them. What keeps this package from higher within its own scope: the URL loader's abort race leaves the underlying fetch running and leaks its listener on success, `crossOrigin` is untyped `string`, `loadImageResourceFromBytes` throws where the sentinel rule wants `null`, `isImageResourceSameOrigin` is misnamed for what it takes, image's own loaders remain HTMLImageElement-bound and do not route through the codec registry, and there is still no data-backed constructor (`createImageResourceFromPixels`) at the entity layer.
+The package has grown substantially since the prior review. Three former Recommended items (abort leak, `crossOrigin` typing, `isImageResourceSameOrigin` rename) all landed, the approved `ImageBackend` seam was built with the `custom > host > sentinel` resolution model and `explain*`/`observe*` diagnostics, and an entire resource-reference resolution system (`imageResourceReference.ts`) was added -- giving the package embedded/external image reference lifecycle, async decode through `@flighthq/image-codec`, bitmap composition, and structured failure tracking. Every export has a colocated test (80 tests, all passing), tests cover contract-interesting paths (clone aliasing, object-URL revocation on failure, abort mid-decode, premultiplied alpha normalization, bitmap composition routing), and the code satisfies SDK conventions well. What keeps it from higher: `loadImageResourceFromBytes` still throws on undetectable MIME type (sentinel violation), `DECODED_ALPHA_TYPE`/`DECODED_GAMUT` are duplicated across two files, the charter is stale on scope and export count, and the reference-resolution system broadens the package's scope beyond what the charter describes.
 
 ## Present capabilities
 
-- **Lifecycle:** `createImageResource(image?)`, `cloneImageResource` (new entity identity + version counter over the *same* pixels — a deliberate, well-documented aliasing contract), `disposeImageResource` (releases `source`/`data` for GC, bumps version), `invalidateImageResource` (monotonic `>>> 0` version bump, the resource-tier analog of `invalidateNodeLocalContent`), `setImageResourceSource` (swap element, re-read size, invalidate).
-- **Queries:** `getImageResourceByteSize` (CPU-side `data.byteLength`, 0 for element-only), `hasImageResourceData`, `hasImageResourceSource`, `isImageResourceEmpty`.
-- **Wrapping constructors:** `createImageResourceFromCanvas` / `FromImageBitmap` / `FromImageElement`; the generic `createImageResource(CanvasImageSource)` additionally handles `HTMLVideoElement` sizing (`videoWidth`/`videoHeight`).
-- **Loading:** `loadImageResourceFromUrl` (crossOrigin passthrough, `img.decode()`, AbortSignal raced against decode), `FromBlob` (object URL with `finally` revoke), `FromBytes` (MIME sniff or explicit type, correct `byteOffset` slicing), `FromBase64` (data-URL composition).
-- **Identification (moved):** `detectImageMimeType` now lives in `@flighthq/image-codec`; image imports it inside `loadImageResourceFromBytes` and does **not** re-export it from its barrel (`index.ts` re-exports only `imageResource` + `imageResourceFrom`).
-- **Origin:** `isImageResourceSameOrigin` — `data:`/`blob:` fast paths, `URL` resolution against `location`.
+Four source files, four colocated test files, 1526 total lines. 24 public-lane exports, 7 contract-only.
 
-Every export has a colocated test; the tests cover the interesting contracts (clone aliasing, object-URL revocation on failure, abort-before-call, byte-offset handling), not just happy paths. Package is `sideEffects: false`, depends on `entity` + `image-codec` + `types` (the codec dependency is new since the last review; it slightly widens the bottleneck footprint the charter's North star #2 wants minimal, though `sideEffects: false` keeps the unused registry code shakeable).
+### Entity lifecycle (`imageResource.ts`)
 
-## Gaps vs an authoritative image-resource library
+- `createImageResource(image: CanvasImageSource): Image` -- wraps a host element; reads dimensions from the element, handling `HTMLVideoElement` via `videoWidth`/`videoHeight` and all other `CanvasImageSource` types via `width`/`height`.
+- `cloneImageResource(resource: Readonly<Image>): Image` -- new entity identity over the same borrowed host handle; independent version counter. Well-commented aliasing contract.
+- `invalidateImageResource(resource: Image): void` -- **contract-only**; bumps `version` via `(version + 1) >>> 0`, re-reads host dimensions. Used by canvas/DOM render caches that key on version.
+- `createCompressedImage(compressed: Readonly<CompressedImageData>): CompressedImage` -- wraps a parsed block-compressed payload as its own GPU-only TextureSource.
+- `isImageResourceEmpty(resource: Readonly<Image>): boolean` -- zero-or-negative dimension check.
 
-The image *subject* is now split across image (entity + DOM loading) and `image-codec` (byte↔pixel seam, sniffing, decode/encode registries). Gaps that migrated with the sniffer/codec — AVIF/SVG/ICO sniff coverage, header-only dimension probes, `isAnimatedImage`, EXIF orientation, byte-level encode — belong to the `image-codec` cell now. What remains at *this* layer:
+### Constructors from DOM sources (`imageResourceFrom.ts`)
 
-- **Loaders do not route through the codec registry.** `loadImageResourceFromBytes` sniffs via the codec's `detectImageMimeType` but still decodes via Blob → object URL → `new Image()` + `decode()` — DOM-bound, not worker-viable. Whether image's loaders should dispatch through `decodeImage`/the registered `createImageBitmap` web decoders (making loads worker-safe and wiring `premultiplyAlpha` to `alphaType`) is the open integration fork between the two packages.
-- **No data-backed constructor.** The `ImageResource` doc explicitly describes data-only resources ("a freshly generated `Bitmap` is data-only"), but this package cannot make one: there is no `createImageResourceFromPixels(data, width, height, format?)`. Today only `bitmap` can mint the data-only shape, which inverts the layering — the entity layer should own all entity constructors. (Sits in tension with charter Decision #1's scope ceiling.)
-- **No browser-native export.** `encodeImage` now exists in `image-codec` for the byte-level direction, but there is still no `encodeImageResourceToBlob(resource, format, quality?)` (canvas `toBlob`) wrapper at the resource layer; the charter currently routes all encode to the codec.
-- **No fetch-based load** with progress reporting or explicit HTTP error surfacing; `img.decode()` failures reject with an opaque `EncodingError` and network vs decode failures are indistinguishable.
-- **No backend seam.** Loading and `isImageResourceSameOrigin` hard-reference `Image`, `URL.createObjectURL`, and `location`. `image-codec` provides the DOM-free seam for decode/encode, but image's own load layer remains the acknowledged web fill without a formal `*Backend`.
-- **Minor (verified still present 2026-07-13):** `loadImageResourceFromUrl`'s abort race leaves the underlying fetch running (no `img.src = ''` cancel) and leaks the abort listener on the success path; `crossOrigin` is typed `string` instead of `'anonymous' | 'use-credentials'`.
+- `createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): Image | null` -- routes through `getImageBackend().createImageFromBitmap`; returns `null` when the backend does not implement it (no silent DOM fallback). Tests verify premultiplied-to-straight normalization through the `putImageData` bridge.
+- `createImageResourceFromCanvas(canvas: HTMLCanvasElement): Image`
+- `createImageResourceFromImageBitmap(bitmap: ImageBitmap): Image`
+- `createImageResourceFromImageElement(img: HTMLImageElement): Image`
+- `isImageUrlSameOrigin(url: string): boolean` -- `data:`/`blob:` fast paths, `URL` resolution against `location.origin`.
 
-## Naming / API-shape notes
+### Async loading (`imageResourceFrom.ts`)
 
-- `isImageResourceSameOrigin(url: string)` (still exported as of 2026-07-13) violates the "function name includes the type it operates on" rule — it takes a URL, not an `ImageResource`. `isImageUrlSameOrigin` (or moving it toward a future network/url home) would be self-identifying.
-- `loadImageResourceFromBytes` **throws** on undetectable type (verified: `throw new Error('Unable to determine image type from bytes')`). Per the sentinel rule that is an expected failure (arbitrary bytes are valid input), so `null` — or resolving the promise to `null` — fits the SDK convention better than an `Error`.
-- `createImageResource(image?)` overlaps the three `createImageResourceFrom*` constructors; keeping the generic one as the video-capable entry is fine, but a `createImageResourceFromVideoElement` would complete the family symmetrically (the union member with the *special* sizing rule is the one without a dedicated constructor).
-- Verb usage is otherwise exemplary: `create`/`clone`/`dispose` match the SDK teardown taxonomy precisely, `invalidate` mirrors the node tier, `Readonly<ImageResource>` is applied on every non-mutating parameter, and the durable ownership comments are exactly the kind the style guide asks for.
+- `loadImageResourceFromUrl(url, crossOrigin?, signal?): Promise<Image>` -- dispatches through `getImageBackend().loadImageFromUrl`. `crossOrigin` properly typed as `'anonymous' | 'use-credentials'`.
+- `loadImageResourceFromBlob(blob, signal?): Promise<Image>` -- object-URL lifecycle with `finally` revoke.
+- `loadImageResourceFromBytes(bytes: Uint8Array, mimeType?, signal?): Promise<Image>` -- sniffs via `detectImageMimeType` from `@flighthq/image-codec/contract`; handles `byteOffset` slicing correctly.
+- `loadImageResourceFromBase64(base64, mimeType, signal?): Promise<Image>` -- data-URL composition.
+
+All four loaders accept `AbortSignal`. The URL loader cancels the pending `img.decode()` by clearing `img.src` on abort and removes its abort listener in a `finally` block. Tests verify both abort-before-call and abort-mid-decode.
+
+### Image resource references (`imageResourceReference.ts`)
+
+A complete async resource-resolution layer added since the prior review. Embedded references carry byte payloads from document parsers; external references name URIs to fetch. The system supports failure tracking, retry, and bitmap composition through registered composers.
+
+- `createEmbeddedImageResourceReference(bytes, mimeType?, alphaType?): EmbeddedImageResourceReference` -- borrows the byte view (no copy); starts unresolved with no subscribers.
+- `createExternalImageResourceReference(uri, basePath?): ExternalImageResourceReference`
+- `resolveImageResourceReference(ref, fetch, signal): Promise<TextureSource | null>` -- the full lifecycle atom. Embedded references decode through `@flighthq/image-codec` (straight or premultiplied per `ref.alphaType`). External references route through the caller's `ImageResourceFetch` seam. Abort reverts to `Unresolved` and rethrows; thrown errors are caught and recorded as `ImageResourceFailure`. Creates proper `Entity` objects for decoded bitmaps via `createEntity`.
+- `resetFailedImageResourceReference(ref): boolean` -- clears a `Failed` reference back to `Unresolved`; leaves other states untouched.
+- `createImageResourceFailure(cause: unknown): ImageResourceFailure` -- serialization-safe failure from Error or arbitrary throw.
+- `explainImageResourceReferenceResolution(ref): ImageResourceReferenceResolutionExplanation` -- detached plain-data explanation; defensive copy of failure.
+- `enableImageBitmapComposition() / disableImageBitmapComposition()` -- tree-shakable opt-in for the decoded-pixel composition hook. A format package calls `enableImageBitmapComposition` beside its composer registrations; without it, the nullable hook leaves the ordinary decode path untouched.
+
+### Backend seam (`imageBackend.ts`)
+
+Follows the approved `custom > host > sentinel` resolution model (Approved 2026-08-21, superseding the lazy-default approach):
+
+- `createWebImageBackend(): ImageBackend` -- **contract-only**; builds the DOM-based backend with `new Image()` + `img.decode()` for URL loading and canvas `putImageData` bridge for bitmap-to-image.
+- `getImageBackend(): ImageBackend` -- **contract-only**; returns `custom ?? host ?? sentinel`.
+- `setImageBackend(backend: ImageBackend | null): void` -- **contract-only**; app-author seam for custom backends.
+- `installImageHostBackend(backend): void` -- **contract-only**; first-host-wins with conflict tracking.
+- `observeImageHostResult(operation, succeeded): void` -- **contract-only**; records runtime viability observation.
+- `resetImageBackendForTest(): void` -- **contract-only**; clears all slots for test isolation.
+- `explainImageBackend(): BackendExplanation` -- public; reports active layer, conflict state, and viability.
+- `explainImageOperation(operation: ImageBackendOperation): BackendOperationExplanation` -- public; per-operation support query. Sentinel's `loadImageFromUrl` is reported as `layer: 'sentinel'` not `implemented: true`.
+- `hasImageOperation(operation): boolean` -- public; shorthand for `explainImageOperation(op).implemented`.
+
+The sentinel backend rejects with a descriptive error naming `enableHostWebImage()` and `setImageBackend()` as remediation, rather than silently returning null or an empty result. Tests verify that `getImageBackend` caches across calls, that `setImageBackend(null)` restores a usable default, and that `loadImageResourceFromUrl` actually dispatches through the active backend with arguments intact.
+
+Host integration lives in `@flighthq/host-web` (`enableHostWebImage`) which wraps `createWebImageBackend` and calls `installImageHostBackend` + `observeImageHostResult` -- image itself carries no top-level registration.
+
+## Gaps
+
+### Within this package's current scope
+
+- **`loadImageResourceFromBytes` throws on undetectable MIME type.** `imageResourceFrom.ts:87` -- `throw new Error('Unable to determine image type from bytes')`. Arbitrary bytes are valid input, making this an expected failure. The sentinel rule says return `null` (or resolve to `null`). This is parked in the assessment as a breaking change affecting `tileset` and `textureatlas` callers.
+
+- **No teardown for Image entities.** The prior source had `disposeImageResource`; the current source has none. An `Image` holding an `ImageBitmap` cannot call `bitmap.close()`, and there is no documented path for releasing that handle. Whether teardown is needed at this layer (vs bitmap's layer, vs the render-state layer) is unrecorded.
+
+- **No `createImageResourceFromVideoElement`.** `createImageResource(CanvasImageSource)` handles video via the `videoWidth`/`videoHeight` sizing branch, but there is no dedicated constructor for `HTMLVideoElement` matching the pattern of the other three (`FromCanvas`, `FromImageBitmap`, `FromImageElement`). The union member with the special sizing rule is the one without a dedicated constructor.
+
+- **`DECODED_ALPHA_TYPE`/`DECODED_GAMUT` duplicated.** `imageResource.ts:77-78` and `imageResourceFrom.ts:101-102` both declare identical `const DECODED_ALPHA_TYPE = 'straight'` and `const DECODED_GAMUT = 'srgb'`. These should be a single shared constant.
+
+### Beyond current scope (subject-level)
+
+- **Loaders do not route through the codec registry.** `loadImageResourceFromBytes` sniffs via `detectImageMimeType` but still decodes via `Blob` -> object URL -> `new Image()` + `decode()`. The `resolveImageResourceReference` path does use `decodeImage`/`decodeImagePremultiplied` from `@flighthq/image-codec`, so there are now two decode paths: the reference resolver (codec-routed, worker-viable) and the direct loaders (DOM-bound, not worker-viable). Whether the direct loaders should unify with the codec path is the cross-package integration fork noted in the assessment.
+
+- **No data-backed constructor.** No `createImageResourceFromPixels(data, width, height, format?)` at this layer; only `@flighthq/bitmap` can mint data-only images. The charter's Decision #1 scope ceiling is in tension with this.
+
+- **No browser-native encode wrapper.** `encodeImage` exists in `image-codec` for byte-level encode; there is no `encodeImageResourceToBlob(resource, format, quality?)` wrapping canvas `toBlob` at the resource layer.
 
 ## Charter contradictions
 
-None found — and two prior Decisions (#2 image-codec neighbor, #3 sniffer migration) have been executed in source. The only soft tension: North star #2 says "dependency footprint light (entity + types only)" while package.json now also depends on `@flighthq/image-codec` — a consequence of Decision #3 the charter's North-star wording hasn't caught up with.
+**No hard contradictions, but two pieces of staleness and one scope tension:**
 
-## Contract & docs fit
+1. **"What it is" description is stale.** The charter says "18 exports" -- the actual count is 31 (24 public + 7 contract-only). The charter also says "Two halves: `imageResource` and `imageResourceFrom`" -- the package now has four source files, with `imageResourceReference.ts` and `imageBackend.ts` as substantial additions. The description does not mention resource reference resolution or the backend seam.
 
-- Contract fit is strong: single root export, `sideEffects: false`, full unabbreviated names, `Readonly<>` discipline, sentinels except the one throw noted above, colocated tests for every export.
-- **Stale doc claim:** the codebase-map Package Map says image "re-exports `detectImageMimeType` from image-codec" — it does not; the barrel exports only `imageResource` + `imageResourceFrom` and the sniffer is an internal import. Candidate revision: either add the re-export or fix the map line.
-- The charter's "What it is" line ("18 exports … Dependencies: entity, types") is stale on both counts (17 exports; deps now include image-codec) — candidate charter touch-up next direction session.
+2. **North star #2 wording is stale.** "Dependencies: entity + types only" -- `package.json` lists `entity`, `image-codec`, and `types`. The `image-codec` dependency was a consequence of executing Decision #3 (sniffer migration), which the charter records, but the North star's dependency claim was not updated.
+
+3. **Boundaries list stale entries.** The "In scope" list includes `detectImageMimeType` which has migrated to `image-codec` per Decision #3. The list does not include the new resource-reference functions (`createEmbeddedImageResourceReference`, `resolveImageResourceReference`, etc.) or the backend seam functions (`explainImageBackend`, `hasImageOperation`, etc.).
+
+4. **Decision #1 scope ceiling vs actual growth.** The charter says "No missing capabilities within this scope" with 18 exports. The package has since gained 13 exports (the entire reference resolution system and the backend seam). These were approved work, not scope creep, but the ceiling decision's premise has changed without amendment.
+
+## Contract and docs fit
+
+**Package fit is strong:**
+
+- Two blessed lanes: `index.ts` (24 public exports) and `contract.ts` (star-exports all 4 source files). No banned subpath exports.
+- `sideEffects: false` declared and observed -- no top-level registration, no module-scope listeners or timers.
+- Full unabbreviated names on all exports: `createImageResourceFromImageBitmap`, `explainImageResourceReferenceResolution`, `resolveImageResourceReference`.
+- `Readonly<>` discipline applied consistently on all non-mutating parameters.
+- Sentinel values for expected failures: `createImageResourceFromBitmap` returns `null`, `resolveImageResourceReference` returns `null` on failure. One violation: `loadImageResourceFromBytes` throws.
+- All types imported from `@flighthq/types/contract` -- no inline type definitions.
+- Entity via `createEntity` from `@flighthq/entity/contract`.
+- Colocated `*.test.ts` for every source file; `describe` blocks alphabetized and mirror exported names.
+- Durable ownership and aliasing comments in source (e.g. clone aliasing contract, decode alpha semantics, byte view borrowing).
+
+**Fit issues:**
+
+- **Module-scoped mutable state.** `imageBackend.ts` has four module-scope variables (`_custom`, `_host`, `_hostConflict`, `_hostObservation`); `imageResourceReference.ts` has one (`_resolveImageBitmapComposition`). The design constraint says "No `set*Backend` singletons, no module-scoped mutable state that functions reach for." The backend pattern was explicitly approved (Approved 2026-08-08 and superseded 2026-08-21) and matches the `@flighthq/net` model, so this is an acknowledged architectural pattern rather than an accidental violation. The bitmap-composition hook in `imageResourceReference.ts` matches the same `enable*/disable*` opt-in pattern used in signals.
+
+- **`invalidateImageResource` is contract-only.** The charter's Boundaries list it as in scope (implying public), and status.md flags that "the public lane cannot invalidate an image" as an open issue. An app importing `@flighthq/image` can construct and mutate a resource but cannot make the change repaint. Whether this is deliberate is unrecorded.
+
+- **Backend seam is contract-only.** `createWebImageBackend`, `getImageBackend`, `setImageBackend`, `installImageHostBackend`, and `observeImageHostResult` are all absent from `index.ts`. The approved architecture routes the web implementation through `host-web`'s `enableHostWebImage()`, and `setImageBackend` is the app-author seam -- both are contract-only. Whether `setImageBackend` belongs in the public lane (since it is the user-facing API for custom backends) is an unrecorded decision.
+
+**Candidate doc revisions:**
+
+- The codebase-map Package Map Resources section lists `image` without describing its scope. Could read: "image resource entity lifecycle, DOM-based loading, embedded/external reference resolution, and backend seam."
+- The prior assessment notes that the Package Map implies image re-exports `detectImageMimeType` -- it does not; the sniffer is imported internally from `@flighthq/image-codec/contract` but not re-exported.
 
 ## Candidate open directions
 
-- Should image's loaders dispatch through the `image-codec` registry (worker-safe decode, `premultiplyAlpha`→`alphaType`) or stay a parallel DOM path? This is the successor to the old "createImageBitmap decode path" question now that the codec exists.
-- `createImageResourceFromPixels` vs Decision #1's scope ceiling.
-- Whether the resource-layer `toBlob` export wrapper is in or out of scope.
+These are questions the charter does not answer that the review had to assume:
+
+1. **Should `setImageBackend` be in the public lane?** It is the app-author entry point for custom backends, but it is contract-only. The `explain*` and `has*` functions are public, which creates a mixed signal: you can query the backend from the public lane but not set it.
+
+2. **Should `invalidateImageResource` be in the public lane?** Without it, an app that mutates a resource's backing element cannot trigger a repaint. The status.md flags this as the top open issue.
+
+3. **What is the teardown story for Image entities?** The prior source had `disposeImageResource`; nothing replaced it. An `ImageBitmap` handle leaks without `close()`.
+
+4. **Should the charter's scope description and Decision #1 be updated to reflect the reference-resolution and backend-seam additions?** The package has grown from "entity lifecycle + DOM loading" to include structured async resolution and a swappable backend layer.
+
+5. **Should the two decode paths (direct loaders via DOM, reference resolver via codec) be unified?** The reference resolver already routes through `@flighthq/image-codec`; the direct loaders do not.

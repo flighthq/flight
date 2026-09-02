@@ -1,49 +1,82 @@
 ---
 package: '@flighthq/screen'
-status: solid
-score: 85
-updated: 2026-07-13
+status: developing
+score: 62
+updated: 2026-09-02
 ingested:
-  - source
-  - tests
+  - source (screen.ts — 300 lines, 27 exported functions)
+  - tests (screen.test.ts — 167 lines)
+  - contract.ts, index.ts
+  - package.json
   - charter.md
-  - status.md
-  - prior review (2026-06-25, refreshed 2026-07-09)
+  - status.md (updated 2026-08-08, partially stale after R3)
+  - assessment.md (pre-R3)
+  - types surface (Screen.ts, ScreenChangeEvent.ts, ScreenMode.ts, ScreenSignals.ts, ScreenColorSpace.ts, ScreenOrientation.ts, Host.ts)
+  - platform-integration.md shared principles
 ---
 
-# screen — Review (live-tree survey, 2026-07-13)
+# screen — Review (live-tree survey, 2026-09-02)
 
-> Historical pre-R3 review. The 2026-08-29 Screen R3 explicit-Host migration supersedes the surface described below.
-
-> Supersedes the 2026-06-25 merge-gate review (`partial — 42, REJECT: does not build`). Its blocking finding is fully resolved: the type seam now exists in `@flighthq/types` — `Screen.ts` (25-field `ScreenInfo` incl. `dpi`, `touchSupport`, `monochrome`), `ScreenChangeEvent.ts` (`ScreenChangeKind`, `ScreenChangedMetrics`, payload-carrying event), `ScreenColorSpace.ts`, `ScreenMode.ts`, `ScreenOrientation.ts`, `ScreenSignals.ts`. The package compiles; the test file's divider comments are gone; and both previously-Approved items are implemented (verified below).
+Post-R3 review. Screen R3 landed 2026-08-29: the ambient `ScreenBackend` singleton, `getScreenModes`, `refreshScreens`, `onScreenChange`, `onScreenDetailPermissionChange`, `enableScreenSignals`, and all direct-subscription convenience functions were removed. The package now delegates every host interaction through explicit Host witness types (`HasScreenQuery`, `HasScreenChange`, `HasScreenDetails`, `HasScreenPermissionChange`) — a four-slot group in `HostScreenCapabilities` where each slot is optional, and functions declare the narrowest witness they need. Web implementation ownership moved to `host-web`.
 
 ## Verdict
 
-**solid — 85/100.** The strongest cell in the OS/device group after `storage`: 29 exports spanning enumeration (`getScreens`, `getPrimaryScreen`, `getScreenById`), point/rect-to-screen lookups (`getScreenNearestPoint`, `getScreenContainingRect`, `getScreenNearestRect`), DIP↔physical converters (4, all documented alias-safe), display modes (`getScreenModes`, `getScreenCurrentMode`), cursor queries, a payload-carrying change stream (`onScreenChange`), an opt-in signals group (`createScreenSignals`/`enableScreenSignals`/`attachScreenSignals`/`detachScreenSignals`/`disposeScreenSignals`), the Window Management multi-monitor upgrade (`requestScreenDetails`), and a Permissions-API watch (`onScreenDetailPermissionChange`). The web backend degrades cleanly to single-monitor with sentinels. What remains between this and authoritative is a small set of already-chartered behavior edges, not missing surface.
+**developing — 62/100.** The API shape is clean and well-aligned with Flight conventions after R3. Twenty-seven exports cover enumeration, spatial lookup, coordinate conversion, mode derivation, signal wiring, and multi-monitor upgrade — all through explicit Host witnesses with no ambient state. The architecture is sound. The score is held back by test depth: 27 of 29 `describe` blocks contain only a single `'is exported'` existence check. Every pure-logic function in the package — the four coordinate converters, the three spatial lookup algorithms, the geometry extractors — has zero behavioral assertions. The spatial algorithms (overlap, containment, nearest-center-distance) are the most complex code in the package and the most amenable to unit testing, yet nothing validates their math. Status.md's Open section is also partially stale, referencing pre-R3 line numbers for issues that moved to `host-web`.
 
-## Spot-verified against the prior review and charter
+## Present capabilities
 
-- **`getScreenNearestRect` now has distinct semantics** (charter Decision 2026-07-02, refresh note commit bd412dd6, verified at `screen.ts:604`): prefer a screen that fully contains the rect, else nearest-by-center-distance — genuinely different from `getScreenContainingRect`'s largest-overlap rule, mirroring Electron's `getDisplayMatching`/`getDisplayNearestPoint` split. The prior "two names, one body" finding is dead.
-- **Test divider comments removed** (charter Decision 2026-07-02): `grep '// ---' screen.test.ts` is empty; 970-line suite with alphabetized describes mirroring the exports.
-- **Permission watch landed:** `onScreenDetailPermissionChange` (`screen.ts:679`) wires `PermissionStatus.change` for `'window-management'` with cancel-safe async setup and a no-op unsubscriber sentinel — this closes the status.md "wire PermissionStatus.onchange" gap.
-- **Change events carry payloads:** the web backend's `subscribe` diffs cached `ScreenInfo` per screen and emits `ScreenAdded`/`ScreenRemoved`/`ScreenMetricsChanged` with `changedMetrics` (`screen.ts:296-323`) — the seam a native host needs for hot-plug.
-- Conventions: `sideEffects: false`, single-line barrel, lazy `_backend`, sentinels not throws, `Readonly<>` on inputs, out-params throughout (incl. `out: ScreenInfo[]` fills).
+**Factory (4):** `createScreenInfo` (25-field Entity with sentinels: `-1` for unknown numerics, `''` for label, `'unknown'` for touchSupport), `createScreenMode` (Entity), `createScreenPermissionChange` (Entity with signal), `createScreenSignals` (Entity with three signals).
 
-## Gaps (why not higher)
+**Enumeration (3):** `getScreens(host, out)`, `getPrimaryScreen(host, out)`, `getScreenById(host, id, out)` — all delegate to `HasScreenQuery`. `getScreenById` returns `null` on miss (sentinel, not throw).
 
-- **Late-subscribe + upgrade ordering (still true, charter Open direction):** `subscribe` captures `const detailsRef = _screenDetails` at subscription time (`screen.ts:330-336`), so a consumer that calls `onScreenChange` *before* `requestScreenDetails()` resolves never receives `screenschange` events from the upgraded details object. Subscribers must re-subscribe after upgrade; nothing re-wires them. This is the most user-visible behavioral trap in the package.
-- **`refreshScreens` is a documented no-op on web** (`screen.ts:703`) — a hook whose web body does nothing and whose native contract ("backends should override via the seam") is not expressible in `ScreenBackend` (there is no `refresh` member to override). Either the backend grows an optional `refresh?()` or the export's contract stays vibes. Small seam-shape wrinkle.
-- **Stable-id contract across hot-plug** for `ScreenInfo.id` remains undecided (charter Open direction) — matters for native backends keying window placement by screen.
-- **Mode-setting is absent by design** (`getScreenModes` is read-only; no `setScreenMode`). Reasonable for web; a native fullscreen-exclusive story would need it — worth an explicit charter ruling so the absence reads as decided rather than missing.
-- **Cheap web-derivable fields** (`monochrome`, `dpi`, `depthPerComponent`) still sentinel on web pending the chartered derive-vs-native decision.
-- **Rust mirror unverified** — cross-tree, conformance entries unwritten.
+**Spatial lookup (5):** `getScreenNearestPoint` (point-in-screen containment, else center-distance), `getScreenContainingRect` (largest-overlap area, else nearest-by-center), `getScreenNearestRect` (fully-contains, else nearest-by-center — distinct semantics per charter Decision 2026-07-02), `getScreenCursorPosition` (delegates to host), `getScreenCursorScreen` (cursor position resolved to nearest screen).
 
-## Charter fit
+**Geometry extraction (3):** `getScreenBounds`, `getScreenWorkArea`, `getScreenCurrentMode` (derives synthetic `ScreenMode` from `ScreenInfo` fields).
 
-Both charter Decisions are implemented in source and can be retired to history at the next direction session. The four Open directions are still the right open set; this review adds the `refreshScreens`/backend-`refresh?()` seam question and the mode-setting scope ruling as candidates.
+**Coordinate conversion (4):** `dipToScreenPoint`, `dipToScreenRect`, `screenToDipPoint`, `screenToDipRect` — all use out-parameter pattern, alias-safe (each line reads its own coordinate before writing).
+
+**Event signals (6):** `attachScreenSignals`/`detachScreenSignals`/`disposeScreenSignals` (wires `HasScreenChange.subscribe` into `ScreenSignals` with three-kind dispatch: `ScreenAdded`, `ScreenRemoved`, `ScreenMetricsChanged`), `attachScreenPermissionChange`/`detachScreenPermissionChange`/`disposeScreenPermissionChange` (wires `HasScreenPermissionChange.subscribe` into `ScreenPermissionChange.onChange`). Subscriptions tracked in module-scoped `WeakMap`s. `dispose*` functions detach then `clearSignal` every member.
+
+**Multi-monitor upgrade (2):** `requestScreenDetails(host)`, `getScreenDetailPermission(host)` — both delegate to `HasScreenDetails`.
+
+## Gaps
+
+1. **Test suite is almost entirely export-existence stubs.** Of 29 `describe` blocks, 27 test only `expect(fn).toBeTypeOf('function')`. Only `screen entities` (entity creation, signal attach/detach/dispose) and `screen queries` (host delegation, current mode derivation) exercise behavior — 5 behavioral assertions total for 27 exported functions and ~180 lines of implementation logic. The coordinate conversion functions, spatial algorithms, geometry extractors, `getScreenById` null-return path, and `getScreenCursorScreen` are entirely untested beyond existence. The pre-R3 test suite had ~970 lines of behavioral coverage; the R3 migration cut the tests to stubs without replacing the behavioral coverage that applies to the remaining pure-logic functions.
+
+2. **Multiple query functions allocate a fresh `ScreenInfo[]` on every call.** `getScreenById`, `getScreenContainingRect`, `getScreenNearestRect`, and `getScreenNearestPoint` each create `const screens: ScreenInfo[] = []` and call `getScreens(host, screens)`. For hot-path usage (e.g., cursor tracking calling `getScreenCursorScreen` on every pointer move), this allocates per call. A module-scoped scratch array or a caller-supplied buffer would eliminate this.
+
+3. **`copyScreenInfo` uses `Object.assign(dst, src)`.** This copies all own enumerable properties, including the `EntityRuntimeKey` symbol. After the copy, `dst[EntityRuntimeKey]` points to `src`'s runtime object. For `ScreenInfo` this is likely harmless (no subsystems attach to screen runtime slots), but it diverges from the Entity identity contract — the `out` entity silently adopts the source's runtime. A field-by-field copy that skips the runtime key would be safer.
+
+4. **`_scratchPoint` is shared mutable module state.** `getScreenCursorScreen` writes to `_scratchPoint` then passes it to `getScreenNearestPoint`. Not reentrant-safe if called recursively (e.g., from within a signal handler). Low practical risk, but the scratch point could be function-local to eliminate the hazard.
+
+5. **No display-mode enumeration.** `getScreenCurrentMode` derives a synthetic mode from `ScreenInfo`. No `getScreenModes` or `getScreenNativeMode` exists. The `ScreenMode` type seam is ready; a real payload needs a native backend. Acknowledged in status.md.
+
+6. **Status.md Open section is partially stale.** Three of four items reference pre-R3 line numbers (`screen.ts:331`, `:128-135`, `:189`, `:289`, `:296`, `:549-553`, `:348`) and describe issues — subscribe-before-upgrade ordering, `ScreenInfo.id` array-index instability, cursor tracking listener leak — that moved to `host-web` with R3. Only item 4 (no display-mode enumeration) still applies to this package.
+
+## Charter contradictions
+
+None. Both charter Decisions (distinct `getScreenNearestRect` semantics, test divider comments removed) are implemented and verified in the current source. The three Open directions (web-derivable fields, stable-id contract, screen-vs-device boundary) are still appropriate and unresolved.
+
+## Contract & docs fit
+
+- **Two-lane exports:** `contract.ts` re-exports all of `screen.ts`; `index.ts` selectively re-exports 27 named functions from `contract.ts`. Both lanes correct.
+- **`sideEffects: false`:** declared in `package.json`; verified — no module-level side effects, only `WeakMap` declarations and a scratch point at file bottom.
+- **Dependencies:** `@flighthq/entity`, `@flighthq/signals`, `@flighthq/types` — correct and minimal.
+- **Types in `@flighthq/types`:** all types (`ScreenInfo`, `ScreenMode`, `ScreenSignals`, `ScreenPermissionChange`, `ScreenChangeEvent`, `ScreenChangedMetrics`, `ScreenChangeKind`, `ScreenColorSpace`, `ScreenOrientation`, `ScreenPermissionState`, `ScreenQueryBackend`, `ScreenChangeBackend`, `ScreenDetailsBackend`, `ScreenPermissionChangeBackend`, `HasScreenQuery`, `HasScreenChange`, `HasScreenDetails`, `HasScreenPermissionChange`) live in `@flighthq/types`. No types defined inline in the implementation package.
+- **Naming:** all function names use full unabbreviated type name (`Screen`, not `Scr`). `get*` prefix on getters. `create*` on factories. `attach*`/`detach*`/`dispose*` lifecycle verbs.
+- **`Readonly<>` on inputs:** applied to `ScreenInfo`, `Vector2Like`, `RectangleLike` parameters.
+- **Out-parameter pattern:** used throughout; all conversion functions return `out`.
+- **Sentinel returns:** `getScreenById` returns `null` on miss; `createScreenInfo` uses `-1` for unknown numerics, `''` for unknown strings, `'unknown'` for `touchSupport`.
+- **Alphabetical ordering:** exported functions alphabetized (case-insensitive). Test `describe` blocks alphabetized and mirror export names.
+- **No TODOs or divider comments** in source or test files.
+- **Explicit dependency model:** every host-touching function takes its witness (`HasScreenQuery`, `HasScreenChange`, etc.) as the first argument. No singletons, no module-scoped backend state.
+- **Platform-integration shared principles:** matches the `create*`/`attach*`/`detach*`/`dispose*` event pattern. Signal creation is eager in `createScreenSignals` (allocates three signals immediately), but this is the purpose-built signals factory — the opt-in boundary is the call to `createScreenSignals` itself, not an `enable*Signals` gate on a broader entity.
 
 ## Candidate open directions
 
-- Late-subscribe re-wiring: have `requestScreenDetails` re-bind existing subscriptions (or document re-subscribe as the contract).
-- Optional `ScreenBackend.refresh?()` so `refreshScreens` has a real seam to delegate to.
-- Explicit ruling that display-mode *setting* is out of scope (or chartered for native).
+- **Behavioral tests for pure-logic functions.** The coordinate converters, spatial algorithms (`getScreenContainingRect`, `getScreenNearestRect`, `getScreenNearestPoint`), and geometry extractors are pure functions with well-defined inputs and outputs. A multi-screen mock host exercising overlap, containment, nearest-fallback, and scale-factor math would bring the score up substantially.
+- **Reduce per-call allocation in query functions.** A module-scoped scratch array (or caller-provided buffer) for `getScreenById`/`getScreenContainingRect`/`getScreenNearestRect`/`getScreenNearestPoint` would eliminate garbage on hot paths.
+- **Field-by-field `copyScreenInfo`.** Replace `Object.assign` to avoid carrying `EntityRuntimeKey` from source to destination.
+- **Update status.md Open section.** Drop the three items that moved to `host-web`; keep or rephrase the mode-enumeration item for this package.
+- **Web-derivable sentinel fields** (`monochrome`, `dpi`, `depthPerComponent`): decide whether to derive in `host-web` or leave sentinel until native — charter Open direction, still pending.
+- **Stable-id contract for `ScreenInfo.id`** across hot-plug — charter Open direction, applies to host backends rather than this package post-R3.

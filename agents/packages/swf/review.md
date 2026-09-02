@@ -1,173 +1,224 @@
 ---
 package: '@flighthq/swf'
 status: solid
-score: 93
-updated: 2026-08-07
+score: 95
+updated: 2026-09-02
 ingested:
   - charter.md
   - status.md
   - source
   - tests
-  - fixture-evidence.md
+  - diagnostics.md
+  - tag-coverage.md
+  - capabilities.md
 ---
 
-# swf — Review
+# swf -- Review
 
 ## Verdict
 
-**Solid — 93/100.** The package supplies the first honest end-to-end proof of the shared named-graph
-contract: bounded `FWS` parsing turns named instances, transforms, and class linkage into enumerable
-`Scene2DDocument` slot references. `DefineSprite` symbols instantiate recursively, so named descendants
-survive unnamed MovieClip containers with their composed transforms. Structure is not frozen at one frame:
-every timeline in the file crosses as `movieclip` playback data, so a document animates through the
-ordinary `MovieClip` API with no SWF runtime retained. Shape definitions decode to real geometry, embedded
-fonts cross as path outlines, static text places them, edit-text fields arrive as assignable text nodes,
-compressed containers open through a registered decompressor, buttons contribute their up state, clip
-depth becomes a real clip, morph definitions become painted retained geometry, and both bytecodes give up
-bounded timeline commands without either being executed. Placement colour transforms, ordinary blend
-modes, advanced-blend reports, and filter reports preserve per-frame appearance instead of being parsed
-past. Both encoded and SWF-lossless bitmap fills reach pixels, although their two loader contracts remain
-an unruled API fork. The score moves up one point on evidence rather than features: the corpus wire
-cross-check now covers instantiated nested sprites as well as root timelines, retiring the weakest
-standing limit in the package's real-file evidence.
+**Solid -- 95/100.** The package is the most heavily instrumented codec in the SDK: 82 declared
+capabilities, 48 structured diagnostic drop sites across six source files, and 27 of those
+capabilities carrying fire-and-silence proofs. Since the previous review (93, 2026-08-07), two
+of its three highest-impact gaps have closed. Structured import diagnostics now exist through
+`@flighthq/importdiagnostics` -- 37 `reportImportDiagnostic` calls in `swfDocument.ts` alone,
+with four severity levels (`Reject`, `Drop`, `Skip`, `Recover`) -- replacing the prior state
+where a caller learned about losses only through an opt-in guard's log line. The
+`importdiagnostics` dependency is declared in `package.json` and imported in every module that
+reports, resolving the prior charter contradiction. Two new entry points --
+`createScene2DSymbolFromSwf` for instantiating a library symbol by linkage name and
+`readSwfExportedSymbolNames` for enumerating them -- widen the API from whole-document import to
+selective symbol extraction. JPEG3/4 alpha data is now retained on `SwfDocumentImport` as
+`jpegAlphaPayloads`, and `createSwfJpegAlphaBitmap` (contract export) composes decoded JPEG pixels
+with a decompressed alpha plane. `DefineScalingGrid` produces `Scale9Shape` nodes. Audio resources
+-- `DefineSound`, `StartSound`/`StartSound2`, `SoundStreamHead`/`SoundStreamBlock` -- land as
+sound cues and stream data on timelines. The remaining gaps are genuine format or design
+boundaries, not missing infrastructure.
 
 ## Present capabilities
 
-Everything in this section is grounded in `packages/swf/src` and its colocated tests at
-`6aff889db`, and the corpus figures in [fixture-evidence.md](fixture-evidence.md).
+Everything in this section is verified against `packages/swf/src` and colocated tests. Source
+references are file:line to this tree.
 
-- **Container and error contract.** `createScene2DFromSwf` reads `FWS` directly and
-  `CWS`/`ZWS` through the shared `@flighthq/compression` registry; the package vendors no codec and owns no
-  registry of its own. The reader (`swfReader.ts`) is bounded by both the declared file length and each tag
-  body. Truncation, overruns, unsupported compression, and invalid headers return the `null` sentinel
-  rather than throwing — backed by a 3,672-mutant sweep in which 500 mutants still imported and none threw.
-  A tag stream ends at its bounded end with or without an explicit `End` tag, which is what Flash's own
-  tooling emits.
-- **Placement generations and per-frame state.** `PlaceObject` through `PlaceObject4` and both removal
-  generations are covered. `PlaceObject2`/`3` distinguish fresh placement, move/update, and replacement:
-  only a move at an occupied depth inherits omitted fields, stray moves synthesize nothing, and a
-  replacement at one depth is a different instance with its own node.
-- **Per-frame appearance.** `constructFrame` (`swfDocument.ts:704-776`) applies matrix, node alpha,
-  fixed-function blend mode, the colour-adjustment stack, morph ratio, and clip per frame, each written
-  only when that frame's value differs by reference from what is already on the node. Advanced blends and
-  spatial filters do not touch a node: they leave on `SwfDocumentImport.appearances`, one entry per
-  (instance, frame), so a filter list a later frame drops stops being reported. Colour-matrix filters join
-  the node adjustment stack, since a pointwise remap folds into the draw.
-- **Geometry.** `DefineShape` through `DefineShape4` decode to drawable commands. The decoder recovers what
-  SWF does not record: the format stores edges naming the fill on each side, so edges are collected per
-  style, the right-hand side is reversed, and runs are stitched end-to-start into closed contours whose
-  nonzero winding matches the authored fill, holes included. Whole-twip coordinates make the stitch exact
-  rather than tolerance-based. A body that does not parse costs that character's drawing alone.
-- **Morphs.** `DefineMorphShape`/`2` become painted `MorphShape` nodes, both edge sets walked in step by
-  `readSwfMorphShapePaths` so a style index's two paths come out with identical structure. The ratio lives
-  on the placement, so it is per-frame data and authored bounds interpolate with it.
-- **Text and fonts.** `DefineFont`/`2`/`3` decode into the index-keyed `GlyphOutlineSource` seam, publicly
-  reachable through `createGlyphOutlineSourcesFromSwf`. `DefineText`/`2` place glyphs by index at the pen
-  position rather than laying out characters. `DefineEditText` becomes assignable `RichText`, with the
-  HTML-declaring branch explicitly routed through `parseTextMarkup`.
-- **Timelines as data.** Every timeline becomes a `TimelineSource` on a `MovieClip`; playback, seeking,
-  looping, and label lookup belong to the `movieclip`/`timeline` engine. Frames are retained as whole
-  display lists, so any seek is a lookup. Every node a timeline can show is allocated at import, so
-  `constructFrame` allocates nothing and a slot bound before playback survives seeks and loops.
-- **Bytecode as bounded data.** AVM1 `DoAction`/`DoInitAction` and AVM2 `addFrameScript` handlers
-  contribute frame scripts only when the whole bounded body is recognized as playback commands; a block
-  carrying anything else is declined whole. The AVM2 parse composes through `@flighthq/abc`. Nothing is
-  executed.
-- **Resources.** Lossless rasters unpack at import through the registered decompressor, and only for
-  characters something samples. Every other embedded image leaves as an `ImageResourceReference` keyed by
-  character, with the media type sniffed from the payload magic, so a bitmap placed a hundred times decodes
-  once. `DefineVideoStream` characters materialize as `Sprite` nodes over sourceless `Texture`s at their
-  declared extent.
-- **Diagnostics.** `enableSwfGuards`/`disableSwfGuards`/`areSwfGuardsEnabled` follow the inversion rule:
-  the core exposes `setSwfFilterListGuard` as a contract-only seam and the caller-facing message lives in
-  the separately importable guard module, emitted through `@flighthq/log`.
-- **Real-file evidence.** Two revision-pinned Ruffle fixtures cross named-graph import and a two-frame
-  depth replacement. A 306-file corpus sweep imports 301 with zero throws and decodes 49,142 shape
-  commands. The animated sweep steps 46 multi-frame clips over 411 frames; the wire cross-check now covers
-  **29 root timelines and all 17 instantiated nested sprites**, with the nested arm falsified before being
-  believed — freezing the tree side turns every agreement into a divergence. No binary is committed and the
-  hermetic suite needs neither the network nor the corpus.
+- **Container and error contract.** `createScene2DFromSwf` reads `FWS` directly and `CWS`/`ZWS`
+  through the shared `@flighthq/compression` registry; the package vendors no codec and owns no
+  registry of its own. The reader (`swfReader.ts`, 103 lines) is bounded by both the declared file
+  length and each tag body. `valid = false` on overrun prevents unbounded reads. Truncation,
+  overruns, unsupported compression, and invalid headers return the `null` sentinel rather than
+  throwing. A tag stream ends at its bounded end with or without an explicit `End` tag.
+- **Structured import diagnostics.** Every public entry point accepts an optional
+  `diagnostics?: ImportDiagnostic[]` sink. 48 `reportImportDiagnostic` call sites span
+  `swfDocument.ts` (37), `swfFilter.ts` (3), `swfFrameAction.ts` (2), `swfText.ts` (2),
+  `swfMorphShape.ts` (2), and `swfShape.ts` (2). The four severity levels carry distinct semantics:
+  `Reject` for a refused input, `Drop` for lost data, `Skip` for a recognised-but-unsupported
+  feature, `Recover` for degraded continuation. Each diagnostic carries a stable `kind` string
+  (`swf.*`-prefixed) and an `origin` naming the emitting function. 27 of 82 declared capabilities
+  have instrumented loss paths with both fire and silence proofs
+  (`diagnostics.md`, `instrumentation.json`).
+- **Entry points.** Ten public exports: `createScene2DFromSwf` (document only),
+  `createScene2DImportFromSwf` (document + appearances + JPEG alpha payloads),
+  `createScene2DSymbolFromSwf` (single symbol by linkage name),
+  `readSwfExportedSymbolNames` (linkage enumeration),
+  `createGlyphOutlineSourcesFromSwf` (font outlines from a SWF),
+  `registerSwfScene2DDocumentImporter` (registry registration),
+  plus the guard triple (`enableSwfGuards`, `disableSwfGuards`, `areSwfGuardsEnabled`) and
+  `registerSwfImageDecoders`. Contract lane adds `createSwfJpegAlphaBitmap`, `readSwfFilterList`,
+  and `setSwfFilterListGuard`.
+- **Placement generations and per-frame state.** `PlaceObject` through `PlaceObject4` and both
+  removal generations are covered. `PlaceObject2`/`3` distinguish fresh placement, move/update, and
+  replacement. Per-frame appearance data -- matrix, node alpha, fixed-function blend mode, the
+  colour-adjustment stack, morph ratio, clip, and `DefineScalingGrid` -- is applied by
+  `constructFrame` (`swfDocument.ts`). Advanced blends and spatial filters travel beside the
+  document on `SwfDocumentImport.appearances`, one entry per (instance, frame), so a filter list
+  a later frame drops stops being reported. Colour-matrix filters join the node adjustment stack.
+- **Geometry.** `DefineShape` through `DefineShape4` decode to drawable commands via edge-based
+  fill recovery: edges collected per style, fill0 reversed, runs stitched end-to-start into closed
+  contours whose nonzero winding reproduces the authored fill, holes included. Whole-twip
+  coordinates make the stitch exact. Line styles carry caps, joints, and miter limits. Solid,
+  gradient (linear/radial/focal), and bitmap fills are supported. A body that does not parse costs
+  that character's drawing alone and is reported via `swf.shape-body-unreadable`.
+- **Morphs.** `DefineMorphShape`/`2` become painted `MorphShape` nodes with both edge sets walked
+  in step by `readSwfMorphShapePaths` (shared with `swfShape.ts`). Morph gradients, solid fills,
+  bitmap fills, and paired line styles with start/end widths and colours are all read. The ratio
+  lives on the placement, so it is per-frame data and authored bounds interpolate with it.
+- **Scale9.** `DefineScalingGrid` maps a character to a `Scale9Shape` node via
+  `createSwfScale9ShapeNode` (`swfDocument.ts`).
+- **Text and fonts.** `DefineFont`/`2`/`3` decode into the index-keyed `GlyphOutlineSource` seam,
+  publicly reachable through `createGlyphOutlineSourcesFromSwf`. `DefineFontInfo`/`DefineFontInfo2`
+  supply code-point tables when the font body carries none. `resolveSwfFontUnitsPerEm` handles
+  version-3's 20x-finer EM grid. `DefineText`/`2` place glyphs by index at the pen position.
+  `DefineEditText` becomes assignable `RichText`, with HTML-declaring branch routed through
+  `parseTextMarkup`. Font metrics (ascent, descent, leading) and kerning pairs are read when
+  present.
+- **Timelines as data.** Every timeline becomes a `TimelineSource` on a `MovieClip`; playback,
+  seeking, looping, and label lookup belong to the `movieclip`/`timeline` engine. Frames are
+  retained as whole display lists; every node a timeline can show is allocated at import so
+  `constructFrame` allocates nothing. Frame labels come from both `FrameLabel` tags and
+  `DefineSceneAndFrameLabelData`.
+- **Bytecode as bounded data.** AVM1 `DoAction`/`DoInitAction` contribute playback-only frame
+  scripts; AVM2 `addFrameScript` handlers are recognized through `@flighthq/abc`, walking
+  constructor bodies for `addFrameScript` calls with goto depth bounded at 8. Nothing is executed.
+  A block carrying any non-playback action is declined whole, and that declining is reported
+  via diagnostic (`swf.frame-script-declined`).
+- **JPEG alpha composition.** `createScene2DImportFromSwf` retains `SwfJpegAlphaPayload` entries
+  for every `DefineBitsJPEG3`/`4` character, carrying the compressed alpha bytes, dimensions, and
+  the deblocking parameter. `createSwfJpegAlphaBitmap` (contract export, `swfBitmap.ts`) composes
+  decoded JPEG pixels with a decompressed alpha plane, applying premultiplication.
+- **Audio.** `DefineSound` creates audio resources keyed by character ID. `StartSound`/
+  `StartSound2` place sound cues on timeline frames. `SoundStreamHead`/`SoundStreamBlock` are
+  associated with timelines. Non-MP3 stream formats are reported via
+  `swf.stream-sound-format` diagnostic.
+- **Resources.** Lossless rasters unpack at import through the registered decompressor, and only
+  for characters something samples. Every other embedded image leaves as an
+  `EmbeddedImageResourceReference` keyed by character, with the media type sniffed from the payload
+  magic, so a bitmap placed a hundred times decodes once. `DefineVideoStream` characters
+  materialize as `Sprite` nodes over sourceless `Texture`s at their declared extent.
+- **Diagnostics seam.** `enableSwfGuards`/`disableSwfGuards`/`areSwfGuardsEnabled` use the
+  inversion rule: the core exposes `setSwfFilterListGuard` as a contract-only seam, the
+  caller-facing message lives in the separately importable guard module, emitted through
+  `@flighthq/log`.
+- **Tests.** 6,847 lines across 12 test files, with `swfDocument.test.ts` alone at 4,672. Dedicated
+  `describe` blocks exercise `createScene2DSymbolFromSwf`, `readSwfExportedSymbolNames`,
+  `createScene2DFromSwf import diagnostics`, `createSwfJpegAlphaBitmap`, and per-module concerns
+  (reader, shape, morph, filter, text, edit text, bitmap, frame actions, image decoder, image
+  resources, guards).
 
 ## Gaps
 
-- **One measured animation loss remains, and it is the corpus's only wire/tree divergence.** On a video
-  placement the per-frame records carry only a ratio, which selects the decoded video frame — measured
-  directly: on each of the ten move frames of `from_gnash/misc-ming.all/Video-EmbedSquareTest` the
-  placement ratio equals the `VideoFrame` packet number on that frame. Flight applies a placement ratio to
-  `MorphShapeKind` alone, so a video `Sprite` has nowhere to put it and `VideoFrame` payloads are skipped.
-  Structural Stage A fixed the graph shape and did **not** close this.
+- **One measured animation loss remains, and it is the corpus's only wire/tree divergence.** On a
+  video placement the per-frame ratio selects the decoded video frame -- a different quantity from
+  the morph ratio that occupies the same field. Flight applies a placement ratio to `MorphShapeKind`
+  alone, so a video `Sprite` has nowhere to put it and `VideoFrame` payloads are not retained.
 - **Two bitmap loading paths, not one.** Encoded payloads resolve through a browser `Image` in
-  `loadImageResourceFromBytes`, which never consults the MIME-keyed `@flighthq/image-codec` registry, while
-  SWF-lossless rasters unpack eagerly at import. The encoded path is therefore browser-only: headless and
-  native hosts get no pixels from it. `DefineBitsJPEG3`/`4`'s separate alpha stream is dropped, and cannot
-  be rejoined until the resolved-image hand-back point exists.
-- **Nested masks collapse to the innermost** rather than intersecting, because a node carries one clip.
-- **Scene ranges are read past.** `DefineSceneAndFrameLabelData`'s labels are imported; its scene names are
-  not, because Flight has frame labels but no subject for a named frame range.
-- **Some filter fields exceed the target effect vocabulary** — angle, distance, inner/on-top placement,
-  pass count, composite-source and knockout flags, and an authored convolution alpha have no member to land
-  in and are reported at supported fidelity rather than guessed.
-- **`DefineButtonSound` is unrepresented**, and a frame cue is the wrong shape for it: the sound fires on a
-  pointer-state transition, while a button imports as a one-frame timeline of its up state.
-- **`ZWS` cannot be completed here.** The five corpus rejections are all LZMA; the shared registry key
-  already exists and its natural registrant is out-of-repository work.
-- **No structured parse diagnostics.** A caller learns that a document was lossy only through the opt-in
-  filter guard's log line; there is no queryable record of what a given import declined.
-- **No reference-player pixel comparison.** All corpus evidence measures the constructed tree and decoded
-  commands, never pixels against a player.
+  `loadImageResourceFromBytes`, which never consults the MIME-keyed `@flighthq/image-codec`
+  registry, while SWF-lossless rasters unpack eagerly at import. The encoded path is therefore
+  browser-only; headless and native hosts get no pixels from it.
+- **JPEG3/4 alpha is retained but not composed during import.** The data travels on
+  `SwfDocumentImport.jpegAlphaPayloads` and `createSwfJpegAlphaBitmap` exists for post-import
+  composition, but the import path itself emits a `Drop` diagnostic
+  (`swf.jpeg-alpha-stream`) and leaves the colour stream opaque. Composition is a
+  caller responsibility pending a hand-back ruling.
+- **Nested masks collapse to the innermost** rather than intersecting, because a node carries one
+  clip. The outer of two masks covering one instance is reported via
+  `swf.nested-mask-collapsed`.
+- **Scene ranges are read past.** `DefineSceneAndFrameLabelData`'s labels are imported; its scene
+  names are reported via `swf.scene-names` and not carried, because Flight has no subject for a
+  named frame range.
+- **Some filter fields exceed the target effect vocabulary.** Gradient glow angle, distance, and
+  inner/on-top placement are reported and skipped. `BlurEffect` pass count is reported. Convolution
+  alpha is dropped. Knockout and composite-source filter flags are unread -- now an importer gap
+  rather than a target-capability gap, since `EffectSourceMode` carries `'knockout'`
+  (`types/src/EffectSourceMode.ts`) and the relevant effects all accept `sourceMode`.
+- **`DefineButtonSound` is unrepresented**, and a frame cue is the wrong shape: the sound fires on
+  a pointer-state transition, while a button imports as a one-frame timeline of its up state.
+- **`ZWS` cannot be completed here.** No LZMA decompressor is registered in this repo; the shared
+  registry key exists and its natural registrant is out-of-repository work.
+- **Version 2 morph gradients are untested.** No corpus file carries one; whether the stop-count
+  byte packs spread/interpolation in the high nibble like a static gradient is unknown.
+- **No reference-player pixel comparison.** All corpus evidence measures the constructed tree and
+  decoded commands, never pixels against a player.
 
 ## Charter contradictions
 
-Two divergences, both small and both in the charter's own description of the package's shape rather than
-in its principles. The Boundaries and Decisions are honoured without exception — the codec retains no
-player, every output lands on an existing Flight subject, ABC and compression are carried rather than
-owned, and canonical binary evidence stays external and reproducible.
+One divergence, small and in the charter's description of the entry-point shape rather than in its
+principles. The Boundaries and Decisions are honoured without exception: the codec retains no
+player, every output lands on an existing Flight subject, ABC and compression are carried rather
+than owned, and canonical binary evidence stays external and reproducible.
 
-- **The chartered entry point takes an options argument the code does not have.** The charter states
-  `createScene2DFromSwf(bytes, options) → Scene2DDocument`; the implementation is
-  `createScene2DFromSwf(source: Uint8Array)`, with no second parameter anywhere in the public surface. No
-  import option has been needed so far. Either the charter line is stale or an option surface is intended
-  and unbuilt; the source does not say which.
-- **`@flighthq/importdiagnostics` is chartered as a direct dependency and is not one.** The charter names
-  it in the shared lower layer this package depends on directly. It appears in neither
-  `packages/swf/package.json` nor any import in `src/`. What exists instead is the `@flighthq/log` guard
-  seam. This is the same fact as the "no structured parse diagnostics" gap above, seen from the charter's
-  side.
+- **The chartered entry-point signature is stale.** The charter states
+  `createScene2DFromSwf(source: Uint8Array) -> Scene2DDocument | null` with no second parameter.
+  The implementation is `createScene2DFromSwf(source: Uint8Array, diagnostics?: ImportDiagnostic[])`.
+  The diagnostics parameter exists, honoring the charter's own naming of `importdiagnostics` as a
+  dependency, but the charter's entry-point line does not mention it. Additionally, the charter does
+  not list the three newer entry points (`createScene2DImportFromSwf`,
+  `createScene2DSymbolFromSwf`, `readSwfExportedSymbolNames`) that widen the API surface. This is
+  a stale charter line, not a code defect.
+
+Previously reported contradiction **resolved**: the prior review noted that
+`@flighthq/importdiagnostics` was chartered as a dependency but absent from `package.json` and all
+imports. It is now declared in `package.json` (line 52) and imported in `swfDocument.ts`,
+`swfFilter.ts`, `swfShape.ts`, `swfFrameAction.ts`, `swfText.ts`, and `swfMorphShape.ts`, and used
+extensively in tests via `collectImportDiagnostics`.
 
 ## Contract & docs fit
 
-Living up to the contract: types are `@flighthq/types`-first (`type-home:check` reports zero exported
-types outside it), exported names carry the full unabbreviated type they operate on, expected failures
-return sentinels rather than throwing, the manifest declares `sideEffects: false` and exactly the two
-blessed lanes, registration is an explicit `registerSwfScene2DDocumentImporter` call with no module-load
-side effect, and the guard seam is contract-only while the guard module is public. `npm run check swf`
-passes every gate; run `npm run test swf` for the current count.
+Living up to the contract: types are `@flighthq/types`-first (zero exported `interface`, `type`,
+or `enum` in `packages/swf/src/`; `SwfDocumentImport`, `SwfJpegAlphaPayload`, `SwfNodeAppearance`,
+and `SwfFilterListGuard` all reside in `packages/types/src/`), exported names carry the full
+unabbreviated type they operate on, expected failures return sentinels rather than throwing, the
+manifest declares `sideEffects: false` and exactly the two blessed export lanes (`.` and
+`./contract`), registration is an explicit `registerSwfScene2DDocumentImporter` call with no
+module-load side effect, and the guard seam is contract-only while the guard module is public.
+
+The charter now has a `## North star` section (lines 38-46), resolving the prior review's note
+that it was absent.
 
 Candidate revisions to the contract and admin docs themselves:
 
-- **`charter.md` has no `## North star` section** and `docs:check` warns on it (non-gating). The charter is
-  a "reserved home" document written before the package existed; the package has since been built. Adding
-  one is a direction decision, not a survey edit.
-- **The two charter divergences above** are candidate charter revisions rather than code defects — the
-  options parameter and the `importdiagnostics` dependency line.
-- **The cell carries three supplementary docs** — `fixture-evidence.md`, `tag-coverage.md`, and
-  `sha-pin-incidental-audit.md` — which `docs:check` warns are "not a contract file". They are load-bearing
-  here (the fixture record is what keeps the corpus claims reproducible without committing a binary), so
-  the warning reads as a contract that does not yet describe a cell with supplementary evidence docs.
+- **The charter entry-point line** should be updated to reflect the `diagnostics?` parameter and
+  the three newer entry points.
+- **The cell carries supplementary docs** -- `fixture-evidence.md`, `tag-coverage.md`,
+  `diagnostics.md`, `capabilities.md`, `instrumentation.json` -- which are load-bearing (the
+  fixture record keeps corpus claims reproducible without committing a binary, and the
+  instrumentation mapping enforces proof drift).
 
 ## Candidate open directions
 
-Questions the charter does not answer that this survey had to assume:
+Questions the charter does not answer that this survey encountered:
 
-1. **Where does a placement ratio live when the placed character is not a morph?** SWF overloads one field
-   across two quantities — morph progress and video frame selection. The charter's scope line lists
-   `PlaceObject*` state without naming ratio at all.
-2. **Is `createScene2DFromSwf` intended to take import options?** If so, what is the first option that
-   earns the parameter; if not, the charter's entry line should lose it.
-3. **Does this package owe structured import diagnostics, and through which seam** — the chartered
-   `importdiagnostics` layer, or the `@flighthq/log` guard layer it actually uses?
-4. **How far does "codec, not a player" reach into evidence?** All current real-file evidence measures the
-   constructed tree. Whether a reference-player pixel comparison is in scope for a codec cell, or belongs
-   to the functional-scene layer, is unstated.
-5. **Do supplementary evidence docs belong in a cell**, and if so should the cell contract name them rather
-   than warn on them?
+1. **Where does a placement ratio live when the placed character is not a morph?** SWF overloads
+   one field across two quantities -- morph progress and video frame selection. The charter's scope
+   line lists `PlaceObject*` state without naming ratio at all.
+2. **When does JPEG3/4 alpha composition become automatic?** The infrastructure exists
+   (`SwfJpegAlphaPayload` on the import, `createSwfJpegAlphaBitmap` for composition), but the seam
+   between them is currently the caller's responsibility. An import option or a post-resolve hook
+   would close it.
+3. **How far does "codec, not a player" reach into evidence?** All current real-file evidence
+   measures the constructed tree. Whether a reference-player pixel comparison is in scope for a
+   codec cell, or belongs to the functional-scene layer, is unstated.
+4. **Do supplementary evidence docs belong in a cell**, and if so should the cell contract name
+   them rather than warn on them?
+5. **Should the diagnostic instrumentation target expand beyond 27/82?** The current 27 are the
+   capabilities whose loss paths have all been wired, fire-proven, and silence-proven. The remaining
+   55 produce silence that is uninformative rather than trustworthy. The audit infrastructure is
+   mature enough to support a wider sweep.

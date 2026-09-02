@@ -1,71 +1,78 @@
 ---
 package: '@flighthq/timeline'
 status: solid
-score: 68
-updated: 2026-07-13
+score: 72
+updated: 2026-09-02
 ingested:
   - charter.md
-  - status.md
-  - assessment.md (prior, 2026-07-02)
-  - review.md (prior merge-gate, 2026-06-25)
-  - source (packages/timeline/src — timeline.ts, timeline.test.ts, index.ts)
+  - status.md (2026-08-08)
+  - assessment.md (2026-07-31)
+  - source (packages/timeline/src — timeline.ts, timeline.test.ts, index.ts, contract.ts)
   - packages/timeline/package.json
-  - '@flighthq/types (Timeline, TimelineSource, TimelineSignals, TimelineFrameEvent, FrameScript, TimelinePlayMode, PlayMode, TimelineLabel)'
-  - git log (packages/timeline, packages/movieclip)
+  - '@flighthq/types (Timeline, TimelineSource, TimelineSignals, TimelineFrameEvent, FrameScript, TimelinePlayMode, TimelineLabel, TimelineCue, TimelineCueRegistry, TimelineCueHandler, TimelineFrameEntryCause, TimelineStreamAudioCue, TimelineAudioCue, TimelineGotoCue, TimelinePlaybackCue, PlayMode, Node2D)'
+  - agents/timeline-cue-model.md (existence confirmed)
+  - packages/clock/src/ (existence confirmed — clock.ts, clockSignals.ts, tests)
 ---
 
-# timeline — Review
+# timeline -- Review
 
 ## Verdict
 
-`solid — 68/100`. The prior 38 was a merge-gate rejection whose sole blocking cause — the missing `@flighthq/types` half — is fixed: `Timeline` now declares `frameScripts`/`playMode`/`signals`, and `TimelineSignals`/`TimelineFrameEvent`/`FrameScript`/`TimelinePlayMode` all exist and are barrel-exported. The package is now what the charter asks for: a pure, headless frame engine (deps: `signals` + `types` only) with an opt-in signal lifecycle, frame scripts, loop/once modes, label navigation, and a clean `TimelineSource` seam — well-commented and fully tested. What keeps it out of the 80s is playback depth (no reverse/speed/ranges/ping-pong, no time addressing) plus one small North-star contradiction (`updateTimeline` returns `void`).
+`solid -- 72/100`. Unchanged from the prior review. The implementation source (258 lines in a single `timeline.ts`) is clean, well-structured, and thoroughly tested (579 lines, 19 describe blocks matching 19 exports one-to-one). The cue type header is comprehensive -- seven kind constants, four concrete cue interfaces, handler/registry/cause types, and the `TimelineStreamAudioCue` added in the Aug 2 types commit -- and the data seam is wired into both `createTimeline` (`cueRegistry`) and `createTimelineSource` (`cues`). But the runtime dispatcher still does not exist: nothing reads either field, so every SWF-imported sound, Goto, and Stop remains inert data. Playback depth is at the same plateau (no reverse, speed, ranges, ping-pong, time addressing). What keeps it from 80 is the unbuilt cue dispatcher and the playback-depth plateau; what exists is clean and correct.
 
-**Continuity note:** the movieclip extraction the old assessment's Backlog led with **has happened** — commit `75c4076b` (2026-07-09) moved `movieClip.ts` to `packages/movieclip` and `createSpritesheetTimelineSource` out of spritesheet; `packages/timeline/src` is now just `timeline.ts` + test + barrel. All three Approved sweep items (2026-07-02) also landed: `disposeTimelineSignals` (timeline.ts:49), the `setMovieClipSource` dead re-wire branch replaced by a durable comment (now in movieclip), and the frame-skip landing-frame-only contract documented on `advanceFrame` and `fireConstructFrame`.
+**Since the 2026-07-31 assessment / prior review:** Two types-level commits landed (Aug 2): the timeline cue model architecture doc (`agents/timeline-cue-model.md`), the full cue type header in `@flighthq/types`, and `TimelineStreamAudioCue` as a separate kind from `TimelineAudioCue`. No implementation-level changes reached `packages/timeline/src/timeline.ts` beyond the cue data seam wiring (`cueRegistry` on `createTimeline`, `cues` + `TimelineCue` import on `createTimelineSource`) and the corresponding `EMPTY_CUES` sentinel. Version bumped to 0.5.0.
 
 ## Present capabilities (grounded in source)
 
-- **Entity + source constructors** — `createTimeline` (defaults: frame 1, stopped, `playMode: 'loop'`, `frameScripts`/`signals` null, `lastFrameUpdate: -1`) and `createTimelineSource` (the native authoring "format": totalFrames/frameRate/labels/constructFrame with a shared `EMPTY_LABELS` and noop defaults).
-- **Advance loop** — `updateTimeline(timeline, deltaTime)`: frame-rate-driven catch-up (`floor(timeElapsed / frameTime)` landing-frame jump, remainder kept) or one-frame-per-update when `frameRate === null`; `fireConstructFrame` realizes exactly one frame per change with the signal order onExitFrame → onEnterFrame → `source.constructFrame` → frame script → onFrameConstructed, all gated on `signals !== null` so a non-signal timeline pays nothing.
-- **Play modes** — `loop` (wrap + `onLoop`, correct multi-wrap modulo `((next - 1) % totalFrames) + 1`) and `once` (clamp at `totalFrames`, stop, `onComplete`), in both clock paths.
-- **Playback control** — `playTimeline`/`stopTimeline`, `gotoAndPlayTimeline`/`gotoAndStopTimeline` (label-or-number via `resolveFrame`, clamped seek that re-realizes the frame), `nextFrameTimeline`/`prevFrameTimeline`.
-- **Labels** — `findTimelineLabel` (null sentinel) and `getTimelineCurrentLabel` (last label at/before the playhead, null sentinel).
-- **Frame scripts** — `addTimelineFrameScript`/`getTimelineFrameScript`/`removeTimelineFrameScript` over a lazily-allocated `Map`, cleared back to `null` when emptied; scripts fire once on frame entry, not on stopped re-updates (tested).
-- **Signals lifecycle** — `enableTimelineSignals` (idempotent, `??=`) paired with `disposeTimelineSignals` (clears to null; re-arm tested).
-- **Tests** — all 16 exports have alphabetized `describe` blocks in `timeline.test.ts`, including catch-up frame skip, wrap, once-mode stop, signal ordering, and dispose/re-arm.
+- **Entity + source constructors** -- `createTimeline` (timeline.ts:22-35; defaults: frame 1, stopped, `playMode: 'loop'`, `frameScripts`/`signals`/`cueRegistry` null, `lastFrameUpdate: -1`, `timeElapsed: 0`) and `createTimelineSource` (timeline.ts:41-55; all-optional input with `totalFrames` defaulting to 1, `frameRate` null, shared `EMPTY_LABELS`/`EMPTY_CUES` sentinels, noop `constructFrame`).
+- **Advance loop** -- `updateTimeline(timeline, deltaTime): boolean` (timeline.ts:142-152): frame-rate-driven catch-up (`Math.floor(timeElapsed / frameTime)` landing-frame jump, remainder kept via modulo) or one-frame-per-update when `frameRate === null`. Returns `true` only when a new frame is realized (constructFrame/scripts/signals fire), `false` otherwise. `fireConstructFrame` (timeline.ts:218-237) realizes exactly one frame per change with signal order: onExitFrame -> lastFrameUpdate written -> onEnterFrame -> `source.constructFrame` -> frame script -> onFrameConstructed, each gated on `signals !== null` or `target !== null` as appropriate.
+- **Play modes** -- `loop` (wrap via `((next - 1) % totalFrames) + 1` + `onLoop` signal, timeline.ts:183-186) and `once` (clamp at `totalFrames`, set `isPlaying = false`, `onComplete` signal, timeline.ts:176-182). Both paths handled identically in the `frameRate !== null` and `frameRate === null` branches of `advanceFrame`.
+- **Playback control** -- `playTimeline` (guards against `totalFrames < 2` and already-playing, resets `timeElapsed`), `stopTimeline` (sets `isPlaying = false`), `gotoAndPlayTimeline`/`gotoAndStopTimeline` (label-or-number via `resolveFrame`, delegating to `seekTimeline` which clamps and resets `lastFrameUpdate` to -1 to force realization), `nextFrameTimeline`/`prevFrameTimeline` (stop + seek by +/-1).
+- **Labels** -- `findTimelineLabel` (linear scan, null sentinel on miss), `getTimelineCurrentLabel` (last label at or before playhead, null sentinel), `getTimelineLabels` (returns source labels or shared empty-array sentinel).
+- **Frame scripts** -- `addTimelineFrameScript` (lazily allocates `Map` via `??=`), `getTimelineFrameScript` (null sentinel), `removeTimelineFrameScript` (deletes entry, resets map to null when empty), `clearTimelineFrameScripts` (nulls the map), `getTimelineFrameScriptFrames` (snapshot of keys or shared empty-array sentinel). Scripts fire once on frame realization only -- repeated updates at the same stopped frame do not re-fire.
+- **Signals lifecycle** -- `enableTimelineSignals` (idempotent via `??=`, creates five `Signal` instances) paired with `disposeTimelineSignals` (sets `signals` to null; re-arming after dispose allocates a fresh group, tested). Five signals: `onComplete`, `onEnterFrame`, `onExitFrame`, `onFrameConstructed`, `onLoop`.
+- **Cue data seam** -- `createTimeline` accepts `cueRegistry: TimelineCueRegistry | null`; `createTimelineSource` accepts `cues: readonly TimelineCue[]`. The type header in `@flighthq/types/src/TimelineCue.ts` is comprehensive: `TimelineAudioCue` (with envelope, loops, offset, duration, skipIfPlaying, stop), `TimelineStreamAudioCue` (separate kind for seek-behavior dispatch), `TimelineGotoCue` (targetFrame/targetLabel), `TimelinePlaybackCue` (NextFrame/Play/PreviousFrame/Stop), `TimelineCueHandler`, `TimelineCueHandlerEntry` (with `dispatchOnSeek`), `TimelineCueRegistry` (extends `Entity`, stores `entries`), `TimelineFrameEntryCause` (Advance/Seek), and seven kind constants. No runtime dispatch exists.
+- **Tests** -- 19 `describe` blocks alphabetized, mirroring the 19 exports. Coverage includes: catch-up frame skip, wrap/loop, once-mode stop, signal ordering (exit-before-enter-before-constructed), dispose/re-arm cycle, boolean return semantics for both clock paths, frameRate-null ordering, label resolution (both hit and miss), bulk frame-script operations, clamping on prev/next/goto at boundaries.
 
-## Gaps (vs a mature timeline engine — games, motion design, creative tools)
+## Gaps (vs a mature timeline engine)
 
-- **No direction or speed.** No `direction: 1 | -1`, no `playbackRate`, no reverse playback. Every mature timeline runtime (GSAP, Animate, game frame-animation systems) has timeScale/reverse; charter parks these as open design.
-- **No play ranges.** No label-delimited segment playback (walk cycle inside a longer strip) — the single most-requested game-animation feature over loop/once.
-- **No ping-pong mode.** `TimelinePlayMode` is `'loop' | 'once'` only.
-- **No time addressing.** No `getTimelineDuration`, no seek-by-milliseconds, no normalized progress query — motion-design and editor scrubbing think in time, not frames. Frames are the only coordinate.
-- **`updateTimeline` returns `void`**, so a caller cannot cheaply observe "did the frame change" without signals (see Charter contradictions).
-- **Clock-mode asymmetry.** In the `frameRate !== null` path, advance happens *before* construct (so `currentFrame` equals the realized frame after an update); in the `frameRate === null` path, construct happens first and *then* the playhead advances, so between updates `currentFrame` reads one ahead of the frame actually realized (`lastFrameUpdate`). Deliberate (it lets frame 1 realize on the first update) but an observable inconsistency in what `currentFrame` means across the two clock modes; undocumented.
-- **Label-not-found throws.** `resolveFrame` throws `Error('Frame label "…" not found')` from inside `gotoAndPlayTimeline`/`gotoAndStopTimeline`/`addTimelineFrameScript` — a message baked into core, with no guard module or `explain*` query per the diagnostics inversion rule. The lookup functions themselves sentinel correctly.
-- **No bulk frame-script operations** (enumerate, clear-all) and one script per frame (`Map<number, FrameScript>`), matching Flash but below creative-tool expectations.
-- **No signals for play/stop/seek** and no label-entered signal; `onComplete`/`onLoop` are bare (charter open direction 1).
-- **No clock integration.** North star 5 says timeline consumes `@flighthq/clock` once it exists — `@flighthq/clock` now exists (Package Map), so this is unblocked, not blocked.
-- **No `flighthq-timeline` Rust crate** (global TS-first posture; expected).
+- **Cue dispatcher is absent.** The type header and data seam are landed, but nothing reads `cueRegistry` or `cues` at runtime. No `createTimelineCueRegistry`, `registerTimelineCue`, or `dispatchTimelineCues` function exists in `packages/timeline/` or anywhere else. The SWF importer emits cues (`swfDocument.ts`, seven usage sites across frames, sounds, and gotos), so every imported cue is inert. This is the cell's blocking gap per status.md; the architecture is ratified in `agents/timeline-cue-model.md`.
+- **No direction or speed.** No `direction`, `playbackRate`, reverse playback, or ping-pong mode. `TimelinePlayMode` is `'loop' | 'once'` only (TimelinePlayMode.ts:3). Charter parks these as open design.
+- **No play ranges.** No label-delimited segment playback, no `TimelineScene`, no `gotoAndPlayTimelineScene`. Sub-animations inside a longer strip cannot be addressed as a unit.
+- **No time addressing.** No `getTimelineDuration`, no seek-by-milliseconds, no normalized progress query. The only coordinate is 1-based frame numbers.
+- **Clock-mode asymmetry.** In the `frameRate !== null` path, `advanceFrame` runs before `fireConstructFrame`; in the `frameRate === null` path, `fireConstructFrame` runs first, then `advanceFrame`. This means `currentFrame` reads one ahead of `lastFrameUpdate` between updates in the null path. Documented in the source comment (timeline.ts:138-141) and tested (timeline.test.ts:514-525), so this is deliberate, but it is an observable difference in what `currentFrame` means across clock modes.
+- **Label-not-found throws.** `resolveFrame` (timeline.ts:247-252) throws `Error('Frame label "..." not found')` from `gotoAndPlayTimeline`, `gotoAndStopTimeline`, and `addTimelineFrameScript`. This is an error message baked into core, without a guard module or `explain*` query per the diagnostics inversion rule. The lookup functions themselves (`findTimelineLabel`, `getTimelineCurrentLabel`) sentinel correctly with null. The throw is defensible as a programmer-error precondition, but the charter's North star 4 ("sentinels over throws ... label lookup") sets an expectation that label resolution is sentinel-based.
+- **No play/stop/seek signals** and no label-entered signal. `onComplete` and `onLoop` are bare `() => void` with no frame payload.
+- **No clock integration.** `@flighthq/clock` exists and ships `createClock`/`updateClock`/`clockSignals` (packages/clock/src/). Charter North star 5 says timeline consumes clock, but timeline does not import or reference it. The seam shape (pass a `Clock` vs caller-scaled `deltaTime`) is an open design question.
+- **One script per frame.** `frameScripts` is `Map<number, FrameScript>` -- `addTimelineFrameScript` calls `map.set`, so attaching a second script to the same frame silently replaces the first. No multi-script or priority support.
+- **No `@flighthq/timeline-formats` neighbor.** No keyframe-document loader; sources come from `createTimelineSource`, spritesheet (via movieclip), or SWF import.
 
 ## Charter contradictions
 
-- **North star 4 states "Update returns whether the frame changed" — `updateTimeline` returns `void`** (timeline.ts:120). The tests observe frame changes only via constructFrame callbacks or signals. Small, but a stated principle the code does not meet.
-- Borderline: North star 4's "sentinels over throws … label lookup" is honored by `findTimelineLabel`, but goto-by-unknown-label throws via `resolveFrame`. Defensible as a programmer-error throw; the charter does not explicitly rule the goto case, so this is a tension to settle, not a clean violation.
-- Otherwise clean: zero scene-graph value dependency (package.json deps are `signals` + `types` only), non-recursive `updateTimeline`, `TimelineSource` as the data seam — all as decided.
+- **None.** The prior review's sole contradiction -- North star 4 stating "Update returns whether the frame changed" while `updateTimeline` returned `void` -- was resolved in the 2026-07-31 sweep: `updateTimeline` returns `boolean` (timeline.ts:142, tested timeline.test.ts:494-512).
+- **Borderline (unchanged):** North star 4 says "sentinels over throws ... label lookup", which `findTimelineLabel` honors (null sentinel), but goto-by-unknown-label throws via `resolveFrame`. Defensible as a programmer-error throw for API misuse; the charter does not explicitly rule the goto case. This is a tension to settle, not a clean violation.
+- Structural alignment is clean: zero scene-graph value dependency (package.json deps: `signals` + `types` only), non-recursive `updateTimeline`, `TimelineSource` as the data seam, `sideEffects: false`, no top-level side effects, no imports from `@flighthq/sdk`.
 
 ## Contract & docs fit
 
-- **Types-first: fixed.** The prior review's blocking defects are gone — all timeline types live in `@flighthq/types` with good durable comments and barrel exports.
-- Contract hygiene otherwise strong: full unabbreviated names, `get*`/`find*` verbs, null sentinels, single root export, `sideEffects: false`, colocated alphabetized tests, module constants at file bottom.
-- **Candidate revisions (docs/admin, user's gate):**
-  - `@flighthq/types` still exports an orphaned `PlayMode` (`'loop' | 'once'`) alongside the used `TimelinePlayMode` — a stale duplicate from the pre-rename pass, referenced nowhere outside types itself. Cross-package cleanup candidate.
-  - Charter Open directions 6 ("Package Map line still says MovieClip-style keyframes") and 7 ("movieclip needs a charter") are both **resolved** — the Package Map now reads "timeline frame engine — keyframes, labels, frame scripts" with a separate movieclip line, and the movieclip charter exists (lastDirection 2026-07-10). Candidates for pruning at the next direction session.
-  - `status.md` front matter says `updated: 2026-06-24` while its newest entry is 2026-06-25, and neither mentions the 2026-07-09 extraction — stale continuity.
-  - Type-level scene-graph vocabulary: `Timeline.target` and `TimelineSource.constructFrame` are typed against `DisplayObject`, and `FrameScript` takes a `DisplayObject`. Value-level purity holds, but the header couples the engine's contract to the display-object family rather than a graph-feature alias.
+- **Types-first: clean.** All timeline types reside in `@flighthq/types` with durable comments and barrel exports. The cue type header is thorough and well-documented, covering the three-seam distinction (constructFrame / frameScripts / cues) in a block comment. `TimelineCueRegistry` extends `Entity` as the convention requires for registry objects.
+- **Timeline is not an Entity.** `Timeline` does not extend `Entity` despite being created by a `create*` function and holding mutable state (currentFrame, isPlaying, timeElapsed). The convention says "`create*` always returns Entity; descriptors, options bags, and type-only constructs are not." Timeline is mutable playback state, not a descriptor. The charter calls timelines "value descriptors" which could justify the exemption, but the mutable-state shape and `create*` convention create a tension. `TimelineSource` also lacks Entity and is more defensible as a read-only data descriptor.
+- **Timeline type header comment is vestigial.** `Timeline.ts:8-11` says "Playback state for a MovieClip's timeline" and references "MovieClips" three times. After the timeline/movieclip split (charter decision 2026-07-02), the timeline is a general-purpose playback engine with no MovieClip dependency. The header comment should reflect the post-split identity.
+- **Naming: clean.** Full unabbreviated names throughout (`addTimelineFrameScript`, `getTimelineCurrentLabel`, `gotoAndPlayTimeline`). `get*`/`find*` verbs used correctly, null sentinels on lookups.
+- **Export lanes: clean.** `index.ts` re-exports the 19 functions from `contract.ts`; `contract.ts` re-exports everything from `timeline.ts` via `export *`. Two lanes, no subpath exports. The `./contract` subpath is declared in package.json exports.
+- **Source style: clean.** Exported functions alphabetized in timeline.ts, module constants and private functions at the bottom (lines 154-258), durable semantic comments on `advanceFrame` (landing-frame-only contract) and `fireConstructFrame` (frame-skip policy). No inline TODOs. Tests alphabetized, 19 describe blocks mirroring 19 exports exactly.
+- **Readonly: adequate.** `Readonly<Timeline>` applied to all pure accessors: `findTimelineLabel`, `getTimelineCurrentLabel`, `getTimelineFrameScript`, `getTimelineFrameScriptFrames`, `getTimelineLabels`, plus private helpers `getTimelineFrameRate`, `getTimelineTotalFrames`, `resolveFrame`. Mutation functions take `Timeline` directly.
+- **Target type vocabulary.** `Timeline.target`, `TimelineSource.constructFrame`, and `FrameScript` are typed against `Node2D` -- the concrete 2D graph node type, not a graph-feature alias (`HierarchyNode`, `Transform2DNode`). Value-level purity holds (timeline imports no scene-graph packages), but the type surface couples the engine's contract to the 2D graph family. A non-2D consumer (3D timeline, standalone sequence) would need the type generalized.
+- **Orphaned `PlayMode` type.** `@flighthq/types` exports `PlayMode` (`'loop' | 'once'`, PlayMode.ts:1) alongside `TimelinePlayMode` (identical definition, TimelinePlayMode.ts:3). `PlayMode` is referenced nowhere outside the types barrel files (index.ts and contract.ts). Stale duplicate from a pre-rename pass.
+- **Charter open directions 6 and 7 are resolved** (Package Map line updated; movieclip charter exists with `lastDirection: 2026-07-10`). Candidates for pruning at the next direction session.
 
 ## Candidate open directions
 
-1. Should `Timeline.target`/`constructFrame`/`FrameScript` be typed against a graph-feature alias (or generic) instead of `DisplayObject`, so a future non-display consumer can drive the pure engine? The charter's "zero scene-graph coupling" is silent on type-level vocabulary.
-2. Goto-with-unknown-label: throw (current), silent sentinel + `enableTimelineGuards` warning, or return-boolean? North star 4 leans sentinel; decide once.
-3. The frameRate-null ordering: is "`currentFrame` may read one ahead of the realized frame between updates" the contract, or should both clock paths converge on advance-then-construct with a first-update exception?
-4. Clock integration shape now that `@flighthq/clock` exists: does `updateTimeline` take a `Clock`, or does the caller keep passing scaled `deltaTime`?
+1. **Cue dispatcher implementation.** The type header, data seam, and architecture doc are landed; the runtime is the gap. `createTimelineCueRegistry`, `registerTimelineCue`, and a dispatch path are the missing pieces. The architecture is ratified in `agents/timeline-cue-model.md`. This is the single largest step the package can take within its own boundary.
+2. **Clock integration shape.** `@flighthq/clock` exists with `createClock`/`updateClock`/clock signals. Does `updateTimeline` accept a `Clock` parameter, or does the caller keep passing scaled `deltaTime`? The latter keeps timeline simpler and more composable; the former centralizes time control. Charter North star 5 says timeline consumes clock.
+3. **Target type generalization.** Should `Timeline.target`, `TimelineSource.constructFrame`, and `FrameScript` be typed against a graph-feature alias or a generic parameter instead of the concrete `Node2D`? A non-display consumer (3D timeline, standalone sequencer) cannot drive the engine without a type workaround today.
+4. **Goto-with-unknown-label policy.** Throw (current via `resolveFrame`), silent sentinel + `enableTimelineGuards` warning, or return-boolean? The charter's North star 4 leans sentinel; decide once.
+5. **`PlayMode` removal.** Orphaned type in `@flighthq/types` -- identical to `TimelinePlayMode`, referenced nowhere outside barrel files. Cross-package cleanup.
+6. **Timeline type header comment.** The `Timeline` interface comment still describes "MovieClip's timeline" post-split. Should reflect the general-purpose engine identity.
+7. **Timeline Entity status.** Decide whether `Timeline` should extend `Entity` (it has a `create*` constructor and mutable state) or whether its "value descriptor" character exempts it. `TimelineCueRegistry` already extends Entity; the two objects in the same domain taking different paths is a tension.
+8. **Playback depth.** Reverse, speed, play ranges, ping-pong, time addressing -- all parked on open charter directions. The largest distance from a mature timeline engine.

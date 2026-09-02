@@ -1,68 +1,232 @@
 ---
 package: '@flighthq/menu'
-status: partial
-score: 62
-updated: 2026-07-13
+status: solid
+score: 70
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
   - packages/menu/src (live)
-  - '@flighthq/types Menu.ts, MenuSignals.ts, WellKnownMenuItemRole.ts'
-  - host-electron/src/electronMenu.ts
+  - packages/menu/package.json
+  - '@flighthq/types Menu.ts, MenuSignals.ts, MenuHighlight.ts, MenuSelect.ts, WellKnownMenuItemRole.ts, Host.ts'
+  - packages/host-web/src/webMenu.ts
+  - packages/host-electron/src/electronMenu.ts
+  - platform-integration.md
 ---
 
 # menu — Review
 
-Evidence: the **live worktree** `packages/menu/src/` (source + tests), `packages/types/src/Menu.ts` / `MenuSignals.ts` / `WellKnownMenuItemRole.ts`, and `packages/host-electron/src/electronMenu.ts`.
+Evidence: the **live worktree** `packages/menu/src/` (source + tests), `packages/types/src/Menu.ts` /
+`MenuSignals.ts` / `MenuHighlight.ts` / `MenuSelect.ts` / `WellKnownMenuItemRole.ts` / `Host.ts`,
+`packages/host-web/src/webMenu.ts`, and `packages/host-electron/src/electronMenu.ts`.
 
-**Provenance correction (2026-07-13 re-review):** the 2026-06-24 review scored the incoming bundle `builder-67dc46d64`, not the live tree. Part of that bundle's surface was later restored by `06a0c480 feat: recover lost source across packages` — the web context-menu renderer, `MenuSignals`, the six template builders, `WellKnownMenuItemRole`, `cloneMenuTemplate`, and `validateMenuItemTemplate` are all live — but the bundle's handle/mutator layer **never landed**: there is no `MenuHandle`/`MenuItemHandle`, no live mutators, no structural edits, no `showContextMenuAt`, no per-item `onSelect`, and `setApplicationMenu` returns `boolean`, not a handle. The prior 84 scored code that does not exist; this review re-scores the live tree.
+**Architecture note (2026-09-02):** Since the previous review (2026-07-13, score 62), the package
+completed the R18 explicit-dependency-model transition. The ambient `getMenuBackend`/`setMenuBackend`
+singleton and the merged three-method `MenuBackend` interface are gone. In their place: four typed
+backend interfaces on host capability slots (`MenuApplicationBackend`, `MenuPopupBackend`,
+`MenuSelectBackend`, `MenuHighlightBackend`), accessed through narrow `Has*` host parameters. The web
+context-menu renderer moved to `host-web/src/webMenu.ts`, where it belongs as a host backend. The
+package now contains no rendering code and no ambient module state beyond the `MenuSignals` opt-in
+group — a clean application of the explicit-dependency model.
 
 ## Verdict
 
-`partial` — 62/100 (was 84, scored against the unlanded bundle). What exists is well-made: a clean three-method `MenuBackend` seam, a plain-data descriptor with an open role contract (43 well-known roles), template construction/clone/validation, an opt-in four-signal group, six standard menu builders, and a genuine DOM context-menu renderer with keyboard nav and hover submenus. But against the AAA rubric — the full native menu vocabulary — the package is missing table-stakes capabilities: **no post-install mutation** (enable/disable, check/uncheck, relabel require a full `setApplicationMenu` rebuild, and the API returns no handle to mutate through), and the descriptor lacks `visible`, `icon`, `sublabel`, `toolTip`, and positional-insertion hints. The seam as shaped today cannot let a native host expose live menu-item state, which real menu bars require. Web fidelity is decent; native fidelity is capped by the seam. That is a partial, not a solid.
+`solid` — 70/100 (was 62 at the 2026-07-13 re-review). The architecture is now clean: four
+capability-typed host slots, origin-pinned event subscriptions with full entity lifecycle, alias-safe
+attempt-all teardown, and zero ambient backend state. What the package offers — menu install, context
+menu popup, event delivery, template construction/clone/validation, six standard templates — is
+well-implemented and well-tested. The score sits at the solid threshold rather than higher because the
+same functional gaps remain: no live mutation layer (the single biggest AAA gap), no icon support, no
+rich context-menu positioning, and accelerator strings are still inert data. The architecture upgrade
+earns the move from partial to solid; the mutation layer and descriptor vocabulary are what stand
+between 70 and 80+.
 
 ## Present capabilities (verified against live source)
 
-- **Backend seam.** `MenuBackend` (types/`Menu.ts`) with exactly three methods: `setApplicationMenu(items): boolean`, `popupContextMenu(items, x, y): Promise<string | null>`, `subscribeSelect(listener): () => void`. `getMenuBackend` lazily installs `createWebMenuBackend()`; `setMenuBackend(backend | null)` swaps or reverts. Matches the platform-suite command shape.
-- **Descriptor model.** `MenuItemTemplate` carries `id`, `label`, `type`, `role`, `accelerator`, `enabled`, `checked`, recursive `submenu` — eight fields, no more. `MenuItemType` is the closed five-kind union; `MenuItemRole` is the open `WellKnownMenuItemRoleValue | (string & {})` contract with 43 documented roles in `WellKnownMenuItemRole` (Electron-parity set including whole-submenu roles).
-- **Construction/clone/validate.** `createMenuItemTemplate` (default-fills `type: 'normal'`, `enabled: true`, recurses into submenus), `cloneMenuTemplate` (deep clone), `validateMenuItemTemplate` (`string | null` sentinel; throws only on a cyclic submenu reference — the programmer-error carve-out).
-- **Context menus.** `showContextMenu(items, x, y)` resolves the clicked id or `null`; emits `onContextMenuOpen`/`onContextMenuClose` when signals are enabled.
-- **Signals.** `enableMenuSignals()`/`getMenuSignals()` (lazy, shared): `onContextMenuOpen`, `onContextMenuClose`, `onMenuItemHighlight`, `onMenuItemSelect`. `onMenuSelect(listener)` subscribes via the backend and fans out to `onMenuItemSelect`.
-- **Web context-menu renderer** (`showWebContextMenu`/`buildWebMenuElement`, ~180 lines): viewport clamping, separators, checkmark/radio-dot, accelerator column, submenu `▶` + hover expansion, keyboard nav (ArrowUp/Down, Enter/Space, Escape), `onMenuItemHighlight` on hover and keyboard focus, overlay outside-click dismiss. `setApplicationMenu` on web returns `false` (no native menu bar) and `subscribeSelect` is a no-op — correct sentinels.
-- **Standard builders** (`menu-templates.ts`): App/Edit/File/Help/View/Window templates with roles and accelerators.
-- **Electron backend** (`electronMenu.ts`): implements the three-method seam — builds `electron.Menu` from templates, wires a single select listener, pops context menus. It does *not* implement structural edits or mutators, because the seam has none.
-- **Tests.** 33 (`menu.test.ts` 15, `menu-templates.test.ts` 18); `describe` blocks alphabetized and mirroring the 11 + 6 exports. Coverage is per-export but shallow on the DOM renderer (jsdom exercises little of the build/keyboard path).
+### Core API (22 public exports)
+
+Source is in two files: `menu.ts` (238 lines, 16 exports) and `menu-templates.ts` (300 lines, 6
+exports), with colocated tests in `menu.test.ts` (470 lines, 38 tests) and `menu-templates.test.ts`
+(163 lines, 18 tests). Exports are alphabetized within each source file; `describe` blocks mirror
+export names alphabetically.
+
+**Template construction and validation (3 functions):**
+- `createMenuItemTemplate(template?)` — default-fills `type: 'normal'`, `enabled: true`; recursively
+  normalizes submenu children.
+- `cloneMenuTemplate(template)` — deep clone of a `MenuItemTemplate` tree.
+- `validateMenuItemTemplate(template)` — returns `string | null` sentinel; validates separator
+  constraints, checked-on-non-toggle rejection (catches `checked` on `normal`/`submenu` items),
+  radio-group sibling exclusivity via `_validateRadioGroups`, and cyclic submenu detection (throws —
+  programmer error). 10 test cases cover the validation matrix.
+
+**Application menu (2 functions):**
+- `setApplicationMenu(host, items)` — delegates to `host.menu.application.setApplicationMenu()`;
+  returns `boolean`.
+- `destroyMenuApplication(...hosts)` — alias-safe, attempt-all teardown. Deduplicates providers via a
+  `WeakSet`, tries every pending destroy even after one throws, rethrows the first error after
+  siblings complete, and retains failed providers so a subsequent call retries only the failures. 5
+  test cases cover alias safety, idempotency, attempt-all, retry-only-failures, and no-destroy
+  tolerance.
+
+**Context menus (1 function):**
+- `showContextMenu(host, items, x, y)` — delegates to `host.menu.popup.popup()`; emits
+  `onContextMenuOpen`/`onContextMenuClose` signals when enabled. Tests verify two independent hosts
+  route to their own popup and that signals fire in open/close order.
+
+**Event entities (8 functions, two entity types):**
+- `createMenuHighlight()` / `attachMenuHighlight(host, highlight)` / `detachMenuHighlight(highlight)`
+  / `disposeMenuHighlight(highlight)` — `MenuHighlight` entity with `onMenuItemHighlight` signal.
+  Subscription is origin-pinned via `WeakMap<MenuHighlight, () => void>`: detaching one entity never
+  ends another's subscription on the same host.
+- `createMenuSelect()` / `attachMenuSelect(host, select)` / `detachMenuSelect(select)` /
+  `disposeMenuSelect(select)` — `MenuSelect` entity with `onMenuItemSelect` signal. Same
+  origin-pinned contract. Re-attaching replaces rather than stacks subscriptions (tested). Dispose
+  detaches and clears listeners (tested independently for both subscription and signal paths).
+
+**Signals (2 functions):**
+- `enableMenuSignals()` / `getMenuSignals()` — lazy-allocated `MenuSignals` group with
+  `onContextMenuOpen` and `onContextMenuClose`. Package-level opt-in, not a host capability —
+  the core dispatcher emits these around the popup call.
+
+**Standard templates (6 functions):**
+- `createDefaultAppMenuTemplate(appName)` / `createDefaultEditMenuTemplate()` /
+  `createDefaultFileMenuTemplate()` / `createDefaultHelpMenuTemplate()` /
+  `createDefaultViewMenuTemplate()` / `createDefaultWindowMenuTemplate()` — each returns a
+  `MenuItemTemplate` with well-known roles from `WellKnownMenuItemRole`, standard accelerators, and
+  whole-submenu roles (`appMenu`, `editMenu`, etc.) for native host substitution. 18 tests verify
+  structure, ids, roles, accelerators, and `enabled` defaults.
+
+### Type surface (`@flighthq/types`)
+
+- `MenuItemTemplate` — 11 fields: `id`, `label`, `type`, `role`, `accelerator`, `enabled`, `checked`,
+  `visible`, `sublabel`, `toolTip`, `submenu`. `visible` (defaults to shown; `false` omits entirely),
+  `sublabel`, and `toolTip` were added in the 2026-07-30 sweep.
+- `MenuItemType` — closed five-kind union: `'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio'`.
+- `MenuItemRole` — open contract: `WellKnownMenuItemRoleValue | (string & {})`.
+- `WellKnownMenuItemRole` — const object with 43 documented roles (7 whole-submenu roles, platform
+  support matrix in comments).
+- Four backend interfaces: `MenuApplicationBackend` (with optional `destroy()`),
+  `MenuHighlightBackend`, `MenuPopupBackend`, `MenuSelectBackend` — each with its own shape
+  (command/subscription/request-response). Deliberately not merged.
+- Four `Has*` capability interfaces in `Host.ts`: `HasMenuApplication`, `HasMenuHighlight`,
+  `HasMenuPopup`, `HasMenuSelect` — narrow typed host requirements per function.
+- `MenuSignals` — `onContextMenuOpen` + `onContextMenuClose` signals.
+- `MenuHighlight` — entity with `onMenuItemHighlight: Signal<(id: string) => void>`.
+- `MenuSelect` — entity with `onMenuItemSelect: Signal<(id: string) => void>`.
+
+### Host backends (outside this package, verified for integration)
+
+- **host-web** (`webMenu.ts`, 225 lines): exposes `webMenuPopupBackend` and
+  `webMenuHighlightBackend`. DOM context-menu renderer with viewport clamping, separators,
+  checkmark/radio-dot glyphs, accelerator column, submenu hover expansion, keyboard nav
+  (ArrowUp/Down/Enter/Space/Escape), `sublabel` and `toolTip` rendering, `visible: false` omission.
+  Does NOT expose `application` or `select` slots — correctly omitted (browser has no native menu
+  bar), not stubbed. 154 lines of test coverage.
+- **host-electron** (`electronMenu.ts`, 69 lines): `createElectronMenuBackends` returns
+  `application`, `popup`, and `select` slots. `application` has `destroy()` that calls
+  `Menu.setApplicationMenu(null)`. `select` wires the shared closure listener. Idempotent destroy.
+
+### Package manifest
+
+- Dependencies: `@flighthq/entity`, `@flighthq/signals`, `@flighthq/types` — all `*`.
+- Two export lanes: `.` (index.ts) and `./contract` (contract.ts). `index.ts` curates from
+  `contract.ts`; `contract.ts` re-exports both source files.
+- `"sideEffects": false` — no top-level registration or mutation. Module state is the `_menuSignals`
+  lazy slot and two `WeakMap`/`WeakSet` instances, all inert until called.
+- Type imports use `import type` on separate lines.
 
 ## Gaps
 
-- **No live mutation layer — the biggest AAA gap.** No `MenuHandle`/`MenuItemHandle`, no `setMenuItemEnabled`/`Checked`/`Label`/`Visible`/`Accelerator`, no `getMenuItemById`, no `appendMenuItem`/`insertMenuItemBefore`/`removeMenuItemById`, no `destroyMenuHandle`. `setApplicationMenu` returns `boolean`, so there is nothing to mutate through; every state change is a full rebuild. Real applications toggle enabled/checked constantly (undo/redo availability, view toggles). This layer existed in the lost bundle and its design notes survive in status.md.
-- **Descriptor vocabulary incomplete.** No `visible`, `icon`, `sublabel`, `toolTip`, `before`/`after` positional hints, `registerAccelerator`, or per-item `onSelect`. Native menus (macOS/Windows/Electron) all support hide-without-remove and icons; the seam cannot express them.
-- **No `showContextMenuAt`/`MenuContextMenuOptions`.** No positioning-item, anchor-element, or `onClose` options; only bare `(x, y)`.
-- **No `MenuItemSelectEvent` payload.** Selection delivers a bare `id: string`; checked-state and item-type context are unavailable to listeners (matters for checkbox/radio items).
-- **Accelerator semantics inert and undesigned.** Stored strings; no parse/normalize/platform-display transform. The `menu`↔`shortcut` dispatch boundary is undecided (charter Open direction 1) and correctly blocks the `menu-formats` neighbor.
-- **Radio-group semantics thin.** `checked` per item; no group id or sibling exclusivity — and the web renderer will happily show two checked radios.
-- **No functional/visual test** for the web renderer, and the jsdom unit tests barely reach the DOM build/keyboard-nav code.
-- **Rust crate divergence.** `crates/flighthq-menu` remains a thin stub behind even the live TS surface; with the mutation layer unlanded, the seam disagreement (`bool` return) currently *matches* the TS `boolean` — the divergence would reopen if the handle layer lands.
+- **No live mutation layer — the core AAA gap.** No `MenuHandle`/`MenuItemHandle`, no
+  `setMenuItemEnabled`/`Checked`/`Label`/`Visible`/`Accelerator`, no `getMenuItemById`, no
+  `appendMenuItem`/`insertMenuItemBefore`/`removeMenuItemById`. `setApplicationMenu` returns
+  `boolean`; every state change requires a full rebuild. Real menu bars toggle undo/redo enabled
+  state, view checkboxes, and dynamic recent-files lists constantly. The seam cannot express these
+  operations, so even a native host that supports them cannot expose them through the current API.
+- **No `icon` field on `MenuItemTemplate`.** The descriptor has no way to express an icon; the web
+  renderer draws only checkmark/radio glyphs. Native menu bars (macOS, Windows) support icons on
+  every item.
+- **No `showContextMenuAt` with options.** Only bare `(x, y)` positioning; no `positioningItemId`,
+  `anchorElementId`, or `onClose` callback. Native APIs support richer positioning.
+- **Selection payload is bare `id: string`.** `MenuSelectBackend.subscribe` and
+  `MenuHighlightBackend.subscribe` both deliver a string id; there is no `MenuItemSelectEvent` with
+  `checked`, `type`, or `role` context. Checkbox/radio consumers must maintain their own mapping.
+- **Accelerator strings are inert data.** `MenuItemTemplate.accelerator` is a bare `string` that
+  nothing parses, normalizes, or displays in a platform-correct way. The `menu` <-> `shortcut`
+  dispatch boundary is undecided (charter Open direction 1). The web renderer in `host-web` renders
+  the raw string (`accel.textContent = item.accelerator`), so macOS users see `CmdOrCtrl+Z` instead
+  of `⌘Z`.
+- **`role` is unresolved on web.** `item.role` is never read by the web renderer in `host-web`; only
+  `host-electron` resolves it. A role-only item (no `label`) renders blank on web. (This is now
+  host-web's concern, not the menu package's, but it affects the overall menu story.)
+- **No guard layer.** No `enableMenuGuards`; `validateMenuItemTemplate` is a manual call. Silent
+  sentinels (the `false` return from `setApplicationMenu`) have no shakeable `explain*` query. The
+  diagnostics convention calls for guard-layer warnings for common misuse.
+- **Radio-group semantics are thin.** No group id or sibling exclusivity enforcement at runtime —
+  validation catches two checked radios, but nothing prevents runtime `checked` assignment that
+  violates the rule. The web renderer draws whatever `checked` says.
+- **No functional/visual test for the web context-menu renderer.** The web renderer in `host-web` has
+  jsdom unit tests but no baseline in `tests/functional/`. This is the most visual output in the menu
+  subsystem.
 
 ## Charter contradictions
 
-One, introduced by the provenance issue: the charter's "What it is" says "mutate live menu items via opaque handles" and "The highest-scoring package in the UI/shell group (84/100)" — **neither is true of the live tree** (no handles, no mutators; score now 62). The charter's Decision [2026-07-02] "No sweep-safe work remaining" was reasoned from the bundle state; the live tree does have sweep-safe work (see assessment). Charter is not touched by this pass; flagging for the next direction session.
+The charter's "What it is" section contains three claims that do not match the live tree:
+1. "mutate live menu items via opaque handles" — no handles, no mutators exist.
+2. "The highest-scoring package in the UI/shell group (84/100)" — score is now 70, based on the live
+   tree. (The 84 was scored against the unlanded builder bundle.)
+3. "The web backend renders a ~200-line DOM context-menu renderer" — the renderer is now in
+   `host-web/src/webMenu.ts` (225 lines), not in the menu package itself. The menu package contains
+   no rendering code.
+
+The charter's Decision [2026-07-02] "No sweep-safe work remaining" was reasoned from the prior
+ambient-backend architecture; the R18 transition has since completed cleanly.
 
 ## Contract & docs fit
 
-What exists fits the contract well: types in `@flighthq/types` (`import type` only), sentinels-not-throws with the single cyclic-reference programmer-error throw, `sideEffects: false` with null-initialized module state, alphabetized exports, single root entry, deps limited to `signals` + `types`.
+**Explicit-dependency model:** textbook implementation. Every capability function takes its host slot
+as a typed parameter (`host: HasMenuApplication`, `host: HasMenuPopup`, etc.); no ambient
+`get*Backend`/`set*Backend`. A host that lacks a slot omits it at the type level rather than stubbing
+it. The four backend interfaces have intentionally incompatible shapes (command/subscription/
+request-response), preventing the "one backend claims four operations while implementing one" problem
+the old `MenuBackend` had.
 
-**Doc drift:** `types/Menu.ts`'s header comment still says "a real web context-menu renderer is out of scope for the MVP" — false; the renderer exists in `menu.ts`. A source-comment fix for whoever next touches the package (not this review's file scope).
+**Entity lifecycle:** `MenuHighlight` and `MenuSelect` implement the standard create/attach/detach/
+dispose pattern with origin-pinned subscriptions. `destroyMenuApplication` implements alias-safe,
+attempt-all teardown with retry semantics. Both align with the tray package's corresponding patterns.
 
-## Structural-fork fit
+**Type home rule:** all types in `@flighthq/types`; the menu package exports functions only with
+`import type` for all type references. No inline type definitions.
 
-- **Fork D (runtime backend seam):** textbook — `MenuBackend` + `get*/set*Backend` + lazy web default.
-- **Fork B:** `MenuItemRole` open contract with documented well-known set is exactly right; `MenuItemType` closed five-member union is the acceptable fixed-taxonomy case.
-- **Subject triad:** `menu-formats` (accelerator chords) correctly withheld pending the shortcut-boundary decision.
+**sideEffects: false:** honored. Module-level state (`_menuSignals`, two `WeakMap`s, one `WeakSet`)
+is inert until called — no registration, no listeners, no timers at import time.
+
+**Source style:** exports alphabetized within files; describe blocks alphabetized and mirroring export
+names; constructors used for entity types; `Readonly<T>` on template parameters; sentinels for
+expected failures (validate returns `string | null`); throws only for cyclic-reference programmer
+error.
+
+**Missing:** no `explain*` query for `setApplicationMenu` returning `false`; no guard layer. The
+`assertSyncVoid` type-level guard at the bottom of `menu.ts` (lines 234-237) is a compile-time
+constraint that prevents `destroy()` from returning a Promise — a sound safeguard, but not a
+user-facing diagnostic.
 
 ## Candidate open directions
 
-1. **Re-land the mutation layer deliberately.** The lost bundle's `MenuHandle` + mutators + structural edits design (recorded in status.md) is the main path from partial to solid — but `setApplicationMenu(): boolean → MenuHandle | null` is a seam-breaking decision that must be blessed, not swept in.
-2. **The `menu`↔`shortcut` accelerator-dispatch boundary** (already a charter Open direction).
-3. **Web-backend fidelity scope** — production-grade (icons, RTL, theming, platform accelerator glyphs) vs reference fallback (already a charter Open direction).
-4. **Radio-group model** — explicit group id with sibling exclusivity vs per-item `checked`.
-5. **Selection payload** — bare `id` vs a `MenuItemSelectEvent { id, checked, type }` for checkbox/radio consumers.
+1. **Re-land the mutation layer deliberately.** `MenuHandle` + mutators + structural edits. This is
+   the main path from 70 to 80+, but `setApplicationMenu(): boolean -> MenuHandle | null` changes
+   the `MenuApplicationBackend` seam shape and must be decided.
+2. **The `menu` <-> `shortcut` accelerator-dispatch boundary** (charter Open direction 1). Whether
+   a declared accelerator auto-registers through `@flighthq/shortcut`, and what prevents
+   double-binding. Blocks `menu-formats` and platform-correct accelerator display.
+3. **Web-backend fidelity scope** (charter Open direction 2). Production-grade (icons, RTL, theming,
+   platform accelerator glyphs) vs reference fallback. Now scoped to `host-web`, not the menu
+   package itself.
+4. **Guard layer.** `enableMenuGuards` covering: separator with submenu, checked on non-toggle,
+   role-only item without label, duplicate ids. `explainSetApplicationMenuResult` for the `false`
+   sentinel.
+5. **Selection payload.** `MenuItemSelectEvent { id, checked, type, role }` instead of bare
+   `id: string`. Changes `MenuSelectBackend.subscribe` and `MenuHighlightBackend.subscribe`.
+6. **Radio-group model.** Explicit group id with sibling exclusivity at runtime, not just validation.
+7. **`icon` field and rendering.** Needs image-pipeline integration and the web-fidelity-scope
+   decision.

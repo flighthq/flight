@@ -1,72 +1,122 @@
 ---
 package: '@flighthq/textshaper'
 status: partial
-score: 66
-updated: 2026-06-25
+score: 62
+updated: 2026-09-02
 ingested:
-  - status.md
-  - source
-  - changes.patch
   - charter.md
-  - 'base=origin/main(eb73c3d74)'
-  - 'evidence=integration-b2824e3d8 delta'
+  - status.md
+  - assessment.md
+  - source
+  - types
 ---
 
-# textshaper — Review (merge gate: integration-b2824e3d8 → origin/main eb73c3d74)
-
-This is a **merge review of the delta only**. Baseline is the approved `origin/main` (`eb73c3d74`), checked out under `incoming/integration-b2824e3d8/base/packages/textshaper/` — the advances-only seam (`index.ts`, `textShaper.ts` + test). The candidate is `incoming/integration-b2824e3d8/head/`. Findings reference `b2824e3d8:<path>`. The charter is an empty stub, so the bar is the codebase-map AAA standard plus the text-stack design (itemize/bidi → **shape** → layout → rasterize; textshaper owns the shape seam).
-
-**Scope note.** The prior `review.md` in the tree (score 62, `base=builder-67dc46d64`) surveyed a _much larger_ head — 16 files with itemize/cluster/cache/pool/signals. This integration branch carries a **trimmed** subset of that work: it adds only `_textShaperHooks.ts` and `textShaperRun.ts` (plus the `@flighthq/types` extensions). No `textShaperItemize`/`Cluster`/`Cache`/`Pool`/`Signals` modules are present in this head. That earlier review is **not** the rubric for this gate — only the eb73c3d74→b2824e3d8 delta is judged here.
+# textshaper — Review
 
 ## Verdict
 
-`partial — 66/100`. **Mergeable after two small grounded fixes.** The delta is a clean, contract-respecting extension of the seam: it adds the full-glyph **shape** path (`shapeTextRun`/`shapeTextRunInto`), the font path (`getFontMetrics`/`getFontMetricsInto`/`getFontUnitScale`), glyph extents (`getGlyphExtents`/`getGlyphExtentsInto`/`getGlyphExtentsBatch`), glyph introspection (`getGlyphIndexForCodePoint`/`getCodePointForGlyph`/`getGlyphName`), the run-shell helpers (`createShapedRun`/`clearShapedRun`), and an internal hook slot (`_textShaperHooks.ts`) that lets `setTextShaperBackend` notify observers through the single setter — the clean version of the seam the older status flagged. Naming, tree-shaking, types-first, sentinels, and alias-safety all pass. The score is held below the seam's structural completeness because, exactly as on the approved base, **every glyph-producing function is an inert null/-1/'' delegate** — no full-glyph backend exists in this delta to exercise it. Two delta-local defects keep it out of "clean": a gratuitous cast in `getFontUnitScale`, and a real signature asymmetry where `shapeTextRunInto` silently drops the `options` (direction/script) hints that `shapeTextRun` forwards.
+`partial — 62/100`. The seam architecture is sound: a single nullable backend slot, two shaping tiers (advances-only `measureText` and full-glyph `shapeTextRun`), opt-in signals, guards, pool, cache, cluster navigation, and script/bidi itemization. Naming is honest and unabbreviated; sentinel returns, `Readonly<>` parameters, out-parameter conventions, and tree-shaking discipline are upheld throughout. The score sits at 62 because the full-glyph tier — 80% of the exported surface by function count — is structurally complete but operationally inert: no backend in the repo implements `shapeRun`, so every glyph-producing function returns its sentinel. The public lane omits backend registration entirely, and several documented behaviors diverge from the code. These are recorded below with file and line references verified against the live tree.
 
-## What the delta adds (verified against `b2824e3d8:head` source)
+11 source files (9 implementation + `contract.ts` + `index.ts`), 9 test files, 115 `it()` cases. 34 public exported functions (contract lane); 31 of those re-exported through the `.` lane.
 
-- **`b2824e3d8:packages/textshaper/src/_textShaperHooks.ts`** — `_textShaperBackendHook` slot + `_setTextShaperBackendHook`. Underscore-prefixed (internal-by-convention) and **not** re-exported from the barrel (`index.ts` re-exports only `textShaper` + `textShaperRun`), so it adds no public surface. `textShaper.ts` now fires `_textShaperBackendHook?.(backend)` from inside `setTextShaperBackend`, so a future signal group observes backend swaps through one setter rather than a `setTextShaperBackendWithSignals` fork. Colocated `_textShaperHooks.test.ts` exercises install/clear/replace/last-write-wins.
-- **`b2824e3d8:packages/textshaper/src/textShaperRun.ts`** (13 exports, alphabetized): `clearShapedRun`, `createShapedRun`, `getCodePointForGlyph`, `getFontMetrics`, `getFontMetricsInto`, `getFontUnitScale`, `getGlyphExtents`, `getGlyphExtentsBatch`, `getGlyphExtentsInto`, `getGlyphIndexForCodePoint`, `getGlyphName`, `shapeTextRun`, `shapeTextRunInto`. All glyph/metrics functions are thin null-guarded delegates to optional `TextShaperBackend` methods, returning documented sentinels (`null`/`-1`/`''`/`false`/`0`).
-- **`@flighthq/types`** (`b2824e3d8:packages/types/src/TextShaper.ts`): adds `ShapeRunOptions` (`direction?`/`script?`) and five optional methods to `TextShaperBackend` (`getCodePointForGlyph`, `getFontMetrics`, `getGlyphExtents`, `getGlyphIndexForCodePoint`, `getGlyphName`, `shapeRun`). New one-concept files `FontMetrics.ts`, `GlyphExtents.ts`, `ShapedRun.ts` (+`ShapedGlyph`), all barrel-exported. `measureText` stays required, so measure-only backends remain valid — correct.
+## Present capabilities
 
-## The seven standards, against the delta
+**Measure tier (live).** `measureText` delegates to `TextShaperBackend.measureText`, returns `-1` when no backend is installed. `textlayout` imports `measureText` and `getTextShaperBackend` from `@flighthq/textshaper/contract` and treats the shaper as its measure provider. The canvas backend (`@flighthq/textshaper-canvas`) implements `measureText` and `getFontMetrics`, making these two the only backend methods exercised in production.
 
-1. **Composition / bedrock — PASS.** No feature-as-config-branch, no fused subjects. The hook slot is the correct decomposition of "notify-on-backend-change" out of the setter (avoids the `textShaper.ts` ↔ signals circular dep without a `*WithSignals` fork). `shapeTextRunInto` is the out-param sibling of `shapeTextRun`, not a duplicate. No over-split.
+**Backend registration.** `getTextShaperBackend`/`setTextShaperBackend` with last-write-wins semantics, no throw on re-registration. `_textShaperBackendHook.ts` provides an internal callback slot so `textShaperSignals.ts` observes backend changes through one setter rather than a forked `WithSignals` variant. The hook module is not re-exported from either lane.
 
-2. **Naming clarity — PASS.** Full unabbreviated type words throughout (`getCodePointForGlyph`, `getFontUnitScale`, `getGlyphExtentsBatch`, `shapeTextRunInto`); `get*`/`create*`/`clear*`/`shape*` verbs used correctly; every name is globally self-identifying. No abbreviations.
+**Operation introspection.** `explainTextShaperOperation` and `hasTextShaperOperation` query whether the installed backend provides a given method, derived structurally from `keyof TextShaperBackend` (no hand-maintained roster). Returns `layer: 'none'` when nothing is installed, `layer: 'custom'` when a backend provides it.
 
-3. **Tree-shaking / bundle invariant — PASS.** `package.json` keeps the single `.` export and `sideEffects: false`. `_textShaperHooks` is _not_ in the barrel, so the hook costs nothing to importers of `shapeText`. No eager registration, no new hot-loop branch taxing a primitive, no new dependency (`@flighthq/types` only).
+**Full-glyph tier (inert).** `shapeTextRun` / `shapeTextRunInto` delegate to `TextShaperBackend.shapeRun?`. Font metrics: `getFontMetrics` / `getFontMetricsInto` / `getFontUnitScale`. Glyph introspection: `getGlyphExtents` / `getGlyphExtentsInto` / `getGlyphExtentsBatch` / `getGlyphIndexForCodePoint` / `getCodePointForGlyph` / `getGlyphName`. Run helpers: `createShapedRun` / `clearShapedRun`. All null-guarded, all return documented sentinels (`null`, `-1`, `''`, `false`, `0`). Well-tested against mock backends but no real backend supplies `shapeRun`.
 
-4. **Registry vs closed union (fork B) — N/A / PASS.** No `switch(kind)` introduced; the seam remains a single swappable backend with last-write-wins, which is the package's established model.
+**Itemization.** `itemizeText` splits a string into contiguous runs by Unicode script and bidi direction. Carries its own simplified bidi-class and script tables (`textShaperItemize.ts` lines 103-152) rather than depending on `@flighthq/textbidi`. `shapeTextRuns` composes `itemizeText` with `shapeTextRun` for multi-script strings.
 
-5. **Subject triad + plurality guard — PASS.** The delta does not mis-home any format/backend code. Backends (`textshaper-canvas`, future `textshaper-harfbuzz`) correctly live in `<subject>-<backend>` neighbors, not here. No premature split.
+**Cluster navigation.** `getCaretPositionsForRun`, `getClusterForIndex`, `getIndexRangeForCluster` operate on `ShapedRun` glyph data for caret positioning and hit-testing.
 
-6. **Contract hygiene — mostly PASS, two defects.** Types-first honored; `Readonly<>` on every format/input; `out`-params alias-safe (the `*Into` functions read the backend's freshly-returned object before writing `out`, and `out` is never aliased to an input); sentinels not throws; no `dispose*`/`destroy*` misuse; `crate: flighthq-textshaper` consistent. **Defects below.**
+**Pool.** `acquireShapedRun` / `releaseShapedRun` with a bounded pool (64 entries), `WeakSet` membership mirror for O(1) double-release detection, and a guard seam (`setShapedRunReleaseGuard`) that the guard module installs.
 
-7. **Tests & honesty — PASS, one stale claim.** Colocated `textShaperRun.test.ts` and `_textShaperHooks.test.ts`, alphabetized `describe` blocks mirroring exports, covering no-backend, advances-only, and full-backend paths plus the alias/zero-fill cases. No dead or unexported-but-implemented surface in the delta. One **claim/code mismatch** (status doc) noted below.
+**Cache.** `createTextShaperCache` / `clearTextShaperCache` / `disposeTextShaperCache` / `shapeTextRunCached` with stable string-key derivation from text + format + options.
 
-## Delta defects (each grounded, each sweep-safe within the package)
+**Signals.** `enableTextShaperSignals` / `disposeTextShaperSignals` / `getTextShaperSignals`. `onBackendChanged` signal built with `createSignal` from `@flighthq/signals`. Opt-in, costs nothing when not enabled.
 
-- **Gratuitous cast in `getFontUnitScale` (`b2824e3d8:packages/textshaper/src/textShaperRun.ts:55`).** `const size = (format as { size?: number }).size ?? 12;` — but `TextFormat.size?: number` is a declared field (`b2824e3d8:packages/types/src/TextFormat.ts:17`), so `format.size ?? 12` reads it directly. The cast invents a structural type that already exists on `TextFormat`, defeating the type system for no reason. Fix: drop the cast, read `format.size`.
+**Guards.** `enableTextShaperGuards` / `disableTextShaperGuards`. Warns via `logOnce` on double-release. Separately importable; `@flighthq/log` dependency stays in this module only.
 
-- **`shapeTextRunInto` silently drops `options` (`b2824e3d8:packages/textshaper/src/textShaperRun.ts:113-116`).** `shapeTextRun(text, format, options?)` forwards its `options` to `backend.shapeRun(text, format, options)` (line 110), but the out-param sibling `shapeTextRunInto(text, format, out)` takes **no** `options` parameter and calls `backend.shapeRun(text, format)` (line 116) — so the alias-safe/pooled path cannot pass `direction`/`script` hints. For RTL/script-tagged runs (the whole reason `ShapeRunOptions` exists) the two entry points are not interchangeable, and a caller migrating from `shapeTextRun` to the allocation-free `shapeTextRunInto` silently loses shaping hints. Fix: add `options?: Readonly<ShapeRunOptions>` to `shapeTextRunInto` and forward it.
+## Gaps
 
-- **Unused-but-advertised `format` parameter on the glyph-introspection wrappers (`b2824e3d8:packages/textshaper/src/textShaperRun.ts:59,65-67,85,95,101`).** The backend's glyph methods are glyphId-only by the delta's own type (`getGlyphExtents?: (glyphId: number) => …`, `getGlyphName?: (glyphId: number) => …`, etc.), so the wrappers' `format` argument is never consumed. The single-glyph wrappers honestly name it `_format` (intentionally unused), but `getGlyphExtentsBatch` (line 67) and `getGlyphExtentsInto` (line 85) name it `format` while never using it — an in-file naming inconsistency, and all of them advertise a `format` parameter the seam cannot honor. This is sweep-safe to normalize (underscore the unused ones for consistency); whether the glyph methods _should_ be format-aware is a seam-shape design question routed to Open directions.
+Every item is verified against the live tree on 2026-09-02. File and line references name this tree's source.
 
-- **Status doc claims an option param that does not exist (honesty, admin-doc).** `status.md` lists `shapeTextRunInto(text, format, out, options?) => boolean` (and `getGlyphExtents?(glyphId, format)` on the backend), neither of which matches the shipped code (`shapeTextRunInto` has no `options`; backend `getGlyphExtents` is glyphId-only). The status was distributed as-claimed from a worker report describing the larger `builder-67dc46d64` head and is now stale against this trimmed integration head. Not a code defect — a status-verification item.
+1. **The full-glyph tier has zero real-world callers.** No backend in the repo implements `shapeRun` (`@flighthq/textshaper-canvas` provides `measureText` and `getFontMetrics` only). `shapeTextRun` therefore always returns `null`; `shapeTextRuns`, `shapeTextRunCached`, the cluster helpers, and the pool have no call sites outside their own tests.
 
-## Not a defect (adversarially re-checked, dropped)
+2. **Public lane omits backend registration.** `getTextShaperBackend`, `setTextShaperBackend`, `explainTextShaperOperation`, and `hasTextShaperOperation` are exported from `contract.ts` (via `export * from './textShaper'`) but absent from `index.ts`. The SDK barrel (`packages/sdk/src/index.ts`) re-exports the `.` lane, so `@flighthq/sdk` users cannot install or query a backend. Only `measureText` reaches the app boundary. This was a deliberate choice (intra-SDK consumers use the `/contract` lane), but it means an end-user application importing from `@flighthq/sdk` cannot set up text shaping without importing directly from `@flighthq/textshaper/contract` or `@flighthq/textshaper-canvas`.
 
-- _"`shapeTextRunInto` dereferences `result` without a null check" (line 116-118)_ — **dropped.** `TextShaperBackend.shapeRun` is typed `=> ShapedRun` (non-null); the `| null` on `shapeTextRun`'s return comes only from the no-backend guard. The deref is type-safe.
-- _"unused `format` fails typecheck"_ — **dropped.** `tsconfig.base.json` sets `strict: true` but not `noUnusedParameters`, so the non-underscore unused params do not break `tsc -b`. Style only.
-- _Critiques of `shapeText`-returning-`number`, the absent harfbuzz backend, no UBA/itemization, no font fallback_ — **dropped as out-of-delta.** `shapeText` is unchanged from the approved base; the missing backend/itemizer are not regressions this delta introduces. They are real package gaps but belong to the charter's Open directions, not this merge gate.
+3. **`getCaretPositionsForRun` comment contradicts its code.** The comment (`textShaperCluster.ts` lines 7-9) states "this respects per-glyph xOffset (mark attachment, kerning corrections)"; the loop (lines 17-20) sums only `xAdvance` and never reads `xOffset`. Mark attachment positioning and kerning corrections recorded in `xOffset` are silently dropped.
+
+4. **`index.ts` alphabetical ordering is broken.** `disposeTextShaperSignals` (line 8) precedes `disableTextShaperGuards` (line 9); alphabetically `disable*` < `dispose*`.
+
+5. **`TextShaperCache._entries` is a public field named as internal.** `TextShaperCache` (`packages/types/src/TextShaperCache.ts`) declares `readonly _entries: Map<string, ShapedRun>`. The underscore prefix signals internal, but the field is `readonly` (not private), and `textShaperCache.ts` calls `cache._entries.clear()` / `.get()` / `.set()` directly. Consumers of the type see `_entries` on the type surface.
+
+6. **`disposeTextShaperCache` and `clearTextShaperCache` are identical.** Both call `cache._entries.clear()` with no additional teardown. The dispose comment says "the cache must not be used after this call" but nothing enforces it (no null-out, no flag). A caller that disposes then reuses sees no error.
+
+7. **`itemizeText` carries its own simplified bidi-class table** (`textShaperItemize.ts` lines 103-132) while `@flighthq/textbidi` has the real Unicode bidi implementation; `package.json` does not depend on `textbidi`. Whether itemization should consume that package or keep a self-contained fallback is undecided (charter is silent).
+
+8. **Font introspection wrappers absent.** No `getFontFeatures` / `getFontScripts` / `getFontLanguages` / `getFontVariationAxes` wrapper, and `TextShaperBackend` declares no matching method. The `FontVariationAxis` type in `@flighthq/types` has no producer on either side of the seam. `TextShaperOptions.features`, `.variations`, and `.language` exist on the options type but no wrapper or backend method consumes them.
+
+9. **No incremental reshape.** No `reshapeTextRun` or equivalent for typing-into-a-paragraph -- every edit reshapes from scratch.
+
+10. **No font-fallback seam.** No `FontFallbackBackend` for resolving `.notdef` against a system font chain; ownership between textshaper and font is undecided.
+
+## Charter contradictions
+
+1. **Charter says `shapeTextRunInto` was missing `options` (decision item 2).** This has been fixed: `shapeTextRunInto` now accepts `options?: ShapeRunOptions` as its fourth parameter and forwards it to the backend (`textShaperRun.ts` line 117). The fix landed; this is no longer a contradiction.
+
+2. **Charter says drop gratuitous cast in `getFontUnitScale` (decision item 3).** Fixed: the function reads `format.size ?? 12` directly (`textShaperRun.ts` line 55) with no cast. Landed.
+
+3. **Charter says fix signal type mismatch (decision item 4).** Fixed: `onBackendChanged` is built with `createSignal` (`textShaperSignals.ts` line 16). Landed.
+
+4. **Charter says `index.ts` is not alphabetized (Open item in status.md).** Still true: `disposeTextShaperSignals` precedes `disableTextShaperGuards` in `index.ts` lines 8-9.
+
+All six charter decisions are landed. The remaining charter open directions (glyph format-awareness, HarfBuzz backend, textlayout migration, font-fallback seam, package-map update) are still open.
 
 ## Contract & docs fit
 
-Strong. The delta upholds every applicable contract rule (full names, `Readonly<>`, `out`-param alias-safety, sentinels, types-first, single `.` export, `sideEffects: false`, no top-level registration, correct teardown vocabulary, string-kind model untouched). The one admin-doc drift is the stale `status.md` signatures above; the codebase-map Package Map still labels the seam `@flighthq/text-shaping (designed, not yet built)` — a Package-Map-owner revision, not a package change, and pre-existing rather than introduced by this delta.
+**Export lanes.** Two blessed lanes (`.` and `./contract`) correctly configured in `package.json`. `contract.ts` uses `export *` from all modules; `index.ts` uses a curated named re-export list from `./contract`. The internal `_textShaperHooks.ts` is excluded from both.
 
-## Candidate open directions (charter is an empty stub)
+**sideEffects.** `"sideEffects": false` in `package.json`. Verified: no top-level registration, no global mutation, no listeners at import time. Module-scoped `let _backend` and `let _signals` are private nullable slots, not side effects.
 
-1. **North star.** Bless textshaper as the canonical home of the **shape** layer; heavy full-glyph backends stay opt-in `<subject>-<backend>` neighbors per the bundle rule.
-2. **Should glyph-introspection methods carry `format`?** Today `getGlyphExtents`/`getGlyphName`/`getCodePointForGlyph`/`getGlyphIndexForCodePoint` are glyphId-only on the backend, so the wrappers' `format` is dead. Decide: format-aware glyph methods (a real font needs the face the format selects) or format-free (drop the wrapper param). A seam-shape ruling.
-3. **harfbuzz backend timing + wasm asset strategy** — the gate that turns this inert seam into a real pipeline.
-4. **textlayout measure-provider → ShapedRun migration (cross-package)** — do not perform autonomously.
+**Dependencies.** `@flighthq/types`, `@flighthq/signals`, `@flighthq/log`. All three are appropriate: types is universal, signals is used by `textShaperSignals.ts`, log is used by `enableTextShaperGuards.ts`. No circular dependencies. No dependency on `@flighthq/sdk`.
+
+**Types-first.** All exported types (`TextShaperBackend`, `TextShaperOperation`, `ShapeRunOptions`, `ShapedRun`, `ShapedGlyph`, `FontMetrics`, `GlyphExtents`, `TextItem`, `TextShaperCache`, `TextShaperSignals`, `TextShaperOptions`, `FontVariationAxis`, `BackendOperationExplanation`) live in `@flighthq/types`. The implementation package exports functions only. Correct.
+
+**Naming.** Full, unabbreviated type names throughout: `getGlyphExtentsBatch`, `getCodePointForGlyph`, `shapeTextRunInto`, `enableTextShaperGuards`. `get*` / `create*` / `clear*` / `shape*` / `acquire*` / `release*` / `enable*` / `disable*` / `dispose*` / `has*` / `explain*` verbs used correctly. No abbreviations.
+
+**Readonly.** All format/input parameters use `Readonly<TextFormat>`, `Readonly<ShapeRunOptions>`, `Readonly<ShapedRun>` where appropriate. Out-parameters are mutable.
+
+**Sentinels.** No throws for expected failures. `measureText` returns `-1`; `getFontMetrics`/`getGlyphExtents` return `null`; `shapeTextRun` returns `null`; `getGlyphName` returns `''`; `getFontUnitScale` returns `-1`; `getGlyphIndexForCodePoint`/`getCodePointForGlyph` return `-1`; `shapeTextRunInto`/`getFontMetricsInto`/`getGlyphExtentsInto` return `false`.
+
+**Teardown vocabulary.** `dispose*` for GC-eligible teardown (cache, signals); `release*` for pool bracket return; `clear*` for content-only reset. No `destroy*` (no GPU resources). Consistent with the codebase contract except the `dispose`/`clear` identity issue noted in gap 6.
+
+**Tests.** One test file per source file, colocated, `*.test.ts`. `describe` blocks mirror exported function names. The tests verify no-backend, advances-only, and full-backend paths, alias safety for `*Into` functions, pool invariants, cache hit/miss, signal lifecycle, and guard warnings. 115 test cases for 34 exports is solid coverage by count, though all glyph-tier tests run against synthetic mock backends.
+
+**Source style.** Exported functions are alphabetized within each file. Module-scoped variables are at the bottom. No structural divider comments. No inline TODOs. Comments are durable-semantic (coordinate-space, allocation, ownership rules). No `Co-Authored-By` trailers in commit convention.
+
+## Candidate open directions
+
+1. **Decide on public-lane backend access.** The `.` lane exposes `measureText` but not `setTextShaperBackend`. An SDK user cannot set up shaping without reaching for `/contract`. Either promote the backend registration pair to the public lane or document that backend setup is a contract-lane operation.
+
+2. **Fix `getCaretPositionsForRun` xOffset omission.** The comment promises mark-attachment and kerning-correction awareness; the code does not deliver it. Either incorporate `xOffset` into the position accumulation or correct the comment to match the code.
+
+3. **HarfBuzz backend (charter open direction 2).** The gate that turns the inert glyph tier into a live pipeline. Separate package, wasm strategy needed.
+
+4. **Glyph introspection format-awareness (charter open direction 1).** The `_format` parameter on glyph-introspection wrappers is unused because `TextShaperBackend` glyph methods are glyphId-only. A full shaper needs the format to select the correct font face. Decide before building the HarfBuzz backend.
+
+5. **textlayout measure-provider to `ShapedRun` migration (charter open direction 3).** Cross-package coordination. `textlayout` currently consumes only the scalar `measureText` path.
+
+6. **`FontFallbackBackend` seam ownership (charter open direction 4).** Font fallback for `.notdef` resolution. Ownership between textshaper and font packages is undecided.
+
+7. **`itemizeText` bidi-table consolidation.** Decide whether to depend on `@flighthq/textbidi` for accurate bidi classification or keep the self-contained fallback.
+
+8. **Font-introspection surface.** `getFontFeatures`, `getFontScripts`, `getFontLanguages`, `getFontVariationAxes` -- the backend methods and wrapper functions are both absent. `FontVariationAxis` and `TextShaperOptions.variations`/`.features`/`.language` types exist with no code to drive them.
+
+9. **Fix `index.ts` alphabetical ordering.** Move `disableTextShaperGuards` before `disposeTextShaperCache`.
+
+10. **Enforce `disposeTextShaperCache` finality.** Either differentiate the implementation from `clearTextShaperCache` (null-out `_entries`, flag-check on reuse) or merge them into a single function.

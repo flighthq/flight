@@ -1,55 +1,115 @@
 ---
 package: '@flighthq/geolocation'
 status: solid
-score: 82
-updated: 2026-07-13
+score: 80
+updated: 2026-09-02
 ingested:
   - status.md
   - charter.md
   - source (packages/geolocation/src)
   - packages/types/src/Geolocation.ts
+  - packages/host-web/src/webGeolocation.ts
+  - packages/host-capacitor/src/capacitorGeolocation.ts
 ---
 
 # geolocation — Review
 
-> Depth review of the live tree (2026-07-13). Supersedes the 2026-06-25 merge-gate review of `integration-b2824e3d8`, whose REJECT verdict (35) scored a snapshot missing the `@flighthq/types` half of the change. **That blocker is resolved**: `packages/types/src/Geolocation.ts` now defines `GeolocationErrorReason`, `GeolocationPermissionState`, `GeoPositionResult`, the `floorLevel` field, and the full 7-member `GeolocationBackend` (`getCurrentPositionResult`, `getPermission`, `subscribePermission`, `watchPosition` with `onError`). The June review's estimate — "would score ~80 reviewed in isolation" — now applies to the tree as it stands, and both 2026-07-02 charter Decisions are verified implemented.
+> Re-survey of the live tree (2026-09-02). Supersedes the 2026-07-13 review (solid, 82). The package has undergone a significant structural change since then: the permission lifecycle was removed and replaced by a single capability-native prompt mechanism. The score moves from 82 to 80 — the permission split is an architectural improvement, but the resulting dependency-model asymmetry between position functions and the prompt function is new and unchartered, and the diagnostics layer remains absent.
 
 ## Verdict
 
-`solid — 82/100`. A small domain covered completely for its rubric: one-shot position (both the `null`-sentinel form and the reason-carrying `GeoPositionResult` companion), position watch with an ongoing `onError` channel, accuracy/timeout/max-age options, heading/speed/altitude/floor-level fields, the full permission lifecycle (query without prompting, request, live change subscription), a synchronous availability probe, and a zeroed-scratch constructor. The web default guards every `navigator.geolocation` / `navigator.permissions` touch and degrades to sentinels; the seam gives native hosts everything they need for full fidelity except watch-throttling options. 25 colocated tests mirror all 12 exports. Held below 85 by the chartered open items (throttle options, the `subscribePermission` attach race) and the absent diagnostics layer — not by any missing rubric row.
+`solid — 80/100`. A small, well-bounded domain covered cleanly: one-shot position (both `null`-sentinel and reason-carrying `GeoPositionResult`), position watch with ongoing error channel, accuracy/timeout/max-age options, heading/speed/altitude/floor-level fields, a synchronous availability probe, a zeroed-scratch constructor, and a capability-native prompt mechanism that returns a seven-arm `GeolocationAccessOutcome` without leaking permission vocabulary. The three-tier backend resolution (custom > host > sentinel) is a clear upgrade over the old single-slot model, and `explainGeolocationBackend()` provides the explain diagnostic the previous review noted absent. 33 colocated tests across 2 test files pass. Held below 85 by the missing guard layer, the open watch-throttling decision, and the dual dependency model (module state for position reads, `Host` parameter for prompt).
 
 ## Present capabilities
 
-Verified against `packages/geolocation/src/geolocation.ts` (250 lines) and `geolocation.test.ts` (25 tests, describes mirror all 12 exports in order):
+### Position acquisition (`geolocation.ts`, 264 lines)
 
-- **Acquisition**: `getCurrentGeoPosition(options?) → GeoPosition | null`; `getCurrentGeoPositionResult(options?) → { position, reason }` distinguishing `'denied' | 'timeout' | 'unavailable'`; `createGeoPosition()` zeroed scratch value.
-- **Watching**: `watchGeolocationPosition(handler, options?, onError?) → id` (`-1` sentinel), `clearGeolocationWatch(id)`. The 2026-07-02 `Geo*` → `Geolocation*` rename Decision is **implemented** — no `watchGeoPosition` / `clearGeoWatch` remains anywhere in `packages/`.
-- **Permissions**: `getGeolocationPermission()` (Permissions API, `'prompt'` fallback), `requestGeolocationPermission()` (query, falling back to a position probe), `onGeolocationPermissionChange(listener) → unsubscribe` (no-op subscription without the Permissions API).
-- **Probes/seam**: `isGeolocationAvailable()` synchronous (checks `navigator`, secure context, `navigator.geolocation`); `getGeolocationBackend` lazy web default / `setGeolocationBackend(null)` restore; `createWebGeolocationBackend` implements all 7 seam members with try/catch around every host call.
-- **`floorLevel` fix implemented** (2026-07-02 Decision): `mapWebPosition` reads `(coords as { floorLevel?: number }).floorLevel ?? 0` with a durable comment on the non-standard field — no longer hardcoded to 0.
-- **Options mapping**: `GeolocationRequestOptions` (`enableHighAccuracy`, `timeoutMs`, `maximumAgeMs`) maps to `PositionOptions` at the web seam; unit-suffixed names per convention.
-- Hygiene: `sideEffects: false`, single `.` export, no dependencies beyond `@flighthq/types`; module state (`_backend`, `_emptyOptions`, `_noopUnsubscribe`) below exports; lib.dom name collision handled via a local `GlobalGeolocationPosition` alias.
+- **One-shot**: `getCurrentGeoPosition(options?) -> GeoPosition | null` — null sentinel on failure. `getCurrentGeoPositionResult(options?) -> GeoPositionResult` — reason-carrying companion distinguishing `'denied' | 'timeout' | 'unavailable'`.
+- **Watch**: `watchGeolocationPosition(handler, options?, onError?) -> number` — returns `-1` sentinel when unavailable. `clearGeolocationWatch(id)` — forwards to backend.
+- **Scratch constructor**: `createGeoPosition()` — zeroed `GeoPosition` with all nine fields.
+- **Options**: `GeolocationRequestOptions` with `enableHighAccuracy`, `timeoutMs`, `maximumAgeMs` — unit-suffixed names. Mapped to `PositionOptions` at the web seam via `toPositionOptions`.
+
+### Backend resolution (`geolocation.ts`)
+
+Three-tier module state: `_custom` (via `setGeolocationBackend`) > `_host` (via `installGeolocationHostBackend`) > `_sentinel`.
+
+- `getGeolocationBackend()` — returns the winning backend.
+- `setGeolocationBackend(backend | null)` — custom override, `null` clears.
+- `installGeolocationHostBackend(backend)` — first-host-wins; a second different backend sets `_hostConflict = true` but does not replace.
+- `resetGeolocationBackendForTest()` — clears all slots.
+
+### Explain diagnostics (`geolocation.ts`)
+
+- `explainGeolocationBackend() -> BackendExplanation` — reports `layer` (`'custom' | 'host' | 'host-not-enabled'`), `conflict` (boolean), `operation` (string or null), and `viability` (`'unobserved' | 'available' | 'runtime-api-unavailable'`).
+- `observeGeolocationHostResult(operation, succeeded)` — records a viability observation; called by host backends (host-web wraps every operation with it).
+
+### Prompt mechanism (`geolocationAccess.ts`, 25 lines)
+
+- `promptForGeolocationAccess(host: Host) -> GeolocationAccessOutcome` — takes a `Host` explicitly, reads `host.system?.geolocation.promptForAccess()`. Returns `{ reason: 'runtime-unavailable' }` when no provider is installed; catches and maps throws to `{ reason: 'operation-failed' }`.
+- `GeolocationAccessOutcome` (in `types/src/Geolocation.ts`) carries seven arms: `'granted' | 'denied' | 'dismissed' | 'timeout' | 'cleanup-failed' | 'runtime-unavailable' | 'operation-failed'`. Deliberately not a `PermissionState` — no `state` field, no permission vocabulary.
+
+### Web backend (`geolocation.ts::createWebGeolocationBackend`)
+
+Implements all six `GeolocationBackend` members with try/catch around every `navigator.geolocation` call. Degrades to sentinels when the API is absent (jsdom, insecure context). `isAvailable()` checks both `navigator.geolocation` existence and `window.isSecureContext`. `promptForAccess()` performs a position probe (the web has no dedicated permission-request API) and maps error codes: code 1 to `'denied'`, code 3 to `'timeout'`, others to `'operation-failed'`. `mapWebPosition` reads `floorLevel` via `(coords as { floorLevel?: number }).floorLevel ?? 0` — the 2026-07-02 charter Decision is still implemented.
+
+### Host backends (outside this package)
+
+- **Web** (`host-web/src/webGeolocation.ts`): `enableHostWebGeolocation()` wraps `createWebGeolocationBackend` with `observeGeolocationHostResult` calls on every operation, then calls `installGeolocationHostBackend`. First-call-wins guard via `_enabled`.
+- **Capacitor** (`host-capacitor/src/capacitorGeolocation.ts`): `createCapacitorGeolocationBackend(capacitor)` adapts the async Capacitor watch-id model (string) to the synchronous numeric-id contract via a `Map<number, string | null>`. `promptForAccess` uses the real Capacitor `requestPermissions()` API. Maps `'prompt'` back from the plugin to `'dismissed'`. Note: `floorLevel` is hardcoded to `0` (Capacitor's position type does not carry it), and `getCurrentPositionResult` collapses every failure to `reason: 'unavailable'` (the denied/timeout distinction the type exists for is unavailable).
+
+### Probes
+
+- `isGeolocationAvailable()` — delegates to `getGeolocationBackend().isAvailable()`.
+
+### Tests
+
+- `geolocation.test.ts`: 28 tests across 12 `describe` blocks — `clearGeolocationWatch`, `createGeoPosition`, `createWebGeolocationBackend` (4 tests including `floorLevel` read-through and secure-context check), `explainGeolocationBackend` (4 tests), `getCurrentGeoPosition`, `getCurrentGeoPositionResult` (2 tests), `getGeolocationBackend` (2 tests), `installGeolocationHostBackend` (2 tests), `isGeolocationAvailable` (3 tests), `observeGeolocationHostResult` (2 tests), `resetGeolocationBackendForTest`, `setGeolocationBackend`, `watchGeolocationPosition` (3 tests).
+- `geolocationAccess.test.ts`: 5 tests — granted, three-way denied/dismissed/timeout distinction, runtime-unavailable when no provider, operation-failed on throw, and a structural assertion that no `state` field appears on any arm.
+
+### Hygiene
+
+- `sideEffects: false`, two blessed export lanes (`.` and `./contract`), no dependencies beyond `@flighthq/types`.
+- Public lane (`index.ts`) exports 8 functions: `clearGeolocationWatch`, `createGeoPosition`, `explainGeolocationBackend`, `getCurrentGeoPosition`, `getCurrentGeoPositionResult`, `isGeolocationAvailable`, `promptForGeolocationAccess`, `watchGeolocationPosition`.
+- Contract lane (`contract.ts`) adds 6 more: `createWebGeolocationBackend`, `getGeolocationBackend`, `installGeolocationHostBackend`, `observeGeolocationHostResult`, `resetGeolocationBackendForTest`, `setGeolocationBackend`.
+- Module state at file bottom. Lib.dom name collision handled via `GlobalGeolocationPosition` alias.
 
 ## Gaps
 
-1. **Native watch-throttling options absent** (charter Open direction #2): `minimumUpdateDistanceMeters` / `minimumUpdateIntervalMs` on `GeolocationRequestOptions` — the one seam field native hosts (Core Location / FusedLocationProvider) expect that web cannot honor. Additive type + docs; needs the chartered decision on how the web backend documents ignoring them.
-2. **`subscribePermission` attach race** (charter Open direction #3): the `change` listener is wired only after `permissions.query()` resolves, so a state change inside that window is missed; the unsubscribe returned before resolution also cannot cancel a pending attach.
-3. **`requestGeolocationPermission` web fallback is a position probe** — when the Permissions API is absent it acquires an actual fix to trigger the prompt, a heavier side effect than "request permission" implies. Inherent to the web platform; worth a seam-doc note so native backends implement a true request.
-4. **No diagnostics layer** — silent sentinels (`null`, `-1`, `'prompt'`, no-op unsubscribe) with no `explain*` / `enable*Guards`; suite-wide condition.
-5. **Rust mirror `flighthq-geolocation` unstarted.**
+1. **Native watch-throttling options absent** (charter Open direction #2): `minimumUpdateDistanceMeters` / `minimumUpdateIntervalMs` on `GeolocationRequestOptions` — the fields native hosts (Core Location `distanceFilter`, Android `LocationRequest` distance/interval floor) expect. Additive type change; requires the chartered decision on how the web backend documents ignoring them.
+2. **No guard layer**: silent sentinels (`null`, `-1`, `{ reason: 'unavailable' }`) with no `enableGeolocationGuards` / shakeable guard module. `explainGeolocationBackend()` is the explain half; the guard half (runtime warnings on misuse) does not exist. Suite-wide condition.
+3. **Capacitor backend loses error-reason fidelity**: `getCurrentPositionResult` collapses every error to `reason: 'unavailable'` — the `'denied' | 'timeout'` distinction that `GeoPositionResult.reason` exists for is unavailable on the one shipping native host. `promptForAccess` is the strong half (maps Capacitor's `'granted' | 'denied' | 'prompt'`).
+4. **Capacitor backend hardcodes `floorLevel: 0`**: the web backend reads the non-standard field; the Capacitor adapter does not, because Capacitor's position type lacks it. Minor — the field will stay zero unless the Capacitor plugin surfaces it.
+5. **Rust mirror `flighthq-geolocation` unstarted.** Per suite-wide posture, TS is the spec.
 
 ## Charter contradictions
 
-None. Both 2026-07-02 Decisions (full `Geolocation*` prefix; `floorLevel` read-through) are verified landed in source and tests. The domain boundary holds — acquisition only, no geospatial math (distance/bearing/geofencing) has crept in.
+None found. Both 2026-07-02 Decisions are still implemented:
+
+- **Full `Geolocation*` prefix**: verified — all exports use `Geolocation*` or `GeoPosition*` (the `Geo` in `GeoPosition` / `GeoPositionResult` is a collision-avoidance abbreviation for the type name, not a function-name abbreviation; the charter Decision targets function names). No `clearGeoWatch` or `watchGeoPosition` survives anywhere in `packages/`.
+- **`floorLevel` reads actual value**: `mapWebPosition` reads `(coords as { floorLevel?: number }).floorLevel ?? 0` at line 223.
+
+The domain boundary holds: acquisition only, no geospatial math has crept in.
 
 ## Contract & docs fit
 
-- Types-first satisfied: the complete seam and all result/permission types live in `packages/types/src/Geolocation.ts` with doc comments on sentinel semantics. The June "status claims types that are absent" honesty finding is resolved — `status.md`'s as-claimed block now matches the tree.
-- Sentinels never throws; `Readonly<>` on options/position params; `GeoPositionResult` is geolocation-local pending the chartered suite-wide question (Open direction #1).
-- Package Map line ("current position and position watches") still undersells the permission lifecycle + availability probe — the doc widen the June review flagged remains outstanding, behind the user's gate.
+**Package against contract:**
+
+- **Types-first satisfied**: `GeoPosition`, `GeoPositionResult`, `GeolocationErrorReason`, `GeolocationRequestOptions`, `GeolocationAccessOutcome`, and `GeolocationBackend` all live in `packages/types/src/Geolocation.ts`. The old `GeolocationPermissionState` type has been correctly removed alongside its three consuming functions.
+- **Sentinels, never throws**: the sentinel backend returns `null`, `-1`, and `{ reason: 'unavailable' }` / `{ reason: 'runtime-unavailable' }` consistently. `promptForGeolocationAccess` catches backend throws and returns `{ reason: 'operation-failed' }`.
+- **`Readonly<>` on parameters**: `options` takes `Readonly<GeolocationRequestOptions>`, `handler` receives `Readonly<GeoPosition>`, `Host` parameter is `Readonly<Host>`.
+- **`sideEffects: false`**: declared and honored — no registration at import.
+- **Two blessed export lanes**: `.` (8 public functions) and `./contract` (14 total). No other subpaths.
+- **Full unabbreviated function names**: `clearGeolocationWatch`, `watchGeolocationPosition`, `getCurrentGeoPosition`, `promptForGeolocationAccess` — all carry the full `Geolocation` stem in the verb portion.
+
+**Dependency model tension**: the position-reading functions (`getCurrentGeoPosition`, `watchGeolocationPosition`, `clearGeolocationWatch`, `isGeolocationAvailable`) use module-scoped mutable state (`_custom`, `_host`, `_sentinel`) via `getGeolocationBackend()` — the platform-suite pattern sanctioned by both the charter and `platform-integration.md`. The prompt function (`promptForGeolocationAccess`) takes a `Host` parameter explicitly — the explicit dependency model the codebase map prefers. Both patterns exist in the same package, serving different operations, without a chartered decision on which is canonical or whether the asymmetry is intentional. The `Host.system.geolocation` field carries the same `GeolocationBackend` interface, but the prompt function reads it from `Host` rather than from `getGeolocationBackend()`, so a `setGeolocationBackend` override does not affect prompting. This is architecturally reasonable (the prompt is a one-shot capability action, not a hot-path position read), but the divergence is unchartered.
+
+**Contract/admin doc candidate revisions:**
+
+- The Package Map line in `AGENTS.md` lists geolocation under "Platform" with no description. The June/July reviews noted the line undersells the package; the permission lifecycle removal and prompt-mechanism addition change the description further. The Package Map is a one-word list, not a description surface — no revision needed.
+- The platform-integration shared principles (`platform-integration.md`) describe the `get*Backend / set*Backend` command-capability pattern. The geolocation package now uses a three-tier model (`_custom / _host / _sentinel`) with separate install verbs, which is a refinement of the pattern the suite doc describes but is not reflected there. This is a minor drift — the suite doc could acknowledge the install/set split.
 
 ## Candidate open directions
 
-1. Watch-throttling seam fields (charter Open direction #2) — decide and land the type before a native host commits to the narrower contract.
-2. Whether `GeoPositionResult` (sentinel + reason companion) becomes a suite-wide pattern (charter Open direction #1) — `storage`/`net`/`webcam` share the same "why did it fail" need.
-3. Fix the `subscribePermission` attach race (charter Open direction #3) — re-read `status.state` after attach and cancel pending attaches on unsubscribe; small, but chartered as open rather than swept.
+1. **Dependency-model asymmetry**: the position functions use module state (`getGeolocationBackend()`), while `promptForGeolocationAccess` takes `Host`. Is this the intended long-term shape — module state for frequent calls, `Host` for capability actions — or a transitional state toward fully explicit Host-based access? A ruling would settle whether other platform packages should follow the same split.
+2. **Watch-throttling seam fields** (charter Open direction #2): `minimumUpdateDistanceMeters` / `minimumUpdateIntervalMs` on `GeolocationRequestOptions` — decide and land the type before a second native host commits to the narrower contract.
+3. **`GeoPositionResult` as a suite-wide pattern** (charter Open direction #1): `storage`, `net`, and `webcam` share the "why did it fail" need. Still open.

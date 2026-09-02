@@ -1,71 +1,156 @@
 ---
 package: '@flighthq/sdk'
 status: solid
-score: 90
-updated: 2026-06-25
+score: 82
+updated: 2026-09-02
 ingested:
-  - status.md
-  - source
-  - changes.patch
   - charter.md
-base: origin/main (eb73c3d74)
-evidence: integration-b2824e3d8 delta
+  - status.md
+  - assessment.md
+  - source
 ---
 
-# sdk — Review (merge gate: integration-b2824e3d8 vs approved origin/main eb73c3d74)
+# sdk -- Review
 
-> Harsh merge-review of the **delta only**. Baseline (approved, not critiqued) is `incoming/integration-b2824e3d8/base/packages/sdk/` = `origin/main` (eb73c3d74). Candidate is `incoming/integration-b2824e3d8/head/packages/sdk/`. Findings are grounded in `b2824e3d8:<path>` hunks and the `packages/sdk/` slice of `changes.patch`. This supersedes the prior survey, which reviewed a different bundle (`builder-67dc46d64`); where that survey's findings reappear in this delta they are re-cited against this candidate.
-
-## What the delta is
-
-The base `@flighthq/sdk` was a thin barrel (`index.ts`, 84 lines, alphabetized) plus a one-line smoke test. The integration delta does four things, all within the barrel's scope:
-
-1. **Closes real barrel drift** — adds `device-formats`, `platform-formats`, `resource-formats` to `index.ts`, `package.json` deps, and `tsconfig.json` references. The base barrel was missing these three app-facing packages; the candidate is complete.
-2. **Expands the reachability test** — `index.test.ts` goes from a single `expect(engine).toBeDefined()` to 22 `it`s across 11 domain `describe` blocks, asserting representative `create*` exports are functions and canonical `*Kind` strings carry expected values.
-3. **Adds a collision gate** — new `src/collision.test.ts` (126 lines): a namespace-size lower bound (`>= 4000` keys) plus 46 unique sentinel-name presence checks.
-4. Backs the completeness enforcement with a repo-level gate (`checkSdkBarrelSync` in `scripts/packages.ts`) over a centralized predicate (`scripts/sdk-policy.ts`).
-
-Net: the candidate is a **strict correctness improvement** over the approved base — the barrel is now complete and faithful where the base silently omitted three packages.
+> Full-tree survey of `packages/sdk/` and its supporting scripts (`scripts/sdk-policy.ts`,
+> `scripts/packages.ts:checkSdkBarrelSync`). All claims verified against files on disk.
 
 ## Verdict
 
-**solid — 90/100.** The functional change is sound and is the right shape for a convenience barrel: new entries are correctly alphabetized in `index.ts`, the deps/tsconfig mirror them, and every sentinel resolves to a real non-test export (spot-verified: `setTextShaperBackend`, `createCamera`, `createParticleEmitter`, `createSceneNode`, `drawGlScene`, `drawWgpuScene`, `createMesh`, `createColorTransform` all exist in source). The barrel stays `"sideEffects": false`, single `.` export, no subpaths. The one real blemish is an **honesty gap**: the package's own status/review and a source comment in the new `scripts/sdk-policy.ts` claim a `packages/sdk/src/completeness.test.ts` guard that **does not exist** in this head tree. Score sits below the prior survey's 96 specifically for that dead reference / over-claim, not for any regression in the barrel itself.
+**Solid -- 82/100.** The barrel does its core job: 154 `export *` lines in `index.ts` re-export
+every eligible `@flighthq/*` package, matched 1:1 by `package.json` dependencies (154 entries) and
+`tsconfig.json` references (154 paths). Mechanical enforcement through `checkSdkBarrelSync` in
+`packages:check` prevents drift. The package owns no code, types, or runtime, matching the charter's
+"pure barrel, zero own code" north star. `"sideEffects": false` is declared.
 
-## Standards scorecard (delta only)
+Score is below the prior review's 90 for three structural issues that have widened since that
+assessment: (1) the `.`/`./contract` lane gap now spans ten packages, not six; (2) the barrel sync
+check still does not cover `contract.ts`, so the gap passes CI silently; and (3) both `index.ts` and
+`contract.ts` remain unsorted with a UTF-8 BOM, and six of thirteen group files are also unsorted.
 
-1. **Composition / bedrock — PASS.** The barrel adds no logic; it re-exports three more leaf packages. No feature is fused in, no config-gated branch is introduced. The three `-formats` packages are their own cells; the barrel is a simple composition of them.
-   - `b2824e3d8:packages/sdk/src/index.ts` lines 7, 50, 56: `export * from '@flighthq/device-formats';` … `'@flighthq/platform-formats';` … `'@flighthq/resource-formats';`
+## Present capabilities
 
-2. **Naming clarity — PASS.** No names are coined by this delta; it re-exports. The new sentinel list in `collision.test.ts` names real, fully-spelled exports (`createApplicationWindow`, `setTextShaperBackend`, `createParticleEmitterConfig`, etc.). No abbreviations introduced.
+- **154-package barrel.** `src/index.ts` re-exports 154 packages via `export *`. Every re-exported
+  package appears as a `"*"` dependency in `package.json` and as a `tsconfig.json` reference.
+- **Contract lane.** `src/contract.ts` re-exports 144 packages. Four of these use the
+  `@flighthq/<pkg>/contract` subpath (`gui`, `gizmo`, `selection`, `scene2d-resources`), exposing
+  the contract surface of packages whose `.` lane differs from their `./contract` lane.
+- **Thirteen categorized group subpaths.** `package.json` exports `./animation`, `./application`,
+  `./core`, `./formats`, `./game`, `./interaction`, `./media`, `./platform`, `./rendering`,
+  `./resources`, `./scene2d`, `./scene3d`, and `./text`. Each is backed by a source file in `src/`.
+  The union of all thirteen group files exactly covers the 154 packages in `index.ts` -- every
+  package appears in exactly one group, enforced by `checkSdkBarrelSync`.
+- **Mechanical completeness enforcement.** `checkSdkBarrelSync` in `scripts/packages.ts` (lines
+  675-797) reads every workspace `package.json`, applies `isSdkBarrelExcludedPackage` from
+  `scripts/sdk-policy.ts`, and verifies: (a) every eligible package has an `export *` line in
+  `index.ts` and a `"*"` dependency; (b) no excluded package appears in either; (c) every
+  barrel export appears in exactly one group file.
+- **Exclusion policy.** `sdk-policy.ts` excludes `@flighthq/sdk` itself, `@flighthq/host-*`,
+  `@flighthq/tool-*`, and `*-rs` packages.
+- **Spot-check test.** `src/index.test.ts` (112 lines, 21 `it` blocks across 10 inner `describe`
+  blocks) verifies representative exports: `create*` functions are functions, `*Kind` constants
+  carry expected string values. One test asserts `setCanvasRenderTransform2D`,
+  `setGlRenderTransform2D`, and `setWgpuRenderTransform2D` are reachable through both `sdk` and
+  the `./rendering` group barrel.
 
-3. **Tree-shaking / bundle invariant — PASS.** All three additions are `export *` from `"sideEffects": false` packages; no eager registration, no top-level side effect, no new hot-loop branch or shared switch. The barrel manifest envelope is unchanged (`b2824e3d8:packages/sdk/package.json` line 121 `"sideEffects": false`; lines 7-12 single `.` export). Adding members to the barrel taxes no primitive — barrel users already opt into the whole shakeable set.
+## Gaps
 
-4. **Registry vs closed union — N/A (PASS).** No `kind`/handler family is introduced or switched on here. The delta is pure re-export.
+1. **Ten packages in `.` but not `./contract`.** `abc`, `compression`, `layout`, `physics2d`,
+   `physics2d-abi`, `physics3d`, `physics3d-abi`, `skeleton2d-formats`, `swf`, and `tokens` are
+   `export *` lines in `index.ts` with no counterpart in `contract.ts` (154 vs 144 lines). This
+   inverts the lane rule everywhere else in the SDK, where `./contract` is the full surface and
+   `.` is the cultivated subset. An intra-SDK consumer importing `@flighthq/sdk/contract` cannot
+   reach ten packages the app lane exposes. The prior status recorded six; four more have
+   appeared since.
 
-5. **Subject triad + plurality guard — PASS for sdk; concern routed upward.** The barrel is correct to include `device-formats` / `platform-formats` / `resource-formats` as the `<subject>-formats` plurality pattern, since they are app-facing and exist. Whether those `-formats` packages themselves satisfy the ≥2-format plurality guard is **out of sdk's scope** — the barrel's job is to reflect the realized app-facing set, not to adjudicate splits. Surfaced to the charter's Open directions (it already carries this as #7).
+2. **Barrel sync check does not cover `contract.ts`.** `checkSdkBarrelSync` parses only
+   `src/index.ts` and `package.json` (lines 678-679, 693-702). It never opens `contract.ts`,
+   which is why the ten-package gap above passes `packages:check` silently. The thirteen group
+   files are checked against `index.ts` only.
 
-6. **Contract hygiene — PASS.** Single root `.` export, `"sideEffects": false`, workspace-wildcard deps, full unabbreviated re-exported names (inherited), correct omission of `host-*` / `*-rs` / `sdk` itself. No `out`-param / sentinel / `dispose`-vs-`destroy` surface in a barrel. `index.test.ts` and `collision.test.ts` `describe` blocks are alphabetized.
+3. **`index.ts` and `contract.ts` are unsorted.** `index.ts` has numerous alphabetical inversions:
+   `@flighthq/abc` appears at line 19 (after `clock` at 18), `@flighthq/encoding` at line 23
+   (between `compression` and `collision`), `@flighthq/scene2d*` block at lines 29-35 (between
+   `dialog` and `easing`), `@flighthq/bitmap` at line 129 (between `swf` and `text`), among
+   others. `contract.ts` has the same structural disorder. Six of the thirteen group files
+   (`core.ts`, `formats.ts`, `game.ts`, `interaction.ts`, `rendering.ts`, `scene2d.ts`) are also
+   unsorted. The dependency block in `package.json` is sorted; the barrel files it mirrors are
+   not.
 
-7. **Tests & honesty — REVISE.** One structural-honesty issue and two cosmetic:
-   - **Claimed-but-absent completeness guard.** The new file `b2824e3d8:scripts/sdk-policy.ts` comments: `//   - packages/sdk/src/completeness.test.ts (local completeness guard)`, and both `agents/packages/sdk/status.md` (its "Bronze: Local completeness guard (`src/completeness.test.ts`)" section, 9 `it`s) and the prior `review.md` describe this test in full as implemented. **No such file exists** in `head/packages/sdk/src/` (the directory holds only `collision.test.ts`, `index.test.ts`, `index.ts`), and `changes.patch` contains no `diff --git ... packages/sdk/src/completeness.test.ts` creating it. The _functional_ completeness enforcement survives via `checkSdkBarrelSync` in `packages.ts` (runs in `packages:check`), so the barrel is not unguarded — but the package-local test the docs and a source comment promise is missing. This is a dead reference plus an over-claiming status doc.
-   - **Duplicate sentinels.** `b2824e3d8:packages/sdk/src/collision.test.ts` lists `DisplayObjectKind` and `BitmapKind` twice — once under `// display object` and again under the `// types (re-exported kind identifiers)` tail — registering two identical `it()`s each. Harmless but the "46/47 sentinel" intent is muddied (48 with dupes).
-   - **Stale package-count comment.** Same file: `// Baseline as of 2026-06-24: 4196 runtime keys across all 83 packages.` — the barrel has 86 `export *` lines (and the status doc says "across 86 packages"). The "83" is internally inconsistent and stale.
+4. **UTF-8 BOM on `index.ts` and `contract.ts`.** Both files begin with `0xEF 0xBB 0xBF`. No
+   other source file in `packages/sdk/src/` has a BOM. The BOM is harmless but inconsistent.
 
-## Status-doc verification (AS-CLAIMED → verified)
+5. **`tsconfig.json` references are unsorted.** The 154 reference paths in `tsconfig.json` have
+   the same sort-order issues as `index.ts` (identical insertion pattern).
 
-- **Three new packages added to fix drift** (`device-formats`, `platform-formats`, `resource-formats`) — VERIFIED present in `index.ts`, `package.json`, and `tsconfig.json`, all correctly alphabetized.
-- **`index.ts` alphabetized** — VERIFIED.
-- **Collision gate + expanded reachability test present** — VERIFIED (`collision.test.ts`, `index.test.ts`).
-- **`scripts/sdk-policy.ts` single export; `checkSdkBarrelSync` integration** — VERIFIED in head (`sdk-policy.ts` exports `isSdkBarrelExcludedPackage`; `packages.ts` references `checkSdkBarrelSync`).
-- **"Local completeness guard (`src/completeness.test.ts`), 9 `it`s"** — **FALSIFIED.** File absent from head; not created in `changes.patch`. See standard 7.
-- **"4196 keys across 86 packages"** — key count is unverifiable from static source (needs a build); the package _count_ is 86, so the in-file "83 packages" comment is stale.
+6. **No collision or namespace-size guard.** The sole test file is `index.test.ts` with 21 spot
+   checks. `completeness.test.ts` and `collision.test.ts` do not exist. Nothing guards the
+   runtime namespace against a silent `export *` shadowing -- the case `tsc` cannot catch. The
+   `checkSdkBarrelSync` covers presence of a package, not survival of its names.
 
-## Gaps (low ceiling for a barrel; all deferred Gold per status)
+7. **Stale reference in `sdk-policy.ts`.** Line 8 of `scripts/sdk-policy.ts` names
+   `packages/sdk/src/completeness.test.ts` as a consumer. That file does not exist and has never
+   existed in the current tree. The comment is a dead reference.
 
-- **No tree-shake conformance proof** — nothing asserts barrel-import bytes == direct-import bytes. Deferred; needs a `size-runner.ts` barrel-vs-direct mode.
-- **No boundary-level side-effect proof** — per-file `checkNoTopLevelSideEffects` runs, but nothing asserts importing the _whole_ barrel registers no renderers / patches no globals.
-- **No full export-surface snapshot** — the 46 sentinels are a stand-in for a committed sorted namespace snapshot.
+8. **Duplicate `it` blocks in `index.test.ts`.** `createSprite` and `SpriteKind` are each tested
+   under both "display object domain" (lines 22-25, 33-36) and "sprite domain" (lines 84-91).
+   The duplication is harmless but the "21 tests" count is inflated by two redundant assertions.
 
-## Charter fit
+9. **No tree-shake conformance proof.** Nothing asserts that `import { X } from '@flighthq/sdk'`
+   shakes to the same bytes as importing `X` from its owning package -- the central promise of
+   the barrel.
 
-No contradiction. The head charter explicitly scopes the barrel-boundary guard tests (completeness, collision/namespace-size, reachability spot-checks) as in-scope, so the new tests align with blessed direction. One tension worth the user's eye (not scored against the delta): the **codebase-map** testing section deprecates "barrel smoke tests" as "a strictly weaker version of work CI already does," yet the sdk charter blesses exactly these guards. The charter governs the package, so this is a doc-reconciliation question, not a merge defect — routed to Open directions.
+10. **`entity` public lane now contributes two functions.** The prior status claimed
+    `export * from '@flighthq/entity'` contributes nothing. As of the current tree, the entity
+    package's `.` lane exports `getEntityUid` and `setEntityUid`, so this claim is stale.
+
+## Charter contradictions
+
+None. The charter says "pure barrel, zero own code" and the package satisfies that. The charter
+blesses `packages:check` completeness enforcement, which is implemented. The charter's decision
+"[2026-07-02] No blood-from-stone tests" aligns with the current single spot-check test file.
+
+The one tension is architectural rather than a charter violation: the charter says `./contract`
+should be the full surface (it carries 144 packages vs. 154 in `.`), but the barrel inverts that
+relationship. The charter does not explicitly address `./contract` parity, so this is a gap, not
+a contradiction.
+
+## Contract & docs fit
+
+- **`"sideEffects": false`** -- declared in `package.json` (line 252). The package contains only
+  `export *` re-exports, so this is accurate.
+- **Two-lane rule.** `package.json` exports `.` and `./contract` plus thirteen categorized
+  groups. AGENTS.md says "no other subpath is allowed," aimed at file-mirroring subpaths. The SDK
+  is explicitly exempted in `packages:check` (line 565: `name === '@flighthq/sdk'`). Whether the
+  groups are a blessed exception or the rule's wording needs a carve-out is unresolved; the prior
+  status recorded this as a user question.
+- **Test file naming.** One test file `index.test.ts` colocated with `index.ts` in `src/`.
+  `describe` blocks are alphabetized. Matches the testing convention.
+- **No imports from `@flighthq/sdk`.** Verified; no circular self-import.
+- **`sdk-policy.ts` stale comment.** The comment naming `completeness.test.ts` as a consumer
+  (line 8) is a documentation defect. The file does not exist.
+
+## Candidate open directions
+
+1. **Close the contract-lane gap.** Add the ten missing packages to `contract.ts` and extend
+   `checkSdkBarrelSync` to verify `contract.ts` in parallel with `index.ts`. This is the
+   highest-value fix: it restores the lane invariant that `./contract` is a superset of `.`.
+
+2. **Sort all barrel files.** Alphabetize `index.ts`, `contract.ts`, the six unsorted group files,
+   and the `tsconfig.json` references. Strip the two BOMs. A single `npm run fix` pass may handle
+   the sort if the ordering rule covers `export *` lines; otherwise a targeted sweep.
+
+3. **Remove stale `completeness.test.ts` reference.** Delete line 8 of `scripts/sdk-policy.ts`.
+
+4. **Deduplicate test assertions.** Remove the redundant sprite-domain `describe` block whose
+   two `it` entries duplicate the display-object-domain block's `createSprite` and `SpriteKind`
+   checks.
+
+5. **Add a collision/namespace-size guard.** A test that imports `* as sdk from './index'` and
+   asserts `Object.keys(sdk).length >= N` plus a set of sentinel names would catch silent
+   `export *` shadowing. The charter's "no blood from stone" decision scopes this to a
+   proportionate spot-check, not an exhaustive snapshot.
+
+6. **Tree-shake conformance proof.** Add a `size-runner.ts` mode comparing barrel-import bytes
+   to direct-import bytes for a representative set of exports. This validates the barrel's
+   central promise.

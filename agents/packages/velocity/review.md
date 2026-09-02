@@ -1,73 +1,90 @@
 ---
 package: '@flighthq/velocity'
 status: solid
-score: 82
-updated: 2026-07-13
+score: 86
+updated: 2026-09-02
 ingested:
   - charter.md
   - status.md
-  - prior review.md
+  - prior review.md (2026-07-13)
+  - assessment.md (2026-07-13)
   - source + tests (live tree)
-  - agents/render-architecture.md + render-backend-support.md
+  - type surface (types/src/Velocity.ts)
+  - consumers (scene2d-gl/src/glVelocity.ts, scene2d-wgpu/src/wgpuVelocity.ts)
+  - functional scenes (effect-motion-blur, particle-motion-blur)
 ---
 
-# velocity — Review (live tree, 2026-07-13)
+# velocity — Review (live tree, 2026-09-02)
 
-Full re-survey of the live package. The prior review (2026-06-25) was a merge gate on the `integration-b2824e3d8` delta and predates the 2026-07-02 direction session; it is superseded here. The live tree is the **lean lineage plus the blessed cleanup**: no `affineVelocity.ts`, no angular velocity, no `dt` — 20 exports across three source files (`velocityField.ts`, `transformVelocity.ts`, `velocitySample.ts`), 48 tests in three colocated files, all describes mirroring exports.
+Full re-survey of the live package. The prior review (2026-07-13, solid 82/100) identified five in-package Recommended items in the assessment; all five have landed in source. The live tree is 21 exports across three source files (`velocityField.ts`, `transformVelocity.ts`, `velocitySample.ts`), 56 tests in three colocated files, all describes alphabetized and mirroring exports. The new `explainVelocity` diagnostic query and the expanded walker/sample tests are the material additions since the prior review.
 
 ## Verdict
 
-`solid — 82/100`. Small, focused, and architecturally clean: every 2026-07-02 charter Decision has landed in source, the field/contributor/sample split matches the charter's Boundaries exactly, and the package is genuinely consumed end-to-end (gl/wgpu velocity passes → motion-blur effect → functional scenes). What holds it below high-solid is unrealized surface — `getVelocitySampleAt` and `contributeTransformVelocity` have zero consumers outside the package — plus a stale header-layer doc comment, no `explain*` diagnostics for its silent sentinels, and a semantic seam (stored velocity vs. transform reprojection) the package neither documents by test nor rules on.
+`solid -- 86/100`. Every assessment-Recommended item has been completed, bringing in-package hygiene to a strong state. The field/contributor/sample split matches the charter Boundaries, all five 2026-07-02 Decisions are honored, diagnostics now cover the silent-sentinel query side, and the walker and reprojection-vs-override semantics are pinned by test. What keeps the score below 90 is the same structural gap as before -- `getVelocitySampleAt` and `contributeTransformVelocity` remain unconsumed outside the package -- plus the absence of guard-layer diagnostics (`enableVelocityGuards`) and the still-unconsumed `VelocityContributor` type. All of these are cross-package or design-decision items, not in-package oversights.
 
-## Prior Approved items — all landed
+## Assessment Recommended items -- all landed
 
-1. **`contributeAffineVelocity` removed.** No `affineVelocity.ts` exists; the only sample-side export is `getVelocitySampleAt`, now in its own `velocitySample.ts`, re-exported from the barrel (`src/index.ts:22`). The duplicate walker is gone. Per charter Decision 1.
-2. **`getVelocitySampleAt` matrix param tightened.** `currentWorldTransform: Readonly<Matrix>` imported from `@flighthq/types` (`src/velocitySample.ts:1,11`) — the inline structural literal is gone. Per charter Decision 3.
-3. **Package Map entry added.** `agents/index.md` Rendering section carries `@flighthq/velocity` ("per-frame per-object 2D motion tracking for velocity-buffer writers"). Per charter Decision 4.
+1. **`VelocityContributor` doc comment fixed.** `@flighthq/types/src/Velocity.ts:36` now reads `contributeVelocity / suppressVelocity`, matching the actual function names. The stale `contributeNodeVelocity / suppressNodeVelocity` text is gone.
+2. **`explainVelocity` added.** `velocityField.ts:89-106` returns a `VelocityExplanation` discriminated by `reason`: `'no-sample'`, `'stale'`, `'explicit-zero'`, `'derived-zero'`, `'ok'`. The `VelocityExplanation` type lives in `@flighthq/types/src/Velocity.ts:40-47`. Five tests in `velocityField.test.ts` cover all five reason variants. Exported through both lanes.
+3. **Subtree-walk tests added.** `transformVelocity.test.ts` grew from 4 to 6 tests. Three new cases: "walks children and derives velocity for each node in the subtree" (parent+child both gain velocity from a parent move), "honors an explicit override on a child while the parent derives from transforms" (the explicit-override fence operates per-node within a subtree), and "still updates previousWorldTransform when an explicit override is in effect" (verifies the transform commit path is unconditional even when the velocity write is fenced). The recursion and child-cast paths are now exercised.
+4. **Reprojection-vs-override semantics pinned.** `velocitySample.test.ts` added "reprojects transforms independently of contributeVelocity / suppressVelocity": after an explicit suppress, `getVelocitySampleAt` still reports the transform-derived delta. The two-truths seam is now documented by test.
+5. **Mislabeled test case resolved.** The prior review's "alias-safe" label overpromise on the `velocitySample.test.ts` case is gone; the current test set names cases by what they verify (translation delta, affine reprojection, rotating transform, etc.).
 
 ## Present capabilities
 
-**Field lifecycle** (`velocityField.ts`): `createVelocityField` (WeakMap samples + `frameId`), `beginVelocityFrame` (frame counter), `ensureVelocitySample` (get-or-create), `contributeVelocity` (explicit set, stamps `explicitFrameId` so it wins over the baseline regardless of call order), `suppressVelocity` (teleport/cut = explicit zero), `getVelocity` (stale-fenced: sentinel zero for missing or not-this-frame samples), `hasVelocity`.
+**Field lifecycle** (`velocityField.ts`, 19 exported functions): `createVelocityField` (WeakMap samples + `frameId`), `beginVelocityFrame` (frame counter increment), `ensureVelocitySample` (get-or-create, contract-lane only), `contributeVelocity` (explicit set, stamps `explicitFrameId` so it wins over the baseline regardless of call order), `suppressVelocity` (teleport/cut = explicit zero, delegates to `contributeVelocity` with `(0, 0)`), `getVelocity` (stale-fenced: sentinel zero for missing or not-this-frame samples), `hasVelocity` (current-frame + nonzero check), `explainVelocity` (diagnostic query, discriminated by five `reason` values).
 
-**Transform-delta baseline** (`transformVelocity.ts`): `contributeTransformVelocity` walks a `Transform2DNode` subtree top-down, derives each node's velocity from the world-transform `tx/ty` delta, honors the explicit-override fence, and always commits the current world matrix into `sample.previousWorldTransform` (allocating via `createMatrix` once, then `copyMatrix`) — so the per-pixel sample path stays available even under explicit overrides. First frame yields zero (tested). The known `child as unknown as Transform2DNode` cast carries a durable comment and is the charter's Open direction 3.
+**Transform-delta baseline** (`transformVelocity.ts`, 1 exported function): `contributeTransformVelocity` walks a `Transform2DNode` subtree top-down, derives each node's velocity from the world-transform `tx/ty` delta, honors the explicit-override fence, and always commits the current world matrix into `sample.previousWorldTransform` (allocating via `createMatrix` once, then `copyMatrix`). First frame yields zero. The child-walk cast (`child as unknown as Transform2DNode`) carries a durable comment and is the charter's Open direction 3 (fix lives in `@flighthq/node`).
 
-**Per-pixel affine sample** (`velocitySample.ts`): `getVelocitySampleAt(sample, currentWorldTransform, pointX, pointY, out)` computes `current·p − previous·p` — full rotation/scale reprojection at an arbitrary local point, sentinel zero when no previous transform is stored. The 90°-rotation test verifies `(-1, 1)` at `p=(1,0)`.
+**Per-pixel affine sample** (`velocitySample.ts`, 1 exported function): `getVelocitySampleAt(sample, currentWorldTransform, pointX, pointY, out)` computes `current*p - previous*p` -- full rotation/scale reprojection at an arbitrary local point, sentinel zero when no previous transform is stored. Tested with identity, translation-only, non-origin point, 90-degree rotation, and paired translated transforms. Operates purely on the stored `previousWorldTransform`, independent of explicit contributions -- this semantic is now pinned by test.
 
-**Value algebra** (`velocityField.ts`): `addVelocity`, `clampVelocity` (max-blur-length safety), `copyVelocity`, `dampVelocity` (EMA), `lerpVelocity`, `normalizeVelocity` (zero-safe), `scaleVelocity` (pixel-ratio conversion), `subtractVelocity`, `zeroVelocity`, plus predicates `isVelocityZero` (epsilon) and `lengthOfVelocity`. All out-param, locals-before-writes, alias-safe, tested with aliased cases.
+**Value algebra** (`velocityField.ts`): `addVelocity`, `clampVelocity` (max-blur-length safety), `copyVelocity`, `dampVelocity` (EMA), `lerpVelocity`, `normalizeVelocity` (zero-safe), `scaleVelocity` (pixel-ratio conversion), `subtractVelocity`, `zeroVelocity`, plus predicates `isVelocityZero` (epsilon) and `lengthOfVelocity`. All out-param, locals-before-writes, alias-safe. Every algebra function has at least one alias-safe test case.
 
-**Types-first**: `Velocity2D` / `VelocitySample` / `VelocityField` / `VelocityContributor` live in `@flighthq/types/Velocity.ts` with the per-instance-velocity ownership rule documented there (instances live on the batch, not the field).
+**Types-first**: `Velocity2D`, `VelocitySample`, `VelocityField`, `VelocityContributor`, and `VelocityExplanation` live in `@flighthq/types/src/Velocity.ts`. The per-instance-velocity ownership rule (instances live on the batch, not the field) is documented in the `VelocityField` doc comment.
 
-**Real consumption**: `scene2d-gl/src/glVelocity.ts` and `scene2d-wgpu/src/wgpuVelocity.ts` build the per-kind velocity-writer registries and rgba16f velocity passes over `VelocityField` + `getVelocity`; `effects-gl`/`effects-wgpu` motion blur reads the resulting buffer; `functional/scenes/effect-motion-blur.*` and `particle-motion-blur.*` exercise the whole path with `beginVelocityFrame`/`contributeVelocity`. (Neither render-backend doc mentions the velocity pass — see Contract & docs fit.)
+**Export lanes**: Public lane (`index.ts`) re-exports 20 names from `contract.ts`. Contract lane (`contract.ts`) exports 21 names (adds `ensureVelocitySample`). Alphabetized in both files.
+
+**Real consumption**: `scene2d-gl/src/glVelocity.ts` and `scene2d-wgpu/src/wgpuVelocity.ts` import `getVelocity` from the contract lane and build per-kind velocity-writer registries over `VelocityField`. `functional/scenes/effect-motion-blur.webgl.ts` and `particle-motion-blur.webgpu.ts` exercise the end-to-end path with `beginVelocityFrame`, `contributeVelocity`, and the velocity targets.
 
 ## Gaps
 
-Measured against a mature per-object motion-vector/velocity-tracking layer for motion blur/TAA:
+Measured against a mature per-object motion-vector/velocity-tracking layer:
 
-- **Affine sample unadopted (the headline).** No file outside `packages/velocity` calls `getVelocitySampleAt`; the gl/wgpu writers read only the coarse per-node `getVelocity`, so a rotating or scaling node gets one origin vector across its whole bounds (or zero, if its origin didn't move). The function that justifies `previousWorldTransform` retention is dead weight until the writers adopt it. Cross-package — already parked in the assessment's Backlog.
-- **Transform-delta baseline also unadopted.** `contributeTransformVelocity` has no consumer outside its own tests; the functional scenes contribute explicitly. Not wrong — the seam is there — but "any motion is velocity for free" (North star 2) has no in-tree proof.
-- **Two velocity truths can disagree, unruled and untested.** `contributeVelocity`/`suppressVelocity` set the *stored* velocity, but `getVelocitySampleAt` reprojects transforms and ignores explicit contributions entirely — an explicitly suppressed node still reports nonzero per-pixel velocity if its transform moved. Consistent with the design (the sample is a transform reprojection), but nothing documents or pins the behavior.
-- **No time normalization.** Velocity is per-frame in node units; there is no `dt`/per-second view. The removed builder lineage had one; the charter's Boundaries are silent. A fixed-timestep or variable-rate consumer must scale by hand.
-- **No angular velocity.** Removed with the builder lineage; charter silent. Per-pixel rotation is recoverable via `getVelocitySampleAt`, so this may be deliberate bedrock — but it is undecided, not decided.
-- **No diagnostics.** `getVelocity`'s silent zero has three distinct causes (no sample / stale sample / explicit zero) and no shakeable `explain*` query; no `enableVelocityGuards` for the classic misuse (contributing without `beginVelocityFrame`, so every frame is frame 0). The diagnostics convention says every silent sentinel gets an `explain*`.
-- **Test thinness at the walker.** `transformVelocity.test.ts` (4 tests) never walks a subtree — no parent+child case, so the recursion and the trait-cast path are untested. The `velocitySample.test.ts` case labeled "alias-safe" is a plain correctness check (out cannot alias a `Matrix` input); the label overpromises.
+- **Affine sample unadopted.** No file outside `packages/velocity` calls `getVelocitySampleAt`. The gl/wgpu writers read only the coarse per-node `getVelocity`, so a rotating or scaling node gets one origin vector across its whole bounds (or zero if its origin did not move). The function is correct and tested, but its value is unrealized until the writers adopt it. Cross-package.
+- **Transform-delta baseline unadopted.** `contributeTransformVelocity` has no consumer outside its own tests; the functional scenes use `contributeVelocity` directly. The "any motion is velocity for free" North star has no in-tree proof beyond the package's own tests.
+- **No guard-layer diagnostics.** `explainVelocity` covers the query side of the diagnostics convention (every silent sentinel gets an `explain*`). The guard side -- `enableVelocityGuards` emitting through `@flighthq/log` for classic misuse patterns (contributing without `beginVelocityFrame`, reading stale fields) -- does not exist. In-package scope but adds a dependency on `@flighthq/log`.
+- **`explainVelocity` test coverage is one arm short.** All five tests use either `contributeVelocity` (explicit) or manual sample manipulation. The `reason: 'ok'` test path is exercised only with `explicit: true`; there is no test that produces a derived nonzero velocity (via `contributeTransformVelocity`) and then calls `explainVelocity` to verify `explicit: false` on the `'ok'` reason. Minor, but the `explicit` flag's false branch on a nonzero result is unchecked.
+- **No time normalization.** Velocity is per-frame in node units with no `dt` / per-second view. A variable-timestep consumer must scale outside the package. Design decision, not an oversight.
+- **No angular velocity.** `VelocitySample` has no angular field. Per-pixel rotation is recoverable via `getVelocitySampleAt`, so this may be deliberate bedrock. Design decision.
+- **`VelocityContributor` type unconsumed.** Zero imports of `VelocityContributor` anywhere in `packages/`. The doc comment is now accurate, but the type itself has no consumer -- it documents an intended contributor contract that nothing uses. The remove-or-keep question is a one-line ruling.
 - **No multi-frame history.** Single previous transform; TAA-style temporal reprojection or trails need N frames. Known, deferred by design (status log), and a real allocation-model decision.
+- **Child-walk trait cast.** `child as unknown as Transform2DNode` in `transformVelocity.ts:51`. The fix lives in `@flighthq/node` (charter Open direction 3). Cross-package.
 
 ## Charter contradictions
 
-**None.** All five 2026-07-02 Decisions are honored in source (removal, WeakMap keying with no iteration surface, `Readonly<Matrix>`, Package Map entry, TS-leads posture). The Boundaries' in-scope function list matches the live 20-export surface one-for-one. This is the good-empty result.
+**None.** All five 2026-07-02 Decisions are honored in source: `contributeAffineVelocity` removed (Decision 1), WeakMap keying with no iteration surface (Decision 2), `Readonly<Matrix>` parameter on `getVelocitySampleAt` (Decision 3), Package Map entry present (Decision 4), TS-leads posture (Decision 5). The Boundaries' in-scope function list matches the live export surface. The 2026-07-15 unified 2D+3D decision is not yet exercised (no 3D velocity exists), which is consistent with the charter's framing ("when 3D motion tracking is needed").
 
 ## Contract & docs fit
 
-**Package side — clean.** Single `.` export, `sideEffects: false`, deps exactly `geometry` + `node` + `types`, full unabbreviated names (`getVelocitySampleAt`, `contributeTransformVelocity`), out-params with locals-before-writes, sentinels not throws, types-first, exports alphabetized in the barrel and mirrored by alphabetized describes. One defect: the **`VelocityContributor` doc comment in `@flighthq/types/Velocity.ts:36` is stale** — it names `contributeNodeVelocity / suppressNodeVelocity`, functions that do not exist (actual: `contributeVelocity` / `suppressVelocity`). The builder lineage claimed this fix; it never landed in the live tree. Also note `VelocityContributor` itself has zero consumers anywhere — an unconsumed seam type (fork B's "don't build the dispatcher before the consumer" applies at the type level too).
+**Package manifest** -- clean. Two export lanes (`.` and `./contract`), `"sideEffects": false`, dependencies exactly `@flighthq/geometry`, `@flighthq/node`, `@flighthq/types` (no over-reaching). `devDependencies` carries `@flighthq/scene2d` (needed for `createDisplayObject` in tests) and `typescript`. No `@flighthq/sdk` import.
 
-**Docs side — two candidate revisions** (user's gate, not acted on):
+**Naming** -- all exported function names include the full unabbreviated type name (`getVelocitySampleAt`, `contributeTransformVelocity`, `explainVelocity`, `dampVelocity`, etc.). Boolean-returning functions use `has*` / `is*`. Accessor uses `get*`. Alphabetized in barrel, source, and test describes.
 
-1. `agents/render-backend-support.md` and `agents/render-architecture.md` contain **zero** mentions of the velocity pass, despite `renderGlVelocity`/`renderWgpuVelocity` being a real, shipped, backend-divergent capability (gl+wgpu only; canvas/dom have none) with functional-scene coverage. The backend gap matrix should carry a velocity-buffer row.
-2. The Package Map entry is accurate but could name the writer seam (`registerGlVelocityWriter`/`registerWgpuVelocityWriter`) as the consumer path; minor.
+**Allocation & out-params** -- `createVelocityField` is the only allocator. `createMatrix` allocation in the walker is lazy (once per sample). All value-algebra functions write to `out` with locals-before-writes for alias safety. `ensureVelocitySample` allocates on first access per source object.
+
+**Sentinels not throws** -- `getVelocity` returns zero for missing/stale samples. `getVelocitySampleAt` returns zero when `previousWorldTransform` is null. `explainVelocity` provides the diagnostic query for the multi-cause sentinel on `getVelocity`.
+
+**Type home** -- all types (`Velocity2D`, `VelocitySample`, `VelocityField`, `VelocityContributor`, `VelocityExplanation`) live in `@flighthq/types/src/Velocity.ts`. The implementation package exports functions only.
+
+**Docs side** (unchanged from prior review, user's gate):
+1. `agents/render-backend-support.md` and `agents/render-architecture.md` carry zero mentions of the velocity pass, despite `renderGlVelocity`/`renderWgpuVelocity` being a shipped, backend-divergent capability with functional-scene coverage.
+2. The Package Map entry is accurate but does not name the velocity-writer registration seam.
 
 ## Candidate open directions
 
-- **Adoption sequencing for `getVelocitySampleAt`.** The affine sample is built and blessed but consumed nowhere. Should the gl/wgpu writers' upgrade be scheduled (cross-package session), or is coarse per-node velocity the accepted quality bar for now? Until ruled, the package carries a deliberately dormant export.
-- **Time base.** Per-frame is the blessed-by-silence status quo. Rule on whether `dt`/per-second normalization is in scope (the removed lineage's `beginVelocityFrame(field, dt?)` shape) or the consumer's job — feeds charter Open direction 1 (velocity's broader role).
-- **Explicit-override vs. reprojection semantics.** Should `getVelocitySampleAt` respect `explicitFrameId` (an explicitly suppressed node samples zero), or is the reprojection deliberately transform-only? One sentence in the charter settles it; a pinning test follows either way.
-- **Angular velocity.** In or out — the charter should say, so the next builder lineage doesn't re-add it speculatively.
+- **Guard-layer diagnostics.** `enableVelocityGuards` would emit warnings for common misuse: contributing without calling `beginVelocityFrame`, reading from a field that has never been framed. In-package scope, adds `@flighthq/log` dependency, and could be the next in-package Recommended item.
+- **Adoption sequencing for `getVelocitySampleAt`.** The affine sample is correct, tested, and semantically pinned, but consumed nowhere. Should the gl/wgpu writers upgrade to per-pixel velocity (cross-package session), or is coarse per-node velocity the accepted quality bar?
+- **Time base.** Per-frame is the status quo. Whether `dt`/per-second normalization belongs in the package or is the consumer's job remains unruled -- charter Open direction 1.
+- **Angular velocity.** In or out -- the charter should say so the decision is recorded, not inferred from absence.
+- **`VelocityContributor` type.** Remove (zero consumers, unconsumed seam) or keep (documents the intended contributor contract for future use). A one-line ruling.
+- **`explainVelocity` derived-nonzero coverage.** Add a test that produces nonzero velocity through `contributeTransformVelocity` and verifies `explainVelocity` reports `reason: 'ok'` with `explicit: false`. Minor, but closes the one unchecked branch.

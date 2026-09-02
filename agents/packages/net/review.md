@@ -1,53 +1,109 @@
 ---
 package: '@flighthq/net'
 status: solid
-score: 80
-updated: 2026-07-13
+score: 78
+updated: 2026-09-02
 ingested:
   - status.md
-  - source
+  - charter.md
+  - source (packages/net/src)
+  - packages/types/src/Net.ts
+  - packages/types/src/Host.ts (HasNetHttp witness)
+  - packages/host-web/src/webNet.ts (web backend, moved from net)
+  - packages/host-web/src/webHostNet.ts (Host factory)
+  - assessment.md (prior, 2026-07-13)
 ---
 
-# net — Review
+# net -- Review
+
+Survey of the live tree (2026-09-02). This **supersedes** the 2026-07-13 review (solid -- 80/100), which predates the explicit Host migration. That migration replaced the ambient `NetBackend` resolver (`getNetBackend`/`setNetBackend`/`createWebNetBackend`) with a single `sendNetRequest(host, request, options?)` that delegates through a `HasNetHttp` Host witness. The web backend implementation moved entirely to `@flighthq/host-web` (`webNet.ts`), and `@flighthq/signals` was dropped as a dependency. The package went from four exports to one. Three of the prior assessment's five `Recommended` items (diagnostics, multi-value header test, progress total semantics) are no longer in scope for this package -- sentinel behavior, header flattening, and progress logic now live in the host backend, not here.
 
 ## Verdict
 
-`solid` — **80/100**. The package delivers the charter's North star with unusual fidelity for a first build: a plain-data `NetRequest` → `Promise<NetResponse>` command over a lazy, swappable `NetBackend`, with sentinel-not-throw failure semantics, opt-in progress, and abort/timeout wired exactly as the 2026-07-10 Decisions specify. What keeps it from higher is the charter's own named next steps (streaming bodies, upload progress, body-encoding helpers) plus the missing diagnostics layer.
+`solid -- 78/100`. The package correctly implements the explicit-dependency model: a single exported function (`sendNetRequest`) takes a `HasNetHttp` Host witness and delegates to `host.net.http.sendNetRequest`. There is no module-scoped mutable state, no singleton, no ambient backend. The type surface in `@flighthq/types/src/Net.ts` remains complete and well-documented. Tests verify the delegation contract and explicitly assert that the old ambient API symbols (`getNetBackend`, `setNetBackend`, `createWebNetBackend`, `installNetHostBackend`, `resetNetBackendForTest`) are absent.
+
+What keeps it below the prior score is the migration's side effect: the package is now a **one-function delegate** whose entire behavior is "call the host." The charter's North star -- "the complete, Flight-idiomatic HTTP transport" -- is realized almost entirely by the host backend and the type surface, not by this package. The charter and its Decisions describe capabilities (sentinel failure model, progress, cancellation, timeout, abort wiring) that this package no longer implements; they live in `host-web/src/webNet.ts`. The package is correctly shaped but thinner than the charter envisions, and the charter has not been updated to reflect the boundary shift.
 
 ## Present capabilities
 
-All in `packages/net/src/net.ts` (four exports, alphabetized), types in `packages/types/src/Net.ts`:
+All in `packages/net/src/net.ts` (one export), types in `packages/types/src/Net.ts`:
 
-- **Seam trio** — `getNetBackend` (lazy web default, "there is always a backend"), `setNetBackend(backend | null)`, `createWebNetBackend` over `fetch` + `AbortController`. No import-time DOM binding; `sideEffects: false`; deps exactly `types` + `signals` per the charter Boundary.
-- **`sendNetRequest(request, options?)`** — the single command; dispatches through the active backend.
-- **Request vocabulary** (`Net.ts`) — `NetMethod` (open union with `(string & {})` autocomplete trick), `NetResponseType` (`text`/`json`/`arraybuffer`/`blob`), `NetCredentials`, `NetRedirect`, `NetBody` (string/ArrayBuffer/view/null), `timeoutMs` — the full descriptor the Decision names.
-- **Sentinel failure model** — transport failure → `{status: 0, ok: false}` with `statusText` distinguishing `'timeout'` vs `'aborted'` vs the error message (`_netTransportFailure`, using a sentinel abort reason `_netTimeoutReason`); non-2xx → normal response with real status, `ok: false`; malformed JSON body → `null` body, no throw (`_decodeNetBuffer`). Exactly the Decision's shape.
-- **Progress** — opt-in `Signal<NetProgress>` via `options.progress`; the download stream is drained chunk-by-chunk with `loaded`/`total` ticks and a whole-body fallback with one terminal tick (`_readNetResponseWithProgress`).
-- **Cancellation** — caller `AbortSignal` merged with the timeout into one controller, with correct teardown (timer cleared, listener detached — `_wireNetAbort`), including the already-aborted-at-call case.
-- **Tests** (`net.test.ts`, 22 cases) cover init mapping, all four decode paths, malformed JSON, non-2xx, network error, timeout vs abort labeling, progress ticks, header record, and the seam trio including null-restore.
+- **`sendNetRequest(host, request, options?)`** -- the single exported function. Takes `HasNetHttp` (the narrowest Host witness carrying `net.http: NetBackend`), a `Readonly<NetRequest>`, and optional `Readonly<NetRequestOptions>`. Returns `Promise<NetResponse>`. The entire body is `host.net.http.sendNetRequest(request, options)` -- a pure delegate with no added logic.
+
+- **Type surface** (`Net.ts`, fully in `@flighthq/types`) -- unchanged from the prior review and still complete:
+  - `NetMethod` (open union with `(string & {})` autocomplete trick)
+  - `NetResponseType` (`text`/`json`/`arraybuffer`/`blob`)
+  - `NetCredentials` (`omit`/`same-origin`/`include`)
+  - `NetRedirect` (`follow`/`error`/`manual`)
+  - `NetBody` (`string`/`ArrayBuffer`/`ArrayBufferView`/`null`)
+  - `NetResponseBody` (`string`/`unknown`/`ArrayBuffer`/`Blob`/`null`)
+  - `NetRequest` -- full descriptor: `method`, `url`, `headers?`, `body?`, `responseType?`, `timeoutMs?`, `credentials?`, `redirect?`
+  - `NetResponse` -- `status`, `statusText`, `ok`, `headers`, `body`, `url`
+  - `NetProgress` -- `phase` (`upload`/`download`), `loaded`, `total`
+  - `NetRequestOptions` -- `progress?` (Signal), `signal?` (AbortSignal)
+  - `NetBackend` -- the single-method seam (`sendNetRequest`)
+
+- **Host witness** (`Host.ts`) -- `HasNetHttp` carries `readonly net: { readonly http: NetBackend }`, wired into the Host capability lattice. The web realization lives at `host-web/src/webHostNet.ts` as `webHostNet = createHost({ net: { http: webNetBackend, socket: webSocketBackend } })`.
+
+- **Two export lanes** -- `index.ts` (public `.`) re-exports from `contract.ts`; `contract.ts` re-exports from `net.ts`. Both lanes expose the same single function.
+
+- **Tests** (`net.test.ts`, 3 cases across 2 describe blocks):
+  - `R3 boundary` -- asserts that five deleted ambient-API symbols are not present in the contract exports.
+  - `sendNetRequest` -- verifies request/options passthrough to the host backend, and that the response passes through unchanged.
 
 ## Gaps
 
-Against a mature HTTP-transport library (and the charter's own Open directions):
+1. **Package is a one-line delegate.** `sendNetRequest` adds no value beyond `host.net.http.sendNetRequest(request, options)` -- no input normalization, no validation, no default application. A consumer who already holds a Host witness could call the backend method directly. The package's value proposition is that it provides the application-facing API name and allows the SDK barrel (`@flighthq/sdk`) to re-export a stable surface, but the function itself adds zero logic.
 
-1. **Streaming response bodies** (charter Open direction 1) — no way to consume a body incrementally; `responseType` is whole-body only. A `'stream'` response type or a chunk-callback option is the standard next tier.
-2. **Upload progress** — `NetProgress.phase` declares `'upload'` but nothing ever emits it (fetch cannot observe upload; documented in `Net.ts`). Either a future XHR/native path or the type is aspirational surface.
-3. **Body-encoding helpers** (Open direction 3) — no multipart/form-data or URL-encoded-form composers over `NetBody`. `FormData`/`URLSearchParams` are also not accepted as `NetBody`, so a form upload today requires hand-encoding.
-4. **Diagnostics** — the package has silent sentinels (status 0, null JSON body) but no `explain*` query and no `enableNetGuards` module, contra the SDK-wide inversion rule (`agents/conventions/diagnostics.md`). E.g. "why did I get status 0" is answerable only by string-matching `statusText`.
-5. **Multi-value response headers** — `_readNetResponseHeaders` flattens to `Record<string, string>`; repeated headers (`Set-Cookie` aside) collapse to fetch's comma-joined value. Acceptable, but worth stating as a known simplification.
-6. **Retry/backoff** — correctly absent per Boundary ("a composing layer owns policy"); noted only to record it was checked.
+2. **Charter is stale.** The charter's North star, Decisions, and Boundaries describe an architecture that no longer exists in this package:
+   - Decision [2026-07-10] describes `getNetBackend`/`setNetBackend`/`createWebNetBackend` -- all deleted.
+   - The Boundary says "Depends on `@flighthq/types` + `@flighthq/signals`" -- `signals` was removed.
+   - The sentinel failure model, progress via Signal, cancellation via AbortSignal/timeout, and response decoding described in the charter all now live in `host-web/src/webNet.ts`, not in this package.
+   - The charter does not mention the Host witness model or the explicit-dependency migration.
+
+3. **Diagnostics absent.** No `explainNetResponse` query and no `enableNetGuards` module, contra the diagnostics inversion rule. The prior review and assessment both flagged this. Whether diagnostics belong here (over the delegate) or in the host backend is now an open question that the charter does not address.
+
+4. **Streaming response bodies** (charter Open direction 1) -- still absent. A `'stream'` response type or chunk-callback would be the standard next tier. This is now a host-backend concern.
+
+5. **Upload progress** -- `NetProgress.phase` declares `'upload'` but nothing in the web backend ever emits it (fetch cannot observe upload progress). Either aspirational or requires a non-fetch backend path.
+
+6. **Body-encoding helpers** (charter Open direction 3) -- no multipart/form-data or URL-encoded-form composers. `FormData`/`URLSearchParams` are not accepted as `NetBody`. Whether helpers belong here or in a companion module is still open.
+
+7. **`platform-integration.md` stale reference.** The shared platform-integration pattern document (line 9) still says "Three ambient-language capabilities (net, socket, textsegment) stay inline with a lazy-install default." `net` has moved to the Host witness model; this reference is outdated.
 
 ## Charter contradictions
 
-None found. The three 2026-07-10 Decisions (command capability, types-in-header, swappable seam) are each implemented as written. The Boundaries (no caching/dedup, no connectivity, HTTP only, deps `types`+`signals`) all hold in source and manifest.
+1. **Backend seam Decision is obsolete.** Decision [2026-07-10] "Swappable `NetBackend` seam" describes `getNetBackend`/`setNetBackend`/`createWebNetBackend` -- all three are deleted. The seam still exists via the Host's `net.http` slot, but the Decision's description of how it is surfaced is entirely wrong.
+
+2. **Dependency Boundary is stale.** The charter says "Depends on `@flighthq/types` + `@flighthq/signals`". The actual dependency is `@flighthq/types` only; `signals` was dropped when the progress/cancellation implementation moved to `host-web`.
+
+3. **"Command capability" Decision partially displaced.** Decision [2026-07-10] describes `sendNetRequest(request, options?)` with two parameters. The actual signature is `sendNetRequest(host, request, options?)` with three -- the Host witness was added as the first argument. The Decision's description of the function shape is stale.
 
 ## Contract & docs fit
 
-- **Package side**: single root export (`index.ts` → `./net`), `sideEffects: false`, full unabbreviated names (`sendNetRequest`, `createWebNetBackend`), sentinels not throws, `Readonly<>` on inputs, module-private state at file bottom, types entirely in `@flighthq/types`. Colocated tests for every export. Clean.
-- **Docs side**: the Package Map line for `net` ("HTTP transport — URLLoader/URLRequest, distinct from connectivity") matches reality; `agents/packages/map.md` should eventually carry the realized `sendNetRequest` shape. No stale claims found.
+**(a) Package against the contract:**
+
+- **Types-first:** Satisfied. The full type surface lives in `@flighthq/types/src/Net.ts`. The `HasNetHttp` witness lives in `@flighthq/types/src/Host.ts`. No exported types in the implementation package.
+- **Two blessed lanes:** `.` (`index.ts`) and `./contract` (`contract.ts`) -- satisfied.
+- **`sideEffects: false`:** Declared and true. No top-level side effects.
+- **Full unabbreviated names:** `sendNetRequest` -- satisfied.
+- **Free functions over classes:** Satisfied. Zero classes.
+- **Explicit dependency model:** Satisfied. `host: HasNetHttp` is the sole dependency injection mechanism. No singletons, no module-scoped mutable state.
+- **`Readonly<T>` on parameters:** `Readonly<NetRequest>` and `Readonly<NetRequestOptions>` -- satisfied.
+- **Crate identity:** `flighthq-net` declared in charter front matter.
+
+**(b) Contract/admin docs that are stale:**
+
+- **Charter body** -- the Decisions, Boundaries, and North star all describe the pre-migration architecture. Major rewrite needed to reflect the Host witness model.
+- **`platform-integration.md`** -- still references net as an "ambient-language capability" with a "lazy-install default." This is incorrect post-migration.
+- **Assessment.md** -- the prior assessment's Recommended items 1-3 (diagnostics query, guard module, URL-encoded form helper) and item 5 (progress total semantics) are now out of scope for this package -- the implementation they target lives in `host-web`. Item 4 (multi-value header test) similarly applies to `host-web/src/webNet.ts`, not to this package. The assessment needs full regeneration.
 
 ## Candidate open directions
 
-1. Should `NetBody` accept `FormData`/`URLSearchParams`/`ReadableStream` directly (web-native but not C-portable), or should encoding helpers produce string/bytes only? The charter's "small companion" gesture (Open direction 3) does not settle the type question.
-2. Where does the `explain*`/guards layer for the platform suite live — per package (`enableNetGuards`) or one suite-wide guard module? `net` is a natural first case.
-3. Is `NetProgress.phase: 'upload'` a commitment (implying a non-fetch web path or native-only support) or should it be dropped until a backend can emit it?
+1. **Does this package earn its existence as a one-function delegate?** The SDK barrel re-exports it, and downstream consumers (`audio`, `scene3d-resources`) import `sendNetRequest` from `@flighthq/net/contract`. The function is the application-facing name and provides a stable import path independent of the host backend. But the function adds no logic. Whether the package should grow convenience helpers (request builders, response inspectors, diagnostics) or remain minimal-by-design is the central question for the charter update.
+
+2. **Diagnostics placement.** Should `explainNetResponse` and `enableNetGuards` live in `@flighthq/net` (analyzing the plain-data `NetResponse` the host returned) or in the host backend? The sentinel interpretation (status 0, `statusText` values) is defined by the type contract, not by the host, so a package-level explainer that reads `NetResponse` fields seems correct regardless of the delegate architecture.
+
+3. **Request builder / convenience helpers.** Functions like `createNetGetRequest(url)`, `createNetPostRequest(url, body)`, or `formatNetFormBody(fields)` could live here as pure constructors over `NetRequest`, adding value without touching the host seam. This would give the package more substance beyond the delegate.
+
+4. **Charter rewrite scope.** The charter needs a rewrite to describe the Host witness architecture, updated Boundaries (types-only dependency), and revised Decisions. The North star ("complete, Flight-idiomatic HTTP transport") should clarify that the transport implementation lives in host backends while this package owns the application-facing API name and any pure-data helpers.

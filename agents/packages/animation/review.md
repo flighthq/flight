@@ -2,70 +2,171 @@
 package: '@flighthq/animation'
 status: solid
 score: 78
-updated: 2026-08-25
+updated: 2026-09-02
 ingested:
+  - charter.md
+  - status.md
   - source
   - tests
 ---
 
+# animation -- Review
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
-
-# animation — Review
-
-_Migrated from the 2026-07-03 depth-review generation (reviews/depth/animation.md)._
-
-**Domain:** Target-free keyframe animation core — sampled tracks (step/linear/cubic, quaternion slerp), channel/clip bundling, and an explicit playhead driver — for a 3D (and eventually general) animation system.
-
-**Verdict:** partial — completeness 40/100
-
-The package exports eight functions across three files: track construction and sampling (`createAnimationTrack`, `sampleAnimationTrack`), clip/channel assembly (`createAnimationChannel`, `createAnimationClip`, `getAnimationClipDuration`), and a playhead (`createAnimationPlayer`, `advanceAnimationPlayer`, `seekAnimationPlayer`). What exists is genuinely well-built: the sampler is alloc-free, glTF-conformant (cubic layout `[inTangent, value, outTangent]`, tangents scaled by segment duration), slerps quaternion tracks with shorter-arc selection and an nlerp fallback, and bridges to `@flighthq/easing` via `track.easing`. But measured against an AnimationMixer-class system (three.js `AnimationMixer`/`AnimationAction`, glTF animation runtimes, ozz-animation's sampling+blending jobs, Unity Playables), the defining capability of the domain — **blending multiple simultaneous animations** — is entirely absent, along with events, additive layers, cross-fades, and every track/clip utility. This is a correct sampling kernel, not yet an animation system.
+**Verdict:** solid -- 78/100. A deep, well-structured target-free animation engine covering tracks, clips, players, blending, crossfades, blend trees, state machines, layer stacks, root motion, and clip events. Architecture is clean and the charter's core principles are lived faithfully. The remaining gaps (blend spaces, per-edge state machine transitions, additive clip creation, clip serialization) separate solid from authoritative.
 
 ## Present capabilities
 
-- `createAnimationTrack` / `sampleAnimationTrack` — the core sampler. Flat `times`/`values` buffers (`ArrayLike<number>`, so `Float32Array` from a glTF accessor works zero-copy), `components` width (scalar/Vector3/quaternion/arbitrary — morph-weight tracks of width N work for free), `Step`/`Linear`/`Cubic` interpolation, quaternion slerp on linear 4-component tracks, cubic renormalization for quaternion tracks, per-segment easing reshape, clamped extrapolation, and well-tested edge cases (empty track → zeros, single keyframe, exact-boundary times). Out-parameter, hot-loop-safe. This is the strongest part of the package.
-- `createAnimationChannel` / `createAnimationClip` / `getAnimationClipDuration` — channel = track + opaque `targetRef`; clip duration defaults to the latest keyframe across channels with an explicit override. Deliberately target-free: the binding layer (`applyAnimationClipToScene` in `@flighthq/scene3d`, reading `Scene3DAnimationTarget { node, path }`) interprets `targetRef`.
-- `createAnimationPlayer` / `advanceAnimationPlayer` / `seekAnimationPlayer` — an explicit, caller-driven playhead: `speed` (negative plays backward), `loop` (modulo wrap in both directions), clamp-and-stop at either end when not looping, zero-duration guard, seek clamped to `[0, duration]`. Eleven player tests cover the loop/clamp/backward matrix thoroughly.
+The package comprises 11 source files (1,770 lines of implementation) with 11 colocated test files (1,707 lines). The public lane (`index.ts`) exports 54 functions; the contract lane (`contract.ts`) re-exports everything via `export *` from 9 modules. Dependencies are minimal: `@flighthq/entity`, `@flighthq/signals`, `@flighthq/types`.
 
-Types (`AnimationTrack`, `AnimationChannel`, `AnimationClip`, `AnimationPlayer`, `AnimationInterpolation`, `Scene3DAnimationTarget`) live in `@flighthq/types` with excellent doc comments — header-layer-first, correct.
+### Track layer (`animationTrack.ts`, 293 lines)
 
-**Where the flagged animation/skeleton/tween boundary currently lands:** the register marks this boundary "still to design"; the code has already taken a defensible de-facto position. `animation` owns target-free sampling and time; `scene` owns the 3D TRS binding (`Scene3DAnimationTarget` + `applyAnimationClipToScene`); `skeleton` owns none of the sampling — joints are ordinary `Node3D`s driven through the scene binding, and the skeleton package only does skinning math. `tween` is untouched; the only bridge is `track.easing: EasingFunction | null`. The unresolved seams are (a) `AnimationPlayer` vs tween's own time driver vs the planned `clock` primitive — three playhead concepts with no shared type — and (b) whether property-tweening ever routes through `AnimationChannel` (the `targetRef: unknown` escape hatch suggests it could, but nothing defines a tween-side target). The design pass should ratify or move these lines explicitly.
+- `createAnimationTrack` -- allocates a track from `times`/`values` buffers. Defaults: linear interpolation, 1 component, non-quaternion.
+- `sampleAnimationTrack` -- binary-search sampler, alloc-free and hot-loop safe. Handles Step (hold previous), Linear (component-wise lerp or quaternion slerp with shorter-arc selection and nlerp fallback at parallel alignment), and Cubic (glTF-style Hermite spline with `[inTangent, value, outTangent]` layout, tangents scaled by segment duration, quaternion renormalization). Per-segment and per-track easing via `track.easing` and `track.segmentEasings`. Clamps outside the time range.
+- `cloneAnimationTrack` -- deep copy preserving Float32Array backing.
+- `trimAnimationTrack` -- extracts a subclip by keyframe time range, rebasing times to zero.
+- `validateAnimationTrack` -- structural validation returning null or diagnostics array (ascending times, values length, segment easing count). Sentinel return, no throws.
 
-## Gaps vs an authoritative keyframe-animation library
+### Clip layer (`animationClip.ts`, 90 lines)
 
-- **Blending / mixing — the headline gap.** No way to play two clips on the same target and weight them: no per-clip weight, no `blendAnimationSample`/mixer accumulation buffer, no normalized weighted sum with quaternion nlerp accumulation (the three.js `PropertyMixer` / ozz `BlendingJob` role). Without this there is no walk↔run blend, no partial-body overlay — the reason AnimationMixer-class systems exist.
-- **Cross-fading and scheduling:** no `crossFade`, `fadeIn`/`fadeOut`, no action lifecycle (scheduled start, warp/time-scale sync of two clips of different durations).
-- **Additive animation:** no additive layers, no `makeAnimationClipAdditive` (rebasing a clip against a reference pose/first frame — standard in glTF tooling and three.js `AnimationUtils`).
-- **Masking / per-channel control:** no per-channel enable/weight, no joint-mask concept for upper-body/lower-body splits.
-- **Loop modes:** boolean `loop` only. No ping-pong, no finite repeat count (`repetitions`), no "clamp when finished" vs "hold last frame" distinction beyond the implicit clamp.
-- **Events / notifications:** no animation events (markers at times firing callbacks/signals), no finished/looped notification from `advanceAnimationPlayer` — the caller must poll `playing`. The SDK has `@flighthq/signals` and an `enable*` convention that fits here exactly.
-- **Sampler seek performance:** `sampleAnimationTrack` linear-scans from index 0 every call (`while (i < count - 1 && times[i + 1] <= t) i++`). Authoritative samplers keep a cached cursor (per-player last-index state) or binary-search; for a 30 s, 30 Hz track this is ~900 iterations per channel per frame. The target-free design makes cursor state awkward on the track itself — it belongs on the player or a per-channel sample state, which is exactly the kind of type the design pass should add.
-- **Clip sampling in the core:** there is no `sampleAnimationClip` — the "sample every channel at time t" loop lives only inside `@flighthq/scene3d`'s binding. A core clip sampler writing into a caller-supplied output (or invoking a per-channel callback) would let non-scene domains (skeleton-only pipelines, tween targets, morph weights) reuse the loop instead of reimplementing it.
-- **Track/clip utilities:** no `trimAnimationTrack`/subclip, no resample/bake, no key reduction/optimize, no `validateAnimationTrack` (ascending times, values length = keys × stride — currently a malformed track silently reads `undefined` as `NaN`), no `cloneAnimationClip`, no serialization (every other descriptor family in the SDK — filters, effects, particles — has serialize/validate).
-- **Root motion:** no extraction/accumulation of root translation — expected in any character-animation-capable core.
-- **Player conveniences:** no `getAnimationPlayerNormalizedTime`, no `stopAnimationPlayer`/`playAnimationPlayer` verbs (callers poke `playing` directly, which is fine for plain data but asymmetric with `seekAnimationPlayer` existing as a function).
+- `createAnimationChannel` -- pairs a track with an opaque `targetRef: unknown`.
+- `createAnimationClip` -- bundles channels and sorted clip events. Duration auto-computed from latest keyframe or event time; explicit duration validated against event times.
+- `createAnimationClipEvent` -- allocates a `{ time, name, payload }` marker.
+- `cloneAnimationClip` -- deep copy of channels (cloned tracks) and events; `targetRef` by reference.
+- `sampleAnimationClip` -- samples every channel at a time, calling a per-channel visitor with the shared scratch buffer. Core loop promoted from scene bindings into the animation core.
+- `getAnimationClipDuration` -- accessor.
 
-## Naming / API-shape notes
+### Player (`animationPlayer.ts`, 242 lines)
 
-- Names carry the full type word (`sampleAnimationTrack`, `advanceAnimationPlayer`) and are globally self-identifying — fully aligned with the SDK rule.
-- `sampleAnimationTrack(out, track, t)` is out-parameter-first, alloc-free, and documented as such; matches the geometry convention. Good.
-- `createAnimationTrack(opts)` takes an options object while `createAnimationChannel(track, targetRef)` and `createAnimationClip(channels, duration?)` take positional args — mildly asymmetric but each reads naturally.
-- `AnimationChannel.targetRef: unknown` is an untyped seam. It buys target-freedom, but `unknown` in the header layer means the binding contract is discoverable only by reading `@flighthq/scene3d`. Consider a branded/documented `AnimationTargetRef` alias, or an open kind-keyed binding registry (the SDK's stated preference over implicit dispatch) so each domain registers its target interpretation.
-- `applyAnimationClipToScene` type-sniffs `targetRef` (`typeof target === 'object' && target.node !== undefined`) — structural guessing rather than a kind tag; a `Scene3DAnimationTarget` with an explicit discriminant (or the registry above) would match the string-kind identity model.
-- The player mutates entity fields directly and `advanceAnimationPlayer` clears `playing` as a side effect of reaching an end — correct per the docs, but the missing finished-signal means the state change is silent.
+- `createAnimationPlayer` -- explicit playhead driver. Defaults: looping, Repeat mode, infinite repeats, playing, speed 1, time 0, signal-free.
+- `advanceAnimationPlayer` -- advances by `dt * speed`. Supports `Repeat` (wrap), `PingPong` (reflect and flip speed), finite `repeatCount` (each wrap/bounce consumes one, stops at 0). Non-looping clamps to `[0, duration]` and clears `playing`. Emits opt-in `onFinished`, `onLooped`, and `onEvent` signals. No-op when paused or zero-duration.
+- `cloneAnimationPlayer` -- shallow copy sharing the clip by reference; clone starts signal-free.
+- `enableAnimationPlayerSignals` -- idempotent attachment of `onFinished`, `onLooped`, `onEvent` signals.
+- `playAnimationPlayer` / `stopAnimationPlayer` / `seekAnimationPlayer` -- play/stop/seek verbs.
+- `getAnimationPlayerNormalizedTime` -- returns `time / duration`, clamped to `[0, 1]`.
 
-## Recommendation
+### Blend primitives (`animationBlend.ts`, 179 lines)
 
-The sampling kernel is keep-worthy as-is; build the system on top of it, in this order:
+- `createAnimationSampleAccumulator` / `resetAnimationSampleAccumulator` -- reusable target-free accumulation state (Entity, Float32Array-backed).
+- `accumulateAnimationSample` -- weighted accumulation with quaternion sign-alignment.
+- `finishAnimationSample` -- normalize weighted sum (divide by weight for scalars, geometric normalize for quaternions). Returns `false` for empty accumulators (sentinel).
+- `blendAnimationSamples` -- two-sample lerp/slerp by alpha. `out` may alias either input.
+- `addAnimationSample` -- additive delta composition: `base + delta * weight` for scalars; weighted quaternion from identity multiplied onto base for quaternion tracks. `out` may alias inputs.
 
-1. **Blending first** — a per-channel/per-clip weighted accumulation primitive (`accumulateAnimationSample` + finalize with quaternion renormalization) and a small mixer state over multiple players. This is the single capability that separates a sampler from an animation library, and skeleton/scene both need it.
-2. **Promote the clip-sampling loop into the core** (`sampleAnimationClip` or a per-channel visitor) so scene, skeleton, and future tween bindings share one loop; type the `targetRef` seam (kind-tagged target or binding registry).
-3. **Player maturation:** cached sample cursors (per-channel last-index state on the player), finished/looped signals behind an `enableAnimationPlayerSignals` opt-in, ping-pong + repeat-count loop modes, `getAnimationPlayerNormalizedTime`.
-4. **Utilities:** `validateAnimationTrack`, subclip/trim, additive rebase (`makeAnimationClipAdditive`), key reduction, clip serialization — matching the serialize/validate posture of filters/effects/particles.
-5. **Run the flagged boundary design pass** and record the outcome: player-vs-tween-vs-`clock` time drivers, and whether tween targets ride `AnimationChannel`.
+### Crossfade (`animationCrossfade.ts`, 148 lines)
 
-Quality is high; the architecture (target-free core + domain bindings) is the right skeleton for an authoritative library. The score is a scope score: without blending, events, and clip utilities it covers roughly the first third of the domain.
+- `createAnimationCrossfade` -- two-player transition with target correspondence built at construction (channels matched by identity equality of `targetRef`). Allocates sample scratch once. Customizable curve via options.
+- `advanceAnimationCrossfade` -- advances both players and updates transition weight.
+- `sampleAnimationCrossfade` -- blends matched targets by weight; one-sided targets pass through.
+- `isAnimationCrossfadeComplete` -- checks elapsed against duration (ignoring curve overshoot).
 
-## 2026-07-09 — deepened
+### Blend tree (`animationBlendTree.ts`, 167 lines)
 
-binary-search sampling, sampleAnimationClip core, opt-in player signals, ping-pong/repeat loop modes, play/stop/normalized-time, validateAnimationTrack, clone/trim (commit 1fd0a7fd). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.
+- `createAnimationBlendTree` -- N-way target correspondence layout from a list of `AnimationBlendTreeInput`s. Validates unique `targetRef` per input, compatible component widths and quaternion flags across inputs. One accumulator per target. Shared player identity tracked.
+- `createAnimationBlendTreeInput` -- leaf descriptor: player + weight + additive flag.
+- `advanceAnimationBlendTree` -- advances each distinct player exactly once (deduplication).
+- `sampleAnimationBlendTree` -- visitor pattern over all targets. Override leaves normalized weighted accumulation, then additive leaves compose deltas in stable input order.
+- `sampleAnimationBlendTreeChannel` -- per-channel seam for layer stack composition.
+- `setAnimationBlendTreeInputWeight` -- updates weight by index; returns `false` for absent index (sentinel).
+
+### State machine (`animationStateMachine.ts`, 220 lines; `animationStateMachineAdvance.ts`, 30 lines)
+
+- `createAnimationStateMachine` -- named-state controller with global target correspondence. States carry blend trees. Validates unique names and initial state. Construction-time scratch allocation (fromSample/toSample buffers).
+- `createAnimationStateMachineState` -- allocates one named state over a blend tree.
+- `transitionAnimationStateMachine` -- starts a timed transition to a named or indexed state. Customizable easing curve. Returns `false` for invalid/same destination or active transition (sentinel). Zero-duration transitions select immediately.
+- `advanceAnimationStateMachine` -- advances current state (and both transition sides during a transition). Completes transition by elapsed duration. Player deduplication via owned scratch.
+- `sampleAnimationStateMachine` / `sampleAnimationStateMachineChannel` -- samples current state or blends both transition sides. One-sided targets pass through.
+- `getAnimationStateMachineCurrentState` / `isAnimationStateMachineTransitioning` -- query accessors.
+
+### Layer stack (`animationLayerStack.ts`, 206 lines)
+
+- `createAnimationLayerStack` -- ordered stack of layers, each sourced by a blend tree or state machine. Global target correspondence across all layers. Construction-time scratch allocation. Validates compatible tracks.
+- `createAnimationBlendTreeLayer` / `createAnimationStateMachineLayer` -- allocates one layer with optional additive flag, weight, and channel-index subset (validated).
+- `advanceAnimationLayerStack` -- advances all sources with cross-stack player deduplication.
+- `sampleAnimationLayerStack` / `sampleAnimationLayerStackChannel` -- ordered pose composition: first override passes through, subsequent overrides blend by weight, additive layers compose weighted deltas.
+- `setAnimationLayerWeight` -- updates weight by index; returns `false` for absent index (sentinel).
+
+### Root motion (`animationRootMotion.ts`, 178 lines)
+
+- `createAnimationRootMotionExtractor` -- allocates reusable scratch for one explicit channel (by index). Validates channel index and quaternion component count. Precomputes cycle delta (start-to-end displacement/rotation).
+- `extractAnimationRootMotion` -- writes accumulated root delta across arbitrary unwrapped time (any number of loop cycles, forward or backward). Vector deltas add complete-cycle displacement; quaternion deltas compose via exponentiation-by-squaring. Returns `false` for insufficient output width (sentinel).
+
+### Internal advance helpers (`animationAdvance.ts`, 17 lines)
+
+- `advanceAnimationPlayers` -- deduplicating advance of a player list with caller-owned scratch. Used by layer stack and state machine advance.
+
+## Gaps
+
+Measured against industry-standard animation systems (Unity Mecanim/Playables, Unreal AnimGraph, ozz-animation, three.js AnimationMixer):
+
+1. **Blend spaces.** `AnimationBlendTreeInput` carries a bare scalar `weight`. There is no 1D threshold mapping (parameter + sorted threshold per input) or 2D cartesian/freeform mapping (gameplay parameter pair mapped to barycentric weights). Every consumer reimplements the parameter-to-weight arithmetic. This is the charter-scoped feature that most gates "complete animation engine."
+
+2. **Per-edge state machine transition configuration.** The state machine holds a single machine-wide `transitionDuration` / `transitionCurve` pair. All transitions share one timing. No per-edge configuration, no transition interruption (returns `false` if a transition is active), no transition queueing.
+
+3. **`makeAnimationClipAdditive`** -- creating additive clips by subtracting a reference pose (first frame or explicit pose) is a standard tool in glTF workflows, three.js `AnimationUtils`, and Unity's additive clip pipeline. Additive leaves exist in blend trees and layer stacks, but there is no clip-level utility to produce them.
+
+4. **Clip serialization/deserialization.** Every other descriptor family in the SDK (filters, effects, particles) has a serialize/validate posture. Animation clips have creation and cloning but no format-agnostic serialization.
+
+5. **Key reduction / optimization / resample.** No `optimizeAnimationTrack` (key reduction for redundant keyframes) or `resampleAnimationTrack` (bake at a target sample rate). These are standard tools in animation pipelines and glTF exporters.
+
+6. **No consumer demonstrates the root-motion round trip.** `extractAnimationRootMotion` returns the delta; applying it to a transform stays binding-owned per the charter boundary, but no consumer in the repo shows the integration. Status.md correctly notes this.
+
+7. **Animation graph composition** -- the charter lists "animation graph/state machine (long-term)." The state machine is present but flat (no hierarchical sub-state machines, no sub-graph nesting). This is charter-acknowledged as long-term.
+
+## Charter contradictions
+
+None found. The code faithfully implements the charter's three North-star principles:
+
+- **"Complete animation engine"** -- substantially met. Sampling, blending, events, state machines, blend trees, layer stacks, root motion are all present and reachable. The remaining gaps (blend spaces, per-edge transitions) are feature additions, not architectural contradictions.
+- **"Animation clips are pure data; playback is a stateless sample operation with explicit time input"** -- yes. Clips are plain entities. `sampleAnimationTrack` and `sampleAnimationClip` take explicit time. Players are explicit driver entities advanced by the caller.
+- **"Domain binding is external"** -- yes. `targetRef` is opaque `unknown`. The package has no scene, skeleton, or shape imports. External consumers (`scene2d`, `scene3d`, `skeleton2d`, `shape`, format codecs) implement their own binding layers.
+
+The seven Decisions entries are all observed in the code. The 2026-07-25 and 2026-08-02 decisions (imperative transitions, flat weighted blend trees, channel-index masks, root motion extraction, sorted clip markers, MorphShape as external binding) are exactly what the implementation delivers.
+
+## Contract and docs fit
+
+### Package to contract
+
+- **Types in `@flighthq/types`** -- 14 type files (`AnimationTrack`, `AnimationClip`, `AnimationPlayer`, `AnimationBlendTree`, `AnimationStateMachine`, `AnimationLayerStack`, `AnimationCrossfade`, `AnimationRootMotionExtractor`, `AnimationSampleAccumulator`, `AnimationChannel`, `AnimationClipEvent`, `AnimationInterpolation`, `AnimationLoopMode`, `AnimationTrackValidationDiagnostic`). No types defined inline in the package. Fully compliant.
+- **Full unabbreviated names** -- all exported function names carry the full type name (`sampleAnimationTrack`, `advanceAnimationBlendTree`, `extractAnimationRootMotion`). Fully compliant.
+- **Two blessed lanes** -- `.` (index.ts) and `./contract` (contract.ts). No other subpaths. Compliant.
+- **`sideEffects: false`** -- declared in `package.json`. No module-level side effects. Compliant.
+- **No `@flighthq/sdk` imports** -- confirmed. Package imports only from `entity/contract`, `signals/contract`, and `types/contract`.
+- **Out-parameter convention** -- consistently used: `sampleAnimationTrack(out, track, t)`, `extractAnimationRootMotion(out, extractor, startTime, endTime)`.
+- **`Readonly<T>`** -- consistently applied to read-only parameters across all functions.
+- **Sentinel returns** -- used for expected failure: `transitionAnimationStateMachine` returns `false`, `setAnimationBlendTreeInputWeight` returns `false`, `finishAnimationSample` returns `false`, `extractAnimationRootMotion` returns `false`, `validateAnimationTrack` returns `null` for valid. Throws reserved for precondition violations (duplicate state names, incompatible track widths, invalid channel indices).
+- **Explicit dependencies** -- all functions take what they need as arguments. No singletons, no module-scoped mutable state (aside from the two internal scratch constants `IDENTITY_QUATERNION` and `_quaternion` in `animationBlend.ts`, which are private constants and a scratch buffer for an internal helper, not shared state).
+
+### Issues
+
+- **Two exports unreachable through either blessed lane.** `advanceAnimationPlayers` (`animationAdvance.ts:7`) and `advanceAnimationStateMachineWithScratch` (`animationStateMachineAdvance.ts:6`) are `export function`s in modules that do not appear in `contract.ts`. Their only importers are intra-package (`animationLayerStack.ts`, `animationStateMachine.ts`) plus their colocated tests. They function as package-internal composition seams. Their `export` keyword is necessary for test imports but makes them API-shaped without being reachable. Status.md already identifies this.
+
+- **Duplicated private helper.** `getLinearAnimationStateMachineTransitionWeight` is defined identically in both `animationStateMachine.ts:212` and `animationStateMachineAdvance.ts:26`. Both are private (not exported), so it does not affect the API surface, but it is a maintenance asymmetry -- changing one without the other would silently diverge behavior.
+
+### Package Map accuracy
+
+The codebase-map entry "3D data: ... `animation` ..." and "Animation and simulation: ..." both mention `animation`. The Package Map lists it among "3D data" packages alongside `mesh`, `lighting`, `texture`, `camera`. Given that the package is deliberately target-free and serves 2D, 3D, skeleton, and shape bindings equally, the "3D data" grouping is slightly misleading. However, this is a classification question for the codebase map, not a package defect.
+
+## Test coverage
+
+Every exported function has a corresponding `describe` block. Test coverage highlights:
+
+- `animationTrack.test.ts` (288 lines) -- binary search, step/linear/cubic/quaternion interpolation, per-segment easing, empty/single-keyframe edge cases, trim, validation.
+- `animationPlayer.test.ts` (275 lines) -- loop/clamp matrix (forward/backward, Repeat/PingPong, finite repeatCount), finished/looped/event signals, seek, stop, normalized time.
+- `animationCrossfade.test.ts` (223 lines) -- target correspondence, matched/one-sided blending, quaternion crossfade, completion.
+- `animationBlendTree.test.ts` (186 lines) -- N-way accumulation, additive leaves, shared player advancement, weight updates, quaternion blending.
+- `animationStateMachine.test.ts` (181 lines) -- state transitions, transition completion, mid-transition sampling, initial state by name/index, zero-duration transition.
+- `animationLayerStack.test.ts` (171 lines) -- override/additive layers, channel masks, cross-stack player deduplication, blend tree and state machine source layers.
+- `animationBlend.test.ts` (112 lines) -- accumulation, additive composition, quaternion sign alignment, slerp blending, finish/reset.
+- `animationClip.test.ts` (123 lines) -- clip creation, event validation, duration computation, clone, visitor-pattern sampling.
+- `animationRootMotion.test.ts` (111 lines) -- vector/quaternion extraction, multi-cycle unwrapping, backward time ranges.
+- `animationAdvance.test.ts` (16 lines) and `animationStateMachineAdvance.test.ts` (21 lines) -- minimal coverage of the internal advance helpers; exercises deduplication.
+
+## Candidate open directions
+
+The charter's Open directions says "None." The following questions arose during review; they are not assertions but candidates for the charter to address:
+
+1. **Should blend spaces live in this package or in a separate `animation-blend` package?** The 1D/2D parameter-to-weight mapping is a distinct concern from the N-way accumulation primitive, and could be a separately importable composition.
+
+2. **Should per-edge transition configuration be a state machine feature or a caller concern?** The charter says "conditions stay external and transitions are imperative." The current API enforces this for condition logic but also forces machine-wide timing, which may be a stronger constraint than intended.
+
+3. **What is the relationship between `AnimationTargetRef` (`unknown`) and the broader kind-based registry pattern?** The SDK's stated preference is open kind-keyed registries over implicit dispatch. Currently each binding layer (`scene3d`, `skeleton2d`, `shape`) implements its own `targetRef` interpretation via structural checking rather than a kind tag.

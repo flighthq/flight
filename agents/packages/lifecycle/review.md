@@ -1,58 +1,82 @@
 ---
 package: '@flighthq/lifecycle'
 status: solid
-score: 78
-updated: '2026-07-13'
+score: 82
+updated: '2026-09-02'
 ingested:
   - status.md
   - charter.md
   - source (packages/lifecycle/src)
   - packages/types/src/Lifecycle.ts
+  - packages/types/src/BackendOperationExplanation.ts
+  - packages/host-web/src/webLifecycle.ts
+  - agents/packages/platform-integration.md
 ---
 
 # lifecycle — Review
 
 ## Verdict
 
-**`solid` — 78/100.** The prior review (2026-06-25, 58/partial) was a merge-gate review of an integration slice whose implementation had outrun its header — `AppLaunchKind`, `AppMemoryPressure`, the three new signals, and the optional backend methods were absent from `@flighthq/types`, so the package did not compile. **That blocker is resolved:** `packages/types/src/Lifecycle.ts` now declares the complete surface — the tri-state `AppLifecycleState`, `AppLaunchKind` (`cold`/`warm`), `AppMemoryPressure` (`normal`/`moderate`/`critical`), the 7-signal `AppLifecycle`, and `LifecycleBackend` with optional `getLaunchKind`/`subscribeMemoryWarning` — all with durable doc comments. Every import resolves; types-first is satisfied.
-
-What stands is the strongest event capability in the platform suite: a full tri-state lifecycle (active/inactive/background) with deduped resume/pause edges, save/restore-state across backgrounding, OS memory-pressure delivery, cold/warm launch classification, boolean state queries, and a vetoable back-button request — over a swappable backend whose web default is a genuine reference implementation (visibilitychange + focus/blur + pagehide/pageshow, bfcache-based launch kind, experimental memory-pressure events), SSR-safe throughout. Test coverage includes property/fuzz storms over transition sequences. Held below the high-solid band by one textbook-surface hole (no before-quit/exit hook), the undecided 4-edge signal set, and the absence of any native backend proof.
+**`solid` — 82/100.** Since the prior review (2026-07-13, 78/solid), the package completed a migration to the explicit Host model: every stateful query now takes `host: HasSystemLifecycle` rather than resolving a process-wide backend through module-scoped `getLifecycleBackend`/`setLifecycleBackend`. Six exports and the `_custom > _host > _sentinel` resolver chain were deleted; the web backend moved from an installed singleton to a value published on `webHost.system.lifecycle` in `@flighthq/host-web`. This is a genuine architectural improvement aligned with the explicit dependency model. The domain surface is unchanged — the same tri-state lifecycle, deduped resume/pause edges, save/restore, memory pressure, launch kind, and vetoable back button — and the property/fuzz test suite survives intact. Held below high-solid by the same open-direction gaps (no before-quit hook, the undecided 4-edge signal set, no native backend proof), plus an eager signal allocation that violates the suite's shared decision.
 
 ## Present capabilities (verified against source)
 
-13 exports in `packages/lifecycle/src/lifecycle.ts`, 43 tests, `describe` blocks alphabetized 1:1 with exports:
+13 exports in `lifecycle.ts` (245 lines), 46 `it()` cases in `lifecycle.test.ts` (601 lines) plus 7 `it()` cases in `lifecycleHost.test.ts` (57 lines). `describe` blocks in `lifecycle.test.ts` are alphabetized 1:1 with all 13 exports.
 
-- **Entity quartet:** `createAppLifecycle` (7 inert signals), `attachAppLifecycle` (idempotent; emits raw `onStateChange` per notification; derives deduped `onResume`/`onPause` on the `'active'` boundary — the `inactive↔background` transitions correctly do not re-fire them; emits `onSaveState` with a fresh mutable bag on leaving active and `onRestoreState` with that bag on next resume; wires `subscribeMemoryWarning` when the backend has it), `detachAppLifecycle`, `disposeAppLifecycle` (also clears the saved-state `WeakMap` entry).
-- **State queries:** `getAppLifecycleState`, `isAppActive` / `isAppInactive` / `isAppBackground`.
-- **Launch:** `getAppLaunchKind` — delegates to optional `backend.getLaunchKind`, falls back to `'warm'` for backends that omit it (the web backend returns `'cold'` unless `PerformanceNavigationTiming.type === 'back_forward'`, i.e. a bfcache thaw — the closest web analog of a warm resume).
-- **Back button:** `requestAppBack` — emits `onBackButton`, returns `false` when a listener vetoed via `cancelSignal`; mirrors `@flighthq/application`'s `requestWindowClose`/`onCloseRequest` contract.
-- **Backend seam:** `getLifecycleBackend` / `setLifecycleBackend` / `createWebLifecycleBackend`. Web backend: three states over document visibility + window focus; `subscribeMemoryWarning` wires the experimental `memory-pressure`/`memory-pressure-relieved` window events (critical→`critical`, moderate→`moderate`, unknown-but-present→`moderate` rather than a silent drop, relieved→`normal`); degrades to `'active'`/no-op in SSR.
+- **Entity quartet:** `createAppLifecycle` (allocates 7 inert signals), `attachAppLifecycle(host, app)` (idempotent; emits raw `onStateChange` per notification; derives deduped `onResume`/`onPause` on the `'active'` boundary — `inactive<->background` transitions correctly do not re-fire them; emits `onSaveState` with a mutable bag on leaving active and `onRestoreState` with that bag on next resume; wires `subscribeMemoryWarning` when the backend has it), `detachAppLifecycle(app)`, `disposeAppLifecycle(app)` (also clears the saved-state `WeakMap` entry).
+- **State queries (host-parameterized):** `getAppLifecycleState(host)`, `isAppActive(host)` / `isAppInactive(host)` / `isAppBackground(host)`. Each reads `host.system.lifecycle.getState()` — no module-level backend resolution.
+- **Launch:** `getAppLaunchKind(host)` — delegates to optional `backend.getLaunchKind()`, falls back to `'warm'` for backends omitting it.
+- **Back button:** `requestAppBack(app)` — emits `onBackButton`, returns `false` when a listener vetoed via `cancelSignal`. Does not take a host parameter (entity-only; no backend call).
+- **Diagnostics (contract-only):** `explainLifecycleOperation(host, operation)` returns `BackendOperationExplanation` with `implemented` (boolean) and `layer` (`'host'` or `'sentinel'`). `hasLifecycleOperation(host, operation)` is the boolean shorthand.
+- **Web backend factory (contract-only):** `createWebLifecycleBackend()` — three states over `document.hidden` + `window.focus`/`blur` + `pagehide`/`pageshow`; `getLaunchKind()` from `PerformanceNavigationTiming.type` (`back_forward` -> `'warm'`, all others -> `'cold'`); `subscribeMemoryWarning()` wires experimental `memory-pressure`/`memory-pressure-relieved` window events. SSR-safe throughout (degrades to `'active'` / no-op).
 
-Test depth is real: all transition edges including the inactive dedup cases, save→restore round-trip, memory delivery + unsubscribe, all four launch-kind navigation types, veto and no-veto back paths, and four property/fuzz suites (100–200 random trials each) pinning the raw-vs-deduped invariants: `onStateChange` fires per notification, resume/pause collapse to the minimal edge set, an all-active flutter emits zero pause/resume, and pause/resume counts alternate within one.
+**Export lanes:** public lane (`index.ts`) exports 10 functions, correctly excluding the 3 contract-only items (`createWebLifecycleBackend`, `explainLifecycleOperation`, `hasLifecycleOperation`). `contract.ts` re-exports everything via `export * from './lifecycle'`.
+
+**Host integration:** `host-web/src/webLifecycle.ts` imports `createWebLifecycleBackend` from the contract lane and publishes `webLifecycleBackend` as a const on the system host. No `host-electron`, `host-tauri`, or `host-capacitor` source references `LifecycleBackend`.
+
+**Test depth:** All transition edges including inactive dedup cases, save-restore round-trip, memory delivery + unsubscribe, all four `getLaunchKind` navigation types, veto and no-veto back paths. Four property/fuzz suites (100-200 random trials each) pin the raw-vs-deduped invariants. `lifecycleHost.test.ts` independently verifies per-host independence for the state queries and launch kind — the property the host migration was for.
 
 ## Gaps (AAA-depth judgment)
 
-1. **No before-quit/exit hook.** A textbook lifecycle surface includes app-termination: a vetoable `onBeforeExit`/`requestAppExit` (native `before-quit`, web `beforeunload`/`pagehide`-as-final) and/or an `onExitRequested` signal. Nothing here covers it. Note the boundary question: `@flighthq/application` owns the *window*-close veto (`requestWindowClose`/`onCloseRequest`); app/process-level quit arguably belongs in this package as the process sibling of `onBackButton`. A design decision, not a sweep — but the largest hole in the domain coverage.
-2. **The 4-edge signal set is undecided.** `onResume`/`onPause` key on the `'active'` boundary, so "focus lost" and "fully backgrounded" are indistinguishable without deriving from `onStateChange`. First-class `onForeground`/`onBackground` (and possibly `onActivate`/`onResignActive`) remain the charter's first Open direction.
-3. **No native backend proof.** The seam has only run against fakes and the web default; the Electron mapping (app focus/blur events, `low-memory-notification`, launch heuristics) is specced in status but unbuilt (cross-package, `host-electron`).
-4. **`getAppLaunchKind` fallback asymmetry.** A backend omitting `getLaunchKind` yields `'warm'` while the web path defaults `'cold'`. The `'warm'` choice is documented in the function comment as the safe cache-assumption for minimal backends, so it is now a recorded rationale rather than a surprise — but it remains worth a deliberate bless-or-flip.
-5. **Stale self-description.** `package.json` still reads "foreground/background lifecycle state and resume/pause/back signals" — omits the inactive state, memory pressure, save/restore, and launch kind. Within-package, sweep-safe.
-6. **Minor comment drift.** The `subscribeMemoryWarning` function-level comment describes only the critical→critical and relieved→normal mappings; the unknown-pressure→`'moderate'` mapping is documented only at the branch. Cosmetic, sweep-safe.
-7. **No diagnostics layer.** SSR sentinels and the memory-events-unsupported no-op have no `explain*`/guards seams. Suite-wide pattern.
+1. **No before-quit/exit hook.** A textbook lifecycle surface includes app-termination: a vetoable `onBeforeExit`/`requestAppExit` (native `before-quit`, web `beforeunload`/`pagehide`-as-final). Nothing here covers it. The boundary question with `@flighthq/application`'s window-close veto (`requestWindowClose`/`onCloseRequest`) remains unsettled. A design decision, not a sweep.
+2. **The 4-edge signal set is undecided.** `onResume`/`onPause` key on the `'active'` boundary, so "focus lost but visible" and "fully backgrounded" are indistinguishable without deriving from `onStateChange`. First-class `onForeground`/`onBackground` (and possibly `onActivate`/`onResignActive`) remain the charter's first open direction.
+3. **No native backend proof.** The `LifecycleBackend` interface has run only against fakes and the web default. `host-electron` has no lifecycle file; `host-tauri` and `host-capacitor` do not reference it. The two optional methods (`getLaunchKind`, `subscribeMemoryWarning`) are unproven against a real OS: `getLaunchKind` approximates from `PerformanceNavigationTiming.type` and `subscribeMemoryWarning` rides Chrome's experimental `memory-pressure` events, which never fire in a shipping browser.
+4. **Eager signal allocation violates the suite shared decision.** The platform-integration shared principles (2026-07-02) state: "Signal opt-in convention should be enforced. Use `enable*Signals` gates -- do not eagerly allocate signals in `create*` functions. Packages violating this should be fixed." `createAppLifecycle()` eagerly allocates all 7 signals. No `enableAppLifecycleSignals` gate exists.
+5. **`getAppLaunchKind` fallback asymmetry.** A backend omitting `getLaunchKind` yields `'warm'`; the web backend defaults `'cold'`. The `'warm'` choice is documented as a safe cache-assumption for minimal backends — a recorded rationale, not a surprise — but it remains worth a deliberate bless-or-flip.
+6. **Orphan test file.** `lifecycleHost.test.ts` has no corresponding `lifecycleHost.ts` source file. The one-test-file-per-source-file convention is violated. The tests exercise functions from `lifecycle.ts`; they could be a `describe` group within `lifecycle.test.ts` or the source could be split to justify the second file.
+7. **Stale `package.json` description.** Still reads "foreground/background lifecycle state and resume/pause/back signals over a swappable web/native backend" — omits the inactive state, memory pressure, save/restore, and launch kind. Sweep-safe.
+8. **No diagnostics layer for SSR sentinels.** The web backend degrades silently (returns `'active'`, no-op subscriptions) without an `explain*`/guard seam. Suite-wide gap.
+9. **`explainLifecycleOperation` returns `layer: 'sentinel'` for unimplemented operations, but the sentinel was removed.** The status log records: "The sentinel went with the resolver, which changes what `explainLifecycleOperation` MEANS: `layer: 'sentinel'` now reports that THIS host's provider omits the operation, not that a process-wide fallback answered for it." The implementation returns `'sentinel'` when `typeof host.system.lifecycle[operation] !== 'function'`, so `'sentinel'` now means "absent from this host" rather than "answered by a fallback object." The value still satisfies the `BackendOperationExplanation` type, but the semantic drift from the type's doc comments (which describe a literal sentinel object) is worth noting.
 
-Also unbuilt: `timeInBackground` payload on resume (charter Open direction), idle/user-inactivity (ownership vs `@flighthq/input` unresolved), the `flighthq-lifecycle` Rust crate.
+Also unbuilt: `timeInBackground` payload on resume, idle/user-inactivity (ownership vs `@flighthq/input` unresolved), the `flighthq-lifecycle` Rust crate.
 
 ## Charter contradictions
 
-None. The What-it-is paragraph matches source exactly. One stale detail: it cites "highest suite review score (58)" — a reference to the June merge-gate number, which this review supersedes. The 2026-07-02 Decision ("no specific issues to fix") predates this review's gap 5/6 findings but those are cosmetic, not bugs, so no contradiction. The save-state bag remains the mutable `Record<string, unknown>` the charter asks to have confirmed (Open direction 4) — still awaiting blessing, faithfully implemented meanwhile.
+None found. The "What it is" paragraph matches source after accounting for the host migration (the listed verbs `createAppLifecycle`/`attachAppLifecycle`/`detachAppLifecycle`/`disposeAppLifecycle` are all present). The charter cites "highest suite review score (58)" — a reference to the June merge-gate number, now superseded twice. Not a contradiction, but stale. The 2026-07-02 Decision ("no specific issues to fix") predates the eager-signal and orphan-test findings but those are not bugs. The save-state bag remains the mutable `Record<string, unknown>` the charter's open direction 4 asks to have confirmed — still awaiting blessing, faithfully implemented.
+
+The charter still references the "event-capability shape" with "`LifecycleBackend`" and "swappable" — accurate after the host migration, since the backend is still swappable (different hosts carry different backends), just no longer via an ambient setter.
 
 ## Contract & docs fit
 
-- **Envelope:** front matter valid; `crate: flighthq-lifecycle` — no Rust crate exists (cross-worktree conformance gap).
-- **Types-first:** satisfied; `Lifecycle.ts` fully describes the API with good doc comments. All concepts share one file rather than one-per-file (`AppLaunchKind`/`AppMemoryPressure` did not get the separate files the status log claims) — consistent with the other platform-suite headers, noted against the types-layout convention.
-- **Shared docs:** the `agents/packages/map.md` line ("active/inactive/background, resume/pause, back button") omits memory/save-restore/launch-kind; `agents/index.md` lists the package bare. Shared-doc edits, out of sweep scope.
-- **No package README**, where `keyboard`/`device` set the suite convention.
+- **Envelope:** front matter valid. `crate: flighthq-lifecycle` declared; no Rust crate exists (cross-worktree conformance gap, suite-wide).
+- **Types-first:** fully satisfied. `Lifecycle.ts` declares `AppLifecycleState`, `AppLaunchKind`, `AppMemoryPressure`, `LifecycleBackend`, `AppLifecycle`, `LifecycleOperation`. `BackendOperationExplanation` is a shared type in its own file. `HasSystemLifecycle` is in `Host.ts`. All with doc comments.
+- **Export lanes:** correct. Public lane is curated (10 functions); contract lane is the full surface (13 via star re-export). Intra-SDK import from host-web uses `@flighthq/lifecycle/contract`.
+- **`sideEffects: false`:** satisfied. No top-level registrations, listeners, or timers. Two `WeakMap`s at module bottom are allocation-only (no side effects at import).
+- **Naming:** full unabbreviated names throughout (`AppLifecycle`, `getAppLifecycleState`, `attachAppLifecycle`, etc.).
+- **`package.json` description:** stale (gap 7).
+- **Package map line** (`agents/packages/map.md`, `agents/packages/catalog.md`): not checked in this review.
 
 ## Candidate open directions
 
-Carried from charter (all still live): the 4-edge signal set; memory-warning home (here vs `power`-adjacent); idle ownership vs `input`; the save-state bag blessing; `timeInBackground`. Add: the before-quit/exit hook and its lifecycle-vs-application boundary (gap 1), and the `'warm'` fallback bless-or-flip (gap 4).
+Carried from charter (all still live):
+- The 4-edge signal set (`onBackground`/`onForeground` vs derived from `onStateChange`).
+- Memory-warning ownership (here vs `power`-adjacent).
+- Idle/user-inactivity ownership vs `@flighthq/input`.
+- State-restoration payload shape blessing (the mutable `Record<string, unknown>` bag).
+- `timeInBackground` (ms-in-background payload on resume).
+
+New from this review:
+- The before-quit/exit hook and its lifecycle-vs-application boundary (gap 1).
+- The `'warm'` fallback bless-or-flip for backends omitting `getLaunchKind` (gap 5).
+- Whether `explainLifecycleOperation` should return a different `layer` value now that the literal sentinel object no longer exists (gap 9) — or whether the current `'sentinel'` meaning ("this host does not implement the operation") should be formally blessed as the post-migration semantic.
+- Whether the eager signal allocation should be converted to an `enableAppLifecycleSignals` gate per the suite shared decision (gap 4).

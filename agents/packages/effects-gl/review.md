@@ -1,100 +1,146 @@
 ---
 package: '@flighthq/effects-gl'
 status: solid
-score: 89
-updated: 2026-08-25
+score: 82
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
+  - assessment.md
   - source
-  - changes.patch
 ---
 
-# effects-gl — Review
+# effects-gl -- Review
 
-> **2026-07-31 correction.** This review records a superseded implementation. GL currently
-> has 46 genuine runner/registrar pairs. The unconditional-identity TAA and SSR modules were
-> deleted in `6ecb599d8`, so neither is a current capability. The batch/category registrar
-> APIs described below existed but were retired in `2a7ac8bff`; registration is now per
-> kind. Use the charter and source-derived reachability inventory for the current set.
-
-> Survey layer. Evidence is the incoming bundle `builder-67dc46d64` (`head/packages/effects-gl/`
->
-> - `changes.patch`), referenced as `67dc46d64:<path>`. No prior `reviews/depth/effects-gl.md` existed to supersede; the charter is a stub (only "What it is" seeded). Where the charter is silent, judged against the codebase-map AAA standard and the SDK-wide structural forks.
+Survey of `packages/effects-gl/` as of 2026-09-02. Judged against `charter.md` (last direction 2026-07-31) and the codebase-map contract where the charter is silent.
 
 ## Verdict
 
-> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
-
-
-`solid` — 84/100. A broad, well-shaped WebGL-2 post-process backend: 44 effect runners across a clean six-band taxonomy, a proper registry (not a switch), an MSAA-aware ping-pong pipeline, a program cache, and now a per-program uniform-location cache and a production-grade mip-pyramid bloom. The package is structurally exemplary and conforms to the contract. It falls short of `authoritative` on two axes: a handful of screen-space effects (SSR, TAA, SSAO, partial SMAA) are honest stand-ins pending a G-buffer/history-target seam, and — newly introduced in this bundle — the bloom recipe **reimplements** mip-count and soft-knee math inline that `@flighthq/effects` now ships as shared helpers, so GL and the other backends will not derive identical bloom parameters.
+`solid` -- 82/100. A broad, structurally sound WebGL 2 post-process backend: 47 per-kind runner/registrar pairs across a six-band taxonomy, a clean open registry, an MSAA-aware HDR-capable ping-pong pipeline with adjustment fusion, a per-context program cache, a per-program uniform-location cache, and a complete diagnostics layer. The architecture is exemplary -- one runner per effect, no switches, full tree-shakability, explicit GPU lifecycle. It falls short of `authoritative` on three axes: the uniform-location cache exists but is adopted by only 5 of 47 effect modules (the other 42 still make per-frame driver round-trips); two screen-space effects (SSAO, SMAA) register under their canonical names but implement materially simpler algorithms; and the `strength` parameter is applied before the spatial operator in the tint/glow family, producing non-independent alpha/strength control and a non-monotonic outer-glow curve.
 
 ## Present capabilities
 
-Grounded in `67dc46d64:packages/effects-gl/src/`.
+Grounded in `packages/effects-gl/src/` (59 source files, ~10,900 lines; 57 test files, ~5,500 lines).
 
-**Effect coverage — 44 runners, one file each.** Every runner is `apply<Name>EffectToGl(...)` plus a `defaultGl<Name>EffectRunner: GlRenderEffectRunner`, with the fragment source as a module-bottom `const`. The set spans antialiasing (Fxaa, Smaa, Taa), bloom/optical (Bloom, ChromaticAberration, GodRays, LensDirt, LensDistortion, LensFlare, Vignette), blur (BokehDepthOfField, CameraMotionBlur, DirectionalBlur, MotionBlur, RadialBlur, TiltShift), color/tone (BrightnessContrast, ChannelMixer, ColorGrade, Exposure, Grayscale, HueSaturation, Invert, LiftGammaGain, LookupTableGrade, Posterize, Sepia, ToneMap, WhiteBalance), screen-space/atmospheric (Displacement, ScreenSpaceFog, Sharpen, Ssao, Ssr), and stylize (Crt, Dither, FilmGrain, Glitch, Halftone, Kuwahara, Outline, Pixelate, Scanlines, Sketch). This is well past a basic filter feature target and reaches into modern engine territory.
+### Registry and pipeline
 
-**Registry, not switch** (`glRenderEffectRegistry.ts`). Per-`GlRenderState` `WeakMap → Map<kind, runner>` with `getGlRenderEffectRunner`, `hasGlRenderEffectRunner`, `registerGlRenderEffect`. Last-write-wins, opt-in import, unused recipes tree-shake. This is the fork-B "open registry by default" pattern done right; the comment explicitly calls it the material-renderer pattern one tier up.
+- **Open effect registry** (`glRenderEffectRegistry.ts`): `registerGlRenderEffect`, `getGlRenderEffectRunner`, `hasGlRenderEffectRunner`, `isGlRenderEffectResolvable`. Per-state, Map-keyed, supports resolver predicates for effects whose identity degrades (CustomShaderEffect, BitmapDisplacementEffect). No switch, no monolithic import. Charter North star #1 satisfied.
 
-**Batch registrars + enumeration** (`glRenderEffectRegistrar.ts`). A six-band taxonomy (`registerAntialiasing/Bloom/Blur/Color/ScreenSpace/Stylize…`) symmetric with `effects-wgpu`, plus `registerDefaultGlRenderEffects`/`registerStandardGlRenderEffects` covering all 44, and back-compat aliases (`registerColorGradeGlRenderEffects`, `registerStandardGlRenderEffects`). `getGlRenderEffectKinds()` returns a single-source-of-truth alphabetized 44-entry list; a test asserts every kind in it resolves to a registered runner under `registerDefault`. The `ALL_GL_EFFECT_KINDS` count (44) and the `registerGlRenderEffect` call count (44) match.
+- **Post-process pipeline** (`glRenderEffectPipeline.ts`): `createGlRenderEffectPipeline` / `beginGlRenderEffectPipeline` / `endGlRenderEffectPipeline` / `destroyGlRenderEffectPipeline`. MSAA-aware scene target, configurable format (rgba8/rgba16f), configurable depth, pooled ping-pong scratch targets, LUT cache, velocity texture seam. Adjustment fusion: consecutive pointwise color adjustments are fused into one color-matrix or one color-LUT pass (`glColorMatrixPass.ts`, `glColorLutPass.ts`) preserving stack order. Color-space-aware present: linear content gets a single `drawGlLinearToSrgbPass`; sRGB content gets a plain blit. Charter North star #3 (explicit GPU lifecycle) satisfied -- create/destroy, acquire/release balanced.
 
-**Pipeline** (`glRenderEffectPipeline.ts`). `begin/end/create/destroyGlRenderEffectPipeline` drive an MSAA-aware HDR-capable scene target with a ping-pong pooled-target loop; depth and velocity are read from the original scene target (not the ping-ponged source), and a `setGlRenderEffectVelocityTexture` seam already exists for velocity-driven effects. `destroy*` correctly frees GPU resources (target + pool) — the right verb per the teardown rule. Final present is a GL→GL blit.
+- **Render-texture application** (`glRenderTextureEffect.ts`): `applyGlRenderEffectsToRenderTexture` / `explainGlRenderEffectApplication` -- the per-node target-to-target path, separate from the pipeline. Returns `false` on no source or no registered runners; the explain function produces a typed `GlRenderEffectApplicationExplanation` covering six statuses.
 
-**Program cache + uniform-location cache** (`glEffectProgramCache.ts`). `getGlEffectProgram` compiles each `(state, key)` fragment once. New this bundle: `getGlEffectUniformLocation` caches per-program uniform locations in a `WeakMap<GlFullscreenProgram, Map<name, location>>`, keyed by the program object so it survives state-key rotation and frees with the program. The cache was applied uniformly across all effect sources (verified on `glGrayscaleEffect` diff: `gl.getUniformLocation(p.program,…)` → `getGlEffectUniformLocation(state, p,…)`). This removes O(N·uniforms) driver round-trips per frame — a genuine Silver/Gold performance win, correctly reasoned.
+- **Program cache** (`glEffectProgramCache.ts`): `getGlEffectProgram` keyed by a stable string per GL context (WeakMap on `GlContext`). `getGlEffectUniformLocation` caches per-program uniform locations to avoid driver string-hash round-trips.
 
-**Mip-pyramid bloom** (`glBloomEffect.ts`). The single-scale Gaussian was replaced with a full bright-pass → N-level downsample → per-level Gaussian → tent-upsample → additive-composite chain (CoD/Unreal style), with soft-knee bright-pass, auto-derived mip count, per-mip weights, and O(1) pool churn via accumulation-target swap. The pool bracket is balanced: every `acquireGlRenderTarget` has a matching `releaseGlRenderTarget`. This is real, production-shaped work, not a stand-in.
+### Per-kind runners (47 registered kinds)
 
-**Tests.** 48 colocated `*.test.ts` (one per source), 128 tests per the status doc. The registrar test asserts the kind/runner closure and the taxonomy moves (Bloom out of blur, Dither into stylize, Vignette into bloom). Tests are presence/closure checks (jsdom can't exercise WebGL2 draws), which is the honest ceiling for unit tests here.
+Each effect matches the pattern: `apply<Name>EffectToGl` (the direct-call function), `defaultGl<Name>EffectRunner` (the registry-shaped adapter), and `registerGl<Name>Effect` (the one-call registrar). Kinds grouped by band:
 
-**Manifest.** `sideEffects: false`, single root `.` export, no `registerRenderer` at module top level, deps trimmed to `effects`/`filters-gl`/`geometry`/`render-gl`/`types` (the unused `@flighthq/filters` was removed). Crate mirror `flighthq-effects-gl` is declared in the contract front matter.
+**Antialiasing** (2): FXAA (single-pass luma-edge), SMAA (single-pass edge-aware blur -- stand-in, see Gaps).
+
+**Bloom / optical** (5): Bloom (bright-pass + separable Gaussian + additive composite), Lens Dirt, Lens Flare, God Rays, Lens Distortion.
+
+**Blur** (7): Blur (separable Gaussian), Directional Blur, Radial Blur, Motion Blur (velocity-aware), Camera Motion Blur, Tilt Shift, Bokeh Depth of Field (disc blur with optional depth-driven CoC).
+
+**Color / tone** (7): Tone Map (Reinhard/ACES operators), White Balance, Composite (blend-mode composition), Blend (backdrop-aware), Posterize, Dither, Custom Shader.
+
+**Screen-space / atmospheric** (3): SSAO (luminance-variation stand-in, see Gaps), Screen Space Fog (depth-aware distance fog), Contact Shadows.
+
+**Stylize** (10+): Bevel, Drop Shadow, Inner Glow, Inner Shadow, Outer Glow, Gradient Bevel, Gradient Glow, Outline, Sketch, CRT, Film Grain, Glitch, Halftone, Scanlines, Pixelate, Chromatic Aberration, Sharpen, Convolution, Kuwahara, Median, Vignette, Bitmap Displacement, Displacement.
+
+**Shared helpers**: `glEffectBoxBlur.ts` (iterative box blur for the glow/shadow family), `glEffectBlitShader.ts` (blit, blit-offset, erase passes), `glEffectTintShader.ts` (tint, invert-tint passes), `glEffectGradientRamp.ts` (gradient-ramp generation for gradient bevel/glow), `glShaderTestHelper.ts` (test utility).
+
+### Blur primitives
+
+Two reusable blur primitives: `applyGaussianBlurToGl` (separable Gaussian, sigma-based, radius = ceil(3*sigma)) used by Bloom and the plain Blur effect, and `applyGlEffectBoxBlur` (iterative box blur) used by the glow/shadow/bevel family. Both also have `*RenderTextures` variants for the per-node path. The Gaussian blur and its test helper use `getGlEffectUniformLocation` correctly.
+
+### Diagnostics layer
+
+`enableGlRenderEffectGuards.ts`: `enableGlRenderEffectGuards` / `disableGlRenderEffectGuards` installs three guards -- pipeline-skip (warns on unregistered kinds silently dropped by the pipeline), render-texture application (typed explanation of partial registration / source-unavailable / stale-destination / unresolved-effects), and custom-shader-source re-registration (warns when different source is registered under the same shaderKey but the compiled program is cached). All messages flow through `logOnce` from `@flighthq/log`; core stays message-free. This fully satisfies the codebase-map diagnostics convention (inversion rule, seams not messages).
+
+### Testing
+
+Every source file has a colocated `.test.ts` (except `contract.ts` and `index.ts`, which are re-exports only). Tests verify function existence, registration wiring, runner shape, and (for complex multi-pass effects like bloom/glow/bevel) exercise the shader-expression math. jsdom cannot reach rendered pixels, so tests are structurally wiring/closure checks by necessity; pixel verification belongs to the functional-test layer.
+
+### Contract compliance
+
+- **Two export lanes**: `.` (`index.ts`) curates the public API; `./contract` (`contract.ts`) re-exports everything for intra-SDK consumption. Both are declared in `package.json` exports map.
+- **`sideEffects: false`**: declared in `package.json`. No top-level registration calls.
+- **Types in `@flighthq/types`**: all imported types (`GlRenderEffectRunner`, `GlRenderState`, `GlRenderTarget`, `BloomEffect`, etc.) come from `@flighthq/types/contract`. No inline exported type definitions.
+- **Intra-SDK imports via `/contract`**: all dependencies (`@flighthq/render-gl/contract`, `@flighthq/effects/contract`, `@flighthq/adjustments/contract`, `@flighthq/color/contract`, `@flighthq/registry/contract`, `@flighthq/log/contract`) use the contract lane.
+- **Full unabbreviated names**: function names include the full type name (`applyBloomEffectToGl`, `registerGlBevelEffect`).
+- **No `@flighthq/sdk` imports**.
+- **Explicit allocation**: `create*`/`destroy*` for owned targets, `acquire*`/`release*` brackets for pooled targets.
 
 ## Gaps
 
-- **Stand-in screen-space effects.** `Ssr` (passthrough copy), `Taa` (passthrough copy), and `Ssao` (luminance-variation stand-in, not depth-driven) preserve the pipeline stage but do not implement the named algorithm. `Smaa` is a single-pass edge-aware blur, not the multi-pass edge/blend-weight recipe. Each is honestly commented, but the _names over-promise_ against what runs. The blocker is real and cross-package: these need a sampleable depth/normal G-buffer and a retained per-pipeline history target from `render-gl`. (`sceneDepthTexture`/`sceneVelocityTexture` seams already exist; the history target does not.)
-- **No backend-parity proof.** There are no `tests/functional/effect-*-gl` scenes proving the GL output agrees with canvas/wgpu (`test:functional:parity`). The colocated tests verify wiring, not rendered pixels. This is the highest-value missing coverage for a render backend and is exactly the kind of thing jsdom cannot reach.
-- **Bloom math duplicated, not consumed** (see Contract & docs fit — this is also a gap in completeness: the package does not yet use the shared primitive it should).
-- **Chain-ordering / validation metadata absent.** No `validateGlRenderEffectChain` / `orderGlRenderEffectChain` / tone-map-last helper; the pipeline silently skips unregistered kinds. `hasGlRenderEffectRunner` lets a caller build their own policy, but there is no canonical ordering hint. Blocked on a `RenderEffectChainHint` type in `@flighthq/types`/`@flighthq/effects`.
-- **Adjustment color domain is implicit.** The pipeline applies its fused adjustment runs before the
-  final linear-to-sRGB pass regardless of whether the adjustment describes scene-linear correction or
-  a display-referred look. Contrast/HSL/LUT operations therefore cannot express a predictable legacy
-  gamma-space grade without a custom final shader; this belongs in chain scheduling/output-transform
-  metadata, not in material shaders.
-- **No context-loss recovery / observable HDR-degrade policy / effect-chain fusion.** Render-gl now
-  falls back from unsupported rgba16f to rgba8, but the pipeline does not diagnose that an HDR-required
-  chain is operating on already-clipped input. The remaining maturity items are deferred and
-  cross-package-dependent.
+### Uniform-location cache adoption (in-package, high-impact)
+
+The `getGlEffectUniformLocation` cache in `glEffectProgramCache.ts` exists and works, but only 5 of 47 effect modules use it (`glBlurEffect.ts`, `glBlendEffect.ts`, `glCompositeEffect.ts`, `glBitmapDisplacementEffect.ts`, `glCustomShaderEffect.ts`). The remaining 42 call `gl.getUniformLocation(p.program, ...)` directly inside their per-draw `setUniforms` closure, incurring a GL driver round-trip per uniform per frame. This is the single largest sweep-safe in-package improvement: a mechanical substitution of `gl.getUniformLocation(p.program, name)` with `getGlEffectUniformLocation(state, p, name)` in each file.
+
+### SSAO is a luminance-variation approximation, not depth-driven AO
+
+`applySsaoEffectToGl` (`glSsaoEffect.ts`) darkens by local luminance variation in a 4-tap neighborhood scaled by intensity. The comment is honest ("stand-in darkens fragments by local luminance variation"), but the algorithm ignores the depth data that the pipeline now feeds (`ctx.sceneDepthTexture` is available since `beginGlRenderEffectPipeline` passes a real `sceneDepthTexture` at line 169 of `glRenderEffectPipeline.ts`). The pipeline blocker documented in the status is stale -- the depth seam landed. The effect itself is the remaining gap.
+
+### SMAA is a single-pass edge blur, not multi-pass morphological AA
+
+`applySmaaEffectToGl` (`glSmaaEffect.ts`) detects edges by luma threshold and averages a 5-tap cross neighborhood. The comment says "single-pass approximation." Real SMAA is a three-pass algorithm (edge detection, blend-weight computation against area/search lookup textures, neighborhood blending). The stand-in is functionally an edge-softening blur, not morphological antialiasing.
+
+### `strength` applied before the spatial operator
+
+`glEffectTintShader.ts:17` computes `min(1.0, a * u_alpha * u_strength)`, folding strength inside the clamp before the blur. This means alpha and strength are not independently controllable. `INVERT_TINT_FRAGMENT_SRC` (`:31`) applies the same folding to the inverted alpha before blur, diverging from a blur-then-invert pipeline on antialiased borders. `glOuterGlowEffect.ts:42-43` splits strength into `min(1,s)` pre-blur plus `floor(s)` repeated composite blits, which is neither continuous nor monotonic. `glBevelEffect.ts:95` passes strength to the bevel shader as `u_intensity` (a post-operator gain), which is the correct placement -- but the uniform name `u_intensity` diverges from the descriptor field `strength`. This is documented in `status.md` as a known issue; the missing primitive is a post-operator coverage-gain pass.
+
+### `BloomEffect.passes` is declared in `@flighthq/types` but consumed by no backend
+
+`BloomEffect.passes` is defined at `packages/types/src/BloomEffect.ts:8` as an optional blur-quality field. No runner in `effects-gl`, `effects-wgpu`, or `effects-canvas` reads it. The bloom runner uses a single separable Gaussian pass whose radius derives from `computeBloomBlurRadius(effect)`. The field is dead.
+
+### No chain validation or ordering
+
+`RenderEffectChainHint`, `validateGlRenderEffectChain`, and `orderGlRenderEffectChain` do not exist. The pipeline silently skips unregistered kinds (with a guard diagnostic), but cannot detect ordering hazards (e.g., bloom after tone map clips highlights) or HDR/depth requirement mismatches. This is noted in the charter as Open direction #4 (cross-package ownership question).
+
+### Two GL-only effects with no WGPU counterpart
+
+`BokehDepthOfFieldEffect` and `CustomShaderEffect` have GL runners but no `effects-wgpu` counterpart. A chain using either silently degrades to identity on WGPU, with no warning unless guards are enabled.
+
+### No functional test scenes
+
+No `tests/functional/` scenes exist for `effects-gl`. Pixel-level correctness across effects and cross-backend parity (GL vs Canvas vs WGPU) are unverified. The colocated unit tests verify wiring and registration only. This is noted in the charter as Open direction #3.
+
+### Bloom math divergence resolved but partially
+
+The previous review's highest-severity finding -- inline bloom mip-count/soft-knee math that disagreed with `@flighthq/effects` shared helpers -- has been partially resolved. `glBloomEffect.ts` now imports and uses `computeBloomThreshold`, `computeBloomIntensity`, and `computeBloomBlurRadius` from `@flighthq/effects/contract`. However, the bloom shader itself is a simple hard-threshold bright-pass (`step(u_threshold, l)`) rather than a soft-knee that the `computeBloomThresholdKnee` helper was designed to feed. Whether the hard-threshold recipe is the intended final shape or should adopt the soft-knee helper is an open question. The `computeBloomMipCount`/`computeBloomMipWeights` helpers are unused -- the GL bloom is not a mip-pyramid but a single-level bright+blur+composite recipe.
+
+### Charter says 46 kinds; source has 47
+
+The charter Decision says "GL has 46 realized built-ins." The source now registers 47 distinct kinds (the 45 in the main grep plus CustomShaderEffect and BitmapDisplacementEffect). The charter count is stale by one.
 
 ## Charter contradictions
 
-None against stated direction — the charter's only authored content is the "What it is" line ("the GPU runner layer that turns the data-descriptor effects in `@flighthq/effects` into multi-pass fullscreen shader recipes, plus the post-process pipeline that drives them"). The package matches that description precisely. North star, Boundaries, Decisions, and Open directions are all `TODO`, so there is no blessed principle to contradict. (The duplication finding below would likely contradict a North star _once authored_ — see candidate open directions.)
+- **North star #2 ("the backend differs, the intent does not")** is mostly satisfied. The bloom effect now consumes the shared `@flighthq/effects` helpers for threshold, intensity, and blur radius. However, the GL bloom recipe (single-level bright+blur+composite with a hard threshold) does not use the mip-pyramid or soft-knee helpers, so GL bloom output will differ from any backend that adopts the multi-level soft-knee recipe. The charter's Open direction #2 covers this.
+
+- **North star #4 ("names tell the truth about what runs")** is satisfied for TAA/SSR (deleted), but the SSAO and SMAA stand-ins still register under canonical names while implementing materially different algorithms. `applySsaoEffectToGl` is a luminance-variation darkener, not ambient occlusion; `applySmaaEffectToGl` is a 5-tap edge-blur, not morphological antialiasing. Both have honest source comments, but the kind strings `SsaoEffect` and `SmaaEffect` carry the expectation of the canonical algorithms. The charter's Open direction #1 covers this.
+
+- **Decision "46 realized built-ins"** is stale; the current count is 47.
 
 ## Contract & docs fit
 
-**Lives up to the contract — strongly.**
+### Package against contract
 
-- Types-first: all effect descriptor types (`BloomEffect`, `SsrEffect`, etc.) and the `GlRenderEffectRunner`/`GlRenderEffectPipeline` contracts live in `@flighthq/types`; the bloom fields `mipCount`/`mipWeights`/`thresholdKnee` were added there (`67dc46d64:packages/types/src/BloomEffect.ts`), not inline. Correct.
-- Full unabbreviated names, `get*`/`has*`/`register*`/`apply*` verbs, sentinels-not-throws (`getGlRenderEffectRunner` returns `null`; the pipeline `continue`s on a missing runner), single root export, `sideEffects: false`, `destroy*` for GPU teardown. All clean.
-- `Readonly<>` on effect/target params throughout.
+- Export lanes, sideEffects, types-in-types, naming, allocation, and diagnostics are all conformant.
+- The `Readonly<T>` convention is inconsistently applied across effect function signatures. Most per-kind `apply*` functions correctly mark `source` and `effect` as `Readonly`, but some shared helpers (e.g., `applyGlEffectTintPass` takes `source: GlRenderTarget` without `Readonly`) do not.
+- Module-scoped state (`_skipGuards`, `_guards`, `_sourceGuards`, `_programs`, `_uniformLocations`, `tintShaders`, `invertTintShaders`, `blitOffsetShaders`, `blitShaders`, `eraseShaders`) is all WeakMap-keyed on either `GlRenderState` or `GlContext`, which aligns with the explicit-dependency model (no set-and-forget singletons, state scoped to context lifetime). These are at the bottom of files per style convention.
 
-**Contract-fit drift — one real finding (registry-by-default is fine; this is fork-C, the within-unit duplication smell):**
+### Admin docs against reality
 
-- **Bloom mip/knee math is reimplemented in the GL backend instead of consuming the shared `@flighthq/effects` helpers added in the same bundle.** `effects/bloomMath.ts` now exports `computeBloomMipCount`, `computeBloomMipWeights`, and `computeBloomThresholdKnee` (with colocated tests), explicitly documented as _"substrate-agnostic … shared by all bloom backends so GL and WGPU derive identical parameters from the same intent."_ But `glBloomEffect.ts` imports only `computeBloomBlurRadius` and computes the rest inline — and the two **disagree**:
-  - Mip count: `effects` uses `max(1, floor(log2(minDim)))` (no clamp); GL uses `max(1, min(6, floor(log2(minDim/4))))` (clamped 1–6, `/4`). Different level counts for the same source.
-  - Soft knee: `effects.computeBloomThresholdKnee` scales the knee by `threshold` (`thresholdKnee * threshold`) and emits curve constants; the GL shader uses an unscaled `u_knee = thresholdKnee` with a different quadratic. Different bright-pass boundary.
-  - Weights: GL re-derives the uniform/normalize fallback inline instead of calling `computeBloomMipWeights`. This defeats the stated purpose of the shared helpers and guarantees GL↔WGPU↔(future Rust) bloom divergence. The status doc claims pass-2 added the pyramid bloom but does **not** flag that it bypasses the shared math — a claim gap worth recording. Candidate revision: have the GL bloom consume the `effects` helpers (and reconcile which derivation is canonical).
-
-**Where the admin docs are stale against the work:**
-
-- The **Package Map** (`agents/index.md`) has an entry for `@flighthq/filters-gl` but **no entry for `@flighthq/effects-gl`** (nor `@flighthq/effects`, `effects-wgpu`, `effects-canvas`). A 44-runner post-process backend is a substantial package and should have a Package Map line. Candidate revision: add `effects` + the three `effects-<backend>` entries.
-- `render-backend-support.md` is referenced as the source of truth for "what renders on each backend"; it should record that GL effects exist but that Ssr/Taa/Ssao/Smaa are stand-ins, so a scoping agent does not assume real depth-driven AO/reflections on GL. Candidate revision.
+- The charter's Decision count (46) should be updated to 47.
+- The previous review carried correction notes referencing superseded implementation details (batch/category registrars, builder bundle references). This review replaces those with current-source observations.
 
 ## Candidate open directions
 
-The charter is a stub; each silence below is a question for the user to settle into the charter.
+Questions the charter does not answer that this review had to assume:
 
-1. **Naming honesty for stand-ins (the central design fork).** Keep `Ssr`/`Taa`/`Ssao`/`Smaa` under their canonical names with honest stand-in comments (current state), or relocate the not-yet-real ones to an `experimental`/`stub` namespace until the G-buffer/history seam lands? This is the one the status doc explicitly escalates; it belongs in the charter's Boundaries/Decisions.
-2. **Canonical bloom math home.** Should _all_ bloom backends be required to consume `@flighthq/effects` bloom helpers (making divergence a lint/contract failure), and which of the two current mip/knee derivations is canonical? This is fork-C made concrete for this package.
-3. **Taxonomy reconciliation.** GL keeps four-band back-compat aliases over the six-band set, and `BloomEffect`/`DitherEffect` band placement differs from history. Bless the six-band taxonomy as the canonical one and drop or keep the aliases? (Low urgency — last-write-wins, no runtime impact.)
-4. **Backend-parity test scope.** Is `effects-gl` expected to carry `tests/functional/effect-*-gl` parity scenes as part of "done," or is that owned by the functional-test harness layer? Settles whether the missing parity coverage is a gap _in this package_.
-5. **Chain orchestration ownership.** Where does effect-chain validation/ordering live — a `RenderEffectChainHint` in `effects` consumed here, or a helper in `render-gl`? (Mirrors the `filters-gl` decision that the chain applier is out of scope for the leaf-shader package.)
-6. **G-buffer/history-target seam.** The real SSR/SSAO/TAA work all converge on one cross-package decision in `render-gl` (retained-target shape, depth/normal buffers). Worth surfacing as the single unblocking dependency rather than three separate effect TODOs.
+1. **Hard-threshold vs soft-knee bloom.** The GL bloom uses `step(threshold, luma)` as a hard bright-pass cutoff. The `@flighthq/effects` package provides a `computeBloomThresholdKnee` helper for a soft-knee curve. Which is the intended final recipe? If soft-knee, the bright-pass shader and its uniform interface need updating.
+
+2. **SSAO should consume the depth seam.** The pipeline now provides `sceneDepthTexture`, but the SSAO runner does not use it. Is the current luminance-variation approximation acceptable as a shipped realization, or is real depth-driven SSAO (using the available depth) a within-package improvement now that the pipeline blocker is resolved?
+
+3. **`Readonly<T>` consistency on shared helpers.** Several internal helper functions (`applyGlEffectTintPass`, `applyGlEffectBlitPass`, `applyGlEffectBlitOffsetPass`, `applyGlEffectErasePass`) take their `source` and `dest` parameters without `Readonly`, unlike the per-kind `apply*` functions. This is an internal-only inconsistency but diverges from the codebase-map convention.
