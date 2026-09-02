@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Tween, TweenManager, TweenOptions } from '@flighthq/types/contract';
 
-import { createTween } from './tween';
+import { addTweenToManager, makeTween } from './internal';
 
 type ColorComponents = { b: number; g: number; r: number };
 
@@ -24,8 +24,7 @@ export function createColorTween(
     g: (fromColor >> 8) & 0xff,
     r: (fromColor >> 16) & 0xff,
   };
-  const tween = createTween(
-    manager,
+  const tween = makeTween(
     components,
     duration,
     {
@@ -34,7 +33,9 @@ export function createColorTween(
       r: (toColor >> 16) & 0xff,
     },
     options,
+    manager.defaultEase,
   );
+  addTweenToManager(manager, tween, options?.overwrite ?? true, target, [property]);
   connectSignal(tween.onUpdate, () => {
     target[property] =
       ((Math.round(components.r) & 0xff) << 16) |
