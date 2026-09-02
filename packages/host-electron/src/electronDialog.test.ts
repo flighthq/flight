@@ -117,6 +117,16 @@ describe('createElectronFileOpenDialogBackend', () => {
     expect((await createElectronFileOpenDialogBackend(electron).open({})).outcome).toBe('runtime-unavailable');
     expect((await createElectronFileSaveDialogBackend(electron).save({})).outcome).toBe('runtime-unavailable');
   });
+
+  it('does not open a native picker when already aborted', async () => {
+    const { electron, calls } = fakeElectron({ open: { canceled: false, filePaths: ['/ignored'] } });
+    const controller = new AbortController();
+    controller.abort();
+    await expect(createElectronFileOpenDialogBackend(electron).open({ signal: controller.signal })).resolves.toEqual({
+      outcome: 'cancelled',
+    });
+    expect(calls.openOptions).toBeUndefined();
+  });
 });
 
 describe('createElectronFileSaveDialogBackend', () => {
@@ -142,5 +152,12 @@ describe('createElectronMessageDialogBackend', () => {
     const no = fakeElectron({ message: { response: 1, checkboxChecked: false } });
     expect(await createElectronMessageDialogBackend(no.electron).confirm({ message: 'ok?' })).toBe(false);
     expect(no.calls.messageOptions?.buttons).toEqual(['OK', 'Cancel']);
+  });
+
+  it('forwards the signal supported by Electron message boxes', async () => {
+    const { electron, calls } = fakeElectron({});
+    const signal = new AbortController().signal;
+    await createElectronMessageDialogBackend(electron).message({ message: 'wait', signal });
+    expect(calls.messageOptions?.signal).toBe(signal);
   });
 });

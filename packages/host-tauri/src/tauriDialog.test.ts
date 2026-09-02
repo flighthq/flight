@@ -114,6 +114,29 @@ describe('createTauriFileOpenDialogBackend', () => {
     expect((await createTauriFileOpenDialogBackend(tauri).open({})).outcome).toBe('runtime-unavailable');
     expect((await createTauriFileSaveDialogBackend(tauri).save({})).outcome).toBe('runtime-unavailable');
   });
+
+  it('does not open a native picker when already aborted', async () => {
+    const { tauri, calls } = fakeTauri('/ignored', null);
+    const controller = new AbortController();
+    controller.abort();
+    await expect(createTauriFileOpenDialogBackend(tauri).open({ signal: controller.signal })).resolves.toEqual({
+      outcome: 'cancelled',
+    });
+    expect(calls.open).toEqual([]);
+  });
+
+  it('preserves a native selection completed after an in-flight abort', async () => {
+    const controller = new AbortController();
+    const { tauri } = fakeTauri('/selected', null);
+    const open = tauri.dialog.open;
+    tauri.dialog.open = async (options) => {
+      const result = await open(options);
+      controller.abort(new Error('native picker already completed'));
+      return result;
+    };
+    const result = await createTauriFileOpenDialogBackend(tauri).open({ signal: controller.signal });
+    expect(result.outcome).toBe('selected');
+  });
 });
 
 describe('createTauriFileSaveDialogBackend', () => {

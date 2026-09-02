@@ -16,6 +16,7 @@ export const webPromptDialogBackend = createWebPromptDialogBackend();
 function createWebMessageDialogBackend(): MessageDialogBackend {
   return {
     async confirm(options) {
+      if (options.signal?.aborted) return false;
       if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
       try {
         return window.confirm(options.message) === true;
@@ -25,6 +26,7 @@ function createWebMessageDialogBackend(): MessageDialogBackend {
     },
     async message(options) {
       const checkboxChecked = options.checkboxChecked ?? false;
+      if (options.signal?.aborted) return { buttonIndex: options.cancelId ?? 0, cancelled: true, checkboxChecked };
       if (typeof window === 'undefined' || typeof window.alert !== 'function') {
         return { buttonIndex: 0, cancelled: false, checkboxChecked };
       }
@@ -41,6 +43,7 @@ function createWebMessageDialogBackend(): MessageDialogBackend {
 function createWebPromptDialogBackend(): PromptDialogBackend {
   return {
     async prompt(options) {
+      if (options.signal?.aborted) return null;
       if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
       try {
         return window.prompt(options.message, options.defaultValue ?? '');
@@ -55,8 +58,17 @@ export function showConfirmDialog(host: HasDialogMessage, options: Readonly<Mess
   return host.dialog.message.confirm(options);
 }
 
-export function showErrorBox(host: HasDialogMessage, title: string, content: string): Promise<MessageDialogResult> {
-  return host.dialog.message.message({ kind: 'error', message: content, title });
+export function showErrorBox(
+  host: HasDialogMessage,
+  title: string,
+  content: string,
+  signal?: AbortSignal,
+): Promise<MessageDialogResult> {
+  return host.dialog.message.message(
+    signal === undefined
+      ? { kind: 'error', message: content, title }
+      : { kind: 'error', message: content, signal, title },
+  );
 }
 
 export function showErrorDialog(

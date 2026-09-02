@@ -18,7 +18,8 @@ import type {
 
 export function createTauriDirectoryOpenDialogBackend(tauri: TauriApi): DirectoryOpenDialogBackend & Entity {
   return createEntity({
-    async open(): Promise<DirectoryOpenDialogResult> {
+    async open(options): Promise<DirectoryOpenDialogResult> {
+      if (options?.signal?.aborted) return { outcome: 'cancelled' };
       const open = tauri.dialog?.open;
       if (typeof open !== 'function') return { outcome: 'runtime-unavailable' };
       try {
@@ -41,6 +42,7 @@ export function createTauriDirectoryOpenDialogBackend(tauri: TauriApi): Director
 export function createTauriFileOpenDialogBackend(tauri: TauriApi): FileOpenDialogBackend & Entity {
   return createEntity({
     async open(options): Promise<FileOpenDialogResult> {
+      if (options.signal?.aborted) return { outcome: 'cancelled' };
       const open = tauri.dialog?.open;
       if (typeof open !== 'function') return { outcome: 'runtime-unavailable' };
       try {
@@ -67,6 +69,7 @@ export function createTauriFileOpenDialogBackend(tauri: TauriApi): FileOpenDialo
 export function createTauriFileSaveDialogBackend(tauri: TauriApi): FileSaveDialogBackend & Entity {
   return createEntity({
     async save(options): Promise<FileSaveDialogResult> {
+      if (options.signal?.aborted) return { outcome: 'cancelled' };
       const save = tauri.dialog?.save;
       if (typeof save !== 'function') return { outcome: 'runtime-unavailable' };
       try {
@@ -90,6 +93,13 @@ export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogB
   const dialog = tauri.dialog;
   return {
     async message(options) {
+      if (options.signal?.aborted) {
+        return {
+          buttonIndex: options.cancelId ?? 0,
+          cancelled: true,
+          checkboxChecked: options.checkboxChecked ?? false,
+        };
+      }
       await dialog.message(options.message, {
         title: options.title,
         kind: toTauriMessageKind(options.kind),
@@ -97,6 +107,7 @@ export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogB
       return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
     },
     async confirm(options) {
+      if (options.signal?.aborted) return false;
       return dialog.confirm(options.message, {
         title: options.title,
         kind: toTauriMessageKind(options.kind),

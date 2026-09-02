@@ -146,6 +146,24 @@ describe('webFileOpenDialogBackend', () => {
     expect(removeInput).toHaveBeenCalledWith('cancel', expect.any(Function));
     expect(removeWindow).toHaveBeenCalledWith('focus', expect.any(Function));
   });
+
+  it('settles an in-flight legacy picker abort once and removes every listener', async () => {
+    const input = document.createElement('input');
+    const removeInput = vi.spyOn(input, 'removeEventListener');
+    const removeWindow = vi.spyOn(window, 'removeEventListener');
+    const controller = new AbortController();
+    const removeSignal = vi.spyOn(controller.signal, 'removeEventListener');
+    vi.spyOn(document, 'createElement').mockReturnValue(input as never);
+
+    const pending = webFileOpenDialogBackend.open({ signal: controller.signal });
+    controller.abort(new Error('cancel picker'));
+
+    await expect(pending).resolves.toEqual({ outcome: 'cancelled' });
+    expect(removeInput).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(removeInput).toHaveBeenCalledWith('cancel', expect.any(Function));
+    expect(removeWindow).toHaveBeenCalledWith('focus', expect.any(Function));
+    expect(removeSignal).toHaveBeenCalledWith('abort', expect.any(Function));
+  });
 });
 
 describe('webFileSaveDialogBackend', () => {
@@ -179,12 +197,36 @@ describe('webFileSaveDialogBackend', () => {
     expect(writes).toEqual(['saved']);
     expect(closes).toBe(1);
   });
+
+  it('aborts an in-flight handle write and releases the signal listener', async () => {
+    const reason = new Error('cancel handle write');
+    const controller = new AbortController();
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    const abort = vi.fn(async () => {});
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = async () =>
+      fileSystemHandle('out.txt', '', {
+        abort,
+        async close() {},
+        async write() {
+          controller.abort(reason);
+          throw reason;
+        },
+      });
+    const result = await webFileSaveDialogBackend.save({});
+    expect(result.outcome).toBe('selected');
+    if (result.outcome !== 'selected') return;
+
+    const write = getFileDialogHandleOperations(result.handle)?.writeText;
+    await expect(write?.('saved', controller.signal)).rejects.toBe(reason);
+    expect(abort).toHaveBeenCalledWith(reason);
+    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
+  });
 });
 
 function fileSystemHandle(
   name: string,
   text: string,
-  writable?: { close(): Promise<void>; write(data: unknown): Promise<void> },
+  writable?: { abort?(reason?: unknown): Promise<void>; close(): Promise<void>; write(data: unknown): Promise<void> },
 ) {
   return {
     kind: 'file' as const,

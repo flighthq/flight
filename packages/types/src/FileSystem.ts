@@ -39,20 +39,20 @@ export interface FileSystemUsage {
 
 // Required subset shared by Web OPFS and Capacitor Filesystem.
 export interface FileSystemBasicBackend {
-  appendTextFile(path: string, data: string): Promise<boolean>;
+  appendTextFile(path: string, data: string, signal?: AbortSignal): Promise<boolean>;
   copy(from: string, to: string): Promise<boolean>;
   directoryExists(path: string): Promise<boolean>;
   fileExists(path: string): Promise<boolean>;
   makeDirectory(path: string): Promise<boolean>;
-  readBinaryFile(path: string): Promise<Uint8Array | null>;
-  readDirectory(path: string): Promise<FileEntry[]>;
-  readTextFile(path: string): Promise<string | null>;
+  readBinaryFile(path: string, signal?: AbortSignal): Promise<Uint8Array | null>;
+  readDirectory(path: string, signal?: AbortSignal): Promise<FileEntry[]>;
+  readTextFile(path: string, signal?: AbortSignal): Promise<string | null>;
   removeDirectory(path: string, recursive?: boolean): Promise<boolean>;
   removeFile(path: string): Promise<boolean>;
   rename(from: string, to: string): Promise<boolean>;
   statFile(path: string): Promise<FileStat | null>;
-  writeBinaryFile(path: string, data: Readonly<Uint8Array>): Promise<boolean>;
-  writeTextFile(path: string, data: string): Promise<boolean>;
+  writeBinaryFile(path: string, data: Readonly<Uint8Array>, signal?: AbortSignal): Promise<boolean>;
+  writeTextFile(path: string, data: string, signal?: AbortSignal): Promise<boolean>;
 }
 
 // Honest host-provider surface. Provider coverage varies beyond FileSystemBasicBackend, so every
@@ -62,15 +62,16 @@ export interface FileSystemBasicBackend {
 export interface FileSystemHostBackend extends Partial<FileSystemBasicBackend> {
   canAccessFile?(path: string, mode: 'readable' | 'writable' | 'executable'): Promise<boolean>;
   getFileSystemUsage?(): Promise<FileSystemUsage | null>;
-  openFileReadStream?(path: string): Promise<ReadableStream<Uint8Array> | null>;
-  openFileWriteStream?(path: string): Promise<WritableStream<Uint8Array> | null>;
-  readBinaryFileRange?(path: string, offset: number, length: number): Promise<Uint8Array | null>;
+  openFileReadStream?(path: string, signal?: AbortSignal): Promise<ReadableStream<Uint8Array> | null>;
+  openFileWriteStream?(path: string, signal?: AbortSignal): Promise<WritableStream<Uint8Array> | null>;
+  readBinaryFileRange?(path: string, offset: number, length: number, signal?: AbortSignal): Promise<Uint8Array | null>;
   readDirectoryRecursive?(path: string, options?: Readonly<FileWalkOptions>): Promise<readonly FileEntry[]>;
-  writeFileAtomic?(path: string, data: Readonly<Uint8Array> | string): Promise<boolean>;
+  writeFileAtomic?(path: string, data: Readonly<Uint8Array> | string, signal?: AbortSignal): Promise<boolean>;
 }
 
 // Options controlling a recursive directory walk.
 export interface FileWalkOptions {
   // Maximum descent depth; omit (or Infinity) to walk the full tree. Depth 0 = entries directly inside the root.
   maxDepth?: number;
+  signal?: AbortSignal;
 }

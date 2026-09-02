@@ -9,6 +9,7 @@ import type {
   HasDialogDirectoryOpen,
   HasDialogFileOpen,
   HasDialogFileSave,
+  OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   SaveFileDialogOptions,
 } from '@flighthq/types/contract';
@@ -38,8 +39,11 @@ export function getFileDialogHandleOperations(
   return runtime?.operations ?? null;
 }
 
-export function showOpenDirectoryDialog(host: HasDialogDirectoryOpen): Promise<DirectoryOpenDialogResult> {
-  return host.dialog.directoryOpen.open();
+export function showOpenDirectoryDialog(
+  host: HasDialogDirectoryOpen,
+  options?: Readonly<OpenDirectoryDialogOptions>,
+): Promise<DirectoryOpenDialogResult> {
+  return options === undefined ? host.dialog.directoryOpen.open() : host.dialog.directoryOpen.open(options);
 }
 
 export function showOpenFileDialog(

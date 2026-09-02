@@ -84,6 +84,31 @@ describe('createCapacitorFileSystemBackend', () => {
     expect([...(await backend.readBinaryFile('/blob.bin'))!]).toEqual([70, 108, 105, 103, 104, 116]);
   });
 
+  it('rejects pre-aborted reads before calling the plugin', async () => {
+    const { capacitor } = fakeCapacitor();
+    const readFile = vi.spyOn(capacitor.filesystem, 'readFile');
+    const controller = new AbortController();
+    const reason = new Error('cancel Capacitor read');
+    controller.abort(reason);
+    const backend = createCapacitorFileSystemBackend(capacitor);
+    await expect(backend.readTextFile('/a.txt', controller.signal)).rejects.toBe(reason);
+    expect(readFile).not.toHaveBeenCalled();
+  });
+
+  it('reports a completed plugin write even when the signal aborts in flight', async () => {
+    const { capacitor, files } = fakeCapacitor();
+    const controller = new AbortController();
+    const writeFile = capacitor.filesystem.writeFile;
+    capacitor.filesystem.writeFile = async (options) => {
+      const result = await writeFile(options);
+      controller.abort(new Error('after native write'));
+      return result;
+    };
+    const backend = createCapacitorFileSystemBackend(capacitor);
+    await expect(backend.writeTextFile('/complete.txt', 'saved', controller.signal)).resolves.toBe(true);
+    expect(files.get('/complete.txt')?.data).toBe('saved');
+  });
+
   it('maps exists/stat/remove and reports null for a missing file', async () => {
     const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
     await backend.writeTextFile('/c.txt', 'x');
