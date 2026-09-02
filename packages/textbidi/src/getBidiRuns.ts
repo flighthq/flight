@@ -1,14 +1,19 @@
-import type { BidiDirection, BidiRun } from '@flighthq/types/contract';
+import type { BidiClassBackend, BidiDirection, BidiRun } from '@flighthq/types/contract';
 
 import { resolveBidiLevels } from './resolveBidiLevels';
 
 // Resolves `text` under UAX #9 (see resolveBidiLevels) and groups consecutive code units of equal
 // embedding level into directional runs. Each run is a half-open [start, end) range in UTF-16 code
 // units with its `level` and derived `direction` (even → 'ltr', odd → 'rtl'); a shaper shapes each run
-// in its own direction, and reorderBidiLine places the runs of a line in visual order. Returns an empty
-// array for empty text.
-export function getBidiRuns(text: string, baseDirection: BidiDirection): readonly BidiRun[] {
-  const levels = resolveBidiLevels(text, baseDirection);
+// in its own direction, and reorderBidiLine places the runs of a line in visual order. Pass
+// `bidiClassBackend` for explicit caller-local class resolution; omission preserves the compact
+// bundled/legacy fallback. Returns an empty array for empty text.
+export function getBidiRuns(
+  text: string,
+  baseDirection: BidiDirection,
+  bidiClassBackend?: BidiClassBackend,
+): readonly BidiRun[] {
+  const levels = resolveBidiLevels(text, baseDirection, bidiClassBackend);
   const runs: BidiRun[] = [];
   const length = levels.length;
   let start = 0;

@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import type { BidiClassBackend, BidiDirection, BidiRun } from '@flighthq/types/contract';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { getBidiRuns } from './getBidiRuns';
+
+const LEFT_TO_RIGHT_BACKEND: BidiClassBackend = { getBidiClass: () => 'L' };
+const RIGHT_TO_LEFT_BACKEND: BidiClassBackend = { getBidiClass: () => 'R' };
 
 const HEBREW = 'שלום';
 
@@ -13,6 +17,25 @@ const RLE = '‫';
 const PDF = '‬';
 
 describe('getBidiRuns', () => {
+  it('preserves the two-argument source-compatible signature while accepting an explicit backend', () => {
+    expectTypeOf(getBidiRuns).toEqualTypeOf<
+      (text: string, baseDirection: BidiDirection, bidiClassBackend?: BidiClassBackend) => readonly BidiRun[]
+    >();
+    expect(getBidiRuns('abc', 'ltr')).toEqual([{ start: 0, end: 3, level: 0, direction: 'ltr' }]);
+  });
+
+  it('isolates interleaved callers that pass different backends', () => {
+    expect(getBidiRuns('abc', 'ltr', RIGHT_TO_LEFT_BACKEND)).toEqual([
+      { start: 0, end: 3, level: 1, direction: 'rtl' },
+    ]);
+    expect(getBidiRuns('abc', 'ltr', LEFT_TO_RIGHT_BACKEND)).toEqual([
+      { start: 0, end: 3, level: 0, direction: 'ltr' },
+    ]);
+    expect(getBidiRuns('abc', 'ltr', RIGHT_TO_LEFT_BACKEND)).toEqual([
+      { start: 0, end: 3, level: 1, direction: 'rtl' },
+    ]);
+  });
+
   it('produces distinct level runs for Arabic text with embedded European numbers', () => {
     // RTL paragraph (Arabic leads). Arabic at level 1. European digits: W2 converts EN after AL
     // to AN, I2 bumps AN to level 2. This creates an RTL run, an LTR run for the digits, and

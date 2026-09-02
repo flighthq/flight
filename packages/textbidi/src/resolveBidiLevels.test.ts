@@ -1,6 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import type { BidiClassBackend, BidiDirection } from '@flighthq/types/contract';
+import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
 
+import { setBidiClassBackend } from './bidiClassBackend';
 import { resolveBidiLevels } from './resolveBidiLevels';
+
+const LEFT_TO_RIGHT_BACKEND: BidiClassBackend = { getBidiClass: () => 'L' };
+const RIGHT_TO_LEFT_BACKEND: BidiClassBackend = { getBidiClass: () => 'R' };
+
+afterEach(() => {
+  setBidiClassBackend(null);
+});
 
 // "שלום" — the Hebrew word (four strong-R letters).
 const HEBREW = 'שלום';
@@ -23,6 +32,26 @@ const FSI = '⁨';
 const PDI = '⁩';
 
 describe('resolveBidiLevels', () => {
+  it('preserves the two-argument source-compatible signature while accepting an explicit backend', () => {
+    expectTypeOf(resolveBidiLevels).toEqualTypeOf<
+      (text: string, baseDirection: BidiDirection, bidiClassBackend?: BidiClassBackend) => Uint8Array
+    >();
+    expect(Array.from(resolveBidiLevels('abc', 'ltr'))).toEqual([0, 0, 0]);
+  });
+
+  it('gives an explicit backend precedence over the legacy installed backend', () => {
+    setBidiClassBackend(RIGHT_TO_LEFT_BACKEND);
+
+    expect(Array.from(resolveBidiLevels('abc', 'ltr', LEFT_TO_RIGHT_BACKEND))).toEqual([0, 0, 0]);
+    expect(Array.from(resolveBidiLevels('abc', 'ltr'))).toEqual([1, 1, 1]);
+  });
+
+  it('isolates interleaved callers that pass different backends', () => {
+    expect(Array.from(resolveBidiLevels('abc', 'ltr', RIGHT_TO_LEFT_BACKEND))).toEqual([1, 1, 1]);
+    expect(Array.from(resolveBidiLevels('abc', 'ltr', LEFT_TO_RIGHT_BACKEND))).toEqual([0, 0, 0]);
+    expect(Array.from(resolveBidiLevels('abc', 'ltr', RIGHT_TO_LEFT_BACKEND))).toEqual([1, 1, 1]);
+  });
+
   it('assigns level 0 to a pure-LTR string', () => {
     expect(Array.from(resolveBidiLevels('hello', 'auto'))).toEqual([0, 0, 0, 0, 0]);
   });
