@@ -4,15 +4,19 @@ import {
   resetBitmapEncodeBackendForTest,
   resetBitmapReadbackBackendForTest,
 } from '@flighthq/bitmap/contract';
+import { resetFontLoadingBackendForTest } from '@flighthq/font/contract';
 import { explainRaster2DSurfaceProvider, resetRaster2DSurfaceProviderForTest } from '@flighthq/render/contract';
 import { hasVideoCapabilityHostBackend, resetVideoCapabilityBackendForTest } from '@flighthq/video/contract';
 
 import { enableHostWeb } from './enableHostWeb';
+import { resetHostWebFontLoadingForTest } from './webFontLoading';
 import { resetHostWebRaster2DSurfaceForTest } from './webRaster2DSurface';
 
 afterEach(() => {
   resetBitmapEncodeBackendForTest();
   resetBitmapReadbackBackendForTest();
+  resetFontLoadingBackendForTest();
+  resetHostWebFontLoadingForTest();
   resetVideoCapabilityBackendForTest();
   resetHostWebRaster2DSurfaceForTest();
   resetRaster2DSurfaceProviderForTest();
