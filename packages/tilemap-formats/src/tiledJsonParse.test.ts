@@ -1,4 +1,5 @@
-import type { TiledParseOptions } from '@flighthq/types/contract';
+import type { ImportDiagnostic, TiledParseOptions } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';
@@ -34,6 +35,7 @@ function tmjWithData(data: unknown, extra: Record<string, unknown> = {}): string
 
 describe('parseTiledTilesetJson', () => {
   it('parses a standalone TSJ tileset', () => {
+    const diagnostics: ImportDiagnostic[] = [];
     const tsj = JSON.stringify({
       columns: 3,
       image: 'terrain.png',
@@ -47,16 +49,46 @@ describe('parseTiledTilesetJson', () => {
       tiles: [{ animation: [{ duration: 100, tileid: 0 }], id: 0, type: 'water' }],
       tilewidth: 16,
     });
-    const tileset = parseTiledTilesetJson(tsj)!;
+    const tileset = parseTiledTilesetJson(tsj, undefined, diagnostics)!;
     expect(tileset.name).toBe('terrain');
     expect(tileset.image).toBe('terrain.png');
     expect(tileset.columns).toBe(3);
     expect(tileset.tiles[0].animation).toEqual([{ duration: 100, tileId: 0 }]);
+    expect(diagnostics).toEqual([]);
   });
 
   it('returns null on malformed JSON', () => {
     expect(parseTiledTilesetJson('{ not json')).toBeNull();
     expect(parseTiledTilesetJson('[]')).toBeNull();
+  });
+
+  it('reports malformed JSON and missing required fields at their exact paths', () => {
+    const malformedDiagnostics: ImportDiagnostic[] = [];
+    expect(parseTiledTilesetJson('{ not json', undefined, malformedDiagnostics)).toBeNull();
+    expect(malformedDiagnostics).toEqual([
+      {
+        detail: { path: 'tileset' },
+        kind: 'tiled.json-malformed',
+        origin: 'parseTiledTilesetJson',
+        severity: ImportDiagnosticSeverity.Reject,
+      },
+    ]);
+
+    const missingDiagnostics: ImportDiagnostic[] = [];
+    const tileset = parseTiledTilesetJson(
+      JSON.stringify({ columns: 1, tilecount: 1, tileheight: 16, tilewidth: 16 }),
+      undefined,
+      missingDiagnostics,
+    );
+    expect(tileset?.name).toBe('');
+    expect(missingDiagnostics).toEqual([
+      {
+        detail: { path: 'tileset.name' },
+        kind: 'tiled.required-field-missing',
+        origin: 'buildTiledTilesetFromJson',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
   });
 });
 
@@ -118,16 +150,47 @@ describe('parseTiledTmj', () => {
   it('preserves a compressed layer as empty without an inflate seam, and decodes with one', () => {
     const json = tmjWithData(base64Layer([1, 5, 2147483649, 6]), { compression: 'zlib', encoding: 'base64' });
 
-    const dropped = parseTiledTmj(json)!;
+    const diagnostics: ImportDiagnostic[] = [];
+    const dropped = parseTiledTmj(json, undefined, diagnostics)!;
     const droppedLayer = dropped.layers[0];
     if (droppedLayer.type !== 'tilelayer') throw new Error('expected a tile layer');
     expect(Array.from(droppedLayer.data)).toEqual([0, 0, 0, 0]);
+    expect(diagnostics).toEqual([
+      {
+        detail: { compression: 'zlib', path: 'map.layers[0].data' },
+        kind: 'tiled.layer-inflate-unavailable',
+        origin: 'buildTiledLayerDataFromJson',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
 
     const options: TiledParseOptions = { inflate: (bytes) => new Uint8Array(bytes) };
-    const decoded = parseTiledTmj(json, options)!;
+    const decodedDiagnostics: ImportDiagnostic[] = [];
+    const decoded = parseTiledTmj(json, options, decodedDiagnostics)!;
     const decodedLayer = decoded.layers[0];
     if (decodedLayer.type !== 'tilelayer') throw new Error('expected a tile layer');
     expect(Array.from(decodedLayer.data)).toEqual([1, 5, 2147483649, 6]);
+    expect(decodedDiagnostics).toEqual([]);
+  });
+
+  it('reports invalid layer encoding while preserving the existing base64 fallback', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const map = parseTiledTmj(
+      tmjWithData(base64Layer([1, 5, 2147483649, 6]), { encoding: 'invalid' }),
+      undefined,
+      diagnostics,
+    )!;
+    const layer = map.layers[0];
+    if (layer.type !== 'tilelayer') throw new Error('expected a tile layer');
+    expect(Array.from(layer.data)).toEqual([1, 5, 2147483649, 6]);
+    expect(diagnostics).toEqual([
+      {
+        detail: { encoding: 'invalid', path: 'map.layers[0].data.encoding' },
+        kind: 'tiled.layer-encoding-invalid',
+        origin: 'buildTiledLayerDataFromJson',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
   });
 
   it('parses a group layer and its nested children', () => {
@@ -277,5 +340,58 @@ describe('parseTiledTmj', () => {
   it('returns null on malformed JSON', () => {
     expect(parseTiledTmj('{ not json')).toBeNull();
     expect(parseTiledTmj('42')).toBeNull();
+  });
+
+  it('reports malformed JSON and missing required fields at their exact paths', () => {
+    const malformedDiagnostics: ImportDiagnostic[] = [];
+    expect(parseTiledTmj('{ not json', undefined, malformedDiagnostics)).toBeNull();
+    expect(malformedDiagnostics).toEqual([
+      {
+        detail: { path: 'map' },
+        kind: 'tiled.json-malformed',
+        origin: 'parseTiledTmj',
+        severity: ImportDiagnosticSeverity.Reject,
+      },
+    ]);
+
+    const missingDiagnostics: ImportDiagnostic[] = [];
+    const map = parseTiledTmj(
+      JSON.stringify({ height: 1, layers: [], tileheight: 16, type: 'map', version: '1.10', width: 1 }),
+      undefined,
+      missingDiagnostics,
+    );
+    expect(map?.tileWidth).toBe(0);
+    expect(missingDiagnostics).toEqual([
+      {
+        detail: { path: 'map.tilewidth' },
+        kind: 'tiled.required-field-missing',
+        origin: 'parseTiledTmj',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
+
+    const missingLayerTypeDiagnostics: ImportDiagnostic[] = [];
+    const mapWithoutLayerType = parseTiledTmj(
+      JSON.stringify({
+        height: 1,
+        layers: [{ data: [1], height: 1, width: 1 }],
+        tileheight: 16,
+        tilewidth: 16,
+        type: 'map',
+        version: '1.10',
+        width: 1,
+      }),
+      undefined,
+      missingLayerTypeDiagnostics,
+    );
+    expect(mapWithoutLayerType?.layers).toEqual([]);
+    expect(missingLayerTypeDiagnostics).toEqual([
+      {
+        detail: { path: 'map.layers[0].type' },
+        kind: 'tiled.required-field-missing',
+        origin: 'buildTiledLayerFromJson',
+        severity: ImportDiagnosticSeverity.Drop,
+      },
+    ]);
   });
 });
