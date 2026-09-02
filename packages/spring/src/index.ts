@@ -1,4 +1,10 @@
 export {
+  SpringPresetBouncy,
+  SpringPresetGentle,
+  SpringPresetStiff,
+  applySpringImpulse,
+  applySpringImpulse2D,
+  applySpringImpulse3D,
   createSpring,
   createSpring2D,
   createSpring3D,
@@ -8,7 +14,10 @@ export {
   isSpring3DSettled,
   isSpringSettled,
   resetSpring,
+  resetSpring2D,
+  resetSpring3D,
   updateSpring,
   updateSpring2D,
   updateSpring3D,
+  updateSpringAngle,
 } from './contract';

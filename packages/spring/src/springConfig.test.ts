@@ -1,7 +1,13 @@
 import { TAU } from '@flighthq/math/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createSpringConfig, createSpringConfigFromPhysical } from './springConfig';
+import {
+  createSpringConfig,
+  createSpringConfigFromPhysical,
+  SpringPresetBouncy,
+  SpringPresetGentle,
+  SpringPresetStiff,
+} from './springConfig';
 
 describe('createSpringConfig', () => {
   it('stores frequency and dampingRatio verbatim', () => {
@@ -23,5 +29,24 @@ describe('createSpringConfigFromPhysical', () => {
     const config = createSpringConfigFromPhysical(100, 20, 4);
     expect(config.frequency).toBeCloseTo(5 / TAU, 9);
     expect(config.dampingRatio).toBeCloseTo(0.5, 12);
+  });
+});
+
+describe('spring presets', () => {
+  it('exports frozen plain-data configs that can be customized by spreading', () => {
+    expect(Object.isFrozen(SpringPresetBouncy)).toBe(true);
+    expect(Object.isFrozen(SpringPresetGentle)).toBe(true);
+    expect(Object.isFrozen(SpringPresetStiff)).toBe(true);
+    expect(Reflect.set(SpringPresetBouncy, 'frequency', 100)).toBe(false);
+
+    const customized = { ...SpringPresetGentle, frequency: 3 };
+    expect(customized).toEqual({ dampingRatio: SpringPresetGentle.dampingRatio, frequency: 3 });
+    expect(SpringPresetGentle.frequency).not.toBe(3);
+  });
+
+  it('provides distinct bouncy, gentle, and stiff response profiles', () => {
+    expect(SpringPresetBouncy.dampingRatio).toBeLessThan(SpringPresetGentle.dampingRatio);
+    expect(SpringPresetGentle.frequency).toBeLessThan(SpringPresetStiff.frequency);
+    expect(SpringPresetStiff.dampingRatio).toBeGreaterThanOrEqual(1);
   });
 });
