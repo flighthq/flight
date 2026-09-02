@@ -1,4 +1,5 @@
 import type { Entity } from './Entity';
+import type { HostShellCapabilities } from './Host';
 
 // Opening an external URL is security-sensitive, so every call must name the schemes it permits.
 // There is deliberately no default and no allow-all sentinel: callers decide policy before a provider
@@ -25,9 +26,42 @@ export type ShellShortcutLinkWriteOutcome = { readonly reason: 'ok' | 'operation
 
 export type ShellTrashOutcome = { readonly reason: 'ok' | 'operation-failed' };
 
-// The six provider interfaces are separate because host coverage differs by operation. An omitted
+// Options for one argument-vector child process. Environment entries are passed as literal strings;
+// command parsing, shell expansion, and ambient shell selection are deliberately outside this seam.
+export interface ShellProcessOptions {
+  readonly cwd?: string;
+  readonly environment?: Readonly<Record<string, string>>;
+}
+
+// Terminal process status. A normal exit has a numeric code and null signal; signal termination has
+// a null code and the provider's literal signal name. Providers preserve null when the platform does
+// not report one side of the result rather than fabricating a value.
+export interface ShellProcessExitStatus {
+  readonly code: number | null;
+  readonly signal: string | null;
+}
+
+// A live provider-owned child process. Standard I/O uses the same Uint8Array Web Streams convention
+// as file-system streaming. Closing stdin is the WritableStream lifecycle; terminate requests process
+// termination, while exit settles exactly once with the provider's terminal status.
+export interface ShellProcess extends Entity {
+  readonly exit: Promise<Readonly<ShellProcessExitStatus>>;
+  readonly stderr: ReadableStream<Uint8Array>;
+  readonly stdin: WritableStream<Uint8Array>;
+  readonly stdout: ReadableStream<Uint8Array>;
+  terminate(): void;
+}
+
+// Minimal host shape accepted by spawnShellProcess. A real Host satisfies it directly; an omitted
+// process slot is explicit unsupported capability and produces null before any provider call.
+export interface ShellProcessHost {
+  readonly shell: Pick<HostShellCapabilities, 'process'>;
+}
+
+// The seven provider interfaces are separate because host coverage differs by operation. An omitted
 // Host.shell slot is capability absence, never a provider whose methods return unsupported sentinels.
-// These bounded commands own no whole-provider resource, so their Entity identity has no destroy hook.
+// The six bounded command providers own no whole-provider resource. Process lifetime belongs to each
+// returned ShellProcess, so the spawning provider itself likewise has no destroy hook.
 export interface ShellBeepBackend extends Entity {
   beep(): void;
 }
@@ -42,6 +76,13 @@ export interface ShellPathOpenBackend extends Entity {
 
 export interface ShellPathRevealBackend extends Entity {
   reveal(path: string): Promise<ShellPathRevealOutcome>;
+}
+
+// Spawn is asynchronous work with a synchronously returned live handle, not a synchronous execution
+// API: completion is observed through ShellProcess.exit. The backend receives an argument vector and
+// never a shell command string to parse.
+export interface ShellProcessBackend extends Entity {
+  spawn(command: string, args: readonly string[], options?: Readonly<ShellProcessOptions>): ShellProcess;
 }
 
 export interface ShellShortcutLinkBackend extends Entity {

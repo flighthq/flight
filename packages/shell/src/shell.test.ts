@@ -12,6 +12,10 @@ import type {
   ShellExternalUrlPolicy,
   ShellPathOpenBackend,
   ShellPathRevealBackend,
+  ShellProcess,
+  ShellProcessBackend,
+  ShellProcessHost,
+  ShellProcessOptions,
   ShellShortcutLinkBackend,
   ShellTrashBackend,
 } from '@flighthq/types/contract';
@@ -25,6 +29,7 @@ import {
   readShellShortcutLink,
   revealShellPath,
   shellBeep,
+  spawnShellProcess,
   writeShellShortcutLink,
 } from './shell';
 
@@ -160,6 +165,30 @@ describe('shellBeep', () => {
   });
 });
 
+describe('spawnShellProcess', () => {
+  it('exposes the explicit host, command, argument-vector, and optional-options API', () => {
+    expectTypeOf(spawnShellProcess).parameters.toEqualTypeOf<
+      [ShellProcessHost, string, readonly string[], Readonly<ShellProcessOptions>?]
+    >();
+    expectTypeOf(spawnShellProcess).returns.toEqualTypeOf<ShellProcess | null>();
+  });
+
+  it('forwards the command, argument vector, and options to the host backend unchanged', () => {
+    const process = shellProcess();
+    const spawn = vi.fn(() => process);
+    const host = processHost(createEntity({ spawn }));
+    const args = ['--flag', 'value'] as const;
+    const options = { cwd: '/work', environment: { MODE: 'test' } } as const;
+
+    expect(spawnShellProcess(host, '/bin/tool', args, options)).toBe(process);
+    expect(spawn).toHaveBeenCalledWith('/bin/tool', args, options);
+  });
+
+  it('returns null when the host does not expose child-process support', () => {
+    expect(spawnShellProcess({ shell: {} }, '/bin/tool', [])).toBeNull();
+  });
+});
+
 describe('writeShellShortcutLink', () => {
   it('requires an explicit write operation and returns the write-specific outcome', async () => {
     const provider = shortcutLinkProvider();
@@ -186,6 +215,20 @@ function pathOpenHost(pathOpen: ShellPathOpenBackend): HasShellPathOpen {
 
 function pathRevealHost(pathReveal: ShellPathRevealBackend): HasShellPathReveal {
   return { shell: { pathReveal } };
+}
+
+function processHost(process: ShellProcessBackend): ShellProcessHost {
+  return { shell: { process } };
+}
+
+function shellProcess(): ShellProcess {
+  return createEntity({
+    exit: Promise.resolve({ code: 0, signal: null }),
+    stderr: new ReadableStream<Uint8Array>(),
+    stdin: new WritableStream<Uint8Array>(),
+    stdout: new ReadableStream<Uint8Array>(),
+    terminate: vi.fn(),
+  });
 }
 
 function shortcutLinkHost(shortcutLink: ShellShortcutLinkBackend): HasShellShortcutLink {

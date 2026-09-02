@@ -9,6 +9,9 @@ import type {
   ShellExternalUrlPolicy,
   ShellPathOpenOutcome,
   ShellPathRevealOutcome,
+  ShellProcess,
+  ShellProcessHost,
+  ShellProcessOptions,
   ShellShortcutLink,
   ShellShortcutLinkReadOutcome,
   ShellShortcutLinkWriteOutcome,
@@ -69,6 +72,15 @@ export function revealShellPath(host: HasShellPathReveal, path: string): Promise
 
 export function shellBeep(host: HasShellBeep): void {
   host.shell.beep.beep();
+}
+
+export function spawnShellProcess(
+  host: ShellProcessHost,
+  command: string,
+  args: readonly string[],
+  options?: Readonly<ShellProcessOptions>,
+): ShellProcess | null {
+  return host.shell.process?.spawn(command, args, options) ?? null;
 }
 
 export function writeShellShortcutLink(
