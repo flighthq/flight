@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 describe('createWebAudioDeviceBackend', () => {
-  it('creates the 13-operation backend with web node access', () => {
+  it('creates the backend with web node access', () => {
     const backend = createWebAudioDeviceBackend();
 
     expect(Object.keys(backend).sort()).toEqual([
@@ -37,10 +37,61 @@ describe('createWebAudioDeviceBackend', () => {
       'onSourceEnded',
       'resumeDevice',
       'setSourceGain',
+      'setSourcePan',
       'setSourcePlaybackRate',
       'startSource',
       'stopSource',
     ]);
+  });
+});
+
+describe('createWebAudioDeviceBackend source graph', () => {
+  it('routes the buffer source through a panner into the gain, and leaves gain as the output', () => {
+    // The panner is inserted BEFORE the gain so the gain node stays the source's output node. If it
+    // were appended after, channel routing and disposal would silently keep addressing the wrong node.
+    const graph = installFakeAudioContext();
+    const backend = createWebAudioDeviceBackend();
+    const device = backend.createDevice(44100);
+    const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
+    const source = backend.createSource(device, buffer);
+    backend.startSource(source, 0);
+
+    expect(graph.panner.connect).toHaveBeenCalledWith(graph.gain);
+    expect(graph.bufferSource.connect).toHaveBeenCalledWith(graph.panner);
+    expect(graph.bufferSource.connect).not.toHaveBeenCalledWith(graph.gain);
+    expect(backend.getSourceGainNode(source)).toBe(graph.gain as unknown as GainNode);
+  });
+
+  it('writes the pan value onto the panner param', () => {
+    const graph = installFakeAudioContext();
+    const backend = createWebAudioDeviceBackend();
+    const device = backend.createDevice(44100);
+    const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
+    const source = backend.createSource(device, buffer);
+
+    backend.setSourcePan(source, -0.5);
+    expect(graph.panner.pan.value).toBe(-0.5);
+  });
+
+  it('ignores a pan set against an unknown source handle', () => {
+    installFakeAudioContext();
+    const backend = createWebAudioDeviceBackend();
+    expect(() => backend.setSourcePan(99 as unknown as AudioSourceHandle, 1)).not.toThrow();
+  });
+
+  it('disconnects the panner when the source is destroyed', () => {
+    // A panner left connected outlives its source and keeps the gain node reachable — a leak that no
+    // audible behaviour would reveal.
+    const graph = installFakeAudioContext();
+    const backend = createWebAudioDeviceBackend();
+    const device = backend.createDevice(44100);
+    const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
+    const source = backend.createSource(device, buffer);
+    backend.startSource(source, 0);
+
+    backend.destroySource(source);
+    expect(graph.panner.disconnect).toHaveBeenCalled();
+    expect(graph.gain.disconnect).toHaveBeenCalled();
   });
 });
 
@@ -83,6 +134,16 @@ describe('explainAudioDeviceOperation', () => {
   it('reports sentinel when no backend is installed', () => {
     expect(explainAudioDeviceOperation('createDevice').implemented).toBe(false);
     expect(explainAudioDeviceOperation('createDevice').layer).toBe('sentinel');
+  });
+
+  it('reports panning through the same seam as every other operation', () => {
+    // Pan is not a capability a caller has to probe for separately: an unsupported backend answers
+    // through the existing operation seam, and the sentinel absorbs the call rather than throwing.
+    expect(explainAudioDeviceOperation('setSourcePan').implemented).toBe(false);
+    expect(explainAudioDeviceOperation('setSourcePan').layer).toBe('sentinel');
+    expect(() => getAudioDeviceBackend().setSourcePan(1 as unknown as AudioSourceHandle, -1)).not.toThrow();
+    installAudioDeviceHostBackend(stubBackend());
+    expect(hasAudioDeviceOperation('setSourcePan')).toBe(true);
   });
 });
 
@@ -299,8 +360,45 @@ function stubBackend(): AudioDeviceBackend {
     onSourceEnded: vi.fn(),
     resumeDevice: vi.fn(),
     setSourceGain: vi.fn(),
+    setSourcePan: vi.fn(),
     setSourcePlaybackRate: vi.fn(),
     startSource: vi.fn(),
     stopSource: vi.fn(),
   };
+}
+
+function installFakeAudioContext(): {
+  bufferSource: { connect: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> } & Record<string, unknown>;
+  gain: { connect: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> } & Record<string, unknown>;
+  panner: {
+    connect: ReturnType<typeof vi.fn>;
+    disconnect: ReturnType<typeof vi.fn>;
+    pan: { value: number };
+  };
+} {
+  const gain = { connect: vi.fn(), disconnect: vi.fn(), gain: { value: 1 } };
+  const panner = { connect: vi.fn(), disconnect: vi.fn(), pan: { value: 0 } };
+  const bufferSource = {
+    buffer: null as unknown,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    onended: null as (() => void) | null,
+    playbackRate: { value: 1 },
+    start: vi.fn(),
+    stop: vi.fn(),
+  };
+  class FakeAudioContext {
+    currentTime = 0;
+    destination = {};
+    close = async (): Promise<void> => {};
+    createBufferSource = (): unknown => bufferSource;
+    createGain = (): unknown => gain;
+    createStereoPanner = (): unknown => panner;
+    resume = async (): Promise<void> => {};
+  }
+  globalThis.AudioContext = FakeAudioContext as unknown as typeof AudioContext;
+  globalThis.AudioBuffer = class {
+    copyToChannel = (): void => {};
+  } as unknown as typeof AudioBuffer;
+  return { bufferSource, gain, panner };
 }

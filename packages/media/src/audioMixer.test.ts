@@ -86,6 +86,7 @@ function createMockBackend(): AudioDeviceBackend {
     onSourceEnded: vi.fn(),
     resumeDevice: vi.fn(),
     setSourceGain: vi.fn(),
+    setSourcePan: vi.fn(),
     setSourcePlaybackRate: vi.fn(),
     startSource: vi.fn(),
     stopSource: vi.fn(),

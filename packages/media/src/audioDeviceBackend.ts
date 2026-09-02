@@ -18,6 +18,7 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       buffer: AudioBuffer;
       context: AudioContext;
       gainNode: GainNode;
+      pannerNode: StereoPannerNode;
       onEnded: (() => void) | null;
       sourceNode: AudioBufferSourceNode | null;
       state: 'playing' | 'stopped';
@@ -60,11 +61,17 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       if (context === undefined || audioBuffer === undefined) return 0 as AudioSourceHandle;
       const gainNode = context.createGain();
       gainNode.connect(context.destination);
+      // The panner sits BEFORE the gain, so the gain node stays the source's output: everything that
+      // treats it as such — channel output node, external routing, disposal — is untouched, and the
+      // ordering is equivalent for a linear gain.
+      const pannerNode = context.createStereoPanner();
+      pannerNode.connect(gainNode);
       const h = handle() as unknown as AudioSourceHandle;
       sources.set(h as number, {
         buffer: audioBuffer,
         context,
         gainNode,
+        pannerNode,
         onEnded: null,
         sourceNode: null,
         state: 'stopped',
@@ -98,6 +105,7 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
         }
         s.sourceNode.disconnect();
       }
+      s.pannerNode.disconnect();
       s.gainNode.disconnect();
       sources.delete(source as number);
     },
@@ -124,6 +132,12 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       s.gainNode.gain.value = gain;
     },
 
+    setSourcePan(source: AudioSourceHandle, pan: number): void {
+      const s = sources.get(source as number);
+      if (s === undefined) return;
+      s.pannerNode.pan.value = pan;
+    },
+
     setSourcePlaybackRate(source: AudioSourceHandle, rate: number): void {
       const s = sources.get(source as number);
       if (s === undefined || s.sourceNode === null) return;
@@ -144,7 +158,7 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       }
       const sourceNode = s.context.createBufferSource();
       sourceNode.buffer = s.buffer;
-      sourceNode.connect(s.gainNode);
+      sourceNode.connect(s.pannerNode);
       sourceNode.onended = () => {
         s.state = 'stopped';
         s.sourceNode = null;
@@ -289,6 +303,7 @@ const _sentinel: AudioDeviceBackend = {
   onSourceEnded(): void {},
   resumeDevice(): void {},
   setSourceGain(): void {},
+  setSourcePan(): void {},
   setSourcePlaybackRate(): void {},
   startSource(): void {},
   stopSource(): void {},
