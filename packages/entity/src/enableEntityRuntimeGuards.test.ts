@@ -46,8 +46,7 @@ describe('enableEntityRuntimeGuards', () => {
       }
     });
     expect(entries.length).toBe(1);
-    // Names a function that actually exists: the point of the warning is that the caller can act on it,
-    // and this guard spent its life directing readers to `ensureEntityRuntime`, which never existed.
+    // Names a function that actually exists: the point of the warning is that the caller can act on it.
     expect(messageOf(entries[0])).toContain('attachEntityBinding');
   });
 
@@ -62,6 +61,7 @@ describe('enableEntityRuntimeGuards', () => {
     });
     expect(entries.length).toBe(1);
     expect(messageOf(entries[0])).toContain('attachEntityBinding');
+    expect(messageOf(entries[0])).toContain('detachEntityBinding');
   });
 
   it('stays SILENT without the guard — the production default', () => {
