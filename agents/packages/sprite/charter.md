@@ -4,8 +4,6 @@ role: package
 crate: flighthq-sprite
 draft: false
 lastDirection: 2026-07-02
-assessment: ./assessment.md
-status: ./status.md
 absorbed: "@flighthq/scene2d + @flighthq/quadbatch + @flighthq/tilemap + @flighthq/particleemitter"
 ---
 
