@@ -1,54 +1,133 @@
 ---
 package: '@flighthq/textureatlas-formats'
 status: partial
-score: 50
-updated: 2026-07-03
+score: 62
+updated: 2026-09-02
 ingested:
+  - charter.md
+  - status.md
   - source
   - tests
 ---
 
 # textureatlas-formats — Review
 
-_Migrated from the 2026-07-03 depth-review generation (reviews/depth/textureatlas-formats.md)._
-
-**Domain:** Texture-atlas descriptor format interchange — parsing (and, in a mature library, writing) the industry atlas metadata formats (TexturePacker JSON, Starling/Sparrow XML, libGDX/Spine `.atlas`, Aseprite JSON, Cocos plist, …) into the SDK's `TextureAtlas` region model.
-
-**Verdict:** partial — completeness 50/100
-
-The package (successor to the dissolved `resource-formats`) ships four parsers — TexturePacker JSON (hash + array), Aseprite JSON (hash + array), Starling/Sparrow XML, and libGDX/Spine text — plus a structural sniffer `detectTextureAtlasFormat`. What exists is well built: typed schema modules with field names as-exported and reference links, correct rotated/trimmed handling (including the TexturePacker rotated w/h swap and Starling's negated `frameX/Y`), document-object convenience variants that avoid a redundant `JSON.parse`, and solid tests. But the layer is read-only (its sibling `spritesheet-formats` has serializers for every format; this package has none), it has no registry/umbrella dispatch even though the old `resource-formats` had `registerTextureAtlasFormat`, and `TextureAtlasFormatKindCocosPlist` is declared in `@flighthq/types` with no parser behind it — the Cocos plist geometry parser lives only in `spritesheet-formats`, breaking the "geometry is owned here" layering for exactly one format.
+**Verdict:** partial — 62/100. Four solid parsers, a clean registry/dispatch layer, good detection disambiguation, and thorough tests. Still read-only (no serializers), still missing the declared Cocos plist format, still discards page/meta data, and the Starling options are dead surface.
 
 ## Present capabilities
 
-- **TexturePacker JSON:** `parseTextureAtlasPackerJson` / `parseTextureAtlasPackerDocument` — hash and array variants, pivot, rotation (with the packed-rect w/h transpose), trim → `sourceX/Y` + `original*`, optional `stripPathPrefix` name normalization. Schema in `textureAtlasPackerSchema.ts` including `frameTags` in `meta`.
-- **Aseprite JSON:** `parseTextureAtlasAsepriteJson` / `parseTextureAtlasAsepriteDocument` — hash and array variants; schema models `frameTags` (with `direction` including `pingpong_reverse`), per-frame `duration`, layers omitted by design (animation is `spritesheet-formats`' layer).
-- **Starling/Sparrow XML:** `parseTextureAtlasStarlingXml` over `@flighthq/xml` — `SubTexture` rects, `frameX/Y/Width/Height` trim (correctly negated into `sourceX/Y`), `rotated`, source-space `pivotX/Y`, tolerant of the `TextureAtlas` element being root or child.
-- **libGDX/Spine text:** `parseTextureAtlasLibgdxAtlas` — hand-rolled line parser handling page headers, `xy`/`size`/`orig`/`offset`/`rotate`/`index`, multi-page files (regions concatenated), index folded into the name as `name_index`, trim inferred from `orig` vs `size`.
-- **Detection:** `detectTextureAtlasFormat` — structural (never extension-based), disambiguates Aseprite vs TexturePacker via `meta.app` with a per-frame-`duration` fallback, `null` sentinel on unknown/corrupt input, never throws.
+### Format registry and dispatch
 
-All parsers clear `atlas.regions` and return the atlas for chaining; all are pure functions of their input. `spritesheet-formats` correctly delegates its TexturePacker/Aseprite/Starling/libGDX geometry to this package and layers animation metadata on top — the intended two-tier split works for four of five formats.
+The package now implements the full open-registry pattern using `@flighthq/registry` `KeyedTable`:
 
-## Gaps vs an authoritative atlas-format library
+- **`registerTextureAtlasFormat(kind, { detect, parse })`** — binds a custom format for detection and parsing. Last-write-wins; vendor-prefixed kinds recommended.
+- **`unregisterTextureAtlasFormat(kind)`** — removes a format binding.
+- **`getTextureAtlasFormat(kind)`** — returns the detect/parse entry for a kind, or `null`.
+- **`getTextureAtlasFormatKinds()`** — sorted snapshot of all bound kinds.
+- **`parseTextureAtlas(content, atlas, formatKind?, options?)`** — auto-detect-and-parse dispatcher. Returns `atlas` on success, `null` on unrecognised content (sentinel, never throws). Accepts an explicit `formatKind` to skip detection.
+- **`detectTextureAtlasFormat(content)`** — iterates the registry's detectors in registration order; returns the matching `TextureAtlasFormatKind` or `null`.
 
-Compare TexturePacker's own exporter matrix, libGDX's `TextureAtlas.TextureAtlasData`, PixiJS/Phaser loader format support:
+Built-in formats are lazily seeded on first registry access, not at import time, preserving `"sideEffects": false`. The four built-in detectors are mutually exclusive by construction (the test suite proves this with a corpus-level exclusivity assertion in `textureAtlasDetect.test.ts`), so detection is order-independent for the built-ins.
 
-- **No serialization.** A formats package should round-trip. `spritesheet-formats` exports `serializeTexturePackerSpritesheet`, `serializeStarlingSpritesheet`, `serializeAsepriteSpritesheet`, `serializeCocosPlistSpritesheet`; this package exports zero `serializeTextureAtlas*` functions. Atlas-editing tools, repacking pipelines, and the future `atlas-packer` package all need writers at this layer.
-- **Cocos plist is declared but absent.** `TextureAtlasFormatKindCocosPlist` exists in `@flighthq/types`, `detectTextureAtlasFormat` does not detect it, and the only plist parser (`parseCocosPlistSpritesheet`) lives in `spritesheet-formats` doing its own geometry — the one format where the geometry/animation layering is inverted. Duplication risk realized.
-- **No registry / umbrella parse.** `spritesheet-formats` has the full open-registry pattern (`registerSpritesheetFormat`, `getSpritesheetFormat`, `parseSpritesheet(text, kind?)`); this package has only the sniffer. Missing: `registerTextureAtlasFormat`, `getTextureAtlasFormat`, and a `parseTextureAtlas(content, atlas, kind?)` dispatcher — the SDK's own registry-over-switch constraint, and a regression from `resource-formats` which had the registry. `detectTextureAtlasFormat` being a closed hardcoded function (rather than iterating registered `detect` entries) also means user-registered formats could never participate in sniffing.
-- **Multipack is dropped, not modeled.** TexturePacker multipack emits one JSON per page plus `meta.related_multi_packs`; libGDX `.atlas` files carry multiple pages with per-page image names, filters, and repeat modes. The libGDX parser discards the page image filename entirely and concatenates regions; the TexturePacker schema omits `related_multi_packs`. Blocked upstream by `TextureAtlas` being single-image, but the format layer should at least surface page names (e.g. a parsed-pages result or options callback) instead of silently losing them.
-- **Meta is unused.** `meta.image`, `meta.size`, and `meta.scale` are parsed into the schemas but never applied — no image-filename return for loaders to fetch the page bitmap, no scale handling (TexturePacker `scale: 0.5` atlases need coordinate rescaling or at least an exposed value).
-- **Dropped format families an authoritative library covers:** Spine's newer `.atlas` 4.x keys (`bounds`/`offsets` shorthand), Unity sprite atlas, Egret/LayaAir JSON, Godot `.tres`, generic grid descriptors, XML plist variants (Zwoptex). Not all are must-haves, but TexturePacker-multipack + Cocos + Spine-4 are table stakes.
-- **libGDX nine-patch keys ignored:** `split:` and `pad:` lines are silently skipped (no schema/field to receive them) — pairs with the missing nine-slice fields on `TextureAtlasRegion`.
-- **Starling options wart:** `TextureAtlasStarlingParseOptions` (`imageWidth`/`imageHeight`) is accepted as `_options` and completely ignored — dead API surface that promises UV support it does not deliver.
-- **Schema duplication with `spritesheet-formats`:** `textureAtlasPackerSchema.ts` / `textureAtlasAsepriteSchema.ts` and `spritesheet-formats`' `texturePackerSchema.ts` / `asepriteSchema.ts` define near-identical document interfaces twice, and each package carries its own detection heuristics for the same five formats (`detectTextureAtlasFormat` vs the private `detectTexturePacker`/`detectAseprite`/… in `spritesheetDetect.ts`). The parse *code* delegates correctly; the *types and sniffers* did not follow.
+### Parsers
 
-## Naming / API-shape notes
+All parsers clear `atlas.regions` before populating, return `atlas` for chaining, use `createTextureAtlasRegion` from `@flighthq/textureatlas/contract`, and guard against partial documents (missing `frame`, `sourceSize`, `spriteSourceSize` are handled with fallback rather than throwing).
 
-- `parseTextureAtlasPackerJson` — "Packer" is an abbreviation of the product name TexturePacker, collapsed to dodge the `TextureAtlasTexturePacker` stutter. It violates the never-abbreviate rule and disagrees with both the kind value (`'texturePacker'`) and the sibling package (`parseTexturePackerSpritesheet`). If the stutter is unacceptable, the format word should still be whole (`parseTexturePackerAtlasJson` or accept `parseTextureAtlasTexturePackerJson`); a reader searching "TexturePacker" today misses these functions.
-- Inconsistent parse-target convention with `spritesheet-formats`: these parsers populate a caller-supplied `atlas` (out-param style, good for reuse), while spritesheet parsers allocate and return `SpritesheetData`. Fine individually, but the asymmetry between the two formats packages is unexplained.
-- `atlas.regions.length = 0` mutation + return-for-chaining, `null` sentinels in detection, schemas as `interface`-only modules, `import type` discipline, and structural detection are all correct per house rules. Test files exist per source file including the schema modules' behavior via the parsers.
-- `parseTextureAtlasAsepriteJson` calls `JSON.parse` unguarded — a corrupt string throws instead of returning a sentinel, while `detectTextureAtlasFormat` carefully catches. The parse functions should state (or share) one failure posture; `parseTextureAtlasPackerJson` has the same property.
+- **TexturePacker JSON** (`textureAtlasPackerParse.ts`): `parseTextureAtlasPackerJson(json, atlas, options?)` and `parseTextureAtlasPackerDocument(doc, atlas, options?)`. Hash and array frame shapes. Pivot, rotation (with the packed w/h swap: `width = rotated ? frame.h : frame.w`), trim with `sourceX/Y` and `originalWidth/Height`. Optional `stripPathPrefix` name normalization. JSON.parse failure returns atlas unchanged (sentinel).
+- **Aseprite JSON** (`textureAtlasAsepriteParse.ts`): `parseTextureAtlasAsepriteJson(json, atlas)` and `parseTextureAtlasAsepriteDocument(doc, atlas)`. Hash and array shapes. Trim, rotation, no pivot (Aseprite does not export one). JSON.parse failure returns atlas unchanged.
+- **Starling/Sparrow XML** (`textureAtlasStarlingParse.ts`): `parseTextureAtlasStarlingXml(xml, atlas, _options?)`. `SubTexture` elements from a `<TextureAtlas>` root or child. Handles `frameX/Y/Width/Height` trim (correctly negated into `sourceX/Y`), `rotated`, source-space `pivotX/Y`. Tolerant of `TextureAtlas` as root or child element. Uses `@flighthq/xml` `parseXmlDocument`.
+- **libGDX/Spine text** (`textureAtlasLibgdxParse.ts`): `parseTextureAtlasLibgdxAtlas(text, atlas)`. Hand-rolled line parser: page headers with key:value pairs, region blocks with `xy`/`size`/`orig`/`offset`/`rotate`/`index`. Multi-page files supported (regions from all pages concatenated). Index >= 0 folded into name as `name_index`. Trim inferred from `orig` vs `size`.
 
-## Recommendation
+### Detection disambiguation
 
-Finish the layer in four moves. (1) **Adopt the registry pattern** from `spritesheet-formats`: `registerTextureAtlasFormat(kind, { detect, parse })`, `getTextureAtlasFormat`, and `parseTextureAtlas(content, atlas, kind?)`, with `detectTextureAtlasFormat` iterating the registry — restoring what `resource-formats` had and letting `spritesheet-formats` reuse the detectors instead of duplicating them. (2) **Move Cocos plist geometry here** (`parseTextureAtlasCocosPlist` + schema) and make `spritesheet-formats` delegate, closing the one inverted format and backing the already-declared kind constant. (3) **Add serializers** (`serializeTextureAtlas*` for TexturePacker JSON, Starling XML, libGDX text at minimum) so the package round-trips. (4) **Surface page/meta data** — return or expose parsed page image names, sizes, and scale (and accept libGDX `split`/`pad` once the region type can hold them), so multipack support has somewhere to land when `TextureAtlas` grows pages. The parsing quality is already there; the package is half of a formats library — the reading half.
+`detectTextureAtlasFormat` in `textureAtlasDetect.ts` is structural, never extension-based:
+
+- Starling: content starts with `<` and contains `<TextureAtlas`.
+- libGDX: not XML or JSON, matches both a header keyword (`size`/`format`/`filter`/`repeat`) and a region keyword (`xy`/`orig`).
+- Aseprite vs TexturePacker (both `{frames, meta}` JSON): disambiguated by `meta.app` string (`aseprite` vs `texturepacker`/`codeandweb`), falling back to the Aseprite-only per-frame `duration` field. Each detector calls the shared `readJsonAtlasKind` and answers only for itself.
+
+Returns `null` for unknown, empty, corrupt, or non-string input.
+
+### Package shape and conventions
+
+- Two export lanes: `.` (`index.ts`) re-exports from `./contract`; `./contract` (`contract.ts`) barrel-exports all four parser modules and `textureAtlasDetect.ts`. Correct per the export-lanes convention.
+- All types live in `@flighthq/types`: `TextureAtlasFormatKind` and its constants, `TextureAtlasParseOptions` (intersection of `TextureAtlasPackerParseOptions` and `TextureAtlasStarlingParseOptions`), and the Aseprite/Packer document/frame schemas. No local type definitions.
+- `"sideEffects": false` declared and honored. Registry seeds lazily, not at import.
+- Dependencies: `@flighthq/registry`, `@flighthq/textureatlas`, `@flighthq/types`, `@flighthq/xml`. All legitimate.
+- Consumers: `@flighthq/spritesheet-formats` delegates its TexturePacker/Aseprite/Starling/libGDX geometry to this package. `@flighthq/sdk` re-exports it.
+
+### Test coverage
+
+77 tests across 5 files (all passing), one test file per source file. Coverage includes:
+
+- Per-parser: hash vs array shapes, trim fields, pivot, rotation, sequential IDs, region clearing, chaining return, malformed JSON sentinel behavior.
+- Detection: each built-in format, array-shaped Aseprite, `meta.app` fallback to per-frame duration, null/empty/garbage input.
+- Registry: `getTextureAtlasFormat` for built-ins and unknown kinds, `getTextureAtlasFormatKinds` enumeration, `registerTextureAtlasFormat` custom format, `unregisterTextureAtlasFormat`, mutual exclusivity proof across a corpus.
+- Partial documents: missing `sourceSize`/`spriteSourceSize`, missing `frame` rect, null `frame`, mixed good/bad frames.
+
+## Gaps
+
+### Cocos plist: declared but absent
+
+`TextureAtlasFormatKindCocosPlist` is declared in `@flighthq/types` with no parser in this package. The Cocos plist geometry parser (`parseCocosPlistSpritesheet` and `parseCocosPlistSpritesheetDocument`) lives only in `@flighthq/spritesheet-formats`, doing its own geometry inline. This is the one format where the two-tier geometry/animation layering is inverted: `spritesheet-formats` delegates to `textureatlas-formats` for the other four formats but handles Cocos plist entirely on its own.
+
+### No serialization
+
+Zero `serializeTextureAtlas*` functions. The package is read-only. Its sibling `spritesheet-formats` has serializers for every format it parses. Atlas-editing tools, repacking pipelines, and any atlas round-trip workflow have no support at this layer.
+
+### Multipack not modeled
+
+TexturePacker multipack emits one JSON per page plus `meta.related_multi_packs`; libGDX `.atlas` files carry multiple pages with per-page image names, filters, and repeat modes. The libGDX parser discards the page image filename and concatenates all regions. The TexturePacker schema and types omit `related_multi_packs`. This is partially blocked upstream by `TextureAtlas` being single-image, but the format layer silently loses page names rather than surfacing them.
+
+### Meta data not surfaced
+
+`meta.image`, `meta.size`, and `meta.scale` are present in the parsed JSON but never returned or applied. Loaders cannot recover the atlas image filename from a parse result. TexturePacker `scale: 0.5` atlases get no coordinate rescaling. The Starling XML `imagePath` attribute is similarly discarded.
+
+### Starling options are dead surface
+
+`TextureAtlasStarlingParseOptions` declares `imageWidth` and `imageHeight` fields. `parseTextureAtlasStarlingXml` accepts them as `_options` and never reads them. This is dead API surface that promises UV computation support it does not deliver.
+
+### libGDX nine-patch keys ignored
+
+`split:` and `pad:` lines are silently skipped by the libGDX parser. No schema or region field exists to receive them. This pairs with the absence of nine-slice fields on `TextureAtlasRegion`.
+
+### Naming: "Packer" abbreviates "TexturePacker"
+
+`parseTextureAtlasPackerJson`, `parseTextureAtlasPackerDocument`, and all `*Packer*` type names use "Packer" rather than the full product name "TexturePacker". This disagrees with the kind constant value `'texturePacker'`, the sibling package's naming (`parseTexturePackerSpritesheet`), and the codebase rule against abbreviating type names in function names. A reader searching "TexturePacker" misses these functions.
+
+### Missing format families
+
+Beyond the five declared kinds, an authoritative atlas-format library would cover Spine 4.x `.atlas` keys (`bounds`/`offsets` shorthand), Unity sprite atlas, Godot `.tres`, Egret/LayaAir JSON, and Zwoptex XML plist variants. Not all are table stakes, but Spine 4.x and Unity are common.
+
+## Charter contradictions
+
+The charter is a stub (North star, Boundaries, and Decisions are all TODO), so there are no charter principles to contradict. The "What it is" section describes the package's purpose accurately: parsing industry atlas formats into the SDK's `TextureAtlas` region model, with serialization as a maturity target.
+
+## Contract and docs fit
+
+**Package to contract:**
+
+- Types are correctly housed in `@flighthq/types`. No inline exported types in the package.
+- Export lanes correct: `.` and `./contract` only.
+- `"sideEffects": false` declared and honored.
+- Function names are fully unabbreviated except for the "Packer" abbreviation noted above.
+- Sentinel return (`null`) used for detection failure and unrecognised parse content, never throws on expected failures.
+- `import type` discipline observed throughout.
+- Uses `@flighthq/registry` `KeyedTable` for the open registry pattern.
+
+**Candidate admin-doc revisions:**
+
+- The Package Map in `AGENTS.md` lists `textureatlas-formats` under "Resources: codecs" which is accurate.
+- The prior review (2026-07-03) noted schema duplication with `spritesheet-formats`: that issue has been resolved by moving all schema types to `@flighthq/types`. No schema source files remain in this package.
+- The prior review noted that `detectTextureAtlasFormat` was a closed hardcoded function. This has been resolved: detection now iterates the registry, and custom formats participate in sniffing.
+
+## Candidate open directions
+
+These are questions the charter does not answer that this review had to assume:
+
+1. **Should this package round-trip?** The charter says "(and, in a mature library, writing)" — is serialization in scope for this package, and if so, which formats first?
+2. **Where should page/meta data land?** Should parsed page image names, scale, and size be returned alongside regions (e.g. as a structured result or via the atlas object), or does that wait for `TextureAtlas` to grow a pages model?
+3. **Is the Cocos plist geometry parser expected here?** The kind constant is declared, `spritesheet-formats` does its own geometry for this format, and the two-tier layering is inverted for exactly this one format.
+4. **Is the "Packer" abbreviation intentional?** If the stutter `TextureAtlasTexturePacker*` is unacceptable, what is the blessed form — `parseTexturePackerAtlasJson`, `parseTextureAtlasTexturePackerJson`, or keeping "Packer"?
+5. **Should Starling parse options be removed or implemented?** `imageWidth`/`imageHeight` are accepted and ignored. Either implement UV computation or remove the dead surface.
+6. **What additional format families are in scope?** Spine 4.x shorthand, Godot `.tres`, Unity sprite atlas, or is the current set (TexturePacker, Aseprite, Starling, libGDX, plus the pending Cocos) the target?

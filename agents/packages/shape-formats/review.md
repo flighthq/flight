@@ -1,63 +1,109 @@
 ---
 package: '@flighthq/shape-formats'
-status: partial
-score: 62
-updated: 2026-07-13
+status: solid
+score: 78
+updated: 2026-09-02
 ingested:
+  - charter.md
   - status.md
+  - assessment.md
   - source
 ---
 
 # shape-formats — Review
 
-**Verdict:** partial — 62/100. The blessed first-build (native command-stream JSON) is delivered cleanly and matches the charter's 2026-07-09 Decisions almost exactly, but the parse contract's "sentinel `null` on malformed input" is only partially realized (no arity/positional-type validation), there is no diagnostics layer, and the package is one format of a charter vision that itself names SVG as the next module.
+**Verdict:** solid -- 78/100. The native command-stream JSON codec is complete, table-driven, and thoroughly tested (44 tests, full vocabulary coverage). All three 2026-07-09 charter Decisions are faithfully implemented. The prior review's three critical gaps (arity/type validation, incomplete round-trip tests, non-finite numbers) have all landed. Remaining gaps are the diagnostics design question (open in the assessment, not a code defect), the charter-deferred SVG format, and minor charter staleness. The package is small and healthy.
 
 ## Present capabilities
 
-- **`formatShapeJson(shape, options?)`** (`packages/shape-formats/src/shapeJson.ts`) — walks the public `shape.data.commands` flat buffer (`[key, argCount, ...args]`) directly and emits `{ shapeFormat: 2, commands: [{ key, args }] }`. Args serialize by JS type: numbers/strings/booleans/numeric arrays/`null` verbatim; `Matrix` → `{a,b,c,d,tx,ty}` (`isMatrixValue`); a live `Texture` → an ordinal `{ texture: { index } }` (`ShapeTextureReference`). `options.space` passes through to `JSON.stringify` for pretty-printing. Output is deterministic.
-- **`parseShapeJson(text, options?)`** — rebuilds a fresh `Shape` via `createShape()` and replays each entry through `SHAPE_COMMAND_APPENDERS`, a `key → appendShape*` table. Returns sentinel `null` (never throws; `JSON.parse` is try/caught) for malformed JSON, missing/mismatched `shapeFormat`, non-array `commands`, malformed entry, unknown key, or an unrecognized object arg (`MALFORMED_ARG` symbol sentinel).
-- **Full command-vocabulary coverage — verified.** The appender table's 17 keys exactly match the 17-key `ShapeCommandRegistry` in `packages/types/src/ShapeCommand.ts` (`beginTextureFill` … `moveTo`). The composite builders `appendShapeArc`/`appendShapeArcTo`/`appendShapePolygon`/`appendShapePolyline`/`appendShapeRoundRectangleVarying` decompose into primitive keys (`moveTo`/`lineTo`/`curveTo`/`cubicCurveTo`) in `packages/shape/src/shapeCommands.ts`, so every buffer a shape can contain round-trips.
-- **Versioning** — a `shapeFormat: 1` top-level tag (`SHAPE_JSON_FORMAT`), checked with strict equality; mismatch → `null`. Tested for missing and mismatched tags.
-- **Texture-fill seam per the charter Decision** — `beginTextureFill`/`lineTextureStyle` textures serialize as the zero-based ordinal of the texture-bearing command; `ShapeJsonParseOptions.resolveTexture` rehydrates, and no resolver / a `null` return drops that one command (`DROP_COMMAND` sentinel) while the rest parses intact. Tested in all three modes (resolver, no resolver, resolver→null).
-- **Losslessness** — the round-trip test asserts `formatShapeJson(restored) === json` byte-for-byte for a 9-command shape (`shapeJson.test.ts`, `createEveryNonBitmapCommandShape`).
-- Types `ShapeTextureReference` / `ShapeJsonFormatOptions` / `ShapeJsonParseOptions` exported; durable comments cover the ordinal rationale and the matrix-vs-texture object discrimination. Tests are colocated, with `describe` blocks alphabetized and mirroring exports.
+### Native command-stream JSON codec
+
+**`formatShapeJson(shape, options?): string`** (`packages/shape-formats/src/shapeJson.ts:37`) -- walks the `shape.data.commands` flat buffer directly and emits a `{ shapeFormat: 3, commands: [{ key, args }] }` document. Arg serialization is type-dispatched: `null` passes through (omitted fill/line matrix, absent triangle indices/uv); `Matrix` values serialize as `{a,b,c,d,tx,ty}` field objects; numbers, strings, booleans, and numeric arrays serialize verbatim via JSON; live `Texture` objects become ordinal `{ texture: { index } }` references (`ShapeTextureReference`). `options.space` passes through to `JSON.stringify` for pretty-printing. The writer validates every command against the shared schema before emitting: a `Shape` holding a non-finite coordinate throws `TypeError` rather than producing a document its own reader would reject (`:47-49`).
+
+**`parseShapeJson(text, options?): Shape | null`** (`shapeJson.ts:81`) -- rebuilds a fresh `Shape` via `createShape()` and replays each entry through `SHAPE_COMMAND_APPENDERS` (a 17-key `key -> appendShape*` table, `:243-261`). Returns sentinel `null` (never throws; `JSON.parse` is try/caught) for: malformed JSON, missing/mismatched `shapeFormat` tag, non-array `commands`, malformed entry (non-object, missing `key`/`args`), unknown command key, unrecognized object arg shape (`MALFORMED_ARG` sentinel, `:236`), wrong arity (too few required or too many total), wrong positional type, or non-finite numbers. Texture-bearing commands whose reference cannot be resolved are dropped rather than rejected (`DROP_COMMAND` sentinel, `:239`), keeping the rest of the shape intact.
+
+### Table-driven command schemas
+
+**`defaultShapeCommandSchemas`** (`packages/shape-formats/src/shapeCommandSchemas.ts:113`) -- a `KeyedTable<ShapeCommandSchema>` populated via `@flighthq/registry`'s `createKeyedTable`/`withRegistryTableEntry`. Covers all 17 `ShapeCommandKey` entries with positional argument names, types (`'number' | 'numbers' | 'numbersOrNull' | 'string' | 'boolean' | 'matrixOrNull' | 'texture'`), and `requiredArgumentCount`. Shared reuse tables for gradient arguments (`:27-36`) and texture arguments (`:38-41`). Used by both `formatShapeJson` (writer-side validation) and `parseShapeJson` (reader-side validation) through the shared `isValidShapeCommandArgs` function (`:146-156`).
+
+This schema table is also the runtime backing for `FlightDocumentSchemaRegistry.shapeCommandSchemas` (`packages/types/src/FlightDocumentSchemaRegistry.ts:15`), consumed by `interaction`, `scene-document`, and `gui` for shape-command resolution in document materialization. The `defaultShapeCommandSchemas` export therefore serves a cross-cutting role beyond just JSON serialization.
+
+### Types
+
+All types are in `@flighthq/types` as required: `ShapeTextureReference`, `ShapeJsonFormatOptions`, `ShapeJsonParseOptions` (`packages/types/src/ShapeJson.ts`), `ShapeCommandSchema`, `ShapeCommandSchemaArgument`, `ShapeCommandSchemaArgumentType` (`packages/types/src/ShapeCommandSchema.ts`). No inline type definitions in the package.
+
+### Full command vocabulary coverage -- verified
+
+The 17-key `SHAPE_COMMAND_APPENDERS` table covers: `beginTextureFill`, `beginFill`, `beginGradientFill`, `cubicCurveTo`, `curveTo`, `drawCircle`, `drawEllipse`, `drawPath`, `drawRectangle`, `drawRoundRectangle`, `drawTriangles`, `endFill`, `lineTextureStyle`, `lineGradientStyle`, `lineStyle`, `lineTo`, `moveTo`. Each has a matching schema entry in `defaultShapeCommandSchemas`. The composite builders (`appendShapeArc`/`appendShapeArcTo`/`appendShapePolygon`/`appendShapePolyline`/`appendShapeRoundRectangleVarying`) decompose into primitive keys, so every buffer a shape can contain round-trips.
+
+### Losslessness
+
+The round-trip test (`shapeJson.test.ts:135-142`) uses `createEveryNonBitmapCommandShape` (`:27-66`), which exercises all 15 non-texture command keys including `drawCircle`, `drawEllipse`, `drawRectangle`, `drawRoundRectangle`, both `drawTriangles` forms (with and without indices/uv), and `lineGradientStyle`. It asserts byte-for-byte identity: `formatShapeJson(restored!) === json`. Texture commands are tested separately through three resolver paths (present resolver, absent resolver, null-returning resolver).
+
+### Test suite
+
+2 test files, 44 tests, all passing. `shapeJson.test.ts` (41 tests): versioned envelope, matrix serialization, matrix field round-trip + non-finite rejection (parameterized over all 6 fields), texture ordinal reference, pretty-printing, full-vocabulary round-trip, 9 malformed-input rejection cases, texture resolver in 3 modes, 13 argument-validation cases (wrong arity, wrong type, non-finite in various positions, null-in-numeric, infinity, matrix fields, optional args). `shapeCommandSchemas.test.ts` (3 tests): curve argument name pins, triangle schema structure pin.
+
+### Export structure
+
+- `index.ts`: re-exports all of `./contract`.
+- `contract.ts`: `export * from './shapeJson'; export * from './shapeCommandSchemas';`
+- Two-lane structure (`.` and `./contract`) correctly configured in `package.json` exports map.
+- Re-exported through `@flighthq/sdk` barrel (`packages/sdk/src/formats.ts:11`, `packages/sdk/src/index.ts:107`).
+- `"sideEffects": false` declared. No top-level side effects in source.
 
 ## Gaps
 
-Vs a textbook native-command-stream codec (charter-deferred items excluded — see Backlog routing):
+Against the charter, the codebase-map standard, and a mature codec package:
 
-1. **No arity or positional-type validation on parse.** `parseShapeJson` validates arg *structure* but never arg *count* or per-position type against the command's `ShapeCommandRegistry` tuple. `{key:'moveTo', args:[]}` parses "successfully" and spreads `undefined` into `appendShapeMoveTo`, writing `undefined` into the command buffer — a corrupt shape that a later `formatShapeJson` would misclassify as a bitmap ref (the `else` branch). `{key:'beginFill', args:['red', true]}` likewise parses into a garbage buffer. This under-delivers the charter Decision's own contract ("sentinel `null` on malformed … input").
-2. **Round-trip test coverage overclaims.** `createEveryNonBitmapCommandShape` covers 9 of the 15 non-bitmap keys — `drawCircle`, `drawEllipse`, `drawRectangle`, `drawRoundRectangle`, `drawTriangles`, and `lineGradientStyle` never appear in any round-trip test, despite the test name "round-trips every non-bitmap command losslessly".
-3. **No malformed-input diagnostics.** Every failure collapses to one silent `null`; there is no shakeable `explain*` query (per the diagnostics inversion rule, every silent sentinel gets one) reporting *why* — reason code, offending command index/key. Dropped bitmap commands are likewise invisible to the caller (no count, no report).
-4. **Non-finite numbers silently corrupt.** `JSON.stringify(NaN/Infinity)` emits `null`, and parse accepts `null` in any arg slot, so `lineTo(NaN, 5)` round-trips to `lineTo(null, 5)` — neither preserved nor rejected.
-5. **Format-side object discrimination is fall-through.** Any non-matrix, non-scalar object arg is assumed to be the bitmap (`shapeJson.ts` `else` branch). Correct for today's closed registry (documented inline), but a declaration-merged custom command with an object arg would silently serialize as a bogus bitmap ordinal.
-6. **No codec extensibility.** `ShapeCommandRegistry` is explicitly open ("May be extended via declaration merging") but `SHAPE_COMMAND_APPENDERS` is a closed `Record` — a user's vendor command key hard-fails the whole parse. No skip-unknown forward-compat mode either (strict-`null` is the blessed Decision; the extensibility seam is not addressed by it).
-7. **Single format.** SVG export/import, the meatier standard interchange, is charter-deferred (Open direction 1), and there is no binary/compact form or streaming — the charter is silent on those two.
+1. **No diagnostics layer.** Every parse failure collapses to one silent `null`; there is no `explain*` query or `ImportDiagnostic` crumb reporting why (reason code, offending command index/key). Dropped texture commands are also invisible. The assessment notes this is an open design question: does a `-formats` parser report through the `ImportDiagnostic` crumb system (adopted by `scene3d-formats`, `particles-formats`, `skeleton2d-formats`, `scene2d-formats`) or through a bespoke `explain*` query, or both? This needs a ruling before implementation.
+
+2. **SVG export/import is unbuilt.** No `formatShapeSvg` / `parseShapeSvg` exists. Explicitly charter-deferred (Open direction 1), so this is scope awareness, not a defect.
+
+3. **Format-side non-finite numbers throw rather than return a sentinel.** `formatShapeJson` throws `TypeError` on non-finite coordinates (`:48-49`), while `parseShapeJson` returns `null` on the same condition. The status documents this asymmetry as deliberate (a `Shape` holding `NaN` is a programmer error / precondition violation, so throwing is within the design constraints), and it aligns with the codebase-map rule (throw for programmer errors, sentinels for expected failures). The asymmetry is honest, but it means `formatShapeJson` is the only function in the package that can throw.
+
+4. **No examples.** No entries in `examples/` demonstrate shape serialization. For a codec package whose consumer base is currently the SDK barrel and document-format infrastructure, this is low-priority but worth noting.
+
+5. **`formatShapeJson` reads `shape.data.commands` directly.** `@flighthq/shape` exports `getShapeCommandCount` but no public command iterator. The flat `[key, argCount, ...args]` buffer layout is therefore duplicated knowledge across packages. The status documents this; it is a cross-package gap owned by `@flighthq/shape`.
+
+6. **Object-arg discrimination is fall-through.** The serialize path treats any non-matrix, non-scalar, non-null object as a texture (`:63-65`). Correct for the current closed vocabulary (documented inline), but a declaration-merged custom command with an object arg would silently serialize as a bogus texture ordinal. The shared schema validates after serialization, so the writer throws on an unknown key, but the discrimination itself is fragile.
+
+7. **Codec extensibility.** `ShapeCommandRegistry` supports declaration merging, but `SHAPE_COMMAND_APPENDERS` is a closed `Record` and `defaultShapeCommandSchemas` is built from a closed map. A vendor command key is not parseable or serializable through this codec.
 
 ## Charter contradictions
 
-No design contradictions — the implementation matches all three 2026-07-09 Decisions (native JSON shape, `format*`/`parse*` naming, ordinal bitmap reference with resolver seam). One **implementation shortfall of a Decision**: the "sentinel `null` on malformed input" ruling is incompletely realized (gap 1 — wrong-arity/wrong-type entries parse into corrupt shapes instead of returning `null`).
+None. All three 2026-07-09 Decisions are faithfully implemented:
 
-## Contract & docs fit
+- **First-build format = native command-stream JSON** -- delivered as `formatShapeJson` / `parseShapeJson` with the exact signatures specified.
+- **`format*`/`parse*` naming** -- matches `path-formats` and `formatBitmapFingerprint` precedent. Parse returns sentinel `null`.
+- **`beginTextureFill` textures serialize as a reference, resolved on parse** -- ordinal `ShapeTextureReference`, `resolveTexture` option, unresolved = drop (not reject).
 
-Package → contract: strong.
+## Contract and docs fit
 
-- Names full and format-keyed (`formatShapeJson`/`parseShapeJson`), matching `path-formats`/`formatBitmapFingerprint` precedent.
-- Sentinels-not-throws throughout; `Readonly<>` on inputs; single root `.` export (`index.ts` is one re-export line); `"sideEffects": false`; module-private sentinels/table at the bottom of the file after exports.
-- Deps `geometry` + `shape` + `types` only; no DOM, no renderer. Package-local option/reference types are codec-private, not cross-package, so keeping them out of `@flighthq/types` is acceptable under the header-layer rule.
-- Reading `shape.data.commands` directly (no public iterator exists in `@flighthq/shape` — verified: `shape.ts` exports `getShapeCommandCount` but no `forEachShapeCommand`) is documented and mirrors `@flighthq/shape`'s own internal readers.
+Package to contract: strong.
 
-Candidate doc revisions:
+- Full unabbreviated names (`formatShapeJson`, `parseShapeJson`, `defaultShapeCommandSchemas`).
+- Sentinels-not-throws on parse (the `formatShapeJson` throw is for a programmer-error precondition).
+- `Readonly<T>` on input parameters (`Readonly<Shape>`, `Readonly<ShapeJsonFormatOptions>`, `Readonly<ShapeJsonParseOptions>`).
+- Types in `@flighthq/types` (6 types across 2 files).
+- `"sideEffects": false`, no top-level registration.
+- Module-private sentinels, tables, and helpers at the bottom of each file after exports.
+- Deps: `@flighthq/geometry` (for `createMatrix`), `@flighthq/registry` (for `KeyedTable`), `@flighthq/shape` (for `appendShape*` builders and `createShape`), `@flighthq/types`.
 
-- **Charter Boundaries dep list is stale**: says "Depends on `@flighthq/shape` + `@flighthq/types`" but `package.json` also carries `@flighthq/geometry` (for `createMatrix` on parse — justified in status.md). One-line charter touch-up at the next direction session.
-- Package Map line in `agents/index.md` is accurate as written.
+**Candidate doc revisions:**
+
+- **Charter Boundaries dep list is stale.** States "Depends on `@flighthq/shape` + `@flighthq/types`" but `package.json` also carries `@flighthq/geometry` (for `createMatrix` on parse) and `@flighthq/registry` (for `KeyedTable<ShapeCommandSchema>`). Both are justified additions from the validation sweep (2026-07-30). One-line charter touch-up at the next direction session.
 
 ## Candidate open directions
 
-Silences I had to assume past; feed to the charter:
+Silences the charter does not address, surfaced for direction:
 
-1. **Stable bitmap references.** The ordinal reference is blessed, but it is positional — editing a shape between format and parse shifts ordinals. A format-side hook (e.g. `referenceBitmap?: (bitmap) => string` emitting caller asset ids) would make references edit-stable. Extension of, not contradiction to, the 2026-07-09 Decision.
-2. **Custom-command codec seam (fork B).** `ShapeCommandRegistry` is open by declaration merging; should the codec grow a matching registry (`registerShapeJsonCommand`-style arg codec per key) so vendor commands round-trip and tree-shake?
-3. **Strict vs lenient parse.** Skip-unknown-commands forward compat vs today's blessed hard-`null` — a real design fork once format v2 or vendor keys exist; also the version-migration policy when `shapeFormat: 2` arrives.
-4. **Binary/compact form.** Charter is silent on a non-JSON compact encoding (the buffer is already flat and binary-friendly).
-5. **A public command iterator in `@flighthq/shape`** (`forEachShapeCommand`) would remove this codec's coupling to the raw buffer layout — cross-package, shape's call.
+1. **Diagnostics channel: crumbs vs `explain*`.** The four `-formats` packages that adopted `ImportDiagnostic` crumbs (`scene3d-formats`, `particles-formats`, `skeleton2d-formats`, `scene2d-formats`) suggest crumbs as the convention for format parsers. But the codebase-map inversion rule says every silent sentinel gets a shakeable `explain*` query. Both plausibly claim this. A ruling would settle whether `shape-formats` reports through crumbs, through `explain*`, or both.
+
+2. **Custom-command codec seam.** Should the codec support a `registerShapeJsonCommand`-style per-key arg codec matching declaration-merged `ShapeCommandRegistry` entries, so vendor commands round-trip and tree-shake? Currently the appender table and schema table are both closed.
+
+3. **Stable texture references.** The ordinal reference is positional -- editing a shape between format and parse shifts ordinals. A format-side hook (`referenceBitmap?: (texture) => string`) emitting caller asset ids would make references edit-stable. Extension of, not contradiction to, the 2026-07-09 Decision.
+
+4. **Strict vs lenient parse / forward-compat.** Skip-unknown-commands mode vs today's strict-`null`. A design fork once vendor keys or format v4 exist.
+
+5. **Binary/compact form.** The buffer is already flat and binary-friendly; the charter is silent on a non-JSON encoding.
