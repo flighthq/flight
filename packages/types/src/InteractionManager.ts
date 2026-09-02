@@ -10,6 +10,15 @@ import type { SpatialIndex2D } from './Spatial';
 
 export type InteractionSignalName = keyof InteractionSignals;
 export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData | FocusEventData) => void;
+export type InteractionDispatchLayer<N extends NodeAny = Node<NodeTraits>> = (
+  target: N,
+  name: InteractionSignalName,
+  data: Readonly<PointerEventData | KeyboardEventData | FocusEventData>,
+) => boolean;
+
+export interface InteractionDispatchLayerOptions {
+  priority?: number;
+}
 
 export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
   // Active cursor backend for this manager's canvas; `null` disables cursor resolution. Per-manager
@@ -19,6 +28,8 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
   // Last rollover target that drove this manager's cursor. Kept separately from per-pointer state
   // because one canvas has one cursor even when the manager tracks several pointer identities.
   cursorTarget: N | null;
+  // Priority-descending dispatch middleware, allocated only when a consumer connects the first layer.
+  dispatchLayers: Array<{ layer: InteractionDispatchLayer<N>; priority: number }> | null;
   // Inclusive maximum elapsed time, in input-timestamp units, between qualifying pointer clicks.
   doubleClickDelay: number;
   // Inclusive maximum distance, in dispatched pointer-coordinate units, between qualifying clicks.

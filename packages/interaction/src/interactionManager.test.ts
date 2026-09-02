@@ -22,6 +22,7 @@ import { registerHitTest } from './hitTests';
 import {
   captureInteractionPointer,
   connectInputToInteraction,
+  connectInteractionDispatchLayer,
   connectInteractionSignal,
   createInteractionManager,
   createInteractionSignals,
@@ -121,6 +122,154 @@ describe('connectInputToInteraction', () => {
   });
 });
 
+describe('connectInteractionDispatchLayer', () => {
+  it('allocates storage lazily and disconnects idempotently', () => {
+    const { manager } = createHitScene3D();
+    expect(manager.dispatchLayers).toBeNull();
+
+    const disconnect = connectInteractionDispatchLayer(manager, () => true);
+    expect(manager.dispatchLayers).toHaveLength(1);
+
+    disconnect();
+    disconnect();
+    expect(manager.dispatchLayers).toBeNull();
+  });
+
+  it('runs in descending priority with stable connection order for equal priorities', () => {
+    const { child, manager, root } = createHitScene3D();
+    const calls: string[] = [];
+    connectInteractionDispatchLayer(manager, () => (calls.push('low'), true), { priority: -1 });
+    connectInteractionDispatchLayer(manager, () => (calls.push('equal-a'), true), { priority: 5 });
+    connectInteractionDispatchLayer(manager, () => (calls.push('high'), true), { priority: 10 });
+    connectInteractionDispatchLayer(manager, () => (calls.push('equal-b'), true), { priority: 5 });
+    connectSignal(enableInteractionSignals(child).onPointerDown, () => calls.push('child'));
+    connectSignal(enableInteractionSignals(root).onPointerDown, () => calls.push('root'));
+
+    dispatchInteractionPointerDown(manager, 50, 50);
+
+    expect(calls).toEqual(['high', 'equal-a', 'equal-b', 'low', 'child', 'root']);
+  });
+
+  it('receives the resolved target and populated data before Flight signal bubbling', () => {
+    const { child, manager } = createHitScene3D();
+    const calls: string[] = [];
+    connectInteractionDispatchLayer(manager, (target, name, data) => {
+      calls.push('layer');
+      expect(target).toBe(child);
+      expect(name).toBe('onPointerDown');
+      expect(data).toMatchObject({ button: 2, pointerId: 7, pointerType: 'pen', x: 25, y: 40 });
+      return true;
+    });
+    connectSignal(enableInteractionSignals(child).onPointerDown, () => calls.push('signal'));
+
+    dispatchInteractionPointerDown(manager, 25, 40, 2, { pointerId: 7, pointerType: 'pen' });
+
+    expect(calls).toEqual(['layer', 'signal']);
+  });
+
+  it('stops at the first false layer and suppresses Flight signal bubbling', () => {
+    const { child, manager, root } = createHitScene3D();
+    const calls: string[] = [];
+    connectInteractionDispatchLayer(manager, () => (calls.push('high'), true), { priority: 10 });
+    connectInteractionDispatchLayer(manager, () => (calls.push('block'), false));
+    connectInteractionDispatchLayer(manager, () => (calls.push('low'), true), { priority: -10 });
+    connectSignal(enableInteractionSignals(child).onPointerDown, () => calls.push('child'));
+    connectSignal(enableInteractionSignals(root).onPointerDown, () => calls.push('root'));
+
+    dispatchInteractionPointerDown(manager, 50, 50);
+
+    expect(calls).toEqual(['high', 'block']);
+  });
+
+  it('suppresses only the blocked synthesized event', () => {
+    const { child, manager } = createHitScene3D();
+    const calls: string[] = [];
+    connectInteractionDispatchLayer(manager, (_target, name) => name !== 'onClick');
+    connectSignal(enableInteractionSignals(child).onPointerDown, () => calls.push('down'));
+    connectSignal(enableInteractionSignals(child).onPointerUp, () => calls.push('up'));
+    connectSignal(enableInteractionSignals(child).onClick, () => calls.push('click'));
+
+    dispatchClick(manager, 50, 50, 1000);
+
+    expect(calls).toEqual(['down', 'up']);
+  });
+
+  it('snapshots additions and removals for the current layer walk', () => {
+    const { manager } = createHitScene3D();
+    const calls: string[] = [];
+    let added = false;
+    let disconnectLater = () => {};
+    connectInteractionDispatchLayer(
+      manager,
+      () => {
+        calls.push('first');
+        disconnectLater();
+        if (!added) {
+          added = true;
+          connectInteractionDispatchLayer(manager, () => (calls.push('added'), true), { priority: 5 });
+        }
+        return true;
+      },
+      { priority: 10 },
+    );
+    disconnectLater = connectInteractionDispatchLayer(manager, () => (calls.push('later'), true));
+
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerDown(manager, 50, 50);
+
+    expect(calls).toEqual(['first', 'later', 'first', 'added']);
+  });
+
+  it('observes every dispatched interaction path without Flight signal subscribers', () => {
+    const { child, manager } = createHitScene3D();
+    const names: string[] = [];
+    setNodePointerDoubleClickEnabled(child, true);
+    connectInteractionDispatchLayer(manager, (_target, name) => {
+      names.push(name);
+      return true;
+    });
+
+    dispatchInteractionPointerMove(manager, 50, 50);
+    dispatchClick(manager, 50, 50, 1000);
+    dispatchClick(manager, 50, 50, 1100);
+    dispatchInteractionPointerMove(manager, 500, 500);
+    dispatchInteractionContextMenu(manager, 50, 50);
+    dispatchInteractionWheel(manager, 50, 50, 0, -120);
+    dispatchInteractionKeyDown(manager, 'a', 65);
+    dispatchInteractionKeyUp(manager, 'a', 65);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerUp(manager, 500, 500);
+    dispatchInteractionPointerDown(manager, 50, 50);
+    dispatchInteractionPointerCancel(manager, 50, 50);
+
+    expect(names).toEqual([
+      'onPointerRollOver',
+      'onPointerRollOver',
+      'onPointerOver',
+      'onPointerMove',
+      'onPointerDown',
+      'onPointerUp',
+      'onClick',
+      'onPointerDown',
+      'onPointerUp',
+      'onClick',
+      'onDoubleClick',
+      'onPointerDoubleClick',
+      'onPointerOut',
+      'onPointerRollOut',
+      'onPointerRollOut',
+      'onContextMenu',
+      'onWheel',
+      'onKeyDown',
+      'onKeyUp',
+      'onPointerDown',
+      'onReleaseOutside',
+      'onPointerDown',
+      'onPointerCancel',
+    ]);
+  });
+});
+
 describe('connectInteractionSignal', () => {
   it('can use tracked subscribers without scanning for direct signal connections', () => {
     const kind = 'TrackedSubscriberHitTest';
@@ -171,6 +320,7 @@ describe('createInteractionManager', () => {
     const manager = createInteractionManager(root);
     expect(manager.enabled).toBe(true);
     expect(manager.cursorTarget).toBeNull();
+    expect(manager.dispatchLayers).toBeNull();
     expect(manager.pointerCaptures.size).toBe(0);
     expect(manager.pointerStates.size).toBe(0);
     expect(manager.root).toBe(root);
