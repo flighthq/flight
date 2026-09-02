@@ -105,6 +105,8 @@ working in that area, but do not build on it as settled. New architecture record
 Material for a direction-setting or planning role. A builder scoped to one package does not need these,
 which is why they are not in the map.
 
+- [three approved shapes](three-shapes-scope.md) — the approved scope for interaction dispatch
+  layers, the effect capture geometry helper, and the immediate-mode GPU draw seam.
 - [openfl-flight upstream batch](openfl-flight-upstream-batch.md) — the approved batch of ten
   general-purpose Flight improvements surfaced by the openfl-flight gap analysis, each
   independently dispatchable. Not OpenFL-specific adapters.
