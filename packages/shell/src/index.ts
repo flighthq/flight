@@ -7,5 +7,6 @@ export {
   readShellShortcutLink,
   revealShellPath,
   shellBeep,
+  spawnShellProcess,
   writeShellShortcutLink,
 } from './contract';

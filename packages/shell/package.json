@@ -44,6 +44,6 @@
     "@flighthq/entity": "*",
     "typescript": "^5.3.0"
   },
-  "description": "OS shell commands over six explicit Host capability slots with required external URL policy",
+  "description": "OS shell commands over seven explicit Host capability slots with required external URL policy",
   "sideEffects": false
 }

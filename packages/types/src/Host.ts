@@ -129,6 +129,7 @@ import type {
   ShellExternalBackend,
   ShellPathOpenBackend,
   ShellPathRevealBackend,
+  ShellProcessBackend,
   ShellShortcutLinkBackend,
   ShellTrashBackend,
 } from './Shell';
@@ -366,13 +367,14 @@ export interface HostScreenCapabilities {
   readonly query?: ScreenQueryBackend;
 }
 
-// Shell is top-level because its six command capabilities have distinct provider coverage. Every
+// Shell is top-level because its seven command capabilities have distinct provider coverage. Every
 // Host names the group; omitted slots mean genuine absence, never a false-returning stub.
 export interface HostShellCapabilities {
   readonly beep?: ShellBeepBackend;
   readonly external?: ShellExternalBackend;
   readonly pathOpen?: ShellPathOpenBackend;
   readonly pathReveal?: ShellPathRevealBackend;
+  readonly process?: ShellProcessBackend;
   readonly shortcutLink?: ShellShortcutLinkBackend;
   readonly trash?: ShellTrashBackend;
 }
