@@ -105,6 +105,9 @@ working in that area, but do not build on it as settled. New architecture record
 Material for a direction-setting or planning role. A builder scoped to one package does not need these,
 which is why they are not in the map.
 
+- [openfl-flight upstream batch](openfl-flight-upstream-batch.md) — the approved batch of ten
+  general-purpose Flight improvements surfaced by the openfl-flight gap analysis, each
+  independently dispatchable. Not OpenFL-specific adapters.
 - [examples plan](examples-plan.md) — the planned example set and implementation order.
 - [quality plan](quality-plan.md) — API maturity verification, unit vs functional test guidance.
 - [input ingress seam](input-ingress-seam-plan.md) — **implemented.** the exhaustive 26-site DOM
