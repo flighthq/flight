@@ -528,6 +528,7 @@ export * from './RenderBlendStateEntry';
 export * from './RenderCache';
 export * from './RenderDrawContext';
 export * from './RenderEffect';
+export * from './RenderEffectCaptureGeometry';
 export * from './RenderEffectPadding';
 export * from './RenderEffectInput';
 export * from './RenderRegistrySignals';

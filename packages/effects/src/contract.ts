@@ -52,6 +52,7 @@ export * from './pixelateEffect';
 export * from './posterizeEffect';
 export * from './radialBlurEffect';
 export * from './renderEffectDefaults';
+export * from './renderEffectCaptureGeometry';
 export * from './renderEffectInputs';
 export * from './renderEffectInterpolation';
 export * from './renderEffectPadding';
