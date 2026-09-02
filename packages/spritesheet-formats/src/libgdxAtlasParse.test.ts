@@ -1,3 +1,5 @@
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+
 import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse';
 
 const MINIMAL_ATLAS = `
@@ -97,5 +99,29 @@ describe('parseLibgdxAtlasSpritesheet', () => {
   it('sets non-indexed frames without rotation', () => {
     const data = parseLibgdxAtlasSpritesheet(MINIMAL_ATLAS);
     expect(data.frames[0]?.rotated).toBe(false);
+  });
+
+  it('emits no diagnostics on well-formed atlas with page header', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseLibgdxAtlasSpritesheet(MINIMAL_ATLAS, undefined, diagnostics);
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it('emits Recover diagnostic when page has no filename', () => {
+    const noPageAtlas = `
+hero
+  rotate: false
+  xy: 0, 0
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+`;
+    const diagnostics: ImportDiagnostic[] = [];
+    const data = parseLibgdxAtlasSpritesheet(noPageAtlas, undefined, diagnostics);
+    expect(data.imageFile).toBe('');
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('spritesheet.libgdx-atlas.missing-page-header');
+    expect(diagnostics[0].severity).toBe('Recover');
   });
 });

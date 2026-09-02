@@ -1,4 +1,4 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -7,19 +7,17 @@ import {
 import { parseTextureAtlasPackerDocument } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
+  ImportDiagnostic,
+  SpritesheetAnimationData,
+  SpritesheetData,
+  SpritesheetFrameData,
   TextureAtlasRegion,
   TexturePackerDocument,
   TexturePackerFrameTag,
   TexturePackerMeta,
   TexturePackerParsed,
 } from '@flighthq/types/contract';
-
-// ─── Internal helpers ────────────────────────────────────────────────────────
-
-// Maps an atlas region (geometry owned by @flighthq/textureatlas-formats — the single source of truth
-// for the region rect, rotation, and trim handling) to a spritesheet frame. This package adds only the
-// animation/frame metadata on top. The untrimmed source size falls back to the region rect, because the
-// atlas parser leaves originalW/H null when a frame is not trimmed (where the source equals the frame).
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
   return createSpritesheetFrameData({
     height: region.height,
@@ -74,34 +72,36 @@ function documentToData(doc: TexturePackerDocument): SpritesheetData {
   });
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/** Parse a Texture Packer JSON string directly to a SpritesheetData.
- *
- *  Single-pass: no intermediate document object is allocated.
- *  Use `parseTexturePackerSpritesheetDocument` instead when you need round-trip serialisation. */
-export function parseTexturePackerSpritesheet(json: string): SpritesheetData {
+export function parseTexturePackerSpritesheet(json: string, diagnostics?: ImportDiagnostic[]): SpritesheetData {
   let document: TexturePackerDocument;
   try {
     document = JSON.parse(json) as TexturePackerDocument;
   } catch {
-    // Malformed JSON is an expected failure — return an empty SpritesheetData sentinel rather than
-    // throwing an uncaught SyntaxError, matching `parseSpritesheet`'s null-on-unrecognized philosophy and
-    // the never-throw importer policy.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'spritesheet.texture-packer.malformed-json',
+      'parseTexturePackerSpritesheet',
+    );
     return createSpritesheetData();
   }
   return documentToData(document);
 }
 
-/** Parse a Texture Packer JSON string and preserve the full document for
- *  round-trip serialisation via `serializeTexturePackerSpritesheet`. */
-export function parseTexturePackerSpritesheetDocument(json: string): TexturePackerParsed {
+export function parseTexturePackerSpritesheetDocument(
+  json: string,
+  diagnostics?: ImportDiagnostic[],
+): TexturePackerParsed {
   let document: TexturePackerDocument;
   try {
     document = JSON.parse(json) as TexturePackerDocument;
   } catch {
-    // Malformed JSON is an expected failure — return an EMPTY RESULT (empty data + empty document), never
-    // throwing; empty (not null) matches the non-Document sibling parseTexturePackerSpritesheet.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'spritesheet.texture-packer.malformed-json',
+      'parseTexturePackerSpritesheetDocument',
+    );
     return { data: createSpritesheetData(), document: createEmptyTexturePackerDocument() };
   }
   return { data: documentToData(document), document };

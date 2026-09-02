@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../importdiagnostics" },
     { "path": "../registry" },
     { "path": "../spritesheet" },
     { "path": "../textureatlas" },

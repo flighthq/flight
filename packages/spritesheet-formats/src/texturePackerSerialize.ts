@@ -1,5 +1,5 @@
-import type { SpritesheetData } from '@flighthq/spritesheet/contract';
 import type {
+  SpritesheetData,
   TexturePackerArrayDocument,
   TexturePackerArrayFrame,
   TexturePackerDocument,
@@ -8,8 +8,6 @@ import type {
   TexturePackerMeta,
   TexturePackerSerializeOptions,
 } from '@flighthq/types/contract';
-
-// ─── Internal helpers ────────────────────────────────────────────────────────
 
 function dataToMeta(data: Readonly<SpritesheetData>, existing: Partial<TexturePackerMeta>): TexturePackerMeta {
   return {
@@ -77,14 +75,6 @@ function dataToArrayDocument(
   return { frames, meta: dataToMeta(data, existing.meta ?? {}) };
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/** Serialise a SpritesheetData to a Texture Packer JSON string.
- *
- *  Pass the `document` returned by `parseTexturePackerSpritesheetDocument` to preserve any fields
- *  that don't round-trip through the data (app name, format string, scale).
- *  The output variant (hash vs array) is inferred from the existing document or
- *  overridden via `options.variant`. */
 export function serializeTexturePackerSpritesheet(
   data: Readonly<SpritesheetData>,
   existing?: Partial<TexturePackerDocument>,

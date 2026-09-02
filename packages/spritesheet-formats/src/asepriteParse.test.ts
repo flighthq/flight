@@ -1,6 +1,6 @@
-import { parseAsepriteSpritesheet, parseAsepriteSpritesheetDocument } from './asepriteParse';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-// ─── Fixtures ────────────────────────────────────────────────────────────────
+import { parseAsepriteSpritesheet, parseAsepriteSpritesheetDocument } from './asepriteParse';
 
 const HASH_JSON = JSON.stringify({
   frames: {
@@ -214,6 +214,20 @@ describe('parseAsepriteSpritesheet', () => {
     const data = parseAsepriteSpritesheet(ARRAY_JSON);
     expect(data.animations[0].direction).toBe('pingpong');
   });
+
+  it('emits Reject diagnostic on malformed JSON', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAsepriteSpritesheet('{ not valid json', diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('spritesheet.aseprite.malformed-json');
+    expect(diagnostics[0].severity).toBe('Reject');
+  });
+
+  it('emits no diagnostics on valid JSON', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAsepriteSpritesheet(HASH_JSON, diagnostics);
+    expect(diagnostics).toHaveLength(0);
+  });
 });
 
 describe('parseAsepriteSpritesheetDocument', () => {
@@ -248,5 +262,13 @@ describe('parseAsepriteSpritesheetDocument', () => {
     const { document } = parseAsepriteSpritesheetDocument(HASH_JSON);
     expect(document.meta.layers).toHaveLength(1);
     expect(document.meta.layers![0].name).toBe('Layer 1');
+  });
+
+  it('emits Reject diagnostic on malformed JSON', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAsepriteSpritesheetDocument('{ not valid json', diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('spritesheet.aseprite.malformed-json');
+    expect(diagnostics[0].severity).toBe('Reject');
   });
 });

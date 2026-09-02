@@ -1,6 +1,6 @@
-import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-// ─── Fixtures ────────────────────────────────────────────────────────────────
+import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse';
 
 const HASH_JSON = JSON.stringify({
   frames: {
@@ -210,6 +210,20 @@ describe('parseTexturePackerSpritesheet', () => {
     expect(frame.offsetX).toBe(0);
     expect(frame.offsetY).toBe(0);
   });
+
+  it('emits Reject diagnostic on malformed JSON', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseTexturePackerSpritesheet('not json', diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('spritesheet.texture-packer.malformed-json');
+    expect(diagnostics[0].severity).toBe('Reject');
+  });
+
+  it('emits no diagnostics on valid JSON', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseTexturePackerSpritesheet(HASH_JSON, diagnostics);
+    expect(diagnostics).toHaveLength(0);
+  });
 });
 
 describe('parseTexturePackerSpritesheetDocument', () => {
@@ -246,5 +260,13 @@ describe('parseTexturePackerSpritesheetDocument', () => {
     expect(document.meta.app).toBe('https://www.codeandweb.com/texturepacker');
     expect(document.meta.version).toBe('1.0');
     expect(document.meta.format).toBe('RGBA8888');
+  });
+
+  it('emits Reject diagnostic on malformed JSON', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseTexturePackerSpritesheetDocument('not json', diagnostics);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('spritesheet.texture-packer.malformed-json');
+    expect(diagnostics[0].severity).toBe('Reject');
   });
 });

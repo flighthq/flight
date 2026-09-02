@@ -1,4 +1,4 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -12,13 +12,13 @@ import type {
   AsepriteFrameTag,
   AsepriteMeta,
   AsepriteParsed,
+  ImportDiagnostic,
+  SpritesheetAnimationData,
+  SpritesheetData,
+  SpritesheetFrameData,
   TextureAtlasRegion,
 } from '@flighthq/types/contract';
-
-// ─── Internal helpers ────────────────────────────────────────────────────────
-
-// Maps an atlas region (geometry owned by @flighthq/textureatlas-formats) to a spritesheet frame.
-// Aseprite carries no pivot; per-frame durations are layered on separately from the document.
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
   return createSpritesheetFrameData({
     height: region.height,
@@ -91,38 +91,33 @@ function documentToData(doc: AsepriteDocument): SpritesheetData {
   });
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/** Parse an Aseprite JSON string directly to a SpritesheetData.
- *
- *  Single-pass: no intermediate document object is allocated.
- *  Use `parseAsepriteSpritesheetDocument` instead when you need round-trip serialisation.
- *
- *  Per-frame durations from Aseprite are preserved in `animation.frameDurations`
- *  when frames within a tag have varying durations. */
-export function parseAsepriteSpritesheet(json: string): SpritesheetData {
+export function parseAsepriteSpritesheet(json: string, diagnostics?: ImportDiagnostic[]): SpritesheetData {
   let document: AsepriteDocument;
   try {
     document = JSON.parse(json) as AsepriteDocument;
   } catch {
-    // Malformed JSON is an expected failure — return an empty SpritesheetData sentinel rather than
-    // throwing an uncaught SyntaxError, matching `parseSpritesheet`'s null-on-unrecognized philosophy and
-    // the never-throw importer policy (the XML path returns a data descriptor, never throws).
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'spritesheet.aseprite.malformed-json',
+      'parseAsepriteSpritesheet',
+    );
     return createSpritesheetData();
   }
   return documentToData(document);
 }
 
-/** Parse an Aseprite JSON string and preserve the full document for round-trip
- *  serialisation via `serializeAsepriteSpritesheet`. */
-export function parseAsepriteSpritesheetDocument(json: string): AsepriteParsed {
+export function parseAsepriteSpritesheetDocument(json: string, diagnostics?: ImportDiagnostic[]): AsepriteParsed {
   let document: AsepriteDocument;
   try {
     document = JSON.parse(json) as AsepriteDocument;
   } catch {
-    // Malformed JSON is an expected failure — return an EMPTY RESULT (empty data + empty document), never
-    // throwing. Empty (not null) keeps this variant's return contract identical to the non-Document sibling
-    // parseAsepriteSpritesheet, and the empty document stays serialisable for round-trip.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'spritesheet.aseprite.malformed-json',
+      'parseAsepriteSpritesheetDocument',
+    );
     return { data: createSpritesheetData(), document: createEmptyAsepriteDocument() };
   }
   return { data: documentToData(document), document };

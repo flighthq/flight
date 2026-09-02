@@ -1,6 +1,6 @@
-import { parseStarlingSpritesheet, parseStarlingSpritesheetDocument } from './starlingParse';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-// ─── Fixtures ────────────────────────────────────────────────────────────────
+import { parseStarlingSpritesheet, parseStarlingSpritesheetDocument } from './starlingParse';
 
 const ATLAS_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="atlas.png">
@@ -142,6 +142,16 @@ describe('parseStarlingSpritesheet', () => {
     const data = parseStarlingSpritesheet(MINIMAL_XML);
     expect(data.frames).toHaveLength(1);
     expect(data.animations).toHaveLength(0);
+  });
+
+  it('emits Recover diagnostic for missing atlas dimensions', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const data = parseStarlingSpritesheet(ATLAS_XML, undefined, diagnostics);
+    expect(data.imageWidth).toBe(0);
+    expect(data.imageHeight).toBe(0);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('spritesheet.starling.missing-dimensions');
+    expect(diagnostics[0].severity).toBe('Recover');
   });
 });
 
