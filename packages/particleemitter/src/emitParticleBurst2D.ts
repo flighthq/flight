@@ -3,6 +3,7 @@ import {
   ensureParticleEmitterStateCapacity,
   sampleParticleColorCurve,
   sampleParticleCurve,
+  writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
 import type { ParticleEmitter2D } from '@flighthq/types/contract';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types/contract';
@@ -10,7 +11,7 @@ import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/type
 import { reserveParticleEmitter2D } from './particleEmitter';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
-const TWO_PI = Math.PI * 2;
+const PARTICLE_SPAWN_OFFSET = [0, 0];
 
 /** Emit `count` particles immediately at an arbitrary point (in the emitter's
  *  simulation space), independent of the emitter's own spawn rate, bursts, or
@@ -98,15 +99,9 @@ export function emitParticleBurst2D(
     // Position = burst point + emitter-shape offset.
     let spawnX = x;
     let spawnY = y;
-    if (config.emitterShape === 'circle' && config.emitterRadius > 0) {
-      const r = Math.sqrt(random()) * config.emitterRadius;
-      const a = random() * TWO_PI;
-      spawnX += Math.cos(a) * r;
-      spawnY += Math.sin(a) * r;
-    } else if (config.emitterShape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
-      spawnX += (random() - 0.5) * config.emitterWidth;
-      spawnY += (random() - 0.5) * config.emitterHeight;
-    }
+    writeParticleSpawnOffset(PARTICLE_SPAWN_OFFSET, 0, config, random);
+    spawnX += PARTICLE_SPAWN_OFFSET[0];
+    spawnY += PARTICLE_SPAWN_OFFSET[1];
 
     const spawnScale = config.scaleMin + random() * (config.scaleMax - config.scaleMin);
     state.scales[idx] = spawnScale;

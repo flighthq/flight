@@ -4,8 +4,10 @@ import {
   PARTICLE_VELOCITY_STRIDE,
   createParticleEmitterConfig,
   createParticleEmitterState,
+  createParticleObjectsState,
+  updateParticleObjects,
 } from '@flighthq/particles/contract';
-import type { TextureAtlas } from '@flighthq/types/contract';
+import type { ParticleObject, TextureAtlas } from '@flighthq/types/contract';
 
 import { createParticleEmitter2D, reserveParticleEmitter2D } from './particleEmitter';
 import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D';
@@ -16,6 +18,20 @@ function makeAtlas(): TextureAtlas {
     texture: null,
     regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
   } as TextureAtlas;
+}
+
+function makeObject(): ParticleObject {
+  return {
+    alpha: 1,
+    blendMode: null,
+    colorScaleBias: null,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+    visible: false,
+    x: 0,
+    y: 0,
+  } as unknown as ParticleObject;
 }
 
 describe('isParticleEmitter2DComplete', () => {
@@ -283,6 +299,98 @@ describe('updateParticleEmitter2D', () => {
     }
   });
 
+  it('spawns particles on the line emitter boundary', () => {
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState(() => 0);
+    const config = createParticleEmitterConfig({
+      spawnRate: 1,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      emitterShape: 'line',
+      emitterWidth: 80,
+    });
+    updateParticleEmitter2D(emitter, state, config, 1);
+    expect(emitter.data.transforms[0]).toBe(-40);
+    expect(emitter.data.transforms[1]).toBe(0);
+  });
+
+  it('spawns particles on the ring emitter boundary', () => {
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState(createRandomSource(12345));
+    const config = createParticleEmitterConfig({
+      spawnRate: 20,
+      maxParticles: 20,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      speedMin: 0,
+      speedMax: 0,
+      emitterShape: 'ring',
+      emitterRadius: 50,
+    });
+    updateParticleEmitter2D(emitter, state, config, 1);
+    for (let i = 0; i < emitter.data.particleCount; i++) {
+      const x = emitter.data.transforms[i * 4];
+      const y = emitter.data.transforms[i * 4 + 1];
+      expect(Math.sqrt(x * x + y * y)).toBeCloseTo(50, 4);
+    }
+  });
+
+  it.each([
+    ['line', { emitterWidth: 0 }],
+    ['ring', { emitterRadius: 0 }],
+  ] as const)('treats a degenerate %s emitter as a point without consuming a shape sample', (emitterShape, size) => {
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    let randomCalls = 0;
+    const state = createParticleEmitterState(() => {
+      randomCalls++;
+      return 0.25;
+    });
+    const config = createParticleEmitterConfig({
+      ...size,
+      emitterShape,
+      lifetimeMin: 10,
+      lifetimeMax: 10,
+      regionIdMax: 0,
+      regionIdMin: 0,
+      scaleMax: 1,
+      scaleMin: 1,
+      spawnRate: 1,
+      speedMax: 0,
+      speedMin: 0,
+      spread: 0,
+    });
+    updateParticleEmitter2D(emitter, state, config, 1);
+    expect(Array.from(emitter.data.transforms.subarray(0, 2))).toEqual([0, 0]);
+    expect(randomCalls).toBe(5);
+  });
+
+  it.each(['line', 'ring'] as const)('matches the object path spawn offset for seeded %s emission', (emitterShape) => {
+    for (let seed = 1; seed <= 16; seed++) {
+      const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+      const emitterState = createParticleEmitterState(createRandomSource(seed));
+      const objects = [makeObject()];
+      const objectsState = createParticleObjectsState(1, createRandomSource(seed));
+      const config = createParticleEmitterConfig({
+        emitterRadius: 50,
+        emitterShape,
+        emitterWidth: 80,
+        lifetimeMax: 10,
+        lifetimeMin: 10,
+        maxParticles: 1,
+        spawnRate: 1,
+        speedMax: 0,
+        speedMin: 0,
+      });
+      updateParticleEmitter2D(emitter, emitterState, config, 1);
+      updateParticleObjects(objects, objectsState, config, 1);
+      expect(emitter.data.transforms[0]).toBeCloseTo(objects[0].x, 5);
+      expect(emitter.data.transforms[1]).toBeCloseTo(objects[0].y, 5);
+      expect(Math.abs(objects[0].x) + Math.abs(objects[0].y)).toBeGreaterThan(0);
+    }
+  });
+
   it('fires a one-shot burst on the first frame', () => {
     const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
@@ -379,6 +487,36 @@ describe('updateParticleEmitter2D', () => {
       },
     });
     expect(deathFired).toBe(true);
+  });
+
+  it('uses the shared 3D callback payload for 2D spawns and deaths', () => {
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const state = createParticleEmitterState(() => 0);
+    const config = createParticleEmitterConfig({
+      duration: 1,
+      emitterShape: 'line',
+      emitterWidth: 20,
+      lifetimeMax: 0.5,
+      lifetimeMin: 0.5,
+      loop: false,
+      spawnRate: 1,
+      speedMax: 0,
+      speedMin: 0,
+    });
+    const spawns: number[][] = [];
+    const deaths: number[][] = [];
+    const callbacks = {
+      onDeath: (x: number, y: number, z: number): void => {
+        deaths.push([x, y, z]);
+      },
+      onSpawn: (x: number, y: number, z: number): void => {
+        spawns.push([x, y, z]);
+      },
+    };
+    updateParticleEmitter2D(emitter, state, config, 1, callbacks);
+    expect(spawns).toEqual([[-10, 0, 0]]);
+    updateParticleEmitter2D(emitter, state, config, 0.6, callbacks);
+    expect(deaths).toEqual([[-10, 0, 0]]);
   });
 
   it('prewarm produces a non-empty particle state', () => {

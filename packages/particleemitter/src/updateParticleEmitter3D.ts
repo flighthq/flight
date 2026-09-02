@@ -5,6 +5,7 @@ import {
   getParticleEmitterSignals,
   sampleParticleColorCurve,
   sampleParticleCurve,
+  writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
 import type {
   ParticleEmitter3D,
@@ -17,6 +18,7 @@ import type {
 import { reserveParticleEmitter3D } from './particleEmitter3D';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
+const PARTICLE_SPAWN_OFFSET = [0, 0];
 const TWO_PI = Math.PI * 2;
 
 export function isParticleEmitter3DComplete(
@@ -330,15 +332,9 @@ export function updateParticleEmitter3D(
         vy = Math.sin(angle) * speed;
         vz = 0;
 
-        if (shape === 'circle' && config.emitterRadius > 0) {
-          const r = Math.sqrt(state.random()) * config.emitterRadius;
-          const a = state.random() * TWO_PI;
-          spawnX = Math.cos(a) * r;
-          spawnY = Math.sin(a) * r;
-        } else if (shape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
-          spawnX = (state.random() - 0.5) * config.emitterWidth;
-          spawnY = (state.random() - 0.5) * config.emitterHeight;
-        }
+        writeParticleSpawnOffset(PARTICLE_SPAWN_OFFSET, 0, config, state.random);
+        spawnX = PARTICLE_SPAWN_OFFSET[0];
+        spawnY = PARTICLE_SPAWN_OFFSET[1];
       }
 
       // World-space: bake the spawn position and velocity into world space so the particle no longer
