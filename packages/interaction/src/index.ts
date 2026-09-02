@@ -4,6 +4,7 @@ export {
   clearFocus,
   connectFocusNavigation,
   connectInputToInteraction,
+  connectInteractionDispatchLayer,
   connectInteractionSignal,
   containsNode2D,
   createFocusManager,

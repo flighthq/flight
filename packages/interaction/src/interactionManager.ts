@@ -8,6 +8,8 @@ import type {
   InputKeyboardData,
   InputPointerData,
   InteractionConnectGuard,
+  InteractionDispatchLayer,
+  InteractionDispatchLayerOptions,
   InteractionInputSource,
   InteractionManager,
   InteractionManagerOptions,
@@ -92,6 +94,35 @@ export function connectInputToInteraction<N extends NodeAny>(
   };
 }
 
+/**
+ * Adds a priority-ordered layer before Flight signal dispatch and returns an idempotent disconnect.
+ * Equal priorities retain connection order. Each dispatch snapshots the current list: additions wait
+ * for the next dispatch, while a layer removed during the walk still receives the current one.
+ */
+export function connectInteractionDispatchLayer<N extends NodeAny>(
+  manager: InteractionManager<N>,
+  layer: InteractionDispatchLayer<N>,
+  options: Readonly<InteractionDispatchLayerOptions> = {},
+): () => void {
+  const entry = { layer, priority: options.priority ?? 0 };
+  const layers = (manager.dispatchLayers ??= []);
+  let index = 0;
+  while (index < layers.length && entry.priority <= layers[index]!.priority) index++;
+  layers.splice(index, 0, entry);
+
+  let connected = true;
+  return () => {
+    if (!connected) return;
+    connected = false;
+    const current = manager.dispatchLayers;
+    if (current === null) return;
+    const currentIndex = current.indexOf(entry);
+    if (currentIndex === -1) return;
+    current.splice(currentIndex, 1);
+    if (current.length === 0) manager.dispatchLayers = null;
+  };
+}
+
 export function connectInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(
   manager: InteractionManager<N>,
   target: N,
@@ -134,6 +165,7 @@ export function createInteractionManager<N extends NodeAny>(
   return {
     cursorBackend: options.cursorBackend ?? null,
     cursorTarget: null,
+    dispatchLayers: null,
     doubleClickDelay: options.doubleClickDelay ?? 500,
     doubleClickDistance: options.doubleClickDistance ?? 4,
     enabled: options.enabled ?? true,
@@ -238,7 +270,12 @@ export function dispatchInteractionPointerCancel<N extends NodeAny>(
 
   setPointerData(target, null, x, y, -1, 0, 0, options);
   if (target !== null) {
-    emitInteractionSignal(target, manager.root, 'onPointerCancel', _pointerData);
+    if (
+      manager.dispatchLayers === null ||
+      dispatchInteractionLayers(manager, target, 'onPointerCancel', _pointerData)
+    ) {
+      emitInteractionSignal(target, manager.root, 'onPointerCancel', _pointerData);
+    }
   }
   if (oldTarget !== null) {
     dispatchPointerRolloverChange(manager, oldTarget, null);
@@ -262,7 +299,9 @@ export function dispatchInteractionPointerDown<N extends NodeAny>(
 
   state.pointerDownTarget = target;
   setPointerData(target, null, x, y, button, 0, 0, options);
-  emitInteractionSignal(target, manager.root, 'onPointerDown', _pointerData);
+  if (manager.dispatchLayers === null || dispatchInteractionLayers(manager, target, 'onPointerDown', _pointerData)) {
+    emitInteractionSignal(target, manager.root, 'onPointerDown', _pointerData);
+  }
 }
 
 export function dispatchInteractionPointerMove<N extends NodeAny>(
@@ -293,7 +332,9 @@ export function dispatchInteractionPointerMove<N extends NodeAny>(
   }
 
   if (target !== null) {
-    emitInteractionSignal(target, manager.root, 'onPointerMove', _pointerData);
+    if (manager.dispatchLayers === null || dispatchInteractionLayers(manager, target, 'onPointerMove', _pointerData)) {
+      emitInteractionSignal(target, manager.root, 'onPointerMove', _pointerData);
+    }
   }
 }
 
@@ -317,16 +358,25 @@ export function dispatchInteractionPointerUp<N extends NodeAny>(
   setPointerData(target ?? downTarget, null, x, y, button, 0, 0, options);
 
   if (target !== null) {
-    emitInteractionSignal(target, manager.root, 'onPointerUp', _pointerData);
+    if (manager.dispatchLayers === null || dispatchInteractionLayers(manager, target, 'onPointerUp', _pointerData)) {
+      emitInteractionSignal(target, manager.root, 'onPointerUp', _pointerData);
+    }
   }
 
   if (downTarget === null) return;
 
   if (target === downTarget) {
-    emitInteractionSignal(target, manager.root, 'onClick', _pointerData);
+    if (manager.dispatchLayers === null || dispatchInteractionLayers(manager, target, 'onClick', _pointerData)) {
+      emitInteractionSignal(target, manager.root, 'onClick', _pointerData);
+    }
     const legacyElapsed = clickTime - state.lastClickTime;
     if (state.lastClickTarget === target && legacyElapsed >= 0 && legacyElapsed <= manager.doubleClickDelay) {
-      emitInteractionSignal(target, manager.root, 'onDoubleClick', _pointerData);
+      if (
+        manager.dispatchLayers === null ||
+        dispatchInteractionLayers(manager, target, 'onDoubleClick', _pointerData)
+      ) {
+        emitInteractionSignal(target, manager.root, 'onDoubleClick', _pointerData);
+      }
       state.lastClickTarget = null;
       state.lastClickTime = -Infinity;
     } else {
@@ -336,7 +386,12 @@ export function dispatchInteractionPointerUp<N extends NodeAny>(
     dispatchPointerDoubleClick(manager, state, target, x, y, button, clickTime);
   } else {
     resetInteractionClickState(state);
-    emitInteractionSignal(downTarget, manager.root, 'onReleaseOutside', _pointerData);
+    if (
+      manager.dispatchLayers === null ||
+      dispatchInteractionLayers(manager, downTarget, 'onReleaseOutside', _pointerData)
+    ) {
+      emitInteractionSignal(downTarget, manager.root, 'onReleaseOutside', _pointerData);
+    }
   }
 }
 
@@ -387,9 +442,11 @@ function dispatchKeyboardSignal<N extends NodeAny>(
   keyCode: number,
   modifiers?: Readonly<Partial<KeyboardEventData>>,
 ): void {
-  if (!manager.enabled || !hasInteractionSignalSubscriber(manager, name)) return;
+  if (!manager.enabled || (manager.dispatchLayers === null && !hasInteractionSignalSubscriber(manager, name))) return;
   setKeyboardData(key, keyCode, modifiers);
-  emitInteractionSignal(manager.root, manager.root, name, _keyboardData);
+  if (manager.dispatchLayers === null || dispatchInteractionLayers(manager, manager.root, name, _keyboardData)) {
+    emitInteractionSignal(manager.root, manager.root, name, _keyboardData);
+  }
 }
 
 function dispatchPointerRolloverChange<N extends NodeAny>(
@@ -398,7 +455,12 @@ function dispatchPointerRolloverChange<N extends NodeAny>(
   target: N | null,
 ): void {
   if (oldTarget !== null) {
-    emitInteractionSignal(oldTarget, manager.root, 'onPointerOut', _pointerData);
+    if (
+      manager.dispatchLayers === null ||
+      dispatchInteractionLayers(manager, oldTarget, 'onPointerOut', _pointerData)
+    ) {
+      emitInteractionSignal(oldTarget, manager.root, 'onPointerOut', _pointerData);
+    }
   }
 
   const oldChain = oldTarget !== null ? getInteractionChain(oldTarget, manager.root) : [];
@@ -407,7 +469,12 @@ function dispatchPointerRolloverChange<N extends NodeAny>(
   for (const node of oldChain) {
     if (newChain.indexOf(node) === -1) {
       setInteractionSignalCurrentTarget(_pointerData, node, node);
-      emitInteractionSignalDirect(node, 'onPointerRollOut', _pointerData);
+      if (
+        manager.dispatchLayers === null ||
+        dispatchInteractionLayers(manager, node, 'onPointerRollOut', _pointerData)
+      ) {
+        emitInteractionSignalDirect(node, 'onPointerRollOut', _pointerData);
+      }
     }
   }
 
@@ -415,12 +482,19 @@ function dispatchPointerRolloverChange<N extends NodeAny>(
     const node = newChain[i]!;
     if (oldChain.indexOf(node) === -1) {
       setInteractionSignalCurrentTarget(_pointerData, node, node);
-      emitInteractionSignalDirect(node, 'onPointerRollOver', _pointerData);
+      if (
+        manager.dispatchLayers === null ||
+        dispatchInteractionLayers(manager, node, 'onPointerRollOver', _pointerData)
+      ) {
+        emitInteractionSignalDirect(node, 'onPointerRollOver', _pointerData);
+      }
     }
   }
 
   if (target !== null) {
-    emitInteractionSignal(target, manager.root, 'onPointerOver', _pointerData);
+    if (manager.dispatchLayers === null || dispatchInteractionLayers(manager, target, 'onPointerOver', _pointerData)) {
+      emitInteractionSignal(target, manager.root, 'onPointerOver', _pointerData);
+    }
   }
 
   manager.cursorTarget = target;
@@ -468,7 +542,9 @@ function dispatchPointerSignalAt<N extends NodeAny>(
   if (target === null) return;
 
   setPointerData(target, null, x, y, button, deltaX, deltaY, options);
-  emitInteractionSignal(target, manager.root, name, _pointerData);
+  if (manager.dispatchLayers === null || dispatchInteractionLayers(manager, target, name, _pointerData)) {
+    emitInteractionSignal(target, manager.root, name, _pointerData);
+  }
 }
 
 function emitInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(
@@ -494,6 +570,21 @@ function emitInteractionSignalDirect<N extends NodeAny, Name extends Interaction
 ): void {
   const signal = getInteractionSignal(target, name);
   if (signal !== null) emitSignal(signal as Signal<(value: InteractionSignalPayload<Name>) => void>, data);
+}
+
+function dispatchInteractionLayers<N extends NodeAny, Name extends InteractionSignalName>(
+  manager: InteractionManager<N>,
+  target: N,
+  name: Name,
+  data: InteractionSignalPayload<Name>,
+): boolean {
+  const layers = manager.dispatchLayers;
+  if (layers === null) return true;
+  const snapshot = layers.slice();
+  for (let i = 0; i < snapshot.length; i++) {
+    if (!snapshot[i]!.layer(target, name, data)) return false;
+  }
+  return true;
 }
 
 function decrementInteractionSignalSubscriberCount<N extends NodeAny>(
@@ -539,7 +630,12 @@ function dispatchPointerDoubleClick<N extends NodeAny>(
 
   if (isPointerDoubleClickCandidateValid(manager, state, target, x, y, button, time)) {
     resetPointerDoubleClickState(state);
-    emitInteractionSignal(target, manager.root, 'onPointerDoubleClick', _pointerData);
+    if (
+      manager.dispatchLayers === null ||
+      dispatchInteractionLayers(manager, target, 'onPointerDoubleClick', _pointerData)
+    ) {
+      emitInteractionSignal(target, manager.root, 'onPointerDoubleClick', _pointerData);
+    }
     return;
   }
 
@@ -721,6 +817,7 @@ function isPointerSignalNeeded<N extends NodeAny>(
     resetInteractionClickStates(manager);
     return false;
   }
+  if (manager.dispatchLayers !== null) return true;
   for (const name of names) {
     if (hasInteractionSignalSubscriber(manager, name)) return true;
   }
