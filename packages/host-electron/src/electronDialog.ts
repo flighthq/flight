@@ -16,7 +16,8 @@ import type {
 
 export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi): DirectoryOpenDialogBackend & Entity {
   return createEntity({
-    async open(): Promise<DirectoryOpenDialogResult> {
+    async open(options): Promise<DirectoryOpenDialogResult> {
+      if (options?.signal?.aborted) return { outcome: 'cancelled' };
       const dialog = electron.dialog;
       if (typeof dialog?.showOpenDialog !== 'function') return { outcome: 'runtime-unavailable' };
       try {
@@ -38,6 +39,7 @@ export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi):
 export function createElectronFileOpenDialogBackend(electron: ElectronApi): FileOpenDialogBackend & Entity {
   return createEntity({
     async open(options): Promise<FileOpenDialogResult> {
+      if (options.signal?.aborted) return { outcome: 'cancelled' };
       const dialog = electron.dialog;
       if (typeof dialog?.showOpenDialog !== 'function') return { outcome: 'runtime-unavailable' };
       try {
@@ -64,6 +66,7 @@ export function createElectronFileOpenDialogBackend(electron: ElectronApi): File
 export function createElectronFileSaveDialogBackend(electron: ElectronApi): FileSaveDialogBackend & Entity {
   return createEntity({
     async save(options): Promise<FileSaveDialogResult> {
+      if (options.signal?.aborted) return { outcome: 'cancelled' };
       const dialog = electron.dialog;
       if (typeof dialog?.showSaveDialog !== 'function') return { outcome: 'runtime-unavailable' };
       try {
@@ -87,6 +90,13 @@ export function createElectronMessageDialogBackend(electron: ElectronApi): Messa
   const dialog = electron.dialog;
   return {
     async message(options) {
+      if (options.signal?.aborted) {
+        return {
+          buttonIndex: options.cancelId ?? 0,
+          cancelled: true,
+          checkboxChecked: options.checkboxChecked ?? false,
+        };
+      }
       const result = await dialog.showMessageBox(undefined, {
         type: options.kind,
         title: options.title,
@@ -95,6 +105,7 @@ export function createElectronMessageDialogBackend(electron: ElectronApi): Messa
         buttons: options.buttons,
         defaultId: options.defaultId,
         cancelId: options.cancelId,
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
         checkboxLabel: options.checkboxLabel,
         checkboxChecked: options.checkboxChecked,
       });
@@ -105,6 +116,7 @@ export function createElectronMessageDialogBackend(electron: ElectronApi): Messa
       };
     },
     async confirm(options) {
+      if (options.signal?.aborted) return false;
       const result = await dialog.showMessageBox(undefined, {
         type: options.kind,
         title: options.title,
@@ -113,6 +125,7 @@ export function createElectronMessageDialogBackend(electron: ElectronApi): Messa
         buttons: ['OK', 'Cancel'],
         defaultId: 0,
         cancelId: 1,
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
       });
       return result.response === 0;
     },

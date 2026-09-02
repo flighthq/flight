@@ -3,17 +3,22 @@ import type { FileEntry, FileSystemHostBackend } from '@flighthq/types/contract'
 // Stable OPFS provider. Unsupported symlink, permissions, real-path, watch, and well-known-path
 // operations are intentionally absent; @flighthq/filesystem owns those documented absence results.
 export const webFileSystemBackend: FileSystemHostBackend = {
-  async appendTextFile(path, data) {
+  async appendTextFile(path, data, signal) {
+    signal?.throwIfAborted();
     const handle = await getFileHandle(path, false);
+    signal?.throwIfAborted();
     let existing = '';
     if (handle !== null) {
       try {
-        existing = await (await handle.getFile()).text();
+        const file = await handle.getFile();
+        signal?.throwIfAborted();
+        existing = await file.text();
       } catch {
         existing = '';
       }
     }
-    return writeFile(path, existing + data);
+    signal?.throwIfAborted();
+    return writeFile(path, existing + data, signal);
   },
   async canAccessFile(path, mode) {
     if (mode === 'executable') return false;
@@ -65,53 +70,80 @@ export const webFileSystemBackend: FileSystemHostBackend = {
     const root = await getRoot();
     return root !== null && (await getDirectoryHandle(root, splitPath(path), true)) !== null;
   },
-  async openFileReadStream(path) {
+  async openFileReadStream(path, signal) {
+    signal?.throwIfAborted();
     const handle = await getFileHandle(path, false);
+    signal?.throwIfAborted();
     if (handle === null) return null;
+    signal?.throwIfAborted();
     try {
       return (await handle.getFile()).stream() as unknown as ReadableStream<Uint8Array>;
     } catch {
       return null;
     }
   },
-  async openFileWriteStream(path) {
+  async openFileWriteStream(path, signal) {
+    signal?.throwIfAborted();
     const handle = await getFileHandle(path, true);
+    signal?.throwIfAborted();
     if (handle === null || typeof handle.createWritable !== 'function') return null;
+    signal?.throwIfAborted();
     try {
       return (await handle.createWritable()) as unknown as WritableStream<Uint8Array>;
     } catch {
       return null;
     }
   },
-  async readBinaryFile(path) {
+  async readBinaryFile(path, signal) {
+    signal?.throwIfAborted();
     const handle = await getFileHandle(path, false);
+    signal?.throwIfAborted();
     if (handle === null) return null;
+    let file: File;
     try {
-      return new Uint8Array(await (await handle.getFile()).arrayBuffer());
+      file = await handle.getFile();
+    } catch {
+      return null;
+    }
+    signal?.throwIfAborted();
+    try {
+      return new Uint8Array(await file.arrayBuffer());
     } catch {
       return null;
     }
   },
-  async readBinaryFileRange(path, offset, length) {
+  async readBinaryFileRange(path, offset, length, signal) {
+    signal?.throwIfAborted();
     const handle = await getFileHandle(path, false);
+    signal?.throwIfAborted();
     if (handle === null) return null;
+    let file: File;
     try {
-      const file = await handle.getFile();
-      if (offset >= file.size) return new Uint8Array(0);
+      file = await handle.getFile();
+    } catch {
+      return null;
+    }
+    signal?.throwIfAborted();
+    if (offset >= file.size) return new Uint8Array(0);
+    try {
       return new Uint8Array(await file.slice(offset, offset + length).arrayBuffer());
     } catch {
       return null;
     }
   },
-  async readDirectory(path) {
+  async readDirectory(path, signal) {
+    signal?.throwIfAborted();
     const root = await getRoot();
+    signal?.throwIfAborted();
     if (root === null) return [];
     const directory = await getDirectoryHandle(root, splitPath(path), false);
+    signal?.throwIfAborted();
     if (directory === null) return [];
     const entries: FileEntry[] = [];
     try {
       const base = normalizePath(path);
       for await (const [name, handle] of asAsyncEntries(directory)) {
+        signal?.throwIfAborted();
         entries.push({
           isDirectory: handle.kind === 'directory',
           name,
@@ -120,27 +152,41 @@ export const webFileSystemBackend: FileSystemHostBackend = {
       }
       return entries;
     } catch {
+      if (signal?.aborted) throw signal.reason;
       return [];
     }
   },
   async readDirectoryRecursive(path, options) {
+    options?.signal?.throwIfAborted();
     const root = await getRoot();
+    options?.signal?.throwIfAborted();
     if (root === null) return [];
     const directory = await getDirectoryHandle(root, splitPath(path), false);
+    options?.signal?.throwIfAborted();
     if (directory === null) return [];
     const entries: FileEntry[] = [];
     try {
-      await walkDirectory(directory, normalizePath(path), entries, 0, options?.maxDepth ?? Infinity);
+      await walkDirectory(directory, normalizePath(path), entries, 0, options?.maxDepth ?? Infinity, options?.signal);
       return entries;
     } catch {
+      if (options?.signal?.aborted) throw options.signal.reason;
       return [];
     }
   },
-  async readTextFile(path) {
+  async readTextFile(path, signal) {
+    signal?.throwIfAborted();
     const handle = await getFileHandle(path, false);
+    signal?.throwIfAborted();
     if (handle === null) return null;
+    let file: File;
     try {
-      return await (await handle.getFile()).text();
+      file = await handle.getFile();
+    } catch {
+      return null;
+    }
+    signal?.throwIfAborted();
+    try {
+      return await file.text();
     } catch {
       return null;
     }
@@ -186,27 +232,34 @@ export const webFileSystemBackend: FileSystemHostBackend = {
     if (root === null || (await getDirectoryHandle(root, splitPath(path), false)) === null) return null;
     return { createdTime: 0, isDirectory: true, isSymlink: false, modifiedTime: 0, size: 0 };
   },
-  async writeBinaryFile(path, data) {
-    return writeFile(path, data.slice());
+  async writeBinaryFile(path, data, signal) {
+    signal?.throwIfAborted();
+    return writeFile(path, data.slice(), signal);
   },
-  async writeFileAtomic(path, data) {
+  async writeFileAtomic(path, data, signal) {
+    signal?.throwIfAborted();
     const temporaryPath = path + '.__atomic_tmp__';
     const payload = typeof data === 'string' ? data : data.slice();
-    if (!(await writeFile(temporaryPath, payload))) return false;
-    const temporaryHandle = await getFileHandle(temporaryPath, false);
-    if (temporaryHandle === null) return false;
     try {
-      const bytes = new Uint8Array(await (await temporaryHandle.getFile()).arrayBuffer());
-      const written = await writeFile(path, bytes);
-      await removeFile(temporaryPath);
-      return written;
+      if (!(await writeFile(temporaryPath, payload, signal))) return false;
+      const temporaryHandle = await getFileHandle(temporaryPath, false);
+      signal?.throwIfAborted();
+      if (temporaryHandle === null) return false;
+      const file = await temporaryHandle.getFile();
+      signal?.throwIfAborted();
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      signal?.throwIfAborted();
+      return await writeFile(path, bytes, signal);
     } catch {
-      await removeFile(temporaryPath);
+      if (signal?.aborted) throw signal.reason;
       return false;
+    } finally {
+      await removeFile(temporaryPath);
     }
   },
-  async writeTextFile(path, data) {
-    return writeFile(path, data);
+  async writeTextFile(path, data, signal) {
+    signal?.throwIfAborted();
+    return writeFile(path, data, signal);
   },
 };
 
@@ -288,26 +341,55 @@ async function walkDirectory(
   out: FileEntry[],
   depth: number,
   maxDepth: number,
+  signal?: AbortSignal,
 ): Promise<void> {
   for await (const [name, handle] of asAsyncEntries(directory)) {
+    signal?.throwIfAborted();
     const path = basePath === '' ? name : `${basePath}/${name}`;
     const isDirectory = handle.kind === 'directory';
     out.push({ isDirectory, name, path });
     if (isDirectory && depth < maxDepth) {
-      await walkDirectory(handle as FileSystemDirectoryHandle, path, out, depth + 1, maxDepth);
+      await walkDirectory(handle as FileSystemDirectoryHandle, path, out, depth + 1, maxDepth, signal);
     }
   }
 }
 
-async function writeFile(path: string, data: string | Uint8Array): Promise<boolean> {
+async function writeFile(path: string, data: string | Uint8Array, signal?: AbortSignal): Promise<boolean> {
+  signal?.throwIfAborted();
   const handle = await getFileHandle(path, true);
+  signal?.throwIfAborted();
   if (handle === null || typeof handle.createWritable !== 'function') return false;
+  let writable: FileSystemWritableFileStream;
   try {
-    const writable = await handle.createWritable();
+    writable = await handle.createWritable();
+  } catch {
+    return false;
+  }
+  if (signal?.aborted) {
+    await writable.abort(signal.reason).catch(() => {});
+    throw signal.reason;
+  }
+  let aborted = false;
+  let abortPromise: Promise<void> | null = null;
+  const onAbort = () => {
+    aborted = true;
+    abortPromise = writable.abort(signal?.reason).catch(() => {});
+  };
+  signal?.addEventListener('abort', onAbort, { once: true });
+  try {
     await writable.write(data as FileSystemWriteChunkType);
+    if (aborted) {
+      await abortPromise;
+      throw signal?.reason;
+    }
     await writable.close();
     return true;
   } catch {
+    if (abortPromise === null) await writable.abort().catch(() => {});
+    else await abortPromise;
+    if (aborted) throw signal?.reason;
     return false;
+  } finally {
+    signal?.removeEventListener('abort', onAbort);
   }
 }

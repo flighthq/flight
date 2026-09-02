@@ -75,12 +75,24 @@ describe('showOpenDirectoryDialog', () => {
     };
     expect((await showOpenDirectoryDialog(host)).outcome).toBe('runtime-unavailable');
   });
+
+  it('forwards cancellation options through the independent capability slot', async () => {
+    const open = vi.fn(async () => ({ outcome: 'cancelled' as const }));
+    const host = { dialog: { directoryOpen: createEntity({ open }) } };
+    const signal = new AbortController().signal;
+    await showOpenDirectoryDialog(host, { signal });
+    expect(open).toHaveBeenCalledWith({ signal });
+  });
 });
 
 describe('showOpenFileDialog', () => {
   it('routes file selection through its independent capability slot', async () => {
-    const result = await showOpenFileDialog(fakeHost(), { multiple: true });
+    const signal = new AbortController().signal;
+    const host = fakeHost();
+    const open = vi.spyOn(host.dialog.fileOpen, 'open');
+    const result = await showOpenFileDialog(host, { multiple: true, signal });
     expect(result.outcome === 'selected' ? result.handles.length : 0).toBe(2);
+    expect(open).toHaveBeenCalledWith({ multiple: true, signal });
   });
 
   it('preserves the file-open-specific security outcome', async () => {

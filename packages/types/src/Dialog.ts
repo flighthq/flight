@@ -20,10 +20,10 @@ export interface FileDialogHandle extends Entity {
 // Runtime operations are deliberately provider-neutral: filesystem consumes these without knowing
 // whether the handle retains a File, a FileSystemFileHandle, or a future native binding.
 export interface FileDialogHandleOperations {
-  readonly readBinary?: () => Promise<Uint8Array | null>;
-  readonly readText?: () => Promise<string | null>;
-  readonly writeBinary?: (data: Readonly<Uint8Array>) => Promise<boolean>;
-  readonly writeText?: (data: string) => Promise<boolean>;
+  readonly readBinary?: (signal?: AbortSignal) => Promise<Uint8Array | null>;
+  readonly readText?: (signal?: AbortSignal) => Promise<string | null>;
+  readonly writeBinary?: (data: Readonly<Uint8Array>, signal?: AbortSignal) => Promise<boolean>;
+  readonly writeText?: (data: string, signal?: AbortSignal) => Promise<boolean>;
 }
 
 export interface FileDialogHandleRuntime extends EntityRuntime {
@@ -33,11 +33,17 @@ export interface FileDialogHandleRuntime extends EntityRuntime {
 export interface OpenFileDialogOptions {
   readonly filters?: readonly FileDialogFilter[];
   readonly multiple?: boolean;
+  readonly signal?: AbortSignal;
+}
+
+export interface OpenDirectoryDialogOptions {
+  readonly signal?: AbortSignal;
 }
 
 export interface SaveFileDialogOptions {
   readonly defaultName?: string;
   readonly filters?: readonly FileDialogFilter[];
+  readonly signal?: AbortSignal;
 }
 
 export type FileOpenDialogResult =
@@ -66,6 +72,7 @@ export interface PromptDialogOptions {
   placeholder?: string;
   // Native parent window to attach the modal dialog to; web backends ignore it.
   parentWindow?: ApplicationWindow;
+  signal?: AbortSignal;
 }
 
 export type MessageDialogKind = 'info' | 'warning' | 'error' | 'question';
@@ -86,6 +93,7 @@ export interface MessageDialogOptions {
   cancelId?: number;
   // Native parent window to attach the modal dialog to; web backends ignore it.
   parentWindow?: ApplicationWindow;
+  signal?: AbortSignal;
 }
 
 // Outcome of a message dialog: which button the user pressed, whether the dialog was cancelled

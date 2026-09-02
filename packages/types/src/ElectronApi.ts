@@ -188,6 +188,7 @@ export interface ElectronMessageBoxOptions {
   buttons?: string[];
   defaultId?: number;
   cancelId?: number;
+  signal?: AbortSignal;
   checkboxLabel?: string;
   checkboxChecked?: boolean;
 }

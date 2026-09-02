@@ -52,6 +52,14 @@ describe('showConfirmDialog', () => {
   it('delegates confirmation through the explicit message slot', async () => {
     expect(await showConfirmDialog(fakeHost(), { message: 'sure?' })).toBe(true);
   });
+
+  it('forwards a live signal through the explicit message slot', async () => {
+    const confirm = vi.fn(async () => true);
+    const host = { dialog: { message: { confirm, message: vi.fn() } } };
+    const signal = new AbortController().signal;
+    await showConfirmDialog(host, { message: 'sure?', signal });
+    expect(confirm).toHaveBeenCalledWith({ message: 'sure?', signal });
+  });
 });
 
 describe('showErrorBox', () => {
@@ -92,6 +100,14 @@ describe('showPromptDialog', () => {
   it('keeps the existing browser message and prompt providers callable', async () => {
     expect(typeof (await webMessageDialogBackend.confirm({ message: 'sure?' }))).toBe('boolean');
     expect(webPromptDialogBackend.prompt({ message: 'name?' })).toBeInstanceOf(Promise);
+  });
+
+  it('does not open the synchronous browser prompt when already aborted', async () => {
+    const prompt = vi.spyOn(window, 'prompt');
+    const controller = new AbortController();
+    controller.abort();
+    await expect(webPromptDialogBackend.prompt({ message: 'name?', signal: controller.signal })).resolves.toBeNull();
+    expect(prompt).not.toHaveBeenCalled();
   });
 });
 

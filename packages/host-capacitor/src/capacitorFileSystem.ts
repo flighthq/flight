@@ -12,14 +12,19 @@ import type { CapacitorApi, Entity, FileEntry, FileStat, FileSystemBasicBackend 
 export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
   const filesystem = capacitor.filesystem;
   return createEntity({
-    async readTextFile(path) {
+    async readTextFile(path, signal) {
+      signal?.throwIfAborted();
+      let data: Blob | string;
       try {
-        return readResultAsText((await filesystem.readFile({ path, encoding: 'utf8' })).data);
+        data = (await filesystem.readFile({ path, encoding: 'utf8' })).data;
       } catch {
         return null;
       }
+      signal?.throwIfAborted();
+      return readResultAsText(data);
     },
-    async writeTextFile(path, data) {
+    async writeTextFile(path, data, signal) {
+      signal?.throwIfAborted();
       try {
         await filesystem.writeFile({ path, data, encoding: 'utf8', recursive: true });
         return true;
@@ -27,14 +32,19 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
         return false;
       }
     },
-    async readBinaryFile(path) {
+    async readBinaryFile(path, signal) {
+      signal?.throwIfAborted();
+      let data: Blob | string;
       try {
-        return readResultAsBytes((await filesystem.readFile({ path })).data);
+        data = (await filesystem.readFile({ path })).data;
       } catch {
         return null;
       }
+      signal?.throwIfAborted();
+      return readResultAsBytes(data);
     },
-    async writeBinaryFile(path, data) {
+    async writeBinaryFile(path, data, signal) {
+      signal?.throwIfAborted();
       try {
         await filesystem.writeFile({ path, data: bytesToBase64(data), recursive: true });
         return true;
@@ -80,12 +90,16 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
         return false;
       }
     },
-    async readDirectory(path) {
+    async readDirectory(path, signal) {
+      signal?.throwIfAborted();
+      let files: Awaited<ReturnType<typeof filesystem.readdir>>['files'];
       try {
-        return (await filesystem.readdir({ path })).files.map((file) => toFileEntry(file.name, file.uri, file.type));
+        files = (await filesystem.readdir({ path })).files;
       } catch {
         return [];
       }
+      signal?.throwIfAborted();
+      return files.map((file) => toFileEntry(file.name, file.uri, file.type));
     },
     async statFile(path) {
       try {
@@ -118,7 +132,8 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
         return false;
       }
     },
-    async appendTextFile(path, data) {
+    async appendTextFile(path, data, signal) {
+      signal?.throwIfAborted();
       try {
         await filesystem.appendFile({ path, data, encoding: 'utf8' });
         return true;

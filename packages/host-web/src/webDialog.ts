@@ -10,6 +10,7 @@ import type {
   FileOpenDialogResult,
   FileSaveDialogBackend,
   FileSaveDialogResult,
+  OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   SaveFileDialogOptions,
 } from '@flighthq/types/contract';
@@ -28,7 +29,8 @@ export const webFileSaveDialogBackend = createEntity({
   save: saveFile,
 } satisfies Omit<FileSaveDialogBackend, typeof EntityRuntimeKey>);
 
-async function openDirectory(): Promise<DirectoryOpenDialogResult> {
+async function openDirectory(options: Readonly<OpenDirectoryDialogOptions> = {}): Promise<DirectoryOpenDialogResult> {
+  if (options.signal?.aborted) return { outcome: 'cancelled' };
   if (typeof window === 'undefined') return { outcome: 'runtime-unavailable' };
   const picker = (window as WindowWithFileSystemAccess).showDirectoryPicker;
   if (typeof picker !== 'function') return { outcome: 'runtime-unavailable' };
@@ -44,6 +46,7 @@ async function openDirectory(): Promise<DirectoryOpenDialogResult> {
 }
 
 function openFile(options: Readonly<OpenFileDialogOptions>): Promise<FileOpenDialogResult> {
+  if (options.signal?.aborted) return Promise.resolve({ outcome: 'cancelled' });
   if (typeof window !== 'undefined') {
     const picker = (window as WindowWithFileSystemAccess).showOpenFilePicker;
     if (typeof picker === 'function') return openFileSystemAccessPicker(window, picker, options);
@@ -56,6 +59,7 @@ async function openFileSystemAccessPicker(
   picker: NonNullable<WindowWithFileSystemAccess['showOpenFilePicker']>,
   options: Readonly<OpenFileDialogOptions>,
 ): Promise<FileOpenDialogResult> {
+  if (options.signal?.aborted) return { outcome: 'cancelled' };
   try {
     const pickerOptions: FileSystemAccessOpenPickerOptions = { multiple: options.multiple ?? false };
     const types = buildFileSystemAccessTypes(options.filters);
@@ -75,6 +79,7 @@ async function openFileSystemAccessPicker(
 }
 
 function openLegacyFilePicker(options: Readonly<OpenFileDialogOptions>): Promise<FileOpenDialogResult> {
+  if (options.signal?.aborted) return Promise.resolve({ outcome: 'cancelled' });
   if (
     typeof document === 'undefined' ||
     typeof document.createElement !== 'function' ||
@@ -96,6 +101,7 @@ function openLegacyFilePicker(options: Readonly<OpenFileDialogOptions>): Promise
       input.removeEventListener('change', onChange);
       input.removeEventListener('cancel', onCancel);
       window.removeEventListener('focus', onFocus);
+      options.signal?.removeEventListener('abort', onAbort);
       if (focusTimer !== null) clearTimeout(focusTimer);
       focusTimer = null;
     };
@@ -128,10 +134,14 @@ function openLegacyFilePicker(options: Readonly<OpenFileDialogOptions>): Promise
       // the no-event cancellation path deterministic.
       focusTimer = setTimeout(() => finish(selectedResult() ?? { outcome: 'cancelled' }), 0);
     }
+    function onAbort() {
+      finish({ outcome: 'cancelled' });
+    }
 
     input.addEventListener('change', onChange);
     input.addEventListener('cancel', onCancel);
     window.addEventListener('focus', onFocus);
+    options.signal?.addEventListener('abort', onAbort, { once: true });
     try {
       input.click();
     } catch {
@@ -141,6 +151,7 @@ function openLegacyFilePicker(options: Readonly<OpenFileDialogOptions>): Promise
 }
 
 async function saveFile(options: Readonly<SaveFileDialogOptions>): Promise<FileSaveDialogResult> {
+  if (options.signal?.aborted) return { outcome: 'cancelled' };
   if (typeof window === 'undefined') return { outcome: 'runtime-unavailable' };
   const picker = (window as WindowWithFileSystemAccess).showSaveFilePicker;
   if (typeof picker !== 'function') return { outcome: 'runtime-unavailable' };
@@ -210,14 +221,16 @@ function errorName(error: unknown): string | null {
 
 function retainedFileOperations(file: File): FileDialogHandleOperations {
   return {
-    async readBinary() {
+    async readBinary(signal) {
+      signal?.throwIfAborted();
       try {
         return new Uint8Array(await file.arrayBuffer());
       } catch {
         return null;
       }
     },
-    async readText() {
+    async readText(signal) {
+      signal?.throwIfAborted();
       try {
         return await file.text();
       } catch {
@@ -229,44 +242,85 @@ function retainedFileOperations(file: File): FileDialogHandleOperations {
 
 function fileSystemHandleOperations(handle: FileSystemFileHandle): FileDialogHandleOperations {
   return {
-    async readBinary() {
+    async readBinary(signal) {
+      signal?.throwIfAborted();
+      let file: File;
       try {
-        const file = await handle.getFile();
+        file = await handle.getFile();
+      } catch {
+        return null;
+      }
+      signal?.throwIfAborted();
+      try {
         return new Uint8Array(await file.arrayBuffer());
       } catch {
         return null;
       }
     },
-    async readText() {
+    async readText(signal) {
+      signal?.throwIfAborted();
+      let file: File;
       try {
-        return await (await handle.getFile()).text();
+        file = await handle.getFile();
+      } catch {
+        return null;
+      }
+      signal?.throwIfAborted();
+      try {
+        return await file.text();
       } catch {
         return null;
       }
     },
-    async writeBinary(data) {
-      return writeFileSystemHandle(handle, data.slice());
+    async writeBinary(data, signal) {
+      signal?.throwIfAborted();
+      return writeFileSystemHandle(handle, data.slice(), signal);
     },
-    async writeText(data) {
-      return writeFileSystemHandle(handle, data);
+    async writeText(data, signal) {
+      signal?.throwIfAborted();
+      return writeFileSystemHandle(handle, data, signal);
     },
   };
 }
 
-async function writeFileSystemHandle(handle: FileSystemFileHandle, data: Uint8Array | string): Promise<boolean> {
+async function writeFileSystemHandle(
+  handle: FileSystemFileHandle,
+  data: Uint8Array | string,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  signal?.throwIfAborted();
   let writable: FileSystemWritableFileStream | null = null;
   try {
     writable = await handle.createWritable();
+  } catch {
+    return false;
+  }
+  if (signal?.aborted) {
+    await writable.abort?.(signal.reason).catch(() => {});
+    throw signal.reason;
+  }
+  let aborted = false;
+  let abortPromise: Promise<void> | null = null;
+  const onAbort = () => {
+    aborted = true;
+    abortPromise = writable?.abort?.(signal?.reason).catch(() => {}) ?? Promise.resolve();
+  };
+  if (writable.abort !== undefined) signal?.addEventListener('abort', onAbort, { once: true });
+  try {
     await writable.write(data);
+    if (aborted) {
+      await abortPromise;
+      throw signal?.reason;
+    }
     await writable.close();
     return true;
   } catch {
-    try {
-      await writable?.abort?.();
-    } catch {
-      // The write failure remains authoritative; abort is best-effort teardown of the owned stream.
-    }
+    if (abortPromise === null) await writable.abort?.().catch(() => {});
+    else await abortPromise;
+    if (aborted) throw signal?.reason;
     return false;
+  } finally {
+    signal?.removeEventListener('abort', onAbort);
   }
 }
 
@@ -283,7 +337,7 @@ interface FileSystemDirectoryHandle {
 }
 
 interface FileSystemWritableFileStream {
-  abort?(): Promise<void>;
+  abort?(reason?: unknown): Promise<void>;
   close(): Promise<void>;
   write(data: Uint8Array | string): Promise<void>;
 }

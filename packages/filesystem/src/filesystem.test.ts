@@ -132,26 +132,42 @@ describe('readBinaryFile', () => {
       bytes,
     );
   });
+
+  it('rejects pre-aborted reads without starting provider work', async () => {
+    const reason = new Error('cancel read');
+    const controller = new AbortController();
+    const readBinaryFile = vi.fn(async () => new Uint8Array());
+    controller.abort(reason);
+    await expect(filesystem.readBinaryFile(hostWith({ readBinaryFile }), 'a', controller.signal)).rejects.toBe(reason);
+    expect(readBinaryFile).not.toHaveBeenCalled();
+  });
 });
 
 describe('readBinaryFileRange', () => {
   it('forwards the range', async () => {
     const readBinaryFileRange = vi.fn(async () => new Uint8Array([2]));
-    await filesystem.readBinaryFileRange(hostWith({ readBinaryFileRange }), 'a', 1, 1);
-    expect(readBinaryFileRange).toHaveBeenCalledWith('a', 1, 1);
+    const signal = new AbortController().signal;
+    await filesystem.readBinaryFileRange(hostWith({ readBinaryFileRange }), 'a', 1, 1, signal);
+    expect(readBinaryFileRange).toHaveBeenCalledWith('a', 1, 1, signal);
   });
 });
 
 describe('readDialogHandleBinaryFile', () => {
   it('uses retained handle operations when there is no native path', async () => {
     const bytes = new Uint8Array([3]);
+    let observedSignal: AbortSignal | undefined;
     const handle = createFileDialogHandle('File', 'a', null, {
-      readBinary: async () => bytes,
+      readBinary: async (signal?: AbortSignal) => {
+        observedSignal = signal;
+        return bytes;
+      },
       readText: async () => 'x',
       writeBinary: async () => true,
       writeText: async () => true,
     });
-    await expect(filesystem.readDialogHandleBinaryFile(hostWith(), handle)).resolves.toBe(bytes);
+    const signal = new AbortController().signal;
+    await expect(filesystem.readDialogHandleBinaryFile(hostWith(), handle, signal)).resolves.toBe(bytes);
+    expect(observedSignal).toBe(signal);
   });
 });
 
@@ -238,8 +254,9 @@ describe('writeBinaryFile', () => {
   it('forwards bytes without mutation', async () => {
     const writeBinaryFile = vi.fn(async () => true);
     const bytes = new Uint8Array([1]);
-    await filesystem.writeBinaryFile(hostWith({ writeBinaryFile }), 'a', bytes);
-    expect(writeBinaryFile).toHaveBeenCalledWith('a', bytes);
+    const signal = new AbortController().signal;
+    await filesystem.writeBinaryFile(hostWith({ writeBinaryFile }), 'a', bytes, signal);
+    expect(writeBinaryFile).toHaveBeenCalledWith('a', bytes, signal);
   });
 });
 
@@ -255,6 +272,27 @@ describe('writeBinaryFileChunks', () => {
     await expect(filesystem.writeBinaryFileChunks(host, 'a', chunks())).resolves.toBe(true);
     expect(written).toEqual([[1], [2]]);
   });
+
+  it('aborts its owned writer, rejects with the abort reason, and removes its listener', async () => {
+    const reason = new Error('cancel chunks');
+    const controller = new AbortController();
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    const abort = vi.fn(async () => {});
+    const stream = new WritableStream<Uint8Array>({
+      abort,
+      async write() {
+        controller.abort(reason);
+        throw reason;
+      },
+    });
+    const host = hostWith({ openFileWriteStream: vi.fn(async () => stream) });
+    async function* chunks() {
+      yield new Uint8Array([1]);
+    }
+    await expect(filesystem.writeBinaryFileChunks(host, 'a', chunks(), controller.signal)).rejects.toBe(reason);
+    expect(abort).toHaveBeenCalledWith(reason);
+    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
+  });
 });
 
 describe('writeDialogHandleBinaryFile', () => {
@@ -268,7 +306,11 @@ describe('writeDialogHandleTextFile', () => {
   it('uses the passed host for a native path', async () => {
     const writeTextFile = vi.fn(async () => true);
     const handle = createFileDialogHandle('File', 'a', '/a');
-    await expect(filesystem.writeDialogHandleTextFile(hostWith({ writeTextFile }), handle, 'x')).resolves.toBe(true);
+    const signal = new AbortController().signal;
+    await expect(filesystem.writeDialogHandleTextFile(hostWith({ writeTextFile }), handle, 'x', signal)).resolves.toBe(
+      true,
+    );
+    expect(writeTextFile).toHaveBeenCalledWith('/a', 'x', signal);
   });
 });
 

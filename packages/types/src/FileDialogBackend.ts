@@ -2,13 +2,14 @@ import type {
   DirectoryOpenDialogResult,
   FileOpenDialogResult,
   FileSaveDialogResult,
+  OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   SaveFileDialogOptions,
 } from './Dialog';
 import type { Entity } from './Entity';
 
 export interface DirectoryOpenDialogBackend extends Entity {
-  open(): Promise<DirectoryOpenDialogResult>;
+  open(options?: Readonly<OpenDirectoryDialogOptions>): Promise<DirectoryOpenDialogResult>;
 }
 
 export interface FileOpenDialogBackend extends Entity {

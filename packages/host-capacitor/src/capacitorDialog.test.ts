@@ -56,4 +56,13 @@ describe('createCapacitorPromptDialogBackend', () => {
     const backend = createCapacitorPromptDialogBackend(fakeCapacitor({ value: '', cancelled: true }).capacitor);
     expect(await backend.prompt({ message: 'name?' })).toBeNull();
   });
+
+  it('does not call the plugin for a pre-aborted prompt', async () => {
+    const { capacitor, calls } = fakeCapacitor();
+    const controller = new AbortController();
+    controller.abort();
+    const backend = createCapacitorPromptDialogBackend(capacitor);
+    await expect(backend.prompt({ message: 'name?', signal: controller.signal })).resolves.toBeNull();
+    expect(calls).toEqual([]);
+  });
 });
