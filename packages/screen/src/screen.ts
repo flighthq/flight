@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { createEntity, stripEntityRuntime } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   HasScreenChange,
@@ -286,7 +286,7 @@ const _signalSubscriptions = new WeakMap<ScreenSignals, () => void>();
 const _scratchPoint = { x: 0, y: 0 };
 
 function copyScreenInfo(src: Readonly<ScreenInfo>, dst: ScreenInfo): void {
-  Object.assign(dst, src);
+  Object.assign(dst, stripEntityRuntime(src));
 }
 
 function fillDefaultScreenInfo(out: ScreenInfo): ScreenInfo {

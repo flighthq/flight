@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { attachEntityBinding, createEntity, getEntityBinding } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { HasScreenQuery, ScreenChangeEvent, ScreenInfo, ScreenPermissionState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -270,6 +270,25 @@ describe('getScreenById', () => {
     expect(getScreenById(host, 20, out)).toBe(out);
     expect(Object.entries(out)).toEqual(Object.entries(second));
     expect(getScreenById(host, 99, out)).toBeNull();
+  });
+
+  it('preserves the destination runtime while copying public screen data', () => {
+    const source = createTestScreen(20, 300, 40, 200, 150, { label: 'source' });
+    const out = createTestScreen(99, 0, 0, 1, 1, { label: 'out' });
+    const sourceBinding = { owner: 'source' };
+    const outBinding = { owner: 'out' };
+    attachEntityBinding(source, sourceBinding);
+    attachEntityBinding(out, outBinding);
+    const sourceRuntime = source[EntityRuntimeKey];
+    const outRuntime = out[EntityRuntimeKey];
+
+    expect(getScreenById(createScreenQueryHost([source]), source.id, out)).toBe(out);
+
+    expect(Object.entries(out)).toEqual(Object.entries(source));
+    expect(out[EntityRuntimeKey]).toBe(outRuntime);
+    expect(out[EntityRuntimeKey]).not.toBe(sourceRuntime);
+    expect(getEntityBinding(out)).toBe(outBinding);
+    expect(getEntityBinding(source)).toBe(sourceBinding);
   });
 });
 
