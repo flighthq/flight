@@ -1,7 +1,4 @@
-import type { SpritesheetData } from '@flighthq/spritesheet/contract';
-import type { StarlingDocument, StarlingSubTexture } from '@flighthq/types/contract';
-
-// ─── Internal helpers ────────────────────────────────────────────────────────
+import type { SpritesheetData, StarlingDocument, StarlingSubTexture } from '@flighthq/types/contract';
 
 function frameToSubTexture(frame: Readonly<SpritesheetData['frames'][0]>): StarlingSubTexture {
   const st: StarlingSubTexture = {
@@ -51,12 +48,6 @@ function documentToXml(doc: StarlingDocument): string {
   return lines.join('\n');
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/** Serialise a SpritesheetData to a Starling / Sparrow XML atlas string.
- *
- *  Pass the `document` returned by `parseStarlingSpritesheetDocument` to preserve any fields that
- *  don't round-trip through the data (pivot values stored in the document). */
 export function serializeStarlingSpritesheet(
   data: Readonly<SpritesheetData>,
   existing?: Partial<StarlingDocument>,

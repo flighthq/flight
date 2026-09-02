@@ -1,4 +1,4 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -6,9 +6,15 @@ import {
 } from '@flighthq/spritesheet/contract';
 import { parseTextureAtlasLibgdxAtlas } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { LibgdxAtlasParseOptions, TextureAtlasRegion } from '@flighthq/types/contract';
-
-// ─── Internal types ───────────────────────────────────────────────────────────
+import type {
+  ImportDiagnostic,
+  LibgdxAtlasParseOptions,
+  SpritesheetAnimationData,
+  SpritesheetData,
+  SpritesheetFrameData,
+  TextureAtlasRegion,
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 interface LibgdxPage {
   filename: string;
@@ -30,8 +36,6 @@ interface LibgdxRegion {
   x: number;
   y: number;
 }
-
-// ─── Parser ───────────────────────────────────────────────────────────────────
 
 function parseIntPair(value: string): [number, number] {
   const parts = value.split(',');
@@ -133,7 +137,6 @@ function parseLibgdxAtlas(text: string): { pages: LibgdxPage[]; regions: LibgdxR
       } else {
         // Region name
         if (currentPage === null) {
-          // Malformed: no page seen yet; create a stub page
           currentPage = { filename: '', height: 0, width: 0 };
           pages.push(currentPage);
         }
@@ -162,8 +165,6 @@ function parseLibgdxAtlas(text: string): { pages: LibgdxPage[]; regions: LibgdxR
 
   return { pages, regions };
 }
-
-// ─── Internal helpers ─────────────────────────────────────────────────────────
 
 // Maps an atlas region (geometry owned by @flighthq/textureatlas-formats — incl. libGDX rotate/orig/
 // offset handling and the `name_index` disambiguation for indexed regions) to a spritesheet frame.
@@ -216,25 +217,27 @@ function inferAnimations(frameNames: string[], frameDuration: number): Spriteshe
   return animations;
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
-
-/** Parse a LibGDX `.atlas` text string directly to a `SpritesheetData`.
- *
- *  Single-pass line-by-line parser. Handles single-page and multi-page atlases.
- *  `rotate: true` regions are marked as `rotated` (90° clockwise in the atlas).
- *  Animations are inferred from the standard `baseName_NNN` frame-naming convention;
- *  indexed regions (`index >= 0`) are also grouped into animations. */
-export function parseLibgdxAtlasSpritesheet(text: string, options?: LibgdxAtlasParseOptions): SpritesheetData {
+export function parseLibgdxAtlasSpritesheet(
+  text: string,
+  options?: LibgdxAtlasParseOptions,
+  diagnostics?: ImportDiagnostic[],
+): SpritesheetData {
   const frameDuration = options?.frameDuration ?? 100;
-  // Page metadata (image file + size) is libGDX-specific and not modeled by TextureAtlas, so it is read
-  // from the local page parse; the region geometry is delegated to the atlas-formats parser.
   const { pages } = parseLibgdxAtlas(text);
 
-  // Use the first page for top-level image metadata
   const firstPage = pages[0];
   const imageFile = firstPage?.filename ?? '';
   const imageWidth = firstPage?.width ?? 0;
   const imageHeight = firstPage?.height ?? 0;
+
+  if (firstPage !== undefined && firstPage.filename === '') {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'spritesheet.libgdx-atlas.missing-page-header',
+      'parseLibgdxAtlasSpritesheet',
+    );
+  }
 
   const regions: readonly TextureAtlasRegion[] = parseTextureAtlasLibgdxAtlas(text, createTextureAtlas()).regions;
   const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);

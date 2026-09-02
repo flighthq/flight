@@ -5,8 +5,12 @@ import {
   withRegistryTableEntry,
   withoutRegistryTableEntry,
 } from '@flighthq/registry/contract';
-import type { SpritesheetData } from '@flighthq/spritesheet/contract';
-import type { KeyedTable, SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
+import type {
+  KeyedTable,
+  SpritesheetData,
+  SpritesheetFormatKind,
+  SpritesheetParseOptions,
+} from '@flighthq/types/contract';
 import {
   SpritesheetFormatKindAseprite as ASEPRITE,
   SpritesheetFormatKindCocosPlist as COCOS_PLIST,

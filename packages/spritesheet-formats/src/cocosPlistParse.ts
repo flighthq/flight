@@ -1,17 +1,17 @@
-import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSpritesheetData, createSpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import type {
   CocosPlistDocument,
   CocosPlistFrame,
   CocosPlistMetadata,
   CocosPlistParsed,
+  ImportDiagnostic,
+  SpritesheetData,
+  SpritesheetFrameData,
+  XmlElement,
 } from '@flighthq/types/contract';
-import type { XmlElement } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
-
-// ─── plist structural helpers ─────────────────────────────────────────────────
-
-/** Parse a Cocos plist size/offset string of the form "{w,h}" or "{x,y}". */
 function parsePlistPair(s: string): [number, number] {
   const m = s.match(/{?\s*([-\d.]+)\s*,\s*([-\d.]+)\s*}?/);
   return [parseFloat(m?.[1] ?? '0'), parseFloat(m?.[2] ?? '0')];
@@ -54,9 +54,7 @@ function getIntValue(el: XmlElement | undefined): number {
   return parseInt(el?.text ?? '0', 10);
 }
 
-// ─── Internal parser ─────────────────────────────────────────────────────────
-
-function parseCocosPlistXml(xml: string): CocosPlistDocument {
+function parseCocosPlistXml(xml: string, diagnostics: ImportDiagnostic[] | undefined): CocosPlistDocument {
   const root = parseXmlDocument(xml);
 
   // Locate the root <dict> (may be under <plist>)
@@ -97,7 +95,16 @@ function parseCocosPlistXml(xml: string): CocosPlistDocument {
       const hasSpriteFields = fm.has('spriteOffset');
       const hasFrame = fm.has('frame') || fm.has('textureRect');
 
-      if (!hasFrame && !hasSpriteFields) continue;
+      if (!hasFrame && !hasSpriteFields) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'spritesheet.cocos-plist.unrecognized-frame',
+          'parseCocosPlistXml',
+          { frame: frameName },
+        );
+        continue;
+      }
 
       // Support both old-style (frame) and new-style (textureRect) keys
       const rectStr = getTextValue(fm.get('frame') ?? fm.get('textureRect'));
@@ -129,8 +136,6 @@ function parseCocosPlistXml(xml: string): CocosPlistDocument {
 
   return { frames, metadata };
 }
-
-// ─── Internal conversion ─────────────────────────────────────────────────────
 
 function plistFrameToData(name: string, pf: CocosPlistFrame): SpritesheetFrameData {
   const rect = parsePlistRect(pf.frame);
@@ -171,19 +176,11 @@ function documentToData(doc: CocosPlistDocument): SpritesheetData {
   });
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/** Parse a Cocos Creator / Cocos2d-x plist XML atlas string directly to a SpritesheetData.
- *
- *  Single-pass: no intermediate document object is allocated.
- *  Use `parseCocosPlistSpritesheetDocument` instead when you need round-trip serialisation. */
-export function parseCocosPlistSpritesheet(xml: string): SpritesheetData {
-  return documentToData(parseCocosPlistXml(xml));
+export function parseCocosPlistSpritesheet(xml: string, diagnostics?: ImportDiagnostic[]): SpritesheetData {
+  return documentToData(parseCocosPlistXml(xml, diagnostics));
 }
 
-/** Parse a Cocos Creator / Cocos2d-x plist XML atlas string and preserve the full document
- *  for round-trip serialisation via `serializeCocosPlistSpritesheet`. */
-export function parseCocosPlistSpritesheetDocument(xml: string): CocosPlistParsed {
-  const document = parseCocosPlistXml(xml);
+export function parseCocosPlistSpritesheetDocument(xml: string, diagnostics?: ImportDiagnostic[]): CocosPlistParsed {
+  const document = parseCocosPlistXml(xml, diagnostics);
   return { data: documentToData(document), document };
 }

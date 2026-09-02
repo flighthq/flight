@@ -1,4 +1,4 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -7,14 +7,17 @@ import {
 import { parseTextureAtlasStarlingXml } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
-  TextureAtlasRegion,
+  ImportDiagnostic,
+  SpritesheetAnimationData,
+  SpritesheetData,
+  SpritesheetFrameData,
   StarlingDocument,
   StarlingParseOptions,
   StarlingParsed,
   StarlingSubTexture,
+  TextureAtlasRegion,
 } from '@flighthq/types/contract';
-
-// ─── Minimal XML attribute parser ────────────────────────────────────────────
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 function parseAttrs(attrs: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -57,8 +60,6 @@ function parseStarlingXml(xml: string): StarlingDocument {
 
   return { imagePath, subTextures };
 }
-
-// ─── Internal helpers ────────────────────────────────────────────────────────
 
 // Maps an atlas region (geometry owned by @flighthq/textureatlas-formats — incl. Starling's negated
 // frameX/Y offsets and trim handling) to a spritesheet frame. Starling pivots are authored in source
@@ -121,10 +122,18 @@ function documentToData(
   doc: StarlingDocument,
   regions: readonly TextureAtlasRegion[],
   frameDuration: number,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): SpritesheetData {
   const frames = regions.map(frameFromRegion);
   const frameNames = frames.map((f) => f.name);
   const animations = inferAnimations(frameNames, frameDuration);
+
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Recover,
+    'spritesheet.starling.missing-dimensions',
+    'documentToData',
+  );
 
   return createSpritesheetData({
     animations,
@@ -140,20 +149,19 @@ function regionsFromXml(xml: string): readonly TextureAtlasRegion[] {
   return parseTextureAtlasStarlingXml(xml, createTextureAtlas()).regions;
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/** Parse a Starling / Sparrow XML atlas string directly to a SpritesheetData.
- *
- *  Single-pass: no intermediate document object is allocated.
- *  Animations are inferred from the standard `baseName_NNN` frame-naming convention.
- *  Use `parseStarlingSpritesheetDocument` instead when you need round-trip serialisation. */
-export function parseStarlingSpritesheet(xml: string, options?: StarlingParseOptions): SpritesheetData {
-  return documentToData(parseStarlingXml(xml), regionsFromXml(xml), options?.frameDuration ?? 100);
+export function parseStarlingSpritesheet(
+  xml: string,
+  options?: StarlingParseOptions,
+  diagnostics?: ImportDiagnostic[],
+): SpritesheetData {
+  return documentToData(parseStarlingXml(xml), regionsFromXml(xml), options?.frameDuration ?? 100, diagnostics);
 }
 
-/** Parse a Starling / Sparrow XML atlas string and preserve the full document
- *  for round-trip serialisation via `serializeStarlingSpritesheet`. */
-export function parseStarlingSpritesheetDocument(xml: string, options?: StarlingParseOptions): StarlingParsed {
+export function parseStarlingSpritesheetDocument(
+  xml: string,
+  options?: StarlingParseOptions,
+  diagnostics?: ImportDiagnostic[],
+): StarlingParsed {
   const document = parseStarlingXml(xml);
-  return { data: documentToData(document, regionsFromXml(xml), options?.frameDuration ?? 100), document };
+  return { data: documentToData(document, regionsFromXml(xml), options?.frameDuration ?? 100, diagnostics), document };
 }

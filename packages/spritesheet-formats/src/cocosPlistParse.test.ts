@@ -1,3 +1,5 @@
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+
 import { parseCocosPlistSpritesheet, parseCocosPlistSpritesheetDocument } from './cocosPlistParse';
 
 const MINIMAL_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
@@ -118,6 +120,44 @@ describe('parseCocosPlistSpritesheet', () => {
   it('produces empty animations array', () => {
     const data = parseCocosPlistSpritesheet(MINIMAL_PLIST);
     expect(data.animations).toHaveLength(0);
+  });
+
+  it('emits no diagnostics on well-formed plist', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseCocosPlistSpritesheet(MINIMAL_PLIST, diagnostics);
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it('emits Drop diagnostic for unrecognized frame entries', () => {
+    const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>frames</key>
+  <dict>
+    <key>bad.png</key>
+    <dict>
+      <key>unknownKey</key>
+      <string>value</string>
+    </dict>
+  </dict>
+  <key>metadata</key>
+  <dict>
+    <key>format</key>
+    <integer>3</integer>
+    <key>size</key>
+    <string>{64,64}</string>
+    <key>textureFileName</key>
+    <string>atlas.png</string>
+  </dict>
+</dict>
+</plist>`;
+    const diagnostics: ImportDiagnostic[] = [];
+    const data = parseCocosPlistSpritesheet(plist, diagnostics);
+    expect(data.frames).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('spritesheet.cocos-plist.unrecognized-frame');
+    expect(diagnostics[0].severity).toBe('Drop');
+    expect(diagnostics[0].detail).toMatchObject({ frame: 'bad.png' });
   });
 });
 

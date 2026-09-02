@@ -1,4 +1,3 @@
-import type { SpritesheetData } from '@flighthq/spritesheet/contract';
 import type {
   AsepriteArrayDocument,
   AsepriteArrayFrame,
@@ -7,9 +6,8 @@ import type {
   AsepriteHashDocument,
   AsepriteMeta,
   AsepriteSerializeOptions,
+  SpritesheetData,
 } from '@flighthq/types/contract';
-
-// ─── Internal helpers ────────────────────────────────────────────────────────
 
 function dataToMeta(data: Readonly<SpritesheetData>, existing: Partial<AsepriteMeta>): AsepriteMeta {
   const tags = data.animations.map((anim, i) => {
@@ -89,14 +87,6 @@ function dataToArrayDocument(
   return { frames, meta: dataToMeta(data, existing.meta ?? {}) };
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/** Serialise a SpritesheetData to an Aseprite JSON string.
- *
- *  Pass the `document` returned by `parseAsepriteSpritesheetDocument` to preserve any fields that
- *  don't round-trip through the data (app name, layer list, tag colours).
- *  Per-frame durations in `animation.frameDurations` are written back to each
- *  frame's `duration` field so they survive a reload. */
 export function serializeAsepriteSpritesheet(
   data: Readonly<SpritesheetData>,
   existing?: Partial<AsepriteDocument>,

@@ -38,10 +38,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/importdiagnostics": "*",
     "@flighthq/registry": "*",
+    "@flighthq/spritesheet": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/textureatlas-formats": "*",
-    "@flighthq/spritesheet": "*",
     "@flighthq/types": "*",
     "@flighthq/xml": "*"
   },
