@@ -1,5 +1,6 @@
 import type { MenuApplicationBackend, MenuPopupBackend, MenuSelectBackend } from '@flighthq/types/contract';
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createTauriMenuBackends } from './tauriMenu';
 
@@ -63,6 +64,12 @@ const template: MenuItemTemplate[] = [
 ];
 
 describe('createTauriMenuBackends', () => {
+  it('returns an Entity-composed capability bundle and providers', () => {
+    const capabilities = createTauriMenuBackends(fakeTauri().tauri);
+    expect(EntityRuntimeKey in capabilities).toBe(true);
+    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
+  });
+
   it('installs an application menu and routes item clicks to the select listener', async () => {
     const { tauri, state } = fakeTauri();
     const backend = _slots(tauri);

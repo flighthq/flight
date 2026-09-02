@@ -65,20 +65,20 @@ export interface PowerKeepAwakeReleaseResult {
 // a teardown obligation with nothing behind it.
 
 // Reads the current power status into `out`. Query only; the matching notification is `change`.
-export interface PowerStatusBackend {
+export interface PowerStatusBackend extends Entity {
   getStatus(out: PowerStatus): PowerStatus;
 }
 
 // Raw "something about power changed" notification. Carries no payload by design — the caller re-reads
 // through the status slot, because no host emits a complete status with its change event.
-export interface PowerChangeBackend {
+export interface PowerChangeBackend extends Entity {
   subscribe(listener: () => void): () => void;
 }
 
 // Stateful keep-awake. Both operations are async because the only real web mechanism (Wake Lock) is
 // async, and a synchronous answer could only be a guess about a request that had not resolved.
 // A synchronous native blocker lifts into the same shape by resolving immediately.
-export interface PowerKeepAwakeBackend {
+export interface PowerKeepAwakeBackend extends Entity {
   acquire(mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult>;
   destroy?(): void;
   isActive(): boolean;
@@ -87,7 +87,7 @@ export interface PowerKeepAwakeBackend {
 
 // System idle queries. Offered only by a host that can really observe idleness; a host that would
 // answer a constant 'Unknown'/-1 omits the slot instead, so nothing polls a value that cannot change.
-export interface PowerIdleBackend {
+export interface PowerIdleBackend extends Entity {
   getIdleState(thresholdSeconds: number): PowerIdleState;
   getIdleTimeSeconds(): number;
 }
@@ -95,30 +95,47 @@ export interface PowerIdleBackend {
 // Session lock as ONE bracket: lock and unlock are the two edges of a single OS session-state boolean,
 // from one mechanism, and every host offers both or neither. A provider that emitted only one edge would
 // leave a consumer permanently wrong about the state the signal exists to track.
-export interface PowerSessionLockBackend {
+export interface PowerSessionLockBackend extends Entity {
   subscribeLock(listener: () => void): () => void;
   subscribeUnlock(listener: () => void): () => void;
 }
 
 // Suspend/resume as ONE bracket, for the same reason: they are the two edges of one transition. Web
 // realizes them with the Page Lifecycle 'freeze'/'resume' events; a native host with its OS equivalents.
-export interface PowerSuspensionBackend {
+export interface PowerSuspensionBackend extends Entity {
   subscribeResume(listener: () => void): () => void;
   subscribeSuspend(listener: () => void): () => void;
 }
 
 // Battery health detail, offered only where the host really reports it.
-export interface PowerBatteryHealthBackend {
+export interface PowerBatteryHealthBackend extends Entity {
   getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth;
 }
 
 // Thermal pressure. The subscription DELIVERS THE STATE rather than announcing that something opaque
 // changed: an event whose state the caller cannot then read is not an actionable capability. A host that
 // can signal a change but not report the level omits this slot.
-export interface PowerThermalBackend {
+export interface PowerThermalBackend extends Entity {
   getThermalState(): PowerThermalState;
   subscribeThermalStateChange(listener: (state: PowerThermalState) => void): () => void;
 }
+
+// Concrete platform capability bundles carry identity because their create functions construct and
+// return them as one composed entity. HostPowerCapabilities itself stays structural so callers can
+// describe arbitrary partial host coverage without manufacturing an identity-bearing wrapper.
+export type ElectronPowerCapabilities = Entity &
+  Required<
+    Pick<
+      HostPowerCapabilities,
+      'batteryHealth' | 'change' | 'idle' | 'keepAwake' | 'sessionLock' | 'status' | 'suspension'
+    >
+  > &
+  Pick<HostPowerCapabilities, 'thermal'>;
+
+export type WebPowerReadingCapabilities = Entity & Required<Pick<HostPowerCapabilities, 'change' | 'status'>>;
+
+export type WebPowerCapabilities = Entity &
+  Required<Pick<HostPowerCapabilities, 'change' | 'keepAwake' | 'status' | 'suspension'>>;
 
 // The host whose slots attachPower subscribes through. Every slot in the group is optional, so a caller
 // passes whichever it has: a host without `sessionLock` simply never delivers lock/unlock edges. A real

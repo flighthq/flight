@@ -1,10 +1,16 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
+  EntityWithoutRuntime,
   HasMenuApplication,
   HasMenuHighlight,
   HasMenuPopup,
   HasMenuSelect,
+  MenuApplicationBackend,
+  MenuHighlightBackend,
   MenuItemTemplate,
+  MenuPopupBackend,
+  MenuSelectBackend,
 } from '@flighthq/types/contract';
 
 import {
@@ -32,12 +38,12 @@ function popupHost(result: string | null, calls: string[] = []): HasMenuPopup & 
   return {
     calls,
     menu: {
-      popup: {
+      popup: createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
         popup(_items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
           calls.push(`popup@${x},${y}`);
           return Promise.resolve(result);
         },
-      },
+      }),
     },
   };
 }
@@ -45,12 +51,12 @@ function popupHost(result: string | null, calls: string[] = []): HasMenuPopup & 
 function applicationHost(accepted: boolean, seen: MenuItemTemplate[][] = []): HasMenuApplication {
   return {
     menu: {
-      application: {
+      application: createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
         setApplicationMenu(items: readonly MenuItemTemplate[]): boolean {
           seen.push([...items]);
           return accepted;
         },
-      },
+      }),
     },
   };
 }
@@ -62,14 +68,14 @@ function selectHost(): HasMenuSelect & { emit(id: string): void; subscriberCount
       for (const listener of listeners) listener(id);
     },
     menu: {
-      select: {
+      select: createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
         subscribe(listener: (id: string) => void): () => void {
           listeners.add(listener);
           return () => {
             listeners.delete(listener);
           };
         },
-      },
+      }),
     },
     subscriberCount(): number {
       return listeners.size;
@@ -84,14 +90,14 @@ function highlightHost(): HasMenuHighlight & { emit(id: string): void } {
       for (const listener of listeners) listener(id);
     },
     menu: {
-      highlight: {
+      highlight: createEntity<EntityWithoutRuntime<MenuHighlightBackend>>({
         subscribe(listener: (id: string) => void): () => void {
           listeners.add(listener);
           return () => {
             listeners.delete(listener);
           };
         },
-      },
+      }),
     },
   };
 }
@@ -184,8 +190,8 @@ describe('createMenuSelect', () => {
 });
 
 describe('destroyMenuApplication', () => {
-  function applicationHostWith(provider: { destroy?: () => void; setApplicationMenu: () => boolean }) {
-    return { menu: { application: provider } };
+  function applicationHostWith(provider: EntityWithoutRuntime<MenuApplicationBackend>): HasMenuApplication {
+    return { menu: { application: createEntity(provider) } };
   }
 
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {

@@ -1,6 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
+  ElectronMenuCapabilities,
+  EntityWithoutRuntime,
   MenuApplicationBackend,
   MenuPopupBackend,
   MenuSelectBackend,
@@ -18,15 +20,11 @@ import { toElectronTemplate } from './electronMenuTemplate';
 // separate SLOTS because their shapes are incompatible — a command returning boolean and an event
 // subscription returning an unsubscribe — but a caller taking only one of them still gets a coherent
 // pair, because both read the same closure.
-export function createElectronMenuBackends(electron: ElectronApi): {
-  application: MenuApplicationBackend;
-  popup: MenuPopupBackend;
-  select: MenuSelectBackend;
-} {
+export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuCapabilities {
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
-  return {
-    application: createEntity<MenuApplicationBackend>({
+  return createEntity({
+    application: createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
       // Provider lifecycle: releases the OS menu this provider installed. It deliberately does NOT end
       // select subscriptions — those are ended by their own unsubscribe.
       destroy(): void {
@@ -41,7 +39,7 @@ export function createElectronMenuBackends(electron: ElectronApi): {
         return true;
       },
     }),
-    popup: createEntity<MenuPopupBackend>({
+    popup: createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
       // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
       // and never resolves to null from a dismissal — callers treat a non-resolving Promise as "still
       // open". We resolve null only if popup throws.
@@ -56,7 +54,7 @@ export function createElectronMenuBackends(electron: ElectronApi): {
         });
       },
     }),
-    select: createEntity<MenuSelectBackend>({
+    select: createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
       subscribe(listener): () => void {
         selectListener = listener;
         return () => {
@@ -64,5 +62,5 @@ export function createElectronMenuBackends(electron: ElectronApi): {
         };
       },
     }),
-  };
+  });
 }

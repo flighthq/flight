@@ -1,4 +1,10 @@
-import type { MenuHighlightBackend, MenuItemTemplate, MenuPopupBackend } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  EntityWithoutRuntime,
+  MenuHighlightBackend,
+  MenuItemTemplate,
+  MenuPopupBackend,
+} from '@flighthq/types/contract';
 
 // The web menu providers. Web renders context menus itself in the DOM, so it exposes POPUP and — because
 // it owns that rendering — HIGHLIGHT. It exposes neither `application` nor `select`: a browser has no
@@ -6,20 +12,20 @@ import type { MenuHighlightBackend, MenuItemTemplate, MenuPopupBackend } from '@
 // setApplicationMenu with an unconditional `false` and subscribeSelect with a no-op unsubscribe, which
 // made web structurally indistinguishable from a host that really implements them.
 
-export const webMenuHighlightBackend: MenuHighlightBackend = {
+export const webMenuHighlightBackend: MenuHighlightBackend = createEntity<EntityWithoutRuntime<MenuHighlightBackend>>({
   subscribe(listener: (id: string) => void): () => void {
     _highlightListeners.add(listener);
     return () => {
       _highlightListeners.delete(listener);
     };
   },
-};
+});
 
-export const webMenuPopupBackend: MenuPopupBackend = {
+export const webMenuPopupBackend: MenuPopupBackend = createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
   popup(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
     return showWebContextMenu(items, x, y);
   },
-};
+});
 
 function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
   return new Promise((resolve) => {

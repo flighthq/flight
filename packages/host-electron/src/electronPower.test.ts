@@ -57,8 +57,8 @@ function fakeElectron(options: { onBatteryPower?: boolean; startId?: number; the
 describe('createElectronPowerBackends', () => {
   it('returns Entity-composed slots', () => {
     const slots = createElectronPowerBackends(fakeElectron({}).electron);
-    expect(EntityRuntimeKey in slots.status).toBe(true);
-    expect(EntityRuntimeKey in slots.keepAwake).toBe(true);
+    expect(EntityRuntimeKey in slots).toBe(true);
+    for (const provider of Object.values(slots)) expect(EntityRuntimeKey in provider).toBe(true);
   });
 
   it('getStatus reports no battery level and infers charging from AC power', () => {

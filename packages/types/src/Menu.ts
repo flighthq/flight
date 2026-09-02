@@ -1,3 +1,5 @@
+import type { Entity } from './Entity';
+import type { HostMenuCapabilities } from './Host';
 import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole';
 
 // Application and context menu seam. Free functions in @flighthq/menu delegate to the active
@@ -51,7 +53,7 @@ export interface MenuItemTemplate {
 
 // Installs the application menu bar. Returns false when the install did not take effect. Only hosts with
 // a real native menu bar expose this slot at all; a host without one omits it rather than returning false.
-export interface MenuApplicationBackend {
+export interface MenuApplicationBackend extends Entity {
   destroy?(): void;
   setApplicationMenu(items: readonly MenuItemTemplate[]): boolean;
 }
@@ -59,17 +61,24 @@ export interface MenuApplicationBackend {
 // Delivers item-highlight notifications (hover / keyboard focus) by item id. Only a provider that
 // renders the menu itself can observe highlight, which today is the web DOM overlay — native hosts hand
 // the menu to the OS and never see it. `subscribe` returns the unsubscribe for THAT subscription only.
-export interface MenuHighlightBackend {
+export interface MenuHighlightBackend extends Entity {
   subscribe(listener: (id: string) => void): () => void;
 }
 
 // Pops up a context menu at (x, y) and resolves the chosen item id, or null when dismissed.
-export interface MenuPopupBackend {
+export interface MenuPopupBackend extends Entity {
   popup(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null>;
 }
 
 // Delivers application menu-bar selections by item id. `subscribe` returns the unsubscribe for THAT
 // subscription only.
-export interface MenuSelectBackend {
+export interface MenuSelectBackend extends Entity {
   subscribe(listener: (id: string) => void): () => void;
 }
+
+// These concrete bundles are identity-bearing results of platform factories. HostMenuCapabilities and
+// the HasMenu* traits stay structural so generic host composition remains structural.
+export type ElectronMenuCapabilities = Entity &
+  Required<Pick<HostMenuCapabilities, 'application' | 'popup' | 'select'>>;
+
+export type TauriMenuCapabilities = Entity & Required<Pick<HostMenuCapabilities, 'application' | 'popup' | 'select'>>;

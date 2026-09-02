@@ -1,10 +1,12 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
+  EntityWithoutRuntime,
   MenuApplicationBackend,
   MenuItemTemplate,
   MenuPopupBackend,
   MenuSelectBackend,
   TauriApi,
+  TauriMenuCapabilities,
   TauriMenuItemHandle,
 } from '@flighthq/types/contract';
 
@@ -18,16 +20,12 @@ import type {
 //
 // Built together because `application` and `select` share the listener closure; kept as separate slots
 // because their shapes are incompatible.
-export function createTauriMenuBackends(tauri: TauriApi): {
-  application: MenuApplicationBackend;
-  popup: MenuPopupBackend;
-  select: MenuSelectBackend;
-} {
+export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities {
   const menuModule = tauri.menu;
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
-  return {
-    application: createEntity<MenuApplicationBackend>({
+  return createEntity({
+    application: createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
       // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
       // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
       // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
@@ -48,7 +46,7 @@ export function createTauriMenuBackends(tauri: TauriApi): {
         return true;
       },
     }),
-    popup: createEntity<MenuPopupBackend>({
+    popup: createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
       popup(items, x, y): Promise<string | null> {
         return new Promise<string | null>((resolve) => {
           void (async () => {
@@ -59,7 +57,7 @@ export function createTauriMenuBackends(tauri: TauriApi): {
         });
       },
     }),
-    select: createEntity<MenuSelectBackend>({
+    select: createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
       subscribe(listener): () => void {
         selectListener = listener;
         return () => {
@@ -67,7 +65,7 @@ export function createTauriMenuBackends(tauri: TauriApi): {
         };
       },
     }),
-  };
+  });
 }
 
 // Recursively builds Tauri menu item handles from Flight templates. Separators become a predefined
