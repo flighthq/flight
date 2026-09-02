@@ -184,7 +184,7 @@ already the registration model's rule.
 
 **Open cost:** it multiplies the per-kind surface. Today a kind carries `apply*EffectTo*` +
 `default*EffectRunner` + `register*Effect`; adding `plan*` and `is*Compatible` makes five exports per kind
-across 47 GL / 45 WGPU / 15 canvas kinds — and `npm run exports:check` requires a colocated test per export.
+across 47 GL / 45 WGPU / 18 canvas kinds — and `npm run exports:check` requires a colocated test per export.
 
 ### Constraints any answer must satisfy
 
