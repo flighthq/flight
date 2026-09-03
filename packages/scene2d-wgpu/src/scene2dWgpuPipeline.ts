@@ -10,6 +10,7 @@ import {
   RenderCacheKind,
   RichTextKind,
   Scale9ShapeKind,
+  Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
   StandardMaterialKind,
@@ -24,6 +25,7 @@ import { defaultWgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
 import { defaultWgpuQuadBatchRenderer } from './wgpuQuadBatch';
 import { defaultWgpuRichTextRenderer } from './wgpuRichText';
 import { defaultWgpuScale9ShapeRenderer } from './wgpuScale9Shape';
+import { defaultWgpuScale9SpriteRenderer } from './wgpuScale9Sprite';
 import { defaultWgpuMorphShapeRenderer, defaultWgpuShapeRenderer } from './wgpuShape';
 import { defaultWgpuSpriteRenderer } from './wgpuSprite';
 import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
@@ -40,6 +42,7 @@ function buildScene2dWgpuRenderers(): KeyedTable<Renderer> {
   table = withRegistryTableEntry(table, RenderCacheKind, defaultWgpuRenderCacheRenderer);
   table = withRegistryTableEntry(table, RichTextKind, defaultWgpuRichTextRenderer);
   table = withRegistryTableEntry(table, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
+  table = withRegistryTableEntry(table, Scale9SpriteKind, defaultWgpuScale9SpriteRenderer);
   table = withRegistryTableEntry(table, ShapeKind, defaultWgpuShapeRenderer);
   table = withRegistryTableEntry(table, SpriteKind, defaultWgpuSpriteRenderer);
   table = withRegistryTableEntry(table, TextLabelKind, defaultWgpuTextLabelRenderer);

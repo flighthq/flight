@@ -17,6 +17,7 @@ export * from './wgpuRenderStats';
 export * from './wgpuRichText';
 export * from './wgpuScale9Mapper';
 export * from './wgpuScale9Shape';
+export * from './wgpuScale9Sprite';
 export * from './wgpuMeshShapeRenderer';
 export * from './wgpuRasterShapeRenderer';
 export * from './wgpuShape';
