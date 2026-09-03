@@ -4,7 +4,6 @@ import type {
   Physics3DBodyType,
   Physics3DCollider,
   Physics3DCollisionFilter,
-  Physics3DContact,
   Physics3DContactConstraint,
   Physics3DMaterial,
   Physics3DSequentialImpulseConfig,
@@ -426,30 +425,25 @@ export function hydratePhysics3DWorld(world: Physics3DWorld): boolean {
   }
   if (version === Physics3DWorldVersion) return true;
 
-  const legacyWorld = world as unknown as {
-    index?: SpatialIndexBackend3D;
-    jointEvents?: Physics3DWorld['jointEvents'];
-    solver: Physics3DWorld['solver'] & { constraintByPair?: Map<number, Physics3DContactConstraint> };
-  };
-  const legacyConfig = world.config as Physics3DSolverConfig & { maxCcdRotationSubsteps?: number };
+  const serializedWorld = world as unknown as SerializedPhysics3DWorld;
+  const serializedConfig = world.config as unknown as SerializedPhysics3DSolverConfig;
   if (version < 2) {
-    legacyWorld.index ??= createUniformGridSpatialBackend3D(1);
+    serializedWorld.index ??= createUniformGridSpatialBackend3D(1);
     for (const body of world.bodies) {
-      const legacyBody = body as RigidBody3D & { colliders?: Physics3DCollider[] };
-      legacyBody.colliders ??= [];
+      (body as unknown as SerializedPhysics3DBody).colliders ??= [];
     }
     for (const contact of world.contacts) {
-      const legacyContact = contact as Physics3DContact & { colliderA?: number; colliderB?: number };
-      legacyContact.colliderA ??= 0;
-      legacyContact.colliderB ??= 0;
+      const serializedContact = contact as unknown as SerializedPhysics3DContact;
+      serializedContact.colliderA ??= 0;
+      serializedContact.colliderB ??= 0;
     }
   }
 
-  legacyWorld.jointEvents ??= { broke: [] };
-  legacyConfig.maxCcdRotationSubsteps ??= createPhysics3DSolverConfig().maxCcdRotationSubsteps;
+  serializedWorld.jointEvents ??= { broke: [] };
+  serializedConfig.maxCcdRotationSubsteps ??= createPhysics3DSolverConfig().maxCcdRotationSubsteps;
   world.solver.constraints = [];
   world.solver.constraintByContact = new Map();
-  delete legacyWorld.solver.constraintByPair;
+  delete serializedWorld.solver.constraintByPair;
   world.version = Physics3DWorldVersion;
   return true;
 }
@@ -848,3 +842,36 @@ const scratchCenter = [0, 0, 0];
 const scratchInverseInertia = [0, 0, 0, 0, 0, 0];
 const scratchMassData = createPhysics3DMassData();
 const scratchVector = [0, 0, 0];
+
+// What hydration may FIND on a serialized world, named per field rather than spelled as the current
+// type intersected with optionals at each access site.
+//
+// The distinction matters: `Physics3DWorld & { index?: ... }` reads as "a current world that might be
+// missing index", which is not a shape that exists — a current world always has it. These describe the
+// older documents instead, so each declaration answers "which version added this field" in one place a
+// reader can check against Physics3DWorldVersion, and no current type is made to look optional.
+interface SerializedPhysics3DWorld {
+  // Added in version 2.
+  index?: SpatialIndexBackend3D;
+  // Added after version 1 alongside joint breaking.
+  jointEvents?: Physics3DWorld['jointEvents'];
+  // `constraintByPair` is a solver cache from a previous process. It is deleted rather than defaulted:
+  // an answer about a world that is no longer running must not survive a load.
+  solver: { constraintByPair?: Map<number, Physics3DContactConstraint> };
+}
+
+// Added in version 2, when a body gained its collider list.
+interface SerializedPhysics3DBody {
+  colliders?: Physics3DCollider[];
+}
+
+// Added in version 2, when a contact began naming the colliders that produced it.
+interface SerializedPhysics3DContact {
+  colliderA?: number;
+  colliderB?: number;
+}
+
+// Added after version 1, when CCD gained a rotation substep budget.
+interface SerializedPhysics3DSolverConfig {
+  maxCcdRotationSubsteps?: number;
+}
