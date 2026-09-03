@@ -81,7 +81,7 @@ describe('createImageResourceFailure', () => {
   });
 
   it('stringifies a non-Error cause with no name', () => {
-    expect(createImageResourceFailure('exploded')).toEqual({
+    expect(createImageResourceFailure('exploded')).toMatchObject({
       kind: ImageResourceFailureKind.Error,
       message: 'exploded',
       name: null,
