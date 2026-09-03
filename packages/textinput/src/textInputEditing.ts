@@ -1,6 +1,10 @@
 import { invalidateNodeAppearance, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { setRichTextScrollH, setRichTextScrollV } from '@flighthq/text/contract';
-import { getRichTextSelectionRectangles, TEXT_BOUNDS_GUTTER } from '@flighthq/textlayout/contract';
+import {
+  createTextFormatRange,
+  getRichTextSelectionRectangles,
+  TEXT_BOUNDS_GUTTER,
+} from '@flighthq/textlayout/contract';
 import type {
   HandleTextInputKeyboardOptions,
   KeyboardEventData,
@@ -608,7 +612,7 @@ function adjustTextFormatRanges(
     if (ranges[i].start >= ranges[i].end) ranges.splice(i, 1);
   }
   if (ranges.length === 0 && insertLength > 0) {
-    ranges.push({ end: beginIndex + insertLength, format: { ...defaultFormat }, start: beginIndex });
+    ranges.push(createTextFormatRange({ ...defaultFormat }, beginIndex, beginIndex + insertLength));
   }
 }
 

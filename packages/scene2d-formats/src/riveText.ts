@@ -1,6 +1,7 @@
 import { packColor } from '@flighthq/color/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRichText } from '@flighthq/text/contract';
+import { createTextFormatRange } from '@flighthq/textlayout/contract';
 import type {
   FontVariation,
   ImportDiagnostic,
@@ -66,11 +67,13 @@ export function createRiveRichText(
     const value = readRiveText(artboard.objects[run], RIVE_RUN_TEXT, '');
     const style = readRiveNumber(artboard.objects[run], RIVE_RUN_STYLE_ID, -1);
     // A run's span is measured in the joined string, so it is stated before the run is appended.
-    formatRanges.push({
-      end: text.length + value.length,
-      format: createRiveTextFormat(artboard, style, align, fontNames, diagnostics, unresolvedStyles),
-      start: text.length,
-    });
+    formatRanges.push(
+      createTextFormatRange(
+        createRiveTextFormat(artboard, style, align, fontNames, diagnostics, unresolvedStyles),
+        text.length,
+        text.length + value.length,
+      ),
+    );
     text += value;
   }
 
