@@ -4,6 +4,7 @@ role: package
 crate: flighthq-camera2d
 draft: false
 lastDirection: 2026-07-10
+assessment: ./assessment.md
 absorbed: "@flighthq/camera"
 ---
 
