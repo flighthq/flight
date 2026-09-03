@@ -106,10 +106,11 @@ describe('capacitorHost', () => {
     expect(host.updater).toEqual({});
   });
 
-  // Every WindowBackend member is optional, so {} is the honest claim for a webview app with no native
-  // window operations of its own.
+  // Every WindowBackend member is optional, so a backend carrying no operation is the honest claim for
+  // a webview app with no native window operations of its own. Counted by own keys rather than compared
+  // to {}, because the backend is an Entity and carries a runtime slot that is not an operation.
   it('claims no native window operations', () => {
-    expect(capacitorHost(fakeCapacitor(), 'ios').window).toEqual({});
+    expect(Object.keys(capacitorHost(fakeCapacitor(), 'ios').window)).toEqual([]);
   });
 
   it('names Shell as an exact empty capability group', () => {

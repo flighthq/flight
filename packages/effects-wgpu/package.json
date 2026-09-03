@@ -41,6 +41,7 @@
     "@flighthq/adjustments": "*",
     "@flighthq/color": "*",
     "@flighthq/effects": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
     "@flighthq/render-wgpu": "*",

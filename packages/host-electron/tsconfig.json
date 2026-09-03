@@ -11,9 +11,6 @@
   },
   "references": [
     {
-      "path": "../entity"
-    },
-    {
       "path": "../app"
     },
     {

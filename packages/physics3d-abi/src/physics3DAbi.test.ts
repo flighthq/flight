@@ -612,7 +612,7 @@ function getColliderShapes(): CollisionColliderShape3D[] {
     { kind: 'cylinder', x0: 0, y0: -1, z0: 0, x1: 0, y1: 1, z1: 0, radius: 0.5 },
     { kind: 'cone', apexX: 0, apexY: 1, apexZ: 0, baseX: 0, baseY: -1, baseZ: 0, radius: 1 },
     { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] },
-    {
+    createEntity({
       kind: 'triangle-mesh',
       version: 0,
       x: 0,
@@ -624,8 +624,8 @@ function getColliderShapes(): CollisionColliderShape3D[] {
       rotationW: 1,
       points: [0, 0, 0, 1, 0, 0, 0, 0, 1],
       indices: [0, 1, 2],
-    },
-    {
+    }),
+    createEntity({
       kind: 'heightfield',
       columns: 2,
       rows: 2,
@@ -640,7 +640,7 @@ function getColliderShapes(): CollisionColliderShape3D[] {
       rotationZ: 0,
       rotationW: 1,
       heights: [0, 0, 0, 0],
-    },
+    }),
   ];
 }
 

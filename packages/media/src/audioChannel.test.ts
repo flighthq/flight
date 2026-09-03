@@ -1,4 +1,5 @@
 import { createAudioResource } from '@flighthq/audio/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
@@ -69,7 +70,7 @@ function createWebMockBackend() {
   const sourceNodes = new Map<number, MockAudioBufferSourceNode>();
 
   return {
-    backend: {
+    backend: createEntity({
       createBuffer: vi.fn().mockReturnValue(1),
       createDevice: vi.fn().mockReturnValue(1),
       createSource: vi.fn(() => {
@@ -104,7 +105,7 @@ function createWebMockBackend() {
         sourceNodes.set(source as number, srcNode);
       }),
       stopSource: vi.fn(),
-    },
+    }),
     gainNodes,
     sourceNodes,
   };
@@ -210,7 +211,7 @@ describe('fadeAudioChannelGain', () => {
 
   it('falls back to setSourceGain when no web nodes are available', () => {
     resetAudioDeviceBackendForTest();
-    const plainMock = {
+    const plainMock = createEntity({
       createBuffer: vi.fn().mockReturnValue(1),
       createDevice: vi.fn().mockReturnValue(1),
       createSource: vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle),
@@ -227,7 +228,7 @@ describe('fadeAudioChannelGain', () => {
       setSourcePlaybackRate: vi.fn(),
       startSource: vi.fn(),
       stopSource: vi.fn(),
-    };
+    });
     setAudioDeviceBackend(plainMock);
     const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
     fadeAudioChannelGain(channel, 0.3, 200);
@@ -576,7 +577,7 @@ describe('setAudioChannelPan', () => {
   });
 
   it('survives a backend with no web node access', () => {
-    const plainMock = {
+    const plainMock = createEntity({
       createBuffer: vi.fn().mockReturnValue(1),
       createDevice: vi.fn().mockReturnValue(1),
       createSource: vi.fn(() => 1 as unknown as AudioSourceHandle),
@@ -591,7 +592,7 @@ describe('setAudioChannelPan', () => {
       setSourcePlaybackRate: vi.fn(),
       startSource: vi.fn(),
       stopSource: vi.fn(),
-    };
+    });
     setAudioDeviceBackend(plainMock);
     const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
     expect(setAudioChannelPan(channel, 0.75)).toBe(0.75);

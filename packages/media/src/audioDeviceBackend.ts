@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   AudioBufferHandle,
   AudioDeviceBackend,
@@ -6,6 +7,7 @@ import type {
   AudioSourceHandle,
   BackendExplanation,
   BackendOperationExplanation,
+  EntityWithoutRuntime,
 } from '@flighthq/types/contract';
 
 export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceBackendWebExtension {
@@ -29,7 +31,7 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
     return nextHandle++;
   }
 
-  return {
+  return createEntity<EntityWithoutRuntime<AudioDeviceBackend & AudioDeviceBackendWebExtension>>({
     createBuffer(
       device: AudioDeviceHandle,
       channels: number,
@@ -193,7 +195,7 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       const s = sources.get(source as number);
       return s?.gainNode ?? null;
     },
-  };
+  });
 }
 
 export function explainAudioDeviceBackend(): BackendExplanation {
@@ -285,7 +287,7 @@ let _host: AudioDeviceBackend | null = null;
 let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 
-const _sentinel: AudioDeviceBackend = {
+const _sentinel: AudioDeviceBackend = createEntity<EntityWithoutRuntime<AudioDeviceBackend>>({
   createBuffer(): AudioBufferHandle {
     return 0 as AudioBufferHandle;
   },
@@ -308,7 +310,7 @@ const _sentinel: AudioDeviceBackend = {
   setSourcePlaybackRate(): void {},
   startSource(): void {},
   stopSource(): void {},
-};
+});
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {

@@ -157,7 +157,7 @@ function recordingWindowBackend(): RecordingWindowBackend {
   const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
   const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
-  return {
+  return createEntity<EntityWithoutRuntime<RecordingWindowBackend>>({
     calls,
     emitCloseRequest() {
       let cancelled = false;
@@ -296,7 +296,7 @@ function recordingWindowBackend(): RecordingWindowBackend {
       visibilityListeners.add(listener);
       return () => visibilityListeners.delete(listener);
     },
-  };
+  });
 }
 
 function createInputTarget(): InputTargetHandle {

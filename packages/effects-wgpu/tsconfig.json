@@ -12,6 +12,7 @@
     { "path": "../adjustments" },
     { "path": "../color" },
     { "path": "../effects" },
+    { "path": "../entity" },
     { "path": "../geometry" },
     {
       "path": "../log"

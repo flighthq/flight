@@ -45,6 +45,7 @@
     "@capacitor/network": "^8.0.0",
     "@capacitor/share": "^8.0.0",
     "@capacitor/status-bar": "^8.0.0",
+    "@flighthq/entity": "*",
     "@flighthq/host-capacitor": "*",
     "@flighthq/host-electron": "*",
     "@flighthq/host-tauri": "*",

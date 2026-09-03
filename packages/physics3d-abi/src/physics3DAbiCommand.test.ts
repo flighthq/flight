@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createPhysics3DBallAndSocketJoint,
   createPhysics3DCollider,
@@ -297,7 +298,7 @@ function getColliderShapeCases(): ReadonlyArray<{
     },
     {
       name: 'triangle mesh',
-      shape: {
+      shape: createEntity({
         kind: 'triangle-mesh',
         version: 2,
         x: 0,
@@ -309,12 +310,12 @@ function getColliderShapeCases(): ReadonlyArray<{
         rotationW: 1,
         points: [0, 0, 0, 1, 0, 0, 0, 0, 1],
         indices: [0, 1, 2],
-      },
+      }),
       code: Physics3DAbiShapeKind.TriangleMesh,
     },
     {
       name: 'heightfield',
-      shape: {
+      shape: createEntity({
         kind: 'heightfield',
         columns: 2,
         rows: 2,
@@ -329,7 +330,7 @@ function getColliderShapeCases(): ReadonlyArray<{
         rotationZ: 0,
         rotationW: 1,
         heights: [0, 0, 0, 0],
-      },
+      }),
       code: Physics3DAbiShapeKind.Heightfield,
     },
   ];
