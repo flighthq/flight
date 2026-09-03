@@ -1,25 +1,28 @@
-import type { CollisionBuiltInShape2D, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CollisionBuiltInShape2D, Entity, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and
 // polygon storage is sized once here so the per-step transform can write in place.
-export function createPhysics2DColliderWorldShape(local: Readonly<CollisionBuiltInShape2D>): CollisionBuiltInShape2D {
+export function createPhysics2DColliderWorldShape(
+  local: Readonly<CollisionBuiltInShape2D>,
+): CollisionBuiltInShape2D & Entity {
   switch (local.kind) {
     case 'circle':
-      return { kind: 'circle', x: local.x, y: local.y, radius: local.radius };
+      return createEntity({ kind: 'circle', x: local.x, y: local.y, radius: local.radius });
     case 'aabb':
     case 'obb':
-      return { kind: 'obb', x: 0, y: 0, halfW: 0, halfH: 0, rotation: 0 };
+      return createEntity({ kind: 'obb', x: 0, y: 0, halfW: 0, halfH: 0, rotation: 0 });
     case 'capsule':
-      return { kind: 'capsule', x0: 0, y0: 0, x1: 0, y1: 0, radius: local.radius };
+      return createEntity({ kind: 'capsule', x0: 0, y0: 0, x1: 0, y1: 0, radius: local.radius });
     case 'polygon':
-      return { kind: 'polygon', points: local.points.slice() };
+      return createEntity({ kind: 'polygon', points: local.points.slice() });
     case 'segment':
-      return { kind: 'segment', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1 };
+      return createEntity({ kind: 'segment', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1 });
     case 'point':
-      return { kind: 'point', x: local.x, y: local.y };
+      return createEntity({ kind: 'point', x: local.x, y: local.y });
     default:
-      return { kind: 'point', x: 0, y: 0 };
+      return createEntity({ kind: 'point', x: 0, y: 0 });
   }
 }
 

@@ -1,4 +1,5 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -30,6 +31,7 @@ describe('createPhysics2DColliderWorldShape', () => {
     const local: CollisionBuiltInShape2D = { kind: 'polygon', points: [0, 0, 1, 0, 0, 1] };
     const world = createPhysics2DColliderWorldShape(local);
     expect(world.kind === 'polygon' && world.points).not.toBe(local.points);
+    expect(EntityRuntimeKey in world).toBe(true);
   });
 });
 
