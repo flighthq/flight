@@ -41,10 +41,11 @@
     "@flighthq/adjustments": "*",
     "@flighthq/color": "*",
     "@flighthq/effects": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
-    "@flighthq/render-gl": "*",
     "@flighthq/registry": "*",
+    "@flighthq/render-gl": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
