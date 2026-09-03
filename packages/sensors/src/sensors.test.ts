@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
+import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HasSystemSensors,
   AmbientLightReading,
@@ -68,7 +70,7 @@ function fakeBackend(): SensorsBackend & {
   let proximityListener: ((reading: Readonly<ProximityReading>) => void) | null = null;
   let quaternionListener: ((reading: Readonly<QuaternionReading>) => void) | null = null;
 
-  return {
+  return createEntity<Omit<ReturnType<typeof fakeBackend>, typeof EntityRuntimeKey>>({
     getPermissionState: async (): Promise<SensorsPermissionState> => 'granted',
     isAmbientLightSupported: () => true,
     isBarometerSupported: () => false,
@@ -170,7 +172,7 @@ function fakeBackend(): SensorsBackend & {
     fireQuaternion(reading) {
       quaternionListener?.(reading);
     },
-  };
+  });
 }
 
 function hostOf(backend: SensorsBackend): HasSystemSensors {

@@ -1,6 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { HasSystemSensors } from '@flighthq/types/contract';
 import type {
   AmbientLightReading,
@@ -304,7 +305,11 @@ export function createSensors(): Sensors {
 // deviceorientation window event streams do not support rate control and always fire at the
 // browser's default interval.
 export function createWebSensorsBackend(): SensorsBackend {
-  return {
+  // Explicit type argument so the literal keeps its contextual method parameter types — without one,
+  // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
+  // the runtime slot: `createEntity<SensorsBackend>` cannot work, because createEntity's type parameter
+  // IS its parameter type, so naming the finished type would demand the slot it exists to add.
+  return createEntity<Omit<SensorsBackend, typeof EntityRuntimeKey>>({
     getPermissionState(sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> {
       return getWebSensorsPermissionState(sensor);
     },
@@ -560,7 +565,7 @@ export function createWebSensorsBackend(): SensorsBackend {
         return () => {};
       }
     },
-  };
+  });
 }
 
 // Stops delivery to `sensors` and forgets its subscription. Safe to call when not attached.
