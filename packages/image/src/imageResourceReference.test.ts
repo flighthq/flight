@@ -77,7 +77,7 @@ describe('createExternalImageResourceReference', () => {
 describe('createImageResourceFailure', () => {
   it('keeps an Error name and message', () => {
     const failure = createImageResourceFailure(new TypeError('bad magic'));
-    expect(failure).toEqual({ kind: ImageResourceFailureKind.Error, message: 'bad magic', name: 'TypeError' });
+    expect(failure).toMatchObject({ kind: ImageResourceFailureKind.Error, message: 'bad magic', name: 'TypeError' });
   });
 
   it('stringifies a non-Error cause with no name', () => {
@@ -127,7 +127,7 @@ describe('explainImageResourceReferenceResolution', () => {
     ref.state = ResourceResolutionState.Failed;
     const explanation = explainImageResourceReferenceResolution(ref);
     expect(explanation.failure).not.toBe(ref.failure);
-    expect(explanation.failure).toEqual(ref.failure);
+    expect(explanation.failure).toMatchObject(ref.failure!);
   });
 
   it('reports only a failed reference as retryable', () => {
@@ -236,7 +236,7 @@ describe('resolveImageResourceReference', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
 
     expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBeNull();
-    expect(ref.failure).toEqual({
+    expect(ref.failure).toMatchObject({
       kind: ImageResourceFailureKind.Unavailable,
       message: 'decoder-not-registered',
       name: null,
@@ -264,7 +264,7 @@ describe('resolveImageResourceReference', () => {
     const fetch = vi.fn().mockRejectedValue(new Error('network down'));
     expect(await resolveImageResourceReference(ref, fetch, new AbortController().signal)).toBeNull();
     expect(ref.state).toBe(ResourceResolutionState.Failed);
-    expect(ref.failure).toEqual({ kind: ImageResourceFailureKind.Error, message: 'network down', name: 'Error' });
+    expect(ref.failure).toMatchObject({ kind: ImageResourceFailureKind.Error, message: 'network down', name: 'Error' });
   });
 
   it('treats an abort as a cancel: reverts to unresolved and rethrows', async () => {

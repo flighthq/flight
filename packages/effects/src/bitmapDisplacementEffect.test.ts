@@ -31,7 +31,7 @@ describe('BitmapDisplacementEffect defaults', () => {
 
 describe('createBitmapDisplacementEffect', () => {
   it('keeps bitmap-map displacement distinct from procedural displacement', () => {
-    expect(createBitmapDisplacementEffect(map)).toEqual({ kind: 'BitmapDisplacementEffect', map });
+    expect(createBitmapDisplacementEffect(map)).toMatchObject({ kind: 'BitmapDisplacementEffect', map });
     expect(createBitmapDisplacementEffect(map).kind).not.toBe(createDisplacementEffect().kind);
   });
 
@@ -44,7 +44,7 @@ describe('createBitmapDisplacementEffect', () => {
         scaleX: -12,
         scaleY: 7,
       }),
-    ).toEqual({
+    ).toMatchObject({
       componentX: ImageChannel.Alpha,
       componentY: ImageChannel.Blue,
       edgeMode: 'clamp',

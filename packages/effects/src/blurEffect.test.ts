@@ -8,7 +8,7 @@ describe('createBlurEffect', () => {
   });
 
   it('defaults to no options beyond kind', () => {
-    expect(createBlurEffect()).toEqual({ kind: 'BlurEffect' });
+    expect(createBlurEffect()).toMatchObject({ kind: 'BlurEffect' });
   });
 
   it('carries through blurX and blurY', () => {

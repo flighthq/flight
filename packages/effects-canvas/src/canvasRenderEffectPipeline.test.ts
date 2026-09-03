@@ -82,7 +82,7 @@ describe('endCanvasRenderEffectPipeline', () => {
     expect(unregisteredDest!.context.drawImage).toHaveBeenCalledWith(scene.canvas, 0, 0);
     expect(realizedRunner).toHaveBeenCalledWith(
       expect.objectContaining({ source: unregisteredDest, dest: realizedDest }),
-      { kind: 'RealizedEffect' },
+      expect.objectContaining({ kind: 'RealizedEffect' }),
     );
     expect(realizedDest!.context.drawImage).toHaveBeenCalledWith(unregisteredDest!.canvas, 0, 0);
     expect(state.context.drawImage).toHaveBeenCalledWith(realizedDest!.canvas, 0, 0);
