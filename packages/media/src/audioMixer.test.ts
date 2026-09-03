@@ -395,6 +395,42 @@ describe('stopAllAudioMixerChannels', () => {
     expect(channel!.state).toBe('stopped');
     expect(getAudioMixerActiveChannels(mixer)).toHaveLength(0);
   });
+
+  it('stops the underlying source, not just the channel state', () => {
+    // The bug was a state flip with no stopSource: the Web Audio node kept emitting sound while the
+    // channel reported 'stopped'. Asserted on the BACKEND call, because every channel-visible field
+    // already looked correct while the sound played on.
+    const mixer = createAudioMixer(ctx);
+    const bus = createAudioBus();
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    routeAudioChannelToMixerBus(mixer, channel, bus);
+    const stopSource = mockBackend.stopSource as unknown as ReturnType<typeof vi.fn>;
+    const destroySource = mockBackend.destroySource as unknown as ReturnType<typeof vi.fn>;
+    const before = stopSource.mock.calls.length + destroySource.mock.calls.length;
+
+    stopAllAudioMixerChannels(mixer);
+
+    expect(stopSource.mock.calls.length + destroySource.mock.calls.length).toBeGreaterThan(before);
+    expect(channel.state).toBe('stopped');
+    expect(channel.currentTime).toBe(0);
+  });
+
+  it('stops every routed channel, not only the first', () => {
+    // Multi-channel coverage. It does NOT discriminate the snapshot from a live-set walk: stopping a
+    // channel does not touch the mixer's set today, so both orders behave identically here.
+    const mixer = createAudioMixer(ctx);
+    const bus = createAudioBus();
+    const first = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    const second = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    routeAudioChannelToMixerBus(mixer, first, bus);
+    routeAudioChannelToMixerBus(mixer, second, bus);
+
+    stopAllAudioMixerChannels(mixer);
+
+    expect(first.state).toBe('stopped');
+    expect(second.state).toBe('stopped');
+    expect(getAudioMixerActiveChannels(mixer)).toEqual([]);
+  });
 });
 
 describe('unrouteAudioChannelFromMixerBus', () => {

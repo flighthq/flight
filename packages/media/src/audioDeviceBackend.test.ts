@@ -54,7 +54,7 @@ describe('createWebAudioDeviceBackend source graph', () => {
     const device = backend.createDevice(44100);
     const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
     const source = backend.createSource(device, buffer);
-    backend.startSource(source, 0);
+    backend.startSource(source, 0, 0);
 
     expect(graph.panner.connect).toHaveBeenCalledWith(graph.gain);
     expect(graph.bufferSource.connect).toHaveBeenCalledWith(graph.panner);
@@ -87,7 +87,7 @@ describe('createWebAudioDeviceBackend source graph', () => {
     const device = backend.createDevice(44100);
     const buffer = backend.createBuffer(device, 1, 1, 44100, [new Float32Array(1)]);
     const source = backend.createSource(device, buffer);
-    backend.startSource(source, 0);
+    backend.startSource(source, 0, 0);
 
     backend.destroySource(source);
     expect(graph.panner.disconnect).toHaveBeenCalled();
@@ -313,7 +313,7 @@ describe('sentinel', () => {
   });
 
   it('is a no-op for startSource', () => {
-    expect(() => getAudioDeviceBackend().startSource(0 as never, 0)).not.toThrow();
+    expect(() => getAudioDeviceBackend().startSource(0 as never, 0, 0)).not.toThrow();
   });
 
   it('is a no-op for stopSource', () => {

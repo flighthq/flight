@@ -11,12 +11,16 @@ import {
   getAudioChannelOutputNode,
   hasAudioChannelFade,
   hasAudioChannelNodeAccess,
+  clearAudioChannelLoopRegion,
+  isAudioChannelMuted,
   isAudioChannelPlaying,
   pauseAudioChannel,
   playAudioResource,
   resumeAudioChannel,
   setAudioChannelCurrentTime,
   setAudioChannelGain,
+  setAudioChannelLoopRegion,
+  setAudioChannelMuted,
   setAudioChannelPan,
   setAudioChannelPlaybackRate,
   stopAudioChannel,
@@ -118,6 +122,20 @@ beforeEach(() => {
 
 afterEach(() => {
   resetAudioDeviceBackendForTest();
+});
+
+describe('clearAudioChannelLoopRegion', () => {
+  it('returns passes to the whole buffer without touching the loop count', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()), { loops: 2 })!;
+    setAudioChannelLoopRegion(channel, 250, 750);
+    clearAudioChannelLoopRegion(channel);
+    expect(channel.loopStart).toBe(0);
+    expect(channel.loopEnd).toBe(0);
+    expect(channel.loops).toBe(2);
+    stopAudioChannel(channel);
+    resumeAudioChannel(channel);
+    expect(webMock.backend.startSource).toHaveBeenLastCalledWith(expect.anything(), 0, 0);
+  });
 });
 
 describe('connectAudioChannelToNode', () => {
@@ -291,6 +309,22 @@ describe('hasAudioChannelNodeAccess', () => {
   });
 });
 
+describe('isAudioChannelMuted', () => {
+  it('reports the mute state without consulting the device', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    expect(isAudioChannelMuted(channel)).toBe(false);
+    setAudioChannelMuted(channel, true);
+    expect(isAudioChannelMuted(channel)).toBe(true);
+  });
+
+  it('still reports a mute set on a channel with no live source', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    stopAudioChannel(channel);
+    setAudioChannelMuted(channel, true);
+    expect(isAudioChannelMuted(channel)).toBe(true);
+  });
+});
+
 describe('isAudioChannelPlaying', () => {
   it('returns true while playing', () => {
     const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
@@ -333,7 +367,7 @@ describe('playAudioResource', () => {
 
   it('converts the millisecond current time to the source offset in seconds', () => {
     playAudioResource(device, createAudioResource(createMockAudioBuffer()), { currentTime: 250 });
-    expect(webMock.backend.startSource).toHaveBeenCalledWith(expect.anything(), 0.25);
+    expect(webMock.backend.startSource).toHaveBeenCalledWith(expect.anything(), 0.25, 0);
   });
 
   it('returns null when buffer is null', () => {
@@ -392,6 +426,108 @@ describe('setAudioChannelGain', () => {
     expect(setAudioChannelGain(channel, 0.25)).toBe(0.25);
     expect(channel.gain).toBe(0.25);
     expect(webMock.backend.setSourceGain).toHaveBeenCalledWith(expect.anything(), 0.25);
+  });
+});
+
+describe('setAudioChannelLoopRegion', () => {
+  it('bounds the playback pass to the region rather than the whole buffer', () => {
+    // The mock buffer is 1000ms. A 250-750 region must reach the backend as offset 0.25s and duration
+    // 0.5s: the duration is what makes the pass END at the region, and without it the source plays on
+    // to the buffer end and the region is decorative.
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    expect(setAudioChannelLoopRegion(channel, 250, 750)).toBe(true);
+    stopAudioChannel(channel);
+    resumeAudioChannel(channel);
+    expect(webMock.backend.startSource).toHaveBeenLastCalledWith(expect.anything(), 0.25, 0.5);
+  });
+
+  it('refuses an inverted or empty region and changes nothing', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    setAudioChannelLoopRegion(channel, 100, 900);
+    expect(setAudioChannelLoopRegion(channel, 700, 300)).toBe(false);
+    expect(setAudioChannelLoopRegion(channel, 400, 400)).toBe(false);
+    // Half-applying a refused region is the failure that matters: it would leave a region the caller
+    // never asked for bounding every later pass.
+    expect(channel.loopStart).toBe(100);
+    expect(channel.loopEnd).toBe(900);
+  });
+
+  it('clamps a region that runs past the buffer', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    expect(setAudioChannelLoopRegion(channel, -100, 5000)).toBe(true);
+    expect(channel.loopStart).toBe(0);
+    expect(channel.loopEnd).toBe(1000);
+  });
+
+  it('restarts inside the region on a loop, and still spends a loop count doing it', () => {
+    // The region says WHERE a pass runs; loops says HOW MANY. A region must not turn a counted loop
+    // into an endless one, which is what wiring the node's own loop flag would have done.
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()), { loops: 1 })!;
+    setAudioChannelLoopRegion(channel, 200, 600);
+    onEndedCallbacks.get(1)!();
+    expect(channel.currentTime).toBe(200);
+    expect(webMock.backend.startSource).toHaveBeenLastCalledWith(expect.anything(), 0.2, 0.4);
+    onEndedCallbacks.get(2)!();
+    expect(channel.state).toBe('complete');
+  });
+
+  it('starts inside the region when the caller seeked before it', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    setAudioChannelLoopRegion(channel, 400, 800);
+    stopAudioChannel(channel);
+    setAudioChannelCurrentTime(channel, 100);
+    resumeAudioChannel(channel);
+    expect(webMock.backend.startSource).toHaveBeenLastCalledWith(expect.anything(), 0.4, 0.4);
+  });
+});
+
+describe('setAudioChannelMuted', () => {
+  it('silences the device without disturbing the stored gain', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()), { gain: 0.8 })!;
+    setAudioChannelMuted(channel, true);
+    expect(channel.gain).toBe(0.8);
+    expect(isAudioChannelMuted(channel)).toBe(true);
+    expect(webMock.backend.setSourceGain).toHaveBeenLastCalledWith(1, 0);
+  });
+
+  it('restores the stored gain on unmute rather than a default', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()), { gain: 0.8 })!;
+    setAudioChannelMuted(channel, true);
+    setAudioChannelMuted(channel, false);
+    expect(webMock.backend.setSourceGain).toHaveBeenLastCalledWith(1, 0.8);
+  });
+
+  it('keeps a gain change made while muted silent until unmute', () => {
+    // The whole point of mute being a separate axis: setting gain must record the new level without
+    // breaking silence, and unmuting must then produce THAT level, not the one from before the mute.
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()), { gain: 0.8 })!;
+    setAudioChannelMuted(channel, true);
+    setAudioChannelGain(channel, 0.25);
+    expect(webMock.backend.setSourceGain).toHaveBeenLastCalledWith(1, 0);
+    expect(channel.gain).toBe(0.25);
+    setAudioChannelMuted(channel, false);
+    expect(webMock.backend.setSourceGain).toHaveBeenLastCalledWith(1, 0.25);
+  });
+
+  it('is not a pause — the channel keeps playing while muted', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    setAudioChannelMuted(channel, true);
+    expect(isAudioChannelPlaying(channel)).toBe(true);
+  });
+
+  it('carries the mute onto the next source when the channel restarts', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()), { gain: 0.6 })!;
+    setAudioChannelMuted(channel, true);
+    stopAudioChannel(channel);
+    resumeAudioChannel(channel);
+    expect(webMock.backend.setSourceGain).toHaveBeenCalledWith(2, 0);
+  });
+
+  it('records the mute on a channel with no live source', () => {
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
+    stopAudioChannel(channel);
+    expect(setAudioChannelMuted(channel, true)).toBe(true);
+    expect(channel.muted).toBe(true);
   });
 });
 

@@ -202,11 +202,16 @@ export function setAudioMixerMasterMuted(mixer: AudioMixer, muted: boolean): boo
 export function stopAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
-  for (const channel of runtime.activeChannels) {
-    channel.state = 'stopped';
-    channel.currentTime = 0;
-  }
+  // Delegating rather than flipping the fields by hand is the fix: the previous version set state and
+  // currentTime directly and never stopped the source, so every channel reported 'stopped' while its
+  // Web Audio node kept emitting. The snapshot is defensive rather than load-bearing —
+  // stopAudioChannel does not currently reach into activeChannels, and destroyAudioMixer iterates the
+  // live set for the same walk — but it makes this loop safe if that stops being true.
+  const stopping = [...runtime.activeChannels];
   runtime.activeChannels.clear();
+  for (const channel of stopping) {
+    stopAudioChannel(channel);
+  }
   // Bookkeeping, not a behavioural guard: resume already re-checks that a channel is still paused, so
   // a stopped channel would be skipped anyway. Clearing keeps the record from retaining channels the
   // mixer no longer owns for the rest of its life.

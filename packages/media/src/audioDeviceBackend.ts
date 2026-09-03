@@ -144,7 +144,7 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       s.sourceNode.playbackRate.value = rate;
     },
 
-    startSource(source: AudioSourceHandle, offset: number): void {
+    startSource(source: AudioSourceHandle, offset: number, duration: number): void {
       const s = sources.get(source as number);
       if (s === undefined) return;
       if (s.sourceNode !== null) {
@@ -166,7 +166,8 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       };
       s.sourceNode = sourceNode;
       s.state = 'playing';
-      sourceNode.start(0, offset);
+      if (duration > 0) sourceNode.start(0, offset, duration);
+      else sourceNode.start(0, offset);
     },
 
     stopSource(source: AudioSourceHandle): void {
