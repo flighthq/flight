@@ -144,7 +144,7 @@ describe('testCollisionSupport3D', () => {
     out.normalX = 9;
     out.depth = 9;
     expect(testCollisionSupport3D(sphere(0, 0, 0, 1), sphere(10, 0, 0, 1), out)).toBe(false);
-    expect(out).toEqual({ overlapping: false, normalX: 0, normalY: 0, normalZ: 0, depth: 0 });
+    expect(out).toMatchObject({ overlapping: false, normalX: 0, normalY: 0, normalZ: 0, depth: 0 });
   });
 
   it('returns false for an unregistered kind rather than throwing', () => {

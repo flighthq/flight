@@ -36,7 +36,7 @@ describe('testCollisionSupport2D', () => {
 
       const genericOverlapping = testCollisionSupport2D(a, b, generic);
       const incumbentOverlapping = testCollision2D(a, b, incumbent);
-      expect({ i, overlapping: genericOverlapping }).toEqual({ i, overlapping: incumbentOverlapping });
+      expect({ i, overlapping: genericOverlapping }).toMatchObject({ i, overlapping: incumbentOverlapping });
       if (!genericOverlapping) continue;
 
       overlaps += 1;
@@ -139,7 +139,7 @@ describe('testCollisionSupportOverlap2D', () => {
     for (let i = 0; i < 1000; i += 1) {
       const a = createRandomShape(random);
       const b = createRandomShape(random);
-      expect({ i, overlapping: testCollisionSupportOverlap2D(a, b) }).toEqual({
+      expect({ i, overlapping: testCollisionSupportOverlap2D(a, b) }).toMatchObject({
         i,
         overlapping: testCollisionSupport2D(a, b, out),
       });

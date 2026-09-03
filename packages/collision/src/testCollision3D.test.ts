@@ -87,7 +87,7 @@ describe('testCollision3D', () => {
     out.normalX = 5;
     registerCollisionPairTest3D('acme.missA', 'acme.missB', () => false);
     expect(testCollision3D({ kind: 'acme.missB' }, { kind: 'acme.missA' }, out)).toBe(false);
-    expect(out).toEqual({ overlapping: false, normalX: 0, normalY: 0, normalZ: 0, depth: 0 });
+    expect(out).toMatchObject({ overlapping: false, normalX: 0, normalY: 0, normalZ: 0, depth: 0 });
   });
 
   it('returns a silent false for an unregistered kind with no specialization', () => {

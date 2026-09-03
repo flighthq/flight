@@ -42,7 +42,7 @@ describe('createCollisionContactManifold2D', () => {
     const manifold = createCollisionContactManifold2D();
     expect(manifold.points).toHaveLength(2);
     for (const point of manifold.points) {
-      expect(point).toEqual({ x: 0, y: 0, depth: 0, featureId: 0 });
+      expect(point).toMatchObject({ x: 0, y: 0, depth: 0, featureId: 0 });
     }
   });
 

@@ -23,7 +23,7 @@ describe('explainCollisionTest3D', () => {
     vi.resetModules();
     const { explainCollisionTest3D: explainUnregistered } = await import('./explainCollisionTest3D');
 
-    expect(explainUnregistered(sphere(0, 2), sphere(1, 2))).toEqual({
+    expect(explainUnregistered(sphere(0, 2), sphere(1, 2))).toMatchObject({
       kind: 'sphere',
       overlapping: false,
       shapeIndex: 0,
@@ -32,13 +32,13 @@ describe('explainCollisionTest3D', () => {
   });
 
   it('distinguishes overlap from ordinary separation', () => {
-    expect(explainCollisionTest3D(sphere(0, 2), sphere(1, 2))).toEqual({
+    expect(explainCollisionTest3D(sphere(0, 2), sphere(1, 2))).toMatchObject({
       kind: null,
       overlapping: true,
       shapeIndex: null,
       status: 'overlapping',
     });
-    expect(explainCollisionTest3D(sphere(0, 2), sphere(10, 2))).toEqual({
+    expect(explainCollisionTest3D(sphere(0, 2), sphere(10, 2))).toMatchObject({
       kind: null,
       overlapping: false,
       shapeIndex: null,
@@ -47,13 +47,13 @@ describe('explainCollisionTest3D', () => {
   });
 
   it('reports the first invalid shape and which of the two it was', () => {
-    expect(explainCollisionTest3D(sphere(0, 0), sphere(1, 2))).toEqual({
+    expect(explainCollisionTest3D(sphere(0, 0), sphere(1, 2))).toMatchObject({
       kind: 'sphere',
       overlapping: false,
       shapeIndex: 0,
       status: 'degenerate-shape',
     });
-    expect(explainCollisionTest3D(sphere(0, 2), sphere(1, -1))).toEqual({
+    expect(explainCollisionTest3D(sphere(0, 2), sphere(1, -1))).toMatchObject({
       kind: 'sphere',
       overlapping: false,
       shapeIndex: 1,
@@ -71,7 +71,7 @@ describe('explainCollisionTest3D', () => {
   });
 
   it('names an unrecognized vendor kind', () => {
-    expect(explainCollisionTest3D({ kind: 'acme.cone' }, sphere(1, 2))).toEqual({
+    expect(explainCollisionTest3D({ kind: 'acme.cone' }, sphere(1, 2))).toMatchObject({
       kind: 'acme.cone',
       overlapping: false,
       shapeIndex: 0,

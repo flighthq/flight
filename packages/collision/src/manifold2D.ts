@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CollisionManifold2D } from '@flighthq/types/contract';
 
 // Clears a manifold to the non-overlapping state: `overlapping` false, normal and depth zero. The
@@ -12,5 +13,5 @@ export function clearCollisionManifold2D(out: CollisionManifold2D): void {
 
 // Allocates a fresh manifold in the non-overlapping state, ready to be passed as an `out` parameter.
 export function createCollisionManifold2D(): CollisionManifold2D {
-  return { overlapping: false, normalX: 0, normalY: 0, depth: 0 };
+  return createEntity({ overlapping: false, normalX: 0, normalY: 0, depth: 0 });
 }

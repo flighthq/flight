@@ -2,6 +2,7 @@ import type { CollisionShape2D, CollisionTestExplanation2D } from '@flighthq/typ
 
 import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D';
 import { getCollisionPairTest2D, getCollisionSupport2D } from './collisionSupport2D';
+import { createCollisionManifold2D } from './manifold2D';
 import { testCollision2D } from './testCollision2D';
 
 // Pure diagnostic twin of testCollision2D. It classifies invalid and unsupported inputs before
@@ -33,7 +34,7 @@ export function explainCollisionTest2D(
     }
   }
 
-  const overlapping = testCollision2D(a, b, { depth: 0, normalX: 0, normalY: 0, overlapping: false });
+  const overlapping = testCollision2D(a, b, createCollisionManifold2D());
   return {
     kind: null,
     overlapping,

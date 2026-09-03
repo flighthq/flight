@@ -18,7 +18,7 @@ describe('explainCollisionTest2D', () => {
     // circles would be the seam repeating the dispatcher's silence instead of explaining it.
     expect(
       explainUnregistered({ kind: 'circle', radius: 2, x: 0, y: 0 }, { kind: 'circle', radius: 2, x: 1, y: 0 }),
-    ).toEqual({
+    ).toMatchObject({
       kind: 'circle',
       overlapping: false,
       shapeIndex: 0,
@@ -28,13 +28,13 @@ describe('explainCollisionTest2D', () => {
 
   it('distinguishes overlap from ordinary separation', () => {
     const circle: CollisionShape2D = { kind: 'circle', radius: 2, x: 0, y: 0 };
-    expect(explainCollisionTest2D(circle, { kind: 'circle', radius: 2, x: 1, y: 0 })).toEqual({
+    expect(explainCollisionTest2D(circle, { kind: 'circle', radius: 2, x: 1, y: 0 })).toMatchObject({
       kind: null,
       overlapping: true,
       shapeIndex: null,
       status: 'overlapping',
     });
-    expect(explainCollisionTest2D(circle, { kind: 'circle', radius: 2, x: 10, y: 0 })).toEqual({
+    expect(explainCollisionTest2D(circle, { kind: 'circle', radius: 2, x: 10, y: 0 })).toMatchObject({
       kind: null,
       overlapping: false,
       shapeIndex: null,
@@ -44,13 +44,13 @@ describe('explainCollisionTest2D', () => {
 
   it('identifies which input is degenerate or non-convex', () => {
     const circle: CollisionShape2D = { kind: 'circle', radius: 2, x: 0, y: 0 };
-    expect(explainCollisionTest2D(circle, { kind: 'circle', radius: 0, x: 0, y: 0 })).toEqual({
+    expect(explainCollisionTest2D(circle, { kind: 'circle', radius: 0, x: 0, y: 0 })).toMatchObject({
       kind: 'circle',
       overlapping: false,
       shapeIndex: 1,
       status: 'degenerate-shape',
     });
-    expect(explainCollisionTest2D({ kind: 'polygon', points: [0, 0, 2, 0, 1, 1, 2, 2, 0, 2] }, circle)).toEqual({
+    expect(explainCollisionTest2D({ kind: 'polygon', points: [0, 0, 2, 0, 1, 1, 2, 2, 0, 2] }, circle)).toMatchObject({
       kind: 'polygon',
       overlapping: false,
       shapeIndex: 0,

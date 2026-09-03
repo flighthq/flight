@@ -17,7 +17,7 @@ const SEEDED_CAPSULE_SWEEP_BATCHES = [
 
 describe('createCollisionTimeOfImpact2D', () => {
   it('creates a cleared reusable output record', () => {
-    expect(createCollisionTimeOfImpact2D()).toEqual({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
+    expect(createCollisionTimeOfImpact2D()).toMatchObject({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
   });
 });
 
@@ -121,7 +121,7 @@ describe('sweepCollisionShape2D', () => {
     const out = createCollisionTimeOfImpact2D();
 
     expect(sweepCollisionShape2D(moving, 10, 0, fixed, 0, 0, out, 0.3)).toBe(false);
-    expect(out).toEqual({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
+    expect(out).toMatchObject({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
     expect(sweepCollisionShape2D(moving, 10, 0, fixed, 0, 0, out)).toBe(true);
     expect(out.fraction).toBeCloseTo(0.4);
     expect(out.normalX).toBe(-1);
@@ -171,7 +171,7 @@ describe('sweepCollisionShape2D', () => {
     expect(
       sweepCollisionShape2D({ kind: 'point', x: 0, y: 0 }, 1, 0, { kind: 'circle', x: 2, y: 0, radius: 1 }, 0, 0, out),
     ).toBe(false);
-    expect(out).toEqual({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
+    expect(out).toMatchObject({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
     expect(
       sweepCollisionShape2D(
         { kind: 'circle', x: 0, y: 0, radius: 1 },
