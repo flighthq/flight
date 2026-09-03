@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
   EasingFunction,
@@ -81,7 +82,7 @@ export function makeTween<T extends object>(
 ): Tween<T> {
   const keys = Object.keys(propertyMap);
   const properties: TweenPropertyDetail[] = keys.map((key) => ({ change: 0, key, start: 0 }));
-  return {
+  return createEntity({
     complete: false,
     delay: options?.delay ?? 0,
     duration,
@@ -101,7 +102,7 @@ export function makeTween<T extends object>(
     smartRotation: options?.smartRotation ?? false,
     snapping: options?.snapping ?? false,
     target,
-  };
+  });
 }
 
 // Proxy-backed tweens interpolate against their private target while manager operations address the

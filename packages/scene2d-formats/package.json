@@ -42,6 +42,7 @@
     "@flighthq/clip": "*",
     "@flighthq/color": "*",
     "@flighthq/easing": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
     "@flighthq/importdiagnostics": "*",

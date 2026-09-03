@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  EntityWithoutRuntime,
   HasDialogMessage,
   HasDialogPrompt,
   MessageDialogBackend,
@@ -14,7 +16,7 @@ export const webMessageDialogBackend = createWebMessageDialogBackend();
 export const webPromptDialogBackend = createWebPromptDialogBackend();
 
 function createWebMessageDialogBackend(): MessageDialogBackend {
-  return {
+  return createEntity<EntityWithoutRuntime<MessageDialogBackend>>({
     async confirm(options) {
       if (options.signal?.aborted) return false;
       if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
@@ -37,11 +39,11 @@ function createWebMessageDialogBackend(): MessageDialogBackend {
       }
       return { buttonIndex: 0, cancelled: false, checkboxChecked };
     },
-  };
+  });
 }
 
 function createWebPromptDialogBackend(): PromptDialogBackend {
-  return {
+  return createEntity<EntityWithoutRuntime<PromptDialogBackend>>({
     async prompt(options) {
       if (options.signal?.aborted) return null;
       if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
@@ -51,7 +53,7 @@ function createWebPromptDialogBackend(): PromptDialogBackend {
         return null;
       }
     },
-  };
+  });
 }
 
 export function showConfirmDialog(host: HasDialogMessage, options: Readonly<MessageDialogOptions>): Promise<boolean> {

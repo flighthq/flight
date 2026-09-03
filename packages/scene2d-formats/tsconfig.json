@@ -28,6 +28,7 @@
     { "path": "../text" },
     { "path": "../textlayout" },
     { "path": "../texture" },
+    { "path": "../entity" },
     { "path": "../types" },
     { "path": "../xml" }
   ],

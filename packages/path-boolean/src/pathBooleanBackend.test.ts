@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { PathBooleanBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -36,13 +37,13 @@ describe('getPathBooleanBackend', () => {
 
 describe('setPathBooleanBackend', () => {
   it('installs a custom backend that getPathBooleanBackend then returns', () => {
-    const custom: PathBooleanBackend = { computePathBoolean: () => [] };
+    const custom: PathBooleanBackend = createEntity({ computePathBoolean: () => [] });
     setPathBooleanBackend(custom);
     expect(getPathBooleanBackend()).toBe(custom);
   });
 
   it('clears back to a lazily-created default when passed null', () => {
-    const custom: PathBooleanBackend = { computePathBoolean: () => [] };
+    const custom: PathBooleanBackend = createEntity({ computePathBoolean: () => [] });
     setPathBooleanBackend(custom);
     setPathBooleanBackend(null);
     expect(getPathBooleanBackend()).not.toBe(custom);

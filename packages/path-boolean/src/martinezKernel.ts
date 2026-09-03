@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  EntityWithoutRuntime,
   PathBooleanBackend,
   PathBooleanContour,
   PathBooleanFillRule,
@@ -28,7 +30,7 @@ import type {
 // algorithm's O(n log n) inline classification for an O(n²) post-pass, which is the right call for a
 // correctness-first kernel on the modest polygon sizes booleans see.
 export function createMartinezPathBooleanBackend(): PathBooleanBackend {
-  return {
+  return createEntity<EntityWithoutRuntime<PathBooleanBackend>>({
     computePathBoolean(
       subject: readonly PathBooleanContour[],
       clip: readonly PathBooleanContour[],
@@ -37,7 +39,7 @@ export function createMartinezPathBooleanBackend(): PathBooleanBackend {
     ): readonly PathBooleanContour[] {
       return computeMartinezBoolean(subject, clip, operation, fillRule);
     },
-  };
+  });
 }
 
 // One endpoint of a segment during the sweep. The two endpoints of an edge cross-link via `otherEvent`.

@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/easing": "*",
+    "@flighthq/entity": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

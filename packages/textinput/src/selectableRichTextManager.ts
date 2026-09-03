@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
 import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout/contract';
 import type { InputKeyboardData, RichText, RichTextRuntime, SelectableRichTextManager } from '@flighthq/types/contract';
@@ -13,7 +14,7 @@ export function blurSelectableRichText(manager: SelectableRichTextManager): void
 }
 
 export function createSelectableRichTextManager(): SelectableRichTextManager {
-  return { focused: null };
+  return createEntity({ focused: null });
 }
 
 export function dispatchSelectableRichTextKeyDown(

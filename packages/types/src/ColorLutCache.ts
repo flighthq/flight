@@ -1,4 +1,5 @@
 import type { ColorLut } from './ColorLut';
+import type { Entity } from './Entity';
 
 // A single-slot memo of the fused color LUT for a run of pointwise adjustments, so a static grade does
 // not re-bake its size³ cells every frame. `signature` is the run's content key — its ops' kinds and
@@ -7,7 +8,7 @@ import type { ColorLut } from './ColorLut';
 // reused by reference on a hit so GPU-upload caches can skip re-uploading by identity. Owned by the
 // effect pipeline; plain GC-managed memory, so resetting it is dropping the references. See
 // bakeColorLutForRun in @flighthq/adjustments.
-export interface ColorLutCache {
+export interface ColorLutCache extends Entity {
   signature: string | null;
   lut: ColorLut | null;
 }

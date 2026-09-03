@@ -13,6 +13,7 @@
     { "path": "../text" },
     { "path": "../signals" },
     { "path": "../textlayout" },
+    { "path": "../entity" },
     { "path": "../types" }
   ],
   "include": ["src"]

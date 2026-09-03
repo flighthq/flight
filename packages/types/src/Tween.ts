@@ -1,10 +1,11 @@
 import type { EasingFunction } from './EasingFunction';
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 import type { TweenPropertyDetail } from './TweenPropertyDetail';
 
 export type NumericProps<T> = { [K in keyof T as T[K] extends number ? K : never]?: number };
 
-export interface Tween<T extends object> {
+export interface Tween<T extends object> extends Entity {
   complete: boolean;
   delay: number;
   duration: number;

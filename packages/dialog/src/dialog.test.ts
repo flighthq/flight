@@ -1,4 +1,5 @@
-import type { MessageDialogBackend, PromptDialogBackend } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { EntityWithoutRuntime, MessageDialogBackend, PromptDialogBackend } from '@flighthq/types/contract';
 
 import {
   showConfirmDialog,
@@ -15,19 +16,19 @@ import {
 function fakeHost() {
   return {
     dialog: {
-      message: {
+      message: createEntity({
         async confirm() {
           return true;
         },
         async message() {
           return { buttonIndex: 2, cancelled: false, checkboxChecked: false };
         },
-      } satisfies MessageDialogBackend,
-      prompt: {
+      } satisfies EntityWithoutRuntime<MessageDialogBackend>),
+      prompt: createEntity({
         async prompt() {
           return 'typed';
         },
-      } satisfies PromptDialogBackend,
+      } satisfies EntityWithoutRuntime<PromptDialogBackend>),
     },
   };
 }
@@ -35,7 +36,7 @@ function fakeHost() {
 function severityHost(observed: string[]) {
   return {
     dialog: {
-      message: {
+      message: createEntity({
         async confirm() {
           return true;
         },
@@ -43,7 +44,7 @@ function severityHost(observed: string[]) {
           observed.push(options.kind ?? 'none');
           return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
         },
-      },
+      }),
     },
   };
 }
@@ -55,7 +56,7 @@ describe('showConfirmDialog', () => {
 
   it('forwards a live signal through the explicit message slot', async () => {
     const confirm = vi.fn(async () => true);
-    const host = { dialog: { message: { confirm, message: vi.fn() } } };
+    const host = { dialog: { message: createEntity({ confirm, message: vi.fn() }) } };
     const signal = new AbortController().signal;
     await showConfirmDialog(host, { message: 'sure?', signal });
     expect(confirm).toHaveBeenCalledWith({ message: 'sure?', signal });

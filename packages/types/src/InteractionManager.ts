@@ -1,5 +1,5 @@
 import type { CursorBackend } from './Cursor';
-import type { EntityRuntimeKey } from './Entity';
+import type { Entity, EntityRuntimeKey } from './Entity';
 import type { FocusEventData } from './FocusEventData';
 import type { InputSignals } from './InputSignals';
 import type { InteractionSignals } from './InteractionSignals';
@@ -24,7 +24,7 @@ export interface InteractionDispatchLayerOptions {
   priority?: number;
 }
 
-export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
+export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> extends Entity {
   // Active cursor backend for this manager's canvas; `null` disables cursor resolution. Per-manager
   // (not a global) so each manager owns its own canvas's cursor zone. Rollover resolves the innermost
   // ancestor's `NodeInteractionState.cursor` and applies it here.

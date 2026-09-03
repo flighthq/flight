@@ -1,6 +1,7 @@
 import type { AdvancedBlendMode } from './AdvancedBlendMode';
 import type { AnimationClip } from './AnimationClip';
 import type { DisplayObject } from './DisplayObject';
+import type { Entity } from './Entity';
 import type { ImageResource } from './ImageResource';
 import type { LottieImageAsset } from './LottieDocument';
 
@@ -26,7 +27,7 @@ export interface LottieAdvancedBlend {
  * Marker records become clip events. The clip's opaque targetRef descriptor remains a charter-scene2d
  * fork until the scene2d-owned versus importer-owned binding boundary is blessed.
  */
-export interface LottieDocumentImportResult {
+export interface LottieDocumentImportResult extends Entity {
   /** Layers needing a `BlendEffect`, because their mode is destination-reading or non-separable. */
   advancedBlends: LottieAdvancedBlend[];
   clip: AnimationClip;

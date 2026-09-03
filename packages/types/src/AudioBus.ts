@@ -1,4 +1,6 @@
-export interface AudioBus {
+import type { Entity } from './Entity';
+
+export interface AudioBus extends Entity {
   gain: number;
   muted: boolean;
   name: string;
@@ -10,7 +12,7 @@ export interface AudioBusOptions {
   name?: string;
   pan?: number;
 }
-export interface AudioMixer {
+export interface AudioMixer extends Entity {
   masterGain: number;
   masterMuted: boolean;
 }

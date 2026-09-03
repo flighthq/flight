@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
   ImportDiagnostic,
@@ -44,7 +45,7 @@ export function createRiveObjectGraph(
   }
 
   for (const artboard of artboards) resolveRiveParentIndices(artboard, diagnostics);
-  return { artboards };
+  return createEntity({ artboards });
 }
 
 function resolveRiveParentIndices(artboard: RiveArtboardGraph, diagnostics: ImportDiagnostic[] | undefined): void {

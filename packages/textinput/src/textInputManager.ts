@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
 import type {
@@ -38,10 +39,10 @@ export function connectInputToTextInput(input: TextInputSource, manager: TextInp
 }
 
 export function createTextInputManager(): TextInputManager {
-  return {
+  return createEntity({
     enabled: true,
     focused: null,
-  };
+  });
 }
 
 export function dispatchTextInput(manager: TextInputManager, text: string): boolean {

@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
+  EntityWithoutRuntime,
   GradientGlowEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
@@ -125,7 +127,7 @@ function getLookupPipeline(state: WgpuRenderState): WgpuEffectPipeline {
       fragment: { module: shaderModule, entryPoint: 'fs_main', targets: [{ format }] },
       primitive: { topology: 'triangle-list' },
     });
-    p = { pipeline, blendMode: 'premul' };
+    p = createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({ pipeline, blendMode: 'premul' });
     lookupPipelines.set(state, p);
   }
   return p;

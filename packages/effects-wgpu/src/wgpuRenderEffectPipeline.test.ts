@@ -1,3 +1,4 @@
+import { createColorLutCache } from '@flighthq/adjustments/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { beginWgpuFrame, createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { RenderEffect } from '@flighthq/types/contract';
@@ -259,7 +260,7 @@ describe('setWgpuRenderEffectVelocityTexture', () => {
       options: {},
       sceneTarget: null,
       pool: { [EntityRuntimeKey]: undefined, free: [] },
-      lutCache: { signature: null, lut: null },
+      lutCache: createColorLutCache(),
       lutTexture: { texture: null, size: 0, lut: null },
       velocityTexture: null,
     });

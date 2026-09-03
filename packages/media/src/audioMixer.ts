@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   AudioBus,
   AudioBusMixerGuard,
@@ -32,22 +33,22 @@ export function addAudioBusToMixer(mixer: Readonly<AudioMixer>, bus: AudioBus): 
 }
 
 export function createAudioBus(options?: Readonly<AudioBusOptions>): AudioBus {
-  return {
+  return createEntity({
     gain: options?.gain ?? 1,
     muted: options?.muted ?? false,
     name: options?.name ?? '',
     pan: options?.pan ?? 0,
-  };
+  });
 }
 
 export function createAudioMixer(context: AudioContext, options?: Readonly<AudioMixerOptions>): AudioMixer {
   const masterGainNode = context.createGain();
   masterGainNode.gain.value = options?.masterGain ?? 1;
   masterGainNode.connect(context.destination);
-  const mixer: AudioMixer = {
+  const mixer: AudioMixer = createEntity({
     masterGain: options?.masterGain ?? 1,
     masterMuted: options?.masterMuted ?? false,
-  };
+  });
   mixerRuntimes.set(mixer, {
     activeChannels: new Set(),
     channelsPausedByMixer: new Set(),

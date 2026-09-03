@@ -164,7 +164,7 @@ export function createInteractionManager<N extends NodeAny>(
   root: N,
   options: Readonly<InteractionManagerOptions> = {},
 ): InteractionManager<N> {
-  return {
+  return createEntity({
     cursorBackend: options.cursorBackend ?? null,
     cursorTarget: null,
     dispatchLayers: null,
@@ -179,7 +179,7 @@ export function createInteractionManager<N extends NodeAny>(
     signalSubscriberCounts: new Map(),
     trackedSignalSlots: new Map(),
     trackedSubscribersOnly: options.trackedSubscribersOnly ?? false,
-  };
+  });
 }
 
 export function createInteractionSignals(): InteractionSignals {
