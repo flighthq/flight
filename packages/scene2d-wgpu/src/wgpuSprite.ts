@@ -12,6 +12,7 @@ import type { RenderProxy2D, Scene2DRenderer, Sprite, WgpuRenderState } from '@f
 import { BatchFormat } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureWgpuQuadBatchResources,
   flushWgpuQuadBatchWriter,
   packWgpuQuadBatchMaterialInstance,
@@ -53,7 +54,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   if (texture.flipX) [u0, u1] = [u1, u0];
   if (texture.flipY) [v0, v1] = [v1, v0];
 
-  const base = prepareWgpuQuadBatchWrite(
+  const instanceIndex = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
     texture.sampler,
@@ -62,7 +63,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
     materialRenderer,
     1,
   );
-  const instanceIndex = runtime.quadBatchWriterCount;
+  const base = instanceIndex * QUAD_BATCH_INSTANCE_FLOATS;
   const data = runtime.quadBatchWriterInstanceData;
   const transform = renderProxy.transform2D;
   data[base] = transform.a;

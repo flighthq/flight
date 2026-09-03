@@ -44,7 +44,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const perTileColorScaleBias = source.data.materialData;
   const nodeColorScaleBias = tilemapNode.colorScaleBias;
   const nodeColorMatrix = tilemapNode.colorMatrix;
-  const base = prepareWgpuQuadBatchWrite(
+  const startInstance = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
     texture.sampler,
@@ -53,7 +53,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
     materialRenderer,
     columns * rows,
   );
-  const startCount = runtime.quadBatchWriterCount;
+  const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
 
   const regions = atlas.regions;
   const numRegions = regions.length;
@@ -93,7 +93,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+      packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorScaleBias =
         (perTileColorScaleBias?.[row * columns + col] as
@@ -103,7 +103,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
           | null) ??
         nodeColorMatrix ??
         nodeColorScaleBias;
-      recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
+      recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startInstance + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }

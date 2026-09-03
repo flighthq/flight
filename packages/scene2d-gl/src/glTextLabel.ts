@@ -22,6 +22,7 @@ import type {
 import { BatchFormat } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureGlQuadBatchShader,
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
@@ -152,7 +153,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 
   const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
   const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
-  const base = prepareGlQuadBatchWrite(
+  const startInstance = prepareGlQuadBatchWrite(
     state,
     texture,
     straightAlpha,
@@ -162,7 +163,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
     materialRenderer,
     1,
   );
-  const startCount = runtime.quadBatchWriterCount;
+  const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
   const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
@@ -178,8 +179,8 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startInstance);
+  recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startInstance);
   runtime.quadBatchWriterCount++;
 }
 

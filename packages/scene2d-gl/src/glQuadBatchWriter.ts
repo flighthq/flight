@@ -27,7 +27,7 @@ import type {
 // Attribute locations 0 (a_corner) and 1-6 are a fixed contract; material shaders extend from
 // location 7. The base buffer and a material's own per-instance buffer share only the instance
 // count and divisor convention.
-const QUAD_BATCH_INSTANCE_FLOATS = 13;
+export const QUAD_BATCH_INSTANCE_FLOATS = 13;
 const QUAD_BATCH_INSTANCE_STRIDE = QUAD_BATCH_INSTANCE_FLOATS * 4;
 
 // Highest per-instance attribute location any quad-batch writer material or the opt-in color-adjustment
@@ -242,8 +242,11 @@ export function packGlQuadBatchMaterialInstance(
 // is compared by reference) or capacity is exceeded. `smoothing` is a per-bitmap sampling preference
 // (`true`/`false` force LINEAR/NEAREST, `null` uses the global `allowSmoothing` default); it keys the
 // batch because filtering is a per-texture-bind property. The color adjustment is orthogonal — it never
-// keys the batch. Returns the float index in quadBatchWriterInstanceData where the caller should begin
-// writing base instance data; the caller increments state.quadBatchWriterCount and records per-instance data.
+// keys the batch. Returns the index of the instance the caller writes first, which is the ONLY valid
+// source for that index: this may flush, and a flush resets quadBatchWriterCount to 0, so a count read
+// taken before the call names an instance the flush will never upload. Multiply by
+// QUAD_BATCH_INSTANCE_FLOATS for the float offset into quadBatchWriterInstanceData; the caller
+// increments state.quadBatchWriterCount and records per-instance data.
 export function prepareGlQuadBatchWrite(
   state: GlRenderState,
   texture: WebGLTexture,
@@ -303,7 +306,7 @@ export function prepareGlQuadBatchWrite(
     }
   }
 
-  return runtime.quadBatchWriterCount * QUAD_BATCH_INSTANCE_FLOATS;
+  return runtime.quadBatchWriterCount;
 }
 
 // Folds instance `instanceIndex`'s effective color adjustment into the active batch through the opt-in

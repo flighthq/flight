@@ -14,13 +14,12 @@ import type {
 import { BatchFormat } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureGlQuadBatchShader,
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
 } from './glQuadBatchWriter';
-
-const INSTANCE_FLOATS = 13;
 
 function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -44,7 +43,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const perTileColorScaleBias = source.data.materialData;
   const nodeColorScaleBias = tilemapNode.colorScaleBias;
   const nodeColorMatrix = tilemapNode.colorMatrix;
-  const base = prepareGlQuadBatchWrite(
+  const startInstance = prepareGlQuadBatchWrite(
     state,
     glTexture,
     straightAlpha,
@@ -54,7 +53,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
     materialRenderer,
     columns * rows,
   );
-  const startCount = runtime.quadBatchWriterCount;
+  const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
 
   const regions = atlas.regions;
   const numRegions = regions.length;
@@ -94,7 +93,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packGlQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+      packGlQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
       // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
       const colorScaleBias =
         (perTileColorScaleBias?.[row * columns + col] as
@@ -104,8 +103,8 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
           | null) ??
         nodeColorMatrix ??
         nodeColorScaleBias;
-      recordGlQuadBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
-      writeBase += INSTANCE_FLOATS;
+      recordGlQuadBatchColorScaleBias(state, colorScaleBias, startInstance + drawCount);
+      writeBase += QUAD_BATCH_INSTANCE_FLOATS;
       drawCount++;
     }
   }

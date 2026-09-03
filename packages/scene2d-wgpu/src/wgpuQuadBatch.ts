@@ -48,7 +48,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const perQuadColorScaleBias = data.materialData;
   const nodeColorScaleBias = quadBatch.colorScaleBias;
   const nodeColorMatrix = quadBatch.colorMatrix;
-  const base = prepareWgpuQuadBatchWrite(
+  const startInstance = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
     texture.sampler,
@@ -57,7 +57,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
     materialRenderer,
     instanceCount,
   );
-  const startCount = runtime.quadBatchWriterCount;
+  const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
 
   const regions = atlas.regions;
   const numRegions = regions.length;
@@ -113,13 +113,13 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
     instanceData[writeBase + 10] = (region.x + region.width) * iw;
     instanceData[writeBase + 11] = (region.y + region.height) * ih;
     instanceData[writeBase + 12] = alpha;
-    packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+    packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
     const colorScaleBias =
       (perQuadColorScaleBias?.[i] as ColorScaleBias | TintMaterialData | readonly number[] | null) ??
       nodeColorMatrix ??
       nodeColorScaleBias;
-    recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startCount + drawCount);
+    recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startInstance + drawCount);
     writeBase += INSTANCE_STRIDE_FLOATS;
     drawCount++;
   }

@@ -22,6 +22,7 @@ import type {
 import { BatchFormat } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureWgpuQuadBatchResources,
   packWgpuQuadBatchMaterialInstance,
   prepareWgpuQuadBatchWrite,
@@ -158,7 +159,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
   const textureEntry = bindWgpuImageResourceTexture(state, surface.image, false, true);
   if (textureEntry === null) return;
-  const base = prepareWgpuQuadBatchWrite(
+  const startInstance = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
     null,
@@ -167,7 +168,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
     materialRenderer,
     1,
   );
-  const startCount = runtime.quadBatchWriterCount;
+  const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
   const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
@@ -183,8 +184,8 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startInstance);
+  recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startInstance);
   runtime.quadBatchWriterCount++;
 }
 

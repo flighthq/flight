@@ -7,6 +7,7 @@ import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@fli
 import { BatchFormat, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureGlQuadBatchShader,
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
@@ -44,7 +45,7 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
     v1 = 1 - v1;
   }
 
-  const base = prepareGlQuadBatchWrite(
+  const instanceIndex = prepareGlQuadBatchWrite(
     state,
     glTexture,
     straightAlpha,
@@ -54,7 +55,7 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
     materialRenderer,
     1,
   );
-  const instanceIndex = runtime.quadBatchWriterCount;
+  const base = instanceIndex * QUAD_BATCH_INSTANCE_FLOATS;
   const data = runtime.quadBatchWriterInstanceData;
   const transform = renderProxy.transform2D;
   data[base] = transform.a;

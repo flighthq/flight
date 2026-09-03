@@ -297,9 +297,11 @@ export function packWgpuQuadBatchMaterialInstance(
 
 // Ensures the quad-batch writer can accept up to `maxInstances` more instances for the given texture,
 // blend mode, and material. Flushes when any of the three changes (material by reference) or
-// capacity is exceeded. Returns the float index in quadBatchWriterInstanceData where the caller writes
-// base instance data; the caller increments the runtime's quadBatchWriterCount and calls
-// packWgpuQuadBatchMaterialInstance per instance.
+// capacity is exceeded. Returns the index of the instance the caller writes first, which is the ONLY
+// valid source for that index: this may flush, and a flush resets quadBatchWriterCount to 0, so a count
+// read taken before the call names an instance the flush will never upload. Multiply by
+// QUAD_BATCH_INSTANCE_FLOATS for the float offset into quadBatchWriterInstanceData; the caller
+// increments the runtime's quadBatchWriterCount and calls packWgpuQuadBatchMaterialInstance per instance.
 export function prepareWgpuQuadBatchWrite(
   state: WgpuRenderState,
   texture: Readonly<WgpuTextureEntry>,
@@ -343,7 +345,7 @@ export function prepareWgpuQuadBatchWrite(
     }
   }
 
-  return runtime.quadBatchWriterCount * QUAD_BATCH_INSTANCE_FLOATS;
+  return runtime.quadBatchWriterCount;
 }
 
 // Folds instance `instanceIndex`'s effective color adjustment into the active batch through the opt-in
