@@ -78,6 +78,14 @@ The package owns exactly the entity↔runtime↔binding triad — construction (
 
   **Enforcement:** the semantic gate is hard for new violations while reporting the baseline.
 
+- **[2026-09-03] HOLD — the collision/value clause of the entry above is rejected by direct user direction. This entry is a stop sign, not the superseding ruling.** The user's clarification is explicit: `Vector2` is Entity, so collision manifolds, raycast hits, heightfields, meshes, and other user-facing SDK value and result objects must be Entity-backed too. **There is no `build*` rename escape, no collision baseline, and no second taxonomy.** The durable rule is that every exported production `create*` returns transitively Entity, with `EntityRuntime` as the only documented second root and `clone*` excluded.
+
+  **Do not act on the "naming debt, baselined" half of the [2026-09-03] doctrine entry** — it is dead. The rest of that entry stands unchanged. The formal superseding Decision is deliberately deferred until the implementation lands, so that it can describe what is true rather than what is intended; this entry holds the line until then.
+
+  **Supporting evidence from the tree, gathered before the clarification arrived and matching it.** `createVector2`, `createMatrix`, and `createRectangle` all compose `createEntity`, while `createCollisionManifold2D` returns a bare object literal. The geometry value types — the most allocation-sensitive records in the SDK — already satisfy the rule, so the "query results and intermediates are not Entity" carve-out never described them.
+
+  **The shape that satisfies this without giving up the no-allocation path already exists.** `RectangleLike` is `EntityWithoutRuntime<Rectangle>`: the named type is an Entity and the structural out-parameter form is derived from it. Collision has no such pair today — `CollisionManifold2D` is only the literal. Making the named collision types Entity with derived `*Like` forms for hot-path out-parameters follows the convention geometry already uses rather than inventing one.
+
 ## Open directions
 
 1. **Guard mode posture.** `createGuardedEntity`/`createGuardedEntityRuntime` use `Proxy` to warn on raw slot writes via `console.warn`. The implementation is opt-in (`enableEntityRuntimeGuards()`) and tree-shakable. However, the `Proxy`-based approach and its alignment with the SDK's plain-data / free-function / C-portable tenets needs review. Is warn-and-allow the intended ceiling (a smoke alarm by design), or should a different mechanism be considered? Should guard mode exist at all, or does it add complexity to a package whose identity is "minimal bedrock"? _(Was Open direction #4.)_ **Resolved — see Decision [2026-07-03]:** guard mode stays, warn-and-allow is the ceiling, emission migrates to `@flighthq/log`.
