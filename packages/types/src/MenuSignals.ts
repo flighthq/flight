@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 /**
@@ -9,7 +10,7 @@ import type { Signal } from './Signal';
  * emitted by a backend, so they became Host event slots (`menu.select`, `menu.highlight`) with their own
  * signal entities.
  */
-export interface MenuSignals {
+export interface MenuSignals extends Entity {
   /** Fires when a context menu is dismissed (either by selection or outside-click). */
   onContextMenuClose: Signal<() => void>;
   /** Fires when a context menu is opened via showContextMenu. */

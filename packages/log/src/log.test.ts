@@ -257,7 +257,7 @@ describe('clearMemoryLogSink', () => {
   });
 
   it('does nothing for an unknown handle', () => {
-    const unknown = { sink: () => {} } as MemoryLogSink;
+    const unknown: MemoryLogSink = { [EntityRuntimeKey]: undefined, sink: () => {} };
 
     expect(() => clearMemoryLogSink(unknown)).not.toThrow();
   });
@@ -923,7 +923,7 @@ describe('destroyFileLogSink', () => {
 
 describe('disposeLogSink', () => {
   it('does nothing for an unknown handle', () => {
-    const unknown = { sink: () => {} } as BufferedLogSink;
+    const unknown: BufferedLogSink = { [EntityRuntimeKey]: undefined, sink: () => {} };
 
     expect(() => disposeLogSink(unknown)).not.toThrow();
   });
@@ -1098,7 +1098,7 @@ describe('exitLogSpan', () => {
 
 describe('flushLogSink', () => {
   it('does nothing for an unknown handle', () => {
-    const unknown = { sink: () => {} } as BufferedLogSink;
+    const unknown: BufferedLogSink = { [EntityRuntimeKey]: undefined, sink: () => {} };
 
     expect(() => flushLogSink(unknown)).not.toThrow();
   });
@@ -1151,7 +1151,7 @@ describe('getMemoryLogSinkEntries', () => {
   });
 
   it('returns an empty array for an unknown handle', () => {
-    const unknown = { sink: () => {} } as MemoryLogSink;
+    const unknown: MemoryLogSink = { [EntityRuntimeKey]: undefined, sink: () => {} };
 
     expect(getMemoryLogSinkEntries(unknown)).toEqual([]);
   });

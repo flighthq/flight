@@ -1,6 +1,7 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   BufferedLogSink,
+  Entity,
   FileLogSink,
   FileLogSinkDestroyOutcome,
   LogContext,
@@ -117,7 +118,7 @@ export function createBufferedLogSink(
     if (state.buf.length >= size) flush();
   };
 
-  const handle: BufferedLogSink = { sink };
+  const handle: BufferedLogSink = initializeLogEntity({ sink });
   let timer: ReturnType<typeof setInterval> | null = null;
   if (intervalMs > 0 && typeof setInterval !== 'undefined') {
     timer = setInterval(flush, intervalMs);
@@ -134,7 +135,7 @@ export function createChildLogContext(
   channel?: string | null,
 ): LogContext {
   const merged = { ...parent.fields, ...fields };
-  return { channel: channel !== undefined ? channel : parent.channel, fields: merged };
+  return initializeLogEntity({ channel: channel !== undefined ? channel : parent.channel, fields: merged });
 }
 
 // Creates a sink that records every entry as a tagged JSON envelope on console.debug — low
@@ -142,22 +143,22 @@ export function createChildLogContext(
 // lands in logs.jsonl. Entries at or above the console threshold (setLogConsoleLevel) are ALSO
 // printed as a human-readable line via the matching console method. Install with addLogSink or
 // setLogSink.
-export function createConsoleCaptureSink(options: { formatter?: LogFormatter } = {}): LogSink {
+export function createConsoleCaptureSink(options: { formatter?: LogFormatter } = {}): LogSink & Entity {
   const envelopeFormatter = options.formatter ?? _defaultJsonFormatter;
-  return (entry: Readonly<LogEntry>): void => _writeConsoleCaptureEntry(entry, envelopeFormatter);
+  return initializeLogEntity((entry: Readonly<LogEntry>): void => _writeConsoleCaptureEntry(entry, envelopeFormatter));
 }
 
-export function createConsoleLogSink(options: { formatter?: LogFormatter } = {}): LogSink {
+export function createConsoleLogSink(options: { formatter?: LogFormatter } = {}): LogSink & Entity {
   const formatter = options.formatter ?? createTextLogFormatter({ levelPrefix: true });
-  return (entry: Readonly<LogEntry>): void => _writeConsoleLogEntry(entry, formatter);
+  return initializeLogEntity((entry: Readonly<LogEntry>): void => _writeConsoleLogEntry(entry, formatter));
 }
 
 // Creates a fan-out sink that forwards every entry to all supplied sinks.
-export function createFanoutLogSink(...sinks: LogSink[]): LogSink {
+export function createFanoutLogSink(...sinks: LogSink[]): LogSink & Entity {
   const list = sinks.slice();
-  return (entry: Readonly<LogEntry>): void => {
+  return initializeLogEntity((entry: Readonly<LogEntry>): void => {
     for (const s of list) s(entry);
-  };
+  });
 }
 
 // Creates an Entity sink that exclusively owns the configured transport for its entire lifetime.
@@ -182,17 +183,20 @@ export function createFileLogSink(transport: LogTransport, options: { formatter?
 
 // Creates a sink that forwards only entries matching a predicate. Compose with addLogSink to give
 // each target its own independent filter (per-sink level, per-channel filter, etc.).
-export function createFilterLogSink(target: LogSink, predicate: (entry: Readonly<LogEntry>) => boolean): LogSink {
-  return (entry: Readonly<LogEntry>): void => {
+export function createFilterLogSink(
+  target: LogSink,
+  predicate: (entry: Readonly<LogEntry>) => boolean,
+): LogSink & Entity {
+  return initializeLogEntity((entry: Readonly<LogEntry>): void => {
     if (predicate(entry)) target(entry);
-  };
+  });
 }
 
 // Creates a formatter that produces the `__flight` JSON envelope used by the capture harness.
 // Field redaction (setLogRedactionPaths) and custom serializers (registerLogSerializer) are
 // applied during formatting.
-export function createJsonLogFormatter(): LogFormatter {
-  return (entry: Readonly<LogEntry>): string => {
+export function createJsonLogFormatter(): LogFormatter & Entity {
+  return initializeLogEntity((entry: Readonly<LogEntry>): string => {
     const { level, channel, data } = entry;
     const serialized = _applySerializers(typeof data === 'string' ? { msg: data } : (data as Record<string, unknown>));
     const redacted = _redactionPaths.length > 0 ? _applyRedaction(serialized) : serialized;
@@ -203,13 +207,13 @@ export function createJsonLogFormatter(): LogFormatter {
       channel,
       data: redacted,
     });
-  };
+  });
 }
 
 // Creates a bound logging context with a channel and optional base fields. Pass the context to
 // logWith / logErrorWith / etc. to have the channel and fields merged into every entry.
 export function createLogContext(channel: string | null, fields: Readonly<Record<string, unknown>> = {}): LogContext {
-  return { channel, fields };
+  return initializeLogEntity({ channel, fields });
 }
 
 // Creates a named tracing span. The returned LogSpan is a plain value — it is not active until
@@ -222,7 +226,7 @@ export function createLogSpan(
   fields: Readonly<Record<string, unknown>> = {},
   channel: string | null = null,
 ): LogSpan {
-  return { name, fields, channel };
+  return initializeLogEntity({ name, fields, channel });
 }
 
 // Creates a sink that captures the last `capacity` entries in a ring buffer. Use
@@ -238,7 +242,7 @@ export function createMemoryLogSink(capacity: number): MemoryLogSink {
       state.head = (state.head + 1) % capacity;
     }
   };
-  const handle: MemoryLogSink = { sink };
+  const handle: MemoryLogSink = initializeLogEntity({ sink });
   _memorySinkStates.set(handle, state);
   return handle;
 }
@@ -265,25 +269,25 @@ export function createRateLimitedLogSink(
     counts.set(key, current + 1);
     target(entry);
   };
-  return { sink };
+  return initializeLogEntity({ sink });
 }
 
 // Creates a sink that forwards approximately 1-in-N entries (probability = 1 / rate when rate > 1).
-export function createSampledLogSink(target: LogSink, rate: number): LogSink {
-  if (rate <= 1) return target;
+export function createSampledLogSink(target: LogSink, rate: number): LogSink & Entity {
+  if (rate <= 1) return initializeLogEntity((entry: Readonly<LogEntry>): void => target(entry));
   let counter = 0;
-  return (entry: Readonly<LogEntry>): void => {
+  return initializeLogEntity((entry: Readonly<LogEntry>): void => {
     counter = (counter + 1) % rate;
     if (counter === 0) target(entry);
-  };
+  });
 }
 
 // Creates a formatter that produces a human-readable `[channel] message` line. When
 // `indentGroups` is true the formatter indents the message by the current group depth.
 export function createTextLogFormatter(
   options: { indentGroups?: boolean; levelPrefix?: boolean; timestamp?: boolean } = {},
-): LogFormatter {
-  return (entry: Readonly<LogEntry>): string => {
+): LogFormatter & Entity {
+  return initializeLogEntity((entry: Readonly<LogEntry>): string => {
     const { level, channel, data } = entry;
     const parts: string[] = [];
     if (options.timestamp) parts.push(`t=${_timestamp().toFixed(2)}`);
@@ -293,7 +297,7 @@ export function createTextLogFormatter(
     if (typeof data === 'string') parts.push(data);
     else parts.push(JSON.stringify(data));
     return parts.join(' ');
-  };
+  });
 }
 
 // Makes the sink terminal and unregisters it synchronously, then awaits its delivery boundary before
@@ -330,10 +334,10 @@ export function disposeLogSink(handle: BufferedLogSink): void {
 // are emitted synchronously in the fan-out path.
 export function enableLogSignals(): LogSignals {
   if (_logSignals !== null) return _logSignals;
-  _logSignals = {
+  _logSignals = initializeLogEntity({
     onLogEntry: createSignal<(entry: Readonly<LogEntry>) => void>(),
     onLogError: createSignal<(entry: Readonly<LogEntry>) => void>(),
-  };
+  });
   return _logSignals;
 }
 
@@ -790,6 +794,12 @@ function _passesLevelGate(level: LogLevel, channel: string | null): boolean {
 
 function _timestamp(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
+function initializeLogEntity<Type extends object>(value: Type): Type & Entity {
+  const entity = value as Type & Entity;
+  entity[EntityRuntimeKey] = undefined;
+  return entity;
 }
 
 const _defaultJsonFormatter: LogFormatter = (entry: Readonly<LogEntry>): string => {

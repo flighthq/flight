@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { ModifierDefinition } from './ModifierDefinition';
 import type { ModifierKind } from './ModifierKind';
 
@@ -6,6 +7,6 @@ import type { ModifierKind } from './ModifierKind';
 // `registerBuiltInModifiers` and their own vendor-prefixed kinds via `registerModifier`, then feed
 // it to the composition contract. Unused modifier kinds — and this whole registry — tree-shake out
 // for anyone who does not import them, so an assembled variant never costs more than its parts.
-export interface ModifierRegistry {
+export interface ModifierRegistry extends Entity {
   definitions: Map<ModifierKind, ModifierDefinition>;
 }
