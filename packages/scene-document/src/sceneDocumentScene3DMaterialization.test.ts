@@ -30,6 +30,7 @@ import {
   AmbientLightKind,
   DirectionalLightKind,
   DisplayObjectKind,
+  EntityRuntimeKey,
   FlightDocumentRefusalReason,
   Node3DKind,
 } from '@flighthq/types/contract';
@@ -48,6 +49,7 @@ describe('createFlightDocumentFromScene3D', () => {
   it('creates a model from an empty Scene3D', () => {
     const scene = createScene3D();
     const document = createFlightDocumentFromScene3D(scene, [], [], createTestSchemas());
+    expect(EntityRuntimeKey in document).toBe(true);
     expect(document.kind).toBe('Scene3D');
     expect(document.scene.children).toHaveLength(0);
     expect(document.cameras).toHaveLength(0);

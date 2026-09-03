@@ -1,7 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createRegistryCatalog } from '@flighthq/registry-catalog/contract';
 import type { RegistryCatalogEntry, RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RequirementFacet } from '@flighthq/types/contract';
 
 import { createRegistryCodegenPlan } from './registryCodegen';
 
@@ -32,7 +32,9 @@ describe('createRegistryCodegenPlan', () => {
       ],
     });
 
-    expect(createRegistryCodegenPlan(catalog, requirements, 'webgl')).toEqual({
+    const plan = createRegistryCodegenPlan(catalog, requirements, 'webgl');
+    expect(EntityRuntimeKey in plan).toBe(true);
+    expect(plan).toMatchObject({
       backend: 'webgl',
       entries: [shapeRenderer, shapeCommands],
       unresolved: [{ facet: RequirementFacet.SceneNodeKind, key: 'Sprite' }],
@@ -47,7 +49,7 @@ describe('createRegistryCodegenPlan', () => {
       requirements: [requirement, requirement],
     });
 
-    expect(createRegistryCodegenPlan(catalog, requirements, 'webgl')).toEqual({
+    expect(createRegistryCodegenPlan(catalog, requirements, 'webgl')).toMatchObject({
       backend: 'webgl',
       entries: [shapeRenderer],
       unresolved: [],
@@ -57,7 +59,7 @@ describe('createRegistryCodegenPlan', () => {
   it('returns an empty plan for empty catalog contents and requirements', () => {
     expect(
       createRegistryCodegenPlan(createRegistryCatalog(), createEntity({ covers: [], requirements: [] }), 'webgl'),
-    ).toEqual({
+    ).toMatchObject({
       backend: 'webgl',
       entries: [],
       unresolved: [],

@@ -18,6 +18,7 @@ import type {
   FlightDocumentScene2D,
   FlightDocumentScene2DMaterialization,
   FlightDocumentSchemaRegistry,
+  Entity,
   Node2D,
   Node2DRuntime,
   NodeAny,
@@ -49,13 +50,13 @@ export function createFlightDocumentFromScene2D(
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   interactiveStateBindings: readonly Readonly<FlightDocumentInteractiveStateBinding<Node2D>>[] = [],
   layoutBindings: readonly Readonly<FlightDocumentLayoutBinding<Node2D>>[] = [],
-): FlightDocumentScene2D {
+): FlightDocumentScene2D & Entity {
   const bindingLookup = createInteractiveStateBindingLookup(interactiveStateBindings);
   const usedBindings = new Set<Readonly<NodeAny>>();
   const writtenNodes = new Map<Readonly<NodeAny>, FlightDocumentNode>();
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
-  return {
+  return createEntity({
     backgroundColor: source.color,
     kind: 'Scene2D',
     layouts: writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes),
@@ -64,7 +65,7 @@ export function createFlightDocumentFromScene2D(
     // section cannot be recovered by writing one back. Callers that round-trip an authored document
     // keep its tokens from the parsed entry rather than from the scene.
     tokens: [],
-  };
+  });
 }
 
 export function createFlightDocumentScene2DMaterialization(
