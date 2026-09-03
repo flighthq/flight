@@ -2,7 +2,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
-import { getTextLayoutResult } from '@flighthq/textlayout/contract';
+import { createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import { RichTextKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
@@ -106,8 +106,8 @@ describe('drawDomRichText', () => {
     const node = createRichText();
     node.data.text = 'BoldGreen';
     node.data.textFormatRanges = [
-      { start: 0, end: 4, format: { bold: true } },
-      { start: 4, end: 9, format: { color: 0x00ff00ff } },
+      createTextFormatRange({ bold: true }, 0, 4),
+      createTextFormatRange({ color: 0x00ff00ff }, 4, 9),
     ];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
@@ -122,7 +122,7 @@ describe('drawDomRichText', () => {
     const state = makeState();
     const node = createRichText();
     node.data.text = 'alpha';
-    node.data.textFormatRanges = [{ start: 0, end: 5, format: { color: 0x00ff0080 } }];
+    node.data.textFormatRanges = [createTextFormatRange({ color: 0x00ff0080 }, 0, 5)];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomRichText(state, renderProxy))!;
@@ -135,7 +135,7 @@ describe('drawDomRichText', () => {
     const node = createRichText({
       data: {
         text: 'underlined',
-        textFormatRanges: [{ end: 10, format: { underline: true }, start: 0 }],
+        textFormatRanges: [createTextFormatRange({ underline: true }, 0, 10)],
       },
     });
 

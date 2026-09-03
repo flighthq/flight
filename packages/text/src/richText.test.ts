@@ -6,7 +6,7 @@ import {
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
+import { createTextFormatRange, setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 import type { Node, RichText, RichTextRuntime, TextFormatRange } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RichTextKind } from '@flighthq/types/contract';
 
@@ -196,7 +196,7 @@ describe('createRichText', () => {
         multiline: false,
         selectable: false,
         textColor: 0x0000ffff,
-        textFormatRanges: [{ start: 0, end: 2, format: { bold: true } }],
+        textFormatRanges: [createTextFormatRange({ bold: true }, 0, 2)],
         wordWrap: true,
       },
     };
@@ -440,14 +440,14 @@ describe('getRichTextFormatRangeAt', () => {
 describe('getRichTextFormatRangeByIndex', () => {
   it('returns false for an out-of-bounds index', () => {
     const richText = createRichText();
-    const out = { start: 0, end: 0, format: {} };
+    const out = createTextFormatRange({}, 0, 0);
     expect(getRichTextFormatRangeByIndex(out, richText, 0)).toBe(false);
   });
 
   it('returns true and fills out with range data for a valid index', () => {
     const richText = createRichText({ data: { text: 'hello' } });
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
-    const out = { start: 0, end: 0, format: {} };
+    const out = createTextFormatRange({}, 0, 0);
     expect(getRichTextFormatRangeByIndex(out, richText, 0)).toBe(true);
     expect(out.start).toBe(1);
     expect(out.end).toBe(4);
@@ -473,7 +473,7 @@ describe('getRichTextFormatRangesIn', () => {
   it('clears out and leaves it empty when no ranges overlap the span', () => {
     const richText = createRichText({ data: { text: 'hello world' } });
     setRichTextFormatRange(richText, { bold: true }, 6, 11);
-    const out: TextFormatRange[] = [{ start: 99, end: 99, format: {} }];
+    const out: TextFormatRange[] = [createTextFormatRange({}, 99, 99)];
     getRichTextFormatRangesIn(out, richText, 0, 5);
     expect(out).toHaveLength(0);
   });
@@ -944,17 +944,17 @@ describe('setRichTextContent', () => {
     const revision = getNodeLocalContentRevision(richText);
     setRichTextContent(richText, {
       [EntityRuntimeKey]: undefined,
-      formatRanges: [{ start: 0, end: 4, format: { bold: true } }],
+      formatRanges: [createTextFormatRange({ bold: true }, 0, 4)],
       text: 'bold',
     });
     expect(richText.data.text).toBe('bold');
-    expect(richText.data.textFormatRanges).toEqual([{ start: 0, end: 4, format: { bold: true } }]);
+    expect(richText.data.textFormatRanges).toMatchObject([{ start: 0, end: 4, format: { bold: true } }]);
     expect(getNodeLocalContentRevision(richText)).toBe(revision + 1);
   });
 
   it('copies the format ranges so the field does not alias the caller array', () => {
     const richText = createRichText();
-    const ranges: TextFormatRange[] = [{ start: 0, end: 2, format: { italic: true } }];
+    const ranges: TextFormatRange[] = [createTextFormatRange({ italic: true }, 0, 2)];
     setRichTextContent(richText, { [EntityRuntimeKey]: undefined, formatRanges: ranges, text: 'hi' });
     expect(richText.data.textFormatRanges).not.toBe(ranges);
     expect(richText.data.textFormatRanges[0]).not.toBe(ranges[0]);
@@ -987,7 +987,7 @@ describe('setRichTextFormatRange', () => {
   it('adds a serialized format range', () => {
     const richText = createRichText({ data: { text: 'hello' } });
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
-    expect(richText.data.textFormatRanges).toEqual([{ start: 1, end: 4, format: { italic: true } }]);
+    expect(richText.data.textFormatRanges).toMatchObject([{ start: 1, end: 4, format: { italic: true } }]);
   });
 });
 
