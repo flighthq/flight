@@ -1,8 +1,7 @@
-import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
 import {
   createWebCursorBackend,
   createWebPageNotificationCapabilities,
-  enableHostWebGlyphRasterizer,
+  webGlyphRasterizerBackend,
   webHost,
 } from '@flighthq/host-web';
 import type { WebPageNotificationApi } from '@flighthq/types/contract';
@@ -13,7 +12,6 @@ import type { HostProbeInstallResult, HostProbeResult } from '#host-probe/contra
 import { createHostProbeNotificationProfileResult } from '#host-probe/expectations';
 
 export async function installWebHostProbe(before: HostProbeBackendSnapshot): Promise<HostProbeInstallResult> {
-  enableHostWebGlyphRasterizer();
   const notification = createWebPageNotificationCapabilities({
     Notification: globalThis.Notification as unknown as WebPageNotificationApi['Notification'],
   });
@@ -34,7 +32,10 @@ export async function installWebHostProbe(before: HostProbeBackendSnapshot): Pro
       'received',
     ]),
   );
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends({ ...webHost, notification }));
+  const changedCapabilities = diffHostProbeBackends(
+    before,
+    captureHostProbeBackends({ ...webHost, notification }, { glyphRasterizer: webGlyphRasterizerBackend }),
+  );
   if (results[0]?.status === 'pass') changedCapabilities.push('cursor');
   return { changedCapabilities, results };
 }
@@ -67,7 +68,7 @@ async function probeWebCursor(): Promise<HostProbeResult> {
 }
 
 async function probeWebGlyphRasterizer(): Promise<HostProbeResult> {
-  const rasterized = getGlyphRasterizerBackend().rasterize(65, {
+  const rasterized = webGlyphRasterizerBackend.rasterize(65, {
     fontFamily: 'sans-serif',
     fontSize: 18,
   });

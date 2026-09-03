@@ -1,5 +1,4 @@
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
-import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
 import type { Host } from '@flighthq/types/contract';
 
 import type { HostProbeCapability } from './expectations';
@@ -33,6 +32,7 @@ export function captureHostProbeBackends(
       | 'window'
     >
   > = {},
+  extras?: Readonly<{ glyphRasterizer?: unknown }>,
 ): HostProbeBackendSnapshot {
   return {
     accessibility: host.accessibility?.provider ?? null,
@@ -44,7 +44,7 @@ export function captureHostProbeBackends(
     dialog: host.dialog ?? null,
     filesystem: host.storage?.fileSystem ?? null,
     geolocation: getGeolocationBackend(),
-    'glyph-rasterizer': getGlyphRasterizerBackend(),
+    'glyph-rasterizer': extras?.glyphRasterizer ?? null,
     haptics: host.input?.haptics ?? null,
     ipc: firstProvidedSlot(host.ipc),
     loop: host.app?.loop ?? null,

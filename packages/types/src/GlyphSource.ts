@@ -91,8 +91,8 @@ export interface GlyphRasterizeOptions {
 }
 
 // The swappable glyph-rasterization seam. The web backend renders via an offscreen canvas; a native
-// host supplies a FreeType-style backend via `setGlyphRasterizerBackend`. `rasterize` returns null
-// for an unrenderable codepoint (or when no canvas is available), never throwing.
+// host supplies a FreeType-style backend. `rasterize` returns null for an unrenderable codepoint
+// (or when no canvas is available), never throwing.
 export interface GlyphRasterizerBackend {
   rasterize(codepoint: number, options: Readonly<GlyphRasterizeOptions>): GlyphRasterizedBitmap | null;
   // Font-level line metrics, when the backend can measure them. Optional so existing backends stay
@@ -124,10 +124,7 @@ export interface GlyphAtlasOptions {
   maxBytes?: number;
   maxGlyphs?: number;
   padding?: number;
-  // Overrides the process-wide rasterizer for this atlas. This is the composition lane for embedded
-  // or parsed fonts: each atlas can bind its own outline-backed rasterizer without changing how any
-  // other atlas resolves glyphs.
-  rasterizerBackend?: GlyphRasterizerBackend;
+  rasterizerBackend: GlyphRasterizerBackend;
   width: number;
 }
 

@@ -9,16 +9,9 @@ import type {
   GlyphRasterizerBackend,
 } from '@flighthq/types/contract';
 
-import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
-
-// Allocates a dynamic glyph atlas: an empty `width x height` atlas bitmap, an empty codepoint→entry
-// cache, and a fresh incremental shelf packer. Glyphs are added lazily by `getGlyphAtlasEntry`;
-// nothing is rasterized here. `padding` defaults to 1px of gutter between glyphs and from the edges;
-// `maxGlyphs` (default 0 = unbounded, only the atlas area caps it) bounds the live cache for LRU
-// eviction. Line metrics are derived from `fontSize` for now (see `deriveGlyphMetricsFromFontSize`).
 export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtlas {
   const padding = options.padding ?? 1;
-  const rasterizerBackend = options.rasterizerBackend ?? getGlyphRasterizerBackend();
+  const rasterizerBackend = options.rasterizerBackend;
   // Built before the runtime so the metrics probe sees the same font the glyphs will rasterize with.
   const rasterizeOptions: GlyphRasterizeOptions = {
     fontFamily: options.fontFamily,

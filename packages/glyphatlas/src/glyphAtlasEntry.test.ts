@@ -4,24 +4,23 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
 import { getGlyphAtlasEntry, setGlyphAtlasEntryGuard } from './glyphAtlasEntry';
-import { createStubGlyphRasterizerBackend, setGlyphRasterizerBackend } from './glyphRasterizerBackend';
+import { createStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 describe('getGlyphAtlasEntry', () => {
-  afterEach(() => setGlyphRasterizerBackend(null));
-
   it('produces a non-blank glyph in a headless env with the stub backend (issue #8)', () => {
-    // The web backend returns null in jsdom (no canvas) and renders blank in headless Chromium when
-    // the FontFace has not loaded. The stub backend is font- and canvas-independent, so this is the
-    // deterministic headless render path.
-    setGlyphRasterizerBackend(createStubGlyphRasterizerBackend());
-    const atlas = createGlyphAtlas({ fontFamily: 'unavailable', fontSize: 32, height: 256, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'unavailable',
+      fontSize: 32,
+      height: 256,
+      rasterizerBackend: createStubGlyphRasterizerBackend(),
+      width: 256,
+    });
 
     const entry = getGlyphAtlasEntry(atlas, 0x41)!;
     expect(entry).not.toBeNull();
     expect(entry.width).toBeGreaterThan(0);
     expect(entry.height).toBeGreaterThan(0);
 
-    // A pixel inside the glyph rect is opaque white — the atlas bitmap is provably not blank.
     const bitmap = getGlyphAtlasBitmap(atlas);
     const inside = getBitmapPixel(bitmap, entry.x + 1, entry.y + 1);
     expect(inside & 0xff).toBe(0xff);
@@ -29,8 +28,13 @@ describe('getGlyphAtlasEntry', () => {
 
   it('rasterizes a missing glyph once and caches it', () => {
     const { backend, calls } = createMockRasterizerBackend();
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     const first = getGlyphAtlasEntry(atlas, 65);
     const second = getGlyphAtlasEntry(atlas, 65);
@@ -42,8 +46,13 @@ describe('getGlyphAtlasEntry', () => {
 
   it('passes the rasterized size, advance, and bearing through to the entry', () => {
     const { backend } = createMockRasterizerBackend((cp) => ({ height: 10, width: cp === 65 ? 12 : 6 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     const entry = getGlyphAtlasEntry(atlas, 65)!;
 
@@ -57,8 +66,13 @@ describe('getGlyphAtlasEntry', () => {
 
   it('places different glyphs in non-overlapping, in-bounds rects', () => {
     const { backend } = createMockRasterizerBackend((cp) => ({ height: 8 + (cp % 5), width: 8 + (cp % 7) }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      rasterizerBackend: backend,
+      width: 256,
+    });
     const bitmap = getGlyphAtlasBitmap(atlas);
 
     const entries: GlyphEntry[] = [];
@@ -75,15 +89,19 @@ describe('getGlyphAtlasEntry', () => {
 
   it('blits the glyph pixels into the atlas bitmap at the entry rect', () => {
     const { backend } = createMockRasterizerBackend();
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      rasterizerBackend: backend,
+      width: 256,
+    });
     const bitmap = getGlyphAtlasBitmap(atlas);
 
     const entry = getGlyphAtlasEntry(atlas, 0x41)!;
     const corner = getBitmapPixel(bitmap, entry.x, entry.y);
     const inside = getBitmapPixel(bitmap, entry.x + 2, entry.y + 2);
 
-    // The mock fills every glyph pixel with (R = codepoint & 0xff, G = 0x80, B = 0x40, A = 0xff).
     expect((corner >>> 24) & 0xff).toBe(0x41);
     expect((corner >>> 16) & 0xff).toBe(0x80);
     expect((corner >>> 8) & 0xff).toBe(0x40);
@@ -93,8 +111,14 @@ describe('getGlyphAtlasEntry', () => {
 
   it('evicts the least-recently-used glyph past the glyph budget and re-rasterizes it on demand', () => {
     const { backend, calls } = createMockRasterizerBackend();
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxGlyphs: 2, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      maxGlyphs: 2,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     getGlyphAtlasEntry(atlas, 66);
@@ -109,14 +133,16 @@ describe('getGlyphAtlasEntry', () => {
     expect(calls).toEqual([65, 66, 67, 66]);
   });
 
-  // Recency is maintained by re-inserting the codepoint, and a Map keeps an existing key in place on
-  // set -- so the delete before it is what actually promotes the entry. Without it recency degenerates
-  // to insertion order and eviction picks the wrong glyph. Three live entries make the order strict
-  // rather than a coin flip between two.
   it('evicts strictly oldest-first after interleaved touches', () => {
     const { backend, calls } = createMockRasterizerBackend();
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxGlyphs: 3, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      maxGlyphs: 3,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     getGlyphAtlasEntry(atlas, 66);
@@ -136,11 +162,16 @@ describe('getGlyphAtlasEntry', () => {
     expect(calls).toEqual([65, 66, 67, 68, 67]);
   });
 
-  // A re-inserted glyph must land at the most-recently-used end, not inherit its old position.
   it('places a re-rasterized glyph at the most-recently-used end', () => {
     const { backend, calls } = createMockRasterizerBackend();
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxGlyphs: 2, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      maxGlyphs: 2,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     getGlyphAtlasEntry(atlas, 66);
@@ -155,12 +186,15 @@ describe('getGlyphAtlasEntry', () => {
 
   it('keeps rects non-overlapping after eviction and repack', () => {
     const { backend } = createMockRasterizerBackend((cp) => ({ height: 8 + (cp % 6), width: 8 + (cp % 4) }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxGlyphs: 4, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      maxGlyphs: 4,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
-    // Add eight glyphs through a four-glyph budget: each of the last four insertions evicts an older
-    // glyph and repacks. The four most-recent codepoints stay cached, so re-requesting them are pure
-    // hits that return their stable post-repack positions.
     for (let cp = 65; cp < 73; cp++) getGlyphAtlasEntry(atlas, cp);
     const surviving: GlyphEntry[] = [];
     for (let cp = 69; cp < 73; cp++) surviving.push(getGlyphAtlasEntry(atlas, cp)!);
@@ -171,16 +205,26 @@ describe('getGlyphAtlasEntry', () => {
 
   it('returns null for a single glyph larger than the whole atlas', () => {
     const { backend } = createMockRasterizerBackend(() => ({ height: 200, width: 200 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 64, width: 64 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: backend,
+      width: 64,
+    });
 
     expect(getGlyphAtlasEntry(atlas, 65)).toBeNull();
   });
 
   it('returns null when the rasterizer produces nothing', () => {
     const backend: GlyphRasterizerBackend = { rasterize: () => null };
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     expect(getGlyphAtlasEntry(atlas, 65)).toBeNull();
   });
@@ -241,18 +285,18 @@ function expectNoOverlap(entries: readonly Readonly<GlyphEntry>[]): void {
 }
 
 describe('repack layout version', () => {
-  afterEach(() => setGlyphRasterizerBackend(null));
-
-  // The repack is the moment a rect stops meaning what it did: survivors move and the dropped glyphs'
-  // space is handed on. Nothing else about the atlas reports it — the entry objects are mutated in
-  // place, and the atlas image is the same object it always was.
   it('bumps once per repack the packer performs', () => {
     const { backend } = createMockRasterizerBackend(() => ({ height: 8, width: 8 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 8, height: 32, padding: 1, width: 32 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 8,
+      height: 32,
+      padding: 1,
+      rasterizerBackend: backend,
+      width: 32,
+    });
 
     for (let cp = 65; cp < 74; cp++) getGlyphAtlasEntry(atlas, cp);
-    // Nine 8x8 glyphs fill a 32x32 atlas exactly, so nothing has had to move yet.
     expect(atlas.runtime.layoutVersion).toBe(0);
 
     getGlyphAtlasEntry(atlas, 74);
@@ -261,13 +305,16 @@ describe('repack layout version', () => {
     expect(atlas.runtime.layoutVersion).toBe(2);
   });
 
-  // Eviction alone leaves the freed pixels untouched — shelf cursors only advance — so a rect handed
-  // out before it is still correct to draw. Bumping here would make every budgeted atlas look like it
-  // relocates constantly, and consumers would re-bake for nothing.
   it('does not bump for an eviction that no repack follows', () => {
     const { backend } = createMockRasterizerBackend(() => ({ height: 8, width: 8 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 8, height: 256, maxGlyphs: 2, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 8,
+      height: 256,
+      maxGlyphs: 2,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     getGlyphAtlasEntry(atlas, 66);
@@ -277,17 +324,18 @@ describe('repack layout version', () => {
     expect(atlas.runtime.layoutVersion).toBe(0);
   });
 
-  // The version must survive a repack that happens to put a survivor back where it was: the atlas
-  // cannot know which consumer baked which rect, so "did anything move" is not the question it answers.
   it('bumps even when a survivor lands back on its own coordinates', () => {
     const { backend } = createMockRasterizerBackend(() => ({ height: 8, width: 8 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 8, height: 32, padding: 1, width: 32 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 8,
+      height: 32,
+      padding: 1,
+      rasterizerBackend: backend,
+      width: 32,
+    });
 
     for (let cp = 65; cp < 74; cp++) getGlyphAtlasEntry(atlas, cp);
-    // Touch every glyph but the last so the eviction takes the HIGHEST codepoint. The repack re-places
-    // survivors by descending height then ascending codepoint, so dropping the last one leaves the rest
-    // in the slots they already held.
     for (let cp = 65; cp < 73; cp++) getGlyphAtlasEntry(atlas, cp);
     const survivor = getGlyphAtlasEntry(atlas, 65)!;
     const x = survivor.x;
@@ -302,15 +350,16 @@ describe('repack layout version', () => {
 });
 
 describe('retained-byte and area budgets', () => {
-  afterEach(() => setGlyphRasterizerBackend(null));
-
-  // A glyph count cannot express memory: the atlas retains each source bitmap to re-blit on repack, so
-  // a few large glyphs cost far more than many small ones. These budgets bound what is retained.
   it('evicts to stay within the retained-byte budget', () => {
     const { backend, calls } = createMockRasterizerBackend(() => ({ height: 10, width: 10 }));
-    setGlyphRasterizerBackend(backend);
-    // 10x10 RGBA = 400 bytes per glyph; a 900-byte budget holds two.
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxBytes: 900, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      maxBytes: 900,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     getGlyphAtlasEntry(atlas, 66);
@@ -318,15 +367,20 @@ describe('retained-byte and area budgets', () => {
 
     expect(atlas.runtime.entries.size).toBe(2);
     expect(atlas.runtime.retainedBytes).toBeLessThanOrEqual(900);
-    // 65 was least recently used, so it is the one that went.
     getGlyphAtlasEntry(atlas, 65);
     expect(calls).toEqual([65, 66, 67, 65]);
   });
 
   it('evicts to stay within the occupied-area budget', () => {
     const { backend } = createMockRasterizerBackend(() => ({ height: 10, width: 10 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxArea: 250, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      maxArea: 250,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     getGlyphAtlasEntry(atlas, 66);
@@ -338,21 +392,29 @@ describe('retained-byte and area budgets', () => {
 
   it('leaves both budgets unbounded when they are not set', () => {
     const { backend } = createMockRasterizerBackend(() => ({ height: 10, width: 10 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     for (let cp = 65; cp < 85; cp++) getGlyphAtlasEntry(atlas, cp);
 
     expect(atlas.runtime.entries.size).toBe(20);
   });
 
-  // The running totals are maintained at every mutation rather than recomputed, so the thing that can
-  // go wrong is drift: a path that drops a glyph without crediting its cost back. This checks the
-  // totals against the cache they describe after inserts AND evictions have both run.
   it('keeps the running totals equal to the live cache after eviction', () => {
     const { backend } = createMockRasterizerBackend((cp) => ({ height: 6 + (cp % 5), width: 6 + (cp % 3) }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, maxBytes: 2000, width: 128 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 128,
+      maxBytes: 2000,
+      rasterizerBackend: backend,
+      width: 128,
+    });
 
     for (let cp = 65; cp < 80; cp++) getGlyphAtlasEntry(atlas, cp);
 
@@ -368,8 +430,14 @@ describe('retained-byte and area budgets', () => {
 
   it('admits a single glyph larger than the whole budget rather than evicting forever', () => {
     const { backend } = createMockRasterizerBackend(() => ({ height: 20, width: 20 }));
-    setGlyphRasterizerBackend(backend);
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxBytes: 100, width: 256 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 256,
+      maxBytes: 100,
+      rasterizerBackend: backend,
+      width: 256,
+    });
 
     expect(getGlyphAtlasEntry(atlas, 65)).not.toBeNull();
     expect(atlas.runtime.entries.size).toBe(1);
@@ -379,17 +447,22 @@ describe('retained-byte and area budgets', () => {
 describe('setGlyphAtlasEntryGuard', () => {
   afterEach(() => {
     setGlyphAtlasEntryGuard(null);
-    setGlyphRasterizerBackend(null);
   });
 
-  // The seam keeps the messages and the @flighthq/log dependency in the separately-importable guard
-  // module; this hot path only calls whatever is installed.
   it('reports the reason and codepoint for each blocked lookup', () => {
     const seen: Array<[string, number]> = [];
     setGlyphAtlasEntryGuard((reason, codepoint) => seen.push([reason, codepoint]));
-    setGlyphRasterizerBackend({ rasterize: () => null });
 
-    getGlyphAtlasEntry(createGlyphAtlas({ fontFamily: 'm', fontSize: 16, height: 64, width: 64 }), 0x41);
+    getGlyphAtlasEntry(
+      createGlyphAtlas({
+        fontFamily: 'm',
+        fontSize: 16,
+        height: 64,
+        rasterizerBackend: { rasterize: () => null },
+        width: 64,
+      }),
+      0x41,
+    );
 
     expect(seen).toEqual([['rasterizer-returned-null', 0x41]]);
   });
@@ -398,9 +471,11 @@ describe('setGlyphAtlasEntryGuard', () => {
     const seen: string[] = [];
     setGlyphAtlasEntryGuard((reason) => seen.push(reason));
     const { backend } = createMockRasterizerBackend();
-    setGlyphRasterizerBackend(backend);
 
-    getGlyphAtlasEntry(createGlyphAtlas({ fontFamily: 'm', fontSize: 16, height: 64, width: 64 }), 65);
+    getGlyphAtlasEntry(
+      createGlyphAtlas({ fontFamily: 'm', fontSize: 16, height: 64, rasterizerBackend: backend, width: 64 }),
+      65,
+    );
 
     expect(seen).toEqual([]);
   });
@@ -408,8 +483,14 @@ describe('setGlyphAtlasEntryGuard', () => {
   it('stops reporting once cleared with null', () => {
     let calls = 0;
     setGlyphAtlasEntryGuard(() => (calls += 1));
-    setGlyphRasterizerBackend({ rasterize: () => null });
-    const atlas = createGlyphAtlas({ fontFamily: 'm', fontSize: 16, height: 64, width: 64 });
+    const nullBackend: GlyphRasterizerBackend = { rasterize: () => null };
+    const atlas = createGlyphAtlas({
+      fontFamily: 'm',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: nullBackend,
+      width: 64,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     setGlyphAtlasEntryGuard(null);

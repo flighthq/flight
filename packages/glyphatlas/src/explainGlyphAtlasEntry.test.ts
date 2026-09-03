@@ -1,10 +1,9 @@
 import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { explainGlyphAtlasEntry } from './explainGlyphAtlasEntry';
 import { createGlyphAtlas } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
-import { setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 function backendProducing(width: number, height: number): GlyphRasterizerBackend {
   return {
@@ -28,11 +27,14 @@ function red4pxBackend(): GlyphRasterizerBackend {
 }
 
 describe('explainGlyphAtlasEntry', () => {
-  afterEach(() => setGlyphRasterizerBackend(null));
-
   it('reports ok with the measured sizes for a glyph that fits', () => {
-    setGlyphRasterizerBackend(backendProducing(8, 8));
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 64, width: 64 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: backendProducing(8, 8),
+      width: 64,
+    });
 
     const explanation = explainGlyphAtlasEntry(atlas, 65);
 
@@ -43,7 +45,6 @@ describe('explainGlyphAtlasEntry', () => {
   });
 
   it('agrees with a real entry produced by the backend pinned to another equivalent atlas', () => {
-    setGlyphRasterizerBackend(null);
     const rasterizerBackend = red4pxBackend();
     const options = {
       fontFamily: 'mock',
@@ -55,8 +56,6 @@ describe('explainGlyphAtlasEntry', () => {
     const subjectAtlas = createGlyphAtlas(options);
     const explanationAtlas = createGlyphAtlas(options);
 
-    // Exercise the subject first. A single atlas would cache the successful entry and let the
-    // explanation pass without proving which backend its uncached path resolves.
     const entry = getGlyphAtlasEntry(subjectAtlas, 65);
     expect(entry).not.toBeNull();
     expect(entry?.width).toBe(4);
@@ -75,11 +74,14 @@ describe('explainGlyphAtlasEntry', () => {
     });
   });
 
-  // The two null paths are genuinely different problems with different remedies, which is the whole
-  // reason this query exists: the sentinel cannot tell them apart.
   it('distinguishes a rasterizer that produced nothing', () => {
-    setGlyphRasterizerBackend({ rasterize: () => null });
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 64, width: 64 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: { rasterize: () => null },
+      width: 64,
+    });
 
     const explanation = explainGlyphAtlasEntry(atlas, 65);
 
@@ -88,8 +90,13 @@ describe('explainGlyphAtlasEntry', () => {
   });
 
   it('distinguishes a glyph larger than the atlas, and reports how much larger', () => {
-    setGlyphRasterizerBackend(backendProducing(200, 8));
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 64, width: 64 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: backendProducing(200, 8),
+      width: 64,
+    });
 
     const explanation = explainGlyphAtlasEntry(atlas, 65);
 
@@ -100,12 +107,17 @@ describe('explainGlyphAtlasEntry', () => {
   });
 
   it('reports a cached glyph as ok without re-measuring it', () => {
-    setGlyphRasterizerBackend(backendProducing(8, 8));
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 64, width: 64 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: backendProducing(8, 8),
+      width: 64,
+    });
     getGlyphAtlasEntry(atlas, 65);
 
     const rasterize = vi.fn(() => null);
-    setGlyphRasterizerBackend({ rasterize });
+    atlas.runtime.rasterizerBackend = { rasterize };
 
     expect(explainGlyphAtlasEntry(atlas, 65).reason).toBe('ok');
     expect(rasterize).not.toHaveBeenCalled();

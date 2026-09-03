@@ -1,6 +1,6 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas';
-import { createWebWgpuRenderSurfaceProvider, enableHostWebGlyphRasterizer } from '@flighthq/host-web';
+import { createWebWgpuRenderSurfaceProvider, webGlyphRasterizerBackend } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
@@ -17,7 +17,6 @@ import { defaultWgpuBitmapTextRenderer, renderWgpuScene2D } from '@flighthq/scen
 import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
 import { BitmapTextKind, StandardMaterialKind } from '@flighthq/types';
 
-enableHostWebGlyphRasterizer();
 const canvas = createWebWgpuRenderSurfaceProvider().createRenderSurface(320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU BitmapText size fixture requires a canvas.');
 document.body.style.margin = '0';
@@ -40,7 +39,13 @@ const state = await createWgpuRenderStateFromCanvasElement(canvas, pipeline, {
 });
 registerWgpuBitmapTextureResolver(state);
 
-const atlas = createGlyphAtlas({ fontFamily: 'sans-serif', fontSize: 42, height: 128, width: 256 });
+const atlas = createGlyphAtlas({
+  fontFamily: 'sans-serif',
+  fontSize: 42,
+  height: 128,
+  rasterizerBackend: webGlyphRasterizerBackend,
+  width: 256,
+});
 const root = createDisplayObject();
 const text = createBitmapText(createGlyphSourceFromGlyphAtlas(atlas), { letterSpacing: 2, text: 'Bitmap' });
 updateBitmapText(text);

@@ -30,7 +30,7 @@ export { webFileSystemBackend } from './webFilesystem';
 export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
 export { webGeolocationBackend } from './webGeolocation';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
-export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
+export { createWebGlyphRasterizerBackend, webGlyphRasterizerBackend } from './webGlyphRasterizer';
 export { webGraphicsHost } from './webGraphicsHost';
 export { webHapticsBackend } from './webHaptics';
 export { createWebImageBackend, webImageBackend } from './webImage';
