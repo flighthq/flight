@@ -54,14 +54,21 @@ const passState = {
   }),
 };
 
+let restoreEffectVertexWgsl: (() => void) | null = null;
+
 beforeAll(() => installWgpuMock());
 
 beforeEach(() => {
   vi.spyOn(wgpuEffectPassModule, 'clearWgpuEffectTarget').mockImplementation((() =>
     recorded.calls.push('clear')) as never);
   vi.spyOn(wgpuEffectPassModule, 'getWgpuEffectPassState').mockReturnValue(passState as never);
+  const original = Object.getOwnPropertyDescriptor(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL');
   // eslint-disable-next-line no-import-assign -- replacing a non-function export for test; works on Vite SSR namespaces
   Object.defineProperty(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL', { value: 'VERTEX\n', configurable: true });
+  restoreEffectVertexWgsl = () => {
+    // eslint-disable-next-line no-import-assign -- restoring the original descriptor captured above
+    if (original !== undefined) Object.defineProperty(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL', original);
+  };
 
   vi.spyOn(wgpuEffectBlitShaderModule, 'applyWgpuEffectBlitPass').mockImplementation(((
     _state: unknown,
@@ -106,7 +113,11 @@ beforeEach(() => {
     recorded.released.push(target)) as never);
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  restoreEffectVertexWgsl?.();
+  restoreEffectVertexWgsl = null;
+  vi.restoreAllMocks();
+});
 
 const SOURCE_WIDTH = 100;
 const SOURCE_HEIGHT = 50;
@@ -254,6 +265,13 @@ describe('defaultWgpuGradientBevelEffectRunner', () => {
     );
 
     expect(recorded.tints[0]![0]).toBe(0xffffffff);
+  });
+});
+
+describe('EFFECT_VERTEX_WGSL namespace stub', () => {
+  it('is restored after each test, so it cannot leak to other files', () => {
+    restoreEffectVertexWgsl?.();
+    expect(wgpuEffectPassModule.EFFECT_VERTEX_WGSL).toContain('struct VertexOut');
   });
 });
 

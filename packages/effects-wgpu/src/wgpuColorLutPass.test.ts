@@ -34,17 +34,28 @@ const recorded = {
   uniforms: [] as number[][],
 };
 
+let restoreEffectVertexWgsl: (() => void) | null = null;
+
 // The WebGPU flag enums are type-level only in @webgpu/types, so jsdom has no runtime values for the
 // usage and visibility bits this module ORs together.
 beforeAll(() => installWgpuMock());
 
 beforeEach(() => {
   vi.spyOn(wgpuEffectPassModule, 'getWgpuEffectPassState').mockReturnValue(passState as never);
+  const original = Object.getOwnPropertyDescriptor(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL');
   // eslint-disable-next-line no-import-assign -- replacing a non-function export for test; works on Vite SSR namespaces
   Object.defineProperty(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL', { value: 'VERTEX_WGSL\n', configurable: true });
+  restoreEffectVertexWgsl = () => {
+    // eslint-disable-next-line no-import-assign -- restoring the original descriptor captured above
+    if (original !== undefined) Object.defineProperty(wgpuEffectPassModule, 'EFFECT_VERTEX_WGSL', original);
+  };
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  restoreEffectVertexWgsl?.();
+  restoreEffectVertexWgsl = null;
+  vi.restoreAllMocks();
+});
 
 function createHarness(): {
   createTexture: ReturnType<typeof vi.fn>;
@@ -251,5 +262,12 @@ describe('applyColorLutPassToWgpu', () => {
 
     expect(recorded.shaderCode[0]).toContain('(uni.u_size - 1.0) / uni.u_size');
     expect(recorded.shaderCode[0]).toContain('0.5 / uni.u_size');
+  });
+});
+
+describe('EFFECT_VERTEX_WGSL namespace stub', () => {
+  it('is restored after each test, so it cannot leak to other files', () => {
+    restoreEffectVertexWgsl?.();
+    expect(wgpuEffectPassModule.EFFECT_VERTEX_WGSL).toContain('struct VertexOut');
   });
 });
