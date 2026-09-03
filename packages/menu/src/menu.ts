@@ -124,7 +124,7 @@ export function disposeMenuSelect(select: MenuSelect): void {
 // The module-level identity/enable state here is package state, not ambient capability resolution —
 // nothing about which provider serves a call is decided by it.
 export function enableMenuSignals(): MenuSignals {
-  _menuSignals ??= { onContextMenuClose: createSignal(), onContextMenuOpen: createSignal() };
+  _menuSignals ??= createEntity({ onContextMenuClose: createSignal(), onContextMenuOpen: createSignal() });
   return _menuSignals;
 }
 
