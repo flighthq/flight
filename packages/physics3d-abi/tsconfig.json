@@ -13,6 +13,9 @@
       "path": "../collision"
     },
     {
+      "path": "../entity"
+    },
+    {
       "path": "../physics3d"
     },
     {
