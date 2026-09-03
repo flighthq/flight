@@ -1,40 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { setGeolocationBackend } from '@flighthq/geolocation/contract';
-import type {
-  CapacitorApi,
-  CapacitorAppCapabilitiesFor,
-  CapacitorProtocolCapabilities,
-  CapacitorShareContentBackend,
-  EntityRuntimeKey,
-  HasConnectivityChange,
-  HasConnectivityStatus,
-  HasClipboardImage,
-  HasClipboardText,
-  HasDialogMessage,
-  HasDialogPrompt,
-  HasInputHaptics,
-  HasNotificationAction,
-  HasNotificationClick,
-  HasNotificationDelivery,
-  HasNotificationLifecycle,
-  HasNotificationPermission,
-  HasNotificationScheduling,
-  HasSoftKeyboardAccessoryBar,
-  HasSoftKeyboardChange,
-  HasSoftKeyboardInfo,
-  HasSoftKeyboardResizeModeWrite,
-  HasSoftKeyboardScrollAssist,
-  HasSoftKeyboardStyle,
-  HasSoftKeyboardVisibility,
-  HasStorageFileSystem,
-  HasUiStatusBarColor,
-  HasUiStatusBarInfo,
-  HasUiStatusBarOverlays,
-  HasUiStatusBarStyle,
-  HasUiStatusBarVisibility,
-  Host,
-  MobileOsProfile,
-} from '@flighthq/types/contract';
+import type { CapacitorApi, CapacitorHost, EntityRuntimeKey, MobileOsProfile } from '@flighthq/types/contract';
 
 import { createCapacitorAppCapabilities } from './capacitorApp';
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
@@ -57,38 +23,6 @@ import { createCapacitorNotificationCapabilities } from './capacitorNotification
 import { createCapacitorProtocolCapabilities } from './capacitorProtocol';
 import { createCapacitorShareContentBackend } from './capacitorShare';
 import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
-
-type CapacitorHost<Profile extends MobileOsProfile> = Host &
-  HasClipboardImage &
-  HasClipboardText &
-  HasConnectivityChange &
-  HasConnectivityStatus &
-  HasDialogMessage &
-  HasDialogPrompt &
-  HasInputHaptics &
-  HasNotificationAction &
-  HasNotificationClick &
-  HasNotificationDelivery &
-  HasNotificationLifecycle &
-  HasNotificationPermission &
-  HasNotificationScheduling &
-  HasSoftKeyboardAccessoryBar &
-  HasSoftKeyboardChange &
-  HasSoftKeyboardInfo &
-  HasSoftKeyboardResizeModeWrite &
-  HasSoftKeyboardScrollAssist &
-  HasSoftKeyboardStyle &
-  HasSoftKeyboardVisibility &
-  HasStorageFileSystem &
-  HasUiStatusBarColor &
-  HasUiStatusBarInfo &
-  HasUiStatusBarOverlays &
-  HasUiStatusBarStyle &
-  HasUiStatusBarVisibility & {
-    readonly app: CapacitorAppCapabilitiesFor<Profile>;
-    readonly protocol: CapacitorProtocolCapabilities;
-    readonly share: { readonly content: CapacitorShareContentBackend };
-  };
 
 // The explicit Capacitor host. Every populated slot below is backed by a real plugin operation; empty
 // groups make unsupported or not-yet-migrated coverage explicit.

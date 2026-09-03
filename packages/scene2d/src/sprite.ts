@@ -10,8 +10,8 @@ import type {
   RenderState,
   Sprite,
   SpriteData,
+  SpriteIdentityRendererData,
   SpriteRuntime,
-  Texture,
 } from '@flighthq/types/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
@@ -43,7 +43,7 @@ export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteDa
 
 // Creates the per-state identity stamp used by a Sprite renderer's optional dirty hook. The data is
 // attached to that state's render proxy, so separate render pipelines compare independently.
-export function createSpriteRendererData(_state: RenderState, source: Renderable): RendererData {
+export function createSpriteRendererData(_state: RenderState, source: Renderable): SpriteIdentityRendererData {
   const texture = (source as Sprite).data.texture;
   return createEntity({ textureIdentity: texture, textureVersion: texture?.version ?? -1 });
 }
@@ -86,9 +86,4 @@ function isSpriteLocalBoundsRectangleValid(source: Readonly<Node>): boolean {
 const defaultMethods: Partial<MethodsOf<SpriteRuntime> & Pick<SpriteRuntime, 'isLocalBoundsRectangleValid'>> = {
   computeLocalBoundsRectangle: computeSpriteLocalBoundsRectangle,
   isLocalBoundsRectangleValid: isSpriteLocalBoundsRectangleValid,
-};
-
-type SpriteIdentityRendererData = RendererData & {
-  textureIdentity: Texture | null;
-  textureVersion: number;
 };

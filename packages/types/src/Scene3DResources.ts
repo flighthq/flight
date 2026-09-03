@@ -61,9 +61,9 @@ export interface Scene3DResourceResolverRuntime {
 
 export const Scene3DResourceResolverRuntimeKey: unique symbol = Symbol('Scene3DResourceResolverRuntime');
 
-export type Scene3DResourceResolverWithRuntime = Scene3DResourceResolver & {
+export interface Scene3DResourceResolverWithRuntime extends Scene3DResourceResolver {
   [Scene3DResourceResolverRuntimeKey]: Scene3DResourceResolverRuntime;
-};
+}
 
 // One byte-progress tick for a source participating in asynchronous Scene3DDocument acquisition. The URL
 // identifies the main file or discovered dependency; totals are per source and may be zero when the

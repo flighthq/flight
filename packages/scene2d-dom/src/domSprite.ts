@@ -3,17 +3,17 @@ import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   DomRenderState,
   Renderable,
-  RendererData,
   RenderProxy2D,
   RenderState,
   Scene2DRenderer,
   Sprite,
+  SpriteIdentityRendererData,
 } from '@flighthq/types/contract';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
 import { resolveDomTexture } from './domTextureResolver';
 
-interface DomSpriteData extends RendererData {
+interface DomSpriteData extends SpriteIdentityRendererData {
   canvas: HTMLCanvasElement | null;
   context: CanvasRenderingContext2D | null;
   image: HTMLImageElement | null;

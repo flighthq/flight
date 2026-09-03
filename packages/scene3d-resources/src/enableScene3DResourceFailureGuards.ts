@@ -1,18 +1,20 @@
 import { explainImageResourceReferenceResolution } from '@flighthq/image/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
-import type { Scene3DResourceEvent, Scene3DResourceResolver } from '@flighthq/types/contract';
+import type { Scene3DResourceEvent, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
 // Returns whether the failure guard is installed on `resolver`.
-export function areScene3DResourceFailureGuardsEnabled(resolver: Readonly<Scene3DResourceResolver>): boolean {
+export function areScene3DResourceFailureGuardsEnabled(
+  resolver: Readonly<Scene3DResourceResolverWithRuntime>,
+): boolean {
   return _guards.has(resolver);
 }
 
 // Removes the resolver-scoped guard. Repeated calls are harmless.
-export function disableScene3DResourceFailureGuards(resolver: Scene3DResourceResolver): void {
+export function disableScene3DResourceFailureGuards(resolver: Scene3DResourceResolverWithRuntime): void {
   const guard = _guards.get(resolver);
   if (guard === undefined) return;
   const signals = enableScene3DResourceSignals(resolver);
@@ -25,7 +27,7 @@ export function disableScene3DResourceFailureGuards(resolver: Scene3DResourceRes
 // settles normally and never throws for an expected unavailable image; diagnostics remain in this
 // separately imported module so the base resolver does not carry @flighthq/log. One shared reference
 // warns once per failed attempt, even when several Texture subscribers receive the event. Idempotent.
-export function enableScene3DResourceFailureGuards(resolver: Scene3DResourceResolver): () => void {
+export function enableScene3DResourceFailureGuards(resolver: Scene3DResourceResolverWithRuntime): () => void {
   if (_guards.has(resolver)) return () => disableScene3DResourceFailureGuards(resolver);
   const warned = new WeakMap<Scene3DResourceEvent['ref'], Scene3DResourceEvent['ref']['failure']>();
   const signals = enableScene3DResourceSignals(resolver);
@@ -60,5 +62,5 @@ interface Scene3DResourceFailureGuard {
   resolved: (event: Readonly<Scene3DResourceEvent>) => void;
 }
 
-const _guards = new WeakMap<Readonly<Scene3DResourceResolver>, Scene3DResourceFailureGuard>();
+const _guards = new WeakMap<Readonly<Scene3DResourceResolverWithRuntime>, Scene3DResourceFailureGuard>();
 let _attemptId = 0;

@@ -5,7 +5,7 @@ import {
   disposeResourceLoader,
   startResourceLoad,
 } from '@flighthq/loader/contract';
-import type { Scene3DResourceResolver, Scene3DResourceResolverOptions } from '@flighthq/types/contract';
+import type { Scene3DResourceResolverOptions } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
@@ -21,7 +21,7 @@ import {
 // above stays empty so importing/creating it cannot silently pull material families into a custom lane.
 export function createBuiltInScene3DResourceResolver(
   options?: Readonly<Scene3DResourceResolverOptions>,
-): Scene3DResourceResolver {
+): Scene3DResourceResolverWithRuntime {
   const resolver = createScene3DResourceResolver(options);
   // Named one by one rather than behind a bag: this assembly's whole contract is which material
   // families it covers, so that list belongs in the source a caller reads, not inside a registrar.
@@ -33,7 +33,7 @@ export function createBuiltInScene3DResourceResolver(
 
 export function createScene3DResourceResolver(
   options?: Readonly<Scene3DResourceResolverOptions>,
-): Scene3DResourceResolver {
+): Scene3DResourceResolverWithRuntime {
   // Streaming so passes can queue after the loader has started; dedupe off since each pending texture
   // is queued once under a unique auto-assigned key, and disabling it avoids an unbounded dedupe map.
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
@@ -53,8 +53,8 @@ export function createScene3DResourceResolver(
 
 // Releases the resolver: cancels and disposes the loader, aborts every in-flight controller, and
 // clears the in-flight map. GC-managed teardown (no GPU/native resource), so dispose, not destroy.
-export function disposeScene3DResourceResolver(resolver: Scene3DResourceResolver): void {
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+export function disposeScene3DResourceResolver(resolver: Scene3DResourceResolverWithRuntime): void {
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   cancelResourceLoad(runtime.loader);
   disposeResourceLoader(runtime.loader);
   for (const entry of runtime.inFlight.values()) {

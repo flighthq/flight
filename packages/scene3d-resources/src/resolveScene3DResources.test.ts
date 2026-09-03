@@ -5,7 +5,12 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { ImageResource, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types/contract';
+import type {
+  ImageResource,
+  ImageResourceReference,
+  Scene3DResourceResolverWithRuntime,
+  Texture,
+} from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
   ImageTextureSourceKind,
@@ -74,7 +79,7 @@ function meshScene3D(...textures: Texture[]) {
   return scene;
 }
 
-async function settle(resolver: Scene3DResourceResolver): Promise<void> {
+async function settle(resolver: Scene3DResourceResolverWithRuntime): Promise<void> {
   await waitForScene3DResourceResolver(resolver);
 }
 

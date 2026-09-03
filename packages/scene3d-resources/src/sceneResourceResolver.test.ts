@@ -7,11 +7,7 @@ import {
   UnlitMaterialKind,
 } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
-import type {
-  ImageResourceReference,
-  Scene3DResourceInFlight,
-  Scene3DResourceResolverWithRuntime,
-} from '@flighthq/types/contract';
+import type { ImageResourceReference, Scene3DResourceInFlight } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
@@ -33,7 +29,7 @@ describe('createBuiltInScene3DResourceResolver', () => {
 describe('createScene3DResourceResolver', () => {
   it('creates an Entity with an empty registry and private runtime machinery', () => {
     const resolver = createScene3DResourceResolver();
-    const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+    const runtime = resolver[Scene3DResourceResolverRuntimeKey];
     expect(EntityRuntimeKey in resolver).toBe(true);
     expect(resolver.registry.listers.size).toBe(0);
     expect(typeof resolver.fetch).toBe('function');
@@ -74,7 +70,7 @@ describe('disposeScene3DResourceResolver', () => {
       promise: Promise.resolve(),
       subscribers: new Set([texture]),
     };
-    const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+    const runtime = resolver[Scene3DResourceResolverRuntimeKey];
     runtime.inFlight.set(ref, entry);
 
     disposeScene3DResourceResolver(resolver);

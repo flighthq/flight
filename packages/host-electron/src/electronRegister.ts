@@ -2,48 +2,11 @@ import { createEntity } from '@flighthq/entity/contract';
 import type {
   DesktopOsProfile,
   ElectronApi,
-  ElectronAppCapabilitiesFor,
   ElectronBackendOptions,
+  ElectronHost,
   ElectronIpcTarget,
-  ElectronProtocolCapabilities,
-  ElectronTrayCapabilitiesFor,
+  ElectronMacosHost,
   EntityRuntimeKey,
-  HasClipboardBookmark,
-  HasClipboardFormats,
-  HasClipboardImage,
-  HasClipboardText,
-  HasDialogDirectoryOpen,
-  HasDialogFileOpen,
-  HasDialogFileSave,
-  HasDialogMessage,
-  HasNotificationAction,
-  HasNotificationClick,
-  HasNotificationClose,
-  HasNotificationDelivery,
-  HasNotificationDismiss,
-  HasNotificationLifecycle,
-  HasNotificationReceived,
-  HasNotificationReply,
-  HasIpcHandle,
-  HasIpcMessage,
-  HasIpcTargetedSend,
-  HasScreenChange,
-  HasScreenQuery,
-  HasShortcutQuery,
-  HasShortcutTrigger,
-  HasUpdaterCommand,
-  HasMenuApplication,
-  HasMenuPopup,
-  HasMenuSelect,
-  HasStorageLocal,
-  HasShellBeep,
-  HasShellExternal,
-  HasShellPathOpen,
-  HasShellPathReveal,
-  HasShellTrash,
-  HasWindowAttach,
-  HasWindowOpen,
-  Host,
 } from '@flighthq/types/contract';
 
 import { createElectronAppCapabilities } from './electronApp';
@@ -71,46 +34,6 @@ import { createElectronStorageBackend } from './electronStorage';
 import { createElectronTrayCapabilities } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
-
-type ElectronHost<Profile extends DesktopOsProfile> = Host & {
-  readonly app: ElectronAppCapabilitiesFor<Profile>;
-  readonly protocol: ElectronProtocolCapabilities;
-  readonly tray: ElectronTrayCapabilitiesFor<Profile>;
-} & HasClipboardBookmark &
-  HasClipboardFormats &
-  HasClipboardImage &
-  HasClipboardText &
-  HasDialogDirectoryOpen &
-  HasDialogFileOpen &
-  HasDialogFileSave &
-  HasDialogMessage &
-  HasNotificationClick &
-  HasNotificationClose &
-  HasNotificationDelivery &
-  HasNotificationDismiss &
-  HasNotificationLifecycle &
-  HasNotificationReceived &
-  HasMenuApplication &
-  HasMenuPopup &
-  HasIpcHandle &
-  HasIpcMessage &
-  HasIpcTargetedSend<ElectronIpcTarget> &
-  HasMenuSelect &
-  HasScreenChange &
-  HasScreenQuery &
-  HasShortcutQuery &
-  HasShortcutTrigger &
-  HasStorageLocal &
-  HasUpdaterCommand &
-  HasShellBeep &
-  HasShellExternal &
-  HasShellPathOpen &
-  HasShellPathReveal &
-  HasShellTrash &
-  HasWindowAttach &
-  HasWindowOpen;
-
-type ElectronMacosHost = ElectronHost<'macos'> & HasNotificationAction & HasNotificationReply;
 
 // Builds the explicit Electron host and installs capabilities that have not yet migrated from their
 // package-local seams. Run this once in the Electron main process, passing the `electron` module plus

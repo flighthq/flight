@@ -8,6 +8,7 @@ import type {
   Node3D,
   Scene3D,
   Scene3DResourceResolver,
+  Scene3DResourceResolverWithRuntime,
   Scene3DResourceRevealOptions,
   Texture,
   TweenManager,
@@ -32,7 +33,7 @@ import { enableScene3DResourceSignals } from './sceneResourceSignals';
 // A texture shared across meshes fades every owning object; an object with several pending textures
 // fades in when the first of them resolves.
 export function revealScene3DResourcesOnResolve(
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   scene: Readonly<Scene3D>,
   tweenManager: TweenManager,
   options?: Readonly<Scene3DResourceRevealOptions>,

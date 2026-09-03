@@ -2,7 +2,7 @@ import { resetFailedImageResourceReference } from '@flighthq/image/contract';
 import type {
   ImageResourceReference,
   Scene3D,
-  Scene3DResourceResolver,
+  Scene3DResourceResolverWithRuntime,
   Texture,
   UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';
@@ -15,7 +15,7 @@ import { updateScene3DResourceStreaming } from './resolveScene3DResources';
 // when visibility selection drops an existing subscriber.
 export function retryFailedScene3DResources(
   scene: Readonly<Scene3D>,
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   options?: Readonly<UpdateScene3DResourceStreamingOptions>,
 ): number {
   const textures: Texture[] = [];
