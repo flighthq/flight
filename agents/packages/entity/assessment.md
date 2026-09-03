@@ -17,9 +17,10 @@ Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). 
    and native GL handles. Review each public function in its package context: some products should become
    Entities, while others need a more truthful operation name. `build*`, `compute*`, `parse*`, `allocate*`,
    and `compile*` are **not** approved blanket mappings from return shape to verb. Do not fake the convention
-   by casting a browser-native `WebGLProgram` or an array to Entity. `npm run api:create-entity` audits the
-   generated public barrels; `npm run api:create-entity:advisory` compares that inventory with the review
-   baseline and reports changes without failing the command or blocking CI.
+   by casting a browser-native `WebGLProgram` or an array to Entity. `npm run entity-contracts:check` audits
+   this: it reads both export lanes rather than `index.ts` alone, derives the census every run with no
+   baseline to keep in sync, and fails rather than advising. The advisory `api:create-entity` pair it
+   replaced was retired once it was enforced.
 
 ## Recommended
 
