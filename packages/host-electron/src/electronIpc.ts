@@ -1,22 +1,67 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ElectronApi, EntityWithoutRuntime, IpcMessageBackend } from '@flighthq/types/contract';
+import type {
+  ElectronApi,
+  ElectronIpcRenderer,
+  ElectronIpcTarget,
+  EntityWithoutRuntime,
+  IpcHandleBackend,
+  IpcInvokeBackend,
+  IpcMessageBackend,
+  IpcSendBackend,
+  IpcTargetedSendBackend,
+} from '@flighthq/types/contract';
 
-// The Electron main-process IPC provider. It offers exactly what ipcMain can really do from this side:
-// receive messages a renderer sent. The previous backend also declared `send` (a documented no-op) and
-// `invoke` (resolving to `undefined`), which made the seam offer two operations no host performed.
-//
-// The platform supports main→renderer send, targeted send, invoke and handle. Flight has not built them,
-// and they are NOT members of this slot: each needs a specific `webContents` target or a request/response
-// pair, so each is a distinct capability with its own provider rather than a method hung here.
+// Electron's process sides expose different capability vectors. These constructors keep the slots
+// independent so a renderer host carries send/invoke while a main host carries message/handle/targetedSend.
+
+export function createElectronIpcHandleBackend(electron: ElectronApi): IpcHandleBackend {
+  const ipcMain = electron.ipcMain;
+  return createEntity<EntityWithoutRuntime<IpcHandleBackend>>({
+    handle(channel, handler) {
+      ipcMain.handle(channel, (_event, ...args) => handler(...args));
+      let active = true;
+      return () => {
+        if (!active) return;
+        active = false;
+        ipcMain.removeHandler(channel);
+      };
+    },
+  });
+}
+
+export function createElectronIpcInvokeBackend(ipcRenderer: ElectronIpcRenderer): IpcInvokeBackend {
+  return createEntity<EntityWithoutRuntime<IpcInvokeBackend>>({
+    invoke(channel, args) {
+      return ipcRenderer.invoke(channel, ...args);
+    },
+  });
+}
+
 export function createElectronIpcMessageBackend(electron: ElectronApi): IpcMessageBackend {
   const ipcMain = electron.ipcMain;
   return createEntity<EntityWithoutRuntime<IpcMessageBackend>>({
-    // The per-subscription cleanup owns everything this call acquired — which is why the slot declares
-    // no provider-level destroy: ipcMain itself is the caller's, not this backend's, to tear down.
-    subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void {
+    subscribe(channel, listener) {
       const handler = (_event: unknown, ...args: unknown[]): void => listener(args);
       ipcMain.on(channel, handler);
       return () => ipcMain.removeListener(channel, handler);
+    },
+  });
+}
+
+export function createElectronIpcSendBackend(ipcRenderer: ElectronIpcRenderer): IpcSendBackend {
+  return createEntity<EntityWithoutRuntime<IpcSendBackend>>({
+    send(channel, args) {
+      ipcRenderer.send(channel, ...args);
+    },
+  });
+}
+
+export function createElectronIpcTargetedSendBackend<
+  Target extends ElectronIpcTarget = ElectronIpcTarget,
+>(): IpcTargetedSendBackend<Target> {
+  return createEntity<EntityWithoutRuntime<IpcTargetedSendBackend<Target>>>({
+    send(target, channel, args) {
+      target.send(channel, ...args);
     },
   });
 }

@@ -38,13 +38,12 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/entity": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Inter-process message reception over an explicit host capability",
+  "description": "Inter-process messaging over explicit operation-tight host capabilities",
   "sideEffects": false
 }
