@@ -1,5 +1,6 @@
 import { createApplicationWindow, openWindow } from '@flighthq/application/contract';
 import { connectSignal } from '@flighthq/signals/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 
 import { createTauriWindowBackend } from './tauriWindow';
@@ -101,6 +102,7 @@ describe('createTauriWindowBackend', () => {
     const { tauri } = fakeTauri();
     const backend = createTauriWindowBackend(tauri);
 
+    expect(EntityRuntimeKey in backend).toBe(true);
     expect(
       Object.keys(backend)
         .filter((operation) => operation !== 'attach')

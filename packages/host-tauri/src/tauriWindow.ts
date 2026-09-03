@@ -1,7 +1,10 @@
 import { notifyWindowClosed } from '@flighthq/application/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationWindow,
+  Entity,
+  EntityRuntimeKey,
   NativeWindowHandle,
   TauriApi,
   TauriUnlisten,
@@ -20,7 +23,7 @@ import type {
 // additional OS windows is a `WebviewWindow`-label concern left to the host and not modeled here.
 export function createTauriWindowBackend(
   tauri: TauriApi,
-): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> {
+): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> & Entity {
   const windowModule = tauri.window;
   const handles = new WeakMap<TauriWindow, ApplicationWindow>();
   const windows = new WeakMap<ApplicationWindow, TauriWindowRecord>();
@@ -89,7 +92,7 @@ export function createTauriWindowBackend(
     );
     return true;
   };
-  return {
+  return createEntity({
     attach(win, handle, ownership) {
       if (!isTauriWindow(handle)) return false;
       return attach(win, handle, ownership);
@@ -196,7 +199,10 @@ export function createTauriWindowBackend(
     setHasShadow(win, hasShadow) {
       run(win, (w) => w.setShadow(hasShadow));
     },
-  };
+  } satisfies Omit<
+    WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>,
+    typeof EntityRuntimeKey
+  >);
 }
 
 interface TauriWindowRecord {
