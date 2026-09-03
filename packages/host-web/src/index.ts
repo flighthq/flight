@@ -27,7 +27,7 @@ export {
 } from './webDialog';
 export { webDialogHost } from './webDialogHost';
 export { webFileSystemBackend } from './webFilesystem';
-export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
+export { createWebFontLoadingBackend, webFontLoadingBackend } from './webFontLoading';
 export { webGeolocationBackend } from './webGeolocation';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { createWebGlyphRasterizerBackend, webGlyphRasterizerBackend } from './webGlyphRasterizer';

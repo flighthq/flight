@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { installFontLoadingHostBackend } from '@flighthq/font/contract';
 import type { Entity, FontLoadingBackend } from '@flighthq/types/contract';
 
 export function createWebFontLoadingBackend(): FontLoadingBackend & Entity {
@@ -19,14 +18,4 @@ export function createWebFontLoadingBackend(): FontLoadingBackend & Entity {
   } satisfies FontLoadingBackend);
 }
 
-export function enableHostWebFontLoading(): void {
-  if (_enabled) return;
-  _enabled = true;
-  installFontLoadingHostBackend(createWebFontLoadingBackend());
-}
-
-export function resetHostWebFontLoadingForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;
+export const webFontLoadingBackend: FontLoadingBackend & Entity = createWebFontLoadingBackend();

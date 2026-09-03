@@ -6,7 +6,6 @@ import {
   _loadFontFaceFromUrls,
   _loadFontFacesFromName,
 } from './_fontFaceLoad';
-import { resetFontLoadingBackendForTest, setFontLoadingBackend } from './fontLoading';
 
 interface FontFaceConstruction {
   family: string;
@@ -17,6 +16,7 @@ interface FontFaceConstruction {
 let constructions: FontFaceConstruction[];
 let addMock = vi.fn<(face: FontFace) => void>();
 let loadMock = vi.fn<(shorthand: string) => Promise<FontFace[]>>();
+let backend: FontLoadingBackend;
 
 class MockFontFace {
   load = vi.fn().mockResolvedValue(undefined);
@@ -30,17 +30,15 @@ beforeEach(() => {
   addMock = vi.fn<(face: FontFace) => void>();
   loadMock = vi.fn<(shorthand: string) => Promise<FontFace[]>>().mockResolvedValue([]);
   vi.stubGlobal('FontFace', MockFontFace);
-  const backend: FontLoadingBackend = {
+  backend = {
     addFontFace: addMock,
     checkFontFace: vi.fn<(shorthand: string) => boolean>().mockReturnValue(false),
     loadFontFaces: loadMock,
     whenReady: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   };
-  setFontLoadingBackend(backend);
 });
 
 afterEach(() => {
-  resetFontLoadingBackendForTest();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -48,7 +46,7 @@ afterEach(() => {
 describe('_loadFontFaceFromBytes', () => {
   it('loads and registers a face using only the bytes inside the supplied view', async () => {
     const backing = new Uint8Array([1, 2, 3, 4, 5, 6]);
-    const face = await _loadFontFaceFromBytes('Family', backing.subarray(1, 5));
+    const face = await _loadFontFaceFromBytes(backend, 'Family', backing.subarray(1, 5));
 
     expect(face).toBe(constructions[0].instance);
     expect(new Uint8Array(constructions[0].source as ArrayBuffer)).toEqual(new Uint8Array([2, 3, 4, 5]));
@@ -59,7 +57,7 @@ describe('_loadFontFaceFromBytes', () => {
 
 describe('_loadFontFaceFromUrl', () => {
   it('loads and registers the single URL source', async () => {
-    await _loadFontFaceFromUrl('Family', 'font.woff2');
+    await _loadFontFaceFromUrl(backend, 'Family', 'font.woff2');
     expect(constructions[0].source).toBe('url(font.woff2)');
     expect(addMock).toHaveBeenCalledWith(constructions[0].instance);
   });
@@ -67,7 +65,11 @@ describe('_loadFontFaceFromUrl', () => {
 
 describe('_loadFontFaceFromUrls', () => {
   it('composes explicit, inferred, and absent format hints once for both public loader families', async () => {
-    await _loadFontFaceFromUrls('Family', [{ url: 'a.woff2', format: 'woff2' }, { url: 'b.ttf' }, { url: 'c.bin' }]);
+    await _loadFontFaceFromUrls(backend, 'Family', [
+      { url: 'a.woff2', format: 'woff2' },
+      { url: 'b.ttf' },
+      { url: 'c.bin' },
+    ]);
 
     expect(constructions[0].source).toBe("url(a.woff2) format('woff2'), url(b.ttf) format('truetype'), url(c.bin)");
   });
@@ -82,7 +84,7 @@ describe('_loadFontFaceFromUrls', () => {
       }),
     );
 
-    await expect(_loadFontFaceFromUrls('Family', [{ url: 'font.woff2' }])).rejects.toThrow('bad font');
+    await expect(_loadFontFaceFromUrls(backend, 'Family', [{ url: 'font.woff2' }])).rejects.toThrow('bad font');
     expect(addMock).not.toHaveBeenCalled();
   });
 });
@@ -92,7 +94,7 @@ describe('_loadFontFacesFromName', () => {
     const faces = [{ family: 'Family' } as unknown as FontFace];
     loadMock.mockResolvedValue(faces);
 
-    await expect(_loadFontFacesFromName("Family's Name")).resolves.toBe(faces);
+    await expect(_loadFontFacesFromName(backend, "Family's Name")).resolves.toBe(faces);
     expect(loadMock).toHaveBeenCalledWith("1em 'Family\\'s Name'");
   });
 });
