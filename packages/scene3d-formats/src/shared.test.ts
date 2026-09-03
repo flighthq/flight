@@ -46,6 +46,15 @@ describe('convertPositionsZUpToYUp', () => {
     convertPositionsZUpToYUp(values);
     expect(values).toEqual([]);
   });
+
+  it('writes through a typed array, which the old readonly-ArrayLike overlay could not express', () => {
+    // The parameter used to be ArrayLike<number> intersected with a writable index signature. That
+    // accepted ANY ArrayLike — including ones nothing can write to — while a Float32Array, which is
+    // exactly what a geometry buffer is, had no better standing than a string did.
+    const values = new Float32Array([1, 2, 3]);
+    convertPositionsZUpToYUp(values);
+    expect(Array.from(values)).toEqual([1, 3, -2]);
+  });
 });
 
 describe('convertQuaternionsZUpToYUp', () => {

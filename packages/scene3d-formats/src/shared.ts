@@ -5,6 +5,7 @@ import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   ImageResourceReference,
+  MutableNumberArray,
   SkinInfluence,
   Texture,
   VertexAttributeLayout,
@@ -40,11 +41,7 @@ export const MAX_SKIN_INFLUENCES = 4;
 // determinant is +1, so triangle winding and cross-product normals are unchanged and no reflection
 // (mirroring) is introduced. Used by every RH Z-up importer — MD2, MD5, and 3DS. stride/offset walk
 // interleaved vertex buffers.
-export function convertPositionsZUpToYUp(
-  values: ArrayLike<number> & { [i: number]: number },
-  stride = 3,
-  offset = 0,
-): void {
+export function convertPositionsZUpToYUp(values: MutableNumberArray, stride = 3, offset = 0): void {
   for (let i = offset; i + 2 < values.length; i += stride) {
     const y = values[i + 1];
     values[i + 1] = values[i + 2];
@@ -54,7 +51,7 @@ export function convertPositionsZUpToYUp(
 
 // Quaternion companion to convertPositionsZUpToYUp: applies the same -90°-about-X rotation to the
 // vector part (qx, qy, qz) → (qx, qz, -qy), leaving qw. Used for MD5 animation rotations.
-export function convertQuaternionsZUpToYUp(values: number[], stride = 4, offset = 0): void {
+export function convertQuaternionsZUpToYUp(values: MutableNumberArray, stride = 4, offset = 0): void {
   for (let i = offset; i + 3 < values.length; i += stride) {
     const qy = values[i + 1];
     values[i + 1] = values[i + 2];
