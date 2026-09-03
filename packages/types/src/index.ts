@@ -444,6 +444,7 @@ export * from './MouseWheelMode';
 export * from './MovieClip';
 export * from './MovieClipSignals';
 export * from './NativeText';
+export * from './MutableNumberArray';
 export * from './Net';
 export * from './Node';
 export * from './NodeOrderList';
