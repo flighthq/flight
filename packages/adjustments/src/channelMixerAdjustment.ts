@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ChannelMixerAdjustment } from '@flighthq/types/contract';
 
 import { createChannelMixerColorMatrix } from './colorMatrixMath';
@@ -8,7 +9,7 @@ import { createChannelMixerColorMatrix } from './colorMatrixMath';
 // `matrix` is the identity mix.
 export function createChannelMixerAdjustment(
   options: Readonly<Omit<ChannelMixerAdjustment, 'kind' | 'colorMatrix'>> = { matrix: IDENTITY_CHANNEL_MIXER },
-): ChannelMixerAdjustment {
+): NonEntityCreateResult<ChannelMixerAdjustment, 'descriptor'> {
   const matrix = options.matrix ?? IDENTITY_CHANNEL_MIXER;
   const m = (i: number): number => matrix[i] ?? IDENTITY_CHANNEL_MIXER[i];
   const colorMatrix = createChannelMixerColorMatrix([m(0), m(1), m(2)], [m(4), m(5), m(6)], [m(8), m(9), m(10)]);

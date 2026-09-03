@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { InvertAdjustment } from '@flighthq/types/contract';
 
 // Channel invert as a matrix-tier adjustment. `mix(rgb, 1 - rgb, intensity)` is affine per channel —
@@ -5,7 +6,7 @@ import type { InvertAdjustment } from '@flighthq/types/contract';
 // this is the classic invert (scale −1, bias 1).
 export function createInvertAdjustment(
   options: Readonly<Omit<InvertAdjustment, 'kind' | 'colorMatrix'>> = {},
-): InvertAdjustment {
+): NonEntityCreateResult<InvertAdjustment, 'descriptor'> {
   const intensity = options.intensity ?? 1;
   const s = 1 - 2 * intensity;
   const o = intensity;

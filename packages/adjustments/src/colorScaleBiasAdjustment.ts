@@ -1,6 +1,9 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ColorScaleBiasAdjustment, ColorScaleBiasLike } from '@flighthq/types/contract';
 
-export function createColorScaleBiasAdjustment(colorScaleBias: Readonly<ColorScaleBiasLike>): ColorScaleBiasAdjustment {
+export function createColorScaleBiasAdjustment(
+  colorScaleBias: Readonly<ColorScaleBiasLike>,
+): NonEntityCreateResult<ColorScaleBiasAdjustment, 'descriptor'> {
   const value = { ...colorScaleBias };
   return {
     kind: 'ColorScaleBiasAdjustment',

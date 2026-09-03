@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { GrayscaleAdjustment } from '@flighthq/types/contract';
 
 // Luma desaturation as a matrix-tier adjustment. `mix(rgb, vec3(luma), intensity)` with ITU-R BT.709
@@ -5,7 +6,7 @@ import type { GrayscaleAdjustment } from '@flighthq/types/contract';
 // the luma. BT.709 (0.2126/0.7152/0.0722) matches the prior full-frame grayscale pass.
 export function createGrayscaleAdjustment(
   options: Readonly<Omit<GrayscaleAdjustment, 'kind' | 'colorMatrix'>> = {},
-): GrayscaleAdjustment {
+): NonEntityCreateResult<GrayscaleAdjustment, 'descriptor'> {
   const intensity = options.intensity ?? 1;
   const k = intensity;
   const j = 1 - intensity;

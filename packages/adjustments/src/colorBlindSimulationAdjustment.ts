@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ColorBlindSimulationAdjustment, ColorBlindType } from '@flighthq/types/contract';
 
 // Color-vision-deficiency simulation as a matrix-tier adjustment — this op's FIRST backend realization
@@ -11,7 +12,7 @@ import type { ColorBlindSimulationAdjustment, ColorBlindType } from '@flighthq/t
 // is full luma monochromacy and achromatomaly its partial form.
 export function createColorBlindSimulationAdjustment(
   options: Readonly<Omit<ColorBlindSimulationAdjustment, 'kind' | 'colorMatrix'>> = {},
-): ColorBlindSimulationAdjustment {
+): NonEntityCreateResult<ColorBlindSimulationAdjustment, 'descriptor'> {
   const type: ColorBlindType = options.type ?? 'deuteranopia';
   const m = COLOR_BLIND_MATRICES[type];
   // prettier-ignore

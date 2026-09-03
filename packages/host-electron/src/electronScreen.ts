@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type {
   ElectronApi,
   ElectronDisplay,
@@ -12,7 +13,7 @@ import type {
 
 export function createElectronScreenCapabilities(
   electron: ElectronApi,
-): Required<Pick<HostScreenCapabilities, 'change' | 'query'>> {
+): NonEntityCreateResult<Required<Pick<HostScreenCapabilities, 'change' | 'query'>>, 'type-only'> {
   const screen = electron.screen;
   const query = createEntity({
     getCursorPosition(out: { x: number; y: number }) {

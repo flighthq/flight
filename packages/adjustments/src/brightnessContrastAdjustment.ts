@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { BrightnessContrastAdjustment } from '@flighthq/types/contract';
 
 // Brightness/contrast as a matrix-tier adjustment. Reproduces the prior full-frame shader
@@ -9,7 +10,7 @@ import type { BrightnessContrastAdjustment } from '@flighthq/types/contract';
 // this corrects it to contrast 1).
 export function createBrightnessContrastAdjustment(
   options: Readonly<Omit<BrightnessContrastAdjustment, 'kind' | 'colorMatrix'>> = {},
-): BrightnessContrastAdjustment {
+): NonEntityCreateResult<BrightnessContrastAdjustment, 'descriptor'> {
   const brightness = options.brightness ?? 0;
   const contrast = options.contrast ?? 1;
   const s = contrast;

@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type {
   CollisionAabb3D,
   CollisionBuiltInShape3D,
@@ -97,7 +98,7 @@ export function createCollisionHeightfield3D(
   heights: readonly number[],
   cellSizeX = 1,
   cellSizeZ = 1,
-): CollisionHeightfield3D {
+): NonEntityCreateResult<CollisionHeightfield3D, 'descriptor'> {
   return {
     kind: 'heightfield',
     columns,
@@ -121,7 +122,7 @@ export function createCollisionHeightfield3D(
 export function createCollisionTriangleMesh3D(
   points: readonly number[],
   indices: readonly number[],
-): CollisionTriangleMesh3D {
+): NonEntityCreateResult<CollisionTriangleMesh3D, 'descriptor'> {
   return {
     kind: 'triangle-mesh',
     points: points.slice(),

@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ColorGradeAdjustment, ColorTransformFunction } from '@flighthq/types/contract';
 
 // The full color grade as one LUT-tier adjustment. The exposure/brightness/temperature/tint/saturation/
@@ -8,7 +9,7 @@ import type { ColorGradeAdjustment, ColorTransformFunction } from '@flighthq/typ
 // identity default here is contrast 1.
 export function createColorGradeAdjustment(
   options: Readonly<Omit<ColorGradeAdjustment, 'kind' | 'transform'>> = {},
-): ColorGradeAdjustment {
+): NonEntityCreateResult<ColorGradeAdjustment, 'descriptor'> {
   const exposure = Math.pow(2, options.exposure ?? 0);
   const brightness = options.brightness ?? 0;
   const contrast = options.contrast ?? 1;
