@@ -13,6 +13,7 @@ import type {
 import { BatchFormat } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureGlQuadBatchShader,
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
@@ -21,7 +22,6 @@ import {
 
 // Per-instance stride, matching the QuadBatch/Tilemap sprite path (13 floats: world transform + region +
 // uv + alpha). See glQuadBatch.
-const INSTANCE_FLOATS = 13;
 
 // Draws a BitmapText leaf: one batched sprite pass per glyph-atlas page (each page binds its own atlas
 // image, so a multi-page source issues one draw per page). The node's resolved color adjustment folds in
@@ -58,7 +58,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
     ensureGlQuadBatchShader(state);
     // prepareGlQuadBatchWrite may flush the prior page's batch (each page binds a different image), so
     // read the running instance count AFTER it so material/color-adjustment indices align with `base`.
-    const base = prepareGlQuadBatchWrite(
+    const startInstance = prepareGlQuadBatchWrite(
       state,
       glTexture,
       straightAlpha,
@@ -68,7 +68,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
       materialRenderer,
       page.instanceCount,
     );
-    const startCount = runtime.quadBatchWriterCount;
+    const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
 
     const regions = atlas.regions;
     const numRegions = regions.length;
@@ -101,9 +101,9 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packGlQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
-      recordGlQuadBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
-      writeBase += INSTANCE_FLOATS;
+      packGlQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
+      recordGlQuadBatchColorScaleBias(state, nodeColorScaleBias, startInstance + drawCount);
+      writeBase += QUAD_BATCH_INSTANCE_FLOATS;
       drawCount++;
     }
 

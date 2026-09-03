@@ -59,7 +59,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
 
     // prepareWgpuQuadBatchWrite may flush the prior page's batch (each page binds a different image),
     // so read the running instance count AFTER it so material/color-adjustment indices align with `base`.
-    const base = prepareWgpuQuadBatchWrite(
+    const startInstance = prepareWgpuQuadBatchWrite(
       state,
       textureEntry,
       texture.sampler,
@@ -68,7 +68,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
       materialRenderer,
       page.instanceCount,
     );
-    const startCount = runtime.quadBatchWriterCount;
+    const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
 
     const regions = atlas.regions;
     const numRegions = regions.length;
@@ -101,8 +101,8 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
-      recordWgpuQuadBatchColorScaleBias(state, nodeColorScaleBias, startCount + drawCount);
+      packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
+      recordWgpuQuadBatchColorScaleBias(state, nodeColorScaleBias, startInstance + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }

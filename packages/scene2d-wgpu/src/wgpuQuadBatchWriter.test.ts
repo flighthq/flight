@@ -185,7 +185,7 @@ describe('packWgpuQuadBatchMaterialInstance', () => {
 });
 
 describe('prepareWgpuQuadBatchWrite', () => {
-  it('returns float index 0 for an empty batch', async () => {
+  it('returns instance index 0 for an empty batch', async () => {
     const state = await createWgpuRenderStateForTest();
     const tex = makeTexture();
 

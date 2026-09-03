@@ -6,6 +6,7 @@ import type { RenderProxy2D, Scene2DRenderer, Shape, WgpuRenderState } from '@fl
 import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureWgpuQuadBatchResources,
   packWgpuQuadBatchMaterialInstance,
   prepareWgpuQuadBatchWrite,
@@ -89,7 +90,7 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
 
   const textureEntry = bindWgpuImageResourceTexture(state, surface.image, false, true);
   if (textureEntry === null) return;
-  const base = prepareWgpuQuadBatchWrite(
+  const startInstance = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
     null,
@@ -98,7 +99,7 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
     materialRenderer,
     1,
   );
-  const startCount = runtime.quadBatchWriterCount;
+  const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
   const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -113,8 +114,8 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  packWgpuQuadBatchMaterialInstance(state, renderProxy.materialData, startInstance);
+  recordWgpuQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startInstance);
   runtime.quadBatchWriterCount++;
 }
 

@@ -6,6 +6,7 @@ import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Shape } from '@flig
 import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_INSTANCE_FLOATS,
   ensureGlQuadBatchShader,
   packGlQuadBatchMaterialInstance,
   prepareGlQuadBatchWrite,
@@ -82,7 +83,7 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
 
   const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
   const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
-  const base = prepareGlQuadBatchWrite(
+  const startInstance = prepareGlQuadBatchWrite(
     state,
     texture,
     straightAlpha,
@@ -92,7 +93,7 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
     materialRenderer,
     1,
   );
-  const startCount = runtime.quadBatchWriterCount;
+  const base = startInstance * QUAD_BATCH_INSTANCE_FLOATS;
   const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
@@ -107,8 +108,8 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
   d[base + 10] = 1;
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
-  packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
-  recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
+  packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startInstance);
+  recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startInstance);
   runtime.quadBatchWriterCount++;
 }
 

@@ -141,7 +141,7 @@ describe('prepareGlQuadBatchWrite', () => {
     expect(runtime.flushPendingDraws).toBe(flushGlQuadBatchWriter);
   });
 
-  it('returns float index 0 for an empty batch', () => {
+  it('returns instance index 0 for an empty batch', () => {
     const { state } = createGlState();
     const tex = makeTexture();
 
