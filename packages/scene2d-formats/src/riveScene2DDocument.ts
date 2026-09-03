@@ -49,13 +49,15 @@ function collectRiveSlots(
   const nested = _nestedArtboards.get(node);
   if (nested !== undefined) {
     const target = artboards[nested];
-    slots.push({
-      content: null,
-      linkage: target === undefined ? null : target.name,
-      name: node.name !== null && node.name !== '' ? node.name : (target?.name ?? ''),
-      required: false,
-      target: node,
-    });
+    slots.push(
+      createEntity({
+        content: null,
+        linkage: target === undefined ? null : target.name,
+        name: node.name !== null && node.name !== '' ? node.name : (target?.name ?? ''),
+        required: false,
+        target: node,
+      }),
+    );
   }
   for (let index = 0; index < getNodeChildCount(node); index++) {
     collectRiveSlots(getNodeChildAt(node, index) as Node2D, artboards, slots);
