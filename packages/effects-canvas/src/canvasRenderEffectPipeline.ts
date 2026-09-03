@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import {
   beginCanvasRenderPass,
   createCanvasRenderTarget,
@@ -68,16 +69,16 @@ export function createCanvasRenderEffectPipeline(
   state: CanvasRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): CanvasRenderEffectPipeline {
-  return {
+  return createEntity({
     options: { ...options },
     sceneTarget: null,
     pool: createCanvasRenderTargetPool(state.surface.creator),
     lutCache: createColorLutCache(),
-  };
+  });
 }
 
 export function createCanvasRenderTargetPool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTargetPool {
-  return { creator, free: [], inUse: [] };
+  return createEntity({ creator, free: [], inUse: [] });
 }
 
 export function destroyCanvasRenderEffectPipeline(

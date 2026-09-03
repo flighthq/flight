@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Path, PathMorph } from '@flighthq/types/contract';
 
 export type { PathMorph } from '@flighthq/types/contract';
@@ -10,7 +11,8 @@ import { buildPathMorph } from './pathMorphGeometry';
 // winding, count, and open/closed topology. Closed traversal direction is normalized when doing so
 // preserves the fill; returns null when a non-zero path reverses only a subset of its contours.
 export function createPathMorph(start: Readonly<Path>, end: Readonly<Path>): PathMorph | null {
-  return buildPathMorph(start, end).morph;
+  const morph = buildPathMorph(start, end).morph;
+  return morph !== null ? createEntity(morph) : null;
 }
 
 // Samples a prepared morph into `out`. Reuses the existing command and coordinate arrays, making

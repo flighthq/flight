@@ -22,6 +22,9 @@
       "path": "../effects"
     },
     {
+      "path": "../entity"
+    },
+    {
       "path": "../geometry"
     },
     {

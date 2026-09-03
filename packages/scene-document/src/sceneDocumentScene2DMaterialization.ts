@@ -1,4 +1,4 @@
-import { getEntityRuntime } from '@flighthq/entity/contract';
+import { createEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
@@ -122,7 +122,7 @@ export function createFlightDocumentScene2DMaterialization(
     materializedNodes,
   );
   if (layoutBindings === null) return null;
-  return { interactiveStateBindings, layoutBindings, scene };
+  return createEntity({ interactiveStateBindings, layoutBindings, scene });
 }
 
 export function createFlightDocumentScene2DMaterializationFromText(

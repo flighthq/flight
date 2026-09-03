@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   HasUiStatusBarChange,
@@ -37,7 +38,7 @@ export function clearStatusBarStyleStack(host: HasUiStatusBarStyleStack): void {
 }
 
 export function createStatusBar(): StatusBar {
-  return { onChange: createSignal() };
+  return createEntity({ onChange: createSignal() });
 }
 
 export function createStatusBarInfo(): StatusBarInfo {

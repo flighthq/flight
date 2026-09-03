@@ -42,6 +42,7 @@
     "@flighthq/adjustments": "*",
     "@flighthq/scene2d-canvas": "*",
     "@flighthq/effects": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/registry": "*",
     "@flighthq/types": "*"

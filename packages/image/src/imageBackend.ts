@@ -6,10 +6,12 @@ import type {
   ImageBackendOperation,
 } from '@flighthq/types/contract';
 
+import { createEntity } from '@flighthq/entity/contract';
+
 import { createImageResourceFromCanvas, createImageResourceFromImageElement } from './imageResourceFrom';
 
 export function createWebImageBackend(): ImageBackend {
-  return {
+  return createEntity({
     createImageFromBitmap(bitmap): ImageResource {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
@@ -44,7 +46,7 @@ export function createWebImageBackend(): ImageBackend {
       }
       return createImageResourceFromImageElement(img);
     },
-  };
+  });
 }
 
 // ImageData is straight-alpha by contract. Preserve a Bitmap's declared representation at its own
