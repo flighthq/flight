@@ -12,14 +12,19 @@ export function setCanvasRenderStateHandles(
   canvas: HTMLCanvasElement,
   context: CanvasRenderingContext2D,
 ): void {
-  const writable = state as CanvasRenderStateWritableHandles;
+  // The double cast is the honest spelling: no narrower assertion exists, because the whole point is
+  // to write fields the public type declares readonly. It is confined to this one function.
+  const writable = state as unknown as CanvasRenderStateWritableHandles;
   writable.canvas = canvas;
   writable.context = context;
 }
 
-// Deliberately not exported: the writable view exists to serve the seam above, and widening it would
-// hand every module back the cast this function exists to hold.
-type CanvasRenderStateWritableHandles = CanvasRenderState & {
+// Deliberately not exported, and deliberately NOT an intersection with CanvasRenderState. Redeclaring
+// `canvas` and `context` as writable on top of a base that declares them readonly erases the readonly
+// through the type system, which is the same defect an inline `state as CanvasRenderState & {...}`
+// commits — moving it behind a function would only have hidden it. This standalone shape names just
+// the two fields being written and claims nothing about the base.
+interface CanvasRenderStateWritableHandles {
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
-};
+}
