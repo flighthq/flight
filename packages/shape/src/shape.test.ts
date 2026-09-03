@@ -6,7 +6,7 @@ import {
 } from '@flighthq/node/contract';
 import { createPath, createPathMorph } from '@flighthq/path/contract';
 import type { ShapeCommandToken } from '@flighthq/types/contract';
-import { ShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ShapeKind } from '@flighthq/types/contract';
 
 import { createMorphShape, setMorphShapeProgress } from './morphShape';
 import { appendMorphShapeBeginFill } from './morphShapePaint';
@@ -281,6 +281,8 @@ describe('createShapeData', () => {
   it('returns a ShapeData object with an empty commands array', () => {
     const data = createShapeData();
     expect(data.commands).toHaveLength(0);
+    expect(Object.hasOwn(data, EntityRuntimeKey)).toBe(true);
+    expect(data[EntityRuntimeKey]).toBeUndefined();
   });
 
   it('returns a new object each call', () => {

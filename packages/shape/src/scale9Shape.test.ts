@@ -1,5 +1,5 @@
 import type { ShapeCommandToken } from '@flighthq/types/contract';
-import { Scale9ShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, Scale9ShapeKind } from '@flighthq/types/contract';
 
 import {
   createScale9Shape,
@@ -35,6 +35,8 @@ describe('createScale9ShapeData', () => {
   it('stores the scale9Grid reference', () => {
     const data = createScale9ShapeData(grid);
     expect(data.scale9Grid).toBe(grid);
+    expect(Object.hasOwn(data, EntityRuntimeKey)).toBe(true);
+    expect(data[EntityRuntimeKey]).toBeUndefined();
   });
 
   it('returns an empty commands array', () => {

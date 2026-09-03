@@ -7,7 +7,7 @@ import type {
   PathMorph,
   ShapeCommandToken,
 } from '@flighthq/types/contract';
-import { MorphShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, MorphShapeKind } from '@flighthq/types/contract';
 
 import {
   appendMorphShapePath,
@@ -133,6 +133,8 @@ describe('createMorphShapeData', () => {
     expect(paintBindings).toStrictEqual([]);
     expect(pathBindings).toStrictEqual([]);
     expect(data.pathBindings).toStrictEqual([{ morph, path: data.path }]);
+    expect(Object.hasOwn(data, EntityRuntimeKey)).toBe(true);
+    expect(data[EntityRuntimeKey]).toBeUndefined();
   });
 
   it('samples the requested initial endpoint exactly', () => {
