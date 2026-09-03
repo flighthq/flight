@@ -589,6 +589,7 @@ export * from './Sampler';
 export * from './ScalarRemap';
 export * from './Scale9Mapper';
 export * from './Scale9Shape';
+export * from './Scale9Sprite';
 export * from './ScanlinesEffect';
 export * from './Scene3D';
 export * from './SceneCoverageCatalog';
