@@ -6,7 +6,7 @@ import type { Entity } from './Entity';
 // Device identity and environment seam. Free functions in @flighthq/device delegate to the active
 // DeviceBackend (web default or a native host's). Snapshot reads fill an `out` value and return it;
 // unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
-export interface DeviceInfo {
+export interface DeviceInfo extends Entity {
   arch: string;
   availableMemory: number;
   boardName: string;
@@ -37,7 +37,7 @@ export interface DeviceInfo {
 }
 
 // Edge insets, in CSS pixels, that keep content clear of notches, rounded corners, and system bars.
-export interface SafeAreaInsets {
+export interface SafeAreaInsets extends Entity {
   top: number;
   right: number;
   bottom: number;

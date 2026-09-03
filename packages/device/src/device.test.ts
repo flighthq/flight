@@ -141,7 +141,7 @@ describe('createDeviceInfo', () => {
 
 describe('createSafeAreaInsets', () => {
   it('allocates zeroed edges', () => {
-    expect(createSafeAreaInsets()).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
+    expect(createSafeAreaInsets()).toMatchObject({ bottom: 0, left: 0, right: 0, top: 0 });
   });
 });
 

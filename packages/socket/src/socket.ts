@@ -1,5 +1,8 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  Entity,
+  EntityRuntimeKey,
   HasNetSocket,
   Socket,
   SocketBackend,
@@ -52,7 +55,7 @@ export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions
     delivering: true,
     disposed: false,
   };
-  const socket: Socket = { url: options.url, runtime };
+  const socket: Socket = createEntity({ url: options.url, runtime });
   // The provider comes from the host the caller passed. A host that carries no socket transport
   // yields no connection rather than reaching a process-global fallback: absence is an answer here,
   // and the guard reports it.
@@ -66,8 +69,8 @@ export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions
 // the package has no side effect; a host composes this value into its own net group. Returns a
 // null connection when WebSocket is unavailable (non-browser host) rather than throwing; raw TCP/UDP
 // is likewise unsupported here and only reachable through a native backend.
-export function createWebSocketBackend(): SocketBackend {
-  return {
+export function createWebSocketBackend(): SocketBackend & Entity {
+  return createEntity({
     openSocket(options, events): SocketConnection | null {
       if (typeof WebSocket === 'undefined') return null;
       const ws =
@@ -91,7 +94,7 @@ export function createWebSocketBackend(): SocketBackend {
         },
       };
     },
-  };
+  } satisfies Omit<SocketBackend, typeof EntityRuntimeKey>);
 }
 
 // Stops delivery of backend events to the socket's signals. The live connection is untouched — use
@@ -122,12 +125,12 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
   const runtime = socket.runtime;
   if (runtime.disposed) _guard?.({ operation: 'enableSocketSignals', reason: 'disposed', socket });
   if (runtime.signals === null) {
-    runtime.signals = {
+    runtime.signals = createEntity({
       onSocketOpen: createSignal<() => void>(),
       onSocketMessage: createSignal<(message: Readonly<SocketMessage>) => void>(),
       onSocketClose: createSignal<(info: Readonly<SocketCloseInfo>) => void>(),
       onSocketError: createSignal<() => void>(),
-    };
+    });
   }
   return runtime.signals;
 }

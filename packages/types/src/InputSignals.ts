@@ -1,10 +1,11 @@
+import type { Entity } from './Entity';
 import type { InputGamepadAxisData, InputGamepadButtonData, InputGamepadConnectData } from './InputGamepadData';
 import type { InputKeyboardData } from './InputKeyboardData';
 import type { InputPointerData } from './InputPointerData';
 import type { InputTextData } from './InputTextData';
 import type { Signal } from './Signal';
 
-export interface InputSignals {
+export interface InputSignals extends Entity {
   onGamepadAxisMove: Signal<(data: Readonly<InputGamepadAxisData>) => void>;
   onGamepadButtonDown: Signal<(data: Readonly<InputGamepadButtonData>) => void>;
   onGamepadButtonUp: Signal<(data: Readonly<InputGamepadButtonData>) => void>;

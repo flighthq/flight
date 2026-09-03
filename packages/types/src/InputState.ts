@@ -1,4 +1,6 @@
-export interface InputState {
+import type { Entity } from './Entity';
+
+export interface InputState extends Entity {
   axisValues: Map<number, number>;
   gamepadButtonsDown: Set<number>;
   justPressedGamepadButtons: Set<number>;

@@ -1,10 +1,10 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { PlatformBackend, PlatformName, TauriApi } from '@flighthq/types/contract';
+import type { Entity, EntityRuntimeKey, PlatformBackend, PlatformName, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's PlatformBackend onto Tauri's `@tauri-apps/plugin-os`. Locale is the plugin's one async
 // identity accessor, so it is prefetched once and cached for the synchronous getInfo seam. Writes into
 // caller-owned `out` so callers control allocation.
-export function createTauriPlatformBackend(tauri: TauriApi): PlatformBackend {
+export function createTauriPlatformBackend(tauri: TauriApi): PlatformBackend & Entity {
   const os = tauri.os;
   let cachedLocale = '';
   os.locale()
@@ -25,7 +25,7 @@ export function createTauriPlatformBackend(tauri: TauriApi): PlatformBackend {
       out.runtime = 'tauri';
       return out;
     },
-  });
+  } satisfies Omit<PlatformBackend, typeof EntityRuntimeKey>);
 }
 
 function toPlatformName(platform: string): PlatformName {

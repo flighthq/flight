@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
@@ -8,15 +9,15 @@ import type {
 import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
 export function createDeviceCapabilities(): DeviceCapabilities {
-  return {
+  return createEntity({
     hasKeyboard: false,
     hasMouse: false,
     hasStylus: false,
-  };
+  });
 }
 
 export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
-  return {
+  return createEntity({
     colorDepth: -1,
     densityDpi: -1,
     logicalHeight: -1,
@@ -24,11 +25,11 @@ export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
     physicalHeight: -1,
     physicalWidth: -1,
     pixelRatio: -1,
-  };
+  });
 }
 
 export function createDeviceInfo(): DeviceInfo {
-  return {
+  return createEntity({
     arch: '',
     availableMemory: -1,
     boardName: '',
@@ -54,11 +55,11 @@ export function createDeviceInfo(): DeviceInfo {
     supportedAbis: [],
     totalMemory: -1,
     webViewVersion: '',
-  };
+  });
 }
 
 export function createSafeAreaInsets(): SafeAreaInsets {
-  return { bottom: 0, left: 0, right: 0, top: 0 };
+  return createEntity({ bottom: 0, left: 0, right: 0, top: 0 });
 }
 
 export function getDeviceCapabilities(host: HasSystemDevice, out: DeviceCapabilities): DeviceCapabilities {
