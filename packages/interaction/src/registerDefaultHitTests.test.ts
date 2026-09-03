@@ -1,6 +1,6 @@
 import { setRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import { createSprite, createScene2D } from '@flighthq/scene2d/contract';
+import { createScale9Sprite, createSprite, createScene2D } from '@flighthq/scene2d/contract';
 import { createMorphShape, createShape } from '@flighthq/shape/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -16,6 +16,11 @@ describe('registerDefaultHitTests', () => {
     setRectangle(getNodeLocalBoundsRectangle(bitmap), 0, 0, 100, 100);
     setNodeHitTestEnabled(bitmap, true);
     expect(findGraphHitTarget(bitmap, 50, 50)).toBe(bitmap);
+
+    const scale9Sprite = createScale9Sprite({ height: 80, width: 80, x: 10, y: 10 });
+    setRectangle(getNodeLocalBoundsRectangle(scale9Sprite), 0, 0, 100, 100);
+    setNodeHitTestEnabled(scale9Sprite, true);
+    expect(findGraphHitTarget(scale9Sprite, 50, 50)).toBe(scale9Sprite);
 
     const shape = createShape();
     setRectangle(getNodeLocalBoundsRectangle(shape), 0, 0, 100, 100);
