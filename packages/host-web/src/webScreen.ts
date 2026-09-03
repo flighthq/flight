@@ -32,6 +32,10 @@ interface ScreenDetails {
   removeEventListener(type: 'screenschange', listener: () => void): void;
 }
 
+interface WebScreenDetailsWindow extends Window {
+  getScreenDetails?: () => Promise<ScreenDetails>;
+}
+
 interface DisplaySubscription {
   details: ScreenDetails | null;
   handle: () => void;
@@ -251,7 +255,7 @@ export function createWebScreenCapabilities(): Required<HostScreenCapabilities> 
     },
     async request(): Promise<boolean> {
       if (typeof window === 'undefined') return false;
-      const request = (window as Window & { getScreenDetails?: () => Promise<ScreenDetails> }).getScreenDetails;
+      const request = (window as WebScreenDetailsWindow).getScreenDetails;
       if (request === undefined) return false;
       try {
         const next = await request.call(window);

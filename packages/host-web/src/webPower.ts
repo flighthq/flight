@@ -193,7 +193,7 @@ export const webPowerCapabilities: WebPowerCapabilities = createEntity({
 
 function _getWebBatteryManagerPromise(): Promise<WebBatteryManager> | null {
   if (typeof navigator === 'undefined') return null;
-  const nav = navigator as Navigator & { getBattery?: () => Promise<WebBatteryManager> };
+  const nav = navigator as WebBatteryNavigator;
   if (typeof nav.getBattery !== 'function') return null;
   try {
     return nav.getBattery();
@@ -242,6 +242,10 @@ interface WebBatteryManager {
     type: 'chargingtimechange' | 'chargingchange' | 'dischargingtimechange' | 'levelchange',
     listener: () => void,
   ) => void;
+}
+
+interface WebBatteryNavigator extends Navigator {
+  getBattery?: () => Promise<WebBatteryManager>;
 }
 
 interface WebWakeLock {

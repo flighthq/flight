@@ -12,6 +12,10 @@ import type {
 import { buildDomContourClipPath } from './domClipContours';
 import { getDomRenderStateRuntime } from './domRenderState';
 
+interface DomClipStyle extends CSSStyleDeclaration {
+  webkitClipPath: string;
+}
+
 export function applyDomClipRectangles(
   state: DomRenderState,
   data: RenderProxy2D,
@@ -35,27 +39,27 @@ export function applyDomClipRectangles(
     const mapPoint = createScene2DToElementPointMapper(element);
     const clipPath = buildDomContourClipPath(contour, mapPoint);
     element.style.clipPath = clipPath;
-    (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = clipPath;
+    (element.style as DomClipStyle).webkitClipPath = clipPath;
     return;
   }
 
   const rect = intersectDomScene2DRectangles(entries as readonly DomScene2DRectangle[]);
   if (rect === null) {
     element.style.clipPath = '';
-    (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = '';
+    (element.style as DomClipStyle).webkitClipPath = '';
     return;
   }
 
   if (rect.right <= rect.left || rect.bottom <= rect.top) {
     element.style.clipPath = EMPTY_CLIP_PATH;
-    (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = EMPTY_CLIP_PATH;
+    (element.style as DomClipStyle).webkitClipPath = EMPTY_CLIP_PATH;
     return;
   }
 
   const local = mapScene2DRectangleToElement(rect, element);
   const clipPath = `polygon(${local.left}px ${local.top}px, ${local.right}px ${local.top}px, ${local.right}px ${local.bottom}px, ${local.left}px ${local.bottom}px)`;
   element.style.clipPath = clipPath;
-  (element.style as CSSStyleDeclaration & { webkitClipPath: string }).webkitClipPath = clipPath;
+  (element.style as DomClipStyle).webkitClipPath = clipPath;
 }
 
 export function createDomScene2DRectangle(

@@ -12,6 +12,10 @@ import type {
   RenderSurfaceBackend,
 } from '@flighthq/types/contract';
 
+interface WebInputTargetStyle extends CSSStyleDeclaration {
+  webkitTapHighlightColor: string;
+}
+
 export const webInputDropFileBackend = createEntity<EntityWithoutRuntime<InputDropFileBackend>>({
   subscribe(target: InputTargetHandle, listener: (path: string) => void) {
     const element = _inputTargets.get(target);
@@ -91,8 +95,7 @@ export const webInputTargetBackend = createEntity<{ prepare(target: InputTargetH
     element.style.touchAction = 'none';
     element.style.userSelect = 'none';
     element.style.webkitUserSelect = 'none';
-    (element.style as CSSStyleDeclaration & { webkitTapHighlightColor: string }).webkitTapHighlightColor =
-      'transparent';
+    (element.style as WebInputTargetStyle).webkitTapHighlightColor = 'transparent';
     if (element instanceof HTMLCanvasElement) element.style.transform = 'translateZ(0)';
   },
 }) satisfies InputTargetBackend;
