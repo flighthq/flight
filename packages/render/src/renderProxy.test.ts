@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
@@ -46,7 +47,7 @@ function makeRenderer() {
 }
 
 function makeClipRegion(): ClipRegion {
-  return { contours: null, rect: createRectangle(0, 0, 10, 10), winding: 'nonZero', version: 0 };
+  return createEntity({ contours: null, rect: createRectangle(0, 0, 10, 10), winding: 'nonZero', version: 0 });
 }
 
 function markRenderProxyClean<Traits extends object>(data: RenderProxy, source: Node<Traits>): void {

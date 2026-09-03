@@ -9,7 +9,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
@@ -65,6 +65,7 @@ describe('drawWgpuParticleEmitter2D', () => {
           });
           const view = texture.createView();
           return {
+            [EntityRuntimeKey]: undefined,
             bindings: new Map(),
             mipLevelCount: 1,
             straightAlpha: true,

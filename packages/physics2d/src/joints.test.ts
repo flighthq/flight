@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   Physics2DDistanceJoint,
   Physics2DGearJoint,
@@ -45,7 +46,7 @@ function box(world: ReturnType<typeof createPhysics2DWorld>, type: 'dynamic' | '
 }
 
 function baseJoint(kind: string, bodyA: number, bodyB: number) {
-  return {
+  return createEntity({
     kind,
     bodyA,
     bodyB,
@@ -63,7 +64,7 @@ function baseJoint(kind: string, bodyA: number, bodyB: number) {
     rAY: 0,
     rBX: 0,
     rBY: 0,
-  };
+  });
 }
 
 function run(world: ReturnType<typeof createPhysics2DWorld>, steps: number): void {

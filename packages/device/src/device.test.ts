@@ -6,7 +6,7 @@ import type {
   HasSystemDevice,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
-import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
+import { DeviceFormFactorUnknown, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as deviceContract from './device';
 import {
@@ -24,6 +24,7 @@ import {
 
 function fakeBackend(): DeviceBackend {
   return {
+    [EntityRuntimeKey]: undefined,
     getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
       out.hasKeyboard = true;
       out.hasMouse = true;

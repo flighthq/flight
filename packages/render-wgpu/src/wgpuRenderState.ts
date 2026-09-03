@@ -44,7 +44,7 @@ export async function createWgpuAcquisitionFromCanvasElement(
 ): Promise<WgpuHostAcquisition | null> {
   try {
     const acquired = await getWgpuHostBackend().acquire(canvas, options);
-    return { ...acquired, ownership: 'caller' };
+    return createEntity({ ...acquired, ownership: 'caller' as const });
   } catch {
     return null;
   }
@@ -80,7 +80,7 @@ export function createWgpuOffscreenRenderState(
   const source = sourceOrDeviceState as WgpuRenderState;
   const sourceRuntime = getWgpuRenderStateRuntime(source);
   const lost = sourceRuntime.context.lost;
-  if (lost !== null) return { reason: 'device-lost', info: lost };
+  if (lost !== null) return createEntity({ reason: 'device-lost', info: lost });
 
   const derivedPipeline = createWgpuPipeline(sourceRuntime.registries);
   const state = initializeWgpuDeviceRenderState(source.deviceState, derivedPipeline, {
@@ -98,7 +98,7 @@ export function createWgpuOffscreenRenderState(
   runtime.mipmapGenerator = sourceRuntime.mipmapGenerator;
   runtime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   runtime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
-  return { reason: 'ok', state };
+  return createEntity({ reason: 'ok', state });
 }
 
 // Synchronous: with the handles already in hand there is nothing left to await. Everything asynchronous

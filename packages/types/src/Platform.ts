@@ -50,6 +50,7 @@ export interface PlatformInfo {
 
 // The seam every capability follows: a host backend object whose methods the package's free
 // functions delegate to. PlatformBackend is the root capability — environment identification.
-export interface PlatformBackend {
+export interface PlatformBackend extends Entity {
   getInfo(out: PlatformInfo): PlatformInfo;
 }
+import type { Entity } from './Entity';

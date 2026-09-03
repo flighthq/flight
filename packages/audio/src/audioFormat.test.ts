@@ -9,7 +9,7 @@ import {
 
 describe('canPlayAudioType', () => {
   beforeEach(() => {
-    setAudioBackend({ canPlayType: (type: string) => type === 'audio/mpeg' });
+    setAudioBackend(createEntity({ canPlayType: (type: string) => type === 'audio/mpeg' }));
   });
 
   afterEach(() => {
@@ -159,3 +159,4 @@ describe('inferAudioMimeType', () => {
     expect(inferAudioMimeType('audio')).toBeNull();
   });
 });
+import { createEntity } from '@flighthq/entity/contract';

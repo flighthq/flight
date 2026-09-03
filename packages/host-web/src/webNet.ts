@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
+  Entity,
   NetBackend,
   NetProgress,
   NetRequest,
@@ -10,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createWebNetBackend(): NetBackend {
-  return {
+  return createEntity<Omit<NetBackend, keyof Entity>>({
     async sendNetRequest(request, options): Promise<NetResponse> {
       const controller = new AbortController();
       const teardownAbort = _wireNetAbort(controller, request.timeoutMs, options?.signal);
@@ -32,7 +34,7 @@ export function createWebNetBackend(): NetBackend {
         teardownAbort();
       }
     },
-  };
+  });
 }
 
 export const webNetBackend: NetBackend = createWebNetBackend();

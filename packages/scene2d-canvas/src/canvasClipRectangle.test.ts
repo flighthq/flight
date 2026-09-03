@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -20,7 +21,7 @@ describe('Clip Rectangle Functions', () => {
     rect = createRectangle(10, 10, 100, 100);
     transform2D = createMatrix();
     source = createDisplayObject();
-    source.clip = { contours: null, rect, winding: 'nonZero', version: 0 };
+    source.clip = createEntity({ contours: null, rect, winding: 'nonZero' as const, version: 0 });
     data = getOrCreateRenderProxy2D(state, source);
     data.transform2D = transform2D;
   });

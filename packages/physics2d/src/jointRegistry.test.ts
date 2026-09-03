@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -26,7 +27,7 @@ function body(world: ReturnType<typeof createPhysics2DWorld>, x: number, y: numb
 }
 
 function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorBX = 0): Physics2DJoint {
-  return {
+  return createEntity({
     kind,
     bodyA,
     bodyB,
@@ -44,7 +45,7 @@ function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorB
     rAY: 0,
     rBX: 0,
     rBY: 0,
-  };
+  });
 }
 
 describe('addPhysics2DJoint', () => {

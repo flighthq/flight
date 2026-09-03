@@ -1,4 +1,5 @@
 import type { CollisionBuiltInShape2D } from './Collision';
+import type { Entity } from './Entity';
 import type { SpatialIndexBackend2D } from './Spatial';
 
 // 2D rigid-body dynamics header. `@flighthq/physics2d` is the solver that sits on top of
@@ -62,7 +63,7 @@ export interface Physics2DCollisionFilter {
 // for it — none of which a vendor kind can answer, because only the support function registered for that
 // kind knows what its parameters mean. A vendor collider reaches `testCollision2D` through the
 // registries; it does not become a rigid body here.
-export interface Physics2DCollider {
+export interface Physics2DCollider extends Entity {
   local: CollisionBuiltInShape2D;
   // The world-space shape, rewritten every step. Its KIND may differ from `local`'s: a rotated
   // axis-aligned box is not an axis-aligned box, so an `aabb` local shape carries an `obb` world shape.
@@ -100,7 +101,7 @@ export interface Physics2DMassData {
 // The inverse mass and inverse inertia are stored alongside the forward values because the solver
 // divides by them on every constraint iteration and a static body's is exactly zero — a sentinel that
 // makes "infinite mass" fall out of the same arithmetic as any other body, with no branch.
-export interface RigidBody2D {
+export interface RigidBody2D extends Entity {
   index: number;
   // Once inserted, change participation through `setPhysics2DBodyType` so mass and constraints follow.
   type: Physics2DBodyType;
@@ -294,7 +295,7 @@ export interface Physics2DStepExplanation {
 //
 // `gravityX`/`gravityY` is an acceleration, scaled per body by `gravityScale`, so a balloon is one
 // field rather than a special case in the integrator.
-export interface Physics2DWorld {
+export interface Physics2DWorld extends Entity {
   // Version of the serializable physics fields on this record. Runtime-owned maps, solver registries,
   // and the spatial index are reconstructed by the caller's format layer; hydratePhysics2DWorld upgrades
   // older reconstructed records before they enter the explicit step path.
@@ -373,7 +374,7 @@ export type Physics2DJointKind = string;
 // The anchors are in each body's LOCAL space, so a joint keeps its attachment as the bodies move. The
 // scratch fields below them are rebuilt every step from the current transforms — a joint stores where it
 // is attached, never where that attachment currently is.
-export interface Physics2DJoint {
+export interface Physics2DJoint extends Entity {
   kind: Physics2DJointKind;
   bodyA: number;
   bodyB: number;
@@ -761,7 +762,7 @@ export interface Physics2DQueryHit {
 
 // Query output retains its high-water storage, following the debug-geometry buffer convention. Only
 // entries below `hitCount` belong to the latest query.
-export interface Physics2DQueryResult {
+export interface Physics2DQueryResult extends Entity {
   hits: Physics2DQueryHit[];
   hitCount: number;
 }
@@ -788,7 +789,7 @@ export interface Physics2DRayHit extends Physics2DQueryHit {
 
 // Ray output follows the same high-water convention as point and region queries. Hits below
 // `hitCount` are ordered by fraction, then persistent body identity and collider index.
-export interface Physics2DRayResult {
+export interface Physics2DRayResult extends Entity {
   hits: Physics2DRayHit[];
   hitCount: number;
 }
@@ -817,7 +818,7 @@ export interface Physics2DRayResult {
 //
 // `body` and `collider` are null exactly when `hit` is false. They are references rather than indices,
 // matching the ray hits, so a caller acts on what it found without a second lookup.
-export interface Physics2DShapeCastResult {
+export interface Physics2DShapeCastResult extends Entity {
   body: RigidBody2D | null;
   collider: Physics2DCollider | null;
   colliderIndex: number;
@@ -881,7 +882,7 @@ export interface Physics2DJointResolutionExplanation {
 //
 // These are FORCES, already divided by the timestep, not the impulses the solver accumulates. A force is
 // what a breakable joint's threshold is authored in and what a reader compares against a weight.
-export interface Physics2DJointReaction {
+export interface Physics2DJointReaction extends Entity {
   forceX: number;
   forceY: number;
   torque: number;
@@ -931,7 +932,7 @@ export interface Physics2DDebugCircle {
 
 // Arrays retain their high-water capacity; only entries below the corresponding count are live. That
 // lets a caller keep one buffer and refill it every frame without allocating as the scene fluctuates.
-export interface Physics2DDebugGeometry {
+export interface Physics2DDebugGeometry extends Entity {
   lines: Physics2DDebugLine[];
   lineCount: number;
   circles: Physics2DDebugCircle[];

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createNode, getNodeChildCount } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Command, CommandHistory, NodeAny } from '@flighthq/types/contract';
@@ -77,7 +78,7 @@ describe('createCommandHistory', () => {
 describe('executeCommand', () => {
   it('refuses an unregistered kind rather than pushing an entry undo would skip', () => {
     const history = createCommandHistory();
-    expect(executeCommand(history, { kind: 'acme.Unbound', label: 'Nope' })).toBe(false);
+    expect(executeCommand(history, command('acme.Unbound', 'Nope'))).toBe(false);
     expect(getCommandHistoryEntries(history)).toHaveLength(0);
   });
 
@@ -173,8 +174,8 @@ describe('undoCommand', () => {
       execute: () => undefined,
       undo: (command) => order.push(command.label),
     });
-    executeCommand(history, { kind: 'test.Ordered', label: 'One' });
-    executeCommand(history, { kind: 'test.Ordered', label: 'Two' });
+    executeCommand(history, command('test.Ordered', 'One'));
+    executeCommand(history, command('test.Ordered', 'Two'));
     undoCommand(history);
     undoCommand(history);
     expect(order).toEqual(['Two', 'One']);
@@ -182,7 +183,11 @@ describe('undoCommand', () => {
 });
 
 function counter(label: string): Command {
-  return { kind: 'test.Counter', label };
+  return command('test.Counter', label);
+}
+
+function command(kind: string, label: string): Command {
+  return createEntity({ kind, label });
 }
 
 // A history bound to one inert kind, so stack behaviour can be tested without any graph mutation.

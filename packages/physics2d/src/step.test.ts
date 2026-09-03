@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
+  Entity,
   Physics2DJoint,
   Physics2DWorld,
   RigidBody2D,
@@ -25,6 +27,10 @@ import {
 } from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
+
+function entityJoint(fields: Omit<Physics2DJoint, keyof Entity>): Physics2DJoint {
+  return createEntity(fields);
+}
 
 function ground(world: Physics2DWorld): RigidBody2D {
   const body = createRigidBody2D('static', 0, 0);
@@ -923,7 +929,7 @@ describe('setPhysics2DJointResolutionGuard', () => {
     stepPhysics2D(world, 1 / 60);
     expect(calls).toBe(0);
 
-    const joint: Physics2DJoint = {
+    const joint: Physics2DJoint = entityJoint({
       kind: 'acme.Unregistered',
       bodyA: world.bodies[0].index,
       bodyB: world.bodies[0].index,
@@ -941,7 +947,7 @@ describe('setPhysics2DJointResolutionGuard', () => {
       rAY: 0,
       rBX: 0,
       rBY: 0,
-    };
+    });
     addPhysics2DJoint(world, joint);
     stepPhysics2D(world, 1 / 60);
     stepPhysics2D(world, 1 / 60);
@@ -951,25 +957,28 @@ describe('setPhysics2DJointResolutionGuard', () => {
   it('leaves the joint seam alone on a step that declines its preconditions', () => {
     const world = createPhysics2DWorld(0, -10);
     box(world, 0, 0);
-    addPhysics2DJoint(world, {
-      kind: 'acme.Unregistered',
-      bodyA: world.bodies[0].index,
-      bodyB: world.bodies[0].index,
-      localAnchorAX: 0,
-      localAnchorAY: 0,
-      localAnchorBX: 0,
-      localAnchorBY: 0,
-      collideConnected: false,
-      breakForce: Number.POSITIVE_INFINITY,
-      breakTorque: Number.POSITIVE_INFINITY,
-      impulse0: 0,
-      impulse1: 0,
-      impulse2: 0,
-      rAX: 0,
-      rAY: 0,
-      rBX: 0,
-      rBY: 0,
-    } satisfies Physics2DJoint);
+    addPhysics2DJoint(
+      world,
+      entityJoint({
+        kind: 'acme.Unregistered',
+        bodyA: world.bodies[0].index,
+        bodyB: world.bodies[0].index,
+        localAnchorAX: 0,
+        localAnchorAY: 0,
+        localAnchorBX: 0,
+        localAnchorBY: 0,
+        collideConnected: false,
+        breakForce: Number.POSITIVE_INFINITY,
+        breakTorque: Number.POSITIVE_INFINITY,
+        impulse0: 0,
+        impulse1: 0,
+        impulse2: 0,
+        rAX: 0,
+        rAY: 0,
+        rBX: 0,
+        rBY: 0,
+      }),
+    );
     world.config.velocityIterations = -1;
     let calls = 0;
     setPhysics2DJointResolutionGuard(() => {
@@ -984,25 +993,28 @@ describe('setPhysics2DJointResolutionGuard', () => {
   it('removes the seam when passed null', () => {
     const world = createPhysics2DWorld(0, -10);
     box(world, 0, 0);
-    addPhysics2DJoint(world, {
-      kind: 'acme.Unregistered',
-      bodyA: world.bodies[0].index,
-      bodyB: world.bodies[0].index,
-      localAnchorAX: 0,
-      localAnchorAY: 0,
-      localAnchorBX: 0,
-      localAnchorBY: 0,
-      collideConnected: false,
-      breakForce: Number.POSITIVE_INFINITY,
-      breakTorque: Number.POSITIVE_INFINITY,
-      impulse0: 0,
-      impulse1: 0,
-      impulse2: 0,
-      rAX: 0,
-      rAY: 0,
-      rBX: 0,
-      rBY: 0,
-    } satisfies Physics2DJoint);
+    addPhysics2DJoint(
+      world,
+      entityJoint({
+        kind: 'acme.Unregistered',
+        bodyA: world.bodies[0].index,
+        bodyB: world.bodies[0].index,
+        localAnchorAX: 0,
+        localAnchorAY: 0,
+        localAnchorBX: 0,
+        localAnchorBY: 0,
+        collideConnected: false,
+        breakForce: Number.POSITIVE_INFINITY,
+        breakTorque: Number.POSITIVE_INFINITY,
+        impulse0: 0,
+        impulse1: 0,
+        impulse2: 0,
+        rAX: 0,
+        rAY: 0,
+        rBX: 0,
+        rBY: 0,
+      }),
+    );
     let calls = 0;
     setPhysics2DJointResolutionGuard(() => {
       calls++;
@@ -1477,7 +1489,7 @@ describe('stepPhysics2D with breakable joints', () => {
     const bob = createRigidBody2D('dynamic', 0, -2);
     bob.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.4 }, STONE));
     addPhysics2DBody(world, bob);
-    const joint: Physics2DJoint = {
+    const joint: Physics2DJoint = entityJoint({
       kind: 'Distance',
       bodyA: anchor.index,
       bodyB: bob.index,
@@ -1495,7 +1507,7 @@ describe('stepPhysics2D with breakable joints', () => {
       rAY: 0,
       rBX: 0,
       rBY: 0,
-    };
+    });
     Object.assign(joint, { length: 2, frequencyHz: 0, dampingRatio: 0 });
     addPhysics2DJoint(world, joint);
     return { world, bob, joint, weight: bob.mass * -GRAVITY };
@@ -1554,7 +1566,7 @@ describe('stepPhysics2D with breakable joints', () => {
     arm.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 1.5, y: 0, radius: 0.4 }, STONE));
     addPhysics2DBody(world, arm);
     const moment = arm.mass * -GRAVITY * 1.5;
-    const joint: Physics2DJoint = {
+    const joint: Physics2DJoint = entityJoint({
       kind: 'Weld',
       bodyA: post.index,
       bodyB: arm.index,
@@ -1572,7 +1584,7 @@ describe('stepPhysics2D with breakable joints', () => {
       rAY: 0,
       rBX: 0,
       rBY: 0,
-    };
+    });
     Object.assign(joint, { referenceAngle: 0 });
     addPhysics2DJoint(world, joint);
 
@@ -1860,25 +1872,28 @@ describe('stepPhysics2D with joints', () => {
     registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
     const placeholder = box(world, 0, 0);
     const constrained = box(world, 0.2, 0);
-    addPhysics2DJoint(world, {
-      kind: 'OneBody',
-      bodyA: placeholder.index,
-      bodyB: constrained.index,
-      localAnchorAX: 0,
-      localAnchorAY: 0,
-      localAnchorBX: 0,
-      localAnchorBY: 0,
-      collideConnected: false,
-      breakForce: Number.POSITIVE_INFINITY,
-      breakTorque: Number.POSITIVE_INFINITY,
-      impulse0: 0,
-      impulse1: 0,
-      impulse2: 0,
-      rAX: 0,
-      rAY: 0,
-      rBX: 0,
-      rBY: 0,
-    });
+    addPhysics2DJoint(
+      world,
+      entityJoint({
+        kind: 'OneBody',
+        bodyA: placeholder.index,
+        bodyB: constrained.index,
+        localAnchorAX: 0,
+        localAnchorAY: 0,
+        localAnchorBX: 0,
+        localAnchorBY: 0,
+        collideConnected: false,
+        breakForce: Number.POSITIVE_INFINITY,
+        breakTorque: Number.POSITIVE_INFINITY,
+        impulse0: 0,
+        impulse1: 0,
+        impulse2: 0,
+        rAX: 0,
+        rAY: 0,
+        rBX: 0,
+        rBY: 0,
+      }),
+    );
 
     stepPhysics2D(world, 1 / 60);
 

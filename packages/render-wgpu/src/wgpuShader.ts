@@ -1,4 +1,5 @@
-import type { ColorScaleBias, RenderProxy, WgpuRenderState } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ColorScaleBias, RenderProxy, WgpuBindGroupLayouts, WgpuRenderState } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
@@ -155,10 +156,7 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.Screen]: createWgpuBlendState('one', 'one-minus-src'),
 };
 
-export function createWgpuBindGroupLayouts(device: GPUDevice): {
-  uniformBindGroupLayout: GPUBindGroupLayout;
-  textureBindGroupLayout: GPUBindGroupLayout;
-} {
+export function createWgpuBindGroupLayouts(device: GPUDevice): WgpuBindGroupLayouts {
   const uniformBindGroupLayout = device.createBindGroupLayout({
     entries: [
       {
@@ -176,7 +174,7 @@ export function createWgpuBindGroupLayouts(device: GPUDevice): {
     ],
   });
 
-  return { uniformBindGroupLayout, textureBindGroupLayout };
+  return createEntity({ uniformBindGroupLayout, textureBindGroupLayout });
 }
 
 // ---- Pipeline creation ----

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Command, CommandHistory } from '@flighthq/types/contract';
 
@@ -27,7 +28,7 @@ export function clearCommandHistory(history: CommandHistory): void {
 
 /** An empty history with no bindings registered. `maxSize` of `0` (the default) is unbounded. */
 export function createCommandHistory(maxSize = 0): CommandHistory {
-  return {
+  return createEntity({
     bindings: createCommandBindingTable(),
     entries: [],
     index: 0,
@@ -36,7 +37,7 @@ export function createCommandHistory(maxSize = 0): CommandHistory {
     transactionDepth: 0,
     transactionIndex: 0,
     transactionLabel: null,
-  };
+  });
 }
 
 // Applies `command` and pushes it. Returns false and changes nothing when the command's kind has no

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // Payload for onTextFieldChange: the field's text after the edit and the text before it.
@@ -23,7 +24,7 @@ export interface TextFieldScrollEvent {
 
 // The opt-in text-field notification group attached to a RichText runtime by enableTextFieldSignals
 // (@flighthq/text). Null on a static RichText that never enables it; setters emit only when present.
-export interface TextFieldSignals {
+export interface TextFieldSignals extends Entity {
   onTextFieldChange: Signal<(event: Readonly<TextFieldChangeEvent>) => void>;
   onTextFieldLink: Signal<(event: Readonly<TextFieldLinkEvent>) => void>;
   onTextFieldScroll: Signal<(event: Readonly<TextFieldScrollEvent>) => void>;

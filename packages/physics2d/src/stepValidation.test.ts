@@ -1,4 +1,5 @@
-import type { Physics2DContact } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Entity, Physics2DContact, Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint } from './jointRegistry';
@@ -15,6 +16,10 @@ import {
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
+
+function entityJoint(fields: Omit<Physics2DJoint, keyof Entity>): Physics2DJoint {
+  return createEntity(fields);
+}
 
 function bodyWorld() {
   const world = createPhysics2DWorld();
@@ -90,25 +95,28 @@ describe('isPhysics2DGravityValid', () => {
 describe('isPhysics2DJointStateValid', () => {
   it('rejects a non-finite authored or accumulated joint number', () => {
     const { body, world } = bodyWorld();
-    const joint = addPhysics2DJoint(world, {
-      kind: 'Unknown',
-      bodyA: body.index,
-      bodyB: body.index,
-      localAnchorAX: 0,
-      localAnchorAY: 0,
-      localAnchorBX: 0,
-      localAnchorBY: 0,
-      collideConnected: false,
-      breakForce: Number.POSITIVE_INFINITY,
-      breakTorque: Number.POSITIVE_INFINITY,
-      impulse0: 0,
-      impulse1: 0,
-      impulse2: 0,
-      rAX: 0,
-      rAY: 0,
-      rBX: 0,
-      rBY: 0,
-    });
+    const joint = addPhysics2DJoint(
+      world,
+      entityJoint({
+        kind: 'Unknown',
+        bodyA: body.index,
+        bodyB: body.index,
+        localAnchorAX: 0,
+        localAnchorAY: 0,
+        localAnchorBX: 0,
+        localAnchorBY: 0,
+        collideConnected: false,
+        breakForce: Number.POSITIVE_INFINITY,
+        breakTorque: Number.POSITIVE_INFINITY,
+        impulse0: 0,
+        impulse1: 0,
+        impulse2: 0,
+        rAX: 0,
+        rAY: 0,
+        rBX: 0,
+        rBY: 0,
+      }),
+    );
     expect(isPhysics2DJointStateValid(world)).toBe(true);
     joint.impulse0 = Number.NaN;
     expect(isPhysics2DJointStateValid(world)).toBe(false);

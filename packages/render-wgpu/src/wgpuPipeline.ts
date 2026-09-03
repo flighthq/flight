@@ -4,7 +4,7 @@ import type { WgpuPipeline, WgpuRenderRegistries } from '@flighthq/types/contrac
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
-  return {
+  return createEntity({
     compressedTextureDecoder: createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered'),
     compressedTextureUpload: createSlotTable('WgpuCompressedTextureUpload', 'Unregistered'),
     customMaterialShaders: createKeyedTable('WgpuCustomMaterialShader', 'Unregistered'),
@@ -18,7 +18,7 @@ export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
     strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
     velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
-  };
+  });
 }
 
 export function createWgpuPipeline(registries: Readonly<WgpuRenderRegistries>): WgpuPipeline {

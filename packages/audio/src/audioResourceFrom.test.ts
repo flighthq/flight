@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { HasNetHttp, NetBackend } from '@flighthq/types/contract';
 
 import { resetAudioBackendForTest, setAudioBackend } from './audioBackend';
@@ -11,12 +12,14 @@ import {
   selectAudioResourceUrl,
 } from './audioResourceFrom';
 
-function fakeNetHost(backend?: NetBackend): HasNetHttp {
+function fakeNetHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
   return {
     net: {
-      http: backend ?? {
-        sendNetRequest: async () => ({ status: 200, statusText: 'OK', ok: true, headers: {}, body: null, url: '' }),
-      },
+      http: createEntity(
+        backend ?? {
+          sendNetRequest: async () => ({ status: 200, statusText: 'OK', ok: true, headers: {}, body: null, url: '' }),
+        },
+      ),
     },
   };
 }
@@ -270,7 +273,7 @@ describe('loadAudioResourceFromUrls', () => {
   });
 
   it('loads the first playable source', async () => {
-    setAudioBackend({ canPlayType: (type: string) => type === 'audio/ogg' });
+    setAudioBackend(createEntity({ canPlayType: (type: string) => type === 'audio/ogg' }));
     const mockSendNetRequest = vi.fn().mockResolvedValue({
       body: new ArrayBuffer(8),
       headers: { 'content-type': 'audio/ogg' },
@@ -293,7 +296,7 @@ describe('loadAudioResourceFromUrls', () => {
 
 describe('selectAudioResourceUrl', () => {
   beforeEach(() => {
-    setAudioBackend({ canPlayType: (type: string) => type === 'audio/ogg' });
+    setAudioBackend(createEntity({ canPlayType: (type: string) => type === 'audio/ogg' }));
   });
 
   it('returns the first source whose inferred type is playable', () => {

@@ -1,10 +1,13 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { addNodeChildAt, getNodeChildCount, removeNodeChild, setNodeChildIndex } from '@flighthq/node/contract';
 import { createKeyedTable, getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   AddNodeChildCommand,
   CommandBinding,
+  CommandBindingTable,
   CommandHistory,
   CompositeCommand,
+  Entity,
   Kind,
   KeyedTable,
   NodeAny,
@@ -23,8 +26,10 @@ import {
 } from '@flighthq/types/contract';
 
 /** An empty command binding table. Every kind a history will dispatch must be registered into it. */
-export function createCommandBindingTable(): KeyedTable<CommandBinding> {
-  return createKeyedTable<CommandBinding>(CommandBindingRegistryId, CommandBindingMissPolicy);
+export function createCommandBindingTable(): CommandBindingTable {
+  return createEntity<KeyedTable<CommandBinding>>(
+    createKeyedTable<CommandBinding>(CommandBindingRegistryId, CommandBindingMissPolicy),
+  );
 }
 
 /** The binding registered for `kind`, or `null` when nothing is. */
@@ -43,7 +48,7 @@ export function hasCommandBinding(history: Readonly<CommandHistory>, kind: Kind)
 // in, which is what keeps unused command kinds shakeable and lets a consumer override a built-in binding
 // or add a vendor-prefixed kind of their own. Last write wins.
 export function registerCommandBinding(history: CommandHistory, kind: Kind, binding: CommandBinding): void {
-  history.bindings = withRegistryTableEntry(history.bindings, kind, binding);
+  history.bindings = createEntity<KeyedTable<CommandBinding>>(withRegistryTableEntry(history.bindings, kind, binding));
 }
 
 // Registers the five built-in kinds. An explicit call rather than a side effect at import: a history that
@@ -136,7 +141,7 @@ const setNodePropertyCommandBinding: CommandBinding = {
       if (a.entries[i].target !== b.entries[i].target) return null;
       if (a.entries[i].property !== b.entries[i].property) return null;
     }
-    return {
+    return createEntity<Omit<SetNodePropertyCommand, keyof Entity>>({
       entries: a.entries.map((entry, i) => ({
         after: b.entries[i].after,
         before: entry.before,
@@ -147,7 +152,7 @@ const setNodePropertyCommandBinding: CommandBinding = {
       label: b.label,
       mergeWindow: b.mergeWindow,
       time: b.time,
-    } as SetNodePropertyCommand;
+    });
   },
   undo: (command) => {
     const entries = (command as Readonly<SetNodePropertyCommand>).entries;

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { reserveFloat32Array } from '@flighthq/geometry/contract';
 import type { ParticleEmitterState, RandomSource } from '@flighthq/types/contract';
 
@@ -5,7 +6,7 @@ import type { ParticleEmitterState, RandomSource } from '@flighthq/types/contrac
 export const PARTICLE_VELOCITY_STRIDE = 3;
 
 export function createParticleEmitterState(random: RandomSource = Math.random): ParticleEmitterState {
-  return {
+  return createEntity({
     burstTimer: 0,
     colorBirth: new Float32Array(),
     colorDeath: new Float32Array(),
@@ -19,7 +20,7 @@ export function createParticleEmitterState(random: RandomSource = Math.random): 
     scales: new Float32Array(),
     spawnAccumulator: 0,
     velocities: new Float32Array(),
-  };
+  });
 }
 
 /** Grow the per-particle state arrays to hold at least `capacity` particles.

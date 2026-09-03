@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { addNodeChild, createNode, getNodeChildCount, getNodeChildIndex } from '@flighthq/node/contract';
 import type { CommandBinding, NodeAny, SetNodePropertyCommand } from '@flighthq/types/contract';
 import { SetNodePropertyCommandKind } from '@flighthq/types/contract';
@@ -49,7 +50,7 @@ describe('registerCommandBinding', () => {
       execute: () => seen.push('execute'),
       undo: () => seen.push('undo'),
     });
-    executeCommand(history, { kind: 'acme.Custom', label: 'Custom' });
+    executeCommand(history, createEntity({ kind: 'acme.Custom', label: 'Custom' }));
     undoCommand(history);
     expect(seen).toEqual(['execute', 'undo']);
   });

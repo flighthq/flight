@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { WgpuFullscreenPipeline, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -49,7 +50,7 @@ export function createWgpuFullscreenPipeline(
     },
     primitive: { topology: 'triangle-list' },
   });
-  return { pipeline, pipelineLayout, uniformBindGroupLayout, textureBindGroupLayouts };
+  return createEntity({ pipeline, pipelineLayout, uniformBindGroupLayout, textureBindGroupLayouts });
 }
 
 // Destroys a fullscreen pipeline's GPU resources. The pipeline and layouts are GC-managed in

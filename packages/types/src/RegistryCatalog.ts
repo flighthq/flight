@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { RequirementFacet } from './RequirementFacet';
 
 // One factual ownership row. It deliberately stops before argument/source expressions: those depend on
@@ -15,6 +15,6 @@ export interface RegistryCatalogEntry {
 }
 
 // A caller-owned, open inventory. The built-in content starts empty and is generated separately.
-export interface RegistryCatalog {
+export interface RegistryCatalog extends Entity {
   readonly entries: RegistryCatalogEntry[];
 }

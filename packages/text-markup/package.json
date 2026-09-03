@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/color": "*",
+    "@flighthq/entity": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/types": "*"
   },

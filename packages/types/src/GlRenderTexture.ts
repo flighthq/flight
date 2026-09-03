@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { GlContext } from './GlContext';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget, GlRenderTargetPool } from './GlRenderTarget';
@@ -18,7 +19,7 @@ export interface GlRenderTextureEntry {
 
 // App-level lease pool. Its currency is RenderTexture; the raw target pool is an implementation
 // detail used by multi-pass effect runners.
-export interface GlRenderTexturePool {
+export interface GlRenderTexturePool extends Entity {
   context: GlContext | null;
   destroyed: boolean;
   readonly effectTargets: GlRenderTargetPool;

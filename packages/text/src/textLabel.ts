@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { computeTextBoundsRectangle, createTextFormatRange } from '@flighthq/textlayout/contract';
@@ -76,14 +77,14 @@ export function createTextLabel(obj?: Readonly<PartialNode<TextLabel>>): TextLab
 }
 
 export function createTextLabelData(data?: Readonly<Partial<TextLabelData>>): TextLabelData {
-  return {
+  return createEntity({
     autoSize: data?.autoSize ?? 'none',
     height: data?.height ?? 100,
     text: data?.text ?? '',
     textFormat: data?.textFormat ?? {},
     verticalAlign: data?.verticalAlign ?? 'top',
     width: data?.width ?? 100,
-  };
+  });
 }
 
 export function createTextLabelRuntime(): TextLabelRuntime {

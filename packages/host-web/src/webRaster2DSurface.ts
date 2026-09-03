@@ -1,16 +1,17 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { installRaster2DSurfaceHostProvider } from '@flighthq/render/contract';
-import type { Raster2DSurfaceProvider } from '@flighthq/types/contract';
+import type { Entity, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 
 export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
-  return {
+  return createEntity<Omit<Raster2DSurfaceProvider, keyof Entity>>({
     createRaster2DSurface(width, height) {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const context = canvas.getContext('2d');
       if (context === null) return null;
-      return {
+      return createEntity({
         get width(): number {
           return canvas.width;
         },
@@ -25,13 +26,13 @@ export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
         },
         context,
         image: createImageResource(canvas),
-      };
+      });
     },
     destroyRaster2DSurface(surface) {
       surface.width = 0;
       surface.height = 0;
     },
-  };
+  });
 }
 
 export function enableHostWebRaster2DSurface(): void {

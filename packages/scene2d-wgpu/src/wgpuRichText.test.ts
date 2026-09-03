@@ -10,6 +10,7 @@ import {
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import type { Raster2DSurface } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getWgpuRendererData } from './wgpuRendererData';
 import {
@@ -35,6 +36,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   canvas.height = height;
   const context = canvas.getContext('2d')!;
   return {
+    [EntityRuntimeKey]: undefined,
     get width() {
       return canvas.width;
     },
@@ -56,6 +58,7 @@ function installTestRaster2DSurfaceProvider(
   destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
 ): void {
   setRaster2DSurfaceProvider({
+    [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width, height) {
       return createTestRaster2DSurface(width, height);
     },

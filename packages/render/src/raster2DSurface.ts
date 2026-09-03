@@ -1,4 +1,5 @@
-import type { BackendExplanation, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { BackendExplanation, Entity, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 
 export function createRaster2DSurface(width: number, height: number): Raster2DSurface | null {
   const provider = getRaster2DSurfaceProvider();
@@ -53,12 +54,12 @@ export function setRaster2DSurfaceProvider(provider: Readonly<Raster2DSurfacePro
   _custom = provider;
 }
 
-const _sentinel: Readonly<Raster2DSurfaceProvider> = {
+const _sentinel: Readonly<Raster2DSurfaceProvider> = createEntity<Omit<Raster2DSurfaceProvider, keyof Entity>>({
   createRaster2DSurface(): null {
     return null;
   },
   destroyRaster2DSurface() {},
-};
+});
 
 const _surfaceProviders = new WeakMap<Raster2DSurface, Readonly<Raster2DSurfaceProvider>>();
 let _custom: Readonly<Raster2DSurfaceProvider> | null = null;

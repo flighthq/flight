@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
   CollisionBuiltInShape2D,
@@ -178,13 +179,13 @@ export function createPhysics2DCollider(
   filter?: Readonly<Physics2DCollisionFilter>,
 ): Physics2DCollider {
   const ownedLocal = clonePhysics2DLocalShape(local);
-  return {
+  return createEntity({
     local: ownedLocal,
     world: createPhysics2DColliderWorldShape(ownedLocal),
     material: { ...material },
     filter: filter === undefined ? { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 } : { ...filter },
     sensor,
-  };
+  });
 }
 
 function clonePhysics2DLocalShape(local: Readonly<CollisionBuiltInShape2D>): CollisionBuiltInShape2D {
@@ -240,7 +241,7 @@ export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
 // without this package knowing which it got — `SpatialIndexBackend2D` is already that seam, so physics
 // adds no second one over it.
 export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: SpatialIndexBackend2D): Physics2DWorld {
-  return {
+  return createEntity({
     version: Physics2DWorldVersion,
     bodies: [],
     bodyByIndex: new Map(),
@@ -271,14 +272,14 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     gravityY,
     previousTimestep: 0,
     nextBodyIndex: 0,
-  };
+  });
 }
 
 // Creates a rigid body at rest. Mass properties stay zero until the body is added to a world, which
 // derives them from the colliders — a body's mass is never assigned, only derived, so it cannot
 // disagree with its shape.
 export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: number, angle = 0): RigidBody2D {
-  return {
+  return createEntity({
     index: -1,
     type,
     x,
@@ -305,7 +306,7 @@ export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: numbe
     sleepEnabled: true,
     sleepTimer: 0,
     colliders: [],
-  };
+  });
 }
 
 // The body carrying `index`, or null when the world no longer holds it. Contacts store body indices

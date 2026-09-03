@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { AudioDecoder, AudioResourceFetch } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
@@ -90,7 +91,7 @@ describe('explainAudioResourceReferenceResolution', () => {
   it('detaches the failure so a caller cannot mutate the reference through it', () => {
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1]));
     reference.state = ResourceResolutionState.Failed;
-    reference.failure = { kind: 'Error', message: 'boom', name: null };
+    reference.failure = createEntity({ kind: 'Error' as const, message: 'boom', name: null });
     const explanation = explainAudioResourceReferenceResolution(reference);
     expect(explanation.retryable).toBe(true);
     expect(explanation.failure).not.toBe(reference.failure);
@@ -117,7 +118,7 @@ describe('resetFailedAudioResourceReference', () => {
   it('returns a failed reference to unresolved', () => {
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1]));
     reference.state = ResourceResolutionState.Failed;
-    reference.failure = { kind: 'Error', message: 'boom', name: null };
+    reference.failure = createEntity({ kind: 'Error' as const, message: 'boom', name: null });
     expect(resetFailedAudioResourceReference(reference)).toBe(true);
     expect(reference.state).toBe(ResourceResolutionState.Unresolved);
     expect(reference.failure).toBeNull();

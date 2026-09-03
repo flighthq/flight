@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CompressedImageResource,
+  Entity,
   TextureContainer,
   TextureContainerFormat,
   TextureColorSpace,
@@ -172,14 +174,14 @@ function uploadWgpuCompressedImage(
   const view = texture.createView();
   const resources = getWgpuRenderStateDeviceResources(state);
   const sampler = state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
-  return {
+  return createEntity<Omit<WgpuTextureEntry, keyof Entity>>({
     bindings: new Map(),
     mipLevelCount: container.mipLevels,
     sampler,
     straightAlpha: native,
     texture,
     view,
-  };
+  });
 }
 
 function premultiplyRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {

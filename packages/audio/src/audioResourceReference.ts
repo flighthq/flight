@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   AudioResource,
   AudioResourceFailure,
@@ -21,9 +22,9 @@ import { loadAudioResourceFromBytes } from './audioResourceFrom';
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
 export function createAudioResourceFailure(cause: unknown): AudioResourceFailure {
   if (cause instanceof Error) {
-    return { kind: AudioResourceFailureKind.Error, message: cause.message, name: cause.name };
+    return createEntity({ kind: AudioResourceFailureKind.Error, message: cause.message, name: cause.name });
   }
-  return { kind: AudioResourceFailureKind.Error, message: String(cause), name: null };
+  return createEntity({ kind: AudioResourceFailureKind.Error, message: String(cause), name: null });
 }
 
 // `bytes` is retained as the view the container handed over, not a copy: a parser carves a sound payload
@@ -35,7 +36,7 @@ export function createEmbeddedAudioResourceReference(
   mimeType: string | null = null,
   name: string | null = null,
 ): EmbeddedAudioResourceReference {
-  return {
+  return createEntity({
     bytes,
     failure: null,
     kind: AudioResourceReferenceKind.Embedded,
@@ -43,7 +44,7 @@ export function createEmbeddedAudioResourceReference(
     name,
     resource: createAudioResource(),
     state: ResourceResolutionState.Unresolved,
-  };
+  });
 }
 
 export function createExternalAudioResourceReference(
@@ -52,7 +53,7 @@ export function createExternalAudioResourceReference(
   mimeType: string | null = null,
   name: string | null = null,
 ): ExternalAudioResourceReference {
-  return {
+  return createEntity({
     basePath,
     failure: null,
     kind: AudioResourceReferenceKind.External,
@@ -61,7 +62,7 @@ export function createExternalAudioResourceReference(
     resource: createAudioResource(),
     state: ResourceResolutionState.Unresolved,
     uri,
-  };
+  });
 }
 
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws
@@ -121,7 +122,11 @@ export async function resolveAudioResourceReference(
         ? await decodeAudioResourceBytes(ref, context, signal)
         : await fetch(ref, signal);
     if (decoded === null || decoded.buffer === null) {
-      ref.failure = { kind: AudioResourceFailureKind.Unavailable, message: 'Audio resource unavailable', name: null };
+      ref.failure = createEntity({
+        kind: AudioResourceFailureKind.Unavailable,
+        message: 'Audio resource unavailable',
+        name: null,
+      });
       ref.state = ResourceResolutionState.Failed;
       return null;
     }

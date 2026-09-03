@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { NodeAny } from './Node';
 import type { KeyedTable } from './RegistryTable';
 import type { Signal } from './Signal';
@@ -16,7 +16,7 @@ import type { Signal } from './Signal';
 // disk. Nodes have no stable identity to name instead — `scene-document` is what supplies one, by key and
 // path — so this is a limit of the SDK today rather than of this design. Everything except the target is
 // already serializable, and the seam is in the right place for the rest to follow once identity exists.
-export interface Command {
+export interface Command extends Entity {
   readonly kind: Kind;
   // Human-readable description, shown by a history panel and returned by the undo/redo label queries.
   readonly label: string;
@@ -35,15 +35,17 @@ export interface CommandBinding {
   readonly undo: (command: Readonly<Command>) => void;
 }
 
+export interface CommandBindingTable extends KeyedTable<CommandBinding>, Entity {}
+
 // An undo/redo stack over commands, plus the bindings that give its entries behaviour.
 //
 // `index` is the count of APPLIED entries: `entries[0 .. index - 1]` have been executed and
 // `entries[index .. ]` are available to redo. Executing a new command discards everything from `index`
 // onward, which is the standard fork-the-timeline behaviour.
-export interface CommandHistory {
+export interface CommandHistory extends Entity {
   // Persistent table — every registration returns a REPLACEMENT that the owner assigns, so this field is
   // reassigned rather than mutated.
-  bindings: KeyedTable<CommandBinding>;
+  bindings: CommandBindingTable;
   entries: Command[];
   index: number;
   // Cap on retained entries; `0` means unbounded. Trimming drops from the OLDEST end, so the most recent

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentScene2D,
@@ -30,9 +31,9 @@ describe('createFlightDocumentTokenResolverRegistry', () => {
 
   it('stays open to a vendor kind the SDK never registered', () => {
     const registry = createFlightDocumentTokenResolverRegistry();
-    const extended: FlightDocumentTokenResolverRegistry = {
+    const extended: FlightDocumentTokenResolverRegistry = createEntity({
       resolvers: withResolver(registry, 'acme.Duration', (value) => (typeof value === 'number' ? value : null)),
-    };
+    });
     expect(resolveOne(extended, token('acme.Duration', { default: 150 }))).toEqual({ 'a.token': 150 });
   });
 });

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   RenderTarget,
@@ -26,13 +27,13 @@ export function acquireWgpuRenderTexture(
 }
 
 export function createWgpuRenderTexturePool(): WgpuRenderTexturePool {
-  return {
+  return createEntity({
     device: null,
     destroyed: false,
     effectTargets: createWgpuRenderTargetPool(),
     free: [],
     leased: new Set(),
-  };
+  });
 }
 
 // Destroys both free and outstanding handles. Shutdown does not require callers to recover every

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   GlRenderState,
@@ -77,7 +78,7 @@ export function acquireGlRenderTarget(
 }
 
 export function createGlRenderTargetPool(): GlRenderTargetPool {
-  return { free: [] };
+  return createEntity({ free: [] });
 }
 
 export function destroyGlRenderTargetPool(state: GlRenderState, pool: GlRenderTargetPool): void {

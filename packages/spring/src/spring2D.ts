@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Spring2D, SpringConfig } from '@flighthq/types/contract';
 
 import { applySpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
@@ -16,7 +17,7 @@ export function createSpring2D(
   velocityX: number = 0,
   velocityY: number = 0,
 ): Spring2D {
-  return { x: createSpring(valueX, velocityX), y: createSpring(valueY, velocityY) };
+  return createEntity({ x: createSpring(valueX, velocityX), y: createSpring(valueY, velocityY) });
 }
 
 // Report whether both axes of `spring2D` have settled at (`targetX`, `targetY`) — the per-component

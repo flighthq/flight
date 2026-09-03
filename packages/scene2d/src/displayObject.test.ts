@@ -1,5 +1,5 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
-import { getEntityRuntime } from '@flighthq/entity/contract';
+import { createEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import {
   addNodeColorAdjustment,
   getNodeColorAdjustments,
@@ -165,12 +165,12 @@ describe('setNode2DClip', () => {
   });
 
   it('sets clip', () => {
-    const clip = {
+    const clip = createEntity({
       contours: null,
       rect: { x: 0, y: 0, width: 100, height: 50 } as Rectangle,
       winding: 'nonZero' as const,
       version: 0,
-    };
+    });
     setNode2DClip(obj, clip);
     expect(obj.clip).toBe(clip);
   });
@@ -182,12 +182,15 @@ describe('setNode2DClip', () => {
 
   it('invalidates appearance', () => {
     const idBefore = getRuntime_(obj).appearanceId;
-    setNode2DClip(obj, {
-      contours: null,
-      rect: { x: 0, y: 0, width: 10, height: 10 } as Rectangle,
-      winding: 'nonZero',
-      version: 0,
-    });
+    setNode2DClip(
+      obj,
+      createEntity({
+        contours: null,
+        rect: { x: 0, y: 0, width: 10, height: 10 } as Rectangle,
+        winding: 'nonZero' as const,
+        version: 0,
+      }),
+    );
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 });

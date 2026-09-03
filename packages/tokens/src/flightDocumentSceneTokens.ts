@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentRefusalExplanation,
@@ -26,7 +27,7 @@ export function createFlightDocumentTokenResolverRegistry(): FlightDocumentToken
   resolvers = withRegistryTableEntry(resolvers, 'Color', resolveColorTokenValue);
   resolvers = withRegistryTableEntry(resolvers, 'Number', resolveNumberTokenValue);
   resolvers = withRegistryTableEntry(resolvers, 'String', resolveStringTokenValue);
-  return { resolvers };
+  return createEntity({ resolvers });
 }
 
 export function explainFlightDocumentSceneTokenResolution(

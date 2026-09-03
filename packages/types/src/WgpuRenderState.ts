@@ -1,5 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
+import type { Entity } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
@@ -56,13 +57,15 @@ export interface WgpuPresentationRenderState extends WgpuRenderState {
  * than a programmer error — so it is reported, not thrown. `info` is the device's own loss report,
  * carried through unchanged; nothing here claims a device can be rebuilt or recovered.
  */
-export type WgpuOffscreenRenderStateResult =
-  | { readonly reason: 'device-lost'; readonly info: GPUDeviceLostInfo }
-  | { readonly reason: 'ok'; readonly state: WgpuRenderState };
+export type WgpuOffscreenRenderStateResult = Entity &
+  (
+    | { readonly reason: 'device-lost'; readonly info: GPUDeviceLostInfo }
+    | { readonly reason: 'ok'; readonly state: WgpuRenderState }
+  );
 
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface WgpuRenderRegistries extends RenderRegistries {
+export interface WgpuRenderRegistries extends RenderRegistries, Entity {
   colorAdjustmentFeature?: SlotTable<WgpuColorAdjustmentMaterialFeature>;
   // Optional diagnostic policy stays separate from the rendering feature: binding this callback
   // reports an unwired feature but never enables color-adjustment rendering behavior.
@@ -131,6 +134,11 @@ export interface WgpuColorAdjustmentFlush {
 // entity) so the public WgpuRenderState surface stays minimal; the render path resolves it each
 // frame via getWgpuRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
+export interface WgpuBindGroupLayouts extends Entity {
+  readonly textureBindGroupLayout: GPUBindGroupLayout;
+  readonly uniformBindGroupLayout: GPUBindGroupLayout;
+}
+
 export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   context: WgpuDeviceRuntime;
   registries: WgpuRenderRegistries;
@@ -484,7 +492,7 @@ export type WgpuTextureBindings = Map<GPUSampler, GPUBindGroup>;
 
 // An uploaded GPU texture, cached per image source in the WgpuRenderState runtime's textureCache: an
 // allocated resource plus the per-sampler bind groups derived from it.
-export interface WgpuTextureEntry extends WgpuTextureResource {
+export interface WgpuTextureEntry extends WgpuTextureResource, Entity {
   bindings: WgpuTextureBindings;
   // A sampler fixed by the SOURCE rather than by the draw — external and video textures carry their
   // own filtering, which the global `allowSmoothing` policy must not override. Absent means "follow the

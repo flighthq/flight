@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape2D,
   Physics2DDebugCircle,
@@ -28,7 +29,7 @@ const DEFAULT_OPTIONS: Readonly<Physics2DDebugGeometryOptions> = {
 // writer advances counts and overwrites existing entries before growing them, so a steady scene stops
 // allocating after its first query.
 export function createPhysics2DDebugGeometry(): Physics2DDebugGeometry {
-  return { circles: [], circleCount: 0, lines: [], lineCount: 0 };
+  return createEntity({ circles: [], circleCount: 0, lines: [], lineCount: 0 });
 }
 
 // Extracts the world's visible constraint geometry without choosing a renderer. Collider outlines are

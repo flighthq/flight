@@ -15,6 +15,7 @@ import {
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
+  Entity,
   RenderEffectPaddingResolver,
   RenderRootGuard,
   RenderState,
@@ -80,6 +81,10 @@ function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuD
   return createWgpuRenderStateRuntimeWithPipeline(deviceState, _testPipeline);
 }
 
+function entityHostBackend(fields: Omit<WgpuHostBackend, keyof Entity>): WgpuHostBackend {
+  return createEntity(fields);
+}
+
 function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuRenderState {
   const pipeline: WgpuPipeline = createWgpuPipeline(getWgpuRenderStateRuntime(source).registries);
   const state = createDeviceOnlyWgpuRenderState(source.deviceState, pipeline, {
@@ -129,13 +134,15 @@ describe('createWgpuAcquisitionFromCanvasElement', () => {
   // ★ NULL, NOT THROW. "This environment cannot give me WebGPU" is an expected outcome, not API misuse, so
   // it reports through the return value like every other expected failure in this SDK.
   it('returns null when the host cannot acquire, rather than rejecting', async () => {
-    setWgpuHostBackend({
-      acquire: vi.fn(async () => {
-        throw new Error('no adapter');
+    setWgpuHostBackend(
+      entityHostBackend({
+        acquire: vi.fn(async () => {
+          throw new Error('no adapter');
+        }),
+        isSupported: vi.fn(() => false),
+        release: vi.fn(),
       }),
-      isSupported: vi.fn(() => false),
-      release: vi.fn(),
-    });
+    );
 
     await expect(createWgpuAcquisitionFromCanvasElement(document.createElement('canvas'))).resolves.toBeNull();
     setWgpuHostBackend(null);
@@ -455,13 +462,13 @@ describe('createWgpuRenderState', () => {
   it('keeps exact caller-owned handles usable through every shared-state teardown', async () => {
     const owner = await createWgpuRenderStateForTest();
     const canvas = document.createElement('canvas');
-    const acquisition = {
+    const acquisition = createEntity({
       context: owner.context,
       device: owner.device,
       format: owner.format,
-      ownership: 'caller',
+      ownership: 'caller' as const,
       surface: owner.surface,
-    } as const;
+    });
     let contextUsable = true;
     let deviceUsable = true;
     const originalCreateBuffer = acquisition.device.createBuffer.bind(acquisition.device);
@@ -557,11 +564,13 @@ describe('createWgpuRenderStateFromCanvasElement', () => {
     const owner = await createWgpuRenderStateForTest();
     const acquisition = { ...ownerAcquisition(owner), ownership: 'flight' } as const;
     const released: Readonly<WgpuHostAcquisition>[] = [];
-    setWgpuHostBackend({
-      acquire: vi.fn(async () => acquisition),
-      isSupported: vi.fn(() => true),
-      release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
-    });
+    setWgpuHostBackend(
+      entityHostBackend({
+        acquire: vi.fn(async () => acquisition),
+        isSupported: vi.fn(() => true),
+        release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
+      }),
+    );
 
     const state = await createWgpuRenderStateFromCanvasElement(document.createElement('canvas'));
     destroyWgpuRenderState(state);
@@ -574,7 +583,7 @@ describe('createWgpuRenderStateFromCanvasElement', () => {
   it('forwards the acquisition options, which the render options no longer carry', async () => {
     const owner = await createWgpuRenderStateForTest();
     const acquire = vi.fn(async () => ({ ...ownerAcquisition(owner), ownership: 'flight' }) as const);
-    setWgpuHostBackend({ acquire, isSupported: vi.fn(() => true), release: vi.fn() });
+    setWgpuHostBackend(entityHostBackend({ acquire, isSupported: vi.fn(() => true), release: vi.fn() }));
     const canvas = document.createElement('canvas');
 
     const state = await createWgpuRenderStateFromCanvasElement(canvas, {
@@ -965,11 +974,13 @@ describe('releaseWgpuAcquisition', () => {
     const owner = await createWgpuRenderStateForTest();
     const acquisition = { ...ownerAcquisition(owner), ownership: 'caller' } as const;
     const released: Readonly<WgpuHostAcquisition>[] = [];
-    setWgpuHostBackend({
-      acquire: vi.fn(async () => acquisition),
-      isSupported: vi.fn(() => true),
-      release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
-    });
+    setWgpuHostBackend(
+      entityHostBackend({
+        acquire: vi.fn(async () => acquisition),
+        isSupported: vi.fn(() => true),
+        release: vi.fn((held: Readonly<WgpuHostAcquisition>) => released.push(held)),
+      }),
+    );
 
     releaseWgpuAcquisition(acquisition);
 
@@ -997,14 +1008,14 @@ describe('wgpu acquisition lifecycle', () => {
   ): { backend: WgpuHostBackend; released: Readonly<WgpuHostAcquisition>[] } => {
     const released: Readonly<WgpuHostAcquisition>[] = [];
     return {
-      backend: {
+      backend: entityHostBackend({
         acquire: vi.fn(async () => acquisition),
         isSupported: vi.fn(() => true),
         release: vi.fn((held: Readonly<WgpuHostAcquisition>) => {
           released.push(held);
           held.device.destroy();
         }),
-      },
+      }),
       released,
     };
   };
@@ -1087,7 +1098,7 @@ describe('wgpu acquisition lifecycle', () => {
 });
 
 function ownerAcquisition(owner: WgpuPresentationRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
-  return { context: owner.context, device: owner.device, format: owner.format, surface: owner.surface };
+  return createEntity({ context: owner.context, device: owner.device, format: owner.format, surface: owner.surface });
 }
 
 describe('WgpuPipeline snapshots', () => {
@@ -1164,13 +1175,13 @@ describe('WgpuPresentationSurface', () => {
         return width;
       },
     };
-    const acquisition = {
+    const acquisition = createEntity({
       context: owner.context,
       device: owner.device,
       format: owner.format,
-      ownership: 'caller',
+      ownership: 'caller' as const,
       surface,
-    } as const;
+    });
     const canvas = document.createElement('canvas');
 
     const state = createWgpuRenderState(acquisition);

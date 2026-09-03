@@ -1,4 +1,4 @@
-import { createEntityRuntime, getEntityRuntime } from '@flighthq/entity/contract';
+import { createEntity, createEntityRuntime, getEntityRuntime } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
 import type {
   Kind,
@@ -71,13 +71,13 @@ export function createNodeRuntime<Traits extends object = NodeTraits>(
 }
 
 export function createNodeSignals(): NodeSignals {
-  return {
+  return createEntity({
     onChildAdded: createSignal(),
     onChildRemoved: createSignal(),
     onChildrenChanged: createSignal(),
     onChildrenOrderChanged: createSignal(),
     onParentChanged: createSignal(),
-  };
+  });
 }
 
 export function defaultNodeRuntimeCanAddChild<Traits extends object>(

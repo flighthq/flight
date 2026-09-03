@@ -1,13 +1,17 @@
 import type { HasNetHttp, NetBackend, NetRequest, NetResponse } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as netContract from './net';
 import { sendNetRequest } from './net';
 
-function fakeHost(backend?: NetBackend): HasNetHttp {
+function fakeHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
   return {
     net: {
-      http: backend ?? {
-        sendNetRequest: async () => stubResponse(),
+      http: {
+        [EntityRuntimeKey]: undefined,
+        ...(backend ?? {
+          sendNetRequest: async () => stubResponse(),
+        }),
       },
     },
   };
@@ -36,7 +40,7 @@ describe('R3 boundary', () => {
 describe('sendNetRequest', () => {
   it('dispatches through the host backend and passes options', async () => {
     let received: { request?: Readonly<NetRequest>; options?: unknown } = {};
-    const backend: NetBackend = {
+    const backend: Pick<NetBackend, 'sendNetRequest'> = {
       sendNetRequest: async (request, options) => {
         received = { request, options };
         return stubResponse();

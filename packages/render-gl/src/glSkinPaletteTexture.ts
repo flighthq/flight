@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { GlContext, GlSkinPaletteTexture } from '@flighthq/types/contract';
 
 // The GPU skinning bone-palette data texture: the per-mesh joint-matrix palette in an RGBA32F texture
@@ -11,7 +12,7 @@ import type { GlContext, GlSkinPaletteTexture } from '@flighthq/types/contract';
 // uploadGlSkinPaletteTexture allocates storage sized to the palette. The caller owns the returned
 // struct and frees it with destroyGlSkinPaletteTexture.
 export function createGlSkinPaletteTexture(gl: GlContext): GlSkinPaletteTexture {
-  return { jointCapacity: 0, texture: gl.createTexture()! };
+  return createEntity({ jointCapacity: 0, texture: gl.createTexture()! });
 }
 
 // Frees the palette texture's GL object. The struct must not be used after this call. Deleting an

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { MarkupClassResolver } from './MarkupClassResolver';
 import type { MarkupColorResolver } from './MarkupColorResolver';
 import type { MarkupTagHandler } from './MarkupTagHandler';
@@ -7,7 +8,7 @@ import type { MarkupTagHandler } from './MarkupTagHandler';
 // registry decides what each tag contributes. The registered set of tag names IS the supported
 // dialect. Open and last-write-wins — a user registers their own (vendor-prefixed) tags, and unused
 // standard tags tree-shake out when a custom registry is built instead of the standard one.
-export interface MarkupTagRegistry {
+export interface MarkupTagRegistry extends Entity {
   // The style seam the `<span>` handler consults for a `class` attribute. Unset on the standard dialect
   // (a `<span>` contributes nothing — a transparent grouping element); `registerMarkupClassStyles`
   // installs one over a caller-provided class → format map. A `class` naming several space-separated

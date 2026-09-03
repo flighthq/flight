@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../color" }, { "path": "../textlayout" }, { "path": "../types" }],
+  "references": [{ "path": "../color" }, { "path": "../entity" }, { "path": "../textlayout" }, { "path": "../types" }],
   "include": ["src"]
 }

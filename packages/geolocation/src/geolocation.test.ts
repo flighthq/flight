@@ -1,4 +1,5 @@
-import type { GeolocationBackend, GeolocationErrorReason, GeoPosition } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { Entity, GeolocationBackend, GeolocationErrorReason, GeoPosition } from '@flighthq/types/contract';
 
 import {
   clearGeolocationWatch,
@@ -17,7 +18,7 @@ import {
 } from './geolocation';
 
 function fakeBackend(available: boolean = true): GeolocationBackend & { cleared: number[]; lastWatch: number } {
-  return {
+  return createEntity<Omit<GeolocationBackend & { cleared: number[]; lastWatch: number }, keyof Entity>>({
     cleared: [],
     lastWatch: 0,
     promptForAccess: () => Promise.resolve({ reason: 'granted' as const }),
@@ -46,7 +47,7 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
       if (onError) onError('denied');
       return ++this.lastWatch;
     },
-  };
+  });
 }
 
 afterEach(() => {

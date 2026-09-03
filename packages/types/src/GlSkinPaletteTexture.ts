@@ -10,7 +10,8 @@
 // primitive grows storage (reallocates the texture) only when the palette exceeds it, otherwise it
 // writes the row in place. Mutable because the upload path reallocates `texture` and updates
 // `jointCapacity` as skeletons grow.
-export interface GlSkinPaletteTexture {
+export interface GlSkinPaletteTexture extends Entity {
   jointCapacity: number;
   texture: WebGLTexture;
 }
+import type { Entity } from './Entity';

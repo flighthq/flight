@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { FlightDocumentValue } from './FlightDocumentFieldSchema';
 import type { KeyedTable } from './RegistryTable';
 
@@ -37,6 +37,6 @@ export type FlightDocumentTokenResolver = (
 // Open registry keyed by token kind, mirroring FlightDocumentResourceResolverRegistry: resolution
 // policy is caller-owned, so an application registers only the kinds it authors and unregistered
 // kinds refuse by name rather than resolving to something plausible.
-export interface FlightDocumentTokenResolverRegistry {
+export interface FlightDocumentTokenResolverRegistry extends Entity {
   resolvers: KeyedTable<FlightDocumentTokenResolver>;
 }

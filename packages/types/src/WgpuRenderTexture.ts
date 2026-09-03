@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { RenderTexture } from './RenderTexture';
 import type { WgpuRenderState } from './WgpuRenderState';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
@@ -19,7 +20,7 @@ export interface WgpuRenderTextureEntry {
 
 // App-level lease pool. Handles and raw effect targets are locked to the first GPUDevice that uses
 // the pool; RenderTexture remains the public currency while recipes consume effectTargets internally.
-export interface WgpuRenderTexturePool {
+export interface WgpuRenderTexturePool extends Entity {
   device: GPUDevice | null;
   destroyed: boolean;
   readonly effectTargets: WgpuRenderTargetPool;

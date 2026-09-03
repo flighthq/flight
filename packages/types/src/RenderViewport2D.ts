@@ -1,4 +1,6 @@
-export interface RenderViewport2D {
+import type { Entity } from './Entity';
+
+export interface RenderViewport2D extends Entity {
   height: number;
   width: number;
   x: number;

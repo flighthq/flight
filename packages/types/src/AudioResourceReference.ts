@@ -1,4 +1,5 @@
 import type { AudioResource } from './AudioResource';
+import type { Entity } from './Entity';
 import type { ResourceResolutionState } from './ResourceResolutionState';
 
 // A lightweight, plain-data reference to encoded audio a document parser emits synchronously instead of
@@ -38,13 +39,13 @@ export type AudioResourceFailureKind = (typeof AudioResourceFailureKind)[keyof t
 
 // A serialization-safe failure cause retained on the reference. Raw thrown values and Error objects stay
 // inside the async operation; diagnostics get the stable category, name, and message only.
-export interface AudioResourceFailure {
+export interface AudioResourceFailure extends Entity {
   kind: AudioResourceFailureKind;
   message: string;
   name: string | null;
 }
 
-interface AudioResourceReferenceBase {
+interface AudioResourceReferenceBase extends Entity {
   // Null until a terminal failure. Reset/retry clears it before the next request.
   failure: AudioResourceFailure | null;
   // The audio MIME type (`audio/mpeg`, `audio/wav`) when known — detected from the embedded bytes or

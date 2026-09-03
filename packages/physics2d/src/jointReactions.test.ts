@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -39,7 +40,7 @@ function ball(world: Physics2DWorld, type: RigidBody2D['type'], x: number, y: nu
 }
 
 function base(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
-  return {
+  return createEntity({
     kind,
     bodyA,
     bodyB,
@@ -57,7 +58,7 @@ function base(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
     rAY: 0,
     rBX: 0,
     rBY: 0,
-  };
+  });
 }
 
 function settledWorld(): Physics2DWorld {

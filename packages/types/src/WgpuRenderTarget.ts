@@ -1,7 +1,8 @@
+import type { Entity } from './Entity';
 import type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget';
 import type { WgpuTextureBindings } from './WgpuRenderState';
 
-export interface WgpuRenderTarget extends RenderTargetDimensions {
+export interface WgpuRenderTarget extends RenderTargetDimensions, Entity {
   // Per-sampler bind groups over `view`, same contract as WgpuTextureEntry: which sampler a draw uses is
   // a draw policy re-read per draw, never captured into the target when it is allocated or resized.
   bindings: WgpuTextureBindings;
@@ -31,6 +32,6 @@ export interface WgpuRenderTarget extends RenderTargetDimensions {
 
 // A free-list of reusable targets. The effect pipeline owns one and lends intermediate targets to
 // multi-pass recipes via acquireWgpuRenderTarget / releaseWgpuRenderTarget.
-export type WgpuRenderTargetPool = {
+export type WgpuRenderTargetPool = Entity & {
   free: WgpuRenderTarget[];
 };

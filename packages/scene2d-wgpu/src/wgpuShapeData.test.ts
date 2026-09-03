@@ -4,6 +4,7 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import type { WgpuShapeRendererData } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   acquireWgpuShapeRasterSurface,
@@ -21,12 +22,14 @@ beforeAll(() => {
 beforeEach(() => {
   destroySurface.mockReset();
   setRaster2DSurfaceProvider({
+    [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width, height) {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const context = canvas.getContext('2d')!;
       return {
+        [EntityRuntimeKey]: undefined,
         get width() {
           return canvas.width;
         },

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   Node,
@@ -121,7 +122,7 @@ export function clearNodeOrderList<Traits extends object = NodeTraits>(list: Nod
 }
 
 export function createNodeOrderList<Traits extends object = NodeTraits>(): NodeOrderList<Traits> {
-  return { entryCount: 0, nodes: [], sortKeys: [] };
+  return createEntity({ entryCount: 0, nodes: [], sortKeys: [] });
 }
 
 /**

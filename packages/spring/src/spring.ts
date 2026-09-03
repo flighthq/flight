@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { approxEqual, approxZero, TAU } from '@flighthq/math/contract';
 import type { Spring, SpringConfig } from '@flighthq/types/contract';
 
@@ -12,7 +13,7 @@ export function applySpringImpulse(spring: Spring, velocity: number): void {
 // allocating function for scalar springs; `updateSpring`, `resetSpring`, and the settle query all
 // write into or read an existing spring.
 export function createSpring(value: number = 0, velocity: number = 0): Spring {
-  return { value, velocity };
+  return createEntity({ value, velocity });
 }
 
 // Report whether `spring` has come to rest at `target`: its `value` is within `positionEpsilon` of

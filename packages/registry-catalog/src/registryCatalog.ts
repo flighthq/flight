@@ -1,7 +1,8 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Kind, RegistryCatalog, RegistryCatalogEntry, RequirementFacet } from '@flighthq/types/contract';
 
 export function createRegistryCatalog(entries: readonly Readonly<RegistryCatalogEntry>[] = []): RegistryCatalog {
-  return { entries: entries.map(copyCatalogEntry) };
+  return createEntity({ entries: entries.map(copyCatalogEntry) });
 }
 
 export function findRegistryCatalogEntries(
