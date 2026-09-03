@@ -9,6 +9,10 @@ import type {
 
 import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBlur';
 
+interface BitmapInnerEffectOptions extends BitmapShadowBlurOptions {
+  intensity?: number;
+}
+
 /**
  * Produces the blurred shadow mask for a drop shadow effect, writing into
  * `out`. The result is a tinted, blurred alpha mask derived from `source`.
@@ -161,7 +165,7 @@ function applyInnerEffect(
   scratch: Uint8ClampedArray,
   source: Readonly<BitmapRegion>,
   color: number,
-  options: Readonly<BitmapShadowBlurOptions & { intensity?: number }>,
+  options: Readonly<BitmapInnerEffectOptions>,
   offsetX: number,
   offsetY: number,
 ): void {

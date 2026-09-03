@@ -221,6 +221,12 @@ export interface LottieTransformShapeItem extends LottieShapeItemBase, LottieTra
   ty: 'tr';
 }
 
+export interface LottieRepeaterTransform extends LottieTransform {
+  /** End/start opacity, in percent. */
+  eo?: LottieAnimatable<number>;
+  so?: LottieAnimatable<number>;
+}
+
 export interface LottieTrimPathShapeItem extends LottieShapeItemBase {
   e: LottieAnimatable<number>;
   /** 1 = simultaneously, 2 = individually. */
@@ -234,11 +240,7 @@ export interface LottieRepeaterShapeItem extends LottieShapeItemBase {
   c: LottieAnimatable<number>;
   m?: 1 | 2;
   o: LottieAnimatable<number>;
-  tr: LottieTransform & {
-    /** End/start opacity, in percent. */
-    eo?: LottieAnimatable<number>;
-    so?: LottieAnimatable<number>;
-  };
+  tr: LottieRepeaterTransform;
   ty: 'rp';
 }
 

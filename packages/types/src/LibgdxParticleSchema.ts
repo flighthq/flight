@@ -25,6 +25,10 @@ export interface LibgdxRangeValue {
   timeline: number[];
 }
 
+export interface LibgdxActiveRangeValue extends LibgdxRangeValue {
+  active: boolean;
+}
+
 /** Full libGDX particle emitter document. */
 export interface LibgdxParticleDocument {
   /** Emitter name (the string after "- Emitter -"). */
@@ -34,21 +38,13 @@ export interface LibgdxParticleDocument {
   /** Blend mode: true = additive, false = normal (alpha). */
   additive: boolean;
   premultipliedAlpha: boolean;
-  delay: LibgdxRangeValue & {
-    active: boolean;
-  };
+  delay: LibgdxActiveRangeValue;
   duration: LibgdxRangeValue;
   emission: LibgdxRangeValue;
   life: LibgdxRangeValue;
-  lifeOffset: LibgdxRangeValue & {
-    active: boolean;
-  };
-  xOffset: LibgdxRangeValue & {
-    active: boolean;
-  };
-  yOffset: LibgdxRangeValue & {
-    active: boolean;
-  };
+  lifeOffset: LibgdxActiveRangeValue;
+  xOffset: LibgdxActiveRangeValue;
+  yOffset: LibgdxActiveRangeValue;
   spawnShape: {
     shape: 'point' | 'line' | 'square' | 'ellipse';
     edges: boolean;
@@ -57,21 +53,11 @@ export interface LibgdxParticleDocument {
   spawnWidth: LibgdxRangeValue;
   spawnHeight: LibgdxRangeValue;
   scale: LibgdxRangeValue;
-  velocity: LibgdxRangeValue & {
-    active: boolean;
-  };
-  angle: LibgdxRangeValue & {
-    active: boolean;
-  };
-  rotation: LibgdxRangeValue & {
-    active: boolean;
-  };
-  wind: LibgdxRangeValue & {
-    active: boolean;
-  };
-  gravity: LibgdxRangeValue & {
-    active: boolean;
-  };
+  velocity: LibgdxActiveRangeValue;
+  angle: LibgdxActiveRangeValue;
+  rotation: LibgdxActiveRangeValue;
+  wind: LibgdxActiveRangeValue;
+  gravity: LibgdxActiveRangeValue;
   tint: {
     colors: string[];
     timeline: number[];

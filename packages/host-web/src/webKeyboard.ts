@@ -73,9 +73,13 @@ interface VirtualKeyboard extends EventTarget {
   hide(): void;
 }
 
+interface WebKeyboardNavigator extends Navigator {
+  virtualKeyboard?: VirtualKeyboard;
+}
+
 function getVirtualKeyboard(): VirtualKeyboard | null {
   if (typeof navigator === 'undefined') return null;
-  const nav = navigator as Navigator & { virtualKeyboard?: VirtualKeyboard };
+  const nav = navigator as WebKeyboardNavigator;
   return nav.virtualKeyboard ?? null;
 }
 

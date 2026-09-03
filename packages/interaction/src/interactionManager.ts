@@ -5,6 +5,7 @@ import type {
   AnyInteractionSignalSlot,
   Cursor,
   FocusEventData,
+  HasTransform2DRuntime,
   InputKeyboardData,
   InputPointerData,
   InteractionConnectGuard,
@@ -930,7 +931,13 @@ function setPointerDataLocalPosition(data: PointerEventData, currentTarget: Node
 }
 
 function isTransform2DNode(source: Readonly<NodeAny>): source is Transform2DNode {
-  const runtime = getNodeRuntime(source) as NodeRuntime & { worldMatrix?: unknown };
+  const runtime = getNodeRuntime(source);
+  return hasTransform2DRuntime(runtime);
+}
+
+function hasTransform2DRuntime(
+  runtime: Readonly<NodeRuntime>,
+): runtime is Readonly<NodeRuntime & HasTransform2DRuntime> {
   return 'worldMatrix' in runtime;
 }
 

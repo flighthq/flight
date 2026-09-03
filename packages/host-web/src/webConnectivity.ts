@@ -119,6 +119,10 @@ interface WebConnectivityConnection {
   removeEventListener?: (type: 'change', listener: () => void) => void;
 }
 
+interface WebConnectivityNavigator extends Navigator {
+  connection?: WebConnectivityConnection;
+}
+
 function anyAbortSignal(a: AbortSignal, b: AbortSignal): AbortSignal {
   if (typeof AbortSignal !== 'undefined' && 'any' in AbortSignal) {
     return (AbortSignal as unknown as { any: (signals: AbortSignal[]) => AbortSignal }).any([a, b]);
@@ -136,7 +140,7 @@ function anyAbortSignal(a: AbortSignal, b: AbortSignal): AbortSignal {
 
 function getWebConnection(): WebConnectivityConnection | null {
   if (typeof navigator === 'undefined') return null;
-  return (navigator as Navigator & { connection?: WebConnectivityConnection }).connection ?? null;
+  return (navigator as WebConnectivityNavigator).connection ?? null;
 }
 
 function mapWebConnectionType(type: string | undefined): ConnectivityConnectionType {
