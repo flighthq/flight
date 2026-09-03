@@ -1,54 +1,36 @@
-import * as imageContract from '@flighthq/image/contract';
-import type { Bitmap, ImageBackend } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
+import type { Bitmap, HasGraphicsImage } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { enableHostWebImage, resetHostWebImageForTest } from './webImage';
+import { createWebImageBackend, webImageBackend } from './webImage';
 
-describe('enableHostWebImage', () => {
-  afterEach(() => {
-    resetHostWebImageForTest();
-    imageContract.resetImageBackendForTest();
-    vi.restoreAllMocks();
-  });
+function hostWith(backend = webImageBackend): HasGraphicsImage {
+  return { graphics: { image: backend } } as HasGraphicsImage;
+}
 
-  it('delegates Bitmap materialization and records the observation', () => {
-    enableHostWebImage();
-    const result = imageContract.getImageBackend().createImageFromBitmap!(createTestBitmap());
-    expect(result.width).toBe(1);
-    expect(result.height).toBe(1);
-    expect(imageContract.explainImageBackend()).toMatchObject({
-      operation: 'createImageFromBitmap',
-      viability: 'available',
-    });
-  });
-
-  it('does not advertise Bitmap materialization when the inner provider omits it', () => {
-    const inner: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
-    vi.spyOn(imageContract, 'createWebImageBackend').mockReturnValue(inner);
-    enableHostWebImage();
-    expect(imageContract.getImageBackend().createImageFromBitmap).toBeUndefined();
-  });
-
-  it('does not throw on first call', () => {
-    expect(() => enableHostWebImage()).not.toThrow();
-  });
-
-  it('is idempotent', () => {
-    enableHostWebImage();
-    expect(() => enableHostWebImage()).not.toThrow();
+describe('createWebImageBackend', () => {
+  it('returns a fresh entity each call', () => {
+    const a = createWebImageBackend();
+    const b = createWebImageBackend();
+    expect(a).not.toBe(b);
+    expect(a.loadImageFromUrl).toBeDefined();
+    expect(a.createImageFromBitmap).toBeDefined();
   });
 });
 
-describe('resetHostWebImageForTest', () => {
+describe('webImageBackend', () => {
   afterEach(() => {
-    resetHostWebImageForTest();
-    imageContract.resetImageBackendForTest();
+    vi.restoreAllMocks();
   });
 
-  it('allows re-enabling after reset', () => {
-    enableHostWebImage();
-    resetHostWebImageForTest();
-    expect(() => enableHostWebImage()).not.toThrow();
+  it('materializes a Bitmap to an ImageResource via canvas', () => {
+    const host = hostWith();
+    const result = host.graphics.image.createImageFromBitmap!(createTestBitmap());
+    expect(result.width).toBe(1);
+    expect(result.height).toBe(1);
+  });
+
+  it('exposes createImageFromBitmap', () => {
+    expect(webImageBackend.createImageFromBitmap).toBeDefined();
   });
 });
 

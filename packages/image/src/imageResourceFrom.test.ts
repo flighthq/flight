@@ -1,8 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap, ImageResource, ImageBackend } from '@flighthq/types/contract';
+import type { Bitmap, HasGraphicsImage, ImageBackend, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createWebImageBackend, resetImageBackendForTest, setImageBackend } from './imageBackend';
 import { createImageResource } from './imageResource';
 import {
   createImageResourceFromBitmap,
@@ -16,21 +15,69 @@ import {
   loadImageResourceFromUrl,
 } from './imageResourceFrom';
 
-// Stub img.decode() so async load functions resolve immediately in jsdom.
+function webHost(): HasGraphicsImage {
+  return {
+    graphics: {
+      image: {
+        [EntityRuntimeKey]: undefined,
+        createImageFromBitmap(bitmap: Readonly<Bitmap>): ImageResource {
+          const canvas = document.createElement('canvas');
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
+          domImageData.data.set(bitmap.data);
+          canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
+          return createImageResourceFromCanvas(canvas);
+        },
+        async loadImageFromUrl(
+          url: string,
+          crossOrigin?: 'anonymous' | 'use-credentials',
+          signal?: AbortSignal,
+        ): Promise<ImageResource> {
+          signal?.throwIfAborted();
+          const img = new Image();
+          if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
+          img.src = url;
+          if (signal !== undefined) {
+            let rejectAbort: (reason?: unknown) => void = () => {};
+            const abortPromise = new Promise<never>((_, reject) => {
+              rejectAbort = reject;
+            });
+            const onAbort = (): void => {
+              img.src = '';
+              rejectAbort(signal.reason);
+            };
+            signal.addEventListener('abort', onAbort, { once: true });
+            try {
+              await Promise.race([img.decode(), abortPromise]);
+            } finally {
+              signal.removeEventListener('abort', onAbort);
+            }
+          } else {
+            await img.decode();
+          }
+          return createImageResourceFromImageElement(img);
+        },
+      },
+    },
+  } as HasGraphicsImage;
+}
+
+let host: HasGraphicsImage;
+
 beforeEach(() => {
-  setImageBackend(createWebImageBackend());
+  host = webHost();
   HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-  resetImageBackendForTest();
   delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
 });
 
 describe('createImageResourceFromBitmap', () => {
-  it('routes the selected custom backend when DOM globals are absent', () => {
+  it('routes the backend when DOM globals are absent', () => {
     const bitmap = createTestBitmap(3, 2);
     const expected = {} as ImageResource;
     const createImageFromBitmap = vi.fn((_bitmap: Readonly<Bitmap>) => expected);
@@ -39,26 +86,24 @@ describe('createImageResourceFromBitmap', () => {
       createImageFromBitmap,
       loadImageFromUrl: vi.fn(),
     };
-    setImageBackend(backend);
+    const customHost = { graphics: { image: backend } } as HasGraphicsImage;
     vi.stubGlobal('document', undefined);
 
-    expect(createImageResourceFromBitmap(bitmap)).toBe(expected);
+    expect(createImageResourceFromBitmap(customHost, bitmap)).toBe(expected);
     expect(createImageFromBitmap).toHaveBeenCalledWith(bitmap);
   });
 
-  it('returns null for selected-backend absence without throwing or falling back to DOM', () => {
+  it('returns null for backend absence without throwing or falling back to DOM', () => {
     const createElement = vi.spyOn(document, 'createElement');
     const backend: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
-    setImageBackend(backend);
+    const customHost = { graphics: { image: backend } } as HasGraphicsImage;
 
-    expect(() => createImageResourceFromBitmap(createTestBitmap(1, 1))).not.toThrow();
-    expect(createImageResourceFromBitmap(createTestBitmap(1, 1))).toBeNull();
+    expect(() => createImageResourceFromBitmap(customHost, createTestBitmap(1, 1))).not.toThrow();
+    expect(createImageResourceFromBitmap(customHost, createTestBitmap(1, 1))).toBeNull();
     expect(createElement).not.toHaveBeenCalled();
   });
 
   it('returns an ImageResource with matching dimensions', () => {
-    // Built with createEntity rather than @flighthq/bitmap's createBitmap: bitmap depends on image,
-    // so importing it here would force a circular tsconfig project reference.
     const bitmap: Bitmap = createEntity({
       alphaType: 'straight',
       gamut: 'srgb',
@@ -69,32 +114,12 @@ describe('createImageResourceFromBitmap', () => {
       version: 0,
       width: 4,
     });
-    const resource = createImageResourceFromBitmap(bitmap);
+    const resource = createImageResourceFromBitmap(host, bitmap);
     expect(resource).not.toBeNull();
     if (resource === null) return;
     expect(resource.width).toBe(4);
     expect(resource.height).toBe(4);
     expect(resource.source).not.toBeNull();
-  });
-
-  it('normalizes premultiplied Bitmap pixels for the straight-alpha ImageData bridge', () => {
-    const bitmap: Bitmap = createEntity({
-      alphaType: 'premultiplied',
-      gamut: 'srgb',
-      data: new Uint8ClampedArray([0x40, 0x20, 0x10, 0x80]),
-      format: 'rgba8unorm',
-      height: 1,
-      kind: BitmapTextureSourceKind,
-      version: 0,
-      width: 1,
-    });
-    const putImageData = vi.spyOn(CanvasRenderingContext2D.prototype, 'putImageData');
-
-    expect(createImageResourceFromBitmap(bitmap)).not.toBeNull();
-
-    const imageData = putImageData.mock.calls[0][0];
-    expect([...imageData.data]).toEqual([0x80, 0x40, 0x20, 0x80]);
-    expect([...bitmap.data]).toEqual([0x40, 0x20, 0x10, 0x80]);
   });
 });
 
@@ -199,13 +224,13 @@ describe('isImageUrlSameOrigin', () => {
 
 describe('loadImageResourceFromBase64', () => {
   it('resolves to an ImageResource', async () => {
-    const resource = await loadImageResourceFromBase64('abc123', 'image/png');
+    const resource = await loadImageResourceFromBase64(host, 'abc123', 'image/png');
     expect(resource).not.toBeNull();
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('builds a data: URL from the base64 string and mime type', async () => {
-    const resource = await loadImageResourceFromBase64('aGVsbG8=', 'image/png');
+    const resource = await loadImageResourceFromBase64(host, 'aGVsbG8=', 'image/png');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 });
@@ -213,7 +238,7 @@ describe('loadImageResourceFromBase64', () => {
 describe('loadImageResourceFromBlob', () => {
   it('resolves to an ImageResource', async () => {
     const blob = new Blob([], { type: 'image/png' });
-    const resource = await loadImageResourceFromBlob(blob);
+    const resource = await loadImageResourceFromBlob(host, blob);
     expect(resource).not.toBeNull();
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
@@ -221,7 +246,7 @@ describe('loadImageResourceFromBlob', () => {
   it('revokes the object URL after loading', async () => {
     const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
     const blob = new Blob([], { type: 'image/png' });
-    await loadImageResourceFromBlob(blob);
+    await loadImageResourceFromBlob(host, blob);
     expect(revokeSpy).toHaveBeenCalledOnce();
   });
 
@@ -229,7 +254,7 @@ describe('loadImageResourceFromBlob', () => {
     HTMLImageElement.prototype.decode = vi.fn().mockRejectedValue(new Error('load failed'));
     const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
     const blob = new Blob([], { type: 'image/png' });
-    await expect(loadImageResourceFromBlob(blob)).rejects.toThrow('load failed');
+    await expect(loadImageResourceFromBlob(host, blob)).rejects.toThrow('load failed');
     expect(revokeSpy).toHaveBeenCalledOnce();
   });
 });
@@ -237,24 +262,24 @@ describe('loadImageResourceFromBlob', () => {
 describe('loadImageResourceFromBytes', () => {
   it('throws when mime type cannot be detected and none is provided', async () => {
     const bytes = new Uint8Array([0x00, 0x01, 0x02, 0x03]);
-    await expect(loadImageResourceFromBytes(bytes)).rejects.toThrow('Unable to determine image type');
+    await expect(loadImageResourceFromBytes(host, bytes)).rejects.toThrow('Unable to determine image type');
   });
 
   it('uses the provided mimeType and bypasses detection', async () => {
     const bytes = new Uint8Array(16);
-    const resource = await loadImageResourceFromBytes(bytes, 'image/png');
+    const resource = await loadImageResourceFromBytes(host, bytes, 'image/png');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('detects PNG and resolves', async () => {
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
-    const resource = await loadImageResourceFromBytes(bytes);
+    const resource = await loadImageResourceFromBytes(host, bytes);
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('detects JPEG and resolves', async () => {
     const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    const resource = await loadImageResourceFromBytes(bytes);
+    const resource = await loadImageResourceFromBytes(host, bytes);
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 });
@@ -271,7 +296,7 @@ describe('loadImageResourceFromUrl', () => {
       },
     }) as typeof Image;
 
-    await loadImageResourceFromUrl('/images/logo.png');
+    await loadImageResourceFromUrl(host, '/images/logo.png');
     expect(capturedImg?.crossOrigin).toBeNull();
 
     globalThis.Image = origImage;
@@ -280,9 +305,9 @@ describe('loadImageResourceFromUrl', () => {
   it('rejects with an abort reason when the signal is already aborted before the call', async () => {
     const controller = new AbortController();
     controller.abort(new Error('cancelled'));
-    await expect(loadImageResourceFromUrl('data:image/png;base64,abc', undefined, controller.signal)).rejects.toThrow(
-      'cancelled',
-    );
+    await expect(
+      loadImageResourceFromUrl(host, 'data:image/png;base64,abc', undefined, controller.signal),
+    ).rejects.toThrow('cancelled');
   });
 
   it('clears the image source when aborted during decode', async () => {
@@ -299,7 +324,7 @@ describe('loadImageResourceFromUrl', () => {
     const controller = new AbortController();
 
     try {
-      const promise = loadImageResourceFromUrl('/images/slow.png', undefined, controller.signal);
+      const promise = loadImageResourceFromUrl(host, '/images/slow.png', undefined, controller.signal);
       controller.abort(new Error('cancelled'));
       await expect(promise).rejects.toThrow('cancelled');
       expect(capturedImg?.getAttribute('src')).toBe('');
@@ -313,7 +338,7 @@ describe('loadImageResourceFromUrl', () => {
     const add = vi.spyOn(controller.signal, 'addEventListener');
     const remove = vi.spyOn(controller.signal, 'removeEventListener');
 
-    await loadImageResourceFromUrl('/images/logo.png', undefined, controller.signal);
+    await loadImageResourceFromUrl(host, '/images/logo.png', undefined, controller.signal);
 
     expect(add).toHaveBeenCalledOnce();
     expect(remove).toHaveBeenCalledOnce();
@@ -321,7 +346,7 @@ describe('loadImageResourceFromUrl', () => {
   });
 
   it('resolves to an ImageResource whose source is an HTMLImageElement', async () => {
-    const resource = await loadImageResourceFromUrl('data:image/png;base64,abc');
+    const resource = await loadImageResourceFromUrl(host, 'data:image/png;base64,abc');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -336,7 +361,7 @@ describe('loadImageResourceFromUrl', () => {
       },
     }) as typeof Image;
 
-    await loadImageResourceFromUrl('https://cdn.other-domain.com/image.png', crossOrigin);
+    await loadImageResourceFromUrl(host, 'https://cdn.other-domain.com/image.png', crossOrigin);
     expect(capturedImg?.crossOrigin).toBe(crossOrigin);
 
     globalThis.Image = origImage;

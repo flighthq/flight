@@ -1,7 +1,7 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResourceReference } from '@flighthq/types/contract';
+import type { HasGraphicsImage, ImageResourceReference } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
   ImageResourceFailureKind,
@@ -19,6 +19,9 @@ import {
 import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
+const host: HasGraphicsImage = {
+  graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
+} as HasGraphicsImage;
 const sinks: ReturnType<typeof createMemoryLogSink>[] = [];
 
 afterEach(() => {
@@ -45,7 +48,7 @@ function failedRef(): ImageResourceReference {
 
 describe('areScene3DResourceFailureGuardsEnabled', () => {
   it('tracks resolver-scoped enable and disable state', () => {
-    const resolver = createScene3DResourceResolver();
+    const resolver = createScene3DResourceResolver(host);
     expect(areScene3DResourceFailureGuardsEnabled(resolver)).toBe(false);
     enableScene3DResourceFailureGuards(resolver);
     expect(areScene3DResourceFailureGuardsEnabled(resolver)).toBe(true);
@@ -57,7 +60,7 @@ describe('areScene3DResourceFailureGuardsEnabled', () => {
 
 describe('disableScene3DResourceFailureGuards', () => {
   it('is harmless when the guard is absent', () => {
-    const resolver = createScene3DResourceResolver();
+    const resolver = createScene3DResourceResolver(host);
     expect(() => disableScene3DResourceFailureGuards(resolver)).not.toThrow();
     disposeScene3DResourceResolver(resolver);
   });
@@ -68,7 +71,7 @@ describe('enableScene3DResourceFailureGuards', () => {
     const sink = createMemoryLogSink(4);
     sinks.push(sink);
     addLogSink(sink.sink);
-    const resolver = createScene3DResourceResolver();
+    const resolver = createScene3DResourceResolver(host);
     const signals = enableScene3DResourceSignals(resolver);
     const ref = failedRef();
     const texture = createTexture({ resource: ref });
@@ -108,7 +111,7 @@ describe('enableScene3DResourceFailureGuards', () => {
     const sink = createMemoryLogSink(4);
     sinks.push(sink);
     addLogSink(sink.sink);
-    const resolver = createScene3DResourceResolver();
+    const resolver = createScene3DResourceResolver(host);
     const signals = enableScene3DResourceSignals(resolver);
     const ref = failedRef();
     const texture = createTexture({ resource: ref });

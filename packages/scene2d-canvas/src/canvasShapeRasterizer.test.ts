@@ -1,15 +1,10 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import {
-  createImageResourceFromCanvas,
-  createWebImageBackend,
-  explainImageOperation,
-  resetImageBackendForTest,
-  setImageBackend,
-} from '@flighthq/image/contract';
+import { createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
-import type { RenderState } from '@flighthq/types/contract';
+import type { HasGraphicsImage, ImageBackend, RenderState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
@@ -28,8 +23,24 @@ function makeRasterizerState(): RenderState {
   return state;
 }
 
-beforeEach(() => setImageBackend(createWebImageBackend()));
-afterEach(() => resetImageBackendForTest());
+function createTestImageBackend(): ImageBackend {
+  return {
+    [EntityRuntimeKey]: undefined,
+    createImageFromBitmap(bitmap) {
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      return createImageResourceFromCanvas(canvas);
+    },
+    loadImageFromUrl: vi.fn(),
+  };
+}
+
+function imageHost(backend: ImageBackend = createTestImageBackend()): HasGraphicsImage {
+  return { graphics: { image: backend } } as HasGraphicsImage;
+}
+
+const host = imageHost();
 
 describe('createCanvasShapeRasterizer', () => {
   it('paints a Bitmap-sourced texture fill, which is what a null render state could never do', () => {
@@ -38,7 +49,7 @@ describe('createCanvasShapeRasterizer', () => {
     // fill produced no pattern and the shape drew nothing at all — SWF's lossless bitmaps, specifically.
     const { context, fills } = createRecordingContext();
     const resolvers = createCanvasTextureResolvers();
-    registerCanvasBitmapTextureResolver(resolvers);
+    registerCanvasBitmapTextureResolver(host, resolvers);
 
     const texture = createTexture();
     setTextureSource(texture, createBitmap(2, 2));
@@ -71,8 +82,9 @@ describe('createCanvasShapeRasterizer', () => {
   it('paints nothing when the registered Bitmap resolver cannot materialize on this host', () => {
     const { context, fills } = createRecordingContext();
     const resolvers = createCanvasTextureResolvers();
-    registerCanvasBitmapTextureResolver(resolvers);
-    resetImageBackendForTest();
+    const backend: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
+    const noMaterializeHost = imageHost(backend);
+    registerCanvasBitmapTextureResolver(noMaterializeHost, resolvers);
 
     const texture = createTexture();
     setTextureSource(texture, createBitmap(2, 2));
@@ -84,7 +96,7 @@ describe('createCanvasShapeRasterizer', () => {
       createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, makeRasterizerState()),
     ).not.toThrow();
     expect(fills).toEqual([]);
-    expect(explainImageOperation('createImageFromBitmap').implemented).toBe(false);
+    expect(backend.createImageFromBitmap).toBeUndefined();
   });
 
   it('resolves an Image-sourced texture through the same state', () => {

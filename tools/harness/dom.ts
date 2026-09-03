@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   createCanvasRenderState,
@@ -58,7 +58,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
   });
 
   enableFlightDiagnostics(state);
-  registerDomBitmapTextureResolver(state);
+  registerDomBitmapTextureResolver(webGraphicsHost, state);
   registerDomImageTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
@@ -111,7 +111,7 @@ function createHarnessShapeRasterizer(): ShapeRasterizer {
     scene2dCanvasPipeline,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
-  registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasBitmapTextureResolver(webGraphicsHost, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);
   return createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(resolverState));

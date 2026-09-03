@@ -3,7 +3,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { ImageResource, ImageResourceReference } from '@flighthq/types/contract';
+import type { HasGraphicsImage, ImageResource, ImageResourceReference } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
   ImageResourceFailureKind,
@@ -16,6 +16,9 @@ import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScen
 import { retryFailedScene3DResources } from './sceneResourceRecovery';
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 
+const host: HasGraphicsImage = {
+  graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
+} as HasGraphicsImage;
 const fakeImage = { height: 1, width: 1 } as ImageResource;
 
 function externalRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
@@ -40,7 +43,7 @@ describe('retryFailedScene3DResources', () => {
     scene.resources.push(ref);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: a })]));
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
-    const resolver = createBuiltInScene3DResourceResolver({ fetch });
+    const resolver = createBuiltInScene3DResourceResolver(host, { fetch });
 
     await loadScene3DResources(scene, resolver);
     expect(ref.state).toBe(ResourceResolutionState.Failed);
@@ -67,7 +70,7 @@ describe('retryFailedScene3DResources', () => {
     const scene = createScene3D();
     scene.resources.push(ref);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
-    const resolver = createBuiltInScene3DResourceResolver();
+    const resolver = createBuiltInScene3DResourceResolver(host);
     expect(retryFailedScene3DResources(scene, resolver, { select: () => false })).toBe(0);
     expect(ref.state).toBe(ResourceResolutionState.Failed);
     disposeScene3DResourceResolver(resolver);

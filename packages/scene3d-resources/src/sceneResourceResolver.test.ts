@@ -1,4 +1,5 @@
 import { createTexture } from '@flighthq/texture/contract';
+import type { HasGraphicsImage } from '@flighthq/types/contract';
 import {
   ResourceResolutionState,
   EntityRuntimeKey,
@@ -17,9 +18,13 @@ import {
   disposeScene3DResourceResolver,
 } from './sceneResourceResolver';
 
+const host: HasGraphicsImage = {
+  graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
+} as HasGraphicsImage;
+
 describe('createBuiltInScene3DResourceResolver', () => {
   it('assembles Standard PBR and Unlit discovery only through the explicit built-in constructor', () => {
-    const resolver = createBuiltInScene3DResourceResolver();
+    const resolver = createBuiltInScene3DResourceResolver(host);
     expect(resolver.registry.listers.has(StandardPbrMaterialKind)).toBe(true);
     expect(resolver.registry.listers.has(UnlitMaterialKind)).toBe(true);
     disposeScene3DResourceResolver(resolver);
@@ -28,7 +33,7 @@ describe('createBuiltInScene3DResourceResolver', () => {
 
 describe('createScene3DResourceResolver', () => {
   it('creates an Entity with an empty registry and private runtime machinery', () => {
-    const resolver = createScene3DResourceResolver();
+    const resolver = createScene3DResourceResolver(host);
     const runtime = resolver[Scene3DResourceResolverRuntimeKey];
     expect(EntityRuntimeKey in resolver).toBe(true);
     expect(resolver.registry.listers.size).toBe(0);
@@ -44,7 +49,7 @@ describe('createScene3DResourceResolver options', () => {
   it('uses a caller-supplied registry and fetch wholesale', () => {
     const registry = createScene3DMaterialTextureRegistry();
     const fetch = async () => null;
-    const resolver = createScene3DResourceResolver({ fetch, registry });
+    const resolver = createScene3DResourceResolver(host, { fetch, registry });
     expect(resolver.registry).toBe(registry);
     expect(resolver.registry.listers.has(UnlitMaterialKind)).toBe(false);
     expect(resolver.fetch).toBe(fetch);
@@ -54,7 +59,7 @@ describe('createScene3DResourceResolver options', () => {
 
 describe('disposeScene3DResourceResolver', () => {
   it('aborts every in-flight controller and clears the map', () => {
-    const resolver = createScene3DResourceResolver();
+    const resolver = createScene3DResourceResolver(host);
     const controller = new AbortController();
     const ref = {
       alphaType: 'straight',
