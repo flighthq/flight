@@ -1,9 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { OutlineEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createOutlineEffect(options: Readonly<Omit<OutlineEffect, 'kind'>> = {}): OutlineEffect {
-  return { kind: 'OutlineEffect', ...options };
+  return createEntity({ kind: 'OutlineEffect', ...options });
 }
 
 export function getOutlineEffectPadding(effect: Readonly<OutlineEffect>): RenderEffectPadding {

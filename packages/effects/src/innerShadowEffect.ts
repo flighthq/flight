@@ -1,10 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { InnerShadowEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { getDirectionalRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then draw or hide the source.
 export function createInnerShadowEffect(options: Readonly<Omit<InnerShadowEffect, 'kind'>> = {}): InnerShadowEffect {
-  return { kind: 'InnerShadowEffect', ...options };
+  return createEntity({ kind: 'InnerShadowEffect', ...options });
 }
 
 export function getInnerShadowEffectPadding(effect: Readonly<InnerShadowEffect>): RenderEffectPadding {

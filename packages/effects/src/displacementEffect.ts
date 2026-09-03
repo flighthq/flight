@@ -1,9 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { DisplacementEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createDisplacementEffect(options: Readonly<Omit<DisplacementEffect, 'kind'>> = {}): DisplacementEffect {
-  return { kind: 'DisplacementEffect', ...options };
+  return createEntity({ kind: 'DisplacementEffect', ...options });
 }
 
 export function getDisplacementEffectPadding(effect: Readonly<DisplacementEffect>): RenderEffectPadding {

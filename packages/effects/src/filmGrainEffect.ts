@@ -1,5 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { FilmGrainEffect } from '@flighthq/types/contract';
 
 export function createFilmGrainEffect(options: Readonly<Omit<FilmGrainEffect, 'kind'>> = {}): FilmGrainEffect {
-  return { kind: 'FilmGrainEffect', ...options };
+  return createEntity({ kind: 'FilmGrainEffect', ...options });
 }

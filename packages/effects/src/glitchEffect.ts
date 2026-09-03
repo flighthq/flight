@@ -1,9 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { GlitchEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createGlitchEffect(options: Readonly<Omit<GlitchEffect, 'kind'>> = {}): GlitchEffect {
-  return { kind: 'GlitchEffect', ...options };
+  return createEntity({ kind: 'GlitchEffect', ...options });
 }
 
 export function getGlitchEffectPadding(effect: Readonly<GlitchEffect>): RenderEffectPadding {

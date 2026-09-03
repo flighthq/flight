@@ -1,5 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CrtEffect } from '@flighthq/types/contract';
 
 export function createCrtEffect(options: Readonly<Omit<CrtEffect, 'kind'>> = {}): CrtEffect {
-  return { kind: 'CrtEffect', ...options };
+  return createEntity({ kind: 'CrtEffect', ...options });
 }
