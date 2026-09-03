@@ -1,9 +1,10 @@
+import type { Entity } from './Entity';
 import type { FocusEventData } from './FocusEventData';
 import type { KeyboardEventData } from './KeyboardEventData';
 import type { PointerEventData } from './PointerEventData';
 import type { Signal } from './Signal';
 
-export interface InteractionSignals {
+export interface InteractionSignals extends Entity {
   onClick: Signal<(data: Readonly<PointerEventData>) => void>;
   onContextMenu: Signal<(data: Readonly<PointerEventData>) => void>;
   onDoubleClick: Signal<(data: Readonly<PointerEventData>) => void>;

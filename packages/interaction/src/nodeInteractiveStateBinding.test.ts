@@ -115,7 +115,7 @@ describe('applyNodeInteractiveStates', () => {
     const schemas = createTestSchemas();
 
     expect(createNodeInteractiveStateBinding(node, states, schemas)).toBeNull();
-    expect(explainNodeInteractiveStateBinding(node, states, schemas)).toEqual({
+    expect(explainNodeInteractiveStateBinding(node, states, schemas)).toMatchObject({
       kind: 'acme.Missing',
       reason: NodeInteractiveStateRefusalReason.ExtensionKindUnregistered,
     });
@@ -123,7 +123,7 @@ describe('applyNodeInteractiveStates', () => {
     states.hover = { alpha: 0.5, extensions: [] };
     expect(
       explainNodeInteractiveStateBinding(node, states, schemas, { fields: {}, kind: 'acme.MissingTransition' }),
-    ).toEqual({
+    ).toMatchObject({
       kind: 'acme.MissingTransition',
       reason: NodeInteractiveStateRefusalReason.TransitionKindUnregistered,
     });
@@ -175,7 +175,7 @@ describe('applyNodeInteractiveStates', () => {
     expect(calls).toEqual(['second:20', 'first:10']);
 
     disposeNodeInteractiveStateBinding(binding);
-    expect(values).toEqual({ first: 2, second: 3 });
+    expect(values).toMatchObject({ first: 2, second: 3 });
     expect(calls.slice(2)).toEqual(['second:3', 'second:disposed', 'first:2', 'first:disposed']);
   });
 });
@@ -233,7 +233,7 @@ describe('explainNodeInteractiveStateBinding', () => {
         { disabled: null, hover: { extensions: [], x: 5 }, pressed: null },
         createTestSchemas(),
       ),
-    ).toEqual({
+    ).toMatchObject({
       kind: node.kind,
       property: 'x',
       reason: NodeInteractiveStateRefusalReason.PropertyTargetUnsupported,

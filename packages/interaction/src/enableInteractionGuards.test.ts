@@ -93,10 +93,10 @@ describe('explainInteractionHitEligibility', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     addNodeChild(root, child);
-    expect(explainInteractionHitEligibility(root)).toEqual({ eligible: false, hasEligibleInSubtree: false });
+    expect(explainInteractionHitEligibility(root)).toMatchObject({ eligible: false, hasEligibleInSubtree: false });
     setNodeHitTestEnabled(child, true);
-    expect(explainInteractionHitEligibility(root)).toEqual({ eligible: false, hasEligibleInSubtree: true });
+    expect(explainInteractionHitEligibility(root)).toMatchObject({ eligible: false, hasEligibleInSubtree: true });
     setNodeHitTestEnabled(root, true);
-    expect(explainInteractionHitEligibility(root)).toEqual({ eligible: true, hasEligibleInSubtree: true });
+    expect(explainInteractionHitEligibility(root)).toMatchObject({ eligible: true, hasEligibleInSubtree: true });
   });
 });

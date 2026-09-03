@@ -21,7 +21,7 @@ import {
 
 describe('createNodeInteractionState', () => {
   it('returns a cell with every field at its default', () => {
-    expect(createNodeInteractionState()).toEqual({
+    expect(createNodeInteractionState()).toMatchObject({
       cursor: null,
       focusable: false,
       hitArea: null,

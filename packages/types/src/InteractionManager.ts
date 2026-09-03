@@ -1,4 +1,5 @@
 import type { CursorBackend } from './Cursor';
+import type { EntityRuntimeKey } from './Entity';
 import type { FocusEventData } from './FocusEventData';
 import type { InputSignals } from './InputSignals';
 import type { InteractionSignals } from './InteractionSignals';
@@ -8,7 +9,10 @@ import type { NodeInteractionState } from './NodeInteractionState';
 import type { PointerEventData, PointerType } from './PointerEventData';
 import type { SpatialIndex2D } from './Spatial';
 
-export type InteractionSignalName = keyof InteractionSignals;
+// The signal names only. InteractionSignals is an Entity, so a bare `keyof` would also yield the
+// runtime slot's symbol — which is not a signal name, and widening this union to include it makes
+// every consumer accept a key it cannot dispatch.
+export type InteractionSignalName = Exclude<keyof InteractionSignals, typeof EntityRuntimeKey>;
 export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData | FocusEventData) => void;
 export type InteractionDispatchLayer<N extends NodeAny = Node<NodeTraits>> = (
   target: N,

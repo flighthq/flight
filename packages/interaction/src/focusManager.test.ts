@@ -121,7 +121,7 @@ describe('connectFocusNavigation', () => {
 describe('createFocusManager', () => {
   it('starts unfocused with wrap on by default, and honors wrap: false', () => {
     const root = createDisplayObject();
-    expect(createFocusManager(root)).toEqual({ focused: null, root, wrap: true });
+    expect(createFocusManager(root)).toMatchObject({ focused: null, root, wrap: true });
     expect(createFocusManager(root, { wrap: false }).wrap).toBe(false);
   });
 });

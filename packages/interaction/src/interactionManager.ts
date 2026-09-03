@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
@@ -182,7 +183,7 @@ export function createInteractionManager<N extends NodeAny>(
 }
 
 export function createInteractionSignals(): InteractionSignals {
-  return {
+  return createEntity({
     onClick: createSignal(),
     onContextMenu: createSignal(),
     onDoubleClick: createSignal(),
@@ -201,7 +202,7 @@ export function createInteractionSignals(): InteractionSignals {
     onPointerUp: createSignal(),
     onReleaseOutside: createSignal(),
     onWheel: createSignal(),
-  };
+  });
 }
 
 export function disconnectInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(
