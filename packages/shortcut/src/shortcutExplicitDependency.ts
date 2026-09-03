@@ -9,6 +9,7 @@ import type {
   GlobalShortcutQueryOutcome,
   HasShortcutQuery,
   HasShortcutTrigger,
+  NonEntityCreateResult,
   ParsedAccelerator,
   ShortcutTriggerBackend,
   ShortcutTriggerSubscription,
@@ -75,8 +76,11 @@ export async function attachGlobalShortcut(
 }
 
 // Creates the consumer Entity only after parsing and normalization succeed. Malformed input is a core
-// value error and cannot reach a provider.
-export function createGlobalShortcut(accelerator: string): CreateGlobalShortcutOutcome {
+// value error and cannot reach a provider. The outcome itself is a plain-data result — the entity it
+// carries on the success arm is the Flight object; the union is how the failure arm is reported.
+export function createGlobalShortcut(
+  accelerator: string,
+): NonEntityCreateResult<CreateGlobalShortcutOutcome, 'descriptor'> {
   const parsed = makeParsedAccelerator();
   const outcome = parseAcceleratorDetailed(accelerator, parsed);
   if ('reason' in outcome) return { parseError: outcome, reason: 'unparseable' };
