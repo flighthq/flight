@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
 import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path/contract';
 import type { MotionPath, MotionPathLoopMode, Path, Vector2Like } from '@flighthq/types/contract';
@@ -15,14 +16,14 @@ export function createMotionPath(
   loopMode: MotionPathLoopMode = 'clamp',
   tolerance?: number,
 ): MotionPath {
-  return {
+  return createEntity({
     direction: 1,
     distance: 0,
     length: getPathLength(path, tolerance),
     loopMode,
     path,
     speed,
-  };
+  });
 }
 
 // Return the marker's heading angle in radians — `atan2(tangentY, tangentX)` of the path tangent at

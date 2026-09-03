@@ -1,4 +1,5 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   Bitmap,
   GlyphAtlas,
@@ -25,7 +26,7 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
     ...(options.fontStyle !== undefined ? { fontStyle: options.fontStyle } : {}),
     ...(options.fontWeight !== undefined ? { fontWeight: options.fontWeight } : {}),
   };
-  return {
+  return createEntity({
     runtime: {
       bitmaps: new Map(),
       dirty: false,
@@ -49,7 +50,7 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
       shelves: [],
       bitmap: createBitmap(options.width, options.height),
     },
-  };
+  });
 }
 
 // Estimates line metrics from a pixel font size when a real font-metrics source is not wired up. The

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   addPhysics2DBody,
   addPhysics2DCollider,
@@ -108,7 +109,7 @@ export function createReferencePhysics2DAbi(): Physics2DAbi {
   const worlds = new Map<number, ReferencePhysics2DAbiWorld>();
   let nextWorldHandle = 1;
 
-  return {
+  return createEntity({
     version: Physics2DAbiVersion,
     capabilities:
       Physics2DAbiCapability.ContactHooks |
@@ -192,7 +193,7 @@ export function createReferencePhysics2DAbi(): Physics2DAbi {
       writeShapeCastHit(state, out);
       return true;
     },
-  };
+  });
 }
 
 interface ReferencePhysics2DAbiCollider {

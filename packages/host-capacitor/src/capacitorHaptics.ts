@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   HapticImpactStyle,
   HapticsBackend,
@@ -15,7 +16,7 @@ import type {
 // omitted; the intensity argument to `impact` is not expressible and is ignored.
 export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HapticsBackend {
   const haptics = capacitor.haptics;
-  return {
+  return createEntity({
     cancel() {
       // Capacitor exposes no cancel-vibration call.
       return false;
@@ -51,7 +52,7 @@ export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HapticsB
       // Capacitor's vibrate takes a single duration, not an on/off pattern; report unsupported.
       return false;
     },
-  };
+  });
 }
 
 // Capacitor's ImpactStyle is HEAVY/MEDIUM/LIGHT; Flight's extra 'soft'/'rigid' fold onto the nearest.

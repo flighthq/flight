@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Node2D,
@@ -20,7 +21,7 @@ export function clearTimelineFrameScripts(timeline: Timeline): void {
 }
 
 export function createTimeline(obj?: Partial<Timeline>): Timeline {
-  return {
+  return createEntity({
     source: obj?.source ?? null,
     target: obj?.target ?? null,
     cueRegistry: obj?.cueRegistry ?? null,
@@ -31,7 +32,7 @@ export function createTimeline(obj?: Partial<Timeline>): Timeline {
     playMode: obj?.playMode ?? 'loop',
     signals: obj?.signals ?? null,
     timeElapsed: 0,
-  };
+  });
 }
 
 // Native authoring entry: wraps an explicit per-frame `constructFrame` plus structure into a
@@ -45,13 +46,13 @@ export function createTimelineSource(obj: {
   cues?: readonly TimelineCue[];
   constructFrame?: (target: Node2D, frame: number) => void;
 }): TimelineSource {
-  return {
+  return createEntity({
     totalFrames: obj.totalFrames ?? 1,
     frameRate: obj.frameRate ?? null,
     labels: obj.labels ?? EMPTY_LABELS,
     cues: obj.cues ?? EMPTY_CUES,
     constructFrame: obj.constructFrame ?? noopConstructFrame,
-  };
+  });
 }
 
 export function disposeTimelineSignals(timeline: Timeline): void {
