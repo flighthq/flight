@@ -1,5 +1,4 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { EntityRuntimeWriteSlot } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { disableEntityRuntimeGuards, enableEntityRuntimeGuards } from './enableEntityRuntimeGuards';
@@ -7,69 +6,47 @@ import { createEntity } from './entity';
 import { areEntityRuntimeGuardsEnabled, createGuardedEntity, createGuardedEntityRuntime } from './guards';
 import { createEntityRuntime } from './runtime';
 
-function captureLog(run: () => void): readonly LogEntry[] {
-  const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+// Every case runs the write under a reporter that records the slot, so what is asserted is what the
+// caller's reporter actually received — not that some sink somewhere was touched.
+function recordSlots(write: () => void): readonly EntityRuntimeWriteSlot[] {
+  const slots: EntityRuntimeWriteSlot[] = [];
+  enableEntityRuntimeGuards((slot) => slots.push(slot));
   try {
-    run();
-    return getMemoryLogSinkEntries(sink);
+    write();
   } finally {
-    removeLogSink(sink.sink);
+    disableEntityRuntimeGuards();
   }
-}
-
-function messageOf(entry: Readonly<LogEntry>): string {
-  const data = entry.data;
-  return typeof data === 'string' ? data : String(data.message);
+  return slots;
 }
 
 describe('disableEntityRuntimeGuards', () => {
   it('uninstalls both the proxies and the reporter', () => {
-    const entries = captureLog(() => {
-      enableEntityRuntimeGuards();
-      disableEntityRuntimeGuards();
-      createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined;
-    });
-    expect(entries.length).toBe(0);
+    const slots: EntityRuntimeWriteSlot[] = [];
+    enableEntityRuntimeGuards((slot) => slots.push(slot));
+    disableEntityRuntimeGuards();
+    createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined;
+    expect(slots).toEqual([]);
     expect(areEntityRuntimeGuardsEnabled()).toBe(false);
   });
 });
 
 describe('enableEntityRuntimeGuards', () => {
-  it('WARNS through the log sink on a direct runtime-slot write', () => {
-    const entries = captureLog(() => {
-      enableEntityRuntimeGuards();
-      try {
-        createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined;
-      } finally {
-        disableEntityRuntimeGuards();
-      }
-    });
-    expect(entries.length).toBe(1);
-    // Names a function that actually exists: the point of the warning is that the caller can act on it.
-    expect(messageOf(entries[0])).toContain('attachEntityBinding');
+  it('REPORTS a direct runtime-slot write to the caller-supplied reporter', () => {
+    expect(recordSlots(() => (createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined))).toEqual([
+      'runtime-slot',
+    ]);
   });
 
-  it('WARNS separately for a direct binding-slot write', () => {
-    const entries = captureLog(() => {
-      enableEntityRuntimeGuards();
-      try {
-        createGuardedEntityRuntime(createEntityRuntime()).binding = null;
-      } finally {
-        disableEntityRuntimeGuards();
-      }
-    });
-    expect(entries.length).toBe(1);
-    expect(messageOf(entries[0])).toContain('attachEntityBinding');
-    expect(messageOf(entries[0])).toContain('detachEntityBinding');
+  it('REPORTS a direct binding-slot write separately', () => {
+    expect(recordSlots(() => (createGuardedEntityRuntime(createEntityRuntime()).binding = null))).toEqual([
+      'binding-slot',
+    ]);
   });
 
   it('stays SILENT without the guard — the production default', () => {
-    const entries = captureLog(() => {
-      // Unguarded entities are returned as-is, so there is nothing to intercept.
-      createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined;
-    });
-    expect(entries.length).toBe(0);
+    const slots: EntityRuntimeWriteSlot[] = [];
+    createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined;
+    expect(slots).toEqual([]);
     expect(areEntityRuntimeGuardsEnabled()).toBe(false);
   });
 });

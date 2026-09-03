@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Entity } from './Entity';
 import type { SignalConnection } from './SignalConnection';
 /**
  * A collection of `SignalConnection` handles that can all be torn down in one
@@ -8,6 +9,6 @@ import type { SignalConnection } from './SignalConnection';
  *
  * Plain data — not a class. Create with `createSignalScope`.
  */
-export interface SignalScope {
+export interface SignalScope extends Entity {
   connections: SignalConnection<(...args: any[]) => void>[];
 }
