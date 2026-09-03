@@ -77,21 +77,47 @@ describe('checkEntityContracts', () => {
     const report = checkFixture({
       'packages/example/src/contract.ts': "export * from './example';",
       'packages/example/src/example.ts': [
+        'interface CanvasView extends Pick<HTMLCanvasElement, "width"> {}',
         'type RandomSource = () => number;',
         'export declare function createValues(): number[];',
         'export declare function createRandomSource(): RandomSource;',
         'export declare function createCanvas(): HTMLCanvasElement;',
+        'export declare function createCanvasView(): CanvasView;',
         'export declare function createLookup(): Map<string, string>;',
       ].join('\n'),
     });
 
     expect(report.exportedCreateCandidates).toEqual([]);
-    expect(report.exportedCreateExclusions).toHaveLength(4);
+    expect(report.exportedCreateExclusions).toHaveLength(5);
     expect(Object.fromEntries(report.exportedCreateExclusions.map(({ name, reasons }) => [name, reasons]))).toEqual({
       '@flighthq/example createCanvas': ['external-native'],
+      '@flighthq/example createCanvasView': ['external-native'],
       '@flighthq/example createLookup': ['external-native'],
       '@flighthq/example createRandomSource': ['callable'],
       '@flighthq/example createValues': ['array-or-tuple'],
+    });
+  });
+
+  it('applies automatic exclusions before Entity assignability', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import type { Entity } from '../../types/src/Entity';",
+        'type BrandedValue = string & { readonly brand: unique symbol };',
+        'type CallableEntity = (() => number) & Entity;',
+        'export declare function createCallableEntity(): CallableEntity;',
+        'export declare function createArrayEntity(): number[] & Entity;',
+        'export declare function createNativeEntity(): HTMLCanvasElement & Entity;',
+        'export declare function createBrandedValue(): BrandedValue;',
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateFunctions).toBe(3);
+    expect(report.exportedCreateEntityReturns).toBe(0);
+    expect(Object.fromEntries(report.exportedCreateExclusions.map(({ name, reasons }) => [name, reasons]))).toEqual({
+      '@flighthq/example createArrayEntity': ['array-or-tuple'],
+      '@flighthq/example createCallableEntity': ['callable'],
+      '@flighthq/example createNativeEntity': ['external-native'],
     });
   });
 

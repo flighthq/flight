@@ -531,6 +531,14 @@ function collectExportedCreateCensus(
         if (isFailureSentinel(resultType) || resultType.isNever() || !isObjectResult(resultType)) continue;
         hasObjectResult = true;
         const returnType = resultType.getText(surface.declaration, TypeFormatFlags.NoTruncation);
+        // Shape and platform ownership are terminal: adding an Entity intersection to an array,
+        // callable, collection, or native object must not move that value into the SDK-object set.
+        const automaticReason = automaticCreateExclusionReason(resultType, root);
+        if (automaticReason !== null) {
+          automaticReasons.add(automaticReason);
+          excludedReturnTypes.add(returnType);
+          continue;
+        }
         if (marker?.kind !== undefined) {
           excludedReturnTypes.add(returnType);
           markerKinds.add(marker.kind);
@@ -538,14 +546,8 @@ function collectExportedCreateCensus(
         }
         const category = entityCategory(resultType, entityType, entityRuntimeType);
         if (category === null) {
-          const automaticReason = automaticCreateExclusionReason(resultType, root);
-          if (automaticReason === null) {
-            hasInvalidObjectResult = true;
-            invalidReturnTypes.add(returnType);
-          } else {
-            automaticReasons.add(automaticReason);
-            excludedReturnTypes.add(returnType);
-          }
+          hasInvalidObjectResult = true;
+          invalidReturnTypes.add(returnType);
         } else if (category === 'runtime') {
           hasRuntimeResult = true;
         } else {
@@ -763,6 +765,10 @@ function isFailureSentinelTypeNode(typeNode: TypeNode): boolean {
 function automaticCreateExclusionReason(type: Type, root: string): ExportedCreateExclusionReason | null {
   if (type.isArray() || type.isTuple()) return 'array-or-tuple';
   if (type.getCallSignatures().length > 0) return 'callable';
+  for (const member of type.getIntersectionTypes()) {
+    const reason = automaticCreateExclusionReason(member, root);
+    if (reason !== null) return reason;
+  }
   return isExternalNativeType(type, root) ? 'external-native' : null;
 }
 
@@ -785,7 +791,16 @@ function isExternalNativeType(type: Type, root: string, seen = new Set<Type>()):
     if (type.getAliasTypeArguments().length > 0) return false;
   }
   const declarations = type.getSymbol()?.getDeclarations() ?? aliasDeclarations;
-  return declarations.length > 0 && declarations.every((declaration) => !isRepositoryDeclaration(declaration));
+  const repositoryDeclarations = declarations.filter(isRepositoryDeclaration);
+  if (repositoryDeclarations.length === 0) return declarations.length > 0;
+  // An empty repository interface can give a portable name to a selected native surface without
+  // creating a Flight-owned object. Its complete heritage must remain external; one local member or
+  // local base makes it a repository result that needs Entity or an explicit source marker.
+  return repositoryDeclarations.every((declaration) => {
+    if (!Node.isInterfaceDeclaration(declaration) || declaration.getMembers().length > 0) return false;
+    const bases = declaration.getBaseTypes();
+    return bases.length > 0 && bases.every((base) => isExternalNativeType(base, root, seen));
+  });
 }
 
 function isExcludedSurfaceDeclaration(declaration: FunctionDeclaration | VariableDeclaration): boolean {
@@ -901,6 +916,7 @@ function isObjectResult(type: Type): boolean {
     const constraint = type.getConstraint();
     return constraint === undefined || isObjectResult(constraint);
   }
+  if (type.isIntersection()) return type.getIntersectionTypes().every(isObjectResult);
   return type.isObject();
 }
 
