@@ -1,5 +1,5 @@
 import { sendNetRequest } from '@flighthq/net/contract';
-import type { AudioResource, AudioResourceUrl, HasNetHttp } from '@flighthq/types/contract';
+import type { AudioResource, AudioResourceUrl, HasMediaAudioCodec, HasNetHttp } from '@flighthq/types/contract';
 
 import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
 import { createAudioResource } from './audioResource';
@@ -84,22 +84,23 @@ export async function loadAudioResourceFromUrl(
 }
 
 export async function loadAudioResourceFromUrls(
-  host: HasNetHttp,
+  host: HasNetHttp & HasMediaAudioCodec,
   context: AudioContext,
   sources: readonly AudioResourceUrl[],
   signal?: AbortSignal,
 ): Promise<AudioResource> {
-  const selected = selectAudioResourceUrl(sources);
+  const selected = selectAudioResourceUrl(host, sources);
   if (selected === null) return createAudioResource();
   return loadAudioResourceFromUrl(host, context, selected, signal);
 }
 
-// Picks the first source URL the environment can play, or null when none is playable. A source's
-// explicit `type` wins; otherwise the MIME type is inferred from the URL extension.
-export function selectAudioResourceUrl(sources: readonly AudioResourceUrl[]): string | null {
+export function selectAudioResourceUrl(
+  host: Readonly<HasMediaAudioCodec>,
+  sources: readonly AudioResourceUrl[],
+): string | null {
   for (const source of sources) {
     const type = source.type ?? inferAudioMimeType(source.url) ?? '';
-    if (canPlayAudioType(type)) return source.url;
+    if (canPlayAudioType(host, type)) return source.url;
   }
   return null;
 }

@@ -1,7 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { HasNetHttp, NetBackend } from '@flighthq/types/contract';
+import type { AudioBackend, Entity, HasMediaAudioCodec, HasNetHttp, NetBackend } from '@flighthq/types/contract';
 
-import { resetAudioBackendForTest, setAudioBackend } from './audioBackend';
 import {
   createAudioResourceFromSamples,
   loadAudioResourceFromBase64,
@@ -11,6 +10,14 @@ import {
   loadAudioResourceFromUrls,
   selectAudioResourceUrl,
 } from './audioResourceFrom';
+
+function fakeAudioCodecHost(canPlay: (type: string) => boolean): HasMediaAudioCodec {
+  return {
+    media: {
+      audioCodec: createEntity<Omit<AudioBackend, keyof Entity>>({ canPlayType: canPlay }),
+    },
+  } as HasMediaAudioCodec;
+}
 
 function fakeNetHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
   return {
@@ -22,6 +29,13 @@ function fakeNetHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
       ),
     },
   };
+}
+
+function fakeNetAudioHost(
+  canPlay: (type: string) => boolean,
+  backend?: Pick<NetBackend, 'sendNetRequest'>,
+): HasNetHttp & HasMediaAudioCodec {
+  return { ...fakeNetHost(backend), ...fakeAudioCodecHost(canPlay) };
 }
 
 const decodedBuffer = { duration: 1 } as AudioBuffer;
@@ -71,7 +85,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  resetAudioBackendForTest();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   (mockContext.decodeAudioData as ReturnType<typeof vi.fn>).mockClear();
@@ -267,13 +280,12 @@ describe('loadAudioResourceFromUrl', () => {
 
 describe('loadAudioResourceFromUrls', () => {
   it('resolves with a null-buffer resource when sources is empty', async () => {
-    const host = fakeNetHost();
+    const host = fakeNetAudioHost(() => false);
     const resource = await loadAudioResourceFromUrls(host, mockContext, []);
     expect(resource.buffer).toBeNull();
   });
 
   it('loads the first playable source', async () => {
-    setAudioBackend(createEntity({ canPlayType: (type: string) => type === 'audio/ogg' }));
     const mockSendNetRequest = vi.fn().mockResolvedValue({
       body: new ArrayBuffer(8),
       headers: { 'content-type': 'audio/ogg' },
@@ -282,7 +294,7 @@ describe('loadAudioResourceFromUrls', () => {
       statusText: 'OK',
       url: 'sound.ogg',
     });
-    const host = fakeNetHost({ sendNetRequest: mockSendNetRequest });
+    const host = fakeNetAudioHost((type) => type === 'audio/ogg', { sendNetRequest: mockSendNetRequest });
 
     const resource = await loadAudioResourceFromUrls(host, mockContext, [{ url: 'sound.mp3' }, { url: 'sound.ogg' }]);
 
@@ -295,19 +307,17 @@ describe('loadAudioResourceFromUrls', () => {
 });
 
 describe('selectAudioResourceUrl', () => {
-  beforeEach(() => {
-    setAudioBackend(createEntity({ canPlayType: (type: string) => type === 'audio/ogg' }));
-  });
+  const host = fakeAudioCodecHost((type) => type === 'audio/ogg');
 
   it('returns the first source whose inferred type is playable', () => {
-    expect(selectAudioResourceUrl([{ url: 'a.mp3' }, { url: 'b.ogg' }])).toBe('b.ogg');
+    expect(selectAudioResourceUrl(host, [{ url: 'a.mp3' }, { url: 'b.ogg' }])).toBe('b.ogg');
   });
 
   it('honours an explicit type over the URL extension', () => {
-    expect(selectAudioResourceUrl([{ type: 'audio/ogg', url: 'stream' }])).toBe('stream');
+    expect(selectAudioResourceUrl(host, [{ type: 'audio/ogg', url: 'stream' }])).toBe('stream');
   });
 
   it('returns null when no source is playable', () => {
-    expect(selectAudioResourceUrl([{ url: 'a.mp3' }, { url: 'b.wav' }])).toBeNull();
+    expect(selectAudioResourceUrl(host, [{ url: 'a.mp3' }, { url: 'b.wav' }])).toBeNull();
   });
 });

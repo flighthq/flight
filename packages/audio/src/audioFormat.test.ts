@@ -1,4 +1,6 @@
-import { resetAudioBackendForTest, setAudioBackend } from './audioBackend';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AudioBackend, Entity, HasMediaAudioCodec } from '@flighthq/types/contract';
+
 import {
   canPlayAudioType,
   detectAudioMimeType,
@@ -7,30 +9,27 @@ import {
   inferAudioMimeType,
 } from './audioFormat';
 
-describe('canPlayAudioType', () => {
-  beforeEach(() => {
-    setAudioBackend(createEntity({ canPlayType: (type: string) => type === 'audio/mpeg' }));
-  });
+function hostWith(canPlay: (type: string) => boolean): HasMediaAudioCodec {
+  return {
+    media: {
+      audioCodec: createEntity<Omit<AudioBackend, keyof Entity>>({ canPlayType: canPlay }),
+    },
+  } as HasMediaAudioCodec;
+}
 
-  afterEach(() => {
-    resetAudioBackendForTest();
-  });
+describe('canPlayAudioType', () => {
+  const host = hostWith((type) => type === 'audio/mpeg');
 
   it('returns false for the empty string without probing', () => {
-    expect(canPlayAudioType('')).toBe(false);
+    expect(canPlayAudioType(host, '')).toBe(false);
   });
 
   it('returns true for a type the backend reports as playable', () => {
-    expect(canPlayAudioType('audio/mpeg')).toBe(true);
+    expect(canPlayAudioType(host, 'audio/mpeg')).toBe(true);
   });
 
   it('returns false for a type the backend cannot play', () => {
-    expect(canPlayAudioType('audio/x-unknown')).toBe(false);
-  });
-
-  it('returns false when no backend is installed (sentinel)', () => {
-    resetAudioBackendForTest();
-    expect(canPlayAudioType('audio/mpeg')).toBe(false);
+    expect(canPlayAudioType(host, 'audio/x-unknown')).toBe(false);
   });
 });
 
@@ -159,4 +158,3 @@ describe('inferAudioMimeType', () => {
     expect(inferAudioMimeType('audio')).toBeNull();
   });
 });
-import { createEntity } from '@flighthq/entity/contract';

@@ -4,11 +4,13 @@ import type { EntityRuntimeKey, Host } from '@flighthq/types/contract';
 import { webAccessibilityHost } from './webAccessibilityHost';
 import { createWebAppCapabilities } from './webApp';
 import { webApplicationExitBackend } from './webApplicationExit';
+import { webAudioBackend } from './webAudio';
 import { webClipboardHost } from './webClipboardHost';
 import { webConnectivityHost } from './webConnectivityHost';
 import { webDeviceBackend } from './webDevice';
 import { webDialogHost } from './webDialogHost';
 import { webFileSystemBackend } from './webFilesystem';
+import { webGeolocationBackend } from './webGeolocation';
 import { webGraphicsHost } from './webGraphicsHost';
 import { webHostNet } from './webHostNet';
 import { webInputHost } from './webInputHost';
@@ -62,6 +64,7 @@ export const webHost = createHost({
   // No IPC provider: a browser page has no inter-process peer to receive channel messages from.
   ipc: {},
   media: {
+    audioCodec: webAudioBackend,
     session: webMediaSessionBackend,
     sessionAction: webMediaSessionActionBackend,
   },
@@ -88,6 +91,7 @@ export const webHost = createHost({
   },
   system: {
     device: webDeviceBackend,
+    geolocation: webGeolocationBackend,
     lifecycle: webLifecycleBackend,
     platform: webPlatformBackend,
     sensors: webSensorsBackend,
