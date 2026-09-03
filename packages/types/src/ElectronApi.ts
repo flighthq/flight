@@ -270,6 +270,19 @@ export interface ElectronIpcMain {
   removeHandler(channel: string): void;
 }
 
+// Renderer-side IPC is injected separately from ElectronApi because ElectronApi represents the main
+// process module. This is exactly the renderer surface the send/invoke adapters consume.
+export interface ElectronIpcRenderer {
+  invoke(channel: string, ...args: readonly unknown[]): Promise<unknown>;
+  send(channel: string, ...args: readonly unknown[]): void;
+}
+
+// The narrow semantic target for main-to-peer delivery. Electron WebContents satisfies this facade,
+// but the generic IPC contract never mentions WebContents and callers may retain a richer target type.
+export interface ElectronIpcTarget {
+  send(channel: string, ...args: readonly unknown[]): void;
+}
+
 export interface ElectronAutoUpdater {
   setFeedURL(options: { url: string }): void;
   checkForUpdates(): void;
