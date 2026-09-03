@@ -10,6 +10,7 @@ import type {
   Camera3D,
   ColorScaleBias,
   Material,
+  InstancedMesh,
   Matrix3,
   Matrix4,
   Mesh,
@@ -115,6 +116,46 @@ export function drawWgpuScene3D(
     drawEntries(state, blendedDrawList, camera, true);
   }
 
+  // Instanced meshes use a rigid, indexed path with one instance-step vertex buffer. They are drawn
+  // after ordinary opaque/blended entries because per-instance depth sorting is not representable by a
+  // single instanced draw; skinning, morphing, and per-instance culling are intentionally unsupported.
+  runtime.activeBlendedRun = false;
+  runtime.activeSkinnedRun = false;
+  const colorAdjustmentFeatureEnabled = getWgpuColorAdjustmentMaterialFeature(state) !== null;
+  for (let m = 0; m < list.instancedMeshCount; m++) {
+    const mesh = list.visibleInstancedMeshes[m];
+    const worldMatrix = getNodeWorldMatrix4(mesh) as Matrix4;
+    setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
+    const nodeRuntime = getNode3DRuntime(mesh);
+    const colorScaleBias = nodeRuntime.resolvedColorScaleBias;
+    const colorMatrix = nodeRuntime.resolvedColorMatrix;
+    const colorAdjusted = colorAdjustmentFeatureEnabled && (colorMatrix !== null || colorScaleBias !== null);
+    const flatMatrices = flattenInstancedMeshMatrices(mesh);
+    for (let s = 0; s < mesh.geometry.subsets.length; s++) {
+      const material = resolveSubsetMaterial(mesh as unknown as Mesh, s);
+      const renderer = resolveWgpuMeshMaterialRenderer(state, material);
+      if (renderer === null) continue;
+      const resolvedMaterial = material ?? DEFAULT_MATERIAL;
+      runtime.activeColorAdjustmentRun = colorAdjusted;
+      runtime.activeColorMatrixRun = colorAdjusted && colorMatrix !== null;
+      renderer.bind(state, resolvedMaterial, lightBlock, camera);
+      proxy.alpha = getNode3DWorldAlpha(mesh);
+      proxy.colorScaleBias = colorAdjusted ? colorScaleBias : null;
+      proxy.colorMatrix = colorAdjusted ? colorMatrix : null;
+      proxy.instanceCount = mesh.instanceCount;
+      proxy.instanceMatrices = flatMatrices;
+      proxy.jointMatrices = null;
+      proxy.normalMatrices = null;
+      proxy.material = resolvedMaterial;
+      proxy.normalMatrix = scratchNormalMatrix;
+      proxy.subset = mesh.geometry.subsets[s];
+      proxy.worldMatrix = worldMatrix;
+      renderer.draw(state, proxy, mesh.geometry);
+    }
+  }
+  proxy.instanceCount = 0;
+  proxy.instanceMatrices = null;
+
   // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
   // visible meshes above. Draw them here as a final transparent instanced pass so the common
   // drawWgpuScene3D path renders a scene's emitters without the caller also invoking the emitter pass
@@ -212,7 +253,10 @@ function hasExcessForwardLights(lights: Readonly<Scene3DLightsLike>): boolean {
 
 // Resolves the Material for a subset index: the positional materials[i] entry, or null when the
 // slot is absent/null (the registry then falls back to StandardMaterialKind, or skips the subset).
-function resolveSubsetMaterial(mesh: Readonly<Mesh>, subsetIndex: number): Readonly<Material> | null {
+function resolveSubsetMaterial(
+  mesh: Readonly<Pick<Mesh, 'materials'>>,
+  subsetIndex: number,
+): Readonly<Material> | null {
   const materials = mesh.materials;
   return subsetIndex < materials.length ? materials[subsetIndex] : null;
 }
@@ -258,6 +302,15 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
     subset: { indexCount: 0, indexOffset: 0 },
     worldMatrix: createMatrix4(),
   };
+}
+
+let scratchInstanceData = new Float32Array(64 * 16);
+function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Array {
+  const count = mesh.instanceCount;
+  const needed = count * 16;
+  if (scratchInstanceData.length < needed) scratchInstanceData = new Float32Array(needed);
+  for (let i = 0; i < count; i++) scratchInstanceData.set(mesh.instanceMatrices[i].m, i * 16);
+  return scratchInstanceData;
 }
 
 // The reused per-draw proxy handed to a renderer's draw. Owned by drawWgpuScene3D, valid only for the
