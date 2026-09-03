@@ -1,4 +1,4 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CollisionAabb3D,
   CollisionBuiltInShape3D,
@@ -98,8 +98,8 @@ export function createCollisionHeightfield3D(
   heights: readonly number[],
   cellSizeX = 1,
   cellSizeZ = 1,
-): NonEntityCreateResult<CollisionHeightfield3D, 'descriptor'> {
-  return {
+): CollisionHeightfield3D {
+  return createEntity({
     kind: 'heightfield',
     columns,
     rows,
@@ -114,7 +114,7 @@ export function createCollisionHeightfield3D(
     rotationY: 0,
     rotationZ: 0,
     rotationW: 1,
-  };
+  });
 }
 
 // Allocates a triangle-mesh descriptor with an identity pose. Points and indices are copied; callers
@@ -122,8 +122,8 @@ export function createCollisionHeightfield3D(
 export function createCollisionTriangleMesh3D(
   points: readonly number[],
   indices: readonly number[],
-): NonEntityCreateResult<CollisionTriangleMesh3D, 'descriptor'> {
-  return {
+): CollisionTriangleMesh3D {
+  return createEntity({
     kind: 'triangle-mesh',
     points: points.slice(),
     indices: indices.slice(),
@@ -135,7 +135,7 @@ export function createCollisionTriangleMesh3D(
     rotationY: 0,
     rotationZ: 0,
     rotationW: 1,
-  };
+  });
 }
 
 export function getCollisionHeightfieldValidationStatus3D(

@@ -437,7 +437,7 @@ export type CollisionShape3D = CollisionBuiltInShape3D | CollisionVendorShape3D;
 // `version` covers mutations to `points` and `indices`. Replace either array by identity or call
 // `invalidateCollisionTriangleMesh3D` after editing its contents; the next query then rebuilds the
 // private BVH. Pose fields do not affect that local-space acceleration and need no invalidation.
-export interface CollisionTriangleMesh3D {
+export interface CollisionTriangleMesh3D extends Entity {
   kind: 'triangle-mesh';
   points: number[];
   indices: number[];
@@ -458,7 +458,7 @@ export interface CollisionTriangleMesh3D {
 //
 // `version` follows the same payload rule as `CollisionTriangleMesh3D`: call
 // `invalidateCollisionHeightfield3D` after editing height values in place. Pose changes need none.
-export interface CollisionHeightfield3D {
+export interface CollisionHeightfield3D extends Entity {
   kind: 'heightfield';
   columns: number;
   rows: number;
