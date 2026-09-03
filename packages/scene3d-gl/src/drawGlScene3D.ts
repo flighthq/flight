@@ -94,6 +94,8 @@ export function drawGlScene3D(
   const blendedDrawList = runtime.blendedDrawList;
   recycleDrawEntries(opaqueDrawList, runtime.opaquePool);
   recycleDrawEntries(blendedDrawList, runtime.blendedPool);
+  sortKeyCounter = 0;
+  sortKeyMap.clear();
 
   // Morph is NOT blended here, and skin palettes are NOT computed here. The app readies both before
   // prepareScene3DRender (prepareScene3DMorph in @flighthq/scene3d, prepareScene3DSkinning in @flighthq/skeleton3d)
@@ -144,6 +146,7 @@ export function drawGlScene3D(
       entry.mesh = mesh;
       entry.material = resolvedMaterial;
       entry.renderer = renderer;
+      entry.sortKey = acquireSortKey(renderer, resolvedMaterial);
       entry.subset = subsets[s];
       entry.worldMatrix = worldMatrix;
 
@@ -155,7 +158,11 @@ export function drawGlScene3D(
     }
   }
 
-  // Pass 1: opaque + mask subsets in scene-graph order. No blending; depth-write on (set by bind).
+  // Sort the opaque list by material so the bind-elision below fires maximally: all subsets sharing
+  // the same renderer + material become contiguous regardless of their scene-graph position.
+  if (opaqueDrawList.length > 1) opaqueDrawList.sort(compareOpaqueEntriesBySortKey);
+
+  // Pass 1: opaque + mask subsets sorted by material. No blending; depth-write on (set by bind).
   let boundMaterial: Readonly<Material> | null | undefined = undefined;
   let boundLightBlock: Readonly<Scene3DLightBlock> | null = null;
   let boundRenderer: GlMeshMaterialRenderer | null = null;
@@ -338,6 +345,7 @@ interface DrawEntry {
   material: Readonly<Material>;
   mesh: Mesh;
   renderer: GlMeshMaterialRenderer;
+  sortKey: number;
   subset: Readonly<MeshSubset>;
   worldMatrix: Readonly<Matrix4>;
 }
@@ -365,6 +373,7 @@ function createDrawEntry(): GlScene3DDrawEntry {
     material: DEFAULT_MATERIAL,
     mesh: null!,
     renderer: null!,
+    sortKey: 0,
     subset: { indexCount: 0, indexOffset: 0 },
     worldMatrix: createMatrix4(),
   };
@@ -386,5 +395,29 @@ const proxy: Scene3DRenderProxy = {
 // Placeholder material for proxy.material when a subset resolved to the default-kind fallback with
 // no concrete material; the renderer treats a default/null material as its untextured defaults.
 const DEFAULT_MATERIAL = { kind: StandardMaterialKind } as Material;
+
+// Assigns a stable integer to each unique (renderer, material) pair within one frame. Entries with
+// the same key sort together, so the opaque pass minimizes bind() calls regardless of scene-graph
+// order. Cleared at the start of each drawGlScene3D.
+let sortKeyCounter = 0;
+const sortKeyMap = new Map<object, number>();
+
+function acquireSortKey(renderer: object, material: object): number {
+  let rk = sortKeyMap.get(renderer);
+  if (rk === undefined) {
+    rk = sortKeyCounter++;
+    sortKeyMap.set(renderer, rk);
+  }
+  let mk = sortKeyMap.get(material);
+  if (mk === undefined) {
+    mk = sortKeyCounter++;
+    sortKeyMap.set(material, mk);
+  }
+  return rk * 65536 + mk;
+}
+
+function compareOpaqueEntriesBySortKey(a: GlScene3DDrawEntry, b: GlScene3DDrawEntry): number {
+  return a.sortKey - b.sortKey;
+}
 
 const scratchNormalMatrix = createMatrix3() as Matrix3;
