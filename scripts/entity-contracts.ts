@@ -16,12 +16,14 @@ import type {
   FunctionDeclaration,
   IndexSignatureDeclaration,
   PropertySignature,
+  Signature,
   SourceFile,
   Symbol as MorphSymbol,
   Type,
   TypeAliasDeclaration,
   TypeLiteralNode,
   TypeNode,
+  TypeReferenceNode,
   VariableDeclaration,
 } from 'ts-morph';
 
@@ -35,7 +37,11 @@ import { formatGateProvenance, readGateTreeState } from './gate-provenance';
 // Implementation-local signature aliases and hidden Entity fields remain advisory while their public type-home
 // policy is settled.
 
-export type EntityContractRule = 'redundant-inline-member' | 'readonly-redeclaration' | 'redundant-optional-property';
+export type EntityContractRule =
+  | 'invalid-non-entity-create-result'
+  | 'redundant-inline-member'
+  | 'readonly-redeclaration'
+  | 'redundant-optional-property';
 
 export type EntityContractAdvisoryRule = 'exported-create-return' | 'exported-local-alias' | 'hidden-entity-field';
 
@@ -57,6 +63,24 @@ export interface ExportedCreateCandidate extends EntityContractAdvisory {
   rule: 'exported-create-return';
 }
 
+export type ExportedCreateExclusionReason =
+  | 'array-or-tuple'
+  | 'callable'
+  | 'descriptor'
+  | 'external-native'
+  | 'options'
+  | 'type-only';
+
+export interface ExportedCreateExclusion {
+  column: number;
+  line: number;
+  name: string;
+  path: string;
+  reasons: readonly ExportedCreateExclusionReason[];
+  returnTypes: readonly string[];
+  source: 'automatic' | 'marker';
+}
+
 export interface EntityContractReport {
   advisories: readonly EntityContractAdvisory[];
   candidateIntersections: number;
@@ -66,6 +90,7 @@ export interface EntityContractReport {
   excludedToolingFiles: number;
   exportedCreateCandidates: readonly ExportedCreateCandidate[];
   exportedCreateEntityReturns: number;
+  exportedCreateExclusions: readonly ExportedCreateExclusion[];
   exportedCreateFunctions: number;
   exportedCreateRuntimeReturns: number;
   exportedSignatures: number;
@@ -88,10 +113,12 @@ export interface ExportedCreateRemediationPackage {
 export interface ExportedCreateRemediationReport {
   acceptedEntity: number;
   acceptedEntityRuntime: number;
+  automaticExclusions: readonly ExportedCreateExclusion[];
   candidatePredicate: 'exported production create* object result outside Entity and EntityRuntime';
   candidates: number;
   excludedFactoryPrefixes: readonly ['clone'];
   mode: 'report-only';
+  markedExclusions: readonly ExportedCreateExclusion[];
   packages: readonly ExportedCreateRemediationPackage[];
   runtimeExceptions: readonly string[];
   semanticSecondRoots: readonly ['EntityRuntime'];
@@ -124,14 +151,23 @@ interface LocalAliasExposure {
 interface ExportedCreateCensus {
   candidates: ExportedCreateCandidate[];
   entity: number;
+  exclusions: ExportedCreateExclusion[];
+  issues: EntityContractIssue[];
   runtime: number;
   runtimeNames: string[];
   total: number;
 }
 
+interface NonEntityCreateMarkerClassification {
+  detail?: string;
+  kind?: 'descriptor' | 'options' | 'type-only';
+  node: TypeReferenceNode;
+}
+
 const FACTORY_NAME = /^(?:clone|create)[A-Z0-9]/;
 const SOURCE_EXTENSION = /\.(?:[cm]?ts|tsx)$/;
 const TEST_SOURCE = /(?:^|\/)(?:__tests__|tests?)(?:\/|$)|\.(?:spec|test)\.(?:[cm]?ts|tsx)$/;
+const TEST_HELPER_SOURCE = /(?:testhelper|testsupport)\.(?:[cm]?ts|tsx)$/i;
 
 export function checkEntityContracts(scope: Readonly<EntityContractScope>): EntityContractReport {
   const entitySource = scope.sourceFiles.find((source) =>
@@ -140,6 +176,13 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
   if (entitySource === undefined) throw new Error('Entity contract gate could not find packages/types/src/Entity.ts');
   const entityType = entitySource.getInterfaceOrThrow('Entity').getType();
   const entityRuntimeType = entitySource.getInterfaceOrThrow('EntityRuntime').getType();
+  const markerSource = scope.sourceFiles.find((source) =>
+    normalizePath(source.getFilePath()).endsWith('/types/src/NonEntityCreateResult.ts'),
+  );
+  if (markerSource === undefined) {
+    throw new Error('Entity contract gate could not find packages/types/src/NonEntityCreateResult.ts');
+  }
+  const nonEntityCreateResult = markerSource.getTypeAliasOrThrow('NonEntityCreateResult');
   const advisories: EntityContractAdvisory[] = [];
   const issues: EntityContractIssue[] = [];
   const candidates = scope.sourceFiles.flatMap(collectCandidateIntersections);
@@ -222,8 +265,15 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
   }
 
   const exportedSurfaces = collectExportedSurfaces(scope.sourceFiles);
-  const exportedCreateCensus = collectExportedCreateCensus(exportedSurfaces, entityType, entityRuntimeType, scope.root);
+  const exportedCreateCensus = collectExportedCreateCensus(
+    exportedSurfaces,
+    entityType,
+    entityRuntimeType,
+    nonEntityCreateResult,
+    scope.root,
+  );
   advisories.push(...exportedCreateCensus.candidates);
+  issues.push(...exportedCreateCensus.issues);
   const localAliasExposures = collectLocalAliasExposures(exportedSurfaces, scope.root);
   for (const exposure of localAliasExposures) {
     const names = [...exposure.surfaces].sort();
@@ -249,6 +299,7 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
     excludedToolingFiles: 0,
     exportedCreateCandidates: exportedCreateCensus.candidates,
     exportedCreateEntityReturns: exportedCreateCensus.entity,
+    exportedCreateExclusions: exportedCreateCensus.exclusions,
     exportedCreateFunctions: exportedCreateCensus.total,
     exportedCreateRuntimeReturns: exportedCreateCensus.runtime,
     exportedSignatures: exportedSurfaces.length,
@@ -282,6 +333,7 @@ export function formatEntityContractReport(report: Readonly<EntityContractReport
     `  - test-helper-source: ${report.excludedTestHelperFiles}`,
     `  - tooling-package: ${report.excludedToolingFiles}`,
     `  Exported create-return candidate census: ${acceptedCreates}/${createReport.total} object-returning create symbols resolve to Entity or EntityRuntime; ${createReport.candidates} report-only classification candidates across ${createReport.packages.length} packages`,
+    `  Semantically excluded create returns: ${createReport.automaticExclusions.length} automatic, ${createReport.markedExclusions.length} source-marked`,
     `  Exported EntityRuntime second-root results: ${formatNames(report.runtimeCreateExceptions)}`,
   ];
   if (!passed) {
@@ -341,10 +393,12 @@ export function createExportedCreateRemediationReport(
   return {
     acceptedEntity: report.exportedCreateEntityReturns,
     acceptedEntityRuntime: report.exportedCreateRuntimeReturns,
+    automaticExclusions: report.exportedCreateExclusions.filter((entry) => entry.source === 'automatic'),
     candidatePredicate: 'exported production create* object result outside Entity and EntityRuntime',
     candidates: packages.reduce((total, entry) => total + entry.candidates.length, 0),
     excludedFactoryPrefixes: ['clone'],
     mode: 'report-only',
+    markedExclusions: report.exportedCreateExclusions.filter((entry) => entry.source === 'marker'),
     packages,
     runtimeExceptions: report.runtimeCreateExceptions,
     semanticSecondRoots: ['EntityRuntime'],
@@ -375,7 +429,7 @@ export function readEntityContractReport(root: string): EntityContractReport {
       excludedTestFiles++;
       continue;
     }
-    if (/testhelper\.(?:[cm]?ts|tsx)$/i.test(path)) {
+    if (TEST_HELPER_SOURCE.test(path)) {
       excludedTestHelperFiles++;
       continue;
     }
@@ -419,6 +473,7 @@ function collectExportedSurfaces(sourceFiles: readonly SourceFile[]): ExportedSu
     for (const [name, declarations] of sourceFile.getExportedDeclarations()) {
       for (const declaration of declarations) {
         if (!Node.isFunctionDeclaration(declaration) && !Node.isVariableDeclaration(declaration)) continue;
+        if (isExcludedSurfaceDeclaration(declaration)) continue;
         if (declaration.getType().getCallSignatures().length === 0) continue;
         const key = nodeKey(declaration);
         const surface = byDeclaration.get(key) ?? { declaration, names: new Set<string>() };
@@ -434,9 +489,18 @@ function collectExportedCreateCensus(
   surfaces: readonly ExportedSurface[],
   entityType: Type,
   entityRuntimeType: Type,
+  nonEntityCreateResult: TypeAliasDeclaration,
   root: string,
 ): ExportedCreateCensus {
-  const census: ExportedCreateCensus = { candidates: [], entity: 0, runtime: 0, runtimeNames: [], total: 0 };
+  const census: ExportedCreateCensus = {
+    candidates: [],
+    entity: 0,
+    exclusions: [],
+    issues: [],
+    runtime: 0,
+    runtimeNames: [],
+    total: 0,
+  };
   const seenNames = new Set<string>();
   for (const surface of surfaces) {
     // @flighthq/sdk is an aggregate mirror of the owning package roots, not a second constructor.
@@ -448,19 +512,45 @@ function collectExportedCreateCensus(
       .sort();
     if (names.length === 0) continue;
     for (const name of names) seenNames.add(name);
+    const automaticReasons = new Set<ExportedCreateExclusionReason>();
+    const excludedReturnTypes = new Set<string>();
     let hasObjectResult = false;
+    let hasEntityResult = false;
     let hasRuntimeResult = false;
     let hasInvalidObjectResult = false;
     const invalidReturnTypes = new Set<string>();
+    const markerKinds = new Set<'descriptor' | 'options' | 'type-only'>();
     for (const signature of surface.declaration.getType().getCallSignatures()) {
+      const marker = classifyNonEntityCreateMarker(signature, nonEntityCreateResult, entityType, entityRuntimeType);
+      if (marker?.detail !== undefined) {
+        for (const name of names) {
+          census.issues.push(issue(root, marker.node, 'invalid-non-entity-create-result', name, marker.detail));
+        }
+      }
       for (const resultType of exportedCreateResultTypes(signature.getReturnType())) {
         if (isFailureSentinel(resultType) || resultType.isNever() || !isObjectResult(resultType)) continue;
         hasObjectResult = true;
+        const returnType = resultType.getText(surface.declaration, TypeFormatFlags.NoTruncation);
+        if (marker?.kind !== undefined) {
+          excludedReturnTypes.add(returnType);
+          markerKinds.add(marker.kind);
+          continue;
+        }
         const category = entityCategory(resultType, entityType, entityRuntimeType);
         if (category === null) {
-          hasInvalidObjectResult = true;
-          invalidReturnTypes.add(resultType.getText(surface.declaration, TypeFormatFlags.NoTruncation));
-        } else if (category === 'runtime') hasRuntimeResult = true;
+          const automaticReason = automaticCreateExclusionReason(resultType, root);
+          if (automaticReason === null) {
+            hasInvalidObjectResult = true;
+            invalidReturnTypes.add(returnType);
+          } else {
+            automaticReasons.add(automaticReason);
+            excludedReturnTypes.add(returnType);
+          }
+        } else if (category === 'runtime') {
+          hasRuntimeResult = true;
+        } else {
+          hasEntityResult = true;
+        }
       }
     }
     if (!hasObjectResult) continue;
@@ -481,8 +571,20 @@ function collectExportedCreateCensus(
       } else if (hasRuntimeResult) {
         census.runtime++;
         census.runtimeNames.push(name);
-      } else {
+      } else if (hasEntityResult) {
         census.entity++;
+      } else {
+        const source = surface.declaration.getSourceFile();
+        const position = source.getLineAndColumnAtPos(surface.declaration.getStart());
+        census.exclusions.push({
+          column: position.column,
+          line: position.line,
+          name,
+          path: normalizePath(relative(root, source.getFilePath())),
+          reasons: [...new Set<ExportedCreateExclusionReason>([...automaticReasons, ...markerKinds])].sort(),
+          returnTypes: [...excludedReturnTypes].sort(),
+          source: markerKinds.size > 0 ? 'marker' : 'automatic',
+        });
       }
     }
   }
@@ -589,6 +691,106 @@ function containsCandidateIntersection(typeNode: TypeNode): boolean {
     const nodes = node.getTypeNodes();
     return nodes.some(Node.isTypeLiteral) && nodes.some(isNamedTypeNode);
   });
+}
+
+function classifyNonEntityCreateMarker(
+  signature: Signature,
+  markerDeclaration: TypeAliasDeclaration,
+  entityType: Type,
+  entityRuntimeType: Type,
+): NonEntityCreateMarkerClassification | undefined {
+  const returnTypeNode = signature.getDeclaration().getReturnTypeNode();
+  if (returnTypeNode === undefined) return undefined;
+  const marker = findDirectNonEntityCreateMarker(returnTypeNode, markerDeclaration);
+  if (marker === undefined) return undefined;
+  const typeArguments = marker.getTypeArguments();
+  if (typeArguments.length !== 2) {
+    return {
+      detail: 'NonEntityCreateResult requires exactly a result type and one semantic reason tag',
+      node: marker,
+    };
+  }
+  const resultType = typeArguments[0]!.getType();
+  if (
+    exportedCreateResultTypes(resultType).some(
+      (type) => !isFailureSentinel(type) && entityCategory(type, entityType, entityRuntimeType) !== null,
+    )
+  ) {
+    return {
+      detail: 'NonEntityCreateResult cannot wrap Entity or EntityRuntime; remove the redundant exemption marker',
+      node: marker,
+    };
+  }
+  const literal = typeArguments[1]!.getType().getLiteralValue();
+  if (literal !== 'descriptor' && literal !== 'options' && literal !== 'type-only') {
+    return {
+      detail: 'NonEntityCreateResult reason must be exactly descriptor, options, or type-only',
+      node: marker,
+    };
+  }
+  return { kind: literal, node: marker };
+}
+
+function findDirectNonEntityCreateMarker(
+  typeNode: TypeNode,
+  markerDeclaration: TypeAliasDeclaration,
+): TypeReferenceNode | undefined {
+  if (Node.isParenthesizedTypeNode(typeNode)) {
+    return findDirectNonEntityCreateMarker(typeNode.getTypeNode(), markerDeclaration);
+  }
+  if (Node.isUnionTypeNode(typeNode)) {
+    const resultNodes = typeNode.getTypeNodes().filter((node) => !isFailureSentinelTypeNode(node));
+    return resultNodes.length === 1 ? findDirectNonEntityCreateMarker(resultNodes[0]!, markerDeclaration) : undefined;
+  }
+  if (!Node.isTypeReference(typeNode)) return undefined;
+  const symbol = typeNode.getTypeName().getSymbol();
+  const declarationSymbol = symbol?.getAliasedSymbol() ?? symbol;
+  if (declarationSymbol?.getDeclarations().some((node) => nodeKey(node) === nodeKey(markerDeclaration)) === true) {
+    return typeNode;
+  }
+  const transparentWrapper = typeNode.getTypeName().getText();
+  const typeArguments = typeNode.getTypeArguments();
+  return (transparentWrapper === 'Awaited' || transparentWrapper === 'Promise') && typeArguments.length === 1
+    ? findDirectNonEntityCreateMarker(typeArguments[0]!, markerDeclaration)
+    : undefined;
+}
+
+function isFailureSentinelTypeNode(typeNode: TypeNode): boolean {
+  if (typeNode.getKind() === SyntaxKind.NullKeyword || typeNode.getKind() === SyntaxKind.UndefinedKeyword) return true;
+  return Node.isLiteralTypeNode(typeNode) && ['false', 'null'].includes(typeNode.getLiteral().getText());
+}
+
+function automaticCreateExclusionReason(type: Type, root: string): ExportedCreateExclusionReason | null {
+  if (type.isArray() || type.isTuple()) return 'array-or-tuple';
+  if (type.getCallSignatures().length > 0) return 'callable';
+  return isExternalNativeType(type, root) ? 'external-native' : null;
+}
+
+function isExternalNativeType(type: Type, root: string, seen = new Set<Type>()): boolean {
+  if (seen.has(type)) return false;
+  seen.add(type);
+  const packagesRoot = `${normalizePath(resolve(root, 'packages'))}/`;
+  const isRepositoryDeclaration = (declaration: Node): boolean =>
+    normalizePath(declaration.getSourceFile().getFilePath()).startsWith(packagesRoot);
+  const alias = type.getAliasSymbol();
+  const aliasDeclarations = alias?.getDeclarations() ?? [];
+  if (aliasDeclarations.some(isRepositoryDeclaration)) return false;
+  if (alias !== undefined) {
+    const objectArguments = type.getAliasTypeArguments().filter(isObjectResult);
+    if (objectArguments.length > 0) {
+      return objectArguments.every((argument) => isExternalNativeType(argument, root, seen));
+    }
+    // External generic utility aliases over primitives (for example Record<string, number>) create a
+    // repository-owned structural result, not an instance owned by that external declaration.
+    if (type.getAliasTypeArguments().length > 0) return false;
+  }
+  const declarations = type.getSymbol()?.getDeclarations() ?? aliasDeclarations;
+  return declarations.length > 0 && declarations.every((declaration) => !isRepositoryDeclaration(declaration));
+}
+
+function isExcludedSurfaceDeclaration(declaration: FunctionDeclaration | VariableDeclaration): boolean {
+  const path = normalizePath(declaration.getSourceFile().getFilePath());
+  return TEST_SOURCE.test(path) || TEST_HELPER_SOURCE.test(path) || /\/packages\/tool-[^/]+\//.test(path);
 }
 
 function entityCategory(type: Type, entityType: Type, entityRuntimeType: Type): 'entity' | 'runtime' | null {
