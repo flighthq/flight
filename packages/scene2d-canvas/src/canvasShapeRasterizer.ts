@@ -1,4 +1,4 @@
-import type { CanvasTextureResolvers, ShapeRasterizer } from '@flighthq/types/contract';
+import type { CanvasTextureResolvers, NonEntityCreateResult, ShapeRasterizer } from '@flighthq/types/contract';
 
 import { renderCanvasShapeCommands } from './canvasShape';
 
@@ -12,7 +12,9 @@ import { renderCanvasShapeCommands } from './canvasShape';
 //
 // The command set and the smoothing policy come from the state the backend hands the rasterizer, so
 // registering commands onto that state is what makes them reachable here.
-export function createCanvasShapeRasterizer(resolvers: CanvasTextureResolvers): ShapeRasterizer {
+export function createCanvasShapeRasterizer(
+  resolvers: CanvasTextureResolvers,
+): NonEntityCreateResult<ShapeRasterizer, 'type-only'> {
   return (context, commands, state) => {
     renderCanvasShapeCommands(context, state, commands as unknown[], resolvers);
   };
