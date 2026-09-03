@@ -1,7 +1,14 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { Renderable, RenderCache, RenderCacheAdapter, Renderer, RenderState } from '@flighthq/types/contract';
+import type {
+  Renderable,
+  RenderCache,
+  RenderCacheAdapter,
+  Renderer,
+  RenderProxy2D,
+  RenderState,
+} from '@flighthq/types/contract';
 import { RenderCacheKind } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
@@ -24,11 +31,14 @@ export function createRenderCache(): RenderCache {
  * traversed. Returns null from `adapt` (renders normally) until a cache is attached.
  */
 export function createRenderCacheAdapter(cache: RenderCache | null = null): RenderCacheAdapter {
-  const adapter: RenderCacheAdapter = {
+  // Built through createEntity like createRenderCache above it, so the adapter carries the standard
+  // runtime slot. `adapt` closes over `adapter` rather than `this`: createEntity returns the same
+  // object it was given, and the closure only runs long after construction.
+  const adapter: RenderCacheAdapter = createEntity({
     cache,
-    signals: null,
+    signals: null as RenderCacheAdapter['signals'],
 
-    adapt(_state, _source, node) {
+    adapt(_state: RenderState, _source: Renderable, node: RenderProxy2D): boolean | null {
       adapter.signals?.onPrepare.emit();
       const attached = adapter.cache ?? null;
       if (attached === null) return null;
@@ -40,7 +50,7 @@ export function createRenderCacheAdapter(cache: RenderCache | null = null): Rend
       multiplyMatrix(node.transform2D, node.transform2D, attached.transform);
       return false;
     },
-  };
+  });
   return adapter;
 }
 
