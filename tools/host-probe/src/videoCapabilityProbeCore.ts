@@ -1,5 +1,5 @@
-import { enableHostWebVideoCapability } from '@flighthq/host-web';
-import { canPlayVideoType, resetVideoCapabilityBackendForTest } from '@flighthq/video/contract';
+import { createWebVideoCapabilityBackend } from '@flighthq/host-web';
+import { canPlayVideoType } from '@flighthq/video/contract';
 
 export interface VideoCapabilityBrowserResult {
   actual: boolean | null;
@@ -30,41 +30,28 @@ export function runVideoCapabilityBrowserProbe(): VideoCapabilityBrowserReport {
 
   const results: VideoCapabilityBrowserResult[] = [];
   try {
-    resetVideoCapabilityBackendForTest();
-    results.push(runCase('before-enable', 'video/mp4', false, 0));
+    const backend = createWebVideoCapabilityBackend();
 
-    const allocationsBeforeEnable = videoAllocations;
-    enableHostWebVideoCapability();
-    results.push(
-      createResult(
-        'enable',
-        null,
-        videoAllocations === allocationsBeforeEnable,
-        true,
-        videoAllocations - allocationsBeforeEnable,
-      ),
-    );
     results.push(runCase('empty-mime', '', false, 0));
     results.push(runCase('non-empty-first', 'video/mp4', null, 1));
     results.push(runCase('non-empty-second', 'video/mp4', null, 1));
+
+    function runCase(
+      id: string,
+      mimeType: string,
+      expected: boolean | null,
+      expectedAllocations: number,
+    ): VideoCapabilityBrowserResult {
+      const allocationsBefore = videoAllocations;
+      const actual = canPlayVideoType(backend, mimeType);
+      return createResult(id, mimeType, actual, expected, videoAllocations - allocationsBefore, expectedAllocations);
+    }
   } finally {
-    resetVideoCapabilityBackendForTest();
     if (ownCreateElement === undefined) delete (document as { createElement?: unknown }).createElement;
     else Object.defineProperty(document, 'createElement', ownCreateElement);
   }
 
   return { results, status: results.every((result) => result.status === 'pass') ? 'pass' : 'fail' };
-
-  function runCase(
-    id: string,
-    mimeType: string,
-    expected: boolean | null,
-    expectedAllocations: number,
-  ): VideoCapabilityBrowserResult {
-    const allocationsBefore = videoAllocations;
-    const actual = canPlayVideoType(mimeType);
-    return createResult(id, mimeType, actual, expected, videoAllocations - allocationsBefore, expectedAllocations);
-  }
 }
 
 function createResult(

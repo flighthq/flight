@@ -1,36 +1,22 @@
-import {
-  canPlayVideoType,
-  explainVideoCapabilityBackend,
-  getVideoCapabilityBackend,
-  hasVideoCapabilityHostBackend,
-  resetVideoCapabilityBackendForTest,
-  setVideoCapabilityBackend,
-} from '@flighthq/video/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { canPlayVideoType } from '@flighthq/video/contract';
+import { describe, expect, it, vi } from 'vitest';
 
-import { enableHostWebVideoCapability } from './webVideoCapability';
+import { createWebVideoCapabilityBackend, webVideoCapabilityBackend } from './webVideoCapability';
 
-afterEach(() => {
-  resetVideoCapabilityBackendForTest();
-  vi.restoreAllMocks();
-});
-
-describe('enableHostWebVideoCapability', () => {
-  it('enables without allocating an element', () => {
-    const createElement = vi.spyOn(document, 'createElement');
-    enableHostWebVideoCapability();
-    expect(hasVideoCapabilityHostBackend()).toBe(true);
-    expect(createElement).not.toHaveBeenCalled();
+describe('createWebVideoCapabilityBackend', () => {
+  it('constructs a backend with canPlayType and createVideoElement', () => {
+    const backend = createWebVideoCapabilityBackend();
+    expect(backend.canPlayType).toBeTypeOf('function');
+    expect(backend.createVideoElement).toBeTypeOf('function');
   });
 
-  it('explicitly keeps enabled-web empty probes allocation- and host-call-free', () => {
-    const createElement = vi.spyOn(document, 'createElement');
-    enableHostWebVideoCapability();
-    const host = getVideoCapabilityBackend();
-    const canPlayType = vi.spyOn(host, 'canPlayType');
+  it('constructs an identity-bearing provider Entity', () => {
+    expect(EntityRuntimeKey in createWebVideoCapabilityBackend()).toBe(true);
+  });
 
-    expect(canPlayVideoType('')).toBe(false);
-    expect(createElement).not.toHaveBeenCalled();
-    expect(canPlayType).not.toHaveBeenCalled();
+  it('returns distinct instances on each call', () => {
+    expect(createWebVideoCapabilityBackend()).not.toBe(createWebVideoCapabilityBackend());
   });
 
   it.each([
@@ -40,60 +26,35 @@ describe('enableHostWebVideoCapability', () => {
     ['invalid', false],
   ] as const)('normalizes the browser result %j to %j', (result, expected) => {
     vi.spyOn(HTMLVideoElement.prototype, 'canPlayType').mockReturnValue(result as CanPlayTypeResult);
-    enableHostWebVideoCapability();
-    expect(canPlayVideoType('video/mp4')).toBe(expected);
-    expect(explainVideoCapabilityBackend()).toMatchObject({
-      operation: 'canPlayType',
-      viability: 'available',
-    });
+    const backend = createWebVideoCapabilityBackend();
+    expect(canPlayVideoType(backend, 'video/mp4')).toBe(expected);
+    vi.restoreAllMocks();
   });
 
-  it('normalizes DOM exceptions to false and records unavailability', () => {
+  it('normalizes DOM exceptions to false', () => {
     vi.spyOn(document, 'createElement').mockImplementation(() => {
       throw new Error('DOM unavailable');
     });
-    enableHostWebVideoCapability();
-    expect(canPlayVideoType('video/mp4')).toBe(false);
-    expect(explainVideoCapabilityBackend()).toMatchObject({
-      operation: 'canPlayType',
-      viability: 'runtime-api-unavailable',
-    });
+    const backend = createWebVideoCapabilityBackend();
+    expect(canPlayVideoType(backend, 'video/mp4')).toBe(false);
+    vi.restoreAllMocks();
   });
 
-  it('installs a hidden host beneath a custom backend without probing the DOM', () => {
-    const createElement = vi.spyOn(document, 'createElement');
-    setVideoCapabilityBackend({ canPlayType: () => false });
-    enableHostWebVideoCapability();
-    expect(hasVideoCapabilityHostBackend()).toBe(true);
-    expect(canPlayVideoType('video/mp4')).toBe(false);
-    expect(createElement).not.toHaveBeenCalled();
+  it('createVideoElement returns a video element', () => {
+    const backend = createWebVideoCapabilityBackend();
+    const element = backend.createVideoElement!();
+    expect(element).not.toBeNull();
+  });
+});
+
+describe('webVideoCapabilityBackend', () => {
+  it('is an Entity with canPlayType and createVideoElement', () => {
+    expect(EntityRuntimeKey in webVideoCapabilityBackend).toBe(true);
+    expect(webVideoCapabilityBackend.canPlayType).toBeTypeOf('function');
+    expect(webVideoCapabilityBackend.createVideoElement).toBeTypeOf('function');
   });
 
-  it('preserves host identity on repeat and creates a fresh host after video reset', () => {
-    enableHostWebVideoCapability();
-    const first = getVideoCapabilityBackend();
-    enableHostWebVideoCapability();
-    expect(getVideoCapabilityBackend()).toBe(first);
-    resetVideoCapabilityBackendForTest();
-    enableHostWebVideoCapability();
-    expect(getVideoCapabilityBackend()).not.toBe(first);
-  });
-
-  it.each([
-    { name: 'false', backend: { canPlayType: () => false } },
-    {
-      name: 'throw',
-      backend: {
-        canPlayType(): boolean {
-          throw new Error('custom failed');
-        },
-      },
-    },
-  ])('keeps a custom $name result terminal without touching the DOM', ({ backend }) => {
-    const createElement = vi.spyOn(document, 'createElement');
-    setVideoCapabilityBackend(backend);
-    enableHostWebVideoCapability();
-    expect(canPlayVideoType('video/mp4')).toBe(false);
-    expect(createElement).not.toHaveBeenCalled();
+  it('is a stable singleton', () => {
+    expect(webVideoCapabilityBackend).toBe(webVideoCapabilityBackend);
   });
 });

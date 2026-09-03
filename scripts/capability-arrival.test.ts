@@ -1,15 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import type { CapabilityArrivalFailure, GeneratedEntry } from './capability-arrival';
 import { capabilityArrivalFailures } from './capability-arrival';
 
-type Removal = 'functional-aggregate' | 'gl-surface' | 'video' | 'wgpu-surface';
-
-const ROOT = resolve(import.meta.dirname, '..');
-const VIDEO_APP = 'examples/packages/video/src/app.ts';
+type Removal = 'functional-aggregate' | 'gl-surface' | 'wgpu-surface';
 
 interface RemovalControl {
   readonly after: number;
@@ -63,13 +57,6 @@ async function analyze(removal?: Removal): Promise<AnalysisResult> {
   const controls: RemovalControl[] = [];
   const failures = await capabilityArrivalFailures({
     transformGeneratedEntry: (entry) => mutateGeneratedEntry(entry, removal, controls),
-    transformSource:
-      removal === 'video'
-        ? ({ path, source }) =>
-            path === VIDEO_APP
-              ? removeRequiredOccurrence(source, 'enableHostWebVideoCapability();', path, controls)
-              : source
-        : undefined,
   });
   return { controls, failures };
 }
@@ -101,37 +88,6 @@ describe('capability-arrival source gate', () => {
       removeRequiredOccurrence('enableHostWeb(); enableHostWeb();', 'enableHostWeb();', 'duplicate', []),
     ).toThrow('duplicate must contain exactly one "enableHostWeb();"; found 2');
   });
-
-  it('reddens all four interactive video routes when VideoCapability is removed', async () => {
-    const evidenceControls: RemovalControl[] = [];
-    const mutatedApp = removeRequiredOccurrence(
-      readFileSync(join(ROOT, VIDEO_APP), 'utf8'),
-      'enableHostWebVideoCapability();',
-      VIDEO_APP,
-      evidenceControls,
-    );
-    const { controls, failures } = await analyze('video');
-
-    // Capture still uses its three canvas-backed fake resources and never loads a video. The only
-    // removed statement is in the else branch, so these failures prove static interactive reachability.
-    expect(mutatedApp).toContain(
-      'setVideoSources(createCaptureVideoResource(), createCaptureVideoResource(), createCaptureVideoResource());',
-    );
-    expect(mutatedApp).toContain('loadVideoResourceFromBlob(blob, opts)');
-    expect(mutatedApp).not.toContain('enableHostWebVideoCapability();');
-    expect(evidenceControls).toEqual([{ after: 0, before: 1, specimen: VIDEO_APP }]);
-    expect(controls).toEqual([{ after: 0, before: 1, specimen: VIDEO_APP }]);
-    expect(arrivalNames(failures)).toEqual([
-      'examples:video/dom:VideoCapability:arrival',
-      'examples:video/canvas:VideoCapability:arrival',
-      'examples:video/webgl:VideoCapability:arrival',
-      'examples:video/webgpu:VideoCapability:arrival',
-    ]);
-    // A timeout here is a hang detector, not a performance budget: this mutation rewrites the video app
-    // and re-analyzes every arrival route, so its wall time tracks whatever else the suite is running.
-    // Sized for headroom over the observed tail rather than close to it, so ordinary contention cannot
-    // redden it while a genuinely wedged run still terminates.
-  }, 120_000);
 
   it('reddens the functional generated-entry owner when its aggregate is removed', async () => {
     const { controls, failures } = await analyze('functional-aggregate');
