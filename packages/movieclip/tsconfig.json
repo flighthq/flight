@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../entity" },
     { "path": "../scene2d" },
     { "path": "../image" },
     { "path": "../log" },

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types/contract';
 
@@ -18,7 +19,7 @@ export function acquireSpritesheetPlayer(): SpritesheetPlayer {
 }
 
 export function cloneSpritesheetPlayer(player: Readonly<SpritesheetPlayer>): SpritesheetPlayer {
-  return {
+  return createEntity({
     animation: player.animation,
     complete: player.complete,
     elapsed: player.elapsed,
@@ -28,11 +29,11 @@ export function cloneSpritesheetPlayer(player: Readonly<SpritesheetPlayer>): Spr
     paused: player.paused,
     queue: [...player.queue],
     speed: player.speed,
-  };
+  });
 }
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
-  return {
+  return createEntity({
     animation: obj?.animation ?? null,
     complete: obj?.complete ?? true,
     elapsed: obj?.elapsed ?? 0,
@@ -42,7 +43,7 @@ export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): Sprit
     paused: obj?.paused ?? false,
     queue: obj?.queue ?? [],
     speed: obj?.speed ?? 1,
-  };
+  });
 }
 
 export function disposeSpritesheetPlayer(player: SpritesheetPlayer): void {

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { StatechartSignals } from './StatechartSignals';
 
 // The finite input vocabulary interpreted by the statechart core. Values are numbers in an instance:
@@ -86,7 +87,7 @@ export type StatechartDurationGuard = (
 // state's denominator via setStatechartRegionDuration without the statechart knowing what produced it.
 // Both reset whenever a region reaches a new state. Optional diagnostics/observers are actor-local and
 // never enter immutable authored data.
-export interface StatechartInstance {
+export interface StatechartInstance extends Entity {
   readonly chart: Readonly<Statechart>;
   durationGuard: StatechartDurationGuard | null;
   readonly inputValues: Float64Array;

@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  Entity,
   Kind,
   KeyedTable,
   OrdinalTable,
@@ -32,7 +34,7 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 export function concatRegistryTable<T>(
   base: Readonly<KeyedTable<T>> | Readonly<SlotTable<T>>,
   overlay: Readonly<KeyedTable<T>> | Readonly<SlotTable<T>>,
-): KeyedTable<T> | SlotTable<T> {
+): (KeyedTable<T> & Entity) | (SlotTable<T> & Entity) {
   if (base.shape !== overlay.shape) {
     throw new Error(`concatRegistryTable: cannot compose a '${base.shape}' table with a '${overlay.shape}' table`);
   }
@@ -50,7 +52,12 @@ export function concatRegistryTable<T>(
   if (base.shape === 'slot') {
     const overlaySlot = overlay as Readonly<SlotTable<T>>;
     // `null` on the overlay is "no opinion" — inherit. A tombstone is "explicitly omitted" and wins.
-    return { entry: overlaySlot.entry ?? base.entry, onMiss: base.onMiss, registry: base.registry, shape: 'slot' };
+    return createEntity({
+      entry: overlaySlot.entry ?? base.entry,
+      onMiss: base.onMiss,
+      registry: base.registry,
+      shape: 'slot',
+    });
   }
 
   const baseKeyed = base as Readonly<KeyedTable<T>>;
@@ -73,12 +80,12 @@ export function concatRegistryTable<T>(
       }
     }
   }
-  return { entries, onMiss: baseKeyed.onMiss, registry: baseKeyed.registry, shape: 'keyed' };
+  return createEntity({ entries, onMiss: baseKeyed.onMiss, registry: baseKeyed.registry, shape: 'keyed' });
 }
 
 /** An empty keyed table for `registry`, carrying the miss policy every replacement of it preserves. */
-export function createKeyedTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): KeyedTable<T> {
-  return { entries: new Map(), onMiss, registry, shape: 'keyed' };
+export function createKeyedTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): KeyedTable<T> & Entity {
+  return createEntity({ entries: new Map(), onMiss, registry, shape: 'keyed' });
 }
 
 /** An ordinal table over `vocabulary`, every ordinal unbound. */
@@ -86,13 +93,13 @@ export function createOrdinalTable<T>(
   registry: RegistryId,
   onMiss: RegistryMissPolicy,
   vocabulary: readonly Kind[],
-): OrdinalTable<T> {
-  return { entries: vocabulary.map(() => null), onMiss, registry, shape: 'ordinal', vocabulary };
+): OrdinalTable<T> & Entity {
+  return createEntity({ entries: vocabulary.map(() => null), onMiss, registry, shape: 'ordinal', vocabulary });
 }
 
 /** An empty slot table for `registry`. Its key is its own `RegistryId`. */
-export function createSlotTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): SlotTable<T> {
-  return { entry: null, onMiss, registry, shape: 'slot' };
+export function createSlotTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): SlotTable<T> & Entity {
+  return createEntity({ entry: null, onMiss, registry, shape: 'slot' });
 }
 
 // The hot-path ordinal form: a direct index, no hash and no string. Out-of-range returns `null`, which
@@ -146,19 +153,19 @@ export function hasRegistryTableEntry(table: Readonly<RegistryTable<unknown>>, k
 // declines to override at all. There is no third union variant for this and there should not be — "no
 // opinion" IS the key being absent from the map, so there is nothing to store and therefore nothing to
 // type. Typing it would be the tombstone.
-export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> {
+export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.delete(key);
-  return { entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' };
+  return createEntity({ entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' });
 }
 
 // Binds `key` to `value`, returning a REPLACEMENT table. Not `setRegistryTableEntry`: this mutates
 // nothing, and `set*` is reserved for in-place mutation. The owner assigns the result:
 //   registries.textureResolvers = withRegistryTableEntry(registries.textureResolvers, kind, resolver);
-export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind, value: T): KeyedTable<T> {
+export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind, value: T): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Bound, value });
-  return { entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' };
+  return createEntity({ entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' });
 }
 
 // OMIT. Binds `key` to the tombstone: this table has an opinion about `key`, and the opinion is NOTHING.
@@ -168,10 +175,10 @@ export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: K
 // other way. Both leave `getRegistryTableEntry` answering `null` on a table with no base, so the
 // difference is invisible until the table is composed. Choose by what you MEAN — override-with-nothing,
 // or decline-to-override — never by which looks right at the call site.
-export function withRegistryTableTombstone<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> {
+export function withRegistryTableTombstone<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Tombstoned });
-  return { entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' };
+  return createEntity({ entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' });
 }
 
 // The stored entry for `key`, tombstones included — the shape-dispatch every resolution query shares.

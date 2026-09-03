@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { GlyphEntry, GlyphMetrics } from './GlyphSource';
 import type { TextureAtlas } from './TextureAtlas';
 
@@ -17,7 +18,7 @@ export type BitmapFontEncoding = 'msdf' | 'raster' | 'sdf';
 // key `left * 0x110000 + right` — the full Unicode codepoint space, not a 16-bit shift — holding the
 // horizontal adjustment in pixels. Build and read that key with `packBitmapFontKerningKey` /
 // `unpackBitmapFontKerningKey`; the arithmetic is theirs to own, not a callsite's to re-derive.
-export interface BitmapFont {
+export interface BitmapFont extends Entity {
   encoding: BitmapFontEncoding;
   glyphs: Map<number, GlyphEntry>;
   kerning: Map<number, number>;

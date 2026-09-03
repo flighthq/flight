@@ -50,7 +50,7 @@ describe('createDomScene2DRectangle', () => {
   it('transforms a local rectangle into a scene2d-space AABB', () => {
     const rect = createDomScene2DRectangle(createRectangle(10, 20, 30, 40), createMatrix(1, 0, 0, 1, 5, 6));
 
-    expect(rect).toEqual({ bottom: 66, left: 15, right: 45, top: 26 });
+    expect(rect).toMatchObject({ bottom: 66, left: 15, right: 45, top: 26 });
   });
 });
 
@@ -60,7 +60,7 @@ describe('pushDomClipRectangle', () => {
 
     pushDomClipRectangle(rectangles, createRectangle(0, 0, 10, 20), createMatrix(1, 0, 0, 1, 2, 3));
 
-    expect(rectangles).toEqual([{ bottom: 23, left: 2, right: 12, top: 3 }]);
+    expect(rectangles).toMatchObject([{ bottom: 23, left: 2, right: 12, top: 3 }]);
   });
 });
 

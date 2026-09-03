@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   ResourceLoadBytes,
@@ -184,7 +185,7 @@ export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>):
     opts.maxBytesPerSecond !== undefined && opts.maxBytesPerSecond > 0
       ? createTokenBucket(opts.maxBytesPerSecond)
       : null;
-  const out: ResourceLoaderInternal = {
+  const out = createEntity({
     cancelled: false,
     dedupeMap: new Map(),
     errorPolicy: opts.errorPolicy ?? 'continue',
@@ -210,7 +211,7 @@ export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>):
     total: 0,
     totalWeight: 0,
     weightLoaded: 0,
-  };
+  }) as ResourceLoaderInternal;
   return out;
 }
 
@@ -234,12 +235,12 @@ export function disposeResourceLoader(loader: ResourceLoader): void {
 export function enableResourceLoaderItemSignals(loader: ResourceLoader): ResourceLoaderItemSignals {
   const internal = loader as ResourceLoaderInternal;
   if (internal.itemSignals === null) {
-    internal.itemSignals = {
+    internal.itemSignals = createEntity({
       onItemComplete: createSignal(),
       onItemError: createSignal(),
       onItemRetry: createSignal(),
       onItemStart: createSignal(),
-    };
+    });
   }
   return internal.itemSignals;
 }

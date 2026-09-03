@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
 import type { TextShaperBackend, TextShaperSignals } from '@flighthq/types/contract';
 
@@ -12,9 +13,9 @@ export function disposeTextShaperSignals(): void {
 
 export function enableTextShaperSignals(): TextShaperSignals {
   if (_signals !== null) return _signals;
-  _signals = {
+  _signals = createEntity({
     onBackendChanged: createSignal<(backend: TextShaperBackend | null) => void>(),
-  };
+  });
   _setTextShaperBackendHook((backend) => {
     if (_signals !== null) {
       _signals.onBackendChanged.emit(backend);

@@ -1,7 +1,9 @@
 import { getDecompressor } from '@flighthq/compression/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { detectFontFormat } from '@flighthq/font/contract';
 import type {
   CffTable,
+  Entity,
   GlyphOutlineMetrics,
   GlyphOutlineSource,
   ImportDiagnostic,
@@ -62,7 +64,7 @@ function unwrapFontContainer(
 export function createGlyphOutlineSourceFromOpenTypeFont(
   source: Readonly<Uint8Array>,
   diagnostics?: ImportDiagnostic[],
-): GlyphOutlineSource | null {
+): (GlyphOutlineSource & Entity) | null {
   const parsed = readOpenTypeFontTables(source, diagnostics);
   if (parsed === null) return null;
 
@@ -70,7 +72,7 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
 
   // A bound method object rather than a plain record, because the source owns tables the methods close
   // over. The scratch-free contract is the caller's: `getGlyphOutline` writes into their `out`.
-  return {
+  return createEntity({
     getGlyphOutline(out: Path, glyphIndex: number): boolean {
       if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
       if (cff !== null) {
@@ -93,7 +95,7 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
     getGlyphOutlineMetrics() {
       return metrics;
     },
-  };
+  });
 }
 
 // Why `createGlyphOutlineSourceFromOpenTypeFont` returned null, as plain data.

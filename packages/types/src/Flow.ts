@@ -26,6 +26,7 @@ export interface FlowState {
 
 // The flow-state stack: `states` ordered bottom-to-top, so the last element is the active top. All
 // stack state lives here — there is no module-global stack; an app holds its own `FlowStack`.
-export interface FlowStack {
+export interface FlowStack extends Entity {
   states: FlowState[];
 }
+import type { Entity } from './Entity';

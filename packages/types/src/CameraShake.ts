@@ -30,7 +30,7 @@ export interface CameraShakeOptions {
 }
 
 // Additive offset produced by `updateCameraShake`. Apply after the camera's base transform.
-export interface CameraShakeOffset {
+export interface CameraShakeOffset extends Entity {
   rotationX: number;
   rotationY: number;
   rotationZ: number;
