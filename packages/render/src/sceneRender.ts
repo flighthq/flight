@@ -25,14 +25,15 @@ import type {
   DirectionalLight,
   Frustum,
   HemisphereLight,
+  InstancedMesh,
   Matrix4,
   Mesh,
   MeshRuntime,
+  Node3D,
   PointLight,
   RenderState,
   Scene3DLightBlock,
   Scene3DLightsLike,
-  Node3D,
   Scene3DRenderList,
   SpotLight,
   Transform3DNode,
@@ -174,13 +175,22 @@ export function prepareScene3DRender(
   packScene3DLightBlock(list.lights, lights);
 
   prepared.meshes.length = 0;
+  prepared.instancedMeshes.length = 0;
   // The sync policy governs transform freshness in the prepare pass, consistently with the 2D
   // display-object prepare: 'refreshDerivedState' (the default) recomposes every visited node's
   // matrices from its current transform each frame, so a bare `mesh.position.x = …` shows up with no
   // caller-side invalidate; 'requiresInvalidation' trusts the caller's invalidate* calls instead.
   const refreshTransforms = state.sceneGraphSyncPolicy === 'refreshDerivedState';
-  collectVisibleMeshes(scene, prepared.frustum, prepared.worldBounds, prepared.meshes, refreshTransforms);
+  collectVisibleMeshes(
+    scene,
+    prepared.frustum,
+    prepared.worldBounds,
+    prepared.meshes,
+    prepared.instancedMeshes,
+    refreshTransforms,
+  );
   list.meshCount = prepared.meshes.length;
+  list.instancedMeshCount = prepared.instancedMeshes.length;
 
   return list;
 }
@@ -189,7 +199,8 @@ function collectVisibleMeshes(
   root: Readonly<Node3D>,
   frustum: Readonly<Frustum>,
   worldBounds: Aabb,
-  out: Mesh[],
+  outMeshes: Mesh[],
+  outInstancedMeshes: InstancedMesh[],
   refreshTransforms: boolean,
 ): void {
   const stack = _collectStack;
@@ -213,8 +224,12 @@ function collectVisibleMeshes(
       invalidateNodeLocalTransform(node);
     }
 
-    if (isSceneMesh(node) && isMeshVisible(node, frustum, worldBounds)) {
-      out.push(node);
+    if (isSceneInstancedMesh(node)) {
+      if (node.instanceCount > 0 && isInstancedMeshVisible(node, frustum, worldBounds)) {
+        outInstancedMeshes.push(node);
+      }
+    } else if (isSceneMesh(node) && isMeshVisible(node, frustum, worldBounds)) {
+      outMeshes.push(node);
     }
 
     const children = getNodeRuntime(node).children;
@@ -231,7 +246,9 @@ function ensurePreparedScene3D(state: RenderState): PreparedScene3D {
   if (prepared === undefined) {
     const viewProjection = createMatrix4();
     const meshes: Mesh[] = [];
+    const instancedMeshes: InstancedMesh[] = [];
     const list: Scene3DRenderList = {
+      instancedMeshCount: 0,
       lights: {
         ambientCount: 0,
         data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
@@ -243,10 +260,12 @@ function ensurePreparedScene3D(state: RenderState): PreparedScene3D {
       },
       meshCount: 0,
       viewProjection: viewProjection,
+      visibleInstancedMeshes: instancedMeshes,
       visibleMeshes: meshes,
     };
     prepared = {
       frustum: createFrustum(),
+      instancedMeshes: instancedMeshes,
       list: list,
       meshes: meshes,
       viewProjection: viewProjection,
@@ -255,6 +274,13 @@ function ensurePreparedScene3D(state: RenderState): PreparedScene3D {
     preparedScene3Ds.set(state, prepared);
   }
   return prepared;
+}
+
+function isInstancedMeshVisible(mesh: Readonly<InstancedMesh>, frustum: Readonly<Frustum>, worldBounds: Aabb): boolean {
+  const bounds = ensureMeshGeometryBounds(mesh.geometry);
+  if (bounds === null) return true;
+  transformAabbByMatrix4(worldBounds, bounds, getNodeWorldMatrix4(mesh));
+  return isFrustumIntersectingAabb(frustum, worldBounds);
 }
 
 function isFloat32ArrayEqual(a: Readonly<Float32Array>, b: Readonly<Float32Array>): boolean {
@@ -410,6 +436,7 @@ function resolveScene3DViewportAspect(camera: Readonly<Camera3D>, viewportAspect
 // fills (the culling frustum, the live visible-mesh array, and a world-bounds scratch).
 interface PreparedScene3D {
   frustum: Frustum;
+  instancedMeshes: InstancedMesh[];
   list: Scene3DRenderList;
   meshes: Mesh[];
   viewProjection: Matrix4;
@@ -438,8 +465,12 @@ export function setSkinnedMeshBoundsGuard(guard: ((mesh: Readonly<Mesh>) => void
   _skinnedBoundsGuard = guard;
 }
 
+function isSceneInstancedMesh(node: Readonly<Node3D>): node is InstancedMesh {
+  return 'instanceMatrices' in node && 'geometry' in node && node.geometry != null;
+}
+
 function isSceneMesh(node: Readonly<Node3D>): node is Mesh {
-  return 'geometry' in node && node.geometry != null;
+  return 'geometry' in node && node.geometry != null && !('instanceMatrices' in node);
 }
 
 const _collectStack: Readonly<Node3D>[] = [];
