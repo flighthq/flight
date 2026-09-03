@@ -4,7 +4,7 @@ export { createWebAccessibilityBackend, webAccessibilityBackend } from './webAcc
 export { webAccessibilityHost } from './webAccessibilityHost';
 export { createWebAppCapabilities } from './webApp';
 export { webAppHost } from './webAppHost';
-export { enableHostWebAudio } from './webAudio';
+export { webAudioBackend } from './webAudio';
 export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebBitmapEncode } from './webBitmapEncode';
 export { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
@@ -28,7 +28,7 @@ export {
 export { webDialogHost } from './webDialogHost';
 export { webFileSystemBackend } from './webFilesystem';
 export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
-export { enableHostWebGeolocation } from './webGeolocation';
+export { webGeolocationBackend } from './webGeolocation';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 export { webGraphicsHost } from './webGraphicsHost';
