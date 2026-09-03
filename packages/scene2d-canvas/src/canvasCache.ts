@@ -32,6 +32,7 @@ import {
   getCanvasRenderStateRuntime,
   registerCanvasRenderStateTeardown,
 } from './canvasRenderState';
+import { setCanvasRenderStateHandles } from './canvasRenderStateHandles';
 import {
   createCanvasRenderTarget,
   destroyCanvasRenderTarget,
@@ -39,14 +40,6 @@ import {
   setCanvasRenderTransform2D,
 } from './canvasRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
-
-// Writable view of the readonly canvas/context handles. refreshCanvasRenderCache redirects the
-// offscreen cache state's handles at the cache target, mirroring the redirection boundary in
-// canvasRenderTarget.
-type CanvasRenderStateHandles = CanvasRenderState & {
-  canvas: HTMLCanvasElement;
-  context: CanvasRenderingContext2D;
-};
 
 /**
  * Creates a dedicated offscreen render state for baking render caches consumed by
@@ -157,17 +150,15 @@ export function refreshCanvasRenderCache(
   computeScene2DRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
-  const handles = cacheState as CanvasRenderStateHandles;
   const runtime = getCanvasRenderStateRuntime(cacheState);
-  handles.canvas = target.canvas;
-  handles.context = target.context;
-  handles.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
-  handles.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
+  setCanvasRenderStateHandles(cacheState, target.canvas, target.context);
+  cacheState.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
+  cacheState.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
   setCanvasRenderTransform2D(cacheState, _renderTransform);
 
   const dirty = prepareScene2DRender(cacheState, source);
   if (dirty || resized) {
-    handles.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
+    cacheState.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
     renderCanvasScene2D(cacheState, source);
   }
   return dirty || resized;

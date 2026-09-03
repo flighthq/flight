@@ -8,15 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { setCanvasRenderStateHandles } from './canvasRenderStateHandles';
 import { acquireCanvasRenderSurface, destroyCanvasRenderSurface } from './canvasRenderSurface';
-
-// Writable view of the readonly canvas/context handles. The render-target redirection deliberately
-// swaps these handles, so this narrow cast is the redirection boundary — mirrors the construction
-// boundary in createCanvasRenderState.
-type CanvasRenderStateHandles = CanvasRenderState & {
-  canvas: HTMLCanvasElement;
-  context: CanvasRenderingContext2D;
-};
 
 type SavedCanvasState = {
   canvas: HTMLCanvasElement;
@@ -39,7 +32,6 @@ export function beginCanvasRenderPass(
   target: CanvasRenderTarget,
   preserve?: Readonly<RenderPassPreserve>,
 ): void {
-  const handles = state as CanvasRenderStateHandles;
   const runtime = getCanvasRenderStateRuntime(state);
 
   let stack = _targetStack.get(state);
@@ -49,19 +41,18 @@ export function beginCanvasRenderPass(
   }
 
   stack.push({
-    canvas: handles.canvas,
-    context: handles.context,
-    renderTransform2D: handles.renderTransform2D,
+    canvas: state.canvas,
+    context: state.context,
+    renderTransform2D: state.renderTransform2D,
   });
 
-  handles.canvas = target.canvas;
-  handles.context = target.context;
-  handles.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
-  handles.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
+  setCanvasRenderStateHandles(state, target.canvas, target.context);
+  state.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
+  state.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
 
   const preserveColor = preserve?.preserveColor;
   const preserved = typeof preserveColor === 'boolean' ? preserveColor : preserveColor?.[0] === true;
-  if (!preserved) handles.context.clearRect(0, 0, target.width, target.height);
+  if (!preserved) state.context.clearRect(0, 0, target.width, target.height);
 }
 
 export function createCanvasRenderTarget(
@@ -91,12 +82,10 @@ export function destroyCanvasRenderTarget(target: CanvasRenderTarget): void {
  * begin. A call with no matching begin is a no-op. Mirrors endGlRenderPass / endWgpuRenderPass.
  */
 export function endCanvasRenderPass(state: CanvasRenderState): void {
-  const handles = state as CanvasRenderStateHandles;
   const saved = _targetStack.get(state)?.pop();
   if (saved === undefined) return;
-  handles.canvas = saved.canvas;
-  handles.context = saved.context;
-  handles.renderTransform2D = saved.renderTransform2D;
+  setCanvasRenderStateHandles(state, saved.canvas, saved.context);
+  state.renderTransform2D = saved.renderTransform2D;
 }
 
 export function resizeCanvasRenderTarget(target: CanvasRenderTarget, width: number, height: number): void {
@@ -113,8 +102,7 @@ export function resizeCanvasRenderTarget(target: CanvasRenderTarget, width: numb
  * saved reference stays intact for restore. Mirrors setGlRenderTransform2D / setWgpuRenderTransform2D.
  */
 export function setCanvasRenderTransform2D(state: CanvasRenderState, transform: Readonly<Matrix>): void {
-  const handles = state as CanvasRenderStateHandles;
   const next = createMatrix();
   copyMatrix(next, transform);
-  handles.renderTransform2D = next;
+  state.renderTransform2D = next;
 }
