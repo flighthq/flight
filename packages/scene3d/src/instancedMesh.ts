@@ -2,6 +2,8 @@ import { copyMatrix4, createMatrix4 } from '@flighthq/geometry/contract';
 import type { InstancedMesh, Kind, Material, Matrix4, MeshGeometry } from '@flighthq/types/contract';
 import { InstancedMeshKind } from '@flighthq/types/contract';
 
+export { InstancedMeshKind };
+
 import { createNode3D } from './sceneNode';
 
 const DEFAULT_CAPACITY = 16;

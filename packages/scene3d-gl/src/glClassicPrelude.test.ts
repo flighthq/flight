@@ -34,9 +34,9 @@ const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
 
 describe('buildGlClassicDefineKey', () => {
   it('encodes the lighting model first, then the feature flags', () => {
-    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l-------');
-    expect(buildGlClassicDefineKey(PHONG)).toBe('p-------');
-    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b-------');
+    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l--------');
+    expect(buildGlClassicDefineKey(PHONG)).toBe('p--------');
+    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b--------');
     expect(
       buildGlClassicDefineKey({
         alphaMaskEnabled: true,
@@ -47,22 +47,22 @@ describe('buildGlClassicDefineKey', () => {
         hasUvTransform: true,
         lightingModel: 'phong',
       }),
-    ).toBe('pmdsnau-');
+    ).toBe('pmdsnau--');
   });
 
   it('encodes a non-identity uv transform in the u slot ahead of skin', () => {
-    expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).toBe('l-----u-');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).toBe('l-----u--');
     expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
   });
 
   it('sets the trailing skin flag so a skinned variant keys distinctly', () => {
-    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l------k');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l------k-');
     expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
   });
 
   it('keeps the base identity stable and appends a promoted color-adjustment marker', () => {
-    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l-------');
-    expect(buildGlClassicDefineKey({ ...LAMBERT, hasColorAdjustment: true })).toBe('l-------c');
+    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l--------');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasColorAdjustment: true })).toBe('l--------c');
   });
 
   it('produces distinct strings per lighting model so they never collide', () => {
@@ -121,7 +121,7 @@ describe('ensureGlClassicProgram', () => {
     const skinned = ensureGlClassicProgram(state, LAMBERT);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('classic:l------k');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('classic:l------k-');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 });

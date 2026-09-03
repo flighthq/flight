@@ -116,20 +116,20 @@ describe('bindGlUnlitSurface', () => {
 
 describe('buildGlUnlitDefineKey', () => {
   it('produces distinct stable strings per flag set', () => {
-    expect(buildGlUnlitDefineKey(FLAT)).toBe('-----');
+    expect(buildGlUnlitDefineKey(FLAT)).toBe('------');
     expect(
       buildGlUnlitDefineKey({ alphaMaskEnabled: true, hasColorMap: true, hasUvTransform: true, vertexColor: true }),
-    ).toBe('mcvu-');
-    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('--v--');
+    ).toBe('mcvu--');
+    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('--v---');
   });
 
   it('encodes a non-identity uv transform with a u slot and keys it distinctly', () => {
-    expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).toBe('---u-');
+    expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).toBe('---u--');
     expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).not.toBe(buildGlUnlitDefineKey(FLAT));
   });
 
   it('encodes the skinned variant with a trailing k and keys it distinctly', () => {
-    expect(buildGlUnlitDefineKey({ ...FLAT, hasSkin: true }).endsWith('k')).toBe(true);
+    expect(buildGlUnlitDefineKey({ ...FLAT, hasSkin: true })).toBe('----k-');
     expect(buildGlUnlitDefineKey({ ...FLAT, hasSkin: true })).not.toBe(buildGlUnlitDefineKey(FLAT));
   });
 });
@@ -162,7 +162,7 @@ describe('ensureGlUnlitProgram', () => {
     getGlScene3DRuntime(state).activeSkinnedRun = true;
     ensureGlUnlitProgram(state, FLAT);
     const keys = [...getGlScene3DRuntime(state).programCache.keys()];
-    expect(keys.some((k) => k.startsWith('unlit:') && k.endsWith('k'))).toBe(true);
+    expect(keys.some((k) => k.startsWith('unlit:') && k.includes('k'))).toBe(true);
     expect(keys.filter((k) => k.startsWith('unlit:')).length).toBe(2);
   });
 });

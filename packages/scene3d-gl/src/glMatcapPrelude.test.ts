@@ -28,10 +28,10 @@ describe('bindGlMatcapSurface', () => {
 
 describe('buildGlMatcapDefineKey', () => {
   it('produces distinct stable strings per flag set', () => {
-    expect(buildGlMatcapDefineKey(FLAT)).toBe('---');
-    expect(buildGlMatcapDefineKey({ alphaMaskEnabled: true, hasMatcap: true })).toBe('mt-');
-    expect(buildGlMatcapDefineKey({ ...FLAT, hasMatcap: true })).toBe('-t-');
-    expect(buildGlMatcapDefineKey({ ...FLAT, hasSkin: true })).toBe('--k');
+    expect(buildGlMatcapDefineKey(FLAT)).toBe('----');
+    expect(buildGlMatcapDefineKey({ alphaMaskEnabled: true, hasMatcap: true })).toBe('mt--');
+    expect(buildGlMatcapDefineKey({ ...FLAT, hasMatcap: true })).toBe('-t--');
+    expect(buildGlMatcapDefineKey({ ...FLAT, hasSkin: true })).toBe('--k-');
   });
 });
 
@@ -64,7 +64,7 @@ describe('ensureGlMatcapProgram', () => {
     const skinned = ensureGlMatcapProgram(state, FLAT);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlScene3DRuntime(state).programCache.keys()]).toEqual(['matcap:---', 'matcap:--k']);
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toEqual(['matcap:----', 'matcap:--k-']);
   });
 });
 

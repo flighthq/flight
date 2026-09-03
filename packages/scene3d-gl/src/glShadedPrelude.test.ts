@@ -46,21 +46,21 @@ function vertexSourceFrom(calls: { name: string; args: unknown[] }[]): string {
 
 describe('buildGlShadedCacheKey', () => {
   it('namespaces under shaded: and joins base flags with the modifier define-key', () => {
-    expect(buildGlShadedCacheKey(BASE_KEY, '')).toBe('shaded:------|');
+    expect(buildGlShadedCacheKey(BASE_KEY, '')).toBe('shaded:-------|');
     expect(buildGlShadedCacheKey({ ...BASE_KEY, hasDiffuseMap: true }, 'EmissiveModifier:m')).toBe(
-      'shaded:-d----|EmissiveModifier:m',
+      'shaded:-d-----|EmissiveModifier:m',
     );
   });
 
   it('encodes a non-identity uv transform in the u slot ahead of skin', () => {
-    expect(buildGlShadedCacheKey({ ...BASE_KEY, hasUvTransform: true }, '')).toBe('shaded:----u-|');
+    expect(buildGlShadedCacheKey({ ...BASE_KEY, hasUvTransform: true }, '')).toBe('shaded:----u--|');
     expect(buildGlShadedCacheKey({ ...BASE_KEY, hasUvTransform: true }, '')).not.toBe(
       buildGlShadedCacheKey(BASE_KEY, ''),
     );
   });
 
   it('sets the trailing skin flag so a skinned variant keys distinctly from the rigid one', () => {
-    expect(buildGlShadedCacheKey({ ...BASE_KEY, hasSkin: true }, '')).toBe('shaded:-----k|');
+    expect(buildGlShadedCacheKey({ ...BASE_KEY, hasSkin: true }, '')).toBe('shaded:-----k-|');
     expect(buildGlShadedCacheKey({ ...BASE_KEY, hasSkin: true }, '')).not.toBe(buildGlShadedCacheKey(BASE_KEY, ''));
   });
 });
@@ -217,7 +217,7 @@ describe('ensureGlShadedProgram', () => {
     const skinned = ensureGlShadedProgram(state, BASE_KEY, []);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('shaded:-----k||registry:0');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('shaded:-----k-||registry:0');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 

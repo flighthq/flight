@@ -16,6 +16,7 @@ import { ImageTextureSourceKind } from '@flighthq/types/contract';
 import {
   SKIN_PALETTE_TEXTURE_UNIT,
   beginGlMeshDraw,
+  bindGlInstancePalette,
   bindGlMeshSkinPalette,
   bindGlUvTransform,
   compileGlProgram,
@@ -67,6 +68,17 @@ describe('beginGlMeshDraw', () => {
     const { state, gl } = makeGlScene3DState();
     beginGlMeshDraw(state, makeProgram(), true);
     expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+  });
+});
+
+describe('bindGlInstancePalette', () => {
+  it('uploads the instance palette texture and sets u_instancePalette', () => {
+    const { state, gl } = makeGlScene3DState();
+    const program = makeProgram();
+    const instanceMatrices = new Float32Array(16);
+    bindGlInstancePalette(state, program, instanceMatrices, 1);
+    expect(gl.calls.some((c) => c.name === 'activeTexture')).toBe(true);
+    expect(program.locInstancePalette).toBeDefined();
   });
 });
 

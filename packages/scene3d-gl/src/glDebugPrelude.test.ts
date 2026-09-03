@@ -37,10 +37,10 @@ describe('bindGlDebugRange', () => {
 
 describe('buildGlDebugDefineKey', () => {
   it('produces distinct stable strings per mode and normal-map flag', () => {
-    expect(buildGlDebugDefineKey(DEPTH)).toBe('d--');
-    expect(buildGlDebugDefineKey(NORMAL)).toBe('n--');
-    expect(buildGlDebugDefineKey(NORMAL_MAP)).toBe('nm-');
-    expect(buildGlDebugDefineKey({ ...DEPTH, hasSkin: true })).toBe('d-k');
+    expect(buildGlDebugDefineKey(DEPTH)).toBe('d---');
+    expect(buildGlDebugDefineKey(NORMAL)).toBe('n---');
+    expect(buildGlDebugDefineKey(NORMAL_MAP)).toBe('nm--');
+    expect(buildGlDebugDefineKey({ ...DEPTH, hasSkin: true })).toBe('d-k-');
   });
 });
 
@@ -73,8 +73,8 @@ describe('ensureGlDebugProgram', () => {
 
     const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('debug:'))).toBe(true);
-    expect(keys).toContain('debug:d--');
-    expect(keys).toContain('debug:n--');
+    expect(keys).toContain('debug:d---');
+    expect(keys).toContain('debug:n---');
     // The two distinct variants compiled exactly once each.
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(2);
   });
@@ -86,7 +86,7 @@ describe('ensureGlDebugProgram', () => {
     const skinned = ensureGlDebugProgram(state, DEPTH);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlScene3DRuntime(state).programCache.keys()]).toEqual(['debug:d--', 'debug:d-k']);
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toEqual(['debug:d---', 'debug:d-k-']);
   });
 });
 
