@@ -6,6 +6,7 @@ import {
   QuadBatchKind,
   RichTextKind,
   Scale9ShapeKind,
+  Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -35,6 +36,7 @@ export function registerDefaultHitTests(): void {
   registerHitTest(QuadBatchKind, defaultQuadBatchHitTestHandler);
   registerHitTest(RichTextKind, defaultRichTextHitTestHandler);
   registerHitTest(Scale9ShapeKind, defaultShapeHitTestHandler);
+  registerHitTest(Scale9SpriteKind, defaultSpriteHitTestHandler);
   registerHitTest(ShapeKind, defaultShapeHitTestHandler);
   registerHitTest(SpriteKind, defaultSpriteHitTestHandler);
   registerHitTest(TextLabelKind, defaultTextHitTestHandler);
