@@ -55,6 +55,10 @@ status: ./status.md
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
 
+- **[2026-09-02] `AudioResourceReference` keeps its name.** `Resource` stays in the reference type's name rather than shortening to `AudioReference`. The name says what it refers to: a reference to an audio clip **resource**, not to an audio clip in some looser sense, and it reads consistently beside the type that owns it, `AudioResource`. A reader meeting the pair together can tell which is the thing and which is the handle without checking either definition.
+
+  **Why:** The shorter form would drop the one word that identifies the referent, and identifying the referent is the whole job of a reference type's name. Exported names in this SDK carry the full, unabbreviated name of the type they operate on, and a reference is named for what it points at.
+
 ## Open directions
 
 1. **Breadth review for AAA completeness.** What does a complete audio resource package look like? Streaming decode? Audio metadata (duration, sample rate, channel count)? Format detection (magic bytes)? Audio codec seam (parallel to image-codec)?
