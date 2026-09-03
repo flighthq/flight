@@ -1,20 +1,6 @@
-import {
-  getFontLoadingBackend,
-  hasFontLoadingHostBackend,
-  resetFontLoadingBackendForTest,
-} from '@flighthq/font/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import {
-  createWebFontLoadingBackend,
-  enableHostWebFontLoading,
-  resetHostWebFontLoadingForTest,
-} from './webFontLoading';
-
-afterEach(() => {
-  resetFontLoadingBackendForTest();
-  resetHostWebFontLoadingForTest();
-});
+import { createWebFontLoadingBackend, webFontLoadingBackend } from './webFontLoading';
 
 describe('createWebFontLoadingBackend', () => {
   it('returns an Entity', () => {
@@ -28,30 +14,22 @@ describe('createWebFontLoadingBackend', () => {
     expect(backend.loadFontFaces).toBeTypeOf('function');
     expect(backend.whenReady).toBeTypeOf('function');
   });
-});
 
-describe('enableHostWebFontLoading', () => {
-  it('installs the host backend', () => {
-    expect(hasFontLoadingHostBackend()).toBe(false);
-    enableHostWebFontLoading();
-    expect(hasFontLoadingHostBackend()).toBe(true);
-  });
-
-  it('is idempotent', () => {
-    enableHostWebFontLoading();
-    enableHostWebFontLoading();
-    expect(hasFontLoadingHostBackend()).toBe(true);
+  it('returns distinct instances on each call', () => {
+    expect(createWebFontLoadingBackend()).not.toBe(createWebFontLoadingBackend());
   });
 });
 
-describe('resetHostWebFontLoadingForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebFontLoading();
-    const first = getFontLoadingBackend();
-    resetHostWebFontLoadingForTest();
-    resetFontLoadingBackendForTest();
-    enableHostWebFontLoading();
-    const second = getFontLoadingBackend();
-    expect(first).not.toBe(second);
+describe('webFontLoadingBackend', () => {
+  it('is an Entity with all four operations', () => {
+    expect(EntityRuntimeKey in webFontLoadingBackend).toBe(true);
+    expect(webFontLoadingBackend.addFontFace).toBeTypeOf('function');
+    expect(webFontLoadingBackend.checkFontFace).toBeTypeOf('function');
+    expect(webFontLoadingBackend.loadFontFaces).toBeTypeOf('function');
+    expect(webFontLoadingBackend.whenReady).toBeTypeOf('function');
+  });
+
+  it('is a stable singleton', () => {
+    expect(webFontLoadingBackend).toBe(webFontLoadingBackend);
   });
 });
