@@ -4,7 +4,7 @@ import {
   unregisterDecompressor,
 } from '@flighthq/compression/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { Compression, CompressionFraming, EntityRuntimeKey, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -63,8 +63,8 @@ describe('readWoffFont', () => {
     const rebuilt = readWoffFont(encodeSyntheticWoff(original), null)!;
     const before = createGlyphOutlineSourceFromOpenTypeFont(original)!;
     const after = createGlyphOutlineSourceFromOpenTypeFont(rebuilt)!;
-    const a: Path = { commands: [], data: [], winding: 'nonZero' };
-    const b: Path = { commands: [], data: [], winding: 'nonZero' };
+    const a: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'nonZero' };
+    const b: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'nonZero' };
     expect(before.getGlyphOutline(a, 1)).toBe(true);
     expect(after.getGlyphOutline(b, 1)).toBe(true);
     expect(b.commands).toEqual(a.commands);

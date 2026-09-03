@@ -1,4 +1,11 @@
-import type { CanvasRenderState, CanvasRenderTarget, CompositeEffect } from '@flighthq/types/contract';
+import { createCompositeEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  CanvasRenderState,
+  CanvasRenderTarget,
+  CanvasRenderTargetPool,
+  CompositeEffect,
+} from '@flighthq/types/contract';
 
 import { registerCanvasBlendEffectBackdrop } from './canvasBlendEffect';
 import {
@@ -39,7 +46,7 @@ function backdropTarget(): CanvasRenderTarget {
 }
 
 function compositeEffect(over: Partial<CompositeEffect> = {}): CompositeEffect {
-  return { kind: 'CompositeEffect', operator: 'SourceOver', ...over } as CompositeEffect;
+  return createCompositeEffect('SourceOver', over);
 }
 
 afterEach(() => {
@@ -121,7 +128,16 @@ describe('defaultCanvasCompositeEffectRunner', () => {
     const drawn = recordDraws(dest);
 
     defaultCanvasCompositeEffectRunner(
-      { state, source, dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] } },
+      {
+        state,
+        source,
+        dest,
+        pool: createEntity({
+          creator: canvasTestSurfaceCreator,
+          free: [],
+          inUse: [],
+        }) as unknown as CanvasRenderTargetPool,
+      },
       compositeEffect({ operator: 'DestinationOver', backdropKey: 'scene' }),
     );
 

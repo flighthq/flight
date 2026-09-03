@@ -7,7 +7,7 @@ import {
   setMovieClipSource,
 } from '@flighthq/movieclip/contract';
 import type { MovieClip, Node2D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
@@ -120,6 +120,7 @@ function actions(bytes: readonly number[]): SwfReader {
 function threeFrameClip(labels: readonly { frame: number; name: string }[] = []): MovieClip {
   const clip = createMovieClip();
   setMovieClipSource(clip, {
+    [EntityRuntimeKey]: undefined,
     constructFrame: () => undefined,
     cues: [],
     frameRate: 24,

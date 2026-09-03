@@ -1,6 +1,7 @@
 // The edge color is the one part of this runner with a channel ORDER to get wrong, and it carried a
 // packing — 0xAARRGGBB, alpha in the high byte — that no other color in the SDK used. The uniform
 // assertion below is what makes the order a fact rather than a reading of four shift expressions.
+import { createConvolutionEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import {
@@ -45,13 +46,17 @@ describe('applyConvolutionEffectToGl', () => {
 
   it('binds the edge color as packed RGBA, not as the ARGB it once carried', () => {
     glMock.uniform4f.mockClear();
-    applyConvolutionEffectToGl({} as never, target, target, {
-      color: 0x44ffee80,
-      kind: 'ConvolutionEffect',
-      matrix: [1],
-      matrixX: 1,
-      matrixY: 1,
-    });
+    applyConvolutionEffectToGl(
+      {} as never,
+      target,
+      target,
+      createConvolutionEffect({
+        color: 0x44ffee80,
+        matrix: [1],
+        matrixX: 1,
+        matrixY: 1,
+      }),
+    );
 
     // 0x44 0xff 0xee 0x80 read in that order. The previous packing produced (1, 0.933, 0.502, 0.267)
     // from this same value — every channel shifted one place, and still a valid-looking color.
@@ -64,12 +69,16 @@ describe('applyConvolutionEffectToGl', () => {
 
   it('defaults the edge color to transparent black when the effect omits it', () => {
     glMock.uniform4f.mockClear();
-    applyConvolutionEffectToGl({} as never, target, target, {
-      kind: 'ConvolutionEffect',
-      matrix: [1],
-      matrixX: 1,
-      matrixY: 1,
-    });
+    applyConvolutionEffectToGl(
+      {} as never,
+      target,
+      target,
+      createConvolutionEffect({
+        matrix: [1],
+        matrixX: 1,
+        matrixY: 1,
+      }),
+    );
 
     const call = glMock.uniform4f.mock.calls.find((entry) => entry[0] === 'u_edgeColor')!;
     expect(call.slice(1)).toEqual([0, 0, 0, 0]);

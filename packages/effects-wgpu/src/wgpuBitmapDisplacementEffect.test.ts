@@ -1,3 +1,4 @@
+import { createBitmapDisplacementEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { BitmapDisplacementEffect, Texture2D, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
@@ -85,7 +86,7 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 function effect(overrides: Readonly<Partial<BitmapDisplacementEffect>> = {}): BitmapDisplacementEffect {
-  return { kind: 'BitmapDisplacementEffect', map, ...overrides } as BitmapDisplacementEffect;
+  return createBitmapDisplacementEffect('map' in overrides ? (overrides.map ?? null) : map, overrides);
 }
 
 describe('applyBitmapDisplacementEffectToWgpu', () => {

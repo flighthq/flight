@@ -3,6 +3,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import { setNodeColorAdjustmentsTint } from '@flighthq/node/contract';
 import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, RenderProxy2D } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { defaultGlBitmapTextRenderer } from './glBitmapText';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
@@ -20,6 +21,7 @@ function createTestGlyphSource(): GlyphSource {
   image.width = 64;
   image.height = 64;
   return {
+    [EntityRuntimeKey]: undefined,
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,

@@ -1,6 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
   HapticImpactStyle,
+  EntityWithoutRuntime,
   HapticsBackend,
   HapticsCapabilities,
   HapticNotificationType,
@@ -16,7 +17,7 @@ import type {
 // omitted; the intensity argument to `impact` is not expressible and is ignored.
 export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HapticsBackend {
   const haptics = capacitor.haptics;
-  return createEntity({
+  return createEntity<EntityWithoutRuntime<HapticsBackend>>({
     cancel() {
       // Capacitor exposes no cancel-vibration call.
       return false;

@@ -1,3 +1,4 @@
+import { createCrtEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -6,7 +7,7 @@ import {
   createGlRenderState,
 } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { CrtEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { applyCrtEffectToGl, defaultGlCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -38,7 +39,7 @@ const HALF_SCANLINE_BELOW_TOP = 1 - 0.5 / RESOLUTION_ROWS;
 function scanlineExpression(): string {
   programMock.getGlEffectProgram.mockClear();
   const target = { height: RESOLUTION_ROWS, texture: {}, width: 4 } as unknown as GlRenderTarget;
-  applyCrtEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, { kind: 'CrtEffect' } as CrtEffect);
+  applyCrtEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createCrtEffect());
   const source = programMock.getGlEffectProgram.mock.calls[0]![2] as string;
   return extractGlslExpression(source, /float line = ([^;]+);/);
 }
@@ -102,7 +103,7 @@ describe('defaultGlCrtEffectRunner', () => {
 
     defaultGlCrtEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
-      { kind: 'CrtEffect' } as CrtEffect,
+      createCrtEffect(),
     );
 
     expect(programMock.getGlEffectProgram.mock.calls[0]![1]).toBe('stylization.crt');

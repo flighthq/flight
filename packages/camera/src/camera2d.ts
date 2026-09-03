@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-
 import type { Camera2D, Camera2DOptions } from '@flighthq/types/contract';
 
 // Allocates a plain-data 2D camera over a `viewportWidth` x `viewportHeight` surface. The camera

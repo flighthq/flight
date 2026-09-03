@@ -41,6 +41,7 @@ function createData(data: Partial<RichTextData> = {}): RichTextData {
 
 function createLayout(layout: Partial<TextLayoutResult> = {}): TextLayoutResult {
   return {
+    [EntityRuntimeKey]: undefined,
     groups: [],
     lineAscents: [],
     lineDescents: [],

@@ -1,3 +1,5 @@
+import { createGradientBevelEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool, GradientBevelEffect } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
@@ -16,7 +18,14 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     target.canvas.id = id;
     return target;
   });
-  return { pool: { creator: canvasTestSurfaceCreator, free: [...targets].reverse(), inUse: [] }, targets };
+  return {
+    pool: createEntity({
+      creator: canvasTestSurfaceCreator,
+      free: [...targets].reverse(),
+      inUse: [],
+    }) as unknown as CanvasRenderTargetPool,
+    targets,
+  };
 }
 
 function recordAll(log: string[], targets: readonly Readonly<CanvasRenderTarget>[]): void {
@@ -40,7 +49,7 @@ function scene(): { source: CanvasRenderTarget; dest: CanvasRenderTarget } {
 const RAMP = { alphas: [1, 1], colors: [0xff0000, 0x0000ff], ratios: [0, 255] };
 
 function effectOf(over: Partial<GradientBevelEffect> = {}): GradientBevelEffect {
-  return { kind: 'GradientBevelEffect', ...RAMP, ...over } as GradientBevelEffect;
+  return createGradientBevelEffect({ ...RAMP, ...over });
 }
 
 afterEach(() => {

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createWgpuRenderStateForTest,
   getWgpuRenderStateRuntime,
@@ -39,14 +40,14 @@ describe('isWgpuRenderEffectResolvable', () => {
   it('treats a runner without a resolver as always resolvable', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuRenderEffect(state, 'acme.Always', vi.fn());
-    expect(isWgpuRenderEffectResolvable(state, { kind: 'acme.Always' })).toBe(true);
+    expect(isWgpuRenderEffectResolvable(state, createEntity({ kind: 'acme.Always' }))).toBe(true);
   });
 
   it('asks the resolver for each effect instance', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuRenderEffect(state, 'acme.Named', vi.fn(), (_state, effect) => 'key' in effect);
-    expect(isWgpuRenderEffectResolvable(state, { kind: 'acme.Named' })).toBe(false);
-    expect(isWgpuRenderEffectResolvable(state, { key: 'ready', kind: 'acme.Named' } as never)).toBe(true);
+    expect(isWgpuRenderEffectResolvable(state, createEntity({ kind: 'acme.Named' }))).toBe(false);
+    expect(isWgpuRenderEffectResolvable(state, createEntity({ key: 'ready', kind: 'acme.Named' }) as never)).toBe(true);
   });
 });
 

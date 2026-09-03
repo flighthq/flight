@@ -76,7 +76,12 @@ export function createPhysics2DAbiContactBuffer(
 }
 
 export function createPhysics2DAbiExecutionResult(): Physics2DAbiExecutionResult {
-  return createEntity({ status: 'Complete', commandIndex: 0, byteOffset: Physics2DAbiCommandHeaderByteLength, commandKind: 0 });
+  return createEntity({
+    status: 'Complete',
+    commandIndex: 0,
+    byteOffset: Physics2DAbiCommandHeaderByteLength,
+    commandKind: 0,
+  });
 }
 
 export function createPhysics2DAbiJointBuffer(capacity: number): Physics2DAbiJointBuffer {

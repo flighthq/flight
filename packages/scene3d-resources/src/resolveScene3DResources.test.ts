@@ -12,6 +12,7 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 import {
+  EntityRuntimeKey,
   ImageResourceFailureKind,
   ImageTextureSourceKind,
   ResourceResolutionState,
@@ -34,6 +35,7 @@ let sceneResources: ImageResourceReference[] = [];
 
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   const ref: ImageResourceReference = {
+    [EntityRuntimeKey]: undefined,
     bytes: new Uint8Array([9, 9]),
     alphaType: 'straight',
     failure: null,
@@ -47,6 +49,7 @@ function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceRefere
 
 function externalRef(uri = 'leaf.png'): ImageResourceReference {
   const ref: ImageResourceReference = {
+    [EntityRuntimeKey]: undefined,
     basePath: null,
     failure: null,
     kind: ImageResourceReferenceKind.External,
@@ -295,6 +298,7 @@ describe('updateScene3DResourceStreaming', () => {
       const source = await fetch(ref, signal);
       if (source === null) {
         ref.failure = {
+          [EntityRuntimeKey]: undefined,
           kind: ImageResourceFailureKind.Unavailable,
           message: 'ImageResource resource unavailable',
           name: null,

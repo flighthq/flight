@@ -1,3 +1,4 @@
+import { createScanlinesEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -49,10 +50,7 @@ afterEach(() => {
 
 function apply(effect: Readonly<Partial<ScanlinesEffect>> = {}): void {
   const target = { height: 60, texture: {}, width: 80 } as unknown as GlRenderTarget;
-  applyScanlinesEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'ScanlinesEffect',
-    ...effect,
-  } as ScanlinesEffect);
+  applyScanlinesEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createScanlinesEffect(effect));
 }
 
 function lineAtImageY(imageY: number, count: number): number {
@@ -103,7 +101,7 @@ describe('defaultGlScanlinesEffectRunner', () => {
 
     defaultGlScanlinesEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
-      { count: 13, kind: 'ScanlinesEffect' } as ScanlinesEffect,
+      createScanlinesEffect({ count: 13 }),
     );
 
     expect(uniformValue('u_count')).toBe(13);

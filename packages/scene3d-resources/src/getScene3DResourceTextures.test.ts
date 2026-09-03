@@ -4,13 +4,14 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResourceReference, Texture } from '@flighthq/types/contract';
-import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
 
 function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
   return {
+    [EntityRuntimeKey]: undefined,
     alphaType: 'straight',
     bytes: new Uint8Array([1, 2, 3]),
     failure: null,

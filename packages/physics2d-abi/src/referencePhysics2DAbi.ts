@@ -51,6 +51,7 @@ import {
 } from '@flighthq/physics2d/contract';
 import type {
   CollisionBuiltInShape2D,
+  EntityWithoutRuntime,
   Physics2DAbi,
   Physics2DAbiBodyBuffer,
   Physics2DAbiCommandBuffer,
@@ -109,7 +110,7 @@ export function createReferencePhysics2DAbi(): Physics2DAbi {
   const worlds = new Map<number, ReferencePhysics2DAbiWorld>();
   let nextWorldHandle = 1;
 
-  return createEntity({
+  return createEntity<EntityWithoutRuntime<Physics2DAbi>>({
     version: Physics2DAbiVersion,
     capabilities:
       Physics2DAbiCapability.ContactHooks |

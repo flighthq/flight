@@ -11,6 +11,7 @@ import type {
   WgpuRenderState,
 } from '@flighthq/types/contract';
 import {
+  EntityRuntimeKey,
   ImageResourceReferenceKind,
   RenderRegistry,
   RequirementFacet,
@@ -44,6 +45,7 @@ const coverageCatalog: SceneCoverageCatalog = [
 
 function shadedUsage(withModifier = false): Scene3DKindUsage {
   const ref: ImageResourceReference = {
+    [EntityRuntimeKey]: undefined,
     alphaType: 'straight',
     bytes: new Uint8Array([1, 2, 3]),
     failure: null,

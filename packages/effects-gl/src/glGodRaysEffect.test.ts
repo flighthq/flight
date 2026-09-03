@@ -1,3 +1,4 @@
+import { createGodRaysEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -46,10 +47,7 @@ function apply(effect: Readonly<Partial<GodRaysEffect>> = {}): void {
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
   const target = { height: 64, texture: {}, width: 64 } as unknown as GlRenderTarget;
-  applyGodRaysEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'GodRaysEffect',
-    ...effect,
-  } as GodRaysEffect);
+  applyGodRaysEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createGodRaysEffect(effect));
 }
 
 function lightPosition(): readonly number[] {
@@ -119,7 +117,7 @@ describe('defaultGlGodRaysEffectRunner', () => {
 
     defaultGlGodRaysEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
-      { centerY: 0.25, kind: 'GodRaysEffect' } as GodRaysEffect,
+      createGodRaysEffect({ centerY: 0.25 }),
     );
 
     expect(lightPosition()[1]).toBeCloseTo(0.75, 6);

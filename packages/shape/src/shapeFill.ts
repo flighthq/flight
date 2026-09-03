@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
@@ -132,7 +133,7 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
         if (path !== null && path.commands.length > 0) regions.push({ path, color, alpha });
         color = commands[a] as number;
         alpha = commands[a + 1] as number;
-        path = { commands: [], data: [], winding };
+        path = createEntity({ commands: [] as number[], data: [] as number[], winding });
         break;
       }
       case 'endFill': {

@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { GlyphAtlas, GlyphSource } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, GlyphAtlas, GlyphSource } from '@flighthq/types/contract';
 
 import { getGlyphAtlasBitmap, getGlyphAtlasLayoutVersion } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
@@ -10,7 +10,7 @@ import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics'
 // so a renderer drawing a string just asks for each glyph. This is the dynamic implementation of
 // `GlyphSource`; `@flighthq/bitmapfont` will provide a static one of the same shape.
 export function createGlyphSourceFromGlyphAtlas(atlas: Readonly<GlyphAtlas>): GlyphSource {
-  return createEntity({
+  return createEntity<EntityWithoutRuntime<GlyphSource>>({
     getGlyphAtlasImage(page = 0) {
       // One growing bitmap = page 0; a `Bitmap` is an `Image`, so this pairs the geometry
       // seam with its pixels directly.

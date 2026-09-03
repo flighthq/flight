@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createRenderState, enableRenderRegistrySignals, getRenderStateRuntime } from '@flighthq/render/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { RenderEffect, RenderState } from '@flighthq/types/contract';
@@ -30,14 +31,14 @@ describe('computeRenderEffectPadding', () => {
     expect(
       computeRenderEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 1 }),
-        { kind: 'acme.Pointwise' } as RenderEffect,
+        createEntity({ kind: 'acme.Pointwise' }) as RenderEffect,
         createBlurEffect({ blurX: 1, blurY: 4 }),
       ]),
     ).toEqual({ bottom: 15, left: 9, right: 9, top: 15 });
   });
 
   it('returns a zero sentinel for an unregistered kind', () => {
-    const effect = { kind: 'acme.Missing' } as RenderEffect;
+    const effect = createEntity({ kind: 'acme.Missing' }) as RenderEffect;
     expect(computeRenderEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
   });
 
@@ -59,7 +60,7 @@ describe('computeRenderEffectPadding', () => {
     connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
       misses.push([registry, kind]);
     });
-    expect(computeRenderEffectPadding(state, { kind: 'acme.Missing' } as RenderEffect)).toEqual({
+    expect(computeRenderEffectPadding(state, createEntity({ kind: 'acme.Missing' }) as RenderEffect)).toEqual({
       bottom: 0,
       left: 0,
       right: 0,
@@ -77,7 +78,7 @@ describe('explainRenderEffectPadding', () => {
     expect(
       explainRenderEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 3 }),
-        { kind: 'acme.Missing' } as RenderEffect,
+        createEntity({ kind: 'acme.Missing' }) as RenderEffect,
       ]),
     ).toEqual({
       missingKinds: ['acme.Missing'],

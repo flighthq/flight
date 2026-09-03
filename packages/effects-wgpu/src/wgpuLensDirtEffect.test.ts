@@ -1,3 +1,4 @@
+import { createLensDirtEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 
 import * as wgpuBlurEffectModule from './wgpuBlurEffect';
@@ -46,12 +47,17 @@ describe('applyLensDirtEffectToWgpu', () => {
     const dest = createTarget('dest');
     const pool = createPool();
 
-    applyLensDirtEffectToWgpu(state, source, dest, pool, {
-      intensity: 1.5,
-      kind: 'LensDirtEffect',
-      seed: 4,
-      threshold: 0.45,
-    });
+    applyLensDirtEffectToWgpu(
+      state,
+      source,
+      dest,
+      pool,
+      createLensDirtEffect({
+        intensity: 1.5,
+        seed: 4,
+        threshold: 0.45,
+      }),
+    );
 
     expect(renderWgpuContractModule.acquireWgpuRenderTarget).toHaveBeenCalledTimes(3);
     const [bright, blurred, temp] = vi

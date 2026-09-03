@@ -1,6 +1,7 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
@@ -18,6 +19,7 @@ function createTestGlyphSource(): GlyphSource {
   image.width = 64;
   image.height = 64;
   return {
+    [EntityRuntimeKey]: undefined,
     getGlyphAtlasImage: (page = 0): ImageResource | null => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,

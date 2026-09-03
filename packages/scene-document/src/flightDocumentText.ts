@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import type {
   FlightDocument,
@@ -472,7 +473,7 @@ function readFlightDocumentText(text: FlightDocumentText): FlightDocumentTextRea
   if (!parsed.ok) {
     return {
       document: null,
-      refusal: {
+      refusal: createEntity({
         actual: parsed.actual,
         column: parsed.column,
         kind: null,
@@ -485,7 +486,7 @@ function readFlightDocumentText(text: FlightDocumentText): FlightDocumentTextRea
         resourceKey: null,
         tokenKey: null,
         version: null,
-      },
+      }),
     };
   }
 

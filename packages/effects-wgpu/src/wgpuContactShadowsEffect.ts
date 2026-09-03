@@ -1,3 +1,4 @@
+import { createSsaoEffect } from '@flighthq/effects/contract';
 import type {
   ContactShadowsEffect,
   WgpuRenderEffectRunner,
@@ -16,12 +17,16 @@ export function applyContactShadowsEffectToWgpu(
   dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ContactShadowsEffect>,
 ): void {
-  applySsaoEffectToWgpu(state, source, dest, {
-    kind: 'SsaoEffect',
-    intensity: effect.opacity ?? 0.6,
-    radius: effect.distance ?? 0.5,
-    samples: effect.samples ?? 16,
-  });
+  applySsaoEffectToWgpu(
+    state,
+    source,
+    dest,
+    createSsaoEffect({
+      intensity: effect.opacity ?? 0.6,
+      radius: effect.distance ?? 0.5,
+      samples: effect.samples ?? 16,
+    }),
+  );
 }
 
 export const defaultWgpuContactShadowsEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

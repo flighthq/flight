@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types/contract';
+import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 import { createShape } from './shape';
 import {
@@ -21,14 +21,24 @@ import {
 
 describe('appendShapeGeometryCommand', () => {
   it('appends polyline verbs and expands primitives, ignoring non-geometry names', () => {
-    const path = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    const path = {
+      [EntityRuntimeKey]: undefined,
+      commands: [] as number[],
+      data: [] as number[],
+      winding: 'nonZero' as const,
+    };
     appendShapeGeometryCommand(path, 'moveTo', ['moveTo', 2, 5, 6], 2);
     appendShapeGeometryCommand(path, 'lineTo', ['lineTo', 2, 7, 8], 2);
     expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO]);
     expect(path.data).toEqual([5, 6, 7, 8]);
 
     // A rectangle primitive expands into MOVE + 4 LINE verbs.
-    const rect = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    const rect = {
+      [EntityRuntimeKey]: undefined,
+      commands: [] as number[],
+      data: [] as number[],
+      winding: 'nonZero' as const,
+    };
     appendShapeGeometryCommand(rect, 'drawRectangle', ['drawRectangle', 4, 0, 0, 10, 10], 2);
     expect(rect.commands).toEqual([
       PathCommand.MOVE_TO,
@@ -39,7 +49,12 @@ describe('appendShapeGeometryCommand', () => {
     ]);
 
     // A styling command name is a no-op.
-    const noop = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    const noop = {
+      [EntityRuntimeKey]: undefined,
+      commands: [] as number[],
+      data: [] as number[],
+      winding: 'nonZero' as const,
+    };
     appendShapeGeometryCommand(noop, 'beginFill', ['beginFill', 2, 0xff0000ff, 1], 2);
     expect(noop.commands).toEqual([]);
   });
@@ -47,7 +62,12 @@ describe('appendShapeGeometryCommand', () => {
   it('keeps the data cursor aligned across a raw CLOSE between drawPath subpaths', () => {
     // A drawPath with two subpaths separated by a CLOSE verb. CLOSE consumes 0 operands: if it were
     // parsed as 2, the second subpath's coordinates would shift.
-    const path = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
+    const path = {
+      [EntityRuntimeKey]: undefined,
+      commands: [] as number[],
+      data: [] as number[],
+      winding: 'nonZero' as const,
+    };
     const verbs = [
       PathCommand.MOVE_TO,
       PathCommand.LINE_TO,

@@ -36,7 +36,14 @@ function fakeCapacitor(info = { visible: true, style: 'Dark', color: '#112233', 
 }
 
 function blankInfo(): StatusBarInfo {
-  return { color: 1, height: 1, overlaysContent: false, style: 'default', visible: false };
+  return {
+    [EntityRuntimeKey]: undefined,
+    color: 1,
+    height: 1,
+    overlaysContent: false,
+    style: 'default',
+    visible: false,
+  };
 }
 
 describe('createCapacitorStatusBarBackend', () => {

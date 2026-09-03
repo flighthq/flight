@@ -1,4 +1,6 @@
-import type { CanvasRenderTarget, PosterizeEffect } from '@flighthq/types/contract';
+import { createPosterizeEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import {
@@ -18,12 +20,12 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
 } {
   const imageData = { data: new Uint8ClampedArray(pixels) };
   const written: { data: Uint8ClampedArray | null } = { data: null };
-  const source = {
+  const source = createEntity({
     context: { getImageData: () => imageData },
     height: 1,
     width: pixels.length / 4,
-  } as unknown as CanvasRenderTarget;
-  const dest = {
+  }) as unknown as CanvasRenderTarget;
+  const dest = createEntity({
     context: {
       clearRect: () => {},
       filter: 'none',
@@ -38,7 +40,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     },
     height: 1,
     width: pixels.length / 4,
-  } as unknown as CanvasRenderTarget;
+  }) as unknown as CanvasRenderTarget;
   return { dest, source, written };
 }
 
@@ -55,7 +57,7 @@ describe('applyPosterizeEffectToCanvas', () => {
     const input = [0, 64, 128, 255, 192, 200, 255, 255];
     const { dest, source, written } = createStubTargets(input);
 
-    applyPosterizeEffectToCanvas(source, dest, { kind: 'PosterizeEffect', levels: 4 });
+    applyPosterizeEffectToCanvas(source, dest, createPosterizeEffect({ levels: 4 }));
 
     expect(written.data).not.toBeNull();
     expect([...written.data!]).toEqual([
@@ -76,7 +78,7 @@ describe('applyPosterizeEffectToCanvas', () => {
   it('collapses values inside a level and separates values across one', () => {
     const { dest, source, written } = createStubTargets([100, 120, 200, 255]);
 
-    applyPosterizeEffectToCanvas(source, dest, { kind: 'PosterizeEffect', levels: 4 });
+    applyPosterizeEffectToCanvas(source, dest, createPosterizeEffect({ levels: 4 }));
 
     const [red, green, blue] = written.data!;
     expect(red).toBe(green); // 100 and 120 both sit in the second quarter
@@ -86,7 +88,7 @@ describe('applyPosterizeEffectToCanvas', () => {
   it('leaves alpha untouched', () => {
     const { dest, source, written } = createStubTargets([10, 20, 30, 40]);
 
-    applyPosterizeEffectToCanvas(source, dest, { kind: 'PosterizeEffect', levels: 8 });
+    applyPosterizeEffectToCanvas(source, dest, createPosterizeEffect({ levels: 8 }));
 
     expect(written.data![3]).toBe(40);
   });
@@ -95,7 +97,7 @@ describe('applyPosterizeEffectToCanvas', () => {
   it('clamps levels to at least 2 rather than dividing by zero', () => {
     const { dest, source, written } = createStubTargets([0, 128, 255, 255]);
 
-    applyPosterizeEffectToCanvas(source, dest, { kind: 'PosterizeEffect', levels: 1 });
+    applyPosterizeEffectToCanvas(source, dest, createPosterizeEffect({ levels: 1 }));
 
     expect([...written.data!].every((value) => Number.isFinite(value))).toBe(true);
     expect([...written.data!].slice(0, 3)).toEqual([expected(0, 2), expected(128, 2), expected(255, 2)]);
@@ -104,7 +106,7 @@ describe('applyPosterizeEffectToCanvas', () => {
   it('defaults to 8 levels when none is given', () => {
     const { dest, source, written } = createStubTargets([137, 137, 137, 255]);
 
-    applyPosterizeEffectToCanvas(source, dest, { kind: 'PosterizeEffect' });
+    applyPosterizeEffectToCanvas(source, dest, createPosterizeEffect());
 
     expect(written.data![0]).toBe(expected(137, 8));
   });
@@ -115,11 +117,17 @@ describe('defaultCanvasPosterizeEffectRunner', () => {
     const { dest, source, written } = createStubTargets([255, 0, 0, 255]);
 
     defaultCanvasPosterizeEffectRunner(
-      { dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] }, source, state: {} as never },
       {
-        kind: 'PosterizeEffect',
-        levels: 2,
-      } as PosterizeEffect,
+        dest,
+        pool: createEntity({
+          creator: canvasTestSurfaceCreator,
+          free: [],
+          inUse: [],
+        }) as unknown as CanvasRenderTargetPool,
+        source,
+        state: {} as never,
+      },
+      createPosterizeEffect({ levels: 2 }),
     );
 
     expect(written.data![0]).toBe(expected(255, 2));

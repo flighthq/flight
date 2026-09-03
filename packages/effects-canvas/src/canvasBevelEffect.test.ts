@@ -1,3 +1,5 @@
+import { createBevelEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { BevelEffect, CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import {
@@ -17,7 +19,14 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     target.canvas.id = id;
     return target;
   });
-  return { pool: { creator: canvasTestSurfaceCreator, free: [...targets].reverse(), inUse: [] }, targets };
+  return {
+    pool: createEntity({
+      creator: canvasTestSurfaceCreator,
+      free: [...targets].reverse(),
+      inUse: [],
+    }) as unknown as CanvasRenderTargetPool,
+    targets,
+  };
 }
 
 const SCRATCH = ['blurred', 'lit', 'shade', 'side', 'tinted', 'band'];
@@ -48,7 +57,7 @@ function scene(): { source: CanvasRenderTarget; dest: CanvasRenderTarget } {
 }
 
 function bevel(over: Partial<BevelEffect> = {}): BevelEffect {
-  return { kind: 'BevelEffect', ...over } as BevelEffect;
+  return createBevelEffect(over);
 }
 
 afterEach(() => {

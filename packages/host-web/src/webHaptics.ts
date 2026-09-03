@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  EntityWithoutRuntime,
   HapticImpactStyle,
   HapticNotificationType,
   HapticsBackend,
@@ -13,7 +15,7 @@ import type {
 // a pattern, which is why `capabilities` reports no intensity and no amplitude control even when the API
 // is present. `vibrateWaveform` is deliberately absent rather than faked, so callers fall back to
 // `vibratePattern` and drop amplitudes honestly instead of silently ignoring them here.
-export const webHapticsBackend: HapticsBackend = {
+export const webHapticsBackend: HapticsBackend = createEntity<EntityWithoutRuntime<HapticsBackend>>({
   cancel(): boolean {
     return _webVibrate(0);
   },
@@ -49,7 +51,7 @@ export const webHapticsBackend: HapticsBackend = {
     if (pattern.length === 0) return false;
     return _webVibrate(pattern as number[]);
   },
-};
+});
 
 function _isVibrateAvailable(): boolean {
   return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';

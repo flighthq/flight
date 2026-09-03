@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -55,8 +56,8 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
 
     expect(
       applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
-        { kind: 'acme.First' },
-        { kind: 'acme.Second' },
+        createEntity({ kind: 'acme.First' }),
+        createEntity({ kind: 'acme.Second' }),
       ]),
     ).toBe(true);
 
@@ -75,9 +76,9 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
     const scratch = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
     writeGlRenderTextureTarget(state, source, () => {});
 
-    expect(applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [{ kind: 'acme.Missing' }])).toBe(
-      false,
-    );
+    expect(
+      applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [createEntity({ kind: 'acme.Missing' })]),
+    ).toBe(false);
     expect(isGlRenderTextureReady(state, dest)).toBe(false);
   });
 
@@ -191,8 +192,8 @@ describe('explainGlRenderEffectApplication', () => {
       (_state, effect) => (effect as unknown as { shaderKey: string }).shaderKey === 'present',
     );
     const chain = [
-      { kind: 'test.explain-i', shaderKey: 'present' },
-      { kind: 'test.explain-i', shaderKey: 'absent' },
+      createEntity({ kind: 'test.explain-i', shaderKey: 'present' }),
+      createEntity({ kind: 'test.explain-i', shaderKey: 'absent' }),
     ];
     const explanation = explainGlRenderEffectApplication(
       state,
@@ -303,7 +304,7 @@ describe('setGlRenderEffectApplicationGuard', () => {
 });
 
 function effects(kinds: readonly string[]): ReadonlyArray<Readonly<RenderEffect>> {
-  return kinds.map((kind) => ({ kind }) as unknown as Readonly<RenderEffect>);
+  return kinds.map((kind) => createEntity({ kind }) as unknown as Readonly<RenderEffect>);
 }
 
 function compositePremultipliedPixel(destination: Uint8Array, source: Uint8Array): Uint8Array {

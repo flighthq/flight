@@ -1,10 +1,11 @@
 import type { BidiClassBackend, BidiDirection, BidiRun } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { getBidiRuns } from './getBidiRuns';
 
-const LEFT_TO_RIGHT_BACKEND: BidiClassBackend = { getBidiClass: () => 'L' };
-const RIGHT_TO_LEFT_BACKEND: BidiClassBackend = { getBidiClass: () => 'R' };
+const LEFT_TO_RIGHT_BACKEND: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'L' };
+const RIGHT_TO_LEFT_BACKEND: BidiClassBackend = { [EntityRuntimeKey]: undefined, getBidiClass: () => 'R' };
 
 const HEBREW = 'שלום';
 

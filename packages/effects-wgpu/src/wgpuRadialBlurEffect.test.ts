@@ -1,3 +1,4 @@
+import { createRadialBlurEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { RadialBlurEffect, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
@@ -53,10 +54,7 @@ function apply(effect: Readonly<Partial<RadialBlurEffect>> = {}): readonly numbe
   recorded.pipelines.length = 0;
   recorded.uniforms.length = 0;
   const target = { height: 64, view: {}, width: 64 } as unknown as WgpuRenderTarget;
-  applyRadialBlurEffectToWgpu({} as unknown as WgpuRenderState, target, target, {
-    kind: 'RadialBlurEffect',
-    ...effect,
-  } as RadialBlurEffect);
+  applyRadialBlurEffectToWgpu({} as unknown as WgpuRenderState, target, target, createRadialBlurEffect(effect));
   return recorded.uniforms[0]!;
 }
 
@@ -125,10 +123,7 @@ describe('defaultWgpuRadialBlurEffectRunner', () => {
 
     defaultWgpuRadialBlurEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,
-      {
-        centerY: 0.25,
-        kind: 'RadialBlurEffect',
-      } as RadialBlurEffect,
+      createRadialBlurEffect({ centerY: 0.25 }),
     );
 
     expect(recorded.uniforms[0]![1]).toBeCloseTo(0.25, 6);

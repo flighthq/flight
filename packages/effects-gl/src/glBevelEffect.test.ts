@@ -2,6 +2,7 @@
 // same arithmetic BitmapBevelOptions has always used offscreen. The composite shader still takes RGB plus
 // one alpha, so the split happens in the runner — which makes the uniform the only place the migration is
 // observable, and the reason this file mocks the draw seam rather than asserting on pixels.
+import { createBevelEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import { applyBevelEffectToGl, defaultGlBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
@@ -80,13 +81,18 @@ describe('applyBevelEffectToGl', () => {
   it('splits each packed RGBA color into composite RGB and an alpha multiplied by its *Alpha field', () => {
     glMock.uniform4f.mockClear();
 
-    applyBevelEffectToGl(state, target, target, pool, {
-      highlightAlpha: 0.5,
-      highlightColor: 0x9d55ff80,
-      kind: 'BevelEffect',
-      shadowAlpha: 1,
-      shadowColor: 0x102030c0,
-    });
+    applyBevelEffectToGl(
+      state,
+      target,
+      target,
+      pool,
+      createBevelEffect({
+        highlightAlpha: 0.5,
+        highlightColor: 0x9d55ff80,
+        shadowAlpha: 1,
+        shadowColor: 0x102030c0,
+      }),
+    );
 
     // Under the 24-bit reading these same values would light the bevel 0x55ff80 and shade it 0x2030c0 —
     // both different colors, both plausible, at full opacity. That is the 0x44ffee failure shape built
@@ -107,7 +113,7 @@ describe('applyBevelEffectToGl', () => {
   it('defaults to opaque white over opaque black, the pair the pre-migration defaults produced', () => {
     glMock.uniform4f.mockClear();
 
-    applyBevelEffectToGl(state, target, target, pool, { kind: 'BevelEffect' });
+    applyBevelEffectToGl(state, target, target, pool, createBevelEffect());
 
     expect(uniformFor('u_highlight')).toEqual([1, 1, 1, 1]);
     expect(uniformFor('u_shadow')).toEqual([0, 0, 0, 1]);

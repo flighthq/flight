@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { BloomEffect, RenderEffect, ToneMapEffect, VignetteEffect } from '@flighthq/types/contract';
 
 import { createBloomEffect } from './bloomEffect';
@@ -42,7 +43,7 @@ describe('getRenderEffectDefaults', () => {
 describe('normalizeRenderEffect', () => {
   it('fills in missing fields from defaults', () => {
     const effect = createBloomEffect({ threshold: 0.9 });
-    const out = { kind: 'BloomEffect' } as BloomEffect;
+    const out = createEntity({ kind: 'BloomEffect' }) as BloomEffect;
     const ok = normalizeRenderEffect(effect, out);
     expect(ok).toBe(true);
     expect(out.threshold).toBe(0.9); // preserved
@@ -51,21 +52,21 @@ describe('normalizeRenderEffect', () => {
   });
   it('preserves explicitly set zero and false', () => {
     const effect = createBloomEffect({ threshold: 0 });
-    const out = { kind: 'BloomEffect' } as BloomEffect;
+    const out = createEntity({ kind: 'BloomEffect' }) as BloomEffect;
     normalizeRenderEffect(effect, out);
     expect(out.threshold).toBe(0); // 0 is explicit, should not be replaced by default 0.8
   });
   it('carries over fields not in the defaults table', () => {
     const effect = createVignetteEffect({ intensity: 0.3 });
-    const out = { kind: 'VignetteEffect' } as VignetteEffect;
+    const out = createEntity({ kind: 'VignetteEffect' }) as VignetteEffect;
     normalizeRenderEffect(effect, out);
     expect(out.intensity).toBe(0.3);
     expect(out.radius).toBe(1);
     expect(out.softness).toBe(0.5);
   });
   it('returns false for unknown kind', () => {
-    const effect = { kind: 'acme.UnknownEffect' } as RenderEffect;
-    const out = { kind: 'acme.UnknownEffect' } as RenderEffect;
+    const effect = createEntity({ kind: 'acme.UnknownEffect' }) as RenderEffect;
+    const out = createEntity({ kind: 'acme.UnknownEffect' }) as RenderEffect;
     expect(normalizeRenderEffect(effect, out)).toBe(false);
   });
   it('is alias-safe when out === effect', () => {

@@ -1,4 +1,6 @@
-import type { CanvasRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
+import { createTiltShiftEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
@@ -30,12 +32,12 @@ function createImpulseTargets(
   }
   const imageData = { data: pixels };
   const written: { data: Uint8ClampedArray | null } = { data: null };
-  const source = {
+  const source = createEntity({
     context: { getImageData: () => imageData },
     height,
     width,
-  } as unknown as CanvasRenderTarget;
-  const dest = {
+  }) as unknown as CanvasRenderTarget;
+  const dest = createEntity({
     context: {
       clearRect: () => {},
       filter: 'none',
@@ -50,7 +52,7 @@ function createImpulseTargets(
     },
     height,
     width,
-  } as unknown as CanvasRenderTarget;
+  }) as unknown as CanvasRenderTarget;
   return { dest, source, written };
 }
 
@@ -63,7 +65,7 @@ describe('applyTiltShiftEffectToCanvas', () => {
   it('keeps the focus band sharp while blurring above and below it', () => {
     const { dest, source, written } = createImpulseTargets(2, 64, [6, 32]);
 
-    applyTiltShiftEffectToCanvas(source, dest, { blur: 6, center: 0.5, kind: 'TiltShiftEffect', width: 0.2 });
+    applyTiltShiftEffectToCanvas(source, dest, createTiltShiftEffect({ blur: 6, center: 0.5, width: 0.2 }));
 
     const data = written.data!;
     expect(rowValue(data, 2, 32)).toBe(255);
@@ -76,7 +78,7 @@ describe('applyTiltShiftEffectToCanvas', () => {
   it('measures center down from the top edge', () => {
     const { dest, source, written } = createImpulseTargets(2, 64, [6, 57]);
 
-    applyTiltShiftEffectToCanvas(source, dest, { blur: 6, center: 0.1, kind: 'TiltShiftEffect', width: 0.15 });
+    applyTiltShiftEffectToCanvas(source, dest, createTiltShiftEffect({ blur: 6, center: 0.1, width: 0.15 }));
 
     const data = written.data!;
     expect(rowValue(data, 2, 6)).toBe(255);
@@ -87,7 +89,7 @@ describe('applyTiltShiftEffectToCanvas', () => {
     const { dest, source, written } = createImpulseTargets(2, 16, [4]);
     const original = [...source.context.getImageData(0, 0, 2, 16).data];
 
-    applyTiltShiftEffectToCanvas(source, dest, { blur: 0, center: 0.5, kind: 'TiltShiftEffect', width: 0.2 });
+    applyTiltShiftEffectToCanvas(source, dest, createTiltShiftEffect({ blur: 0, center: 0.5, width: 0.2 }));
 
     expect([...written.data!]).toEqual(original);
   });
@@ -98,7 +100,7 @@ describe('applyTiltShiftEffectToCanvas', () => {
     const { dest, source, written } = createImpulseTargets(2, 32, [8, 24]);
     const original = [...source.context.getImageData(0, 0, 2, 32).data];
 
-    applyTiltShiftEffectToCanvas(source, dest, { blur: 8, center: 0.5, kind: 'TiltShiftEffect', width: 2 });
+    applyTiltShiftEffectToCanvas(source, dest, createTiltShiftEffect({ blur: 8, center: 0.5, width: 2 }));
 
     expect([...written.data!]).toEqual(original);
   });
@@ -110,7 +112,7 @@ describe('applyTiltShiftEffectToCanvas', () => {
   it('spreads an impulse into seven equal taps', () => {
     const { dest, source, written } = createImpulseTargets(2, 64, [32]);
 
-    applyTiltShiftEffectToCanvas(source, dest, { blur: 6, center: 0.5, kind: 'TiltShiftEffect', width: 0.01 });
+    applyTiltShiftEffectToCanvas(source, dest, createTiltShiftEffect({ blur: 6, center: 0.5, width: 0.01 }));
 
     const data = written.data!;
     const share = Math.round(255 / 7);
@@ -123,7 +125,7 @@ describe('applyTiltShiftEffectToCanvas', () => {
   it('leaves alpha at full where the source is opaque', () => {
     const { dest, source, written } = createImpulseTargets(2, 32, [16]);
 
-    applyTiltShiftEffectToCanvas(source, dest, { blur: 6, center: 0.5, kind: 'TiltShiftEffect', width: 0.2 });
+    applyTiltShiftEffectToCanvas(source, dest, createTiltShiftEffect({ blur: 6, center: 0.5, width: 0.2 }));
 
     expect(written.data![3]).toBe(255);
   });
@@ -134,11 +136,17 @@ describe('defaultCanvasTiltShiftEffectRunner', () => {
     const { dest, source, written } = createImpulseTargets(2, 16, [4]);
 
     defaultCanvasTiltShiftEffectRunner(
-      { dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] }, source, state: {} as never },
       {
-        blur: 0,
-        kind: 'TiltShiftEffect',
-      } as TiltShiftEffect,
+        dest,
+        pool: createEntity({
+          creator: canvasTestSurfaceCreator,
+          free: [],
+          inUse: [],
+        }) as unknown as CanvasRenderTargetPool,
+        source,
+        state: {} as never,
+      },
+      createTiltShiftEffect({ blur: 0 }),
     );
 
     expect(written.data).not.toBeNull();

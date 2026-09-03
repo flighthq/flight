@@ -1,3 +1,5 @@
+import { createEntity } from '@flighthq/entity/contract';
+
 import { createBloomEffect } from './bloomEffect';
 import { createBokehDepthOfFieldEffect } from './bokehDepthOfFieldEffect';
 import { getRenderEffectInputs, getRenderEffectKinds, RENDER_EFFECT_KINDS } from './renderEffectInputs';
@@ -32,7 +34,7 @@ describe('getRenderEffectInputs', () => {
   });
 
   it('returns empty array for unknown kind', () => {
-    expect(getRenderEffectInputs({ kind: 'acme.UnknownEffect' } as never)).toEqual([]);
+    expect(getRenderEffectInputs(createEntity({ kind: 'acme.UnknownEffect' }) as never)).toEqual([]);
   });
 });
 

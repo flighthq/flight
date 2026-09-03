@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { getPathLength, getPathPositionAtDistance } from '@flighthq/path/contract';
 import type {
@@ -197,7 +198,7 @@ function wrapSkeleton2DAngle(degrees: number): number {
 }
 
 const MINIMUM_DETERMINANT = 1e-9;
-const _path: Path = { commands: [], data: [], winding: 'nonZero' };
+const _path: Path = createEntity({ commands: [] as number[], data: [] as number[], winding: 'nonZero' as const });
 const _point = { x: 0, y: 0 };
 const _tangent = { x: 0, y: 0 };
 let _positions = new Float64Array(0);

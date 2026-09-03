@@ -1,3 +1,4 @@
+import { createBevelEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { BevelEffect, WgpuRenderState, WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types/contract';
@@ -104,10 +105,7 @@ function apply(effect: Readonly<Partial<BevelEffect>> = {}): readonly number[] {
     target,
     target,
     {} as unknown as WgpuRenderTargetPool,
-    {
-      kind: 'BevelEffect',
-      ...effect,
-    } as BevelEffect,
+    createBevelEffect(effect),
   );
   return recorded.composites[0]!;
 }
@@ -221,7 +219,7 @@ describe('defaultWgpuBevelEffectRunner', () => {
 
     defaultWgpuBevelEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,
-      { kind: 'BevelEffect', shadowColor: 0x102030ff } as BevelEffect,
+      createBevelEffect({ shadowColor: 0x102030ff }),
     );
 
     expect(recorded.composites[0]![4]).toBeCloseTo(0x10 / 255, 6);

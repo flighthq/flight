@@ -1,3 +1,4 @@
+import { createRadialBlurEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -50,10 +51,7 @@ function apply(effect: Readonly<Partial<RadialBlurEffect>> = {}): void {
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
   const target = { height: 64, texture: {}, width: 64 } as unknown as GlRenderTarget;
-  applyRadialBlurEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'RadialBlurEffect',
-    ...effect,
-  } as RadialBlurEffect);
+  applyRadialBlurEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createRadialBlurEffect(effect));
 }
 
 function center(): readonly number[] {
@@ -138,7 +136,7 @@ describe('defaultGlRadialBlurEffectRunner', () => {
 
     defaultGlRadialBlurEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
-      { centerY: 0.25, kind: 'RadialBlurEffect' } as RadialBlurEffect,
+      createRadialBlurEffect({ centerY: 0.25 }),
     );
 
     expect(center()[1]).toBeCloseTo(0.75, 6);

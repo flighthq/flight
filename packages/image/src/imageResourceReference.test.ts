@@ -123,7 +123,7 @@ describe('enableImageBitmapComposition', () => {
 describe('explainImageResourceReferenceResolution', () => {
   it('detaches the failure so a caller cannot mutate the reference', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array(1));
-    ref.failure = { kind: ImageResourceFailureKind.Error, message: 'nope', name: null };
+    ref.failure = { [EntityRuntimeKey]: undefined, kind: ImageResourceFailureKind.Error, message: 'nope', name: null };
     ref.state = ResourceResolutionState.Failed;
     const explanation = explainImageResourceReferenceResolution(ref);
     expect(explanation.failure).not.toBe(ref.failure);
@@ -141,7 +141,12 @@ describe('explainImageResourceReferenceResolution', () => {
 describe('resetFailedImageResourceReference', () => {
   it('clears a failed reference back to unresolved', () => {
     const ref = createExternalImageResourceReference('a.png');
-    ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'missing', name: null };
+    ref.failure = {
+      [EntityRuntimeKey]: undefined,
+      kind: ImageResourceFailureKind.Unavailable,
+      message: 'missing',
+      name: null,
+    };
     ref.state = ResourceResolutionState.Failed;
     expect(resetFailedImageResourceReference(ref)).toBe(true);
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);
@@ -276,7 +281,7 @@ describe('resolveImageResourceReference', () => {
 
   it('clears a prior failure when the reference is retried', async () => {
     const ref = createExternalImageResourceReference('flaky.png');
-    ref.failure = { kind: ImageResourceFailureKind.Error, message: 'old', name: null };
+    ref.failure = { [EntityRuntimeKey]: undefined, kind: ImageResourceFailureKind.Error, message: 'old', name: null };
     ref.state = ResourceResolutionState.Failed;
     const fetch = vi.fn().mockResolvedValue({ width: 1 } as ImageResource);
     await resolveImageResourceReference(ref, fetch, new AbortController().signal);

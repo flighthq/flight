@@ -1,3 +1,4 @@
+import { createSsaoEffect } from '@flighthq/effects/contract';
 import type {
   ContactShadowsEffect,
   GlRenderEffectRunner,
@@ -17,12 +18,16 @@ export function applyContactShadowsEffectToGl(
   dest: Readonly<GlRenderTarget>,
   effect: Readonly<ContactShadowsEffect>,
 ): void {
-  applySsaoEffectToGl(state, source, dest, {
-    kind: 'SsaoEffect',
-    intensity: effect.opacity ?? 0.6,
-    radius: effect.distance ?? 0.5,
-    samples: effect.samples ?? 16,
-  });
+  applySsaoEffectToGl(
+    state,
+    source,
+    dest,
+    createSsaoEffect({
+      intensity: effect.opacity ?? 0.6,
+      radius: effect.distance ?? 0.5,
+      samples: effect.samples ?? 16,
+    }),
+  );
 }
 
 export const defaultGlContactShadowsEffectRunner: GlRenderEffectRunner = (ctx, effect) => {

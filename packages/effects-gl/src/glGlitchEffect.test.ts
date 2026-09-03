@@ -1,3 +1,4 @@
+import { createGlitchEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -54,10 +55,7 @@ function apply(effect: Readonly<Partial<GlitchEffect>> = {}): void {
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
   const target = { height: FRAME_ROWS, texture: {}, width: 200 } as unknown as GlRenderTarget;
-  applyGlitchEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'GlitchEffect',
-    ...effect,
-  } as GlitchEffect);
+  applyGlitchEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createGlitchEffect(effect));
 }
 
 function blockExpression(): string {
@@ -138,7 +136,7 @@ describe('defaultGlGlitchEffectRunner', () => {
 
     defaultGlGlitchEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
-      { kind: 'GlitchEffect' } as GlitchEffect,
+      createGlitchEffect(),
     );
 
     expect(vi.mocked(glEffectProgramCache.getGlEffectProgram).mock.calls[0]![1]).toBe('stylization.glitch');

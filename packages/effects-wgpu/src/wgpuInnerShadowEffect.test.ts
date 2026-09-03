@@ -1,3 +1,4 @@
+import { createInnerShadowEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader';
@@ -48,7 +49,7 @@ describe('applyInnerShadowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), { kind: 'InnerShadowEffect' });
+    applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), createInnerShadowEffect());
 
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenCalledTimes(2);
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
@@ -58,10 +59,15 @@ describe('applyInnerShadowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'InnerShadowEffect',
-      sourceMode: 'hide',
-    });
+    applyInnerShadowEffectToWgpu(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createInnerShadowEffect({
+        sourceMode: 'hide',
+      }),
+    );
 
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenCalledTimes(1);
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
@@ -74,11 +80,16 @@ describe('applyInnerShadowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'InnerShadowEffect',
-      color: 0x000000ff,
-      sourceMode: 'hide',
-    });
+    applyInnerShadowEffectToWgpu(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createInnerShadowEffect({
+        color: 0x000000ff,
+        sourceMode: 'hide',
+      }),
+    );
 
     expect(wgpuEffectBoxBlurMod.applyWgpuEffectBoxBlur).toHaveBeenCalledWith(
       expect.anything(),
@@ -93,10 +104,15 @@ describe('applyInnerShadowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'InnerShadowEffect',
-      sourceMode: 'hide',
-    });
+    applyInnerShadowEffectToWgpu(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createInnerShadowEffect({
+        sourceMode: 'hide',
+      }),
+    );
 
     expect(wgpuEffectTintShaderMod.applyWgpuEffectInnerClipPass).toHaveBeenCalledWith(
       expect.anything(),

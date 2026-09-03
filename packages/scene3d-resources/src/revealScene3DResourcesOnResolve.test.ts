@@ -14,7 +14,7 @@ import type {
   Scene3DResourceEvent,
   Texture,
 } from '@flighthq/types/contract';
-import { ImageTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ImageTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve';
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';
@@ -24,6 +24,7 @@ const testResources: EmbeddedImageResourceReference[] = [];
 
 function pendingRef(): EmbeddedImageResourceReference {
   const ref: EmbeddedImageResourceReference = {
+    [EntityRuntimeKey]: undefined,
     alphaType: 'straight',
     bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
     failure: null,

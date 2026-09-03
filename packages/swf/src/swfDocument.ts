@@ -41,6 +41,7 @@ import type {
   BoundsNodeAny,
   ClipRegion,
   EmbeddedImageResourceReference,
+  EntityWithoutRuntime,
   FrameScript,
   GlyphOutlineSource,
   ImageResourceReference,
@@ -847,7 +848,7 @@ function createSwfTimelineSource(
   const appliedAlphas = new Map<Node2D, number>();
   const appliedColorAdjustments = new Map<Node2D, readonly Adjustment[] | null>();
   const appliedRatios = new Map<Node2D, number>();
-  return {
+  return createEntity<EntityWithoutRuntime<TimelineSource>>({
     totalFrames: frames.length,
     labels,
     frameRate,
@@ -927,7 +928,7 @@ function createSwfTimelineSource(
         }
       }
     },
-  };
+  });
 }
 
 // Pairs each drawn placement of a frame with the clip its mask imposes. SWF masks by depth range — a

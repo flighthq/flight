@@ -1,3 +1,4 @@
+import { createGradientBevelEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type {
@@ -138,11 +139,7 @@ function apply(effect: Readonly<Partial<GradientBevelEffect>> = {}): void {
     target,
     target,
     {} as unknown as WgpuRenderTargetPool,
-    {
-      kind: 'GradientBevelEffect',
-      ...STOPS,
-      ...effect,
-    } as GradientBevelEffect,
+    createGradientBevelEffect({ ...STOPS, ...effect }),
   );
 }
 
@@ -253,7 +250,7 @@ describe('defaultWgpuGradientBevelEffectRunner', () => {
         source: target,
         state: { device: createDevice() },
       } as never,
-      { kind: 'GradientBevelEffect', ...STOPS } as GradientBevelEffect,
+      createGradientBevelEffect(STOPS),
     );
 
     expect(recorded.tints[0]![0]).toBe(0xffffffff);

@@ -1,11 +1,12 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createWebImageBackend, installImageHostBackend, observeImageHostResult } from '@flighthq/image/contract';
-import type { ImageResource, ImageBackend } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, ImageResource, ImageBackend } from '@flighthq/types/contract';
 
 export function enableHostWebImage(): void {
   if (_enabled) return;
   _enabled = true;
   const inner = createWebImageBackend();
-  const backend: ImageBackend = {
+  const backend: ImageBackend = createEntity<EntityWithoutRuntime<ImageBackend>>({
     async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
       try {
         const result = await inner.loadImageFromUrl(url, crossOrigin, signal);
@@ -16,7 +17,7 @@ export function enableHostWebImage(): void {
         throw error;
       }
     },
-  };
+  });
   // Optional operations are composed structurally: an observing wrapper must not advertise a method
   // the inner provider does not implement, because method presence is the capability signal.
   if (inner.createImageFromBitmap !== undefined) {

@@ -95,6 +95,7 @@ describe('setScene3DDocumentResourceBasePathFromUrl', () => {
       skins: [],
       resources: [
         {
+          [EntityRuntimeKey]: undefined,
           basePath: null,
           failure: null,
           kind: ImageResourceReferenceKind.External,
@@ -103,6 +104,7 @@ describe('setScene3DDocumentResourceBasePathFromUrl', () => {
           uri: 'skin.png',
         },
         {
+          [EntityRuntimeKey]: undefined,
           basePath: 'authored',
           failure: null,
           kind: ImageResourceReferenceKind.External,

@@ -14,6 +14,7 @@ import type {
   GlyphSource,
   ImageResource,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createBitmapText, getBitmapTextBounds, getBitmapTextPages, isBitmapTextGlyphLayoutStale } from './bitmapText';
@@ -33,6 +34,7 @@ function createTestGlyphSource(): GlyphSource {
   const kerning = new Map<number, number>([[(0x41 << 16) | 0x42, -2]]);
   const image = {} as ImageResource;
   return {
+    [EntityRuntimeKey]: undefined,
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: (l, r) => kerning.get((l << 16) | r) ?? 0,
@@ -50,6 +52,7 @@ function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: ImageRes
     [0x42, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 1, width: 6, x: 3, y: 0 }], // B → page 1
   ]);
   const source: GlyphSource = {
+    [EntityRuntimeKey]: undefined,
     getGlyphAtlasImage: (page = 0) => (page === 0 ? page0Image : page === 1 ? page1Image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,
@@ -99,6 +102,7 @@ function createMidLayoutRelocatingGlyphSource(nth: number): GlyphSource {
   let lookups = 0;
   let version = 0;
   return {
+    [EntityRuntimeKey]: undefined,
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry(codepoint) {
       lookups++;

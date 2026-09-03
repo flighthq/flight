@@ -1,7 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
-import { BitmapTextKind } from '@flighthq/types/contract';
+import { BitmapTextKind, EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -33,6 +33,7 @@ function createTestGlyphSource(): GlyphSource {
   entries.set(0x20, { advance: 5, bearingX: 0, bearingY: 0, height: 0, page: 0, width: 0, x: 0, y: 0 }); // space
   const image = {} as ImageResource;
   return {
+    [EntityRuntimeKey]: undefined,
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,

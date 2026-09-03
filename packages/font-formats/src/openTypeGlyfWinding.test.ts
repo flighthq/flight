@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types/contract';
+import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -52,7 +52,7 @@ function ringAreas(reverseCounter: boolean, flipBoth = false): number[] {
     glyphs: [emptySyntheticGlyph(), ringSyntheticGlyph(reverseCounter, flipBoth)],
   });
   const source = createGlyphOutlineSourceFromOpenTypeFont(font)!;
-  const path: Path = { commands: [], data: [], winding: 'nonZero' };
+  const path: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'nonZero' };
   expect(source.getGlyphOutline(path, 1)).toBe(true);
   return signedContourAreas(path);
 }

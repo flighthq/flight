@@ -1,4 +1,5 @@
 import type { ImageResource, ImageBackend } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -21,6 +22,7 @@ function recordingBackend(): { backend: ImageBackend; calls: unknown[][] } {
   const calls: unknown[][] = [];
   return {
     backend: {
+      [EntityRuntimeKey]: undefined,
       loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
         calls.push([url, crossOrigin, signal]);
         return Promise.resolve({} as ImageResource);
@@ -82,7 +84,7 @@ describe('explainImageOperation', () => {
       operation: 'createImageFromBitmap',
     });
 
-    setImageBackend({ loadImageFromUrl: vi.fn() });
+    setImageBackend({ [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() });
     expect(explainImageOperation('createImageFromBitmap')).toEqual({
       implemented: false,
       layer: 'none',
@@ -91,7 +93,7 @@ describe('explainImageOperation', () => {
   });
 
   it('reports the unsupported Bitmap operation without claiming URL loading is absent', () => {
-    const backend: ImageBackend = { loadImageFromUrl: vi.fn() };
+    const backend: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     setImageBackend(backend);
 
     expect(explainImageOperation('createImageFromBitmap')).toEqual({
@@ -145,7 +147,7 @@ describe('hasImageOperation', () => {
       expect(hasImageOperation(operation)).toBe(explainImageOperation(operation).implemented);
     }
 
-    setImageBackend({ loadImageFromUrl: vi.fn() });
+    setImageBackend({ [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() });
     for (const operation of ['createImageFromBitmap', 'loadImageFromUrl'] as const) {
       expect(hasImageOperation(operation)).toBe(explainImageOperation(operation).implemented);
     }

@@ -3,7 +3,9 @@ import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/
 import type {
   CanvasRenderState,
   CanvasRenderSurfaceCreator,
+  CanvasRenderTargetPool,
   CanvasRenderTexturePool,
+  EntityWithoutRuntime,
   RenderTarget,
   RenderTargetDescriptor,
   RenderTexture,
@@ -28,9 +30,9 @@ export function acquireCanvasRenderTexture(
 }
 
 export function createCanvasRenderTexturePool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTexturePool {
-  return createEntity({
+  return createEntity<EntityWithoutRuntime<CanvasRenderTexturePool>>({
     destroyed: false,
-    effectTargets: { creator, free: [], inUse: [] },
+    effectTargets: createEntity<EntityWithoutRuntime<CanvasRenderTargetPool>>({ creator, free: [], inUse: [] }),
     free: [],
     leased: new Set(),
     owner: null,

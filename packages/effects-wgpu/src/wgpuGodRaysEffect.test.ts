@@ -1,3 +1,4 @@
+import { createGodRaysEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { GodRaysEffect, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
@@ -47,10 +48,7 @@ function apply(effect: Readonly<Partial<GodRaysEffect>> = {}): readonly number[]
   recorded.pipelines.length = 0;
   recorded.uniforms.length = 0;
   const target = { height: 64, view: {}, width: 64 } as unknown as WgpuRenderTarget;
-  applyGodRaysEffectToWgpu({} as unknown as WgpuRenderState, target, target, {
-    kind: 'GodRaysEffect',
-    ...effect,
-  } as GodRaysEffect);
+  applyGodRaysEffectToWgpu({} as unknown as WgpuRenderState, target, target, createGodRaysEffect(effect));
   return recorded.uniforms[0]!;
 }
 
@@ -126,10 +124,7 @@ describe('defaultWgpuGodRaysEffectRunner', () => {
 
     defaultWgpuGodRaysEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,
-      {
-        centerY: 0.25,
-        kind: 'GodRaysEffect',
-      } as GodRaysEffect,
+      createGodRaysEffect({ centerY: 0.25 }),
     );
 
     expect(recorded.uniforms[0]![1]).toBeCloseTo(0.25, 6);

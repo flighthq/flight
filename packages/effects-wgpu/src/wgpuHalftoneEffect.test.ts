@@ -1,3 +1,4 @@
+import { createHalftoneEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { HalftoneEffect, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
@@ -56,10 +57,7 @@ function apply(effect: Readonly<Partial<HalftoneEffect>> = {}): readonly number[
   recorded.pipelines.length = 0;
   recorded.uniforms.length = 0;
   const target = { height: SOURCE_HEIGHT, view: {}, width: SOURCE_WIDTH } as unknown as WgpuRenderTarget;
-  applyHalftoneEffectToWgpu({} as unknown as WgpuRenderState, target, target, {
-    kind: 'HalftoneEffect',
-    ...effect,
-  } as HalftoneEffect);
+  applyHalftoneEffectToWgpu({} as unknown as WgpuRenderState, target, target, createHalftoneEffect(effect));
   return recorded.uniforms[0]!;
 }
 
@@ -178,10 +176,7 @@ describe('defaultWgpuHalftoneEffectRunner', () => {
 
     defaultWgpuHalftoneEffectRunner(
       { dest: target, pool: {}, source: target, state: {} } as never,
-      {
-        angle: 90,
-        kind: 'HalftoneEffect',
-      } as HalftoneEffect,
+      createHalftoneEffect({ angle: 90 }),
     );
 
     expect(recorded.uniforms[0]![1]).toBeCloseTo(Math.PI / 2, 6);

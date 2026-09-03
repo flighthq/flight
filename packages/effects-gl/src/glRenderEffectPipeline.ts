@@ -174,7 +174,7 @@ export function endGlRenderEffectPipeline(
         sceneDepthTexture: scene.depthTexture,
         sceneVelocityTexture: pipeline.velocityTexture,
       },
-      operation,
+      operation as Readonly<RenderEffect>,
     );
     source = dest;
   }
