@@ -1,4 +1,5 @@
 import type { RichTextContent, TextFormat } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMarkupTagRegistry, registerMarkupTag } from './markupTagRegistry';
@@ -13,19 +14,22 @@ function formatAt(content: RichTextContent, index: number): TextFormat {
 
 describe('formatTextMarkup', () => {
   it('returns an empty string for empty content', () => {
-    expect(formatTextMarkup({ formatRanges: [], text: '' })).toBe('');
+    expect(formatTextMarkup({ [EntityRuntimeKey]: undefined, formatRanges: [], text: '' })).toBe('');
   });
 
   it('emits plain text with no ranges and no tags', () => {
-    expect(formatTextMarkup({ formatRanges: [], text: 'hello' })).toBe('hello');
+    expect(formatTextMarkup({ [EntityRuntimeKey]: undefined, formatRanges: [], text: 'hello' })).toBe('hello');
   });
 
   it('escapes text entities on the way out', () => {
-    expect(formatTextMarkup({ formatRanges: [], text: 'a < b & c > d' })).toBe('a &lt; b &amp; c &gt; d');
+    expect(formatTextMarkup({ [EntityRuntimeKey]: undefined, formatRanges: [], text: 'a < b & c > d' })).toBe(
+      'a &lt; b &amp; c &gt; d',
+    );
   });
 
   it('emits style booleans as their tags', () => {
     const content: RichTextContent = {
+      [EntityRuntimeKey]: undefined,
       formatRanges: [{ end: 4, format: { bold: true, italic: true, strikethrough: true, underline: true }, start: 0 }],
       text: 'text',
     };
@@ -34,6 +38,7 @@ describe('formatTextMarkup', () => {
 
   it('emits font color as a #rrggbb attribute', () => {
     const content: RichTextContent = {
+      [EntityRuntimeKey]: undefined,
       formatRanges: [{ end: 3, format: { color: 0xff0000ff, font: 'Verdana', size: 18 }, start: 0 }],
       text: 'red',
     };
@@ -42,6 +47,7 @@ describe('formatTextMarkup', () => {
 
   it('emits anchors with href and target', () => {
     const content: RichTextContent = {
+      [EntityRuntimeKey]: undefined,
       formatRanges: [{ end: 4, format: { target: '_blank', url: 'https://a.test' }, start: 0 }],
       text: 'link',
     };
@@ -50,6 +56,7 @@ describe('formatTextMarkup', () => {
 
   it('emits textformat block metrics', () => {
     const content: RichTextContent = {
+      [EntityRuntimeKey]: undefined,
       formatRanges: [{ end: 1, format: { blockIndent: 4, leading: 2, leftMargin: 10, tabStops: [10, 20] }, start: 0 }],
       text: 'x',
     };
@@ -60,6 +67,7 @@ describe('formatTextMarkup', () => {
 
   it('emits bullets with a list marker type', () => {
     const content: RichTextContent = {
+      [EntityRuntimeKey]: undefined,
       formatRanges: [{ end: 4, format: { bullet: true, listMarker: 'square' }, start: 0 }],
       text: 'item',
     };

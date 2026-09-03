@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
@@ -71,8 +72,8 @@ describe('endCanvasRenderEffectPipeline', () => {
     registerCanvasRenderEffect(state, 'RealizedEffect', realizedRunner);
 
     endCanvasRenderEffectPipeline(state, pipeline, [
-      { kind: 'UnregisteredEffect' },
-      { kind: 'RealizedEffect' },
+      createEntity({ kind: 'UnregisteredEffect' }),
+      createEntity({ kind: 'RealizedEffect' }),
     ] as RenderEffect[]);
 
     const [unregisteredDest, realizedDest] = pipeline.pool.free;

@@ -1,6 +1,6 @@
 import * as imageContract from '@flighthq/image/contract';
 import type { Bitmap, ImageBackend } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { enableHostWebImage, resetHostWebImageForTest } from './webImage';
 
@@ -23,7 +23,7 @@ describe('enableHostWebImage', () => {
   });
 
   it('does not advertise Bitmap materialization when the inner provider omits it', () => {
-    const inner: ImageBackend = { loadImageFromUrl: vi.fn() };
+    const inner: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     vi.spyOn(imageContract, 'createWebImageBackend').mockReturnValue(inner);
     enableHostWebImage();
     expect(imageContract.getImageBackend().createImageFromBitmap).toBeUndefined();

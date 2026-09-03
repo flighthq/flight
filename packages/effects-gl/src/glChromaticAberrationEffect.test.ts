@@ -1,5 +1,6 @@
+import { createChromaticAberrationEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { ChromaticAberrationEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import {
   applyChromaticAberrationEffectToGl,
@@ -21,9 +22,12 @@ beforeAll(() => {
     .mockImplementation(((_state: unknown, _key: string, _source: string) => ({ program: {} })) as never);
   vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation((() => {}) as never);
   const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
-  applyChromaticAberrationEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'ChromaticAberrationEffect',
-  } as ChromaticAberrationEffect);
+  applyChromaticAberrationEffectToGl(
+    { gl: {} } as unknown as GlRenderState,
+    target,
+    target,
+    createChromaticAberrationEffect(),
+  );
   SOURCE = spy.mock.calls[0]![2] as string;
   vi.restoreAllMocks();
 });

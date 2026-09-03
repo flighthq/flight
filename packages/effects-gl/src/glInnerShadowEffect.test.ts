@@ -1,3 +1,4 @@
+import { createInnerShadowEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import * as glEffectBlitShader from './glEffectBlitShader';
@@ -49,7 +50,7 @@ describe('applyInnerShadowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerShadowEffectToGl(createState(), source, dest, createPool(), { kind: 'InnerShadowEffect' });
+    applyInnerShadowEffectToGl(createState(), source, dest, createPool(), createInnerShadowEffect());
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledTimes(2);
     expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
@@ -59,10 +60,13 @@ describe('applyInnerShadowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerShadowEffectToGl(createState(), source, dest, createPool(), {
-      kind: 'InnerShadowEffect',
-      sourceMode: 'hide',
-    });
+    applyInnerShadowEffectToGl(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createInnerShadowEffect({ sourceMode: 'hide' }),
+    );
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledTimes(1);
     expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
@@ -75,11 +79,13 @@ describe('applyInnerShadowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerShadowEffectToGl(createState(), source, dest, createPool(), {
-      kind: 'InnerShadowEffect',
-      color: 0x000000ff,
-      sourceMode: 'hide',
-    });
+    applyInnerShadowEffectToGl(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createInnerShadowEffect({ color: 0x000000ff, sourceMode: 'hide' }),
+    );
 
     expect(glEffectBoxBlur.applyGlEffectBoxBlur).toHaveBeenCalledWith(
       expect.anything(),
@@ -95,10 +101,13 @@ describe('applyInnerShadowEffectToGl', () => {
     const dest = createTarget('dest');
     const sourceTexture = (source as unknown as { texture: unknown }).texture;
 
-    applyInnerShadowEffectToGl(createState(), source, dest, createPool(), {
-      kind: 'InnerShadowEffect',
-      sourceMode: 'hide',
-    });
+    applyInnerShadowEffectToGl(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createInnerShadowEffect({ sourceMode: 'hide' }),
+    );
 
     expect(renderGlContract.drawGlFullscreenPass).toHaveBeenCalledTimes(1);
     expect(renderGlContract.drawGlFullscreenPass).toHaveBeenNthCalledWith(

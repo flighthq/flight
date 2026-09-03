@@ -1,4 +1,6 @@
-import type { BloomEffect, CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
+import { createBloomEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import {
   applyBloomEffectToCanvas,
@@ -15,7 +17,7 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
   const data = new Uint8ClampedArray(pixels);
   const canvas = { __data: data };
-  return {
+  return createEntity({
     canvas,
     context: {
       clearRect: () => {},
@@ -41,7 +43,7 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
     },
     height: 1,
     width: pixels.length / 4,
-  } as unknown as CanvasRenderTarget;
+  }) as unknown as CanvasRenderTarget;
 }
 
 // The pool hands out targets that start as copies of the source, which is what the real
@@ -51,11 +53,11 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
 // never ran.
 function createPool(width: number): CanvasRenderTargetPool {
   const blank = (): CanvasRenderTarget => createTarget(new Array(width * 4).fill(0));
-  return {
+  return createEntity({
     creator: canvasTestSurfaceCreator,
     free: [blank(), blank()],
     inUse: [],
-  } as unknown as CanvasRenderTargetPool;
+  }) as unknown as CanvasRenderTargetPool;
 }
 
 const read = (target: CanvasRenderTarget): number[] => [...target.context.getImageData(0, 0, 1, 1).data];
@@ -69,11 +71,15 @@ describe('applyBloomEffectToCanvas', () => {
     const source = createTarget([255, 255, 92, 255]);
     const dest = createTarget([0, 0, 0, 0]);
 
-    applyBloomEffectToCanvas(source, dest, createPool(1), {
-      intensity: 1,
-      kind: 'BloomEffect',
-      threshold: 0.6,
-    } as BloomEffect);
+    applyBloomEffectToCanvas(
+      source,
+      dest,
+      createPool(1),
+      createBloomEffect({
+        intensity: 1,
+        threshold: 0.6,
+      }),
+    );
 
     // scene + bloom * 1, and the bloom branch kept the whole colour rather than dropping blue.
     expect(read(dest)[2]).toBeGreaterThan(92);
@@ -85,11 +91,15 @@ describe('applyBloomEffectToCanvas', () => {
     const source = createTarget([255, 255, 255, 255]);
     const dest = createTarget([0, 0, 0, 0]);
 
-    applyBloomEffectToCanvas(source, dest, createPool(1), {
-      intensity: 1,
-      kind: 'BloomEffect',
-      threshold: 0.6,
-    } as BloomEffect);
+    applyBloomEffectToCanvas(
+      source,
+      dest,
+      createPool(1),
+      createBloomEffect({
+        intensity: 1,
+        threshold: 0.6,
+      }),
+    );
 
     expect(read(dest).slice(0, 3)).toEqual([255, 255, 255]);
   });
@@ -98,11 +108,15 @@ describe('applyBloomEffectToCanvas', () => {
     const source = createTarget([20, 20, 20, 255]);
     const dest = createTarget([0, 0, 0, 0]);
 
-    applyBloomEffectToCanvas(source, dest, createPool(1), {
-      intensity: 1,
-      kind: 'BloomEffect',
-      threshold: 0.6,
-    } as BloomEffect);
+    applyBloomEffectToCanvas(
+      source,
+      dest,
+      createPool(1),
+      createBloomEffect({
+        intensity: 1,
+        threshold: 0.6,
+      }),
+    );
 
     // The bright branch contributed nothing, so the scene passes through unchanged.
     expect(read(dest).slice(0, 3)).toEqual([20, 20, 20]);
@@ -113,16 +127,24 @@ describe('applyBloomEffectToCanvas', () => {
   it('makes an intensity above 1 differ from an intensity of 1', () => {
     const atOne = createTarget([0, 0, 0, 0]);
     const atMore = createTarget([0, 0, 0, 0]);
-    const effect = { kind: 'BloomEffect', threshold: 0.6 } as BloomEffect;
-
-    applyBloomEffectToCanvas(createTarget([255, 255, 92, 255]), atOne, createPool(1), {
-      ...effect,
-      intensity: 1,
-    });
-    applyBloomEffectToCanvas(createTarget([255, 255, 92, 255]), atMore, createPool(1), {
-      ...effect,
-      intensity: 2,
-    });
+    applyBloomEffectToCanvas(
+      createTarget([255, 255, 92, 255]),
+      atOne,
+      createPool(1),
+      createBloomEffect({
+        intensity: 1,
+        threshold: 0.6,
+      }),
+    );
+    applyBloomEffectToCanvas(
+      createTarget([255, 255, 92, 255]),
+      atMore,
+      createPool(1),
+      createBloomEffect({
+        intensity: 2,
+        threshold: 0.6,
+      }),
+    );
 
     expect(read(atMore)[2]).toBeGreaterThan(read(atOne)[2]!);
   });
@@ -130,11 +152,15 @@ describe('applyBloomEffectToCanvas', () => {
   it('leaves alpha to the scene rather than the bloom branch', () => {
     const dest = createTarget([0, 0, 0, 0]);
 
-    applyBloomEffectToCanvas(createTarget([255, 255, 255, 128]), dest, createPool(1), {
-      intensity: 2,
-      kind: 'BloomEffect',
-      threshold: 0.6,
-    } as BloomEffect);
+    applyBloomEffectToCanvas(
+      createTarget([255, 255, 255, 128]),
+      dest,
+      createPool(1),
+      createBloomEffect({
+        intensity: 2,
+        threshold: 0.6,
+      }),
+    );
 
     expect(read(dest)[3]).toBe(128);
   });
@@ -146,7 +172,7 @@ describe('defaultCanvasBloomEffectRunner', () => {
 
     defaultCanvasBloomEffectRunner(
       { dest, pool: createPool(1), source: createTarget([255, 255, 255, 255]), state: {} as never },
-      { intensity: 1, kind: 'BloomEffect', threshold: 0.6 } as BloomEffect,
+      createBloomEffect({ intensity: 1, threshold: 0.6 }),
     );
 
     expect(read(dest).slice(0, 3)).toEqual([255, 255, 255]);

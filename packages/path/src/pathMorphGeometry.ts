@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Path, PathMorph } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
@@ -57,7 +58,7 @@ export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): Path
   return {
     contour: null,
     issue: PathMorphIssueNone,
-    morph: { commands, endData, startData, winding: start.winding },
+    morph: createEntity({ commands, endData, startData, winding: start.winding }),
   };
 }
 

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { appendPathClose } from '@flighthq/path/contract';
 import type { Path, StrokeStyle } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
@@ -18,7 +19,7 @@ export function compactStrokePath(path: Readonly<Path>, style: Readonly<StrokeSt
   const cap = style.cap ?? 'butt';
   const miterLimit = style.miterLimit ?? 4;
   const halfWidth = width / 2;
-  const result: Path = { commands: [], data: [], winding: 'nonZero' };
+  const result: Path = createEntity({ commands: [] as number[], data: [] as number[], winding: 'nonZero' as const });
   // Decode path into flat subpath polylines, respecting the closed flag.
   const subpaths = decodeSubpaths(path, tolerance);
   const dash = style.dash && style.dash.length > 0 ? style.dash : null;

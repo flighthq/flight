@@ -24,7 +24,7 @@ import {
 } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CanvasRenderState } from '@flighthq/types/contract';
-import { MorphShapeKind, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, MorphShapeKind, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
@@ -99,7 +99,13 @@ describe('drawCanvasShape', () => {
     const canvas = document.createElement('canvas');
     const state = makeShapeState(canvas);
     registerRenderer(state, MorphShapeKind, defaultCanvasMorphShapeRenderer);
-    const shape = createMorphShape({ commands: [], endData: [], startData: [], winding: 'nonZero' });
+    const shape = createMorphShape({
+      [EntityRuntimeKey]: undefined,
+      commands: [],
+      endData: [],
+      startData: [],
+      winding: 'nonZero',
+    });
     const data = getOrCreateRenderProxy2D(state, shape);
 
     expect(defaultCanvasMorphShapeRenderer).toBe(defaultCanvasShapeRenderer);

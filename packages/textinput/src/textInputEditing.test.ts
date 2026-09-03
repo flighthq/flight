@@ -7,7 +7,7 @@ import type {
   TextInputOptions,
   TextLayoutResult,
 } from '@flighthq/types/contract';
-import { KeyCode } from '@flighthq/types/contract';
+import { EntityRuntimeKey, KeyCode } from '@flighthq/types/contract';
 
 import { enableTextInput, getTextInputState } from './textInput';
 import {
@@ -69,8 +69,10 @@ function createKeyboardData(data: Partial<KeyboardEventData>): KeyboardEventData
 
 function createLayout(): TextLayoutResult {
   return {
+    [EntityRuntimeKey]: undefined,
     groups: [
       {
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: 3,
@@ -85,6 +87,7 @@ function createLayout(): TextLayoutResult {
         width: 30,
       },
       {
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: 7,
@@ -777,6 +780,7 @@ describe('scrollTextInputCaretIntoView', () => {
     const groups = [];
     for (let line = 0; line < 4; line++) {
       groups.push({
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: line + 1,
@@ -792,6 +796,7 @@ describe('scrollTextInputCaretIntoView', () => {
       });
     }
     return {
+      [EntityRuntimeKey]: undefined,
       groups,
       lineAscents: [10, 10, 10, 10],
       lineDescents: [2, 2, 2, 2],

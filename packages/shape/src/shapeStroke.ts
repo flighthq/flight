@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Path, ShapeCommandToken, ShapeStrokeRegion, StrokeStyle } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
@@ -48,7 +49,7 @@ export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): S
           join: joints as StrokeStyle['join'],
           miterLimit: commands[a + 7] as number,
         };
-        centerline = { commands: [], data: [], winding: 'nonZero' };
+        centerline = createEntity({ commands: [] as number[], data: [] as number[], winding: 'nonZero' as const });
       } else {
         style = null;
         centerline = null;

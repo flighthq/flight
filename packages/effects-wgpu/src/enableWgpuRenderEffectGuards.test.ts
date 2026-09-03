@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
   clearLogOnceKeys,
@@ -98,7 +99,7 @@ describe('enableWgpuRenderEffectGuards', () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuRenderEffectGuards(state);
     const pipeline = createWgpuRenderEffectPipeline(state);
-    const chain = [{ kind: 'test.wgpu-pipeline-dropped-kind' }] as unknown as Readonly<RenderEffect>[];
+    const chain = [createEntity({ kind: 'test.wgpu-pipeline-dropped-kind' })] as unknown as Readonly<RenderEffect>[];
 
     const entries = captureLog(() => {
       beginWgpuFrame(state);
@@ -183,7 +184,7 @@ function applyChain(state: WgpuRenderState, kinds: readonly string[]): boolean {
   const scratch = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
   // Realize the source so `source-unavailable` is not what is being measured here.
   writeWgpuRenderTextureTarget(state, source, () => {});
-  const effects = kinds.map((kind) => ({ kind }) as unknown as Readonly<RenderEffect>);
+  const effects = kinds.map((kind) => createEntity({ kind }) as unknown as Readonly<RenderEffect>);
   return applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }
 

@@ -1,5 +1,6 @@
 import type { RectangleLike, TextLayoutResult } from '@flighthq/types/contract';
 import type { TextBoundsSpec } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   computeTextBoundsHeight,
@@ -22,6 +23,7 @@ function createSpec(spec: Partial<TextBoundsSpec> = {}): TextBoundsSpec {
 
 function createLayout(layout: Partial<TextLayoutResult> = {}): TextLayoutResult {
   return {
+    [EntityRuntimeKey]: undefined,
     groups: [],
     lineAscents: [],
     lineDescents: [],

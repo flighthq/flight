@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types/contract';
+import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -9,7 +9,7 @@ import type { SyntheticGlyph } from './openTypeTestHelper';
 import { readSfntTableDirectory } from './sfntTableDirectory';
 
 function createPath(): Path {
-  return { commands: [], data: [], winding: 'evenOdd' };
+  return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
 }
 
 // Reads a glyph out of a synthetic font through the same steps the source does, so these tests exercise
@@ -33,7 +33,7 @@ describe('readOpenTypeGlyphOutline', () => {
     // test that built one would pass whether or not this reader writes the field — and a caller
     // reusing a scratch path across glyphs is exactly the case that keeps a stale value and renders
     // a counter as a solid blob.
-    const path: Path = { commands: [], data: [], winding: 'evenOdd' };
+    const path: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
     const font = createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] });
     const directory = readSfntTableDirectory(font)!;
     const ranges = readOpenTypeGlyphRanges(

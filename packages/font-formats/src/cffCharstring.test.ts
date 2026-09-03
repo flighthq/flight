@@ -1,11 +1,11 @@
-import { PathCommand } from '@flighthq/types/contract';
+import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { cffSubroutineBias, runCffCharstring } from './cffCharstring';
 
 function createPath(): Path {
-  return { commands: [], data: [], winding: 'evenOdd' };
+  return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
 }
 
 // Charstrings are assembled as raw operator/operand bytes. One-byte operands cover -107..107, which is

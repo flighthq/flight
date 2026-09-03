@@ -1,7 +1,7 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
 import type { RichText, RichTextData, RichTextRuntime, TextLayoutResult } from '@flighthq/types/contract';
-import { KeyCode } from '@flighthq/types/contract';
+import { EntityRuntimeKey, KeyCode } from '@flighthq/types/contract';
 
 import { enableTextInput, getTextInputState } from './textInput';
 import {
@@ -33,8 +33,10 @@ function createInput(data: Partial<RichTextData> = {}): RichText {
 // index 0, x=17 on index 1, etc. (midpoint rounding: x < offsetX + advance/2 → that index).
 function createSingleLineLayout(): TextLayoutResult {
   return {
+    [EntityRuntimeKey]: undefined,
     groups: [
       {
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: 11,
@@ -62,8 +64,10 @@ function createSingleLineLayout(): TextLayoutResult {
 
 function createTwoLineLayout(): TextLayoutResult {
   return {
+    [EntityRuntimeKey]: undefined,
     groups: [
       {
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: 3,
@@ -78,6 +82,7 @@ function createTwoLineLayout(): TextLayoutResult {
         width: 30,
       },
       {
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: 7,

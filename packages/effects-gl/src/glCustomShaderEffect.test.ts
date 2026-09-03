@@ -1,3 +1,4 @@
+import { createCustomShaderEffect } from '@flighthq/effects/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   createEmptyGlRegistries,
@@ -73,7 +74,7 @@ describe('getGlCustomShaderSource', () => {
 describe('isGlCustomShaderEffectResolvable', () => {
   it('is false for a shaderKey with no registered source, which is the identity-passthrough case', () => {
     const state = makeState();
-    expect(isGlCustomShaderEffectResolvable(state, { kind: 'CustomShaderEffect', shaderKey: 'ripple' } as never)).toBe(
+    expect(isGlCustomShaderEffectResolvable(state, createCustomShaderEffect({ shaderKey: 'ripple' }) as never)).toBe(
       false,
     );
   });
@@ -81,7 +82,7 @@ describe('isGlCustomShaderEffectResolvable', () => {
   it('is true once the key names registered source', () => {
     const state = makeState();
     registerGlCustomShaderSource(state, 'ripple', FRAGMENT_SRC);
-    expect(isGlCustomShaderEffectResolvable(state, { kind: 'CustomShaderEffect', shaderKey: 'ripple' } as never)).toBe(
+    expect(isGlCustomShaderEffectResolvable(state, createCustomShaderEffect({ shaderKey: 'ripple' }) as never)).toBe(
       true,
     );
   });
@@ -89,8 +90,8 @@ describe('isGlCustomShaderEffectResolvable', () => {
   it('answers per effect instance, so two effects of this kind can disagree', () => {
     const state = makeState();
     registerGlCustomShaderSource(state, 'ripple', FRAGMENT_SRC);
-    const registered = { kind: 'CustomShaderEffect', shaderKey: 'ripple' } as never;
-    const missing = { kind: 'CustomShaderEffect', shaderKey: 'absent' } as never;
+    const registered = createCustomShaderEffect({ shaderKey: 'ripple' }) as never;
+    const missing = createCustomShaderEffect({ shaderKey: 'absent' }) as never;
     expect(isGlCustomShaderEffectResolvable(state, registered)).toBe(true);
     expect(isGlCustomShaderEffectResolvable(state, missing)).toBe(false);
   });

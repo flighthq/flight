@@ -1,3 +1,4 @@
+import { createScreenSpaceFogEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -54,10 +55,13 @@ function apply(effect: Readonly<Partial<ScreenSpaceFogEffect>> = {}, depthTextur
   glMock.uniform3f.mockClear();
   drawCalls.inputs.length = 0;
   const target = { height: 64, texture: { id: 'scene' }, width: 64 } as unknown as GlRenderTarget;
-  applyScreenSpaceFogEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, depthTexture, {
-    kind: 'ScreenSpaceFogEffect',
-    ...effect,
-  } as ScreenSpaceFogEffect);
+  applyScreenSpaceFogEffectToGl(
+    { gl: {} } as unknown as GlRenderState,
+    target,
+    target,
+    depthTexture,
+    createScreenSpaceFogEffect(effect),
+  );
 }
 
 // The proxy branch, taken when the scene wrote no depth. Extracted from the `else` arm specifically:
@@ -168,7 +172,7 @@ describe('defaultGlScreenSpaceFogEffectRunner', () => {
         source: target,
         state: { gl: {} },
       } as never,
-      { kind: 'ScreenSpaceFogEffect' } as ScreenSpaceFogEffect,
+      createScreenSpaceFogEffect(),
     );
 
     expect(drawCalls.inputs[0]![1]).toBe(depth);

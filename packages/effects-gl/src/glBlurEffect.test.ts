@@ -1,3 +1,4 @@
+import { createBlurEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -45,11 +46,16 @@ describe('applyBlurEffectToGlRenderTextures', () => {
     writeGlRenderTextureTarget(state, source, () => {});
 
     expect(
-      applyBlurEffectToGlRenderTextures(state, source, dest, scratch, {
-        blurX: 2,
-        blurY: 3,
-        kind: 'BlurEffect',
-      }),
+      applyBlurEffectToGlRenderTextures(
+        state,
+        source,
+        dest,
+        scratch,
+        createBlurEffect({
+          blurX: 2,
+          blurY: 3,
+        }),
+      ),
     ).toBe(true);
     expect(isGlRenderTextureReady(state, dest)).toBe(true);
     expect(isGlRenderTextureReady(state, scratch)).toBe(true);

@@ -1,3 +1,4 @@
+import { createOuterGlowEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import * as glEffectBlitShader from './glEffectBlitShader';
@@ -44,7 +45,7 @@ describe('applyOuterGlowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToGl(createState(), source, dest, createPool(), { kind: 'OuterGlowEffect' });
+    applyOuterGlowEffectToGl(createState(), source, dest, createPool(), createOuterGlowEffect());
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
@@ -54,10 +55,7 @@ describe('applyOuterGlowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToGl(createState(), source, dest, createPool(), {
-      kind: 'OuterGlowEffect',
-      sourceMode: 'hide',
-    });
+    applyOuterGlowEffectToGl(createState(), source, dest, createPool(), createOuterGlowEffect({ sourceMode: 'hide' }));
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
@@ -67,10 +65,13 @@ describe('applyOuterGlowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToGl(createState(), source, dest, createPool(), {
-      kind: 'OuterGlowEffect',
-      sourceMode: 'knockout',
-    });
+    applyOuterGlowEffectToGl(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createOuterGlowEffect({ sourceMode: 'knockout' }),
+    );
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(glEffectBlitShader.applyGlEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);

@@ -1,4 +1,6 @@
-import type { CanvasRenderTarget, LensDistortionEffect } from '@flighthq/types/contract';
+import { createLensDistortionEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
 import {
@@ -26,12 +28,12 @@ function createTargets(
   }
   const imageData = { data: pixels };
   const written: { data: Uint8ClampedArray | null } = { data: null };
-  const source = {
+  const source = createEntity({
     context: { getImageData: () => imageData },
     height,
     width,
-  } as unknown as CanvasRenderTarget;
-  const dest = {
+  }) as unknown as CanvasRenderTarget;
+  const dest = createEntity({
     context: {
       clearRect: () => {},
       filter: 'none',
@@ -46,7 +48,7 @@ function createTargets(
     },
     height,
     width,
-  } as unknown as CanvasRenderTarget;
+  }) as unknown as CanvasRenderTarget;
   return { dest, source, written };
 }
 
@@ -61,7 +63,7 @@ describe('applyLensDistortionEffectToCanvas', () => {
   it('is the identity at amount 0', () => {
     const { dest, source, written } = createTargets(8, 8);
 
-    applyLensDistortionEffectToCanvas(source, dest, { amount: 0, kind: 'LensDistortionEffect' });
+    applyLensDistortionEffectToCanvas(source, dest, createLensDistortionEffect({ amount: 0 }));
 
     const original = source.context.getImageData(0, 0, 8, 8).data;
     expect([...written.data!]).toEqual([...original]);
@@ -73,7 +75,7 @@ describe('applyLensDistortionEffectToCanvas', () => {
     const { dest, source, written } = createTargets(9, 9);
     const before = at(source.context.getImageData(0, 0, 9, 9).data, 9, 4, 4);
 
-    applyLensDistortionEffectToCanvas(source, dest, { amount: 0.4, kind: 'LensDistortionEffect' });
+    applyLensDistortionEffectToCanvas(source, dest, createLensDistortionEffect({ amount: 0.4 }));
 
     expect(at(written.data!, 9, 4, 4)).toEqual(before);
   });
@@ -84,7 +86,7 @@ describe('applyLensDistortionEffectToCanvas', () => {
     const { dest, source, written } = createTargets(16, 16);
     const before = at(source.context.getImageData(0, 0, 16, 16).data, 16, 12, 8)[0]!;
 
-    applyLensDistortionEffectToCanvas(source, dest, { amount: 0.5, kind: 'LensDistortionEffect' });
+    applyLensDistortionEffectToCanvas(source, dest, createLensDistortionEffect({ amount: 0.5 }));
 
     expect(at(written.data!, 16, 12, 8)[0]!).toBeGreaterThan(before);
   });
@@ -94,7 +96,7 @@ describe('applyLensDistortionEffectToCanvas', () => {
     const { dest, source, written } = createTargets(16, 16);
     const before = at(source.context.getImageData(0, 0, 16, 16).data, 16, 12, 8)[0]!;
 
-    applyLensDistortionEffectToCanvas(source, dest, { amount: -0.5, kind: 'LensDistortionEffect' });
+    applyLensDistortionEffectToCanvas(source, dest, createLensDistortionEffect({ amount: -0.5 }));
 
     expect(at(written.data!, 16, 12, 8)[0]!).toBeLessThan(before);
   });
@@ -104,7 +106,7 @@ describe('applyLensDistortionEffectToCanvas', () => {
   it('writes opaque black where the sample leaves the frame', () => {
     const { dest, source, written } = createTargets(16, 16);
 
-    applyLensDistortionEffectToCanvas(source, dest, { amount: 3, kind: 'LensDistortionEffect' });
+    applyLensDistortionEffectToCanvas(source, dest, createLensDistortionEffect({ amount: 3 }));
 
     expect(at(written.data!, 16, 0, 0)).toEqual([0, 0, 0, 255]);
   });
@@ -113,12 +115,15 @@ describe('applyLensDistortionEffectToCanvas', () => {
     const { dest, source, written } = createTargets(16, 16);
     const wide = createTargets(16, 16);
 
-    applyLensDistortionEffectToCanvas(source, dest, { amount: 0.5, kind: 'LensDistortionEffect' });
-    applyLensDistortionEffectToCanvas(wide.source, wide.dest, {
-      amount: 0.5,
-      kind: 'LensDistortionEffect',
-      scale: 1.5,
-    });
+    applyLensDistortionEffectToCanvas(source, dest, createLensDistortionEffect({ amount: 0.5 }));
+    applyLensDistortionEffectToCanvas(
+      wide.source,
+      wide.dest,
+      createLensDistortionEffect({
+        amount: 0.5,
+        scale: 1.5,
+      }),
+    );
 
     expect(at(wide.written.data!, 16, 14, 8)[0]!).toBeLessThan(at(written.data!, 16, 14, 8)[0]!);
   });
@@ -128,13 +133,17 @@ describe('defaultCanvasLensDistortionEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const { dest, pool, source, written } = {
       ...createTargets(8, 8),
-      pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] },
+      pool: createEntity({
+        creator: canvasTestSurfaceCreator,
+        free: [],
+        inUse: [],
+      }) as unknown as CanvasRenderTargetPool,
     };
 
-    defaultCanvasLensDistortionEffectRunner({ dest, pool, source, state: {} as never }, {
-      amount: 0,
-      kind: 'LensDistortionEffect',
-    } as LensDistortionEffect);
+    defaultCanvasLensDistortionEffectRunner(
+      { dest, pool, source, state: {} as never },
+      createLensDistortionEffect({ amount: 0 }),
+    );
 
     expect(written.data).not.toBeNull();
   });

@@ -4,6 +4,7 @@ import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
 import type {
   Entity,
+  EntityWithoutRuntime,
   Node2D,
   Sprite,
   Spritesheet,
@@ -30,7 +31,7 @@ export function createSpritesheetTimelineSource(
   if (_spritesheetTimelineSourceGuard !== null) {
     _spritesheetTimelineSourceGuard(animation, explainSpritesheetTimelineSource(animation));
   }
-  return createEntity({
+  return createEntity<EntityWithoutRuntime<TimelineSource>>({
     totalFrames: frames.length,
     labels: [],
     // A spritesheet animation is pure frame content; the format carries nothing to cue.

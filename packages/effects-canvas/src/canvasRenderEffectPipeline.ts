@@ -150,7 +150,7 @@ export function endCanvasRenderEffectPipeline(
     // later pass never reads an uninitialized ping-pong target. Keeping this composition rule here
     // avoids per-kind passthrough registrations that would falsely advertise renderer support.
     if (runner === null) drawCanvasEffectPass(dest, source, 'none');
-    else runner({ state, source, dest, pool }, operation);
+    else runner({ state, source, dest, pool }, operation as Readonly<RenderEffect>);
     source = dest;
   }
   flushAdjustments();

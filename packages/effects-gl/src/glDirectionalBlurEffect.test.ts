@@ -1,5 +1,6 @@
+import { createDirectionalBlurEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { DirectionalBlurEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import {
   applyDirectionalBlurEffectToGl,
@@ -21,9 +22,7 @@ beforeAll(() => {
     .mockImplementation(((_state: unknown, _key: string, _source: string) => ({ program: {} })) as never);
   vi.spyOn(renderGlContract, 'drawGlFullscreenPass').mockImplementation((() => {}) as never);
   const target = { height: 8, texture: {}, width: 8 } as unknown as GlRenderTarget;
-  applyDirectionalBlurEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'DirectionalBlurEffect',
-  } as DirectionalBlurEffect);
+  applyDirectionalBlurEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createDirectionalBlurEffect());
   SOURCE = spy.mock.calls[0]![2] as string;
   vi.restoreAllMocks();
 });

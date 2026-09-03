@@ -1,3 +1,5 @@
+import { createOuterGlowEffect } from '@flighthq/effects/contract';
+
 import * as canvasEffectCompositing from './canvasEffectCompositing';
 import { canvasTestSurfaceCreator } from './canvasEffectTestSupport';
 import {
@@ -51,7 +53,7 @@ describe('applyOuterGlowEffectToCanvas', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToCanvas(source, dest, { kind: 'OuterGlowEffect' });
+    applyOuterGlowEffectToCanvas(source, dest, createOuterGlowEffect());
 
     expect(canvasEffectCompositing.drawCanvasEffectPass).toHaveBeenCalledWith(
       dest,
@@ -65,7 +67,7 @@ describe('applyOuterGlowEffectToCanvas', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToCanvas(source, dest, { kind: 'OuterGlowEffect', sourceMode: 'hide' });
+    applyOuterGlowEffectToCanvas(source, dest, createOuterGlowEffect({ sourceMode: 'hide' }));
 
     expect(canvasSourceModeCompositing.compositeCanvasSourceMode).toHaveBeenCalledWith(dest, source, 'hide');
   });
@@ -74,7 +76,7 @@ describe('applyOuterGlowEffectToCanvas', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToCanvas(source, dest, { kind: 'OuterGlowEffect', sourceMode: 'knockout' });
+    applyOuterGlowEffectToCanvas(source, dest, createOuterGlowEffect({ sourceMode: 'knockout' }));
 
     expect(canvasSourceModeCompositing.compositeCanvasSourceMode).toHaveBeenCalledWith(dest, source, 'knockout');
   });

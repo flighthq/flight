@@ -10,7 +10,7 @@ import type {
   Scene3DResourceLoadProgress,
   Texture,
 } from '@flighthq/types/contract';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources';
@@ -22,6 +22,7 @@ let sceneResources: ImageResourceReference[] = [];
 
 function externalRef(): ImageResourceReference {
   const ref: ImageResourceReference = {
+    [EntityRuntimeKey]: undefined,
     basePath: null,
     failure: null,
     kind: ImageResourceReferenceKind.External,

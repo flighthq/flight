@@ -145,7 +145,7 @@ function refuse(
   mode: string | null,
   kind: string | null,
 ): typeof INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE {
-  state.refusal ??= {
+  state.refusal ??= createEntity({
     actual: null,
     column: null,
     kind,
@@ -158,7 +158,7 @@ function refuse(
     resourceKey: null,
     tokenKey,
     version: null,
-  };
+  });
   return INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE;
 }
 

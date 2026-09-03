@@ -1,3 +1,4 @@
+import { createTiltShiftEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -55,10 +56,7 @@ function apply(effect: Readonly<Partial<TiltShiftEffect>> = {}): void {
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
   const target = { height: 64, texture: {}, width: 64 } as unknown as GlRenderTarget;
-  applyTiltShiftEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'TiltShiftEffect',
-    ...effect,
-  } as TiltShiftEffect);
+  applyTiltShiftEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createTiltShiftEffect(effect));
 }
 
 function distanceExpression(): string {
@@ -141,7 +139,7 @@ describe('defaultGlTiltShiftEffectRunner', () => {
 
     defaultGlTiltShiftEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
-      { center: 0.2, kind: 'TiltShiftEffect' } as TiltShiftEffect,
+      createTiltShiftEffect({ center: 0.2 }),
     );
 
     expect(scalarUniform('u_center')).toBe(0.2);

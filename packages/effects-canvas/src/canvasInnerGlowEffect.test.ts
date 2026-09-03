@@ -1,3 +1,5 @@
+import { createInnerGlowEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool, InnerGlowEffect } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
@@ -18,7 +20,14 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     target.canvas.id = id;
     return target;
   });
-  return { pool: { creator: canvasTestSurfaceCreator, free: [...targets].reverse(), inUse: [] }, targets };
+  return {
+    pool: createEntity({
+      creator: canvasTestSurfaceCreator,
+      free: [...targets].reverse(),
+      inUse: [],
+    }) as unknown as CanvasRenderTargetPool,
+    targets,
+  };
 }
 
 // One transcript across every target, so ordering between passes is visible and not just within one.
@@ -45,7 +54,7 @@ function scene(): { source: CanvasRenderTarget; dest: CanvasRenderTarget } {
 }
 
 function innerGlow(over: Partial<InnerGlowEffect> = {}): InnerGlowEffect {
-  return { kind: 'InnerGlowEffect', ...over } as InnerGlowEffect;
+  return createInnerGlowEffect(over);
 }
 
 afterEach(() => {

@@ -1,5 +1,5 @@
 import type { Path } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 import { flattenPath } from './flattenPath';
 import { appendPathClose, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
@@ -46,6 +46,7 @@ describe('flattenPath', () => {
 
   it('reads the second coordinate pair for WIDE_ verbs', () => {
     const path: Path = {
+      [EntityRuntimeKey]: undefined,
       commands: [PathCommand.WIDE_MOVE_TO, PathCommand.WIDE_LINE_TO],
       data: [0, 0, 5, 6, 0, 0, 7, 8],
       winding: 'nonZero',

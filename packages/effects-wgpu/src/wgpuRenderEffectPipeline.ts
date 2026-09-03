@@ -180,7 +180,7 @@ export function endWgpuRenderEffectPipeline(
         sceneDepthTexture: null,
         sceneVelocityTexture: pipeline.velocityTexture,
       },
-      operation,
+      operation as Readonly<RenderEffect>,
     );
     source = dest;
   }

@@ -5,6 +5,7 @@ import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type { ImageResource, ImageResourceReference } from '@flighthq/types/contract';
 import {
+  EntityRuntimeKey,
   ImageResourceFailureKind,
   ImageResourceReferenceKind,
   ResourceResolutionState,
@@ -19,6 +20,7 @@ const fakeImage = { height: 1, width: 1 } as ImageResource;
 
 function externalRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
   return {
+    [EntityRuntimeKey]: undefined,
     basePath: null,
     failure: null,
     kind: ImageResourceReferenceKind.External,
@@ -55,7 +57,12 @@ describe('retryFailedScene3DResources', () => {
 
   it('honors selection and leaves an excluded failure untouched', () => {
     const ref = externalRef(ResourceResolutionState.Failed);
-    ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'missing', name: null };
+    ref.failure = {
+      [EntityRuntimeKey]: undefined,
+      kind: ImageResourceFailureKind.Unavailable,
+      message: 'missing',
+      name: null,
+    };
     const texture = createTexture({ resource: ref });
     const scene = createScene3D();
     scene.resources.push(ref);

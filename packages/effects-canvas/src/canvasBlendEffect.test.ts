@@ -1,4 +1,11 @@
-import type { BlendEffect, CanvasRenderState, CanvasRenderTarget } from '@flighthq/types/contract';
+import { createBlendEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  BlendEffect,
+  CanvasRenderState,
+  CanvasRenderTarget,
+  CanvasRenderTargetPool,
+} from '@flighthq/types/contract';
 
 import {
   applyBlendEffectToCanvas,
@@ -48,7 +55,7 @@ function backdropTarget(): CanvasRenderTarget {
 }
 
 function blendEffect(over: Partial<BlendEffect> = {}): BlendEffect {
-  return { kind: 'BlendEffect', mode: 'Overlay', ...over } as BlendEffect;
+  return createBlendEffect('Overlay', over);
 }
 
 afterEach(() => {
@@ -110,7 +117,16 @@ describe('defaultCanvasBlendEffectRunner', () => {
     const drawn = recordDraws(dest);
 
     defaultCanvasBlendEffectRunner(
-      { state, source, dest, pool: { creator: canvasTestSurfaceCreator, free: [], inUse: [] } },
+      {
+        state,
+        source,
+        dest,
+        pool: createEntity({
+          creator: canvasTestSurfaceCreator,
+          free: [],
+          inUse: [],
+        }) as unknown as CanvasRenderTargetPool,
+      },
       blendEffect({ mode: 'Screen', backdropKey: 'scene' }),
     );
 

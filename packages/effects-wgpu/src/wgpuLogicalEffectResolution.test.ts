@@ -1,3 +1,18 @@
+import {
+  createCrtEffect,
+  createDirectionalBlurEffect,
+  createDisplacementEffect,
+  createDitherEffect,
+  createFxaaEffect,
+  createGlitchEffect,
+  createKuwaharaEffect,
+  createMotionBlurEffect,
+  createPixelateEffect,
+  createSharpenEffect,
+  createSmaaEffect,
+  createSsaoEffect,
+  createTiltShiftEffect,
+} from '@flighthq/effects/contract';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass';
@@ -79,31 +94,31 @@ const logicalEffects: ReadonlyArray<{
 }> = [
   {
     apply: (renderState, source, dest) =>
-      applyTiltShiftEffectToWgpu(renderState, source, dest, { kind: 'TiltShiftEffect' } as never),
+      applyTiltShiftEffectToWgpu(renderState, source, dest, createTiltShiftEffect() as never),
     name: 'tilt-shift',
     resolutionSlot: 4,
   },
   {
     apply: (renderState, source, dest) =>
-      applyDisplacementEffectToWgpu(renderState, source, dest, { kind: 'DisplacementEffect' } as never),
+      applyDisplacementEffectToWgpu(renderState, source, dest, createDisplacementEffect() as never),
     name: 'displacement',
     resolutionSlot: 4,
   },
   {
     apply: (renderState, source, dest) =>
-      applyDirectionalBlurEffectToWgpu(renderState, source, dest, { kind: 'DirectionalBlurEffect' } as never),
+      applyDirectionalBlurEffectToWgpu(renderState, source, dest, createDirectionalBlurEffect() as never),
     name: 'directional blur',
     resolutionSlot: 4,
   },
   {
     apply: (renderState, source, dest) =>
-      applyKuwaharaEffectToWgpu(renderState, source, dest, { kind: 'KuwaharaEffect' } as never),
+      applyKuwaharaEffectToWgpu(renderState, source, dest, createKuwaharaEffect() as never),
     name: 'kuwahara',
     resolutionSlot: 2,
   },
   {
     apply: (renderState, source, dest) =>
-      applyGlitchEffectToWgpu(renderState, source, dest, { kind: 'GlitchEffect' } as never),
+      applyGlitchEffectToWgpu(renderState, source, dest, createGlitchEffect() as never),
     name: 'glitch',
     resolutionSlot: 4,
   },
@@ -114,38 +129,36 @@ const logicalEffects: ReadonlyArray<{
         source,
         dest,
         { createView: () => ({}) } as unknown as GPUTexture,
-        { kind: 'MotionBlurEffect' } as never,
+        createMotionBlurEffect() as never,
       ),
     name: 'active motion blur',
     resolutionSlot: 2,
   },
   {
-    apply: (renderState, source, dest) =>
-      applySsaoEffectToWgpu(renderState, source, dest, { kind: 'SsaoEffect' } as never),
+    apply: (renderState, source, dest) => applySsaoEffectToWgpu(renderState, source, dest, createSsaoEffect() as never),
     name: 'SSAO',
     resolutionSlot: 2,
   },
   {
     apply: (renderState, source, dest) =>
-      applyPixelateEffectToWgpu(renderState, source, dest, { kind: 'PixelateEffect' } as never),
+      applyPixelateEffectToWgpu(renderState, source, dest, createPixelateEffect() as never),
     name: 'pixelate',
     resolutionSlot: 2,
   },
   {
     apply: (renderState, source, dest) =>
-      applyDitherEffectToWgpu(renderState, source, dest, { kind: 'DitherEffect' } as never),
+      applyDitherEffectToWgpu(renderState, source, dest, createDitherEffect() as never),
     name: 'dither',
     resolutionSlot: 2,
   },
   {
-    apply: (renderState, source, dest) =>
-      applyCrtEffectToWgpu(renderState, source, dest, { kind: 'CrtEffect' } as never),
+    apply: (renderState, source, dest) => applyCrtEffectToWgpu(renderState, source, dest, createCrtEffect() as never),
     name: 'CRT',
     resolutionSlot: 4,
   },
   {
     apply: (renderState, source, dest) =>
-      applySharpenEffectToWgpu(renderState, source, dest, { kind: 'SharpenEffect' } as never),
+      applySharpenEffectToWgpu(renderState, source, dest, createSharpenEffect() as never),
     name: 'sharpen',
     resolutionSlot: 2,
   },
@@ -153,13 +166,11 @@ const logicalEffects: ReadonlyArray<{
 
 const physicalEffects: ReadonlyArray<{ readonly apply: ApplyEffect; readonly name: string }> = [
   {
-    apply: (renderState, source, dest) =>
-      applyFxaaEffectToWgpu(renderState, source, dest, { kind: 'FxaaEffect' } as never),
+    apply: (renderState, source, dest) => applyFxaaEffectToWgpu(renderState, source, dest, createFxaaEffect() as never),
     name: 'FXAA',
   },
   {
-    apply: (renderState, source, dest) =>
-      applySmaaEffectToWgpu(renderState, source, dest, { kind: 'SmaaEffect' } as never),
+    apply: (renderState, source, dest) => applySmaaEffectToWgpu(renderState, source, dest, createSmaaEffect() as never),
     name: 'SMAA',
   },
 ];

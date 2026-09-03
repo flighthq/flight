@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   acquireCanvasRenderTexture,
   createCanvasOffscreenRenderState,
@@ -32,8 +33,8 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
 
     expect(
       applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
-        { kind: 'acme.First' },
-        { kind: 'acme.Second' },
+        createEntity({ kind: 'acme.First' }),
+        createEntity({ kind: 'acme.Second' }),
       ]),
     ).toBe(true);
 
@@ -53,7 +54,9 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
     writeCanvasRenderTextureTarget(state, source, () => {});
 
     expect(
-      applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [{ kind: 'acme.Missing' }]),
+      applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
+        createEntity({ kind: 'acme.Missing' }),
+      ]),
     ).toBe(false);
     expect(isCanvasRenderTextureReady(state, dest)).toBe(false);
   });

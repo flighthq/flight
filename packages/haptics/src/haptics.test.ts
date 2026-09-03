@@ -5,6 +5,7 @@ import type {
   HapticsCapabilities,
   HasInputHaptics,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   cancelDeviceVibration,
@@ -47,6 +48,7 @@ function makeHost(overrides: Partial<HapticsBackend> = {}): { calls: RecordedCal
       return result;
     };
   const haptics: HapticsBackend = {
+    [EntityRuntimeKey]: undefined,
     cancel: record('cancel', true),
     capabilities(out: HapticsCapabilities): HapticsCapabilities {
       calls.push({ args: [], name: 'capabilities' });

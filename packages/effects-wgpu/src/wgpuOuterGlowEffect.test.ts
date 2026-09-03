@@ -1,3 +1,4 @@
+import { createOuterGlowEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
@@ -43,7 +44,7 @@ describe('applyOuterGlowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToWgpu(createState(), source, dest, createPool(), { kind: 'OuterGlowEffect' });
+    applyOuterGlowEffectToWgpu(createState(), source, dest, createPool(), createOuterGlowEffect());
 
     expect(wgpuEffectBlitShaderModule.applyWgpuEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(wgpuEffectBlitShaderModule.applyWgpuEffectErasePass).not.toHaveBeenCalled();
@@ -53,10 +54,15 @@ describe('applyOuterGlowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'OuterGlowEffect',
-      sourceMode: 'hide',
-    });
+    applyOuterGlowEffectToWgpu(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createOuterGlowEffect({
+        sourceMode: 'hide',
+      }),
+    );
 
     expect(wgpuEffectBlitShaderModule.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(
       expect.anything(),
@@ -70,10 +76,15 @@ describe('applyOuterGlowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyOuterGlowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'OuterGlowEffect',
-      sourceMode: 'knockout',
-    });
+    applyOuterGlowEffectToWgpu(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createOuterGlowEffect({
+        sourceMode: 'knockout',
+      }),
+    );
 
     expect(wgpuEffectBlitShaderModule.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(
       expect.anything(),

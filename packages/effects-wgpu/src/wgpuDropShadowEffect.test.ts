@@ -1,3 +1,4 @@
+import { createDropShadowEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 
 import {
@@ -48,7 +49,7 @@ describe('applyDropShadowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToWgpu(createState(), source, dest, createPool(), { kind: 'DropShadowEffect' });
+    applyDropShadowEffectToWgpu(createState(), source, dest, createPool(), createDropShadowEffect());
 
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectErasePass).not.toHaveBeenCalled();
@@ -58,10 +59,15 @@ describe('applyDropShadowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'DropShadowEffect',
-      sourceMode: 'hide',
-    });
+    applyDropShadowEffectToWgpu(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createDropShadowEffect({
+        sourceMode: 'hide',
+      }),
+    );
 
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectErasePass).not.toHaveBeenCalled();
@@ -71,10 +77,15 @@ describe('applyDropShadowEffectToWgpu', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'DropShadowEffect',
-      sourceMode: 'knockout',
-    });
+    applyDropShadowEffectToWgpu(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createDropShadowEffect({
+        sourceMode: 'knockout',
+      }),
+    );
 
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(wgpuEffectBlitShaderMod.applyWgpuEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);

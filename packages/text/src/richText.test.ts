@@ -8,7 +8,7 @@ import {
 import { connectSignal } from '@flighthq/signals/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 import type { Node, RichText, RichTextRuntime, TextFormatRange } from '@flighthq/types/contract';
-import { RichTextKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RichTextKind } from '@flighthq/types/contract';
 
 import {
   appendRichTextString,
@@ -942,7 +942,11 @@ describe('setRichTextContent', () => {
   it('sets text and format ranges from a RichTextContent and bumps content', () => {
     const richText = createRichText();
     const revision = getNodeLocalContentRevision(richText);
-    setRichTextContent(richText, { formatRanges: [{ start: 0, end: 4, format: { bold: true } }], text: 'bold' });
+    setRichTextContent(richText, {
+      [EntityRuntimeKey]: undefined,
+      formatRanges: [{ start: 0, end: 4, format: { bold: true } }],
+      text: 'bold',
+    });
     expect(richText.data.text).toBe('bold');
     expect(richText.data.textFormatRanges).toEqual([{ start: 0, end: 4, format: { bold: true } }]);
     expect(getNodeLocalContentRevision(richText)).toBe(revision + 1);
@@ -951,7 +955,7 @@ describe('setRichTextContent', () => {
   it('copies the format ranges so the field does not alias the caller array', () => {
     const richText = createRichText();
     const ranges: TextFormatRange[] = [{ start: 0, end: 2, format: { italic: true } }];
-    setRichTextContent(richText, { formatRanges: ranges, text: 'hi' });
+    setRichTextContent(richText, { [EntityRuntimeKey]: undefined, formatRanges: ranges, text: 'hi' });
     expect(richText.data.textFormatRanges).not.toBe(ranges);
     expect(richText.data.textFormatRanges[0]).not.toBe(ranges[0]);
   });
@@ -963,7 +967,7 @@ describe('setRichTextContent', () => {
     connectSignal(signals.onTextFieldChange, (event) => {
       seen = event.previousText;
     });
-    setRichTextContent(richText, { formatRanges: [], text: 'new' });
+    setRichTextContent(richText, { [EntityRuntimeKey]: undefined, formatRanges: [], text: 'new' });
     expect(seen).toBe('old');
   });
 });

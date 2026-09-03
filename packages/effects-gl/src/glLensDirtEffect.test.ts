@@ -1,3 +1,4 @@
+import { createLensDirtEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderTarget } from '@flighthq/types/contract';
 
@@ -41,12 +42,17 @@ describe('applyLensDirtEffectToGl', () => {
     const dest = createTarget('dest');
     const pool = createPool();
 
-    applyLensDirtEffectToGl(state, source, dest, pool, {
-      intensity: 1.5,
-      kind: 'LensDirtEffect',
-      seed: 4,
-      threshold: 0.45,
-    });
+    applyLensDirtEffectToGl(
+      state,
+      source,
+      dest,
+      pool,
+      createLensDirtEffect({
+        intensity: 1.5,
+        seed: 4,
+        threshold: 0.45,
+      }),
+    );
 
     expect(renderGlContract.acquireGlRenderTarget).toHaveBeenCalledTimes(3);
     const [bright, blurred, temp] = vi

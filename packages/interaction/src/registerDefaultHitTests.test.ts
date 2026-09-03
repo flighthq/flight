@@ -2,6 +2,7 @@ import { setRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createSprite, createScene2D } from '@flighthq/scene2d/contract';
 import { createMorphShape, createShape } from '@flighthq/shape/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { findGraphHitTarget } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';
@@ -21,7 +22,13 @@ describe('registerDefaultHitTests', () => {
     setNodeHitTestEnabled(shape, true);
     expect(findGraphHitTarget(shape, 50, 50)).toBe(shape);
 
-    const morphShape = createMorphShape({ commands: [], endData: [], startData: [], winding: 'nonZero' });
+    const morphShape = createMorphShape({
+      [EntityRuntimeKey]: undefined,
+      commands: [],
+      endData: [],
+      startData: [],
+      winding: 'nonZero',
+    });
     setRectangle(getNodeLocalBoundsRectangle(morphShape), 0, 0, 100, 100);
     setNodeHitTestEnabled(morphShape, true);
     expect(findGraphHitTarget(morphShape, 50, 50)).toBe(morphShape);

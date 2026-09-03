@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   FlightDocumentFields,
   FlightDocumentNode,
@@ -95,7 +96,7 @@ function refuse(
   path: string,
   tokenKey: string | null,
 ): void {
-  state.refusal ??= {
+  state.refusal ??= createEntity({
     actual: null,
     column: null,
     kind: null,
@@ -108,7 +109,7 @@ function refuse(
     resourceKey: null,
     tokenKey,
     version: null,
-  };
+  });
 }
 
 interface SceneSubstitutionResult {

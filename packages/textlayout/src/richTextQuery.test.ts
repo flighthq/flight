@@ -1,4 +1,5 @@
 import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   computeRichTextCharIndexAtPoint,
@@ -18,8 +19,10 @@ import {
 // Two-line layout: 'abc' on line 0 (indices 0-3), 'defg' on line 1 (indices 3-7).
 function createLayout(): TextLayoutResult {
   return {
+    [EntityRuntimeKey]: undefined,
     groups: [
       {
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: 3,
@@ -34,6 +37,7 @@ function createLayout(): TextLayoutResult {
         width: 30,
       },
       {
+        [EntityRuntimeKey]: undefined,
         ascent: 10,
         descent: 2,
         endIndex: 7,

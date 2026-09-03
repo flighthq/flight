@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { Bitmap, ImageResource, ImageBackend } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createWebImageBackend, resetImageBackendForTest, setImageBackend } from './imageBackend';
 import { createImageResource } from './imageResource';
@@ -35,6 +35,7 @@ describe('createImageResourceFromBitmap', () => {
     const expected = {} as ImageResource;
     const createImageFromBitmap = vi.fn((_bitmap: Readonly<Bitmap>) => expected);
     const backend: ImageBackend = {
+      [EntityRuntimeKey]: undefined,
       createImageFromBitmap,
       loadImageFromUrl: vi.fn(),
     };
@@ -47,7 +48,7 @@ describe('createImageResourceFromBitmap', () => {
 
   it('returns null for selected-backend absence without throwing or falling back to DOM', () => {
     const createElement = vi.spyOn(document, 'createElement');
-    const backend: ImageBackend = { loadImageFromUrl: vi.fn() };
+    const backend: ImageBackend = { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() };
     setImageBackend(backend);
 
     expect(() => createImageResourceFromBitmap(createTestBitmap(1, 1))).not.toThrow();

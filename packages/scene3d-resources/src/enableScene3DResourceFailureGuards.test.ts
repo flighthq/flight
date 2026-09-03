@@ -3,6 +3,7 @@ import { emitSignal } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResourceReference } from '@flighthq/types/contract';
 import {
+  EntityRuntimeKey,
   ImageResourceFailureKind,
   ImageResourceReferenceKind,
   LogLevel,
@@ -27,8 +28,14 @@ afterEach(() => {
 
 function failedRef(): ImageResourceReference {
   return {
+    [EntityRuntimeKey]: undefined,
     basePath: null,
-    failure: { kind: ImageResourceFailureKind.Error, message: 'bad image', name: 'CodecError' },
+    failure: {
+      [EntityRuntimeKey]: undefined,
+      kind: ImageResourceFailureKind.Error,
+      message: 'bad image',
+      name: 'CodecError',
+    },
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Failed,
@@ -83,6 +90,7 @@ describe('enableScene3DResourceFailureGuards', () => {
 
     emitSignal(signals.onResourceResolved, event);
     ref.failure = {
+      [EntityRuntimeKey]: undefined,
       kind: ImageResourceFailureKind.Unavailable,
       message: 'still unavailable',
       name: null,

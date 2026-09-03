@@ -1,3 +1,5 @@
+import { createDropShadowEffect } from '@flighthq/effects/contract';
+
 import {
   applyDropShadowEffectToCanvas,
   defaultCanvasDropShadowEffectRunner,
@@ -51,7 +53,7 @@ describe('applyDropShadowEffectToCanvas', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToCanvas(source, dest, { kind: 'DropShadowEffect' });
+    applyDropShadowEffectToCanvas(source, dest, createDropShadowEffect());
 
     expect(canvasEffectCompositing.drawCanvasEffectPass).toHaveBeenCalledWith(
       dest,
@@ -65,7 +67,7 @@ describe('applyDropShadowEffectToCanvas', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToCanvas(source, dest, { kind: 'DropShadowEffect', sourceMode: 'hide' });
+    applyDropShadowEffectToCanvas(source, dest, createDropShadowEffect({ sourceMode: 'hide' }));
 
     expect(canvasSourceModeCompositing.compositeCanvasSourceMode).toHaveBeenCalledWith(dest, source, 'hide');
   });
@@ -74,7 +76,7 @@ describe('applyDropShadowEffectToCanvas', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToCanvas(source, dest, { kind: 'DropShadowEffect', sourceMode: 'knockout' });
+    applyDropShadowEffectToCanvas(source, dest, createDropShadowEffect({ sourceMode: 'knockout' }));
 
     expect(canvasSourceModeCompositing.compositeCanvasSourceMode).toHaveBeenCalledWith(dest, source, 'knockout');
   });

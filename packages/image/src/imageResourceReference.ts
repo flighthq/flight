@@ -32,7 +32,7 @@ export function createEmbeddedImageResourceReference(
   mimeType: string | null = null,
   alphaType: AlphaType = 'straight',
 ): EmbeddedImageResourceReference {
-  return {
+  return createEntity({
     alphaType,
     bytes,
     failure: null,
@@ -40,7 +40,7 @@ export function createEmbeddedImageResourceReference(
     mimeType,
     state: ResourceResolutionState.Unresolved,
     textures: [],
-  };
+  });
 }
 
 // The one encoded-byte producer for image resource references. A registered decoder owns format
@@ -77,7 +77,7 @@ export function createExternalImageResourceReference(
   uri: string,
   basePath: string | null = null,
 ): ExternalImageResourceReference {
-  return {
+  return createEntity({
     basePath,
     failure: null,
     kind: ImageResourceReferenceKind.External,
@@ -85,16 +85,16 @@ export function createExternalImageResourceReference(
     state: ResourceResolutionState.Unresolved,
     textures: [],
     uri,
-  };
+  });
 }
 
 // Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
 export function createImageResourceFailure(cause: unknown): ImageResourceFailure {
   if (cause instanceof Error) {
-    return { kind: ImageResourceFailureKind.Error, message: cause.message, name: cause.name };
+    return createEntity({ kind: ImageResourceFailureKind.Error, message: cause.message, name: cause.name });
   }
-  return { kind: ImageResourceFailureKind.Error, message: String(cause), name: null };
+  return createEntity({ kind: ImageResourceFailureKind.Error, message: String(cause), name: null });
 }
 
 async function resolveImageBitmapComposition(
@@ -179,11 +179,11 @@ export async function resolveImageResourceReference(
       const decodeFailure = usesOrdinaryEmbeddedDecode
         ? explainImageDecodeFailure(ref.bytes, ref.mimeType ?? undefined)
         : null;
-      ref.failure = {
+      ref.failure = createEntity({
         kind: ImageResourceFailureKind.Unavailable,
         message: decodeFailure?.reason ?? 'Image resource unavailable',
         name: null,
-      };
+      });
       ref.state = ResourceResolutionState.Failed;
       return null;
     }

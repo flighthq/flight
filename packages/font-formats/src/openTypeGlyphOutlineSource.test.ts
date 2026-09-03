@@ -1,4 +1,4 @@
-import { PathCommand } from '@flighthq/types/contract';
+import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -44,7 +44,7 @@ function malformedUnitsPerEmFont(): Uint8Array {
 }
 
 function createPath(): Path {
-  return { commands: [], data: [], winding: 'evenOdd' };
+  return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };
 }
 
 describe('createGlyphOutlineSourceFromOpenTypeFont', () => {

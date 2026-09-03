@@ -11,6 +11,7 @@ import {
 } from './sceneResourceSignals';
 
 const ref: ImageResourceReference = {
+  [EntityRuntimeKey]: undefined,
   alphaType: 'straight',
   bytes: new Uint8Array(),
   failure: null,

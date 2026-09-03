@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
   clearLogOnceKeys,
@@ -159,7 +160,9 @@ describe('enableGlRenderEffectGuards', () => {
 
     const entries = captureLog(() => {
       beginGlRenderEffectPipeline(state, pipeline);
-      endGlRenderEffectPipeline(state, pipeline, [{ kind: 'test.pipeline-dropped-kind' } as RenderEffect]);
+      endGlRenderEffectPipeline(state, pipeline, [
+        createEntity({ kind: 'test.pipeline-dropped-kind' }) as RenderEffect,
+      ]);
     });
 
     expect(entries).toHaveLength(1);
@@ -170,7 +173,9 @@ describe('enableGlRenderEffectGuards', () => {
     // observation, and a warning that repeated per frame would be its own defect.
     const again = captureLog(() => {
       beginGlRenderEffectPipeline(state, pipeline);
-      endGlRenderEffectPipeline(state, pipeline, [{ kind: 'test.pipeline-dropped-kind' } as RenderEffect]);
+      endGlRenderEffectPipeline(state, pipeline, [
+        createEntity({ kind: 'test.pipeline-dropped-kind' }) as RenderEffect,
+      ]);
     });
 
     expect(again).toHaveLength(0);
@@ -209,7 +214,7 @@ function applyChain(state: GlRenderState, kinds: readonly string[], publishDesti
   // Realize the source so `source-unavailable` is not what is being measured here.
   writeGlRenderTextureTarget(state, source, () => {});
   if (publishDestination) writeGlRenderTextureTarget(state, dest, () => {});
-  const effects = kinds.map((kind) => ({ kind }) as unknown as Readonly<RenderEffect>);
+  const effects = kinds.map((kind) => createEntity({ kind }) as unknown as Readonly<RenderEffect>);
   return applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }
 

@@ -1,3 +1,5 @@
+import { createInnerShadowEffect } from '@flighthq/effects/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool, InnerShadowEffect } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
@@ -17,7 +19,14 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     target.canvas.id = id;
     return target;
   });
-  return { pool: { creator: canvasTestSurfaceCreator, free: [...targets].reverse(), inUse: [] }, targets };
+  return {
+    pool: createEntity({
+      creator: canvasTestSurfaceCreator,
+      free: [...targets].reverse(),
+      inUse: [],
+    }) as unknown as CanvasRenderTargetPool,
+    targets,
+  };
 }
 
 interface Draw {
@@ -49,7 +58,7 @@ function scene(): { source: CanvasRenderTarget; dest: CanvasRenderTarget } {
 }
 
 function innerShadow(over: Partial<InnerShadowEffect> = {}): InnerShadowEffect {
-  return { kind: 'InnerShadowEffect', ...over } as InnerShadowEffect;
+  return createInnerShadowEffect(over);
 }
 
 afterEach(() => {

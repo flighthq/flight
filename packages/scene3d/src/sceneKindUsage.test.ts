@@ -20,6 +20,7 @@ import { createNode3D } from './sceneNode';
 
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   return {
+    [EntityRuntimeKey]: undefined,
     alphaType: 'straight',
     bytes: new Uint8Array([1, 2, 3]),
     failure: null,

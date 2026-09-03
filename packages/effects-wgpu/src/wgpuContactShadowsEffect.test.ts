@@ -1,3 +1,4 @@
+import { createContactShadowsEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 
 import {
@@ -20,23 +21,27 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('applyContactShadowsEffectToWgpu', () => {
   it('maps the contact descriptor into the shared local-occlusion realization', () => {
-    applyContactShadowsEffectToWgpu({} as never, {} as never, {} as never, {
-      distance: 3,
-      kind: 'ContactShadowsEffect',
-      opacity: 0.75,
-      samples: 24,
-    });
+    applyContactShadowsEffectToWgpu(
+      {} as never,
+      {} as never,
+      {} as never,
+      createContactShadowsEffect({
+        distance: 3,
+        opacity: 0.75,
+        samples: 24,
+      }),
+    );
 
     expect(wgpuSsaoEffectMod.applySsaoEffectToWgpu).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       expect.anything(),
-      {
+      expect.objectContaining({
         intensity: 0.75,
         kind: 'SsaoEffect',
         radius: 3,
         samples: 24,
-      },
+      }),
     );
   });
 });

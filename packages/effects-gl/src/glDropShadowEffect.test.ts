@@ -1,3 +1,4 @@
+import { createDropShadowEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import {
@@ -45,18 +46,20 @@ describe('applyDropShadowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToGl(createState(), source, dest, createPool(), { kind: 'DropShadowEffect' });
+    applyDropShadowEffectToGl(createState(), source, dest, createPool(), createDropShadowEffect());
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
   });
 
   it('hands the packed color and the effect alpha to the tint pass without splitting either', () => {
-    applyDropShadowEffectToGl(createState(), createTarget('source'), createTarget('dest'), createPool(), {
-      alpha: 0.5,
-      color: 0x9d55ff80,
-      kind: 'DropShadowEffect',
-    });
+    applyDropShadowEffectToGl(
+      createState(),
+      createTarget('source'),
+      createTarget('dest'),
+      createPool(),
+      createDropShadowEffect({ alpha: 0.5, color: 0x9d55ff80 }),
+    );
 
     const call = vi.mocked(glEffectTintShader.applyGlEffectTintPass).mock.calls[0]!;
     expect(call[3]).toBe(0x9d55ff80);
@@ -67,10 +70,13 @@ describe('applyDropShadowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToGl(createState(), source, dest, createPool(), {
-      kind: 'DropShadowEffect',
-      sourceMode: 'hide',
-    });
+    applyDropShadowEffectToGl(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createDropShadowEffect({ sourceMode: 'hide' }),
+    );
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(glEffectBlitShader.applyGlEffectErasePass).not.toHaveBeenCalled();
@@ -80,10 +86,13 @@ describe('applyDropShadowEffectToGl', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyDropShadowEffectToGl(createState(), source, dest, createPool(), {
-      kind: 'DropShadowEffect',
-      sourceMode: 'knockout',
-    });
+    applyDropShadowEffectToGl(
+      createState(),
+      source,
+      dest,
+      createPool(),
+      createDropShadowEffect({ sourceMode: 'knockout' }),
+    );
 
     expect(glEffectBlitShader.applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(glEffectBlitShader.applyGlEffectErasePass).toHaveBeenCalledWith(expect.anything(), source, dest);

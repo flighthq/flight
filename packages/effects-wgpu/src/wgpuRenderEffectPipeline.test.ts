@@ -217,7 +217,7 @@ describe('endWgpuRenderEffectPipeline', () => {
   it('returns pooled scratch targets after running a chain', async () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuRenderEffectPipeline(state);
-    const chain = [{ kind: 'test.wgpu-pipeline-unregistered' } as RenderEffect];
+    const chain = [createEntity({ kind: 'test.wgpu-pipeline-unregistered' }) as RenderEffect];
 
     beginWgpuFrame(state);
     beginWgpuRenderEffectPipeline(state, pipeline);
@@ -234,7 +234,7 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuRenderEffectPipeline(state);
     const dropped: string[] = [];
-    const chain = [{ kind: 'test.wgpu-pipeline-skip-seam' } as RenderEffect];
+    const chain = [createEntity({ kind: 'test.wgpu-pipeline-skip-seam' }) as RenderEffect];
 
     setWgpuRenderEffectPipelineSkipGuard(state, (_state, kind) => dropped.push(kind));
     beginWgpuFrame(state);

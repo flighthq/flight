@@ -1,3 +1,4 @@
+import { createBitmapDisplacementEffect } from '@flighthq/effects/contract';
 import {
   createGlContextFromCanvasElement,
   createGlContextState,
@@ -72,7 +73,8 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 function effect(overrides: Readonly<Partial<BitmapDisplacementEffect>> = {}): BitmapDisplacementEffect {
-  return { kind: 'BitmapDisplacementEffect', map, ...overrides } as BitmapDisplacementEffect;
+  const { map: effectMap, ...rest } = overrides as Partial<BitmapDisplacementEffect>;
+  return createBitmapDisplacementEffect(effectMap !== undefined ? effectMap : map, rest);
 }
 
 function uniform1i(name: string): number {

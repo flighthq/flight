@@ -1,17 +1,17 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   BackendExplanation,
   BackendOperationExplanation,
+  EntityWithoutRuntime,
   ImageResource,
   ImageBackend,
   ImageBackendOperation,
 } from '@flighthq/types/contract';
 
-import { createEntity } from '@flighthq/entity/contract';
-
 import { createImageResourceFromCanvas, createImageResourceFromImageElement } from './imageResourceFrom';
 
 export function createWebImageBackend(): ImageBackend {
-  return createEntity({
+  return createEntity<EntityWithoutRuntime<ImageBackend>>({
     createImageFromBitmap(bitmap): ImageResource {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
@@ -138,7 +138,7 @@ export function setImageBackend(backend: ImageBackend | null): void {
   _custom = backend;
 }
 
-const _sentinel: ImageBackend = {
+const _sentinel: ImageBackend = createEntity<EntityWithoutRuntime<ImageBackend>>({
   loadImageFromUrl(
     _url: string,
     _crossOrigin?: 'anonymous' | 'use-credentials',
@@ -148,7 +148,7 @@ const _sentinel: ImageBackend = {
       new Error('No image backend installed. Call enableHostWebImage() or setImageBackend() first.'),
     );
   },
-};
+});
 
 let _custom: ImageBackend | null = null;
 let _host: ImageBackend | null = null;

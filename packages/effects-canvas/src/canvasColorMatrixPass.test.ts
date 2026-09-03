@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorMatrixPassToCanvas, applyColorMatrixToImageDataBytes } from './canvasColorMatrixPass';
@@ -12,12 +13,12 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
 } {
   const imageData = { data: new Uint8ClampedArray(pixels) };
   const written: { data: Uint8ClampedArray | null } = { data: null };
-  const source = {
+  const source = createEntity({
     context: { getImageData: () => imageData },
     height: 1,
     width: pixels.length / 4,
-  } as unknown as CanvasRenderTarget;
-  const dest = {
+  }) as unknown as CanvasRenderTarget;
+  const dest = createEntity({
     context: {
       clearRect: () => {},
       filter: 'none',
@@ -32,7 +33,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     },
     height: 1,
     width: pixels.length / 4,
-  } as unknown as CanvasRenderTarget;
+  }) as unknown as CanvasRenderTarget;
   return { dest, source, written };
 }
 

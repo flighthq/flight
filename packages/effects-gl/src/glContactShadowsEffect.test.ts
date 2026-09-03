@@ -1,3 +1,4 @@
+import { createContactShadowsEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -24,23 +25,27 @@ afterEach(() => {
 
 describe('applyContactShadowsEffectToGl', () => {
   it('maps the contact descriptor into the shared local-occlusion realization', () => {
-    applyContactShadowsEffectToGl({} as never, {} as never, {} as never, {
-      distance: 3,
-      kind: 'ContactShadowsEffect',
-      opacity: 0.75,
-      samples: 24,
-    });
+    applyContactShadowsEffectToGl(
+      {} as never,
+      {} as never,
+      {} as never,
+      createContactShadowsEffect({
+        distance: 3,
+        opacity: 0.75,
+        samples: 24,
+      }),
+    );
 
     expect(glSsaoEffect.applySsaoEffectToGl).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       expect.anything(),
-      {
+      expect.objectContaining({
         intensity: 0.75,
         kind: 'SsaoEffect',
         radius: 3,
         samples: 24,
-      },
+      }),
     );
   });
 });

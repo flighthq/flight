@@ -1,3 +1,4 @@
+import { createDisplacementEffect } from '@flighthq/effects/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -54,10 +55,7 @@ afterEach(() => {
 
 function apply(effect: Readonly<Partial<DisplacementEffect>> = {}): void {
   const target = { height: SOURCE_HEIGHT, texture: {}, width: SOURCE_WIDTH } as unknown as GlRenderTarget;
-  applyDisplacementEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
-    kind: 'DisplacementEffect',
-    ...effect,
-  } as DisplacementEffect);
+  applyDisplacementEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, createDisplacementEffect(effect));
 }
 
 function shaderSource(): string {
@@ -125,7 +123,7 @@ describe('defaultGlDisplacementEffectRunner', () => {
 
     defaultGlDisplacementEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
-      { intensity: 4, kind: 'DisplacementEffect' } as DisplacementEffect,
+      createDisplacementEffect({ intensity: 4 }),
     );
 
     expect(uniformValue('u_intensity')).toBe(4);
