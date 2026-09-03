@@ -1,8 +1,11 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ColorMatrixAdjustment } from '@flighthq/types/contract';
 
 import { COLOR_MATRIX_LENGTH } from './colorMatrixMath';
 
-export function createColorMatrixAdjustment(colorMatrix: readonly number[]): ColorMatrixAdjustment {
+export function createColorMatrixAdjustment(
+  colorMatrix: readonly number[],
+): NonEntityCreateResult<ColorMatrixAdjustment, 'descriptor'> {
   if (colorMatrix.length !== COLOR_MATRIX_LENGTH) {
     throw new Error(`Color matrix must contain ${COLOR_MATRIX_LENGTH} values.`);
   }

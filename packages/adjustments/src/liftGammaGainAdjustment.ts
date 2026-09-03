@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ColorTransformFunction, LiftGammaGainAdjustment } from '@flighthq/types/contract';
 
 // Lift/gamma/gain as a LUT-tier adjustment (gamma is the nonlinear part). Ported faithfully from the old
@@ -5,7 +6,7 @@ import type { ColorTransformFunction, LiftGammaGainAdjustment } from '@flighthq/
 // per-channel power curve. Packed-RGBA neutrals: lift 0x000000ff, gamma 0x808080ff, gain 0xffffffff.
 export function createLiftGammaGainAdjustment(
   options: Readonly<Omit<LiftGammaGainAdjustment, 'kind' | 'transform'>> = {},
-): LiftGammaGainAdjustment {
+): NonEntityCreateResult<LiftGammaGainAdjustment, 'descriptor'> {
   const lift = unpackRgb(options.lift ?? 0x000000ff);
   const gammaRaw = unpackRgb(options.gamma ?? 0x808080ff);
   const gain = unpackRgb(options.gain ?? 0xffffffff);

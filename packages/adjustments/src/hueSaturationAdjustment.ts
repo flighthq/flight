@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ColorTransformFunction, HueSaturationAdjustment } from '@flighthq/types/contract';
 
 // Hue/saturation/lightness as a LUT-tier adjustment. The transform is the exact HSL round-trip the old
@@ -5,7 +6,7 @@ import type { ColorTransformFunction, HueSaturationAdjustment } from '@flighthq/
 // convert back — ported faithfully so the look is unchanged while the op now fuses into a baked LUT.
 export function createHueSaturationAdjustment(
   options: Readonly<Omit<HueSaturationAdjustment, 'kind' | 'transform'>> = {},
-): HueSaturationAdjustment {
+): NonEntityCreateResult<HueSaturationAdjustment, 'descriptor'> {
   const hue = (options.hue ?? 0) / 360;
   const saturation = options.saturation ?? 1;
   const lightness = options.lightness ?? 0;

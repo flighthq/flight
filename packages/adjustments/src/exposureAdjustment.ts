@@ -1,3 +1,4 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type { ExposureAdjustment } from '@flighthq/types/contract';
 
 // Linear exposure as a matrix-tier adjustment: RGB is scaled by `2^exposure` (a per-channel diagonal
@@ -8,7 +9,7 @@ import type { ExposureAdjustment } from '@flighthq/types/contract';
 // Default exposure 0 is the identity.
 export function createExposureAdjustment(
   options: Readonly<Omit<ExposureAdjustment, 'kind' | 'colorMatrix'>> = {},
-): ExposureAdjustment {
+): NonEntityCreateResult<ExposureAdjustment, 'descriptor'> {
   const m = Math.pow(2, options.exposure ?? 0);
   // prettier-ignore
   const colorMatrix = [
