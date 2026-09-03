@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // Reported confidence of a sensor reading. 'unknown' when the host does not supply an accuracy level.
@@ -22,20 +23,20 @@ export interface SensorReading {
 }
 
 // Ambient illuminance in lux.
-export interface AmbientLightReading extends SensorReading {
+export interface AmbientLightReading extends Entity, SensorReading {
   illuminance: number;
 }
 
 // A three-axis vector reading in m/s² (accelerometer, linear acceleration, gravity) or microtesla
 // (magnetometer).
-export interface MotionReading extends SensorReading {
+export interface MotionReading extends Entity, SensorReading {
   x: number;
   y: number;
   z: number;
 }
 
 // Device orientation as Euler angles (alpha/beta/gamma in degrees).
-export interface OrientationReading extends SensorReading {
+export interface OrientationReading extends Entity, SensorReading {
   alpha: number;
   beta: number;
   gamma: number;
@@ -46,21 +47,21 @@ export interface OrientationReading extends SensorReading {
 }
 
 // Barometric pressure in hectopascals, with a derived altitude in meters (-1 when underivable).
-export interface PressureReading extends SensorReading {
+export interface PressureReading extends Entity, SensorReading {
   altitude: number;
   pressure: number;
 }
 
 // Proximity reading. `near` is the boolean near/far state; `distance` and `max` are in centimeters
 // and -1 when only near/far is known.
-export interface ProximityReading extends SensorReading {
+export interface ProximityReading extends Entity, SensorReading {
   distance: number;
   max: number;
   near: boolean;
 }
 
 // Orientation as a unit quaternion (w/x/y/z).
-export interface QuaternionReading extends SensorReading {
+export interface QuaternionReading extends Entity, SensorReading {
   w: number;
   x: number;
   y: number;
@@ -68,7 +69,7 @@ export interface QuaternionReading extends SensorReading {
 }
 
 // Angular velocity in deg/s around the device z/x/y axes (alpha/beta/gamma).
-export interface RotationRateReading extends SensorReading {
+export interface RotationRateReading extends Entity, SensorReading {
   alpha: number;
   beta: number;
   gamma: number;
@@ -156,7 +157,7 @@ export interface SensorsBackend {
 }
 
 // Device sensor event entity. Enable delivery with attachSensors; the signals stay inert until then.
-export interface Sensors {
+export interface Sensors extends Entity {
   onAbsoluteOrientation: Signal<(reading: Readonly<OrientationReading>) => void>;
   onAccelerometer: Signal<(reading: Readonly<MotionReading>) => void>;
   onAmbientLight: Signal<(reading: Readonly<AmbientLightReading>) => void>;
