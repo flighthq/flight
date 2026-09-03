@@ -73,9 +73,15 @@ Both create a `FontFace`, call `.load()`, add to `document.fonts`. The distincti
   tree-shakable adapter from that source to `GlyphRasterizerBackend`, while the exported seam types stay
   in `@flighthq/types`. User-directed 2026-08-01.
 
+- **[2026-09-02] `FontResource` is the only font type; `Font` is deleted.** The `Font` type in `packages/types/src/Font.ts` and its factories — `createFont`, `loadFontFromBytes`, `loadFontFromName`, `loadFontFromUrl`, `loadFontFromUrls` — are gone. `FontResource` carries the `family` field `Font` held, is Entity-backed through `createEntity`, and `FontUrl` moved from `Font.ts` to `FontResource.ts`. Every consumer already used `FontResource`; the deleted APIs had no callers anywhere in `packages/`, `examples/`, or `tools/`. Landed in `a41e64601`.
+
+  **Why:** Two types doing identical loading work is one type and a naming argument. The string-handle-versus-data-holder split the 2026-07-02 ruling described never produced two real consumer shapes — text rendering reads `family` off the resource like everything else — so the second type was cost without a caller. Pre-release, with no published consumers, the answer to a wrong abstraction is deletion rather than a compatibility layer.
+
+  **Supersedes the [2026-07-02] "Clarify dual API identity" entry above,** which is left in place because this ledger is append-only: there is no longer a dual API to clarify. It also moots the `loadFontFrom*` half of the [2026-07-02] byte-input entry — those functions no longer exist — while the `loadFontResourceFrom*` half of that ruling stands unchanged. **Resolves Open direction 1** by its option (c): drop the `Font` entity entirely.
+
 ## Open directions
 
-1. **Unify Font and FontResource?** Both do identical loading work. Options: (a) merge into one type that carries both entity identity and FontFace reference, (b) keep both as distinct consumer-facing abstractions (string handle vs data holder), (c) drop Font entity entirely (just use the family name string — do you need an entity wrapper for a string?). Needs input from the text/textlayout consumer perspective.
+1. **Unify Font and FontResource?** Both do identical loading work. Options: (a) merge into one type that carries both entity identity and FontFace reference, (b) keep both as distinct consumer-facing abstractions (string handle vs data holder), (c) drop Font entity entirely (just use the family name string — do you need an entity wrapper for a string?). Needs input from the text/textlayout consumer perspective. **Resolved — see Decision [2026-09-02]:** option (c). `Font` is deleted and `FontResource` is the sole type.
 
 2. **Breadth review for AAA completeness.** What does a complete font lifecycle package look like? Font variation support? Font fallback chains? Subset loading? Web font loading events/progress? System font enumeration?
 
