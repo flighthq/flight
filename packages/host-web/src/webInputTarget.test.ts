@@ -194,6 +194,20 @@ describe('webInputPointerLockBackend', () => {
     expect(removeEventListener).toHaveBeenCalledWith('pointerlockerror', errorListener);
   });
 
+  it('falls back to the owner document for a target rooted in a plain DocumentFragment', async () => {
+    const element = document.createElement('div');
+    document.createDocumentFragment().appendChild(element);
+    Object.defineProperty(document, 'pointerLockElement', { configurable: true, value: element });
+    Object.defineProperty(element, 'requestPointerLock', {
+      configurable: true,
+      value: () => document.dispatchEvent(new Event('pointerlockchange')),
+    });
+
+    await expect(webInputPointerLockBackend.request(createWebInputTargetHandle(element))).resolves.toEqual({
+      reason: 'ok',
+    });
+  });
+
   it('does not treat a legacy change for another target as success', async () => {
     const element = document.createElement('div');
     Object.defineProperty(document, 'pointerLockElement', { configurable: true, value: document.body });

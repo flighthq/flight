@@ -1,5 +1,5 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { RenderProxyAdapter } from '@flighthq/types/contract';
+import type { RenderProxy2D, RenderProxyAdapter } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import { createRenderProxy2D } from './renderProxy';
@@ -7,6 +7,10 @@ import { applyRenderProxyAdapter, getRenderProxyAdapter, setRenderProxyAdapter }
 import { createRenderState } from './renderState';
 
 describe('applyRenderProxyAdapter', () => {
+  it('accepts the canonical RenderProxy2D type without a redundant refinement', () => {
+    expectTypeOf(applyRenderProxyAdapter).parameter(2).toEqualTypeOf<RenderProxy2D>();
+  });
+
   it('sets traverseChildren to true when no resolver is attached', () => {
     const state = createRenderState();
     const source = createDisplayObject();

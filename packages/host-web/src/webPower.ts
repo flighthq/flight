@@ -204,7 +204,7 @@ function _getWebBatteryManagerPromise(): Promise<WebBatteryManager> | null {
 
 function _getWebWakeLock(): WebWakeLock | null {
   if (typeof navigator === 'undefined') return null;
-  return (navigator as Navigator & { wakeLock?: WebWakeLock }).wakeLock ?? null;
+  return navigator.wakeLock ?? null;
 }
 
 // A platform refusal names itself; anything else is treated as an operation failure rather than

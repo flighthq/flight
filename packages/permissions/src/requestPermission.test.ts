@@ -72,6 +72,14 @@ describe('requestPermission', () => {
     });
   });
 
+  it('reports the Wake Lock API as unavailable when the standard property is absent at runtime', async () => {
+    vi.stubGlobal('navigator', {});
+
+    await expect(requestPermission(notificationHost(null), 'screen-wake-lock')).resolves.toEqual({
+      reason: 'runtime-unavailable',
+    });
+  });
+
   it('keeps acquisition failure separate from user denial', async () => {
     vi.stubGlobal('navigator', {
       mediaDevices: {

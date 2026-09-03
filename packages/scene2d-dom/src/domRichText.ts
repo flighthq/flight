@@ -221,7 +221,7 @@ function probeCssFontAscent(font: string): number {
 
 function canvasFontAscentFallback(ctx: CanvasRenderingContext2D, font: string): number {
   ctx.font = font;
-  const metrics = ctx.measureText('H') as TextMetrics & { fontBoundingBoxAscent?: number };
+  const metrics = ctx.measureText('H');
   const sizeMatch = /(\d+(?:\.\d+)?)px/.exec(font);
   const size = sizeMatch ? parseFloat(sizeMatch[1]) : 12;
   return metrics.fontBoundingBoxAscent ?? size * 0.85;

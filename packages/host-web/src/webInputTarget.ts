@@ -208,10 +208,10 @@ function observePointerLockExit(ownerDocument: Document): {
 }
 
 function isPointerLockTarget(element: HTMLElement): boolean {
-  const root = element.getRootNode() as Node & { readonly pointerLockElement?: Element | null };
-  return (
-    ('pointerLockElement' in root ? root.pointerLockElement : element.ownerDocument.pointerLockElement) === element
-  );
+  const root = element.getRootNode();
+  const pointerLockRoot: DocumentOrShadowRoot =
+    root instanceof Document || root instanceof ShadowRoot ? root : element.ownerDocument;
+  return pointerLockRoot.pointerLockElement === element;
 }
 
 function trackWebInputTargetSubscription(cleanup: () => void): () => void {

@@ -301,7 +301,7 @@ function media(query: string): boolean {
 
 function orientation(): OrientationLike | null {
   if (typeof window === 'undefined') return null;
-  return (window.screen as Screen & { orientation?: OrientationLike }).orientation ?? null;
+  return window.screen.orientation ?? null;
 }
 
 function orientationName(): ScreenInfo['orientation'] {

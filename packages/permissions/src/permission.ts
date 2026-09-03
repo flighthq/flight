@@ -335,8 +335,7 @@ function stopMediaStreamTracksAttemptAll(stream: Readonly<MediaStream>): boolean
 
 async function requestWebScreenWakeLockPermission(): Promise<PermissionRequestOutcome> {
   if (typeof navigator === 'undefined') return { reason: 'runtime-unavailable' };
-  const wakeLock = (navigator as Navigator & { wakeLock?: { request?: (type: string) => Promise<WakeLockLike> } })
-    .wakeLock;
+  const wakeLock = navigator.wakeLock;
   if (wakeLock === undefined || typeof wakeLock.request !== 'function') return { reason: 'runtime-unavailable' };
 
   let sentinel: WakeLockLike | null = null;
