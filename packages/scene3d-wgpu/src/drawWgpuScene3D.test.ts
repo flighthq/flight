@@ -61,7 +61,8 @@ describe('drawWgpuScene3D', () => {
     drawWgpuScene3D(state, scene, makeCamera(), LIGHTS);
     drawWgpuScene3D(derived, scene, makeCamera(), LIGHTS);
 
-    expect(countMeshBuffers(fake.calls)).toBe(meshBuffersBefore + 2);
+    // 2 geometry buffers (vertex + index, shared across states) + 2 per-state instance buffers.
+    expect(countMeshBuffers(fake.calls)).toBe(meshBuffersBefore + 4);
   });
 
   it('draws each visible mesh subset with its registered material renderer', () => {

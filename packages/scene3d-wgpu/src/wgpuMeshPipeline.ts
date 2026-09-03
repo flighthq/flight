@@ -237,7 +237,10 @@ export function drawWgpuMeshSubset(
     proxy.instanceCount !== undefined &&
     proxy.instanceCount > 0;
   const instanceCount = hasInstances ? proxy.instanceCount! : 1;
-  if (hasInstances) pass.setVertexBuffer(1, ensureWgpuInstanceBuffer(state, proxy.instanceMatrices, instanceCount));
+  pass.setVertexBuffer(
+    1,
+    ensureWgpuInstanceBuffer(state, hasInstances ? proxy.instanceMatrices! : null, instanceCount),
+  );
   // Non-indexed geometry draws the vertex range directly, matching glMeshProgram's drawElements /
   // drawArrays split. The subset's indexCount/indexOffset address vertices in that case.
   if (upload.indexBuffer === null) {
@@ -1307,16 +1310,6 @@ const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
       { shaderLocation: 1, offset: 12, format: 'float32x3' },
       { shaderLocation: 2, offset: 24, format: 'float32x4' },
       { shaderLocation: 3, offset: 40, format: 'float32x2' },
-    ],
-  },
-  {
-    arrayStride: 64,
-    stepMode: 'instance',
-    attributes: [
-      { shaderLocation: 5, offset: 0, format: 'float32x4' },
-      { shaderLocation: 6, offset: 16, format: 'float32x4' },
-      { shaderLocation: 7, offset: 32, format: 'float32x4' },
-      { shaderLocation: 8, offset: 48, format: 'float32x4' },
     ],
   },
 ];
