@@ -61,6 +61,7 @@ export interface WgpuScene3DDrawEntry {
   material: object;
   mesh: object;
   renderer: object;
+  sortKey: number;
   subset: object;
   worldMatrix: object;
 }

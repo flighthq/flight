@@ -67,6 +67,8 @@ export function drawWgpuScene3D(
   const blendedDrawList = runtime.blendedDrawList;
   recycleDrawEntries(opaqueDrawList, runtime.opaquePool);
   recycleDrawEntries(blendedDrawList, runtime.blendedPool);
+  sortKeyCounter = 0;
+  sortKeyMap.clear();
 
   for (let m = 0; m < list.meshCount; m++) {
     const mesh = list.visibleMeshes[m];
@@ -99,12 +101,14 @@ export function drawWgpuScene3D(
       entry.material = resolvedMaterial;
       entry.mesh = mesh;
       entry.renderer = renderer;
+      entry.sortKey = acquireSortKey(renderer, resolvedMaterial);
       entry.subset = subsets[s];
       entry.worldMatrix = worldMatrix;
       (blended ? blendedDrawList : opaqueDrawList).push(entry);
     }
   }
 
+  if (opaqueDrawList.length > 1) opaqueDrawList.sort(compareOpaqueEntriesBySortKey);
   drawEntries(state, opaqueDrawList, camera, false);
   if (blendedDrawList.length > 0) {
     blendedDrawList.sort(compareBlendedEntriesDescending);
@@ -226,6 +230,7 @@ interface DrawEntry {
   material: Readonly<Material>;
   mesh: Mesh;
   renderer: WgpuMeshMaterialRenderer;
+  sortKey: number;
   subset: Readonly<MeshSubset>;
   worldMatrix: Readonly<Matrix4>;
 }
@@ -249,6 +254,7 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
     material: DEFAULT_MATERIAL,
     mesh: null!,
     renderer: null!,
+    sortKey: 0,
     subset: { indexCount: 0, indexOffset: 0 },
     worldMatrix: createMatrix4(),
   };
@@ -271,5 +277,26 @@ const proxy: Scene3DRenderProxy = {
 // Placeholder material for proxy.material when a subset resolved to the default-kind fallback with
 // no concrete material; the renderer treats a default/null material as its untextured defaults.
 const DEFAULT_MATERIAL = { kind: StandardMaterialKind } as Material;
+
+let sortKeyCounter = 0;
+const sortKeyMap = new Map<object, number>();
+
+function acquireSortKey(renderer: object, material: object): number {
+  let rk = sortKeyMap.get(renderer);
+  if (rk === undefined) {
+    rk = sortKeyCounter++;
+    sortKeyMap.set(renderer, rk);
+  }
+  let mk = sortKeyMap.get(material);
+  if (mk === undefined) {
+    mk = sortKeyCounter++;
+    sortKeyMap.set(material, mk);
+  }
+  return rk * 65536 + mk;
+}
+
+function compareOpaqueEntriesBySortKey(a: WgpuScene3DDrawEntry, b: WgpuScene3DDrawEntry): number {
+  return a.sortKey - b.sortKey;
+}
 
 const scratchNormalMatrix = createMatrix3() as Matrix3;
