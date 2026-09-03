@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // Bidirectional persistent-connection transport seam — the Flight home for what OpenFL/Lime expose
@@ -37,7 +38,7 @@ export interface SocketCloseInfo {
 
 // Opt-in event group, allocated lazily by enableSocketSignals and stored on the runtime. A bare
 // socket keeps these null and pays no signal allocation or dispatch cost.
-export interface SocketSignals {
+export interface SocketSignals extends Entity {
   onSocketOpen: Signal<() => void>;
   onSocketMessage: Signal<(message: Readonly<SocketMessage>) => void>;
   onSocketClose: Signal<(info: Readonly<SocketCloseInfo>) => void>;
@@ -109,7 +110,7 @@ export interface SocketRuntime {
 // Persistent-connection transport entity. `url` is the requested endpoint; all live state lives on
 // the opaque runtime. Create with createSocket, observe via enableSocketSignals, send with
 // sendSocketMessage, and tear down with closeSocket (the connection) then disposeSocket (the entity).
-export interface Socket {
+export interface Socket extends Entity {
   url: string;
   runtime: SocketRuntime;
 }

@@ -89,9 +89,9 @@ export function createTauriFileSaveDialogBackend(tauri: TauriApi): FileSaveDialo
 
 // Tauri provides message and confirmation surfaces but no native text-input prompt. Consumers can
 // therefore assemble dialog.message while leaving dialog.prompt absent.
-export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogBackend {
+export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogBackend & Entity {
   const dialog = tauri.dialog;
-  return {
+  return createEntity({
     async message(options) {
       if (options.signal?.aborted) {
         return {
@@ -113,7 +113,7 @@ export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogB
         kind: toTauriMessageKind(options.kind),
       });
     },
-  };
+  } satisfies Omit<MessageDialogBackend, typeof EntityRuntimeKey>);
 }
 
 function createNativeHandle(path: string, kind: 'File' | 'Directory') {

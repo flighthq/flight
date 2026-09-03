@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   HasSystemPlatform,
   PlatformEngine,
@@ -28,7 +29,7 @@ export function comparePlatformVersions(a: string, b: string): -1 | 0 | 1 {
 
 // Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a backend.
 export function createPlatformInfo(): PlatformInfo {
-  return {
+  return createEntity({
     arch: '',
     distro: '',
     distroVersion: '',
@@ -43,7 +44,7 @@ export function createPlatformInfo(): PlatformInfo {
     pointerWidth: -1,
     runtime: 'unknown',
     version: '',
-  };
+  });
 }
 
 // The browser rendering engine — 'blink' | 'gecko' | 'webkit' | 'unknown'. Convenience over

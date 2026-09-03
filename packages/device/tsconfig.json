@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../types" }, { "path": "../useragent" }],
+  "references": [{ "path": "../entity" }, { "path": "../types" }, { "path": "../useragent" }],
   "include": ["src"]
 }

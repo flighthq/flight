@@ -4,7 +4,8 @@
  * delay-then-interval repeat cycle, invoking `callback` on each tick, and
  * `stop` cancels it. The handle is reusable across press/release cycles.
  */
-export interface InputKeyRepeatTimer {
+export interface InputKeyRepeatTimer extends Entity {
   start(callback: () => void): void;
   stop(): void;
 }
+import type { Entity } from './Entity';

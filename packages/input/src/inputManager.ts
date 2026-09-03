@@ -1,6 +1,9 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AttachInputOptions,
+  Entity,
+  EntityRuntimeKey,
   GamepadAxisKind,
   GamepadButtonKind,
   GamepadMappingKind,
@@ -276,18 +279,18 @@ export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOption
     }, options.delay) as unknown as number;
   };
 
-  return { start, stop };
+  return createEntity({ start, stop });
 }
 
 export function createInputManager(): InputManager {
-  return {
+  return createEntity({
     ...createInputSignals(),
     enabled: true,
-  };
+  });
 }
 
 export function createInputSignals(): InputSignals {
-  return {
+  return createEntity({
     onGamepadAxisMove: createSignal(),
     onGamepadButtonDown: createSignal(),
     onGamepadButtonUp: createSignal(),
@@ -303,7 +306,7 @@ export function createInputSignals(): InputSignals {
     onTextEdit: createSignal(),
     onTextInput: createSignal(),
     onWheel: createSignal(),
-  };
+  });
 }
 
 /**
@@ -313,7 +316,7 @@ export function createInputSignals(): InputSignals {
  * logical frame to roll the edge sets.
  */
 export function createInputState(): InputState {
-  return {
+  return createEntity({
     axisValues: new Map(),
     gamepadButtonsDown: new Set(),
     justPressedGamepadButtons: new Set(),
@@ -322,12 +325,12 @@ export function createInputState(): InputState {
     justReleasedKeys: new Set(),
     keysDown: new Set(),
     pointerButtonsDown: new Map(),
-  };
+  });
 }
 
 /** Explicit browser adapter for the process-wide input-ingress seam. */
-export function createWebInputIngressBackend(): InputIngressBackend {
-  return {
+export function createWebInputIngressBackend(): InputIngressBackend & Entity {
+  return createEntity({
     attachGamepad(source, sink): () => void {
       const target = getWebInputEventTarget(source);
       if (target === null) return noopInputIngressRelease;
@@ -541,7 +544,7 @@ export function createWebInputIngressBackend(): InputIngressBackend {
       target.addEventListener('wheel', onWheel, { passive: !preventDefault });
       return () => target.removeEventListener('wheel', onWheel);
     },
-  };
+  } satisfies Omit<InputIngressBackend, typeof EntityRuntimeKey>);
 }
 
 export function detachGamepadInput(manager: InputManager, source: InputIngressSource): void {

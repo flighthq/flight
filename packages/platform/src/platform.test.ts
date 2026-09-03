@@ -71,7 +71,7 @@ describe('comparePlatformVersions', () => {
 
 describe('createPlatformInfo', () => {
   it('allocates a zeroed PlatformInfo with all new fields', () => {
-    expect(createPlatformInfo()).toEqual({
+    expect(createPlatformInfo()).toMatchObject({
       arch: '',
       distro: '',
       distroVersion: '',

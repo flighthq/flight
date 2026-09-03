@@ -19,7 +19,7 @@ export type PlatformKind = 'desktop' | 'mobile' | 'web' | 'unknown';
 // non-web-shell native host, 'unknown' off-DOM).
 export type PlatformRuntime = 'web' | 'electron' | 'tauri' | 'capacitor' | 'native' | 'unknown';
 
-export interface PlatformInfo {
+export interface PlatformInfo extends Entity {
   name: PlatformName;
   kind: PlatformKind;
   // OS version string when the host reports one, else ''. Never parsed for semantics here.
