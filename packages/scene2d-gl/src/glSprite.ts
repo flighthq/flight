@@ -44,7 +44,6 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
     v1 = 1 - v1;
   }
 
-  const instanceIndex = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,
     glTexture,
@@ -55,6 +54,7 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
     materialRenderer,
     1,
   );
+  const instanceIndex = runtime.quadBatchWriterCount;
   const data = runtime.quadBatchWriterInstanceData;
   const transform = renderProxy.transform2D;
   data[base] = transform.a;

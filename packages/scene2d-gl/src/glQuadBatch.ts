@@ -49,7 +49,6 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const perQuadColorScaleBias = data.materialData;
   const nodeColorScaleBias = quadBatch.colorScaleBias;
   const nodeColorMatrix = quadBatch.colorMatrix;
-  const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,
     glTexture,
@@ -60,6 +59,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
     materialRenderer,
     instanceCount,
   );
+  const startCount = runtime.quadBatchWriterCount;
 
   const regions = atlas.regions;
   const numRegions = regions.length;

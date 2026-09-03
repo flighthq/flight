@@ -48,7 +48,6 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const perQuadColorScaleBias = data.materialData;
   const nodeColorScaleBias = quadBatch.colorScaleBias;
   const nodeColorMatrix = quadBatch.colorMatrix;
-  const startCount = runtime.quadBatchWriterCount;
   const base = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
@@ -58,6 +57,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
     materialRenderer,
     instanceCount,
   );
+  const startCount = runtime.quadBatchWriterCount;
 
   const regions = atlas.regions;
   const numRegions = regions.length;

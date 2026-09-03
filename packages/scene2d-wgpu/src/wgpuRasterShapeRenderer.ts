@@ -89,7 +89,6 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
 
   const textureEntry = bindWgpuImageResourceTexture(state, surface.image, false, true);
   if (textureEntry === null) return;
-  const startCount = runtime.quadBatchWriterCount;
   const base = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
@@ -99,6 +98,7 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
     materialRenderer,
     1,
   );
+  const startCount = runtime.quadBatchWriterCount;
   const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;

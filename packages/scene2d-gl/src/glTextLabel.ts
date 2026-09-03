@@ -152,7 +152,6 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 
   const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
   const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
-  const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,
     texture,
@@ -163,6 +162,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
     materialRenderer,
     1,
   );
+  const startCount = runtime.quadBatchWriterCount;
   const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;

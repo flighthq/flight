@@ -82,7 +82,6 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
 
   const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
   const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
-  const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,
     texture,
@@ -93,6 +92,7 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
     materialRenderer,
     1,
   );
+  const startCount = runtime.quadBatchWriterCount;
   const d = runtime.quadBatchWriterInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;
