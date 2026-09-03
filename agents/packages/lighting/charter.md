@@ -59,11 +59,22 @@ Part of the in-scope 3D pipeline (structural fork G, decided 2026-06-24) alongsi
 - **2026-07-03 — Light-probe / SH irradiance descriptor in scope.**
 - **2026-07-03 — TS-leads, Rust conforms later.**
 
+- **[2026-09-02] Closure state of the 2026-07-03 rulings, after the descriptor deepening landed in `f2f8d7750`.** The four entries above are append-only and unchanged; this records where each now stands.
+
+  - *Shadow descriptor expansion in scope* — **CLOSED at the descriptor layer.** Flat `shadowMapSize` / `shadowNear` / `shadowFar` / `shadowStrength` fields on shadow-capable lights, plus `cascadeCount` / `cascadeSplits` on `DirectionalLight`. Render consumption and cascade math remain renderer-owned and were **not** added to `Scene3DLightBlock`.
+  - *Forward-budget selection in scope* — **CLOSED / PRESERVED.** The existing selector now excludes disabled lights and ranks using per-light decay through `getLightContributionAtBoundingSphere`.
+  - *Light-probe / SH irradiance descriptor in scope* — **REMAINS OPEN, untouched.** Probe work was not commissioned in this pass.
+  - *TS-leads, Rust conforms later* — **PRESERVED.** This pass changes the authoritative TypeScript descriptor/analysis surface only and leaves Rust conformance for the recorded later phase.
+
+  **Implementation note:** `Environment` receives `enabled` but intentionally no `intensityUnit`, preserving the charter/architecture contract that its intensity is a unitless cubemap multiplier; the six emitting descriptors receive `LightUnit`-backed `intensityUnit` with `Unitless` defaults.
+
+  **Mechanism worth knowing, since "excludes disabled lights" does not appear in the selector itself:** the exclusion is not a separate filter. `getLightContributionAtBoundingSphere` returns `0` for a disabled light, and the selector skips any candidate whose score is not `> 0`. One gate, in the analysis function, which is why a custom kind that omits `enabled` keeps the historical enabled-by-default behaviour rather than being silently dropped.
+
 ## Open directions
 
 Every candidate question from `review.md`, plus the structural forks that touch this package. These are unresolved — an agent must **ask**, not assume.
 
-1. **Shadow-config ownership and shape.** Does the richer shadow descriptor — `shadowMapSize`, `shadowNear`/`shadowFar`, `shadowStrength`, and directional CSM cascades (`cascadeCount`/`cascadeSplits`) — live as flat fields _here_, or does `SceneLightBlock`/render own the cascade math? This is the largest remaining real-time-shadow hole and is a cross-package layout decision (Silver Wave B is explicitly gated on it), not a lighting-only one.
+1. **Shadow-config ownership and shape.** Does the richer shadow descriptor — `shadowMapSize`, `shadowNear`/`shadowFar`, `shadowStrength`, and directional CSM cascades (`cascadeCount`/`cascadeSplits`) — live as flat fields _here_, or does `SceneLightBlock`/render own the cascade math? This is the largest remaining real-time-shadow hole and is a cross-package layout decision (Silver Wave B is explicitly gated on it), not a lighting-only one. **Resolved — see Decision [2026-09-02]:** both, split at the seam. The descriptor fields live here as flat fields; `Scene3DLightBlock` was not widened and the cascade math stays renderer-owned.
 
 2. **Forward-budget policy beyond contribution ranking.** `selectScene3DForwardLights` already chooses the strongest point and spot contributors against `MAX_FORWARD_LIGHTS`. Should punctual descriptors additionally carry explicit priority/layer masks, and if so should those filters precede contribution ranking here or remain caller policy?
 
