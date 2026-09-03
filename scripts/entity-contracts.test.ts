@@ -52,7 +52,7 @@ describe('checkEntityContracts', () => {
     expect(report.issues).toEqual([]);
   });
 
-  it('reports exported create candidates for classification and excludes clone functions', () => {
+  it('rejects exported create candidates and excludes clone functions', () => {
     const files = {
       'packages/example/src/contract.ts': "export { clonePlain, createPlain } from './example';",
       'packages/example/src/example.ts': [
@@ -64,9 +64,9 @@ describe('checkEntityContracts', () => {
     const report = checkFixture(files);
 
     expect(report.exportedCreateFunctions).toBe(1);
-    expect(report.issues).toEqual([]);
-    expect(report.advisories).toHaveLength(1);
-    expect(report.advisories[0]).toMatchObject({
+    expect(report.advisories).toEqual([]);
+    expect(report.issues).toHaveLength(1);
+    expect(report.issues[0]).toMatchObject({
       name: '@flighthq/example createPlain',
       returnTypes: ['Plain'],
       rule: 'exported-create-return',
@@ -89,6 +89,7 @@ describe('checkEntityContracts', () => {
 
     expect(report.exportedCreateCandidates).toEqual([]);
     expect(report.exportedCreateExclusions).toHaveLength(5);
+    expect(report.issues).toEqual([]);
     expect(Object.fromEntries(report.exportedCreateExclusions.map(({ name, reasons }) => [name, reasons]))).toEqual({
       '@flighthq/example createCanvas': ['external-native'],
       '@flighthq/example createCanvasView': ['external-native'],
@@ -114,6 +115,7 @@ describe('checkEntityContracts', () => {
 
     expect(report.exportedCreateFunctions).toBe(3);
     expect(report.exportedCreateEntityReturns).toBe(0);
+    expect(report.issues).toEqual([]);
     expect(Object.fromEntries(report.exportedCreateExclusions.map(({ name, reasons }) => [name, reasons]))).toEqual({
       '@flighthq/example createArrayEntity': ['array-or-tuple'],
       '@flighthq/example createCallableEntity': ['callable'],
@@ -139,6 +141,8 @@ describe('checkEntityContracts', () => {
       '@flighthq/example createCapabilities',
       '@flighthq/example createOutcome',
     ]);
+    expect(report.issues).toHaveLength(3);
+    expect(report.issues.every(({ rule }) => rule === 'exported-create-return')).toBe(true);
     expect(report.exportedCreateExclusions).toHaveLength(1);
     expect(report.exportedCreateExclusions[0]).toMatchObject({
       name: '@flighthq/example createReadonlyCanvas',
@@ -158,6 +162,7 @@ describe('checkEntityContracts', () => {
     expect(report.exportedCreateFunctions).toBe(0);
     expect(report.exportedCreateCandidates).toEqual([]);
     expect(report.exportedCreateExclusions).toEqual([]);
+    expect(report.issues).toEqual([]);
   });
 
   it('requires a direct public marker for repository-owned non-SDK create results', () => {
@@ -180,6 +185,11 @@ describe('checkEntityContracts', () => {
     });
     expect(report.exportedCreateCandidates).toHaveLength(1);
     expect(report.exportedCreateCandidates[0]?.name).toBe('@flighthq/example createIndirectDescriptor');
+    expect(report.issues).toHaveLength(1);
+    expect(report.issues[0]).toMatchObject({
+      name: '@flighthq/example createIndirectDescriptor',
+      rule: 'exported-create-return',
+    });
   });
 
   it('rejects unknown marker tags and wrappers around Entity roots', () => {
@@ -196,13 +206,19 @@ describe('checkEntityContracts', () => {
       ].join('\n'),
     });
 
-    expect(report.issues).toHaveLength(4);
-    expect(report.issues.every(({ rule }) => rule === 'invalid-non-entity-create-result')).toBe(true);
-    expect(report.issues.map(({ detail }) => detail)).toEqual(
+    const markerIssues = report.issues.filter(({ rule }) => rule === 'invalid-non-entity-create-result');
+    expect(markerIssues).toHaveLength(4);
+    expect(markerIssues.map(({ detail }) => detail)).toEqual(
       expect.arrayContaining([
         expect.stringContaining('cannot wrap Entity or EntityRuntime'),
         expect.stringContaining('reason must be exactly descriptor, options, or type-only'),
       ]),
+    );
+    expect(report.issues).toContainEqual(
+      expect.objectContaining({
+        name: '@flighthq/example createMixed',
+        rule: 'exported-create-return',
+      }),
     );
   });
 
@@ -225,7 +241,7 @@ describe('checkEntityContracts', () => {
     expect(remediation).toMatchObject({
       candidates: 3,
       excludedFactoryPrefixes: ['clone'],
-      mode: 'report-only',
+      mode: 'enforced',
       semanticSecondRoots: ['EntityRuntime'],
       total: 3,
     });
@@ -238,7 +254,7 @@ describe('checkEntityContracts', () => {
       '@flighthq/alpha createZulu',
     ]);
     const formatted = formatEntityContractReport(report, process.cwd());
-    expect(formatted).toContain('3 report-only exported create-return classification candidates');
+    expect(formatted).toContain('3 exported create-return contract violations');
     expect(formatted).toContain('@flighthq/alpha (2):');
     expect(formatted).toContain('@flighthq/alpha createZulu');
     expect(formatted).toContain('@flighthq/beta (1):');
@@ -357,7 +373,7 @@ describe('formatEntityContractReport', () => {
     const text = formatEntityContractReport(report, process.cwd());
 
     expect(text).toContain('1 specializations');
-    expect(text).toContain('Exported create-return candidate census: 0/0');
+    expect(text).toContain('Exported create-return contract: 0/0');
     expect(text).toContain('[redundant-optional-property]');
   });
 });
