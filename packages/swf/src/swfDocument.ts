@@ -741,6 +741,15 @@ function populateSwfTimelineNode(
       const scale9Grid = sprite === undefined ? undefined : parsed.scalingGrids.get(placement.characterId);
       const scale9 =
         scale9Grid === undefined ? null : createSwfScale9ShapeNode(sprite!, scale9Grid, parsed, targetBounds);
+      if (scale9Grid !== undefined && scale9 === null) {
+        reportImportDiagnostic(
+          state.diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'swf.scaling-grid-dropped',
+          'populateSwfTimelineNode',
+          { characterId: placement.characterId },
+        );
+      }
       const target =
         scale9 !== null
           ? scale9

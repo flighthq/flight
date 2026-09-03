@@ -37,6 +37,7 @@ import type {
   Bitmap,
   ColorScaleBiasAdjustment,
   EmbeddedAudioResourceReference,
+  ImportDiagnostic,
   TimelineAudioCue,
   MorphShape,
   MovieClip,
@@ -319,6 +320,7 @@ describe('createScene2DFromSwf', () => {
     writer.writeStraightEdge(400, 0);
     writer.writeEndShape();
 
+    const diagnostics: ImportDiagnostic[] = [];
     const document = createScene2DFromSwf(
       createSwf([
         createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
@@ -338,6 +340,7 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      diagnostics,
     );
 
     const children = getNodeChildren(document!.root);
@@ -349,9 +352,12 @@ describe('createScene2DFromSwf', () => {
     expect(target.data.scale9Grid).toMatchObject({ height: 10, width: 10, x: 5, y: 5 });
     expect(target.data.commands.filter((token) => token === 'lineTo')).toHaveLength(1);
     expect(getNodeChildren(target)).toHaveLength(0);
+    // The grid was honored, so nothing was discarded to report.
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.scaling-grid-dropped')).toHaveLength(0);
   });
 
   it('leaves a scaling grid on a sprite that is more than a wrapper as an ordinary clip', () => {
+    const diagnostics: ImportDiagnostic[] = [];
     const writer = new ShapeWriter();
     writer.writeSolidFillStyles([0x123456]);
     writer.writeLineStyleCount(0);
@@ -381,10 +387,16 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      diagnostics,
     );
 
     const target = getNodeChildren(document!.root)[0];
     expect(target.kind).toBe(MovieClipKind);
+    // The authored grid is discarded with no substitute, which is a Drop the importer must name rather
+    // than differ silently from the authored file.
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.scaling-grid-dropped')).toMatchObject([
+      { origin: 'populateSwfTimelineNode', severity: 'Drop' },
+    ]);
   });
 
   it('carries an MP3 event sound out as undecoded bytes past its seek prefix', () => {
