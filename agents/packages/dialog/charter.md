@@ -24,6 +24,8 @@ Native host dialogs — file open, file save, directory pick, and the message fa
 - **[2026-08-30] `FileDialogHandle` is Entity currency across cells.** Provider-neutral runtime operations travel with the handle; a serialized path/name DTO is deliberately not a handle and gains no runtime authority.
 - **[2026-08-30] Picker providers own no durable descriptor.** Calls settle their transient UI, and filesystem owns each writable it opens. No provider-wide destroy or handle dispose is invented.
 
+- **[2026-09-02] One-shot media choice and capture are method-tight dialog capabilities.** `dialog.imageOpen`, `dialog.photoCapture`, and `dialog.videoCapture` are independent Host slots. The web providers live in `@flighthq/host-web`; selected images and photos carry decoded pixel dimensions, selected videos carry decoded duration in seconds, and cancellation, runtime absence, reliable security denial, and operation-specific failure remain distinct.
+
 ## Open directions
 
 No open direction is recorded for the file-picker slice. Message and prompt option uniformity remains a
