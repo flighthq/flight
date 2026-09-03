@@ -1,6 +1,7 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
+import { createTextFormatRange } from '@flighthq/textlayout/contract';
 
 import {
   defaultCanvasRichTextRenderer,
@@ -51,8 +52,8 @@ describe('drawCanvasRichText', () => {
     const node = createRichText();
     node.data.text = 'redbold';
     node.data.textFormatRanges = [
-      { start: 0, end: 3, format: { color: 0xff0000ff } },
-      { start: 3, end: 7, format: { bold: true } },
+      createTextFormatRange({ color: 0xff0000ff }, 0, 3),
+      createTextFormatRange({ bold: true }, 3, 7),
     ];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
@@ -68,7 +69,7 @@ describe('drawCanvasRichText', () => {
     const node = createRichText();
     node.alpha = 0.5;
     node.data.text = 'alpha';
-    node.data.textFormatRanges = [{ start: 0, end: 5, format: { color: 0xff000080, underline: true } }];
+    node.data.textFormatRanges = [createTextFormatRange({ color: 0xff000080, underline: true }, 0, 5)];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     renderProxy.alpha = node.alpha;
     const fills: Array<{ alpha: number; style: string | CanvasGradient | CanvasPattern }> = [];

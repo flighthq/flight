@@ -3,6 +3,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
+import { createTextFormatRange } from '@flighthq/textlayout/contract';
 import type { Raster2DSurface, RendererData, RenderProxy2D, RichText } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -188,8 +189,8 @@ describe('drawGlRichText', () => {
     const node = renderProxy.source as RichText;
     node.data.text = 'BoldGreen';
     node.data.textFormatRanges = [
-      { start: 0, end: 4, format: { bold: true } },
-      { start: 4, end: 9, format: { color: 0x00ff00ff } },
+      createTextFormatRange({ bold: true }, 0, 4),
+      createTextFormatRange({ color: 0x00ff00ff }, 4, 9),
     ];
     drawGlRichText(state, renderProxy);
     expect(gl.drawElements).toHaveBeenCalled();

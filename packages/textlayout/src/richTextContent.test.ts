@@ -7,6 +7,7 @@ import {
   createRichTextContent,
   getRichTextContent,
 } from './richTextContent';
+import { createTextFormatRange } from './textFormatRange';
 
 function createData(data: Partial<RichTextData> = {}): RichTextData {
   return {
@@ -95,7 +96,7 @@ describe('computeRichTextContent', () => {
       content,
       createData({
         text: 'hello',
-        textFormatRanges: [{ start: 1, end: 4, format: { italic: true } }],
+        textFormatRanges: [createTextFormatRange({ italic: true }, 1, 4)],
       }),
     );
     expect(content.formatRanges.map((range) => [range.start, range.end, range.format.italic])).toEqual([
@@ -112,7 +113,7 @@ describe('computeRichTextContent', () => {
       createData({
         text: 'hello',
         textColor: 0x000000ff,
-        textFormatRanges: [{ start: 1, end: 4, format: { color: 0xff0000ff } }],
+        textFormatRanges: [createTextFormatRange({ color: 0xff0000ff }, 1, 4)],
       }),
     );
     expect(content.formatRanges[1].format.color).toBe(0xff0000ff);
