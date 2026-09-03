@@ -1,12 +1,11 @@
-import { createWebGlyphRasterizerBackend, enableHostWebImage } from '@flighthq/host-web/contract';
-import type { BitmapText } from '@flighthq/sdk';
+import { createWebGlyphRasterizerBackend, webImageBackend } from '@flighthq/host-web/contract';
+import type { BitmapText, HasGraphicsImage } from '@flighthq/sdk';
 import {
   addNodeChild,
   createSprite,
   createDisplayObject,
   createImageResourceFromBitmap,
   createTexture,
-  explainImageOperation,
   invalidateNodeLocalTransform,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
@@ -96,12 +95,11 @@ for (const bitmapText of bitmapTexts) refreshBitmapTextGlyphLayout(bitmapText);
 
 // Materialize the completed CPU atlas once so every backend consumes the same uploadable image.
 // The atlas remains the source of glyph metrics and regions; only its finalized pixels are adapted.
-enableHostWebImage();
-const atlasImage = createImageResourceFromBitmap(getGlyphAtlasBitmap(atlas));
+const imageHost: HasGraphicsImage = { graphics: { image: webImageBackend } } as HasGraphicsImage;
+const atlasImage = createImageResourceFromBitmap(imageHost, getGlyphAtlasBitmap(atlas));
 if (atlasImage === null) {
-  const explanation = explainImageOperation('createImageFromBitmap');
   const refusal = document.createElement('p');
-  refusal.textContent = `Bitmap atlas materialization unavailable (${explanation.layer}).`;
+  refusal.textContent = 'Bitmap atlas materialization unavailable.';
   document.body.appendChild(refusal);
 } else {
   for (const bitmapText of bitmapTexts) {

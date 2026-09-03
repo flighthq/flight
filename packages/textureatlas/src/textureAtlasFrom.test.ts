@@ -1,11 +1,7 @@
-import {
-  createImageResourceFromImageElement,
-  createWebImageBackend,
-  resetImageBackendForTest,
-  setImageBackend,
-} from '@flighthq/image/contract';
+import { createImageResourceFromCanvas, createImageResourceFromImageElement } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import type { HasGraphicsImage, ImageBackend, ImageResource } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createTextureAtlasFromCanvas,
@@ -18,15 +14,28 @@ import {
   loadTextureAtlasFromUrl,
 } from './textureAtlasFrom';
 
-// Stub img.decode() so async load functions resolve immediately in jsdom.
+function createTestImageBackend(): ImageBackend {
+  return {
+    [EntityRuntimeKey]: undefined,
+    async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
+      signal?.throwIfAborted();
+      const img = new Image();
+      if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
+      img.src = url;
+      await img.decode();
+      return createImageResourceFromImageElement(img);
+    },
+  };
+}
+
+const host: HasGraphicsImage = { graphics: { image: createTestImageBackend() } } as HasGraphicsImage;
+
 beforeEach(() => {
-  setImageBackend(createWebImageBackend());
   HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  resetImageBackendForTest();
   delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
 });
 
@@ -108,7 +117,7 @@ describe('createTextureAtlasFromImageResource', () => {
 
 describe('loadTextureAtlasFromBase64', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
-    const atlas = await loadTextureAtlasFromBase64('abc123', 'image/png');
+    const atlas = await loadTextureAtlasFromBase64(host, 'abc123', 'image/png');
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
@@ -116,7 +125,7 @@ describe('loadTextureAtlasFromBase64', () => {
 describe('loadTextureAtlasFromBlob', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const blob = new Blob([], { type: 'image/png' });
-    const atlas = await loadTextureAtlasFromBlob(blob);
+    const atlas = await loadTextureAtlasFromBlob(host, blob);
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
@@ -124,7 +133,7 @@ describe('loadTextureAtlasFromBlob', () => {
 describe('loadTextureAtlasFromBytes', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
-    const atlas = await loadTextureAtlasFromBytes(bytes);
+    const atlas = await loadTextureAtlasFromBytes(host, bytes);
 
     expect(getTextureSource(atlas.texture!)).not.toBeNull();
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
@@ -132,20 +141,20 @@ describe('loadTextureAtlasFromBytes', () => {
 
   it('starts with an empty regions array', async () => {
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
-    const atlas = await loadTextureAtlasFromBytes(bytes);
+    const atlas = await loadTextureAtlasFromBytes(host, bytes);
 
     expect(atlas.regions).toHaveLength(0);
   });
 
   it('throws when mime type cannot be detected', async () => {
     const bytes = new Uint8Array(16);
-    await expect(loadTextureAtlasFromBytes(bytes)).rejects.toThrow('Unable to determine image type');
+    await expect(loadTextureAtlasFromBytes(host, bytes)).rejects.toThrow('Unable to determine image type');
   });
 });
 
 describe('loadTextureAtlasFromUrl', () => {
   it('resolves to a TextureAtlas whose image src is an HTMLImageElement', async () => {
-    const atlas = await loadTextureAtlasFromUrl('data:image/png;base64,abc');
+    const atlas = await loadTextureAtlasFromUrl(host, 'data:image/png;base64,abc');
     expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

@@ -7,7 +7,7 @@ export {
   enableScene3DResourceFailureGuards,
   enableScene3DResourceSignals,
   explainScene3DResourceCoverage,
-  fetchWebImageResource,
+  createWebImageResourceFetch,
   getScene3DDocumentBasePathFromUrl,
   getScene3DResourceSignals,
   getScene3DResourceTextures,

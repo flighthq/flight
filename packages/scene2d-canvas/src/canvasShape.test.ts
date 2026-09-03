@@ -23,7 +23,7 @@ import {
   setMorphShapeProgress,
 } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
+import type { CanvasRenderState, HasGraphicsImage } from '@flighthq/types/contract';
 import { EntityRuntimeKey, MorphShapeKind, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -54,8 +54,11 @@ function makeShapeTarget(): { context: CanvasRenderingContext2D; state: CanvasRe
   return { context: canvas.getContext('2d') as CanvasRenderingContext2D, state: makeShapeState(canvas) };
 }
 
+const host: HasGraphicsImage = {
+  graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
+} as HasGraphicsImage;
 const resolvers = createCanvasTextureResolvers();
-registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasBitmapTextureResolver(host, resolvers);
 registerCanvasImageTextureResolver(resolvers);
 
 describe('drawCanvasShape', () => {

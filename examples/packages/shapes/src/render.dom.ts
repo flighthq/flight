@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
+import { webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   connectCanvasTextureResolverMisses,
@@ -37,7 +37,7 @@ registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 // rather than a render state, and that set is pointed at this state's diagnostics.
 const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
-registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(webGraphicsHost, shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);

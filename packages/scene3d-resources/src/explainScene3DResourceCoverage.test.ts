@@ -3,14 +3,23 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type { Material, Scene3DKindUsage, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/types/contract';
-import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import type {
+  HasGraphicsImage,
+  Material,
+  Scene3DKindUsage,
+  SceneCoverageCatalog,
+  SceneCoverageEntry,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey, RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './explainScene3DResourceCoverage';
 import { createBuiltInScene3DResourceResolver, createScene3DResourceResolver } from './sceneResourceResolver';
 import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures';
 
+const host: HasGraphicsImage = {
+  graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
+} as HasGraphicsImage;
 const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'UnlitMaterial',
@@ -46,7 +55,7 @@ function gaps(
 
 describe('explainScene3DResourceCoverage', () => {
   it('reports a bare resolver with the call that registers the material lister', () => {
-    const found = gaps(createScene3DResourceResolver(), usageOf(createUnlitMaterial()));
+    const found = gaps(createScene3DResourceResolver(host), usageOf(createUnlitMaterial()));
     expect(found).toEqual([
       {
         coverage: SceneCoverage.Unregistered,
@@ -62,7 +71,7 @@ describe('explainScene3DResourceCoverage', () => {
   it('reports a covered kind as Satisfied rather than omitting it', () => {
     // The manifest lists every requirement, so a caller can render a checklist and tell "covered" from
     // "never asked about". Omitting covered kinds would make those two indistinguishable.
-    expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createUnlitMaterial()))).toEqual([
+    expect(gaps(createBuiltInScene3DResourceResolver(host), usageOf(createUnlitMaterial()))).toEqual([
       {
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
@@ -76,7 +85,7 @@ describe('explainScene3DResourceCoverage', () => {
     // The opt-in boundary this query makes explicit: shading ships registerShadedScene3DMaterialTextures, but
     // createBuiltInScene3DResourceResolver covers only the surface-PBR families, so an AWD2 document
     // loaded through the built-in assembly has no lister for its materials.
-    expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createShadedMaterial()))).toContainEqual({
+    expect(gaps(createBuiltInScene3DResourceResolver(host), usageOf(createShadedMaterial()))).toContainEqual({
       coverage: SceneCoverage.Unregistered,
       facet: RequirementFacet.SceneMaterialKind,
       kind: 'ShadedMaterial',
@@ -87,7 +96,7 @@ describe('explainScene3DResourceCoverage', () => {
   });
 
   it('stops reporting once the named door for that family is called', () => {
-    const resolver = createBuiltInScene3DResourceResolver();
+    const resolver = createBuiltInScene3DResourceResolver(host);
     registerShadedScene3DMaterialTextures(resolver.registry);
     expect(gaps(resolver, usageOf(createShadedMaterial()))).toEqual([
       {
@@ -101,7 +110,7 @@ describe('explainScene3DResourceCoverage', () => {
 
   it('reports a family that ships no lister at all, so the omission is visible rather than inferred', () => {
     // BlinnPhongMaterial carries four texture slots and has no lister anywhere in the SDK.
-    expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createBlinnPhongMaterial()))).toContainEqual({
+    expect(gaps(createBuiltInScene3DResourceResolver(host), usageOf(createBlinnPhongMaterial()))).toContainEqual({
       coverage: SceneCoverage.Unavailable,
       facet: RequirementFacet.SceneMaterialKind,
       kind: 'BlinnPhongMaterial',
@@ -110,7 +119,7 @@ describe('explainScene3DResourceCoverage', () => {
   });
 
   it('clears out, so a repeated call does not accumulate', () => {
-    const resolver = createScene3DResourceResolver();
+    const resolver = createScene3DResourceResolver(host);
     const usage = usageOf(createUnlitMaterial());
     const out: SceneCoverageEntry[] = [];
     explainScene3DResourceCoverage(out, resolver, usage, coverageCatalog);
@@ -122,11 +131,11 @@ describe('explainScene3DResourceCoverage', () => {
 
 describe('hasScene3DResourceCoverage', () => {
   it('is false while any material kind is undescribed', () => {
-    expect(hasScene3DResourceCoverage(createScene3DResourceResolver(), usageOf(createUnlitMaterial()))).toBe(false);
+    expect(hasScene3DResourceCoverage(createScene3DResourceResolver(host), usageOf(createUnlitMaterial()))).toBe(false);
   });
 
   it('agrees with the explain tier on the same resolver, so the two can never disagree', () => {
-    const resolver = createBuiltInScene3DResourceResolver();
+    const resolver = createBuiltInScene3DResourceResolver(host);
     const usage = usageOf(createUnlitMaterial(), createShadedMaterial());
     const out: SceneCoverageEntry[] = [];
     explainScene3DResourceCoverage(out, resolver, usage, coverageCatalog);
@@ -136,7 +145,7 @@ describe('hasScene3DResourceCoverage', () => {
   it('stays true when the manifest is all Satisfied entries, which are not shortfalls', () => {
     // The invariant the manifest widening could have broken: explain now appends entries for covered
     // kinds too, and the predicate must keep counting only real gaps.
-    const resolver = createBuiltInScene3DResourceResolver();
+    const resolver = createBuiltInScene3DResourceResolver(host);
     const usage = usageOf(createUnlitMaterial());
     const out: SceneCoverageEntry[] = [];
     explainScene3DResourceCoverage(out, resolver, usage, coverageCatalog);
@@ -148,6 +157,6 @@ describe('hasScene3DResourceCoverage', () => {
   it('is true for an empty scene, which names no material kinds', () => {
     const usage = createScene3DKindUsage();
     getScene3DKindUsage(usage, createScene3D());
-    expect(hasScene3DResourceCoverage(createScene3DResourceResolver(), usage)).toBe(true);
+    expect(hasScene3DResourceCoverage(createScene3DResourceResolver(host), usage)).toBe(true);
   });
 });

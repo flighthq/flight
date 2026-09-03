@@ -1,15 +1,13 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, HasGraphicsImage, ImageResource } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { getImageBackend } from './imageBackend';
-
-// Transcodes a Bitmap's raw pixels into the selected host's drawable ImageResource representation. The
-// inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
-// conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
-export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageResource | null {
-  const backend = getImageBackend();
+export function createImageResourceFromBitmap(
+  host: Readonly<HasGraphicsImage>,
+  bitmap: Readonly<Bitmap>,
+): ImageResource | null {
+  const backend = host.graphics.image;
   if (backend.createImageFromBitmap === undefined) return null;
   return backend.createImageFromBitmap(bitmap);
 }
@@ -60,23 +58,29 @@ export function isImageUrlSameOrigin(url: string): boolean {
 }
 
 export async function loadImageResourceFromBase64(
+  host: Readonly<HasGraphicsImage>,
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
 ): Promise<ImageResource> {
-  return loadImageResourceFromUrl(`data:${mimeType};base64,${base64}`, undefined, signal);
+  return loadImageResourceFromUrl(host, `data:${mimeType};base64,${base64}`, undefined, signal);
 }
 
-export async function loadImageResourceFromBlob(blob: Blob, signal?: AbortSignal): Promise<ImageResource> {
+export async function loadImageResourceFromBlob(
+  host: Readonly<HasGraphicsImage>,
+  blob: Blob,
+  signal?: AbortSignal,
+): Promise<ImageResource> {
   const url = URL.createObjectURL(blob);
   try {
-    return await loadImageResourceFromUrl(url, undefined, signal);
+    return await loadImageResourceFromUrl(host, url, undefined, signal);
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
 export async function loadImageResourceFromBytes(
+  host: Readonly<HasGraphicsImage>,
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
@@ -86,17 +90,17 @@ export async function loadImageResourceFromBytes(
     throw new Error('Unable to determine image type from bytes');
   }
   const buf = (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-  return loadImageResourceFromBlob(new Blob([buf], { type }), signal);
+  return loadImageResourceFromBlob(host, new Blob([buf], { type }), signal);
 }
 
 export async function loadImageResourceFromUrl(
+  host: Readonly<HasGraphicsImage>,
   url: string,
   crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,
 ): Promise<ImageResource> {
-  return getImageBackend().loadImageFromUrl(url, crossOrigin, signal);
+  return host.graphics.image.loadImageFromUrl(url, crossOrigin, signal);
 }
 
-// The host-decode truth for every browser-backed source; see imageResource.ts.
 const DECODED_ALPHA_TYPE = 'straight';
 const DECODED_GAMUT = 'srgb';

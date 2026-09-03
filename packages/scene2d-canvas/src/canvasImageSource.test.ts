@@ -1,20 +1,15 @@
 import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
-import {
-  createImageResource,
-  createWebImageBackend,
-  resetImageBackendForTest,
-  setImageBackend,
-} from '@flighthq/image/contract';
+import { createImageResource, createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { TextureSource } from '@flighthq/types/contract';
+import type { HasGraphicsImage, ImageBackend, TextureSource } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { explainCanvasImageSource } from './canvasImageSource';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
+import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTestSupport';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
@@ -25,8 +20,20 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-beforeEach(() => setImageBackend(createWebImageBackend()));
-afterEach(() => resetImageBackendForTest());
+function createTestImageBackend(): ImageBackend {
+  return {
+    [EntityRuntimeKey]: undefined,
+    createImageFromBitmap(bitmap) {
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      return createImageResourceFromCanvas(canvas);
+    },
+    loadImageFromUrl: vi.fn(),
+  };
+}
+
+const host: HasGraphicsImage = { graphics: { image: createTestImageBackend() } } as HasGraphicsImage;
 
 describe('explainCanvasImageSource', () => {
   it('reports element for a host-element-backed resource', () => {
@@ -45,8 +52,8 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const stateB = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
     const texture = createTexture({ dimension: '2d', source: bitmap });
-    registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(stateA));
-    registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(stateB));
+    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(stateA));
+    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(stateB));
 
     const first = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(stateA), texture);
     expect(first).toBeInstanceOf(HTMLCanvasElement);
@@ -58,7 +65,7 @@ describe('registerCanvasBitmapTextureResolver', () => {
     const state = makeState();
     const bitmap = createBitmap(4, 4, 0xffffffff);
     const texture = createTexture({ dimension: '2d', source: bitmap });
-    registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(state));
+    registerCanvasBitmapTextureResolver(host, getCanvasRenderStateTextureResolvers(state));
     const first = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture);
     invalidateBitmap(bitmap);
     expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture)).not.toBe(first);

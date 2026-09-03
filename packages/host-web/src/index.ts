@@ -33,7 +33,7 @@ export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from '
 export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 export { webGraphicsHost } from './webGraphicsHost';
 export { webHapticsBackend } from './webHaptics';
-export { enableHostWebImage } from './webImage';
+export { createWebImageBackend, webImageBackend } from './webImage';
 export {
   createWebInputTargetHandle,
   webInputDropFileBackend,

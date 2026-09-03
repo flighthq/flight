@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
+import { webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   connectCanvasTextureResolverMisses,
@@ -40,7 +40,7 @@ registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
-registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(webGraphicsHost, shapeRasterizerResolvers);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));

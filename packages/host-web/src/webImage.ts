@@ -1,42 +1,62 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { createWebImageBackend, installImageHostBackend, observeImageHostResult } from '@flighthq/image/contract';
-import type { EntityWithoutRuntime, ImageResource, ImageBackend } from '@flighthq/types/contract';
+import { createImageResourceFromCanvas, createImageResourceFromImageElement } from '@flighthq/image/contract';
+import type { Entity, EntityWithoutRuntime, ImageBackend, ImageResource } from '@flighthq/types/contract';
 
-export function enableHostWebImage(): void {
-  if (_enabled) return;
-  _enabled = true;
-  const inner = createWebImageBackend();
-  const backend: ImageBackend = createEntity<EntityWithoutRuntime<ImageBackend>>({
+export function createWebImageBackend(): ImageBackend & Entity {
+  return createEntity<EntityWithoutRuntime<ImageBackend>>({
+    createImageFromBitmap(bitmap): ImageResource {
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
+      domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
+      canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
+      return createImageResourceFromCanvas(canvas);
+    },
     async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
-      try {
-        const result = await inner.loadImageFromUrl(url, crossOrigin, signal);
-        observeImageHostResult('loadImageFromUrl', true);
-        return result;
-      } catch (error) {
-        observeImageHostResult('loadImageFromUrl', false);
-        throw error;
+      signal?.throwIfAborted();
+      const img = new Image();
+      if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
+      img.src = url;
+      if (signal !== undefined) {
+        let rejectAbort: (reason?: unknown) => void = () => {};
+        const abortPromise = new Promise<never>((_, reject) => {
+          rejectAbort = reject;
+        });
+        const onAbort = (): void => {
+          img.src = '';
+          rejectAbort(signal.reason);
+        };
+        signal.addEventListener('abort', onAbort, { once: true });
+        try {
+          await Promise.race([img.decode(), abortPromise]);
+        } finally {
+          signal.removeEventListener('abort', onAbort);
+        }
+      } else {
+        await img.decode();
       }
+      return createImageResourceFromImageElement(img);
     },
   });
-  // Optional operations are composed structurally: an observing wrapper must not advertise a method
-  // the inner provider does not implement, because method presence is the capability signal.
-  if (inner.createImageFromBitmap !== undefined) {
-    backend.createImageFromBitmap = (bitmap) => {
-      try {
-        const result = inner.createImageFromBitmap!(bitmap);
-        observeImageHostResult('createImageFromBitmap', true);
-        return result;
-      } catch (error) {
-        observeImageHostResult('createImageFromBitmap', false);
-        throw error;
-      }
-    };
+}
+
+export const webImageBackend: ImageBackend & Entity = createWebImageBackend();
+
+function unpremultiplyRgba8(source: Readonly<Uint8ClampedArray>): Uint8ClampedArray<ArrayBuffer> {
+  const data = new Uint8ClampedArray(source);
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    if (alpha === 0) {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+      continue;
+    }
+    const scale = 255 / alpha;
+    data[i] = Math.min(255, Math.round(data[i] * scale));
+    data[i + 1] = Math.min(255, Math.round(data[i + 1] * scale));
+    data[i + 2] = Math.min(255, Math.round(data[i + 2] * scale));
   }
-  installImageHostBackend(backend);
+  return data;
 }
-
-export function resetHostWebImageForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;

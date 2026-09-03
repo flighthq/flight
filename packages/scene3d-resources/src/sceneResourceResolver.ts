@@ -5,11 +5,11 @@ import {
   disposeResourceLoader,
   startResourceLoad,
 } from '@flighthq/loader/contract';
-import type { Scene3DResourceResolverOptions } from '@flighthq/types/contract';
+import type { HasGraphicsImage, Scene3DResourceResolverOptions } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
-import { fetchWebImageResource } from './imageResourceFetch';
+import { createWebImageResourceFetch } from './imageResourceFetch';
 import {
   createScene3DMaterialTextureRegistry,
   registerExtendedPbrScene3DMaterialTextures,
@@ -20,11 +20,10 @@ import {
 // Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
 // above stays empty so importing/creating it cannot silently pull material families into a custom lane.
 export function createBuiltInScene3DResourceResolver(
+  host: Readonly<HasGraphicsImage>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolverWithRuntime {
-  const resolver = createScene3DResourceResolver(options);
-  // Named one by one rather than behind a bag: this assembly's whole contract is which material
-  // families it covers, so that list belongs in the source a caller reads, not inside a registrar.
+  const resolver = createScene3DResourceResolver(host, options);
   registerStandardPbrScene3DMaterialTextures(resolver.registry);
   registerUnlitScene3DMaterialTextures(resolver.registry);
   registerExtendedPbrScene3DMaterialTextures(resolver.registry);
@@ -32,15 +31,14 @@ export function createBuiltInScene3DResourceResolver(
 }
 
 export function createScene3DResourceResolver(
+  host: Readonly<HasGraphicsImage>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolverWithRuntime {
-  // Streaming so passes can queue after the loader has started; dedupe off since each pending texture
-  // is queued once under a unique auto-assigned key, and disabling it avoids an unbounded dedupe map.
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
   startResourceLoad(loader);
 
   return createEntity({
-    fetch: options?.fetch ?? fetchWebImageResource,
+    fetch: options?.fetch ?? createWebImageResourceFetch(host),
     registry: options?.registry ?? createScene3DMaterialTextureRegistry(),
     [Scene3DResourceResolverRuntimeKey]: {
       inFlight: new Map(),

@@ -1,11 +1,15 @@
 import * as imageContract from '@flighthq/image/contract';
-import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types/contract';
-import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
+import type { ExternalImageResourceReference, HasGraphicsImage, ImageResource } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchWebImageResource, resolveImageResourceUri } from './imageResourceFetch';
+import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
+const host: HasGraphicsImage = {
+  graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },
+} as HasGraphicsImage;
+const fetchWebImageResource = createWebImageResourceFetch(host);
 
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {
   return {
@@ -27,7 +31,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('fetchWebImageResource', () => {
+describe('createWebImageResourceFetch', () => {
   it('fetches the resolved URL and returns the decoded image', async () => {
     vi.mocked(imageContract.loadImageResourceFromUrl).mockResolvedValue(fakeImage);
     const result = await fetchWebImageResource(
@@ -35,6 +39,7 @@ describe('fetchWebImageResource', () => {
       new AbortController().signal,
     );
     expect(imageContract.loadImageResourceFromUrl).toHaveBeenCalledWith(
+      host,
       'assets/textures/leaf.png',
       undefined,
       expect.anything(),
