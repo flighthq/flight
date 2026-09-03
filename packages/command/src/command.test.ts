@@ -3,6 +3,7 @@ import type { NodeAny } from '@flighthq/types/contract';
 import {
   AddNodeChildCommandKind,
   CompositeCommandKind,
+  EntityRuntimeKey,
   RemoveNodeChildCommandKind,
   ReorderNodeChildCommandKind,
   SetNodePropertyCommandKind,
@@ -19,11 +20,12 @@ import {
 } from './command';
 
 describe('createAddNodeChildCommand', () => {
-  it('is plain data carrying its kind, and appends by default', () => {
+  it('is Entity data carrying its kind, and appends by default', () => {
     const parent = node();
     const child = node();
     const command = createAddNodeChildCommand('Add sprite', parent, child);
-    expect(command).toEqual({ child, index: -1, kind: AddNodeChildCommandKind, label: 'Add sprite', parent });
+    expect(Object.hasOwn(command, EntityRuntimeKey)).toBe(true);
+    expect(command).toMatchObject({ child, index: -1, kind: AddNodeChildCommandKind, label: 'Add sprite', parent });
   });
 
   it('records an explicit insertion index', () => {

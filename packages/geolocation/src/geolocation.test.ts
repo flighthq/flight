@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { Entity, GeolocationBackend, GeolocationErrorReason, GeoPosition } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   clearGeolocationWatch,
@@ -70,7 +71,9 @@ describe('clearGeolocationWatch', () => {
 
 describe('createGeoPosition', () => {
   it('allocates a zeroed position', () => {
-    expect(createGeoPosition()).toEqual({
+    const position = createGeoPosition();
+    expect(Object.hasOwn(position, EntityRuntimeKey)).toBe(true);
+    expect(position).toMatchObject({
       accuracy: 0,
       altitude: 0,
       altitudeAccuracy: 0,

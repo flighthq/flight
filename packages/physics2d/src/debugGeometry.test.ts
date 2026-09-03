@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { Physics2DJoint, Physics2DMouseJoint, Physics2DPulleyJoint } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
@@ -39,7 +40,14 @@ function baseJoint(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
 
 describe('createPhysics2DDebugGeometry', () => {
   it('starts with empty reusable primitive pools', () => {
-    expect(createPhysics2DDebugGeometry()).toEqual({ circleCount: 0, circles: [], lineCount: 0, lines: [] });
+    const geometry = createPhysics2DDebugGeometry();
+    expect(Object.hasOwn(geometry, EntityRuntimeKey)).toBe(true);
+    expect(geometry).toMatchObject({
+      circleCount: 0,
+      circles: [],
+      lineCount: 0,
+      lines: [],
+    });
   });
 });
 

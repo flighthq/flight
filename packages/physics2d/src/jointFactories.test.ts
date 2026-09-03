@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -14,7 +15,9 @@ import {
 
 describe('createPhysics2DDistanceJoint', () => {
   it('owns common defaults and solver scratch', () => {
-    expect(createPhysics2DDistanceJoint({ bodyA: 1, bodyB: 2, length: 3 })).toEqual({
+    const joint = createPhysics2DDistanceJoint({ bodyA: 1, bodyB: 2, length: 3 });
+    expect(Object.hasOwn(joint, EntityRuntimeKey)).toBe(true);
+    expect(joint).toMatchObject({
       kind: 'Distance',
       bodyA: 1,
       bodyB: 2,
