@@ -3,6 +3,7 @@ import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   MethodsOf,
   Node,
+  NonEntityCreateResult,
   PartialNode,
   Rectangle,
   Renderable,
@@ -35,7 +36,9 @@ export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
   return createNode2D(SpriteKind, obj, createSpriteData, createSpriteRuntime) as Sprite;
 }
 
-export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
+export function createSpriteData(
+  data?: Readonly<Partial<SpriteData>>,
+): NonEntityCreateResult<SpriteData, 'descriptor'> {
   return {
     texture: data?.texture ?? null,
   };

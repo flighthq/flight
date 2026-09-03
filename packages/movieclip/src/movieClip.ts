@@ -21,6 +21,7 @@ import type {
   MovieClipData,
   MovieClipRuntime,
   MovieClipSignals,
+  NonEntityCreateResult,
   PartialNode,
   TimelineLabel,
   TimelineSource,
@@ -38,7 +39,9 @@ export function createMovieClip(obj?: Readonly<PartialNode<MovieClip>>): MovieCl
   return createNode2D(MovieClipKind, obj, createMovieClipData, createMovieClipRuntime) as MovieClip;
 }
 
-export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): MovieClipData {
+export function createMovieClipData(
+  data?: Readonly<Partial<MovieClipData>>,
+): NonEntityCreateResult<MovieClipData, 'descriptor'> {
   return {
     timeline: data?.timeline ?? null,
   };

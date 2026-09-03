@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
   CollisionColliderShape3D,
+  NonEntityCreateResult,
   Physics3DBodyType,
   Physics3DCollider,
   Physics3DCollisionFilter,
@@ -273,7 +274,10 @@ export function createPhysics3DCollider(
 // The default sequential-impulse tuning. Eight velocity iterations and three position iterations are
 // the values a Box2D-lineage solver converges acceptably at for ordinary scenes; a scene of tall stacks
 // wants more of the first, and one with deep initial overlap more of the second.
-export function createPhysics3DSequentialImpulseConfig(): Physics3DSequentialImpulseConfig {
+export function createPhysics3DSequentialImpulseConfig(): NonEntityCreateResult<
+  Physics3DSequentialImpulseConfig,
+  'options'
+> {
   return {
     velocityIterations: 8,
     positionIterations: 3,
@@ -285,7 +289,7 @@ export function createPhysics3DSequentialImpulseConfig(): Physics3DSequentialImp
 }
 
 // The default solver tuning. `substeps` is 1, which reproduces a single discrete step per call.
-export function createPhysics3DSolverConfig(): Physics3DSolverConfig {
+export function createPhysics3DSolverConfig(): NonEntityCreateResult<Physics3DSolverConfig, 'options'> {
   return {
     allowSleeping: true,
     sleepLinearThreshold: 0.01,

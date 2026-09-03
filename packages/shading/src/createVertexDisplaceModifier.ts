@@ -1,4 +1,4 @@
-import type { Vector3Like, VertexDisplaceModifierOptions } from '@flighthq/types/contract';
+import type { NonEntityCreateResult, Vector3Like, VertexDisplaceModifierOptions } from '@flighthq/types/contract';
 import { ModifierSlot, VertexDisplaceModifierKind } from '@flighthq/types/contract';
 import type { VertexDisplaceModifier } from '@flighthq/types/contract';
 
@@ -12,7 +12,9 @@ import type { VertexDisplaceModifier } from '@flighthq/types/contract';
 // traveling wave animated by the shading tier's per-frame `time` (using `frequency` default 1, `speed`
 // default 1, `direction` default +X); `HeightMap` reads the amount from `map`'s red channel. `axis`,
 // `map`, and `direction` are plain value pairs copied by reference only when provided.
-export function createVertexDisplaceModifier(options: Readonly<VertexDisplaceModifierOptions>): VertexDisplaceModifier {
+export function createVertexDisplaceModifier(
+  options: Readonly<VertexDisplaceModifierOptions>,
+): NonEntityCreateResult<VertexDisplaceModifier, 'descriptor'> {
   const modifier: VertexDisplaceModifier = {
     kind: VertexDisplaceModifierKind,
     slot: ModifierSlot.Vertex,

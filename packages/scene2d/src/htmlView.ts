@@ -5,6 +5,7 @@ import type {
   HtmlViewRuntime,
   MethodsOf,
   Node,
+  NonEntityCreateResult,
   PartialNode,
   Rectangle,
 } from '@flighthq/types/contract';
@@ -22,7 +23,9 @@ export function createHtmlView(obj?: Readonly<PartialNode<HtmlView>>): HtmlView 
   return createNode2D(HtmlViewKind, obj, createHtmlViewData, createHtmlViewRuntime) as HtmlView;
 }
 
-export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): HtmlViewData {
+export function createHtmlViewData(
+  data?: Readonly<Partial<HtmlViewData>>,
+): NonEntityCreateResult<HtmlViewData, 'descriptor'> {
   return {
     element: data?.element ?? null,
     height: data?.height ?? 100,

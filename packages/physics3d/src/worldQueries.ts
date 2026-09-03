@@ -8,6 +8,7 @@ import type {
   CollisionBuiltInShape3D,
   CollisionRaycastHit3D,
   CollisionTimeOfImpact3D,
+  NonEntityCreateResult,
   Physics3DCollider,
   Physics3DQueryFilter,
   Physics3DQueryResult,
@@ -32,7 +33,7 @@ import { writePhysics3DColliderBounds } from './colliderTransform';
 // movement, so two runs of the same scene would otherwise disagree about which of two overlapping
 // colliders came first.
 
-export function createPhysics3DQueryFilter(): Physics3DQueryFilter {
+export function createPhysics3DQueryFilter(): NonEntityCreateResult<Physics3DQueryFilter, 'options'> {
   return {
     categoryBits: 0xffffffff,
     maskBits: 0xffffffff,

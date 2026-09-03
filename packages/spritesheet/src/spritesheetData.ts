@@ -1,10 +1,17 @@
-import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/types/contract';
+import type {
+  NonEntityCreateResult,
+  SpritesheetAnimationData,
+  SpritesheetData,
+  SpritesheetFrameData,
+} from '@flighthq/types/contract';
 
 // Canonical definitions now live in @flighthq/types (the shared header layer); re-exported here so
 // spritesheet authoring keeps a single import surface alongside the constructors below.
 export type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData };
 
-export function createSpritesheetAnimationData(obj?: Partial<SpritesheetAnimationData>): SpritesheetAnimationData {
+export function createSpritesheetAnimationData(
+  obj?: Partial<SpritesheetAnimationData>,
+): NonEntityCreateResult<SpritesheetAnimationData, 'descriptor'> {
   return {
     direction: obj?.direction ?? 'forward',
     frameDuration: obj?.frameDuration ?? 100,
@@ -17,7 +24,9 @@ export function createSpritesheetAnimationData(obj?: Partial<SpritesheetAnimatio
   };
 }
 
-export function createSpritesheetData(obj?: Partial<SpritesheetData>): SpritesheetData {
+export function createSpritesheetData(
+  obj?: Partial<SpritesheetData>,
+): NonEntityCreateResult<SpritesheetData, 'descriptor'> {
   return {
     animations: obj?.animations ?? [],
     frames: obj?.frames ?? [],
@@ -28,7 +37,9 @@ export function createSpritesheetData(obj?: Partial<SpritesheetData>): Spriteshe
   };
 }
 
-export function createSpritesheetFrameData(obj?: Partial<SpritesheetFrameData>): SpritesheetFrameData {
+export function createSpritesheetFrameData(
+  obj?: Partial<SpritesheetFrameData>,
+): NonEntityCreateResult<SpritesheetFrameData, 'descriptor'> {
   return {
     height: obj?.height ?? 0,
     name: obj?.name ?? '',
