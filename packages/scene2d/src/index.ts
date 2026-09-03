@@ -3,6 +3,7 @@ export {
   cloneSprite,
   computeSpriteLocalBoundsRectangle,
   computeHtmlViewLocalBoundsRectangle,
+  createScale9Sprite,
   createScene2DKindUsage,
   createSprite,
   createDisplayObject,

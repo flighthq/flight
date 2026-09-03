@@ -1,3 +1,4 @@
+export * from './scale9Sprite';
 export * from './sprite';
 export * from './displayContainer';
 export * from './displayObject';
