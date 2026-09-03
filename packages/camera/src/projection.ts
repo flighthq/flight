@@ -1,5 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
-import type { Matrix4Like } from '@flighthq/types/contract';
+import type { Entity, Matrix4Like } from '@flighthq/types/contract';
 import type {
   OrthographicProjection,
   OrthographicProjectionOptions,
@@ -11,22 +12,26 @@ import type {
 // Builds an orthographic projection descriptor from explicit view-volume half-extents (in
 // view-space units). The full visible width is 2*halfWidth and height 2*halfHeight; the
 // clip-plane distances live on the owning Camera3D, not the projection.
-export function createOrthographicProjection(opts: Readonly<OrthographicProjectionOptions>): OrthographicProjection {
-  return {
+export function createOrthographicProjection(
+  opts: Readonly<OrthographicProjectionOptions>,
+): OrthographicProjection & Entity {
+  return createEntity({
     halfHeight: opts.halfHeight,
     halfWidth: opts.halfWidth,
     kind: 'orthographic',
-  };
+  });
 }
 
 // Builds a perspective projection descriptor from a vertical field of view (radians) and a
 // viewport aspect ratio (width / height). The clip-plane distances live on the owning Camera3D.
-export function createPerspectiveProjection(opts: Readonly<PerspectiveProjectionOptions>): PerspectiveProjection {
-  return {
+export function createPerspectiveProjection(
+  opts: Readonly<PerspectiveProjectionOptions>,
+): PerspectiveProjection & Entity {
+  return createEntity({
     aspect: opts.aspect ?? 1,
     fovY: opts.fovY,
     kind: 'perspective',
-  };
+  });
 }
 
 // Returns the larger world-space footprint of one texel across an orthographic projection. Using the

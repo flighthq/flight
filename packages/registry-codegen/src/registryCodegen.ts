@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { findRegistryCatalogEntries } from '@flighthq/registry-catalog/contract';
 import type {
+  Entity,
   RegistryCatalog,
   RegistryCatalogEntry,
   RegistryCodegenPlan,
@@ -13,7 +15,7 @@ export function createRegistryCodegenPlan(
   catalog: Readonly<RegistryCatalog>,
   requirements: Readonly<RequirementSet>,
   backend: string,
-): RegistryCodegenPlan {
+): RegistryCodegenPlan & Entity {
   const entries: RegistryCatalogEntry[] = [];
   const unresolved: Requirement[] = [];
   const seen = new Set<string>();
@@ -31,7 +33,7 @@ export function createRegistryCodegenPlan(
     }
   }
 
-  return { backend, entries, unresolved };
+  return createEntity({ backend, entries, unresolved });
 }
 
 function requirementIdentity(requirement: Readonly<Requirement>): string {

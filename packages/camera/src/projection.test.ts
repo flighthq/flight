@@ -1,4 +1,5 @@
 import { createMatrix4, createPerspectiveMatrix4, setOrthographicMatrix4 } from '@flighthq/geometry/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { OrthographicProjection, PerspectiveProjection } from '@flighthq/types/contract';
 
 import {
@@ -13,6 +14,7 @@ import {
 describe('createOrthographicProjection', () => {
   it('builds an orthographic descriptor from half-extents', () => {
     const projection = createOrthographicProjection({ halfHeight: 3, halfWidth: 4 });
+    expect(EntityRuntimeKey in projection).toBe(true);
     expect(projection.kind).toBe('orthographic');
     expect(projection.halfWidth).toBe(4);
     expect(projection.halfHeight).toBe(3);
@@ -22,6 +24,7 @@ describe('createOrthographicProjection', () => {
 describe('createPerspectiveProjection', () => {
   it('builds a perspective descriptor from fovY and aspect', () => {
     const projection = createPerspectiveProjection({ aspect: 1.5, fovY: Math.PI / 3 });
+    expect(EntityRuntimeKey in projection).toBe(true);
     expect(projection.kind).toBe('perspective');
     expect(projection.fovY).toBeCloseTo(Math.PI / 3);
     expect(projection.aspect).toBe(1.5);

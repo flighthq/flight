@@ -26,6 +26,7 @@ import type {
   FlightDocumentScene3D,
   FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
+  Entity,
   NodeAny,
   Node3D,
   Scene3D,
@@ -68,13 +69,13 @@ export function createFlightDocumentFromScene3D(
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   interactiveStateBindings: readonly Readonly<FlightDocumentInteractiveStateBinding<Node3D>>[] = [],
   layoutBindings: readonly Readonly<FlightDocumentLayoutBinding<Node3D>>[] = [],
-): FlightDocumentScene3D {
+): FlightDocumentScene3D & Entity {
   const bindingLookup = createInteractiveStateBindingLookup(interactiveStateBindings);
   const usedBindings = new Set<Readonly<NodeAny>>();
   const writtenNodes = new Map<Readonly<NodeAny>, FlightDocumentNode>();
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
-  return {
+  return createEntity({
     cameras: cameras.map((c) => ({ ...c })),
     kind: 'Scene3D',
     layouts: writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes),
@@ -82,7 +83,7 @@ export function createFlightDocumentFromScene3D(
     scene,
     // Same as the 2D writer: substitution is one-way, so a written entry declares no tokens.
     tokens: [],
-  };
+  });
 }
 
 export function createFlightDocumentScene3DMaterialization(

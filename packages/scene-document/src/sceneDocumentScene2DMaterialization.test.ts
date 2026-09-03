@@ -2,7 +2,13 @@ import { addNodeChild, getNodeChildren, getNodeRuntime } from '@flighthq/node/co
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { createDisplayObject, createScene2D, createSprite } from '@flighthq/scene2d/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
-import { DisplayObjectKind, FlightDocumentRefusalReason, Node3DKind, SpriteKind } from '@flighthq/types/contract';
+import {
+  DisplayObjectKind,
+  EntityRuntimeKey,
+  FlightDocumentRefusalReason,
+  Node3DKind,
+  SpriteKind,
+} from '@flighthq/types/contract';
 import type {
   FlightDocument,
   FlightDocumentFields,
@@ -31,6 +37,7 @@ describe('createFlightDocumentFromScene2D', () => {
   it('creates a model from an empty Scene2D', () => {
     const scene = createScene2D();
     const document = createFlightDocumentFromScene2D(scene, createTestSchemas());
+    expect(EntityRuntimeKey in document).toBe(true);
     expect(document.kind).toBe('Scene2D');
     expect(document.scene.children).toHaveLength(0);
   });
