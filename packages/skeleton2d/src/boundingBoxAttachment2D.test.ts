@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DBoundingBoxAttachmentVertices } from './boundingBoxAttachment2D';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { createSkin2D } from './skin2D';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {
@@ -44,10 +45,10 @@ describe('computeSkeleton2DBoundingBoxAttachmentVertices', () => {
   it('blends a weighted point across bones, so a hit box bends with the limb it covers', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const skin: Skin2D = {
-      influenceCounts: new Uint16Array([1, 2]),
-      influences: new Float32Array([0, 0, 0, 1, 0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-    };
+    const skin: Skin2D = createSkin2D(
+      new Uint16Array([1, 2]),
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 0.5, 1, 0, 0, 0.5]),
+    );
     const out = new Float32Array(4);
 
     computeSkeleton2DBoundingBoxAttachmentVertices(out, box(skin, null, 2), skeleton, 0);

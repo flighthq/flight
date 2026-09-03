@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
 import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
+import { createSkin2D } from './skin2D';
 import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
@@ -23,10 +24,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   };
 }
 
-const twoBoneSkin: Skin2D = {
-  influenceCounts: new Uint16Array([2]),
-  influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-};
+const twoBoneSkin: Skin2D = createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]));
 
 describe('skinSkeleton2DAttachmentPoints', () => {
   // A slot whose bone name did not resolve carries boneIndex -1 — the value spineParse emits by design for
@@ -93,7 +91,7 @@ describe('skinSkeleton2DAttachmentPoints', () => {
   it('adds a weighted deform in BONE-LOCAL space, before the weighted sum', () => {
     const skeleton = createSkeleton2D([makeBone({ rotation: 90 })]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const skin: Skin2D = { influenceCounts: new Uint16Array([1]), influences: new Float32Array([0, 1, 0, 1]) };
+    const skin: Skin2D = createSkin2D(new Uint16Array([1]), new Float32Array([0, 1, 0, 1]));
     const out = new Float32Array(2);
 
     skinSkeleton2DAttachmentPoints(out, skin, null, skeleton, 0, new Float32Array([0, 2]), 'test');

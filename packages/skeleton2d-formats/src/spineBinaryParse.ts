@@ -5,6 +5,7 @@ import {
   createSkeleton2D,
   createSkeleton2DBoneAnimationTarget,
   createSkeleton2DSlotAnimationTarget,
+  createSkin2D,
 } from '@flighthq/skeleton2d/contract';
 import type {
   Skeleton2DDrawOrderTimeline,
@@ -1072,7 +1073,7 @@ function readSpineBinaryVertices(
       );
     }
   }
-  return { skin: { influenceCounts, influences: Float32Array.from(influences) }, vertices: null };
+  return { skin: createSkin2D(influenceCounts, Float32Array.from(influences)), vertices: null };
 }
 
 // Consumes a vertex stream whose geometry is not kept (an unmodeled attachment type still occupies bytes).

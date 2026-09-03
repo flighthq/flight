@@ -5,6 +5,7 @@ import {
   createSkeleton2D,
   createSkeleton2DBoneAnimationTarget,
   createSkeleton2DSlotAnimationTarget,
+  createSkin2D,
 } from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
@@ -827,7 +828,7 @@ function parseDragonBonesWeightedMesh(
   return {
     kind: MeshAttachment2DKind,
     name: typeof display.name === 'string' ? display.name : null,
-    skin: { influenceCounts, influences: Float32Array.from(influences) },
+    skin: createSkin2D(influenceCounts, Float32Array.from(influences)),
     triangles: toUint16Array(display.triangles),
     uvs,
     vertexCount,

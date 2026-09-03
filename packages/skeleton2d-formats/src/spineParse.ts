@@ -5,6 +5,7 @@ import {
   createSkeleton2D,
   createSkeleton2DBoneAnimationTarget,
   createSkeleton2DSlotAnimationTarget,
+  createSkin2D,
 } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
@@ -363,7 +364,7 @@ function parseSpineWeightedVertices(
       { vertices: 1 },
     );
   }
-  return { influenceCounts, influences: Float32Array.from(influences) };
+  return createSkin2D(influenceCounts, Float32Array.from(influences));
 }
 
 function toFloat32Array(value: unknown): Float32Array {
