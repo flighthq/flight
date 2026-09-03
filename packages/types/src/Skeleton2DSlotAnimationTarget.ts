@@ -1,4 +1,5 @@
 import type { Attachment2D } from './Attachment2D';
+import type { Entity } from './Entity';
 import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind';
 
 // Which part of a `Slot2D`'s appearance an AnimationChannel drives — the slot-side counterpart of
@@ -45,7 +46,7 @@ export type Skeleton2DSlotAnimationPath =
 // change do not compose: wearing a different `AttachmentSkin2D` will not re-point a swap channel's entries.
 // A rig that both swaps skins and animates attachments needs the table re-resolved for the worn skin, which
 // is a named deferral rather than an oversight.
-export interface Skeleton2DSlotAnimationTarget {
+export interface Skeleton2DSlotAnimationTarget extends Entity {
   attachments?: readonly (Attachment2D | null)[] | null;
   kind: Skeleton2DAnimationTargetKind;
   path: Skeleton2DSlotAnimationPath;

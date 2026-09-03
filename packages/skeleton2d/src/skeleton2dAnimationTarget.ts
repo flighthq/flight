@@ -1,4 +1,5 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createKeyedTable,
   getRegistryTableEntry,
@@ -33,7 +34,7 @@ export function createSkeleton2DBoneAnimationTarget(
   boneIndex: number,
   path: Skeleton2DAnimationPath,
 ): Skeleton2DAnimationTarget {
-  return { boneIndex, kind: TargetKind.Bone, path };
+  return createEntity({ boneIndex, kind: TargetKind.Bone, path });
 }
 
 // The binding target for a slot appearance channel. `attachments` is the lookup table an Attachment
@@ -43,7 +44,7 @@ export function createSkeleton2DSlotAnimationTarget(
   path: Skeleton2DSlotAnimationPath,
   attachments: readonly (Attachment2D | null)[] | null = null,
 ): Skeleton2DSlotAnimationTarget {
-  return { attachments, kind: TargetKind.Slot, path, slotIndex };
+  return createEntity({ attachments, kind: TargetKind.Slot, path, slotIndex });
 }
 
 /**

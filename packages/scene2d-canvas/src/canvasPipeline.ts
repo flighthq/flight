@@ -10,11 +10,11 @@ export function createCanvasPipeline(registries: Readonly<CanvasRenderRegistries
 }
 
 export function createEmptyCanvasRegistries(): CanvasRenderRegistries {
-  return {
+  return createEntity({
     renderEffects: createKeyedTable('CanvasRenderEffect', 'Unregistered'),
     renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
     strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
-  };
+  });
 }
 
 export function getCanvasPipelineRegistries(pipeline: Readonly<CanvasPipeline>): Readonly<CanvasRenderRegistries> {
