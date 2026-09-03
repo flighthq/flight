@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { ContactShadowsEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
@@ -5,7 +6,7 @@ import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 export function createContactShadowsEffect(
   options: Readonly<Omit<ContactShadowsEffect, 'kind'>> = {},
 ): ContactShadowsEffect {
-  return { kind: 'ContactShadowsEffect', ...options };
+  return createEntity({ kind: 'ContactShadowsEffect', ...options });
 }
 
 // Contact shadows are a screen-space depth treatment and do not expand a node-local silhouette.

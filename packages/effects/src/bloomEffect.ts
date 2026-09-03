@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { BloomEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
@@ -19,7 +20,7 @@ export function computeBloomThreshold(effect: Readonly<BloomEffect>): number {
 }
 
 export function createBloomEffect(options: Readonly<Omit<BloomEffect, 'kind'>> = {}): BloomEffect {
-  return { kind: 'BloomEffect', ...options };
+  return createEntity({ kind: 'BloomEffect', ...options });
 }
 
 export function getBloomEffectPadding(effect: Readonly<BloomEffect>): RenderEffectPadding {

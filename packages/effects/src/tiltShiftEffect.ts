@@ -1,9 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { RenderEffect, RenderEffectPadding, RenderState, TiltShiftEffect } from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createTiltShiftEffect(options: Readonly<Omit<TiltShiftEffect, 'kind'>> = {}): TiltShiftEffect {
-  return { kind: 'TiltShiftEffect', ...options };
+  return createEntity({ kind: 'TiltShiftEffect', ...options });
 }
 
 export function getTiltShiftEffectPadding(effect: Readonly<TiltShiftEffect>): RenderEffectPadding {

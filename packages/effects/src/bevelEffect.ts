@@ -1,10 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { BevelEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { getDirectionalRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then applies sourceMode compositing.
 export function createBevelEffect(options: Readonly<Omit<BevelEffect, 'kind'>> = {}): BevelEffect {
-  return { kind: 'BevelEffect', ...options };
+  return createEntity({ kind: 'BevelEffect', ...options });
 }
 
 export function getBevelEffectPadding(effect: Readonly<BevelEffect>): RenderEffectPadding {

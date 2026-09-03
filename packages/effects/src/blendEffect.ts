@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { AdvancedBlendMode, BlendEffect } from '@flighthq/types/contract';
 
 // Advanced-blend composite effect: blends the incoming pipeline layer over a registered backdrop using
@@ -11,5 +12,5 @@ export function createBlendEffect(
   mode: AdvancedBlendMode,
   options: Readonly<Omit<BlendEffect, 'kind' | 'mode'>> = {},
 ): BlendEffect {
-  return { kind: 'BlendEffect', mode, ...options };
+  return createEntity({ kind: 'BlendEffect', mode, ...options });
 }

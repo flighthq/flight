@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CompositeEffect, CompositeOperator } from '@flighthq/types/contract';
 
 // Porter-Duff composite effect: merges the incoming pipeline layer over a registered backdrop with a
@@ -10,5 +11,5 @@ export function createCompositeEffect(
   operator: CompositeOperator,
   options: Readonly<Omit<CompositeEffect, 'kind' | 'operator'>> = {},
 ): CompositeEffect {
-  return { kind: 'CompositeEffect', operator, ...options };
+  return createEntity({ kind: 'CompositeEffect', operator, ...options });
 }

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { DirectionalBlurEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
@@ -5,7 +6,7 @@ import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 export function createDirectionalBlurEffect(
   options: Readonly<Omit<DirectionalBlurEffect, 'kind'>> = {},
 ): DirectionalBlurEffect {
-  return { kind: 'DirectionalBlurEffect', ...options };
+  return createEntity({ kind: 'DirectionalBlurEffect', ...options });
 }
 
 export function getDirectionalBlurEffectPadding(effect: Readonly<DirectionalBlurEffect>): RenderEffectPadding {

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { BokehDepthOfFieldEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
@@ -5,7 +6,7 @@ import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 export function createBokehDepthOfFieldEffect(
   options: Readonly<Omit<BokehDepthOfFieldEffect, 'kind'>> = {},
 ): BokehDepthOfFieldEffect {
-  return { kind: 'BokehDepthOfFieldEffect', ...options };
+  return createEntity({ kind: 'BokehDepthOfFieldEffect', ...options });
 }
 
 export function getBokehDepthOfFieldEffectPadding(effect: Readonly<BokehDepthOfFieldEffect>): RenderEffectPadding {
