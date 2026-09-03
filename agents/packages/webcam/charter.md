@@ -22,7 +22,10 @@ Device camera media capture -- take a photo, record a video, and pick an existin
 - **[2026-07-02] Package is unfinished, not blocked.** Types define 13 files but source implementation is minimal. This is incomplete work to be built out, not a design problem.
 - **[2026-07-02] Fix `null as any` cast.** `WebcamStreamRuntime.mediaStream` is typed non-nullable but initialized as `null as any`. Fix by making the field nullable (`MediaStream | null`, initialized to `null`) or by deferring initialization to a factory that supplies the real value.
 
+- **[2026-09-02] One-shot media capture is absorbed into dialog.** The former ambient `MediaFileCapture` seam, setter, installer, sentinel, and web compatibility enabler are removed. `@flighthq/webcam` is reserved for future explicit-host live device streaming, device enumeration, and stream lifecycle.
+
 ## Open directions
 
-- Scope of the full capture API: photo, video recording, photo-library picker, device enumeration, torch/flash control.
-- Whether stream lifecycle (start/stop/pause) warrants its own event entity or stays as plain callbacks.
+The 2026-07-02 direction to scope one-shot photo capture, video recording, and photo-library picking is closed by the dialog absorption decision above.
+
+- Live device streaming remains unimplemented: define device enumeration and start, stop, and pause lifecycle before this package gains exports.

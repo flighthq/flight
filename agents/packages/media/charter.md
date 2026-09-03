@@ -52,6 +52,18 @@ status: ./status.md
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
 
+- **2026-09-02 — Channel mute is a separate axis from gain.** `AudioChannel.muted` and `VideoChannel.muted` silence output without disturbing `gain`, so unmuting restores the level the caller set and a gain change made while muted takes effect on unmute. Mute is not a pause: a muted channel keeps playing and keeps advancing its time.
+- **2026-09-02 — A loop region bounds each pass; `loops` still counts them.** `loopStart`/`loopEnd` (milliseconds, `loopEnd` of 0 meaning no region) cut each playback pass via a `duration` on `AudioDeviceBackend.startSource`. The node's own `loop` flag is deliberately NOT used: it never ends, and this package counts loops by restarting on `ended`, so the flag would turn every counted loop into an endless one.
+- **2026-09-02 — `MediaChannelSignals` is opt-in per channel and split by producibility.** The playback-lifecycle half — complete, loop, pause, play, stop — is produced by the channel's own state machine through `enableAudioChannelSignals`/`enableVideoChannelSignals`. The readiness half — buffering, error, ready, seeked — remains declared and unproduced, because it describes transport state only a backend or DOM element can report and the audio side has no such seam.
+
+- **[2026-09-02] Closure state of the review's gap list, after the Silver-tier channel controls landed.**
+
+  - *`stopAllAudioMixerChannels` does not stop the underlying audio sources* — **CLOSED.** It delegates to `stopAudioChannel`, matching `pauseAllAudioMixerChannels` and `destroyAudioMixer`.
+  - *No channel mute* — **CLOSED** for both audio and video.
+  - *No audio loop region* — **CLOSED.**
+  - *No `MediaChannelSignals` implementation* — **PARTIALLY CLOSED.** Five lifecycle signals are produced; the four readiness signals await a backend/DOM seam and are the remaining work.
+  - The prior *fix correctness holes immediately* decision is now fully satisfied; the last named hole, `stopAllAudioMixerChannels`, is fixed.
+
 ## Open directions
 
 1. **Should media exist?** If audio playback → audio, video playback → video, and mixer → audio-mixer, media dissolves. If there's a genuine cross-cutting coordination layer (AudioContext lifecycle, synchronized A/V, media session API), media has a reason to live. This is the central question and blocks where the lost work goes.
