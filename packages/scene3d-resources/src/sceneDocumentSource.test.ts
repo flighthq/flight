@@ -6,7 +6,7 @@ import type {
   Scene3DDocument,
   Scene3DDocumentLoadProgress,
 } from '@flighthq/types/contract';
-import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -16,8 +16,8 @@ import {
   setScene3DDocumentResourceBasePathFromUrl,
 } from './sceneDocumentSource';
 
-function fakeNetHost(backend: NetBackend): HasNetHttp {
-  return { net: { http: backend } };
+function fakeNetHost(backend: Omit<NetBackend, typeof EntityRuntimeKey>): HasNetHttp {
+  return { net: { http: { ...backend, [EntityRuntimeKey]: undefined } } };
 }
 
 function okResponse(body: string | ArrayBuffer): NetResponse {

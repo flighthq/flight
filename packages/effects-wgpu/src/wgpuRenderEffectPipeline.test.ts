@@ -1,5 +1,6 @@
 import { beginWgpuFrame, createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { RenderEffect } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   beginWgpuRenderEffectPipeline,
@@ -256,7 +257,7 @@ describe('setWgpuRenderEffectVelocityTexture', () => {
     const pipeline = {
       options: {},
       sceneTarget: null,
-      pool: { free: [] },
+      pool: { [EntityRuntimeKey]: undefined, free: [] },
       lutCache: { signature: null, lut: null },
       lutTexture: { texture: null, size: 0, lut: null },
       velocityTexture: null,

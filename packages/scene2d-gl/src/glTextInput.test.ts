@@ -3,6 +3,7 @@ import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from 
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { Raster2DSurface, RenderProxy2D, RichText } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createGlRichTextData, drawGlRichText } from './glRichText';
 import { createGlState } from './glTestHelper';
@@ -25,6 +26,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   canvas.width = width;
   canvas.height = height;
   return {
+    [EntityRuntimeKey]: undefined,
     get width() {
       return canvas.width;
     },
@@ -44,6 +46,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
 
 beforeEach(() => {
   setRaster2DSurfaceProvider({
+    [EntityRuntimeKey]: undefined,
     createRaster2DSurface: createTestRaster2DSurface,
     destroyRaster2DSurface() {},
   });

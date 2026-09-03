@@ -7,6 +7,7 @@ import type {
   NetResponse,
   Scene3DDocument,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } from './gltfLoad';
@@ -28,7 +29,12 @@ function emptyDocument(): Scene3DDocument {
 
 function fakeHost(): HasNetHttp {
   const host: HasNetHttp = {
-    net: { http: { sendNetRequest: (request, options) => netContract.sendNetRequest(host, request, options) } },
+    net: {
+      http: {
+        [EntityRuntimeKey]: undefined,
+        sendNetRequest: (request, options) => netContract.sendNetRequest(host, request, options),
+      },
+    },
   };
   return host;
 }

@@ -13,7 +13,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, PathCommand } from '@flighthq/types/contract';
+import { BatchFormat, EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
@@ -34,12 +34,14 @@ beforeEach(() => {
 
 beforeEach(() => {
   setRaster2DSurfaceProvider({
+    [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width, height) {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const context = canvas.getContext('2d')!;
       return {
+        [EntityRuntimeKey]: undefined,
         get width() {
           return canvas.width;
         },
