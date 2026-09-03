@@ -77,6 +77,11 @@ describe('compileGlBitmapProgram', () => {
 });
 
 describe('createDefaultGlBitmapShader', () => {
+  it('returns an Entity-backed shader', () => {
+    const shader = createDefaultGlBitmapShader(makeShaderLoc(), new Float32Array(9));
+    expect(EntityRuntimeKey in shader).toBe(true);
+  });
+
   it('returns a shader with the provided program', () => {
     const loc = makeShaderLoc();
     const m = new Float32Array(9);
@@ -125,6 +130,11 @@ describe('createDefaultGlBitmapShader', () => {
 });
 
 describe('createGlBitmapShader', () => {
+  it('returns an Entity-backed shader', () => {
+    const shader = createGlBitmapShader(makeGL(), '#version 300 es\nvoid main() {}');
+    expect(EntityRuntimeKey in shader).toBe(true);
+  });
+
   it('returns a shader compiled from the fragment source', () => {
     const gl = makeGL();
     const shader = createGlBitmapShader(gl, '#version 300 es\nvoid main() {}');

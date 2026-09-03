@@ -549,11 +549,11 @@ describe('destroyGlRenderState', () => {
     const owner = createTestGlRenderState(gl);
     const owned = ensureDefaultGlBitmapShader(owner);
     const callerProgram = { callerOwned: true } as unknown as WebGLProgram;
-    const shader = {
+    const shader = createEntity({
       bind: vi.fn(),
       locations: { ...owned.locations, program: callerProgram },
       program: callerProgram,
-    };
+    });
     const deleteProgram = vi.spyOn(gl, 'deleteProgram');
     useGlProgram(owner, shader);
 

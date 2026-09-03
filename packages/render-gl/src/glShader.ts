@@ -1,5 +1,6 @@
-﻿import type { GlContext, GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
+﻿import { createEntity } from '@flighthq/entity/contract';
 import type { GlBitmapShader, GlShaderLocations } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
 
 import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -51,7 +52,7 @@ export function compileGlBitmapProgram(gl: GlContext, fragmentSrc: string = FRAG
 }
 
 export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrixArray: Float32Array): GlBitmapShader {
-  return {
+  return createEntity({
     locations: shaderLoc,
     program: shaderLoc.program,
     bind(gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -67,7 +68,7 @@ export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrix
       );
       setGlBaseUniforms(gl, shaderLoc, renderProxy);
     },
-  };
+  });
 }
 
 /**
@@ -83,7 +84,7 @@ export function createGlBitmapShader(
   onBind?: (gl: GlContext, locations: GlShaderLocations, renderProxy: RenderProxy2D) => void,
 ): GlBitmapShader {
   const locations = compileGlBitmapProgram(gl, fragmentSrc);
-  return {
+  return createEntity({
     locations,
     program: locations.program,
     bind(gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -100,7 +101,7 @@ export function createGlBitmapShader(
       setGlBaseUniforms(gl, locations, renderProxy);
       onBind?.(gl, locations, renderProxy);
     },
-  };
+  });
 }
 
 export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShader {

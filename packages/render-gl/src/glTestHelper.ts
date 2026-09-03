@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -51,7 +52,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     currentScissorRect: null,
     flushPendingDraws: null,
     renderTargetViewport: null,
-    defaultBitmapShader: { locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() },
+    defaultBitmapShader: createEntity({ locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() }),
     quadVertexData: new Float32Array(16),
     matrixArray: new Float32Array(9),
     scissorStack: [],
