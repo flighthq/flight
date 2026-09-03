@@ -10,6 +10,7 @@ import type {
   MenuItemTemplate,
   MenuSelect,
   MenuSignals,
+  NonEntityCreateResult,
 } from '@flighthq/types/contract';
 
 // Starts delivering highlight notifications from the host's provider into `highlight`. Re-attaching
@@ -51,7 +52,9 @@ export function createMenuHighlight(): MenuHighlight {
 // Builds a menu item template, filling defaults (type 'normal', enabled true). Recursively normalizes
 // any submenu children through the same default-fill, so every item in the tree has canonical defaults
 // regardless of nesting depth.
-export function createMenuItemTemplate(template?: Readonly<Partial<MenuItemTemplate>>): MenuItemTemplate {
+export function createMenuItemTemplate(
+  template?: Readonly<Partial<MenuItemTemplate>>,
+): NonEntityCreateResult<MenuItemTemplate, 'descriptor'> {
   const item: MenuItemTemplate = {
     type: 'normal',
     enabled: true,

@@ -1,4 +1,4 @@
-import type { EmissiveModifier, EmissiveModifierOptions } from '@flighthq/types/contract';
+import type { EmissiveModifier, EmissiveModifierOptions, NonEntityCreateResult } from '@flighthq/types/contract';
 import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createEmissiveModifier`. Only `color` is required; every other field carries a
@@ -12,7 +12,9 @@ import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@fli
 // radiance and defaults to 1; `facing` defaults to Ignore (emit everywhere) and `facingSoftness` to
 // 0 (a hard terminator). `mask` is copied by reference only when provided — omitted leaves the
 // descriptor unmasked.
-export function createEmissiveModifier(options: Readonly<EmissiveModifierOptions>): EmissiveModifier {
+export function createEmissiveModifier(
+  options: Readonly<EmissiveModifierOptions>,
+): NonEntityCreateResult<EmissiveModifier, 'descriptor'> {
   const modifier: EmissiveModifier = {
     kind: EmissiveModifierKind,
     slot: ModifierSlot.Emissive,

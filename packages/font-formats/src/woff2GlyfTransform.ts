@@ -1,5 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Entity, Woff2GlyfStreams } from '@flighthq/types/contract';
+import type { Woff2GlyfStreams } from '@flighthq/types/contract';
 
 import { encodeSfntCompositeGlyph, encodeSfntLoca, encodeSfntSimpleGlyph } from './sfntAssembly';
 
@@ -29,8 +28,11 @@ const WOFF2_GLYF_HEADER_BYTES = 36;
 // A WOFF2 whose `glyf` is transformed always marks `loca` transformed too, with a transformed length of
 // zero, because its contents are entirely derived. Asking for `loca` first is handled: the reversal runs
 // from the `glyf` bytes in `tables` whichever tag arrives first.
-export function createWoff2TransformReverser(): Entity &
-  ((tag: string, transformed: Readonly<Uint8Array>, tables: ReadonlyMap<string, Uint8Array>) => Uint8Array | null) {
+export function createWoff2TransformReverser(): (
+  tag: string,
+  transformed: Readonly<Uint8Array>,
+  tables: ReadonlyMap<string, Uint8Array>,
+) => Uint8Array | null {
   let reversed: { glyf: Uint8Array; loca: Uint8Array } | null = null;
 
   const reverse = (glyfBytes: Readonly<Uint8Array> | undefined): boolean => {
@@ -42,7 +44,7 @@ export function createWoff2TransformReverser(): Entity &
     return reversed !== null;
   };
 
-  return createEntity((tag, transformed, tables) => {
+  return (tag, transformed, tables) => {
     if (tag === 'glyf') return reverse(transformed) ? reversed!.glyf : null;
     if (tag === 'loca') return reverse(tables.get('glyf')) ? reversed!.loca : null;
     // Any other transformed table is a transform this package does not implement, and refusing is what
@@ -56,7 +58,7 @@ export function createWoff2TransformReverser(): Entity &
     // path. `censusWoff2Transforms` in the reversal oracle is what measures this, and it is the check
     // to re-run before deciding the situation has changed.
     return null;
-  });
+  };
 }
 
 // One point's coordinate delta, decoded from the flag's low seven bits and the bytes that follow it in

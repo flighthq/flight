@@ -1,4 +1,8 @@
-import type { AnimatedNormalModifier, AnimatedNormalModifierOptions } from '@flighthq/types/contract';
+import type {
+  AnimatedNormalModifier,
+  AnimatedNormalModifierOptions,
+  NonEntityCreateResult,
+} from '@flighthq/types/contract';
 import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createAnimatedNormalModifier`. `map` (nullable) and `scroll` are required; the
@@ -12,7 +16,9 @@ import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contra
 // reference); `strength` defaults to 1. An optional `secondaryMap` (+ `secondaryScroll`) adds a
 // second layer panning at a different rate to break up tiling — omitted leaves the modifier a single
 // layer.
-export function createAnimatedNormalModifier(options: Readonly<AnimatedNormalModifierOptions>): AnimatedNormalModifier {
+export function createAnimatedNormalModifier(
+  options: Readonly<AnimatedNormalModifierOptions>,
+): NonEntityCreateResult<AnimatedNormalModifier, 'descriptor'> {
   const modifier: AnimatedNormalModifier = {
     kind: AnimatedNormalModifierKind,
     slot: ModifierSlot.Normal,

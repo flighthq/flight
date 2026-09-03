@@ -1,10 +1,10 @@
-import type { MenuItemTemplate } from '@flighthq/types/contract';
+import type { MenuItemTemplate, NonEntityCreateResult } from '@flighthq/types/contract';
 import { WellKnownMenuItemRole } from '@flighthq/types/contract';
 
 // Returns a standard macOS-style application menu (the first menu, labeled with the app name).
 // On Windows/Linux this menu is typically omitted; native backends handle that automatically when
 // the whole-submenu role 'appMenu' is set. Includes About, Services, Hide/Show, and Quit.
-export function createDefaultAppMenuTemplate(appName: string): MenuItemTemplate {
+export function createDefaultAppMenuTemplate(appName: string): NonEntityCreateResult<MenuItemTemplate, 'descriptor'> {
   return {
     label: appName,
     role: WellKnownMenuItemRole.appMenu,
@@ -68,7 +68,7 @@ export function createDefaultAppMenuTemplate(appName: string): MenuItemTemplate 
 // role 'editMenu' is set so native hosts (Electron/Tauri) can substitute their own platform-native
 // Edit menu where that is more appropriate. Items are also individually role-tagged for finer
 // native control.
-export function createDefaultEditMenuTemplate(): MenuItemTemplate {
+export function createDefaultEditMenuTemplate(): NonEntityCreateResult<MenuItemTemplate, 'descriptor'> {
   return {
     label: 'Edit',
     role: WellKnownMenuItemRole.editMenu,
@@ -145,7 +145,7 @@ export function createDefaultEditMenuTemplate(): MenuItemTemplate {
 
 // Returns a standard File menu template. The whole-submenu role 'fileMenu' signals native backends
 // to place the menu in the standard File slot. Includes New, Open, Save, Save As, and Close.
-export function createDefaultFileMenuTemplate(): MenuItemTemplate {
+export function createDefaultFileMenuTemplate(): NonEntityCreateResult<MenuItemTemplate, 'descriptor'> {
   return {
     label: 'File',
     role: WellKnownMenuItemRole.fileMenu,
@@ -196,7 +196,7 @@ export function createDefaultFileMenuTemplate(): MenuItemTemplate {
 
 // Returns a standard Help menu template. The whole-submenu role 'helpMenu' signals native backends
 // to place the menu in the standard Help slot (macOS help-menu convention).
-export function createDefaultHelpMenuTemplate(): MenuItemTemplate {
+export function createDefaultHelpMenuTemplate(): NonEntityCreateResult<MenuItemTemplate, 'descriptor'> {
   return {
     label: 'Help',
     role: WellKnownMenuItemRole.helpMenu,
@@ -216,7 +216,7 @@ export function createDefaultHelpMenuTemplate(): MenuItemTemplate {
 
 // Returns a standard View menu template covering reload and zoom. The whole-submenu role 'viewMenu'
 // signals native backends to substitute a platform-native View menu where appropriate.
-export function createDefaultViewMenuTemplate(): MenuItemTemplate {
+export function createDefaultViewMenuTemplate(): NonEntityCreateResult<MenuItemTemplate, 'descriptor'> {
   return {
     label: 'View',
     role: WellKnownMenuItemRole.viewMenu,
@@ -271,7 +271,7 @@ export function createDefaultViewMenuTemplate(): MenuItemTemplate {
 
 // Returns a standard Window menu template. The whole-submenu role 'windowMenu' signals native
 // backends (notably macOS) to manage the Window menu list automatically.
-export function createDefaultWindowMenuTemplate(): MenuItemTemplate {
+export function createDefaultWindowMenuTemplate(): NonEntityCreateResult<MenuItemTemplate, 'descriptor'> {
   return {
     label: 'Window',
     role: WellKnownMenuItemRole.windowMenu,

@@ -1,4 +1,4 @@
-import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
+import type { Bitmap, BitmapRegion, NonEntityCreateResult } from '@flighthq/types/contract';
 
 /**
  * Allocates a `BitmapRegion`. With no bounds it covers the whole bitmap, so
@@ -14,7 +14,7 @@ export function createBitmapRegion(
   y: number = 0,
   width: number = bitmap.width,
   height: number = bitmap.height,
-): BitmapRegion {
+): NonEntityCreateResult<BitmapRegion, 'descriptor'> {
   return { bitmap, x, y, width, height };
 }
 
