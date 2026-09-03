@@ -31,19 +31,19 @@ import { formatGateProvenance, readGateTreeState } from './gate-provenance';
 
 // Required/readonly weakening and exact duplicate members are unsound in every named-base refinement,
 // so they fail the gate. Exported production create* object results outside Entity and EntityRuntime are
-// classification candidates: user-facing Flight SDK objects belong on Entity, while native objects,
-// collections, and true descriptor/options/type-only results do not. The candidate census stays report-only
-// until the latter categories have a semantic source-local encoding; clone* is outside this doctrine.
+// contract violations: user-facing Flight SDK objects belong on Entity, while native objects, collections,
+// and true descriptor/options/type-only results are excluded semantically. clone* is outside this doctrine.
 // Implementation-local signature aliases and hidden Entity fields remain advisory while their public type-home
 // policy is settled.
 
 export type EntityContractRule =
+  | 'exported-create-return'
   | 'invalid-non-entity-create-result'
   | 'redundant-inline-member'
   | 'readonly-redeclaration'
   | 'redundant-optional-property';
 
-export type EntityContractAdvisoryRule = 'exported-create-return' | 'exported-local-alias' | 'hidden-entity-field';
+export type EntityContractAdvisoryRule = 'exported-local-alias' | 'hidden-entity-field';
 
 export interface EntityContractIssue {
   column: number;
@@ -58,7 +58,7 @@ export interface EntityContractAdvisory extends Omit<EntityContractIssue, 'rule'
   rule: EntityContractAdvisoryRule;
 }
 
-export interface ExportedCreateCandidate extends EntityContractAdvisory {
+export interface ExportedCreateCandidate extends EntityContractIssue {
   returnTypes: readonly string[];
   rule: 'exported-create-return';
 }
@@ -117,7 +117,7 @@ export interface ExportedCreateRemediationReport {
   candidatePredicate: 'exported production create* object result outside Entity and EntityRuntime';
   candidates: number;
   excludedFactoryPrefixes: readonly ['clone'];
-  mode: 'report-only';
+  mode: 'enforced';
   markedExclusions: readonly ExportedCreateExclusion[];
   packages: readonly ExportedCreateRemediationPackage[];
   runtimeExceptions: readonly string[];
@@ -272,8 +272,7 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
     nonEntityCreateResult,
     scope.root,
   );
-  advisories.push(...exportedCreateCensus.candidates);
-  issues.push(...exportedCreateCensus.issues);
+  issues.push(...exportedCreateCensus.candidates, ...exportedCreateCensus.issues);
   const localAliasExposures = collectLocalAliasExposures(exportedSurfaces, scope.root);
   for (const exposure of localAliasExposures) {
     const names = [...exposure.surfaces].sort();
@@ -312,6 +311,8 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
 export function formatEntityContractReport(report: Readonly<EntityContractReport>, root: string): string {
   const passed = report.issues.length === 0;
   const createReport = createExportedCreateRemediationReport(report);
+  const createIssues = report.issues.filter((entry) => entry.rule === 'exported-create-return');
+  const otherIssues = report.issues.filter((entry) => entry.rule !== 'exported-create-return');
   const exportedAliasAdvisories = report.advisories.filter((entry) => entry.rule === 'exported-local-alias');
   const fieldAdvisories = report.advisories.filter((entry) => entry.rule === 'hidden-entity-field');
   const acceptedCreates = createReport.acceptedEntity + createReport.acceptedEntityRuntime;
@@ -332,18 +333,21 @@ export function formatEntityContractReport(report: Readonly<EntityContractReport
     `  - test-source: ${report.excludedTestFiles}`,
     `  - test-helper-source: ${report.excludedTestHelperFiles}`,
     `  - tooling-package: ${report.excludedToolingFiles}`,
-    `  Exported create-return candidate census: ${acceptedCreates}/${createReport.total} object-returning create symbols resolve to Entity or EntityRuntime; ${createReport.candidates} report-only classification candidates across ${createReport.packages.length} packages`,
+    `  Exported create-return contract: ${acceptedCreates}/${createReport.total} object-returning create symbols resolve to Entity or EntityRuntime; ${createReport.candidates} violations across ${createReport.packages.length} packages`,
     `  Semantically excluded create returns: ${createReport.automaticExclusions.length} automatic, ${createReport.markedExclusions.length} source-marked`,
     `  Exported EntityRuntime second-root results: ${formatNames(report.runtimeCreateExceptions)}`,
   ];
-  if (!passed) {
-    lines.push('', `  ${report.issues.length} semantic contract issue${report.issues.length === 1 ? '' : 's'}:`);
-    for (const entry of report.issues) {
+  if (otherIssues.length > 0) {
+    lines.push('', `  ${otherIssues.length} semantic contract issue${otherIssues.length === 1 ? '' : 's'}:`);
+    for (const entry of otherIssues) {
       lines.push(`  - [${entry.rule}] ${entry.path}:${entry.line}:${entry.column} ${entry.name} — ${entry.detail}`);
     }
   }
-  if (createReport.candidates > 0) {
-    lines.push('', `  ${createReport.candidates} report-only exported create-return classification candidates:`);
+  if (createIssues.length > 0) {
+    lines.push(
+      '',
+      `  ${createReport.candidates} exported create-return contract violation${createReport.candidates === 1 ? '' : 's'}:`,
+    );
     for (const group of createReport.packages) {
       lines.push(`  ${group.packageName} (${group.candidates.length}):`);
       for (const entry of group.candidates) {
@@ -397,7 +401,7 @@ export function createExportedCreateRemediationReport(
     candidatePredicate: 'exported production create* object result outside Entity and EntityRuntime',
     candidates: packages.reduce((total, entry) => total + entry.candidates.length, 0),
     excludedFactoryPrefixes: ['clone'],
-    mode: 'report-only',
+    mode: 'enforced',
     markedExclusions: report.exportedCreateExclusions.filter((entry) => entry.source === 'marker'),
     packages,
     runtimeExceptions: report.runtimeCreateExceptions,
@@ -560,12 +564,12 @@ function collectExportedCreateCensus(
       census.total++;
       if (hasInvalidObjectResult) {
         census.candidates.push({
-          ...advisory(
+          ...issue(
             root,
             surface.declaration,
             'exported-create-return',
             name,
-            'classify whether this result is a user-facing Flight SDK object that must be Entity or a genuine non-SDK result',
+            'exported create result must transitively assign to Entity or EntityRuntime unless it is automatically excluded or directly marked descriptor, options, or type-only',
           ),
           returnTypes: [...invalidReturnTypes].sort(),
           rule: 'exported-create-return',
