@@ -1,5 +1,6 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
-import type { Image, VideoResource } from '@flighthq/types/contract';
+import type { ImageResource, VideoResource } from '@flighthq/types/contract';
+import { createVideoResource } from '@flighthq/video/contract';
 
 import { getTextureSource } from './texture';
 import {
@@ -17,13 +18,8 @@ import {
   setVideoTextureSource,
 } from './videoTexture';
 
-// A minimal borrowed host element: only the fields the video-backed Texture accessors read.
 function makeVideoResource(readyState = 4, videoWidth = 320, videoHeight = 240): VideoResource {
-  return {
-    element: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
-    objectUrl: null,
-    ownsElement: false,
-  };
+  return createVideoResource({ readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement);
 }
 
 describe('advanceVideoTexture', () => {
@@ -71,7 +67,7 @@ describe('createVideoTexture', () => {
     const source = makeVideoResource();
     const vt = createVideoTexture(source);
     expect(vt.colorSpace).toBe('srgb');
-    expect((getTextureSource(vt) as Image).source).toBe(source.element);
+    expect((getTextureSource(vt) as ImageResource).source).toBe(source.element);
     expect(vt.version).toBe(0xffffffff);
     expect(vt.uvOffset.x).toBe(0);
     expect(vt.uvScale.x).toBe(1);
@@ -118,7 +114,7 @@ describe('getVideoTextureHeight', () => {
   it('returns the element videoHeight when a frame is decoded, else -1', () => {
     expect(getVideoTextureHeight(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(240);
     expect(getVideoTextureHeight(createVideoTexture(makeVideoResource(0, 0, 0)))).toBe(-1);
-    expect(getVideoTextureHeight(createVideoTexture({ element: null, objectUrl: null, ownsElement: false }))).toBe(-1);
+    expect(getVideoTextureHeight(createVideoTexture(createVideoResource()))).toBe(-1);
   });
 });
 
@@ -161,7 +157,7 @@ describe('getVideoTextureWidth', () => {
   it('returns the element videoWidth when a frame is decoded, else -1', () => {
     expect(getVideoTextureWidth(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(320);
     expect(getVideoTextureWidth(createVideoTexture(makeVideoResource(0, 0, 0)))).toBe(-1);
-    expect(getVideoTextureWidth(createVideoTexture({ element: null, objectUrl: null, ownsElement: false }))).toBe(-1);
+    expect(getVideoTextureWidth(createVideoTexture(createVideoResource()))).toBe(-1);
   });
 });
 
@@ -170,9 +166,7 @@ describe('isVideoTextureFrameReady', () => {
     expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(true);
     expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(1, 320, 240)))).toBe(false);
     expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(4, 0, 0)))).toBe(false);
-    expect(isVideoTextureFrameReady(createVideoTexture({ element: null, objectUrl: null, ownsElement: false }))).toBe(
-      false,
-    );
+    expect(isVideoTextureFrameReady(createVideoTexture(createVideoResource()))).toBe(false);
   });
 });
 
@@ -193,7 +187,7 @@ describe('setVideoTextureSource', () => {
     advanceVideoTexture(vt);
     const next = makeVideoResource(4, 640, 480);
     setVideoTextureSource(vt, next);
-    expect((getTextureSource(vt) as Image).source).toBe(next.element);
+    expect((getTextureSource(vt) as ImageResource).source).toBe(next.element);
     expect(vt.version).toBe(0xffffffff);
     expect(getVideoTextureWidth(vt)).toBe(640);
   });

@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { getRegistryTableKeys } from '@flighthq/registry/contract';
-import type { Image, RenderTexture, Texture, TextureSource } from '@flighthq/types/contract';
+import type { ImageResource, RenderTexture, Texture, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
@@ -26,7 +26,7 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-function imageResource(source: CanvasImageSource = document.createElement('canvas')): Image {
+function imageResource(source: CanvasImageSource = document.createElement('canvas')): ImageResource {
   return {
     height: 4,
     alphaType: 'straight',
@@ -35,7 +35,7 @@ function imageResource(source: CanvasImageSource = document.createElement('canva
     source,
     version: 0,
     width: 4,
-  } as unknown as Image;
+  } as unknown as ImageResource;
 }
 
 function textureSource(kind: string): TextureSource {
@@ -111,7 +111,7 @@ describe('registerWgpuBitmapTextureResolver', () => {
 });
 
 describe('registerWgpuCompressedImageTextureResolver', () => {
-  it('registers only the CompressedImage source key', async () => {
+  it('registers only the CompressedImageResource source key', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedImageTextureResolver(state);
     expect(registeredTextureSourceKinds(state)).toEqual([CompressedImageTextureSourceKind]);

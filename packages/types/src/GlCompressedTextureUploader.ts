@@ -1,9 +1,9 @@
-import type { CompressedImage } from './CompressedImage';
+import type { CompressedImageResource } from './CompressedImageResource';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlContext } from './GlContext';
 import type { TextureColorSpace } from './Texture';
 
-// The opt-in seam that uploads a CompressedImage's payload to the currently-bound GL
+// The opt-in seam that uploads a CompressedImageResource's payload to the currently-bound GL
 // texture. Installed per render state by registerGlCompressedTextureUpload; unset until then, so a
 // state that only ever draws Image or Bitmap sources never pulls the compressed-container
 // upload path (its ~40-format enum table and the GPU-native / RGBA-fallback branches) into the bundle.
@@ -14,7 +14,7 @@ import type { TextureColorSpace } from './Texture';
 // is still supercompressed — a sentinel, not a throw.
 export type GlCompressedTextureUploader = (
   gl: GlContext,
-  image: Readonly<CompressedImage>,
+  image: Readonly<CompressedImageResource>,
   decode: GlCompressedTextureDecoder | null,
   colorSpace?: TextureColorSpace,
 ) => boolean;

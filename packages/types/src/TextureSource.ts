@@ -9,10 +9,11 @@ import type { TextureSourceKind } from './TextureSourceKind';
  *
  * `alphaType` and `colorSpace` are what the BYTES ARE — intrinsic to the payload, true whatever anyone
  * does with it. They live here, on the base, so every source kind answers them uniformly: an uploader
- * asks the source once instead of guarding for `Bitmap` and assuming for `Image` and `CompressedImage`,
+ * asks the source once instead of guarding for `Bitmap` and assuming for `ImageResource` and `CompressedImageResource`,
  * which is the asymmetry that let an already-premultiplied image be multiplied a second time.
  *
- * Deliberately NOT the same axis as `Texture.colorSpace`, and the near-collision is worth reading twice:
+ * Deliberately NOT the same axis as `Texture.colorSpace`, and the near-collision is worth reading
+ * twice:
  *
  * - `gamut` is which primaries the data uses (`'srgb' | 'display-p3'`), a property of the BYTES. Its
  *   values mirror the platform's `PredefinedColorSpace` — it is what `ImageData.colorSpace` reports.

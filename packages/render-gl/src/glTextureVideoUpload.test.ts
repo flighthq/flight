@@ -1,4 +1,4 @@
-import type { Image } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
 
@@ -12,12 +12,12 @@ function makeGl(): WebGL2RenderingContext {
   } as unknown as WebGL2RenderingContext;
 }
 
-// A video Image whose only relevant fields are version and the borrowed host element.
-function makeVideoImage(version: number, readyState = 4, videoWidth = 320, videoHeight = 240): Image {
+// A video ImageResource whose only relevant fields are version and the borrowed host element.
+function makeVideoImage(version: number, readyState = 4, videoWidth = 320, videoHeight = 240): ImageResource {
   return {
     source: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement,
     version,
-  } as unknown as Image;
+  } as unknown as ImageResource;
 }
 
 describe('uploadGlTextureVideoFrame', () => {
@@ -61,7 +61,7 @@ describe('uploadGlTextureVideoFrame', () => {
 
   it('skips when the element is null', () => {
     const gl = makeGl();
-    const image = { source: null, version: 2 } as unknown as Image;
+    const image = { source: null, version: 2 } as unknown as ImageResource;
     expect(uploadGlTextureVideoFrame(gl, image, -1)).toBe(-1);
     expect(gl.texImage2D).not.toHaveBeenCalled();
   });

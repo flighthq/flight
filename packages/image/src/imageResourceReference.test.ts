@@ -5,7 +5,7 @@ import {
   registerImageBitmapComposer,
   registerImageDecoder,
 } from '@flighthq/image-codec/contract';
-import type { Bitmap, Image, ImageDecoder } from '@flighthq/types/contract';
+import type { Bitmap, ImageResource, ImageDecoder } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   EntityRuntimeKey,
@@ -240,7 +240,7 @@ describe('resolveImageResourceReference', () => {
 
   it('routes an external reference through the fetch seam', async () => {
     const ref = createExternalImageResourceReference('atlas.png', '/assets');
-    const fetched = { width: 2 } as Image;
+    const fetched = { width: 2 } as ImageResource;
     const fetch = vi.fn().mockResolvedValue(fetched);
     expect(await resolveImageResourceReference(ref, fetch, new AbortController().signal)).toBe(fetched);
     expect(fetch).toHaveBeenCalledOnce();
@@ -278,7 +278,7 @@ describe('resolveImageResourceReference', () => {
     const ref = createExternalImageResourceReference('flaky.png');
     ref.failure = { kind: ImageResourceFailureKind.Error, message: 'old', name: null };
     ref.state = ResourceResolutionState.Failed;
-    const fetch = vi.fn().mockResolvedValue({ width: 1 } as Image);
+    const fetch = vi.fn().mockResolvedValue({ width: 1 } as ImageResource);
     await resolveImageResourceReference(ref, fetch, new AbortController().signal);
     expect(ref.failure).toBeNull();
     expect(ref.state).toBe(ResourceResolutionState.Resolved);

@@ -1,4 +1,4 @@
-import type { CubeTexture, Image, TextureSourceCubeFaces } from '@flighthq/types/contract';
+import type { CubeTexture, ImageResource, TextureSourceCubeFaces } from '@flighthq/types/contract';
 import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types/contract';
 
 import {
@@ -12,8 +12,8 @@ import {
 } from './cubeTexture';
 import { createSampler, equalsSampler } from './sampler';
 
-const fakeFace = { width: 64, height: 64 } as Image;
-const fakeFace2 = { width: 128, height: 128 } as Image;
+const fakeFace = { width: 64, height: 64 } as ImageResource;
+const fakeFace2 = { width: 128, height: 128 } as ImageResource;
 
 const allFaces: TextureSourceCubeFaces = [fakeFace, fakeFace, fakeFace, fakeFace, fakeFace, fakeFace];
 
@@ -108,7 +108,7 @@ describe('equalsCubeTexture', () => {
   it('is false when a face reference differs', () => {
     const a = createCubeTexture({ sources: allFaces });
     const b = createCubeTexture({ sources: allFaces });
-    (b.sources as unknown as (Image | null)[])[0] = fakeFace2;
+    (b.sources as unknown as (ImageResource | null)[])[0] = fakeFace2;
 
     expect(equalsCubeTexture(a, b)).toBe(false);
   });

@@ -4,13 +4,13 @@ import { createEmbeddedImageResourceReference, createExternalImageResourceRefere
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { Image, ImageResourceReference, Scene2DImageResourceLoadProgress } from '@flighthq/types/contract';
+import type { ImageResource, ImageResourceReference, Scene2DImageResourceLoadProgress } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DImageResources } from './loadScene2DImageResources';
 import { createScene2DDocument } from './scene2DDocument';
 
-const fetchedImage = { height: 4, width: 4 } as Image;
+const fetchedImage = { height: 4, width: 4 } as ImageResource;
 
 function externalResource(uri: string): ImageResourceReference {
   return createExternalImageResourceReference(uri);

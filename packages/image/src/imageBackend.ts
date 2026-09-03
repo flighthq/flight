@@ -1,7 +1,7 @@
 import type {
   BackendExplanation,
   BackendOperationExplanation,
-  Image,
+  ImageResource,
   ImageBackend,
   ImageBackendOperation,
 } from '@flighthq/types/contract';
@@ -10,7 +10,7 @@ import { createImageResourceFromCanvas, createImageResourceFromImageElement } fr
 
 export function createWebImageBackend(): ImageBackend {
   return {
-    createImageFromBitmap(bitmap): Image {
+    createImageFromBitmap(bitmap): ImageResource {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
       canvas.height = bitmap.height;
@@ -19,7 +19,7 @@ export function createWebImageBackend(): ImageBackend {
       canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
       return createImageResourceFromCanvas(canvas);
     },
-    async loadImageFromUrl(url, crossOrigin, signal): Promise<Image> {
+    async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
       signal?.throwIfAborted();
       const img = new Image();
       if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
@@ -82,7 +82,7 @@ export function explainImageBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// Reports support for exactly one Image operation on the selected backend. A custom backend masks the
+// Reports support for exactly one ImageResource operation on the selected backend. A custom backend masks the
 // host as a whole, so an omitted optional method does not fall through to a host implementation.
 export function explainImageOperation(operation: ImageBackendOperation): BackendOperationExplanation {
   if (_custom !== null) {
@@ -141,7 +141,7 @@ const _sentinel: ImageBackend = {
     _url: string,
     _crossOrigin?: 'anonymous' | 'use-credentials',
     _signal?: AbortSignal,
-  ): Promise<Image> {
+  ): Promise<ImageResource> {
     return Promise.reject(
       new Error('No image backend installed. Call enableHostWebImage() or setImageBackend() first.'),
     );

@@ -25,6 +25,9 @@
       "path": "../entity"
     },
     {
+      "path": "../font"
+    },
+    {
       "path": "../geometry"
     },
     {

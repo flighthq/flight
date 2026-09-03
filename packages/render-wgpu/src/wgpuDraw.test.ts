@@ -1,7 +1,13 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, CompressedImage, Image, Texture, WgpuTextureEntry } from '@flighthq/types/contract';
+import type {
+  Bitmap,
+  CompressedImageResource,
+  ImageResource,
+  Texture,
+  WgpuTextureEntry,
+} from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   BlendMode,
@@ -55,7 +61,7 @@ function bitmap(size: number, version: number): Bitmap {
   } as unknown as Bitmap;
 }
 
-function compressedBc3Image(): CompressedImage {
+function compressedBc3Image(): CompressedImageResource {
   return {
     compressed: {
       container: {
@@ -75,7 +81,7 @@ function compressedBc3Image(): CompressedImage {
     kind: CompressedImageTextureSourceKind,
     version: 1,
     width: 4,
-  } as unknown as CompressedImage;
+  } as unknown as CompressedImageResource;
 }
 
 describe('applyWgpuBlendMode', () => {
@@ -205,7 +211,7 @@ describe('bindWgpuImageResourceTexture', () => {
       height: 4,
       kind: ImageTextureSourceKind,
       version: 1,
-    } as unknown as Image;
+    } as unknown as ImageResource;
     bindWgpuImageResourceTexture(state, image);
     expect(copy).toHaveBeenCalled();
   });
@@ -222,7 +228,7 @@ describe('bindWgpuImageResourceTexture', () => {
       height: 4,
       kind: ImageTextureSourceKind,
       version: 1,
-    } as unknown as Image;
+    } as unknown as ImageResource;
     expect(bindWgpuImageResourceTexture(state, image)).toBeNull();
     expect(copy).not.toHaveBeenCalled();
   });
@@ -239,7 +245,7 @@ describe('bindWgpuImageResourceTexture', () => {
       height: 4,
       kind: ImageTextureSourceKind,
       version: 1,
-    } as unknown as Image;
+    } as unknown as ImageResource;
     const entry = requireTextureEntry(bindWgpuImageResourceTexture(state, image));
     copy.mockImplementation(() => {
       throw new TypeError('Failed to copy content from external image.');
@@ -365,7 +371,7 @@ describe('bindWgpuVideoTexture', () => {
     const state = await createWgpuRenderStateForTest();
     const video = videoTexture(1, 1, 0, 0);
     expect(bindWgpuVideoTexture(state, video)).toBeNull();
-    const element = (getTextureSource(video) as Image).source as HTMLVideoElement;
+    const element = (getTextureSource(video) as ImageResource).source as HTMLVideoElement;
     Object.assign(element, { readyState: 4, videoHeight: 120, videoWidth: 160 });
     const first = bindWgpuVideoTexture(state, video)!;
     const destroy = vi.spyOn(first.texture, 'destroy');

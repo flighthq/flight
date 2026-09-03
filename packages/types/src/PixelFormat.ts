@@ -6,6 +6,6 @@
  * Both variants are 8-bit unsigned-normalized RGBA in `Uint8ClampedArray` (4 bytes per pixel); they
  * differ only in channel order. `bgra8unorm` is reachable via `convertBitmapPixelOrder`. Wider
  * formats (float and single-channel R8) are out of scope; block-compressed payloads use the sibling
- * `CompressedImage` backing.
+ * `CompressedImageResource` backing.
  */
 export type PixelFormat = 'bgra8unorm' | 'rgba8unorm';

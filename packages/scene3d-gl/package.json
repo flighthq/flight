@@ -59,6 +59,7 @@
     "@flighthq/entity": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/skeleton3d": "*",
+    "@flighthq/video": "*",
     "typescript": "^5.3.0"
   },
   "description": "WebGL2 3D scene renderer",

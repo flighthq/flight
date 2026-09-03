@@ -1,6 +1,6 @@
 import type { EntityRuntime } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
-import type { Image } from './Image';
+import type { ImageResource } from './ImageResource';
 import type { RenderTexture } from './RenderTexture';
 import type { TextureSource } from './TextureSource';
 import type { WgpuDeviceSignals } from './WgpuDeviceSignals';
@@ -30,8 +30,8 @@ export interface WgpuDeviceRuntime extends EntityRuntime {
   textureSourcePremultipliedSrgbTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
   textureSourceStraightTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
   textureSourceStraightSrgbTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
-  videoTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;
-  videoSrgbTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;
+  videoTextureCache?: WeakMap<ImageResource, WgpuVideoTextureEntry>;
+  videoSrgbTextureCache?: WeakMap<ImageResource, WgpuVideoTextureEntry>;
   wgpuExternalTextureCache?: WeakMap<ExternalTexture, WgpuTextureEntry>;
   wgpuRenderTextureCache?: WeakMap<RenderTexture, WgpuRenderTextureEntry>;
   sceneMeshUploadCache?: WeakMap<object, object> | null;

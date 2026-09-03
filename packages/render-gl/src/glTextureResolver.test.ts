@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { getRegistryTableKeys } from '@flighthq/registry/contract';
-import type { Image, RenderTexture, TextureLike, TextureSource } from '@flighthq/types/contract';
+import type { ImageResource, RenderTexture, TextureLike, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
@@ -45,7 +45,7 @@ function textureWithImage(image: TextureSource | null): TextureLike {
   } as unknown as TextureLike;
 }
 
-function imageResource(source: CanvasImageSource = document.createElement('img')): Image {
+function imageResource(source: CanvasImageSource = document.createElement('img')): ImageResource {
   return {
     height: 1,
     alphaType: 'straight',
@@ -54,7 +54,7 @@ function imageResource(source: CanvasImageSource = document.createElement('img')
     source,
     version: 0,
     width: 1,
-  } as unknown as Image;
+  } as unknown as ImageResource;
 }
 
 function textureSource(kind: string): TextureSource {
@@ -97,7 +97,7 @@ describe('registerGlBitmapTextureResolver', () => {
 });
 
 describe('registerGlCompressedImageTextureResolver', () => {
-  it('registers only the CompressedImage source key', () => {
+  it('registers only the CompressedImageResource source key', () => {
     const { state } = createGlState();
     registerGlCompressedImageTextureResolver(state);
     expect(registeredTextureSourceKinds(state)).toEqual([CompressedImageTextureSourceKind]);

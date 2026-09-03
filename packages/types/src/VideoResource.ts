@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { HostImageSource } from './HostImageSource';
 import type { Signal } from './Signal';
 
@@ -23,7 +24,7 @@ export interface VideoPlayOptions {
   playbackRate?: number;
 }
 
-export interface VideoResource {
+export interface VideoResource extends Entity {
   element: HostImageSource | null;
   // The object URL this resource owns, when it was loaded from a Blob; null otherwise. It is held for
   // the resource's whole life, not just its load: the element keeps fetching from this URL while it

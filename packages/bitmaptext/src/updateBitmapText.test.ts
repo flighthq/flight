@@ -12,7 +12,7 @@ import type {
   GlyphEntry,
   GlyphRasterizerBackend,
   GlyphSource,
-  Image,
+  ImageResource,
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -31,7 +31,7 @@ function createTestGlyphSource(): GlyphSource {
   add(0x42, 6); // B
   entries.set(0x20, { advance: 5, bearingX: 0, bearingY: 0, height: 0, page: 0, width: 0, x: 0, y: 0 }); // space
   const kerning = new Map<number, number>([[(0x41 << 16) | 0x42, -2]]);
-  const image = {} as Image;
+  const image = {} as ImageResource;
   return {
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
@@ -42,9 +42,9 @@ function createTestGlyphSource(): GlyphSource {
 }
 
 // A two-page glyph source: 'A' lives on page 0, 'B' on page 1, each page a DISTINCT stub image.
-function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: Image; page1Image: Image } {
-  const page0Image = {} as Image;
-  const page1Image = {} as Image;
+function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: ImageResource; page1Image: ImageResource } {
+  const page0Image = {} as ImageResource;
+  const page1Image = {} as ImageResource;
   const entries = new Map<number, GlyphEntry>([
     [0x41, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 }], // A → page 0
     [0x42, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 1, width: 6, x: 3, y: 0 }], // B → page 1
@@ -91,7 +91,7 @@ function readGlyphCodepointAtRegion(bitmap: Readonly<Bitmap>, x: number, y: numb
 // that DROPS a glyph: the reference the pass captured is orphaned at its old rect, and the next lookup
 // mints a fresh entry somewhere else. `nth: 0` never fires, for the held-still half of the pair.
 function createMidLayoutRelocatingGlyphSource(nth: number): GlyphSource {
-  const image = {} as Image;
+  const image = {} as ImageResource;
   const entries = new Map<number, GlyphEntry>();
   for (let codepoint = 0x41; codepoint <= 0x5a; codepoint++) {
     entries.set(codepoint, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 });

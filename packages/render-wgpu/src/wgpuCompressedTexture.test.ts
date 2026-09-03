@@ -1,4 +1,4 @@
-import type { CompressedImage, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types/contract';
+import type { CompressedImageResource, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import {
@@ -30,14 +30,14 @@ function container(overrides: Partial<TextureContainer> = {}): TextureContainer 
   };
 }
 
-function compressedImage(): CompressedImage {
+function compressedImage(): CompressedImageResource {
   return {
     compressed: { container: container(), payload: new Uint8Array(8) },
     height: 4,
     kind: CompressedImageTextureSourceKind,
     version: 1,
     width: 4,
-  } as unknown as CompressedImage;
+  } as unknown as CompressedImageResource;
 }
 
 describe('detectWgpuCompressedTextureSupport', () => {

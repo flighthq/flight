@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
-import type { Image, RenderTarget, Texture2D } from '@flighthq/types/contract';
+import type { ImageResource, RenderTarget, Texture2D } from '@flighthq/types/contract';
 import { ImageTextureSourceKind, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { createSampler, equalsSampler } from './sampler';
@@ -29,7 +29,7 @@ import {
   transformTextureUv,
 } from './texture';
 
-const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as Image;
+const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as ImageResource;
 
 function makeRenderTarget(width: number, height: number): RenderTarget {
   return createEntity({
@@ -227,7 +227,7 @@ describe('equalsTexture', () => {
   });
 
   it('is false when the image reference differs', () => {
-    const other = { width: 4, height: 4 } as Image;
+    const other = { width: 4, height: 4 } as ImageResource;
     const a = createTexture({ dimension: '2d', source: fakeImage });
     const b = createTexture({ dimension: '2d', source: other });
 
@@ -606,7 +606,7 @@ describe('setTextureUvFromPixelRect', () => {
   it('normalizes a pixel rectangle against the texture dimensions', () => {
     const texture = createTexture({
       dimension: '2d',
-      source: { height: 100, width: 200 } as Image,
+      source: { height: 100, width: 200 } as ImageResource,
     });
     setTextureUvFromPixelRect(texture, 20, 10, 50, 25);
     expect(texture.uvOffset.x).toBeCloseTo(0.1);

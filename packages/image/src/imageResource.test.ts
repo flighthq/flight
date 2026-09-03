@@ -3,7 +3,7 @@ import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@fligh
 
 import {
   cloneImageResource,
-  createCompressedImage,
+  createCompressedImageResource,
   createImageResource,
   invalidateImageResource,
   isImageResourceEmpty,
@@ -42,10 +42,10 @@ describe('cloneImageResource', () => {
   });
 });
 
-describe('createCompressedImage', () => {
+describe('createCompressedImageResource', () => {
   it('wraps the compressed payload as a distinct source', () => {
     const compressed = makeCompressed();
-    const image = createCompressedImage(compressed);
+    const image = createCompressedImageResource(compressed);
     expect(image.kind).toBe(CompressedImageTextureSourceKind);
     expect(image.compressed).toBe(compressed);
     expect(image.width).toBe(4);

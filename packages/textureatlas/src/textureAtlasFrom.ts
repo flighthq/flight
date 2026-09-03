@@ -8,7 +8,7 @@ import {
   loadImageResourceFromUrl,
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Image, TextureAtlas } from '@flighthq/types/contract';
+import type { ImageResource, TextureAtlas } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 
@@ -30,7 +30,7 @@ export function createTextureAtlasFromImageElement(img: HTMLImageElement): Textu
   });
 }
 
-export function createTextureAtlasFromImageResource(resource: Image): TextureAtlas {
+export function createTextureAtlasFromImageResource(resource: ImageResource): TextureAtlas {
   return createTextureAtlas({ texture: createTexture({ dimension: '2d', source: resource }) });
 }
 

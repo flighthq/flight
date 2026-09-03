@@ -2,7 +2,7 @@ import { getEntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { Image, Node, Sprite, SpriteRuntime } from '@flighthq/types/contract';
+import type { ImageResource, Node, Sprite, SpriteRuntime } from '@flighthq/types/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
 import {
@@ -152,5 +152,5 @@ describe('Sprite local bounds validity', () => {
 });
 
 function texture(width: number, height: number) {
-  return createTexture({ dimension: '2d', source: { height, width } as Image });
+  return createTexture({ dimension: '2d', source: { height, width } as ImageResource });
 }

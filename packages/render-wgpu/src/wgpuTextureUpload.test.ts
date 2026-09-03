@@ -1,4 +1,4 @@
-import type { Image } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { uploadWgpuTextureData, uploadWgpuTextureElement, uploadWgpuTextureImageResource } from './wgpuTextureUpload';
 
@@ -67,7 +67,7 @@ describe('uploadWgpuTextureImageResource', () => {
     const source = document.createElement('canvas');
     source.width = 4;
     source.height = 4;
-    const image = { source, width: 4, height: 4 } as unknown as Image;
+    const image = { source, width: 4, height: 4 } as unknown as ImageResource;
     uploadWgpuTextureImageResource(device, texture, [0, 0, 0], image);
     expect(device.queue.copyExternalImageToTexture).toHaveBeenCalledTimes(1);
     expect(device.queue.writeTexture).not.toHaveBeenCalled();

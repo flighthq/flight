@@ -5,14 +5,14 @@ import type {
   Environment,
   GlRenderState,
   TextureSource,
-  Image,
+  ImageResource,
   Texture,
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
-// Uploads an Environment's source radiance cubemap (six Image faces) to a GL cubemap texture,
+// Uploads an Environment's source radiance cubemap (six ImageResource faces) to a GL cubemap texture,
 // caching it on the scene runtime. Returns null when the environment has no complete cube — all six
 // faces bound with pixels, either a decoded `source` element or raw `data` — which callers treat as
 // "no environment this frame". Each face uploads through whichever representation it carries: the
@@ -106,6 +106,6 @@ function uploadGlEnvironmentImage(
     const bitmap = image as Readonly<Bitmap>;
     uploadGlTextureData(gl, target, bitmap.width, bitmap.height, bitmap.data, internalFormat);
   } else {
-    uploadGlTextureImageResource(gl, target, image as Readonly<Image>, internalFormat);
+    uploadGlTextureImageResource(gl, target, image as Readonly<ImageResource>, internalFormat);
   }
 }

@@ -1,6 +1,7 @@
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
 import type { LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
+import { createVideoResource } from '@flighthq/video/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
@@ -39,11 +40,7 @@ describe('bindWgpuUnlitVideoSurface', () => {
       videoHeight: { value: 120 },
       videoWidth: { value: 160 },
     });
-    const video = createVideoTexture({
-      element,
-      objectUrl: null,
-      ownsElement: false,
-    });
+    const video = createVideoTexture(createVideoResource(element));
     advanceVideoTexture(video);
     registerWgpuImageTextureResolver(state);
     bindWgpuUnlitVideoSurface(state, pipeline, {}, COLOR, 1, 0.5, video);

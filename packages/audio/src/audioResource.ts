@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { AudioResource } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the SAME underlying AudioBuffer. The buffer is shared by
@@ -5,11 +6,11 @@ import type { AudioResource } from '@flighthq/types/contract';
 // e.g. to hand one decoded sound to two playback subsystems. Use createAudioResourceFromSamples with
 // copied channel data when you need the samples themselves duplicated.
 export function cloneAudioResource(resource: Readonly<AudioResource>): AudioResource {
-  return { buffer: resource.buffer };
+  return createEntity({ buffer: resource.buffer });
 }
 
 export function createAudioResource(buffer?: AudioBuffer): AudioResource {
-  return { buffer: buffer ?? null };
+  return createEntity({ buffer: buffer ?? null });
 }
 
 // Releases the decoded AudioBuffer reference so it becomes eligible for GC. The AudioBuffer is plain

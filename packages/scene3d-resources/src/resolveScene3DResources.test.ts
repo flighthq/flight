@@ -5,7 +5,7 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { Image, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types/contract';
+import type { ImageResource, ImageResourceReference, Scene3DResourceResolver, Texture } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
   ImageTextureSourceKind,
@@ -23,7 +23,7 @@ import {
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
-const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as Image;
+const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as ImageResource;
 const testResources: ImageResourceReference[] = [];
 let sceneResources: ImageResourceReference[] = [];
 
@@ -128,7 +128,7 @@ describe('resolveScene3DResources', () => {
     let loadSignal: AbortSignal | undefined;
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(
       (_ref, _fetch, signal) =>
-        new Promise<Image>((_resolve, reject) => {
+        new Promise<ImageResource>((_resolve, reject) => {
           loadSignal = signal;
           signal?.addEventListener('abort', () => reject(signal.reason));
         }),
@@ -226,7 +226,7 @@ describe('updateScene3DResourceStreaming', () => {
     let loadSignal: AbortSignal | undefined;
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(
       (_ref, _fetch, signal) =>
-        new Promise<Image>((_resolve, reject) => {
+        new Promise<ImageResource>((_resolve, reject) => {
           loadSignal = signal;
           signal?.addEventListener('abort', () => reject(signal.reason));
         }),
@@ -291,7 +291,7 @@ describe('updateScene3DResourceStreaming', () => {
       if (source === null) {
         ref.failure = {
           kind: ImageResourceFailureKind.Unavailable,
-          message: 'Image resource unavailable',
+          message: 'ImageResource resource unavailable',
           name: null,
         };
         ref.state = ResourceResolutionState.Failed;
@@ -309,7 +309,7 @@ describe('updateScene3DResourceStreaming', () => {
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
     expect(resourceOf(texture)?.failure).toEqual({
       kind: ImageResourceFailureKind.Unavailable,
-      message: 'Image resource unavailable',
+      message: 'ImageResource resource unavailable',
       name: null,
     });
     disposeScene3DResourceResolver(resolver);
@@ -338,7 +338,7 @@ describe('updateScene3DResourceStreaming', () => {
     // A load that hangs until its signal aborts, so we can drop it mid-flight.
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(
       (_ref, _fetch, signal) =>
-        new Promise<Image>((_resolve, reject) => {
+        new Promise<ImageResource>((_resolve, reject) => {
           if (signal !== undefined) loadSignals.push(signal);
           signal?.addEventListener('abort', () => reject(signal.reason));
         }),
@@ -366,7 +366,7 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('does not re-request a texture already in flight', async () => {
-    vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(() => new Promise<Image>(() => {}));
+    vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(() => new Promise<ImageResource>(() => {}));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver();

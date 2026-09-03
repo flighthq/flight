@@ -1,4 +1,4 @@
-import type { Image } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
 
@@ -38,12 +38,12 @@ export function uploadWgpuTextureElement(
   tryCopyWgpuExternalImageToTexture(device.queue, { source }, { texture, origin }, width, height);
 }
 
-// Uploads a host-backed Image through the decoded-element fast path.
+// Uploads a host-backed ImageResource through the decoded-element fast path.
 export function uploadWgpuTextureImageResource(
   device: GPUDevice,
   texture: GPUTexture,
   origin: GPUOrigin3D,
-  image: Readonly<Image>,
+  image: Readonly<ImageResource>,
 ): void {
   uploadWgpuTextureElement(
     device,

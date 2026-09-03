@@ -3,8 +3,8 @@ import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } fr
 import type {
   RenderTargetColorSpace,
   Bitmap,
-  CompressedImage,
-  Image,
+  CompressedImageResource,
+  ImageResource,
   RenderTexture,
   TextureColorSpace,
   TextureSourceKind,
@@ -101,7 +101,7 @@ function resolveWgpuCompressedImageTexture(
   _premultiply: boolean,
   colorSpace: TextureColorSpace,
 ): WgpuTextureEntry | null {
-  const image = getTextureSource(texture) as Readonly<CompressedImage> | null;
+  const image = getTextureSource(texture) as Readonly<CompressedImageResource> | null;
   return image === null ? null : bindWgpuCompressedImageTexture(state, image, colorSpace);
 }
 
@@ -111,7 +111,7 @@ function resolveWgpuImageTexture(
   premultiply: boolean,
   colorSpace: TextureColorSpace,
 ): WgpuTextureEntry | null {
-  const image = getTextureSource(texture) as Readonly<Image> | null;
+  const image = getTextureSource(texture) as Readonly<ImageResource> | null;
   return image === null
     ? null
     : bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps, premultiply, colorSpace);

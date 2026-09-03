@@ -1,10 +1,17 @@
 import { uploadWgpuTextureData, uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
-import type { Bitmap, Environment, TextureSource, Image, Texture, WgpuRenderState } from '@flighthq/types/contract';
+import type {
+  Bitmap,
+  Environment,
+  TextureSource,
+  ImageResource,
+  Texture,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
-// Uploads an Environment's source radiance cubemap (six Image faces) to a wgpu cube texture,
+// Uploads an Environment's source radiance cubemap (six ImageResource faces) to a wgpu cube texture,
 // caching it on the scene runtime. Returns null when the environment has no complete cube — all six faces
 // bound with pixels, either a decoded `source` element or raw `data` — which callers treat as "no
 // environment this frame". Each face uploads through whichever representation it carries:
@@ -87,6 +94,6 @@ function uploadWgpuEnvironmentImage(
     const bitmap = image as Readonly<Bitmap>;
     uploadWgpuTextureData(device, texture, [0, 0, face], bitmap.width, bitmap.height, bitmap.data);
   } else {
-    uploadWgpuTextureImageResource(device, texture, [0, 0, face], image as Readonly<Image>);
+    uploadWgpuTextureImageResource(device, texture, [0, 0, face], image as Readonly<ImageResource>);
   }
 }

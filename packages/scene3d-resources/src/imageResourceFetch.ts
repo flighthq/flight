@@ -1,5 +1,5 @@
 import { loadImageResourceFromUrl } from '@flighthq/image/contract';
-import type { ExternalImageResourceReference, Image } from '@flighthq/types/contract';
+import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types/contract';
 
 // The web external-fetch seam: resolves the ref's `uri` against its `basePath`, then decodes it
 // through @flighthq/image. Returns `null` on any throw (an expected fetch/decode failure), except a
@@ -7,7 +7,7 @@ import type { ExternalImageResourceReference, Image } from '@flighthq/types/cont
 export async function fetchWebImageResource(
   ref: Readonly<ExternalImageResourceReference>,
   signal: AbortSignal,
-): Promise<Image | null> {
+): Promise<ImageResource | null> {
   const url = resolveImageResourceUri(ref.uri, ref.basePath);
   try {
     return await loadImageResourceFromUrl(url, undefined, signal);

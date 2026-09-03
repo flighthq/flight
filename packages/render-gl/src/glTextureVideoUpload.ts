@@ -1,8 +1,8 @@
-import type { GlContext, Image } from '@flighthq/types/contract';
+import type { GlContext, ImageResource } from '@flighthq/types/contract';
 
 import { uploadGlTextureElement } from './glTextureUpload';
 
-// The per-frame video-to-GPU upload path. An Image's borrowed HTMLVideoElement decodes new pixels
+// The per-frame video-to-GPU upload path. An ImageResource's borrowed HTMLVideoElement decodes new pixels
 // continuously, so a driver re-uploads the currently-bound GL texture whenever the element's frame
 // advances — but not on frames where nothing changed (a paused or stalled stream), which would waste a
 // full-frame DMA. `uploadedVersion` is the source revision the caller last uploaded; this compares it to the
@@ -14,7 +14,7 @@ import { uploadGlTextureElement } from './glTextureUpload';
 // advanced or the element has no decoded frame yet, so it is safe to call every frame unconditionally.
 export function uploadGlTextureVideoFrame(
   gl: GlContext,
-  image: Readonly<Image>,
+  image: Readonly<ImageResource>,
   uploadedVersion: number,
   internalFormat: number = gl.RGBA,
 ): number {

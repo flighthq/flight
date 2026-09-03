@@ -1,6 +1,6 @@
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext/contract';
 import { createImageResource } from '@flighthq/image/contract';
-import type { BitmapText, GlyphEntry, GlyphSource, Image, RenderProxy2D } from '@flighthq/types/contract';
+import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
@@ -8,7 +8,7 @@ import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { createCanvasRenderState } from './canvasTestSupport';
 
-// Single-page stub glyph source whose page-0 image is a real Image backed by a DOM <img>.
+// Single-page stub glyph source whose page-0 image is a real ImageResource backed by a DOM <img>.
 function createTestGlyphSource(): GlyphSource {
   const entries = new Map<number, GlyphEntry>([
     [0x41, { advance: 10, bearingX: 0, bearingY: 8, height: 8, page: 0, width: 6, x: 0, y: 0 }],
@@ -18,7 +18,7 @@ function createTestGlyphSource(): GlyphSource {
   image.width = 64;
   image.height = 64;
   return {
-    getGlyphAtlasImage: (page = 0): Image | null => (page === 0 ? image : null),
+    getGlyphAtlasImage: (page = 0): ImageResource | null => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,
     getGlyphKerning: () => 0,
     getGlyphLayoutVersion: () => 0,

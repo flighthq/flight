@@ -1,6 +1,6 @@
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, CompressedImage, Image, SamplerLike, Texture } from '@flighthq/types/contract';
+import type { Bitmap, CompressedImageResource, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
 import {
   AdvancedBlendMode,
   BitmapTextureSourceKind,
@@ -48,7 +48,7 @@ function createTestGlRenderState(gl: WebGL2RenderingContext) {
 }
 
 // A single 4×4 bc3 level for exercising the opt-in compressed upload seam.
-function compressedBc3Image(): CompressedImage {
+function compressedBc3Image(): CompressedImageResource {
   return {
     compressed: {
       container: {
@@ -68,7 +68,7 @@ function compressedBc3Image(): CompressedImage {
     height: 4,
     version: 1,
     kind: CompressedImageTextureSourceKind,
-  } as unknown as CompressedImage;
+  } as unknown as CompressedImageResource;
 }
 
 function bitmap(size: number, version: number): Bitmap {
@@ -397,7 +397,7 @@ describe('bindGlImageResourceTexture', () => {
       height: 1,
       kind: ImageTextureSourceKind,
       version: 1,
-    } as unknown as Image;
+    } as unknown as ImageResource;
     bindGlImageResourceTexture(state, image);
     expect(gl.texImage2D).toHaveBeenCalled();
   });
@@ -662,7 +662,7 @@ describe('bindGlVideoTexture', () => {
       gl.RGBA,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      (getTextureSource(vt) as Image).source,
+      (getTextureSource(vt) as ImageResource).source,
     );
     const t2 = bindGlVideoTexture(state, vt);
     expect(t2).toBe(t1);
@@ -691,7 +691,7 @@ describe('bindGlVideoTexture', () => {
       gl.SRGB8_ALPHA8,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      (getTextureSource(vt) as Image).source,
+      (getTextureSource(vt) as ImageResource).source,
     );
     vt.colorSpace = 'linear';
     const linear = bindGlVideoTexture(state, vt);
@@ -702,7 +702,7 @@ describe('bindGlVideoTexture', () => {
       gl.RGBA,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      (getTextureSource(vt) as Image).source,
+      (getTextureSource(vt) as ImageResource).source,
     );
   });
 

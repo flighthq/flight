@@ -8,7 +8,7 @@ import {
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { CompressedImage, RenderProxy2D } from '@flighthq/types/contract';
+import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
@@ -52,7 +52,7 @@ describe('drawWgpuParticleEmitter2D', () => {
       kind: CompressedImageTextureSourceKind,
       version: 1,
       width: 4,
-    } as unknown as CompressedImage;
+    } as unknown as CompressedImageResource;
     runtime.registries.compressedTextureUpload = {
       ...runtime.registries.compressedTextureUpload,
       entry: {

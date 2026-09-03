@@ -4,14 +4,19 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { Image, ImageResourceReference, Scene3DResourceLoadProgress, Texture } from '@flighthq/types/contract';
+import type {
+  ImageResource,
+  ImageResourceReference,
+  Scene3DResourceLoadProgress,
+  Texture,
+} from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources';
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
 
-const fakeImage = { height: 1, width: 1 } as unknown as Image;
+const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 const testResources: ImageResourceReference[] = [];
 let sceneResources: ImageResourceReference[] = [];
 

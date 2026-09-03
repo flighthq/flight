@@ -12,7 +12,7 @@ import {
 } from '@flighthq/shading/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type {
-  Image,
+  ImageResource,
   Modifier,
   Texture,
   WgpuColorAdjustmentMaterialFeature,
@@ -427,7 +427,7 @@ describe('shaded binding cache', () => {
   });
 });
 
-function makeImageResource(): Image {
+function makeImageResource(): ImageResource {
   const source = document.createElement('canvas');
   source.width = 1;
   source.height = 1;
@@ -437,5 +437,5 @@ function makeImageResource(): Image {
     source,
     version: 0,
     width: 1,
-  } as unknown as Image;
+  } as unknown as ImageResource;
 }

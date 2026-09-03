@@ -2,7 +2,7 @@ export {
   explainImageBackend,
   explainImageOperation,
   cloneImageResource,
-  createCompressedImage,
+  createCompressedImageResource,
   createEmbeddedImageResourceReference,
   createExternalImageResourceReference,
   createImageResource,

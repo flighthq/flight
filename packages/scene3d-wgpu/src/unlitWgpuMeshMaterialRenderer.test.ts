@@ -6,6 +6,7 @@ import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
+import { createVideoResource } from '@flighthq/video/contract';
 
 import { registerWgpuUnlitMaterial, unlitWgpuMeshMaterialRenderer } from './unlitWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -61,11 +62,7 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
       videoHeight: { value: 120 },
       videoWidth: { value: 160 },
     });
-    material.baseColorMap = createVideoTexture({
-      element,
-      objectUrl: null,
-      ownsElement: false,
-    });
+    material.baseColorMap = createVideoTexture(createVideoResource(element));
     advanceVideoTexture(material.baseColorMap);
     registerWgpuImageTextureResolver(state);
     unlitWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());

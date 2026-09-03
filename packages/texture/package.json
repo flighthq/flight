@@ -43,6 +43,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/video": "*",
     "typescript": "^5.3.0"
   },
   "description": "Textures and samplers: image-backed material texture bindings and cubemaps",

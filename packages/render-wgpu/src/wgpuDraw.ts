@@ -2,10 +2,10 @@ import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   ColorScaleBias,
-  CompressedImage,
+  CompressedImageResource,
   HasColorScaleBias,
   TextureSource,
-  Image,
+  ImageResource,
   Texture,
   TextureColorSpace,
   RenderProxy,
@@ -38,19 +38,19 @@ export function bindWgpuBitmapTexture(
 
 export function bindWgpuCompressedImageTexture(
   state: WgpuRenderState,
-  image: Readonly<CompressedImage>,
+  image: Readonly<CompressedImageResource>,
   colorSpace: TextureColorSpace = 'linear',
 ): WgpuTextureEntry | null {
   return bindWgpuTextureSourceTexture(state, image, false, false, colorSpace, uploadWgpuCompressedImageEntry);
 }
 
-// Uploads and caches the WebGPU texture for an Image. Bitmap and CompressedImage use sibling
+// Uploads and caches the WebGPU texture for an ImageResource. Bitmap and CompressedImageResource use sibling
 // entry points below; they share only the identity/version cache bracket and keep representation-specific
 // uploaders. Premultiplied and straight requests use separate caches so 2D and 3D sampling of one source
 // cannot rewrite each other's realization. Returns the texture, view, and 2D bind group.
 export function bindWgpuImageResourceTexture(
   state: WgpuRenderState,
-  image: Readonly<Image>,
+  image: Readonly<ImageResource>,
   generateMips = false,
   premultiply = false,
   colorSpace: TextureColorSpace = 'linear',
@@ -169,7 +169,7 @@ export function bindWgpuTexture(
   // Store every uploaded texture premultiplied, matching the premultiplied (ONE, ONE_MINUS_SRC_ALPHA)
   // blend and the shaders, which expect premultiplied input (e.g. the particle shader tints
   // tex.rgb assuming it is already alpha-multiplied). Canvas/OffscreenCanvas are premultiplied
-  // internally, so premultipliedAlpha: true is the lossless pass-through; Image/ImageBitmap carry
+  // internally, so premultipliedAlpha: true is the lossless pass-through; ImageResource/ImageBitmap carry
   // straight alpha and get premultiplied on copy. (A straight-alpha texture under premultiplied
   // blend blows RGB out — it turned the semi-transparent shape panel opaque white.)
   //
@@ -222,14 +222,14 @@ function resolveWgpuTextureBinding(state: WgpuRenderState, entry: WgpuTextureEnt
   return bindGroup;
 }
 
-// Dynamic host-video upload. The texture is cached by Image source and copied only when its
+// Dynamic host-video upload. The texture is cached by ImageResource source and copied only when its
 // version advances; a resolution change recreates the allocation/view, and a sampler mutation rebuilds
 // only the bind group. Returns null until the source element has a decoded frame.
 export function bindWgpuVideoTexture(
   state: WgpuRenderState,
   videoTexture: Readonly<Texture>,
 ): WgpuVideoTextureEntry | null {
-  const image = getTextureSource(videoTexture) as Image | null;
+  const image = getTextureSource(videoTexture) as ImageResource | null;
   const element = (image?.source ?? null) as HTMLVideoElement | null;
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) return null;
 
@@ -316,7 +316,7 @@ export function createWgpuTextureEntry(
 }
 
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
-  const image = getTextureSource(videoTexture) as Image | null;
+  const image = getTextureSource(videoTexture) as ImageResource | null;
   if (image == null) return false;
   const runtime = getWgpuRenderStateRuntime(state);
   let destroyed = false;
@@ -566,7 +566,7 @@ function uploadWgpuCompressedImageEntry(
   const decoderEntry = runtime.registries.compressedTextureDecoder.entry;
   return uploadEntry.value(
     state,
-    image as Readonly<CompressedImage>,
+    image as Readonly<CompressedImageResource>,
     decoderEntry?.state === RegistryEntryState.Bound ? decoderEntry.value : null,
     colorSpace,
   );
@@ -579,7 +579,7 @@ function uploadWgpuImageResourceEntry(
   premultiply: boolean,
   colorSpace: TextureColorSpace,
 ): WgpuTextureEntry | null {
-  const resource = image as Readonly<Image>;
+  const resource = image as Readonly<ImageResource>;
   const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
   const width = resource.width || 1;
