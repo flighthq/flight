@@ -1,9 +1,17 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ConvolutionEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
+import type {
+  EntityWithoutRuntime,
+  ConvolutionEffect,
+  RenderEffect,
+  RenderEffectPadding,
+  RenderState,
+} from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
-export function createConvolutionEffect(options: Readonly<Omit<ConvolutionEffect, 'kind'>>): ConvolutionEffect {
+export function createConvolutionEffect(
+  options: Readonly<Omit<EntityWithoutRuntime<ConvolutionEffect>, 'kind'>>,
+): ConvolutionEffect {
   return createEntity({ kind: 'ConvolutionEffect', ...options });
 }
 

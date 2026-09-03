@@ -1,10 +1,18 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { GradientGlowEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
+import type {
+  EntityWithoutRuntime,
+  GradientGlowEffect,
+  RenderEffect,
+  RenderEffectPadding,
+  RenderState,
+} from '@flighthq/types/contract';
 
 import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha, then sourceMode decides source compositing.
-export function createGradientGlowEffect(options: Readonly<Omit<GradientGlowEffect, 'kind'>>): GradientGlowEffect {
+export function createGradientGlowEffect(
+  options: Readonly<Omit<EntityWithoutRuntime<GradientGlowEffect>, 'kind'>>,
+): GradientGlowEffect {
   return createEntity({ kind: 'GradientGlowEffect', ...options });
 }
 

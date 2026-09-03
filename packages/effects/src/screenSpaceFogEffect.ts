@@ -1,8 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ScreenSpaceFogEffect } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
 export function createScreenSpaceFogEffect(
-  options: Readonly<Omit<ScreenSpaceFogEffect, 'kind'>> = {},
+  options: Readonly<Omit<EntityWithoutRuntime<ScreenSpaceFogEffect>, 'kind'>> = {},
 ): ScreenSpaceFogEffect {
   return createEntity({ kind: 'ScreenSpaceFogEffect', ...options });
 }

@@ -1,5 +1,5 @@
 import type { Bitmap } from './Bitmap';
-import type { Entity } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity';
 import type { HostImageSource } from './HostImageSource';
 import type { TextureSource } from './TextureSource';
 import type { ImageTextureSourceKind } from './TextureSourceKind';
@@ -36,4 +36,4 @@ export interface ImageBackend extends Entity {
   ): Promise<ImageResource>;
 }
 
-export type ImageBackendOperation = keyof ImageBackend;
+export type ImageBackendOperation = keyof EntityWithoutRuntime<ImageBackend>;

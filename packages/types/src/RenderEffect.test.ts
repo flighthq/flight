@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from './Entity';
 import type { RenderEffect } from './RenderEffect';
 
 describe('RenderEffect', () => {
@@ -8,8 +9,7 @@ describe('RenderEffect', () => {
         density: number;
       }
 
-      const effect: AcmeEffect = { kind: 'acme.Sparkle', density: 10 };
-      // A custom effect is assignable to the open base
+      const effect: AcmeEffect = { [EntityRuntimeKey]: undefined, kind: 'acme.Sparkle', density: 10 };
       const base: RenderEffect = effect;
       expect(base.kind).toBe('acme.Sparkle');
     });
@@ -24,7 +24,7 @@ describe('RenderEffect', () => {
         amount: number;
       }
 
-      const eff: RedEffect | BlueEffect = { kind: 'RedEffect', strength: 2 };
+      const eff: RedEffect | BlueEffect = { [EntityRuntimeKey]: undefined, kind: 'RedEffect', strength: 2 };
       if (eff.kind === 'RedEffect') {
         expectTypeOf(eff).toHaveProperty('strength');
       }
@@ -32,7 +32,7 @@ describe('RenderEffect', () => {
     });
 
     it('accepts any string kind', () => {
-      const effect: RenderEffect = { kind: 'SomeEffect' };
+      const effect: RenderEffect = { [EntityRuntimeKey]: undefined, kind: 'SomeEffect' };
       expect(effect.kind).toBe('SomeEffect');
     });
   });

@@ -1,10 +1,12 @@
 import type { CompositeEffect } from './CompositeEffect';
 import { CompositeOperator } from './CompositeOperator';
+import { EntityRuntimeKey } from './Entity';
 import type { RenderEffect } from './RenderEffect';
 
 describe('CompositeEffect', () => {
   it('is assignable to the open RenderEffect base with a CompositeEffect kind', () => {
     const effect: CompositeEffect = {
+      [EntityRuntimeKey]: undefined,
       kind: 'CompositeEffect',
       operator: CompositeOperator.DestinationOut,
       backdropKey: 'backdrop.scene',
@@ -16,7 +18,11 @@ describe('CompositeEffect', () => {
   });
 
   it('leaves backdropKey optional', () => {
-    const effect: CompositeEffect = { kind: 'CompositeEffect', operator: CompositeOperator.DestinationIn };
+    const effect: CompositeEffect = {
+      [EntityRuntimeKey]: undefined,
+      kind: 'CompositeEffect',
+      operator: CompositeOperator.DestinationIn,
+    };
     expect(effect.backdropKey).toBeUndefined();
   });
 });
