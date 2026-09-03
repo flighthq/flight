@@ -11,6 +11,7 @@ import {
   registerSkeleton2DAnimationTargetBinder,
   unregisterSkeleton2DAnimationTargetBinder,
 } from './skeleton2dAnimationTarget';
+import { createSkin2D } from './skin2D';
 import { getSkeleton2DSlotDeformOffsets } from './slotDeform2D';
 
 function makeBone(): Bone2D {
@@ -30,10 +31,7 @@ function makeBone(): Bone2D {
 }
 
 function mesh(pointCount: number): MeshAttachment2D {
-  const skin: Skin2D = {
-    influenceCounts: new Uint16Array(pointCount).fill(1),
-    influences: new Float32Array(pointCount * 4),
-  };
+  const skin: Skin2D = createSkin2D(new Uint16Array(pointCount).fill(1), new Float32Array(pointCount * 4));
   return {
     kind: MeshAttachment2DKind,
     skin,

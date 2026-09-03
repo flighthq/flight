@@ -2,13 +2,11 @@ import type { Skin2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainSkeleton2DDeformLength } from './explainSkeleton2DDeformLength';
+import { createSkin2D } from './skin2D';
 
 // One vertex bound to two bones: eight floats of influence data, so the deform stream it parallels is
 // FOUR floats — twice what a per-vertex reading predicts.
-const twoBoneSkin: Skin2D = {
-  influenceCounts: new Uint16Array([2]),
-  influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-};
+const twoBoneSkin: Skin2D = createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]));
 
 describe('explainSkeleton2DDeformLength', () => {
   it('addresses a weighted attachment per INFLUENCE, which is the count that surprises', () => {

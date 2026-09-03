@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
 import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
+import { createSkin2D } from './skin2D';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {
@@ -35,11 +36,9 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('carries the verb stream and winding through untouched, since bones move points and not verbs', () => {
     const skeleton = createSkeleton2D([makeBone()]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment = weightedPath(
-      { influenceCounts: new Uint16Array([1]), influences: new Float32Array([0, 3, 4, 1]) },
-      1,
-      [PathCommand.MOVE_TO],
-    );
+    const attachment = weightedPath(createSkin2D(new Uint16Array([1]), new Float32Array([0, 3, 4, 1])), 1, [
+      PathCommand.MOVE_TO,
+    ]);
     const out = emptyPath();
 
     deformSkeleton2DPathAttachment(out, attachment, skeleton, 0);
@@ -57,10 +56,7 @@ describe('deformSkeleton2DPathAttachment', () => {
     const skeleton = createSkeleton2D([makeBone({ rotation: 90 })]);
     computeSkeleton2DWorldTransforms(skeleton);
     const attachment = weightedPath(
-      {
-        influenceCounts: new Uint16Array([1, 1, 1]),
-        influences: new Float32Array([0, 0, 0, 1, 0, 1, 0, 1, 0, 2, 0, 1]),
-      },
+      createSkin2D(new Uint16Array([1, 1, 1]), new Float32Array([0, 0, 0, 1, 0, 1, 0, 1, 0, 2, 0, 1])),
       3,
       [PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO],
     );
@@ -82,10 +78,7 @@ describe('deformSkeleton2DPathAttachment', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
     computeSkeleton2DWorldTransforms(skeleton);
     const attachment = weightedPath(
-      {
-        influenceCounts: new Uint16Array([2]),
-        influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-      },
+      createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5])),
       1,
       [PathCommand.MOVE_TO],
     );
@@ -100,11 +93,9 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('adds a weighted deform offset in bone-local space, one pair per influence', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment = weightedPath(
-      { influenceCounts: new Uint16Array([1]), influences: new Float32Array([0, 1, 0, 1]) },
-      1,
-      [PathCommand.MOVE_TO],
-    );
+    const attachment = weightedPath(createSkin2D(new Uint16Array([1]), new Float32Array([0, 1, 0, 1])), 1, [
+      PathCommand.MOVE_TO,
+    ]);
     const out = emptyPath();
 
     deformSkeleton2DPathAttachment(out, attachment, skeleton, 0, new Float32Array([0, 2]));
@@ -118,10 +109,7 @@ describe('deformSkeleton2DPathAttachment', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
     computeSkeleton2DWorldTransforms(skeleton);
     const attachment = weightedPath(
-      {
-        influenceCounts: new Uint16Array([2]),
-        influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-      },
+      createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5])),
       1,
       [PathCommand.MOVE_TO],
     );
@@ -138,10 +126,7 @@ describe('deformSkeleton2DPathAttachment', () => {
     const skeleton = createSkeleton2D([makeBone(), makeBone()]);
     computeSkeleton2DWorldTransforms(skeleton);
     const attachment = weightedPath(
-      {
-        influenceCounts: new Uint16Array([2]),
-        influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-      },
+      createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5])),
       1,
       [PathCommand.MOVE_TO],
     );

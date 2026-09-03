@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { Bone2D, RiveArtboardGraph, RiveCoreObject, RiveSkeleton2DImport } from '@flighthq/types/contract';
@@ -44,7 +45,7 @@ export function createRiveSkeleton2D(artboard: Readonly<RiveArtboardGraph>): Riv
       component,
     ),
   );
-  return { boneIndices, skeleton: createSkeleton2D(bones) };
+  return createEntity({ boneIndices, skeleton: createSkeleton2D(bones) });
 }
 
 function createRiveBone2D(

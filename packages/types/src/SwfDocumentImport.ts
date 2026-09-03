@@ -1,4 +1,5 @@
 import type { AdvancedBlendMode } from './AdvancedBlendMode';
+import type { Entity } from './Entity';
 import type { EmbeddedImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
 import type { RenderEffect } from './RenderEffect';
@@ -9,7 +10,7 @@ import type { Scene2DDocument } from './Scene2DDocument';
  * than being dropped or silently flattened onto a node. `createScene2DFromSwf` returns the document
  * alone for the callers — the importer registry among them — that only want the graph.
  */
-export interface SwfDocumentImport {
+export interface SwfDocumentImport extends Entity {
   /** Every placement appearance the caller has to realize itself. Empty for a file that uses none. */
   appearances: SwfNodeAppearance[];
   document: Scene2DDocument;

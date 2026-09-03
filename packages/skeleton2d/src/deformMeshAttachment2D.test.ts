@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { deformSkeleton2DMeshAttachment } from './deformMeshAttachment2D';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
 import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
+import { createSkin2D } from './skin2D';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {
@@ -39,7 +40,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
     // One bone rotated 90° at (5,0). One vertex, one influence: offset (1,0) in the bone, weight 1.
     const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
-    const mesh = weightedMesh({ influenceCounts: new Uint16Array([1]), influences: new Float32Array([0, 1, 0, 1]) }, 1);
+    const mesh = weightedMesh(createSkin2D(new Uint16Array([1]), new Float32Array([0, 1, 0, 1])), 1);
     const out = new Float32Array(2);
     deformSkeleton2DMeshAttachment(out, mesh, s, 0);
     // (1,0) rotated 90° = (0,1), + translation (5,0) → (5,1).
@@ -51,10 +52,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
     const s = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
     computeSkeleton2DWorldTransforms(s);
     // Vertex at each bone's origin (0,0), weighted 0.5 to bone 0 and 0.5 to bone 1.
-    const skin: Skin2D = {
-      influenceCounts: new Uint16Array([2]),
-      influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-    };
+    const skin: Skin2D = createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]));
     const out = new Float32Array(2);
     deformSkeleton2DMeshAttachment(out, weightedMesh(skin, 1), s, 0);
     expect(out[0]).toBeCloseTo(5, 5); // midpoint of x=0 and x=10
@@ -64,7 +62,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
   it('adds a weighted deform offset in BONE-LOCAL space, one pair per influence', () => {
     const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
-    const mesh = weightedMesh({ influenceCounts: new Uint16Array([1]), influences: new Float32Array([0, 1, 0, 1]) }, 1);
+    const mesh = weightedMesh(createSkin2D(new Uint16Array([1]), new Float32Array([0, 1, 0, 1])), 1);
     const out = new Float32Array(2);
 
     deformSkeleton2DMeshAttachment(out, mesh, s, 0, new Float32Array([0, 2]));
@@ -78,10 +76,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
   it('walks the deform stream per influence, so a two-bone vertex consumes two offset pairs', () => {
     const s = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
     computeSkeleton2DWorldTransforms(s);
-    const skin: Skin2D = {
-      influenceCounts: new Uint16Array([2]),
-      influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-    };
+    const skin: Skin2D = createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]));
     const out = new Float32Array(2);
 
     // Only the SECOND influence is displaced; at weight 0.5 it moves the blended vertex half as far.
@@ -94,10 +89,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
   it('ignores a deform stream too short for the influences it parallels rather than reading past it', () => {
     const s = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
     computeSkeleton2DWorldTransforms(s);
-    const skin: Skin2D = {
-      influenceCounts: new Uint16Array([2]),
-      influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-    };
+    const skin: Skin2D = createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]));
     const out = new Float32Array(2);
 
     // Sized from vertex count (one pair) instead of influence count (two) — the importer bug this guards.
@@ -132,10 +124,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
     setSkeleton2DDeformLengthGuard((report) => reports.push({ ...report }));
     const s = createSkeleton2D([makeBone(), makeBone()]);
     computeSkeleton2DWorldTransforms(s);
-    const skin: Skin2D = {
-      influenceCounts: new Uint16Array([2]),
-      influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
-    };
+    const skin: Skin2D = createSkin2D(new Uint16Array([2]), new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]));
 
     // Sized from vertex count (2) rather than influence count (4) — the importer mistake the guard names.
     deformSkeleton2DMeshAttachment(new Float32Array(2), weightedMesh(skin, 1), s, 0, new Float32Array([9, 9]));

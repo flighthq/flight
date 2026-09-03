@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
@@ -114,12 +115,12 @@ export function createScene2DDocumentFromRiveDocument(
   const root = createDisplayObject({ name: 'Rive' });
   for (const artboard of imported.artboards) addNodeChild(root, artboard.root);
 
-  return {
+  return createEntity({
     imageResources: createRiveImageResources(imported, diagnostics),
     imported,
     root,
     slots: createRiveSlots(imported.artboards),
-  };
+  });
 }
 
 /**

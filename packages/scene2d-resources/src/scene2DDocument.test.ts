@@ -10,7 +10,7 @@ describe('createScene2DDocument', () => {
     const slots = [createScene2DSlotReference('bg', createDisplayObject())];
     const imageResources = [createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png')];
     const audioResources = [createEmbeddedAudioResourceReference(new Uint8Array([2]), 'audio/mpeg')];
-    expect(createScene2DDocument(root, slots, 'acme', null, imageResources, audioResources)).toEqual({
+    expect(createScene2DDocument(root, slots, 'acme', null, imageResources, audioResources)).toMatchObject({
       audioResources,
       backgroundColor: null,
       imageResources,

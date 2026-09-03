@@ -12,6 +12,7 @@ export {
   createSkeleton2D,
   createSkeleton2DBoneAnimationTarget,
   createSkeleton2DSlotAnimationTarget,
+  createSkin2D,
   deformSkeleton2DMeshAttachment,
   deformSkeleton2DPathAttachment,
   disposeSkeleton2D,

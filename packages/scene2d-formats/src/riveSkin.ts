@@ -1,5 +1,6 @@
 import { createMatrix, inverseMatrixTransformPointXY, matrixTransformPointXY } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type {
   ImportDiagnostic,
   Matrix,
@@ -87,7 +88,7 @@ export function createRiveSkin2D(
     influenceCounts[position] = written;
   }
 
-  return { influenceCounts, influences: new Float32Array(influences) };
+  return createSkin2D(influenceCounts, new Float32Array(influences));
 }
 
 interface RiveTendonBone {

@@ -216,7 +216,7 @@ export type RiveAnimationLoop = (typeof RiveAnimationLoop)[keyof typeof RiveAnim
  * not a bone. Animation keys its objects by component index, so a channel needs this to reach the
  * bone it drives.
  */
-export interface RiveSkeleton2DImport {
+export interface RiveSkeleton2DImport extends Entity {
   boneIndices: number[];
   skeleton: Skeleton2D;
 }
@@ -339,7 +339,7 @@ export interface RivePathRecord {
  * they came from. The artboards travel alongside because their clips, state machines and advanced
  * blends have no place in a static document — a caller that wants to play or blend needs the import.
  */
-export interface RiveScene2DDocumentResult {
+export interface RiveScene2DDocumentResult extends Entity {
   imageResources: ImageResourceReference[];
   imported: RiveDocumentImportResult;
   root: DisplayObject;

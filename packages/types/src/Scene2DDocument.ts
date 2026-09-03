@@ -1,4 +1,5 @@
 import type { AudioResourceReference } from './AudioResourceReference';
+import type { Entity } from './Entity';
 import type { ImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
 
@@ -32,7 +33,7 @@ export interface Scene2DSlotReference {
 //
 // A format that embeds a whole sub-document (a nested or data-uri SVG) recurses through the importer
 // registry at parse instead, which is why neither array carries a node-producing byte payload.
-export interface Scene2DDocument {
+export interface Scene2DDocument extends Entity {
   audioResources: AudioResourceReference[];
   // The authored stage colour as packed RGBA, or null when the format declares none. It is document
   // metadata rather than content — a colour the viewport clears to, not a node in the graph — so an

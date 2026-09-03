@@ -2,6 +2,7 @@ import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import { createAudioResource, createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -145,7 +146,7 @@ export function createScene2DImportFromSwf(
   }
   const imageResources = createSwfImageResources(parsed);
 
-  return {
+  return createEntity({
     appearances: instantiation.appearances,
     document: createScene2DDocument(
       root,
@@ -156,7 +157,7 @@ export function createScene2DImportFromSwf(
       createSwfAudioResources(parsed),
     ),
     jpegAlphaPayloads: createSwfJpegAlphaPayloads(parsed, imageResources.references),
-  };
+  });
 }
 
 // Instantiates a symbol the file exported by linkage name but never placed on a timeline. A library

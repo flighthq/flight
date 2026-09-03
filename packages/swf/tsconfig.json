@@ -35,6 +35,7 @@
     { "path": "../text" },
     { "path": "../texture" },
     { "path": "../text-markup" },
+    { "path": "../entity" },
     { "path": "../types" }
   ],
   "include": ["src"]

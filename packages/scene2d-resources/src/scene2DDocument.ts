@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   AudioResourceReference,
   ImageResourceReference,
@@ -14,7 +15,7 @@ export function createScene2DDocument(
   imageResources: ImageResourceReference[] = [],
   audioResources: AudioResourceReference[] = [],
 ): Scene2DDocument {
-  return { audioResources, backgroundColor, imageResources, root, slots, sourceKind };
+  return createEntity({ audioResources, backgroundColor, imageResources, root, slots, sourceKind });
 }
 
 export function createScene2DSlotReference(
