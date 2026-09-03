@@ -11,6 +11,7 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
@@ -27,7 +28,7 @@ export function buildGlClassicDefineKey(key: Readonly<GlClassicDefineKey>): stri
     key.hasSpecularMap ? 's' : '-'
   }${key.hasNormalMap ? 'n' : '-'}${key.hasAlphaMap ? 'a' : '-'}${key.hasUvTransform ? 'u' : '-'}${
     key.hasSkin ? 'k' : '-'
-  }${key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''}`;
+  }${key.hasInstances ? 'i' : '-'}${key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''}`;
 }
 
 // Compiles the classic uber-shader for a define key, links it, and resolves its uniform locations.
@@ -71,6 +72,7 @@ export function ensureGlClassicProgram(state: GlRenderState, key: Readonly<GlCla
     ...key,
     hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
     hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
+    hasInstances: getGlScene3DRuntime(state).activeInstancedRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
@@ -117,7 +119,8 @@ export function getGlClassicVertexSource(): string {
 // shader), so it is spliced here rather than into the shared define block.
 export function getGlClassicVertexSourceForKey(key: Readonly<GlClassicDefineKey>): string {
   const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
-  return buildGlClassicDefineSource(key) + skin + CLASSIC_VERTEX_BODY;
+  const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
+  return buildGlClassicDefineSource(key) + skin + instances + CLASSIC_VERTEX_BODY;
 }
 
 // Builds the leading "#version 300 es\n#define ..." block for a classic define key, to be prepended
@@ -134,6 +137,7 @@ function buildGlClassicDefineSource(key: Readonly<GlClassicDefineKey>): string {
   if (key.hasAlphaMap) defines += '#define HAS_ALPHA_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasInstances) defines += '#define HAS_INSTANCES\n';
   if (key.hasColorMatrix) defines += '#define HAS_COLOR_MATRIX\n';
   else if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
   return defines;
@@ -165,9 +169,18 @@ void main() {
   vec3 localNormal = a_normal;
   vec3 localTangent = a_tangent.xyz;
 #endif
+#ifdef HAS_INSTANCES
+  mat4 instanceModel = u_model * instanceModelMatrix();
+  vec4 worldPosition = instanceModel * localPosition;
+  v_worldPosition = worldPosition.xyz;
+  v_normal = mat3(instanceModel) * localNormal;
+  mat3 modelRotation = mat3(instanceModel);
+#else
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
+  mat3 modelRotation = mat3(u_model);
+#endif
   // A tangent is a TRUE SURFACE VECTOR and follows the model matrix, the same one a position
   // follows. Only the normal is a covector needing the inverse-transpose. The two agree under
   // rotation and uniform scale, which is why sharing u_normalMatrix looked correct, and diverge
@@ -176,7 +189,6 @@ void main() {
   // the bitangent is rebuilt as w * cross(N, T), so without this the whole frame is flipped on every
   // mirrored instance. Guarded rather than sign(), because sign() returns 0 for a singular matrix
   // and a zero w collapses the bitangent entirely — a worse failure than keeping the original hand.
-  mat3 modelRotation = mat3(u_model);
   float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
   v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
   v_uv0 = applyUvTransform(a_uv0);

@@ -10,6 +10,7 @@ import type {
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
@@ -45,7 +46,7 @@ export function bindGlUnlitSurface(
 export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
   return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.vertexColor ? 'v' : '-'}${
     key.hasUvTransform ? 'u' : '-'
-  }${key.hasSkin ? 'k' : '-'}`;
+  }${key.hasSkin ? 'k' : '-'}${key.hasInstances ? 'i' : '-'}`;
 }
 
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -73,6 +74,7 @@ export function ensureGlUnlitProgram(state: GlRenderState, key: Readonly<GlUnlit
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlUnlitDefineKey = {
     ...key,
+    hasInstances: getGlScene3DRuntime(state).activeInstancedRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `unlit:${buildGlUnlitDefineKey(fullKey)}`, (gl) =>
@@ -87,7 +89,9 @@ export function getGlUnlitFragmentSourceForKey(key: Readonly<GlUnlitDefineKey>):
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlUnlitVertexSourceForKey(key: Readonly<GlUnlitDefineKey>): string {
-  return buildDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + UNLIT_VERTEX_BODY;
+  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+  const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
+  return buildDefineSource(key) + skin + instances + UNLIT_VERTEX_BODY;
 }
 
 function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
@@ -97,6 +101,7 @@ function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.vertexColor) defines += '#define VERTEX_COLOR\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasInstances) defines += '#define HAS_INSTANCES\n';
   return defines;
 }
 
@@ -118,7 +123,9 @@ void main() {
 #ifdef VERTEX_COLOR
   v_color0 = a_color0;
 #endif
-#ifdef HAS_SKIN
+#ifdef HAS_INSTANCES
+  gl_Position = u_viewProjection * u_model * instanceModelMatrix() * vec4(a_position, 1.0);
+#elif defined(HAS_SKIN)
   gl_Position = u_viewProjection * u_model * skinMatrix() * vec4(a_position, 1.0);
 #else
   gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);

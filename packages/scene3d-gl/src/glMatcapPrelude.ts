@@ -9,7 +9,12 @@ import type {
 } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
+import {
+  compileGlProgram,
+  ensureGlScene3DProgram,
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
+  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+} from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Uploads the resolved matcap surface uniforms: the linear tint (already sRgb-decoded on the CPU),
 // the optional matcap texture on texture unit 0, and the alpha-mask cutoff. The caller has already
@@ -34,7 +39,7 @@ export function bindGlMatcapSurface(
 // A short, stable, order-independent string identity for a matcap define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlMatcapDefineKey(key: Readonly<GlMatcapDefineKey>): string {
-  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasMatcap ? 't' : '-'}${key.hasSkin ? 'k' : '-'}`;
+  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasMatcap ? 't' : '-'}${key.hasSkin ? 'k' : '-'}${key.hasInstances ? 'i' : '-'}`;
 }
 
 // Compiles the matcap shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -60,6 +65,7 @@ export function compileGlMatcapProgram(gl: GlContext, key: Readonly<GlMatcapDefi
 export function ensureGlMatcapProgram(state: GlRenderState, key: Readonly<GlMatcapDefineKey>): GlMatcapProgram {
   const fullKey: GlMatcapDefineKey = {
     ...key,
+    hasInstances: getGlScene3DRuntime(state).activeInstancedRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `matcap:${buildGlMatcapDefineKey(fullKey)}`, (gl) =>
@@ -74,7 +80,9 @@ export function getGlMatcapFragmentSourceForKey(key: Readonly<GlMatcapDefineKey>
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlMatcapVertexSourceForKey(key: Readonly<GlMatcapDefineKey>): string {
-  return buildDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + MATCAP_VERTEX_BODY;
+  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+  const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
+  return buildDefineSource(key) + skin + instances + MATCAP_VERTEX_BODY;
 }
 
 function buildDefineSource(key: Readonly<GlMatcapDefineKey>): string {
@@ -82,6 +90,7 @@ function buildDefineSource(key: Readonly<GlMatcapDefineKey>): string {
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasMatcap) defines += '#define HAS_MATCAP\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasInstances) defines += '#define HAS_INSTANCES\n';
   return defines;
 }
 
@@ -105,10 +114,20 @@ void main() {
   vec4 localPosition = vec4(a_position, 1.0);
   vec3 localNormal = a_normal;
 #endif
+#ifdef HAS_INSTANCES
+  mat4 instanceModel = u_model * instanceModelMatrix();
+  vec4 worldPosition = instanceModel * localPosition;
+  // mat3(instanceModel) approximates the normal transform for instanced draws (correct under
+  // rotation and uniform scale — non-uniform per-instance scale would need the inverse-transpose,
+  // which the instance buffer does not carry).
+  v_viewNormal = mat3(u_view) * (mat3(instanceModel) * localNormal);
+#else
+  vec4 worldPosition = u_model * localPosition;
   // u_normalMatrix takes the object normal into world space (handles model rotation/scale);
   // mat3(u_view) rotates it into view space. Normalized in the fragment scene2d.
   v_viewNormal = mat3(u_view) * (u_normalMatrix * localNormal);
-  gl_Position = u_viewProjection * u_model * localPosition;
+#endif
+  gl_Position = u_viewProjection * worldPosition;
 }
 `;
 

@@ -17,6 +17,7 @@ import { MAX_FORWARD_LIGHTS, ModifierSlot, RegistryEntryState } from '@flighthq/
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
@@ -33,7 +34,7 @@ type GlModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<KeyedTable<
 export function buildGlShadedCacheKey(key: Readonly<GlShadedDefineKey>, modifierDefineKey: string): string {
   const base = `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${key.hasSpecularMap ? 's' : '-'}${
     key.hasNormalMap ? 'n' : '-'
-  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}${
+  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}${key.hasInstances ? 'i' : '-'}${
     key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''
   }`;
   return `shaded:${base}|${modifierDefineKey}`;
@@ -58,6 +59,7 @@ export function compileGlShadedProgram(
   const vertexSource =
     defineSource +
     (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') +
+    (key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '') +
     assembleGlShadedVertexBody(orderedModifiers, registry);
   let fragmentBody = assembleGlShadedFragmentBody(orderedModifiers, registry);
   if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
@@ -111,6 +113,7 @@ export function ensureGlShadedProgram(
     ...key,
     hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
     hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
+    hasInstances: getGlScene3DRuntime(state).activeInstancedRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const cacheKey = `${buildGlShadedCacheKey(fullKey, getGlModifierDefineKey(modifiers, registry))}|registry:${
@@ -213,6 +216,7 @@ function buildGlShadedDefineSource(key: Readonly<GlShadedDefineKey>): string {
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasInstances) defines += '#define HAS_INSTANCES\n';
   if (key.hasColorMatrix) defines += '#define HAS_COLOR_MATRIX\n';
   else if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
   return defines;
@@ -253,9 +257,18 @@ void main() {
   // procedural cases scroll by \`u_time\` and read \`vertexUv\` (the raw uv, before the uv transform).
   //@VERTEX
 
+#ifdef HAS_INSTANCES
+  mat4 instanceModel = u_model * instanceModelMatrix();
+  vec4 worldPosition = instanceModel * localPosition;
+  v_worldPosition = worldPosition.xyz;
+  v_normal = mat3(instanceModel) * localNormal;
+  mat3 modelRotation = mat3(instanceModel);
+#else
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
+  mat3 modelRotation = mat3(u_model);
+#endif
   // A tangent is a TRUE SURFACE VECTOR and follows the model matrix, the same one a position
   // follows. Only the normal is a covector needing the inverse-transpose. The two agree under
   // rotation and uniform scale, which is why sharing u_normalMatrix looked correct, and diverge
@@ -264,7 +277,6 @@ void main() {
   // the bitangent is rebuilt as w * cross(N, T), so without this the whole frame is flipped on every
   // mirrored instance. Guarded rather than sign(), because sign() returns 0 for a singular matrix
   // and a zero w collapses the bitangent entirely — a worse failure than keeping the original hand.
-  mat3 modelRotation = mat3(u_model);
   float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
   v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
   v_uv0 = applyUvTransform(a_uv0);

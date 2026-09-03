@@ -31,7 +31,11 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { GL_DIRECTIONAL_SHADOW_GLSL } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
+import {
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
+  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  GL_UV_TRANSFORM_VERTEX_GLSL,
+} from './glMeshProgram';
 // A short, stable, order-independent string identity for a define key, used as the program-cache
 // map key. Two keys with the same flags produce the same string and so share a compiled program.
 // Standard map/alpha flags first, then one slot per extension lobe.
@@ -46,6 +50,7 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
     `${key.hasAlphaMap ? 'a' : '-'}` +
     `${key.hasUvTransform ? 'u' : '-'}` +
     `:${key.hasSkin ? 'k' : '-'}` +
+    `${key.hasInstances ? 'i' : '-'}` +
     `${key.hasColorMatrix ? 'x' : key.hasColorAdjustment ? 'c' : ''}`
   );
 }
@@ -63,6 +68,7 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   if (key.hasOcclusionMap) defines += '#define HAS_OCCLUSION_MAP\n';
   if (key.hasEmissiveMap) defines += '#define HAS_EMISSIVE_MAP\n';
   if (key.hasAlphaMap) defines += '#define HAS_ALPHA_MAP\n';
+  if (key.hasInstances) defines += '#define HAS_INSTANCES\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
   if (key.hasColorMatrix) defines += '#define HAS_COLOR_MATRIX\n';
   else if (key.hasColorAdjustment) defines += '#define HAS_COLOR_ADJUSTMENT\n';
@@ -118,7 +124,9 @@ export function getGlPbrVertexSource(): string {
 // hand to the GL compiler. The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment
 // shader), so it is spliced here rather than into the shared define block.
 export function getGlPbrVertexSourceForKey(key: Readonly<GlPbrDefineKey>): string {
-  return buildGlPbrDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + PBR_VERTEX_BODY;
+  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+  const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
+  return buildGlPbrDefineSource(key) + skin + instances + PBR_VERTEX_BODY;
 }
 
 const PBR_EXTENSION_DECLARATIONS = '/*__PBR_EXTENSION_DECLARATIONS__*/';
@@ -157,6 +165,13 @@ void main() {
   vec3 localNormal = a_normal;
   vec3 localTangent = a_tangent.xyz;
 #endif
+#ifdef HAS_INSTANCES
+  mat4 instanceModel = u_model * instanceModelMatrix();
+  vec4 worldPosition = instanceModel * localPosition;
+  v_worldPosition = worldPosition.xyz;
+  v_normal = mat3(instanceModel) * localNormal;
+  mat3 modelRotation = mat3(instanceModel);
+#else
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
@@ -169,6 +184,7 @@ void main() {
   // mirrored instance. Guarded rather than sign(), because sign() returns 0 for a singular matrix
   // and a zero w collapses the bitangent entirely — a worse failure than keeping the original hand.
   mat3 modelRotation = mat3(u_model);
+#endif
   float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
   v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
   v_uv0 = applyUvTransform(a_uv0);
