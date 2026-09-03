@@ -1,7 +1,7 @@
 import {
   createBitmap,
   createBitmapFingerprint,
-  createBitmapFromImageSource,
+  createBitmapFromCanvas,
   formatBitmapFingerprint,
   getBitmapCoverage,
   getBitmapPixel,
@@ -275,7 +275,8 @@ export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   if (target?.kind === 'webgl') return createBitmapFromGlRenderState(target.state);
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
-  return createBitmapFromImageSource(canvas, canvas.width, canvas.height);
+  if (canvas.getContext('2d') === null) return null;
+  return createBitmapFromCanvas(canvas, 0, 0, canvas.width, canvas.height);
 }
 
 function waitForDomRenderPixels(timeoutMs: number): Promise<Bitmap | null> {

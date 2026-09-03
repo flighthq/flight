@@ -16,7 +16,6 @@ export * from './bitmapDissolve';
 export * from './bitmapDraw';
 export * from './bitmapEncode';
 export * from './bitmapEncodeBackend';
-export * from './bitmapReadbackBackend';
 export * from './bitmapFill';
 export * from './bitmapFingerprint';
 export * from './bitmapFlip';

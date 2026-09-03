@@ -1,16 +1,15 @@
-import {
-  createBitmapFromImageSource,
-  explainBitmapReadback,
-  hasBitmapReadbackHostBackend,
-  resetBitmapReadbackBackendForTest,
-} from '@flighthq/bitmap/contract';
+import { createBitmapFromImageSource, explainBitmapReadback } from '@flighthq/bitmap/contract';
+import type { HasGraphicsBitmapReadback } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
+import { createWebBitmapReadbackBackend, webBitmapReadbackBackend } from './webBitmapReadback';
+
+function hostWith(backend: HasGraphicsBitmapReadback['graphics']['bitmapReadback']): HasGraphicsBitmapReadback {
+  return { graphics: { bitmapReadback: backend } } as HasGraphicsBitmapReadback;
+}
 
 afterEach(() => {
-  resetBitmapReadbackBackendForTest();
   vi.restoreAllMocks();
 });
 
@@ -27,24 +26,16 @@ describe('createWebBitmapReadbackBackend', () => {
   });
 });
 
-describe('enableHostWebBitmapReadback', () => {
-  it('installs lazily without allocating a canvas', () => {
-    const createElement = vi.spyOn(document, 'createElement');
-
-    enableHostWebBitmapReadback();
-
-    expect(hasBitmapReadbackHostBackend()).toBe(true);
-    expect(createElement).not.toHaveBeenCalled();
-  });
+describe('webBitmapReadbackBackend', () => {
+  const host = hostWith(webBitmapReadbackBackend);
 
   it('materializes full pixels only for the constructor path', () => {
     const source = document.createElement('canvas');
     source.width = 8;
     source.height = 4;
     const getImageData = vi.spyOn(CanvasRenderingContext2D.prototype, 'getImageData');
-    enableHostWebBitmapReadback();
 
-    const bitmap = createBitmapFromImageSource(source, 8, 4);
+    const bitmap = createBitmapFromImageSource(host, source, 8, 4);
 
     expect(bitmap).not.toBeNull();
     expect(bitmap!.width).toBe(8);
@@ -68,9 +59,11 @@ describe('enableHostWebBitmapReadback', () => {
     const getImageData = vi.spyOn(CanvasRenderingContext2D.prototype, 'getImageData').mockReturnValue(probe);
     const drawImage = vi.spyOn(CanvasRenderingContext2D.prototype, 'drawImage');
     const createElement = vi.spyOn(document, 'createElement');
-    enableHostWebBitmapReadback();
 
-    expect(explainBitmapReadback(source, source.width, source.height)).toEqual({ readable: true, reason: 'ok' });
+    expect(explainBitmapReadback(host, source, source.width, source.height)).toEqual({
+      readable: true,
+      reason: 'ok',
+    });
 
     const scratch = createElement.mock.results[0]?.value;
     expect(scratch).toBeInstanceOf(HTMLCanvasElement);
@@ -88,16 +81,15 @@ describe('enableHostWebBitmapReadback', () => {
     const getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(null as ReturnType<HTMLCanvasElement['getContext']>);
-    enableHostWebBitmapReadback();
 
-    expect(explainBitmapReadback(source, 8, 4)).toEqual({ readable: false, reason: 'no-canvas' });
+    expect(explainBitmapReadback(host, source, 8, 4)).toEqual({ readable: false, reason: 'no-canvas' });
     getContext.mockRestore();
 
     const getImageData = vi.spyOn(CanvasRenderingContext2D.prototype, 'getImageData').mockImplementation(() => {
       throw new DOMException('Tainted canvases may not be exported.', 'SecurityError');
     });
-    expect(explainBitmapReadback(source, 8, 4)).toEqual({ readable: false, reason: 'tainted-source' });
-    expect(createBitmapFromImageSource(source, 8, 4)).toBeNull();
+    expect(explainBitmapReadback(host, source, 8, 4)).toEqual({ readable: false, reason: 'tainted-source' });
+    expect(createBitmapFromImageSource(host, source, 8, 4)).toBeNull();
     getImageData.mockRestore();
   });
 
@@ -109,9 +101,8 @@ describe('enableHostWebBitmapReadback', () => {
       if (width === 1 && height === 1) return onePixel;
       throw fault;
     });
-    enableHostWebBitmapReadback();
 
-    expect(explainBitmapReadback(source, 8192, 8192)).toEqual({ readable: true, reason: 'ok' });
-    expect(() => createBitmapFromImageSource(source, 8192, 8192)).toThrow(fault);
+    expect(explainBitmapReadback(host, source, 8192, 8192)).toEqual({ readable: true, reason: 'ok' });
+    expect(() => createBitmapFromImageSource(host, source, 8192, 8192)).toThrow(fault);
   });
 });

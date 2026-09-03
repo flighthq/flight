@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { CapabilityArrivalFailure, GeneratedEntry } from './capability-arrival';
 import { capabilityArrivalFailures } from './capability-arrival';
 
-type Removal = 'bitmap-readback' | 'functional-aggregate' | 'gl-surface' | 'video' | 'wgpu-surface';
+type Removal = 'functional-aggregate' | 'gl-surface' | 'video' | 'wgpu-surface';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const VIDEO_APP = 'examples/packages/video/src/app.ts';
@@ -47,13 +47,6 @@ function mutateGeneratedEntry(
   controls: RemovalControl[],
 ): string {
   let source = entry.source;
-  if (
-    removal === 'bitmap-readback' &&
-    entry.suite === 'examples' &&
-    (entry.renderer === 'canvas' || entry.renderer === 'webgl')
-  ) {
-    source = removeRequiredOccurrence(source, 'enableHostWebBitmapReadback();', entry.consumer, controls);
-  }
   if (removal === 'functional-aggregate' && entry.suite === 'functional') {
     source = removeRequiredOccurrence(source, 'enableHostWeb();', entry.consumer, controls);
   }
@@ -107,17 +100,6 @@ describe('capability-arrival source gate', () => {
     expect(() =>
       removeRequiredOccurrence('enableHostWeb(); enableHostWeb();', 'enableHostWeb();', 'duplicate', []),
     ).toThrow('duplicate must contain exactly one "enableHostWeb();"; found 2');
-  });
-
-  it('reddens every Canvas/WebGL example when BitmapReadback is removed from the generated entry', async () => {
-    const { controls, failures } = await analyze('bitmap-readback');
-
-    expect(controls.length).toBeGreaterThan(0);
-    expect(new Set(controls.map(({ after, before }) => `${before}->${after}`))).toEqual(new Set(['1->0']));
-    expect(failures).toHaveLength(controls.length);
-    expect(new Set(failures.map((failure) => failure.capability))).toEqual(new Set(['BitmapReadback']));
-    expect(arrivalNames(failures)).toContain('examples:shapes/canvas:BitmapReadback:arrival');
-    expect(arrivalNames(failures)).toContain('examples:shapes/webgl:BitmapReadback:arrival');
   });
 
   it('reddens all four interactive video routes when VideoCapability is removed', async () => {
