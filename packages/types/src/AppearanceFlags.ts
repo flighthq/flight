@@ -4,7 +4,6 @@ export enum AppearanceFlags {
   Alpha = 1 << 1,
   BlendMode = 1 << 2,
   Clip = 1 << 3,
-  Scale9Grid = 1 << 4,
 
   Any = 1 << 31,
 }
