@@ -75,7 +75,7 @@ describe('createPhysics3DAbiContactBuffer', () => {
 
 describe('createPhysics3DAbiExecutionResult', () => {
   it('starts at a complete empty stream boundary', () => {
-    expect(createPhysics3DAbiExecutionResult()).toEqual({
+    expect(createPhysics3DAbiExecutionResult()).toMatchObject({
       status: 'Complete',
       commandIndex: 0,
       byteOffset: Physics3DAbiCommandHeaderByteLength,

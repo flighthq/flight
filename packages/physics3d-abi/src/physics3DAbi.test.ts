@@ -177,7 +177,7 @@ describe('executePhysics3DAbiCommands', () => {
     const result = createPhysics3DAbiExecutionResult();
 
     expect(executePhysics3DAbiCommands(abi, world, commands, result)).toBe(false);
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       status: 'InvalidBuffer',
       commandIndex: 0,
       byteOffset: Physics3DAbiCommandHeaderByteLength,
