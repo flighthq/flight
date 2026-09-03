@@ -8,6 +8,7 @@ import type { GlLitProgram } from './GlLitProgram';
 export interface GlToonDefineKey {
   alphaMaskEnabled: boolean;
   hasBaseColorMap: boolean;
+  hasInstances?: boolean;
   hasRamp: boolean;
   // Set by ensureGlToonProgram from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
   hasSkin?: boolean;

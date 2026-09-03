@@ -1,3 +1,4 @@
+import type { InstancedMesh } from './InstancedMesh';
 import type { Matrix4 } from './Matrix4';
 import type { Mesh } from './Mesh';
 import type { Scene3DLightBlock } from './Scene3DLightBlock';
@@ -17,8 +18,10 @@ import type { Scene3DLightBlock } from './Scene3DLightBlock';
 // The list is reused scratch owned by the render state across frames; a consumer must not retain
 // it past the drawScene3D it is passed to.
 export interface Scene3DRenderList {
+  instancedMeshCount: number;
   lights: Readonly<Scene3DLightBlock>;
   meshCount: number;
   viewProjection: Readonly<Matrix4>;
+  visibleInstancedMeshes: InstancedMesh[];
   visibleMeshes: Mesh[];
 }

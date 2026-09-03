@@ -11,6 +11,7 @@ export interface GlShadedDefineKey {
   hasColorAdjustment?: boolean;
   hasColorMatrix?: boolean;
   hasDiffuseMap: boolean;
+  hasInstances?: boolean;
   hasNormalMap: boolean;
   // Set by ensureGlShadedProgram from the render-state skinned-run flag, not the material renderer —
   // skinning keys off geometry.

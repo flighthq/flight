@@ -75,6 +75,7 @@ export interface GlScene3DRuntime {
   // tree-shakable feature is registered. Material-family compilers fold this into their program key.
   activeColorAdjustmentRun: boolean;
   activeColorMatrixRun: boolean;
+  activeInstancedRun: boolean;
   activeMeshProgram: GlMeshProgram | null;
   // Whether the draw run currently being bound is skinned. drawGlScene3D sets it before each bind()
   // so ensureGl*Program folds HAS_SKIN into the selected program variant without every material
@@ -117,6 +118,7 @@ export interface GlScene3DRuntime {
   // The per-state GPU skin bone-palette data texture (RGBA32F), created lazily by ensureGlSkinPalette on
   // the first skinned draw and grown to the largest skeleton seen. Every skinned mesh reuses this one
   // texture: the palette is re-uploaded per draw, so no per-mesh texture is retained. null until first use.
+  instancePalette: GlSkinPaletteTexture | null;
   skinPalette: GlSkinPaletteTexture | null;
   // The normal palette's own data texture, separate from the pose palette rather than interleaved with
   // it: a 3x3 padded to three vec4 columns uploads directly this way, with no per-frame repacking.

@@ -34,6 +34,16 @@ export interface Scene3DRenderProxy {
   // presence promotes the material renderer to its registered post-shade adjustment variant.
   colorScaleBias?: Readonly<ColorScaleBias> | null;
   colorMatrix?: readonly number[] | null;
+  // GPU instance count for an instanced draw. Absent or 0 means a single-instance draw (the common
+  // case); a positive value triggers `drawElementsInstanced` and expects `instanceMatrices` to carry
+  // the flattened per-instance model matrices (column-major, 16 floats each). Exclusive with skin —
+  // an instanced draw never reads `jointMatrices`.
+  instanceCount?: number;
+  // Flattened per-instance model matrices: `instanceCount` mat4s packed as 16 contiguous floats each
+  // (column-major), uploaded to the GPU instance palette texture. The shader multiplies
+  // `u_model * instanceModelMatrix()` so each instance's matrix is entity-local. Null/absent when
+  // `instanceCount` is 0 or absent.
+  instanceMatrices?: Readonly<Float32Array> | null;
   jointMatrices?: Readonly<Float32Array> | null;
   // The matching NORMAL palette for this draw — the skeleton's `normalMatrices`, one inverse-transpose
   // 3x3 per joint as three padded vec4 columns (12 floats each). Carried beside `jointMatrices` because

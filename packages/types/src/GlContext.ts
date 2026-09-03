@@ -180,6 +180,7 @@ type GlContextMember =
   | 'disable'
   | 'disableVertexAttribArray'
   | 'drawArrays'
+  | 'drawArraysInstanced'
   | 'drawBuffers'
   | 'drawElements'
   | 'drawElementsInstanced'

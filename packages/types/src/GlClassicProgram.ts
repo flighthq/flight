@@ -18,6 +18,7 @@ export interface GlClassicDefineKey {
   hasColorMatrix?: boolean;
   hasAlphaMap: boolean;
   hasDiffuseMap: boolean;
+  hasInstances?: boolean;
   hasNormalMap: boolean;
   // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlClassicProgram
   // from the render-state skinned-run flag, not by the material renderer — skinning keys off geometry.
