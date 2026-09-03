@@ -1,5 +1,4 @@
 export {
-  explainGeolocationBackend,
   clearGeolocationWatch,
   createGeoPosition,
   getCurrentGeoPosition,

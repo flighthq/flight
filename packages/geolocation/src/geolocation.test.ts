@@ -1,5 +1,11 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Entity, GeolocationBackend, GeolocationErrorReason, GeoPosition } from '@flighthq/types/contract';
+import type {
+  Entity,
+  GeolocationBackend,
+  GeolocationErrorReason,
+  GeoPosition,
+  HasSystemGeolocation,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -8,14 +14,8 @@ import {
   createWebGeolocationBackend,
   getCurrentGeoPosition,
   getCurrentGeoPositionResult,
-  getGeolocationBackend,
   isGeolocationAvailable,
-  setGeolocationBackend,
   watchGeolocationPosition,
-  explainGeolocationBackend,
-  installGeolocationHostBackend,
-  observeGeolocationHostResult,
-  resetGeolocationBackendForTest,
 } from './geolocation';
 
 function fakeBackend(available: boolean = true): GeolocationBackend & { cleared: number[]; lastWatch: number } {
@@ -51,20 +51,14 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
   });
 }
 
-afterEach(() => {
-  resetGeolocationBackendForTest();
-  vi.unstubAllGlobals();
-});
+function hostWith(backend: GeolocationBackend): HasSystemGeolocation {
+  return { system: { geolocation: backend } } as HasSystemGeolocation;
+}
 
 describe('clearGeolocationWatch', () => {
-  it('does not throw on the web backend in jsdom', () => {
-    expect(() => clearGeolocationWatch(0)).not.toThrow();
-  });
-
-  it('forwards the id to the active backend', () => {
+  it('forwards the id to the host backend', () => {
     const backend = fakeBackend();
-    setGeolocationBackend(backend);
-    clearGeolocationWatch(7);
+    clearGeolocationWatch(hostWith(backend), 7);
     expect(backend.cleared).toEqual([7]);
   });
 });
@@ -153,40 +147,13 @@ describe('createWebGeolocationBackend', () => {
     vi.stubGlobal('window', { isSecureContext: true });
     expect(backend.isAvailable()).toBe(false);
   });
-});
 
-describe('explainGeolocationBackend', () => {
-  afterEach(() => resetGeolocationBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetGeolocationBackendForTest();
-    const explanation = explainGeolocationBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setGeolocationBackend(fakeBackend());
-    expect(explainGeolocationBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installGeolocationHostBackend(fakeBackend());
-    expect(explainGeolocationBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installGeolocationHostBackend(fakeBackend());
-    installGeolocationHostBackend(fakeBackend());
-    expect(explainGeolocationBackend().conflict).toBe(true);
-  });
+  afterEach(() => vi.unstubAllGlobals());
 });
 
 describe('getCurrentGeoPosition', () => {
   it('returns the backend position', async () => {
-    setGeolocationBackend(fakeBackend());
-    const position = (await getCurrentGeoPosition()) as GeoPosition;
+    const position = (await getCurrentGeoPosition(hostWith(fakeBackend()))) as GeoPosition;
     expect(position.latitude).toBe(1);
     expect(position.longitude).toBe(2);
   });
@@ -194,116 +161,24 @@ describe('getCurrentGeoPosition', () => {
 
 describe('getCurrentGeoPositionResult', () => {
   it('returns position and null reason on success', async () => {
-    setGeolocationBackend(fakeBackend());
-    const result = await getCurrentGeoPositionResult();
+    const result = await getCurrentGeoPositionResult(hostWith(fakeBackend()));
     expect(result.position).not.toBeNull();
     expect(result.position!.latitude).toBe(1);
     expect(result.reason).toBeNull();
   });
-
-  it('returns null position with a reason on failure (web backend in jsdom)', async () => {
-    const result = await getCurrentGeoPositionResult();
-    expect(result.position).toBeNull();
-    expect(result.reason).toBe('unavailable');
-  });
-});
-
-describe('getGeolocationBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getGeolocationBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setGeolocationBackend(backend);
-    expect(getGeolocationBackend()).toBe(backend);
-  });
-});
-
-describe('installGeolocationHostBackend', () => {
-  afterEach(() => resetGeolocationBackendForTest());
-
-  it('installs a host backend that getGeolocationBackend returns', () => {
-    const backend = fakeBackend();
-    installGeolocationHostBackend(backend);
-    expect(getGeolocationBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installGeolocationHostBackend(first);
-    installGeolocationHostBackend(second);
-    expect(getGeolocationBackend()).toBe(first);
-    expect(explainGeolocationBackend().conflict).toBe(true);
-  });
 });
 
 describe('isGeolocationAvailable', () => {
-  it('returns the false sentinel even when browser geolocation exists', () => {
-    vi.stubGlobal('navigator', { geolocation: {} });
-    vi.stubGlobal('window', { isSecureContext: true });
-    expect(isGeolocationAvailable()).toBe(false);
-  });
-
-  it('routes a custom available provider when DOM globals are absent', () => {
-    vi.stubGlobal('navigator', undefined);
-    vi.stubGlobal('window', undefined);
-    setGeolocationBackend(fakeBackend(true));
-    expect(isGeolocationAvailable()).toBe(true);
-  });
-
-  it('routes an unavailable host provider when browser geolocation exists', () => {
-    vi.stubGlobal('navigator', { geolocation: {} });
-    vi.stubGlobal('window', { isSecureContext: true });
-    installGeolocationHostBackend(fakeBackend(false));
-    expect(isGeolocationAvailable()).toBe(false);
-  });
-});
-
-describe('observeGeolocationHostResult', () => {
-  afterEach(() => resetGeolocationBackendForTest());
-
-  it('records a successful observation', () => {
-    installGeolocationHostBackend(fakeBackend());
-    observeGeolocationHostResult('clearWatch', true);
-    const explanation = explainGeolocationBackend();
-    expect(explanation.operation).toBe('clearWatch');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installGeolocationHostBackend(fakeBackend());
-    observeGeolocationHostResult('clearWatch', false);
-    expect(explainGeolocationBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-describe('resetGeolocationBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setGeolocationBackend(fakeBackend());
-    installGeolocationHostBackend(fakeBackend());
-    observeGeolocationHostResult('clearWatch', true);
-    resetGeolocationBackendForTest();
-    expect(explainGeolocationBackend().layer).toBe('host-not-enabled');
-    expect(explainGeolocationBackend().conflict).toBe(false);
-    expect(explainGeolocationBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('setGeolocationBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setGeolocationBackend(fakeBackend());
-    setGeolocationBackend(null);
-    expect(getGeolocationBackend()).not.toBeNull();
+  it('routes the host backend availability', () => {
+    expect(isGeolocationAvailable(hostWith(fakeBackend(true)))).toBe(true);
+    expect(isGeolocationAvailable(hostWith(fakeBackend(false)))).toBe(false);
   });
 });
 
 describe('watchGeolocationPosition', () => {
   it('delivers positions and returns a watch id', () => {
-    setGeolocationBackend(fakeBackend());
     let seen = 0;
-    const id = watchGeolocationPosition((position) => {
+    const id = watchGeolocationPosition(hostWith(fakeBackend()), (position) => {
       seen = position.latitude;
     });
     expect(id).toBe(1);
@@ -311,17 +186,13 @@ describe('watchGeolocationPosition', () => {
   });
 
   it('delivers error reasons when onError is provided', () => {
-    setGeolocationBackend(fakeBackend());
     const errors: GeolocationErrorReason[] = [];
     watchGeolocationPosition(
+      hostWith(fakeBackend()),
       () => {},
       {},
       (reason) => errors.push(reason),
     );
     expect(errors).toEqual(['denied']);
-  });
-
-  it('returns -1 from the web backend when watching is unavailable', () => {
-    expect(watchGeolocationPosition(() => {})).toBe(-1);
   });
 });
