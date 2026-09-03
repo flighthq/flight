@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { HasSystemSensors } from '@flighthq/types/contract';
@@ -231,19 +232,19 @@ export function computeWorldAccelerationFromDeviceAcceleration(
 
 // Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
 export function createAmbientLightReading(): AmbientLightReading {
-  return { accuracy: 'unknown', illuminance: 0, interval: -1, timestamp: -1 };
+  return createEntity({ accuracy: 'unknown', illuminance: 0, interval: -1, timestamp: -1 });
 }
 
 // Allocates a zeroed MotionReading with unknown accuracy/interval/timestamp.
 // Used for accelerometer (gravity-included), linear acceleration, gravity vector, and magnetometer readings.
 export function createMotionReading(): MotionReading {
-  return { accuracy: 'unknown', interval: -1, timestamp: -1, x: 0, y: 0, z: 0 };
+  return createEntity({ accuracy: 'unknown', interval: -1, timestamp: -1, x: 0, y: 0, z: 0 });
 }
 
 // Allocates a zeroed OrientationReading. heading is -1 (unknown) and absolute is false until
 // a reading arrives.
 export function createOrientationReading(): OrientationReading {
-  return {
+  return createEntity({
     absolute: false,
     accuracy: 'unknown',
     alpha: 0,
@@ -252,35 +253,35 @@ export function createOrientationReading(): OrientationReading {
     heading: -1,
     interval: -1,
     timestamp: -1,
-  };
+  });
 }
 
 // Allocates a zeroed PressureReading with unknown accuracy/interval/timestamp.
 // altitude is -1 when underivable from pressure alone.
 export function createPressureReading(): PressureReading {
-  return { accuracy: 'unknown', altitude: -1, interval: -1, pressure: 0, timestamp: -1 };
+  return createEntity({ accuracy: 'unknown', altitude: -1, interval: -1, pressure: 0, timestamp: -1 });
 }
 
 // Allocates a zeroed ProximityReading with unknown accuracy/interval/timestamp.
 // distance and max are -1 when only near/far is known.
 export function createProximityReading(): ProximityReading {
-  return { accuracy: 'unknown', distance: -1, interval: -1, max: -1, near: false, timestamp: -1 };
+  return createEntity({ accuracy: 'unknown', distance: -1, interval: -1, max: -1, near: false, timestamp: -1 });
 }
 
 // Allocates a zeroed QuaternionReading (identity quaternion: w=1) with unknown accuracy/interval/timestamp.
 export function createQuaternionReading(): QuaternionReading {
-  return { accuracy: 'unknown', interval: -1, timestamp: -1, w: 1, x: 0, y: 0, z: 0 };
+  return createEntity({ accuracy: 'unknown', interval: -1, timestamp: -1, w: 1, x: 0, y: 0, z: 0 });
 }
 
 // Allocates a zeroed RotationRateReading with unknown accuracy/interval/timestamp.
 // alpha/beta/gamma are angular velocity in deg/s around the device z/x/y axes respectively.
 export function createRotationRateReading(): RotationRateReading {
-  return { accuracy: 'unknown', alpha: 0, beta: 0, gamma: 0, interval: -1, timestamp: -1 };
+  return createEntity({ accuracy: 'unknown', alpha: 0, beta: 0, gamma: 0, interval: -1, timestamp: -1 });
 }
 
 // Allocates a Sensors event entity with inert signals; call attachSensors to start delivery.
 export function createSensors(): Sensors {
-  return {
+  return createEntity({
     onAbsoluteOrientation: createSignal(),
     onAccelerometer: createSignal(),
     onAmbientLight: createSignal(),
@@ -292,7 +293,7 @@ export function createSensors(): Sensors {
     onOrientation: createSignal(),
     onProximity: createSignal(),
     onQuaternion: createSignal(),
-  };
+  });
 }
 
 // Builds the default web backend over the devicemotion, deviceorientation, and deviceorientationabsolute
