@@ -13,6 +13,7 @@ import {
   computeRichTextTextHeight,
   computeRichTextTextWidth,
   computeTextBoundsRectangle,
+  createTextFormatRange,
   getRichTextContent,
   getRichTextLinkAtPoint,
   mergeTextFormat,
@@ -458,7 +459,7 @@ export function setRichTextFormatRange(
   start = 0,
   end = source.data.text.length,
 ): void {
-  source.data.textFormatRanges.push({ end, format, start });
+  source.data.textFormatRanges.push(createTextFormatRange(format, start, end));
   invalidateRichTextContent(source);
 }
 

@@ -8,6 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { mergeTextFormat } from './textFormat';
+import { createTextFormatRange } from './textFormatRange';
 
 export function clearRichTextContent(runtime: RichTextRuntime): void {
   runtime.richTextContent = null;
@@ -143,7 +144,7 @@ function writeFormatRange(ranges: TextFormatRange[], format: Readonly<TextFormat
   if (previous !== undefined && previous.end === start && textFormatEquals(previous.format, format)) {
     previous.end = end;
   } else {
-    ranges.push({ end, format: { ...format }, start });
+    ranges.push(createTextFormatRange({ ...format }, start, end));
   }
 }
 
