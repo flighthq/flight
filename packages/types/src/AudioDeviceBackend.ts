@@ -21,7 +21,10 @@ export interface AudioDeviceBackend {
   // refusing, so a caller never has to ask whether panning is available before setting it.
   setSourcePan(source: AudioSourceHandle, pan: number): void;
   setSourcePlaybackRate(source: AudioSourceHandle, rate: number): void;
-  startSource(source: AudioSourceHandle, offset: number): void;
+  // `duration` bounds one playback pass in seconds; 0 or less plays to the end of the buffer. A loop
+  // region is expressed this way rather than through the node's own loop flag, because the node's loop
+  // never ends and the channel counts its loops by restarting on end.
+  startSource(source: AudioSourceHandle, offset: number, duration: number): void;
   stopSource(source: AudioSourceHandle): void;
 }
 

@@ -8,6 +8,8 @@ export interface VideoChannel {
   gain: number;
   length: number;
   loops: number;
+  // Silences output without disturbing `gain`, so unmuting restores the level the caller set.
+  muted: boolean;
   playbackRate: number;
   source: VideoResource | null;
   state: VideoChannelState;

@@ -13,11 +13,13 @@ import {
   getVideoChannelHeight,
   getVideoChannelWidth,
   isVideoChannelPlaying,
+  isVideoChannelMuted,
   pauseVideoChannel,
   playVideoResource,
   resumeVideoChannel,
   setVideoChannelCurrentTime,
   setVideoChannelGain,
+  setVideoChannelMuted,
   setVideoChannelPlaybackRate,
   stopVideoChannel,
 } from './videoChannel';
@@ -191,6 +193,16 @@ describe('getVideoChannelWidth', () => {
   });
 });
 
+describe('isVideoChannelMuted', () => {
+  it('reports the mute state independently of the stored gain', () => {
+    const channel = playVideoResource(createVideoResource(createMockVideoElement()), { gain: 0.5 })!;
+    expect(isVideoChannelMuted(channel)).toBe(false);
+    setVideoChannelMuted(channel, true);
+    expect(isVideoChannelMuted(channel)).toBe(true);
+    expect(channel.gain).toBe(0.5);
+  });
+});
+
 describe('isVideoChannelPlaying', () => {
   it('returns true while playing', () => {
     const channel = playVideoResource(createVideoResource(createMockVideoElement()));
@@ -256,6 +268,33 @@ describe('setVideoChannelGain', () => {
     expect(channel).not.toBeNull();
     expect(setVideoChannelGain(channel!, 0.3)).toBe(0.3);
     expect(element.volume).toBe(0.3);
+  });
+});
+
+describe('setVideoChannelMuted', () => {
+  it('mutes the element without disturbing its volume or the stored gain', () => {
+    const element = createMockVideoElement();
+    const channel = playVideoResource(createVideoResource(element), { gain: 0.7 })!;
+    setVideoChannelMuted(channel, true);
+    expect(element.muted).toBe(true);
+    expect(element.volume).toBe(0.7);
+    expect(channel.gain).toBe(0.7);
+    expect(isVideoChannelMuted(channel)).toBe(true);
+  });
+
+  it('unmutes back to the level the caller set, including one set while muted', () => {
+    const element = createMockVideoElement();
+    const channel = playVideoResource(createVideoResource(element), { gain: 0.7 })!;
+    setVideoChannelMuted(channel, true);
+    setVideoChannelGain(channel, 0.2);
+    setVideoChannelMuted(channel, false);
+    expect(element.muted).toBe(false);
+    expect(element.volume).toBe(0.2);
+  });
+
+  it('starts unmuted', () => {
+    const channel = playVideoResource(createVideoResource(createMockVideoElement()))!;
+    expect(isVideoChannelMuted(channel)).toBe(false);
   });
 });
 

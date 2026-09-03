@@ -9,6 +9,17 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getAudioDeviceBackend, getAudioSourceBufferSourceNode, getAudioSourceGainNode } from './audioDeviceBackend';
+import { getAudioChannelSignals } from './mediaChannelSignals';
+
+// Clamped rather than assigned as given, following setAudioChannelCurrentTime: pan is the other
+// setter with a bounded domain, and the returned value is the one that actually reached the device so
+// the channel field and the transport can never disagree about where the sound is.
+// Clears the loop region so each pass plays the whole buffer again. Loop COUNTS are untouched: the
+// region says where a pass runs, `loops` says how many passes remain.
+export function clearAudioChannelLoopRegion(channel: AudioChannel): void {
+  channel.loopEnd = 0;
+  channel.loopStart = 0;
+}
 
 export function connectAudioChannelToNode(channel: AudioChannel, destinationNode: AudioNode): void {
   const runtime = channelRuntime.get(channel);
@@ -84,6 +95,13 @@ export function hasAudioChannelNodeAccess(): boolean {
   return 'getSourceGainNode' in backend;
 }
 
+// Mute is a separate axis from gain: `channel.gain` keeps the level the caller set, and only the value
+// reaching the device is zeroed, so unmuting restores the level rather than a default. Setting gain
+// while muted updates the stored level and leaves the output silent.
+export function isAudioChannelMuted(channel: Readonly<AudioChannel>): boolean {
+  return channel.muted;
+}
+
 export function isAudioChannelPlaying(channel: AudioChannel): boolean {
   return channel.state === 'playing';
 }
@@ -93,6 +111,7 @@ export function pauseAudioChannel(channel: AudioChannel): void {
   channel.currentTime = getAudioChannelCurrentTime(channel);
   channel.state = 'paused';
   destroyActiveSource(channel);
+  emitChannelSignal(channel, 'onPause');
 }
 
 export function playAudioResource(
@@ -115,7 +134,10 @@ export function playAudioResource(
     currentTime: options?.currentTime ?? 0,
     gain: options?.gain ?? 1,
     length: buf.duration * 1000,
+    loopEnd: 0,
     loops: options?.loops ?? 0,
+    loopStart: 0,
+    muted: false,
     pan: 0,
     playbackRate: options?.playbackRate ?? 1,
     source,
@@ -133,12 +155,14 @@ export function playAudioResource(
   });
 
   startAudioChannel(channel);
+  emitChannelSignal(channel, 'onPlay');
   return channel;
 }
 
 export function resumeAudioChannel(channel: AudioChannel): void {
   if (channel.state === 'playing' || channel.source.buffer === null) return;
   startAudioChannel(channel);
+  emitChannelSignal(channel, 'onPlay');
 }
 
 export function setAudioChannelCurrentTime(channel: AudioChannel, value: number): number {
@@ -153,15 +177,34 @@ export function setAudioChannelCurrentTime(channel: AudioChannel, value: number)
 export function setAudioChannelGain(channel: AudioChannel, value: number): number {
   channel.gain = value;
   const runtime = channelRuntime.get(channel);
-  if (runtime !== undefined && runtime.sourceHandle !== INVALID_SOURCE) {
+  if (runtime !== undefined && runtime.sourceHandle !== INVALID_SOURCE && !channel.muted) {
     getAudioDeviceBackend().setSourceGain(runtime.sourceHandle, value);
   }
   return channel.gain;
 }
 
-// Clamped rather than assigned as given, following setAudioChannelCurrentTime: pan is the other
-// setter with a bounded domain, and the returned value is the one that actually reached the device so
-// the channel field and the transport can never disagree about where the sound is.
+// Bounds each playback pass to [startMs, endMs] of the buffer. Returns false and leaves the channel
+// unchanged when the region is empty or inverted, rather than half-applying it. Takes effect on the
+// next pass; the pass already playing is not re-cut, because re-cutting it would restart audio the
+// caller did not ask to restart.
+export function setAudioChannelLoopRegion(channel: AudioChannel, startMs: number, endMs: number): boolean {
+  const start = clamp(startMs, 0, channel.length);
+  const end = clamp(endMs, 0, channel.length);
+  if (end <= start) return false;
+  channel.loopStart = start;
+  channel.loopEnd = end;
+  return true;
+}
+
+export function setAudioChannelMuted(channel: AudioChannel, value: boolean): boolean {
+  channel.muted = value;
+  const runtime = channelRuntime.get(channel);
+  if (runtime !== undefined && runtime.sourceHandle !== INVALID_SOURCE) {
+    getAudioDeviceBackend().setSourceGain(runtime.sourceHandle, value ? 0 : channel.gain);
+  }
+  return channel.muted;
+}
+
 export function setAudioChannelPan(channel: AudioChannel, value: number): number {
   channel.pan = clamp(value, -1, 1);
   const runtime = channelRuntime.get(channel);
@@ -184,6 +227,7 @@ export function stopAudioChannel(channel: AudioChannel): void {
   destroyActiveSource(channel);
   channel.currentTime = 0;
   channel.state = 'stopped';
+  emitChannelSignal(channel, 'onStop');
 }
 
 interface AudioChannelRuntime {
@@ -200,6 +244,16 @@ const INVALID_SOURCE = 0 as AudioSourceHandle;
 
 const channelRuntime = new WeakMap<AudioChannel, AudioChannelRuntime>();
 
+// A null check and a return until a caller opts in, which is what keeps the producers free for
+// everyone else.
+function emitChannelSignal(
+  channel: Readonly<AudioChannel>,
+  name: 'onComplete' | 'onLoop' | 'onPause' | 'onPlay' | 'onStop',
+): void {
+  const signals = getAudioChannelSignals(channel);
+  if (signals !== null) emitSignal(signals[name]);
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -210,7 +264,11 @@ function completeAudioChannel(channel: AudioChannel): void {
 
   if (runtime.loopsRemaining !== 0) {
     if (runtime.loopsRemaining > 0) runtime.loopsRemaining--;
+    // Rewinds to zero even under a loop region: startAudioChannel floors the pass into the region, so
+    // naming loopStart here as well would be a second mechanism for one behaviour, and no test can
+    // tell the two apart because the floor runs either way.
     channel.currentTime = 0;
+    emitChannelSignal(channel, 'onLoop');
     startAudioChannel(channel);
     return;
   }
@@ -218,6 +276,7 @@ function completeAudioChannel(channel: AudioChannel): void {
   runtime.sourceHandle = INVALID_SOURCE;
   channel.currentTime = channel.length;
   channel.state = 'complete';
+  emitChannelSignal(channel, 'onComplete');
   emitSignal(channel.onComplete);
 }
 
@@ -235,10 +294,14 @@ function startAudioChannel(channel: AudioChannel): void {
   if (runtime === undefined) return;
 
   const backend = getAudioDeviceBackend();
-  const currentTime = clamp(channel.currentTime, 0, channel.length);
+  const hasRegion = channel.loopEnd > channel.loopStart;
+  // A pass that would start outside the region begins at its start rather than being refused: the
+  // region is where playback lives, so seeking away from it and pressing play resumes inside it.
+  const regionFloor = hasRegion && channel.currentTime < channel.loopStart ? channel.loopStart : channel.currentTime;
+  const currentTime = clamp(regionFloor, 0, hasRegion ? channel.loopEnd : channel.length);
   const sourceHandle = backend.createSource(runtime.device, runtime.bufferHandle);
 
-  backend.setSourceGain(sourceHandle, channel.gain);
+  backend.setSourceGain(sourceHandle, channel.muted ? 0 : channel.gain);
   backend.setSourcePan(sourceHandle, channel.pan);
   backend.onSourceEnded(sourceHandle, () => completeAudioChannel(channel));
 
@@ -247,7 +310,7 @@ function startAudioChannel(channel: AudioChannel): void {
   channel.currentTime = currentTime;
   channel.state = 'playing';
 
-  backend.startSource(sourceHandle, currentTime / 1000);
+  backend.startSource(sourceHandle, currentTime / 1000, hasRegion ? (channel.loopEnd - currentTime) / 1000 : 0);
   backend.setSourcePlaybackRate(sourceHandle, channel.playbackRate);
 
   const gainNode = getAudioSourceGainNode(sourceHandle);
