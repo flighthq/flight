@@ -1,16 +1,25 @@
 import { writeCollisionHeightfieldBounds3D, writeCollisionTriangleMeshBounds3D } from '@flighthq/collision/contract';
-import type { CollisionColliderShape3D, Physics3DCollider, RigidBody3D, SpatialAabb3D } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  CollisionColliderShape3D,
+  Entity,
+  Physics3DCollider,
+  RigidBody3D,
+  SpatialAabb3D,
+} from '@flighthq/types/contract';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and
 // convex-hull storage is sized once here so the per-step transform can write in place.
-export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColliderShape3D>): CollisionColliderShape3D {
+export function createPhysics3DColliderWorldShape(
+  local: Readonly<CollisionColliderShape3D>,
+): CollisionColliderShape3D & Entity {
   switch (local.kind) {
     case 'sphere':
-      return { kind: 'sphere', x: local.x, y: local.y, z: local.z, radius: local.radius };
+      return createEntity({ kind: 'sphere', x: local.x, y: local.y, z: local.z, radius: local.radius });
     case 'aabb':
     case 'box':
-      return {
+      return createEntity({
         kind: 'box',
         x: 0,
         y: 0,
@@ -22,9 +31,9 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColli
         rotationY: 0,
         rotationZ: 0,
         rotationW: 1,
-      };
+      });
     case 'capsule':
-      return {
+      return createEntity({
         kind: 'capsule',
         x0: local.x0,
         y0: local.y0,
@@ -33,9 +42,9 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColli
         y1: local.y1,
         z1: local.z1,
         radius: local.radius,
-      };
+      });
     case 'cylinder':
-      return {
+      return createEntity({
         kind: 'cylinder',
         x0: local.x0,
         y0: local.y0,
@@ -44,9 +53,9 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColli
         y1: local.y1,
         z1: local.z1,
         radius: local.radius,
-      };
+      });
     case 'cone':
-      return {
+      return createEntity({
         kind: 'cone',
         apexX: local.apexX,
         apexY: local.apexY,
@@ -55,11 +64,11 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColli
         baseY: local.baseY,
         baseZ: local.baseZ,
         radius: local.radius,
-      };
+      });
     case 'convex':
-      return { kind: 'convex', points: local.points.slice() };
+      return createEntity({ kind: 'convex', points: local.points.slice() });
     case 'triangle-mesh':
-      return {
+      return createEntity({
         kind: 'triangle-mesh',
         points: local.points,
         indices: local.indices,
@@ -71,9 +80,9 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColli
         rotationY: local.rotationY,
         rotationZ: local.rotationZ,
         rotationW: local.rotationW,
-      };
+      });
     case 'heightfield':
-      return {
+      return createEntity({
         kind: 'heightfield',
         columns: local.columns,
         rows: local.rows,
@@ -88,9 +97,9 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColli
         rotationY: local.rotationY,
         rotationZ: local.rotationZ,
         rotationW: local.rotationW,
-      };
+      });
     default:
-      return { kind: 'sphere', x: 0, y: 0, z: 0, radius: 0 };
+      return createEntity({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 0 });
   }
 }
 

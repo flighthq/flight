@@ -6,6 +6,7 @@ import {
   registerBuiltInCollisionPairTests3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -59,6 +60,7 @@ import {
   wakePhysics3DBody,
   writePhysics3DJointReaction,
 } from '@flighthq/physics3d/contract';
+import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   CollisionColliderShape3D,
   Physics3DAbi,
@@ -115,7 +117,7 @@ export function createReferencePhysics3DAbi(): Physics3DAbi {
   const worlds = new Map<number, ReferencePhysics3DAbiWorld>();
   let nextWorldHandle = 1;
 
-  return {
+  return createEntity({
     version: Physics3DAbiVersion,
     capabilities:
       Physics3DAbiCapability.ContactHooks |
@@ -210,7 +212,7 @@ export function createReferencePhysics3DAbi(): Physics3DAbi {
       writeShapeCastHit(state, out);
       return true;
     },
-  };
+  } satisfies Omit<Physics3DAbi, typeof EntityRuntimeKey>);
 }
 
 interface ReferencePhysics3DAbiCollider {
@@ -467,18 +469,21 @@ function executeSetBody(
   if (!setPhysics3DBodyTransform(body, values[0], values[1], values[2], values[3], values[4], values[5], values[6])) {
     return 'RejectedMutation';
   }
-  setRigidBody3DMassData(body, {
-    mass: values[19],
-    inertiaXX: values[20],
-    inertiaYY: values[21],
-    inertiaZZ: values[22],
-    inertiaXY: values[23],
-    inertiaXZ: values[24],
-    inertiaYZ: values[25],
-    centerX: values[26],
-    centerY: values[27],
-    centerZ: values[28],
-  });
+  setRigidBody3DMassData(
+    body,
+    createEntity({
+      mass: values[19],
+      inertiaXX: values[20],
+      inertiaYY: values[21],
+      inertiaZZ: values[22],
+      inertiaXY: values[23],
+      inertiaXZ: values[24],
+      inertiaYZ: values[25],
+      centerX: values[26],
+      centerY: values[27],
+      centerZ: values[28],
+    }),
+  );
   refreshRigidBody3DWorldInertia(body);
   writeBodyDynamicValues(body, values, flags);
 

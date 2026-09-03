@@ -10,7 +10,7 @@ import type {
 
 import { synchronizePhysics3DBroadphase } from './broadphase';
 import { collidePhysics3DColliderShapes } from './colliderCollision';
-import { createPhysics3DContactPoint } from './contacts';
+import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
 import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
 import { isPhysics3DPairOrdered } from './jointRegistry';
 import { mixPhysics3DFriction, mixPhysics3DRestitution } from './material';
@@ -200,22 +200,11 @@ function mergePhysics3DContact(
 
   const existing = contact !== null;
   if (contact === null) {
-    contact = {
-      bodyA,
-      bodyB,
-      colliderA,
-      colliderB,
-      normalX: 0,
-      normalY: 0,
-      normalZ: 0,
-      pointCount: 0,
-      points: [],
-      friction,
-      restitution,
-      enabled: true,
-      sensor,
-      touching: true,
-    };
+    contact = createPhysics3DContact(bodyA, bodyB, colliderA, colliderB);
+    contact.friction = friction;
+    contact.restitution = restitution;
+    contact.sensor = sensor;
+    contact.touching = true;
     world.contacts.push(contact);
     world.events.began.push(contact);
   }

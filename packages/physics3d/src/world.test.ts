@@ -8,6 +8,7 @@ import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flig
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { buildPhysics3DContacts } from './contactIntake';
+import { createPhysics3DContact } from './contacts';
 import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
 import { createPhysics3DBallAndSocketJoint } from './jointFactories';
 import { addPhysics3DJoint } from './jointRegistry';
@@ -686,33 +687,9 @@ describe('removePhysics3DBody', () => {
     const b = createRigidBody3D();
     addPhysics3DBody(world, a);
     addPhysics3DBody(world, b);
-    world.joints.push({
-      kind: 'Physics3DBallJoint',
-      bodyA: a.index,
-      bodyB: b.index,
-      localAnchorAX: 0,
-      localAnchorAY: 0,
-      localAnchorAZ: 0,
-      localAnchorBX: 0,
-      localAnchorBY: 0,
-      localAnchorBZ: 0,
-      collideConnected: false,
-      breakForce: Number.POSITIVE_INFINITY,
-      breakTorque: Number.POSITIVE_INFINITY,
-      broken: false,
-      impulse0: 0,
-      impulse1: 0,
-      impulse2: 0,
-      impulse3: 0,
-      impulse4: 0,
-      impulse5: 0,
-      rAX: 0,
-      rAY: 0,
-      rAZ: 0,
-      rBX: 0,
-      rBY: 0,
-      rBZ: 0,
-    });
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: a.index, bodyB: b.index });
+    joint.kind = 'Physics3DBallJoint';
+    world.joints.push(joint);
 
     removePhysics3DBody(world, b);
 
@@ -867,22 +844,11 @@ describe('setPhysics3DBodySleepEnabled', () => {
 });
 
 function contact(bodyA: number, bodyB: number): Physics3DWorld['contacts'][number] {
-  return {
-    bodyA,
-    bodyB,
-    colliderA: 0,
-    colliderB: 0,
-    normalX: 0,
-    normalY: 1,
-    normalZ: 0,
-    pointCount: 0,
-    points: [],
-    friction: 0.2,
-    restitution: 0,
-    enabled: true,
-    sensor: false,
-    touching: true,
-  };
+  const value = createPhysics3DContact(bodyA, bodyB);
+  value.normalY = 1;
+  value.friction = 0.2;
+  value.touching = true;
+  return value;
 }
 
 function sphere(): RigidBody3D {

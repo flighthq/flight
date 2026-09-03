@@ -1,4 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
+  EntityWithoutRuntime,
   Physics3DBallAndSocketJoint,
   Physics3DBallAndSocketJointOptions,
   Physics3DConeTwistJoint,
@@ -38,7 +40,7 @@ import {
 export function createPhysics3DBallAndSocketJoint(
   options: Readonly<Physics3DBallAndSocketJointOptions>,
 ): Physics3DBallAndSocketJoint {
-  return { kind: Physics3DBallAndSocketJointKind, ...createJointBase(options) };
+  return createEntity({ kind: Physics3DBallAndSocketJointKind, ...createJointBase(options) });
 }
 
 // Defaults to a cone of 45 degrees in both directions and a free twist. A cone-twist with no limits at all is
@@ -47,7 +49,7 @@ export function createPhysics3DBallAndSocketJoint(
 export function createPhysics3DConeTwistJoint(
   options: Readonly<Physics3DConeTwistJointOptions>,
 ): Physics3DConeTwistJoint {
-  return {
+  return createEntity({
     kind: Physics3DConeTwistJointKind,
     ...createJointBase(options),
     ...createJointFrames(options),
@@ -63,14 +65,14 @@ export function createPhysics3DConeTwistJoint(
     swingLimitImpulse: 0,
     lowerTwistImpulse: 0,
     upperTwistImpulse: 0,
-  };
+  });
 }
 
 // Defaults to a RIGID strut: no spring, no limit, and a rest length of zero, which holds the two anchors
 // coincident until a caller names a length. The limit interval defaults to `[0, Infinity]` so that switching
 // `enableLimit` on alone gives a rope with no stated bound rather than one pinned to zero length.
 export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistanceJointOptions>): Physics3DDistanceJoint {
-  return {
+  return createEntity({
     kind: Physics3DDistanceJointKind,
     ...createJointBase(options),
     length: options.length ?? 0,
@@ -82,11 +84,11 @@ export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistance
     maxLength: options.maxLength ?? Number.POSITIVE_INFINITY,
     lowerLimitImpulse: 0,
     upperLimitImpulse: 0,
-  };
+  });
 }
 
 export function createPhysics3DFixedJoint(options: Readonly<Physics3DFixedJointOptions>): Physics3DFixedJoint {
-  return { kind: Physics3DFixedJointKind, ...createJointBase(options), ...createJointFrames(options) };
+  return createEntity({ kind: Physics3DFixedJointKind, ...createJointBase(options), ...createJointFrames(options) });
 }
 
 // Defaults every axis to FREE, so a joint built with no bounds constrains nothing and each axis is opted into
@@ -95,7 +97,7 @@ export function createPhysics3DFixedJoint(options: Readonly<Physics3DFixedJointO
 export function createPhysics3DGeneric6DofJoint(
   options: Readonly<Physics3DGeneric6DofJointOptions>,
 ): Physics3DGeneric6DofJoint {
-  return {
+  return createEntity({
     kind: Physics3DGeneric6DofJointKind,
     ...createJointBase(options),
     ...createJointFrames(options),
@@ -116,11 +118,11 @@ export function createPhysics3DGeneric6DofJoint(
     limitDampingRatio: options.limitDampingRatio ?? 0,
     lowerLimitImpulses: [0, 0, 0, 0, 0, 0],
     upperLimitImpulses: [0, 0, 0, 0, 0, 0],
-  };
+  });
 }
 
 export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointOptions>): Physics3DHingeJoint {
-  return {
+  return createEntity({
     kind: Physics3DHingeJointKind,
     ...createJointBase(options),
     ...createJointFrames(options),
@@ -136,11 +138,11 @@ export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointO
     motorImpulse: 0,
     lowerLimitImpulse: 0,
     upperLimitImpulse: 0,
-  };
+  });
 }
 
 export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJointOptions>): Physics3DSliderJoint {
-  return {
+  return createEntity({
     kind: Physics3DSliderJointKind,
     ...createJointBase(options),
     ...createJointFrames(options),
@@ -156,10 +158,10 @@ export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJoin
     motorImpulse: 0,
     lowerLimitImpulse: 0,
     upperLimitImpulse: 0,
-  };
+  });
 }
 
-function createJointBase(options: Readonly<Physics3DJointOptions>): Omit<Physics3DJoint, 'kind'> {
+function createJointBase(options: Readonly<Physics3DJointOptions>): Omit<EntityWithoutRuntime<Physics3DJoint>, 'kind'> {
   return {
     bodyA: options.bodyA,
     bodyB: options.bodyB,

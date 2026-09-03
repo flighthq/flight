@@ -6,6 +6,10 @@ import type { Physics3DContact, Physics3DContactPoint, Physics3DWorld, RigidBody
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { buildPhysics3DContacts } from './contactIntake';
+import {
+  createPhysics3DContact as createPhysics3DContactRecord,
+  createPhysics3DContactPoint as createPhysics3DContactPointRecord,
+} from './contacts';
 import { refreshRigidBody3DWorldInertia } from './integrate';
 import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands';
 import { computePhysics3DBoxMassData, createPhysics3DMassData } from './massProperties';
@@ -462,38 +466,21 @@ describe('warmStartPhysics3DContacts', () => {
 });
 
 function createContactPoint(featureId: number, depth: number): Physics3DContactPoint {
-  return {
-    depth,
-    featureId,
-    rAX: 0,
-    rAY: -0.5,
-    rAZ: 0,
-    rBX: 0,
-    rBY: 0.5,
-    rBZ: 0,
-    x: 0,
-    y: 0,
-    z: 0,
-  };
+  const point = createPhysics3DContactPointRecord();
+  point.depth = depth;
+  point.featureId = featureId;
+  point.rAY = -0.5;
+  point.rBY = 0.5;
+  return point;
 }
 
 function createContact(bodyA: number, bodyB: number): Physics3DContact {
-  return {
-    bodyA,
-    bodyB,
-    colliderA: 0,
-    colliderB: 0,
-    enabled: true,
-    friction: 0,
-    normalX: 0,
-    normalY: 1,
-    normalZ: 0,
-    pointCount: 1,
-    points: [createContactPoint(1, 0.01)],
-    restitution: 0,
-    sensor: false,
-    touching: true,
-  };
+  const contact = createPhysics3DContactRecord(bodyA, bodyB);
+  contact.normalY = 1;
+  contact.pointCount = 1;
+  contact.points.push(createContactPoint(1, 0.01));
+  contact.touching = true;
+  return contact;
 }
 
 function createUnitBox(world: Physics3DWorld): RigidBody3D {

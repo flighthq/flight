@@ -1,4 +1,5 @@
 import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CollisionContactManifold3D,
   Physics3DContactConstraint,
@@ -23,7 +24,7 @@ import { writeRigidBody3DWorldCenter } from './world';
 // Allocates one contact constraint with no points. The solver owns this record; nothing here belongs
 // on `Physics3DContact`, which carries geometry and identity only.
 export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
-  return {
+  return createEntity({
     contact: -1,
     pointCount: 0,
     points: [],
@@ -33,13 +34,13 @@ export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
     tangent1X: 0,
     tangent1Y: 0,
     tangent1Z: 0,
-  };
+  });
 }
 
 // Allocates one point's accumulators, zeroed. A fresh point warm-starts from nothing, which is the
 // correct behaviour for a contact that did not exist last step.
 export function createPhysics3DContactConstraintPoint(): Physics3DContactConstraintPoint {
-  return {
+  return createEntity({
     bias: 0,
     featureId: 0,
     normalImpulse: 0,
@@ -48,7 +49,7 @@ export function createPhysics3DContactConstraintPoint(): Physics3DContactConstra
     tangentImpulse1: 0,
     tangentMass0: 0,
     tangentMass1: 0,
-  };
+  });
 }
 
 // Rebuilds the solver's working set from the world's contact list and prepares every constraint row:
