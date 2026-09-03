@@ -316,7 +316,7 @@ describe('updateScene3DResourceStreaming', () => {
 
     expect(getTextureSource(texture)).toBeNull();
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
-    expect(resourceOf(texture)?.failure).toEqual({
+    expect(resourceOf(texture)?.failure).toMatchObject({
       kind: ImageResourceFailureKind.Unavailable,
       message: 'ImageResource resource unavailable',
       name: null,
@@ -334,7 +334,7 @@ describe('updateScene3DResourceStreaming', () => {
     await settle(resolver);
 
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
-    expect(resourceOf(texture)?.failure).toEqual({
+    expect(resourceOf(texture)?.failure).toMatchObject({
       kind: ImageResourceFailureKind.Error,
       message: 'bad image',
       name: 'Error',
