@@ -151,7 +151,10 @@ export function createWgpuMeshPipeline(
     vertex: {
       module: options.module,
       entryPoint: 'vs_main',
-      buffers: options.skinned && skinning !== null ? skinning.vertexBufferLayouts : VERTEX_BUFFER_LAYOUTS,
+      buffers:
+        options.skinned && skinning !== null
+          ? [...skinning.vertexBufferLayouts, INSTANCE_BUFFER_LAYOUT]
+          : [...VERTEX_BUFFER_LAYOUTS, INSTANCE_BUFFER_LAYOUT],
     },
     fragment: {
       module: options.module,
@@ -228,14 +231,48 @@ export function drawWgpuMeshSubset(
 
   pass.setBindGroup(1, boundDrawGroup, _dynamicOffsets);
   pass.setVertexBuffer(0, upload.vertexBuffer);
+  const hasInstances =
+    proxy.instanceMatrices !== null &&
+    proxy.instanceMatrices !== undefined &&
+    proxy.instanceCount !== undefined &&
+    proxy.instanceCount > 0;
+  const instanceCount = hasInstances ? proxy.instanceCount! : 1;
+  if (hasInstances) pass.setVertexBuffer(1, ensureWgpuInstanceBuffer(state, proxy.instanceMatrices, instanceCount));
   // Non-indexed geometry draws the vertex range directly, matching glMeshProgram's drawElements /
   // drawArrays split. The subset's indexCount/indexOffset address vertices in that case.
   if (upload.indexBuffer === null) {
-    pass.draw(subset.indexCount, 1, subset.indexOffset, 0);
+    pass.draw(subset.indexCount, instanceCount, subset.indexOffset, 0);
   } else {
     pass.setIndexBuffer(upload.indexBuffer, upload.indexFormat!);
-    pass.drawIndexed(subset.indexCount, 1, subset.indexOffset, 0, 0);
+    pass.drawIndexed(subset.indexCount, instanceCount, subset.indexOffset, 0, 0);
   }
+}
+
+const instanceBuffers = new WeakMap<WgpuRenderState, { buffer: GPUBuffer; capacity: number }>();
+const identityInstance = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+
+function ensureWgpuInstanceBuffer(
+  state: WgpuRenderState,
+  matrices: Readonly<Float32Array> | null | undefined,
+  instanceCount: number,
+): GPUBuffer {
+  const source = matrices !== null && matrices !== undefined ? matrices : identityInstance;
+  const required = Math.max(1, instanceCount) * 64;
+  let cached = instanceBuffers.get(state);
+  if (cached === undefined || cached.capacity < required) {
+    cached?.buffer.destroy();
+    const capacity = Math.max(required, 64 * 64);
+    cached = {
+      buffer: state.device.createBuffer({
+        size: capacity,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      }),
+      capacity,
+    };
+    instanceBuffers.set(state, cached);
+  }
+  state.device.queue.writeBuffer(cached.buffer, 0, source.buffer, source.byteOffset, required);
+  return cached.buffer;
 }
 
 // Resolves the shared Frame bind group, creating it from the shared Frame layout + Frame buffer on
@@ -1014,11 +1051,17 @@ struct VertexOutput {
   @location(1) normal : vec3f,
   @location(2) tangent : vec4f,
   @location(3) uv : vec2f,
+  @location(6) instanceModel0 : vec4f,
+  @location(7) instanceModel1 : vec4f,
+  @location(8) instanceModel2 : vec4f,
+  @location(9) instanceModel3 : vec4f,
 ) -> VertexOutput {
   var out : VertexOutput;
   var localPosition = vec4f(position, 1.0);
   var localNormal = normal;
   var localTangent = tangent.xyz;
+  let instanceModel = mat4x4f(instanceModel0, instanceModel1, instanceModel2, instanceModel3);
+  localPosition = instanceModel * localPosition;
   let world = draw.world * localPosition;
   out.worldPosition = world.xyz;
   out.clipPosition = frame.viewProjection * world;
@@ -1266,7 +1309,28 @@ const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
       { shaderLocation: 3, offset: 40, format: 'float32x2' },
     ],
   },
+  {
+    arrayStride: 64,
+    stepMode: 'instance',
+    attributes: [
+      { shaderLocation: 5, offset: 0, format: 'float32x4' },
+      { shaderLocation: 6, offset: 16, format: 'float32x4' },
+      { shaderLocation: 7, offset: 32, format: 'float32x4' },
+      { shaderLocation: 8, offset: 48, format: 'float32x4' },
+    ],
+  },
 ];
+
+const INSTANCE_BUFFER_LAYOUT: GPUVertexBufferLayout = {
+  arrayStride: 64,
+  stepMode: 'instance',
+  attributes: [
+    { shaderLocation: 6, offset: 0, format: 'float32x4' },
+    { shaderLocation: 7, offset: 16, format: 'float32x4' },
+    { shaderLocation: 8, offset: 32, format: 'float32x4' },
+    { shaderLocation: 9, offset: 48, format: 'float32x4' },
+  ],
+};
 
 const scratchViewProjection = createMatrix4();
 const scratchWebGpuViewProjection = createMatrix4();

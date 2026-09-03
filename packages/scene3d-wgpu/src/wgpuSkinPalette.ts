@@ -291,20 +291,20 @@ ${getWgpuSkinBindingWgsl(1)}
 ${getWgpuSkinNormalBindingWgsl(1)}`,
     )
     .replace(
-      '  @location(3) uv : vec2f,\n) -> VertexOutput {',
+      '  @location(3) uv : vec2f,\n  @location(6) instanceModel0 : vec4f,',
       `  @location(3) uv : vec2f,
   @location(4) joints0 : vec4f,
   @location(5) weights0 : vec4f,
-) -> VertexOutput {`,
+  @location(6) instanceModel0 : vec4f,`,
     )
     .replace(
-      '  var localTangent = tangent.xyz;\n  let world = draw.world * localPosition;',
+      '  var localTangent = tangent.xyz;\n  let instanceModel =',
       `  var localTangent = tangent.xyz;
   let skin = skinMatrix(joints0, weights0);
   localPosition = skin * localPosition;
   localNormal = skinNormalMatrix(joints0, weights0) * localNormal;
   localTangent = (skin * vec4f(localTangent, 0.0)).xyz;
-  let world = draw.world * localPosition;`,
+  let instanceModel =`,
     );
 }
 
