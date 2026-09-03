@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Path } from './Path';
 
 // Path-following animation header. `@flighthq/motionpath` advances a marker along `path` by ARC
@@ -20,7 +21,7 @@ export type MotionPathLoopMode = 'clamp' | 'loop' | 'pingpong';
 // path start, `-1` backward). Direction is stored rather than folded into a signed speed because
 // `pingpong` must remember which way the marker is heading across frames to reflect at the ends;
 // `clamp`/`loop` leave `direction` under the caller's control.
-export interface MotionPath {
+export interface MotionPath extends Entity {
   direction: 1 | -1;
   distance: number;
   length: number;

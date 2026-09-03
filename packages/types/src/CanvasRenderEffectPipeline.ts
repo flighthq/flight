@@ -2,6 +2,7 @@ import type { CanvasRenderState } from './CanvasRenderState';
 import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { ColorLutCache } from './ColorLutCache';
+import type { Entity } from './Entity';
 import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
 import type { RenderEffect } from './RenderEffect';
 
@@ -32,7 +33,7 @@ export type CanvasRenderEffectRunner = (
 // canvases for branch/blur stages and release them when done — the Canvas analog of the Gl render
 // target pool. Each acquire returns a canvas sized to the requested descriptor; each must be matched by
 // a release so the canvas can be reused next frame without reallocating.
-export interface CanvasRenderTargetPool {
+export interface CanvasRenderTargetPool extends Entity {
   readonly creator: Readonly<CanvasRenderSurfaceCreator>;
   free: CanvasRenderTarget[];
   inUse: CanvasRenderTarget[];
@@ -42,7 +43,7 @@ export interface CanvasRenderTargetPool {
 // renders into and the intermediate-target pool. The per-frame effect list is data passed to
 // endCanvasRenderEffectPipeline, not retained here. `options.sampleCount`, `format`, and `depth` are
 // accepted for parity with the Gl pipeline but have no Canvas 2D realization and are ignored.
-export interface CanvasRenderEffectPipeline {
+export interface CanvasRenderEffectPipeline extends Entity {
   readonly options: Readonly<RenderEffectPipelineOptions>;
   sceneTarget: CanvasRenderTarget | null;
   readonly pool: CanvasRenderTargetPool;

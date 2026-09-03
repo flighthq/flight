@@ -1,4 +1,5 @@
 import type { Bitmap } from './Bitmap';
+import type { Entity } from './Entity';
 import type { HostImageSource } from './HostImageSource';
 import type { TextureSource } from './TextureSource';
 import type { ImageTextureSourceKind } from './TextureSourceKind';
@@ -23,7 +24,7 @@ export interface ImageResource extends TextureSource {
 // `crossOrigin` is the DOM attribute's vocabulary because that is what the format of the request is,
 // not because the backend must be a DOM one: a native host reads it as the credential mode to use.
 // `signal` cancels the load; an aborted load rejects with the signal's reason rather than resolving.
-export interface ImageBackend {
+export interface ImageBackend extends Entity {
   // Materializes raw Bitmap pixels into this host's drawable ImageResource representation. Optional
   // because native providers may decode URLs without owning a synchronous raw-pixel bridge; absence
   // is the capability signal and callers must not silently fall back to browser globals.
