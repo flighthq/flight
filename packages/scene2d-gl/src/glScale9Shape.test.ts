@@ -29,6 +29,7 @@ function createTestSurface(width = 1, height = 1): Raster2DSurface {
   canvas.height = height;
   const context = canvas.getContext('2d')!;
   return {
+    [EntityRuntimeKey]: undefined,
     get width() {
       return canvas.width;
     },
@@ -49,6 +50,7 @@ function createTestSurface(width = 1, height = 1): Raster2DSurface {
 beforeEach(() => {
   destroySurface.mockReset();
   setRaster2DSurfaceProvider({
+    [EntityRuntimeKey]: undefined,
     createRaster2DSurface: createTestSurface,
     destroyRaster2DSurface: destroySurface,
   });
@@ -63,6 +65,7 @@ describe('acquireGlScale9ShapeRasterSurface', () => {
     const surface = createTestSurface();
     const createSurface = vi.fn().mockReturnValueOnce(null).mockReturnValue(surface);
     setRaster2DSurfaceProvider({
+      [EntityRuntimeKey]: undefined,
       createRaster2DSurface: createSurface,
       destroyRaster2DSurface: destroySurface,
     });

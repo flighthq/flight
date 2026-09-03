@@ -66,7 +66,7 @@ describe('destroyGlScene3DRuntime', () => {
       shadowBias: 0,
       texture: depthTexture,
     };
-    scene.skinPalette = { jointCapacity: 4, texture: {} as WebGLTexture };
+    scene.skinPalette = { [EntityRuntimeKey]: undefined, jointCapacity: 4, texture: {} as WebGLTexture };
 
     destroyGlScene3DRuntime(state);
 

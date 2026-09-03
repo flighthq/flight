@@ -2,16 +2,24 @@ import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Node2D, RenderProxy2D } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { enableGlClipSupport } from './glClip';
 import { createGlState } from './glTestHelper';
 
 function makeRectClip(): ClipRegion {
-  return { rect: createRectangle(0, 0, 50, 50), contours: null, winding: 'nonZero', version: 0 };
+  return {
+    [EntityRuntimeKey]: undefined,
+    rect: createRectangle(0, 0, 50, 50),
+    contours: null,
+    winding: 'nonZero',
+    version: 0,
+  };
 }
 
 function makeContourClip(): ClipRegion {
   return {
+    [EntityRuntimeKey]: undefined,
     rect: createRectangle(0, 0, 50, 50),
     contours: [[0, 0, 50, 0, 50, 50, 0, 50]],
     winding: 'nonZero',

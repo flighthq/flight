@@ -1,6 +1,7 @@
 import * as netModule from '@flighthq/net/contract';
 import * as scene3dFormatsModule from '@flighthq/scene3d-formats/contract';
 import type { HasNetHttp, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFrom3dsUrl } from './threeDsLoad';
@@ -22,7 +23,12 @@ function emptyDocument(): Scene3DDocument {
 
 function fakeHost(): HasNetHttp {
   const host: HasNetHttp = {
-    net: { http: { sendNetRequest: (request, options) => netModule.sendNetRequest(host, request, options) } },
+    net: {
+      http: {
+        [EntityRuntimeKey]: undefined,
+        sendNetRequest: (request, options) => netModule.sendNetRequest(host, request, options),
+      },
+    },
   };
   return host;
 }
