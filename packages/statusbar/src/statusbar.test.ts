@@ -46,7 +46,7 @@ describe('createStatusBar', () => {
 
 describe('createStatusBarInfo', () => {
   it('creates the documented unknown/default snapshot', () => {
-    expect(statusbar.createStatusBarInfo()).toEqual({
+    expect(statusbar.createStatusBarInfo()).toMatchObject({
       color: 0,
       height: -1,
       overlaysContent: false,

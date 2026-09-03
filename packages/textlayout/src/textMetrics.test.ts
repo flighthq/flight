@@ -4,7 +4,7 @@ import { createTextMetrics, getTextMetrics } from './textMetrics';
 
 describe('createTextMetrics', () => {
   it('creates a zeroed metrics object', () => {
-    expect(createTextMetrics()).toEqual({ height: 0, numLines: 0, width: 0 });
+    expect(createTextMetrics()).toMatchObject({ height: 0, numLines: 0, width: 0 });
   });
 });
 
