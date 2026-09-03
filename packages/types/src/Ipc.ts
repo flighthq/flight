@@ -1,25 +1,28 @@
-// Inter-process messaging. The domain is ONE capability: receiving messages on a named channel.
-//
-// ★ WHAT WAS DELETED AND WHY. The seam previously declared send / sendTo / invoke / invokeWithTimeout /
-// handle / message-event operations, a capability struct, a target, a channel wrapper and an error
-// family. No provider implemented any of them: the only host backend (Electron main) documents `send`
-// as a no-op and `invoke` as resolving to `undefined`, and there was no second provider. They were
-// operations the SDK offered and no host could perform.
-//
-// Named Electron gaps, recorded so an absence stays examined rather than forgotten. The platform
-// genuinely supports all four; Flight has not built them:
-//   • main→renderer send — needs a specific `webContents`, so it is a targeted operation, not a global one
-//   • targeted send — same, addressed by window
-//   • invoke — `ipcMain.handle` + `ipcRenderer.invoke`, a request/response pair
-//   • handle — the main-side responder for invoke
-// Building any of them means a new slot with a real provider behind it, not a member on this one.
+import type { Entity } from './Entity';
 
-// A channel is a plain string. The former `IpcChannel` wrapper carried a single `name` field and no
-// behavior, so it was a value type standing between callers and the string they already had.
-// Both the contract and its constructors carry Entity identity; exposing it only at runtime would deny
-// consumers the identity the provider actually owns.
+// Independent IPC capabilities. Provider coverage varies by process side: an Electron renderer can
+// send and invoke, while Electron main can receive messages, handle invokes, and send to a supplied
+// target. Keeping each operation in its own Entity-backed slot makes that coverage a construction fact.
+
+export interface IpcHandleBackend extends Entity {
+  handle(channel: string, handler: (...args: readonly unknown[]) => unknown | Promise<unknown>): () => void;
+}
+
+export interface IpcInvokeBackend extends Entity {
+  invoke(channel: string, args: readonly unknown[]): Promise<unknown>;
+}
+
 export interface IpcMessageBackend extends Entity {
   // Delivers messages arriving on `channel`, returning the unsubscribe for THAT subscription only.
   subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void;
 }
-import type { Entity } from './Entity';
+
+export interface IpcSendBackend extends Entity {
+  send(channel: string, args: readonly unknown[]): void;
+}
+
+// Target identity belongs to the provider and caller, not to IPC core. Electron can use any target
+// satisfying its narrow send facade; another host may use an entirely different handle type.
+export interface IpcTargetedSendBackend<Target = never> extends Entity {
+  send(target: Target, channel: string, args: readonly unknown[]): void;
+}

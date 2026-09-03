@@ -64,7 +64,13 @@ import type { HapticsBackend } from './Haptics';
 import type { ImageBackend } from './Image';
 import type { InputIngressBackend } from './InputIngressBackend';
 import type { InputTargetBackend } from './InputTargetBackend';
-import type { IpcMessageBackend } from './Ipc';
+import type {
+  IpcHandleBackend,
+  IpcInvokeBackend,
+  IpcMessageBackend,
+  IpcSendBackend,
+  IpcTargetedSendBackend,
+} from './Ipc';
 import type {
   SoftKeyboardAccessoryBarBackend,
   SoftKeyboardChangeBackend,
@@ -292,7 +298,11 @@ export interface HostInputCapabilities {
 }
 
 export interface HostIpcCapabilities {
+  readonly handle?: IpcHandleBackend;
+  readonly invoke?: IpcInvokeBackend;
   readonly message?: IpcMessageBackend;
+  readonly send?: IpcSendBackend;
+  readonly targetedSend?: IpcTargetedSendBackend;
 }
 
 export interface HostMediaCapabilities {
@@ -732,8 +742,24 @@ export interface HasSoftKeyboardVisibility {
   };
 }
 
+export interface HasIpcHandle {
+  readonly ipc: { readonly handle: IpcHandleBackend };
+}
+
+export interface HasIpcInvoke {
+  readonly ipc: { readonly invoke: IpcInvokeBackend };
+}
+
 export interface HasIpcMessage {
   readonly ipc: { readonly message: IpcMessageBackend };
+}
+
+export interface HasIpcSend {
+  readonly ipc: { readonly send: IpcSendBackend };
+}
+
+export interface HasIpcTargetedSend<Target> {
+  readonly ipc: { readonly targetedSend: IpcTargetedSendBackend<Target> };
 }
 
 export interface HasMediaAudioCodec {
