@@ -16,6 +16,7 @@ import {
   RenderCacheKind,
   RegistryEntryState,
   RichTextKind,
+  Scale9SpriteKind,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
@@ -31,6 +32,7 @@ import { defaultGlParticleEmitter2DRenderer } from './glParticleEmitter2D';
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
 import { defaultGlRichTextRenderer } from './glRichText';
 import { defaultGlScale9ShapeRenderer } from './glScale9Shape';
+import { defaultGlScale9SpriteRenderer } from './glScale9Sprite';
 import { defaultGlShapeRenderer, defaultGlMorphShapeRenderer } from './glShape';
 import { defaultGlSpriteRenderer } from './glSprite';
 import { standardGlMaterialRenderer } from './glStandardMaterial';
@@ -47,6 +49,7 @@ function buildScene2dGlRenderers(): KeyedTable<Renderer> {
   table = withRegistryTableEntry(table, QuadBatchKind, defaultGlQuadBatchRenderer);
   table = withRegistryTableEntry(table, RenderCacheKind, defaultGlRenderCacheRenderer);
   table = withRegistryTableEntry(table, RichTextKind, defaultGlRichTextRenderer);
+  table = withRegistryTableEntry(table, Scale9SpriteKind, defaultGlScale9SpriteRenderer);
   table = withRegistryTableEntry(table, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
   table = withRegistryTableEntry(table, ShapeKind, defaultGlShapeRenderer);
   table = withRegistryTableEntry(table, SpriteKind, defaultGlSpriteRenderer);

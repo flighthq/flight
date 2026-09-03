@@ -13,6 +13,7 @@ export * from './glParticleEmitter2D';
 export * from './glQuadBatch';
 export * from './glRichText';
 export * from './glScale9Mapper';
+export * from './glScale9Sprite';
 export * from './glScale9Shape';
 export * from './glMeshShapeRenderer';
 export * from './glRasterShapeRenderer';
