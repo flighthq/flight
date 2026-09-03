@@ -1,4 +1,5 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import {
   getWgpuBlendState,
@@ -169,14 +170,14 @@ export function createWgpuMeshPipeline(
     },
     depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: !options.blended, depthCompare: 'less' },
   });
-  return {
+  return createEntity({
     hasIblGroup: options.iblBindGroupLayout !== undefined,
     hasPbrSampleGroup: options.pbrSampleBindGroupLayout !== undefined,
     hasShadowGroup: options.shadowBindGroupLayout !== undefined,
     materialBindGroupLayout: options.materialBindGroupLayout,
     pipeline,
     skinned: options.skinned === true,
-  };
+  });
 }
 
 // Whether a draw's fragment alpha is COVERAGE the compositor should honor. A material with no surface

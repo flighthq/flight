@@ -10,6 +10,7 @@
   },
   "references": [
     { "path": "../animation" },
+    { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../log" },
     { "path": "../math" },
