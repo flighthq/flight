@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { applySpringImpulse2D, createSpring2D, isSpring2DSettled, resetSpring2D, updateSpring2D } from './spring2D';
@@ -9,14 +10,17 @@ describe('applySpringImpulse2D', () => {
 
     applySpringImpulse2D(spring, 3, -5);
 
-    expect(spring.x).toEqual({ value: 10, velocity: 4 });
-    expect(spring.y).toEqual({ value: 20, velocity: -3 });
+    expect(spring.x).toMatchObject({ value: 10, velocity: 4 });
+    expect(spring.y).toMatchObject({ value: 20, velocity: -3 });
   });
 });
 
 describe('createSpring2D', () => {
   it('defaults both axes to value 0 and velocity 0', () => {
     const spring = createSpring2D();
+    expect(Object.hasOwn(spring, EntityRuntimeKey)).toBe(true);
+    expect(Object.hasOwn(spring.x, EntityRuntimeKey)).toBe(true);
+    expect(Object.hasOwn(spring.y, EntityRuntimeKey)).toBe(true);
     expect(spring.x.value).toBe(0);
     expect(spring.x.velocity).toBe(0);
     expect(spring.y.value).toBe(0);
@@ -51,12 +55,12 @@ describe('resetSpring2D', () => {
     resetSpring2D(spring, 10, 20, 30, 40);
     expect(spring.x).toBe(x);
     expect(spring.y).toBe(y);
-    expect(spring.x).toEqual({ value: 10, velocity: 30 });
-    expect(spring.y).toEqual({ value: 20, velocity: 40 });
+    expect(spring.x).toMatchObject({ value: 10, velocity: 30 });
+    expect(spring.y).toMatchObject({ value: 20, velocity: 40 });
 
     resetSpring2D(spring, -10, -20);
-    expect(spring.x).toEqual({ value: -10, velocity: 0 });
-    expect(spring.y).toEqual({ value: -20, velocity: 0 });
+    expect(spring.x).toMatchObject({ value: -10, velocity: 0 });
+    expect(spring.y).toMatchObject({ value: -20, velocity: 0 });
   });
 });
 

@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
@@ -30,19 +31,25 @@ describe('createPhysics2DQueryFilter', () => {
 
 describe('createPhysics2DQueryResult', () => {
   it('starts with no live hits', () => {
-    expect(createPhysics2DQueryResult()).toEqual({ hits: [], hitCount: 0 });
+    const result = createPhysics2DQueryResult();
+    expect(Object.hasOwn(result, EntityRuntimeKey)).toBe(true);
+    expect(result).toMatchObject({ hits: [], hitCount: 0 });
   });
 });
 
 describe('createPhysics2DRayResult', () => {
   it('starts with no live hits', () => {
-    expect(createPhysics2DRayResult()).toEqual({ hits: [], hitCount: 0 });
+    const result = createPhysics2DRayResult();
+    expect(Object.hasOwn(result, EntityRuntimeKey)).toBe(true);
+    expect(result).toMatchObject({ hits: [], hitCount: 0 });
   });
 });
 
 describe('createPhysics2DShapeCastResult', () => {
   it('starts as a miss with nothing referenced', () => {
-    expect(createPhysics2DShapeCastResult()).toEqual({
+    const result = createPhysics2DShapeCastResult();
+    expect(Object.hasOwn(result, EntityRuntimeKey)).toBe(true);
+    expect(result).toMatchObject({
       body: null,
       collider: null,
       colliderIndex: -1,
@@ -392,7 +399,7 @@ describe('queryPhysics2DShapeCast', () => {
 
     queryPhysics2DShapeCast(world, unitBox, 3, 0, out);
 
-    expect(out).toEqual({
+    expect(out).toMatchObject({
       body: null,
       collider: null,
       colliderIndex: -1,

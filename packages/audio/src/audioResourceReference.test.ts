@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { AudioDecoder, AudioResourceFetch } from '@flighthq/types/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
+import { EntityRuntimeKey, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { getAudioDecoderMimeTypes, registerAudioDecoder, unregisterAudioDecoder } from './audioDecoderRegistry';
 import { createAudioResource } from './audioResource';
@@ -17,11 +17,14 @@ import {
 describe('createAudioResourceFailure', () => {
   it('keeps an Error’s name and message without retaining the Error', () => {
     const failure = createAudioResourceFailure(new TypeError('bad bytes'));
-    expect(failure).toEqual({ kind: 'Error', message: 'bad bytes', name: 'TypeError' });
+    expect(Object.hasOwn(failure, EntityRuntimeKey)).toBe(true);
+    expect(failure).toMatchObject({ kind: 'Error', message: 'bad bytes', name: 'TypeError' });
   });
 
   it('stringifies a thrown non-Error', () => {
-    expect(createAudioResourceFailure('nope')).toEqual({ kind: 'Error', message: 'nope', name: null });
+    const failure = createAudioResourceFailure('nope');
+    expect(Object.hasOwn(failure, EntityRuntimeKey)).toBe(true);
+    expect(failure).toMatchObject({ kind: 'Error', message: 'nope', name: null });
   });
 });
 
@@ -177,7 +180,12 @@ describe('resolveAudioResourceReference', () => {
 
     expect(resolved).toBeNull();
     expect(reference.state).toBe(ResourceResolutionState.Failed);
-    expect(reference.failure).toEqual({ kind: 'Unavailable', message: 'Audio resource unavailable', name: null });
+    expect(Object.hasOwn(reference.failure!, EntityRuntimeKey)).toBe(true);
+    expect(reference.failure).toMatchObject({
+      kind: 'Unavailable',
+      message: 'Audio resource unavailable',
+      name: null,
+    });
   });
 
   it('routes an external reference through the fetch seam', async () => {
@@ -202,7 +210,8 @@ describe('resolveAudioResourceReference', () => {
 
     expect(resolved).toBeNull();
     expect(reference.state).toBe(ResourceResolutionState.Failed);
-    expect(reference.failure).toEqual({ kind: 'Error', message: 'bad bytes', name: 'TypeError' });
+    expect(Object.hasOwn(reference.failure!, EntityRuntimeKey)).toBe(true);
+    expect(reference.failure).toMatchObject({ kind: 'Error', message: 'bad bytes', name: 'TypeError' });
   });
 
   it('treats an abort as a cancel, leaving the reference requestable rather than failed', async () => {

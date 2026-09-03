@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions';
@@ -77,7 +78,9 @@ function settle(world: Physics2DWorld, joint: Physics2DJoint, steps = SETTLE_STE
 
 describe('createPhysics2DJointReaction', () => {
   it('starts at rest', () => {
-    expect(createPhysics2DJointReaction()).toEqual({ forceX: 0, forceY: 0, torque: 0 });
+    const reaction = createPhysics2DJointReaction();
+    expect(Object.hasOwn(reaction, EntityRuntimeKey)).toBe(true);
+    expect(reaction).toMatchObject({ forceX: 0, forceY: 0, torque: 0 });
   });
 
   it('allocates a fresh object each call, so two readings do not alias', () => {
@@ -313,7 +316,7 @@ describe('writePhysics2DJointReaction', () => {
 
     const out = createPhysics2DJointReaction();
     expect(writePhysics2DJointReaction(world, joint, DT, out)).toBe(false);
-    expect(out).toEqual({ forceX: 0, forceY: 0, torque: 0 });
+    expect(out).toMatchObject({ forceX: 0, forceY: 0, torque: 0 });
   });
 
   it('declines for a kind whose solver was never registered', () => {
@@ -345,7 +348,7 @@ describe('writePhysics2DJointReaction', () => {
 
     for (const bad of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
       expect(writePhysics2DJointReaction(world, joint, bad, out)).toBe(false);
-      expect(out).toEqual({ forceX: 0, forceY: 0, torque: 0 });
+      expect(out).toMatchObject({ forceX: 0, forceY: 0, torque: 0 });
     }
   });
 

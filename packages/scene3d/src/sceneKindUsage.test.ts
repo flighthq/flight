@@ -4,7 +4,13 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResourceReference } from '@flighthq/types/contract';
-import { ImageResourceReferenceKind, MeshKind, Node3DKind, ResourceResolutionState } from '@flighthq/types/contract';
+import {
+  EntityRuntimeKey,
+  ImageResourceReferenceKind,
+  MeshKind,
+  Node3DKind,
+  ResourceResolutionState,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh';
@@ -25,7 +31,9 @@ function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceRefere
 
 describe('createScene3DKindUsage', () => {
   it('starts empty so a caller can reuse one record across scenes', () => {
-    expect(createScene3DKindUsage()).toEqual({
+    const usage = createScene3DKindUsage();
+    expect(Object.hasOwn(usage, EntityRuntimeKey)).toBe(true);
+    expect(usage).toMatchObject({
       materialKinds: [],
       modifierKinds: [],
       nodeKinds: [],

@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { applySpringImpulse3D, createSpring3D, isSpring3DSettled, resetSpring3D, updateSpring3D } from './spring3D';
@@ -9,15 +10,19 @@ describe('applySpringImpulse3D', () => {
 
     applySpringImpulse3D(spring, 3, -5, 7);
 
-    expect(spring.x).toEqual({ value: 10, velocity: 4 });
-    expect(spring.y).toEqual({ value: 20, velocity: -3 });
-    expect(spring.z).toEqual({ value: 30, velocity: 10 });
+    expect(spring.x).toMatchObject({ value: 10, velocity: 4 });
+    expect(spring.y).toMatchObject({ value: 20, velocity: -3 });
+    expect(spring.z).toMatchObject({ value: 30, velocity: 10 });
   });
 });
 
 describe('createSpring3D', () => {
   it('defaults all axes to value 0 and velocity 0', () => {
     const spring = createSpring3D();
+    expect(Object.hasOwn(spring, EntityRuntimeKey)).toBe(true);
+    expect(Object.hasOwn(spring.x, EntityRuntimeKey)).toBe(true);
+    expect(Object.hasOwn(spring.y, EntityRuntimeKey)).toBe(true);
+    expect(Object.hasOwn(spring.z, EntityRuntimeKey)).toBe(true);
     expect(spring.x.value).toBe(0);
     expect(spring.y.value).toBe(0);
     expect(spring.z.value).toBe(0);
@@ -58,14 +63,14 @@ describe('resetSpring3D', () => {
     expect(spring.x).toBe(x);
     expect(spring.y).toBe(y);
     expect(spring.z).toBe(z);
-    expect(spring.x).toEqual({ value: 10, velocity: 40 });
-    expect(spring.y).toEqual({ value: 20, velocity: 50 });
-    expect(spring.z).toEqual({ value: 30, velocity: 60 });
+    expect(spring.x).toMatchObject({ value: 10, velocity: 40 });
+    expect(spring.y).toMatchObject({ value: 20, velocity: 50 });
+    expect(spring.z).toMatchObject({ value: 30, velocity: 60 });
 
     resetSpring3D(spring, -10, -20, -30);
-    expect(spring.x).toEqual({ value: -10, velocity: 0 });
-    expect(spring.y).toEqual({ value: -20, velocity: 0 });
-    expect(spring.z).toEqual({ value: -30, velocity: 0 });
+    expect(spring.x).toMatchObject({ value: -10, velocity: 0 });
+    expect(spring.y).toMatchObject({ value: -20, velocity: 0 });
+    expect(spring.z).toMatchObject({ value: -30, velocity: 0 });
   });
 });
 
