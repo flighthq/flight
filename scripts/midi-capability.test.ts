@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -89,7 +89,7 @@ function productionSources(directory: string): string {
 function productionTypeScriptFiles(directory: string): Array<{ contents: string; path: string }> {
   const absolute = resolve(ROOT, directory);
   return walk(absolute)
-    .filter((path) => !path.includes('/dist/') && path.endsWith('.ts') && !path.endsWith('.test.ts'))
+    .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts'))
     .map((path) => ({ contents: readFileSync(path, 'utf8'), path: relative(ROOT, path) }))
     .sort((left, right) => left.path.localeCompare(right.path));
 }
@@ -98,9 +98,41 @@ function source(path: string): string {
   return readFileSync(resolve(ROOT, path), 'utf8');
 }
 
+// Build output and installed dependencies cannot hold the production source these assertions are about,
+// and descending into them was most of the traversal: of 24,730 paths this walk visited under packages/,
+// 19,244 were dist output that existed only to be filtered out afterwards, against 3,153 kept. Pruning at
+// the directory keeps the work proportional to the subject and makes the result independent of whether
+// the repository happens to have been built — the walk is the whole cost of this file, and under the
+// shared-worker suite it was overrunning the 5s deadline. Reading entry types from readdir also drops one
+// statSync per visited path.
+//
+// The prune is load-bearing for CORRECTNESS, not only cost: emitted declarations under dist/ end in .ts
+// and are not .test.ts, so they satisfy the production-source filter. Removing this prune readmits every
+// .d.ts as production source and the request-owner assertion starts failing on build output.
+const SKIPPED_DIRECTORIES = new Set(['dist', 'node_modules']);
+
 function walk(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
-    const path = join(directory, entry);
-    return statSync(path).isDirectory() ? walk(path) : [path];
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (!entry.isDirectory()) return [path];
+    return SKIPPED_DIRECTORIES.has(entry.name) ? [] : walk(path);
   });
 }
+
+// The walk is what made this file the slowest in the suite, and the defect was where it went rather than
+// how long it took: it descended into every package's build output and filtered the results away after
+// paying for them. Asserting the traversal never enters those directories is deterministic, unlike a
+// timing bound, and it fails on the traversal that caused the timeout.
+describe('production source traversal', () => {
+  it('never descends into build output or installed dependencies', () => {
+    const visited = walk(resolve(ROOT, 'packages'));
+    expect(visited.filter((path) => path.includes('/dist/'))).toEqual([]);
+    expect(visited.filter((path) => path.includes('/node_modules/'))).toEqual([]);
+  });
+
+  it('still reaches package production sources', () => {
+    expect(productionTypeScriptFiles('packages/midi/src').map(({ path }) => path)).toContain(
+      'packages/midi/src/midiAccess.ts',
+    );
+  });
+});
