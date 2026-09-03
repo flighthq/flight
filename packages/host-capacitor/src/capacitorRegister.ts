@@ -88,7 +88,7 @@ export function capacitorHost<Profile extends MobileOsProfile>(
     updater: {},
     // Every WindowBackend member is optional, so {} is the honest claim: a Capacitor app runs in a
     // webview and provides no native window operations of its own.
-    window: {},
+    window: createEntity({}),
   } satisfies Omit<CapacitorHost<Profile>, typeof EntityRuntimeKey>);
 }
 

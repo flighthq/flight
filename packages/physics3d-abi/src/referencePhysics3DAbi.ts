@@ -1,4 +1,6 @@
 import {
+  createCollisionHeightfield3D,
+  createCollisionTriangleMesh3D,
   getCollisionHeightfieldValidationStatus3D,
   getCollisionShapeValidationStatus3D,
   getCollisionTriangleMeshValidationStatus3D,
@@ -930,37 +932,28 @@ function readShape(command: Readonly<CommandRecord>, byteOffset: number): Collis
   }
   if (kind === Physics3DAbiShapeKind.Convex && integerCount === 0) return { kind: 'convex', points: values };
   if (kind === Physics3DAbiShapeKind.TriangleMesh && scalarCount >= 7) {
-    return {
-      kind: 'triangle-mesh',
-      version,
-      x: values[0],
-      y: values[1],
-      z: values[2],
-      rotationX: values[3],
-      rotationY: values[4],
-      rotationZ: values[5],
-      rotationW: values[6],
-      points: values.slice(7),
-      indices: integers,
-    };
+    const mesh = createCollisionTriangleMesh3D(values.slice(7), integers);
+    mesh.version = version;
+    mesh.x = values[0];
+    mesh.y = values[1];
+    mesh.z = values[2];
+    mesh.rotationX = values[3];
+    mesh.rotationY = values[4];
+    mesh.rotationZ = values[5];
+    mesh.rotationW = values[6];
+    return mesh;
   }
   if (kind === Physics3DAbiShapeKind.Heightfield && scalarCount >= 9 && integerCount === 2) {
-    return {
-      kind: 'heightfield',
-      columns: integers[0],
-      rows: integers[1],
-      version,
-      cellSizeX: values[0],
-      cellSizeZ: values[1],
-      x: values[2],
-      y: values[3],
-      z: values[4],
-      rotationX: values[5],
-      rotationY: values[6],
-      rotationZ: values[7],
-      rotationW: values[8],
-      heights: values.slice(9),
-    };
+    const heightfield = createCollisionHeightfield3D(integers[0], integers[1], values.slice(9), values[0], values[1]);
+    heightfield.version = version;
+    heightfield.x = values[2];
+    heightfield.y = values[3];
+    heightfield.z = values[4];
+    heightfield.rotationX = values[5];
+    heightfield.rotationY = values[6];
+    heightfield.rotationZ = values[7];
+    heightfield.rotationW = values[8];
+    return heightfield;
   }
   return null;
 }

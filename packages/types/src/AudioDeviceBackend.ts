@@ -1,6 +1,7 @@
 import type { AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle';
+import type { Entity } from './Entity';
 
-export interface AudioDeviceBackend {
+export interface AudioDeviceBackend extends Entity {
   createBuffer(
     device: AudioDeviceHandle,
     channels: number,
@@ -28,4 +29,7 @@ export interface AudioDeviceBackend {
   stopSource(source: AudioSourceHandle): void;
 }
 
-export type AudioDeviceOperation = keyof AudioDeviceBackend;
+// The operation names only. AudioDeviceBackend is an Entity, so a bare `keyof` would also yield the
+// runtime slot's symbol — which names no operation, and widening this union to include it makes every
+// explain*/has* consumer accept a key it can never resolve.
+export type AudioDeviceOperation = Exclude<keyof AudioDeviceBackend, keyof Entity>;

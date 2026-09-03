@@ -9,7 +9,7 @@ import {
   initTransform2DTrait,
 } from '@flighthq/node/contract';
 import type {
-  InteractionSignals,
+  InteractionSignalName,
   KeyboardEventData,
   Node2D,
   Node2DRuntime,
@@ -37,7 +37,7 @@ export function createGuiTestNode(width = 100, height = 20): Node2D {
   return node;
 }
 
-export function emitGuiKeyboard(target: Node2D, name: keyof InteractionSignals, key: string): void {
+export function emitGuiKeyboard(target: Node2D, name: InteractionSignalName, key: string): void {
   const data: KeyboardEventData = {
     altKey: false,
     ctrlKey: false,
@@ -51,7 +51,7 @@ export function emitGuiKeyboard(target: Node2D, name: keyof InteractionSignals, 
 
 export function emitGuiPointer(
   target: Node2D,
-  name: keyof InteractionSignals,
+  name: InteractionSignalName,
   fields?: Readonly<Partial<PointerEventData>>,
 ): void {
   const data: PointerEventData = {

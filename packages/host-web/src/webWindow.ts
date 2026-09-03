@@ -2,6 +2,7 @@ import { notifyWindowClosed } from '@flighthq/application/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import type {
   ApplicationWindow,
+  EntityWithoutRuntime,
   FullscreenBackend,
   FullscreenTargetHandle,
   NativeWindowHandle,
@@ -25,7 +26,7 @@ type WebWindowBackend = WindowBackend &
     >
   >;
 
-export const webWindowBackend: WebWindowBackend = {
+export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRuntime<WebWindowBackend>>({
   attach(win, handle, ownership) {
     if (!isWebWindow(handle)) return false;
     return attachWebWindow(win, handle, ownership);
@@ -157,7 +158,7 @@ export const webWindowBackend: WebWindowBackend = {
     pageDocument.addEventListener('visibilitychange', handler);
     return trackWebWindowSubscription(() => pageDocument.removeEventListener('visibilitychange', handler));
   },
-};
+});
 
 export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> =
   {

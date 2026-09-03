@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { beginWgpuFrame, createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { RenderEffect } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -254,14 +255,14 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
 
 describe('setWgpuRenderEffectVelocityTexture', () => {
   it('sets the velocity texture on the pipeline', () => {
-    const pipeline = {
+    const pipeline = createEntity({
       options: {},
       sceneTarget: null,
       pool: { [EntityRuntimeKey]: undefined, free: [] },
       lutCache: { signature: null, lut: null },
       lutTexture: { texture: null, size: 0, lut: null },
       velocityTexture: null,
-    };
+    });
     const texture = {} as GPUTexture;
     setWgpuRenderEffectVelocityTexture(pipeline, texture);
     expect(pipeline.velocityTexture).toBe(texture);

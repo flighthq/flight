@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import {
   acquireWgpuRenderTarget,
   beginWgpuRenderPass,
@@ -20,6 +21,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type {
   Adjustment,
+  EntityWithoutRuntime,
   RenderEffect,
   RenderEffectPipelineOptions,
   RenderTargetColorSpace,
@@ -82,7 +84,7 @@ export function createWgpuRenderEffectPipeline(
   if (requestedSampleCount !== appliedSampleCount) {
     _sampleCountGuards.get(state)?.(state, requestedSampleCount, appliedSampleCount);
   }
-  return {
+  return createEntity<EntityWithoutRuntime<WgpuRenderEffectPipeline>>({
     options: {
       ...options,
       sampleCount: appliedSampleCount,
@@ -92,7 +94,7 @@ export function createWgpuRenderEffectPipeline(
     lutCache: createColorLutCache(),
     lutTexture: { texture: null, size: 0, lut: null },
     velocityTexture: null,
-  };
+  });
 }
 
 export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: WgpuRenderEffectPipeline): void {

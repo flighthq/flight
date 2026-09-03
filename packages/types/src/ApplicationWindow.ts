@@ -100,7 +100,7 @@ export type WindowResizeTargetHandle = Entity & { readonly __brand: 'WindowResiz
 // absence is a safe command no-op are optional, so a host declares support by providing the method rather
 // than by publishing a false implementation. Every method takes the target window so the seam supports
 // multiple windows.
-export interface WindowBackend {
+export interface WindowBackend extends Entity {
   // Attaches an existing native window. Optional because absence is the structural declaration that a
   // backend cannot adopt host-created windows. A host passed to attachWindow must also provide close,
   // which owns the resulting release obligation.

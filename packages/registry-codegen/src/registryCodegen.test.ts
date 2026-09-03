@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createRegistryCatalog } from '@flighthq/registry-catalog/contract';
 import type { RegistryCatalogEntry, RequirementSet } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
@@ -23,13 +24,13 @@ const shapeCommands: RegistryCatalogEntry = {
 describe('createRegistryCodegenPlan', () => {
   it('selects the matching backend rows in requirement and catalog order', () => {
     const catalog = createRegistryCatalog([shapeRenderer, shapeCommands, { ...shapeRenderer, backend: 'webgpu' }]);
-    const requirements: RequirementSet = {
+    const requirements: RequirementSet = createEntity({
       covers: [RequirementFacet.SceneNodeKind],
       requirements: [
         { facet: RequirementFacet.SceneNodeKind, key: 'Shape' },
         { facet: RequirementFacet.SceneNodeKind, key: 'Sprite' },
       ],
-    };
+    });
 
     expect(createRegistryCodegenPlan(catalog, requirements, 'webgl')).toEqual({
       backend: 'webgl',
@@ -41,10 +42,10 @@ describe('createRegistryCodegenPlan', () => {
   it('deduplicates repeated positive requirements without treating covers as requests', () => {
     const catalog = createRegistryCatalog([shapeRenderer]);
     const requirement = { facet: RequirementFacet.SceneNodeKind, key: 'Shape' } as const;
-    const requirements: RequirementSet = {
+    const requirements: RequirementSet = createEntity({
       covers: [RequirementFacet.SceneNodeKind, RequirementFacet.SceneShapeCommand],
       requirements: [requirement, requirement],
-    };
+    });
 
     expect(createRegistryCodegenPlan(catalog, requirements, 'webgl')).toEqual({
       backend: 'webgl',
@@ -54,7 +55,9 @@ describe('createRegistryCodegenPlan', () => {
   });
 
   it('returns an empty plan for empty catalog contents and requirements', () => {
-    expect(createRegistryCodegenPlan(createRegistryCatalog(), { covers: [], requirements: [] }, 'webgl')).toEqual({
+    expect(
+      createRegistryCodegenPlan(createRegistryCatalog(), createEntity({ covers: [], requirements: [] }), 'webgl'),
+    ).toEqual({
       backend: 'webgl',
       entries: [],
       unresolved: [],

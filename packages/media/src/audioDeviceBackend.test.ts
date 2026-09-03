@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceBackend } from '@flighthq/types/contract';
 import type { AudioSourceHandle } from '@flighthq/types/contract';
 
@@ -349,7 +350,7 @@ describe('setAudioDeviceBackend', () => {
 });
 
 function stubBackend(): AudioDeviceBackend {
-  return {
+  return createEntity({
     createBuffer: vi.fn().mockReturnValue(1),
     createDevice: vi.fn().mockReturnValue(1),
     createSource: vi.fn().mockReturnValue(1),
@@ -364,7 +365,7 @@ function stubBackend(): AudioDeviceBackend {
     setSourcePlaybackRate: vi.fn(),
     startSource: vi.fn(),
     stopSource: vi.fn(),
-  };
+  });
 }
 
 function installFakeAudioContext(): {

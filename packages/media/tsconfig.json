@@ -13,6 +13,9 @@
       "path": "../audio"
     },
     {
+      "path": "../entity"
+    },
+    {
       "path": "../log"
     },
     {

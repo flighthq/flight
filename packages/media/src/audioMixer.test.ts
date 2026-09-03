@@ -1,4 +1,5 @@
 import { createAudioResource } from '@flighthq/audio/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceBackend, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import { pauseAudioChannel, playAudioResource } from './audioChannel';
@@ -75,7 +76,7 @@ function createMockAudioBuffer(): AudioBuffer {
 }
 
 function createMockBackend(): AudioDeviceBackend {
-  return {
+  return createEntity({
     createBuffer: vi.fn().mockReturnValue(1),
     createDevice: vi.fn().mockReturnValue(1),
     createSource: vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle),
@@ -90,7 +91,7 @@ function createMockBackend(): AudioDeviceBackend {
     setSourcePlaybackRate: vi.fn(),
     startSource: vi.fn(),
     stopSource: vi.fn(),
-  };
+  });
 }
 
 beforeEach(() => {
