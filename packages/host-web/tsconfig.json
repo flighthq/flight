@@ -43,8 +43,7 @@
     { "path": "../storage" },
     { "path": "../types" },
     { "path": "../useragent" },
-    { "path": "../video" },
-    { "path": "../webcam" }
+    { "path": "../video" }
   ],
   "include": ["src"]
 }

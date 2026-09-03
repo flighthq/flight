@@ -57,7 +57,6 @@ export * from './webStoragePersistence';
 export * from './webSystemHost';
 export * from './webUiHost';
 export * from './webVideoCapability';
-export * from './webMediaFileCapture';
 export * from './webWindow';
 export * from './webWindowHost';
 export * from './webWgpuRenderSurface';

@@ -1,1 +1,1 @@
-export * from './mediaFileCapture';
+export {};

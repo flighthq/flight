@@ -1,6 +1,10 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import type {
+  CapturePhotoDialogOptions,
+  CaptureVideoDialogOptions,
+  DialogImage,
+  DialogVideo,
   DirectoryOpenDialogBackend,
   DirectoryOpenDialogResult,
   EntityRuntimeKey,
@@ -10,9 +14,16 @@ import type {
   FileOpenDialogResult,
   FileSaveDialogBackend,
   FileSaveDialogResult,
+  ImageOpenDialogBackend,
+  ImageOpenDialogResult,
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
+  OpenImageDialogOptions,
+  PhotoCaptureDialogBackend,
+  PhotoCaptureDialogResult,
   SaveFileDialogOptions,
+  VideoCaptureDialogBackend,
+  VideoCaptureDialogResult,
 } from '@flighthq/types/contract';
 
 export { webMessageDialogBackend, webPromptDialogBackend } from '@flighthq/dialog/contract';
@@ -28,6 +39,18 @@ export const webFileOpenDialogBackend = createEntity({
 export const webFileSaveDialogBackend = createEntity({
   save: saveFile,
 } satisfies Omit<FileSaveDialogBackend, typeof EntityRuntimeKey>);
+
+export const webImageOpenDialogBackend = createEntity({
+  open: openImage,
+} satisfies Omit<ImageOpenDialogBackend, typeof EntityRuntimeKey>);
+
+export const webPhotoCaptureDialogBackend = createEntity({
+  capture: capturePhoto,
+} satisfies Omit<PhotoCaptureDialogBackend, typeof EntityRuntimeKey>);
+
+export const webVideoCaptureDialogBackend = createEntity({
+  capture: captureVideo,
+} satisfies Omit<VideoCaptureDialogBackend, typeof EntityRuntimeKey>);
 
 async function openDirectory(options: Readonly<OpenDirectoryDialogOptions> = {}): Promise<DirectoryOpenDialogResult> {
   if (options.signal?.aborted) return { outcome: 'cancelled' };
@@ -168,6 +191,262 @@ async function saveFile(options: Readonly<SaveFileDialogOptions>): Promise<FileS
   } catch (error) {
     return { outcome: classifyPickerFailure(error, 'file-save-failed') };
   }
+}
+
+async function openImage(options: Readonly<OpenImageDialogOptions> = {}): Promise<ImageOpenDialogResult> {
+  const picked = await pickMediaFile('image/*', undefined, options.signal, 'image-open-failed');
+  if ('outcome' in picked) return picked;
+  const dataUrl = await readDataUrl(picked.file, options.signal);
+  if (dataUrl === 'cancelled') return { outcome: 'cancelled' };
+  if (dataUrl === null) return { outcome: 'image-open-failed' };
+  const image = await decodeImage(dataUrl, picked.file.type, options.signal);
+  if (image === 'cancelled') return { outcome: 'cancelled' };
+  return image === null ? { outcome: 'image-open-failed' } : { image, outcome: 'selected' };
+}
+
+async function capturePhoto(options: Readonly<CapturePhotoDialogOptions> = {}): Promise<PhotoCaptureDialogResult> {
+  const picked = await pickMediaFile(
+    'image/*',
+    options.facingMode ?? 'environment',
+    options.signal,
+    'photo-capture-failed',
+  );
+  if ('outcome' in picked) return picked;
+  const dataUrl = await readDataUrl(picked.file, options.signal);
+  if (dataUrl === 'cancelled') return { outcome: 'cancelled' };
+  if (dataUrl === null) return { outcome: 'photo-capture-failed' };
+  const photo = await decodeImage(dataUrl, picked.file.type, options.signal);
+  if (photo === 'cancelled') return { outcome: 'cancelled' };
+  return photo === null ? { outcome: 'photo-capture-failed' } : { outcome: 'selected', photo };
+}
+
+async function captureVideo(options: Readonly<CaptureVideoDialogOptions> = {}): Promise<VideoCaptureDialogResult> {
+  const picked = await pickMediaFile(
+    'video/*',
+    options.facingMode ?? 'environment',
+    options.signal,
+    'video-capture-failed',
+  );
+  if ('outcome' in picked) return picked;
+  const dataUrl = await readDataUrl(picked.file, options.signal);
+  if (dataUrl === 'cancelled') return { outcome: 'cancelled' };
+  if (dataUrl === null) return { outcome: 'video-capture-failed' };
+  const video = await decodeVideo(dataUrl, picked.file.type, options.signal);
+  if (video === 'cancelled') return { outcome: 'cancelled' };
+  return video === null ? { outcome: 'video-capture-failed' } : { outcome: 'selected', video };
+}
+
+type MediaPickerFailure = 'image-open-failed' | 'photo-capture-failed' | 'video-capture-failed';
+
+function pickMediaFile<Failure extends MediaPickerFailure>(
+  accept: string,
+  capture: string | undefined,
+  signal: AbortSignal | undefined,
+  failure: Failure,
+): Promise<
+  { readonly file: File } | { readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | Failure }
+> {
+  if (signal?.aborted) return Promise.resolve({ outcome: 'cancelled' });
+  if (
+    typeof document === 'undefined' ||
+    typeof document.createElement !== 'function' ||
+    typeof FileReader === 'undefined'
+  ) {
+    return Promise.resolve({ outcome: 'runtime-unavailable' });
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    if (capture !== undefined) input.capture = capture;
+
+    const cleanup = () => {
+      input.removeEventListener('change', onChange);
+      input.removeEventListener('cancel', onCancel);
+      signal?.removeEventListener('abort', onAbort);
+    };
+    const finish = (
+      result:
+        | { readonly file: File }
+        | { readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | Failure },
+    ) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+    function onChange() {
+      const file = input.files?.[0];
+      finish(file === undefined ? { outcome: 'cancelled' } : { file });
+    }
+    function onCancel() {
+      finish({ outcome: 'cancelled' });
+    }
+    function onAbort() {
+      finish({ outcome: 'cancelled' });
+    }
+
+    input.addEventListener('change', onChange);
+    input.addEventListener('cancel', onCancel);
+    signal?.addEventListener('abort', onAbort, { once: true });
+    try {
+      input.click();
+    } catch (error) {
+      finish({ outcome: classifyPickerFailure(error, failure) });
+    }
+  });
+}
+
+function readDataUrl(file: File, signal?: AbortSignal): Promise<string | 'cancelled' | null> {
+  if (signal?.aborted) return Promise.resolve('cancelled');
+  if (typeof FileReader === 'undefined') return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let reader: FileReader;
+    try {
+      reader = new FileReader();
+    } catch {
+      resolve(null);
+      return;
+    }
+    let settled = false;
+    const cleanup = () => {
+      reader.removeEventListener('load', onLoad);
+      reader.removeEventListener('error', onError);
+      reader.removeEventListener('abort', onReaderAbort);
+      signal?.removeEventListener('abort', onSignalAbort);
+    };
+    const finish = (result: string | 'cancelled' | null) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+    function onLoad() {
+      finish(typeof reader.result === 'string' ? reader.result : null);
+    }
+    function onError() {
+      finish(null);
+    }
+    function onReaderAbort() {
+      finish('cancelled');
+    }
+    function onSignalAbort() {
+      reader.abort();
+      finish('cancelled');
+    }
+
+    reader.addEventListener('load', onLoad);
+    reader.addEventListener('error', onError);
+    reader.addEventListener('abort', onReaderAbort);
+    signal?.addEventListener('abort', onSignalAbort, { once: true });
+    try {
+      reader.readAsDataURL(file);
+    } catch {
+      finish(null);
+    }
+  });
+}
+
+function decodeImage(
+  dataUrl: string,
+  mimeType: string,
+  signal?: AbortSignal,
+): Promise<DialogImage | 'cancelled' | null> {
+  if (signal?.aborted) return Promise.resolve('cancelled');
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function') return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let image: HTMLImageElement;
+    try {
+      image = document.createElement('img');
+    } catch {
+      resolve(null);
+      return;
+    }
+    let settled = false;
+    const cleanup = () => {
+      image.onload = null;
+      image.onerror = null;
+      signal?.removeEventListener('abort', onAbort);
+    };
+    const finish = (result: DialogImage | 'cancelled' | null) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+    function onAbort() {
+      finish('cancelled');
+    }
+
+    image.onload = () => {
+      const { naturalHeight: height, naturalWidth: width } = image;
+      finish(
+        Number.isFinite(height) && height > 0 && Number.isFinite(width) && width > 0
+          ? { dataUrl, height, mimeType, width }
+          : null,
+      );
+    };
+    image.onerror = () => finish(null);
+    signal?.addEventListener('abort', onAbort, { once: true });
+    try {
+      image.src = dataUrl;
+    } catch {
+      finish(null);
+    }
+  });
+}
+
+function decodeVideo(
+  dataUrl: string,
+  mimeType: string,
+  signal?: AbortSignal,
+): Promise<DialogVideo | 'cancelled' | null> {
+  if (signal?.aborted) return Promise.resolve('cancelled');
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function') return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let video: HTMLVideoElement;
+    try {
+      video = document.createElement('video');
+    } catch {
+      resolve(null);
+      return;
+    }
+    let settled = false;
+    const cleanup = () => {
+      video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      video.removeEventListener('error', onError);
+      signal?.removeEventListener('abort', onAbort);
+      video.removeAttribute('src');
+    };
+    const finish = (result: DialogVideo | 'cancelled' | null) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+    function onLoadedMetadata() {
+      const { duration } = video;
+      finish(Number.isFinite(duration) && duration > 0 ? { dataUrl, duration, mimeType } : null);
+    }
+    function onError() {
+      finish(null);
+    }
+    function onAbort() {
+      finish('cancelled');
+    }
+
+    video.preload = 'metadata';
+    video.addEventListener('loadedmetadata', onLoadedMetadata);
+    video.addEventListener('error', onError);
+    signal?.addEventListener('abort', onAbort, { once: true });
+    try {
+      video.src = dataUrl;
+      video.load();
+    } catch {
+      finish(null);
+    }
+  });
 }
 
 function buildFileSystemAccessTypes(

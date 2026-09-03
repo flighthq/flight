@@ -64,7 +64,7 @@ const WRAPPERS = [
     group: 'dialog',
     imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webDialog'],
     name: 'webDialogHost',
-    slots: ['directoryOpen', 'fileOpen', 'fileSave', 'message', 'prompt'],
+    slots: ['directoryOpen', 'fileOpen', 'fileSave', 'imageOpen', 'message', 'photoCapture', 'prompt', 'videoCapture'],
   },
   {
     file: 'webGraphicsHost.ts',
