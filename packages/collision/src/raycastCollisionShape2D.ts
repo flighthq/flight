@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CollisionRaycastHit2D, CollisionBuiltInShape2D } from '@flighthq/types/contract';
 
 import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
@@ -6,7 +7,7 @@ import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
 const RELATIVE_EPSILON = 1e-9;
 
 export function createCollisionRaycastHit2D(): CollisionRaycastHit2D {
-  return { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
+  return createEntity({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
 }
 
 // Writes the first exact intersection of `origin + direction * fraction` with `shape`. Direction need
@@ -589,7 +590,7 @@ function acquireRaycastScratch(): RaycastScratch {
 
 function createRaycastScratch(): RaycastScratch {
   return {
-    localHit: { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 },
+    localHit: createCollisionRaycastHit2D(),
     fraction: { value: 0 },
     polygonCenter: { x: 0, y: 0 },
   };
@@ -602,7 +603,7 @@ function releaseRaycastScratch(scratch: RaycastScratch): void {
 const raycastScratchPool: RaycastScratch[] = [createRaycastScratch()];
 
 // Reused across capsule raycasts so the three sub-shape tests allocate nothing. Rebound per call.
-const capsuleHit: CollisionRaycastHit2D = { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
+const capsuleHit: CollisionRaycastHit2D = createCollisionRaycastHit2D();
 const capsuleRectangleProbe: Extract<CollisionBuiltInShape2D, { kind: 'obb' }> = {
   kind: 'obb',
   x: 0,

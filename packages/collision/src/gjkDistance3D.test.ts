@@ -20,7 +20,7 @@ function aabb(minX: number, minY: number, minZ: number, maxX: number, maxY: numb
 
 describe('createCollisionDistance3D', () => {
   it('starts zeroed and not overlapping', () => {
-    expect(createCollisionDistance3D()).toEqual({
+    expect(createCollisionDistance3D()).toMatchObject({
       distance: 0,
       directionX: 0,
       directionY: 0,

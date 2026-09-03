@@ -1,12 +1,14 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CollisionBuiltInShape2D, CollisionTimeOfImpact2D } from '@flighthq/types/contract';
 
 import { collideContactManifold2D } from './collideContactManifold2D';
 import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D';
 import { createCollisionContactManifold2D } from './contactManifold2D';
 import { writeAabbVertices, writeObbVertices } from './convexVertices2D';
+import { createCollisionRaycastHit2D } from './raycastCollisionShape2D';
 
 export function createCollisionTimeOfImpact2D(): CollisionTimeOfImpact2D {
-  return { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
+  return createEntity({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
 }
 
 // Finds the exact first contact under LINEAR TRANSLATION of both shapes. Circle-circle uses its
@@ -571,7 +573,7 @@ function createCollisionSweepScratch(): CollisionSweepScratch {
     verticesB: new Float64Array(8),
     piecesA: createSweepPieces(),
     piecesB: createSweepPieces(),
-    pieceHit: { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 },
+    pieceHit: createCollisionRaycastHit2D(),
     projectionMin: 0,
     projectionMax: 0,
     entry: 0,

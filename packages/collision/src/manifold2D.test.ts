@@ -4,7 +4,11 @@ import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2
 
 describe('clearCollisionManifold2D', () => {
   it('resets every field to the non-overlapping state', () => {
-    const manifold = { overlapping: true, normalX: 0.5, normalY: -0.5, depth: 3 };
+    const manifold = createCollisionManifold2D();
+    manifold.overlapping = true;
+    manifold.normalX = 0.5;
+    manifold.normalY = -0.5;
+    manifold.depth = 3;
     clearCollisionManifold2D(manifold);
     expect(manifold.overlapping).toBe(false);
     expect(manifold.normalX).toBe(0);

@@ -223,7 +223,7 @@ describe('writeCollisionHeightfieldBounds3D', () => {
     heightfield.x = 4;
     const bounds = { minX: 0, minY: 0, minZ: 0, maxX: 0, maxY: 0, maxZ: 0 };
     writeCollisionHeightfieldBounds3D(heightfield, bounds);
-    expect(bounds).toEqual({ minX: 4, minY: -1, minZ: 0, maxX: 6, maxY: 1, maxZ: 3 });
+    expect(bounds).toMatchObject({ minX: 4, minY: -1, minZ: 0, maxX: 6, maxY: 1, maxZ: 3 });
   });
 });
 

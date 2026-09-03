@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 // Narrow-phase collision header. `@flighthq/collision` tests one collider pair for overlap and, when
 // they overlap, writes a manifold — the minimum-translation vector that separates the pair. It also
 // computes exact first contact under linear translation for continuous collision users. Shapes are
@@ -152,7 +153,7 @@ export type CollisionShape2D = CollisionBuiltInShape2D | CollisionVendorShape2D;
 // distance along it — moving A by `normal * depth` just separates the pair. When `overlapping` is
 // false the pair is disjoint (or merely touching, which is treated as non-overlapping) and
 // `normalX`/`normalY`/`depth` are left at 0.
-export interface CollisionManifold2D {
+export interface CollisionManifold2D extends Entity {
   overlapping: boolean;
   normalX: number;
   normalY: number;
@@ -162,7 +163,7 @@ export interface CollisionManifold2D {
 // Exact first intersection of a parametric ray `origin + direction * fraction` with one shape.
 // `raycastCollisionShape2D` rewrites this record and returns whether it is live. A zero normal means the
 // origin was already inside the shape or the hit shape is area-less and has no outward-facing side.
-export interface CollisionRaycastHit2D {
+export interface CollisionRaycastHit2D extends Entity {
   fraction: number;
   x: number;
   y: number;
@@ -174,7 +175,7 @@ export interface CollisionRaycastHit2D {
 // `fraction` lies in [0,maxFraction]; the normal points in the direction that separates A out of B,
 // matching every discrete manifold, and (`x`,`y`) is a support point on A at impact. Rotational sweep
 // is deliberately outside this primitive: callers must subdivide changing orientations explicitly.
-export interface CollisionTimeOfImpact2D {
+export interface CollisionTimeOfImpact2D extends Entity {
   fraction: number;
   x: number;
   y: number;
@@ -264,7 +265,7 @@ export interface CollisionContactPoint2D {
 // Points lie on the surface of the penetrating (incident) shape: the clipped incident face for
 // polygon pairs, the circle's deepest surface point for circle pairs. The two surfaces differ by at
 // most `depth`, which is immaterial to a solver that uses the point only as a lever-arm anchor.
-export interface CollisionContactManifold2D {
+export interface CollisionContactManifold2D extends Entity {
   overlapping: boolean;
   normalX: number;
   normalY: number;
@@ -489,7 +490,7 @@ export type CollisionColliderShape3D = CollisionBuiltInShape3D | CollisionStatic
 // distance along it — moving A by `normal * depth` just separates the pair. When `overlapping` is
 // false the pair is disjoint (or merely touching, which is treated as non-overlapping) and the normal
 // and depth are left at 0.
-export interface CollisionManifold3D {
+export interface CollisionManifold3D extends Entity {
   overlapping: boolean;
   normalX: number;
   normalY: number;
@@ -565,7 +566,7 @@ export interface CollisionContactPoint3D {
 // deepest point is enough to know a pair touches and nowhere near enough to rest a box on a floor —
 // that needs a polygon of contact, which is what face clipping produces and what a support function
 // cannot, because a support function hides face topology by construction.
-export interface CollisionContactManifold3D {
+export interface CollisionContactManifold3D extends Entity {
   overlapping: boolean;
   normalX: number;
   normalY: number;
@@ -605,7 +606,7 @@ export type CollisionFaceQuery3D = (
 // Exact first intersection of a parametric ray `origin + direction * fraction` with one 3D shape.
 // `raycastCollisionShape3D` rewrites this record and returns whether it is live. A zero normal means
 // the origin was already inside the shape, where no outward-facing side was crossed.
-export interface CollisionRaycastHit3D {
+export interface CollisionRaycastHit3D extends Entity {
   fraction: number;
   x: number;
   y: number;
@@ -635,7 +636,7 @@ export interface CollisionRaycastHit3D {
 // genuinely touch at, but a face-face contact is an area, and no single point represents it: reading one
 // as a lever arm gives a squarely-struck box a spin it should not have. Use `CollisionContactManifold3D`
 // where the contact patch matters, and a witness where a single closest point is the actual question.
-export interface CollisionDistance3D {
+export interface CollisionDistance3D extends Entity {
   distance: number;
   directionX: number;
   directionY: number;
@@ -654,7 +655,7 @@ export interface CollisionDistance3D {
 // `fraction` is 0 when they already touch at the start and 1 when they touch only at the very end.
 // (`x`,`y`,`z`) is where contact happens and the normal points from B toward A, matching
 // `CollisionDistance3D` and the contact normal convention.
-export interface CollisionTimeOfImpact3D {
+export interface CollisionTimeOfImpact3D extends Entity {
   fraction: number;
   x: number;
   y: number;

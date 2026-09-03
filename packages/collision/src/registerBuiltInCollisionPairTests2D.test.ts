@@ -57,6 +57,19 @@ describe('registerBuiltInCollisionPairTests2D', () => {
 
     // The adapter casts rather than re-dispatching, so this is what proves the cast lands on the right
     // function: an adapter wired to the wrong pair would still typecheck and still return a manifold.
-    expect(throughRegistry).toEqual(direct);
+    // Compared field by field rather than whole-object: both manifolds are Entities now, and an
+    // Entity carries a symbol-keyed runtime slot that toEqual reports as a difference with no visual
+    // diff. The fields are what the adapter is being judged on.
+    expect({
+      depth: throughRegistry.depth,
+      normalX: throughRegistry.normalX,
+      normalY: throughRegistry.normalY,
+      overlapping: throughRegistry.overlapping,
+    }).toEqual({
+      depth: direct.depth,
+      normalX: direct.normalX,
+      normalY: direct.normalY,
+      overlapping: direct.overlapping,
+    });
   });
 });

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CollisionContactManifold2D, CollisionContactPoint2D } from '@flighthq/types/contract';
 
 // Lifecycle for the contact manifold the `collide*ContactManifold` functions write. The two contact
@@ -19,14 +20,14 @@ export function clearCollisionContactManifold2D(out: CollisionContactManifold2D)
 // Allocates a fresh contact manifold in the non-overlapping state, with its fixed two-point array
 // already populated, ready to be passed as an `out` parameter.
 export function createCollisionContactManifold2D(): CollisionContactManifold2D {
-  return {
+  return createEntity({
     overlapping: false,
     normalX: 0,
     normalY: 0,
     depth: 0,
     pointCount: 0,
     points: [createContactPoint(), createContactPoint()],
-  };
+  });
 }
 
 function createContactPoint(): CollisionContactPoint2D {

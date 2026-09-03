@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CollisionContactManifold3D } from '@flighthq/types/contract';
 import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/types/contract';
 
@@ -23,5 +24,5 @@ export function createCollisionContactManifold3D(): CollisionContactManifold3D {
   for (let i = 0; i < MAX_COLLISION_CONTACT_POINTS_3D; i += 1) {
     points.push({ x: 0, y: 0, z: 0, depth: 0, featureId: 0 });
   }
-  return { overlapping: false, normalX: 0, normalY: 0, normalZ: 0, pointCount: 0, points };
+  return createEntity({ overlapping: false, normalX: 0, normalY: 0, normalZ: 0, pointCount: 0, points });
 }

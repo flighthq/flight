@@ -1,10 +1,11 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CollisionBuiltInShape3D, CollisionRaycastHit3D } from '@flighthq/types/contract';
 
 import { writeCollisionConvexHullFaces3D } from './convexHull3D';
 import { getCollisionShapeContainsPoint3D } from './pointContainment3D';
 
 export function createCollisionRaycastHit3D(): CollisionRaycastHit3D {
-  return { fraction: 0, x: 0, y: 0, z: 0, normalX: 0, normalY: 0, normalZ: 0 };
+  return createEntity({ fraction: 0, x: 0, y: 0, z: 0, normalX: 0, normalY: 0, normalZ: 0 });
 }
 
 // Writes the first exact intersection of `origin + direction * fraction` with `shape`. Direction need

@@ -27,7 +27,7 @@ function expectHitOnRay(
 
 describe('createCollisionRaycastHit3D', () => {
   it('starts zeroed', () => {
-    expect(createCollisionRaycastHit3D()).toEqual({
+    expect(createCollisionRaycastHit3D()).toMatchObject({
       fraction: 0,
       x: 0,
       y: 0,
@@ -326,6 +326,6 @@ describe('raycastCollisionShape3D', () => {
     expect(raycastCollisionShape3D(sphere, 0, 0, 0, 1, 0, 0, hit)).toBe(true);
     expect(hit.fraction).toBeGreaterThan(0);
     expect(raycastCollisionShape3D(sphere, 0, 50, 0, 1, 0, 0, hit)).toBe(false);
-    expect(hit).toEqual({ fraction: 0, x: 0, y: 0, z: 0, normalX: 0, normalY: 0, normalZ: 0 });
+    expect(hit).toMatchObject({ fraction: 0, x: 0, y: 0, z: 0, normalX: 0, normalY: 0, normalZ: 0 });
   });
 });

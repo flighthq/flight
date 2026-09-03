@@ -100,7 +100,7 @@ describe('testCollision2D', () => {
     const capsule: CollisionShape2D = { kind: 'acme.capsule' };
     const circle: CollisionShape2D = { kind: 'circle', x: 0, y: 0, radius: 1 };
     expect(testCollision2D(capsule, circle, out)).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
   });
 
   it('prefers a registered specialization over the generic support floor, in both orders', () => {
@@ -163,10 +163,10 @@ describe('testCollision2D', () => {
     expect(out).toMatchObject({ depth: 3, normalX: -1, normalY: 0, overlapping: true });
 
     expect(testCollision2D(circle, { kind: 'circle', radius: 2, x: 10, y: 0 }, out)).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
 
     expect(testCollision2D({ kind: 'point', x: 0, y: 0 }, circle, out)).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
 
     expect(testCollision2D(circle, { kind: 'aabb', maxX: 1, maxY: 1, minX: -1, minY: -1 }, out)).toBe(true);
     expect(out.overlapping).toBe(true);

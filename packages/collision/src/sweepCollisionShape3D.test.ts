@@ -1,7 +1,9 @@
+import type { CollisionManifold3D } from '@flighthq/types/contract';
 import type { CollisionShape3D, CollisionTimeOfImpact3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
+import { createCollisionManifold3D } from './manifold3D';
 import { createCollisionTimeOfImpact3D, sweepCollisionShape3D } from './sweepCollisionShape3D';
 import { testCollision3D } from './testCollision3D';
 
@@ -21,7 +23,7 @@ function aabb(minX: number, minY: number, minZ: number, maxX: number, maxY: numb
 
 describe('createCollisionTimeOfImpact3D', () => {
   it('starts zeroed', () => {
-    expect(createCollisionTimeOfImpact3D()).toEqual({
+    expect(createCollisionTimeOfImpact3D()).toMatchObject({
       fraction: 0,
       x: 0,
       y: 0,
@@ -181,6 +183,6 @@ describe('sweepCollisionShape3D', () => {
   });
 });
 
-function createManifold() {
-  return { overlapping: false, normalX: 0, normalY: 0, normalZ: 0, depth: 0 };
+function createManifold(): CollisionManifold3D {
+  return createCollisionManifold3D();
 }

@@ -10,7 +10,7 @@ function hit(): CollisionRaycastHit2D {
 
 describe('createCollisionRaycastHit2D', () => {
   it('starts in the reusable miss state', () => {
-    expect(createCollisionRaycastHit2D()).toEqual({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
+    expect(createCollisionRaycastHit2D()).toMatchObject({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
   });
 });
 
@@ -81,13 +81,24 @@ describe('raycastCollisionShape2D', () => {
   it('reports an origin inside a shape at fraction zero with no entry normal', () => {
     const out = hit();
     expect(raycastCollisionShape2D({ kind: 'circle', x: 0, y: 0, radius: 2 }, 0, 0, 1, 0, out)).toBe(true);
-    expect(out).toEqual({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
+    expect(out).toMatchObject({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
   });
 
   it('honours maxFraction and clears output on a miss', () => {
-    const out = { fraction: 9, x: 9, y: 9, normalX: 9, normalY: 9 };
+    const out = hit();
+    out.fraction = 9;
+    out.x = 9;
+    out.y = 9;
+    out.normalX = 9;
+    out.normalY = 9;
     expect(raycastCollisionShape2D({ kind: 'circle', x: 3, y: 0, radius: 1 }, 0, 0, 1, 0, out, 1)).toBe(false);
-    expect(out).toEqual({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
+    expect({ fraction: out.fraction, x: out.x, y: out.y, normalX: out.normalX, normalY: out.normalY }).toMatchObject({
+      fraction: 0,
+      x: 0,
+      y: 0,
+      normalX: 0,
+      normalY: 0,
+    });
   });
 
   it('treats a zero direction as an exact point query', () => {

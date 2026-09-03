@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { CollisionDistance3D, CollisionShape3D } from '@flighthq/types/contract';
 
 import { getCollisionSupport3D } from './collisionSupport3D';
@@ -30,7 +31,7 @@ import { getCollisionSupport3D } from './collisionSupport3D';
 // either way. That case wants a manifold, and this query does not pretend to be one.
 
 export function createCollisionDistance3D(): CollisionDistance3D {
-  return {
+  return createEntity({
     distance: 0,
     directionX: 0,
     directionY: 0,
@@ -42,7 +43,7 @@ export function createCollisionDistance3D(): CollisionDistance3D {
     pointBY: 0,
     pointBZ: 0,
     overlapping: false,
-  };
+  });
 }
 
 // Writes the distance between `a` and `b`, the unit direction of closest approach pointing from B toward

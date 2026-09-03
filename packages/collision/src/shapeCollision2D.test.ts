@@ -81,7 +81,7 @@ describe('testAabbAabbCollision2D', () => {
     expect(
       testAabbAabbCollision2D({ minX: 1, minY: 0, maxX: 1, maxY: 2 }, { minX: 0, minY: 0, maxX: 2, maxY: 2 }, out),
     ).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
   });
 
   it('prefers +X when both separation axes and directions tie', () => {
@@ -146,7 +146,7 @@ describe('testAabbObbCollision2D', () => {
     out.normalX = 1;
     out.depth = 4;
     expect(testAabbObbCollision2D({ minX: 0, minY: 0, maxX: 4, maxY: 10 }, b as CollisionObb2D, out)).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
   });
 
   it('overlaps an axis-aligned OBB and pushes the box off it', () => {
@@ -271,7 +271,7 @@ describe('testCircleCircleCollision2D', () => {
     out.normalX = -1;
     out.depth = 2;
     expect(testCircleCircleCollision2D({ x: 0, y: 0, radius: 0 }, { x: 0, y: 0, radius: 1 }, out)).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
   });
 
   it('keeps a directional normal for proportionally tiny circles', () => {
@@ -431,7 +431,7 @@ describe('testPolygonPolygonCollision2D', () => {
     const out = createCollisionManifold2D();
     out.overlapping = true;
     expect(testPolygonPolygonCollision2D({ points: [0, 0, 1, 1] }, square(0, 0, 2), out)).toBe(false);
-    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
   });
 
   it('chooses the same +X MTV for coincident squares regardless of start vertex and winding', () => {

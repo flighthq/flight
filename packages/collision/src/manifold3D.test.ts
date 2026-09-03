@@ -11,13 +11,13 @@ describe('clearCollisionManifold3D', () => {
     manifold.normalZ = 3;
     manifold.depth = 4;
     clearCollisionManifold3D(manifold);
-    expect(manifold).toEqual({ overlapping: false, normalX: 0, normalY: 0, normalZ: 0, depth: 0 });
+    expect(manifold).toMatchObject({ overlapping: false, normalX: 0, normalY: 0, normalZ: 0, depth: 0 });
   });
 });
 
 describe('createCollisionManifold3D', () => {
   it('allocates in the non-overlapping state', () => {
-    expect(createCollisionManifold3D()).toEqual({
+    expect(createCollisionManifold3D()).toMatchObject({
       overlapping: false,
       normalX: 0,
       normalY: 0,
