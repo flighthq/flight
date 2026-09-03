@@ -77,6 +77,10 @@ All current load paths are DOM-bound (`HTMLImageElement.decode()`). The DOM-free
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
 
+- **[2026-09-02] `ImageResourceReference` keeps its name.** `Resource` stays in the reference type's name rather than shortening to `ImageReference`. The name says what it refers to: a reference to an image **resource**, not to an image in some looser sense, and it reads consistently beside the type that owns it, `ImageResource`. A reader meeting the pair together can tell which is the thing and which is the handle without checking either definition.
+
+  **Why:** The shorter form would drop the one word that identifies the referent, and identifying the referent is the whole job of a reference type's name. Exported names in this SDK carry the full, unabbreviated name of the type they operate on, and a reference is named for what it points at.
+
 ## Open directions
 
 1. **`loadImageResourceFromArrayBuffer` rename/signature.** When switching to `Uint8Array`, decide whether to rename the function (e.g. `loadImageResourceFromBytes`) or keep the name and change the parameter type. The function name convention includes the full type name — `loadImageResourceFromArrayBuffer` with a `Uint8Array` parameter would be misleading.
