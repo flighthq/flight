@@ -38,10 +38,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/scene2d": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
     "@flighthq/particles": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/types": "*"
   },

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Kind } from './Entity';
 import type { RequirementFacet } from './RequirementFacet';
 
@@ -10,7 +11,7 @@ export interface Requirement {
 
 // `covers` makes completeness explicit. A missing requirement is evidence of absence only for facets the
 // producer says it inspected.
-export interface RequirementSet {
+export interface RequirementSet extends Entity {
   readonly covers: readonly RequirementFacet[];
   readonly requirements: readonly Readonly<Requirement>[];
 }

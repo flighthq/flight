@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
@@ -210,7 +211,7 @@ export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
 }
 
 export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitterData>>): ParticleEmitterData {
-  return {
+  return createEntity({
     alphas: data?.alphas ?? new Float32Array(),
     atlas: data?.atlas ?? null,
     colors: data?.colors ?? new Float32Array(),
@@ -220,7 +221,7 @@ export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitte
     transforms: data?.transforms ?? new Float32Array(),
     velocities: data?.velocities ?? new Float32Array(),
     worldSpace: data?.worldSpace ?? false,
-  };
+  });
 }
 
 export function getParticleEmitter2DCapacity(source: Readonly<ParticleEmitter2D>): number {

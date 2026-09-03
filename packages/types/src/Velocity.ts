@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Matrix } from './Matrix';
 
 // Generic per-node motion. Velocity is not a camera feature: any transform that changed between frames
@@ -27,7 +28,7 @@ export interface VelocitySample {
 // or anything a contributor wants to track. Owned by the caller; decoupled from any renderer, camera, or
 // scene-graph family. (Per-instance velocity for batched draws is not keyed here — an instance is not a
 // stable object; it lives on the batch and is emitted by that kind's velocity writer.)
-export interface VelocityField {
+export interface VelocityField extends Entity {
   samples: WeakMap<object, VelocitySample>;
   frameId: number;
 }

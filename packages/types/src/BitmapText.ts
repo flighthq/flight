@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { GlyphSource } from './GlyphSource';
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { Rectangle } from './Rectangle';
@@ -14,7 +15,7 @@ export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 // bearing, kerning, line metrics) and emits one glyph quad per visible glyph into the page whose
 // `GlyphEntry.page` it belongs to. Tint is not a bitmap-text concern: it is the node's generic
 // color-adjustment stack (`setNodeColorAdjustmentsTint`), folded on the backends that realize adjustments.
-export interface BitmapTextData extends Node2DData {
+export interface BitmapTextData extends Entity, Node2DData {
   align: BitmapTextAlign;
   // The bound glyph source supplying per-glyph atlas rects, advances, kerning, and line metrics. A
   // live runtime binding (a method object), NOT serializable — a scene serialized with a BitmapText

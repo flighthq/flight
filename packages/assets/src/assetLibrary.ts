@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createResourceLoader,
   disposeResourceLoader,
@@ -84,7 +85,7 @@ export function createAssetLibrary(): AssetLibrary {
     freedIds: new Set(),
     groups: new Map(),
   };
-  return { runtime };
+  return createEntity({ runtime });
 }
 
 // Disposes every resident asset through its registered adapter and empties the library — adapters,

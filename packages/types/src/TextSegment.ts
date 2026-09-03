@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 // Unicode text-segmentation seam (UAX #29). Free functions in @flighthq/textsegment accept an
 // explicit HasTextSegmenter capability; when omitted, the bundled Intl.Segmenter provider remains
 // the compatibility fallback. A from-scratch UAX #29 backend can be composed by headless/native
@@ -30,6 +31,6 @@ export interface TextSegmentRange {
 // BCP-47 `locale`. One method keeps a from-scratch backend to a single function to implement, and
 // mirrors Intl.Segmenter, which is itself parameterized by granularity. Returns segments in order,
 // covering the whole string with no gaps.
-export interface TextSegmenterBackend {
+export interface TextSegmenterBackend extends Entity {
   segment(text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[];
 }
