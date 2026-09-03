@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { TextureSourceKind } from './TextureSourceKind';
 
 // What a Scene3D actually uses, as plain kinds — the inventory half of "will this document draw?".
@@ -15,7 +15,7 @@ import type { TextureSourceKind } from './TextureSourceKind';
 // `nodeKinds` is reported even though the 3D pipeline collects meshes structurally (`geometry != null`)
 // rather than by registered kind. Whether a node kind needs a renderer is a render-layer fact; the
 // scene reports what it contains and lets the consumer apply its own rule.
-export interface Scene3DKindUsage {
+export interface Scene3DKindUsage extends Entity {
   materialKinds: Kind[];
   // Modifier kinds found on any material carrying a `modifiers` stack.
   modifierKinds: Kind[];

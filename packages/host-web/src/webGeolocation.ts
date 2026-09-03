@@ -1,15 +1,16 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createWebGeolocationBackend,
   installGeolocationHostBackend,
   observeGeolocationHostResult,
 } from '@flighthq/geolocation/contract';
-import type { GeolocationBackend } from '@flighthq/types/contract';
+import type { Entity, GeolocationBackend } from '@flighthq/types/contract';
 
 export function enableHostWebGeolocation(): void {
   if (_enabled) return;
   _enabled = true;
   const inner = createWebGeolocationBackend();
-  const backend: GeolocationBackend = {
+  const backend: GeolocationBackend = createEntity<Omit<GeolocationBackend, keyof Entity>>({
     clearWatch(id) {
       inner.clearWatch(id);
     },
@@ -40,7 +41,7 @@ export function enableHostWebGeolocation(): void {
     watchPosition(listener, options, onError) {
       return inner.watchPosition(listener, options, onError);
     },
-  };
+  });
   installGeolocationHostBackend(backend);
 }
 

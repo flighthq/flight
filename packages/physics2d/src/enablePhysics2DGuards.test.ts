@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
   clearLogOnceKeys,
@@ -5,7 +6,7 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { LogEntry, Physics2DDistanceJoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
+import type { Entity, LogEntry, Physics2DDistanceJoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { arePhysics2DGuardsEnabled, disablePhysics2DGuards, enablePhysics2DGuards } from './enablePhysics2DGuards';
@@ -40,7 +41,7 @@ function unregisteredJointWorld(): Physics2DWorld {
   const world = createPhysics2DWorld(0, -10);
   const anchor = ball(world, 'static', 0, 0);
   const bob = ball(world, 'dynamic', 0, -3);
-  const joint: Physics2DDistanceJoint = {
+  const joint: Physics2DDistanceJoint = createEntity<Omit<Physics2DDistanceJoint, keyof Entity>>({
     kind: Physics2DDistanceJointKind,
     bodyA: anchor.index,
     bodyB: bob.index,
@@ -61,7 +62,7 @@ function unregisteredJointWorld(): Physics2DWorld {
     length: 3,
     frequencyHz: 0,
     dampingRatio: 0,
-  };
+  });
   addPhysics2DJoint(world, joint);
   return world;
 }

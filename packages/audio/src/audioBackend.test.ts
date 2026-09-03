@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { AudioBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -14,6 +15,10 @@ afterEach(() => {
   resetAudioBackendForTest();
 });
 
+function audioBackend(canPlayType: (mimeType: string) => boolean): AudioBackend {
+  return createEntity({ canPlayType });
+}
+
 describe('createWebAudioBackend', () => {
   it('is tested via host-web', () => {
     expect(true).toBe(true);
@@ -29,21 +34,21 @@ describe('explainAudioBackend', () => {
   });
 
   it('reports host layer when host backend is installed', () => {
-    installAudioHostBackend({ canPlayType: () => false });
+    installAudioHostBackend(audioBackend(() => false));
     const explanation = explainAudioBackend();
     expect(explanation.layer).toBe('host');
     expect(explanation.viability).toBe('unobserved');
   });
 
   it('reports custom layer when custom backend is set', () => {
-    installAudioHostBackend({ canPlayType: () => false });
-    setAudioBackend({ canPlayType: () => true });
+    installAudioHostBackend(audioBackend(() => false));
+    setAudioBackend(audioBackend(() => true));
     const explanation = explainAudioBackend();
     expect(explanation.layer).toBe('custom');
   });
 
   it('reports observed viability after observeAudioHostResult', () => {
-    installAudioHostBackend({ canPlayType: () => true });
+    installAudioHostBackend(audioBackend(() => true));
     observeAudioHostResult('canPlayType', true);
     const explanation = explainAudioBackend();
     expect(explanation.viability).toBe('available');
@@ -51,7 +56,7 @@ describe('explainAudioBackend', () => {
   });
 
   it('reports runtime-api-unavailable on failed observation', () => {
-    installAudioHostBackend({ canPlayType: () => false });
+    installAudioHostBackend(audioBackend(() => false));
     observeAudioHostResult('canPlayType', false);
     const explanation = explainAudioBackend();
     expect(explanation.viability).toBe('runtime-api-unavailable');
@@ -65,14 +70,14 @@ describe('getAudioBackend', () => {
   });
 
   it('returns host backend when installed', () => {
-    const host: AudioBackend = { canPlayType: () => true };
+    const host = audioBackend(() => true);
     installAudioHostBackend(host);
     expect(getAudioBackend()).toBe(host);
   });
 
   it('returns custom backend over host', () => {
-    const host: AudioBackend = { canPlayType: () => false };
-    const custom: AudioBackend = { canPlayType: () => true };
+    const host = audioBackend(() => false);
+    const custom = audioBackend(() => true);
     installAudioHostBackend(host);
     setAudioBackend(custom);
     expect(getAudioBackend()).toBe(custom);
@@ -81,19 +86,19 @@ describe('getAudioBackend', () => {
 
 describe('installAudioHostBackend', () => {
   it('installs the host backend', () => {
-    const host: AudioBackend = { canPlayType: () => true };
+    const host = audioBackend(() => true);
     installAudioHostBackend(host);
     expect(getAudioBackend()).toBe(host);
   });
 
   it('detects conflict on double install with different backend', () => {
-    installAudioHostBackend({ canPlayType: () => false });
-    installAudioHostBackend({ canPlayType: () => true });
+    installAudioHostBackend(audioBackend(() => false));
+    installAudioHostBackend(audioBackend(() => true));
     expect(explainAudioBackend().conflict).toBe(true);
   });
 
   it('does not flag conflict on same backend', () => {
-    const host: AudioBackend = { canPlayType: () => false };
+    const host = audioBackend(() => false);
     installAudioHostBackend(host);
     installAudioHostBackend(host);
     expect(explainAudioBackend().conflict).toBe(false);
@@ -102,7 +107,7 @@ describe('installAudioHostBackend', () => {
 
 describe('observeAudioHostResult', () => {
   it('records the operation and viability', () => {
-    installAudioHostBackend({ canPlayType: () => true });
+    installAudioHostBackend(audioBackend(() => true));
     observeAudioHostResult('canPlayType', true);
     const explanation = explainAudioBackend();
     expect(explanation.operation).toBe('canPlayType');
@@ -112,8 +117,8 @@ describe('observeAudioHostResult', () => {
 
 describe('resetAudioBackendForTest', () => {
   it('clears all state', () => {
-    installAudioHostBackend({ canPlayType: () => true });
-    setAudioBackend({ canPlayType: () => true });
+    installAudioHostBackend(audioBackend(() => true));
+    setAudioBackend(audioBackend(() => true));
     observeAudioHostResult('canPlayType', true);
     resetAudioBackendForTest();
     expect(explainAudioBackend().layer).toBe('host-not-enabled');
@@ -123,13 +128,13 @@ describe('resetAudioBackendForTest', () => {
 
 describe('setAudioBackend', () => {
   it('overrides the active backend', () => {
-    const custom: AudioBackend = { canPlayType: () => true };
+    const custom = audioBackend(() => true);
     setAudioBackend(custom);
     expect(getAudioBackend()).toBe(custom);
   });
 
   it('clears the custom backend when null', () => {
-    setAudioBackend({ canPlayType: () => true });
+    setAudioBackend(audioBackend(() => true));
     setAudioBackend(null);
     expect(getAudioBackend().canPlayType('audio/mpeg')).toBe(false);
   });

@@ -1,4 +1,6 @@
-export type FullscreenTargetHandle = { readonly __brand: 'FullscreenTargetHandle' };
+import type { Entity } from './Entity';
+
+export type FullscreenTargetHandle = Entity & { readonly __brand: 'FullscreenTargetHandle' };
 
 export interface FullscreenBackend {
   exit(): Promise<boolean>;

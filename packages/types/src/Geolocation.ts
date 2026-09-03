@@ -5,7 +5,7 @@
 
 // A plain snapshot of a device location. Named GeoPosition to avoid colliding with the lib.dom
 // GeolocationPosition / GeolocationCoordinates global types. Fields are zeroed when unknown.
-export interface GeoPosition {
+export interface GeoPosition extends Entity {
   latitude: number;
   longitude: number;
   accuracy: number;
@@ -60,7 +60,7 @@ export type GeolocationAccessOutcome = {
     | 'timeout';
 };
 
-export interface GeolocationBackend {
+export interface GeolocationBackend extends Entity {
   getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null>;
   getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult>;
   // Reports whether this provider can acquire positions now; permission denial is a separate state.
@@ -75,3 +75,4 @@ export interface GeolocationBackend {
   // permission API instead of emulating the web's acquire-and-discard workaround.
   promptForAccess(): Promise<GeolocationAccessOutcome>;
 }
+import type { Entity } from './Entity';

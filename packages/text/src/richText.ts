@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
@@ -155,11 +156,11 @@ export function createRichTextRuntime(): RichTextRuntime {
 }
 
 export function createTextFieldSignals(): TextFieldSignals {
-  return {
+  return createEntity({
     onTextFieldChange: createSignal(),
     onTextFieldLink: createSignal(),
     onTextFieldScroll: createSignal(),
-  };
+  });
 }
 
 // Checks whether the given point (in field-local space) is over a hyperlink, and if so emits

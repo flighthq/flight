@@ -7,6 +7,10 @@ import {
   setGlRenderSurfaceProvider,
 } from './glElement';
 
+function entityProvider(fields: Omit<GlRenderSurfaceProvider, keyof Entity>): GlRenderSurfaceProvider {
+  return createEntity(fields);
+}
+
 describe('createGlCanvasElement', () => {
   afterEach(() => {
     resetGlRenderSurfaceProviderForTest();
@@ -14,7 +18,7 @@ describe('createGlCanvasElement', () => {
 
   it('preserves the canonical provider result identity', () => {
     const surface = {} as HTMLCanvasElement;
-    setGlRenderSurfaceProvider({ createRenderSurface: () => surface });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface: () => surface }));
     expect(createGlCanvasElement(100, 200, 2)).toBe(surface);
   });
 
@@ -25,7 +29,7 @@ describe('createGlCanvasElement', () => {
   });
 
   it('throws the same setup error when the provider refuses', () => {
-    setGlRenderSurfaceProvider({ createRenderSurface: () => null });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface: () => null }));
     expect(() => createGlCanvasElement(100, 200)).toThrowError(/enableHostWebGlRenderSurface\(\)/);
   });
 });
@@ -42,7 +46,7 @@ describe('createGlRenderSurface', () => {
   it('passes exact dimensions and the default pixel ratio to the selected provider', () => {
     const surface = {} as HTMLCanvasElement;
     const createRenderSurface = vi.fn(() => surface);
-    setGlRenderSurfaceProvider({ createRenderSurface });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface }));
 
     expect(createGlRenderSurface(100, 200)).toBe(surface);
     expect(createRenderSurface).toHaveBeenCalledOnce();
@@ -52,7 +56,7 @@ describe('createGlRenderSurface', () => {
   it('passes an explicit pixel ratio and preserves the provider result identity', () => {
     const surface = {} as HTMLCanvasElement;
     const createRenderSurface = vi.fn(() => surface);
-    setGlRenderSurfaceProvider({ createRenderSurface });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface }));
 
     expect(createGlRenderSurface(300, 150, 2.5)).toBe(surface);
     expect(createRenderSurface).toHaveBeenCalledWith(300, 150, 2.5);
@@ -61,8 +65,8 @@ describe('createGlRenderSurface', () => {
   it('selects replacements and reset restores omission', () => {
     const first = {} as HTMLCanvasElement;
     const second = {} as HTMLCanvasElement;
-    const firstProvider = { createRenderSurface: vi.fn(() => first) };
-    const secondProvider = { createRenderSurface: vi.fn(() => second) };
+    const firstProvider = entityProvider({ createRenderSurface: vi.fn(() => first) });
+    const secondProvider = entityProvider({ createRenderSurface: vi.fn(() => second) });
 
     setGlRenderSurfaceProvider(firstProvider);
     expect(getGlRenderSurfaceProvider()).toBe(firstProvider);
@@ -78,13 +82,13 @@ describe('createGlRenderSurface', () => {
   });
 
   it('preserves provider refusal as null', () => {
-    setGlRenderSurfaceProvider({ createRenderSurface: () => null });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface: () => null }));
     expect(createGlRenderSurface(100, 200)).toBeNull();
   });
 
   it('lets a native host provide a surface without reading document', () => {
     const surface = {} as HTMLCanvasElement;
-    setGlRenderSurfaceProvider({ createRenderSurface: () => surface });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface: () => surface }));
 
     withThrowingDocument(() => {
       expect(createGlRenderSurface(100, 200)).toBe(surface);
@@ -94,7 +98,7 @@ describe('createGlRenderSurface', () => {
   it('returns null for omission and refusal without reading document', () => {
     withThrowingDocument(() => {
       expect(createGlRenderSurface(100, 200)).toBeNull();
-      setGlRenderSurfaceProvider({ createRenderSurface: () => null });
+      setGlRenderSurfaceProvider(entityProvider({ createRenderSurface: () => null }));
       expect(createGlRenderSurface(100, 200)).toBeNull();
     });
   });
@@ -110,7 +114,7 @@ describe('explainGlRenderSurfaceAbsence', () => {
   });
 
   it('returns null whenever a provider is installed, including one that refuses a surface', () => {
-    setGlRenderSurfaceProvider({ createRenderSurface: () => null });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface: () => null }));
     expect(explainGlRenderSurfaceAbsence()).toBeNull();
   });
 });
@@ -121,7 +125,7 @@ describe('getGlRenderSurfaceProvider', () => {
   });
 
   it('returns the exact selected provider', () => {
-    const provider = { createRenderSurface: () => ({}) as HTMLCanvasElement };
+    const provider = entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
     setGlRenderSurfaceProvider(provider);
     expect(getGlRenderSurfaceProvider()).toBe(provider);
   });
@@ -129,7 +133,7 @@ describe('getGlRenderSurfaceProvider', () => {
 
 describe('resetGlRenderSurfaceProviderForTest', () => {
   it('restores provider omission', () => {
-    setGlRenderSurfaceProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
+    setGlRenderSurfaceProvider(entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement }));
     resetGlRenderSurfaceProviderForTest();
     expect(getGlRenderSurfaceProvider()).toBeNull();
     expect(createGlRenderSurface(1, 1)).toBeNull();
@@ -142,8 +146,8 @@ describe('setGlRenderSurfaceProvider', () => {
   });
 
   it('replaces the selected provider', () => {
-    const first = { createRenderSurface: () => ({}) as HTMLCanvasElement };
-    const second = { createRenderSurface: () => ({}) as HTMLCanvasElement };
+    const first = entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
+    const second = entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
     setGlRenderSurfaceProvider(first);
     setGlRenderSurfaceProvider(second);
     expect(getGlRenderSurfaceProvider()).toBe(second);
@@ -165,3 +169,5 @@ function withThrowingDocument(run: () => void): void {
     else Object.defineProperty(globalThis, 'document', descriptor);
   }
 }
+import { createEntity } from '@flighthq/entity/contract';
+import type { Entity, GlRenderSurfaceProvider } from '@flighthq/types/contract';

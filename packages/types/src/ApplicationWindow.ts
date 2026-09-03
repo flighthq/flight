@@ -92,7 +92,7 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 
 // Provider-bound identity for the element whose content box drives attachWindowResize. The web host
 // maps this opaque value to an Element; neutral application and native-host contracts never name DOM.
-export type WindowResizeTargetHandle = { readonly __brand: 'WindowResizeTargetHandle' };
+export type WindowResizeTargetHandle = Entity & { readonly __brand: 'WindowResizeTargetHandle' };
 
 // Control seam for windowing: a host backend the window command functions delegate to. The web
 // backend covers what a browser page-window can do (title, fullscreen, focus, popup move/resize);

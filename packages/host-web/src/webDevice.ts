@@ -1,8 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   DeviceBackend,
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
+  Entity,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import {
@@ -13,7 +15,7 @@ import {
 } from '@flighthq/useragent/contract';
 
 export function createWebDeviceBackend(): DeviceBackend {
-  return {
+  return createEntity<Omit<DeviceBackend, keyof Entity>>({
     getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
       const nav = typeof navigator !== 'undefined' ? navigator : null;
       // hasMouse: weak heuristic — no touch points is a strong desktop / pointer-device signal.
@@ -118,7 +120,7 @@ export function createWebDeviceBackend(): DeviceBackend {
       }
       return out;
     },
-  };
+  });
 }
 
 export function enableWebSafeAreaInsets(): () => void {

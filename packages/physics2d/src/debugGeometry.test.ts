@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Physics2DJoint, Physics2DMouseJoint, Physics2DPulleyJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -15,7 +16,7 @@ const ONLY_COLLIDERS = {
 };
 
 function baseJoint(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
-  return {
+  return createEntity({
     bodyA,
     bodyB,
     collideConnected: false,
@@ -33,7 +34,7 @@ function baseJoint(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
     rAY: 0,
     rBX: 0,
     rBY: 0,
-  };
+  });
 }
 
 describe('createPhysics2DDebugGeometry', () => {

@@ -1,4 +1,5 @@
 import type { RichTextData, RichTextRuntime } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   clearRichTextContent,
@@ -31,6 +32,7 @@ function createData(data: Partial<RichTextData> = {}): RichTextData {
     width: 100,
     wordWrap: false,
     ...data,
+    [EntityRuntimeKey]: undefined,
   };
 }
 

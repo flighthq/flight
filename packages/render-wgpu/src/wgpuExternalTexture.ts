@@ -34,13 +34,16 @@ export function createExternalWgpuTexture(
   // The external source fixes its own filtering, so the entry carries the sampler and the draw policy
   // does not override it. Bind groups are built per sampler on demand rather than captured here.
   const sampler = getExternalWgpuSampler(state, texture);
-  (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache ??= new WeakMap()).set(source, {
-    bindings: new Map(),
-    mipLevelCount: 1,
-    sampler,
-    texture: handle,
-    view,
-  });
+  (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache ??= new WeakMap()).set(
+    source,
+    createEntity({
+      bindings: new Map(),
+      mipLevelCount: 1,
+      sampler,
+      texture: handle,
+      view,
+    }),
+  );
   registerWgpuTextureResolver(state, ExternalTextureSourceKind, resolveExternalWgpuTexture);
   return texture;
 }

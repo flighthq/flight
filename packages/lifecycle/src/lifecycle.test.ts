@@ -1,8 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
 import type {
   HasSystemLifecycle,
   AppLifecycleState,
   AppMemoryPressure,
+  Entity,
   LifecycleBackend,
   LifecycleOperation,
 } from '@flighthq/types/contract';
@@ -36,7 +38,7 @@ function hostOf(backend: LifecycleBackend): HasSystemLifecycle {
 function fakeBackend(): FakeBackend {
   let stateListener: (() => void) | null = null;
   let memoryListener: ((level: AppMemoryPressure) => void) | null = null;
-  return {
+  return createEntity<Omit<FakeBackend, keyof Entity>>({
     state: 'active',
     getState() {
       return this.state;
@@ -59,7 +61,7 @@ function fakeBackend(): FakeBackend {
     fireMemory(level: AppMemoryPressure) {
       memoryListener?.(level);
     },
-  };
+  });
 }
 
 describe('attachAppLifecycle', () => {
@@ -454,7 +456,7 @@ describe('explainLifecycleOperation', () => {
   });
 
   it('reports an operation the host provider omits as unimplemented', () => {
-    const host = hostOf({ getState: () => 'active', subscribe: () => () => {} } as LifecycleBackend);
+    const host = hostOf(createEntity({ getState: () => 'active' as const, subscribe: () => () => {} }));
     expect(explainLifecycleOperation(host, 'getLaunchKind')).toEqual({
       implemented: false,
       layer: 'sentinel',
@@ -466,7 +468,7 @@ describe('explainLifecycleOperation', () => {
   // process-wide backend answered for every caller.
   it('answers per host rather than process-wide', () => {
     const rich = hostOf(fakeBackend());
-    const bare = hostOf({ getState: () => 'active', subscribe: () => () => {} } as LifecycleBackend);
+    const bare = hostOf(createEntity({ getState: () => 'active' as const, subscribe: () => () => {} }));
     expect(explainLifecycleOperation(rich, 'subscribeMemoryWarning').implemented).toBe(true);
     expect(explainLifecycleOperation(bare, 'subscribeMemoryWarning').implemented).toBe(false);
   });
@@ -480,11 +482,11 @@ describe('getAppLaunchKind', () => {
   });
 
   it('delegates to backend.getLaunchKind when present', () => {
-    const backend: LifecycleBackend = {
+    const backend: LifecycleBackend = createEntity({
       getState: () => 'active',
       subscribe: () => () => {},
       getLaunchKind: () => 'cold',
-    };
+    });
     const host = hostOf(backend);
     expect(getAppLaunchKind(host)).toBe('cold');
   });
@@ -506,7 +508,7 @@ describe('hasLifecycleOperation', () => {
   });
 
   it('is false for an operation the host provider omits', () => {
-    const host = hostOf({ getState: () => 'active', subscribe: () => () => {} } as LifecycleBackend);
+    const host = hostOf(createEntity({ getState: () => 'active' as const, subscribe: () => () => {} }));
     expect(hasLifecycleOperation(host, 'getLaunchKind')).toBe(false);
   });
 });
@@ -557,10 +559,10 @@ const OPTIONAL_OPERATIONS: readonly LifecycleOperation[] = ['getLaunchKind', 'su
 
 // A host implementing only the REQUIRED members — partial support declared by absence.
 function partialBackend(): LifecycleBackend {
-  return {
+  return createEntity({
     getState: (() => undefined) as never,
     subscribe: (() => undefined) as never,
-  } as LifecycleBackend;
+  });
 }
 
 describe('isAppInactive', () => {

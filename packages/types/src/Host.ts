@@ -381,6 +381,8 @@ export interface HostScreenCapabilities {
   readonly query?: ScreenQueryBackend;
 }
 
+export type WebScreenCapabilities = Entity & Required<HostScreenCapabilities>;
+
 // Shell is top-level because its seven command capabilities have distinct provider coverage. Every
 // Host names the group; omitted slots mean genuine absence, never a false-returning stub.
 export interface HostShellCapabilities {

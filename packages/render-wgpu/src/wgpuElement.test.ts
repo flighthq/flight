@@ -6,12 +6,16 @@ import {
   setWgpuRenderSurfaceProvider,
 } from './wgpuElement';
 
+function entityProvider(fields: Omit<WgpuRenderSurfaceProvider, keyof Entity>): WgpuRenderSurfaceProvider {
+  return createEntity(fields);
+}
+
 describe('createWgpuCanvasElement', () => {
   afterEach(() => resetWgpuRenderSurfaceProviderForTest());
 
   it('preserves the canonical provider result identity', () => {
     const surface = {} as HTMLCanvasElement;
-    setWgpuRenderSurfaceProvider({ createRenderSurface: () => surface });
+    setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface: () => surface }));
     expect(createWgpuCanvasElement(100, 200, 2)).toBe(surface);
   });
 
@@ -22,7 +26,7 @@ describe('createWgpuCanvasElement', () => {
   });
 
   it('throws the same setup error when the provider refuses', () => {
-    setWgpuRenderSurfaceProvider({ createRenderSurface: () => null });
+    setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface: () => null }));
     expect(() => createWgpuCanvasElement(100, 200)).toThrowError(/enableHostWebWgpuRenderSurface\(\)/);
   });
 });
@@ -37,7 +41,7 @@ describe('createWgpuRenderSurface', () => {
   it('passes exact dimensions and the default pixel ratio to the selected provider', () => {
     const surface = {} as HTMLCanvasElement;
     const createRenderSurface = vi.fn(() => surface);
-    setWgpuRenderSurfaceProvider({ createRenderSurface });
+    setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface }));
     expect(createWgpuRenderSurface(100, 200)).toBe(surface);
     expect(createRenderSurface).toHaveBeenCalledOnce();
     expect(createRenderSurface).toHaveBeenCalledWith(100, 200, 1);
@@ -46,7 +50,7 @@ describe('createWgpuRenderSurface', () => {
   it('passes an explicit pixel ratio and preserves the provider result identity', () => {
     const surface = {} as HTMLCanvasElement;
     const createRenderSurface = vi.fn(() => surface);
-    setWgpuRenderSurfaceProvider({ createRenderSurface });
+    setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface }));
     expect(createWgpuRenderSurface(300, 150, 2.5)).toBe(surface);
     expect(createRenderSurface).toHaveBeenCalledWith(300, 150, 2.5);
   });
@@ -54,8 +58,8 @@ describe('createWgpuRenderSurface', () => {
   it('selects replacements and reset restores omission', () => {
     const first = {} as HTMLCanvasElement;
     const second = {} as HTMLCanvasElement;
-    const firstProvider = { createRenderSurface: vi.fn(() => first) };
-    const secondProvider = { createRenderSurface: vi.fn(() => second) };
+    const firstProvider = entityProvider({ createRenderSurface: vi.fn(() => first) });
+    const secondProvider = entityProvider({ createRenderSurface: vi.fn(() => second) });
     setWgpuRenderSurfaceProvider(firstProvider);
     expect(getWgpuRenderSurfaceProvider()).toBe(firstProvider);
     expect(createWgpuRenderSurface(1, 2)).toBe(first);
@@ -68,20 +72,20 @@ describe('createWgpuRenderSurface', () => {
   });
 
   it('preserves provider refusal as null', () => {
-    setWgpuRenderSurfaceProvider({ createRenderSurface: () => null });
+    setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface: () => null }));
     expect(createWgpuRenderSurface(100, 200)).toBeNull();
   });
 
   it('lets a native host provide a surface without reading document', () => {
     const surface = {} as HTMLCanvasElement;
-    setWgpuRenderSurfaceProvider({ createRenderSurface: () => surface });
+    setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface: () => surface }));
     withThrowingDocument(() => expect(createWgpuRenderSurface(100, 200)).toBe(surface));
   });
 
   it('returns null for omission and refusal without reading document', () => {
     withThrowingDocument(() => {
       expect(createWgpuRenderSurface(100, 200)).toBeNull();
-      setWgpuRenderSurfaceProvider({ createRenderSurface: () => null });
+      setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface: () => null }));
       expect(createWgpuRenderSurface(100, 200)).toBeNull();
     });
   });
@@ -91,7 +95,7 @@ describe('getWgpuRenderSurfaceProvider', () => {
   afterEach(() => resetWgpuRenderSurfaceProviderForTest());
 
   it('returns the exact selected provider', () => {
-    const provider = { createRenderSurface: () => ({}) as HTMLCanvasElement };
+    const provider = entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
     setWgpuRenderSurfaceProvider(provider);
     expect(getWgpuRenderSurfaceProvider()).toBe(provider);
   });
@@ -99,7 +103,7 @@ describe('getWgpuRenderSurfaceProvider', () => {
 
 describe('resetWgpuRenderSurfaceProviderForTest', () => {
   it('restores provider omission', () => {
-    setWgpuRenderSurfaceProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
+    setWgpuRenderSurfaceProvider(entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement }));
     resetWgpuRenderSurfaceProviderForTest();
     expect(getWgpuRenderSurfaceProvider()).toBeNull();
     expect(createWgpuRenderSurface(1, 1)).toBeNull();
@@ -110,8 +114,8 @@ describe('setWgpuRenderSurfaceProvider', () => {
   afterEach(() => resetWgpuRenderSurfaceProviderForTest());
 
   it('replaces the selected provider', () => {
-    const first = { createRenderSurface: () => ({}) as HTMLCanvasElement };
-    const second = { createRenderSurface: () => ({}) as HTMLCanvasElement };
+    const first = entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
+    const second = entityProvider({ createRenderSurface: () => ({}) as HTMLCanvasElement });
     setWgpuRenderSurfaceProvider(first);
     setWgpuRenderSurfaceProvider(second);
     expect(getWgpuRenderSurfaceProvider()).toBe(second);
@@ -133,3 +137,5 @@ function withThrowingDocument(run: () => void): void {
     else Object.defineProperty(globalThis, 'document', descriptor);
   }
 }
+import { createEntity } from '@flighthq/entity/contract';
+import type { Entity, WgpuRenderSurfaceProvider } from '@flighthq/types/contract';

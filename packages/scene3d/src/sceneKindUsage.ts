@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
 import type { Material, Modifier, Node3D, Scene3D, Scene3DKindUsage } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
@@ -7,13 +8,13 @@ import { isMesh } from './mesh';
 // Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
 // frames without reallocating five arrays.
 export function createScene3DKindUsage(): Scene3DKindUsage {
-  return {
+  return createEntity({
     materialKinds: [],
     modifierKinds: [],
     nodeKinds: [],
     resourceMimeTypes: [],
     textureSourceKinds: [],
-  };
+  });
 }
 
 // Clears `out`, then fills it with every kind this scene uses. One walk, no registry, no backend, no

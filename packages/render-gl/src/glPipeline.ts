@@ -4,7 +4,7 @@ import type { GlPipeline, GlRenderRegistries } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createEmptyGlRegistries(): GlRenderRegistries {
-  return {
+  return createEntity({
     blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
     compressedTextureDecoder: createSlotTable('GlCompressedTextureDecoder', 'Unregistered'),
     compressedTextureUpload: createSlotTable('GlCompressedTextureUpload', 'Unregistered'),
@@ -22,7 +22,7 @@ export function createEmptyGlRegistries(): GlRenderRegistries {
     strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
     velocityWriters: createKeyedTable('GlVelocityWriter', 'Unregistered'),
-  };
+  });
 }
 
 export function createGlPipeline(registries: Readonly<GlRenderRegistries>): GlPipeline {

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { BackendOperationExplanation, LifecycleOperation } from '@flighthq/types/contract';
 import type {
@@ -6,6 +7,7 @@ import type {
   AppLifecycle,
   AppLifecycleState,
   AppMemoryPressure,
+  Entity,
   LifecycleBackend,
 } from '@flighthq/types/contract';
 
@@ -60,7 +62,7 @@ export function attachAppLifecycle(host: HasSystemLifecycle, app: AppLifecycle):
 
 // Allocates an AppLifecycle event entity with inert signals; call attachAppLifecycle to start delivery.
 export function createAppLifecycle(): AppLifecycle {
-  return {
+  return createEntity({
     onStateChange: createSignal(),
     onResume: createSignal(),
     onPause: createSignal(),
@@ -68,7 +70,7 @@ export function createAppLifecycle(): AppLifecycle {
     onMemoryWarning: createSignal(),
     onSaveState: createSignal(),
     onRestoreState: createSignal(),
-  };
+  });
 }
 
 // Builds the default web backend over document visibility, window focus/blur, and pagehide/pageshow
@@ -90,7 +92,7 @@ export function createAppLifecycle(): AppLifecycle {
 // no-op unsubscribe when the event is not supported (no standard API is widely deployed as of 2026).
 export function createWebLifecycleBackend(): LifecycleBackend {
   let _windowFocused = typeof document !== 'undefined';
-  return {
+  return createEntity<Omit<LifecycleBackend, keyof Entity>>({
     getState(): AppLifecycleState {
       if (typeof document === 'undefined') return 'active';
       if (document.hidden) return 'background';
@@ -163,7 +165,7 @@ export function createWebLifecycleBackend(): LifecycleBackend {
         window.removeEventListener('memory-pressure-relieved', onPressureRelieved);
       };
     },
-  };
+  });
 }
 
 // Stops delivery to `app` and forgets its subscription. Safe to call when not attached.

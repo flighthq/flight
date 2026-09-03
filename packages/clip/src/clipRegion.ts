@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   cloneRectangle,
   containsRectanglePointXY,
@@ -70,7 +71,7 @@ export function clipRegionIntersectsRectangle(clip: Readonly<ClipRegion>, rectan
 export function cloneClipRegion(clip: Readonly<ClipRegion>): ClipRegion {
   const rect = cloneRectangle(clip.rect);
   const contours = clip.contours === null ? null : clip.contours.map((c) => c.slice());
-  return { contours, rect, version: clip.version, winding: clip.winding };
+  return createEntity({ contours, rect, version: clip.version, winding: clip.winding });
 }
 
 // Copies source into out in place; does nothing when out === source. Bumps out.version
@@ -101,7 +102,7 @@ export function createClipRegionFromContours(
   const rect = createRectangle();
   setRectangleToContoursBounds(rect, contours);
   const owned = contours.map((c) => c.slice());
-  return { contours: owned, rect, version: 0, winding };
+  return createEntity({ contours: owned, rect, version: 0, winding });
 }
 
 // Builds a clip region from an axis-aligned ellipse bounded by the given rectangle.
@@ -120,13 +121,13 @@ export function createClipRegionFromPath(path: Readonly<Path>, tolerance = 0.25)
   const contours = flattenPath(path, tolerance);
   const rect = createRectangle();
   setRectangleToContoursBounds(rect, contours);
-  return { contours, rect, version: 0, winding: path.winding };
+  return createEntity({ contours, rect, version: 0, winding: path.winding });
 }
 
 // Builds a rectangular clip region — the allocation-light, scissor-eligible form. The rectangle is
 // copied so later edits to the caller's rectangle do not mutate the region; bump via invalidateClipRegion.
 export function createClipRegionFromRectangle(rectangle: Readonly<RectangleLike>): ClipRegion {
-  return { contours: null, rect: cloneRectangle(rectangle), version: 0, winding: 'nonZero' };
+  return createEntity({ contours: null, rect: cloneRectangle(rectangle), version: 0, winding: 'nonZero' });
 }
 
 // Builds a clip region from a rounded rectangle with a uniform corner radius.
@@ -468,7 +469,7 @@ const NORMALIZE_EPSILON = 1e-6;
 const clipRegionPool: ClipRegion[] = [];
 
 function makeEmptyClipRegion(): ClipRegion {
-  return { contours: null, rect: createRectangle(), version: 0, winding: 'nonZero' };
+  return createEntity({ contours: null, rect: createRectangle(), version: 0, winding: 'nonZero' });
 }
 
 // Returns true if (px, py) is inside the contours according to the given winding rule.

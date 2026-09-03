@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // The shared time primitive: a node in a clock tree that turns a real per-frame delta into scaled,
@@ -5,7 +6,7 @@ import type { Signal } from './Signal';
 // root; time-driven consumers (tween, timeline, spritesheet) read deltaTime/elapsed instead of a raw
 // delta. Scale and pause compose down the tree — a child's effective rate is the product of its own and
 // every ancestor's scale, and any paused ancestor freezes the whole subtree. Times are in seconds.
-export interface Clock {
+export interface Clock extends Entity {
   // Local time scale applied to the incoming delta (1 = realtime, 0.5 = half speed, 2 = double).
   scale: number;
   // When true, this clock and its whole subtree receive a zero delta while advancing (elapsed frozen).

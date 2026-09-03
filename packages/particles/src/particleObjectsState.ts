@@ -1,8 +1,9 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { reserveFloat32Array } from '@flighthq/geometry/contract';
 import type { ParticleObjectsState, RandomSource } from '@flighthq/types/contract';
 
 export function createParticleObjectsState(capacity: number, random: RandomSource = Math.random): ParticleObjectsState {
-  return {
+  return createEntity({
     burstTimer: 0,
     emitterAge: 0,
     lifetimes: new Float32Array(capacity * 2),
@@ -13,7 +14,7 @@ export function createParticleObjectsState(capacity: number, random: RandomSourc
     scales: new Float32Array(capacity),
     spawnAccumulator: 0,
     velocities: new Float32Array(capacity * 2),
-  };
+  });
 }
 
 export function ensureParticleObjectsStateCapacity(state: ParticleObjectsState, capacity: number): void {

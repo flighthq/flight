@@ -10,7 +10,7 @@ import {
 } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
+import { BatchFormat, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
 
 import { defaultWgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
@@ -32,12 +32,14 @@ beforeEach(() => {
 
 beforeEach(() => {
   setRaster2DSurfaceProvider({
+    [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width, height) {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const context = canvas.getContext('2d')!;
       return {
+        [EntityRuntimeKey]: undefined,
         get width() {
           return canvas.width;
         },

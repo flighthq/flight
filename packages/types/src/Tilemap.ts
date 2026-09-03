@@ -1,8 +1,9 @@
+import type { Entity } from './Entity';
 import type { MaterialData } from './Material';
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { TextureAtlas } from './TextureAtlas';
 
-export interface TilemapData extends Node2DData {
+export interface TilemapData extends Node2DData, Entity {
   atlas: TextureAtlas | null;
   columns: number;
   rows: number;

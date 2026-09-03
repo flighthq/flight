@@ -1,3 +1,5 @@
+import { createEntity } from '@flighthq/entity/contract';
+import type { Entity, Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
@@ -29,6 +31,10 @@ import {
 } from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
+
+function entityJoint(fields: Omit<Physics2DJoint, keyof Entity>): Physics2DJoint {
+  return createEntity(fields);
+}
 
 function boxBody(x: number, y: number) {
   const body = createRigidBody2D('dynamic', x, y);
@@ -483,25 +489,28 @@ describe('removePhysics2DBody', () => {
     registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
     const placeholder = addPhysics2DBody(world, boxBody(0, 0));
     const constrained = addPhysics2DBody(world, boxBody(2, 0));
-    const joint = addPhysics2DJoint(world, {
-      kind: 'OneBody',
-      bodyA: placeholder.index,
-      bodyB: constrained.index,
-      localAnchorAX: 0,
-      localAnchorAY: 0,
-      localAnchorBX: 0,
-      localAnchorBY: 0,
-      collideConnected: false,
-      breakForce: Number.POSITIVE_INFINITY,
-      breakTorque: Number.POSITIVE_INFINITY,
-      impulse0: 0,
-      impulse1: 0,
-      impulse2: 0,
-      rAX: 0,
-      rAY: 0,
-      rBX: 0,
-      rBY: 0,
-    });
+    const joint = addPhysics2DJoint(
+      world,
+      entityJoint({
+        kind: 'OneBody',
+        bodyA: placeholder.index,
+        bodyB: constrained.index,
+        localAnchorAX: 0,
+        localAnchorAY: 0,
+        localAnchorBX: 0,
+        localAnchorBY: 0,
+        collideConnected: false,
+        breakForce: Number.POSITIVE_INFINITY,
+        breakTorque: Number.POSITIVE_INFINITY,
+        impulse0: 0,
+        impulse1: 0,
+        impulse2: 0,
+        rAX: 0,
+        rAY: 0,
+        rBX: 0,
+        rBY: 0,
+      }),
+    );
 
     removePhysics2DBody(world, placeholder);
 
@@ -666,25 +675,28 @@ describe('setPhysics2DBodyTransform', () => {
     registerPhysics2DJointSolver(world, 'Cached', { prepare: () => {}, solve: () => {} });
     const first = addPhysics2DBody(world, boxBody(0, 0));
     const second = addPhysics2DBody(world, boxBody(0.75, 0));
-    const joint = addPhysics2DJoint(world, {
-      kind: 'Cached',
-      bodyA: first.index,
-      bodyB: second.index,
-      localAnchorAX: 0,
-      localAnchorAY: 0,
-      localAnchorBX: 0,
-      localAnchorBY: 0,
-      collideConnected: true,
-      breakForce: Number.POSITIVE_INFINITY,
-      breakTorque: Number.POSITIVE_INFINITY,
-      impulse0: 3,
-      impulse1: 4,
-      impulse2: 5,
-      rAX: 0,
-      rAY: 0,
-      rBX: 0,
-      rBY: 0,
-    });
+    const joint = addPhysics2DJoint(
+      world,
+      entityJoint({
+        kind: 'Cached',
+        bodyA: first.index,
+        bodyB: second.index,
+        localAnchorAX: 0,
+        localAnchorAY: 0,
+        localAnchorBX: 0,
+        localAnchorBY: 0,
+        collideConnected: true,
+        breakForce: Number.POSITIVE_INFINITY,
+        breakTorque: Number.POSITIVE_INFINITY,
+        impulse0: 3,
+        impulse1: 4,
+        impulse2: 5,
+        rAX: 0,
+        rAY: 0,
+        rBX: 0,
+        rBY: 0,
+      }),
+    );
     stepPhysics2D(world, 1 / 60);
     joint.impulse0 = 3;
     joint.impulse1 = 4;

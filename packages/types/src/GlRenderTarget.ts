@@ -47,6 +47,6 @@ export interface GlRenderTarget extends Entity, RenderTargetDimensions {
 
 // A free-list of reusable targets. The effect pipeline owns one and lends intermediate targets to
 // multi-pass recipes via acquireGlRenderTarget / releaseGlRenderTarget.
-export interface GlRenderTargetPool {
+export interface GlRenderTargetPool extends Entity {
   free: GlRenderTarget[];
 }

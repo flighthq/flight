@@ -6,7 +6,7 @@ import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from 
 import { createTextLabel } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
 import type { Raster2DSurface, RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 import { defaultWgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel';
@@ -43,6 +43,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   canvas.height = height;
   const context = canvas.getContext('2d')!;
   return {
+    [EntityRuntimeKey]: undefined,
     get width() {
       return canvas.width;
     },
@@ -91,6 +92,7 @@ function installTestRaster2DSurfaceProvider(
   destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
 ): void {
   setRaster2DSurfaceProvider({
+    [EntityRuntimeKey]: undefined,
     createRaster2DSurface(width, height) {
       return createTestRaster2DSurface(width, height);
     },

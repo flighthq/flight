@@ -1,4 +1,5 @@
 import type { RichTextData, TextLayoutResult } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   computeRichTextBottomScrollV,
@@ -34,6 +35,7 @@ function createData(data: Partial<RichTextData> = {}): RichTextData {
     width: 200,
     wordWrap: false,
     ...data,
+    [EntityRuntimeKey]: undefined,
   };
 }
 

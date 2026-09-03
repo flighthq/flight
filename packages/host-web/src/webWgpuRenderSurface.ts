@@ -1,12 +1,13 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { setWgpuRenderSurfaceProvider } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderSurfaceProvider } from '@flighthq/types/contract';
+import type { Entity, WgpuRenderSurfaceProvider } from '@flighthq/types/contract';
 
 import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
 
 let _enabled = false;
 
 export function createWebWgpuRenderSurfaceProvider(): WgpuRenderSurfaceProvider {
-  return {
+  return createEntity<Omit<WgpuRenderSurfaceProvider, keyof Entity>>({
     createRenderSurface(width, height, pixelRatio): HTMLCanvasElement {
       const canvas = document.createElement('canvas');
       canvas.style.width = `${width}px`;
@@ -15,7 +16,7 @@ export function createWebWgpuRenderSurfaceProvider(): WgpuRenderSurfaceProvider 
       canvas.height = height * pixelRatio;
       return canvas;
     },
-  };
+  });
 }
 
 export function enableHostWebWgpuRenderSurface(): void {

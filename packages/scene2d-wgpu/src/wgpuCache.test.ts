@@ -90,6 +90,7 @@ beforeEach(() => {
   vi.spyOn(renderWgpu, 'setWgpuRenderTransform2D').mockImplementation((() => {}) as never);
   vi.spyOn(renderWgpu, 'createWgpuRenderTarget').mockImplementation(
     ((_state: unknown, width: number, height: number): WgpuRenderTarget => ({
+      [EntityRuntimeKey]: undefined,
       bindings: new Map(),
       mipLevelCount: 1,
       colorSpace: 'srgb',

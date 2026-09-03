@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/collision": "*",
+    "@flighthq/entity": "*",
     "@flighthq/log": "*",
     "@flighthq/math": "*",
     "@flighthq/node": "*",

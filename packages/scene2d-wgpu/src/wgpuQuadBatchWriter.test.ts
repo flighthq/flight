@@ -2,7 +2,7 @@ import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgp
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { ColorScaleBias, Material, WgpuTextureEntry } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import {
@@ -27,6 +27,7 @@ function makeMaterial(): Material {
 
 function makeTexture(): WgpuTextureEntry {
   return {
+    [EntityRuntimeKey]: undefined,
     bindings: new Map(),
     mipLevelCount: 1,
     texture: {} as GPUTexture,

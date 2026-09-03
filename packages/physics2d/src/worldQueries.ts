@@ -5,6 +5,7 @@ import {
   raycastCollisionShape2D,
   sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape2D,
   CollisionRaycastHit2D,
@@ -38,16 +39,26 @@ export function createPhysics2DQueryFilter(): Physics2DQueryFilter {
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
 // rewrite them and publish only `hitCount`, so pointer picking can run each frame without garbage.
 export function createPhysics2DQueryResult(): Physics2DQueryResult {
-  return { hits: [], hitCount: 0 };
+  return createEntity({ hits: [], hitCount: 0 });
 }
 
 export function createPhysics2DRayResult(): Physics2DRayResult {
-  return { hits: [], hitCount: 0 };
+  return createEntity({ hits: [], hitCount: 0 });
 }
 
 // A reusable shape-cast result, starting as a miss.
 export function createPhysics2DShapeCastResult(): Physics2DShapeCastResult {
-  return { body: null, collider: null, colliderIndex: -1, hit: false, fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
+  return createEntity({
+    body: null,
+    collider: null,
+    colliderIndex: -1,
+    hit: false,
+    fraction: 0,
+    x: 0,
+    y: 0,
+    normalX: 0,
+    normalY: 0,
+  });
 }
 
 // Writes every collider containing the world-space point. Broadphase candidates are confirmed by the
@@ -477,10 +488,10 @@ const physics2DQueryScratchPool: Physics2DQueryScratch[] = [createPhysics2DQuery
 // A stand-in collider so a bare shape can reuse the collider bounds writer. Its `world` shape is REBOUND
 // per call rather than copied, so this never retains the caller's shape past the call, and its material
 // and filter are never read on this path.
-const shapeCastProbe: Physics2DCollider = {
+const shapeCastProbe: Physics2DCollider = createEntity({
   local: { kind: 'point', x: 0, y: 0 },
   world: { kind: 'point', x: 0, y: 0 },
   material: { density: 0, friction: 0, restitution: 0 },
   filter: { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 },
   sensor: false,
-};
+});

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Rectangle } from './Rectangle';
 import type { PathWinding } from './ShapeCommand';
 
@@ -16,7 +17,7 @@ import type { PathWinding } from './ShapeCommand';
  * texture version to know when to re-upload derived state. Build with the `createClipRegionFrom*`
  * producers in `@flighthq/clip`. Plain data — the caller owns it and its lifetime.
  */
-export interface ClipRegion {
+export interface ClipRegion extends Entity {
   rect: Rectangle;
   contours: number[][] | null;
   /** Fill rule for the contour form (canvas clip rule / stencil winding accumulation). 'nonZero' for rects. */

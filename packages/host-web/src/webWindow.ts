@@ -1,4 +1,5 @@
 import { notifyWindowClosed } from '@flighthq/application/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   ApplicationWindow,
   FullscreenBackend,
@@ -195,13 +196,13 @@ export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenB
   };
 
 export function createWebFullscreenTargetHandle(element: Element): FullscreenTargetHandle {
-  const target: FullscreenTargetHandle = { __brand: 'FullscreenTargetHandle' };
+  const target: FullscreenTargetHandle = createEntity({ __brand: 'FullscreenTargetHandle' as const });
   _fullscreenTargets.set(target, element);
   return target;
 }
 
 export function createWebWindowResizeTargetHandle(element: Element): WindowResizeTargetHandle {
-  const target: WindowResizeTargetHandle = { __brand: 'WindowResizeTargetHandle' };
+  const target: WindowResizeTargetHandle = createEntity({ __brand: 'WindowResizeTargetHandle' as const });
   _windowResizeTargets.set(target, element);
   return target;
 }

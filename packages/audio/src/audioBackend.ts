@@ -1,11 +1,12 @@
-import type { AudioBackend, BackendExplanation } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { AudioBackend, BackendExplanation, Entity } from '@flighthq/types/contract';
 
 export function createWebAudioBackend(): AudioBackend {
-  return {
+  return createEntity<Omit<AudioBackend, keyof Entity>>({
     canPlayType(mimeType: string): boolean {
       return new Audio().canPlayType(mimeType) !== '';
     },
-  };
+  });
 }
 
 export function explainAudioBackend(): BackendExplanation {
@@ -58,8 +59,8 @@ let _host: AudioBackend | null = null;
 let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 
-const _sentinel: AudioBackend = {
+const _sentinel: AudioBackend = createEntity<Omit<AudioBackend, keyof Entity>>({
   canPlayType(_mimeType: string): boolean {
     return false;
   },
-};
+});

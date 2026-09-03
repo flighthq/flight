@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry/contract';
 import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
 import type { Matrix, Rectangle, RenderProxy2D, RenderViewport2D, Spatial2DNode } from '@flighthq/types/contract';
@@ -20,7 +21,7 @@ export function computeRenderProxyWorldBounds(
 
 // Allocates and returns a new RenderViewport2D with the given screen-space region.
 export function createRenderViewport2D(x: number, y: number, width: number, height: number): RenderViewport2D {
-  return { height, width, x, y };
+  return createEntity({ height, width, x, y });
 }
 
 // Returns true when `source` may be visible within `viewport`. Conservative: returns true when

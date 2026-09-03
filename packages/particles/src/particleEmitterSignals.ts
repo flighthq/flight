@@ -1,14 +1,15 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type { ParticleEmitterSignals } from '@flighthq/types/contract';
 
 /** Create a fresh {@link ParticleEmitterSignals} group. Called by
  *  {@link enableParticleEmitterSignals} on first use; exported for unit testing. */
 export function createParticleEmitterSignals(): ParticleEmitterSignals {
-  return {
+  return createEntity({
     onEmitterComplete: createSignal(),
     onParticleDeath: createSignal(),
     onParticleSpawn: createSignal(),
-  };
+  });
 }
 
 /** Opt-in signals for a typed-array particle emitter.

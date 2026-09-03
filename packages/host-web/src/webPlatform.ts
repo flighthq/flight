@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { PlatformBackend, PlatformInfo } from '@flighthq/types/contract';
 import {
   detectEndianness,
@@ -12,7 +13,7 @@ import {
 } from '@flighthq/useragent/contract';
 
 export function createWebPlatformBackend(): PlatformBackend {
-  return { getInfo: getWebPlatformInfo };
+  return createEntity({ getInfo: getWebPlatformInfo });
 }
 
 export const webPlatformBackend: PlatformBackend = createWebPlatformBackend();

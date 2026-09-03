@@ -3,6 +3,7 @@ import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import {
@@ -119,6 +120,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = {
+      [EntityRuntimeKey]: undefined,
       bindings: new Map(),
       mipLevelCount: 1,
       texture: {} as GPUTexture,

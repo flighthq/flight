@@ -9,7 +9,7 @@
 // A 1D spring's motion state: its current `value` and the `velocity` carried into the next step.
 // `velocity` is what makes the motion second-order (overshoot-capable); a fresh spring has velocity
 // 0. Both are plain numbers in whatever unit the value drives (pixels, radians, a normalized 0..1).
-export interface Spring {
+export interface Spring extends Entity {
   value: number;
   velocity: number;
 }
@@ -30,15 +30,16 @@ export interface SpringConfig {
 // A 2D spring as a pair of independent scalar `Spring`s, one per axis. The vector step applies the
 // same scalar integrator per component, so a `Spring2D` is exactly a composition of two `Spring`s
 // with nothing extra — `spring2D.x` is a full `Spring` usable with the scalar functions directly.
-export interface Spring2D {
+export interface Spring2D extends Entity {
   x: Spring;
   y: Spring;
 }
 
 // A 3D spring as three independent scalar `Spring`s. Like `Spring2D`, this is a plain composition of
 // per-axis `Spring`s stepped by the same scalar integrator.
-export interface Spring3D {
+export interface Spring3D extends Entity {
   x: Spring;
   y: Spring;
   z: Spring;
 }
+import type { Entity } from './Entity';

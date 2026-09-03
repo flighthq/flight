@@ -1,6 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlContext } from './GlContext';
@@ -36,7 +36,7 @@ export interface GlRenderState extends RenderState {
 
 // Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface GlRenderRegistries extends RenderRegistries {
+export interface GlRenderRegistries extends RenderRegistries, Entity {
   blendRealizations: KeyedTable<GlBlendRealization>;
   colorAdjustmentFeature?: SlotTable<GlColorAdjustmentMaterialFeature>;
   // Optional diagnostic policy stays separate from the rendering feature: binding this callback

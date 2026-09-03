@@ -1,9 +1,9 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
-  HostScreenCapabilities,
   ScreenChangeEvent,
   ScreenInfo,
+  WebScreenCapabilities,
   ScreenPermissionState,
 } from '@flighthq/types/contract';
 
@@ -49,7 +49,7 @@ interface OrientationLike {
   removeEventListener?(type: 'change', listener: () => void): void;
 }
 
-export function createWebScreenCapabilities(): Required<HostScreenCapabilities> {
+export function createWebScreenCapabilities(): WebScreenCapabilities {
   let cached: ScreenInfo[] = [];
   let cursorX = 0;
   let cursorY = 0;
@@ -294,7 +294,7 @@ export function createWebScreenCapabilities(): Required<HostScreenCapabilities> 
     },
   });
 
-  return { change, details: detailsBackend, permissionChange, query };
+  return createEntity({ change, details: detailsBackend, permissionChange, query });
 }
 
 export const webScreenCapabilities = createWebScreenCapabilities();

@@ -304,7 +304,7 @@ function createInputTarget(): InputTargetHandle {
 }
 
 function createWindowResizeTarget(): WindowResizeTargetHandle {
-  return { __brand: 'WindowResizeTargetHandle' };
+  return createEntity({ __brand: 'WindowResizeTargetHandle' as const });
 }
 
 function recordingFullscreenBackend(): RecordingFullscreenBackend {
@@ -1467,7 +1467,7 @@ describe('prepareElementForInput', () => {
 
 describe('requestApplicationFullscreen', () => {
   it('passes the opaque target to the fullscreen capability', async () => {
-    const target: FullscreenTargetHandle = { __brand: 'FullscreenTargetHandle' };
+    const target: FullscreenTargetHandle = createEntity({ __brand: 'FullscreenTargetHandle' as const });
     await expect(requestApplicationFullscreen(host, target)).resolves.toBe(true);
     expect(host.ui.fullscreen.calls).toEqual(['request']);
   });

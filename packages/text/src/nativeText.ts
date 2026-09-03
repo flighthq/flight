@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
@@ -42,14 +43,14 @@ export function createNativeText(obj?: Readonly<PartialNode<NativeText>>): Nativ
 }
 
 export function createNativeTextData(data?: Readonly<Partial<NativeTextData>>): NativeTextData {
-  return {
+  return createEntity({
     autoSize: data?.autoSize ?? 'none',
     height: data?.height ?? 100,
     style: data?.style ?? {},
     text: data?.text ?? '',
     verticalAlign: data?.verticalAlign ?? 'top',
     width: data?.width ?? 100,
-  };
+  });
 }
 
 export function createNativeTextRuntime(): NativeTextRuntime {

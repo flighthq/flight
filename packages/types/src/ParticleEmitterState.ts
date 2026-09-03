@@ -1,6 +1,7 @@
+import type { Entity } from './Entity';
 import type { RandomSource } from './RandomSource';
 
-export interface ParticleEmitterState {
+export interface ParticleEmitterState extends Entity {
   burstTimer: number;
   colorBirth: Float32Array;
   colorDeath: Float32Array;

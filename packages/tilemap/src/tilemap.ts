@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
@@ -56,7 +57,7 @@ export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
 export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
   const columns = data?.columns ?? 0;
   const rows = data?.rows ?? 0;
-  return {
+  return createEntity({
     atlas: data?.atlas ?? null,
     columns,
     materialData: data?.materialData ?? null,
@@ -64,7 +65,7 @@ export function createTilemapData(data?: Readonly<Partial<TilemapData>>): Tilema
     tileHeight: data?.tileHeight ?? 0,
     tileWidth: data?.tileWidth ?? 0,
     tiles: data?.tiles ?? new Int16Array(columns * rows).fill(-1),
-  };
+  });
 }
 
 export function createTilemapRuntime(): TilemapRuntime {
@@ -72,11 +73,11 @@ export function createTilemapRuntime(): TilemapRuntime {
 }
 
 export function createTilemapSignals(): TilemapSignals {
-  return {
+  return createEntity({
     onCleared: createSignal(),
     onTileChanged: createSignal(),
     onTilesChanged: createSignal(),
-  };
+  });
 }
 
 /**

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { SpatialIndexingExplanation } from './SpatialIndexing';
 
 // 2D broadphase header. `@flighthq/spatial` is the acceleration structure in front of
@@ -130,7 +131,7 @@ export interface SpatialIndexRuntime2D {
 // opaque runtime's backend. Create with createSpatialIndex2D (defaulting to a uniform grid), drive it
 // with insertSpatialObject2D / updateSpatialObject2D / removeSpatialObject2D, and read it with the query
 // functions. The backend swaps the underlying structure without changing this entity's shape.
-export interface SpatialIndex2D {
+export interface SpatialIndex2D extends Entity {
   runtime: SpatialIndexRuntime2D;
 }
 
@@ -184,6 +185,6 @@ export interface SpatialIndexRuntime3D {
 // with insertSpatialObject3D / updateSpatialObject3D / removeSpatialObject3D, and read it with the query
 // functions. This is what `@flighthq/physics3d` indexes its colliders in, and what a 3D scene culls
 // against.
-export interface SpatialIndex3D {
+export interface SpatialIndex3D extends Entity {
   runtime: SpatialIndexRuntime3D;
 }

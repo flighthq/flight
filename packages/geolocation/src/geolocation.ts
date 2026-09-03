@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
+  Entity,
   GeolocationAccessOutcome,
   GeolocationBackend,
   GeolocationErrorReason,
@@ -13,7 +15,7 @@ export function clearGeolocationWatch(id: number): void {
 }
 
 export function createGeoPosition(): GeoPosition {
-  return {
+  return createEntity({
     accuracy: 0,
     altitude: 0,
     altitudeAccuracy: 0,
@@ -23,14 +25,14 @@ export function createGeoPosition(): GeoPosition {
     longitude: 0,
     speed: 0,
     timestamp: 0,
-  };
+  });
 }
 
 // Builds the default web backend over navigator.geolocation. Position reads resolve to null and
 // permission requests resolve to false when the API is absent (insecure context, jsdom) or the user
 // denies access — location access is not guaranteed.
 export function createWebGeolocationBackend(): GeolocationBackend {
-  return {
+  return createEntity<Omit<GeolocationBackend, keyof Entity>>({
     clearWatch(id) {
       const geo = getWebGeolocation();
       if (geo === null || typeof geo.clearWatch !== 'function') return;
@@ -114,7 +116,7 @@ export function createWebGeolocationBackend(): GeolocationBackend {
         return -1;
       }
     },
-  };
+  });
 }
 
 export function explainGeolocationBackend(): BackendExplanation {
@@ -188,7 +190,7 @@ let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _emptyOptions: GeolocationRequestOptions = {};
 
-const _sentinel: GeolocationBackend = {
+const _sentinel: GeolocationBackend = createEntity<Omit<GeolocationBackend, keyof Entity>>({
   clearWatch() {},
   getCurrentPosition() {
     return Promise.resolve(null);
@@ -205,7 +207,7 @@ const _sentinel: GeolocationBackend = {
   watchPosition() {
     return -1;
   },
-};
+});
 
 function getWebGeolocation(): Geolocation | null {
   if (typeof navigator === 'undefined') return null;
@@ -214,7 +216,7 @@ function getWebGeolocation(): Geolocation | null {
 
 function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosition {
   const coords = position.coords;
-  return {
+  return createEntity({
     accuracy: coords.accuracy,
     altitude: coords.altitude ?? 0,
     altitudeAccuracy: coords.altitudeAccuracy ?? 0,
@@ -226,7 +228,7 @@ function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosit
     longitude: coords.longitude,
     speed: coords.speed ?? 0,
     timestamp: position.timestamp,
-  };
+  });
 }
 
 function mapWebAccessError(error: GeolocationPositionError): GeolocationAccessOutcome['reason'] {

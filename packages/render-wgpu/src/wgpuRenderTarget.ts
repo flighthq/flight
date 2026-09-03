@@ -1,4 +1,5 @@
 import { srgbChannelToLinear } from '@flighthq/color/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   Material,
@@ -133,7 +134,7 @@ export function createWgpuRenderTarget(
   });
   const depthStencilView = depthStencilTexture.createView();
 
-  return {
+  return createEntity({
     bindings: new Map(),
     mipLevelCount: 1,
     colorSpace,
@@ -147,7 +148,7 @@ export function createWgpuRenderTarget(
     clearDepth: 1,
     width: w,
     height: h,
-  };
+  });
 }
 
 // Stamps the color space produced into the currently bound target. False means the caller is drawing
@@ -197,7 +198,12 @@ export function drawWgpuRenderTargetResult(
     state,
     renderProxy as never,
     composedTransform,
-    { bindings: target.bindings, mipLevelCount: target.mipLevelCount, texture: target.texture, view: target.view },
+    createEntity({
+      bindings: target.bindings,
+      mipLevelCount: target.mipLevelCount,
+      texture: target.texture,
+      view: target.view,
+    }),
     0,
     0,
     target.width,
