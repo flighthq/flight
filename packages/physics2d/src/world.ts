@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
   CollisionBuiltInShape2D,
+  NonEntityCreateResult,
   Physics2DCollisionFilter,
   Physics2DCollider,
   Physics2DMaterial,
@@ -218,7 +219,7 @@ function clonePhysics2DLocalShape(local: Readonly<CollisionBuiltInShape2D>): Col
 // sequential-impulse engine converges on for game-scale stacks; the slop and correction factor are what
 // stop a resting contact from either twitching against a target of exactly zero overlap or exploding
 // outward when a deep overlap is corrected all at once.
-export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
+export function createPhysics2DSolverConfig(): NonEntityCreateResult<Physics2DSolverConfig, 'options'> {
   return {
     // Box2D's long-standing defaults: still below 0.01 m/s and 2 deg/s, asleep after half a second.
     allowSleeping: true,

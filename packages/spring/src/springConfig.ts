@@ -1,5 +1,5 @@
 import { TAU } from '@flighthq/math/contract';
-import type { SpringConfig } from '@flighthq/types/contract';
+import type { NonEntityCreateResult, SpringConfig } from '@flighthq/types/contract';
 
 // Frozen plain-data presets: spread one into a mutable object to customize it without changing the
 // shared profile. Bouncy is quick and underdamped for visible overshoot.
@@ -14,7 +14,10 @@ export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze({ damping
 // Allocate a `SpringConfig` from the designer-intuitive `frequency` (Hz) and `dampingRatio`
 // (0 undamped, <1 underdamped/overshoots, 1 critical/fastest-no-overshoot, >1 overdamped). This is
 // the primary constructor; use `createSpringConfigFromPhysical` when starting from raw physics.
-export function createSpringConfig(frequency: number, dampingRatio: number): SpringConfig {
+export function createSpringConfig(
+  frequency: number,
+  dampingRatio: number,
+): NonEntityCreateResult<SpringConfig, 'options'> {
   return { dampingRatio, frequency };
 }
 
@@ -22,7 +25,11 @@ export function createSpringConfig(frequency: number, dampingRatio: number): Spr
 // Converts to the mass-independent form via `frequency = sqrt(k / m) / (2 * PI)` and
 // `dampingRatio = c / (2 * sqrt(k * m))`, the standard undamped-natural-frequency and
 // damping-ratio identities. Expects positive `stiffness` and `mass`.
-export function createSpringConfigFromPhysical(stiffness: number, damping: number, mass: number): SpringConfig {
+export function createSpringConfigFromPhysical(
+  stiffness: number,
+  damping: number,
+  mass: number,
+): NonEntityCreateResult<SpringConfig, 'options'> {
   return {
     dampingRatio: damping / (2 * Math.sqrt(stiffness * mass)),
     frequency: Math.sqrt(stiffness / mass) / TAU,
