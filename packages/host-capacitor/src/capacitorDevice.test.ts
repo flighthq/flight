@@ -39,6 +39,7 @@ function fakeCapacitor() {
 
 function blankInfo(): DeviceInfo {
   return {
+    [EntityRuntimeKey]: undefined,
     arch: 'z',
     availableMemory: 1,
     boardName: 'z',
@@ -92,6 +93,7 @@ describe('createCapacitorDeviceBackend', () => {
   it('reports sentinels for metrics, capabilities, and safe-area insets', () => {
     const backend = createCapacitorDeviceBackend(fakeCapacitor().capacitor);
     const metrics: DeviceDisplayMetrics = {
+      [EntityRuntimeKey]: undefined,
       colorDepth: 1,
       densityDpi: 1,
       logicalHeight: 1,
@@ -101,9 +103,14 @@ describe('createCapacitorDeviceBackend', () => {
       pixelRatio: 1,
     };
     expect(backend.getDisplayMetrics(metrics).pixelRatio).toBe(-1);
-    const caps: DeviceCapabilities = { hasKeyboard: true, hasMouse: true, hasStylus: true };
-    expect(backend.getCapabilities(caps)).toEqual({ hasKeyboard: false, hasMouse: false, hasStylus: false });
-    const insets: SafeAreaInsets = { top: 9, right: 9, bottom: 9, left: 9 };
-    expect(backend.getSafeAreaInsets(insets)).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
+    const caps: DeviceCapabilities = {
+      [EntityRuntimeKey]: undefined,
+      hasKeyboard: true,
+      hasMouse: true,
+      hasStylus: true,
+    };
+    expect(backend.getCapabilities(caps)).toMatchObject({ hasKeyboard: false, hasMouse: false, hasStylus: false });
+    const insets: SafeAreaInsets = { [EntityRuntimeKey]: undefined, top: 9, right: 9, bottom: 9, left: 9 };
+    expect(backend.getSafeAreaInsets(insets)).toMatchObject({ top: 0, right: 0, bottom: 0, left: 0 });
   });
 });

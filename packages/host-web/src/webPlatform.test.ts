@@ -312,6 +312,6 @@ describe('webPlatformBackend', () => {
     const b = createPlatformInfo();
     webPlatformBackend.getInfo(a);
     createWebPlatformBackend().getInfo(b);
-    expect(a).toEqual(b);
+    expect(a).toMatchObject(b);
   });
 });

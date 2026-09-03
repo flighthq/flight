@@ -135,12 +135,12 @@ export function enableWebSafeAreaInsets(): () => void {
 
   function readInsets(): void {
     const style = getComputedStyle(el);
-    _safeAreaInsets = {
+    _safeAreaInsets = createEntity({
       bottom: parseFloat(style.bottom) || 0,
       left: parseFloat(style.left) || 0,
       right: parseFloat(style.right) || 0,
       top: parseFloat(style.top) || 0,
-    };
+    });
   }
 
   readInsets();

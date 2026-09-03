@@ -36,7 +36,7 @@ describe('createWebDeviceBackend', () => {
 
   it('returns zero safe-area insets on plain web (no CSS probe)', () => {
     const backend = createWebDeviceBackend();
-    expect(backend.getSafeAreaInsets(createSafeAreaInsets())).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
+    expect(backend.getSafeAreaInsets(createSafeAreaInsets())).toMatchObject({ bottom: 0, left: 0, right: 0, top: 0 });
   });
 
   it('getId returns a string (empty or a UUID) without throwing', () => {
@@ -118,6 +118,6 @@ describe('webDeviceBackend', () => {
     const b = createDeviceInfo();
     webDeviceBackend.getInfo(a);
     createWebDeviceBackend().getInfo(b);
-    expect(a).toEqual(b);
+    expect(a).toMatchObject(b);
   });
 });

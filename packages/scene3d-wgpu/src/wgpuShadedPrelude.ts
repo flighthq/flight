@@ -1,6 +1,11 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
+import {
+  createModifierRegistry,
+  getModifierDefineKey,
+  orderModifierStack,
+  resolveModifier,
+} from '@flighthq/shading/contract';
 import type {
   AnimatedNormalModifier,
   DissolveModifier,
@@ -824,7 +829,7 @@ fn shadedValueNoise(p : vec2f) -> f32 {
 
 const MODIFIER_FLOATS = 12;
 const _color: LinearColor = [0, 0, 0, 0];
-const EMPTY_MODIFIER_REGISTRY: ModifierRegistry = { definitions: new Map() };
+const EMPTY_MODIFIER_REGISTRY: ModifierRegistry = createModifierRegistry();
 
 function getWgpuModifierDefineKey(stack: readonly Modifier[], registry: WgpuModifierSnippetSource): string {
   if (!isWgpuModifierSnippetTable(registry)) return getModifierDefineKey(stack, registry);
