@@ -1,17 +1,22 @@
 import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas } from './glyphAtlas';
 import { clearGlyphAtlasDirty, getGlyphAtlasDirtyRegion } from './glyphAtlasDirty';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
-import { setGlyphRasterizerBackend } from './glyphRasterizerBackend';
+
+const defaultBackend: GlyphRasterizerBackend = { rasterize: () => null };
 
 describe('clearGlyphAtlasDirty', () => {
-  afterEach(() => setGlyphRasterizerBackend(null));
-
   it('resets the dirty region to null', () => {
-    setGlyphRasterizerBackend(createMockRasterizerBackend());
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, width: 128 });
+    const backend = createMockRasterizerBackend();
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 128,
+      rasterizerBackend: backend,
+      width: 128,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     expect(getGlyphAtlasDirtyRegion(atlas)).not.toBeNull();
@@ -22,16 +27,26 @@ describe('clearGlyphAtlasDirty', () => {
 });
 
 describe('getGlyphAtlasDirtyRegion', () => {
-  afterEach(() => setGlyphRasterizerBackend(null));
-
   it('is null on a fresh atlas', () => {
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, width: 128 });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 128,
+      rasterizerBackend: defaultBackend,
+      width: 128,
+    });
     expect(getGlyphAtlasDirtyRegion(atlas)).toBeNull();
   });
 
   it('covers a newly added glyph rect', () => {
-    setGlyphRasterizerBackend(createMockRasterizerBackend());
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, width: 128 });
+    const backend = createMockRasterizerBackend();
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 128,
+      rasterizerBackend: backend,
+      width: 128,
+    });
 
     const entry = getGlyphAtlasEntry(atlas, 65)!;
     const region = getGlyphAtlasDirtyRegion(atlas)!;
@@ -43,8 +58,14 @@ describe('getGlyphAtlasDirtyRegion', () => {
   });
 
   it('re-dirties only the new rect after a clear', () => {
-    setGlyphRasterizerBackend(createMockRasterizerBackend());
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, width: 128 });
+    const backend = createMockRasterizerBackend();
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      height: 128,
+      rasterizerBackend: backend,
+      width: 128,
+    });
 
     getGlyphAtlasEntry(atlas, 65);
     clearGlyphAtlasDirty(atlas);

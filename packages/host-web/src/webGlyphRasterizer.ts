@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { installGlyphRasterizerHostBackend, observeGlyphRasterizerHostResult } from '@flighthq/glyphatlas/contract';
 import type {
   Entity,
   GlyphMetrics,
@@ -12,39 +11,23 @@ export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Enti
   return createEntity({
     measureMetrics(options): GlyphMetrics | null {
       const context = _acquireGlyphRasterContext();
-      if (context === null) {
-        observeGlyphRasterizerHostResult('measureMetrics', false);
-        return null;
-      }
+      if (context === null) return null;
       _applyGlyphRasterFont(context, options);
       const metrics = context.measureText('Hg');
       const ascent = metrics.fontBoundingBoxAscent;
       const descent = metrics.fontBoundingBoxDescent;
-      if (!(ascent > 0) || !(descent >= 0)) {
-        observeGlyphRasterizerHostResult('measureMetrics', false);
-        return null;
-      }
-      observeGlyphRasterizerHostResult('measureMetrics', true);
+      if (!(ascent > 0) || !(descent >= 0)) return null;
       return { ascent, descent, lineGap: 0 };
     },
     rasterize(codepoint, options): GlyphRasterizedBitmap | null {
       const context = _acquireGlyphRasterContext();
-      if (context === null) {
-        observeGlyphRasterizerHostResult('rasterize', false);
-        return null;
-      }
-      // Observe on context acquisition, not on result: null is valid for zero-ink glyphs (space).
-      observeGlyphRasterizerHostResult('rasterize', true);
+      if (context === null) return null;
       return _rasterizeGlyphOnContext(context, codepoint, options);
     },
   });
 }
 
-export function enableHostWebGlyphRasterizer(): void {
-  if (_enabled) return;
-  _enabled = true;
-  installGlyphRasterizerHostBackend(createWebGlyphRasterizerBackend());
-}
+export const webGlyphRasterizerBackend: GlyphRasterizerBackend & Entity = createWebGlyphRasterizerBackend();
 
 function _acquireGlyphRasterContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null {
   try {
@@ -113,9 +96,3 @@ function _rasterizeGlyphOnContext(
     width,
   };
 }
-
-export function resetHostWebGlyphRasterizerForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;

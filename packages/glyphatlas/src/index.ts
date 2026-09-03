@@ -2,7 +2,6 @@ export {
   disableGlyphAtlasGuards,
   enableGlyphAtlasGuards,
   explainGlyphAtlasEntry,
-  explainGlyphRasterizerBackend,
   clearGlyphAtlasDirty,
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
@@ -15,6 +14,4 @@ export {
   getGlyphAtlasMetrics,
   getGlyphAtlasBitmap,
   getGlyphAtlasLayoutVersion,
-  getGlyphRasterizerBackend,
-  setGlyphRasterizerBackend,
 } from './contract';
