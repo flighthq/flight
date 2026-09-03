@@ -60,6 +60,13 @@ import {
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 import { registerWgpuTextureResolver } from './wgpuTextureResolver';
 
+function expectEntitySlot(slot: object & { readonly [EntityRuntimeKey]?: unknown }, fields: object): void {
+  const { [EntityRuntimeKey]: entityRuntime, ...slotFields } = slot;
+  expect(slotFields).toEqual(fields);
+  expect(Object.hasOwn(slot, EntityRuntimeKey)).toBe(true);
+  expect(entityRuntime).toBeUndefined();
+}
+
 beforeAll(() => {
   installWgpuMock();
 });
@@ -632,26 +639,26 @@ describe('createWgpuRenderStateRuntime', () => {
       registry: 'WgpuRenderEffect',
       shape: 'keyed',
     });
-    expect(runtime.registries.compressedTextureDecoder).toEqual({
+    expectEntitySlot(runtime.registries.compressedTextureDecoder, {
       entry: null,
       onMiss: 'Unregistered',
       registry: 'WgpuCompressedTextureDecoder',
       shape: 'slot',
     });
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expect(runtime.registries.compressedTextureUpload).toEqual({
+    expectEntitySlot(runtime.registries.compressedTextureUpload, {
       entry: null,
       onMiss: 'Unregistered',
       registry: 'WgpuCompressedTextureUpload',
       shape: 'slot',
     });
-    expect(runtime.registries.shapeRasterizer).toEqual({
+    expectEntitySlot(runtime.registries.shapeRasterizer, {
       entry: null,
       onMiss: 'Unregistered',
       registry: 'WgpuShapeRasterizer',
       shape: 'slot',
     });
-    expect(runtime.registries.strokeTessellator).toEqual({
+    expectEntitySlot(runtime.registries.strokeTessellator, {
       entry: null,
       onMiss: 'Rasterize',
       registry: 'StrokeTessellator',

@@ -51,6 +51,13 @@ function makeContext() {
   return { gl: makeGL() };
 }
 
+function expectEntitySlot(slot: object & { readonly [EntityRuntimeKey]?: unknown }, fields: object): void {
+  const { [EntityRuntimeKey]: entityRuntime, ...slotFields } = slot;
+  expect(slotFields).toEqual(fields);
+  expect(Object.hasOwn(slot, EntityRuntimeKey)).toBe(true);
+  expect(entityRuntime).toBeUndefined();
+}
+
 const testPipeline = createGlPipeline(createEmptyGlRegistries());
 
 function createTestGlRenderState(gl: WebGL2RenderingContext, options: GlRenderOptions = {}) {
@@ -491,26 +498,26 @@ describe('createGlRenderStateRuntime', () => {
       registry: 'GlRenderEffect',
       shape: 'keyed',
     });
-    expect(runtime.registries.compressedTextureDecoder).toEqual({
+    expectEntitySlot(runtime.registries.compressedTextureDecoder, {
       entry: null,
       onMiss: 'Unregistered',
       registry: 'GlCompressedTextureDecoder',
       shape: 'slot',
     });
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expect(runtime.registries.compressedTextureUpload).toEqual({
+    expectEntitySlot(runtime.registries.compressedTextureUpload, {
       entry: null,
       onMiss: 'Unregistered',
       registry: 'GlCompressedTextureUpload',
       shape: 'slot',
     });
-    expect(runtime.registries.shapeRasterizer).toEqual({
+    expectEntitySlot(runtime.registries.shapeRasterizer, {
       entry: null,
       onMiss: 'Unregistered',
       registry: 'GlShapeRasterizer',
       shape: 'slot',
     });
-    expect(runtime.registries.strokeTessellator).toEqual({
+    expectEntitySlot(runtime.registries.strokeTessellator, {
       entry: null,
       onMiss: 'Rasterize',
       registry: 'StrokeTessellator',
