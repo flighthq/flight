@@ -1,30 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type {
-  DesktopOsProfile,
-  EntityRuntimeKey,
-  HasClipboardText,
-  HasDialogDirectoryOpen,
-  HasDialogFileOpen,
-  HasDialogFileSave,
-  HasDialogMessage,
-  HasNotificationDelivery,
-  HasNotificationLifecycle,
-  HasNotificationPermission,
-  HasShellExternal,
-  HasShellPathOpen,
-  HasShellPathReveal,
-  HasShortcutQuery,
-  HasShortcutTrigger,
-  HasMenuApplication,
-  HasMenuPopup,
-  HasMenuSelect,
-  HasWindowAttach,
-  HasWindowOpen,
-  Host,
-  TauriApi,
-  TauriAppCapabilities,
-  TauriTrayCapabilitiesFor,
-} from '@flighthq/types/contract';
+import type { DesktopOsProfile, EntityRuntimeKey, TauriApi, TauriHost } from '@flighthq/types/contract';
 
 import { createTauriAppCapabilities } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
@@ -41,28 +16,6 @@ import { makeTauriShellCapabilities } from './tauriShell';
 import { createTauriShortcutQueryBackend, createTauriShortcutTriggerBackend } from './tauriShortcut';
 import { createTauriTrayCapabilities } from './tauriTray';
 import { createTauriWindowBackend } from './tauriWindow';
-
-type TauriHost<Profile extends DesktopOsProfile> = Host & {
-  readonly app: TauriAppCapabilities;
-  readonly tray: TauriTrayCapabilitiesFor<Profile>;
-} & HasClipboardText &
-  HasDialogDirectoryOpen &
-  HasDialogFileOpen &
-  HasDialogFileSave &
-  HasDialogMessage &
-  HasMenuApplication &
-  HasMenuPopup &
-  HasMenuSelect &
-  HasNotificationDelivery &
-  HasNotificationLifecycle &
-  HasNotificationPermission &
-  HasShellExternal &
-  HasShellPathOpen &
-  HasShellPathReveal &
-  HasShortcutQuery &
-  HasShortcutTrigger &
-  HasWindowAttach &
-  HasWindowOpen;
 
 // Builds the explicit Tauri host and installs capabilities that have not yet migrated from their
 // package-local seams. Run this once at app startup, passing an object that aggregates the Tauri v2 JS

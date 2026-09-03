@@ -35,10 +35,10 @@ export function resolveOneScene3DResourceTexture(
 // operations.
 export function resolveScene3DResources(
   scene: Readonly<Scene3D>,
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   options?: Readonly<ResolveScene3DResourcesOptions>,
 ): Scene3DResources {
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   const textures: Texture[] = [];
   getScene3DResourceTextures(textures, scene);
 
@@ -85,7 +85,7 @@ export function resolveScene3DResources(
 // visibility/priority working set; disposal remains the cancellation boundary for the retained resolver.
 export function updateScene3DResourceStreaming(
   scene: Readonly<Scene3D>,
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   options?: Readonly<UpdateScene3DResourceStreamingOptions>,
 ): Scene3DResources {
   const resources = resolveScene3DResources(scene, resolver, options);
@@ -107,10 +107,10 @@ function addScene3DResourceGroupsToWorkingSet(
 }
 
 function cancelDroppedResolutions(
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   working: ReadonlyMap<ImageResourceReference, readonly Texture[]>,
 ): void {
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   for (const [ref, entry] of runtime.inFlight) {
     const subscribers = working.get(ref);
     if (subscribers !== undefined && subscribers.length > 0) {
@@ -128,12 +128,12 @@ function cancelDroppedResolutions(
 }
 
 function finishScene3DResourceResolution(
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   ref: ImageResourceReference,
   entry: Scene3DResourceInFlight,
   source: TextureSource | null,
 ): void {
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   // Ignore a late settle whose entry was already cancelled or replaced by a newer request.
   if (runtime.inFlight.get(ref) !== entry) return;
   runtime.inFlight.delete(ref);
@@ -154,12 +154,12 @@ function finishScene3DResourceResolution(
 }
 
 function failScene3DResourceResolution(
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   ref: ImageResourceReference,
   entry: Scene3DResourceInFlight,
   cause: unknown,
 ): void {
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   if (runtime.inFlight.get(ref) !== entry) return;
   runtime.inFlight.delete(ref);
   // An abort is a cancel, not a failure: the ref was already reverted to Unresolved when dropped.
@@ -170,7 +170,7 @@ function failScene3DResourceResolution(
 }
 
 function bindResolvedScene3DResource(
-  resolver: Readonly<Scene3DResourceResolver>,
+  resolver: Readonly<Scene3DResourceResolverWithRuntime>,
   texture: Texture,
   ref: ImageResourceReference,
   source: TextureSource,
@@ -183,23 +183,23 @@ function bindResolvedScene3DResource(
 }
 
 function emitScene3DResourceEvent(
-  resolver: Readonly<Scene3DResourceResolver>,
+  resolver: Readonly<Scene3DResourceResolverWithRuntime>,
   texture: Texture,
   ref: ImageResourceReference,
   resolved: boolean,
 ): void {
-  const signals = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey].signals;
+  const signals = resolver[Scene3DResourceResolverRuntimeKey].signals;
   if (signals === null) return;
   const event = { ref, texture };
   emitSignal(resolved ? signals.onResourceResolved : signals.onResourceFailed, event);
 }
 
 function requestWorkingResolutions(
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   working: ReadonlyMap<ImageResourceReference, readonly Texture[]>,
   options?: Readonly<UpdateScene3DResourceStreamingOptions>,
 ): void {
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   for (const [ref, subscribers] of working) {
     const resolved = runtime.resolved.get(ref);
     if (resolved !== undefined) {

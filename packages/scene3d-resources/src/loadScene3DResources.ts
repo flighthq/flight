@@ -3,11 +3,10 @@ import type {
   ImageResourceReference,
   LoadScene3DResourcesOptions,
   Scene3D,
-  Scene3DResourceResolver,
+  Scene3DResourceResolverWithRuntime,
 } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
-import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { updateScene3DResourceStreaming } from './resolveScene3DResources';
 
@@ -16,14 +15,14 @@ import { updateScene3DResourceStreaming } from './resolveScene3DResources';
 // return. Progressive callers use updateScene3DResourceStreaming instead.
 export async function loadScene3DResources(
   scene: Readonly<Scene3D>,
-  resolver: Scene3DResourceResolver,
+  resolver: Scene3DResourceResolverWithRuntime,
   options?: Readonly<LoadScene3DResourcesOptions>,
 ): Promise<void> {
   const resources = updateScene3DResourceStreaming(scene, resolver, options);
   const refs = new Set<ImageResourceReference>();
   for (let i = 0; i < resources.resolved.length; i++) refs.add(resources.resolved[i].ref);
   for (let i = 0; i < resources.unresolved.length; i++) refs.add(resources.unresolved[i].ref);
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   const total = refs.size;
   let loaded = 0;
   const pending: Promise<void>[] = [];
@@ -48,8 +47,10 @@ export async function loadScene3DResources(
 
 // Waits for the loads that are pending at call time without revealing or exposing the resolver's
 // private request records. New work queued after the snapshot belongs to the caller's next bracket.
-export async function waitForScene3DResourceResolver(resolver: Readonly<Scene3DResourceResolver>): Promise<void> {
-  const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
+export async function waitForScene3DResourceResolver(
+  resolver: Readonly<Scene3DResourceResolverWithRuntime>,
+): Promise<void> {
+  const runtime = resolver[Scene3DResourceResolverRuntimeKey];
   const promises: Promise<void>[] = [];
   for (const entry of runtime.inFlight.values()) promises.push(entry.promise);
   await Promise.allSettled(promises);
