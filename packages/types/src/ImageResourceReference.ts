@@ -1,4 +1,5 @@
 import type { AlphaType } from './AlphaType';
+import type { Entity } from './Entity';
 import type { ImageBitmapComposition } from './ImageBitmapComposition';
 import type { ImageResource } from './ImageResource';
 import type { ResourceResolutionState } from './ResourceResolutionState';
@@ -40,13 +41,13 @@ export type ImageResourceFailureKind = (typeof ImageResourceFailureKind)[keyof t
 
 // A serialization-safe failure cause retained on the reference. Raw thrown values and Error objects
 // stay inside the async operation; diagnostics get the stable category, name, and message only.
-export interface ImageResourceFailure {
+export interface ImageResourceFailure extends Entity {
   kind: ImageResourceFailureKind;
   message: string;
   name: string | null;
 }
 
-interface ImageResourceReferenceBase {
+interface ImageResourceReferenceBase extends Entity {
   // Null until a terminal failure. Reset/retry clears it before the next request.
   failure: ImageResourceFailure | null;
   // The image MIME type (`image/png`, `image/jpeg`) when known — detected from the embedded bytes

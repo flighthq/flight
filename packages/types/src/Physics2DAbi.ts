@@ -30,7 +30,7 @@ export type Physics2DAbiExecutionStatus =
   | 'UnsupportedJoint'
   | 'UnsupportedShape';
 
-export interface Physics2DAbiExecutionResult {
+export interface Physics2DAbiExecutionResult extends Entity {
   status: Physics2DAbiExecutionStatus;
   commandIndex: number;
   byteOffset: number;
@@ -40,7 +40,7 @@ export interface Physics2DAbiExecutionResult {
 // A fixed-capacity, little-endian command stream. Writers return false without changing this record
 // when the next command cannot be encoded or does not fit; semantic validation happens when the backend
 // executes it. Capacity growth is explicit: allocate another buffer and rewrite the stream.
-export interface Physics2DAbiCommandBuffer {
+export interface Physics2DAbiCommandBuffer extends Entity {
   readonly data: Uint8Array<ArrayBufferLike>;
   byteLength: number;
   commandCount: number;
@@ -49,7 +49,7 @@ export interface Physics2DAbiCommandBuffer {
 // Structure-of-arrays body readback. `requiredCount` reports the complete answer and `count` the prefix
 // that fit. A selective read preserves the caller's id order and silently omits ids absent from the
 // world; an unfiltered read is ordered by ABI body id.
-export interface Physics2DAbiBodyBuffer {
+export interface Physics2DAbiBodyBuffer extends Entity {
   readonly ids: Uint32Array<ArrayBufferLike>;
   readonly flags: Uint32Array<ArrayBufferLike>;
   readonly values: Float64Array<ArrayBufferLike>;
@@ -62,7 +62,7 @@ export type Physics2DAbiContactSelection = 'All' | 'Began' | 'Ended';
 // Structure-of-arrays contact readback. Each contact occupies one id/flag row and one value row;
 // `pointStarts`/`pointCounts` select its points from the point arrays. Required counts describe the
 // whole answer even when the caller-provided capacities publish only a prefix.
-export interface Physics2DAbiContactBuffer {
+export interface Physics2DAbiContactBuffer extends Entity {
   readonly ids: Uint32Array<ArrayBufferLike>;
   readonly flags: Uint32Array<ArrayBufferLike>;
   readonly pointStarts: Uint32Array<ArrayBufferLike>;
@@ -94,7 +94,7 @@ export type Physics2DAbiStepStatus = 'BusyWorld' | 'Complete' | 'Declined' | 'In
 // Joint ids and their latest reaction. `flags` carries the Broken bit. Broken rows are one-read events;
 // reading this buffer consumes them. A kind that cannot report a reaction writes zeroes, exactly as
 // `writePhysics2DJointReaction` reports false in the standard API.
-export interface Physics2DAbiJointBuffer {
+export interface Physics2DAbiJointBuffer extends Entity {
   readonly ids: Uint32Array<ArrayBufferLike>;
   readonly flags: Uint32Array<ArrayBufferLike>;
   readonly values: Float64Array<ArrayBufferLike>;
@@ -105,7 +105,7 @@ export interface Physics2DAbiJointBuffer {
 // Query output shared by point, region, ray, and shape-cast calls. Point/region hits leave the geometric
 // value row zero. Rays and shape casts write fraction, point, and normal. `requiredCount` makes capacity
 // exhaustion distinguishable from an empty result without allocating from the query.
-export interface Physics2DAbiQueryBuffer {
+export interface Physics2DAbiQueryBuffer extends Entity {
   readonly bodyIds: Uint32Array<ArrayBufferLike>;
   readonly colliderIds: Uint32Array<ArrayBufferLike>;
   readonly values: Float64Array<ArrayBufferLike>;
