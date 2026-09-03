@@ -203,7 +203,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     },
   });
 
-  if (profile === 'linux') return { ...common, title } as unknown as TauriTrayCapabilitiesFor<Profile>;
+  if (profile === 'linux') return createEntity({ ...common, title }) as unknown as TauriTrayCapabilitiesFor<Profile>;
 
   const interactionEvents = createEntity({
     getSignal: (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null,
@@ -225,9 +225,11 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   });
 
   if (profile === 'windows') {
-    return { ...common, interactionEvents, tooltip } as unknown as TauriTrayCapabilitiesFor<Profile>;
+    return createEntity({ ...common, interactionEvents, tooltip }) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
-  return {
+  // The double cast is what a generic conditional return costs; createEntity is what makes the Entity
+  // arm of that claim true at runtime rather than only in the annotation.
+  return createEntity({
     ...common,
     interactionEvents,
     templateImage: createEntity({
@@ -239,7 +241,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     }),
     title,
     tooltip,
-  } as unknown as TauriTrayCapabilitiesFor<Profile>;
+  }) as unknown as TauriTrayCapabilitiesFor<Profile>;
 }
 
 function activeRecord(records: ReadonlyMap<TrayIcon, TrayRecord>, tray: TrayIcon): TrayRecord | null {
