@@ -16,7 +16,7 @@ export type StatusBarStyleEntryHandle = number;
 
 // Snapshot of the current status bar state, written into an `out` by getStatusBarInfo. Sentinel values
 // (height = -1) indicate the host does not report a field rather than throwing.
-export interface StatusBarInfo {
+export interface StatusBarInfo extends Entity {
   // Background color as a packed RGBA integer (0xRRGGBBAA, Flight convention); 0 when unknown.
   color: number;
   // Height in CSS pixels, or -1 when the host does not report it (web, desktops).

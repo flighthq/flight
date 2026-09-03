@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 
 // Stable identities shared by text parsing, logical validation, resource resolution, and scene
 // materialization. Limit values are intentionally not caller-configurable; the six limit identities
@@ -72,7 +72,7 @@ export type FlightDocumentRefusalReason =
 
 // One diagnostic shape spans every null-returning document seam. A field is null when that refusal
 // has no corresponding context; path is empty when the failure cannot be localized structurally.
-export interface FlightDocumentRefusalExplanation {
+export interface FlightDocumentRefusalExplanation extends Entity {
   actual: number | null;
   column: number | null;
   kind: Kind | null;

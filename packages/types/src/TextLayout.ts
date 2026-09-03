@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextDirection } from './TextDirection';
 import type { TextFormat } from './TextFormat';
@@ -7,7 +8,7 @@ import type { TextVerticalAlign } from './TextVerticalAlign';
 
 export type TextMeasureFunction = (text: string, format: TextFormat) => number;
 
-export interface TextLayoutGroup {
+export interface TextLayoutGroup extends Entity {
   ascent: number;
   descent: number;
   endIndex: number;
@@ -46,7 +47,7 @@ export interface TextLayoutParams {
   wordWrap?: boolean;
 }
 
-export interface TextLayoutResult {
+export interface TextLayoutResult extends Entity {
   groups: TextLayoutGroup[];
   lineAscents: number[];
   lineDescents: number[];
