@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
@@ -57,14 +58,14 @@ export function createBitmapText(glyphSource: GlyphSource | null, options?: Read
 }
 
 export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): BitmapTextData {
-  return {
+  return createEntity({
     align: data?.align ?? 'left',
     glyphSource: data?.glyphSource ?? null,
     letterSpacing: data?.letterSpacing ?? 0,
     lineHeight: data?.lineHeight ?? 1,
     text: data?.text ?? '',
     wrapWidth: data?.wrapWidth ?? null,
-  };
+  });
 }
 
 export function createBitmapTextRuntime(): BitmapTextRuntime {

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { ViewportAlign } from './ViewportAlign';
 
 export const AnchorLayoutKind = 'AnchorLayout';
@@ -113,7 +114,7 @@ export type LayoutResolver = (
 
 export type LayoutResolutionGuard = (explanation: Readonly<LayoutResolutionExplanation>) => void;
 
-export interface LayoutState {
+export interface LayoutState extends Entity {
   guard: LayoutResolutionGuard | null;
   lastFailureActualLength: number;
   lastFailureKind: LayoutResolutionFailureKind | null;

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types/contract';
 import type { ParticleObject } from '@flighthq/types/contract';
 
@@ -8,7 +9,7 @@ import { createParticleObjectsState } from './particleObjectsState';
 // Node-free SoA emitter fixture: applyParticleCollisions reads only `emitter.data`, so the display
 // node from @flighthq/particleemitter is not needed to unit-test the collision pass.
 function createEmitterFixture(capacity: number): ParticleEmitter2D {
-  const data: ParticleEmitterData = {
+  const data: ParticleEmitterData = createEntity({
     alphas: new Float32Array(capacity),
     atlas: null,
     colors: new Float32Array(capacity * 3),
@@ -18,7 +19,7 @@ function createEmitterFixture(capacity: number): ParticleEmitter2D {
     transforms: new Float32Array(capacity * 4),
     velocities: new Float32Array(capacity * 2),
     worldSpace: false,
-  };
+  });
   return { data, x: 0, y: 0 } as unknown as ParticleEmitter2D;
 }
 

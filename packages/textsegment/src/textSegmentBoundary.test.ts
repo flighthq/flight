@@ -1,3 +1,5 @@
+import { createEntity } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { HasTextSegmenter, TextSegmenterBackend } from '@flighthq/types/contract';
 
 import {
@@ -71,11 +73,11 @@ describe('getPreviousWordBoundary', () => {
 
 describe('getWordRangeAt', () => {
   it('threads an explicit host through the boundary helper', () => {
-    const explicit: TextSegmenterBackend = {
+    const explicit = createEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>({
       segment: (text) => [{ start: 0, end: text.length, text, isWordLike: true }],
-    };
+    });
     const host: HasTextSegmenter = { text: { segmenter: explicit } };
-    setTextSegmenterBackend({ segment: () => [] });
+    setTextSegmenterBackend(createEntity({ segment: () => [] }));
     expect(getWordRangeAt('word', 1, undefined, host)).toEqual({ start: 0, end: 4 });
   });
 
@@ -97,12 +99,14 @@ describe('getWordRangeAt', () => {
 
   it('threads the locale to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    setTextSegmenterBackend({
-      segment(text, _granularity, locale) {
-        seenLocale = locale;
-        return [{ start: 0, end: text.length, text, isWordLike: true }];
-      },
-    });
+    setTextSegmenterBackend(
+      createEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>({
+        segment(text, _granularity, locale) {
+          seenLocale = locale;
+          return [{ start: 0, end: text.length, text, isWordLike: true }];
+        },
+      }),
+    );
     getWordRangeAt('word', 1, 'ja-JP');
     expect(seenLocale).toBe('ja-JP');
   });

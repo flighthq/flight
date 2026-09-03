@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // The @flighthq/assets header. An id-keyed asset library layered over @flighthq/loader (scheduling)
@@ -70,7 +71,7 @@ export interface AssetLibraryRuntime {
 // The id-keyed asset library entity. All state lives on the opaque runtime; create with
 // createAssetLibrary, register per-type loaders with registerAssetLoader, declare assets with
 // registerAssetDescriptor/registerAssetManifest, then acquire/release by id or preload by named group.
-export interface AssetLibrary {
+export interface AssetLibrary extends Entity {
   runtime: AssetLibraryRuntime;
 }
 

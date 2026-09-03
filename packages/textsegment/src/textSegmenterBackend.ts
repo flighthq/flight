@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   HasTextSegmenter,
   TextSegment,
@@ -12,7 +13,7 @@ import type {
 // engine), segment() returns [] rather than throwing; compose a from-scratch UAX #29 backend into
 // the host for those environments.
 export function createWebTextSegmenterBackend(): TextSegmenterBackend {
-  return { segment: segmentWithIntlSegmenter };
+  return createEntity({ segment: segmentWithIntlSegmenter });
 }
 
 // Stable bundled web provider. Hosts can import this directly when composing their explicit

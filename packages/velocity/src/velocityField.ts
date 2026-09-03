@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Velocity2D, VelocityExplanation, VelocityField, VelocitySample } from '@flighthq/types/contract';
 
 // The VelocityField is the generic seam: any system (physics, tween, camera, manual edit) contributes a
@@ -55,7 +56,7 @@ export function copyVelocity(out: Velocity2D, source: Readonly<Velocity2D>): Vel
 }
 
 export function createVelocityField(): VelocityField {
-  return { samples: new WeakMap(), frameId: 0 };
+  return createEntity({ samples: new WeakMap(), frameId: 0 });
 }
 
 // Exponential moving average (EMA) of velocity across frames. Useful for jitter-free motion buffers.
