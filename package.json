@@ -109,6 +109,8 @@
     "electron:review": "tsx ./scripts/electron-tool.ts review",
     "electron:review:examples": "tsx ./scripts/electron-tool.ts review:examples",
     "electron:review:functional": "tsx ./scripts/electron-tool.ts review:functional",
+    "entity-contracts:check": "tsx ./scripts/entity-contracts.ts",
+    "entity-contracts:create-report": "tsx ./scripts/entity-contracts.ts --create-report",
     "evidence": "tsx ./scripts/capture-evidence.ts",
     "evidence:baseline": "tsx ./scripts/capture-evidence.ts --update",
     "evidence:check": "tsx ./scripts/capture-evidence.ts --check",
