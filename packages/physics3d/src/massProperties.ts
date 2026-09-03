@@ -1,4 +1,5 @@
 import { writeCollisionConvexHullFaces3D } from '@flighthq/collision/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { Physics3DCollider, Physics3DMassData, RigidBody3D } from '@flighthq/types/contract';
 
 import {
@@ -371,7 +372,7 @@ export function computePhysics3DSphereMassData(radius: number, density: number, 
 // Allocates a zeroed mass-data record — no mass, no inertia, centred on the origin. The identity for
 // `combinePhysics3DMassData`, so an assembly starts here and accumulates.
 export function createPhysics3DMassData(): Physics3DMassData {
-  return {
+  return createEntity({
     mass: 0,
     inertiaXX: 0,
     inertiaYY: 0,
@@ -382,7 +383,7 @@ export function createPhysics3DMassData(): Physics3DMassData {
     centerX: 0,
     centerY: 0,
     centerZ: 0,
-  };
+  });
 }
 
 // Writes mass data onto a body, deriving the inverse mass and the LOCAL inverse inertia tensor.

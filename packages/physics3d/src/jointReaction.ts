@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Physics3DJoint, Physics3DJointReaction, Physics3DWorld } from '@flighthq/types/contract';
 
 // What a joint is CARRYING — the force and torque its constraint applied over the sub-interval just
@@ -48,7 +49,7 @@ export function clearPhysics3DJointReaction(out: Physics3DJointReaction): void {
 }
 
 export function createPhysics3DJointReaction(): Physics3DJointReaction {
-  return { forceX: 0, forceY: 0, forceZ: 0, torqueX: 0, torqueY: 0, torqueZ: 0 };
+  return createEntity({ forceX: 0, forceY: 0, forceZ: 0, torqueX: 0, torqueY: 0, torqueZ: 0 });
 }
 
 export function getPhysics3DJointReactionForce(reaction: Readonly<Physics3DJointReaction>): number {

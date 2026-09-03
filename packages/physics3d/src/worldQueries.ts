@@ -3,6 +3,7 @@ import {
   createCollisionTimeOfImpact3D,
   getCollisionShapeContainsPoint3D,
 } from '@flighthq/collision/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape3D,
   CollisionRaycastHit3D,
@@ -45,15 +46,15 @@ export function createPhysics3DQueryFilter(): Physics3DQueryFilter {
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
 // rewrite them and publish only `hitCount`, so picking can run each frame without garbage.
 export function createPhysics3DQueryResult(): Physics3DQueryResult {
-  return { hits: [], hitCount: 0 };
+  return createEntity({ hits: [], hitCount: 0 });
 }
 
 export function createPhysics3DRayResult(): Physics3DRayResult {
-  return { hits: [], hitCount: 0 };
+  return createEntity({ hits: [], hitCount: 0 });
 }
 
 export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
-  return {
+  return createEntity({
     body: null,
     collider: null,
     colliderIndex: -1,
@@ -65,7 +66,7 @@ export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
     x: 0,
     y: 0,
     z: 0,
-  };
+  });
 }
 
 // Writes every collider containing the world-space point. Broadphase candidates are confirmed by the
@@ -547,12 +548,12 @@ function releasePhysics3DQueryScratch(scratch: Physics3DQueryScratch): void {
 
 // A stand-in collider so a bare shape can reuse `writePhysics3DColliderBounds`. Only `world` is read by
 // that function; the rest is filled to keep the object one shape rather than a partial.
-const shapeCastProbe: Physics3DCollider = {
+const shapeCastProbe: Physics3DCollider = createEntity({
   filter: { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff },
   local: { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 },
   material: { density: 0, friction: 0, restitution: 0 },
   sensor: false,
   world: { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 },
-};
+});
 
 const physics3DQueryScratchPool: Physics3DQueryScratch[] = [createPhysics3DQueryScratch()];

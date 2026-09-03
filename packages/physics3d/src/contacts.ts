@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/contract';
 
 // Constructors for the contact records the step consumes.
@@ -29,7 +30,7 @@ import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/co
 // must point so that resolving pushes A out of B.
 export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA = 0, colliderB = 0): Physics3DContact {
   const ordered = bodyA <= bodyB;
-  return {
+  return createEntity({
     bodyA: ordered ? bodyA : bodyB,
     bodyB: ordered ? bodyB : bodyA,
     colliderA: ordered ? colliderA : colliderB,
@@ -44,14 +45,14 @@ export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA =
     enabled: true,
     sensor: false,
     touching: false,
-  };
+  });
 }
 
 // Allocates one contact point, zeroed. `featureId` is the caller's to assign and is opaque to this
 // package: its only contract is that the SAME physical feature carries the SAME id between steps, which is
 // what lets the solver match this step's points against last step's accumulators.
 export function createPhysics3DContactPoint(): Physics3DContactPoint {
-  return {
+  return createEntity({
     x: 0,
     y: 0,
     z: 0,
@@ -63,5 +64,5 @@ export function createPhysics3DContactPoint(): Physics3DContactPoint {
     rBX: 0,
     rBY: 0,
     rBZ: 0,
-  };
+  });
 }

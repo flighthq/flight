@@ -13,7 +13,7 @@ import type {
 import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase';
 import { collidePhysics3DColliderShapes, sweepPhysics3DColliderShapes } from './colliderCollision';
 import { updatePhysics3DColliderWorldShape } from './colliderTransform';
-import { createPhysics3DContactPoint } from './contacts';
+import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
 import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate';
 import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
 import { isPhysics3DPairOrdered } from './jointRegistry';
@@ -559,22 +559,13 @@ function writePhysics3DImpactContact(
 
   scratch.contactCreated = contact === null;
   if (contact === null) {
-    contact = {
-      bodyA: scratch.bodyA,
-      bodyB: scratch.bodyB,
-      colliderA: scratch.colliderA,
-      colliderB: scratch.colliderB,
-      normalX: scratch.normalX,
-      normalY: scratch.normalY,
-      normalZ: scratch.normalZ,
-      pointCount: 0,
-      points: [],
-      friction: scratch.friction,
-      restitution: scratch.restitution,
-      enabled: true,
-      sensor: false,
-      touching: true,
-    };
+    contact = createPhysics3DContact(scratch.bodyA, scratch.bodyB, scratch.colliderA, scratch.colliderB);
+    contact.normalX = scratch.normalX;
+    contact.normalY = scratch.normalY;
+    contact.normalZ = scratch.normalZ;
+    contact.friction = scratch.friction;
+    contact.restitution = scratch.restitution;
+    contact.touching = true;
     world.contacts.push(contact);
     world.events.began.push(contact);
   }
@@ -641,22 +632,15 @@ function reportPhysics3DSensorImpact(
   }
 
   const pointCount = rotational ? scratch.rotationalManifold.pointCount : 1;
-  const contact: Physics3DContact = {
-    bodyA: bodyA.index,
-    bodyB: bodyB.index,
-    colliderA: colliderAIndex,
-    colliderB: colliderBIndex,
-    normalX: impact.normalX,
-    normalY: impact.normalY,
-    normalZ: impact.normalZ,
-    pointCount,
-    points: [],
-    friction: mixPhysics3DFriction(colliderA.material.friction, colliderB.material.friction),
-    restitution: mixPhysics3DRestitution(colliderA.material.restitution, colliderB.material.restitution),
-    enabled: true,
-    sensor: true,
-    touching: true,
-  };
+  const contact = createPhysics3DContact(bodyA.index, bodyB.index, colliderAIndex, colliderBIndex);
+  contact.normalX = impact.normalX;
+  contact.normalY = impact.normalY;
+  contact.normalZ = impact.normalZ;
+  contact.pointCount = pointCount;
+  contact.friction = mixPhysics3DFriction(colliderA.material.friction, colliderB.material.friction);
+  contact.restitution = mixPhysics3DRestitution(colliderA.material.restitution, colliderB.material.restitution);
+  contact.sensor = true;
+  contact.touching = true;
   for (let pointIndex = 0; pointIndex < pointCount; pointIndex += 1) {
     const source = rotational ? scratch.rotationalManifold.points[pointIndex] : impact;
     const point = createPhysics3DContactPoint();

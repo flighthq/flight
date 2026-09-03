@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/collision": "*",
+    "@flighthq/entity": "*",
     "@flighthq/physics3d": "*",
     "@flighthq/types": "*"
   },

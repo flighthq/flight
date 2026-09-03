@@ -1,4 +1,5 @@
 import type { CollisionBuiltInShape3D } from './Collision';
+import type { Entity } from './Entity';
 import type { Physics3DQueryFilter } from './Physics3D';
 import type { SpatialAabb3D } from './Spatial';
 
@@ -29,7 +30,7 @@ export type Physics3DAbiExecutionStatus =
   | 'UnsupportedJoint'
   | 'UnsupportedShape';
 
-export interface Physics3DAbiExecutionResult {
+export interface Physics3DAbiExecutionResult extends Entity {
   status: Physics3DAbiExecutionStatus;
   commandIndex: number;
   byteOffset: number;
@@ -39,7 +40,7 @@ export interface Physics3DAbiExecutionResult {
 // A fixed-capacity, little-endian command stream. Writers return false without changing this record
 // when the next command cannot be encoded or does not fit; semantic validation happens when the backend
 // executes it. Capacity growth is explicit: allocate another buffer and rewrite the stream.
-export interface Physics3DAbiCommandBuffer {
+export interface Physics3DAbiCommandBuffer extends Entity {
   readonly data: Uint8Array<ArrayBufferLike>;
   byteLength: number;
   commandCount: number;
@@ -48,7 +49,7 @@ export interface Physics3DAbiCommandBuffer {
 // Structure-of-arrays body readback. `requiredCount` reports the complete answer and `count` the prefix
 // that fit. A selective read preserves the caller's id order and silently omits ids absent from the
 // world; an unfiltered read is ordered by ABI body id.
-export interface Physics3DAbiBodyBuffer {
+export interface Physics3DAbiBodyBuffer extends Entity {
   readonly ids: Uint32Array<ArrayBufferLike>;
   readonly flags: Uint32Array<ArrayBufferLike>;
   readonly values: Float64Array<ArrayBufferLike>;
@@ -61,7 +62,7 @@ export type Physics3DAbiContactSelection = 'All' | 'Began' | 'Ended';
 // Structure-of-arrays contact readback. Each contact occupies one id/flag row and one value row;
 // `pointStarts`/`pointCounts` select its points from the point arrays. Required counts describe the
 // whole answer even when the caller-provided capacities publish only a prefix.
-export interface Physics3DAbiContactBuffer {
+export interface Physics3DAbiContactBuffer extends Entity {
   readonly ids: Uint32Array<ArrayBufferLike>;
   readonly flags: Uint32Array<ArrayBufferLike>;
   readonly pointStarts: Uint32Array<ArrayBufferLike>;
@@ -91,7 +92,7 @@ export type Physics3DAbiStepStatus = 'BusyWorld' | 'Complete' | 'Declined' | 'In
 
 // Joint ids and their latest reaction. `flags` carries the Broken bit. A kind that cannot report a
 // reaction writes zeroes, exactly as `writePhysics3DJointReaction` reports false in the standard API.
-export interface Physics3DAbiJointBuffer {
+export interface Physics3DAbiJointBuffer extends Entity {
   readonly ids: Uint32Array<ArrayBufferLike>;
   readonly flags: Uint32Array<ArrayBufferLike>;
   readonly values: Float64Array<ArrayBufferLike>;
@@ -102,7 +103,7 @@ export interface Physics3DAbiJointBuffer {
 // Query output shared by point, region, ray, and shape-cast calls. Point/region hits leave the geometric
 // value row zero. Rays and shape casts write fraction, point, and normal. `requiredCount` makes capacity
 // exhaustion distinguishable from an empty result without allocating from the query.
-export interface Physics3DAbiQueryBuffer {
+export interface Physics3DAbiQueryBuffer extends Entity {
   readonly bodyIds: Uint32Array<ArrayBufferLike>;
   readonly colliderIds: Uint32Array<ArrayBufferLike>;
   readonly values: Float64Array<ArrayBufferLike>;
@@ -115,7 +116,7 @@ export interface Physics3DAbiQueryBuffer {
 // codec and convenience function. A zero-copy native shadow may additionally replace the buffer
 // constructors with identical records backed by its linear memory; the typed-array fields deliberately
 // accept every ArrayBufferLike backing for that reason.
-export interface Physics3DAbi {
+export interface Physics3DAbi extends Entity {
   readonly version: number;
   readonly capabilities: number;
   createWorld(): Physics3DAbiWorldHandle;

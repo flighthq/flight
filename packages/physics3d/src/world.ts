@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
   CollisionColliderShape3D,
@@ -252,7 +253,7 @@ export function createPhysics3DCollider(
   sensor = false,
 ): Physics3DCollider {
   const ownedLocal = cloneCollisionColliderShape3D(local);
-  return {
+  return createEntity({
     local: ownedLocal,
     world: createPhysics3DColliderWorldShape(ownedLocal),
     material: {
@@ -266,7 +267,7 @@ export function createPhysics3DCollider(
       groupIndex: filter?.groupIndex ?? 0,
     },
     sensor,
-  };
+  });
 }
 
 // The default sequential-impulse tuning. Eight velocity iterations and three position iterations are
@@ -305,7 +306,7 @@ export function createPhysics3DSolverConfig(): Physics3DSolverConfig {
 // world spanning kilometres or carrying bodies at widely different scales, say — hands over the BVH or
 // its own implementation without this package changing.
 export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWorld {
-  return {
+  return createEntity({
     version: Physics3DWorldVersion,
     bodies: [],
     bodyByIndex: new Map(),
@@ -342,14 +343,14 @@ export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWo
     gravityZ: 0,
     previousTimestep: 0,
     nextBodyIndex: 0,
-  };
+  });
 }
 
 // Allocates a body at rest at the origin, with no mass. It is not in any world until added, and it will
 // not move until given mass: a dynamic body with zero mass carries a zero inverse mass, which is the
 // same immovable sentinel a static body carries.
 export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBody3D {
-  return {
+  return createEntity({
     index: -1,
     type,
     x: 0,
@@ -403,7 +404,7 @@ export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBod
     sleepEnabled: true,
     sleepTimer: 0,
     colliders: [],
-  };
+  });
 }
 
 // Looks a body up by its persistent index, or null when no body in this world carries it. The

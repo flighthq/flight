@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -101,24 +102,24 @@ describe('createPhysics3DAbi', () => {
   it('executes and reads through caller-owned shared-memory views', () => {
     const abi = createPhysics3DAbi();
     const world = createPhysics3DAbiWorld(abi);
-    const commands: Physics3DAbiCommandBuffer = {
+    const commands: Physics3DAbiCommandBuffer = createEntity({
       data: new Uint8Array(new SharedArrayBuffer(512)),
       byteLength: 0,
       commandCount: 0,
-    };
+    });
     clearPhysics3DAbiCommandBuffer(commands);
     const body = createRigidBody3D();
     body.x = 17;
     expect(writePhysics3DAbiSetBodyCommand(commands, 3, body)).toBe(true);
     executeOrThrow(abi, world, commands);
 
-    const out: Physics3DAbiBodyBuffer = {
+    const out: Physics3DAbiBodyBuffer = createEntity({
       ids: new Uint32Array(new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT)),
       flags: new Uint32Array(new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT)),
       values: new Float64Array(new SharedArrayBuffer(Physics3DAbiBodyValueStride * Float64Array.BYTES_PER_ELEMENT)),
       count: 0,
       requiredCount: 0,
-    };
+    });
     expect(readPhysics3DAbiBodies(abi, world, null, out)).toBe(true);
     expect(out.ids[0]).toBe(3);
     expect(out.values[Physics3DAbiBodyValue.X]).toBe(17);

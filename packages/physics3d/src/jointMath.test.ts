@@ -2,6 +2,7 @@ import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from '@flighth
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories';
 import {
   applyPhysics3DJointAngularImpulse,
   applyPhysics3DJointImpulse,
@@ -573,33 +574,9 @@ function cross(aX: number, aY: number, aZ: number, bX: number, bY: number, bZ: n
 }
 
 function createTestJoint(): Physics3DJoint {
-  return {
-    kind: 'Test',
-    bodyA: 0,
-    bodyB: 1,
-    localAnchorAX: 0,
-    localAnchorAY: 0,
-    localAnchorAZ: 0,
-    localAnchorBX: 0,
-    localAnchorBY: 0,
-    localAnchorBZ: 0,
-    collideConnected: false,
-    breakForce: Number.POSITIVE_INFINITY,
-    breakTorque: Number.POSITIVE_INFINITY,
-    broken: false,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    impulse3: 0,
-    impulse4: 0,
-    impulse5: 0,
-    rAX: 0,
-    rAY: 0,
-    rAZ: 0,
-    rBX: 0,
-    rBY: 0,
-    rBZ: 0,
-  };
+  const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+  joint.kind = 'Test';
+  return joint;
 }
 
 function createUnitBody(): RigidBody3D {

@@ -1,6 +1,7 @@
 import type { Physics3DContact, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { createPhysics3DContact as createPhysics3DContactRecord, createPhysics3DContactPoint } from './contacts';
 import { refreshRigidBody3DWorldInertia } from './integrate';
 import {
   buildPhysics3DSolveIslands,
@@ -371,34 +372,15 @@ function createBox(world: Physics3DWorld): RigidBody3D {
 }
 
 function createContact(bodyA: number, bodyB: number): Physics3DContact {
-  return {
-    bodyA,
-    bodyB,
-    colliderA: 0,
-    colliderB: 0,
-    enabled: true,
-    friction: 0,
-    normalX: 0,
-    normalY: 1,
-    normalZ: 0,
-    pointCount: 1,
-    points: [
-      {
-        depth: 0.01,
-        featureId: 1,
-        rAX: 0,
-        rAY: -0.5,
-        rAZ: 0,
-        rBX: 0,
-        rBY: 0.5,
-        rBZ: 0,
-        x: 0,
-        y: 0,
-        z: 0,
-      },
-    ],
-    restitution: 0,
-    sensor: false,
-    touching: true,
-  };
+  const contact = createPhysics3DContactRecord(bodyA, bodyB);
+  const point = createPhysics3DContactPoint();
+  point.depth = 0.01;
+  point.featureId = 1;
+  point.rAY = -0.5;
+  point.rBY = 0.5;
+  contact.normalY = 1;
+  contact.pointCount = 1;
+  contact.points.push(point);
+  contact.touching = true;
+  return contact;
 }

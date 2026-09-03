@@ -1,4 +1,5 @@
 import type { CollisionColliderShape3D } from './Collision';
+import type { Entity } from './Entity';
 import type { SpatialIndexBackend3D } from './Spatial';
 
 // 3D rigid-body dynamics header. `@flighthq/physics3d` owns integration and constraint resolution in
@@ -66,7 +67,7 @@ export interface Physics3DCollisionFilter {
 // what its parameters mean. The convex built-ins carry mass; triangle mesh and heightfield are static
 // surfaces with no mass contribution and are rejected on dynamic or kinematic bodies. A vendor shape
 // still reaches `testCollision3D` through the registries; it does not become a rigid body here.
-export interface Physics3DCollider {
+export interface Physics3DCollider extends Entity {
   // The authored shape, in the body's LOCAL frame.
   local: CollisionColliderShape3D;
   // The world-space shape, rewritten every step. Its KIND may differ from `local`'s: a rotated
@@ -93,7 +94,7 @@ export interface Physics3DCollider {
 // sphere, box, or capsule, and false the moment two such primitives are combined at an offset. Storing
 // the general symmetric form rather than three principal moments is what lets primitives combine by the
 // parallel-axis theorem without an eigenvalue solve.
-export interface Physics3DMassData {
+export interface Physics3DMassData extends Entity {
   mass: number;
   inertiaXX: number;
   inertiaYY: number;
@@ -117,7 +118,7 @@ export interface Physics3DMassData {
 // — and therefore the warm-start cache — stable while the bodies move. Geometry cannot supply that
 // order, because any order derived from coordinates flips the moment those coordinates cross. Identity
 // survives motion; position does not.
-export interface RigidBody3D {
+export interface RigidBody3D extends Entity {
   index: number;
   // Once inserted, change participation through `setPhysics3DBodyType` so mass and constraints follow.
   type: Physics3DBodyType;
@@ -245,7 +246,7 @@ export interface RigidBody3D {
 // `featureId` is an opaque, frame-stable identifier for WHICH feature pair produced this point, so a
 // solver can match this step's points against last step's accumulators and warm-start. Stability across
 // steps is the whole contract; the value itself means nothing.
-export interface Physics3DContactPoint {
+export interface Physics3DContactPoint extends Entity {
   x: number;
   y: number;
   z: number;
@@ -274,7 +275,7 @@ export interface Physics3DContactPoint {
 //
 // `friction` and `restitution` are the combined surface values for the pair, mixed once when the
 // contact is created rather than re-derived per iteration.
-export interface Physics3DContact {
+export interface Physics3DContact extends Entity {
   bodyA: number;
   bodyB: number;
   // Indices into each body's `colliders`. Contact identity is the FOUR of these together, not the body
@@ -339,7 +340,7 @@ export interface Physics3DContactHooks {
 // pair is solved as a coupled cone rather than two independent axes, because clamping each to
 // `mu * normalImpulse` separately permits a combined magnitude up to `sqrt(2) * mu * normalImpulse`
 // along the diagonal — a box that slides measurably faster at 45 degrees than along either axis.
-export interface Physics3DContactConstraintPoint {
+export interface Physics3DContactConstraintPoint extends Entity {
   featureId: number;
 
   normalImpulse: number;
@@ -359,7 +360,7 @@ export interface Physics3DContactConstraintPoint {
 
 // The solver's per-contact working set: the friction basis and the accumulators. Rebuilt each step from
 // the contact list and carried across steps so warm starting has something to start from.
-export interface Physics3DContactConstraint {
+export interface Physics3DContactConstraint extends Entity {
   // Index into `Physics3DWorld.contacts`, valid for the duration of one step.
   contact: number;
 
@@ -535,7 +536,7 @@ export type Physics3DJointKind = string;
 // ball-and-socket means three linear components at the anchor; a hinge means those plus two angular
 // rows; a 6-DOF may use all six. Only the kind knows, which is why turning them back into an impulse is
 // the solver's `warmStart` rather than a generic service.
-export interface Physics3DJoint {
+export interface Physics3DJoint extends Entity {
   kind: Physics3DJointKind;
   bodyA: number;
   bodyB: number;
@@ -664,7 +665,7 @@ export interface Physics3DJointFrames {
 //
 // A FORCE, not an impulse: the solver accumulates impulses, and dividing by the sub-interval turns a
 // quantity that changes with timestep into one that does not.
-export interface Physics3DJointReaction {
+export interface Physics3DJointReaction extends Entity {
   forceX: number;
   forceY: number;
   forceZ: number;
@@ -1013,7 +1014,7 @@ export interface Physics3DGeneric6DofJointOptions extends Physics3DJointFrameOpt
 //
 // `gravityX`/`gravityY`/`gravityZ` is an acceleration, scaled per body by `gravityScale`, so a balloon
 // is one field rather than a special case in the integrator.
-export interface Physics3DWorld {
+export interface Physics3DWorld extends Entity {
   // Version of the serializable physics fields on this record. Runtime-owned maps and solver registries
   // are reconstructed by the caller's format layer; `hydratePhysics3DWorld` upgrades older reconstructed
   // records before they enter the explicit step path.
@@ -1093,7 +1094,7 @@ export interface Physics3DQueryHit {
 // A reusable query buffer. Entries stay allocated at their HIGH-WATER MARK and only `hitCount` is
 // published, so a pointer-picking loop that runs every frame allocates nothing after its first busy
 // frame. Entries at or beyond `hitCount` hold stale values by design and must not be read.
-export interface Physics3DQueryResult {
+export interface Physics3DQueryResult extends Entity {
   hits: Physics3DQueryHit[];
   hitCount: number;
 }
@@ -1124,7 +1125,7 @@ export interface Physics3DRayHit extends Physics3DQueryHit {
   normalZ: number;
 }
 
-export interface Physics3DRayResult {
+export interface Physics3DRayResult extends Entity {
   hits: Physics3DRayHit[];
   hitCount: number;
 }
@@ -1148,7 +1149,7 @@ export interface Physics3DRayResult {
 // matching the ray hits, so a caller acts on what it found without a second lookup — but this result is
 // ONE slot rather than a list, so there is no un-published entry to leave stale and the miss has to be
 // representable in the slot itself.
-export interface Physics3DShapeCastResult {
+export interface Physics3DShapeCastResult extends Entity {
   body: RigidBody3D | null;
   collider: Physics3DCollider | null;
   colliderIndex: number;
@@ -1194,7 +1195,7 @@ export interface Physics3DDebugSphere {
 
 // Arrays retain their high-water capacity; only entries below the corresponding count are live. That
 // lets a caller keep one buffer and refill it every frame without allocating as the scene fluctuates.
-export interface Physics3DDebugGeometry {
+export interface Physics3DDebugGeometry extends Entity {
   lines: Physics3DDebugLine[];
   lineCount: number;
   spheres: Physics3DDebugSphere[];
