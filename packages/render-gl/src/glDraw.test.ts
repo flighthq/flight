@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Bitmap, CompressedImageResource, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
@@ -1062,12 +1063,13 @@ describe('useGlProgram', () => {
   it('uses the registered bitmap shader program and locations', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    const shader = {
+    const program = {} as WebGLProgram;
+    const locations = { ...runtime.defaultBitmapShader!.locations, program };
+    const shader = createEntity({
       bind: vi.fn(),
-      locations: { ...runtime.defaultBitmapShader!.locations, program: {} as WebGLProgram },
-      program: {} as WebGLProgram,
-    };
-    shader.locations.program = shader.program;
+      locations,
+      program,
+    });
 
     registerGlBitmapShader(state, shader);
     useGlProgram(state);

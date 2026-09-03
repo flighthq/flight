@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { GlShader } from './GlShader';
 
 export interface GlShaderLocations {
@@ -12,6 +13,7 @@ export interface GlShaderLocations {
   locTexture: WebGLUniformLocation;
 }
 
-export type GlBitmapShader = GlShader & {
-  readonly locations: GlShaderLocations;
-};
+export type GlBitmapShader = Entity &
+  GlShader & {
+    readonly locations: GlShaderLocations;
+  };
