@@ -1,9 +1,15 @@
 import { copyRectangle, matrixTransformPointXY } from '@flighthq/geometry/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { getNodeWorldBoundsRectangle, getNodeWorldMatrix } from '@flighthq/node/contract';
-import type { GizmoNode2DFeatures, Node2D, Rectangle, Vector2Like } from '@flighthq/types/contract';
+import type {
+  GizmoNode2DFeatures,
+  Node2D,
+  NonEntityCreateResult,
+  Rectangle,
+  Vector2Like,
+} from '@flighthq/types/contract';
 
-export function createNode2DGizmoFeatures(): GizmoNode2DFeatures<Node2D> {
+export function createNode2DGizmoFeatures(): NonEntityCreateResult<GizmoNode2DFeatures<Node2D>, 'type-only'> {
   return {
     getWorldBoundsRectangle: getNode2DGizmoWorldBoundsRectangle,
     getWorldOrigin: getNode2DGizmoWorldOrigin,

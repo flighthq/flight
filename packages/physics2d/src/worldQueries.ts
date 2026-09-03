@@ -10,6 +10,7 @@ import type {
   CollisionBuiltInShape2D,
   CollisionRaycastHit2D,
   CollisionTimeOfImpact2D,
+  NonEntityCreateResult,
   Physics2DCollider,
   Physics2DQueryFilter,
   Physics2DQueryResult,
@@ -25,7 +26,7 @@ import { synchronizePhysics2DBroadphase } from './broadphase';
 import { writePhysics2DColliderBounds } from './colliderTransform';
 import { findPhysics2DBody } from './world';
 
-export function createPhysics2DQueryFilter(): Physics2DQueryFilter {
+export function createPhysics2DQueryFilter(): NonEntityCreateResult<Physics2DQueryFilter, 'options'> {
   return {
     categoryBits: 0xffffffff,
     maskBits: 0xffffffff,

@@ -1,5 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import type {
+  NonEntityCreateResult,
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterial,
   StandardPbrMaterialProperties,
@@ -116,7 +117,7 @@ export function createStandardPbrMaterial(opts?: Readonly<Partial<StandardPbrMat
 // or the surface trailer.
 export function createStandardPbrMaterialProperties(
   opts?: Readonly<Partial<StandardPbrMaterialProperties>>,
-): StandardPbrMaterialProperties {
+): NonEntityCreateResult<StandardPbrMaterialProperties, 'descriptor'> {
   const properties = {} as StandardPbrMaterialProperties;
   assignStandardPbrMaterialProperties(properties, opts);
   return properties;

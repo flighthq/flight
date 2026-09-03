@@ -1,6 +1,8 @@
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { NonEntityCreateResult, ParticleEmitterConfig } from '@flighthq/types/contract';
 
-export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
+export function createParticleEmitterConfig(
+  config?: Partial<ParticleEmitterConfig>,
+): NonEntityCreateResult<ParticleEmitterConfig, 'options'> {
   return {
     alphaCurve: config?.alphaCurve ?? null,
     alphaEnd: config?.alphaEnd ?? 0,
