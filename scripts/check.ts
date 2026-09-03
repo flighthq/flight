@@ -79,6 +79,7 @@ if (!scoped) {
   // `npm run check` and was attested green. A gate the standard check cannot reach is one that
   // eventually goes unrun.
   add('backend-lifecycle:check', 'tsx', ['scripts/backend-lifecycle.ts']);
+  add('entity-contracts:check', 'tsx', ['scripts/entity-contracts.ts']);
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
   // Advisory, and deliberately not a gate. `create*` is useful API-design evidence, but a function
   // can legitimately create a non-Entity value. The baseline makes additions and resolved entries
