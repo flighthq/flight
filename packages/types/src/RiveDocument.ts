@@ -1,6 +1,7 @@
 import type { AdvancedBlendMode } from './AdvancedBlendMode';
 import type { AnimationClip } from './AnimationClip';
 import type { DisplayObject } from './DisplayObject';
+import type { Entity } from './Entity';
 import type { ImageResourceReference } from './ImageResourceReference';
 import type { LayoutTree } from './Layout';
 import type { Scene2DSlotReference } from './Scene2DDocument';
@@ -117,7 +118,7 @@ export interface RiveArtboardGraph {
 }
 
 /** Every artboard in a `.riv`, each with its component tree resolved. */
-export interface RiveObjectGraph {
+export interface RiveObjectGraph extends Entity {
   artboards: RiveArtboardGraph[];
 }
 
@@ -346,7 +347,7 @@ export interface RiveScene2DDocumentResult {
 }
 
 /** The result of importing a `.riv`: every artboard it declares, in file order. */
-export interface RiveDocumentImportResult {
+export interface RiveDocumentImportResult extends Entity {
   artboards: RiveArtboardImport[];
   /** Every asset the file declares, in the order it declares them — which is how they are addressed. */
   assets: RiveFileAsset[];

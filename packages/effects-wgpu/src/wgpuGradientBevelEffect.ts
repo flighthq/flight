@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
+  EntityWithoutRuntime,
   GradientBevelEffect,
   WgpuRenderEffectRunner,
   WgpuRenderState,
@@ -191,7 +193,7 @@ function getApplyPipeline(state: WgpuRenderState): WgpuEffectPipeline {
       fragment: { module: shaderModule, entryPoint: 'fs_main', targets: [{ format }] },
       primitive: { topology: 'triangle-list' },
     });
-    p = { pipeline, blendMode: 'premul' };
+    p = createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({ pipeline, blendMode: 'premul' });
     applyPipelines.set(state, p);
   }
   return p;
@@ -212,7 +214,7 @@ function getEncodePipeline(state: WgpuRenderState): WgpuEffectPipeline {
       fragment: { module: shaderModule, entryPoint: 'fs_main', targets: [{ format }] },
       primitive: { topology: 'triangle-list' },
     });
-    p = { pipeline, blendMode: 'replace' };
+    p = createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({ pipeline, blendMode: 'replace' });
     encodePipelines.set(state, p);
   }
   return p;

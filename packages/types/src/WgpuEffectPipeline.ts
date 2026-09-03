@@ -1,6 +1,7 @@
+import type { Entity } from './Entity';
 import type { WgpuEffectBlendMode } from './WgpuEffectBlendMode';
 
-export type WgpuEffectPipeline = {
+export type WgpuEffectPipeline = Entity & {
   // The default variant, compiled for the canvas format (state.format).
   pipeline: GPURenderPipeline;
   blendMode: WgpuEffectBlendMode;

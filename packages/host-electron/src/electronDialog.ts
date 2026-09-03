@@ -1,6 +1,7 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import type {
+  EntityWithoutRuntime,
   DirectoryOpenDialogBackend,
   DirectoryOpenDialogResult,
   ElectronApi,
@@ -88,7 +89,7 @@ export function createElectronFileSaveDialogBackend(electron: ElectronApi): File
 // therefore assemble dialog.message while leaving dialog.prompt absent.
 export function createElectronMessageDialogBackend(electron: ElectronApi): MessageDialogBackend {
   const dialog = electron.dialog;
-  return {
+  return createEntity<EntityWithoutRuntime<MessageDialogBackend>>({
     async message(options) {
       if (options.signal?.aborted) {
         return {
@@ -129,7 +130,7 @@ export function createElectronMessageDialogBackend(electron: ElectronApi): Messa
       });
       return result.response === 0;
     },
-  };
+  });
 }
 
 function createNativeHandle(path: string, kind: 'File' | 'Directory') {

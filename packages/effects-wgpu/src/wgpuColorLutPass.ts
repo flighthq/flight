@@ -1,4 +1,11 @@
-import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type {
+  ColorLut,
+  EntityWithoutRuntime,
+  WgpuColorLutTextureCache,
+  WgpuRenderState,
+  WgpuRenderTarget,
+} from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
@@ -93,7 +100,7 @@ function getLutPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuE
       },
       primitive: { topology: 'triangle-list' },
     });
-    pipeline = { pipeline: gpuPipeline, blendMode: 'replace' };
+    pipeline = createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({ pipeline: gpuPipeline, blendMode: 'replace' });
     byFormat.set(format, pipeline);
   }
   return pipeline;

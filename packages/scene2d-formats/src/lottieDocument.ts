@@ -8,6 +8,7 @@ import {
 import { createClipRegionFromPath } from '@flighthq/clip/contract';
 import { packColor } from '@flighthq/color/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
@@ -108,7 +109,7 @@ export function createScene2DFromLottieDocument(
       'lottie.invalid-document',
       'createScene2DFromLottieDocument',
     );
-    return { advancedBlends: [], clip: createAnimationClip([]), duration: 0, frameRate: 0, root };
+    return createEntity({ advancedBlends: [], clip: createAnimationClip([]), duration: 0, frameRate: 0, root });
   }
 
   const context: LottieImportContext = {
@@ -129,13 +130,13 @@ export function createScene2DFromLottieDocument(
       duration: marker.dr / document.fr,
     }),
   );
-  return {
+  return createEntity({
     advancedBlends: context.advancedBlends,
     clip: createAnimationClip(context.channels, duration, events),
     duration,
     frameRate: document.fr,
     root,
-  };
+  });
 }
 
 interface LottieImportContext {

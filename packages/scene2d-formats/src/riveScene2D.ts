@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
@@ -46,19 +47,19 @@ export function createScene2DFromRiveDocument(
   diagnostics?: ImportDiagnostic[],
 ): RiveDocumentImportResult {
   const document = parseRiveDocument(source, diagnostics);
-  if (document === null) return { artboards: [], assets: [] };
+  if (document === null) return createEntity({ artboards: [], assets: [] });
 
   const graph = createRiveObjectGraph(document, diagnostics);
   const assets = createRiveFileAssets(document.objects, diagnostics);
   // A text style names its typeface by a position in the asset list, the same space an image
   // drawable's assetId indexes, so the names are resolved once here rather than per drawable.
   const fontNames = assets.map((asset) => asset.name);
-  return {
+  return createEntity({
     artboards: graph.artboards.map((artboard) =>
       createRiveArtboardImport(artboard, document.objects, fontNames, diagnostics),
     ),
     assets,
-  };
+  });
 }
 
 function createRiveArtboardImport(

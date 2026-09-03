@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { PathBooleanFillRule } from './PathBooleanFillRule';
 import type { PathBooleanOperation } from './PathBooleanOperation';
 
@@ -15,7 +16,7 @@ export type PathBooleanContour = readonly number[];
 // entity types) so a heavier native/wasm kernel can implement the same seam. Result contours use the
 // winding convention that outer boundaries and holes are counter-wound relative to each other, so they
 // rebuild into a single `nonZero` path directly.
-export interface PathBooleanBackend {
+export interface PathBooleanBackend extends Entity {
   computePathBoolean(
     subject: readonly PathBooleanContour[],
     clip: readonly PathBooleanContour[],

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createPath, appendPathRectangle, flattenPath } from '@flighthq/path/contract';
 import type { Path, PathWinding } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -142,12 +143,14 @@ describe('unionPaths', () => {
 
   it('routes through a swapped-in backend', () => {
     let seen = false;
-    setPathBooleanBackend({
-      computePathBoolean() {
-        seen = true;
-        return [];
-      },
-    });
+    setPathBooleanBackend(
+      createEntity({
+        computePathBoolean() {
+          seen = true;
+          return [];
+        },
+      }),
+    );
     const result = unionPaths(rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
     setPathBooleanBackend(null);
     expect(seen).toBe(true);

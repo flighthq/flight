@@ -1,5 +1,7 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getWgpuRenderStateRuntime, getWgpuSurfaceRenderExtent } from '@flighthq/render-wgpu/contract';
 import type {
+  EntityWithoutRuntime,
   WgpuDualSourceEffectPipeline,
   WgpuEffectBlendMode,
   WgpuEffectPipeline,
@@ -250,7 +252,12 @@ export function createWgpuDualSourceEffectPipeline(
       primitive: { topology: 'triangle-list' },
     });
 
-  return { pipeline: compileForFormat(fs.format), blendMode: blend, compileForFormat, variants: new Map() };
+  return createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({
+    pipeline: compileForFormat(fs.format),
+    blendMode: blend,
+    compileForFormat,
+    variants: new Map(),
+  });
 }
 
 /** Compiles a WGSL effect pipeline, creating the combined vertex+fragment shader module. */
@@ -279,7 +286,12 @@ export function createWgpuEffectPipeline(
       primitive: { topology: 'triangle-list' },
     });
 
-  return { pipeline: compileForFormat(fs.format), blendMode: blend, compileForFormat, variants: new Map() };
+  return createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({
+    pipeline: compileForFormat(fs.format),
+    blendMode: blend,
+    compileForFormat,
+    variants: new Map(),
+  });
 }
 
 function getBlendState(blend: WgpuEffectBlendMode): GPUBlendState {
