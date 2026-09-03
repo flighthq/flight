@@ -1,55 +1,38 @@
 import type { VideoCapabilityBackend, VideoResourceUrl } from '@flighthq/types/contract';
 
-import {
-  canPlayVideoType,
-  detectVideoMimeType,
-  explainVideoCapabilityBackend,
-  explainVideoCapabilityOperation,
-  getVideoCapabilityBackend,
-  hasVideoCapabilityHostBackend,
-  hasVideoCapabilityOperation,
-  inferVideoMimeType,
-  installVideoCapabilityHostBackend,
-  observeVideoCapabilityHostResult,
-  resetVideoCapabilityBackendForTest,
-  selectVideoResourceUrl,
-  setVideoCapabilityBackend,
-} from './videoFormat';
+import { canPlayVideoType, detectVideoMimeType, inferVideoMimeType, selectVideoResourceUrl } from './videoFormat';
 
-afterEach(() => {
-  resetVideoCapabilityBackendForTest();
-  vi.restoreAllMocks();
-});
+const falseBackend: VideoCapabilityBackend = { canPlayType: () => false };
+const trueBackend: VideoCapabilityBackend = { canPlayType: () => true };
 
 describe('canPlayVideoType', () => {
-  it('is false when no backend is installed', () => {
-    expect(canPlayVideoType('video/mp4')).toBe(false);
+  it('delegates to the backend', () => {
+    expect(canPlayVideoType(trueBackend, 'video/mp4')).toBe(true);
   });
 
-  it('uses an installed custom backend', () => {
-    setVideoCapabilityBackend({ canPlayType: () => true });
-    expect(canPlayVideoType('video/mp4')).toBe(true);
+  it('returns false with a non-playing backend', () => {
+    expect(canPlayVideoType(falseBackend, 'video/mp4')).toBe(false);
   });
 
-  it('rejects an empty MIME type without invoking the selected backend', () => {
+  it('rejects an empty MIME type without invoking the backend', () => {
     const canPlayType = vi.fn(() => true);
-    setVideoCapabilityBackend({ canPlayType });
-    expect(canPlayVideoType('')).toBe(false);
+    expect(canPlayVideoType({ canPlayType }, '')).toBe(false);
     expect(canPlayType).not.toHaveBeenCalled();
   });
 
-  it('accepts only primitive true from an untyped backend', () => {
-    setVideoCapabilityBackend({ canPlayType: () => 'probably' } as unknown as VideoCapabilityBackend);
-    expect(canPlayVideoType('video/mp4')).toBe(false);
+  it('accepts only primitive true from a backend', () => {
+    expect(canPlayVideoType({ canPlayType: () => 'probably' } as unknown as VideoCapabilityBackend, 'video/mp4')).toBe(
+      false,
+    );
   });
 
   it('normalizes backend exceptions to false', () => {
-    setVideoCapabilityBackend({
+    const backend: VideoCapabilityBackend = {
       canPlayType(): boolean {
         throw new Error('unavailable');
       },
-    });
-    expect(canPlayVideoType('video/mp4')).toBe(false);
+    };
+    expect(canPlayVideoType(backend, 'video/mp4')).toBe(false);
   });
 });
 
@@ -79,78 +62,6 @@ describe('detectVideoMimeType', () => {
     const buf = new ArrayBuffer(8);
     new Uint8Array(buf).set([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
     expect(detectVideoMimeType(buf)).toBe('video/mp4');
-  });
-});
-
-describe('explainVideoCapabilityBackend', () => {
-  it('reports host observations while custom selection remains unobserved', () => {
-    installVideoCapabilityHostBackend({ canPlayType: () => true });
-    observeVideoCapabilityHostResult('canPlayType', false);
-    expect(explainVideoCapabilityBackend()).toMatchObject({
-      layer: 'host',
-      operation: 'canPlayType',
-      viability: 'runtime-api-unavailable',
-    });
-    setVideoCapabilityBackend({ canPlayType: () => true });
-    expect(explainVideoCapabilityBackend()).toMatchObject({
-      layer: 'custom',
-      operation: null,
-      viability: 'unobserved',
-    });
-  });
-});
-
-describe('explainVideoCapabilityOperation', () => {
-  it('reports sentinel, host, and custom operation support structurally', () => {
-    expect(explainVideoCapabilityOperation('canPlayType')).toEqual({
-      implemented: false,
-      layer: 'sentinel',
-      operation: 'canPlayType',
-    });
-    expect(hasVideoCapabilityOperation('canPlayType')).toBe(false);
-
-    installVideoCapabilityHostBackend({ canPlayType: () => true });
-    expect(explainVideoCapabilityOperation('canPlayType').layer).toBe('host');
-    expect(hasVideoCapabilityOperation('canPlayType')).toBe(true);
-
-    setVideoCapabilityBackend({ canPlayType: 1 } as unknown as VideoCapabilityBackend);
-    expect(explainVideoCapabilityOperation('canPlayType')).toEqual({
-      implemented: false,
-      layer: 'none',
-      operation: 'canPlayType',
-    });
-    expect(hasVideoCapabilityOperation('canPlayType')).toBe(false);
-  });
-});
-
-describe('getVideoCapabilityBackend', () => {
-  it('uses custom over host and reveals the host again when custom is cleared', () => {
-    const host = { canPlayType: vi.fn(() => true) };
-    const custom = { canPlayType: vi.fn(() => false) };
-    installVideoCapabilityHostBackend(host);
-    setVideoCapabilityBackend(custom);
-    expect(getVideoCapabilityBackend()).toBe(custom);
-    expect(canPlayVideoType('video/mp4')).toBe(false);
-    setVideoCapabilityBackend(null);
-    expect(getVideoCapabilityBackend()).toBe(host);
-    expect(canPlayVideoType('video/mp4')).toBe(true);
-  });
-});
-
-describe('hasVideoCapabilityHostBackend', () => {
-  it('tracks host occupancy independently of a custom backend', () => {
-    setVideoCapabilityBackend({ canPlayType: () => true });
-    expect(hasVideoCapabilityHostBackend()).toBe(false);
-    installVideoCapabilityHostBackend({ canPlayType: () => false });
-    expect(hasVideoCapabilityHostBackend()).toBe(true);
-  });
-});
-
-describe('hasVideoCapabilityOperation', () => {
-  it('cannot diverge from the operation explanation', () => {
-    expect(hasVideoCapabilityOperation('canPlayType')).toBe(explainVideoCapabilityOperation('canPlayType').implemented);
-    setVideoCapabilityBackend({ canPlayType: () => true });
-    expect(hasVideoCapabilityOperation('canPlayType')).toBe(explainVideoCapabilityOperation('canPlayType').implemented);
   });
 });
 
@@ -208,71 +119,29 @@ describe('inferVideoMimeType', () => {
   });
 });
 
-describe('installVideoCapabilityHostBackend', () => {
-  it('keeps the first host and reports only a distinct second host as conflict', () => {
-    const first = { canPlayType: vi.fn(() => true) };
-    installVideoCapabilityHostBackend(first);
-    installVideoCapabilityHostBackend(first);
-    expect(explainVideoCapabilityBackend().conflict).toBe(false);
-    installVideoCapabilityHostBackend({ canPlayType: () => false });
-    expect(getVideoCapabilityBackend()).toBe(first);
-    expect(explainVideoCapabilityBackend().conflict).toBe(true);
-  });
-});
-
-describe('observeVideoCapabilityHostResult', () => {
-  it('records successful host viability', () => {
-    installVideoCapabilityHostBackend({ canPlayType: () => true });
-    observeVideoCapabilityHostResult('canPlayType', true);
-    expect(explainVideoCapabilityBackend()).toMatchObject({
-      operation: 'canPlayType',
-      viability: 'available',
-    });
-  });
-});
-
-describe('resetVideoCapabilityBackendForTest', () => {
-  it('reset clears custom, host, conflict, and observation state', () => {
-    installVideoCapabilityHostBackend({ canPlayType: () => true });
-    installVideoCapabilityHostBackend({ canPlayType: () => false });
-    observeVideoCapabilityHostResult('canPlayType', true);
-    setVideoCapabilityBackend({ canPlayType: () => true });
-    resetVideoCapabilityBackendForTest();
-    expect(hasVideoCapabilityHostBackend()).toBe(false);
-    expect(explainVideoCapabilityBackend()).toEqual({
-      conflict: false,
-      layer: 'host-not-enabled',
-      operation: null,
-      viability: 'unobserved',
-    });
-    expect(canPlayVideoType('video/mp4')).toBe(false);
-  });
-});
-
 describe('selectVideoResourceUrl', () => {
   it('returns null when no source is playable', () => {
-    expect(selectVideoResourceUrl([{ url: 'clip.mp4' }])).toBeNull();
+    expect(selectVideoResourceUrl(falseBackend, [{ url: 'clip.mp4' }])).toBeNull();
   });
 
   it('returns null for an empty source list', () => {
-    expect(selectVideoResourceUrl([])).toBeNull();
+    expect(selectVideoResourceUrl(falseBackend, [])).toBeNull();
   });
 
   it('picks the first source whose inferred type is playable', () => {
-    setVideoCapabilityBackend({ canPlayType: (type) => type === 'video/webm' });
-    const selected = selectVideoResourceUrl([{ url: 'clip.mp4' }, { url: 'clip.webm' }]);
+    const backend: VideoCapabilityBackend = { canPlayType: (type) => type === 'video/webm' };
+    const selected = selectVideoResourceUrl(backend, [{ url: 'clip.mp4' }, { url: 'clip.webm' }]);
     expect(selected?.url).toBe('clip.webm');
   });
 
   it('honours an explicit type over the URL extension', () => {
-    setVideoCapabilityBackend({ canPlayType: (type) => type === 'video/mp4' });
-    const selected = selectVideoResourceUrl([{ url: 'stream', type: 'video/mp4' }]);
+    const backend: VideoCapabilityBackend = { canPlayType: (type) => type === 'video/mp4' };
+    const selected = selectVideoResourceUrl(backend, [{ url: 'stream', type: 'video/mp4' }]);
     expect(selected?.url).toBe('stream');
   });
 
   it('treats an explicit empty type as authoritative and does not read the URL', () => {
     const canPlayType = vi.fn(() => true);
-    setVideoCapabilityBackend({ canPlayType });
     const source = Object.defineProperties(
       {},
       {
@@ -285,29 +154,14 @@ describe('selectVideoResourceUrl', () => {
         },
       },
     ) as VideoResourceUrl;
-    expect(selectVideoResourceUrl([source])).toBeNull();
+    expect(selectVideoResourceUrl({ canPlayType }, [source])).toBeNull();
     expect(canPlayType).not.toHaveBeenCalled();
   });
 
   it('skips unknown inferred types without invoking the backend', () => {
     const canPlayType = vi.fn(() => true);
-    setVideoCapabilityBackend({ canPlayType });
-    expect(selectVideoResourceUrl([{ url: 'clip.avi' }])).toBeNull();
+    expect(selectVideoResourceUrl({ canPlayType }, [{ url: 'clip.avi' }])).toBeNull();
     expect(canPlayType).not.toHaveBeenCalled();
-  });
-
-  it('pins one lazily resolved backend across a reentrant custom-backend change', () => {
-    const replacement = { canPlayType: vi.fn(() => false) };
-    const initial = {
-      canPlayType: vi.fn((type: string) => {
-        setVideoCapabilityBackend(replacement);
-        return type === 'video/webm';
-      }),
-    };
-    setVideoCapabilityBackend(initial);
-    expect(selectVideoResourceUrl([{ url: 'clip.mp4' }, { url: 'clip.webm' }])?.url).toBe('clip.webm');
-    expect(initial.canPlayType).toHaveBeenCalledTimes(2);
-    expect(replacement.canPlayType).not.toHaveBeenCalled();
   });
 
   it('continues after invalid truthy results and backend exceptions', () => {
@@ -318,8 +172,11 @@ describe('selectVideoResourceUrl', () => {
         throw new Error('unavailable');
       })
       .mockReturnValueOnce(true);
-    setVideoCapabilityBackend({ canPlayType } as VideoCapabilityBackend);
-    const selected = selectVideoResourceUrl([{ url: 'first.mp4' }, { url: 'second.webm' }, { url: 'third.ogv' }]);
+    const selected = selectVideoResourceUrl({ canPlayType } as VideoCapabilityBackend, [
+      { url: 'first.mp4' },
+      { url: 'second.webm' },
+      { url: 'third.ogv' },
+    ]);
     expect(selected?.url).toBe('third.ogv');
   });
 
@@ -329,16 +186,6 @@ describe('selectVideoResourceUrl', () => {
         throw new Error('caller getter failed');
       },
     }) as VideoResourceUrl;
-    expect(() => selectVideoResourceUrl([source])).toThrow('caller getter failed');
-  });
-});
-
-describe('setVideoCapabilityBackend', () => {
-  it('selects and clears a custom backend', () => {
-    const custom = { canPlayType: () => true };
-    setVideoCapabilityBackend(custom);
-    expect(getVideoCapabilityBackend()).toBe(custom);
-    setVideoCapabilityBackend(null);
-    expect(getVideoCapabilityBackend()).not.toBe(custom);
+    expect(() => selectVideoResourceUrl(trueBackend, [source])).toThrow('caller getter failed');
   });
 });

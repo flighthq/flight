@@ -85,7 +85,7 @@ export {
   createWebWindowStoragePersistenceCapabilities,
   createWebWorkerStoragePersistenceCapabilities,
 } from './webStoragePersistence';
-export { enableHostWebVideoCapability } from './webVideoCapability';
+export { createWebVideoCapabilityBackend, webVideoCapabilityBackend } from './webVideoCapability';
 export { webHost } from './webHost';
 export { webHostNet } from './webHostNet';
 export { webSystemHost } from './webSystemHost';
