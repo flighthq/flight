@@ -466,6 +466,7 @@ export * from './NodeDescendantVisitor';
 export * from './NodeInteraction';
 export * from './NodeInteractionState';
 export * from './NodeSignals';
+export * from './NonEntityCreateResult';
 export * from './NormalMaterial';
 export * from './Notification';
 export * from './Obb';

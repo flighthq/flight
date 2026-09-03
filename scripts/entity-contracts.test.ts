@@ -73,6 +73,113 @@ describe('checkEntityContracts', () => {
     });
   });
 
+  it('automatically excludes arrays, callable values, and external native objects', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        'type RandomSource = () => number;',
+        'export declare function createValues(): number[];',
+        'export declare function createRandomSource(): RandomSource;',
+        'export declare function createCanvas(): HTMLCanvasElement;',
+        'export declare function createLookup(): Map<string, string>;',
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateCandidates).toEqual([]);
+    expect(report.exportedCreateExclusions).toHaveLength(4);
+    expect(Object.fromEntries(report.exportedCreateExclusions.map(({ name, reasons }) => [name, reasons]))).toEqual({
+      '@flighthq/example createCanvas': ['external-native'],
+      '@flighthq/example createLookup': ['external-native'],
+      '@flighthq/example createRandomSource': ['callable'],
+      '@flighthq/example createValues': ['array-or-tuple'],
+    });
+  });
+
+  it('keeps repository structures wrapped in external utility aliases as candidates', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        'interface Capabilities { readonly query?: object }',
+        'type Baseline = Record<string, number>;',
+        'export declare function createBaseline(): Baseline;',
+        'export declare function createCapabilities(): Required<Pick<Capabilities, "query">>;',
+        'export declare function createOutcome(): Readonly<{ readonly reason: "created" }>;',
+        'export declare function createReadonlyCanvas(): Readonly<HTMLCanvasElement>;',
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateCandidates.map(({ name }) => name).sort()).toEqual([
+      '@flighthq/example createBaseline',
+      '@flighthq/example createCapabilities',
+      '@flighthq/example createOutcome',
+    ]);
+    expect(report.exportedCreateExclusions).toHaveLength(1);
+    expect(report.exportedCreateExclusions[0]).toMatchObject({
+      name: '@flighthq/example createReadonlyCanvas',
+      reasons: ['external-native'],
+    });
+  });
+
+  it('excludes exported create helpers by semantic source role', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './exampleTestSupport';",
+      'packages/example/src/exampleTestSupport.ts': [
+        'interface Fixture { value: number }',
+        'export declare function createFixture(): Fixture;',
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateFunctions).toBe(0);
+    expect(report.exportedCreateCandidates).toEqual([]);
+    expect(report.exportedCreateExclusions).toEqual([]);
+  });
+
+  it('requires a direct public marker for repository-owned non-SDK create results', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import type { NonEntityCreateResult } from '../../types/src/NonEntityCreateResult';",
+        'interface Descriptor { readonly value: number }',
+        "type IndirectDescriptor = NonEntityCreateResult<Descriptor, 'descriptor'>;",
+        "export declare function createDescriptor(): Promise<NonEntityCreateResult<Descriptor, 'descriptor'> | null>;",
+        'export declare function createIndirectDescriptor(): IndirectDescriptor;',
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateExclusions).toHaveLength(1);
+    expect(report.exportedCreateExclusions[0]).toMatchObject({
+      name: '@flighthq/example createDescriptor',
+      reasons: ['descriptor'],
+      source: 'marker',
+    });
+    expect(report.exportedCreateCandidates).toHaveLength(1);
+    expect(report.exportedCreateCandidates[0]?.name).toBe('@flighthq/example createIndirectDescriptor');
+  });
+
+  it('rejects unknown marker tags and wrappers around Entity roots', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import type { Entity, EntityRuntime } from '../../types/src/Entity';",
+        "import type { NonEntityCreateResult } from '../../types/src/NonEntityCreateResult';",
+        'interface Descriptor { readonly value: number }',
+        "export declare function createUnknown(): NonEntityCreateResult<Descriptor, 'escape'>;",
+        "export declare function createMarkedEntity(): NonEntityCreateResult<Entity, 'descriptor'>;",
+        "export declare function createMarkedRuntime(): NonEntityCreateResult<Promise<EntityRuntime>, 'options'>;",
+        "export declare function createMixed(): NonEntityCreateResult<Entity | Descriptor, 'type-only'>;",
+      ].join('\n'),
+    });
+
+    expect(report.issues).toHaveLength(4);
+    expect(report.issues.every(({ rule }) => rule === 'invalid-non-entity-create-result')).toBe(true);
+    expect(report.issues.map(({ detail }) => detail)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('cannot wrap Entity or EntityRuntime'),
+        expect.stringContaining('reason must be exactly descriptor, options, or type-only'),
+      ]),
+    );
+  });
+
   it('partitions the complete exported create remediation census by package', () => {
     const report = checkFixture({
       'packages/alpha/src/contract.ts': "export { createZulu, createAlpha } from './values';",
@@ -241,6 +348,13 @@ function checkFixture(files: Readonly<Record<string, string>>) {
       "export interface Entity { readonly __entity: 'entity'; readonly runtime: EntityRuntime }",
     ].join('\n'),
   );
+  const markerSource = project.createSourceFile(
+    '/packages/types/src/NonEntityCreateResult.ts',
+    [
+      "export type NonEntityCreateResult<Type, Kind extends 'descriptor' | 'options' | 'type-only'> =",
+      "  Kind extends 'descriptor' | 'options' | 'type-only' ? Type : never;",
+    ].join('\n'),
+  );
   const createEntitySource = project.createSourceFile(
     '/packages/entity/src/entity.ts',
     [
@@ -250,6 +364,7 @@ function checkFixture(files: Readonly<Record<string, string>>) {
   );
   const sourceFiles = [
     entitySource,
+    markerSource,
     createEntitySource,
     ...Object.entries(files).map(([path, text]) => project.createSourceFile(`/${path}`, text)),
   ];
