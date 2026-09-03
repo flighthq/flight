@@ -1,5 +1,6 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createRenderCache,
@@ -21,6 +22,32 @@ describe('createRenderCache', () => {
     const cache = createRenderCache();
     expect(cache.kind).toBe(RenderCacheKind);
     expect(cache.transform).toBeDefined();
+  });
+});
+
+describe('createRenderCacheAdapter', () => {
+  it('returns an Entity, so the adapter can carry runtime state like every other SDK object', () => {
+    // Pinned on the KEY rather than on a helper: an adapter built by a plain object literal satisfies
+    // the RenderCacheAdapter type and every behavioural test below, and only the missing runtime slot
+    // tells it apart from one built through createEntity.
+    const adapter = createRenderCacheAdapter();
+    expect(EntityRuntimeKey in adapter).toBe(true);
+    expect(adapter[EntityRuntimeKey]).toBeUndefined();
+  });
+
+  it('gives each adapter its own runtime slot rather than a shared one', () => {
+    const first = createRenderCacheAdapter();
+    const second = createRenderCacheAdapter();
+    expect(Object.hasOwn(first, EntityRuntimeKey)).toBe(true);
+    expect(Object.hasOwn(second, EntityRuntimeKey)).toBe(true);
+    expect(first).not.toBe(second);
+  });
+
+  it('still starts detached and still adopts the cache it was given', () => {
+    expect(createRenderCacheAdapter().cache).toBeNull();
+    const cache = createRenderCache();
+    expect(createRenderCacheAdapter(cache).cache).toBe(cache);
+    expect(createRenderCacheAdapter().signals).toBeNull();
   });
 });
 
