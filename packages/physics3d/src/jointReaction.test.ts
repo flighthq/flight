@@ -80,13 +80,13 @@ describe('clearPhysics3DJointReaction', () => {
 
     clearPhysics3DJointReaction(out);
 
-    expect(out).toEqual({ forceX: 0, forceY: 0, forceZ: 0, torqueX: 0, torqueY: 0, torqueZ: 0 });
+    expect(out).toMatchObject({ forceX: 0, forceY: 0, forceZ: 0, torqueX: 0, torqueY: 0, torqueZ: 0 });
   });
 });
 
 describe('createPhysics3DJointReaction', () => {
   it('starts zeroed', () => {
-    expect(createPhysics3DJointReaction()).toEqual({
+    expect(createPhysics3DJointReaction()).toMatchObject({
       forceX: 0,
       forceY: 0,
       forceZ: 0,
