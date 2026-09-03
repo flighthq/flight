@@ -1,4 +1,5 @@
 import type { ColorLutCache } from './ColorLutCache';
+import type { Entity } from './Entity';
 import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
 import type { RenderEffect } from './RenderEffect';
 import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache';
@@ -36,7 +37,7 @@ export interface WgpuRenderEffectRegistration {
 // into and the intermediate-target pool. The per-frame effect list is data passed to
 // endWgpuRenderEffectPipeline, not retained here. Mirrors GlRenderEffectPipeline; shares
 // RenderEffectPipelineOptions with the Gl pipeline.
-export interface WgpuRenderEffectPipeline {
+export interface WgpuRenderEffectPipeline extends Entity {
   readonly options: Readonly<RenderEffectPipelineOptions>;
   sceneTarget: WgpuRenderTarget | null;
   readonly pool: WgpuRenderTargetPool;

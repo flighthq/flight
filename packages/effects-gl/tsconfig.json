@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../entity" },
     { "path": "../adjustments" },
     { "path": "../color" },
     { "path": "../effects" },

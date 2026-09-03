@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import {
   acquireGlRenderTarget,
   beginGlRenderPass,
@@ -75,14 +76,14 @@ export function createGlRenderEffectPipeline(
   _state: GlRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): GlRenderEffectPipeline {
-  return {
+  return createEntity({
     options: { ...options },
     sceneTarget: null,
     pool: createGlRenderTargetPool(),
     lutCache: createColorLutCache(),
     lutTexture: { texture: null, lut: null },
     velocityTexture: null,
-  };
+  });
 }
 
 export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRenderEffectPipeline): void {
