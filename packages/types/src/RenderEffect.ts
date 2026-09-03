@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 
 // Substrate-agnostic render-effect intents. Each is plain data carrying a `kind` discriminant; per-backend
 // recipes register a runner against that `kind` (registerGlRenderEffect) and the effect pipeline
@@ -10,6 +10,6 @@ import type { Kind } from './Entity';
 
 // Open base contract for every render effect. The `kind` is the canonical PascalCase type name and the
 // registry key a per-backend runner is registered against.
-export interface RenderEffect {
+export interface RenderEffect extends Entity {
   kind: Kind;
 }

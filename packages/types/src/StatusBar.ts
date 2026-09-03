@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // Mobile status bar seam. Operations consume narrow explicit Host capability slots. Web owns only the
@@ -66,6 +67,6 @@ export interface StatusBarVisibilityBackend {
 }
 
 // Status bar event entity. Enable delivery with attachStatusBar; the signals stay inert until then.
-export interface StatusBar {
+export interface StatusBar extends Entity {
   onChange: Signal<(info: Readonly<StatusBarInfo>) => void>;
 }

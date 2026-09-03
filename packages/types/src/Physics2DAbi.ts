@@ -1,4 +1,5 @@
 import type { CollisionBuiltInShape2D } from './Collision';
+import type { Entity } from './Entity';
 import type { Physics2DQueryFilter } from './Physics2D';
 import type { SpatialAabb2D } from './Spatial';
 
@@ -117,7 +118,7 @@ export interface Physics2DAbiQueryBuffer {
 // codec and convenience function. A zero-copy native shadow may additionally replace the buffer
 // constructors with identical records backed by its linear memory; the typed-array fields deliberately
 // accept every ArrayBufferLike backing for that reason.
-export interface Physics2DAbi {
+export interface Physics2DAbi extends Entity {
   readonly version: number;
   readonly capabilities: number;
   createWorld(): Physics2DAbiWorldHandle;

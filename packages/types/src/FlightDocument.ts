@@ -1,5 +1,5 @@
 import type { Camera3D } from './Camera3D';
-import type { Kind } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
 import type {
   FlightDocumentInteractiveStateBinding,
@@ -55,13 +55,13 @@ export interface FlightDocumentScene3D {
   tokens: FlightDocumentToken[];
 }
 
-export interface FlightDocumentScene2DMaterialization {
+export interface FlightDocumentScene2DMaterialization extends Entity {
   interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node2D>[];
   layoutBindings: FlightDocumentLayoutBinding<Node2D>[];
   scene: Scene2D;
 }
 
-export interface FlightDocumentScene3DMaterialization {
+export interface FlightDocumentScene3DMaterialization extends Entity {
   cameras: Camera3D[];
   interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node3D>[];
   layoutBindings: FlightDocumentLayoutBinding<Node3D>[];

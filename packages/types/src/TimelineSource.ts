@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Node2D } from './Node2D';
 import type { TimelineCue } from './TimelineCue';
 import type { TimelineLabel } from './TimelineLabel';
@@ -7,7 +8,7 @@ import type { TimelineLabel } from './TimelineLabel';
 // imported SWF/Animate document. The Timeline engine owns *playback* (currentFrame, play/stop, looping,
 // labels lookup); the source owns what a frame *is*. Splitting the two lets any format drive a MovieClip
 // without the engine and the format depending on each other — both depend only on this contract.
-export interface TimelineSource {
+export interface TimelineSource extends Entity {
   readonly totalFrames: number;
   readonly labels: readonly TimelineLabel[];
   // Edge-triggered cues the format authored onto frames — sounds, playhead commands, user-defined kinds.

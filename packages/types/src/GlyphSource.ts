@@ -1,4 +1,5 @@
 import type { Bitmap } from './Bitmap';
+import type { Entity } from './Entity';
 import type { TextureSource } from './TextureSource';
 
 // The shared seam a text renderer consumes to draw glyphs, independent of how those glyphs are
@@ -12,7 +13,7 @@ import type { TextureSource } from './TextureSource';
 // It is a small method object (not free functions) precisely because it is the runtime-swappable
 // boundary between the renderer and either implementation — the one place in the SDK where a bound
 // handle is the right shape. Adapt a `GlyphAtlas` into one with `createGlyphSourceFromGlyphAtlas`.
-export interface GlyphSource {
+export interface GlyphSource extends Entity {
   // The atlas image a same-page `getGlyphEntry` rect samples from — the pixels paired with the
   // geometry seam. `page` selects which atlas image (default 0); returns null when the page does not
   // exist. Single-page sources hold everything on page 0 and return null for any other page.
@@ -184,7 +185,7 @@ export interface GlyphAtlasRuntime {
 // packer live inside the opaque runtime. Create it with `createGlyphAtlas`, drive it with
 // `getGlyphAtlasEntry` (rasterize-on-miss), read its pixels with `getGlyphAtlasBitmap`, and hand it
 // to a renderer as a `GlyphSource` via `createGlyphSourceFromGlyphAtlas`.
-export interface GlyphAtlas {
+export interface GlyphAtlas extends Entity {
   runtime: GlyphAtlasRuntime;
 }
 

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Rectangle } from './Rectangle';
 
 // 2D game-camera header. `@flighthq/camera` operates on this plain-data camera to produce the
@@ -10,7 +11,7 @@ import type { Rectangle } from './Rectangle';
 // out. `rotation` is in radians and rotates the camera counter-clockwise about its center, so the
 // world appears to rotate clockwise on screen. `viewportWidth`/`viewportHeight` are the drawable
 // surface size in device pixels. Distinct from `Camera3D` (the 3D perspective/orthographic camera).
-export interface Camera2D {
+export interface Camera2D extends Entity {
   rotation: number;
   viewportHeight: number;
   viewportWidth: number;

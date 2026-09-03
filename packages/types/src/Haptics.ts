@@ -1,3 +1,5 @@
+import type { Entity } from './Entity';
+
 // Haptic feedback seam. Free functions in @flighthq/haptics delegate to the active HapticsBackend
 // (web default over navigator.vibrate, or a native host's). Each trigger returns false when the host
 // lacks haptics or denies the request rather than throwing.
@@ -14,7 +16,7 @@ export interface HapticsCapabilities {
   supported: boolean;
 }
 
-export interface HapticsBackend {
+export interface HapticsBackend extends Entity {
   // Cancels any in-progress vibration. Returns false when haptics are unavailable.
   cancel(): boolean;
   // Fills `out` with the backend's capabilities and returns it.

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { PathWinding } from './ShapeCommand';
 
 /**
@@ -19,7 +20,7 @@ export const PathCommand = {
 
 export type PathCommand = (typeof PathCommand)[keyof typeof PathCommand];
 
-export interface Path {
+export interface Path extends Entity {
   commands: number[];
   data: number[];
   winding: PathWinding;
