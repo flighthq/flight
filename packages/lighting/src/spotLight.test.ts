@@ -1,10 +1,11 @@
 import { createVector3 } from '@flighthq/geometry/contract';
-import { SpotLightKind } from '@flighthq/types/contract';
+import { CandelaLightUnit, SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 import {
   cloneSpotLight,
   createSpotLight,
   getSpotLightConeDegrees,
+  setSpotLightBlend,
   setSpotLightCone,
   setSpotLightDirection,
   setSpotLightTarget,
@@ -15,15 +16,23 @@ describe('cloneSpotLight', () => {
     const light = createSpotLight({
       castsShadow: true,
       color: 0x112233ff,
+      decay: 1.5,
       direction: createVector3(1, 0, 0),
+      enabled: false,
       innerConeDegrees: 10,
       intensity: 0.5,
+      intensityUnit: CandelaLightUnit,
       normalBias: 0.1,
       outerConeDegrees: 30,
       pcfRadius: 2,
       position: createVector3(3, 4, 5),
       range: 10,
       shadowBias: 0.01,
+      shadowFar: 300,
+      shadowMapSize: 2048,
+      shadowNear: 0.25,
+      shadowStrength: 0.75,
+      spotBlend: 0.6,
     });
     const copy = cloneSpotLight(light);
     expect(copy).not.toBe(light);
@@ -31,15 +40,23 @@ describe('cloneSpotLight', () => {
     expect(copy.direction).not.toBe(light.direction);
     expect(copy.castsShadow).toBe(true);
     expect(copy.color).toBe(0x112233ff);
+    expect(copy.decay).toBe(1.5);
     expect(copy.direction.x).toBe(1);
+    expect(copy.enabled).toBe(false);
     expect(copy.innerConeCos).toBe(light.innerConeCos);
     expect(copy.intensity).toBe(0.5);
+    expect(copy.intensityUnit).toBe(CandelaLightUnit);
     expect(copy.normalBias).toBe(0.1);
     expect(copy.outerConeCos).toBe(light.outerConeCos);
     expect(copy.pcfRadius).toBe(2);
     expect(copy.position.z).toBe(5);
     expect(copy.range).toBe(10);
     expect(copy.shadowBias).toBe(0.01);
+    expect(copy.shadowFar).toBe(300);
+    expect(copy.shadowMapSize).toBe(2048);
+    expect(copy.shadowNear).toBe(0.25);
+    expect(copy.shadowStrength).toBe(0.75);
+    expect(copy.spotBlend).toBe(0.6);
     expect(copy.kind).toBe(SpotLightKind);
   });
 });
@@ -49,15 +66,23 @@ describe('createSpotLight', () => {
     const light = createSpotLight();
     expect(light.castsShadow).toBe(false);
     expect(light.color).toBe(0xffffffff);
+    expect(light.decay).toBe(2);
     expect(light.direction.y).toBe(-1);
+    expect(light.enabled).toBe(true);
     expect(light.innerConeCos).toBeCloseTo(1, 6);
     expect(light.intensity).toBe(1);
+    expect(light.intensityUnit).toBe(UnitlessLightUnit);
     expect(light.normalBias).toBe(0);
     expect(light.outerConeCos).toBeCloseTo(Math.cos((45 * Math.PI) / 180), 6);
     expect(light.pcfRadius).toBe(0);
     expect(light.position.x).toBe(0);
     expect(light.range).toBe(-1);
     expect(light.shadowBias).toBe(0);
+    expect(light.shadowFar).toBe(500);
+    expect(light.shadowMapSize).toBe(1024);
+    expect(light.shadowNear).toBe(0.5);
+    expect(light.shadowStrength).toBe(1);
+    expect(light.spotBlend).toBe(0);
     expect(light.kind).toBe(SpotLightKind);
   });
 
@@ -74,6 +99,11 @@ describe('createSpotLight', () => {
     const light = createSpotLight({ direction, position });
     expect(light.position).not.toBe(position);
     expect(light.direction).not.toBe(direction);
+  });
+
+  it('clamps a supplied blend through the public setter path', () => {
+    expect(createSpotLight({ spotBlend: -1 }).spotBlend).toBe(0);
+    expect(createSpotLight({ spotBlend: 2 }).spotBlend).toBe(1);
   });
 });
 
@@ -92,6 +122,22 @@ describe('getSpotLightConeDegrees', () => {
     getSpotLightConeDegrees(out, light);
     expect(out.innerDegrees).toBeCloseTo(0, 4);
     expect(out.outerDegrees).toBeCloseTo(45, 4);
+  });
+});
+
+describe('setSpotLightBlend', () => {
+  it('stores a blend within the normalized range', () => {
+    const light = createSpotLight();
+    setSpotLightBlend(light, 0.4);
+    expect(light.spotBlend).toBe(0.4);
+  });
+
+  it('clamps values to the normalized range', () => {
+    const light = createSpotLight();
+    setSpotLightBlend(light, -1);
+    expect(light.spotBlend).toBe(0);
+    setSpotLightBlend(light, 2);
+    expect(light.spotBlend).toBe(1);
   });
 });
 

@@ -1,14 +1,22 @@
-import { HemisphereLightKind } from '@flighthq/types/contract';
+import { HemisphereLightKind, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
 import { cloneHemisphereLight, createHemisphereLight } from './hemisphereLight';
 
 describe('cloneHemisphereLight', () => {
   it('creates an independent copy with the same fields', () => {
-    const light = createHemisphereLight({ groundColor: 0x223344ff, intensity: 0.5, skyColor: 0x8899aaff });
+    const light = createHemisphereLight({
+      enabled: false,
+      groundColor: 0x223344ff,
+      intensity: 0.5,
+      intensityUnit: LuxLightUnit,
+      skyColor: 0x8899aaff,
+    });
     const copy = cloneHemisphereLight(light);
     expect(copy).not.toBe(light);
+    expect(copy.enabled).toBe(false);
     expect(copy.groundColor).toBe(0x223344ff);
     expect(copy.intensity).toBe(0.5);
+    expect(copy.intensityUnit).toBe(LuxLightUnit);
     expect(copy.skyColor).toBe(0x8899aaff);
     expect(copy.kind).toBe(HemisphereLightKind);
   });
@@ -17,8 +25,10 @@ describe('cloneHemisphereLight', () => {
 describe('createHemisphereLight', () => {
   it('applies opaque-white defaults at unit intensity for both colors', () => {
     const light = createHemisphereLight();
+    expect(light.enabled).toBe(true);
     expect(light.groundColor).toBe(0xffffffff);
     expect(light.intensity).toBe(1);
+    expect(light.intensityUnit).toBe(UnitlessLightUnit);
     expect(light.skyColor).toBe(0xffffffff);
     expect(light.kind).toBe(HemisphereLightKind);
   });

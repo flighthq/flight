@@ -1,16 +1,19 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
 import type { SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types/contract';
-import { SpotLightKind } from '@flighthq/types/contract';
+import { SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a spot light's data, including fresh `position`/`direction` vectors.
 export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
   return createEntity({
     castsShadow: source.castsShadow,
     color: source.color,
+    decay: source.decay,
     direction: cloneVector3(source.direction),
+    enabled: source.enabled,
     innerConeCos: source.innerConeCos,
     intensity: source.intensity,
+    intensityUnit: source.intensityUnit,
     kind: SpotLightKind,
     normalBias: source.normalBias,
     outerConeCos: source.outerConeCos,
@@ -18,6 +21,11 @@ export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
     position: cloneVector3(source.position),
     range: source.range,
     shadowBias: source.shadowBias,
+    shadowFar: source.shadowFar,
+    shadowMapSize: source.shadowMapSize,
+    shadowNear: source.shadowNear,
+    shadowStrength: source.shadowStrength,
+    spotBlend: source.spotBlend,
   });
 }
 
@@ -31,9 +39,12 @@ export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight
   const light: SpotLight = createEntity({
     castsShadow: options?.castsShadow ?? false,
     color: options?.color ?? 0xffffffff,
+    decay: options?.decay ?? 2,
     direction: direction ? cloneVector3(direction) : createVector3(0, -1, 0),
+    enabled: options?.enabled ?? true,
     innerConeCos: 1,
     intensity: options?.intensity ?? 1,
+    intensityUnit: options?.intensityUnit ?? UnitlessLightUnit,
     kind: SpotLightKind,
     normalBias: options?.normalBias ?? 0,
     outerConeCos: 1,
@@ -41,8 +52,14 @@ export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight
     position: position ? cloneVector3(position) : createVector3(0, 0, 0),
     range: options?.range ?? -1,
     shadowBias: options?.shadowBias ?? 0,
+    shadowFar: options?.shadowFar ?? 500,
+    shadowMapSize: options?.shadowMapSize ?? 1024,
+    shadowNear: options?.shadowNear ?? 0.5,
+    shadowStrength: options?.shadowStrength ?? 1,
+    spotBlend: 0,
   });
   setSpotLightCone(light, options?.innerConeDegrees ?? 0, options?.outerConeDegrees ?? 45);
+  setSpotLightBlend(light, options?.spotBlend ?? 0);
   return light;
 }
 
@@ -52,6 +69,12 @@ export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight
 export function getSpotLightConeDegrees(out: SpotLightConeAngles, source: Readonly<SpotLight>): void {
   out.innerDegrees = (Math.acos(source.innerConeCos) * 180) / Math.PI;
   out.outerDegrees = (Math.acos(source.outerConeCos) * 180) / Math.PI;
+}
+
+// Writes a normalized penumbra blend. Values outside [0, 1] are clamped rather than rejected so
+// inspector and animation inputs remain safe to apply directly.
+export function setSpotLightBlend(out: SpotLight, blend: number): void {
+  out.spotBlend = Math.max(0, Math.min(1, blend));
 }
 
 // Writes the precomputed cone cosines from inner/outer half-angles given in degrees. A larger

@@ -31,10 +31,11 @@ function createTestCubeTexture(): Texture {
 describe('cloneEnvironment', () => {
   it('creates an independent copy that shares the cubemap reference', () => {
     const cube = createTestCubeTexture();
-    const environment = createEnvironment({ environment: cube, intensity: 0.5 });
+    const environment = createEnvironment({ enabled: false, environment: cube, intensity: 0.5 });
     const copy = cloneEnvironment(environment);
     expect(copy).not.toBe(environment);
     expect(copy.environment).toBe(cube);
+    expect(copy.enabled).toBe(false);
     expect(copy.intensity).toBe(0.5);
     expect(copy.kind).toBe(EnvironmentKind);
   });
@@ -44,13 +45,15 @@ describe('createEnvironment', () => {
   it('applies defaults: no cubemap at unit intensity', () => {
     const environment = createEnvironment();
     expect(environment.environment).toBeNull();
+    expect(environment.enabled).toBe(true);
     expect(environment.intensity).toBe(1);
     expect(environment.kind).toBe(EnvironmentKind);
   });
 
   it('stores the supplied cubemap and intensity', () => {
     const cube = createTestCubeTexture();
-    const environment = createEnvironment({ environment: cube, intensity: 2 });
+    const environment = createEnvironment({ enabled: false, environment: cube, intensity: 2 });
+    expect(environment.enabled).toBe(false);
     expect(environment.environment).toBe(cube);
     expect(environment.intensity).toBe(2);
   });

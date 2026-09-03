@@ -1,15 +1,18 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, normalizeVector3, setVector3 } from '@flighthq/geometry/contract';
 import type { AreaLight, AreaLightOptions, Vector3Like } from '@flighthq/types/contract';
-import { AreaLightKind } from '@flighthq/types/contract';
+import { AreaLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of an area light's data, including fresh position/direction/right/up vectors.
 export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {
   return createEntity({
     castsShadow: source.castsShadow,
     color: source.color,
+    decay: source.decay,
     direction: cloneVector3(source.direction),
+    enabled: source.enabled,
     intensity: source.intensity,
+    intensityUnit: source.intensityUnit,
     kind: AreaLightKind,
     normalBias: source.normalBias,
     pcfRadius: source.pcfRadius,
@@ -17,6 +20,10 @@ export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {
     range: source.range,
     right: cloneVector3(source.right),
     shadowBias: source.shadowBias,
+    shadowFar: source.shadowFar,
+    shadowMapSize: source.shadowMapSize,
+    shadowNear: source.shadowNear,
+    shadowStrength: source.shadowStrength,
     up: cloneVector3(source.up),
   });
 }
@@ -33,8 +40,11 @@ export function createAreaLight(options?: Readonly<AreaLightOptions>): AreaLight
   return createEntity({
     castsShadow: options?.castsShadow ?? false,
     color: options?.color ?? 0xffffffff,
+    decay: options?.decay ?? 2,
     direction: direction ? cloneVector3(direction) : createVector3(0, -1, 0),
+    enabled: options?.enabled ?? true,
     intensity: options?.intensity ?? 1,
+    intensityUnit: options?.intensityUnit ?? UnitlessLightUnit,
     kind: AreaLightKind,
     normalBias: options?.normalBias ?? 0,
     pcfRadius: options?.pcfRadius ?? 0,
@@ -42,6 +52,10 @@ export function createAreaLight(options?: Readonly<AreaLightOptions>): AreaLight
     range: options?.range ?? -1,
     right: right ? cloneVector3(right) : createVector3(1, 0, 0),
     shadowBias: options?.shadowBias ?? 0,
+    shadowFar: options?.shadowFar ?? 500,
+    shadowMapSize: options?.shadowMapSize ?? 1024,
+    shadowNear: options?.shadowNear ?? 0.5,
+    shadowStrength: options?.shadowStrength ?? 1,
     up: up ? cloneVector3(up) : createVector3(0, 0, 1),
   });
 }

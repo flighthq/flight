@@ -103,6 +103,33 @@ describe('selectScene3DForwardLights', () => {
     expect(out.indices).toHaveLength(0);
   });
 
+  it('omits disabled lights even when they would otherwise rank first', () => {
+    const disabled = createPointLight({ enabled: false, intensity: 100, position: { x: 1, y: 0, z: 0 }, range: -1 });
+    const enabled = createPointLight({ position: { x: 2, y: 0, z: 0 }, range: -1 });
+    const out = selection();
+    selectScene3DForwardLights(
+      out,
+      { ambient: null, directional: null, point: [disabled, enabled] },
+      createBoundingSphere(0, 0, 0, 0),
+    );
+    expect(out.point).toEqual([enabled]);
+    expect(out.indices).toEqual([1]);
+  });
+
+  it('uses decay when ranking the forward-light budget', () => {
+    const inverseSquare = createPointLight({ decay: 2, position: { x: 4, y: 0, z: 0 }, range: -1 });
+    const linear = createPointLight({ decay: 1, position: { x: 4, y: 0, z: 0 }, range: -1 });
+    const fillers = [1, 2, 3].map((x) => createPointLight({ position: { x, y: 0, z: 0 }, range: -1 }));
+    const out = selection();
+    selectScene3DForwardLights(
+      out,
+      { ambient: null, directional: null, point: [...fillers, inverseSquare, linear] },
+      createBoundingSphere(0, 0, 0, 0),
+    );
+    expect(out.point).toContain(linear);
+    expect(out.point).not.toContain(inverseSquare);
+  });
+
   it('reads all inputs before writing an aliased output', () => {
     const points = [
       createPointLight({ position: { x: 4, y: 0, z: 0 }, range: -1 }),
