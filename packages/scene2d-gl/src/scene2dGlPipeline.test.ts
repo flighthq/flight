@@ -14,6 +14,7 @@ import {
   RenderTargetTextureSourceKind,
   RegistryEntryState,
   RichTextKind,
+  Scale9SpriteKind,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
@@ -44,7 +45,7 @@ describe('scene2dGlPipeline', () => {
     expect(EntityRuntimeKey in scene2dGlPipeline).toBe(true);
   });
 
-  it('carries all twelve standard 2D GL renderers', () => {
+  it('carries all thirteen standard 2D GL renderers', () => {
     const registries = getGlPipelineRegistries(scene2dGlPipeline);
     const expectedKinds = [
       BitmapTextKind,
@@ -54,6 +55,7 @@ describe('scene2dGlPipeline', () => {
       QuadBatchKind,
       RenderCacheKind,
       RichTextKind,
+      Scale9SpriteKind,
       Scale9ShapeKind,
       ShapeKind,
       SpriteKind,
