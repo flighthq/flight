@@ -146,8 +146,8 @@ export type TrayCreateProviderResult =
   | { readonly error?: unknown; readonly outcome: 'tray-create-failed' };
 
 export type TrayCreateResult<Tray extends TrayIcon = TrayIcon> =
-  | { readonly outcome: 'created'; readonly tray: Tray }
-  | Exclude<TrayCreateProviderResult, { readonly outcome: 'created' }>;
+  | (Entity & { readonly outcome: 'created'; readonly tray: Tray })
+  | (Entity & Exclude<TrayCreateProviderResult, { readonly outcome: 'created' }>);
 
 export interface TrayDestroyFailure {
   readonly error?: unknown;
