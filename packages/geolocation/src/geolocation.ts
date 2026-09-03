@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   Entity,
   GeolocationAccessOutcome,
@@ -8,10 +7,11 @@ import type {
   GeolocationRequestOptions,
   GeoPosition,
   GeoPositionResult,
+  HasSystemGeolocation,
 } from '@flighthq/types/contract';
 
-export function clearGeolocationWatch(id: number): void {
-  getGeolocationBackend().clearWatch(id);
+export function clearGeolocationWatch(host: Readonly<HasSystemGeolocation>, id: number): void {
+  host.system.geolocation.clearWatch(id);
 }
 
 export function createGeoPosition(): GeoPosition {
@@ -28,9 +28,6 @@ export function createGeoPosition(): GeoPosition {
   });
 }
 
-// Builds the default web backend over navigator.geolocation. Position reads resolve to null and
-// permission requests resolve to false when the API is absent (insecure context, jsdom) or the user
-// denies access — location access is not guaranteed.
 export function createWebGeolocationBackend(): GeolocationBackend {
   return createEntity<Omit<GeolocationBackend, keyof Entity>>({
     clearWatch(id) {
@@ -82,10 +79,6 @@ export function createWebGeolocationBackend(): GeolocationBackend {
       if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
       return getWebGeolocation() !== null;
     },
-    // The web has no permission-request API: the prompt is raised as a side effect of a position
-    // read. Code 1 is a refusal; code 3 is an acquisition TIMEOUT and says nothing about the user, so
-    // it is reported as such rather than guessed at. 'dismissed' is reachable only on hosts that can
-    // actually observe a closed-undecided prompt, which the web cannot.
     promptForAccess() {
       return new Promise<GeolocationAccessOutcome>((resolve) => {
         const geo = getWebGeolocation();
@@ -119,95 +112,34 @@ export function createWebGeolocationBackend(): GeolocationBackend {
   });
 }
 
-export function explainGeolocationBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+export function getCurrentGeoPosition(
+  host: Readonly<HasSystemGeolocation>,
+  options?: Readonly<GeolocationRequestOptions>,
+): Promise<GeoPosition | null> {
+  return host.system.geolocation.getCurrentPosition(options ?? _emptyOptions);
 }
 
-export function getCurrentGeoPosition(options?: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null> {
-  return getGeolocationBackend().getCurrentPosition(options ?? _emptyOptions);
+export function getCurrentGeoPositionResult(
+  host: Readonly<HasSystemGeolocation>,
+  options?: Readonly<GeolocationRequestOptions>,
+): Promise<GeoPositionResult> {
+  return host.system.geolocation.getCurrentPositionResult(options ?? _emptyOptions);
 }
 
-export function getCurrentGeoPositionResult(options?: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult> {
-  return getGeolocationBackend().getCurrentPositionResult(options ?? _emptyOptions);
-}
-
-export function getGeolocationBackend(): GeolocationBackend {
-  return _custom ?? _host ?? _sentinel;
-}
-
-export function installGeolocationHostBackend(backend: GeolocationBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  _host = backend;
-}
-
-export function isGeolocationAvailable(): boolean {
-  return getGeolocationBackend().isAvailable();
-}
-
-export function observeGeolocationHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
-}
-
-export function resetGeolocationBackendForTest(): void {
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-}
-
-export function setGeolocationBackend(backend: GeolocationBackend | null): void {
-  _custom = backend;
+export function isGeolocationAvailable(host: Readonly<HasSystemGeolocation>): boolean {
+  return host.system.geolocation.isAvailable();
 }
 
 export function watchGeolocationPosition(
+  host: Readonly<HasSystemGeolocation>,
   handler: (position: Readonly<GeoPosition>) => void,
   options?: Readonly<GeolocationRequestOptions>,
   onError?: (reason: GeolocationErrorReason) => void,
 ): number {
-  return getGeolocationBackend().watchPosition(handler, options ?? _emptyOptions, onError);
+  return host.system.geolocation.watchPosition(handler, options ?? _emptyOptions, onError);
 }
 
-let _custom: GeolocationBackend | null = null;
-let _host: GeolocationBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _emptyOptions: GeolocationRequestOptions = {};
-
-const _sentinel: GeolocationBackend = createEntity<Omit<GeolocationBackend, keyof Entity>>({
-  clearWatch() {},
-  getCurrentPosition() {
-    return Promise.resolve(null);
-  },
-  getCurrentPositionResult() {
-    return Promise.resolve({ position: null, reason: 'unavailable' as const });
-  },
-  isAvailable() {
-    return false;
-  },
-  promptForAccess() {
-    return Promise.resolve({ reason: 'runtime-unavailable' as const });
-  },
-  watchPosition() {
-    return -1;
-  },
-});
 
 function getWebGeolocation(): Geolocation | null {
   if (typeof navigator === 'undefined') return null;
@@ -220,8 +152,6 @@ function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosit
     accuracy: coords.accuracy,
     altitude: coords.altitude ?? 0,
     altitudeAccuracy: coords.altitudeAccuracy ?? 0,
-    // floorLevel is non-standard: absent from the W3C GeolocationCoordinates type, but some hosts
-    // (indoor-positioning platforms) populate it. Read it when present rather than forcing 0.
     floorLevel: (coords as { floorLevel?: number }).floorLevel ?? 0,
     heading: coords.heading ?? 0,
     latitude: coords.latitude,
@@ -261,5 +191,4 @@ function toPositionOptions(options: Readonly<GeolocationRequestOptions>): Positi
   };
 }
 
-// Local alias for the lib.dom global so source never references the colliding name directly.
 type GlobalGeolocationPosition = GeolocationPosition;
