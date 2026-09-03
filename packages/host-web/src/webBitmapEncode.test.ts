@@ -1,16 +1,9 @@
-import {
-  encodeBitmap,
-  explainBitmapEncodeBackend,
-  getBitmapEncodeBackend,
-  hasBitmapEncodeHostBackend,
-  resetBitmapEncodeBackendForTest,
-  setBitmapEncodeBackend,
-} from '@flighthq/bitmap/contract';
+import { encodeBitmap } from '@flighthq/bitmap/contract';
 import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapEncodeBackend } from '@flighthq/types/contract';
+import type { Bitmap, HasGraphicsBitmapEncode } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { enableHostWebBitmapEncode } from './webBitmapEncode';
+import { createWebBitmapEncodeBackend, webBitmapEncodeBackend } from './webBitmapEncode';
 
 function createTestBitmap(): Bitmap {
   return createEntity({
@@ -25,21 +18,32 @@ function createTestBitmap(): Bitmap {
   });
 }
 
+function hostWith(backend = webBitmapEncodeBackend): HasGraphicsBitmapEncode {
+  return { graphics: { bitmapEncode: backend } } as HasGraphicsBitmapEncode;
+}
+
 afterEach(() => {
-  resetBitmapEncodeBackendForTest();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-describe('enableHostWebBitmapEncode', () => {
-  it('enables without allocating a canvas or ImageData', () => {
+describe('createWebBitmapEncodeBackend', () => {
+  it('returns a fresh entity each call', () => {
+    const a = createWebBitmapEncodeBackend();
+    const b = createWebBitmapEncodeBackend();
+    expect(a).not.toBe(b);
+    expect(a.supportedFormats).toEqual(['jpeg', 'png']);
+  });
+});
+
+describe('webBitmapEncodeBackend', () => {
+  it('does not allocate a canvas or ImageData at import time', () => {
     const createElement = vi.spyOn(document, 'createElement');
     const imageData = globalThis.ImageData;
     const imageDataAccess = vi.fn(() => imageData);
     Object.defineProperty(globalThis, 'ImageData', { configurable: true, get: imageDataAccess });
     try {
-      enableHostWebBitmapEncode();
-      expect(hasBitmapEncodeHostBackend()).toBe(true);
+      expect(webBitmapEncodeBackend.supportedFormats).toEqual(['jpeg', 'png']);
       expect(createElement).not.toHaveBeenCalled();
       expect(imageDataAccess).not.toHaveBeenCalled();
     } finally {
@@ -53,8 +57,6 @@ describe('enableHostWebBitmapEncode', () => {
   ] as const)('encodes %s through exact web pixel and data-url semantics', (format, mimeType) => {
     const putImageData = vi.fn();
     const createElement = vi.spyOn(document, 'createElement');
-    // The DOM declaration combines 2D and WebGPU overloads; this partial mock implements only the
-    // 2D member exercised by the encoder, so neither overloaded return type can express it directly.
     const context = { putImageData } as unknown as CanvasRenderingContext2D;
     const getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
@@ -76,10 +78,10 @@ describe('enableHostWebBitmapEncode', () => {
     }
     vi.stubGlobal('ImageData', MockImageData);
 
+    const host = hostWith();
     const source = createTestBitmap();
     const originalPixels = [...source.data];
-    enableHostWebBitmapEncode();
-    expect(encodeBitmap(source, format, 0.6)).toEqual(new Uint8Array([1, 2, 3]));
+    expect(encodeBitmap(host, source, format, 0.6)).toEqual(new Uint8Array([1, 2, 3]));
     const canvas = createElement.mock.results[0]?.value;
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
     if (!(canvas instanceof HTMLCanvasElement)) return;
@@ -91,43 +93,14 @@ describe('enableHostWebBitmapEncode', () => {
     expect(putImageData).toHaveBeenCalledWith(createdImageData[0], 0, 0);
     expect(toDataURL).toHaveBeenCalledWith(mimeType, 0.6);
     expect([...source.data]).toEqual(originalPixels);
-    expect(explainBitmapEncodeBackend()).toMatchObject({ operation: 'encodeBitmap', viability: 'available' });
   });
 
-  it('records and rethrows genuine web encoding faults', () => {
+  it('rethrows genuine web encoding faults', () => {
     const failure = new Error('canvas unavailable');
     vi.spyOn(document, 'createElement').mockImplementation(() => {
       throw failure;
     });
-    enableHostWebBitmapEncode();
-    expect(() => encodeBitmap(createTestBitmap())).toThrow(failure);
-    expect(explainBitmapEncodeBackend()).toMatchObject({
-      operation: 'encodeBitmap',
-      viability: 'runtime-api-unavailable',
-    });
-  });
-
-  it('installs a hidden host beneath a terminal custom result without touching the DOM', () => {
-    const custom: BitmapEncodeBackend = {
-      encodeBitmap: vi.fn(() => new Uint8Array([7])),
-      supportedFormats: ['png'],
-    };
-    const createElement = vi.spyOn(document, 'createElement');
-    setBitmapEncodeBackend(custom);
-    enableHostWebBitmapEncode();
-    expect(hasBitmapEncodeHostBackend()).toBe(true);
-    expect(encodeBitmap(createTestBitmap(), 'jpeg')).toBeNull();
-    expect(custom.encodeBitmap).not.toHaveBeenCalled();
-    expect(createElement).not.toHaveBeenCalled();
-  });
-
-  it('preserves host identity on repeat and creates a fresh host after reset', () => {
-    enableHostWebBitmapEncode();
-    const first = getBitmapEncodeBackend();
-    enableHostWebBitmapEncode();
-    expect(getBitmapEncodeBackend()).toBe(first);
-    resetBitmapEncodeBackendForTest();
-    enableHostWebBitmapEncode();
-    expect(getBitmapEncodeBackend()).not.toBe(first);
+    const host = hostWith();
+    expect(() => encodeBitmap(host, createTestBitmap())).toThrow(failure);
   });
 });

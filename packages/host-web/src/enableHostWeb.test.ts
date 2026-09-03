@@ -1,9 +1,3 @@
-import {
-  hasBitmapEncodeHostBackend,
-  hasBitmapReadbackHostBackend,
-  resetBitmapEncodeBackendForTest,
-  resetBitmapReadbackBackendForTest,
-} from '@flighthq/bitmap/contract';
 import { resetFontLoadingBackendForTest } from '@flighthq/font/contract';
 import { explainRaster2DSurfaceProvider, resetRaster2DSurfaceProviderForTest } from '@flighthq/render/contract';
 import { hasVideoCapabilityHostBackend, resetVideoCapabilityBackendForTest } from '@flighthq/video/contract';
@@ -13,8 +7,6 @@ import { resetHostWebFontLoadingForTest } from './webFontLoading';
 import { resetHostWebRaster2DSurfaceForTest } from './webRaster2DSurface';
 
 afterEach(() => {
-  resetBitmapEncodeBackendForTest();
-  resetBitmapReadbackBackendForTest();
   resetFontLoadingBackendForTest();
   resetHostWebFontLoadingForTest();
   resetVideoCapabilityBackendForTest();
@@ -25,8 +17,6 @@ afterEach(() => {
 describe('enableHostWeb', () => {
   it('does not throw on first call', () => {
     expect(() => enableHostWeb()).not.toThrow();
-    expect(hasBitmapEncodeHostBackend()).toBe(true);
-    expect(hasBitmapReadbackHostBackend()).toBe(true);
     expect(hasVideoCapabilityHostBackend()).toBe(true);
     expect(explainRaster2DSurfaceProvider().layer).toBe('host');
   });
