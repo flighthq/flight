@@ -61,6 +61,7 @@ const requiredCapabilities: Readonly<Record<HostProbeHost, ReadonlySet<HostProbe
     'notification.lifecycle',
     'notification.permission',
     'notification.scheduling',
+    'protocol',
     'share',
     'soft-keyboard',
     'statusbar',

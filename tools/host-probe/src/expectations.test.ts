@@ -85,8 +85,9 @@ describe('getRequiredHostProbeCapabilities', () => {
     ]);
     expect(getRequiredHostProbeCapabilities('tauri').has('updater')).toBe(false);
     expect(getRequiredHostProbeCapabilities('capacitor').has('updater')).toBe(false);
+    expect(getRequiredHostProbeCapabilities('capacitor').has('protocol')).toBe(true);
     expect(getRequiredHostProbeCapabilities('tauri').size).toBe(12);
-    expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(17);
+    expect(getRequiredHostProbeCapabilities('capacitor').size).toBe(18);
   });
 });
 
