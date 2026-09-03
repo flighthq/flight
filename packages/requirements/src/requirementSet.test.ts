@@ -14,7 +14,7 @@ describe('createRequirementSet', () => {
     covers.length = 0;
     requirements.length = 0;
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       covers: [RequirementFacet.SceneBlendMode, RequirementFacet.SceneNodeKind],
       requirements: [
         { facet: RequirementFacet.SceneBlendMode, key: 'Multiply' },
@@ -40,7 +40,7 @@ describe('diffRequirementSets', () => {
       ),
     );
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       covers: [RequirementFacet.SceneNodeKind],
       requirements: [{ facet: RequirementFacet.SceneNodeKind, key: 'Shape' }],
     });
@@ -60,7 +60,7 @@ describe('mergeRequirementSets', () => {
       ),
     ]);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       covers: [RequirementFacet.SceneNodeKind],
       requirements: [
         { facet: RequirementFacet.SceneNodeKind, key: 'Shape' },

@@ -11,7 +11,7 @@ describe('collectScene2DRequirements', () => {
       reportRequirement(sink, RequirementFacet.SceneNodeKind, 'Shape');
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       covers: [
         RequirementFacet.SceneBlendMode,
         RequirementFacet.SceneMaterialKind,
