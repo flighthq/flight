@@ -1,3 +1,4 @@
+import { createScreenInfo } from '@flighthq/screen/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -47,5 +48,18 @@ describe('createWebScreenCapabilities', () => {
     expect(await capabilities.details.request()).toBe(false);
     expect(['denied', 'granted', 'prompt']).toContain(await capabilities.details.queryPermission());
     expect(capabilities.permissionChange.subscribe(vi.fn())).toEqual(expect.any(Function));
+  });
+
+  it('retains the landscape fallback when the standard orientation property is absent at runtime', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(window.screen, 'orientation');
+    Object.defineProperty(window.screen, 'orientation', { configurable: true, value: undefined });
+    try {
+      const out = createWebScreenCapabilities().query.getPrimaryScreen(createScreenInfo());
+      expect(out.orientation).toBe('Landscape');
+      expect(out.rotation).toBe(-1);
+    } finally {
+      if (descriptor === undefined) Reflect.deleteProperty(window.screen, 'orientation');
+      else Object.defineProperty(window.screen, 'orientation', descriptor);
+    }
   });
 });

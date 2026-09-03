@@ -4,11 +4,7 @@ import type { Node, Renderable, RenderProxy2D, RenderProxyAdapter, RenderState }
 import { installRenderAdaptHook, updateRenderProxyRenderer } from './renderProxy';
 import { getRenderStateRuntime } from './renderState';
 
-export function applyRenderProxyAdapter(
-  state: RenderState,
-  source: Renderable,
-  data: RenderProxy2D & { traverseChildren: boolean },
-): void {
+export function applyRenderProxyAdapter(state: RenderState, source: Renderable, data: RenderProxy2D): void {
   const renderAdapter = getRenderStateRuntime(state).renderProxyAdapterMap.get(source) ?? null;
   let traverseChildren = true;
   if (renderAdapter !== null) {
