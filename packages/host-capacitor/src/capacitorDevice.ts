@@ -39,7 +39,7 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
     .catch(() => {
       /* leave '' */
     });
-  return createEntity({
+  return createEntity<Omit<DeviceBackend, keyof Entity>>({
     getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
       // `@capacitor/device` reports no input capabilities; report the false sentinels.
       out.hasKeyboard = false;
@@ -98,7 +98,7 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
       out.left = 0;
       return out;
     },
-  } satisfies DeviceBackend);
+  });
 }
 
 // Capacitor's platform is 'ios' | 'android' | 'web'; a mobile platform is a phone (no tablet signal),

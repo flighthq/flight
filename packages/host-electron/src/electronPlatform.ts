@@ -6,7 +6,7 @@ import type { ElectronApi, Entity, PlatformBackend, PlatformName } from '@flight
 // typed without @types/node) and falls back to '' / 'unknown' sentinels. Writes into caller-owned
 // `out` so callers control allocation.
 export function createElectronPlatformBackend(electron: ElectronApi): PlatformBackend & Entity {
-  return createEntity({
+  return createEntity<Omit<PlatformBackend, keyof Entity>>({
     getInfo(out) {
       const proc =
         typeof process !== 'undefined'
@@ -20,7 +20,7 @@ export function createElectronPlatformBackend(electron: ElectronApi): PlatformBa
       out.isTouch = false;
       return out;
     },
-  } satisfies PlatformBackend);
+  });
 }
 
 function toPlatformName(platform: string | undefined): PlatformName {

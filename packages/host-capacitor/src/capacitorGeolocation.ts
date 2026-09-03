@@ -21,7 +21,7 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
   // The Capacitor string callback id keyed by the numeric id handed to the caller; null while the async
   // watch registration is still in flight. A cleared-early entry is removed so its late id self-cancels.
   const watchIds = new Map<number, string | null>();
-  return createEntity({
+  return createEntity<Omit<GeolocationBackend, keyof Entity>>({
     async getCurrentPosition(options) {
       try {
         return toGeoPosition(await geolocation.getCurrentPosition(options));
@@ -76,12 +76,12 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
         return { reason: 'operation-failed' as const };
       }
     },
-  } satisfies GeolocationBackend);
+  });
 }
 
 function toGeoPosition(position: Readonly<CapacitorPosition>): GeoPosition {
   const coords = position.coords;
-  return {
+  return createEntity<Omit<GeoPosition, keyof Entity>>({
     latitude: coords.latitude,
     longitude: coords.longitude,
     accuracy: coords.accuracy,
@@ -91,7 +91,7 @@ function toGeoPosition(position: Readonly<CapacitorPosition>): GeoPosition {
     heading: coords.heading ?? 0,
     speed: coords.speed ?? 0,
     timestamp: position.timestamp,
-  };
+  });
 }
 
 // Capacitor reports 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'; the last folds to 'prompt'.
