@@ -1,5 +1,6 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
-import type { CanvasTextShaperBackend, FontMetrics, TextFormat } from '@flighthq/types/contract';
+import type { CanvasTextShaperBackend, EntityWithoutRuntime, FontMetrics, TextFormat } from '@flighthq/types/contract';
 
 // Clears the advance cache on a backend returned by createCanvasTextShaperBackend. Call this after
 // a webfont finishes loading — document.fonts.ready resolves, FontFaceObserver fires, etc. — so
@@ -43,7 +44,7 @@ export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
   // cache reaches _CACHE_MAX_SIZE, keeping allocation bounded on hot-path layout measurement.
   const cache = new Map<string, number>();
 
-  const backend: CanvasTextShaperBackend = {
+  const backend = {
     clearCache(): void {
       cache.clear();
     },
@@ -125,9 +126,9 @@ export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
       cache.set(cacheKey, width);
       return width;
     },
-  };
+  } satisfies EntityWithoutRuntime<CanvasTextShaperBackend>;
 
-  return backend;
+  return createEntity(backend);
 }
 
 // ---------------------------------------------------------------------------
@@ -169,7 +170,7 @@ function _createContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingCo
 // callers receive the documented sentinel values rather than a throw at construction time. The
 // clearCache no-op satisfies the CanvasTextShaperBackend contract.
 function _createSentinelBackend(): CanvasTextShaperBackend {
-  return {
+  const backend = {
     clearCache(): void {
       // No-op: no cache in the sentinel path.
     },
@@ -179,5 +180,6 @@ function _createSentinelBackend(): CanvasTextShaperBackend {
     measureText(_text: string, _format: Readonly<TextFormat>): number {
       return -1;
     },
-  };
+  } satisfies EntityWithoutRuntime<CanvasTextShaperBackend>;
+  return createEntity(backend);
 }

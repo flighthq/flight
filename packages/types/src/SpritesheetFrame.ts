@@ -1,4 +1,6 @@
-export interface SpritesheetFrame {
+import type { Entity } from './Entity';
+
+export interface SpritesheetFrame extends Entity {
   id: number;
   offsetX: number;
   offsetY: number;

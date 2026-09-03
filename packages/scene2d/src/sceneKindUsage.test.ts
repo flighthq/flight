@@ -28,7 +28,7 @@ function usageOf(build: (root: Node2D) => void) {
 
 describe('createScene2DKindUsage', () => {
   it('starts empty so a caller can reuse one record across scenes', () => {
-    expect(createScene2DKindUsage()).toEqual({
+    expect(createScene2DKindUsage()).toMatchObject({
       blendModes: [],
       materialKinds: [],
       nodeKinds: [],

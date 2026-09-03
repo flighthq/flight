@@ -1,4 +1,5 @@
-import type { BitmapFont, GlyphSource } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { BitmapFont, Entity, GlyphSource } from '@flighthq/types/contract';
 
 import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from './bitmapFont';
 
@@ -6,8 +7,8 @@ import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from '
 // lookups into the method object. `getGlyphEntry` is the static map lookup (no side effects) — the
 // static counterpart to `@flighthq/glyphatlas`'s `createGlyphSourceFromGlyphAtlas`, whose
 // `getGlyphEntry` rasterizes on miss. A renderer holds either behind the one seam without knowing which.
-export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource {
-  return {
+export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource & Entity {
+  return createEntity({
     getGlyphAtlasImage(page = 0) {
       // Each page's atlas image, indexed by the glyph's `page`. An out-of-range page (or a page whose
       // atlas carries no image yet) yields null — the renderer skips glyphs it cannot sample.
@@ -29,5 +30,5 @@ export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): Gly
     getGlyphMetrics() {
       return getBitmapFontMetrics(font);
     },
-  };
+  });
 }

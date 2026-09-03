@@ -1,6 +1,7 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
-export interface ResourceLoaderItemSignals {
+export interface ResourceLoaderItemSignals extends Entity {
   onItemComplete: Signal<(key: string, value: unknown) => void>;
   onItemError: Signal<(key: string, error: unknown, attempt: number) => void>;
   onItemRetry: Signal<(key: string, attempt: number, delayMs: number) => void>;

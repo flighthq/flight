@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { FlowState, FlowStack } from '@flighthq/types/contract';
 
 // Empty the stack, exiting every state top-to-bottom (`onExit` on the active top first, down to the
@@ -14,7 +15,7 @@ export function clearFlowStack(stack: FlowStack): void {
 // Allocate an empty flow-state stack. The only allocating function; every other stack function reads
 // or mutates an existing stack in place. Push states onto it to drive the enter/pause lifecycle.
 export function createFlowStack(): FlowStack {
-  return { states: [] };
+  return createEntity({ states: [] });
 }
 
 // The active top of the stack — the state currently receiving `onUpdate` — or `null` if the stack is

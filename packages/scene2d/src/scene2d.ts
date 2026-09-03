@@ -35,11 +35,11 @@ export function createScene2DRuntime(): Scene2DRuntime {
 }
 
 export function createScene2DSignals(): Scene2DSignals {
-  return {
+  return createEntity({
     onFullscreenChanged: createSignal(),
     onOrientationChanged: createSignal(),
     onResize: createSignal(),
-  };
+  });
 }
 
 export function enableScene2DSignals(source: Scene2D): Scene2DSignals {

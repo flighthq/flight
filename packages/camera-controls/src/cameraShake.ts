@@ -18,7 +18,7 @@ export function createCameraShake(options?: Readonly<CameraShakeOptions>): Camer
 }
 
 export function createCameraShakeOffset(): CameraShakeOffset {
-  return { rotationX: 0, rotationY: 0, rotationZ: 0, x: 0, y: 0, z: 0 };
+  return createEntity({ rotationX: 0, rotationY: 0, rotationZ: 0, x: 0, y: 0, z: 0 });
 }
 
 export function resetCameraShake(shake: CameraShake): void {

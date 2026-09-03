@@ -1,11 +1,12 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
-import type { Node2D, Scene2D, Scene2DKindUsage, ShapeCommandToken } from '@flighthq/types/contract';
+import type { Entity, Node2D, Scene2D, Scene2DKindUsage, ShapeCommandToken } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 // Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
 // frames without reallocating four arrays.
-export function createScene2DKindUsage(): Scene2DKindUsage {
-  return { blendModes: [], materialKinds: [], nodeKinds: [], shapeCommandKeys: [] };
+export function createScene2DKindUsage(): Scene2DKindUsage & Entity {
+  return createEntity({ blendModes: [], materialKinds: [], nodeKinds: [], shapeCommandKeys: [] });
 }
 
 // Clears `out`, then fills it with every kind this scene uses. One walk, no registry, no backend, no

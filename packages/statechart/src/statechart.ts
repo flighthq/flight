@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { StatechartComparison, StatechartInputKind, StatechartTransitionStatus } from '@flighthq/types/contract';
 import type {
   Statechart,
@@ -64,7 +65,7 @@ export function createStatechartInstance(chart: Readonly<Statechart>): Statechar
     regionStates[regionIndex] = chart.regions[regionIndex].initialStateIndex;
   }
 
-  return {
+  return createEntity({
     chart,
     durationGuard: null,
     inputValues,
@@ -74,7 +75,7 @@ export function createStatechartInstance(chart: Readonly<Statechart>): Statechar
     regionStates,
     regionTransitions,
     signals: null,
-  };
+  });
 }
 
 // Explain what the next advance sees in one region. This is the shakeable diagnostic companion to

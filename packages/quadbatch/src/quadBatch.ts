@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
@@ -209,11 +210,11 @@ export function createQuadBatchRuntime(): QuadBatchRuntime {
 }
 
 export function createQuadBatchSignals(): QuadBatchSignals {
-  return {
+  return createEntity({
     onCleared: createSignal(),
     onInstanceAppended: createSignal(),
     onInstanceRemoved: createSignal(),
-  };
+  });
 }
 
 /**

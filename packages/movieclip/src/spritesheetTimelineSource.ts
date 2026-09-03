@@ -1,7 +1,9 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
 import type {
+  Entity,
   Node2D,
   Sprite,
   Spritesheet,
@@ -22,13 +24,13 @@ import type {
 export function createSpritesheetTimelineSource(
   spritesheet: Readonly<Spritesheet>,
   animation: Readonly<SpritesheetAnimation>,
-): TimelineSource {
+): TimelineSource & Entity {
   const bitmaps = new WeakMap<Node2D, Sprite>();
   const frames = materializeSpritesheetTimelineFrames(animation);
   if (_spritesheetTimelineSourceGuard !== null) {
     _spritesheetTimelineSourceGuard(animation, explainSpritesheetTimelineSource(animation));
   }
-  return {
+  return createEntity({
     totalFrames: frames.length,
     labels: [],
     // A spritesheet animation is pure frame content; the format carries nothing to cue.
@@ -52,7 +54,7 @@ export function createSpritesheetTimelineSource(
       bitmap.y = sheetFrame.offsetY - animation.originY;
       invalidateNodeLocalTransform(bitmap);
     },
-  };
+  });
 }
 
 // Reports the authored playback fields the TimelineSource vocabulary cannot carry. Direction is exact:
