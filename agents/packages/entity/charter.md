@@ -68,6 +68,16 @@ The package owns exactly the entity↔runtime↔binding triad — construction (
 
   **Why:** The package charter requires every attach to have detach and read paths to have presence/typed-read counterparts. Detach clears only the binding because runtimes, once allocated, are not removed; the typed read is safe by construction because the attaching layer owns the binding identity. This closes review gaps 1–4 and charter contradictions 1–3 without expanding the package beyond the entity↔runtime↔binding triad.
 
+- **[2026-09-03] `create*` returns transitively Entity; `EntityRuntime` is the documented exception and `clone*` is out of scope.** The doctrine in [explicit-dependency-model](../../explicit-dependency-model.md) stands unchanged: an exported `create*` returns something that is transitively an Entity. `EntityRuntime` is the one documented exception — it is the runtime slot the doctrine is built on, not an object the doctrine applies to — and `clone*` is excluded from the rule rather than exempted by it.
+
+  The collision and value `create*` functions that do not return Entity — `createCollisionManifold2D`, `createCollisionRaycastHit2D`, and their neighbours — are **naming debt, not exceptions.** They stay visibly baselined for now. The eventual fix is a hot-path `out` parameter or the existing `build*` vocabulary, not a second taxonomy of blessed exceptions. **No renames are commissioned yet**; nothing here authorizes touching those names.
+
+  **Why:** A list of exceptions grows and then becomes the rule. Baselining keeps the debt visible and countable without pretending it is correct, which an exception list would. The doctrine's value is that a reader can tell from the verb alone whether a thing has identity, and that survives a known baseline far better than it survives a second vocabulary of blessed escapes.
+
+  **Reading note, because the surface wording looks like a contradiction and a future agent will trip on it:** the model says "there is no `build*`, `make*`, or `assemble*` verb to avoid Entity", while this Decision points the eventual fix at `build*`. Both hold. That sentence bans `build*` as an escape hatch for something that genuinely *is* an entity. A contact manifold and a raycast hit are query results — which the same model already lists under **Not Entity** — so naming them with a non-`create` verb is not an escape from the rule, it is the rule applied. `build*` already exists in the tree (`buildBitmapFontFromRecord`, `buildTilemapLayersFromTiled`).
+
+  **Enforcement:** the semantic gate is hard for new violations while reporting the baseline.
+
 ## Open directions
 
 1. **Guard mode posture.** `createGuardedEntity`/`createGuardedEntityRuntime` use `Proxy` to warn on raw slot writes via `console.warn`. The implementation is opt-in (`enableEntityRuntimeGuards()`) and tree-shakable. However, the `Proxy`-based approach and its alignment with the SDK's plain-data / free-function / C-portable tenets needs review. Is warn-and-allow the intended ceiling (a smoke alarm by design), or should a different mechanism be considered? Should guard mode exist at all, or does it add complexity to a package whose identity is "minimal bedrock"? _(Was Open direction #4.)_ **Resolved — see Decision [2026-07-03]:** guard mode stays, warn-and-allow is the ceiling, emission migrates to `@flighthq/log`.
