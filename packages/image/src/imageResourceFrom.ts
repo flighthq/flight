@@ -1,20 +1,20 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap, Image } from '@flighthq/types/contract';
+import type { Bitmap, ImageResource } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getImageBackend } from './imageBackend';
 
-// Transcodes a Bitmap's raw pixels into the selected host's drawable Image representation. The
+// Transcodes a Bitmap's raw pixels into the selected host's drawable ImageResource representation. The
 // inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
 // conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
-export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): Image | null {
+export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): ImageResource | null {
   const backend = getImageBackend();
   if (backend.createImageFromBitmap === undefined) return null;
   return backend.createImageFromBitmap(bitmap);
 }
 
-export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): Image {
+export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   return createEntity({
     alphaType: DECODED_ALPHA_TYPE,
     gamut: DECODED_GAMUT,
@@ -26,7 +26,7 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): Image 
   });
 }
 
-export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): Image {
+export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
   return createEntity({
     alphaType: DECODED_ALPHA_TYPE,
     gamut: DECODED_GAMUT,
@@ -38,7 +38,7 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): Image {
   });
 }
 
-export function createImageResourceFromImageElement(img: HTMLImageElement): Image {
+export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
   return createEntity({
     alphaType: DECODED_ALPHA_TYPE,
     gamut: DECODED_GAMUT,
@@ -63,11 +63,11 @@ export async function loadImageResourceFromBase64(
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
-): Promise<Image> {
+): Promise<ImageResource> {
   return loadImageResourceFromUrl(`data:${mimeType};base64,${base64}`, undefined, signal);
 }
 
-export async function loadImageResourceFromBlob(blob: Blob, signal?: AbortSignal): Promise<Image> {
+export async function loadImageResourceFromBlob(blob: Blob, signal?: AbortSignal): Promise<ImageResource> {
   const url = URL.createObjectURL(blob);
   try {
     return await loadImageResourceFromUrl(url, undefined, signal);
@@ -80,7 +80,7 @@ export async function loadImageResourceFromBytes(
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
-): Promise<Image> {
+): Promise<ImageResource> {
   const type = mimeType ?? detectImageMimeType(bytes);
   if (type === null) {
     throw new Error('Unable to determine image type from bytes');
@@ -93,7 +93,7 @@ export async function loadImageResourceFromUrl(
   url: string,
   crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,
-): Promise<Image> {
+): Promise<ImageResource> {
   return getImageBackend().loadImageFromUrl(url, crossOrigin, signal);
 }
 

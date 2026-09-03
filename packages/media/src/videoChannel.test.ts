@@ -172,7 +172,7 @@ describe('getVideoChannelHeight', () => {
   it('returns 0 when element is null', () => {
     const channel = playVideoResource(createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
-    channel!.source = { element: null, objectUrl: null, ownsElement: false };
+    channel!.source = createVideoResource();
     expect(getVideoChannelHeight(channel!)).toBe(0);
   });
 });
@@ -188,7 +188,7 @@ describe('getVideoChannelWidth', () => {
   it('returns 0 when element is null', () => {
     const channel = playVideoResource(createVideoResource(createMockVideoElement()));
     expect(channel).not.toBeNull();
-    channel!.source = { element: null, objectUrl: null, ownsElement: false };
+    channel!.source = createVideoResource();
     expect(getVideoChannelWidth(channel!)).toBe(0);
   });
 });

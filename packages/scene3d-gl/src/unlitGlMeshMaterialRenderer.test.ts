@@ -10,6 +10,7 @@ import {
 import { advanceVideoTexture, createRenderTexture, createVideoTexture } from '@flighthq/texture/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
+import { createVideoResource } from '@flighthq/video/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -60,11 +61,9 @@ describe('unlitGlMeshMaterialRenderer', () => {
   it('binds a ready dynamic video map into the color-map slot', () => {
     const { state, gl } = makeGlScene3DState();
     const material = createUnlitMaterial();
-    material.baseColorMap = createVideoTexture({
-      element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
-      objectUrl: null,
-      ownsElement: false,
-    });
+    material.baseColorMap = createVideoTexture(
+      createVideoResource({ readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement),
+    );
     material.baseColorMap.sampler.mipmaps = false;
     advanceVideoTexture(material.baseColorMap);
     registerGlUnlitMaterial(state);

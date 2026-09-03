@@ -3,7 +3,7 @@ import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   GlContext,
   Bitmap,
-  CompressedImage,
+  CompressedImageResource,
   GlBitmapShader,
   GlBlendRealization,
   GlBlendSignature,
@@ -12,7 +12,7 @@ import type {
   GlTextureRealization,
   TextureSource,
   TextureColorSpace,
-  Image,
+  ImageResource,
   SamplerLike,
   TextureLike,
   TextureFilter,
@@ -121,7 +121,7 @@ export function bindGlBitmapTexture(
 
 export function bindGlCompressedImageTexture(
   state: GlRenderState,
-  image: Readonly<CompressedImage>,
+  image: Readonly<CompressedImageResource>,
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
   colorSpace: TextureColorSpace = 'linear',
@@ -139,7 +139,7 @@ export function bindGlCompressedImageTexture(
 }
 
 // Binds (uploading + caching on first use, re-uploading when the host image changes) the GL texture for
-// an Image and applies the sampler's full state. The Bitmap and CompressedImage siblings below
+// an ImageResource and applies the sampler's full state. The Bitmap and CompressedImageResource siblings below
 // share only the identity/version cache bracket; each source keeps a representation-specific uploader.
 // Sampler state is re-applied every bind so a resource reused by two materials with different samplers
 // follows the current draw.
@@ -158,7 +158,7 @@ export function bindGlCompressedImageTexture(
 // agents/texture-color-space-model.md.
 export function bindGlImageResourceTexture(
   state: GlRenderState,
-  image: Readonly<Image>,
+  image: Readonly<ImageResource>,
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
   premultiply = false,
@@ -265,9 +265,9 @@ export function bindGlTextureRealization(
 }
 
 // Binds the GL texture for a video-backed Texture and re-uploads the source element's current frame
-// only when its Image `version` has advanced — the dynamic, per-frame sibling of
-// bindGlImageResourceTexture (settled Image) and bindGlTexture (raw element). The GL texture is
-// cached by Image identity plus Texture.colorSpace, so two sampled Textures share one upload only
+// only when its ImageResource `version` has advanced — the dynamic, per-frame sibling of
+// bindGlImageResourceTexture (settled ImageResource) and bindGlTexture (raw element). The GL texture is
+// cached by ImageResource identity plus Texture.colorSpace, so two sampled Textures share one upload only
 // when they request the same GPU interpretation while their samplers remain draw-local.
 // Leaves the texture bound at the active unit for the caller to sample. Callers advance the source
 // version via advanceVideoTexture when the element reports a fresh decoded frame; this reads the current frame
@@ -277,7 +277,7 @@ export function bindGlVideoTexture(
   texture: Readonly<TextureLike>,
   sampler?: Readonly<SamplerLike> | null,
 ): WebGLTexture {
-  const image = getTextureSource(texture) as Image;
+  const image = getTextureSource(texture) as ImageResource;
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const cache =
@@ -471,7 +471,7 @@ function uploadGlCompressedImage(
   const decoderEntry = runtime.registries.compressedTextureDecoder.entry;
   uploadEntry.value(
     state.gl,
-    image as Readonly<CompressedImage>,
+    image as Readonly<CompressedImageResource>,
     decoderEntry?.state === RegistryEntryState.Bound ? decoderEntry.value : null,
     colorSpace,
   );
@@ -486,13 +486,13 @@ function uploadGlImageResource(
   const gl = state.gl;
   // Honour the source's declared encoding, the same way uploadGlBitmap does — a payload that already
   // folded alpha into rgb (a native decode commonly has) must not be multiplied a second time. Unlike
-  // the Bitmap path there is no CPU fallback here: an Image is a borrowed host handle uploaded straight
+  // the Bitmap path there is no CPU fallback here: an ImageResource is a borrowed host handle uploaded straight
   // through texImage2D, so this can only decline the multiply, never undo one.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply && image.alphaType !== 'premultiplied');
   uploadGlTextureElement(
     gl,
     gl.TEXTURE_2D,
-    (image as Readonly<Image>).source as TexImageSource,
+    (image as Readonly<ImageResource>).source as TexImageSource,
     colorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA,
   );
 }

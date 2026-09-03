@@ -7,7 +7,7 @@ import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/
 import type {
   Camera3D,
   Bitmap,
-  Image,
+  ImageResource,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   Texture,
@@ -735,7 +735,7 @@ describe('getWgpuMaterialSampler', () => {
     const { state } = makeWgpuScene3DState();
     const texture = createTexture({
       dimension: '2d',
-      source: { kind: ImageTextureSourceKind } as Image,
+      source: { kind: ImageTextureSourceKind } as ImageResource,
     });
     texture.sampler.wrapU = 'repeat';
     texture.sampler.wrapV = 'repeat';
@@ -750,7 +750,7 @@ describe('getWgpuMaterialSampler', () => {
 
   it('preserves independent minification and magnification filters', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const texture = createTexture({ dimension: '2d', source: {} as Image });
+    const texture = createTexture({ dimension: '2d', source: {} as ImageResource });
     texture.sampler.minFilter = 'nearest';
     texture.sampler.magFilter = 'linear';
 
@@ -763,9 +763,9 @@ describe('getWgpuMaterialSampler', () => {
 
   it('drops the mip filter when the map disables mipmaps (distinct packed key from the mipmapped default)', () => {
     const { state } = makeWgpuScene3DState();
-    const noMip = createTexture({ dimension: '2d', source: {} as Image });
+    const noMip = createTexture({ dimension: '2d', source: {} as ImageResource });
     noMip.sampler.mipmaps = false;
-    const withMip = createTexture({ dimension: '2d', source: {} as Image }); // default: trilinear (mipmaps on)
+    const withMip = createTexture({ dimension: '2d', source: {} as ImageResource }); // default: trilinear (mipmaps on)
 
     getWgpuMaterialSampler(state, noMip);
     getWgpuMaterialSampler(state, withMip);
@@ -775,9 +775,9 @@ describe('getWgpuMaterialSampler', () => {
 
   it('carries the map anisotropy into the derived sampler (distinct packed key from the non-anisotropic one)', () => {
     const { state } = makeWgpuScene3DState();
-    const aniso = createTexture({ dimension: '2d', source: {} as Image });
+    const aniso = createTexture({ dimension: '2d', source: {} as ImageResource });
     aniso.sampler.anisotropy = 8;
-    const noAniso = createTexture({ dimension: '2d', source: {} as Image });
+    const noAniso = createTexture({ dimension: '2d', source: {} as ImageResource });
 
     getWgpuMaterialSampler(state, aniso);
     getWgpuMaterialSampler(state, noAniso);
@@ -823,7 +823,7 @@ describe('isWgpuMaterialBindGroupRebuildNeeded', () => {
 
   it('rebuilds when any resolved view identity changes (swap / unready->ready / ready->ready / version++)', () => {
     // resolveWgpuMaterialTextureView is the invalidation seam: a texture swap, an unready->ready
-    // transition, a ready->ready image replacement, or an Image version bump each yield a new
+    // transition, a ready->ready image replacement, or an ImageResource version bump each yield a new
     // view identity, so this single identity check covers all four.
     expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [{} as GPUTextureView, view1])).toBe(true);
   });
@@ -842,7 +842,7 @@ describe('isWgpuTextureReady', () => {
     expect(
       isWgpuTextureReady({
         dimension: '2d',
-        source: { height: 1, kind: ImageTextureSourceKind, source: {}, version: 0, width: 1 } as Image,
+        source: { height: 1, kind: ImageTextureSourceKind, source: {}, version: 0, width: 1 } as ImageResource,
       } as unknown as Texture),
     ).toBe(true);
     expect(
@@ -905,7 +905,7 @@ describe('stashWgpuUvTransform', () => {
     const { state } = makeWgpuScene3DState();
     const texture = createTexture({
       dimension: '2d',
-      source: { kind: ImageTextureSourceKind } as Image,
+      source: { kind: ImageTextureSourceKind } as ImageResource,
     });
     setTextureUvScale(texture, 2, 3);
     setTextureUvOffset(texture, 0.5, 0.25);
@@ -921,7 +921,7 @@ describe('stashWgpuUvTransform', () => {
     const { state } = makeWgpuScene3DState();
     const texture = createTexture({
       dimension: '2d',
-      source: { kind: ImageTextureSourceKind } as Image,
+      source: { kind: ImageTextureSourceKind } as ImageResource,
     });
     setTextureUvScale(texture, 4, 4);
     stashWgpuUvTransform(state, texture);
@@ -938,7 +938,7 @@ describe('stashWgpuUvTransform', () => {
       state,
       createTexture({
         dimension: '2d',
-        source: { kind: ImageTextureSourceKind } as Image,
+        source: { kind: ImageTextureSourceKind } as ImageResource,
       }),
     );
 
@@ -1000,7 +1000,7 @@ describe('writeWgpuDrawUniform', () => {
     const { state } = makeWgpuScene3DState();
     const texture = createTexture({
       dimension: '2d',
-      source: { kind: ImageTextureSourceKind } as Image,
+      source: { kind: ImageTextureSourceKind } as ImageResource,
     });
     setTextureUvScale(texture, 2, 3);
     stashWgpuUvTransform(state, texture);
@@ -1019,7 +1019,7 @@ describe('writeWgpuDrawUniform', () => {
     const { state } = makeWgpuScene3DState();
     const texture = createTexture({
       dimension: '2d',
-      source: { kind: ImageTextureSourceKind } as Image,
+      source: { kind: ImageTextureSourceKind } as ImageResource,
     });
     setTextureUvScale(texture, 2, 3);
     stashWgpuUvTransform(state, texture);

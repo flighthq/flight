@@ -60,6 +60,7 @@
   "devDependencies": {
     "@flighthq/mesh": "*",
     "@flighthq/particleemitter": "*",
+    "@flighthq/video": "*",
     "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },

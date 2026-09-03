@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap, CompressedImage, TextureAtlas } from '@flighthq/types/contract';
+import type { Bitmap, CompressedImageResource, TextureAtlas } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, CompressedImageTextureSourceKind } from '@flighthq/types/contract';
 
 export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
@@ -30,7 +30,7 @@ export function getTextureAtlasByteSize(atlas: Readonly<TextureAtlas>): number {
   const image = texture.source;
   if (image.kind === BitmapTextureSourceKind) return (image as Readonly<Bitmap>).data.byteLength;
   if (image.kind === CompressedImageTextureSourceKind) {
-    return (image as Readonly<CompressedImage>).compressed.payload.byteLength;
+    return (image as Readonly<CompressedImageResource>).compressed.payload.byteLength;
   }
   return 0;
 }

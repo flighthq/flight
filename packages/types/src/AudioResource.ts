@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 export type AudioChannelState = 'complete' | 'paused' | 'playing' | 'stopped';
@@ -30,7 +31,7 @@ export interface AudioPlayOptions {
   playbackRate?: number;
 }
 
-export interface AudioResource {
+export interface AudioResource extends Entity {
   buffer: AudioBuffer | null;
 }
 

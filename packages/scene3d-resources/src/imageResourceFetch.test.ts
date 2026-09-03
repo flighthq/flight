@@ -1,11 +1,11 @@
 import * as imageContract from '@flighthq/image/contract';
-import type { ExternalImageResourceReference, Image } from '@flighthq/types/contract';
+import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchWebImageResource, resolveImageResourceUri } from './imageResourceFetch';
 
-const fakeImage = { height: 1, width: 1 } as unknown as Image;
+const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {
   return {

@@ -1,6 +1,6 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import { createTexture, getTextureSource, transformTextureUv } from '@flighthq/texture/contract';
-import type { Image, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { ImageResource, TextureAtlasRegion } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas';
 import {
@@ -314,7 +314,7 @@ describe('explainTextureAtlasRegionTexture', () => {
 
     atlas.texture = createTexture({
       dimension: '2d',
-      source: { height: 50, width: 100 } as Image,
+      source: { height: 50, width: 100 } as ImageResource,
       uvRotation: 0.25,
     });
     expect(explainTextureAtlasRegionTexture(atlas, 0)).toEqual({ status: 'rotated-page' });
@@ -570,7 +570,7 @@ describe('getTextureAtlasRegionSequence', () => {
 
 describe('getTextureAtlasRegionTexture', () => {
   it('returns one cached texture per distinct region over the shared atlas image', () => {
-    const image = { height: 50, width: 100 } as Image;
+    const image = { height: 50, width: 100 } as ImageResource;
     const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
     addTextureAtlasRegion(atlas, 10, 5, 20, 15);
     addTextureAtlasRegion(atlas, 30, 5, 20, 15);
@@ -590,7 +590,7 @@ describe('getTextureAtlasRegionTexture', () => {
   // it correct is that every call re-derives the window — pinned here because it is the contract, and
   // without a test it reads as an incidental refresh someone could optimize away into a stale UV.
   it('re-derives the window on every call, so an in-place region edit is picked up', () => {
-    const image = { height: 50, width: 100 } as Image;
+    const image = { height: 50, width: 100 } as ImageResource;
     const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
     addTextureAtlasRegion(atlas, 10, 5, 20, 15);
 
@@ -607,7 +607,7 @@ describe('getTextureAtlasRegionTexture', () => {
 
   // The cost of sharing one Texture per region: the earlier reference is not a snapshot.
   it('rewrites a previously returned reference rather than minting a second view', () => {
-    const image = { height: 50, width: 100 } as Image;
+    const image = { height: 50, width: 100 } as ImageResource;
     const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
     addTextureAtlasRegion(atlas, 10, 5, 20, 15);
 
@@ -624,13 +624,13 @@ describe('getTextureAtlasRegionTexture', () => {
     expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
     atlas.texture = createTexture({
       dimension: '2d',
-      source: { height: 10, width: 10 } as Image,
+      source: { height: 10, width: 10 } as ImageResource,
     });
     expect(getTextureAtlasRegionTexture(atlas, 99)).toBeNull();
   });
 
   it('composes a region in pixel space against a windowed page', () => {
-    const image = { height: 100, width: 200 } as Image;
+    const image = { height: 100, width: 200 } as ImageResource;
     const atlas = createTextureAtlas({
       texture: createTexture({
         dimension: '2d',
@@ -648,7 +648,7 @@ describe('getTextureAtlasRegionTexture', () => {
   });
 
   it('folds page flips and packed-region rotation into the minted view', () => {
-    const image = { height: 50, width: 100 } as Image;
+    const image = { height: 50, width: 100 } as ImageResource;
     const atlas = createTextureAtlas({
       texture: createTexture({
         dimension: '2d',
@@ -679,7 +679,7 @@ describe('getTextureAtlasRegionTexture', () => {
     addTextureAtlasRegion(atlas, 0, 0, 10, 10);
     atlas.texture = createTexture({
       dimension: '2d',
-      source: { height: 50, width: 100 } as Image,
+      source: { height: 50, width: 100 } as ImageResource,
       uvRotation: 0.25,
     });
     expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();

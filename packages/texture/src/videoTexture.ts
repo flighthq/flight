@@ -1,11 +1,18 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
-import type { Image, Matrix3Like, Texture, Texture2D, TextureLike, VideoResource } from '@flighthq/types/contract';
+import type {
+  ImageResource,
+  Matrix3Like,
+  Texture,
+  Texture2D,
+  TextureLike,
+  VideoResource,
+} from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './texture';
 
-// Marks a fresh decoded frame on a video-backed Texture. The Image is the shared CPU-origin source
+// Marks a fresh decoded frame on a video-backed Texture. The ImageResource is the shared CPU-origin source
 // and owns the upload revision; Texture.version mirrors it as the sampled object's dirty-bit.
 export function advanceVideoTexture(texture: TextureLike): number {
   const image = getVideoImage(texture);
@@ -16,7 +23,7 @@ export function advanceVideoTexture(texture: TextureLike): number {
   return texture.version;
 }
 
-// Clones sampling/UV state while sharing the borrowed video Image and its upload cache key.
+// Clones sampling/UV state while sharing the borrowed video ImageResource and its upload cache key.
 export function cloneVideoTexture(source: Readonly<TextureLike>): Texture {
   return cloneTexture(source);
 }
@@ -26,7 +33,7 @@ export function copyVideoTexture(out: TextureLike, source: Readonly<TextureLike>
   copyTexture(out, source);
 }
 
-// Wraps a VideoResource's borrowed host element in an Image source and returns the same
+// Wraps a VideoResource's borrowed host element in an ImageResource source and returns the same
 // universal Texture type used by still images and render targets. The all-ones initial revision
 // preserves the former first advanceVideoTexture result of 0 after u32 wrap.
 export function createVideoTexture(source: VideoResource, opts?: Readonly<Partial<TextureLike>>): Texture2D {
@@ -39,7 +46,7 @@ export function createVideoTexture(source: VideoResource, opts?: Readonly<Partia
   });
 }
 
-// Detaches the borrowed video Image source without destroying the underlying VideoResource. Leaves
+// Detaches the borrowed video ImageResource source without destroying the underlying VideoResource. Leaves
 // the Texture entity invalid — subsequent advance/ready calls return sentinel values.
 export function destroyVideoTexture(texture: Texture2D): void {
   texture.source = null;
@@ -92,7 +99,7 @@ export function setVideoTextureSource(texture: TextureLike, source: VideoResourc
   texture.version = INITIAL_VIDEO_VERSION;
 }
 
-function createVideoImageResource(source: Readonly<VideoResource>): Image | null {
+function createVideoImageResource(source: Readonly<VideoResource>): ImageResource | null {
   if (source.element === null) return null;
   const image = createEntity({
     height: 0,
@@ -102,7 +109,7 @@ function createVideoImageResource(source: Readonly<VideoResource>): Image | null
     source: source.element,
     version: INITIAL_VIDEO_VERSION,
     width: 0,
-  }) as Image;
+  }) as ImageResource;
   updateVideoImageSize(image);
   return image;
 }
@@ -111,11 +118,11 @@ function getVideoElement(texture: Readonly<TextureLike>): HTMLVideoElement | nul
   return (getVideoImage(texture)?.source as HTMLVideoElement | null | undefined) ?? null;
 }
 
-function getVideoImage(texture: Readonly<TextureLike>): Image | null {
-  return texture.dimension === '2d' ? (texture.source as Image | null) : null;
+function getVideoImage(texture: Readonly<TextureLike>): ImageResource | null {
+  return texture.dimension === '2d' ? (texture.source as ImageResource | null) : null;
 }
 
-function updateVideoImageSize(image: Image): void {
+function updateVideoImageSize(image: ImageResource): void {
   const element = image.source as HTMLVideoElement;
   image.width = element.videoWidth || 0;
   image.height = element.videoHeight || 0;

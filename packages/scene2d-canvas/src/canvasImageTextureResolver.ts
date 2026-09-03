@@ -1,5 +1,5 @@
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { CanvasTextureResolvers, Image, Texture } from '@flighthq/types/contract';
+import type { CanvasTextureResolvers, ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerCanvasTextureResolver } from './canvasTextureResolver';
@@ -12,5 +12,5 @@ function resolveCanvasImageTexture(
   _resolvers: CanvasTextureResolvers,
   texture: Readonly<Texture>,
 ): CanvasImageSource | null {
-  return (getTextureSource(texture) as Readonly<Image> | null)?.source ?? null;
+  return (getTextureSource(texture) as Readonly<ImageResource> | null)?.source ?? null;
 }

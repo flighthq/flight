@@ -1,6 +1,6 @@
 import type { AlphaType } from './AlphaType';
-import type { Image } from './Image';
 import type { ImageBitmapComposition } from './ImageBitmapComposition';
+import type { ImageResource } from './ImageResource';
 import type { ResourceResolutionState } from './ResourceResolutionState';
 import type { Texture } from './Texture';
 
@@ -88,7 +88,7 @@ export interface ExternalImageResourceReference extends ImageResourceReferenceBa
 export type ImageResourceReference = EmbeddedImageResourceReference | ExternalImageResourceReference;
 
 // The swappable fetch seam an External reference resolves through. The web backend fetches a URL; a
-// native host substitutes its own. This boundary deliberately remains Image-only: External means fetching
+// native host substitutes its own. This boundary deliberately remains ImageResource-only: External means fetching
 // a URI into a host-drawable handle, while Embedded has bytes in hand and may decode to any TextureSource.
 // Widen this only when an external compressed/pre-decoded source has a real consumer; doing so before then
 // would advertise an injection path no standard fetch implementation can produce. Returns null for an
@@ -96,7 +96,7 @@ export type ImageResourceReference = EmbeddedImageResourceReference | ExternalIm
 export type ImageResourceFetch = (
   ref: Readonly<ExternalImageResourceReference>,
   signal: AbortSignal,
-) => Promise<Image | null>;
+) => Promise<ImageResource | null>;
 
 export interface ImageResourceReferenceResolutionExplanation {
   failure: ImageResourceFailure | null;

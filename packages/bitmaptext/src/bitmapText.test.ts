@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { BitmapTextRuntime, GlyphEntry, GlyphSource, Image } from '@flighthq/types/contract';
+import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -22,7 +22,7 @@ import {
 } from './bitmapText';
 import { updateBitmapText } from './updateBitmapText';
 
-// A single-page glyph source: A/B are 6x8, a space advances 5, and page 0 is a stub `Image`.
+// A single-page glyph source: A/B are 6x8, a space advances 5, and page 0 is a stub `ImageResource`.
 function createTestGlyphSource(): GlyphSource {
   const entries = new Map<number, GlyphEntry>();
   const add = (cp: number, x: number): void => {
@@ -31,7 +31,7 @@ function createTestGlyphSource(): GlyphSource {
   add(0x41, 0); // A
   add(0x42, 6); // B
   entries.set(0x20, { advance: 5, bearingX: 0, bearingY: 0, height: 0, page: 0, width: 0, x: 0, y: 0 }); // space
-  const image = {} as Image;
+  const image = {} as ImageResource;
   return {
     getGlyphAtlasImage: (page = 0) => (page === 0 ? image : null),
     getGlyphEntry: (cp) => entries.get(cp) ?? null,

@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap, Image, ImageBackend } from '@flighthq/types/contract';
+import type { Bitmap, ImageResource, ImageBackend } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createWebImageBackend, resetImageBackendForTest, setImageBackend } from './imageBackend';
@@ -32,7 +32,7 @@ afterEach(() => {
 describe('createImageResourceFromBitmap', () => {
   it('routes the selected custom backend when DOM globals are absent', () => {
     const bitmap = createTestBitmap(3, 2);
-    const expected = {} as Image;
+    const expected = {} as ImageResource;
     const createImageFromBitmap = vi.fn((_bitmap: Readonly<Bitmap>) => expected);
     const backend: ImageBackend = {
       createImageFromBitmap,
@@ -55,7 +55,7 @@ describe('createImageResourceFromBitmap', () => {
     expect(createElement).not.toHaveBeenCalled();
   });
 
-  it('returns an Image with matching dimensions', () => {
+  it('returns an ImageResource with matching dimensions', () => {
     // Built with createEntity rather than @flighthq/bitmap's createBitmap: bitmap depends on image,
     // so importing it here would force a circular tsconfig project reference.
     const bitmap: Bitmap = createEntity({
@@ -197,7 +197,7 @@ describe('isImageUrlSameOrigin', () => {
 });
 
 describe('loadImageResourceFromBase64', () => {
-  it('resolves to an Image', async () => {
+  it('resolves to an ImageResource', async () => {
     const resource = await loadImageResourceFromBase64('abc123', 'image/png');
     expect(resource).not.toBeNull();
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
@@ -210,7 +210,7 @@ describe('loadImageResourceFromBase64', () => {
 });
 
 describe('loadImageResourceFromBlob', () => {
-  it('resolves to an Image', async () => {
+  it('resolves to an ImageResource', async () => {
     const blob = new Blob([], { type: 'image/png' });
     const resource = await loadImageResourceFromBlob(blob);
     expect(resource).not.toBeNull();
@@ -319,7 +319,7 @@ describe('loadImageResourceFromUrl', () => {
     expect(remove.mock.calls[0][1]).toBe(add.mock.calls[0][1]);
   });
 
-  it('resolves to an Image whose source is an HTMLImageElement', async () => {
+  it('resolves to an ImageResource whose source is an HTMLImageElement', async () => {
     const resource = await loadImageResourceFromUrl('data:image/png;base64,abc');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });

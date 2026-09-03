@@ -61,8 +61,8 @@ import type { FullscreenBackend } from './FullscreenBackend';
 import type { GeolocationBackend } from './Geolocation';
 import type { GlyphRasterizerBackend } from './GlyphSource';
 import type { HapticsBackend } from './Haptics';
-import type { ImageBackend } from './Image';
 import type { ImageOpenDialogBackend } from './ImageOpenDialogBackend';
+import type { ImageBackend } from './ImageResource';
 import type { InputIngressBackend } from './InputIngressBackend';
 import type { InputTargetBackend } from './InputTargetBackend';
 import type {

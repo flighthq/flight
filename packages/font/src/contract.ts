@@ -1,6 +1,4 @@
-export * from './font';
 export * from './fontFormat';
-export * from './fontFrom';
 export * from './fontLoading';
 export * from './fontResource';
 export * from './fontResourceFrom';

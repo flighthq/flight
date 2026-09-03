@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@flighthq/bitmap": "*",
+    "@flighthq/font": "*",
     "@flighthq/image": "*",
     "typescript": "^5.3.0"
   },

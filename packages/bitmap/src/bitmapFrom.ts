@@ -1,15 +1,15 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Image, Bitmap } from '@flighthq/types/contract';
+import type { ImageResource, Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver';
 
 /**
- * Reads a host-backed Image into a newly allocated, CPU-readable Bitmap. Returns `null` when the
+ * Reads a host-backed ImageResource into a newly allocated, CPU-readable Bitmap. Returns `null` when the
  * readback cannot complete — call `explainBitmapReadback` with `(resource.source, resource.width,
  * resource.height)` for the reason.
  */
-export function captureBitmapFromImageResource(resource: Readonly<Image>): Bitmap | null {
+export function captureBitmapFromImageResource(resource: Readonly<ImageResource>): Bitmap | null {
   return createBitmapFromImageSource(resource.source, resource.width, resource.height);
 }
 

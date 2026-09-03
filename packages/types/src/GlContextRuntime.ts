@@ -8,7 +8,7 @@ import type { GlBlendSignature, GlBoundShader } from './GlRenderState';
 import type { GlRenderTextureEntry } from './GlRenderTexture';
 import type { GlShapeMeshResources } from './GlShapeMeshResources';
 import type { GlTextureRealization } from './GlTextureResolver';
-import type { Image } from './Image';
+import type { ImageResource } from './ImageResource';
 import type { RenderTexture } from './RenderTexture';
 import type { TextureSource } from './TextureSource';
 
@@ -40,8 +40,8 @@ export interface GlContextRuntime extends EntityRuntime {
   textureSourceStraightSrgbTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
   glExternalTextureCache?: WeakMap<ExternalTexture, WebGLTexture>;
   glRenderTextureCache?: WeakMap<RenderTexture, GlRenderTextureEntry>;
-  videoTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;
-  videoSrgbTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;
+  videoTextureCache?: WeakMap<ImageResource, { texture: WebGLTexture; uploadedVersion: number }>;
+  videoSrgbTextureCache?: WeakMap<ImageResource, { texture: WebGLTexture; uploadedVersion: number }>;
   mipmappedTextures?: WeakSet<WebGLTexture>;
 
   // Extension queries resolved lazily on the first anisotropic bind.

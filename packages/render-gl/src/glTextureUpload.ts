@@ -1,4 +1,4 @@
-import type { GlContext, Image } from '@flighthq/types/contract';
+import type { GlContext, ImageResource } from '@flighthq/types/contract';
 
 // Raw texel-upload primitives. Each writes level 0 of the texture currently bound at `target` — the GL
 // enum for a 2D texture (gl.TEXTURE_2D) or a cube face (gl.TEXTURE_CUBE_MAP_POSITIVE_X + face). They set
@@ -41,11 +41,11 @@ export function uploadGlTextureElement(
   gl.texImage2D(target, 0, internalFormat, gl.RGBA, gl.UNSIGNED_BYTE, source);
 }
 
-// Uploads a host-backed Image through the decoded-element fast path.
+// Uploads a host-backed ImageResource through the decoded-element fast path.
 export function uploadGlTextureImageResource(
   gl: GlContext,
   target: number,
-  image: Readonly<Image>,
+  image: Readonly<ImageResource>,
   internalFormat: number = gl.RGBA,
 ): void {
   uploadGlTextureElement(gl, target, image.source as TexImageSource, internalFormat);

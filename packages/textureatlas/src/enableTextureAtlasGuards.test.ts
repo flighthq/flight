@@ -1,6 +1,6 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Image } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import {
   areTextureAtlasGuardsEnabled,
@@ -35,7 +35,7 @@ describe('enableTextureAtlasGuards', () => {
     const atlas = createTextureAtlas({
       texture: createTexture({
         dimension: '2d',
-        source: { height: 50, width: 100 } as Image,
+        source: { height: 50, width: 100 } as ImageResource,
         uvRotation: 0.25,
       }),
     });

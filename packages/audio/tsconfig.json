@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../net" }, { "path": "../types" }],
+  "references": [{ "path": "../entity" }, { "path": "../net" }, { "path": "../types" }],
   "include": ["src"]
 }

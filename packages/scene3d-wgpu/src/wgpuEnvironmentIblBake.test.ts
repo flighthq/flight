@@ -1,4 +1,4 @@
-import type { Environment, Image, Texture } from '@flighthq/types/contract';
+import type { Environment, ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake';
@@ -19,7 +19,7 @@ function completeEnvironment(): Environment {
     kind: ImageTextureSourceKind,
     source,
     width: 4,
-  } as unknown as Image;
+  } as unknown as ImageResource;
   const cube = {
     colorSpace: 'srgb',
     sampler: {},

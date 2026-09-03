@@ -3,11 +3,11 @@ import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } fr
 import type {
   RenderTargetColorSpace,
   Bitmap,
-  CompressedImage,
+  CompressedImageResource,
   GlRenderState,
   GlTextureRealization,
   GlTextureResolver,
-  Image,
+  ImageResource,
   RenderTexture,
   TextureColorSpace,
   TextureSourceKind,
@@ -122,7 +122,7 @@ function resolveGlCompressedImageTexture(
   _premultiply: boolean,
   colorSpace: TextureColorSpace,
 ): GlTextureRealization | null {
-  const image = getTextureSource(texture) as Readonly<CompressedImage> | null;
+  const image = getTextureSource(texture) as Readonly<CompressedImageResource> | null;
   if (image === null) return null;
   return {
     straightAlpha: true,
@@ -136,7 +136,7 @@ function resolveGlImageTexture(
   premultiply: boolean,
   colorSpace: TextureColorSpace,
 ): GlTextureRealization | null {
-  const image = getTextureSource(texture) as Readonly<Image> | null;
+  const image = getTextureSource(texture) as Readonly<ImageResource> | null;
   if (image === null) return null;
   return {
     straightAlpha: false,

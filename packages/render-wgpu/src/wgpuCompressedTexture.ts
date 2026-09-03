@@ -1,5 +1,5 @@
 import type {
-  CompressedImage,
+  CompressedImageResource,
   TextureContainer,
   TextureContainerFormat,
   TextureColorSpace,
@@ -152,7 +152,7 @@ export function uploadWgpuCompressedTextureContainer(
 
 function uploadWgpuCompressedImage(
   state: WgpuRenderState,
-  image: Readonly<CompressedImage>,
+  image: Readonly<CompressedImageResource>,
   decode: WgpuCompressedTextureDecoder | null,
   colorSpace: TextureColorSpace = 'linear',
 ): WgpuTextureEntry | null {

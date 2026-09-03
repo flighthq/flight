@@ -9,7 +9,7 @@ import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/c
 import type { Scene3D } from '@flighthq/types/contract';
 import type {
   EmbeddedImageResourceReference,
-  Image,
+  ImageResource,
   Node3D,
   Scene3DResourceEvent,
   Texture,
@@ -128,7 +128,7 @@ describe('revealScene3DResourcesOnResolve', () => {
     const bound = createTexture({
       resource: pendingRef(),
       dimension: '2d',
-      source: { height: 1, kind: ImageTextureSourceKind, width: 1 } as Image,
+      source: { height: 1, kind: ImageTextureSourceKind, width: 1 } as ImageResource,
     });
     const failedRef = pendingRef();
     failedRef.state = ResourceResolutionState.Failed;

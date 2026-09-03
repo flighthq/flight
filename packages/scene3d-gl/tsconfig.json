@@ -65,6 +65,9 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "../video"
     }
   ],
   "include": ["src"]

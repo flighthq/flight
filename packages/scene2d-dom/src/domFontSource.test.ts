@@ -1,3 +1,5 @@
+import { createFontResource } from '@flighthq/font/contract';
+
 import { getDomFontAscentCached, invalidateDomFontResource, setDomFontAscentCached } from './domFontSource';
 
 describe('getDomFontAscentCached', () => {
@@ -10,14 +12,14 @@ describe('invalidateDomFontResource', () => {
   it('removes cache entries that match the font family', () => {
     setDomFontAscentCached("16px 'MyFont'", 14);
     setDomFontAscentCached('16px "MyFont"', 14);
-    invalidateDomFontResource({ family: 'MyFont', face: null });
+    invalidateDomFontResource(createFontResource('MyFont'));
     expect(getDomFontAscentCached("16px 'MyFont'")).toBeUndefined();
     expect(getDomFontAscentCached('16px "MyFont"')).toBeUndefined();
   });
 
   it('does not remove cache entries for other families', () => {
     setDomFontAscentCached("16px 'OtherFont'", 13);
-    invalidateDomFontResource({ family: 'MyFont', face: null });
+    invalidateDomFontResource(createFontResource('MyFont'));
     expect(getDomFontAscentCached("16px 'OtherFont'")).toBe(13);
   });
 });

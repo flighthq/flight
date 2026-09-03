@@ -9,7 +9,7 @@ import {
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Camera3D, Image, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, ImageResource, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {
@@ -177,7 +177,7 @@ describe('customShaderWgpuMeshMaterialRenderer', () => {
   });
 });
 
-function makeImageResource(version: number): Image {
+function makeImageResource(version: number): ImageResource {
   const source = document.createElement('canvas');
   source.width = 1;
   source.height = 1;
@@ -187,7 +187,7 @@ function makeImageResource(version: number): Image {
     source,
     version,
     width: 1,
-  } as unknown as Image;
+  } as unknown as ImageResource;
 }
 
 describe('getWgpuCustomMaterialShaderSource', () => {

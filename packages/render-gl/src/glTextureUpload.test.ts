@@ -1,4 +1,4 @@
-import type { Image } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import { uploadGlTextureData, uploadGlTextureElement, uploadGlTextureImageResource } from './glTextureUpload';
 
@@ -34,7 +34,7 @@ describe('uploadGlTextureImageResource', () => {
   it('takes the element path when the resource carries a source', () => {
     const gl = makeGl();
     const source = {} as TexImageSource;
-    const image = { source, width: 4, height: 4 } as unknown as Image;
+    const image = { source, width: 4, height: 4 } as unknown as ImageResource;
     uploadGlTextureImageResource(gl, gl.TEXTURE_2D, image);
     expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
   });

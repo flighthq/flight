@@ -1,12 +1,12 @@
 import { createWebImageBackend, installImageHostBackend, observeImageHostResult } from '@flighthq/image/contract';
-import type { Image, ImageBackend } from '@flighthq/types/contract';
+import type { ImageResource, ImageBackend } from '@flighthq/types/contract';
 
 export function enableHostWebImage(): void {
   if (_enabled) return;
   _enabled = true;
   const inner = createWebImageBackend();
   const backend: ImageBackend = {
-    async loadImageFromUrl(url, crossOrigin, signal): Promise<Image> {
+    async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
       try {
         const result = await inner.loadImageFromUrl(url, crossOrigin, signal);
         observeImageHostResult('loadImageFromUrl', true);

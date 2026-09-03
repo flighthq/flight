@@ -1,4 +1,4 @@
-import type { Image, ImageBackend } from '@flighthq/types/contract';
+import type { ImageResource, ImageBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -21,9 +21,9 @@ function recordingBackend(): { backend: ImageBackend; calls: unknown[][] } {
   const calls: unknown[][] = [];
   return {
     backend: {
-      loadImageFromUrl(url, crossOrigin, signal): Promise<Image> {
+      loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
         calls.push([url, crossOrigin, signal]);
-        return Promise.resolve({} as Image);
+        return Promise.resolve({} as ImageResource);
       },
     },
     calls,

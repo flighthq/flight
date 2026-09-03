@@ -5,7 +5,7 @@ import {
   setImageBackend,
 } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Image } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 
 import {
   createTextureAtlasFromCanvas,
@@ -37,7 +37,7 @@ describe('createTextureAtlasFromCanvas', () => {
     canvas.height = 240;
     const atlas = createTextureAtlasFromCanvas(canvas);
 
-    expect((getTextureSource(atlas.texture!) as Image | null)?.source).toBe(canvas);
+    expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBe(canvas);
     expect(getTextureSource(atlas.texture!)?.width).toBe(320);
     expect(getTextureSource(atlas.texture!)?.height).toBe(240);
   });
@@ -58,7 +58,7 @@ describe('createTextureAtlasFromImageBitmap', () => {
     const bitmap = { width: 64, height: 128, close: () => {} } as ImageBitmap;
     const atlas = createTextureAtlasFromImageBitmap(bitmap);
 
-    expect((getTextureSource(atlas.texture!) as Image | null)?.source).toBe(bitmap);
+    expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBe(bitmap);
     expect(getTextureSource(atlas.texture!)?.width).toBe(64);
     expect(getTextureSource(atlas.texture!)?.height).toBe(128);
   });
@@ -74,7 +74,7 @@ describe('createTextureAtlasFromImageElement', () => {
     const img = { width: 200, height: 100 } as HTMLImageElement;
     const atlas = createTextureAtlasFromImageElement(img);
 
-    expect((getTextureSource(atlas.texture!) as Image | null)?.source).toBe(img);
+    expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBe(img);
     expect(getTextureSource(atlas.texture!)?.width).toBe(200);
     expect(getTextureSource(atlas.texture!)?.height).toBe(100);
   });
@@ -86,7 +86,7 @@ describe('createTextureAtlasFromImageElement', () => {
 });
 
 describe('createTextureAtlasFromImageResource', () => {
-  it('uses the provided Image as the atlas image', () => {
+  it('uses the provided ImageResource as the atlas image', () => {
     const source = createImageResourceFromImageElement({ width: 128, height: 64 } as HTMLImageElement);
     const atlas = createTextureAtlasFromImageResource(source);
 
@@ -109,7 +109,7 @@ describe('createTextureAtlasFromImageResource', () => {
 describe('loadTextureAtlasFromBase64', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const atlas = await loadTextureAtlasFromBase64('abc123', 'image/png');
-    expect((getTextureSource(atlas.texture!) as Image | null)?.source).toBeInstanceOf(HTMLImageElement);
+    expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -117,7 +117,7 @@ describe('loadTextureAtlasFromBlob', () => {
   it('resolves to a TextureAtlas with a non-null image', async () => {
     const blob = new Blob([], { type: 'image/png' });
     const atlas = await loadTextureAtlasFromBlob(blob);
-    expect((getTextureSource(atlas.texture!) as Image | null)?.source).toBeInstanceOf(HTMLImageElement);
+    expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 
@@ -127,7 +127,7 @@ describe('loadTextureAtlasFromBytes', () => {
     const atlas = await loadTextureAtlasFromBytes(bytes);
 
     expect(getTextureSource(atlas.texture!)).not.toBeNull();
-    expect((getTextureSource(atlas.texture!) as Image | null)?.source).toBeInstanceOf(HTMLImageElement);
+    expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 
   it('starts with an empty regions array', async () => {
@@ -146,6 +146,6 @@ describe('loadTextureAtlasFromBytes', () => {
 describe('loadTextureAtlasFromUrl', () => {
   it('resolves to a TextureAtlas whose image src is an HTMLImageElement', async () => {
     const atlas = await loadTextureAtlasFromUrl('data:image/png;base64,abc');
-    expect((getTextureSource(atlas.texture!) as Image | null)?.source).toBeInstanceOf(HTMLImageElement);
+    expect((getTextureSource(atlas.texture!) as ImageResource | null)?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

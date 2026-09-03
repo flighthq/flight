@@ -11,6 +11,7 @@ import {
   createVideoTexture,
 } from '@flighthq/texture/contract';
 import type { GlUnlitDefineKey, LinearColor } from '@flighthq/types/contract';
+import { createVideoResource } from '@flighthq/video/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
@@ -78,11 +79,9 @@ describe('bindGlUnlitSurface', () => {
   it('routes a video-backed Texture through the registered Texture resolver', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
-    const videoMap = createVideoTexture({
-      element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
-      objectUrl: null,
-      ownsElement: false,
-    });
+    const videoMap = createVideoTexture(
+      createVideoResource({ readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement),
+    );
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);
     registerGlImageTextureResolver(state);
@@ -100,11 +99,9 @@ describe('bindGlUnlitSurface', () => {
   it('does not upload a video frame whose source version has not advanced', () => {
     const { state, gl } = makeGlScene3DState();
     const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
-    const videoMap = createVideoTexture({
-      element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement,
-      objectUrl: null,
-      ownsElement: false,
-    });
+    const videoMap = createVideoTexture(
+      createVideoResource({ readyState: 4, videoWidth: 320, videoHeight: 240 } as HTMLVideoElement),
+    );
     videoMap.sampler.mipmaps = false;
     advanceVideoTexture(videoMap);
     registerGlImageTextureResolver(state);

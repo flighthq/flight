@@ -6,7 +6,7 @@ import {
   getBitmapFontPage,
 } from '@flighthq/bitmapfont/contract';
 import { createTextureAtlas, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
-import type { BitmapFontParseOptions, Image, ImportDiagnostic, TextureAtlas } from '@flighthq/types/contract';
+import type { BitmapFontParseOptions, ImageResource, ImportDiagnostic, TextureAtlas } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { formatBitmapFontFnt, parseBitmapFontFnt } from './bitmapFontFnt';
@@ -138,8 +138,8 @@ describe('parseBitmapFontFnt', () => {
   });
 
   it('resolves every page of a multi-page font and routes each glyph to the right page image', () => {
-    const image0 = {} as Image;
-    const image1 = {} as Image;
+    const image0 = {} as ImageResource;
+    const image1 = {} as ImageResource;
     const page0 = createTextureAtlasFromImageResource(image0);
     const page1 = createTextureAtlasFromImageResource(image1);
     const seen: Array<[number, string]> = [];

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { VideoResource } from '@flighthq/types/contract';
 
 // No cloneVideoResource: a VideoResource is a thin carrier over a single HTMLVideoElement, and an
@@ -12,7 +13,7 @@ export function createVideoResource(
   objectUrl?: string,
   ownsElement?: boolean,
 ): VideoResource {
-  return { element: element ?? null, objectUrl: objectUrl ?? null, ownsElement: ownsElement ?? false };
+  return createEntity({ element: element ?? null, objectUrl: objectUrl ?? null, ownsElement: ownsElement ?? false });
 }
 
 // Releases a video resource's non-GC state: for owned elements, detaches the media source so the

@@ -1,6 +1,6 @@
 import type {
   GlContext,
-  CompressedImage,
+  CompressedImageResource,
   GlCompressedTextureDecoder,
   GlCompressedTextureSupport,
   GlRenderState,
@@ -215,8 +215,8 @@ export function registerGlCompressedTextureDecoder(
 
 // Installs the block-compressed upload seam on a render state, opting the ~40-format
 // uploadGlCompressedTextureContainer path into the bundle only for a state that actually draws a
-// CompressedImage. The 2D display draw path reads the installed handler off the runtime and skips the
-// source when none is registered, so Image/Bitmap bundles do not carry the compression enum
+// CompressedImageResource. The 2D display draw path reads the installed handler off the runtime and skips the
+// source when none is registered, so ImageResource/Bitmap bundles do not carry the compression enum
 // table. Opt-in and last-write-wins; pass null to clear a previously installed uploader.
 export function registerGlCompressedTextureUpload(state: GlRenderState, uploader?: null): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -356,11 +356,11 @@ function isSupportedGlCompressedTextureContainerShape(container: Readonly<Textur
   return container.faces === 6 && container.layers === 1;
 }
 
-// The installed GlCompressedTextureUploader bridges a CompressedImage to the container upload while
+// The installed GlCompressedTextureUploader bridges a CompressedImageResource to the container upload while
 // threading through any registered RGBA decode fallback.
 function uploadGlCompressedImage(
   gl: GlContext,
-  image: Readonly<CompressedImage>,
+  image: Readonly<CompressedImageResource>,
   decode: GlCompressedTextureDecoder | null,
   colorSpace: TextureColorSpace = 'linear',
 ): boolean {

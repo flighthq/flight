@@ -1,4 +1,4 @@
-import type { CompressedImage, GlCompressedTextureSupport, TextureContainer } from '@flighthq/types/contract';
+import type { CompressedImageResource, GlCompressedTextureSupport, TextureContainer } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import {
@@ -47,14 +47,14 @@ function makeContainer(): TextureContainer {
   };
 }
 
-function uploadableCompressedImage(containerOverrides?: Partial<TextureContainer>): CompressedImage {
+function uploadableCompressedImage(containerOverrides?: Partial<TextureContainer>): CompressedImageResource {
   return {
     compressed: { container: { ...makeContainer(), ...containerOverrides }, payload: new Uint8Array(16) },
     height: 4,
     kind: CompressedImageTextureSourceKind,
     version: 1,
     width: 4,
-  } as unknown as CompressedImage;
+  } as unknown as CompressedImageResource;
 }
 
 describe('detectGlCompressedTextureSupport', () => {
@@ -150,7 +150,7 @@ describe('registerGlCompressedTextureUpload', () => {
     expect(runtime.registries.compressedTextureUpload.entry).toBeNull();
   });
 
-  it('uploads a CompressedImage once installed, threading the registered decoder', () => {
+  it('uploads a CompressedImageResource once installed, threading the registered decoder', () => {
     const { state, gl } = createGlState();
     const rgba = new Uint8ClampedArray(4 * 4 * 4);
     const decode = vi.fn(() => rgba);
