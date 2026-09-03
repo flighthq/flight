@@ -7,7 +7,7 @@ export { webAppHost } from './webAppHost';
 export { webAudioBackend } from './webAudio';
 export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebBitmapEncode } from './webBitmapEncode';
-export { createWebBitmapReadbackBackend, enableHostWebBitmapReadback } from './webBitmapReadback';
+export { createWebBitmapReadbackBackend, webBitmapReadbackBackend } from './webBitmapReadback';
 export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 export { webClipboardBackend } from './webClipboard';
 export { webClipboardHost } from './webClipboardHost';

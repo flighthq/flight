@@ -1,4 +1,3 @@
-import { hasBitmapReadbackHostBackend, installBitmapReadbackHostBackend } from '@flighthq/bitmap/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import type { Bitmap, BitmapReadbackBackend, Entity } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
@@ -45,10 +44,7 @@ export function createWebBitmapReadbackBackend(): BitmapReadbackBackend & Entity
   } satisfies BitmapReadbackBackend);
 }
 
-export function enableHostWebBitmapReadback(): void {
-  if (hasBitmapReadbackHostBackend()) return;
-  installBitmapReadbackHostBackend(createWebBitmapReadbackBackend());
-}
+export const webBitmapReadbackBackend: BitmapReadbackBackend & Entity = createWebBitmapReadbackBackend();
 
 function isExpectedSourceRefusal(error: unknown): boolean {
   return (
