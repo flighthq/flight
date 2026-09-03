@@ -1,6 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { PixelateEffect } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, PixelateEffect } from '@flighthq/types/contract';
 
-export function createPixelateEffect(options: Readonly<Omit<PixelateEffect, 'kind'>> = {}): PixelateEffect {
+export function createPixelateEffect(
+  options: Readonly<Omit<EntityWithoutRuntime<PixelateEffect>, 'kind'>> = {},
+): PixelateEffect {
   return createEntity({ kind: 'PixelateEffect', ...options });
 }

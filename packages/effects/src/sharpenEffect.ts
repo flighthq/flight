@@ -1,6 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { SharpenEffect } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, SharpenEffect } from '@flighthq/types/contract';
 
-export function createSharpenEffect(options: Readonly<Omit<SharpenEffect, 'kind'>> = {}): SharpenEffect {
+export function createSharpenEffect(
+  options: Readonly<Omit<EntityWithoutRuntime<SharpenEffect>, 'kind'>> = {},
+): SharpenEffect {
   return createEntity({ kind: 'SharpenEffect', ...options });
 }

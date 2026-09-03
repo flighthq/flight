@@ -1,4 +1,5 @@
 import type { Camera3D, Projection } from './Camera3D';
+import type { Entity } from './Entity';
 import type {
   FlightDocument,
   FlightDocumentScene,
@@ -86,7 +87,7 @@ describe('FlightDocumentScene2D', () => {
 
 describe('FlightDocumentScene2DMaterialization', () => {
   it('owns inert interactive-state bindings beside the scene', () => {
-    expectTypeOf<keyof FlightDocumentScene2DMaterialization>().toEqualTypeOf<
+    expectTypeOf<Exclude<keyof FlightDocumentScene2DMaterialization, keyof Entity>>().toEqualTypeOf<
       'interactiveStateBindings' | 'layoutBindings' | 'scene'
     >();
     expectTypeOf<FlightDocumentScene2DMaterialization['interactiveStateBindings']>().toEqualTypeOf<
@@ -126,7 +127,7 @@ describe('FlightDocumentScene3D', () => {
 
 describe('FlightDocumentScene3DMaterialization', () => {
   it('owns a camera array, runtime lights, and inert interactive-state bindings beside the scene', () => {
-    expectTypeOf<keyof FlightDocumentScene3DMaterialization>().toEqualTypeOf<
+    expectTypeOf<Exclude<keyof FlightDocumentScene3DMaterialization, keyof Entity>>().toEqualTypeOf<
       'cameras' | 'interactiveStateBindings' | 'layoutBindings' | 'lights' | 'scene'
     >();
     expectTypeOf<FlightDocumentScene3DMaterialization['cameras']>().toEqualTypeOf<Camera3D[]>();

@@ -1,10 +1,16 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { ContactShadowsEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
+import type {
+  EntityWithoutRuntime,
+  ContactShadowsEffect,
+  RenderEffect,
+  RenderEffectPadding,
+  RenderState,
+} from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createContactShadowsEffect(
-  options: Readonly<Omit<ContactShadowsEffect, 'kind'>> = {},
+  options: Readonly<Omit<EntityWithoutRuntime<ContactShadowsEffect>, 'kind'>> = {},
 ): ContactShadowsEffect {
   return createEntity({ kind: 'ContactShadowsEffect', ...options });
 }

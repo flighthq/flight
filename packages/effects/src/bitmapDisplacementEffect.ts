@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import type {
+  EntityWithoutRuntime,
   BitmapDisplacementEffect,
   RenderEffect,
   RenderEffectPadding,
@@ -11,7 +12,7 @@ import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createBitmapDisplacementEffect(
   map: Readonly<Texture2D> | null,
-  options: Readonly<Omit<BitmapDisplacementEffect, 'kind' | 'map'>> = {},
+  options: Readonly<Omit<EntityWithoutRuntime<BitmapDisplacementEffect>, 'kind' | 'map'>> = {},
 ): BitmapDisplacementEffect {
   return createEntity({ kind: 'BitmapDisplacementEffect', map, ...options });
 }

@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { SsaoEffect } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, SsaoEffect } from '@flighthq/types/contract';
 
-export function createSsaoEffect(options: Readonly<Omit<SsaoEffect, 'kind'>> = {}): SsaoEffect {
+export function createSsaoEffect(options: Readonly<Omit<EntityWithoutRuntime<SsaoEffect>, 'kind'>> = {}): SsaoEffect {
   return createEntity({ kind: 'SsaoEffect', ...options });
 }

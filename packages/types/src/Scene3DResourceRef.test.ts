@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from './Entity';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
@@ -17,6 +18,7 @@ describe('ImageResourceReference', () => {
   describe('descriptor shape', () => {
     it('models an embedded ref carrying encoded bytes and a starting Unresolved state', () => {
       const ref: EmbeddedImageResourceReference = {
+        [EntityRuntimeKey]: undefined,
         alphaType: 'straight',
         bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
         failure: null,
@@ -32,6 +34,7 @@ describe('ImageResourceReference', () => {
 
     it('models an external ref carrying a uri and optional basePath', () => {
       const ref: ExternalImageResourceReference = {
+        [EntityRuntimeKey]: undefined,
         basePath: '/models/',
         failure: null,
         kind: 'External',
@@ -47,6 +50,7 @@ describe('ImageResourceReference', () => {
 
     it('narrows on the kind discriminant', () => {
       const ref: ImageResourceReference = {
+        [EntityRuntimeKey]: undefined,
         basePath: null,
         failure: null,
         kind: 'External',

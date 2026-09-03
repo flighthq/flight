@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { SsrEffect } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, SsrEffect } from '@flighthq/types/contract';
 
-export function createSsrEffect(options: Readonly<Omit<SsrEffect, 'kind'>> = {}): SsrEffect {
+export function createSsrEffect(options: Readonly<Omit<EntityWithoutRuntime<SsrEffect>, 'kind'>> = {}): SsrEffect {
   return createEntity({ kind: 'SsrEffect', ...options });
 }

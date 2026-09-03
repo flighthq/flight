@@ -1,10 +1,18 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { OuterGlowEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
+import type {
+  EntityWithoutRuntime,
+  OuterGlowEffect,
+  RenderEffect,
+  RenderEffectPadding,
+  RenderState,
+} from '@flighthq/types/contract';
 
 import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
-export function createOuterGlowEffect(options: Readonly<Omit<OuterGlowEffect, 'kind'>> = {}): OuterGlowEffect {
+export function createOuterGlowEffect(
+  options: Readonly<Omit<EntityWithoutRuntime<OuterGlowEffect>, 'kind'>> = {},
+): OuterGlowEffect {
   return createEntity({ kind: 'OuterGlowEffect', ...options });
 }
 

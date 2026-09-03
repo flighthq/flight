@@ -1,8 +1,8 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { FilmEmulationEffect } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, FilmEmulationEffect } from '@flighthq/types/contract';
 
 export function createFilmEmulationEffect(
-  options: Readonly<Omit<FilmEmulationEffect, 'kind'>> = {},
+  options: Readonly<Omit<EntityWithoutRuntime<FilmEmulationEffect>, 'kind'>> = {},
 ): FilmEmulationEffect {
   return createEntity({ kind: 'FilmEmulationEffect', ...options });
 }

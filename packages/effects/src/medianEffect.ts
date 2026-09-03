@@ -1,9 +1,17 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { MedianEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
+import type {
+  EntityWithoutRuntime,
+  MedianEffect,
+  RenderEffect,
+  RenderEffectPadding,
+  RenderState,
+} from '@flighthq/types/contract';
 
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
-export function createMedianEffect(options: Readonly<Omit<MedianEffect, 'kind'>> = {}): MedianEffect {
+export function createMedianEffect(
+  options: Readonly<Omit<EntityWithoutRuntime<MedianEffect>, 'kind'>> = {},
+): MedianEffect {
   return createEntity({ kind: 'MedianEffect', ...options });
 }
 
