@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { invalidateContent } from '@flighthq/node/contract';
 import { createPath, samplePathMorph } from '@flighthq/path/contract';
 import { createNode2D, getNode2DRuntime } from '@flighthq/scene2d/contract';
@@ -59,14 +60,14 @@ export function createMorphShapeData(
   for (let i = 0; i < pathBindings.length; i++) {
     samplePathMorph(pathBindings[i].path, pathBindings[i].morph, progress);
   }
-  const out: MorphShapeData = {
+  const out: MorphShapeData = createEntity({
     commands: data?.commands ?? [],
     morph,
     paintBindings: [...(data?.paintBindings ?? [])],
     path,
     pathBindings,
     progress,
-  };
+  });
   sampleMorphShapePaintBindings(out, progress);
   return out;
 }

@@ -25,5 +25,5 @@ export function createScene2DSlotReference(
   required = true,
 ): Scene2DSlotReference {
   target.name = name;
-  return { content: null, linkage, name, required, target };
+  return createEntity({ content: null, linkage, name, required, target });
 }

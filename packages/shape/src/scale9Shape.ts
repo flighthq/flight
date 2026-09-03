@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createNode2D, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   PartialNode,
@@ -26,10 +27,10 @@ export function createScale9ShapeData(
   scale9Grid: Readonly<RectangleLike>,
   data?: Readonly<Partial<Scale9ShapeData>>,
 ): Scale9ShapeData {
-  return {
+  return createEntity({
     commands: data?.commands ?? [],
     scale9Grid,
-  };
+  });
 }
 
 export function createScale9ShapeRuntime(): Scale9ShapeRuntime {

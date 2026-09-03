@@ -1,6 +1,7 @@
 import { createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
 
@@ -36,5 +37,7 @@ describe('createScene2DSlotReference', () => {
     expect(reference.linkage).toBe('Game.Avatar');
     expect(reference.required).toBe(false);
     expect(target.name).toBe('avatarSlot');
+    expect(Object.hasOwn(reference, EntityRuntimeKey)).toBe(true);
+    expect(reference[EntityRuntimeKey]).toBeUndefined();
   });
 });

@@ -10,6 +10,7 @@ import {
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import type { MorphShape, MorphShapeAnimationTarget } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { appendMorphShapePath, createMorphShape } from './morphShape';
 import {
@@ -128,7 +129,10 @@ describe('createMorphShapeAnimationTarget', () => {
 
     const target: MorphShapeAnimationTarget = createMorphShapeAnimationTarget(shape);
 
-    expect(target).toStrictEqual({ shape });
+    const { [EntityRuntimeKey]: entityRuntime, ...fields } = target;
+    expect(fields).toStrictEqual({ shape });
+    expect(Object.hasOwn(target, EntityRuntimeKey)).toBe(true);
+    expect(entityRuntime).toBeUndefined();
   });
 });
 

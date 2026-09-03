@@ -6,7 +6,7 @@ import type { Node2D } from './Node2D';
 // A named place in the authored graph where the application supplies content the document does not carry.
 // The document knows the slot exists and where it goes; only the application knows what belongs in it, so
 // this is the one reference whose resolution produces a Node2D.
-export interface Scene2DSlotReference {
+export interface Scene2DSlotReference extends Entity {
   content: Node2D | null;
   // The authoring-time class/symbol name a format recorded for this slot, when it recorded one. A resolver
   // dispatching on an exported symbol reads this rather than matching on `name`.
