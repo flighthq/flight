@@ -19,8 +19,11 @@ export const DisplayObjectKind = 'DisplayObject';
 export const Node2DTraitsKey = Symbol('Node2DTraits');
 // `scene2d` is a back-pointer set on a display root by createScene2D (null on every other node). getScene2DRoot
 // walks to the root and reads it, so scene2d membership needs no per-node propagation.
-export type Node2DRuntime = NodeRuntime<Node2DTraits> &
-  HasTransform2DRuntime &
-  HasBoundsRectangleRuntime & { scene2d: Scene2D | null };
+// A named interface rather than an intersection typedef ending in an anonymous overlay: the runtime is
+// a seam subsystems attach to, so it needs a name a declaration can be found by and extended from.
+// Every base is already an interface, so this introduces no second root — it names the same shape.
+export interface Node2DRuntime extends NodeRuntime<Node2DTraits>, HasTransform2DRuntime, HasBoundsRectangleRuntime {
+  scene2d: Scene2D | null;
+}
 export type Node2DDataFactory = NodeDataFactory<Node2DData>;
 export type Node2DRuntimeFactory<R extends Node2DRuntime> = NodeRuntimeFactory<R>;
