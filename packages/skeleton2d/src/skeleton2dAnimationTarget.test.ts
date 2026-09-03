@@ -22,7 +22,7 @@ import {
 
 describe('createSkeleton2DBoneAnimationTarget', () => {
   it('stamps the bone kind, which is what the binder dispatches on', () => {
-    expect(createSkeleton2DBoneAnimationTarget(3, Skeleton2DAnimationPath.Rotation)).toEqual({
+    expect(createSkeleton2DBoneAnimationTarget(3, Skeleton2DAnimationPath.Rotation)).toMatchObject({
       boneIndex: 3,
       kind: Skeleton2DAnimationTargetKind.Bone,
       path: Skeleton2DAnimationPath.Rotation,
@@ -32,7 +32,7 @@ describe('createSkeleton2DBoneAnimationTarget', () => {
 
 describe('createSkeleton2DSlotAnimationTarget', () => {
   it('stamps the slot kind and leaves the attachment table null for a colour channel', () => {
-    expect(createSkeleton2DSlotAnimationTarget(2, Skeleton2DSlotAnimationPath.Color)).toEqual({
+    expect(createSkeleton2DSlotAnimationTarget(2, Skeleton2DSlotAnimationPath.Color)).toMatchObject({
       attachments: null,
       kind: Skeleton2DAnimationTargetKind.Slot,
       path: Skeleton2DSlotAnimationPath.Color,

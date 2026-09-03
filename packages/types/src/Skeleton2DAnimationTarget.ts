@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Skeleton2DAnimationPath } from './Skeleton2DAnimationPath';
 import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind';
 
@@ -9,7 +10,7 @@ import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetK
 // delta), composes it onto the setup bone (add for translate/rotate/shear, multiply for scale) and writes
 // the result to the matching pose `Bone2D` field(s), then re-propagates world transforms. `boneIndex` (not
 // a `Bone2D` reference) keeps the target stable across a `cloneSkeleton2D` — the same clip drives a cloned rig.
-export interface Skeleton2DAnimationTarget {
+export interface Skeleton2DAnimationTarget extends Entity {
   boneIndex: number;
   kind: Skeleton2DAnimationTargetKind;
   path: Skeleton2DAnimationPath;

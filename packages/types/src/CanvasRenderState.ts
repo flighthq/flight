@@ -5,6 +5,7 @@ import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
 import type { CanvasRenderSurface } from './CanvasRenderSurface';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
+import type { Entity } from './Entity';
 import type { KeyedTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
@@ -23,7 +24,7 @@ export interface CanvasRenderState extends RenderState {
 
 // Pure registration policy owned by one Canvas render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface CanvasRenderRegistries extends RenderRegistries {
+export interface CanvasRenderRegistries extends Entity, RenderRegistries {
   // Immutable blend-mode application policy. Canvas natively supports all blend modes via
   // globalCompositeOperation — no realization table needed. The pipeline carries this function so a
   // state constructed from a pipeline receives blend support without a separate enableCanvasBlendMode

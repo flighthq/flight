@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   CanvasRenderState,
@@ -68,7 +69,13 @@ export function createCanvasRenderTarget(
     width: targetWidth,
   });
   if (surface === null) throw new Error('Failed to acquire Canvas render target surface.');
-  return { canvas: surface.canvas, context: surface.context, height: targetHeight, surface, width: targetWidth };
+  return createEntity({
+    canvas: surface.canvas,
+    context: surface.context,
+    height: targetHeight,
+    surface,
+    width: targetWidth,
+  });
 }
 
 export function destroyCanvasRenderTarget(target: CanvasRenderTarget): void {
