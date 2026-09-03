@@ -9,7 +9,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
-import { Node, Project, SymbolFlags, SyntaxKind, TypeFormatFlags } from 'ts-morph';
+import { Node, Project, SymbolFlags, SyntaxKind, TypeFormatFlags, ts } from 'ts-morph';
 import type {
   CallExpression,
   Expression,
@@ -68,6 +68,7 @@ export type ExportedCreateExclusionReason =
   | 'callable'
   | 'descriptor'
   | 'external-native'
+  | 'non-object-result'
   | 'options'
   | 'type-only';
 
@@ -333,8 +334,8 @@ export function formatEntityContractReport(report: Readonly<EntityContractReport
     `  - test-source: ${report.excludedTestFiles}`,
     `  - test-helper-source: ${report.excludedTestHelperFiles}`,
     `  - tooling-package: ${report.excludedToolingFiles}`,
-    `  Exported create-return contract: ${acceptedCreates}/${createReport.total} object-returning create symbols resolve to Entity or EntityRuntime; ${createReport.candidates} violations across ${createReport.packages.length} packages`,
-    `  Semantically excluded create returns: ${createReport.automaticExclusions.length} automatic, ${createReport.markedExclusions.length} source-marked`,
+    `  Exported create-return contract: ${acceptedCreates}/${createReport.total} exported create symbols resolve to Entity or EntityRuntime; ${createReport.candidates} violations across ${createReport.packages.length} packages`,
+    `  Semantically excluded create returns: ${createReport.automaticExclusions.length} automatic (${formatExclusionReasons(createReport.automaticExclusions)}), ${createReport.markedExclusions.length} source-marked (${formatExclusionReasons(createReport.markedExclusions)})`,
     `  Exported EntityRuntime second-root results: ${formatNames(report.runtimeCreateExceptions)}`,
   ];
   if (otherIssues.length > 0) {
@@ -519,6 +520,7 @@ function collectExportedCreateCensus(
     const automaticReasons = new Set<ExportedCreateExclusionReason>();
     const excludedReturnTypes = new Set<string>();
     let hasObjectResult = false;
+    let hasNonObjectResult = false;
     let hasEntityResult = false;
     let hasRuntimeResult = false;
     let hasInvalidObjectResult = false;
@@ -532,9 +534,19 @@ function collectExportedCreateCensus(
         }
       }
       for (const resultType of exportedCreateResultTypes(signature.getReturnType())) {
-        if (isFailureSentinel(resultType) || resultType.isNever() || !isObjectResult(resultType)) continue;
+        if (isFailureSentinel(resultType) || resultType.isNever()) continue;
+        const resultTypeText = resultType.getText(surface.declaration, TypeFormatFlags.NoTruncation);
+        // A primitive, void, or otherwise non-object result is a real answer about the factory, not a
+        // reason to drop it: it is recorded as an automatic exclusion so every exported create symbol
+        // stays visible in the census.
+        if (!isObjectResult(resultType)) {
+          hasNonObjectResult = true;
+          automaticReasons.add('non-object-result');
+          excludedReturnTypes.add(resultTypeText);
+          continue;
+        }
         hasObjectResult = true;
-        const returnType = resultType.getText(surface.declaration, TypeFormatFlags.NoTruncation);
+        const returnType = resultTypeText;
         // Shape and platform ownership are terminal: adding an Entity intersection to an array,
         // callable, collection, or native object must not move that value into the SDK-object set.
         const automaticReason = automaticCreateExclusionReason(resultType, root);
@@ -559,7 +571,7 @@ function collectExportedCreateCensus(
         }
       }
     }
-    if (!hasObjectResult) continue;
+    if (!hasObjectResult && !hasNonObjectResult) continue;
     for (const name of names) {
       census.total++;
       if (hasInvalidObjectResult) {
@@ -822,10 +834,48 @@ function entityCategory(type: Type, entityType: Type, entityRuntimeType: Type): 
   return null;
 }
 
-function exportedCreateResultTypes(type: Type): Type[] {
-  const awaited = type.getAwaitedType() ?? type;
-  if (!awaited.isUnion()) return [awaited];
-  return awaited.getUnionTypes().flatMap(exportedCreateResultTypes);
+function exportedCreateResultTypes(type: Type, seen = new Set<Type>()): Type[] {
+  // Awaiting is gated on the result actually being thenable. TypeScript answers `Awaited<Type>` — itself
+  // a conditional — for a bare type parameter, so unconditionally awaiting turned every generic factory
+  // into an unresolvable conditional and lost it from the census.
+  const awaited = (type.getProperty('then') !== undefined ? type.getAwaitedType() : undefined) ?? type;
+  if (seen.has(awaited)) return [awaited];
+  seen.add(awaited);
+  if (awaited.isUnion()) return awaited.getUnionTypes().flatMap((member) => exportedCreateResultTypes(member, seen));
+  const branches = conditionalBranchTypes(awaited);
+  if (branches.length > 0) return branches.flatMap((branch) => exportedCreateResultTypes(branch, seen));
+  return [awaited];
+}
+
+// A conditional type that is still generic has no single resolved result, so it is adjudicated by its
+// branches: each arm is a result the factory can actually return. The branches are read from the alias
+// declaration because an uninstantiated conditional exposes no resolved arms through the type API. A
+// conditional that yields no readable branch stays whole and is judged on its own, which is what makes
+// an unresolvable object-capable result a violation rather than a silent skip.
+function conditionalBranchTypes(type: Type): Type[] {
+  if ((type.getFlags() & ts.TypeFlags.Conditional) === 0) return [];
+  // A still-generic conditional carries its arms as its default constraint, which is the union of every
+  // branch it can resolve to. That reads an inline conditional and an aliased one alike; the alias
+  // declaration is only walked when there is no constraint to read.
+  const constraint = type.getConstraint();
+  if (constraint !== undefined) return constraint.isUnion() ? constraint.getUnionTypes() : [constraint];
+  const declarations = type.getAliasSymbol()?.getDeclarations() ?? type.getSymbol()?.getDeclarations() ?? [];
+  const branches: Type[] = [];
+  for (const declaration of declarations) {
+    if (!Node.isTypeAliasDeclaration(declaration)) continue;
+    collectConditionalBranchTypes(declaration.getTypeNode(), branches);
+  }
+  return branches;
+}
+
+function collectConditionalBranchTypes(typeNode: TypeNode | undefined, branches: Type[]): void {
+  if (typeNode === undefined) return;
+  if (Node.isConditionalTypeNode(typeNode)) {
+    collectConditionalBranchTypes(typeNode.getTrueType(), branches);
+    collectConditionalBranchTypes(typeNode.getFalseType(), branches);
+    return;
+  }
+  branches.push(typeNode.getType());
 }
 
 function exportName(surfaceName: string): string {
@@ -845,6 +895,22 @@ function findCreateEntityCall(expression: Expression): CallExpression | undefine
     return path.endsWith('/packages/entity/src/entity.ts');
   });
   return declaredByEntityPackage ? underlying : undefined;
+}
+
+// Every excluded create symbol is reported under the reason that excluded it, so a result leaving the
+// Entity population is visible as a decision rather than as an absence. A create symbol whose result is
+// primitive, void, or otherwise not an object appears here under non-object-result; before that reason
+// existed such a symbol was dropped before it was ever counted.
+function formatExclusionReasons(exclusions: readonly ExportedCreateExclusion[]): string {
+  const counts = new Map<ExportedCreateExclusionReason, number>();
+  for (const exclusion of exclusions) {
+    for (const reason of exclusion.reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  }
+  if (counts.size === 0) return 'none';
+  return [...counts]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([reason, count]) => `${reason} ${count}`)
+    .join(', ');
 }
 
 function formatNames(names: readonly string[]): string {
@@ -921,7 +987,10 @@ function isObjectResult(type: Type): boolean {
     return constraint === undefined || isObjectResult(constraint);
   }
   if (type.isIntersection()) return type.getIntersectionTypes().every(isObjectResult);
-  return type.isObject();
+  // The `object` keyword carries NonPrimitive rather than Object, so `Type extends object` reads as a
+  // non-object constraint unless it is named here. Without this every generic factory whose result is
+  // `Type & Entity` — createEntity itself, createNode, createWgpuRendererData — leaves the census.
+  return type.isObject() || (type.getFlags() & ts.TypeFlags.NonPrimitive) !== 0;
 }
 
 function isNamedTypeNode(typeNode: TypeNode): boolean {

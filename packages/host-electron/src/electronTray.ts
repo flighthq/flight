@@ -269,10 +269,10 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
         },
       }),
     };
-    return {
+    return createEntity({
       ...common,
       ...macos,
-    } as unknown as ElectronTrayCapabilitiesFor<Profile>;
+    }) as unknown as ElectronTrayCapabilitiesFor<Profile>;
   }
 
   if (profile === 'windows') {
@@ -312,13 +312,15 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
       }),
       balloonEvents: createEntity({ getSignal: (tray: TrayIcon) => records.get(tray)?.balloonEvents ?? null }),
     };
-    return {
+    return createEntity({
       ...common,
       ...windows,
-    } as unknown as ElectronTrayCapabilitiesFor<Profile>;
+    }) as unknown as ElectronTrayCapabilitiesFor<Profile>;
   }
 
-  return common as unknown as ElectronTrayCapabilitiesFor<Profile>;
+  // The double cast is what a generic conditional return costs; createEntity is what makes the Entity
+  // arm of that claim true at runtime rather than only in the annotation.
+  return createEntity(common) as unknown as ElectronTrayCapabilitiesFor<Profile>;
 
   function attachNativeListeners(record: TrayRecord, osProfile: DesktopOsProfile): void {
     const interaction =

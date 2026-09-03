@@ -113,13 +113,103 @@ describe('checkEntityContracts', () => {
       ].join('\n'),
     });
 
-    expect(report.exportedCreateFunctions).toBe(3);
+    expect(report.exportedCreateFunctions).toBe(4);
     expect(report.exportedCreateEntityReturns).toBe(0);
     expect(report.issues).toEqual([]);
+    // A branded primitive is excluded for being a primitive, not for its brand, and it is REPORTED
+    // rather than dropped — every exported create symbol stays visible in the census.
     expect(Object.fromEntries(report.exportedCreateExclusions.map(({ name, reasons }) => [name, reasons]))).toEqual({
       '@flighthq/example createArrayEntity': ['array-or-tuple'],
+      '@flighthq/example createBrandedValue': ['non-object-result'],
       '@flighthq/example createCallableEntity': ['callable'],
       '@flighthq/example createNativeEntity': ['external-native'],
+    });
+  });
+
+  it('accepts a generic Entity result whose type parameter is constrained to object', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import type { Entity } from '../../types/src/Entity';",
+        'interface Node<Traits extends object> extends Entity { traits: Traits }',
+        'export declare function createExampleEntity<Type extends object>(value: Type): Type & Entity;',
+        'export declare function createExampleNode<Traits extends object>(traits: Traits): Node<Traits> & Traits;',
+      ].join('\n'),
+    });
+
+    // `Type extends object` is the shape every generic factory in the repository uses, createEntity
+    // itself included. It must resolve, or the analyzer cannot see its own constructor.
+    expect(report.exportedCreateFunctions).toBe(2);
+    expect(report.exportedCreateEntityReturns).toBe(2);
+    expect(report.exportedCreateCandidates).toEqual([]);
+    expect(report.issues).toEqual([]);
+  });
+
+  it('reports an unresolved object-capable generic result as a violation', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        'export declare function createUnconstrained<Type>(value: Type): Type;',
+        'export declare function createObjectGeneric<Type extends object>(value: Type): Type;',
+      ].join('\n'),
+    });
+
+    // The red half of the rule above. An unresolved generic result cannot be waved through the way a
+    // resolved Entity intersection is, and constraining it to `object` does not make it an Entity.
+    expect(report.exportedCreateCandidates.map(({ name }) => name).sort()).toEqual([
+      '@flighthq/example createObjectGeneric',
+      '@flighthq/example createUnconstrained',
+    ]);
+    expect(report.issues).toHaveLength(2);
+  });
+
+  it('adjudicates a generic conditional result by its branches', () => {
+    const files = (entityArm: string) => ({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import type { Entity } from '../../types/src/Entity';",
+        "type Profile = 'macos' | 'windows';",
+        `type CommonCapabilities = ${entityArm}{ readonly menu: object };`,
+        'type WindowsCapabilities = CommonCapabilities & { readonly balloon: object };',
+        "export declare function createCapabilitiesFor<P extends Profile>(profile: P): P extends 'windows'",
+        '  ? WindowsCapabilities',
+        '  : CommonCapabilities;',
+      ].join('\n'),
+    });
+
+    // An uninstantiated conditional resolves to no single type, so the arms are what the factory can
+    // actually return and each is judged on its own. Green when the shared base carries Entity...
+    const accepted = checkFixture(files('Entity & '));
+    expect(accepted.exportedCreateEntityReturns).toBe(1);
+    expect(accepted.exportedCreateCandidates).toEqual([]);
+
+    // ...and red without it, which is the whole reason the two tray capability groups were invisible.
+    const rejected = checkFixture(files(''));
+    expect(rejected.exportedCreateCandidates.map(({ name }) => name)).toEqual([
+      '@flighthq/example createCapabilitiesFor',
+    ]);
+  });
+
+  it('excludes primitive and void results as automatic non-object results', () => {
+    const report = checkFixture({
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        'export declare function createCount(): number;',
+        'export declare function createLabel(): string;',
+        'export declare function createFlagAsync(): Promise<boolean>;',
+        'export declare function createNothing(): void;',
+      ].join('\n'),
+    });
+
+    // Counted, not dropped: before non-object-result existed these four left no trace in the census.
+    expect(report.exportedCreateFunctions).toBe(4);
+    expect(report.exportedCreateCandidates).toEqual([]);
+    expect(report.issues).toEqual([]);
+    expect(Object.fromEntries(report.exportedCreateExclusions.map(({ name, reasons }) => [name, reasons]))).toEqual({
+      '@flighthq/example createCount': ['non-object-result'],
+      '@flighthq/example createFlagAsync': ['non-object-result'],
+      '@flighthq/example createLabel': ['non-object-result'],
+      '@flighthq/example createNothing': ['non-object-result'],
     });
   });
 
