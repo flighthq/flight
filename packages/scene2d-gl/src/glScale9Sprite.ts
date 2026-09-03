@@ -81,9 +81,9 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
   const colorScaleBias = renderProxy.colorMatrix ?? renderProxy.colorScaleBias;
 
   let writeBase = base;
-  let instanceIndex = startCount;
   for (let row = 0; row < 3; row++) {
     for (let column = 0; column < 3; column++) {
+      const instanceIndex = startCount + row * 3 + column;
       const x = targetX[column];
       const y = targetY[row];
       data[writeBase] = a;
@@ -102,7 +102,6 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
       packGlQuadBatchMaterialInstance(state, renderProxy.materialData, instanceIndex);
       recordGlQuadBatchColorScaleBias(state, colorScaleBias, instanceIndex);
       writeBase += INSTANCE_FLOATS;
-      instanceIndex++;
     }
   }
 
