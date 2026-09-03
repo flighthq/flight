@@ -4,27 +4,18 @@ import type { NodeRuntime } from './Node';
 import type { Node2DRuntime, Node2DTraits } from './Node2D';
 
 describe('Node2DRuntime', () => {
-  it('is a named interface a declaration can extend, not an intersection typedef', () => {
-    // The point of the seam: a subsystem adds its slot by EXTENDING the runtime. An intersection
-    // typedef ending in an anonymous overlay cannot be extended, so every subsystem had to re-state
-    // the whole intersection to add one field.
-    interface SubsystemRuntime extends Node2DRuntime {
-      subsystemSlot: string | null;
-    }
-    const runtime = { subsystemSlot: 'attached' } as unknown as SubsystemRuntime;
-    expect(runtime.subsystemSlot).toBe('attached');
-  });
-
-  it('is still assignable to the node runtime it specialises, so no second root was introduced', () => {
-    // The risk in naming a shape is rooting it somewhere new. This pins the direction that matters:
-    // a Node2DRuntime must still BE a NodeRuntime<Node2DTraits>, checked by the compiler rather than
-    // by a runtime assertion that could not observe it either way.
+  // These do NOT prove the interface form: an interface and the intersection typedef it replaced are
+  // the same type, so nothing observable separates them and no test can. They are forward guards —
+  // the shape a future edit could break — and the reason to name the shape is that a declaration can
+  // be found, read, and errored against by name, which is a source property rather than a type one.
+  it('is assignable to every runtime it specialises, so naming it introduced no second root', () => {
     expectTypeOf<Node2DRuntime>().toMatchTypeOf<NodeRuntime<Node2DTraits>>();
     expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasBoundsRectangleRuntime>();
     expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasTransform2DRuntime>();
   });
 
   it('carries the scene back-pointer that was the anonymous half of the old typedef', () => {
+    expectTypeOf<Node2DRuntime>().toHaveProperty('scene2d');
     const runtime = { scene2d: null } as unknown as Node2DRuntime;
     expect(runtime.scene2d).toBeNull();
   });
