@@ -5,9 +5,10 @@ import {
   renderIntoGlRenderTexture,
 } from '@flighthq/render-gl/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { Bitmap, RenderProxy2D, Sprite } from '@flighthq/types/contract';
+import type { Bitmap, ColorScaleBias, RenderProxy2D, Sprite } from '@flighthq/types/contract';
 import { BatchFormat, BitmapTextureSourceKind } from '@flighthq/types/contract';
 
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { defaultGlSpriteRenderer, drawGlSprite } from './glSprite';
 import { registerGlStandardMaterial } from './glStandardMaterial';
@@ -42,6 +43,21 @@ function makeRenderProxy(sprite: Sprite): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
+function ct(scale: number): ColorScaleBias {
+  return {
+    alphaBias: 0,
+    alphaScale: 1,
+    blueBias: 0,
+    blueScale: scale,
+    greenBias: 0,
+    greenScale: scale,
+    redBias: 0,
+    redScale: scale,
+  } as ColorScaleBias;
+}
+
+const CT_MODE_UNIFORM = 1;
+
 describe('defaultGlSpriteRenderer', () => {
   it('declares the quad format and submit function', () => {
     expect(defaultGlSpriteRenderer.format).toBe(BatchFormat.Quad);
@@ -75,6 +91,24 @@ describe('drawGlSprite', () => {
 
     const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(data.slice(6, 12)).toEqual(new Float32Array([100, 80, 140 / 720, 1 - 160 / 480, 240 / 720, 1 - 240 / 480]));
+  });
+
+  it('records a tint against the instance the flush uploads when a new texture breaks the batch', () => {
+    const { state } = createGlState();
+    registerGlBitmapTextureResolver(state);
+    registerGlStandardMaterial(state);
+    registerGlColorAdjustmentMaterialFeature(state);
+    const runtime = getGlRenderStateRuntime(state);
+
+    drawGlSprite(state, makeRenderProxy(makeSprite(32, 32)));
+    expect(runtime.quadBatchWriterCount).toBe(1);
+
+    const tinted = makeRenderProxy(makeSprite(16, 16));
+    (tinted as { colorScaleBias: ColorScaleBias }).colorScaleBias = ct(0.5);
+    drawGlSprite(state, tinted);
+
+    expect(runtime.quadBatchWriterCount).toBe(1);
+    expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_UNIFORM);
   });
 
   it('resolves and draws the texture on flush', () => {

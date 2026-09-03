@@ -158,7 +158,6 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
   const textureEntry = bindWgpuImageResourceTexture(state, surface.image, false, true);
   if (textureEntry === null) return;
-  const startCount = runtime.quadBatchWriterCount;
   const base = prepareWgpuQuadBatchWrite(
     state,
     textureEntry,
@@ -168,6 +167,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
     materialRenderer,
     1,
   );
+  const startCount = runtime.quadBatchWriterCount;
   const d = runtime.quadBatchWriterInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;

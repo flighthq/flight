@@ -44,7 +44,6 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const perTileColorScaleBias = source.data.materialData;
   const nodeColorScaleBias = tilemapNode.colorScaleBias;
   const nodeColorMatrix = tilemapNode.colorMatrix;
-  const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(
     state,
     glTexture,
@@ -55,6 +54,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
     materialRenderer,
     columns * rows,
   );
+  const startCount = runtime.quadBatchWriterCount;
 
   const regions = atlas.regions;
   const numRegions = regions.length;
