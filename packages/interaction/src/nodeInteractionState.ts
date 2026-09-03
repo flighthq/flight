@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { Cursor, HitArea, NodeAny, NodeInteractionState, NodeRuntime } from '@flighthq/types/contract';
 
@@ -7,14 +8,14 @@ import type { Cursor, HitArea, NodeAny, NodeInteractionState, NodeRuntime } from
  * every field is set consistently.
  */
 export function createNodeInteractionState(): NodeInteractionState {
-  return {
+  return createEntity({
     cursor: null,
     focusable: false,
     hitArea: null,
     hitTestEnabled: false,
     pointerDoubleClickEnabled: false,
     tabIndex: -1,
-  };
+  });
 }
 
 /**

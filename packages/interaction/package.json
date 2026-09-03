@@ -38,16 +38,17 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/bitmap": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/node": "*",
-    "@flighthq/scene2d": "*",
     "@flighthq/log": "*",
+    "@flighthq/node": "*",
     "@flighthq/path": "*",
     "@flighthq/registry": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/shape": "*",
-    "@flighthq/spatial": "*",
     "@flighthq/signals": "*",
-    "@flighthq/bitmap": "*",
+    "@flighthq/spatial": "*",
     "@flighthq/text": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/types": "*"

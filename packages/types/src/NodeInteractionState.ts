@@ -1,4 +1,5 @@
 import type { Cursor } from './Cursor';
+import type { Entity } from './Entity';
 import type { HitArea } from './NodeInteraction';
 
 /**
@@ -15,7 +16,7 @@ import type { HitArea } from './NodeInteraction';
  * on rollover; `focusable`/`tabIndex` are read by a keyboard focus/navigation manager and are never
  * consulted on the pointer path.
  */
-export interface NodeInteractionState {
+export interface NodeInteractionState extends Entity {
   // Opt-in eligibility: whether this node participates in hit testing at all. Defaults to `false` — a
   // node is a hit candidate only after it volunteers. Also the on/off toggle for a volunteered node.
   hitTestEnabled: boolean;
