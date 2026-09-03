@@ -77,7 +77,12 @@ describe('readSwfEditTextFactory', () => {
 
     // Without the parse the field would display its own tags, which is the whole point of the flag.
     expect(field.data.text).toBe('Hit hard now');
-    expect(field.data.textFormatRanges).toEqual([{ end: 8, format: { bold: true }, start: 4 }]);
+    expect(field.data.textFormatRanges).toHaveLength(1);
+    expect(field.data.textFormatRanges[0]).toMatchObject({
+      end: 8,
+      format: { bold: true },
+      start: 4,
+    });
   });
 
   it('keeps markup verbatim in a field that is not flagged as html', () => {

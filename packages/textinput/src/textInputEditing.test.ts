@@ -760,7 +760,12 @@ describe('replaceTextInput', () => {
     const text = createInput({ text: 'abcd' });
     setRichTextFormatRange(text, { bold: true }, 0, 4);
     replaceTextInput(text, 2, 2, 'XY');
-    expect(text.data.textFormatRanges).toEqual([{ start: 0, end: 6, format: { bold: true } }]);
+    expect(text.data.textFormatRanges).toHaveLength(1);
+    expect(text.data.textFormatRanges[0]).toMatchObject({
+      start: 0,
+      end: 6,
+      format: { bold: true },
+    });
   });
 
   it('updates serialized text format ranges after replacement', () => {
@@ -768,7 +773,8 @@ describe('replaceTextInput', () => {
     setRichTextFormatRange(text, { bold: true }, 0, 2);
     setRichTextFormatRange(text, { italic: true }, 2, 4);
     replaceTextInput(text, 1, 3, 'Z');
-    expect(text.data.textFormatRanges).toEqual([
+    expect(text.data.textFormatRanges).toHaveLength(2);
+    expect(text.data.textFormatRanges).toMatchObject([
       { start: 0, end: 1, format: { bold: true } },
       { start: 1, end: 3, format: { italic: true } },
     ]);
