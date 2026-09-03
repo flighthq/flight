@@ -1,7 +1,8 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { TextLayoutResult, TextMetrics } from '@flighthq/types/contract';
 
 export function createTextMetrics(): TextMetrics {
-  return { height: 0, numLines: 0, width: 0 };
+  return createEntity({ height: 0, numLines: 0, width: 0 });
 }
 
 // Fills `out` with the measured content size from a computed layout (the glyph extent, ceil'd to whole

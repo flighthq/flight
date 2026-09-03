@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentFields,
@@ -262,7 +263,7 @@ export function createDocumentRefusal(
   reason: FlightDocumentRefusalReasonType,
   path: string,
 ): FlightDocumentRefusalExplanation {
-  return {
+  return createEntity({
     actual: null,
     column: null,
     kind: null,
@@ -275,7 +276,7 @@ export function createDocumentRefusal(
     resourceKey: null,
     tokenKey: null,
     version: null,
-  };
+  });
 }
 
 export function createSceneRefusal(

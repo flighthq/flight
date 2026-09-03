@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   Physics2DAbiBodyBuffer,
   Physics2DAbiCommandBuffer,
@@ -31,24 +32,24 @@ export function clearPhysics2DAbiCommandBuffer(out: Physics2DAbiCommandBuffer): 
 
 export function createPhysics2DAbiBodyBuffer(capacity: number): Physics2DAbiBodyBuffer {
   assertCapacity(capacity, 'body');
-  return {
+  return createEntity({
     ids: new Uint32Array(capacity),
     flags: new Uint32Array(capacity),
     values: new Float64Array(capacity * Physics2DAbiBodyValueStride),
     count: 0,
     requiredCount: 0,
-  };
+  });
 }
 
 export function createPhysics2DAbiCommandBuffer(byteCapacity = 4096): Physics2DAbiCommandBuffer {
   if (!Number.isSafeInteger(byteCapacity) || byteCapacity < Physics2DAbiCommandHeaderByteLength) {
     throw new RangeError(`Physics2D ABI command capacity must be at least ${Physics2DAbiCommandHeaderByteLength}`);
   }
-  const out: Physics2DAbiCommandBuffer = {
+  const out: Physics2DAbiCommandBuffer = createEntity({
     data: new Uint8Array(byteCapacity),
     byteLength: 0,
     commandCount: 0,
-  };
+  });
   clearPhysics2DAbiCommandBuffer(out);
   return out;
 }
@@ -59,7 +60,7 @@ export function createPhysics2DAbiContactBuffer(
 ): Physics2DAbiContactBuffer {
   assertCapacity(contactCapacity, 'contact');
   assertCapacity(pointCapacity, 'contact point');
-  return {
+  return createEntity({
     ids: new Uint32Array(contactCapacity * Physics2DAbiContactIdStride),
     flags: new Uint32Array(contactCapacity),
     pointStarts: new Uint32Array(contactCapacity),
@@ -71,33 +72,33 @@ export function createPhysics2DAbiContactBuffer(
     pointCount: 0,
     requiredCount: 0,
     requiredPointCount: 0,
-  };
+  });
 }
 
 export function createPhysics2DAbiExecutionResult(): Physics2DAbiExecutionResult {
-  return { status: 'Complete', commandIndex: 0, byteOffset: Physics2DAbiCommandHeaderByteLength, commandKind: 0 };
+  return createEntity({ status: 'Complete', commandIndex: 0, byteOffset: Physics2DAbiCommandHeaderByteLength, commandKind: 0 });
 }
 
 export function createPhysics2DAbiJointBuffer(capacity: number): Physics2DAbiJointBuffer {
   assertCapacity(capacity, 'joint');
-  return {
+  return createEntity({
     ids: new Uint32Array(capacity),
     flags: new Uint32Array(capacity),
     values: new Float64Array(capacity * Physics2DAbiJointValueStride),
     count: 0,
     requiredCount: 0,
-  };
+  });
 }
 
 export function createPhysics2DAbiQueryBuffer(capacity: number): Physics2DAbiQueryBuffer {
   assertCapacity(capacity, 'query');
-  return {
+  return createEntity({
     bodyIds: new Uint32Array(capacity),
     colliderIds: new Uint32Array(capacity),
     values: new Float64Array(capacity * Physics2DAbiQueryValueStride),
     count: 0,
     requiredCount: 0,
-  };
+  });
 }
 
 export function getPhysics2DAbiCommandBufferRemainingByteLength(buffer: Readonly<Physics2DAbiCommandBuffer>): number {

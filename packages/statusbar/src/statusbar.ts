@@ -42,13 +42,13 @@ export function createStatusBar(): StatusBar {
 }
 
 export function createStatusBarInfo(): StatusBarInfo {
-  return {
+  return createEntity({
     color: 0,
     height: -1,
     overlaysContent: false,
     style: 'default',
     visible: true,
-  };
+  });
 }
 
 export function detachStatusBar(bar: StatusBar): void {

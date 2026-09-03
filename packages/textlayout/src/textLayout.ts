@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type {
   TextDirection,
   TextFormat,
@@ -773,7 +774,7 @@ function writeLineMetrics(out: TextLayoutResult, groups: readonly TextLayoutGrou
 // ---------------------------------------------------------------------------
 
 export function createTextLayoutResult(): TextLayoutResult {
-  return {
+  return createEntity({
     groups: [],
     lineAscents: [],
     lineDescents: [],
@@ -783,7 +784,7 @@ export function createTextLayoutResult(): TextLayoutResult {
     numLines: 0,
     textHeight: 0,
     textWidth: 0,
-  };
+  });
 }
 
 export function isTextLayoutTruncated(layout: Readonly<TextLayoutResult>, params: Readonly<TextLayoutParams>): boolean {

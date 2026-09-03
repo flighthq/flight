@@ -1,7 +1,8 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { TextFormat, TextLayoutGroup } from '@flighthq/types/contract';
 
 export function createTextLayoutGroup(format: TextFormat, startIndex: number, endIndex: number): TextLayoutGroup {
-  return {
+  return createEntity({
     ascent: 0,
     descent: 0,
     endIndex,
@@ -14,5 +15,5 @@ export function createTextLayoutGroup(format: TextFormat, startIndex: number, en
     positions: [],
     startIndex,
     width: 0,
-  };
+  });
 }
