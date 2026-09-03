@@ -81,7 +81,7 @@ export interface RotationRateReading extends Entity, SensorReading {
 //
 // Each subscribe* registers a listener and returns an unsubscribe function. Readings handed to listeners
 // may be scratch-reused; listeners must copy values they need to outlive the callback.
-export interface SensorsBackend {
+export interface SensorsBackend extends Entity {
   // Current permission state for the given gated sensor, without prompting; 'unsupported' when absent.
   getPermissionState(sensor?: 'magnetometer' | 'motion' | 'orientation'): Promise<SensorsPermissionState>;
   // True when ambient light sensing is available.
