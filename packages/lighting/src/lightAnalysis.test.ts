@@ -24,6 +24,19 @@ describe('getLightContributionAtBoundingSphere', () => {
     expect(near / far).toBeCloseTo(4);
   });
 
+  it('uses the light decay exponent for distance attenuation', () => {
+    const linear = createPointLight({ decay: 1, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const inverseSquare = createPointLight({ decay: 2, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    const bounds = createBoundingSphere(4, 0, 0, 0);
+    expect(getLightContributionAtBoundingSphere(linear, bounds)).toBeCloseTo(0.25);
+    expect(getLightContributionAtBoundingSphere(inverseSquare, bounds)).toBeCloseTo(0.0625);
+  });
+
+  it('returns zero for a disabled punctual light', () => {
+    const light = createPointLight({ enabled: false, position: { x: 0, y: 0, z: 0 }, range: -1 });
+    expect(getLightContributionAtBoundingSphere(light, createBoundingSphere(2, 0, 0, 0))).toBe(0);
+  });
+
   it('applies radius slack at the nearest sphere surface', () => {
     const light = createPointLight({ position: { x: 0, y: 0, z: 0 }, range: -1 });
     const point = getLightContributionAtBoundingSphere(light, createBoundingSphere(4, 0, 0, 0));
@@ -59,6 +72,16 @@ describe('getLightContributionAtBoundingSphere', () => {
 });
 
 describe('getLightInfluenceBounds', () => {
+  it('writes an empty zero-radius bound for a disabled light', () => {
+    const light = createPointLight({ enabled: false, position: { x: 1, y: 2, z: 3 }, range: 5 });
+    const out = createBoundingSphere(9, 8, 7, -1);
+    getLightInfluenceBounds(out, light);
+    expect(out.center.x).toBe(0);
+    expect(out.center.y).toBe(0);
+    expect(out.center.z).toBe(0);
+    expect(out.radius).toBe(0);
+  });
+
   it('returns sentinel radius (-1) for ambient lights', () => {
     const light = createAmbientLight();
     const out = createBoundingSphere();
@@ -122,10 +145,23 @@ describe('getLightInfluenceBounds', () => {
 });
 
 describe('getLightLuminance', () => {
-  it('returns 0 for lights without a color field', () => {
-    const light = createEnvironment({ intensity: 5 });
-    // Environment has no color field — luminance should fall back to 0.
-    // (environment light has no color field in its type; cast to bypass type)
+  it('kind-dispatches Environment to zero even when foreign data adds a color field', () => {
+    const light = Object.assign(createEnvironment({ intensity: 5 }), { color: 0xffffffff });
+    expect(getLightLuminance(light)).toBe(0);
+  });
+
+  it('returns zero for a disabled colored light', () => {
+    const light = createAmbientLight({ color: 0xffffffff, enabled: false, intensity: 5 });
+    expect(getLightLuminance(light)).toBe(0);
+  });
+
+  it('uses the mean sky/ground luminance for a hemisphere light', () => {
+    const light = createHemisphereLight({ groundColor: 0x000000ff, intensity: 2, skyColor: 0xffffffff });
+    expect(getLightLuminance(light)).toBeCloseTo(1, 4);
+  });
+
+  it('returns zero for an open custom kind even when it resembles a colored light', () => {
+    const light = createEntity({ color: 0xffffffff, enabled: true, intensity: 5, kind: 'acme:GlowLight' });
     expect(getLightLuminance(light)).toBe(0);
   });
 
@@ -160,6 +196,12 @@ describe('getLightLuminance', () => {
 });
 
 describe('hasLightInfluenceOnBounds', () => {
+  it('returns false for disabled finite and unlimited lights', () => {
+    const bounds = createBoundingSphere(0, 0, 0, 1);
+    expect(hasLightInfluenceOnBounds(createAmbientLight({ enabled: false }), bounds)).toBe(false);
+    expect(hasLightInfluenceOnBounds(createPointLight({ enabled: false, range: 10 }), bounds)).toBe(false);
+  });
+
   it('returns true for ambient lights (unlimited reach)', () => {
     const light = createAmbientLight();
     const bounds = createBoundingSphere(100, 0, 0, 1);
@@ -218,6 +260,11 @@ describe('isLightCastingShadow', () => {
   it('returns true for directional lights with castsShadow: true', () => {
     const light = createDirectionalLight({ castsShadow: true });
     expect(isLightCastingShadow(light)).toBe(true);
+  });
+
+  it('returns false when a shadow-casting light is disabled', () => {
+    const light = createDirectionalLight({ castsShadow: true, enabled: false });
+    expect(isLightCastingShadow(light)).toBe(false);
   });
 
   it('returns true for point lights with castsShadow: true', () => {

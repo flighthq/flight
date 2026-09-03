@@ -1,4 +1,5 @@
 import type { Light } from './Light';
+import type { LightUnit } from './LightUnit';
 import type { Vector3 } from './Vector3';
 
 // Infinitely distant directional light (sun). `direction` is the world-space travel direction
@@ -8,12 +9,18 @@ import type { Vector3 } from './Vector3';
 // canonical LOCAL -Z axis and the document light's `transform` carries the aim, per that type's placement
 // convention. Anything a renderer consumes — `Scene3DLights`, `packScene3DLightBlock` — is world-space.
 export interface DirectionalLight extends Light {
+  // One cascade preserves the historical single directional shadow-map behavior.
+  cascadeCount: number;
+  // Normalized far split for each cascade; the default single cascade ends at 1.
+  cascadeSplits: number[];
   // Enables the explicit directional shadow-map pass when this light is passed to it.
   castsShadow: boolean;
   // Packed sRGB RGBA (`0xRRGGBBAA`); radiance is unpackColorToLinear(color) x intensity.
   color: number;
   direction: Vector3;
+  enabled: boolean;
   intensity: number;
+  intensityUnit: LightUnit;
   kind: 'DirectionalLight';
   // Receiver offset along the geometric normal, measured in shadow-map texels. The renderer converts
   // it through the orthographic shadow projection, so a fitted map keeps the same relative bias as the
@@ -23,6 +30,14 @@ export interface DirectionalLight extends Light {
   pcfRadius: number;
   // Receiver depth-compare offset in normalized shadow depth.
   shadowBias: number;
+  // Far clip distance, in world units, for a renderer-authored shadow camera.
+  shadowFar: number;
+  // Requested square shadow-map resolution.
+  shadowMapSize: number;
+  // Near clip distance, in world units, for a renderer-authored shadow camera.
+  shadowNear: number;
+  // Shadow opacity in [0, 1].
+  shadowStrength: number;
 }
 
 export const DirectionalLightKind = 'DirectionalLight';

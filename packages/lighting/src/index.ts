@@ -27,6 +27,7 @@ export {
   setAreaLightOrientation,
   setDirectionalLightDirection,
   setDirectionalLightTarget,
+  setSpotLightBlend,
   setSpotLightCone,
   setSpotLightDirection,
   setSpotLightTarget,

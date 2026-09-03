@@ -1,19 +1,27 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
 import type { DirectionalLight, DirectionalLightOptions } from '@flighthq/types/contract';
-import { DirectionalLightKind } from '@flighthq/types/contract';
+import { DirectionalLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a directional light's data, including a fresh `direction` vector.
 export function cloneDirectionalLight(source: Readonly<DirectionalLight>): DirectionalLight {
   return createEntity({
+    cascadeCount: source.cascadeCount,
+    cascadeSplits: source.cascadeSplits.slice(),
     castsShadow: source.castsShadow,
     color: source.color,
     direction: cloneVector3(source.direction),
+    enabled: source.enabled,
     intensity: source.intensity,
+    intensityUnit: source.intensityUnit,
     kind: DirectionalLightKind,
     normalBias: source.normalBias,
     pcfRadius: source.pcfRadius,
     shadowBias: source.shadowBias,
+    shadowFar: source.shadowFar,
+    shadowMapSize: source.shadowMapSize,
+    shadowNear: source.shadowNear,
+    shadowStrength: source.shadowStrength,
   });
 }
 
@@ -22,16 +30,26 @@ export function cloneDirectionalLight(source: Readonly<DirectionalLight>): Direc
 // defaults to opaque white at unit intensity, pointing straight down (0, -1, 0) with shadows off.
 export function createDirectionalLight(options?: Readonly<DirectionalLightOptions>): DirectionalLight {
   const direction = options?.direction;
-  return createEntity({
+  const light: DirectionalLight = createEntity({
+    cascadeCount: options?.cascadeCount ?? 1,
+    cascadeSplits: options?.cascadeSplits?.slice() ?? [1],
     castsShadow: options?.castsShadow ?? false,
     color: options?.color ?? 0xffffffff,
-    direction: direction ? cloneVector3(direction) : createVector3(0, -1, 0),
+    direction: createVector3(0, -1, 0),
+    enabled: options?.enabled ?? true,
     intensity: options?.intensity ?? 1,
+    intensityUnit: options?.intensityUnit ?? UnitlessLightUnit,
     kind: DirectionalLightKind,
     normalBias: options?.normalBias ?? 0,
     pcfRadius: options?.pcfRadius ?? 0,
     shadowBias: options?.shadowBias ?? 0,
+    shadowFar: options?.shadowFar ?? 500,
+    shadowMapSize: options?.shadowMapSize ?? 1024,
+    shadowNear: options?.shadowNear ?? 0.5,
+    shadowStrength: options?.shadowStrength ?? 1,
   });
+  if (direction) setDirectionalLightDirection(light, direction.x, direction.y, direction.z);
+  return light;
 }
 
 // Writes a normalized direction into `out.direction`. Normalizes the supplied x/y/z components
