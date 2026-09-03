@@ -74,7 +74,6 @@ const STILL_TRUE_ARCHITECTURE_GAPS = [
   'descriptor-only-effects',
   'dom-batch-kinds',
   'dom-effect-pipeline',
-  'instanced-lod-mesh',
   'scene-area-lights',
   'wgpu-custom-shader-effect',
 ] as const;
@@ -131,8 +130,8 @@ describe('causal limitation prose', () => {
     }
   });
 
-  it('fails when the nine architecture gaps gain the capability their prose says is absent', () => {
-    expect(STILL_TRUE_ARCHITECTURE_GAPS).toHaveLength(9);
+  it('fails when the eight architecture gaps gain the capability their prose says is absent', () => {
+    expect(STILL_TRUE_ARCHITECTURE_GAPS).toHaveLength(8);
 
     const canvasIndex = read('packages/scene2d-canvas/src/index.ts');
     const canvasState = read('packages/scene2d-canvas/src/canvasRenderState.ts');
@@ -171,10 +170,9 @@ describe('causal limitation prose', () => {
     const lights = read('packages/types/src/Scene3DLights.ts');
     expect(lights).not.toMatch(/\barea\??\s*:/);
     const sceneIndex = read('packages/scene3d/src/index.ts');
-    expect(sceneIndex).not.toContain('InstancedMesh');
     expect(sceneIndex).not.toContain('LodMesh');
-    expect(read('packages/scene3d-gl/src/index.ts')).not.toMatch(/\b(InstancedMesh|LodMesh)\b/);
-    expect(read('packages/scene3d-wgpu/src/index.ts')).not.toMatch(/\b(InstancedMesh|LodMesh)\b/);
+    expect(read('packages/scene3d-gl/src/index.ts')).not.toMatch(/\bLodMesh\b/);
+    expect(read('packages/scene3d-wgpu/src/index.ts')).not.toMatch(/\bLodMesh\b/);
 
     expect(support).toContain('Two effects are **impossible on Canvas 2D**');
     expect(support).toContain('Batch kinds — `QuadBatch`, `Tilemap`, `BitmapText`, and `ParticleEmitter2D`');
