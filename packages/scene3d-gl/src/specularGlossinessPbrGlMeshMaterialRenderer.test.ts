@@ -77,7 +77,7 @@ describe('specularGlossinessPbrGlMeshMaterialRenderer', () => {
     expect(key.startsWith('pbr:')).toBe(true);
     // The standard renderer contributes no extension identity; the only post-colon standard slot is
     // the unset skin flag.
-    expect(key.split(':')[2]).toBe('-');
+    expect(key.split(':')[2]).toBe('--');
   });
 
   it('draw issues an indexed draw after bind', () => {

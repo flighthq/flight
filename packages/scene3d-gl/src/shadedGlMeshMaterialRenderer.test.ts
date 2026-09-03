@@ -72,7 +72,7 @@ describe('shadedGlMeshMaterialRenderer', () => {
     const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     // Empty modifier feature-set → the define-key trails with an empty modifier segment. The last two
     // base flags are the (unset) uv-transform and skin flags.
-    expect(keys).toContain('shaded:------||registry:0');
+    expect(keys).toContain('shaded:-------||registry:0');
   });
 
   it('binds modifier uniforms for a material carrying a modifier stack', () => {

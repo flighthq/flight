@@ -9,6 +9,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   destroyGlScene3DRuntime,
+  ensureGlInstancePalette,
   ensureGlSkinNormalPalette,
   ensureGlSkinPalette,
   getGlScene3DRuntime,
@@ -85,6 +86,17 @@ describe('destroyGlScene3DRuntime', () => {
     expect(scene.shadowTarget).toBeNull();
     expect(scene.shadow).toBeNull();
     expect(scene.skinPalette).toBeNull();
+  });
+});
+
+describe('ensureGlInstancePalette', () => {
+  it('creates the instance palette lazily and reuses it after', () => {
+    const { state } = makeGlScene3DState();
+    expect(getGlScene3DRuntime(state).instancePalette).toBeNull();
+
+    const first = ensureGlInstancePalette(state);
+    expect(first).toBe(getGlScene3DRuntime(state).instancePalette);
+    expect(ensureGlInstancePalette(state)).toBe(first);
   });
 });
 

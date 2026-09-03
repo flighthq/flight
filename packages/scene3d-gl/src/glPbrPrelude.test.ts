@@ -44,26 +44,26 @@ const COLOR_FEATURE: GlColorAdjustmentMaterialFeature = {
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('--------:-');
-    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe--:-');
-    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe--:-');
-    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b------:-');
-    expect(buildGlPbrDefineKey(makeKey({ hasAlphaMap: true }))).toBe('------a-:-');
+    expect(buildGlPbrDefineKey(NONE)).toBe('--------:--');
+    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe--:--');
+    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe--:--');
+    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b------:--');
+    expect(buildGlPbrDefineKey(makeKey({ hasAlphaMap: true }))).toBe('------a-:--');
   });
 
   it('encodes the HAS_UV_TRANSFORM variant as a distinct standard-block slot', () => {
-    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).toBe('-------u:-');
+    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).toBe('-------u:--');
     expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
   it('encodes the HAS_SKIN variant as a distinct trailing slot', () => {
-    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('--------:k');
+    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('--------:k-');
     expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
   it('appends color adjustment only for the promoted variant', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('--------:-');
-    expect(buildGlPbrDefineKey(makeKey({ hasColorAdjustment: true }))).toBe('--------:-c');
+    expect(buildGlPbrDefineKey(NONE)).toBe('--------:--');
+    expect(buildGlPbrDefineKey(makeKey({ hasColorAdjustment: true }))).toBe('--------:--c');
   });
 
   it('is identical for equal flag sets', () => {

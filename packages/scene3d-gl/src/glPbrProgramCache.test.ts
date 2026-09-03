@@ -81,7 +81,7 @@ describe('ensureGlPbrProgram', () => {
     const skinned = ensureGlPbrProgram(state, KEY);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('pbr:--------:k:0:');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('pbr:--------:k-:0:');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 
