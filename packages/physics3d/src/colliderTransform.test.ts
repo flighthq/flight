@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CollisionBuiltInShape3D, Physics3DCollider, RigidBody3D, SpatialAabb3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -26,7 +27,9 @@ function collider(local: CollisionBuiltInShape3D): Physics3DCollider {
 
 describe('createPhysics3DColliderWorldShape', () => {
   it('keeps the kind for shapes a rigid transform cannot change', () => {
-    expect(createPhysics3DColliderWorldShape({ kind: 'sphere', x: 1, y: 2, z: 3, radius: 4 }).kind).toBe('sphere');
+    const sphere = createPhysics3DColliderWorldShape({ kind: 'sphere', x: 1, y: 2, z: 3, radius: 4 });
+    expect(EntityRuntimeKey in sphere).toBe(true);
+    expect(sphere.kind).toBe('sphere');
     expect(
       createPhysics3DColliderWorldShape({ kind: 'capsule', x0: 0, y0: 0, z0: 0, x1: 0, y1: 1, z1: 0, radius: 1 }).kind,
     ).toBe('capsule');

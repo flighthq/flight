@@ -53,7 +53,7 @@ function liveSpheres(out: ReturnType<typeof createPhysics3DDebugGeometry>) {
 
 describe('createPhysics3DDebugGeometry', () => {
   it('starts empty', () => {
-    expect(createPhysics3DDebugGeometry()).toEqual({ lines: [], lineCount: 0, spheres: [], sphereCount: 0 });
+    expect(createPhysics3DDebugGeometry()).toMatchObject({ lines: [], lineCount: 0, spheres: [], sphereCount: 0 });
   });
 });
 

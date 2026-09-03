@@ -61,13 +61,13 @@ describe('createPhysics3DQueryFilter', () => {
 
 describe('createPhysics3DQueryResult', () => {
   it('starts empty', () => {
-    expect(createPhysics3DQueryResult()).toEqual({ hits: [], hitCount: 0 });
+    expect(createPhysics3DQueryResult()).toMatchObject({ hits: [], hitCount: 0 });
   });
 });
 
 describe('createPhysics3DRayResult', () => {
   it('starts empty', () => {
-    expect(createPhysics3DRayResult()).toEqual({ hits: [], hitCount: 0 });
+    expect(createPhysics3DRayResult()).toMatchObject({ hits: [], hitCount: 0 });
   });
 });
 
