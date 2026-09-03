@@ -1,6 +1,11 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import type { ImportDiagnostic, Node2D, Sprite, Texture2D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, ResourceResolutionState, SpriteKind } from '@flighthq/types/contract';
+import {
+  EntityRuntimeKey,
+  ImportDiagnosticSeverity,
+  ResourceResolutionState,
+  SpriteKind,
+} from '@flighthq/types/contract';
 
 import {
   createRiveImageSprite,
@@ -153,6 +158,8 @@ describe('createScene2DDocumentFromRiveDocument', () => {
     // A slot is a place the document does not fill itself.
     expect(result.slots[0].content).toBeNull();
     expect(result.slots[0].target).toBe(getNodeChildAt(getNodeChildAt(result.root, 0) as Node2D, 0));
+    expect(Object.hasOwn(result.slots[0], EntityRuntimeKey)).toBe(true);
+    expect(result.slots[0][EntityRuntimeKey]).toBeUndefined();
   });
 
   it('prefers the site name over the referenced artboard name when the file states one', () => {
