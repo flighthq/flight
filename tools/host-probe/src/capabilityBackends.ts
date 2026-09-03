@@ -94,7 +94,7 @@ export function captureHostProbeBackends(
     storage: host.storage?.local ?? null,
     tray: firstProvidedSlot(host.tray),
     updater: host.updater?.command ?? null,
-    window: host.window ?? null,
+    window: firstProvidedSlot(host.window),
   };
 }
 
@@ -109,7 +109,7 @@ export function diffHostProbeBackends(
   return changed;
 }
 
-// Required capability groups remain `{}` on hosts without a provider. The group object itself is
+// Capability groups remain `{}` on hosts without a provider. The group object itself is
 // therefore not availability evidence; only a populated slot is.
 function firstProvidedSlot(group: object | undefined): unknown {
   if (group === undefined) return null;
