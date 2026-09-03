@@ -6,8 +6,7 @@ import type { GlMeshProgram } from './GlMeshProgram';
 export interface GlUnlitDefineKey {
   alphaMaskEnabled: boolean;
   hasColorMap: boolean;
-  // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlUnlitProgram
-  // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
+  hasInstances?: boolean;
   hasSkin?: boolean;
   // Whether the color map carries a non-identity uv transform (HAS_UV_TRANSFORM). Set only when
   // hasColorMap is also true, since the transform applies to the sampled map's coordinates.

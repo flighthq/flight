@@ -8,6 +8,7 @@ export interface InstancedMesh extends Node3D {
   instanceCount: number;
   instanceMatrices: Matrix4[];
   materials: (Material | null)[];
+  version: number;
 }
 export type InstancedMeshRuntime = Node3DRuntime;
 export const InstancedMeshKind = 'InstancedMesh';

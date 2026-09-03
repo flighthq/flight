@@ -39,6 +39,7 @@ export interface GlPbrDefineKey {
   hasColorAdjustment?: boolean;
   hasColorMatrix?: boolean;
   hasEmissiveMap: boolean;
+  hasInstances?: boolean;
   hasMetallicRoughnessMap: boolean;
   hasNormalMap: boolean;
   hasOcclusionMap: boolean;
