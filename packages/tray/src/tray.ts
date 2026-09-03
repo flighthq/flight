@@ -77,9 +77,9 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
   try {
     result = await host.tray.lifecycle.create(tray, options);
   } catch (error) {
-    return { error, outcome: 'tray-create-failed' };
+    return createEntity({ error, outcome: 'tray-create-failed' as const });
   }
-  if (result.outcome !== 'created') return result;
+  if (result.outcome !== 'created') return createEntity({ ...result });
 
   const runtime = createEntityRuntime() as TrayRuntime;
   runtime.animationGeneration = 0;
@@ -91,7 +91,7 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
   runtime.releases = new Set();
   runtime.state = 'active';
   tray[EntityRuntimeKey] = runtime;
-  return { outcome: 'created', tray };
+  return createEntity({ outcome: 'created' as const, tray });
 }
 
 export function destroyTrayIcon(tray: TrayIcon): Promise<TrayDestroyResult> {
