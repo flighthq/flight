@@ -1,9 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { SignalScope } from '@flighthq/types/contract';
 
 import { disconnectSignalConnection } from './connection';
 
 export function createSignalScope(): SignalScope {
-  return { connections: [] };
+  return createEntity({ connections: [] });
 }
 
 // The scope is emptied before the loop rather than after it, so it is never left half-drained and a

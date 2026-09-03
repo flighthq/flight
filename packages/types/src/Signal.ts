@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Entity } from './Entity';
 
-export interface Signal<T extends (...args: any[]) => void> {
+export interface Signal<T extends (...args: any[]) => void> extends Entity {
   data: SignalData<T> | null;
   emit: T;
 }
