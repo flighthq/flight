@@ -15,7 +15,12 @@ import type {
 } from '@flighthq/types/contract';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
-import { ensureGlSkinNormalPalette, ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
+import {
+  ensureGlInstancePalette,
+  ensureGlSkinNormalPalette,
+  ensureGlSkinPalette,
+  getGlScene3DRuntime,
+} from './glScene3DRuntime';
 import { getGlScene3DViewportAspect } from './glViewportAspect';
 // The shared per-bind head for every mesh-material family: stores the family's program as the active
 // bind→draw handoff, selects it, and sets the depth + face-cull state a forward 3D draw needs (depth
@@ -40,6 +45,24 @@ export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshPr
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
   }
+}
+
+export function bindGlInstancePalette(
+  state: GlRenderState,
+  program: Readonly<GlMeshProgram>,
+  instanceMatrices: Readonly<Float32Array>,
+  instanceCount: number,
+): void {
+  const gl = state.gl;
+  const palette = ensureGlInstancePalette(state);
+  gl.activeTexture(gl.TEXTURE0 + INSTANCE_PALETTE_TEXTURE_UNIT);
+  uploadGlSkinPaletteTexture(gl, palette, instanceMatrices, instanceCount);
+  let loc = program.locInstancePalette;
+  if (loc === undefined) {
+    loc = gl.getUniformLocation(program.program, 'u_instancePalette');
+    (program as GlMeshProgram).locInstancePalette = loc;
+  }
+  if (loc !== null) gl.uniform1i(loc, INSTANCE_PALETTE_TEXTURE_UNIT);
 }
 
 // Uploads and binds the pose + normal palettes consumed by a HAS_SKIN mesh program. Returns true only
@@ -186,7 +209,13 @@ export function drawGlMeshSubset(
     }
   }
 
-  const gpuSkinned = bindGlMeshSkinPalette(state, program, proxy);
+  const instanceCount = proxy.instanceCount ?? 0;
+  const gpuInstanced = instanceCount > 0 && proxy.instanceMatrices != null;
+  const gpuSkinned = gpuInstanced ? false : bindGlMeshSkinPalette(state, program, proxy);
+
+  if (gpuInstanced) {
+    bindGlInstancePalette(state, program, proxy.instanceMatrices!, instanceCount);
+  }
 
   // A GPU-skinned draw uploads the static bind pose (the shader deforms it via the palette), so the
   // per-frame CPU pose updateMeshSkin also writes to geometry.vertices is not re-applied on top.
@@ -195,10 +224,24 @@ export function drawGlMeshSubset(
 
   if (upload.indexBuffer !== null) {
     const elementSize = upload.indexType === gl.UNSIGNED_INT ? 4 : 2;
-    gl.drawElements(upload.primitiveMode, subset.indexCount, upload.indexType, subset.indexOffset * elementSize);
+    if (gpuInstanced) {
+      gl.drawElementsInstanced(
+        upload.primitiveMode,
+        subset.indexCount,
+        upload.indexType,
+        subset.indexOffset * elementSize,
+        instanceCount,
+      );
+    } else {
+      gl.drawElements(upload.primitiveMode, subset.indexCount, upload.indexType, subset.indexOffset * elementSize);
+    }
     gl.frontFace(gl.CCW);
   } else {
-    gl.drawArrays(upload.primitiveMode, subset.indexOffset, subset.indexCount);
+    if (gpuInstanced) {
+      gl.drawArraysInstanced(upload.primitiveMode, subset.indexOffset, subset.indexCount, instanceCount);
+    } else {
+      gl.drawArrays(upload.primitiveMode, subset.indexOffset, subset.indexCount);
+    }
     gl.frontFace(gl.CCW);
   }
 }
@@ -259,41 +302,6 @@ export function setGlMeshViewProjection(
   state.gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
 }
 
-// The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from
-// the proxy, lazily uploads the geometry's GPU buffers (cached by geometry.version), and issues the
-// indexed (or array) draw over the proxy's subset range. Families call this from draw() after bind()
-// has selected and stored their program, so the geometry path lives in exactly one place.
-// Uploads a draw's resolved per-object opacity into `u_objectAlpha`, resolving the location once per
-// program (undefined until first draw) and caching it. A program whose fragment shader lacks the uniform
-// caches a null location and skips silently, so families without it cost nothing beyond one lookup.
-//
-// Its own function because a renderer that cannot use drawGlMeshSubset still has to do this. The
-// wireframe family binds its own line-index VAO and issues its own gl.LINES draw, and while this upload
-// lived inside drawGlMeshSubset that family silently shipped u_objectAlpha = 0 — invisible while nothing
-// read alpha, and a black frame the moment the fragment tail began premultiplying by it.
-export function uploadGlMeshDrawAlpha(
-  gl: GlContext,
-  program: Readonly<GlMeshProgram>,
-  alpha: number,
-  material: Readonly<Material> | null,
-): void {
-  let location = program.locObjectAlpha;
-  if (location === undefined) {
-    location = gl.getUniformLocation(program.program, 'u_objectAlpha');
-    (program as GlMeshProgram).locObjectAlpha = location;
-  }
-  if (location !== null) gl.uniform1f(location, alpha);
-
-  let coverageLocation = program.locAlphaIsCoverage;
-  if (coverageLocation === undefined) {
-    coverageLocation = gl.getUniformLocation(program.program, 'u_alphaIsCoverage');
-    (program as GlMeshProgram).locAlphaIsCoverage = coverageLocation;
-  }
-  if (coverageLocation !== null) {
-    gl.uniform1f(coverageLocation, isGlMeshAlphaCoverage(material) ? 1 : 0);
-  }
-}
-
 // Whether a draw's fragment alpha is COVERAGE the compositor should honor. Only glTF's 'blend' means
 // that: 'opaque' ignores the material's alpha entirely and 'mask' resolves to fully-opaque at its
 // cutoff. A material with no surface trailer (or none at all) is treated as opaque, which is what the
@@ -324,6 +332,7 @@ export const SKIN_PALETTE_TEXTURE_UNIT = 12;
 // The normal palette's own unit. Separate texture rather than interleaving with the pose palette, so a
 // padded 3x3 uploads directly; one extra unit is cheaper than a per-frame repack of every joint.
 export const SKIN_NORMAL_PALETTE_TEXTURE_UNIT = 13;
+export const INSTANCE_PALETTE_TEXTURE_UNIT = 14;
 
 // Vertex-scene2d GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
 // influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette DATA TEXTURE, and
@@ -387,6 +396,55 @@ mat3 skinNormalMatrix() {
        + a_weights0.w * fetchJointNormalMatrix(int(a_joints0.w));
 }
 `;
+
+export const GL_INSTANCE_VERTEX_DECLARATIONS_GLSL = `
+uniform highp sampler2D u_instancePalette;
+
+mat4 instanceModelMatrix() {
+  int x = gl_InstanceID * 4;
+  return mat4(
+    texelFetch(u_instancePalette, ivec2(x, 0), 0),
+    texelFetch(u_instancePalette, ivec2(x + 1, 0), 0),
+    texelFetch(u_instancePalette, ivec2(x + 2, 0), 0),
+    texelFetch(u_instancePalette, ivec2(x + 3, 0), 0)
+  );
+}
+`;
+
+// The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from
+// the proxy, lazily uploads the geometry's GPU buffers (cached by geometry.version), and issues the
+// indexed (or array) draw over the proxy's subset range. Families call this from draw() after bind()
+// has selected and stored their program, so the geometry path lives in exactly one place.
+// Uploads a draw's resolved per-object opacity into `u_objectAlpha`, resolving the location once per
+// program (undefined until first draw) and caching it. A program whose fragment shader lacks the uniform
+// caches a null location and skips silently, so families without it cost nothing beyond one lookup.
+//
+// Its own function because a renderer that cannot use drawGlMeshSubset still has to do this. The
+// wireframe family binds its own line-index VAO and issues its own gl.LINES draw, and while this upload
+// lived inside drawGlMeshSubset that family silently shipped u_objectAlpha = 0 — invisible while nothing
+// read alpha, and a black frame the moment the fragment tail began premultiplying by it.
+export function uploadGlMeshDrawAlpha(
+  gl: GlContext,
+  program: Readonly<GlMeshProgram>,
+  alpha: number,
+  material: Readonly<Material> | null,
+): void {
+  let location = program.locObjectAlpha;
+  if (location === undefined) {
+    location = gl.getUniformLocation(program.program, 'u_objectAlpha');
+    (program as GlMeshProgram).locObjectAlpha = location;
+  }
+  if (location !== null) gl.uniform1f(location, alpha);
+
+  let coverageLocation = program.locAlphaIsCoverage;
+  if (coverageLocation === undefined) {
+    coverageLocation = gl.getUniformLocation(program.program, 'u_alphaIsCoverage');
+    (program as GlMeshProgram).locAlphaIsCoverage = coverageLocation;
+  }
+  if (coverageLocation !== null) {
+    gl.uniform1f(coverageLocation, isGlMeshAlphaCoverage(material) ? 1 : 0);
+  }
+}
 
 const scratchViewProjection = createMatrix4();
 const scratchCameraPosition = { x: 0, y: 0, z: 0 };

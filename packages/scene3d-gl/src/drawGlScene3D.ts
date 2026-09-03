@@ -15,6 +15,7 @@ import type {
   GlScene3DForwardLightList,
   GlMeshMaterialRenderer,
   GlRenderState,
+  InstancedMesh,
   Material,
   Matrix3,
   Matrix4,
@@ -280,6 +281,61 @@ export function drawGlScene3D(
   runtime.activeBlendedRun = false;
   state.gl.depthMask(true);
 
+  // Pass 3: instanced meshes. Each InstancedMesh carries N instances of a shared geometry drawn with
+  // a single `drawElementsInstanced` call per subset. Instance model matrices are uploaded to an
+  // RGBA32F data texture and read via `texelFetch(u_instancePalette, gl_InstanceID)` in the vertex
+  // shader, multiplied by the entity's own world matrix (`u_model * instanceModelMatrix()`). Drawn
+  // after the regular opaque/blended passes so all depth is established; no blended instanced mesh
+  // support in this path — blended instances would need per-instance depth sorting.
+  if (list.instancedMeshCount > 0) {
+    runtime.activeInstancedRun = true;
+    runtime.activeSkinnedRun = false;
+
+    for (let m = 0; m < list.instancedMeshCount; m++) {
+      const mesh = list.visibleInstancedMeshes[m];
+      const subsets = mesh.geometry.subsets;
+      const worldMatrix = getNodeWorldMatrix4(mesh) as Matrix4;
+      setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
+
+      const objectAlpha = getNode3DWorldAlpha(mesh);
+      const nodeRuntime = getNode3DRuntime(mesh);
+      const colorScaleBias = nodeRuntime.resolvedColorScaleBias;
+      const colorMatrix = nodeRuntime.resolvedColorMatrix;
+      const colorAdjusted = colorAdjustmentFeatureEnabled && (colorMatrix !== null || colorScaleBias !== null);
+      const colorMatrixFlag = colorAdjusted && colorMatrix !== null;
+
+      const flatMatrices = flattenInstancedMeshMatrices(mesh);
+
+      for (let s = 0; s < subsets.length; s++) {
+        const material = resolveInstancedMeshSubsetMaterial(mesh, s);
+        const renderer = resolveGlMeshMaterialRenderer(state, material);
+        if (renderer === null) continue;
+
+        const resolvedMaterial = material ?? DEFAULT_MATERIAL;
+        runtime.activeColorAdjustmentRun = colorAdjusted;
+        runtime.activeColorMatrixRun = colorMatrixFlag;
+        renderer.bind(state, resolvedMaterial, lightBlock, camera);
+
+        proxy.alpha = objectAlpha;
+        proxy.colorScaleBias = colorAdjusted ? colorScaleBias : null;
+        proxy.colorMatrix = colorAdjusted ? colorMatrix : null;
+        proxy.instanceCount = mesh.instanceCount;
+        proxy.instanceMatrices = flatMatrices;
+        proxy.jointMatrices = null;
+        proxy.normalMatrices = null;
+        proxy.material = resolvedMaterial;
+        proxy.normalMatrix = scratchNormalMatrix;
+        proxy.subset = subsets[s];
+        proxy.worldMatrix = worldMatrix;
+        renderer.draw(state, proxy, mesh.geometry);
+      }
+    }
+
+    runtime.activeInstancedRun = false;
+    proxy.instanceCount = 0;
+    proxy.instanceMatrices = null;
+  }
+
   // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
   // visible meshes above. Draw them here as a final transparent instanced pass so the common
   // drawGlScene3D path renders a scene's emitters without the caller also invoking the emitter pass
@@ -420,4 +476,22 @@ function compareOpaqueEntriesBySortKey(a: GlScene3DDrawEntry, b: GlScene3DDrawEn
   return a.sortKey - b.sortKey;
 }
 
+function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Array {
+  const count = mesh.instanceCount;
+  const needed = count * 16;
+  if (scratchInstanceData.length < needed) scratchInstanceData = new Float32Array(needed);
+  for (let i = 0; i < count; i++) {
+    scratchInstanceData.set(mesh.instanceMatrices[i].m, i * 16);
+  }
+  return scratchInstanceData;
+}
+
+function resolveInstancedMeshSubsetMaterial(
+  mesh: Readonly<InstancedMesh>,
+  subsetIndex: number,
+): Readonly<Material> | null {
+  return subsetIndex < mesh.materials.length ? mesh.materials[subsetIndex] : null;
+}
+
+let scratchInstanceData = new Float32Array(64 * 16);
 const scratchNormalMatrix = createMatrix3() as Matrix3;

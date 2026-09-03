@@ -63,6 +63,7 @@ export function ensureGlPbrProgram(
     ...key,
     hasColorAdjustment: getGlScene3DRuntime(state).activeColorAdjustmentRun,
     hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
+    hasInstances: getGlScene3DRuntime(state).activeInstancedRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const extensionKey = contributions.map((contribution) => contribution.key).join(',');

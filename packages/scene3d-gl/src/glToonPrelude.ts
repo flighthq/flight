@@ -4,6 +4,7 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
@@ -15,7 +16,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {
   return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasBaseColorMap ? 'b' : '-'}${key.hasRamp ? 'r' : '-'}${
     key.hasUvTransform ? 'u' : '-'
-  }${key.hasSkin ? 'k' : '-'}`;
+  }${key.hasSkin ? 'k' : '-'}${key.hasInstances ? 'i' : '-'}`;
 }
 
 // Compiles the Toon uber-shader for a define key, links it, and resolves its uniform locations.
@@ -49,6 +50,7 @@ export function ensureGlToonProgram(state: GlRenderState, key: Readonly<GlToonDe
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
   const fullKey: GlToonDefineKey = {
     ...key,
+    hasInstances: getGlScene3DRuntime(state).activeInstancedRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `toon:${buildGlToonDefineKey(fullKey)}`, (gl) =>
@@ -64,7 +66,8 @@ export function getGlToonFragmentSourceForKey(key: Readonly<GlToonDefineKey>): s
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlToonVertexSourceForKey(key: Readonly<GlToonDefineKey>): string {
   const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
-  return buildGlToonDefineSource(key) + skin + TOON_VERTEX_BODY;
+  const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
+  return buildGlToonDefineSource(key) + skin + instances + TOON_VERTEX_BODY;
 }
 
 // Builds the leading "#version 300 es\n#define ..." block for a define key, to be prepended to the
@@ -77,6 +80,7 @@ function buildGlToonDefineSource(key: Readonly<GlToonDefineKey>): string {
   if (key.hasRamp) defines += '#define HAS_RAMP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasInstances) defines += '#define HAS_INSTANCES\n';
   return defines;
 }
 
@@ -102,9 +106,16 @@ void main() {
   vec4 localPosition = vec4(a_position, 1.0);
   vec3 localNormal = a_normal;
 #endif
+#ifdef HAS_INSTANCES
+  mat4 instanceModel = u_model * instanceModelMatrix();
+  vec4 worldPosition = instanceModel * localPosition;
+  v_worldPosition = worldPosition.xyz;
+  v_normal = mat3(instanceModel) * localNormal;
+#else
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
+#endif
   v_uv0 = applyUvTransform(a_uv0);
   gl_Position = u_viewProjection * worldPosition;
 }

@@ -2,7 +2,12 @@ import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlContext, GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
+import {
+  compileGlProgram,
+  ensureGlScene3DProgram,
+  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
+  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+} from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
@@ -39,7 +44,7 @@ export function bindGlDebugRange(
 // A short, stable, order-independent string identity for a debug define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlDebugDefineKey(key: Readonly<GlDebugDefineKey>): string {
-  return `${key.mode === 'depth' ? 'd' : 'n'}${key.hasNormalMap ? 'm' : '-'}${key.hasSkin ? 'k' : '-'}`;
+  return `${key.mode === 'depth' ? 'd' : 'n'}${key.hasNormalMap ? 'm' : '-'}${key.hasSkin ? 'k' : '-'}${key.hasInstances ? 'i' : '-'}`;
 }
 
 // Compiles the debug shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -66,6 +71,7 @@ export function compileGlDebugProgram(gl: GlContext, key: Readonly<GlDebugDefine
 export function ensureGlDebugProgram(state: GlRenderState, key: Readonly<GlDebugDefineKey>): GlDebugProgram {
   const fullKey: GlDebugDefineKey = {
     ...key,
+    hasInstances: getGlScene3DRuntime(state).activeInstancedRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `debug:${buildGlDebugDefineKey(fullKey)}`, (gl) =>
@@ -80,7 +86,9 @@ export function getGlDebugFragmentSourceForKey(key: Readonly<GlDebugDefineKey>):
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlDebugVertexSourceForKey(key: Readonly<GlDebugDefineKey>): string {
-  return buildDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + DEBUG_VERTEX_BODY;
+  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+  const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
+  return buildDefineSource(key) + skin + instances + DEBUG_VERTEX_BODY;
 }
 
 function buildDefineSource(key: Readonly<GlDebugDefineKey>): string {
@@ -89,6 +97,7 @@ function buildDefineSource(key: Readonly<GlDebugDefineKey>): string {
   else defines += '#define NORMAL_MODE\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
+  if (key.hasInstances) defines += '#define HAS_INSTANCES\n';
   return defines;
 }
 
@@ -124,6 +133,13 @@ void main() {
   vec3 localNormal = a_normal;
   vec3 localTangent = a_tangent.xyz;
 #endif
+#ifdef HAS_INSTANCES
+  mat4 instanceModel = u_model * instanceModelMatrix();
+  vec4 worldPosition = instanceModel * localPosition;
+  v_worldPosition = worldPosition.xyz;
+  v_normal = mat3(instanceModel) * localNormal;
+  mat3 modelRotation = mat3(instanceModel);
+#else
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
@@ -136,6 +152,7 @@ void main() {
   // mirrored instance. Guarded rather than sign(), because sign() returns 0 for a singular matrix
   // and a zero w collapses the bitangent entirely — a worse failure than keeping the original hand.
   mat3 modelRotation = mat3(u_model);
+#endif
   float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
   v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
   v_uv0 = a_uv0;
