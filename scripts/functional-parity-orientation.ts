@@ -27,6 +27,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { compareBitmapFingerprints, parseBitmapFingerprint } from '@flighthq/bitmap/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { BitmapFingerprint } from '@flighthq/types/contract';
 
 export interface FunctionalOrientationFinding {
@@ -51,7 +52,7 @@ export function mirrorBitmapFingerprintVertically(fingerprint: Readonly<BitmapFi
     const source = fingerprint.cells.subarray(row * rowBytes, (row + 1) * rowBytes);
     cells.set(source, (gridSize - 1 - row) * rowBytes);
   }
-  return { cells, gridSize };
+  return createEntity({ cells, gridSize });
 }
 
 /**
