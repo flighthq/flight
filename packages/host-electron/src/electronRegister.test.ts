@@ -60,6 +60,9 @@ describe('registerElectronBackends', () => {
     expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.close.closeAllNotifications).toBeTypeOf('function');
+    expect(host.ipc.handle.handle).toBeTypeOf('function');
+    expect(host.ipc.message.subscribe).toBeTypeOf('function');
+    expect(host.ipc.targetedSend.send).toBeTypeOf('function');
     expect(EntityRuntimeKey in host.shortcut.query).toBe(true);
     expect(EntityRuntimeKey in host.shortcut.trigger).toBe(true);
     expect(EntityRuntimeKey in host.updater.command).toBe(true);

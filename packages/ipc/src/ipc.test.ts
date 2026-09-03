@@ -1,7 +1,19 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { EntityWithoutRuntime, HasIpcMessage, IpcMessageBackend } from '@flighthq/types/contract';
+import type {
+  EntityWithoutRuntime,
+  HasIpcHandle,
+  HasIpcInvoke,
+  HasIpcMessage,
+  HasIpcSend,
+  HasIpcTargetedSend,
+  IpcHandleBackend,
+  IpcInvokeBackend,
+  IpcMessageBackend,
+  IpcSendBackend,
+  IpcTargetedSendBackend,
+} from '@flighthq/types/contract';
 
-import { onIpcMessage, onceIpcMessage } from './ipc';
+import { invokeIpc, onIpcInvoke, onIpcMessage, onceIpcMessage, sendIpcMessage, sendIpcMessageTo } from './ipc';
 
 // A host carrying a recording message provider. Nothing installs anywhere, so two hosts can be live at
 // once — the property the ambient seam could not express.
@@ -29,6 +41,77 @@ function messageHost(): HasIpcMessage & {
     },
   };
 }
+
+interface TestIpcTarget {
+  readonly id: number;
+}
+
+function operationHost(): HasIpcHandle &
+  HasIpcInvoke &
+  HasIpcSend &
+  HasIpcTargetedSend<TestIpcTarget> & {
+    readonly handlers: Map<string, (...args: readonly unknown[]) => unknown | Promise<unknown>>;
+    readonly invocations: Array<{ readonly args: readonly unknown[]; readonly channel: string }>;
+    readonly sent: Array<{ readonly args: readonly unknown[]; readonly channel: string }>;
+    readonly sentTo: Array<{
+      readonly args: readonly unknown[];
+      readonly channel: string;
+      readonly target: TestIpcTarget;
+    }>;
+  } {
+  const handlers = new Map<string, (...args: readonly unknown[]) => unknown | Promise<unknown>>();
+  const invocations: Array<{ readonly args: readonly unknown[]; readonly channel: string }> = [];
+  const sent: Array<{ readonly args: readonly unknown[]; readonly channel: string }> = [];
+  const sentTo: Array<{
+    readonly args: readonly unknown[];
+    readonly channel: string;
+    readonly target: TestIpcTarget;
+  }> = [];
+  return {
+    handlers,
+    invocations,
+    ipc: {
+      handle: createEntity<EntityWithoutRuntime<IpcHandleBackend>>({
+        handle(channel, handler) {
+          handlers.set(channel, handler);
+          return () => {
+            if (handlers.get(channel) === handler) handlers.delete(channel);
+          };
+        },
+      }),
+      invoke: createEntity<EntityWithoutRuntime<IpcInvokeBackend>>({
+        invoke(channel, args) {
+          invocations.push({ args, channel });
+          return Promise.resolve({ args, channel });
+        },
+      }),
+      send: createEntity<EntityWithoutRuntime<IpcSendBackend>>({
+        send(channel, args) {
+          sent.push({ args, channel });
+        },
+      }),
+      targetedSend: createEntity<EntityWithoutRuntime<IpcTargetedSendBackend<TestIpcTarget>>>({
+        send(target, channel, args) {
+          sentTo.push({ args, channel, target });
+        },
+      }),
+    },
+    sent,
+    sentTo,
+  };
+}
+
+describe('invokeIpc', () => {
+  it('requires the invoke capability and returns its response', async () => {
+    expectTypeOf(invokeIpc).parameter(0).toEqualTypeOf<HasIpcInvoke>();
+    const host = operationHost();
+
+    const response = await invokeIpc(host, 'compute', 1, 2);
+
+    expect(response).toEqual({ args: [1, 2], channel: 'compute' });
+    expect(host.invocations).toEqual([{ args: [1, 2], channel: 'compute' }]);
+  });
+});
 
 describe('onceIpcMessage', () => {
   it('delivers the first message and then releases the subscription', () => {
@@ -91,6 +174,19 @@ describe('onceIpcMessage', () => {
   });
 });
 
+describe('onIpcInvoke', () => {
+  it('requires the handle capability, spreads arguments, and returns its release', async () => {
+    expectTypeOf(onIpcInvoke).parameter(0).toEqualTypeOf<HasIpcHandle>();
+    const host = operationHost();
+    const stop = onIpcInvoke(host, 'double', (value) => (value as number) * 2);
+
+    expect(await host.handlers.get('double')?.(4)).toBe(8);
+
+    stop();
+    expect(host.handlers.has('double')).toBe(false);
+  });
+});
+
 describe('onIpcMessage', () => {
   it('delivers every message on its channel with the sent arguments', () => {
     const host = messageHost();
@@ -132,5 +228,31 @@ describe('onIpcMessage', () => {
     second.deliver('c');
     first.deliver('c');
     expect(seen).toEqual(['second', 'first']);
+  });
+});
+
+describe('sendIpcMessage', () => {
+  it('requires the send capability and forwards the arguments', () => {
+    expectTypeOf(sendIpcMessage).parameter(0).toEqualTypeOf<HasIpcSend>();
+    const host = operationHost();
+
+    sendIpcMessage(host, 'log', 'hello', 7);
+
+    expect(host.sent).toEqual([{ args: ['hello', 7], channel: 'log' }]);
+  });
+});
+
+describe('sendIpcMessageTo', () => {
+  it('requires a capability for the target type and forwards that target unchanged', () => {
+    expectTypeOf(sendIpcMessageTo<TestIpcTarget>)
+      .parameter(0)
+      .toEqualTypeOf<HasIpcTargetedSend<TestIpcTarget>>();
+    const host = operationHost();
+    const target = { id: 7 };
+
+    sendIpcMessageTo(host, target, 'log', 'hello');
+
+    expect(host.sentTo).toEqual([{ args: ['hello'], channel: 'log', target }]);
+    expect(host.sentTo[0].target).toBe(target);
   });
 });

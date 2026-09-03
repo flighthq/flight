@@ -4,6 +4,7 @@ import type {
   ElectronApi,
   ElectronAppCapabilitiesFor,
   ElectronBackendOptions,
+  ElectronIpcTarget,
   ElectronProtocolCapabilities,
   ElectronTrayCapabilitiesFor,
   EntityRuntimeKey,
@@ -23,7 +24,9 @@ import type {
   HasNotificationLifecycle,
   HasNotificationReceived,
   HasNotificationReply,
+  HasIpcHandle,
   HasIpcMessage,
+  HasIpcTargetedSend,
   HasScreenChange,
   HasScreenQuery,
   HasShortcutQuery,
@@ -51,7 +54,11 @@ import {
   createElectronFileSaveDialogBackend,
   createElectronMessageDialogBackend,
 } from './electronDialog';
-import { createElectronIpcMessageBackend } from './electronIpc';
+import {
+  createElectronIpcHandleBackend,
+  createElectronIpcMessageBackend,
+  createElectronIpcTargetedSendBackend,
+} from './electronIpc';
 import { createElectronMenuBackends } from './electronMenu';
 import { createElectronNotificationCapabilities } from './electronNotification';
 import { createElectronPlatformBackend } from './electronPlatform';
@@ -85,7 +92,9 @@ type ElectronHost<Profile extends DesktopOsProfile> = Host & {
   HasNotificationReceived &
   HasMenuApplication &
   HasMenuPopup &
+  HasIpcHandle &
   HasIpcMessage &
+  HasIpcTargetedSend<ElectronIpcTarget> &
   HasMenuSelect &
   HasScreenChange &
   HasScreenQuery &
@@ -144,7 +153,11 @@ export function registerElectronBackends(
   };
   const notification = createElectronNotificationCapabilities(electron, options);
   const screen = createElectronScreenCapabilities(electron);
-  const ipc = { message: createElectronIpcMessageBackend(electron) };
+  const ipc = {
+    handle: createElectronIpcHandleBackend(electron),
+    message: createElectronIpcMessageBackend(electron),
+    targetedSend: createElectronIpcTargetedSendBackend<ElectronIpcTarget>(),
+  };
   const query = createElectronShortcutQueryBackend(electron);
   const trigger = createElectronShortcutTriggerBackend(electron);
   const menu = createElectronMenuBackends(electron);
