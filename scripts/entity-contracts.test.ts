@@ -52,7 +52,7 @@ describe('checkEntityContracts', () => {
     expect(report.issues).toEqual([]);
   });
 
-  it('reports exported create violations for remediation and excludes clone functions', () => {
+  it('reports exported create candidates for classification and excludes clone functions', () => {
     const files = {
       'packages/example/src/contract.ts': "export { clonePlain, createPlain } from './example';",
       'packages/example/src/example.ts': [
@@ -68,6 +68,7 @@ describe('checkEntityContracts', () => {
     expect(report.advisories).toHaveLength(1);
     expect(report.advisories[0]).toMatchObject({
       name: '@flighthq/example createPlain',
+      returnTypes: ['Plain'],
       rule: 'exported-create-return',
     });
   });
@@ -89,22 +90,22 @@ describe('checkEntityContracts', () => {
     const remediation = createExportedCreateRemediationReport(report);
 
     expect(remediation).toMatchObject({
+      candidates: 3,
       excludedFactoryPrefixes: ['clone'],
       mode: 'report-only',
       semanticSecondRoots: ['EntityRuntime'],
       total: 3,
-      violations: 3,
     });
-    expect(remediation.packages.map(({ packageName, violations }) => [packageName, violations.length])).toEqual([
+    expect(remediation.packages.map(({ packageName, candidates }) => [packageName, candidates.length])).toEqual([
       ['@flighthq/alpha', 2],
       ['@flighthq/beta', 1],
     ]);
-    expect(remediation.packages[0]?.violations.map(({ name }) => name)).toEqual([
+    expect(remediation.packages[0]?.candidates.map(({ name }) => name)).toEqual([
       '@flighthq/alpha createAlpha',
       '@flighthq/alpha createZulu',
     ]);
     const formatted = formatEntityContractReport(report, process.cwd());
-    expect(formatted).toContain('3 report-only exported create-return remediation violations');
+    expect(formatted).toContain('3 report-only exported create-return classification candidates');
     expect(formatted).toContain('@flighthq/alpha (2):');
     expect(formatted).toContain('@flighthq/alpha createZulu');
     expect(formatted).toContain('@flighthq/beta (1):');
@@ -223,7 +224,7 @@ describe('formatEntityContractReport', () => {
     const text = formatEntityContractReport(report, process.cwd());
 
     expect(text).toContain('1 specializations');
-    expect(text).toContain('Exported create-return contract: 0/0');
+    expect(text).toContain('Exported create-return candidate census: 0/0');
     expect(text).toContain('[redundant-optional-property]');
   });
 });
