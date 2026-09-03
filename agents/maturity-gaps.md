@@ -125,8 +125,8 @@ functional proofs for differentiated joins and sampler variants, and all four ba
 ### D. Descriptor/header layer advertises features with no renderer behind them
 The "header layer is the design surface" convention means many fully-formed types exist with no implementation,
 reading as shipped: **area lights** (`AreaLightKind` + photometric helpers, but `Scene3DLights` has no `area`
-field — unrenderable on any backend), **`InstancedMesh`/`LodMesh`** (typed, not exported from scene, no
-renderer), and **seven effects** (autoExposure/barrelDistortion/filmEmulation/panniniProjection/ssr/taa/
+field — unrenderable on any backend), **`LodMesh`** (typed, not exported from scene, no
+renderer — its `InstancedMesh` sibling now ships on GL), and **seven effects** (autoExposure/barrelDistortion/filmEmulation/panniniProjection/ssr/taa/
 volumetricLight — descriptor+tests, zero realization files). `ThreeDsMaterial` is not an example: the 3DS
 parser builds a material table and converts each referenced entry to a live BlinnPhong material.
 
@@ -248,7 +248,7 @@ no equivalent diagnostic seam.
 | Area lights render | `Scene3DLights` has no `area` field (`Scene3DLights.ts:17-21`); `packSceneLightBlock` no area refs; grep across scene-gl/wgpu/render → nothing | none | SURPRISE |
 | Point/spot lights cast shadows | Shadows directional-only, single ortho map, no cascades/CSM, no point/spot/cube (`shadowCamera.ts:14` sole export) | gl/wgpu (dir only) | SURPRISE |
 | WebGPU 3D lighting/shadow/IBL works | RESOLVED with WebGPU raster proofs for point/spot/hemisphere lights, IBL, orthographic projection, and directional shadows received by both PBR and classic materials (`shadow-directional` / `shadow-classic`) | wgpu | RESOLVED |
-| `InstancedMesh`/`LodMesh` ship | Header types only; no `create*`, not exported from scene barrel, no renderer consumes them | none | SURPRISE |
+| `InstancedMesh`/`LodMesh` ship | PARTIAL. `InstancedMesh` ships: `createInstancedMesh` and its accessors are exported from the scene barrel, and `drawGlScene3D.ts:284` draws it as a dedicated instanced pass. WGPU does not consume it — no occurrence in `packages/scene3d-wgpu/src`. `LodMesh` remains header-only: no `createLodMesh`, no `LodMeshKind`, no renderer | gl (InstancedMesh only) | SURPRISE (LodMesh, wgpu InstancedMesh) |
 | Frustum culling is automatic | `cullSceneNodeByFrustum` exists but no renderer calls it (grep across render/scene-gl/wgpu → none); every mesh drawn every frame | gl/wgpu (manual) | MAJOR |
 | Orthographic on WebGPU | RESOLVED — VP depth remap and functional baseline | wgpu | RESOLVED |
 | Particles (3D) status | RESOLVED on both GPU backends with instanced billboard renderers and `particle-emitter-3d` functional cells | gl/wgpu | RESOLVED |
