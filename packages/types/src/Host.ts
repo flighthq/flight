@@ -62,6 +62,7 @@ import type { GeolocationBackend } from './Geolocation';
 import type { GlyphRasterizerBackend } from './GlyphSource';
 import type { HapticsBackend } from './Haptics';
 import type { ImageBackend } from './Image';
+import type { ImageOpenDialogBackend } from './ImageOpenDialogBackend';
 import type { InputIngressBackend } from './InputIngressBackend';
 import type { InputTargetBackend } from './InputTargetBackend';
 import type {
@@ -82,7 +83,6 @@ import type {
 } from './Keyboard';
 import type { LifecycleBackend } from './Lifecycle';
 import type { LoopBackend } from './LoopBackend';
-import type { MediaFileCaptureBackend } from './MediaFileCapture';
 import type { MediaSessionActionBackend, MediaSessionBackend } from './MediaSession';
 import type { MenuApplicationBackend, MenuHighlightBackend, MenuPopupBackend, MenuSelectBackend } from './Menu';
 import type { MessageDialogBackend } from './MessageDialogBackend';
@@ -102,6 +102,7 @@ import type {
   NotificationSchedulingBackend,
 } from './Notification';
 import type { PathBooleanBackend } from './PathBooleanBackend';
+import type { PhotoCaptureDialogBackend } from './PhotoCaptureDialogBackend';
 import type { PlatformBackend } from './Platform';
 import type {
   PowerBatteryHealthBackend,
@@ -176,6 +177,7 @@ import type {
 } from './Tray';
 import type { UpdaterCommandBackend } from './Updater';
 import type { VideoCapabilityBackend } from './VideoCapabilityBackend';
+import type { VideoCaptureDialogBackend } from './VideoCaptureDialogBackend';
 import type { WgpuHostBackend } from './WgpuHost';
 
 export interface Host extends Entity {
@@ -267,8 +269,11 @@ export interface HostDialogCapabilities {
   readonly directoryOpen?: DirectoryOpenDialogBackend;
   readonly fileOpen?: FileOpenDialogBackend;
   readonly fileSave?: FileSaveDialogBackend;
+  readonly imageOpen?: ImageOpenDialogBackend;
   readonly message?: MessageDialogBackend;
+  readonly photoCapture?: PhotoCaptureDialogBackend;
   readonly prompt?: PromptDialogBackend;
+  readonly videoCapture?: VideoCaptureDialogBackend;
 }
 
 export interface HostGraphicsCapabilities {
@@ -311,7 +316,6 @@ export interface HostMediaCapabilities {
   readonly session?: MediaSessionBackend;
   readonly sessionAction?: MediaSessionActionBackend;
   readonly video?: VideoCapabilityBackend;
-  readonly mediaFileCapture?: MediaFileCaptureBackend;
 }
 
 // Menu is a top-level group rather than a ui slot: its three capabilities have different provider
@@ -646,12 +650,24 @@ export interface HasDialogFileSave {
   readonly dialog: { readonly fileSave: FileSaveDialogBackend };
 }
 
+export interface HasDialogImageOpen {
+  readonly dialog: { readonly imageOpen: ImageOpenDialogBackend };
+}
+
 export interface HasDialogMessage {
   readonly dialog: { readonly message: MessageDialogBackend };
 }
 
+export interface HasDialogPhotoCapture {
+  readonly dialog: { readonly photoCapture: PhotoCaptureDialogBackend };
+}
+
 export interface HasDialogPrompt {
   readonly dialog: { readonly prompt: PromptDialogBackend };
+}
+
+export interface HasDialogVideoCapture {
+  readonly dialog: { readonly videoCapture: VideoCaptureDialogBackend };
 }
 
 export interface HasGraphicsBitmapEncode {
@@ -780,10 +796,6 @@ export interface HasMediaSessionAction {
 
 export interface HasMediaVideo {
   readonly media: { readonly video: VideoCapabilityBackend };
-}
-
-export interface HasMediaFileCapture {
-  readonly media: { readonly mediaFileCapture: MediaFileCaptureBackend };
 }
 
 export interface HasNetHttp {

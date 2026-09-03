@@ -5,13 +5,17 @@ import {
   webDirectoryOpenDialogBackend,
   webFileOpenDialogBackend,
   webFileSaveDialogBackend,
+  webImageOpenDialogBackend,
   webMessageDialogBackend,
+  webPhotoCaptureDialogBackend,
   webPromptDialogBackend,
+  webVideoCaptureDialogBackend,
 } from './webDialog';
 import { webHost } from './webHost';
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   delete (window as Window & { showDirectoryPicker?: unknown }).showDirectoryPicker;
   delete (window as Window & { showOpenFilePicker?: unknown }).showOpenFilePicker;
   delete (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
@@ -222,6 +226,121 @@ describe('webFileSaveDialogBackend', () => {
     expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 });
+
+describe('webImageOpenDialogBackend', () => {
+  it('is a distinct Entity installed in the image-open slot', () => {
+    expect(EntityRuntimeKey in webImageOpenDialogBackend).toBe(true);
+    expect(webImageOpenDialogBackend).not.toBe(webPhotoCaptureDialogBackend);
+    expect(webHost.dialog.imageOpen).toBe(webImageOpenDialogBackend);
+  });
+
+  it('decodes the selected image dimensions instead of returning zero sentinels', async () => {
+    const { input } = mockImagePicker(640, 480);
+
+    const pending = webImageOpenDialogBackend.open();
+    input.dispatchEvent(new Event('change'));
+
+    await expect(pending).resolves.toMatchObject({
+      image: { height: 480, mimeType: 'image/png', width: 640 },
+      outcome: 'selected',
+    });
+  });
+});
+
+describe('webPhotoCaptureDialogBackend', () => {
+  it('is a distinct Entity installed in the photo-capture slot', () => {
+    expect(EntityRuntimeKey in webPhotoCaptureDialogBackend).toBe(true);
+    expect(webPhotoCaptureDialogBackend).not.toBe(webImageOpenDialogBackend);
+    expect(webHost.dialog.photoCapture).toBe(webPhotoCaptureDialogBackend);
+  });
+
+  it('forwards the requested facing mode and decodes the captured dimensions', async () => {
+    const { input } = mockImagePicker(1920, 1080);
+
+    const pending = webPhotoCaptureDialogBackend.capture({ facingMode: 'user' });
+    expect(input.capture).toBe('user');
+    input.dispatchEvent(new Event('change'));
+
+    await expect(pending).resolves.toMatchObject({
+      outcome: 'selected',
+      photo: { height: 1080, mimeType: 'image/png', width: 1920 },
+    });
+  });
+
+  it('returns a cancellation outcome and removes listeners when aborted', async () => {
+    const input = document.createElement('input');
+    const remove = vi.spyOn(input, 'removeEventListener');
+    vi.spyOn(document, 'createElement').mockReturnValue(input as never);
+    const controller = new AbortController();
+
+    const pending = webPhotoCaptureDialogBackend.capture({ signal: controller.signal });
+    controller.abort();
+
+    await expect(pending).resolves.toEqual({ outcome: 'cancelled' });
+    expect(remove).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(remove).toHaveBeenCalledWith('cancel', expect.any(Function));
+  });
+});
+
+describe('webVideoCaptureDialogBackend', () => {
+  it('is a distinct Entity installed in the video-capture slot', () => {
+    expect(EntityRuntimeKey in webVideoCaptureDialogBackend).toBe(true);
+    expect(webVideoCaptureDialogBackend).not.toBe(webPhotoCaptureDialogBackend);
+    expect(webHost.dialog.videoCapture).toBe(webVideoCaptureDialogBackend);
+  });
+
+  it('decodes the selected video duration instead of returning a zero sentinel', async () => {
+    const input = document.createElement('input');
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      value: [new File(['video'], 'clip.mp4', { type: 'video/mp4' })],
+    });
+    const video = document.createElement('video');
+    Object.defineProperty(video, 'duration', { configurable: true, value: 2.5 });
+    vi.spyOn(video, 'load').mockImplementation(() =>
+      queueMicrotask(() => video.dispatchEvent(new Event('loadedmetadata'))),
+    );
+    const createElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+      if (tag === 'input') return input;
+      if (tag === 'video') return video;
+      return createElement(tag);
+    }) as typeof document.createElement);
+
+    const pending = webVideoCaptureDialogBackend.capture();
+    input.dispatchEvent(new Event('change'));
+
+    await expect(pending).resolves.toMatchObject({
+      outcome: 'selected',
+      video: { duration: 2.5, mimeType: 'video/mp4' },
+    });
+  });
+});
+
+function mockImagePicker(width: number, height: number): { input: HTMLInputElement } {
+  const input = document.createElement('input');
+  const createElement = document.createElement.bind(document);
+  Object.defineProperty(input, 'files', {
+    configurable: true,
+    value: [new File(['image'], 'photo.png', { type: 'image/png' })],
+  });
+  class LoadedImage {
+    naturalHeight = height;
+    naturalWidth = width;
+    onerror: (() => void) | null = null;
+    onload: (() => void) | null = null;
+
+    set src(_value: string) {
+      queueMicrotask(() => this.onload?.());
+    }
+  }
+  vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+    if (tag === 'input') return input;
+    if (tag === 'img') return new LoadedImage();
+    return createElement(tag);
+  }) as typeof document.createElement);
+  return { input };
+}
 
 function fileSystemHandle(
   name: string,

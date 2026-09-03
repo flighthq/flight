@@ -64,6 +64,56 @@ export type FileSaveDialogResult =
       readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | 'file-save-failed';
     };
 
+export interface OpenImageDialogOptions {
+  readonly signal?: AbortSignal;
+}
+
+// The values match the browser file input capture hint. Native providers may map them to their
+// closest front- or rear-facing camera.
+export type MediaCaptureDialogFacingMode = 'environment' | 'user';
+
+export interface CapturePhotoDialogOptions {
+  readonly facingMode?: MediaCaptureDialogFacingMode;
+  readonly signal?: AbortSignal;
+}
+
+export interface CaptureVideoDialogOptions {
+  readonly facingMode?: MediaCaptureDialogFacingMode;
+  readonly signal?: AbortSignal;
+}
+
+export interface DialogImage {
+  readonly dataUrl: string;
+  readonly height: number;
+  readonly mimeType: string;
+  readonly width: number;
+}
+
+export interface DialogVideo {
+  readonly dataUrl: string;
+  // Duration is expressed in seconds, matching HTMLMediaElement and native media metadata APIs.
+  readonly duration: number;
+  readonly mimeType: string;
+}
+
+export type ImageOpenDialogResult =
+  | { readonly image: DialogImage; readonly outcome: 'selected' }
+  | {
+      readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | 'image-open-failed';
+    };
+
+export type PhotoCaptureDialogResult =
+  | { readonly outcome: 'selected'; readonly photo: DialogImage }
+  | {
+      readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | 'photo-capture-failed';
+    };
+
+export type VideoCaptureDialogResult =
+  | { readonly outcome: 'selected'; readonly video: DialogVideo }
+  | {
+      readonly outcome: 'cancelled' | 'runtime-unavailable' | 'security-denied' | 'video-capture-failed';
+    };
+
 // Options for a text prompt dialog. Aligns prompt with its sibling dialog calls (object options).
 export interface PromptDialogOptions {
   title?: string;

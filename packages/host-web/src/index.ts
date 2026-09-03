@@ -19,8 +19,11 @@ export {
   webDirectoryOpenDialogBackend,
   webFileOpenDialogBackend,
   webFileSaveDialogBackend,
+  webImageOpenDialogBackend,
   webMessageDialogBackend,
+  webPhotoCaptureDialogBackend,
   webPromptDialogBackend,
+  webVideoCaptureDialogBackend,
 } from './webDialog';
 export { webDialogHost } from './webDialogHost';
 export { webFileSystemBackend } from './webFilesystem';
@@ -83,7 +86,6 @@ export {
   createWebWorkerStoragePersistenceCapabilities,
 } from './webStoragePersistence';
 export { enableHostWebVideoCapability } from './webVideoCapability';
-export { enableHostWebMediaFileCapture } from './webMediaFileCapture';
 export { webHost } from './webHost';
 export { webHostNet } from './webHostNet';
 export { webSystemHost } from './webSystemHost';

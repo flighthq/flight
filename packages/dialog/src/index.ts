@@ -1,6 +1,8 @@
 export {
   createFileDialogHandle,
   getFileDialogHandleOperations,
+  showCapturePhotoDialog,
+  showCaptureVideoDialog,
   showConfirmDialog,
   showErrorBox,
   showErrorDialog,
@@ -8,6 +10,7 @@ export {
   showMessageDialog,
   showOpenDirectoryDialog,
   showOpenFileDialog,
+  showOpenImageDialog,
   showPromptDialog,
   showSaveFileDialog,
   showWarningDialog,
