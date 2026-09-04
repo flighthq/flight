@@ -69,25 +69,44 @@ function createWebMockBackend() {
   const sourceNodes = new Map<number, MockAudioBufferSourceNode>();
 
   return {
-    backend: (() => { const out = allocateEntity<AudioBuffer>(); out.createBuffer = vi.fn().mockReturnValue(1); out.createDevice = vi.fn().mockReturnValue(1); out.createSource = vi.fn(() => {
+    backend: (() => {
+      const out = allocateEntity<AudioBuffer>();
+      out.createBuffer = vi.fn().mockReturnValue(1);
+      out.createDevice = vi.fn().mockReturnValue(1);
+      out.createSource = vi.fn(() => {
         const h = nextSourceHandle++;
         const gainNode = new MockGainNode();
         gainNodes.set(h, gainNode);
         return h as unknown as AudioSourceHandle;
-      }); out.destroyBuffer = vi.fn(); out.destroyDevice = vi.fn(); out.destroySource = vi.fn((source: AudioSourceHandle) => {
+      });
+      out.destroyBuffer = vi.fn();
+      out.destroyDevice = vi.fn();
+      out.destroySource = vi.fn((source: AudioSourceHandle) => {
         gainNodes.delete(source as number);
         sourceNodes.delete(source as number);
         onEndedCallbacks.delete(source as number);
-      }); out.getDeviceTime = vi.fn(() => deviceTime); out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
+      });
+      out.getDeviceTime = vi.fn(() => deviceTime);
+      out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
         return (sourceNodes.get(source as number) as unknown as AudioBufferSourceNode) ?? null;
-      }; out.getSourceGainNode = (source: AudioSourceHandle): GainNode | null => {
+      };
+      out.getSourceGainNode = (source: AudioSourceHandle): GainNode | null => {
         return (gainNodes.get(source as number) as unknown as GainNode) ?? null;
-      }; out.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
+      };
+      out.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
         onEndedCallbacks.set(source as number, cb);
-      }); out.resumeDevice = vi.fn(); out.setSourceGain = vi.fn(); out.setSourcePan = vi.fn(); out.setSourcePlaybackRate = vi.fn(); out.startSource = vi.fn((source: AudioSourceHandle) => {
+      });
+      out.resumeDevice = vi.fn();
+      out.setSourceGain = vi.fn();
+      out.setSourcePan = vi.fn();
+      out.setSourcePlaybackRate = vi.fn();
+      out.startSource = vi.fn((source: AudioSourceHandle) => {
         const srcNode = new MockAudioBufferSourceNode();
         sourceNodes.set(source as number, srcNode);
-      }); out.stopSource = vi.fn(); return finishEntity(out); })(),
+      });
+      out.stopSource = vi.fn();
+      return finishEntity(out);
+    })(),
     gainNodes,
     sourceNodes,
   };
@@ -198,8 +217,8 @@ describe('fadeAudioChannelGain', () => {
     plainMock.destroySource = vi.fn();
     plainMock.getDeviceTime = vi.fn(() => deviceTime);
     plainMock.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
-        onEndedCallbacks.set(source as number, cb);
-      });
+      onEndedCallbacks.set(source as number, cb);
+    });
     plainMock.resumeDevice = vi.fn();
     plainMock.setSourceGain = vi.fn();
     plainMock.setSourcePan = vi.fn();

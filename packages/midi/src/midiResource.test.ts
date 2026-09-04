@@ -98,7 +98,7 @@ function outputOperations() {
 }
 
 function inputPort(): MidiInputPort {
-    const out = allocateEntity<MidiInputPort>();
+  const out = allocateEntity<MidiInputPort>();
   out.id = 'same';
   out.manufacturer = null;
   out.name = null;
@@ -108,7 +108,7 @@ function inputPort(): MidiInputPort {
 }
 
 function outputPort(): MidiOutputPort {
-    const out = allocateEntity<MidiInputPort>();
+  const out = allocateEntity<MidiInputPort>();
   out.id = 'same';
   out.manufacturer = null;
   out.name = null;

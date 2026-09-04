@@ -123,7 +123,13 @@ describe('defaultCanvasPosterizeEffectRunner', () => {
     defaultCanvasPosterizeEffectRunner(
       {
         dest,
-        pool: (() => { const out = allocateEntity<number>(); out.creator = canvasTestSurfaceCreator; out.free = []; out.inUse = []; return finishEntity(out) as unknown; })() as CanvasRenderTargetPool,
+        pool: (() => {
+          const out = allocateEntity<number>();
+          out.creator = canvasTestSurfaceCreator;
+          out.free = [];
+          out.inUse = [];
+          return finishEntity(out) as unknown;
+        })() as CanvasRenderTargetPool,
         source,
         state: {} as never,
       },

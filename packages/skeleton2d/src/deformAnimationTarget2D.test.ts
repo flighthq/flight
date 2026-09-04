@@ -33,14 +33,18 @@ function makeBone(): Bone2D {
 
 function mesh(pointCount: number): MeshAttachment2D {
   const skin: Skin2D = createSkin2D(new Uint16Array(pointCount).fill(1), new Float32Array(pointCount * 4));
-    const out = allocateEntity<Bone2D>();
+  const out = allocateEntity<Bone2D>();
   out.kind = MeshAttachment2DKind;
   out.skin = skin;
   out.triangles = new Uint16Array();
   out.uvs = new Float32Array(pointCount * 2);
   out.vertexCount = pointCount;
   out.vertices = null;
-  return finishEntity(out) as MeshAttachment2D;;
+  return finishEntity(out) as MeshAttachment2D;
+}
+
+function rig(attachment: MeshAttachment2D | null): {
+  pose: ReturnType<typeof cloneSkeleton2D>;
   setup: ReturnType<typeof createSkeleton2D>;
 } {
   const slot: Slot2D = { attachment, boneIndex: 0, color: 0xffffffff, name: 's' };

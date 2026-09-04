@@ -12,20 +12,26 @@ import {
 } from './audioResourceFrom';
 
 function fakeAudioCodecHost(canPlay: (type: string) => boolean): HasMediaAudioCodec {
+  const out = allocateEntity<Omit<AudioBackend, keyof Entity>>();
+  out.canPlayType = canPlay;
   return {
     media: {
-      audioCodec: (() => { const out = allocateEntity<Omit<AudioBackend, keyof Entity>>(); out.canPlayType = canPlay; return finishEntity(out); })(),
+      audioCodec: finishEntity(out),
     },
   } as HasMediaAudioCodec;
 }
 
 function fakeNetHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
+  const out = allocateEntity<NetBackend>();
+  Object.assign(
+    out,
+    backend ?? {
+      sendNetRequest: async () => ({ status: 200, statusText: 'OK', ok: true, headers: {}, body: null, url: '' }),
+    },
+  );
   return {
     net: {
-      http: (() => { const out = allocateEntity<unknown>(); Object.assign(out, backend ?? {
-          sendNetRequest: async (); return finishEntity(out); })() => ({ status: 200, statusText: 'OK', ok: true, headers: {}, body: null, url: '' }),
-        },
-      ),
+      http: finishEntity(out),
     },
   };
 }

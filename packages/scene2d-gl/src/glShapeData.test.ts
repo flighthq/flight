@@ -16,7 +16,7 @@ import { createGlState } from './glTestHelper';
 const destroySurface = vi.fn();
 
 function emptyData(): GlShapeRendererData {
-    const out = allocateEntity<GlShapeRendererData>();
+  const out = allocateEntity<GlShapeRendererData>();
   out.surface = null;
   out.lastContentId = -1;
   out.lastPixelRatio = 0;
@@ -56,7 +56,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
 }
 
 function createTestProvider(): Raster2DSurfaceProvider {
-    const out = allocateEntity<GlShapeRendererData>();
+  const out = allocateEntity<GlShapeRendererData>();
   out.createRaster2DSurface = createTestRaster2DSurface;
   out.destroyRaster2DSurface = destroySurface;
   return finishEntity(out);

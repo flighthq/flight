@@ -17,15 +17,27 @@ function fakeHost() {
   const saved = createFileDialogHandle('File', 'out.txt', '/tmp/out.txt');
   return {
     dialog: {
-      directoryOpen: (() => { const out = allocateEntity<unknown>(); out.open = async () => {
+      directoryOpen: (() => {
+        const out = allocateEntity<unknown>();
+        out.open = async () => {
           return { handle: directory, outcome: 'selected' as const };
-        }; return finishEntity(out); })(),
-      fileOpen: (() => { const out = allocateEntity<unknown>(); out.open = async () => {
+        };
+        return finishEntity(out);
+      })(),
+      fileOpen: (() => {
+        const out = allocateEntity<unknown>();
+        out.open = async () => {
           return { handles: [first, second] as const, outcome: 'selected' as const };
-        }; return finishEntity(out); })(),
-      fileSave: (() => { const out = allocateEntity<unknown>(); out.save = async () => {
+        };
+        return finishEntity(out);
+      })(),
+      fileSave: (() => {
+        const out = allocateEntity<unknown>();
+        out.save = async () => {
           return { handle: saved, outcome: 'selected' as const };
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
   };
 }
@@ -60,9 +72,13 @@ describe('showOpenDirectoryDialog', () => {
   it('preserves the directory-specific runtime-unavailable outcome', async () => {
     const host = {
       dialog: {
-        directoryOpen: (() => { const out = allocateEntity<unknown>(); out.open = async () => {
+        directoryOpen: (() => {
+          const out = allocateEntity<unknown>();
+          out.open = async () => {
             return { outcome: 'runtime-unavailable' as const };
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     expect((await showOpenDirectoryDialog(host)).outcome).toBe('runtime-unavailable');
@@ -70,7 +86,15 @@ describe('showOpenDirectoryDialog', () => {
 
   it('forwards cancellation options through the independent capability slot', async () => {
     const open = vi.fn(async () => ({ outcome: 'cancelled' as const }));
-    const host = { dialog: { directoryOpen: (() => { const out = allocateEntity<unknown>(); out.open = open; return finishEntity(out); })() } };
+    const host = {
+      dialog: {
+        directoryOpen: (() => {
+          const out = allocateEntity<unknown>();
+          out.open = open;
+          return finishEntity(out);
+        })(),
+      },
+    };
     const signal = new AbortController().signal;
     await showOpenDirectoryDialog(host, { signal });
     expect(open).toHaveBeenCalledWith({ signal });
@@ -90,9 +114,13 @@ describe('showOpenFileDialog', () => {
   it('preserves the file-open-specific security outcome', async () => {
     const host = {
       dialog: {
-        fileOpen: (() => { const out = allocateEntity<unknown>(); out.open = async () => {
+        fileOpen: (() => {
+          const out = allocateEntity<unknown>();
+          out.open = async () => {
             return { outcome: 'security-denied' as const };
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     expect((await showOpenFileDialog(host, {})).outcome).toBe('security-denied');
@@ -108,9 +136,13 @@ describe('showSaveFileDialog', () => {
   it('preserves the file-save-specific failure outcome', async () => {
     const host = {
       dialog: {
-        fileSave: (() => { const out = allocateEntity<unknown>(); out.save = async () => {
+        fileSave: (() => {
+          const out = allocateEntity<unknown>();
+          out.save = async () => {
             return { outcome: 'file-save-failed' as const };
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     expect((await showSaveFileDialog(host, {})).outcome).toBe('file-save-failed');

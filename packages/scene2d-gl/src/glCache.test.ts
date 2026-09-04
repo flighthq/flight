@@ -30,17 +30,17 @@ beforeEach(() => {
     descriptor: { width: number; height: number },
   ): GlRenderTarget => {
     const texture = {} as WebGLTexture;
-        const out = allocateEntity<unknown>();
+    const out = allocateEntity<unknown>();
     out.requestedAxes = {
-        width: descriptor.width,
-        height: descriptor.height,
-        format: 'rgba8',
-        colorAttachments: 1,
-        colorFormats: ['rgba8'],
-        sampleCount: 1,
-        depth: 'none',
-        colorSpace: 'srgb',
-      };
+      width: descriptor.width,
+      height: descriptor.height,
+      format: 'rgba8',
+      colorAttachments: 1,
+      colorFormats: ['rgba8'],
+      sampleCount: 1,
+      depth: 'none',
+      colorSpace: 'srgb',
+    };
     out.framebuffer = {} as WebGLFramebuffer;
     out.resolveFramebuffer = null;
     out.texture = texture;

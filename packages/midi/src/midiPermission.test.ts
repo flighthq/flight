@@ -10,7 +10,15 @@ describe('getMidiPermission', () => {
       .mockResolvedValueOnce({ reason: 'ok', state: 'prompt' })
       .mockResolvedValueOnce({ reason: 'unsupported' })
       .mockRejectedValueOnce(new Error('provider fault'));
-    const host = { midi: { permission: (() => { const out = allocateEntity<unknown>(); out.getPermission = getPermission; return finishEntity(out); })() } };
+    const host = {
+      midi: {
+        permission: (() => {
+          const out = allocateEntity<unknown>();
+          out.getPermission = getPermission;
+          return finishEntity(out);
+        })(),
+      },
+    };
     const getMidiPermission = requiredFunction('getMidiPermission');
     await expect(getMidiPermission(host)).resolves.toEqual({ reason: 'ok', state: 'prompt' });
     await expect(getMidiPermission(host)).resolves.toEqual({ reason: 'unsupported' });

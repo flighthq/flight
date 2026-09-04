@@ -50,7 +50,15 @@ describe('registerCommandBinding', () => {
       execute: () => seen.push('execute'),
       undo: () => seen.push('undo'),
     });
-    executeCommand(history, (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Custom'; out.label = 'Custom'; return finishEntity(out); })());
+    executeCommand(
+      history,
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Custom';
+        out.label = 'Custom';
+        return finishEntity(out);
+      })(),
+    );
     undoCommand(history);
     expect(seen).toEqual(['execute', 'undo']);
   });

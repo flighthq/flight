@@ -20,7 +20,13 @@ describe('showCapturePhotoDialog', () => {
       photo: { dataUrl: 'data:image/png;base64,AA==', height: 480, mimeType: 'image/png', width: 640 },
     }));
     const host: HasDialogPhotoCapture = {
-      dialog: { photoCapture: (() => { const out = allocateEntity<unknown>(); out.capture = capture; return finishEntity(out) as PhotoCaptureDialogBackend; })() },
+      dialog: {
+        photoCapture: (() => {
+          const out = allocateEntity<unknown>();
+          out.capture = capture;
+          return finishEntity(out) as PhotoCaptureDialogBackend;
+        })(),
+      },
     };
     const options: CapturePhotoDialogOptions = {
       facingMode: 'user',
@@ -37,7 +43,11 @@ describe('showCapturePhotoDialog', () => {
     const capture = async () => ({ outcome: 'photo-capture-failed' as const });
     const host: HasDialogPhotoCapture = {
       dialog: {
-        photoCapture: (() => { const out = allocateEntity<unknown>(); out.capture = capture; return finishEntity(out) as PhotoCaptureDialogBackend,; })()
+        photoCapture: (() => {
+          const out = allocateEntity<unknown>();
+          out.capture = capture;
+          return finishEntity(out) as PhotoCaptureDialogBackend;
+        })(),
       },
     };
 
@@ -52,7 +62,13 @@ describe('showCaptureVideoDialog', () => {
       video: { dataUrl: 'data:video/mp4;base64,AA==', duration: 2.5, mimeType: 'video/mp4' },
     }));
     const host: HasDialogVideoCapture = {
-      dialog: { videoCapture: (() => { const out = allocateEntity<unknown>(); out.capture = capture; return finishEntity(out) as VideoCaptureDialogBackend; })() },
+      dialog: {
+        videoCapture: (() => {
+          const out = allocateEntity<unknown>();
+          out.capture = capture;
+          return finishEntity(out) as VideoCaptureDialogBackend;
+        })(),
+      },
     };
     const options: CaptureVideoDialogOptions = { facingMode: 'environment' };
 
@@ -67,7 +83,13 @@ describe('showOpenImageDialog', () => {
   it('routes selection through the explicit image-open slot and forwards cancellation', async () => {
     const open = vi.fn(async () => ({ outcome: 'cancelled' as const }));
     const host: HasDialogImageOpen = {
-      dialog: { imageOpen: (() => { const out = allocateEntity<unknown>(); out.open = open; return finishEntity(out) as ImageOpenDialogBackend; })() },
+      dialog: {
+        imageOpen: (() => {
+          const out = allocateEntity<unknown>();
+          out.open = open;
+          return finishEntity(out) as ImageOpenDialogBackend;
+        })(),
+      },
     };
     const options: OpenImageDialogOptions = { signal: new AbortController().signal };
 
@@ -79,7 +101,11 @@ describe('showOpenImageDialog', () => {
     const open = async () => ({ outcome: 'image-open-failed' as const });
     const host: HasDialogImageOpen = {
       dialog: {
-        imageOpen: (() => { const out = allocateEntity<unknown>(); out.open = open; return finishEntity(out) as ImageOpenDialogBackend,; })()
+        imageOpen: (() => {
+          const out = allocateEntity<unknown>();
+          out.open = open;
+          return finishEntity(out) as ImageOpenDialogBackend;
+        })(),
       },
     };
 

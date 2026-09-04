@@ -8,7 +8,14 @@ import { createStandardPbrMaterialProperties } from './pbrMaterials';
 describe('createExtendedPbrMaterial', () => {
   it('composes a standard property block with an ordered extension list', () => {
     const standard = createStandardPbrMaterialProperties({ roughness: 0.25 });
-    const extensions = [createClearcoatPbrExtension(), (() => { const out = allocateEntity<unknown>(); out.kind = 'VendorPbrExtension'; return finishEntity(out); })()];
+    const extensions = [
+      createClearcoatPbrExtension(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'VendorPbrExtension';
+        return finishEntity(out);
+      })(),
+    ];
 
     const material = createExtendedPbrMaterial({ extensions, standard });
 

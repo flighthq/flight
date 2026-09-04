@@ -46,7 +46,7 @@ describe('normalizeRenderEffect', () => {
     const out = (() => {
       const out = allocateEntity<unknown>();
       out.kind = 'BloomEffect';
-      return finishEntity(out) as BloomEffect;;
+      return finishEntity(out) as BloomEffect;
     })();
     expect(ok).toBe(true);
     expect(out.threshold).toBe(0.9); // preserved
@@ -58,7 +58,7 @@ describe('normalizeRenderEffect', () => {
     const out = (() => {
       const out = allocateEntity<unknown>();
       out.kind = 'BloomEffect';
-      return finishEntity(out) as BloomEffect;;
+      return finishEntity(out) as BloomEffect;
     })();
     expect(out.threshold).toBe(0); // 0 is explicit, should not be replaced by default 0.8
   });
@@ -67,7 +67,7 @@ describe('normalizeRenderEffect', () => {
     const out = (() => {
       const out = allocateEntity<unknown>();
       out.kind = 'VignetteEffect';
-      return finishEntity(out) as VignetteEffect;;
+      return finishEntity(out) as VignetteEffect;
     })();
     expect(out.intensity).toBe(0.3);
     expect(out.radius).toBe(1);

@@ -128,7 +128,7 @@ describe('hasAudioDeviceWebNodeAccess', () => {
 });
 
 function stubBackend(): AudioDeviceBackend {
-    const out = allocateEntity<AudioDeviceBackend>();
+  const out = allocateEntity<AudioDeviceBackend>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
   out.createSource = vi.fn().mockReturnValue(1);

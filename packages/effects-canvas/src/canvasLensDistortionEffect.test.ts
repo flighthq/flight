@@ -137,7 +137,13 @@ describe('defaultCanvasLensDistortionEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const { dest, pool, source, written } = {
       ...createTargets(8, 8),
-      pool: (() => { const out = allocateEntity<unknown>(); out.creator = canvasTestSurfaceCreator; out.free = []; out.inUse = []; return finishEntity(out) as unknown; })() as CanvasRenderTargetPool,
+      pool: (() => {
+        const out = allocateEntity<unknown>();
+        out.creator = canvasTestSurfaceCreator;
+        out.free = [];
+        out.inUse = [];
+        return finishEntity(out) as unknown;
+      })() as CanvasRenderTargetPool,
     };
 
     defaultCanvasLensDistortionEffectRunner(

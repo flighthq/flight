@@ -144,10 +144,14 @@ describe('unionPaths', () => {
   it('routes through a swapped-in backend', () => {
     let seen = false;
     setPathBooleanBackend(
-      (() => { const out = allocateEntity<Path>(); out.computePathBoolean = () => {
+      (() => {
+        const out = allocateEntity<Path>();
+        out.computePathBoolean = () => {
           seen = true;
           return [];
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     );
     const result = unionPaths(rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
     setPathBooleanBackend(null);

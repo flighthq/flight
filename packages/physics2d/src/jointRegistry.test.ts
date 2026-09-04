@@ -27,7 +27,7 @@ function body(world: ReturnType<typeof createPhysics2DWorld>, x: number, y: numb
 }
 
 function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorBX = 0): Physics2DJoint {
-    const out = allocateEntity<Physics2DJoint>();
+  const out = allocateEntity<Physics2DJoint>();
   out.kind = kind;
   out.bodyA = bodyA;
   out.bodyB = bodyB;

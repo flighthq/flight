@@ -62,7 +62,16 @@ describe('createRegistryCodegenPlan', () => {
 
   it('returns an empty plan for empty catalog contents and requirements', () => {
     expect(
-      createRegistryCodegenPlan(createRegistryCatalog(), (() => { const out = allocateEntity<unknown>(); out.covers = []; out.requirements = []; return finishEntity(out); })(), 'webgl'),
+      createRegistryCodegenPlan(
+        createRegistryCatalog(),
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.covers = [];
+          out.requirements = [];
+          return finishEntity(out);
+        })(),
+        'webgl',
+      ),
     ).toMatchObject({
       backend: 'webgl',
       entries: [],

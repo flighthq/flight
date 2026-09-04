@@ -47,7 +47,7 @@ function makeRenderer() {
 }
 
 function makeClipRegion(): ClipRegion {
-    const out = allocateEntity<ClipRegion>();
+  const out = allocateEntity<ClipRegion>();
   out.contours = null;
   out.rect = createRectangle(0, 0, 10, 10);
   out.winding = 'nonZero';

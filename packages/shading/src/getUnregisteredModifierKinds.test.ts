@@ -25,10 +25,25 @@ describe('getUnregisteredModifierKinds', () => {
     const registry = createModifierRegistry();
     registerBuiltInModifiers(registry);
     const stack: Modifier[] = [
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; out.slot = 'Effect'; return finishEntity(out); })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Missing';
+        out.slot = 'Effect';
+        return finishEntity(out);
+      })(),
       createEmissiveModifier({ color: 0xffffffff }),
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Other'; out.slot = 'Normal'; return finishEntity(out); })(),
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; out.slot = 'Effect'; return finishEntity(out); })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Other';
+        out.slot = 'Normal';
+        return finishEntity(out);
+      })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Missing';
+        out.slot = 'Effect';
+        return finishEntity(out);
+      })(),
     ];
     expect(getUnregisteredModifierKinds(registry, stack)).toEqual(['acme.Missing', 'acme.Other']);
   });

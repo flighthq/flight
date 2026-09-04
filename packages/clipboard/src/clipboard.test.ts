@@ -286,7 +286,7 @@ function hostFor(clipboard: FakeClipboardBackend): FakeClipboardHost {
 }
 
 function fakeBackend(): FakeClipboardBackend {
-    const out = allocateEntity<Omit<FakeClipboardBackend, typeof EntityRuntimeKey>>();
+  const out = allocateEntity<Omit<FakeClipboardBackend, typeof EntityRuntimeKey>>();
   out.bookmark = null;
   out.formats = {};
   out.html = '';
@@ -295,100 +295,100 @@ function fakeBackend(): FakeClipboardBackend {
   out.rtf = '';
   out.text = '';
   out.clear = async () => {
-      this.bookmark = null;
-      this.formats = {};
-      this.html = '';
-      this.image = '';
-      this.rtf = '';
-      this.text = '';
-      return true;
-    };
+    this.bookmark = null;
+    this.formats = {};
+    this.html = '';
+    this.image = '';
+    this.rtf = '';
+    this.text = '';
+    return true;
+  };
   out.getFormats = async () => {
-      const formats = Object.keys(this.formats);
-      if (this.text.length > 0) formats.push(ClipboardFormatText);
-      if (this.html.length > 0) formats.push(ClipboardFormatHtml);
-      if (this.image.length > 0) formats.push(ClipboardFormatImage);
-      if (this.rtf.length > 0) formats.push(ClipboardFormatRtf);
-      if (this.bookmark !== null) formats.push(ClipboardFormatBookmark);
-      return [...new Set(formats)];
-    };
+    const formats = Object.keys(this.formats);
+    if (this.text.length > 0) formats.push(ClipboardFormatText);
+    if (this.html.length > 0) formats.push(ClipboardFormatHtml);
+    if (this.image.length > 0) formats.push(ClipboardFormatImage);
+    if (this.rtf.length > 0) formats.push(ClipboardFormatRtf);
+    if (this.bookmark !== null) formats.push(ClipboardFormatBookmark);
+    return [...new Set(formats)];
+  };
   out.hasFormat = async (format) => {
-      return (await this.getFormats()).includes(format);
-    };
+    return (await this.getFormats()).includes(format);
+  };
   out.hasImage = async () => {
-      return this.image.length > 0;
-    };
+    return this.image.length > 0;
+  };
   out.hasText = async () => {
-      return this.text.length > 0;
-    };
+    return this.text.length > 0;
+  };
   out.readBookmark = async () => {
-      return this.bookmark;
-    };
+    return this.bookmark;
+  };
   out.readFormat = async (format) => {
-      if (format === ClipboardFormatText) return this.text;
-      if (format === ClipboardFormatHtml) return this.html;
-      if (format === ClipboardFormatImage) return this.image;
-      if (format === ClipboardFormatRtf) return this.rtf;
-      return this.formats[format] ?? '';
-    };
+    if (format === ClipboardFormatText) return this.text;
+    if (format === ClipboardFormatHtml) return this.html;
+    if (format === ClipboardFormatImage) return this.image;
+    if (format === ClipboardFormatRtf) return this.rtf;
+    return this.formats[format] ?? '';
+  };
   out.readHtml = async () => {
-      return this.html;
-    };
+    return this.html;
+  };
   out.readImage = async () => {
-      return this.image;
-    };
+    return this.image;
+  };
   out.readItems = async (formats) => {
-      const result: Record<string, string> = {};
-      for (const format of formats) {
-        const data = await this.readFormat(format);
-        if (data.length > 0) result[format] = data;
-      }
-      return result;
-    };
+    const result: Record<string, string> = {};
+    for (const format of formats) {
+      const data = await this.readFormat(format);
+      if (data.length > 0) result[format] = data;
+    }
+    return result;
+  };
   out.readRTF = async () => {
-      return this.rtf;
-    };
+    return this.rtf;
+  };
   out.readText = async () => {
-      return this.text;
-    };
+    return this.text;
+  };
   out.subscribe = (callback) => {
-      this.listeners.add(callback);
-    };
+    this.listeners.add(callback);
+  };
   out.unsubscribe = (callback) => {
-      this.listeners.delete(callback);
-    };
+    this.listeners.delete(callback);
+  };
   out.writeBookmark = async (title, url) => {
-      this.bookmark = { title, url };
-      return true;
-    };
+    this.bookmark = { title, url };
+    return true;
+  };
   out.writeFormat = async (format, data) => {
-      if (format === ClipboardFormatText) this.text = data;
-      else if (format === ClipboardFormatHtml) this.html = data;
-      else if (format === ClipboardFormatImage) this.image = data;
-      else if (format === ClipboardFormatRtf) this.rtf = data;
-      else this.formats[format] = data;
-      return true;
-    };
+    if (format === ClipboardFormatText) this.text = data;
+    else if (format === ClipboardFormatHtml) this.html = data;
+    else if (format === ClipboardFormatImage) this.image = data;
+    else if (format === ClipboardFormatRtf) this.rtf = data;
+    else this.formats[format] = data;
+    return true;
+  };
   out.writeHtml = async (html) => {
-      this.html = html;
-      return true;
-    };
+    this.html = html;
+    return true;
+  };
   out.writeImage = async (dataUrl) => {
-      this.image = dataUrl;
-      return true;
-    };
+    this.image = dataUrl;
+    return true;
+  };
   out.writeItems = async (items) => {
-      for (const item of items) await this.writeFormat(item.format, item.data);
-      return true;
-    };
+    for (const item of items) await this.writeFormat(item.format, item.data);
+    return true;
+  };
   out.writeRTF = async (rtf) => {
-      this.rtf = rtf;
-      return true;
-    };
+    this.rtf = rtf;
+    return true;
+  };
   out.writeText = async (text) => {
-      this.text = text;
-      return true;
-    };
+    this.text = text;
+    return true;
+  };
   return finishEntity(out);
 }
 

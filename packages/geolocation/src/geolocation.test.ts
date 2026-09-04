@@ -19,35 +19,35 @@ import {
 } from './geolocation';
 
 function fakeBackend(available: boolean = true): GeolocationBackend & { cleared: number[]; lastWatch: number } {
-    const out = allocateEntity<Omit<GeolocationBackend & { cleared: number[]; lastWatch: number }, keyof Entity>>();
+  const out = allocateEntity<Omit<GeolocationBackend & { cleared: number[]; lastWatch: number }, keyof Entity>>();
   out.cleared = [];
   out.lastWatch = 0;
   out.promptForAccess = () => Promise.resolve({ reason: 'granted' as const });
   out.clearWatch = (id) => {
-      this.cleared.push(id);
-    };
+    this.cleared.push(id);
+  };
   out.getCurrentPosition = async () => {
-      const position = createGeoPosition();
-      position.latitude = 1;
-      position.longitude = 2;
-      return position;
-    };
+    const position = createGeoPosition();
+    position.latitude = 1;
+    position.longitude = 2;
+    return position;
+  };
   out.getCurrentPositionResult = async () => {
-      const position = createGeoPosition();
-      position.latitude = 1;
-      position.longitude = 2;
-      return { position, reason: null };
-    };
+    const position = createGeoPosition();
+    position.latitude = 1;
+    position.longitude = 2;
+    return { position, reason: null };
+  };
   out.isAvailable = () => {
-      return available;
-    };
+    return available;
+  };
   out.watchPosition = (listener, _options, onError) => {
-      const position = createGeoPosition();
-      position.latitude = 3;
-      listener(position);
-      if (onError) onError('denied');
-      return ++this.lastWatch;
-    };
+    const position = createGeoPosition();
+    position.latitude = 3;
+    listener(position);
+    if (onError) onError('denied');
+    return ++this.lastWatch;
+  };
   return finishEntity(out);
 }
 

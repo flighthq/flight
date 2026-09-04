@@ -25,12 +25,17 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function box(skin: Skin2D | null, vertices: Float32Array | null, pointCount: number): BoundingBoxAttachment2D {
-    const out = allocateEntity<BoundingBoxAttachment2D>();
+  const out = allocateEntity<BoundingBoxAttachment2D>();
   out.kind = BoundingBoxAttachment2DKind;
   out.pointCount = pointCount;
   out.skin = skin;
   out.vertices = vertices;
-  return finishEntity(out) as BoundingBoxAttachment2D;;
+  return finishEntity(out) as BoundingBoxAttachment2D;
+}
+
+describe('computeSkeleton2DBoundingBoxAttachmentVertices', () => {
+  it('carries a rigid box through the slot bone world transform', () => {
+    const skeleton = createSkeleton2D([makeBone({ rotation: 90, x: 5 })]);
     computeSkeleton2DWorldTransforms(skeleton);
     const out = new Float32Array(4);
 

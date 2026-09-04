@@ -27,12 +27,16 @@ function messageHost(): HasIpcMessage & {
       for (const listener of [...(channels.get(channel) ?? [])]) listener(args);
     },
     ipc: {
-      message: (() => { const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>(); out.subscribe = (channel: string, listener: (args: readonly unknown[]) => void): () => void => {
+      message: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>();
+        out.subscribe = (channel: string, listener: (args: readonly unknown[]) => void): (() => void) => {
           const set = channels.get(channel) ?? new Set();
           channels.set(channel, set);
           set.add(listener);
           return () => set.delete(listener);
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
     subscriberCount(channel: string): number {
       return channels.get(channel)?.size ?? 0;
@@ -69,22 +73,38 @@ function operationHost(): HasIpcHandle &
     handlers,
     invocations,
     ipc: {
-      handle: (() => { const out = allocateEntity<EntityWithoutRuntime<IpcHandleBackend>>(); out.handle = (channel, handler) => {
+      handle: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<IpcHandleBackend>>();
+        out.handle = (channel, handler) => {
           handlers.set(channel, handler);
           return () => {
             if (handlers.get(channel) === handler) handlers.delete(channel);
           };
-        }; return finishEntity(out); })(),
-      invoke: (() => { const out = allocateEntity<EntityWithoutRuntime<IpcInvokeBackend>>(); out.invoke = (channel, args) => {
+        };
+        return finishEntity(out);
+      })(),
+      invoke: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<IpcInvokeBackend>>();
+        out.invoke = (channel, args) => {
           invocations.push({ args, channel });
           return Promise.resolve({ args, channel });
-        }; return finishEntity(out); })(),
-      send: (() => { const out = allocateEntity<EntityWithoutRuntime<IpcSendBackend>>(); out.send = (channel, args) => {
+        };
+        return finishEntity(out);
+      })(),
+      send: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<IpcSendBackend>>();
+        out.send = (channel, args) => {
           sent.push({ args, channel });
-        }; return finishEntity(out); })(),
-      targetedSend: (() => { const out = allocateEntity<EntityWithoutRuntime<IpcTargetedSendBackend<TestIpcTarget>>>(); out.send = (target, channel, args) => {
+        };
+        return finishEntity(out);
+      })(),
+      targetedSend: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<IpcTargetedSendBackend<TestIpcTarget>>>();
+        out.send = (target, channel, args) => {
           sentTo.push({ args, channel, target });
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
     sent,
     sentTo,
@@ -129,9 +149,13 @@ describe('onceIpcMessage', () => {
     let releases = 0;
     const host: HasIpcMessage = {
       ipc: {
-        message: (() => { const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>(); out.subscribe = (): () => void => {
+        message: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>();
+          out.subscribe = (): (() => void) => {
             return () => releases++;
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     const stop = onceIpcMessage(host, 'ping', () => {});
@@ -147,10 +171,14 @@ describe('onceIpcMessage', () => {
     let released = false;
     const host: HasIpcMessage = {
       ipc: {
-        message: (() => { const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>(); out.subscribe = (_channel, listener): () => void => {
+        message: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>();
+          out.subscribe = (_channel, listener): (() => void) => {
             listener([42]);
             return () => (released = true);
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     const seen: (readonly unknown[])[] = [];

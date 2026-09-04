@@ -29,10 +29,17 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function constraint(kind: string): Skeleton2DConstraint {
-    const out = allocateEntity<Skeleton2DConstraint>();
+  const out = allocateEntity<Skeleton2DConstraint>();
   out.kind = kind;
   out.mix = 1;
-  return finishEntity(out) as Skeleton2DConstraint;;
+  return finishEntity(out) as Skeleton2DConstraint;
+}
+
+// The registry is a module GLOBAL, deliberately: last-write-wins is what lets a caller replace a built-in
+// solver, and skeleton2d has no state object to scope it to. So a test may not assert anything about a kind
+// it did not itself set — another file registering a built-in would decide the result. Every kind this file
+// touches is restored to whatever it was found holding.
+const TOUCHED = ['acme.First', 'acme.Present', 'acme.Rope', 'acme.RopeConstraint', 'acme.Second'];
 const PRIOR = new Map(TOUCHED.map((kind) => [kind, getSkeleton2DConstraintSolver(kind)]));
 
 afterEach(() => {
@@ -102,8 +109,10 @@ describe('solveSkeleton2DConstraints', () => {
       out.kind = 'acme.Rope';
       out.mix = 0.25;
       out.slack = 3;
-      return finishEntity(out) as Skeleton2DConstraint;;
+      return finishEntity(out) as Skeleton2DConstraint;
     })();
+
+    solveSkeleton2DConstraints(skeleton, [rope]);
     unregisterSkeleton2DConstraintSolver('acme.Rope');
 
     expect(seen).toBe(rope);

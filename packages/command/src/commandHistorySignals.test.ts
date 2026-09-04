@@ -20,7 +20,15 @@ describe('enableCommandHistorySignals', () => {
     let changes = 0;
     connectSignal(enableCommandHistorySignals(history), () => changes++);
 
-    executeCommand(history, (() => { const out = allocateEntity<unknown>(); out.kind = 'test.Counter'; out.label = 'One'; return finishEntity(out); })());
+    executeCommand(
+      history,
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'test.Counter';
+        out.label = 'One';
+        return finishEntity(out);
+      })(),
+    );
     expect(changes).toBe(1);
     undoCommand(history);
     expect(changes).toBe(2);
@@ -31,7 +39,15 @@ describe('enableCommandHistorySignals', () => {
     const history = createCommandHistory();
     let changes = 0;
     connectSignal(enableCommandHistorySignals(history), () => changes++);
-    executeCommand(history, (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Unbound'; out.label = 'Nope'; return finishEntity(out); })());
+    executeCommand(
+      history,
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Unbound';
+        out.label = 'Nope';
+        return finishEntity(out);
+      })(),
+    );
     expect(changes).toBe(0);
   });
 });

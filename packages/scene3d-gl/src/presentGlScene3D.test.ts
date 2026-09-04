@@ -24,17 +24,17 @@ function makeCamera(): Camera3D {
 }
 
 function makeTarget(): GlRenderTarget {
-    const out = allocateEntity<Camera3D>();
+  const out = allocateEntity<Camera3D>();
   out.requestedAxes = {
-      width: 256,
-      height: 256,
-      format: 'rgba16f',
-      colorAttachments: 1,
-      colorFormats: ['rgba16f'],
-      sampleCount: 1,
-      depth: 'depth-stencil',
-      colorSpace: 'linear',
-    };
+    width: 256,
+    height: 256,
+    format: 'rgba16f',
+    colorAttachments: 1,
+    colorFormats: ['rgba16f'],
+    sampleCount: 1,
+    depth: 'depth-stencil',
+    colorSpace: 'linear',
+  };
   out.width = 256;
   out.height = 256;
   out.format = 'rgba16f';

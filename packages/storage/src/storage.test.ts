@@ -68,7 +68,7 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   const getFailures = new Map<string, StorageGetItemFailureReason>();
   const removeFailures = new Map<string, StorageRemoveItemFailureReason>();
   const setFailures = new Map<string, StorageSetItemFailureReason>();
-    const out = allocateEntity<unknown>();
+  const out = allocateEntity<unknown>();
   out.clearFailure = null;
   out.data = data;
   out.getCalls = 0;
@@ -77,33 +77,33 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   out.removeFailures = removeFailures;
   out.setFailures = setFailures;
   out.clear = () => {
-      if (this.clearFailure !== null) return { reason: this.clearFailure };
-      for (const key of Object.keys(data)) delete data[key];
-      return { reason: 'ok' };
-    };
+    if (this.clearFailure !== null) return { reason: this.clearFailure };
+    for (const key of Object.keys(data)) delete data[key];
+    return { reason: 'ok' };
+  };
   out.getItem = (key) => {
-      this.getCalls++;
-      const failure = getFailures.get(key);
-      if (failure !== undefined) return { reason: failure, value: null };
-      return { reason: 'ok', value: Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null };
-    };
+    this.getCalls++;
+    const failure = getFailures.get(key);
+    if (failure !== undefined) return { reason: failure, value: null };
+    return { reason: 'ok', value: Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null };
+  };
   out.keys = () => {
-      return this.keysFailure === null
-        ? { reason: 'ok', value: Object.keys(data) }
-        : { reason: this.keysFailure, value: null };
-    };
+    return this.keysFailure === null
+      ? { reason: 'ok', value: Object.keys(data) }
+      : { reason: this.keysFailure, value: null };
+  };
   out.removeItem = (key) => {
-      const failure = removeFailures.get(key);
-      if (failure !== undefined) return { reason: failure };
-      delete data[key];
-      return { reason: 'ok' };
-    };
+    const failure = removeFailures.get(key);
+    if (failure !== undefined) return { reason: failure };
+    delete data[key];
+    return { reason: 'ok' };
+  };
   out.setItem = (key, value) => {
-      const failure = setFailures.get(key);
-      if (failure !== undefined) return { reason: failure };
-      data[key] = value;
-      return { reason: 'ok' };
-    };
+    const failure = setFailures.get(key);
+    if (failure !== undefined) return { reason: failure };
+    data[key] = value;
+    return { reason: 'ok' };
+  };
   return finishEntity(out);
 }
 

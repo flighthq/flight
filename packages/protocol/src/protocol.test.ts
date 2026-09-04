@@ -29,15 +29,42 @@ function createFixture() {
   const unsubscribe = vi.fn();
   const host = {
     protocol: {
-      default: (() => { const out = allocateEntity<unknown>(); out.isDefault = (scheme: string) => scheme === 'flight'; out.removeAsDefault = (scheme: string) => (calls.push(`removeDefault:${scheme}`), true); out.setAsDefault = (scheme: string) => (calls.push(`default:${scheme}`), true); return finishEntity(out); })(),
-      launch: (() => { const out = allocateEntity<unknown>(); out.getLaunchUrl = () => 'flight://cold-start'; return finishEntity(out); })(),
-      open: (() => { const out = allocateEntity<unknown>(); out.subscribe = (listener: (url: string) => void) => {
+      default: (() => {
+        const out = allocateEntity<unknown>();
+        out.isDefault = (scheme: string) => scheme === 'flight';
+        out.removeAsDefault = (scheme: string) => (calls.push(`removeDefault:${scheme}`), true);
+        out.setAsDefault = (scheme: string) => (calls.push(`default:${scheme}`), true);
+        return finishEntity(out);
+      })(),
+      launch: (() => {
+        const out = allocateEntity<unknown>();
+        out.getLaunchUrl = () => 'flight://cold-start';
+        return finishEntity(out);
+      })(),
+      open: (() => {
+        const out = allocateEntity<unknown>();
+        out.subscribe = (listener: (url: string) => void) => {
           open = listener;
           return unsubscribe;
-        }; return finishEntity(out); })(),
-      registration: (() => { const out = allocateEntity<unknown>(); out.getRegisteredSchemes = () => ['flight']; out.register = (scheme: string) => (calls.push(`register:${scheme}`), scheme !== 'fail'); return finishEntity(out); })(),
-      registrationQuery: (() => { const out = allocateEntity<unknown>(); out.isRegistered = (scheme: string) => scheme === 'flight'; return finishEntity(out); })(),
-      unregistration: (() => { const out = allocateEntity<unknown>(); out.unregister = (scheme: string) => (calls.push(`unregister:${scheme}`), scheme !== 'fail'); return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
+      registration: (() => {
+        const out = allocateEntity<unknown>();
+        out.getRegisteredSchemes = () => ['flight'];
+        out.register = (scheme: string) => (calls.push(`register:${scheme}`), scheme !== 'fail');
+        return finishEntity(out);
+      })(),
+      registrationQuery: (() => {
+        const out = allocateEntity<unknown>();
+        out.isRegistered = (scheme: string) => scheme === 'flight';
+        return finishEntity(out);
+      })(),
+      unregistration: (() => {
+        const out = allocateEntity<unknown>();
+        out.unregister = (scheme: string) => (calls.push(`unregister:${scheme}`), scheme !== 'fail');
+        return finishEntity(out);
+      })(),
     },
   };
   return { calls, emitOpen: (url: string) => open?.(url), host, unsubscribe };

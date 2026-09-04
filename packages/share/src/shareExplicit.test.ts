@@ -7,12 +7,12 @@ function createRecordingHost(label: string, calls: string[]): HasShareContent {
   const content = allocateEntity<HasShareContent>();
   content.canShareContent = () => true;
   content.shareContent = async (payload) => {
-      calls.push(`${label}:${payload.text ?? ''}`);
-      return true;
-    };
+    calls.push(`${label}:${payload.text ?? ''}`);
+    return true;
+  };
   content.shareContentWithResult = async () => {
-      return { activityType: null, completed: true, dismissed: false };
-    };
+    return { activityType: null, completed: true, dismissed: false };
+  };
   return { share: { content } };
 }
 

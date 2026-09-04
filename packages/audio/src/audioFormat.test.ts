@@ -12,7 +12,11 @@ import {
 function hostWith(canPlay: (type: string) => boolean): HasMediaAudioCodec {
   return {
     media: {
-      audioCodec: (() => { const out = allocateEntity<Omit<AudioBackend, keyof Entity>>(); out.canPlayType = canPlay; return finishEntity(out); })(),
+      audioCodec: (() => {
+        const out = allocateEntity<Omit<AudioBackend, keyof Entity>>();
+        out.canPlayType = canPlay;
+        return finishEntity(out);
+      })(),
     },
   } as HasMediaAudioCodec;
 }

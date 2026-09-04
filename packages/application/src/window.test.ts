@@ -157,156 +157,156 @@ function recordingWindowBackend(): RecordingWindowBackend {
   const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
   const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
-    const out = allocateEntity<EntityWithoutRuntime<RecordingWindowBackend>>();
+  const out = allocateEntity<EntityWithoutRuntime<RecordingWindowBackend>>();
   out.calls = calls;
   out.emitCloseRequest = () => {
-      let cancelled = false;
-      for (const subscription of closeSubscriptions) {
-        if (subscription.onCloseRequest()) cancelled = true;
-      }
-      return cancelled;
-    };
+    let cancelled = false;
+    for (const subscription of closeSubscriptions) {
+      if (subscription.onCloseRequest()) cancelled = true;
+    }
+    return cancelled;
+  };
   out.emitClosed = () => {
-      for (const subscription of closeSubscriptions) subscription.onClose();
-    };
+    for (const subscription of closeSubscriptions) subscription.onClose();
+  };
   out.emitMove = (x, y) => {
-      for (const listener of moveListeners) listener(x, y);
-    };
+    for (const listener of moveListeners) listener(x, y);
+  };
   out.emitOrientation = () => {
-      for (const listener of orientationListeners) listener();
-    };
+    for (const listener of orientationListeners) listener();
+  };
   out.emitResize = (width, height, devicePixelRatio) => {
-      for (const listener of resizeListeners) listener(width, height, devicePixelRatio);
-    };
+    for (const listener of resizeListeners) listener(width, height, devicePixelRatio);
+  };
   out.emitVisibility = (visible) => {
-      for (const listener of visibilityListeners) listener(visible);
-    };
+    for (const listener of visibilityListeners) listener(visible);
+  };
   out.attach = (_win, _handle, ownership) => {
-      calls.push(`attach:${ownership}`);
-      return true;
-    };
+    calls.push(`attach:${ownership}`);
+    return true;
+  };
   out.open = (_win, options) => {
-      calls.push(`open:${options.title ?? ''}`);
-      return true;
-    };
+    calls.push(`open:${options.title ?? ''}`);
+    return true;
+  };
   out.close = () => {
-      calls.push('close');
-    };
+    calls.push('close');
+  };
   out.setTitle = (_win, title) => {
-      calls.push(`setTitle:${title}`);
-    };
+    calls.push(`setTitle:${title}`);
+  };
   out.setPosition = (_win, x, y) => {
-      calls.push(`setPosition:${x},${y}`);
-    };
+    calls.push(`setPosition:${x},${y}`);
+  };
   out.setSize = (_win, width, height) => {
-      calls.push(`setSize:${width},${height}`);
-    };
+    calls.push(`setSize:${width},${height}`);
+  };
   out.getBounds = (_win, out) => {
-      calls.push('getBounds');
-      out.x = 1;
-      out.y = 2;
-      out.width = 3;
-      out.height = 4;
-      return out;
-    };
+    calls.push('getBounds');
+    out.x = 1;
+    out.y = 2;
+    out.width = 3;
+    out.height = 4;
+    return out;
+  };
   out.minimize = () => {
-      calls.push('minimize');
-    };
+    calls.push('minimize');
+  };
   out.maximize = () => {
-      calls.push('maximize');
-    };
+    calls.push('maximize');
+  };
   out.restore = () => {
-      calls.push('restore');
-    };
+    calls.push('restore');
+  };
   out.focus = () => {
-      calls.push('focus');
-    };
+    calls.push('focus');
+  };
   out.show = () => {
-      calls.push('show');
-    };
+    calls.push('show');
+  };
   out.hide = () => {
-      calls.push('hide');
-    };
+    calls.push('hide');
+  };
   out.center = () => {
-      calls.push('center');
-    };
+    calls.push('center');
+  };
   out.setResizable = (_win, resizable) => {
-      calls.push(`setResizable:${resizable}`);
-    };
+    calls.push(`setResizable:${resizable}`);
+  };
   out.setAlwaysOnTop = (_win, alwaysOnTop) => {
-      calls.push(`setAlwaysOnTop:${alwaysOnTop}`);
-    };
+    calls.push(`setAlwaysOnTop:${alwaysOnTop}`);
+  };
   out.setMinimumSize = (_win, width, height) => {
-      calls.push(`setMinimumSize:${width},${height}`);
-    };
+    calls.push(`setMinimumSize:${width},${height}`);
+  };
   out.setMaximumSize = (_win, width, height) => {
-      calls.push(`setMaximumSize:${width},${height}`);
-    };
+    calls.push(`setMaximumSize:${width},${height}`);
+  };
   out.setFullscreen = (_win, fullscreen) => {
-      calls.push(`setFullscreen:${fullscreen}`);
-    };
+    calls.push(`setFullscreen:${fullscreen}`);
+  };
   out.setIcon = (_win, icon) => {
-      calls.push(`setIcon:${icon}`);
-    };
+    calls.push(`setIcon:${icon}`);
+  };
   out.setOpacity = (_win, opacity) => {
-      calls.push(`setOpacity:${opacity}`);
-    };
+    calls.push(`setOpacity:${opacity}`);
+  };
   out.setSkipTaskbar = (_win, skip) => {
-      calls.push(`setSkipTaskbar:${skip}`);
-    };
+    calls.push(`setSkipTaskbar:${skip}`);
+  };
   out.setMenuBarVisible = (_win, visible) => {
-      calls.push(`setMenuBarVisible:${visible}`);
-    };
+    calls.push(`setMenuBarVisible:${visible}`);
+  };
   out.setParent = (_win, parent) => {
-      calls.push(`setParent:${parent === null ? 'null' : 'win'}`);
-    };
+    calls.push(`setParent:${parent === null ? 'null' : 'win'}`);
+  };
   out.setProgress = (_win, progress) => {
-      calls.push(`setProgress:${progress}`);
-    };
+    calls.push(`setProgress:${progress}`);
+  };
   out.requestAttention = (_win, attention) => {
-      calls.push(`requestAttention:${attention}`);
-    };
+    calls.push(`requestAttention:${attention}`);
+  };
   out.setContentProtection = (_win, enabled) => {
-      calls.push(`setContentProtection:${enabled}`);
-    };
+    calls.push(`setContentProtection:${enabled}`);
+  };
   out.flashWindowFrame = () => {
-      calls.push('flashWindowFrame');
-    };
+    calls.push('flashWindowFrame');
+  };
   out.setHasShadow = (_win, hasShadow) => {
-      calls.push(`setHasShadow:${hasShadow}`);
-    };
+    calls.push(`setHasShadow:${hasShadow}`);
+  };
   out.subscribeClose = (onCloseRequest, onClose) => {
-      const subscription = { onClose, onCloseRequest };
-      closeSubscriptions.add(subscription);
-      return () => closeSubscriptions.delete(subscription);
-    };
+    const subscription = { onClose, onCloseRequest };
+    closeSubscriptions.add(subscription);
+    return () => closeSubscriptions.delete(subscription);
+  };
   out.subscribeMove = (listener) => {
-      moveListeners.add(listener);
-      return () => moveListeners.delete(listener);
-    };
+    moveListeners.add(listener);
+    return () => moveListeners.delete(listener);
+  };
   out.subscribeOrientation = (listener) => {
-      orientationListeners.add(listener);
-      return () => orientationListeners.delete(listener);
-    };
+    orientationListeners.add(listener);
+    return () => orientationListeners.delete(listener);
+  };
   out.subscribeResize = (_target, listener) => {
-      resizeListeners.add(listener);
-      return () => resizeListeners.delete(listener);
-    };
+    resizeListeners.add(listener);
+    return () => resizeListeners.delete(listener);
+  };
   out.subscribeVisibility = (listener) => {
-      visibilityListeners.add(listener);
-      return () => visibilityListeners.delete(listener);
-    };
+    visibilityListeners.add(listener);
+    return () => visibilityListeners.delete(listener);
+  };
   return finishEntity(out);
 }
 
 function createInputTarget(): InputTargetHandle {
-    const out = allocateEntity<RenderState>();
+  const out = allocateEntity<RenderState>();
   out.__brand = 'InputTargetHandle' as const;
   return finishEntity(out);
 }
 
 function createWindowResizeTarget(): WindowResizeTargetHandle {
-    const out = allocateEntity<RenderState>();
+  const out = allocateEntity<RenderState>();
   out.__brand = 'WindowResizeTargetHandle' as const;
   return finishEntity(out);
 }
@@ -341,19 +341,19 @@ function recordingFullscreenBackend(): RecordingFullscreenBackend {
 function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
   let listener: ((path: string) => void) | null = null;
   const calls: string[] = [];
-    const out = allocateEntity<EntityWithoutRuntime<RecordingInputDropFileBackend>>();
+  const out = allocateEntity<EntityWithoutRuntime<RecordingInputDropFileBackend>>();
   out.calls = calls;
   out.emit = (path: string) => {
-      listener?.(path);
-    };
+    listener?.(path);
+  };
   out.subscribe = (_target: InputTargetHandle, next: (path: string) => void) => {
-      calls.push('subscribe');
-      listener = next;
-      return () => {
-        calls.push('release');
-        if (listener === next) listener = null;
-      };
+    calls.push('subscribe');
+    listener = next;
+    return () => {
+      calls.push('release');
+      if (listener === next) listener = null;
     };
+  };
   return finishEntity(out);
 }
 
@@ -361,39 +361,39 @@ function recordingInputFocusBackend(): RecordingInputFocusBackend {
   let onBlur: (() => void) | null = null;
   let onFocus: (() => void) | null = null;
   const calls: string[] = [];
-    const out = allocateEntity<EntityWithoutRuntime<RecordingInputFocusBackend>>();
+  const out = allocateEntity<EntityWithoutRuntime<RecordingInputFocusBackend>>();
   out.calls = calls;
   out.emitBlur = () => {
-      onBlur?.();
-    };
+    onBlur?.();
+  };
   out.emitFocus = () => {
-      onFocus?.();
-    };
+    onFocus?.();
+  };
   out.subscribe = (_target: InputTargetHandle, nextFocus: () => void, nextBlur: () => void) => {
-      calls.push('subscribe');
-      onFocus = nextFocus;
-      onBlur = nextBlur;
-      return () => {
-        calls.push('release');
-        if (onFocus === nextFocus) onFocus = null;
-        if (onBlur === nextBlur) onBlur = null;
-      };
+    calls.push('subscribe');
+    onFocus = nextFocus;
+    onBlur = nextBlur;
+    return () => {
+      calls.push('release');
+      if (onFocus === nextFocus) onFocus = null;
+      if (onBlur === nextBlur) onBlur = null;
     };
+  };
   return finishEntity(out);
 }
 
 function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
   const calls: string[] = [];
-    const out = allocateEntity<EntityWithoutRuntime<RecordingInputPointerLockBackend>>();
+  const out = allocateEntity<EntityWithoutRuntime<RecordingInputPointerLockBackend>>();
   out.calls = calls;
   out.exit = async () => {
-      calls.push('exit');
-      return { reason: 'ok' };
-    };
+    calls.push('exit');
+    return { reason: 'ok' };
+  };
   out.request = async (_target: InputTargetHandle) => {
-      calls.push('request');
-      return { reason: 'ok' };
-    };
+    calls.push('request');
+    return { reason: 'ok' };
+  };
   return finishEntity(out);
 }
 
@@ -401,34 +401,34 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
   let onLost: (() => void) | null = null;
   let onRestored: (() => void) | null = null;
   const calls: string[] = [];
-    const out = allocateEntity<EntityWithoutRuntime<RecordingRenderContextBackend>>();
+  const out = allocateEntity<EntityWithoutRuntime<RecordingRenderContextBackend>>();
   out.calls = calls;
   out.emitLost = () => {
-      onLost?.();
-    };
+    onLost?.();
+  };
   out.emitRestored = () => {
-      onRestored?.();
-    };
+    onRestored?.();
+  };
   out.subscribe = (_target: InputTargetHandle, nextLost: () => void, nextRestored: () => void) => {
-      calls.push('subscribe');
-      onLost = nextLost;
-      onRestored = nextRestored;
-      return () => {
-        calls.push('release');
-        if (onLost === nextLost) onLost = null;
-        if (onRestored === nextRestored) onRestored = null;
-      };
+    calls.push('subscribe');
+    onLost = nextLost;
+    onRestored = nextRestored;
+    return () => {
+      calls.push('release');
+      if (onLost === nextLost) onLost = null;
+      if (onRestored === nextRestored) onRestored = null;
     };
+  };
   return finishEntity(out);
 }
 
 function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   const calls: string[] = [];
-    const out = allocateEntity<EntityWithoutRuntime<RecordingRenderSurfaceBackend>>();
+  const out = allocateEntity<EntityWithoutRuntime<RecordingRenderSurfaceBackend>>();
   out.calls = calls;
   out.resize = (_target: InputTargetHandle, width: number, height: number) => {
-      calls.push(`resize:${width},${height}`);
-    };
+    calls.push(`resize:${width},${height}`);
+  };
   return finishEntity(out);
 }
 

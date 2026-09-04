@@ -24,7 +24,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function region(overrides: Partial<RegionAttachment2D> = {}): RegionAttachment2D {
-    const out = allocateEntity<unknown>();
+  const out = allocateEntity<unknown>();
   out.kind = RegionAttachment2DKind;
   out.height = 2;
   out.rotation = 0;
@@ -34,7 +34,16 @@ function region(overrides: Partial<RegionAttachment2D> = {}): RegionAttachment2D
   out.x = 0;
   out.y = 0;
   Object.assign(out, overrides);
-  return finishEntity(out) as RegionAttachment2D;;
+  return finishEntity(out) as RegionAttachment2D;
+}
+
+describe('computeSkeleton2DRegionAttachmentVertices', () => {
+  // The sibling of the guard in skinSkeleton2DAttachmentPoints, and the reason this one exists: a slot
+  // whose bone name did not resolve carries boneIndex -1, which spineParse emits by design, and this
+  // wrote eight NaN corners for it while the point attachment next door returned cleanly. `out` is
+  // pre-filled with a marker so "left alone" is distinguishable from "written with zeroes".
+  it.each([-1, 3, 99])('leaves out untouched for a slot bound to no bone (boneIndex %i)', (boneIndex) => {
+    const s = createSkeleton2D([makeBone({ x: 10, y: 5 })]);
     computeSkeleton2DWorldTransforms(s);
     const out = new Float32Array(8).fill(-7);
 

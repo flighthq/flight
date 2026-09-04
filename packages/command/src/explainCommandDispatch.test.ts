@@ -9,7 +9,17 @@ import { explainCommandDispatch } from './explainCommandDispatch';
 describe('explainCommandDispatch', () => {
   it('names the unregistered kind behind a refusal', () => {
     const history = createCommandHistory();
-    expect(explainCommandDispatch(history, (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Unbound'; out.label = 'Nope'; return finishEntity(out); })())).toEqual({
+    expect(
+      explainCommandDispatch(
+        history,
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'acme.Unbound';
+          out.label = 'Nope';
+          return finishEntity(out);
+        })(),
+      ),
+    ).toEqual({
       missingKind: 'acme.Unbound',
       resolved: false,
     });
@@ -18,7 +28,17 @@ describe('explainCommandDispatch', () => {
   it('resolves when the kind is registered', () => {
     const history = createCommandHistory();
     registerCommandBinding(history, 'acme.Bound', { execute: () => undefined, undo: () => undefined });
-    expect(explainCommandDispatch(history, (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Bound'; out.label = 'Yes'; return finishEntity(out); })())).toEqual({
+    expect(
+      explainCommandDispatch(
+        history,
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'acme.Bound';
+          out.label = 'Yes';
+          return finishEntity(out);
+        })(),
+      ),
+    ).toEqual({
       missingKind: null,
       resolved: true,
     });
@@ -29,7 +49,14 @@ describe('explainCommandDispatch', () => {
   it('descends into a composite and names an unbound child kind', () => {
     const history = createCommandHistory();
     registerCommandBinding(history, 'CompositeCommand', { execute: () => undefined, undo: () => undefined });
-    const composite = createCompositeCommand('Group', [(() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Unbound'; out.label = 'Child'; return finishEntity(out); })()]);
+    const composite = createCompositeCommand('Group', [
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Unbound';
+        out.label = 'Child';
+        return finishEntity(out);
+      })(),
+    ]);
     expect(explainCommandDispatch(history, composite).missingKind).toBe('acme.Unbound');
   });
 
@@ -37,7 +64,14 @@ describe('explainCommandDispatch', () => {
     const history = createCommandHistory();
     registerCommandBinding(history, 'CompositeCommand', { execute: () => undefined, undo: () => undefined });
     registerCommandBinding(history, 'acme.Bound', { execute: () => undefined, undo: () => undefined });
-    const composite = createCompositeCommand('Group', [(() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Bound'; out.label = 'Child'; return finishEntity(out); })()]);
+    const composite = createCompositeCommand('Group', [
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Bound';
+        out.label = 'Child';
+        return finishEntity(out);
+      })(),
+    ]);
     expect(explainCommandDispatch(history, composite).resolved).toBe(true);
   });
 });

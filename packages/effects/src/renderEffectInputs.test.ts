@@ -34,7 +34,15 @@ describe('getRenderEffectInputs', () => {
   });
 
   it('returns empty array for unknown kind', () => {
-    expect(getRenderEffectInputs((() => { const out = allocateEntity<unknown>(); out.kind = 'acme.UnknownEffect'; return finishEntity(out) as never)).toEqual([]);; })()
+    expect(
+      getRenderEffectInputs(
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'acme.UnknownEffect';
+          return finishEntity(out) as never;
+        })(),
+      ),
+    ).toEqual([]);
   });
 });
 

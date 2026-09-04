@@ -14,10 +14,26 @@ describe('app explicit Host ownership', () => {
     const setBadgeCount = vi.fn(() => true);
     const host = {
       app: {
-        badge: (() => { const out = allocateEntity<unknown>(); out.setBadgeCount = setBadgeCount; return finishEntity(out); })(),
-        focus: (() => { const out = allocateEntity<unknown>(); out.focus = focus; return finishEntity(out); })(),
-        name: (() => { const out = allocateEntity<unknown>(); out.getName = getName; return finishEntity(out); })(),
-        quit: (() => { const out = allocateEntity<unknown>(); out.quit = quit; return finishEntity(out); })(),
+        badge: (() => {
+          const out = allocateEntity<unknown>();
+          out.setBadgeCount = setBadgeCount;
+          return finishEntity(out);
+        })(),
+        focus: (() => {
+          const out = allocateEntity<unknown>();
+          out.focus = focus;
+          return finishEntity(out);
+        })(),
+        name: (() => {
+          const out = allocateEntity<unknown>();
+          out.getName = getName;
+          return finishEntity(out);
+        })(),
+        quit: (() => {
+          const out = allocateEntity<unknown>();
+          out.quit = quit;
+          return finishEntity(out);
+        })(),
       },
     };
 
@@ -49,7 +65,11 @@ describe('app explicit Host ownership', () => {
         allWindowsClosed: inert,
         openFile: inert,
         quitRequest: inert,
-        ready: (() => { const out = allocateEntity<unknown>(); out.subscribe = subscribe; return finishEntity(out); })(),
+        ready: (() => {
+          const out = allocateEntity<unknown>();
+          out.subscribe = subscribe;
+          return finishEntity(out);
+        })(),
         secondInstance: inert,
       },
     };

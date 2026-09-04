@@ -27,13 +27,18 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function clip(endSlotIndex: number, vertices: Float32Array | null = null): ClippingAttachment2D {
-    const out = allocateEntity<ClippingAttachment2D>();
+  const out = allocateEntity<ClippingAttachment2D>();
   out.endSlotIndex = endSlotIndex;
   out.kind = ClippingAttachment2DKind;
   out.pointCount = vertices === null ? 0 : vertices.length / 2;
   out.skin = null;
   out.vertices = vertices;
-  return finishEntity(out) as ClippingAttachment2D;;
+  return finishEntity(out) as ClippingAttachment2D;
+}
+
+describe('computeSkeleton2DClippingAttachmentVertices', () => {
+  it('carries the polygon through the slot bone world transform', () => {
+    const skeleton = createSkeleton2D([makeBone({ x: 4 })]);
     computeSkeleton2DWorldTransforms(skeleton);
     const out = new Float32Array(4);
 

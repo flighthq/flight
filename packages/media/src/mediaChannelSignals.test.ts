@@ -27,7 +27,7 @@ function mockBuffer(): AudioBuffer {
 }
 
 function mockBackend(): AudioDeviceBackend {
-    const out = allocateEntity<AudioBuffer>();
+  const out = allocateEntity<AudioBuffer>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
   out.createSource = vi.fn(() => nextHandle++ as unknown as AudioSourceHandle);
@@ -36,8 +36,8 @@ function mockBackend(): AudioDeviceBackend {
   out.destroySource = vi.fn();
   out.getDeviceTime = vi.fn(() => 0);
   out.onSourceEnded = vi.fn((source: AudioSourceHandle, cb: (() => void) | null) => {
-      onEnded.set(source as number, cb);
-    });
+    onEnded.set(source as number, cb);
+  });
   out.resumeDevice = vi.fn();
   out.setSourceGain = vi.fn();
   out.setSourcePan = vi.fn();

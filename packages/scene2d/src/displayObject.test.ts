@@ -183,7 +183,14 @@ describe('setNode2DClip', () => {
     const idBefore = getRuntime_(obj).appearanceId;
     setNode2DClip(
       obj,
-      (() => { const out = allocateEntity<Node2DRuntime>(); out.contours = null; out.rect = { x: 0, y: 0, width: 10, height: 10 } as Rectangle; out.winding = 'nonZero' as const; out.version = 0; return finishEntity(out); })(),
+      (() => {
+        const out = allocateEntity<Node2DRuntime>();
+        out.contours = null;
+        out.rect = { x: 0, y: 0, width: 10, height: 10 } as Rectangle;
+        out.winding = 'nonZero' as const;
+        out.version = 0;
+        return finishEntity(out);
+      })(),
     );
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
@@ -242,7 +249,7 @@ interface Node2DTestData extends Node2DData {
 }
 
 function createNode2DTestData(data?: Partial<Node2DTestData>): Node2DTestData {
-    const out = allocateEntity<Node2DRuntime>();
+  const out = allocateEntity<Node2DRuntime>();
   out.foo = data?.foo ?? 'bar';
   return finishEntity(out);
 }

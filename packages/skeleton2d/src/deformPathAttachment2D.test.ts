@@ -30,14 +30,19 @@ function emptyPath(): Path {
 }
 
 function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): PathAttachment2D {
-    const out = allocateEntity<Path>();
+  const out = allocateEntity<Path>();
   out.commands = commands;
   out.kind = PathAttachment2DKind;
   out.pointCount = pointCount;
   out.skin = skin;
   out.vertices = null;
   out.winding = 'evenOdd';
-  return finishEntity(out) as PathAttachment2D;;
+  return finishEntity(out) as PathAttachment2D;
+}
+
+describe('deformSkeleton2DPathAttachment', () => {
+  it('carries the verb stream and winding through untouched, since bones move points and not verbs', () => {
+    const skeleton = createSkeleton2D([makeBone()]);
     computeSkeleton2DWorldTransforms(skeleton);
     const attachment = weightedPath(createSkin2D(new Uint16Array([1]), new Float32Array([0, 3, 4, 1])), 1, [
       PathCommand.MOVE_TO,
@@ -152,8 +157,9 @@ function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): Pat
       out.skin = null;
       out.vertices = new Float32Array([2, 0, 0, 3]);
       out.winding = 'nonZero';
-      return finishEntity(out) as PathAttachment2D;;
+      return finishEntity(out) as PathAttachment2D;
     })();
+    const out = emptyPath();
 
     deformSkeleton2DPathAttachment(out, attachment, skeleton, 0, new Float32Array([0, 0, 0, 0]));
 
@@ -173,6 +179,7 @@ function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): Pat
     attachment.skin = null;
     attachment.vertices = null;
     attachment.winding = 'nonZero';
+    const out = emptyPath();
 
     expect(() => deformSkeleton2DPathAttachment(out, attachment, skeleton, 0)).not.toThrow();
     expect(out.data).toEqual([]);
