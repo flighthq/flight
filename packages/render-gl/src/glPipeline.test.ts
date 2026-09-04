@@ -40,7 +40,7 @@ describe('createGlPipeline', () => {
     expect(pipeline[EntityRuntimeKey]).toBeDefined();
   });
 
-  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without createEntity', () => {
+  it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without allocateEntity', () => {
     const registries = createEmptyGlRegistries();
     const literal = { registries } as unknown as GlPipeline;
     expect(EntityRuntimeKey in literal).toBe(false);

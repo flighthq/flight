@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { MidiAccess, MidiInputPort, MidiOutputPort } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -12,8 +12,8 @@ import {
 
 describe('getMidiAccessResourceState', () => {
   it('returns only state retained for the exact access identity', () => {
-    const retained = createEntity({}) as MidiAccess;
-    const other = createEntity({}) as MidiAccess;
+    const retained = finishEntity(allocateEntity<MidiAccess>()) as MidiAccess;
+    const other = finishEntity(allocateEntity<MidiAccess>()) as MidiAccess;
     retainMidiAccessResourceState(retained, accessOperations());
     expect(getMidiAccessResourceState(retained)?.disposed).toBe(false);
     expect(getMidiAccessResourceState(other)).toBeUndefined();
@@ -32,7 +32,7 @@ describe('getMidiPortResourceState', () => {
 
 describe('retainMidiAccessResourceState', () => {
   it('starts an empty live access ownership ledger', () => {
-    const access = createEntity({}) as MidiAccess;
+    const access = finishEntity(allocateEntity<MidiAccess>()) as MidiAccess;
     retainMidiAccessResourceState(access, accessOperations());
     expect(getMidiAccessResourceState(access)).toMatchObject({
       disposeCompleted: false,
@@ -98,9 +98,21 @@ function outputOperations() {
 }
 
 function inputPort(): MidiInputPort {
-  return createEntity({ id: 'same', manufacturer: null, name: null, type: 'input' as const, version: null });
+    const out = allocateEntity<MidiInputPort>();
+  out.id = 'same';
+  out.manufacturer = null;
+  out.name = null;
+  out.type = 'input' as const;
+  out.version = null;
+  return finishEntity(out);
 }
 
 function outputPort(): MidiOutputPort {
-  return createEntity({ id: 'same', manufacturer: null, name: null, type: 'output' as const, version: null });
+    const out = allocateEntity<MidiInputPort>();
+  out.id = 'same';
+  out.manufacturer = null;
+  out.name = null;
+  out.type = 'output' as const;
+  out.version = null;
+  return finishEntity(out);
 }

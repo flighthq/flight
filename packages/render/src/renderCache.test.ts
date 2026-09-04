@@ -29,7 +29,7 @@ describe('createRenderCacheAdapter', () => {
   it('returns an Entity, so the adapter can carry runtime state like every other SDK object', () => {
     // Pinned on the KEY rather than on a helper: an adapter built by a plain object literal satisfies
     // the RenderCacheAdapter type and every behavioural test below, and only the missing runtime slot
-    // tells it apart from one built through createEntity.
+    // tells it apart from one built through allocateEntity.
     const adapter = createRenderCacheAdapter();
     expect(EntityRuntimeKey in adapter).toBe(true);
     expect(adapter[EntityRuntimeKey]).toBeUndefined();

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -63,7 +63,7 @@ describe('destroyCanvasRenderState', () => {
     const root = createDisplayObject();
     const destroyData = vi.fn();
     registerRenderer(state, root.kind, {
-      createData: () => createEntity({}),
+      createData: () => finishEntity(allocateEntity()),
       destroyData,
       submit: vi.fn(),
     });
