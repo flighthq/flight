@@ -1,4 +1,9 @@
-import { attachEntityBinding, createEntity, getEntityBinding } from '@flighthq/entity/contract';
+import {
+  allocateEntity,
+  attachEntityBinding,
+  finishEntity,
+  getEntityBinding,
+} from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { HasScreenQuery, ScreenChangeEvent, ScreenInfo, ScreenPermissionState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -535,12 +540,10 @@ function createPermissionChangeHarness() {
   const unsubscribe = vi.fn();
   const host = {
     screen: {
-      permissionChange: createEntity({
-        subscribe(next: (state: ScreenPermissionState) => void): () => void {
+      permissionChange: (() => { const out = allocateEntity<unknown>(); out.subscribe = (next: (state: ScreenPermissionState) => void): () => void => {
           listener = next;
           return unsubscribe;
-        },
-      }),
+        }; return finishEntity(out); })(),
     },
   };
   return { host, emit: (state: ScreenPermissionState) => listener?.(state), unsubscribe };
@@ -551,12 +554,10 @@ function createScreenChangeHarness() {
   const unsubscribe = vi.fn();
   const host = {
     screen: {
-      change: createEntity({
-        subscribe(next: (event: Readonly<ScreenChangeEvent>) => void): () => void {
+      change: (() => { const out = allocateEntity<unknown>(); out.subscribe = (next: (event: Readonly<ScreenChangeEvent>) => void): () => void => {
           listener = next;
           return unsubscribe;
-        },
-      }),
+        }; return finishEntity(out); })(),
     },
   };
   return { host, emit: (event: Readonly<ScreenChangeEvent>) => listener?.(event), unsubscribe };
@@ -565,10 +566,7 @@ function createScreenChangeHarness() {
 function createScreenDetailsHost(permission: ScreenPermissionState, requestResult: boolean) {
   return {
     screen: {
-      details: createEntity({
-        queryPermission: vi.fn(async () => permission),
-        request: vi.fn(async () => requestResult),
-      }),
+      details: (() => { const out = allocateEntity<unknown>(); out.queryPermission = vi.fn(async () => permission); out.request = vi.fn(async () => requestResult); return finishEntity(out); })(),
     },
   };
 }
@@ -579,23 +577,19 @@ function createScreenQueryHost(
 ): HasScreenQuery {
   return {
     screen: {
-      query: createEntity({
-        getCursorPosition: vi.fn((out: { x: number; y: number }) => {
+      query: (() => { const out = allocateEntity<unknown>(); out.getCursorPosition = vi.fn((out: { x: number; y: number }) => {
           out.x = cursor.x;
           out.y = cursor.y;
           return out;
-        }),
-        getPrimaryScreen: vi.fn((out: ScreenInfo) => {
+        }); out.getPrimaryScreen = vi.fn((out: ScreenInfo) => {
           const primary = screens.find((screen) => screen.isPrimary) ?? screens[0];
           if (primary !== undefined) Object.assign(out, primary);
           return out;
-        }),
-        getScreens: vi.fn((out: ScreenInfo[]) => {
+        }); out.getScreens = vi.fn((out: ScreenInfo[]) => {
           out.length = 0;
           out.push(...screens);
           return out;
-        }),
-      }),
+        }); return finishEntity(out); })(),
     },
   };
 }

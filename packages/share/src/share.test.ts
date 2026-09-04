@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
@@ -32,12 +32,7 @@ type FilesImplementation = Omit<ShareFilesBackend, typeof EntityRuntimeKey>;
 function contentHost(overrides: Partial<ContentImplementation> = {}): HasShareContent {
   return {
     share: {
-      content: createEntity({
-        canShareContent: () => true,
-        shareContent: async () => true,
-        shareContentWithResult: async () => ({ activityType: null, completed: true, dismissed: false }),
-        ...overrides,
-      } satisfies ContentImplementation),
+      content: (() => { const out = allocateEntity<ContentImplementation>(); out.canShareContent = () => true; out.shareContent = async () => true; out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false }); Object.assign(out, overrides); return finishEntity(out); })(),
     },
   };
 }
@@ -45,12 +40,7 @@ function contentHost(overrides: Partial<ContentImplementation> = {}): HasShareCo
 function filesHost(overrides: Partial<FilesImplementation> = {}): HasShareFiles {
   return {
     share: {
-      files: createEntity({
-        canShareContent: () => true,
-        shareContent: async () => true,
-        shareContentWithResult: async () => ({ activityType: null, completed: true, dismissed: false }),
-        ...overrides,
-      } satisfies FilesImplementation),
+      files: (() => { const out = allocateEntity<FilesImplementation>(); out.canShareContent = () => true; out.shareContent = async () => true; out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false }); Object.assign(out, overrides); return finishEntity(out); })(),
     },
   };
 }

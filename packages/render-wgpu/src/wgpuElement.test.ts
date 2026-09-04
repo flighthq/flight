@@ -7,7 +7,7 @@ import {
 } from './wgpuElement';
 
 function entityProvider(fields: Omit<WgpuRenderSurfaceProvider, keyof Entity>): WgpuRenderSurfaceProvider {
-  return createEntity(fields);
+  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
 }
 
 describe('createWgpuCanvasElement', () => {
@@ -137,5 +137,5 @@ function withThrowingDocument(run: () => void): void {
     else Object.defineProperty(globalThis, 'document', descriptor);
   }
 }
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, WgpuRenderSurfaceProvider } from '@flighthq/types/contract';

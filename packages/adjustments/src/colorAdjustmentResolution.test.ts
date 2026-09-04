@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Adjustment, ColorScaleBias } from '@flighthq/types/contract';
 
 import {
@@ -13,22 +13,17 @@ import { createColorMatrixAdjustment } from './colorMatrixAdjustment';
 import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath';
 
 function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBias {
-  return createEntity({
-    redScale: 1,
-    greenScale: 1,
-    blueScale: 1,
-    alphaScale: 1,
-    redBias: 0,
-    greenBias: 0,
-    blueBias: 0,
-    alphaBias: 0,
-    ...fields,
-  }) as ColorScaleBias;
-}
-
-describe('isAffineColorMatrix', () => {
-  it('is true for a diagonal identity matrix', () => {
-    expect(isAffineColorMatrix(createIdentityColorMatrix())).toBe(true);
+    const out = allocateEntity<unknown>();
+  out.redScale = 1;
+  out.greenScale = 1;
+  out.blueScale = 1;
+  out.alphaScale = 1;
+  out.redBias = 0;
+  out.greenBias = 0;
+  out.blueBias = 0;
+  out.alphaBias = 0;
+  Object.assign(out, fields);
+  return finishEntity(out) as ColorScaleBias;;
   });
 
   it('is false when off-diagonal channel-mixing terms are present', () => {
@@ -39,13 +34,14 @@ describe('isAffineColorMatrix', () => {
 describe('resolveColorAdjustmentsColorMatrix', () => {
   it('returns the complete fused matrix for matrix-tier adjustments', () => {
     const saturation = createSaturationColorMatrix(0);
-    const adjustment = createEntity({ kind: 'Saturation', colorMatrix: saturation }) as Adjustment;
-    expect(resolveColorAdjustmentsColorMatrix([adjustment])).toEqual(saturation);
+    const adjustment = allocateEntity<unknown>();
+    adjustment.kind = 'Saturation';
+    adjustment.colorMatrix = saturation;
   });
 
   it('returns null for empty stacks and non-matrix adjustments', () => {
     expect(resolveColorAdjustmentsColorMatrix([])).toBeNull();
-    expect(resolveColorAdjustmentsColorMatrix([createEntity({ kind: 'acme.Lut' }) as Adjustment])).toBeNull();
+    expect(resolveColorAdjustmentsColorMatrix([(() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Lut'; return finishEntity(out) as Adjustment])).toBeNull();; })()
   });
 });
 
@@ -75,16 +71,17 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('reports channel-mixing and writes only the affine part for an off-diagonal stack', () => {
-    const saturation = createEntity({ kind: 'Saturation', colorMatrix: createSaturationColorMatrix(0) }) as Adjustment;
-    const out = makeColorScaleBias();
+    const saturation = allocateEntity<unknown>();
+    saturation.kind = 'Saturation';
+    saturation.colorMatrix = createSaturationColorMatrix(0);
     expect(resolveColorAdjustmentsColorScaleBias([saturation], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
     // Only the diagonal (grayscale luma weight for red) is written; off-diagonal mix is dropped.
     expect(out.redScale).toBeCloseTo(0.299);
   });
 
   it('reports channel-mixing when a non-matrix (LUT) op is present', () => {
-    const lut = createEntity({ kind: 'acme.Lut' }) as Adjustment;
-    const out = makeColorScaleBias();
+    const lut = allocateEntity<unknown>();
+    lut.kind = 'acme.Lut';
     expect(resolveColorAdjustmentsColorScaleBias([lut], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
   });
 });

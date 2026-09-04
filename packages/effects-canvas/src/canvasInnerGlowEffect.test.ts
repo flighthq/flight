@@ -1,5 +1,5 @@
 import { createInnerGlowEffect } from '@flighthq/effects/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool, InnerGlowEffect } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState, createCanvasRenderTarget } from './canvasEffectTestSupport';
@@ -21,11 +21,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
     return target;
   });
   return {
-    pool: createEntity({
-      creator: canvasTestSurfaceCreator,
-      free: [...targets].reverse(),
-      inUse: [],
-    }) as unknown as CanvasRenderTargetPool,
+    pool: (() => { const out = allocateEntity<unknown>(); out.creator = canvasTestSurfaceCreator; out.free = [...targets].reverse(); out.inUse = []; return finishEntity(out) as unknown; })() as CanvasRenderTargetPool,
     targets,
   };
 }

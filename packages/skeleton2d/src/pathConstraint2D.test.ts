@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, PathAttachment2D, Skeleton2D, Skeleton2DPathConstraint, Slot2D } from '@flighthq/types/contract';
 import {
   PathAttachment2DKind,
@@ -39,39 +39,32 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 // A rigid straight path from (0,0) to (100,0) — 100 units of arc length, so a distance IS an x coordinate
 // and every assertion below can be read off by hand.
 function straightPath(): PathAttachment2D {
-  return createEntity({
-    commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
-    kind: PathAttachment2DKind,
-    pointCount: 2,
-    skin: null,
-    vertices: new Float32Array([0, 0, 100, 0]),
-    winding: 'nonZero' as const,
-  }) as PathAttachment2D;
-}
-
-function pathSlot(attachment: PathAttachment2D | null): Slot2D {
-  return { attachment, boneIndex: 0, color: 0xffffffff, name: 'path' };
+    const out = allocateEntity<PathAttachment2D>();
+  out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO];
+  out.kind = PathAttachment2DKind;
+  out.pointCount = 2;
+  out.skin = null;
+  out.vertices = new Float32Array([0, 0, 100, 0]);
+  out.winding = 'nonZero' as const;
+  return finishEntity(out) as PathAttachment2D;;
 }
 
 function constraint(overrides: Partial<Skeleton2DPathConstraint> = {}): Skeleton2DPathConstraint {
-  return createEntity({
-    boneIndices: [1],
-    kind: Skeleton2DConstraintKind.Path as 'Skeleton2D.PathConstraint',
-    mix: 1,
-    mixRotate: 0,
-    mixX: 1,
-    mixY: 1,
-    position: 0,
-    positionMode: Skeleton2DPathPositionMode.Fixed,
-    rotateMode: Skeleton2DPathRotateMode.Tangent,
-    spacing: 0,
-    spacingMode: Skeleton2DPathSpacingMode.Fixed,
-    targetSlotIndex: 0,
-    ...overrides,
-  }) as Skeleton2DPathConstraint;
-}
-
-// Bone 0 carries the path slot; bones 1..n are the chain laid along it.
+    const out = allocateEntity<PathAttachment2D>();
+  out.boneIndices = [1];
+  out.kind = Skeleton2DConstraintKind.Path as 'Skeleton2D.PathConstraint';
+  out.mix = 1;
+  out.mixRotate = 0;
+  out.mixX = 1;
+  out.mixY = 1;
+  out.position = 0;
+  out.positionMode = Skeleton2DPathPositionMode.Fixed;
+  out.rotateMode = Skeleton2DPathRotateMode.Tangent;
+  out.spacing = 0;
+  out.spacingMode = Skeleton2DPathSpacingMode.Fixed;
+  out.targetSlotIndex = 0;
+  Object.assign(out, overrides);
+  return finishEntity(out) as Skeleton2DPathConstraint;; bones 1..n are the chain laid along it.
 function rig(chainLength: number, attachment: PathAttachment2D | null = straightPath()): Skeleton2D {
   const bones = [makeBone()];
   for (let i = 0; i < chainLength; i++) bones.push(makeBone({ length: 10 }));
@@ -203,14 +196,7 @@ describe('solveSkeleton2DPathConstraint', () => {
   it('turns a bone to the path without moving it when both translate mixes are zero', () => {
     const skeleton = rig(
       1,
-      createEntity({
-        commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
-        kind: PathAttachment2DKind,
-        pointCount: 2,
-        skin: null,
-        vertices: new Float32Array([0, 0, 0, 100]),
-        winding: 'nonZero' as const,
-      }) as PathAttachment2D,
+      (() => { const out = allocateEntity<PathAttachment2D>(); out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO]; out.kind = PathAttachment2DKind; out.pointCount = 2; out.skin = null; out.vertices = new Float32Array([0, 0, 0, 100]); out.winding = 'nonZero' as const; return finishEntity(out) as PathAttachment2D,; })()
     );
     skeleton.bones[1].x = 40;
     skeleton.bones[1].y = -7;
@@ -226,15 +212,7 @@ describe('solveSkeleton2DPathConstraint', () => {
   it('aims a bone along the path tangent when rotateMode is Tangent', () => {
     const skeleton = rig(
       1,
-      createEntity({
-        commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
-        kind: PathAttachment2DKind,
-        pointCount: 2,
-        skin: null,
-        // Straight up, so the tangent is a quarter turn from the bone's setup direction.
-        vertices: new Float32Array([0, 0, 0, 100]),
-        winding: 'nonZero' as const,
-      }) as PathAttachment2D,
+      (() => { const out = allocateEntity<PathAttachment2D>(); out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO]; out.kind = PathAttachment2DKind; out.pointCount = 2; out.skin = null; out.vertices = new Float32Array([0, 0, 0, 100]); out.winding = 'nonZero' as const; return finishEntity(out) as PathAttachment2D,; })()
     );
 
     solveSkeleton2DPathConstraint(skeleton, constraint({ mixRotate: 1, position: 10 }));
@@ -246,15 +224,7 @@ describe('solveSkeleton2DPathConstraint', () => {
   it('aims each bone at the NEXT one in Chain mode, sampling every position before moving any', () => {
     const skeleton = rig(
       2,
-      createEntity({
-        commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO],
-        kind: PathAttachment2DKind,
-        pointCount: 3,
-        skin: null,
-        // An L: 50 along +x, then 50 along +y. A chain straddling the corner aims across it.
-        vertices: new Float32Array([0, 0, 50, 0, 50, 50]),
-        winding: 'nonZero' as const,
-      }) as PathAttachment2D,
+      (() => { const out = allocateEntity<PathAttachment2D>(); out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]; out.kind = PathAttachment2DKind; out.pointCount = 3; out.skin = null; out.vertices = new Float32Array([0, 0, 50, 0, 50, 50]); out.winding = 'nonZero' as const; return finishEntity(out) as PathAttachment2D,; })()
     );
 
     solveSkeleton2DPathConstraint(

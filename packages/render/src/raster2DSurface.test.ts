@@ -1,10 +1,10 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 
 import { createRaster2DSurface, destroyRaster2DSurface } from './raster2DSurface';
 
 function entityProvider(fields: Omit<Raster2DSurfaceProvider, keyof Entity>): Raster2DSurfaceProvider {
-  return createEntity(fields);
+  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
 }
 
 describe('createRaster2DSurface', () => {
