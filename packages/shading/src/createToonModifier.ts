@@ -1,6 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ToonModifier, ToonModifierOptions } from '@flighthq/types/contract';
 import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
+
+import { initializeModifier } from './modifier';
 
 // The options for `createToonModifier`. Only `steps` is required; `smoothness` carries a documented
 // default. Both are uniform-fed scalars — they do not change the emitted program, so a toon modifier
@@ -12,10 +14,9 @@ import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
 // fog). `steps` is the number of shading bands (values below 2 clamp to 2 in the shader); `smoothness`
 // softens each band edge and defaults to 0 (crisp cel edges).
 export function createToonModifier(options: Readonly<ToonModifierOptions>): ToonModifier {
-  return createEntity({
-    kind: ToonModifierKind,
-    slot: ModifierSlot.Effect,
-    steps: options.steps,
-    smoothness: options.smoothness ?? 0,
-  });
+  const out = allocateEntity<ToonModifier>();
+  initializeModifier(out, ToonModifierKind, ModifierSlot.Effect);
+  out.steps = options.steps;
+  out.smoothness = options.smoothness ?? 0;
+  return finishEntity(out);
 }

@@ -1,6 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { FogModifier, FogModifierOptions } from '@flighthq/types/contract';
 import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
+
+import { initializeModifier } from './modifier';
 
 // The options for `createFogModifier`. Only `color` is required; `mode`/`near`/`far`/`density` carry
 // documented defaults. `mode` is compile-time structural (each curve emits different GLSL, so it
@@ -13,13 +15,12 @@ import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/
 // falloff rate. This is the per-material forward-shaded fog term, the compiled sibling of the
 // post-process ScreenSpaceFogEffect.
 export function createFogModifier(options: Readonly<FogModifierOptions>): FogModifier {
-  return createEntity({
-    kind: FogModifierKind,
-    slot: ModifierSlot.Effect,
-    color: options.color,
-    mode: options.mode ?? FogModifierMode.Linear,
-    near: options.near ?? 0,
-    far: options.far ?? 1,
-    density: options.density ?? 1,
-  });
+  const out = allocateEntity<FogModifier>();
+  initializeModifier(out, FogModifierKind, ModifierSlot.Effect);
+  out.color = options.color;
+  out.mode = options.mode ?? FogModifierMode.Linear;
+  out.near = options.near ?? 0;
+  out.far = options.far ?? 1;
+  out.density = options.density ?? 1;
+  return finishEntity(out);
 }

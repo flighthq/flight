@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ShadedMaterial, ShadedMaterialOptions } from '@flighthq/types/contract';
 import { BlendMode, ShadedMaterialKind } from '@flighthq/types/contract';
 
@@ -17,18 +17,19 @@ import { BlendMode, ShadedMaterialKind } from '@flighthq/types/contract';
 // construction, exactly as for BlinnPhong/PBR. The result is an entity (it carries runtime/binding
 // identity), not a plain literal.
 export function createShadedMaterial(options?: Readonly<ShadedMaterialOptions>): ShadedMaterial {
-  const material = createEntity({ kind: ShadedMaterialKind }) as ShadedMaterial;
-  material.alphaCutoff = options?.alphaCutoff ?? 0.5;
-  material.alphaMode = options?.alphaMode ?? 'opaque';
-  material.blendMode = options?.blendMode ?? BlendMode.Normal;
-  material.diffuse = options?.diffuse ?? 0xffffffff;
-  material.diffuseMap = options?.diffuseMap ?? null;
-  material.doubleSided = options?.doubleSided ?? false;
-  material.modifiers = options?.modifiers ?? [];
-  material.normalMap = options?.normalMap ?? null;
-  material.normalScale = options?.normalScale ?? 1;
-  material.shininess = options?.shininess ?? 32;
-  material.specular = options?.specular ?? 0xffffffff;
-  material.specularMap = options?.specularMap ?? null;
-  return material;
+  const out = allocateEntity<ShadedMaterial>();
+  out.kind = ShadedMaterialKind;
+  out.alphaCutoff = options?.alphaCutoff ?? 0.5;
+  out.alphaMode = options?.alphaMode ?? 'opaque';
+  out.blendMode = options?.blendMode ?? BlendMode.Normal;
+  out.diffuse = options?.diffuse ?? 0xffffffff;
+  out.diffuseMap = options?.diffuseMap ?? null;
+  out.doubleSided = options?.doubleSided ?? false;
+  out.modifiers = options?.modifiers ?? [];
+  out.normalMap = options?.normalMap ?? null;
+  out.normalScale = options?.normalScale ?? 1;
+  out.shininess = options?.shininess ?? 32;
+  out.specular = options?.specular ?? 0xffffffff;
+  out.specularMap = options?.specularMap ?? null;
+  return finishEntity(out);
 }

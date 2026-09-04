@@ -1,6 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EnvReflectModifier, EnvReflectModifierOptions } from '@flighthq/types/contract';
 import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
+
+import { initializeModifier } from './modifier';
 
 // The options for `createEnvReflectModifier`. Every field is optional and carries a documented
 // default so the returned descriptor is fully populated (all four are uniform-fed scalars, so an
@@ -13,12 +15,11 @@ import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 // to opaque white; `intensity` scales the whole term (default 1); `fresnelBias` is f0 (default 0.04,
 // a dielectric); `roughness` selects a blurrier prefiltered mip (default 0 = mirror-sharp).
 export function createEnvReflectModifier(options?: Readonly<EnvReflectModifierOptions>): EnvReflectModifier {
-  return createEntity({
-    kind: EnvReflectModifierKind,
-    slot: ModifierSlot.Effect,
-    tint: options?.tint ?? 0xffffffff,
-    intensity: options?.intensity ?? 1,
-    fresnelBias: options?.fresnelBias ?? 0.04,
-    roughness: options?.roughness ?? 0,
-  });
+  const out = allocateEntity<EnvReflectModifier>();
+  initializeModifier(out, EnvReflectModifierKind, ModifierSlot.Effect);
+  out.tint = options?.tint ?? 0xffffffff;
+  out.intensity = options?.intensity ?? 1;
+  out.fresnelBias = options?.fresnelBias ?? 0.04;
+  out.roughness = options?.roughness ?? 0;
+  return finishEntity(out);
 }

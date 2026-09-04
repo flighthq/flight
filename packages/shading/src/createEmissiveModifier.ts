@@ -1,6 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EmissiveModifier, EmissiveModifierOptions } from '@flighthq/types/contract';
 import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
+
+import { initializeModifier } from './modifier';
 
 // The options for `createEmissiveModifier`. Only `color` is required; every other field carries a
 // documented default so the returned descriptor is fully populated (the define-key signature reads
@@ -14,14 +16,12 @@ import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@fli
 // 0 (a hard terminator). `mask` is copied by reference only when provided — omitted leaves the
 // descriptor unmasked.
 export function createEmissiveModifier(options: Readonly<EmissiveModifierOptions>): EmissiveModifier {
-  const modifier = createEntity({
-    kind: EmissiveModifierKind,
-    slot: ModifierSlot.Emissive,
-    color: options.color,
-    strength: options.strength ?? 1,
-    facing: options.facing ?? EmissiveModifierFacing.Ignore,
-    facingSoftness: options.facingSoftness ?? 0,
-  }) as EmissiveModifier;
-  if (options.mask !== undefined) modifier.mask = options.mask;
-  return modifier;
+  const out = allocateEntity<EmissiveModifier>();
+  initializeModifier(out, EmissiveModifierKind, ModifierSlot.Emissive);
+  out.color = options.color;
+  out.strength = options.strength ?? 1;
+  out.facing = options.facing ?? EmissiveModifierFacing.Ignore;
+  out.facingSoftness = options.facingSoftness ?? 0;
+  if (options.mask !== undefined) out.mask = options.mask;
+  return finishEntity(out);
 }

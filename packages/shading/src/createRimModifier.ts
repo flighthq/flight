@@ -1,6 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { RimModifier, RimModifierOptions } from '@flighthq/types/contract';
 import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
+
+import { initializeModifier } from './modifier';
 
 // The options for `createRimModifier`. Only `color` is required; `power`/`intensity`/`bias` carry
 // documented defaults. All three are uniform-fed scalars — they do not change the emitted program,
@@ -12,12 +14,11 @@ import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 // `power` (falloff exponent, higher = tighter) defaults to 3, `intensity` to 1, and `bias` (the
 // constant floor before the falloff) to 0 (pure Fresnel).
 export function createRimModifier(options: Readonly<RimModifierOptions>): RimModifier {
-  return createEntity({
-    kind: RimModifierKind,
-    slot: ModifierSlot.Effect,
-    color: options.color,
-    power: options.power ?? 3,
-    intensity: options.intensity ?? 1,
-    bias: options.bias ?? 0,
-  });
+  const out = allocateEntity<RimModifier>();
+  initializeModifier(out, RimModifierKind, ModifierSlot.Effect);
+  out.color = options.color;
+  out.power = options.power ?? 3;
+  out.intensity = options.intensity ?? 1;
+  out.bias = options.bias ?? 0;
+  return finishEntity(out);
 }
