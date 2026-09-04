@@ -16,6 +16,9 @@
       "path": "../easing"
     },
     {
+      "path": "../entity"
+    },
+    {
       "path": "../importdiagnostics"
     },
     {
