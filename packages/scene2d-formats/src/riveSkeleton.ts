@@ -1,7 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
-import type { Bone2D, RiveArtboardGraph, RiveCoreObject, RiveSkeleton2DImport } from '@flighthq/types/contract';
+import type {
+  Bone2D,
+  EntityConstruction,
+  RiveArtboardGraph,
+  RiveCoreObject,
+  RiveSkeleton2DImport,
+} from '@flighthq/types/contract';
 import { TransformMode2D } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
@@ -45,7 +51,10 @@ export function createRiveSkeleton2D(artboard: Readonly<RiveArtboardGraph>): Riv
       component,
     ),
   );
-  return createEntity({ boneIndices, skeleton: createSkeleton2D(bones) });
+  const out = allocateEntity<unknown>();
+  out.boneIndices = boneIndices;
+  out.skeleton = createSkeleton2D(bones);
+  return finishEntity(out);
 }
 
 function createRiveBone2D(

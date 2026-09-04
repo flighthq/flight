@@ -1,20 +1,20 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reserveFloat32Array } from '@flighthq/geometry/contract';
 import type { ParticleObjectsState, RandomSource } from '@flighthq/types/contract';
 
 export function createParticleObjectsState(capacity: number, random: RandomSource = Math.random): ParticleObjectsState {
-  return createEntity({
-    burstTimer: 0,
-    emitterAge: 0,
-    lifetimes: new Float32Array(capacity * 2),
-    prevX: NaN,
-    prevY: NaN,
-    random,
-    rotationSpeeds: new Float32Array(capacity),
-    scales: new Float32Array(capacity),
-    spawnAccumulator: 0,
-    velocities: new Float32Array(capacity * 2),
-  });
+  const out = allocateEntity<ParticleObjectsState>();
+  out.burstTimer = 0;
+  out.emitterAge = 0;
+  out.lifetimes = new Float32Array(capacity * 2);
+  out.prevX = NaN;
+  out.prevY = NaN;
+  out.random = random;
+  out.rotationSpeeds = new Float32Array(capacity);
+  out.scales = new Float32Array(capacity);
+  out.spawnAccumulator = 0;
+  out.velocities = new Float32Array(capacity * 2);
+  return finishEntity(out);
 }
 
 export function ensureParticleObjectsStateCapacity(state: ParticleObjectsState, capacity: number): void {

@@ -1,9 +1,10 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   MethodsOf,
   Node,
   PartialNode,
@@ -192,14 +193,14 @@ export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBat
 }
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
-  return createEntity({
-    atlas: data?.atlas ?? null,
-    ids: data?.ids ?? new Uint16Array(),
-    instanceCount: data?.instanceCount ?? 0,
-    materialData: data?.materialData ?? null,
-    transforms: data?.transforms ?? new Float32Array(),
-    transformType: data?.transformType ?? 'vector2',
-  });
+  const out = allocateEntity<QuadBatch>();
+  out.atlas = data?.atlas ?? null;
+  out.ids = data?.ids ?? new Uint16Array();
+  out.instanceCount = data?.instanceCount ?? 0;
+  out.materialData = data?.materialData ?? null;
+  out.transforms = data?.transforms ?? new Float32Array();
+  out.transformType = data?.transformType ?? 'vector2';
+  return finishEntity(out);
 }
 
 export function createQuadBatchRuntime(): QuadBatchRuntime {
@@ -210,11 +211,11 @@ export function createQuadBatchRuntime(): QuadBatchRuntime {
 }
 
 export function createQuadBatchSignals(): QuadBatchSignals {
-  return createEntity({
-    onCleared: createSignal(),
-    onInstanceAppended: createSignal(),
-    onInstanceRemoved: createSignal(),
-  });
+  const out = allocateEntity<QuadBatch>();
+  out.onCleared = createSignal();
+  out.onInstanceAppended = createSignal();
+  out.onInstanceRemoved = createSignal();
+  return finishEntity(out);
 }
 
 /**
@@ -534,7 +535,11 @@ export function setQuadBatchInstanceTint(target: QuadBatch, index: number, rgba:
   const data = target.data;
   if (index < 0 || index >= data.instanceCount) return;
   if (data.materialData === null) data.materialData = new Array(data.instanceCount).fill(null);
-  data.materialData[index] = createEntity({ tint: rgba >>> 0 });
+  data.materialData[index] = (() => {
+    const out = allocateEntity<number>();
+    out.tint = rgba >>> 0;
+    return finishEntity(out);
+  })();
 }
 
 export function setQuadBatchLocalBoundsRectangle(target: QuadBatch, rect: Readonly<Rectangle>): void {

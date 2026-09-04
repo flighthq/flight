@@ -1,29 +1,29 @@
-import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentUnsupportedGuard,
-  Renderable,
+  EntityConstruction,
   RenderState,
   RenderStateRuntime,
+  Renderable,
 } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
-  const state = createEntity({
-    allowSmoothing: obj?.allowSmoothing ?? true,
-    backgroundColor: obj?.backgroundColor ?? 0,
-    backgroundColorRgba: obj?.backgroundColorRgba ?? [],
-    backgroundColorString: obj?.backgroundColorString ?? '',
-    currentClipDepth: obj?.currentClipDepth ?? 0,
-    displayObjectClipHooks: obj?.displayObjectClipHooks ?? null,
-    pixelRatio: obj?.pixelRatio ?? 1,
-    raster2DSurfaceProvider: obj?.raster2DSurfaceProvider ?? null,
-    renderAlpha: obj?.renderAlpha ?? 1,
-    renderBlendMode: obj?.renderBlendMode ?? BlendMode.Normal,
-    renderTransform2D: obj?.renderTransform2D ?? null,
-    roundPixels: obj?.roundPixels ?? false,
-    sceneGraphSyncPolicy: obj?.sceneGraphSyncPolicy ?? 'refreshDerivedState',
-  }) as RenderState;
+  const state = allocateEntity<RenderState>();
+  state.allowSmoothing = obj?.allowSmoothing ?? true;
+  state.backgroundColor = obj?.backgroundColor ?? 0;
+  state.backgroundColorRgba = obj?.backgroundColorRgba ?? [];
+  state.backgroundColorString = obj?.backgroundColorString ?? '';
+  state.currentClipDepth = obj?.currentClipDepth ?? 0;
+  state.displayObjectClipHooks = obj?.displayObjectClipHooks ?? null;
+  state.pixelRatio = obj?.pixelRatio ?? 1;
+  state.raster2DSurfaceProvider = obj?.raster2DSurfaceProvider ?? null;
+  state.renderAlpha = obj?.renderAlpha ?? 1;
+  state.renderBlendMode = obj?.renderBlendMode ?? BlendMode.Normal;
+  state.renderTransform2D = obj?.renderTransform2D ?? null;
+  state.roundPixels = obj?.roundPixels ?? false;
+  state.sceneGraphSyncPolicy = obj?.sceneGraphSyncPolicy ?? 'refreshDerivedState';
   state[EntityRuntimeKey] = createRenderStateRuntime();
   return state;
 }

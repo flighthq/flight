@@ -1,8 +1,9 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeOrderListEntry, clearNodeOrderList } from '@flighthq/node/contract';
 import type {
   AnimationChannel,
+  EntityConstruction,
   Node,
   NodeOrderList,
   NodeTraits,
@@ -30,7 +31,11 @@ export function createSkeleton2DDrawOrderAnimationTarget<Traits extends object =
   nodes: readonly (Node<Traits> | null)[],
   orderList: NodeOrderList<Traits>,
 ): Skeleton2DDrawOrderAnimationTarget<Traits> {
-  return createEntity({ kind: TargetKind.DrawOrder, nodes, orderList });
+  const out = allocateEntity<Skeleton2DDrawOrderAnimationTarget<Traits>>();
+  out.kind = TargetKind.DrawOrder;
+  out.nodes = nodes;
+  out.orderList = orderList;
+  return finishEntity(out);
 }
 
 /**

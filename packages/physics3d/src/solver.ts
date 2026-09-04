@@ -1,7 +1,8 @@
 import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionContactManifold3D,
+  EntityConstruction,
   Physics3DContactConstraint,
   Physics3DContactConstraintPoint,
   Physics3DWorld,
@@ -24,32 +25,32 @@ import { writeRigidBody3DWorldCenter } from './world';
 // Allocates one contact constraint with no points. The solver owns this record; nothing here belongs
 // on `Physics3DContact`, which carries geometry and identity only.
 export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
-  return createEntity({
-    contact: -1,
-    pointCount: 0,
-    points: [],
-    tangent0X: 0,
-    tangent0Y: 0,
-    tangent0Z: 0,
-    tangent1X: 0,
-    tangent1Y: 0,
-    tangent1Z: 0,
-  });
+  const out = allocateEntity<Physics3DContactConstraint>();
+  out.contact = -1;
+  out.pointCount = 0;
+  out.points = [];
+  out.tangent0X = 0;
+  out.tangent0Y = 0;
+  out.tangent0Z = 0;
+  out.tangent1X = 0;
+  out.tangent1Y = 0;
+  out.tangent1Z = 0;
+  return finishEntity(out);
 }
 
 // Allocates one point's accumulators, zeroed. A fresh point warm-starts from nothing, which is the
 // correct behaviour for a contact that did not exist last step.
 export function createPhysics3DContactConstraintPoint(): Physics3DContactConstraintPoint {
-  return createEntity({
-    bias: 0,
-    featureId: 0,
-    normalImpulse: 0,
-    normalMass: 0,
-    tangentImpulse0: 0,
-    tangentImpulse1: 0,
-    tangentMass0: 0,
-    tangentMass1: 0,
-  });
+  const out = allocateEntity<Physics3DContactConstraint>();
+  out.bias = 0;
+  out.featureId = 0;
+  out.normalImpulse = 0;
+  out.normalMass = 0;
+  out.tangentImpulse0 = 0;
+  out.tangentImpulse1 = 0;
+  out.tangentMass0 = 0;
+  out.tangentMass1 = 0;
+  return finishEntity(out);
 }
 
 // Rebuilds the solver's working set from the world's contact list and prepares every constraint row:

@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   SpatialAabb3D,
   SpatialFrustum3D,
   SpatialIndex3D,
@@ -20,11 +21,11 @@ export function clearSpatialIndex3D(index: Readonly<SpatialIndex3D>): void {
 // to select the structure for the workload. Constructing the default grid happens here, on call —
 // importing the package has no side effect.
 export function createSpatialIndex3D(backend?: SpatialIndexBackend3D): SpatialIndex3D {
-  return createEntity({
-    runtime: {
-      backend: backend ?? createUniformGridSpatialBackend3D(DEFAULT_SPATIAL_CELL_SIZE_3D),
-    },
-  });
+  const out = allocateEntity<SpatialIndex3D>();
+  out.runtime = {
+    backend: backend ?? createUniformGridSpatialBackend3D(DEFAULT_SPATIAL_CELL_SIZE_3D),
+  };
+  return finishEntity(out);
 }
 
 // Adds an object to the index under `id` with its current bounds. The bounds are copied; the caller

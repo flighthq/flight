@@ -1,10 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type { Scene3DResourceResolverWithRuntime, Scene3DResourceSignals } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 
 export function createScene3DResourceSignals(): Scene3DResourceSignals {
-  return createEntity({ onResourceFailed: createSignal(), onResourceResolved: createSignal() });
+  const out = allocateEntity<Scene3DResourceSignals>();
+  out.onResourceFailed = createSignal();
+  out.onResourceResolved = createSignal();
+  return finishEntity(out);
 }
 
 // Enables (once) and returns the resolver's availability signals. Idempotent: repeated calls return

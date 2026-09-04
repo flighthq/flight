@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { IridescencePbrExtension } from '@flighthq/types/contract';
 import { IridescencePbrExtensionKind } from '@flighthq/types/contract';
 
@@ -8,17 +8,17 @@ import { isValidPbrUvSet } from './pbrExtension';
 export function createIridescencePbrExtension(
   opts?: Readonly<Partial<IridescencePbrExtension>>,
 ): IridescencePbrExtension {
-  return createEntity({
-    iridescence: opts?.iridescence ?? 0,
-    iridescenceIor: opts?.iridescenceIor ?? 1.3,
-    iridescenceMap: opts?.iridescenceMap ?? null,
-    iridescenceMapUvSet: opts?.iridescenceMapUvSet ?? 0,
-    iridescenceThicknessMap: opts?.iridescenceThicknessMap ?? null,
-    iridescenceThicknessMapUvSet: opts?.iridescenceThicknessMapUvSet ?? 0,
-    iridescenceThicknessMax: opts?.iridescenceThicknessMax ?? 400,
-    iridescenceThicknessMin: opts?.iridescenceThicknessMin ?? 100,
-    kind: IridescencePbrExtensionKind,
-  });
+  const out = allocateEntity<IridescencePbrExtension>();
+  out.iridescence = opts?.iridescence ?? 0;
+  out.iridescenceIor = opts?.iridescenceIor ?? 1.3;
+  out.iridescenceMap = opts?.iridescenceMap ?? null;
+  out.iridescenceMapUvSet = opts?.iridescenceMapUvSet ?? 0;
+  out.iridescenceThicknessMap = opts?.iridescenceThicknessMap ?? null;
+  out.iridescenceThicknessMapUvSet = opts?.iridescenceThicknessMapUvSet ?? 0;
+  out.iridescenceThicknessMax = opts?.iridescenceThicknessMax ?? 400;
+  out.iridescenceThicknessMin = opts?.iridescenceThicknessMin ?? 100;
+  out.kind = IridescencePbrExtensionKind;
+  return finishEntity(out);
 }
 
 export function isValidIridescencePbrExtension(value: Readonly<IridescencePbrExtension>): boolean {

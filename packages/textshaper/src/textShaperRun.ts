@@ -1,11 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
+  EntityConstruction,
   FontMetrics,
   GlyphExtents,
   HasTextShaper,
-  ShapedRun,
   ShapeRunOptions,
+  ShapedRun,
   TextFormat,
 } from '@flighthq/types/contract';
 
@@ -22,14 +23,14 @@ export function clearShapedRun(run: ShapedRun): ShapedRun {
 }
 
 export function createShapedRun(): ShapedRun & Entity {
-  return createEntity({
-    advanceWidth: 0,
-    direction: 'LeftToRight',
-    font: null,
-    glyphCount: 0,
-    glyphs: [],
-    script: '',
-  });
+  const out = allocateEntity<unknown>();
+  out.advanceWidth = 0;
+  out.direction = 'LeftToRight';
+  out.font = null;
+  out.glyphCount = 0;
+  out.glyphs = [];
+  out.script = '';
+  return finishEntity(out);
 }
 
 export function getCodePointForGlyph(glyphId: number, _format: Readonly<TextFormat>, host?: HasTextShaper): number {

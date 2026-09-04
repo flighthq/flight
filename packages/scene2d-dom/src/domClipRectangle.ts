@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   DomClipContourEntry,
   DomClipEntry,
@@ -6,6 +6,7 @@ import type {
   DomRenderState,
   DomScene2DRectangle,
   Entity,
+  EntityConstruction,
   MatrixLike,
   RectangleLike,
   RenderProxy2D,
@@ -77,12 +78,12 @@ export function createDomScene2DRectangle(
   const x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
-  return createEntity({
-    bottom: Math.max(y0, y1, y2, y3),
-    left: Math.min(x0, x1, x2, x3),
-    right: Math.max(x0, x1, x2, x3),
-    top: Math.min(y0, y1, y2, y3),
-  });
+  const out = allocateEntity<unknown>();
+  out.bottom = Math.max(y0, y1, y2, y3);
+  out.left = Math.min(x0, x1, x2, x3);
+  out.right = Math.max(x0, x1, x2, x3);
+  out.top = Math.min(y0, y1, y2, y3);
+  return finishEntity(out);
 }
 
 export function pushDomClipRectangle(

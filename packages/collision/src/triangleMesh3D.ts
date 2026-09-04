@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionAabb3D,
   CollisionBuiltInShape3D,
@@ -9,6 +9,7 @@ import type {
   CollisionTestStatus,
   CollisionTimeOfImpact3D,
   CollisionTriangleMesh3D,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { collideContactManifold3D } from './collideContactManifold3D';
@@ -99,22 +100,22 @@ export function createCollisionHeightfield3D(
   cellSizeX = 1,
   cellSizeZ = 1,
 ): CollisionHeightfield3D {
-  return createEntity({
-    kind: 'heightfield',
-    columns,
-    rows,
-    heights: heights.slice(),
-    cellSizeX,
-    cellSizeZ,
-    version: 0,
-    x: 0,
-    y: 0,
-    z: 0,
-    rotationX: 0,
-    rotationY: 0,
-    rotationZ: 0,
-    rotationW: 1,
-  });
+  const out = allocateEntity<CollisionHeightfield3D>();
+  out.kind = 'heightfield';
+  out.columns = columns;
+  out.rows = rows;
+  out.heights = heights.slice();
+  out.cellSizeX = cellSizeX;
+  out.cellSizeZ = cellSizeZ;
+  out.version = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  out.rotationX = 0;
+  out.rotationY = 0;
+  out.rotationZ = 0;
+  out.rotationW = 1;
+  return finishEntity(out);
 }
 
 // Allocates a triangle-mesh descriptor with an identity pose. Points and indices are copied; callers
@@ -123,19 +124,19 @@ export function createCollisionTriangleMesh3D(
   points: readonly number[],
   indices: readonly number[],
 ): CollisionTriangleMesh3D {
-  return createEntity({
-    kind: 'triangle-mesh',
-    points: points.slice(),
-    indices: indices.slice(),
-    version: 0,
-    x: 0,
-    y: 0,
-    z: 0,
-    rotationX: 0,
-    rotationY: 0,
-    rotationZ: 0,
-    rotationW: 1,
-  });
+  const out = allocateEntity<CollisionHeightfield3D>();
+  out.kind = 'triangle-mesh';
+  out.points = points.slice();
+  out.indices = indices.slice();
+  out.version = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  out.rotationX = 0;
+  out.rotationY = 0;
+  out.rotationZ = 0;
+  out.rotationW = 1;
+  return finishEntity(out);
 }
 
 export function getCollisionHeightfieldValidationStatus3D(

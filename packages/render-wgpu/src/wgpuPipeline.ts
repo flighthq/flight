@@ -1,28 +1,29 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { WgpuPipeline, WgpuRenderRegistries } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
-  return createEntity({
-    compressedTextureDecoder: createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered'),
-    compressedTextureUpload: createSlotTable('WgpuCompressedTextureUpload', 'Unregistered'),
-    customMaterialShaders: createKeyedTable('WgpuCustomMaterialShader', 'Unregistered'),
-    materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
-    meshMaterialRenderers: createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial'),
-    modifierSnippets: createKeyedTable('WgpuModifierSnippet', 'Unregistered'),
-    modifierSnippetRevision: 0,
-    renderEffects: createKeyedTable('WgpuRenderEffect', 'Unregistered'),
-    renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
-    shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
-    strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
-    textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
-    velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
-  });
+  const out = allocateEntity<WgpuRenderRegistries>();
+  out.compressedTextureDecoder = createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered');
+  out.compressedTextureUpload = createSlotTable('WgpuCompressedTextureUpload', 'Unregistered');
+  out.customMaterialShaders = createKeyedTable('WgpuCustomMaterialShader', 'Unregistered');
+  out.materialRenderers = createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial');
+  out.meshMaterialRenderers = createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial');
+  out.modifierSnippets = createKeyedTable('WgpuModifierSnippet', 'Unregistered');
+  out.modifierSnippetRevision = 0;
+  out.renderEffects = createKeyedTable('WgpuRenderEffect', 'Unregistered');
+  out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.shapeRasterizer = createSlotTable('WgpuShapeRasterizer', 'Unregistered');
+  out.strokeTessellator = createSlotTable('StrokeTessellator', 'Rasterize');
+  out.textureResolvers = createKeyedTable('WgpuTextureResolver', 'Unregistered');
+  out.velocityWriters = createKeyedTable('WgpuVelocityWriter', 'Unregistered');
+  return finishEntity(out);
 }
 
 export function createWgpuPipeline(registries: Readonly<WgpuRenderRegistries>): WgpuPipeline {
-  const pipeline = createEntity({ registries }) as WgpuPipeline;
+  const pipeline = allocateEntity<WgpuRenderRegistries>();
+  pipeline.registries = registries;
   pipeline[EntityRuntimeKey] = { binding: null };
   return pipeline;
 }

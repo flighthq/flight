@@ -1,32 +1,32 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
-import type { SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types/contract';
+import type { EntityConstruction, SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types/contract';
 import { SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a spot light's data, including fresh `position`/`direction` vectors.
 export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
-  return createEntity({
-    castsShadow: source.castsShadow,
-    color: source.color,
-    decay: source.decay,
-    direction: cloneVector3(source.direction),
-    enabled: source.enabled,
-    innerConeCos: source.innerConeCos,
-    intensity: source.intensity,
-    intensityUnit: source.intensityUnit,
-    kind: SpotLightKind,
-    normalBias: source.normalBias,
-    outerConeCos: source.outerConeCos,
-    pcfRadius: source.pcfRadius,
-    position: cloneVector3(source.position),
-    range: source.range,
-    shadowBias: source.shadowBias,
-    shadowFar: source.shadowFar,
-    shadowMapSize: source.shadowMapSize,
-    shadowNear: source.shadowNear,
-    shadowStrength: source.shadowStrength,
-    spotBlend: source.spotBlend,
-  });
+  const out = allocateEntity<unknown>();
+  out.castsShadow = source.castsShadow;
+  out.color = source.color;
+  out.decay = source.decay;
+  out.direction = cloneVector3(source.direction);
+  out.enabled = source.enabled;
+  out.innerConeCos = source.innerConeCos;
+  out.intensity = source.intensity;
+  out.intensityUnit = source.intensityUnit;
+  out.kind = SpotLightKind;
+  out.normalBias = source.normalBias;
+  out.outerConeCos = source.outerConeCos;
+  out.pcfRadius = source.pcfRadius;
+  out.position = cloneVector3(source.position);
+  out.range = source.range;
+  out.shadowBias = source.shadowBias;
+  out.shadowFar = source.shadowFar;
+  out.shadowMapSize = source.shadowMapSize;
+  out.shadowNear = source.shadowNear;
+  out.shadowStrength = source.shadowStrength;
+  out.spotBlend = source.spotBlend;
+  return finishEntity(out);
 }
 
 // Cone-restricted point light. `position`/`direction` are world-space; the cone is stored as the
@@ -36,28 +36,27 @@ export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
 export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight {
   const position = options?.position;
   const direction = options?.direction;
-  const light: SpotLight = createEntity({
-    castsShadow: options?.castsShadow ?? false,
-    color: options?.color ?? 0xffffffff,
-    decay: options?.decay ?? 2,
-    direction: direction ? cloneVector3(direction) : createVector3(0, -1, 0),
-    enabled: options?.enabled ?? true,
-    innerConeCos: 1,
-    intensity: options?.intensity ?? 1,
-    intensityUnit: options?.intensityUnit ?? UnitlessLightUnit,
-    kind: SpotLightKind,
-    normalBias: options?.normalBias ?? 0,
-    outerConeCos: 1,
-    pcfRadius: options?.pcfRadius ?? 0,
-    position: position ? cloneVector3(position) : createVector3(0, 0, 0),
-    range: options?.range ?? -1,
-    shadowBias: options?.shadowBias ?? 0,
-    shadowFar: options?.shadowFar ?? 500,
-    shadowMapSize: options?.shadowMapSize ?? 1024,
-    shadowNear: options?.shadowNear ?? 0.5,
-    shadowStrength: options?.shadowStrength ?? 1,
-    spotBlend: 0,
-  });
+  const light = allocateEntity<SpotLight>();
+  light.castsShadow = options?.castsShadow ?? false;
+  light.color = options?.color ?? 0xffffffff;
+  light.decay = options?.decay ?? 2;
+  light.direction = direction ? cloneVector3(direction) : createVector3(0, -1, 0);
+  light.enabled = options?.enabled ?? true;
+  light.innerConeCos = 1;
+  light.intensity = options?.intensity ?? 1;
+  light.intensityUnit = options?.intensityUnit ?? UnitlessLightUnit;
+  light.kind = SpotLightKind;
+  light.normalBias = options?.normalBias ?? 0;
+  light.outerConeCos = 1;
+  light.pcfRadius = options?.pcfRadius ?? 0;
+  light.position = position ? cloneVector3(position) : createVector3(0, 0, 0);
+  light.range = options?.range ?? -1;
+  light.shadowBias = options?.shadowBias ?? 0;
+  light.shadowFar = options?.shadowFar ?? 500;
+  light.shadowMapSize = options?.shadowMapSize ?? 1024;
+  light.shadowNear = options?.shadowNear ?? 0.5;
+  light.shadowStrength = options?.shadowStrength ?? 1;
+  light.spotBlend = 0;
   setSpotLightCone(light, options?.innerConeDegrees ?? 0, options?.outerConeDegrees ?? 45);
   setSpotLightBlend(light, options?.spotBlend ?? 0);
   return light;

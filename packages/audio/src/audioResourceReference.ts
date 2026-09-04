@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AudioResource,
   AudioResourceFailure,
@@ -6,6 +6,7 @@ import type {
   AudioResourceReference,
   AudioResourceReferenceResolutionExplanation,
   EmbeddedAudioResourceReference,
+  EntityConstruction,
   ExternalAudioResourceReference,
 } from '@flighthq/types/contract';
 import {
@@ -22,9 +23,17 @@ import { loadAudioResourceFromBytes } from './audioResourceFrom';
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
 export function createAudioResourceFailure(cause: unknown): AudioResourceFailure {
   if (cause instanceof Error) {
-    return createEntity({ kind: AudioResourceFailureKind.Error, message: cause.message, name: cause.name });
+    const out = allocateEntity<AudioResourceFailure>();
+    out.kind = AudioResourceFailureKind.Error;
+    out.message = cause.message;
+    out.name = cause.name;
+    return finishEntity(out);
   }
-  return createEntity({ kind: AudioResourceFailureKind.Error, message: String(cause), name: null });
+  const out = allocateEntity<AudioResourceFailure>();
+  out.kind = AudioResourceFailureKind.Error;
+  out.message = String(cause);
+  out.name = null;
+  return finishEntity(out);
 }
 
 // `bytes` is retained as the view the container handed over, not a copy: a parser carves a sound payload
@@ -36,15 +45,15 @@ export function createEmbeddedAudioResourceReference(
   mimeType: string | null = null,
   name: string | null = null,
 ): EmbeddedAudioResourceReference {
-  return createEntity({
-    bytes,
-    failure: null,
-    kind: AudioResourceReferenceKind.Embedded,
-    mimeType,
-    name,
-    resource: createAudioResource(),
-    state: ResourceResolutionState.Unresolved,
-  });
+  const out = allocateEntity<AudioResourceFailure>();
+  out.bytes = bytes;
+  out.failure = null;
+  out.kind = AudioResourceReferenceKind.Embedded;
+  out.mimeType = mimeType;
+  out.name = name;
+  out.resource = createAudioResource();
+  out.state = ResourceResolutionState.Unresolved;
+  return finishEntity(out);
 }
 
 export function createExternalAudioResourceReference(
@@ -53,16 +62,16 @@ export function createExternalAudioResourceReference(
   mimeType: string | null = null,
   name: string | null = null,
 ): ExternalAudioResourceReference {
-  return createEntity({
-    basePath,
-    failure: null,
-    kind: AudioResourceReferenceKind.External,
-    mimeType,
-    name,
-    resource: createAudioResource(),
-    state: ResourceResolutionState.Unresolved,
-    uri,
-  });
+  const out = allocateEntity<AudioResourceFailure>();
+  out.basePath = basePath;
+  out.failure = null;
+  out.kind = AudioResourceReferenceKind.External;
+  out.mimeType = mimeType;
+  out.name = name;
+  out.resource = createAudioResource();
+  out.state = ResourceResolutionState.Unresolved;
+  out.uri = uri;
+  return finishEntity(out);
 }
 
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws
@@ -122,11 +131,13 @@ export async function resolveAudioResourceReference(
         ? await decodeAudioResourceBytes(ref, context, signal)
         : await fetch(ref, signal);
     if (decoded === null || decoded.buffer === null) {
-      ref.failure = createEntity({
-        kind: AudioResourceFailureKind.Unavailable,
-        message: 'Audio resource unavailable',
-        name: null,
-      });
+      ref.failure = (() => {
+        const out = allocateEntity<AudioResourceFailure>();
+        out.kind = AudioResourceFailureKind.Unavailable;
+        out.message = 'Audio resource unavailable';
+        out.name = null;
+        return finishEntity(out);
+      })();
       ref.state = ResourceResolutionState.Failed;
       return null;
     }

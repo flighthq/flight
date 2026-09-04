@@ -1,16 +1,16 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap, CompressedImageResource, TextureAtlas } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Bitmap, CompressedImageResource, EntityConstruction, TextureAtlas } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, CompressedImageTextureSourceKind } from '@flighthq/types/contract';
 
 export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
-  return createEntity({
-    imageHeight: obj?.imageHeight ?? 0,
-    imageName: obj?.imageName ?? null,
-    imageWidth: obj?.imageWidth ?? 0,
-    regions: obj?.regions ?? [],
-    scale: obj?.scale ?? 1,
-    texture: obj?.texture ?? null,
-  });
+  const out = allocateEntity<TextureAtlas>();
+  out.imageHeight = obj?.imageHeight ?? 0;
+  out.imageName = obj?.imageName ?? null;
+  out.imageWidth = obj?.imageWidth ?? 0;
+  out.regions = obj?.regions ?? [];
+  out.scale = obj?.scale ?? 1;
+  out.texture = obj?.texture ?? null;
+  return finishEntity(out);
 }
 
 // Releases what keeps the atlas reachable: drops its regions and its texture reference. The texture

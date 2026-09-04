@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   Scene2DDocument,
   Scene2DDocumentImportContext,
   Scene2DDocumentImporter,
@@ -23,7 +24,9 @@ export function createScene2DDocumentFromBytes(
 }
 
 export function createScene2DDocumentImporterRegistry(): Scene2DDocumentImporterRegistry {
-  return createEntity({ entries: [] });
+  const out = allocateEntity<Scene2DDocumentImporterRegistry>();
+  out.entries = [];
+  return finishEntity(out);
 }
 
 export function registerScene2DDocumentImporter(

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Scene3DLights, Scene3DLightsLike } from '@flighthq/types/contract';
 
 // Constructs a `Scene3DLights` draw-argument, filling every absent slot: the single ambient/directional
@@ -11,11 +11,11 @@ import type { Scene3DLights, Scene3DLightsLike } from '@flighthq/types/contract'
 // product still carries Flight's Entity shape invariant. That identity does not imply a GPU binding:
 // the packed `Scene3DLightBlock` is what a backend caches, keyed off the render state.
 export function createScene3DLights(options?: Readonly<Partial<Scene3DLightsLike>>): Scene3DLights {
-  return createEntity({
-    ambient: options?.ambient ?? null,
-    directional: options?.directional ?? null,
-    hemisphere: options?.hemisphere ?? [],
-    point: options?.point ?? [],
-    spot: options?.spot ?? [],
-  });
+  const out = allocateEntity<Scene3DLights>();
+  out.ambient = options?.ambient ?? null;
+  out.directional = options?.directional ?? null;
+  out.hemisphere = options?.hemisphere ?? [];
+  out.point = options?.point ?? [];
+  out.spot = options?.spot ?? [];
+  return finishEntity(out);
 }

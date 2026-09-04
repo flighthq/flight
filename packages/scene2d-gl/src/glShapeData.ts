@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import type {
+  EntityConstruction,
   GlRenderState,
   GlShapeRendererData,
   Raster2DSurface,
@@ -29,15 +30,15 @@ export function acquireGlShapeRasterSurface(
 // Shared by all three shape strategies so a node keeps one cache whichever one draws it. Both halves
 // start empty: nothing is allocated until a strategy needs it.
 export function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
-  return createEntity({
-    surface: null,
-    lastContentId: -1,
-    lastPixelRatio: 0,
-    lastW: 0,
-    lastH: 0,
-    meshVersion: -1,
-    meshes: null,
-  });
+  const out = allocateEntity<unknown>();
+  out.surface = null;
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.lastW = 0;
+  out.lastH = 0;
+  out.meshVersion = -1;
+  out.meshes = null;
+  return finishEntity(out);
 }
 
 // The batch uploads this shape's raster resource into the shared cache. Teardown deletes that GPU texture

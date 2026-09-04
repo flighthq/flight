@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationWindow,
+  EntityConstruction,
   FullscreenTargetHandle,
   HasGraphicsRenderContextSubscription,
   HasGraphicsRenderSurface,
@@ -248,44 +249,44 @@ export function computeWindowDeviceTransform(win: Readonly<ApplicationWindow>, o
 }
 
 export function createApplicationWindow(): ApplicationWindow {
-  return createEntity({
-    alwaysOnTop: false,
-    devicePixelRatio: 1,
-    focused: false,
-    fullscreen: false,
-    height: 0,
-    icon: '',
-    maxHeight: -1,
-    maximized: false,
-    maxWidth: -1,
-    minHeight: 0,
-    minimized: false,
-    minWidth: 0,
-    opacity: 1,
-    resizable: true,
-    skipTaskbar: false,
-    title: '',
-    visible: true,
-    width: 0,
-    x: 0,
-    y: 0,
-    onActivate: createSignal(),
-    onClose: createSignal(),
-    onCloseRequest: createSignal(),
-    onDeactivate: createSignal(),
-    onDropFile: createSignal(),
-    onFocusIn: createSignal(),
-    onFocusOut: createSignal(),
-    onFullscreenChanged: createSignal(),
-    onMaximize: createSignal(),
-    onMinimize: createSignal(),
-    onMove: createSignal(),
-    onOrientationChanged: createSignal(),
-    onRenderContextLost: createSignal(),
-    onRenderContextRestored: createSignal(),
-    onResize: createSignal(),
-    onRestore: createSignal(),
-  });
+  const out = allocateEntity<ApplicationWindow>();
+  out.alwaysOnTop = false;
+  out.devicePixelRatio = 1;
+  out.focused = false;
+  out.fullscreen = false;
+  out.height = 0;
+  out.icon = '';
+  out.maxHeight = -1;
+  out.maximized = false;
+  out.maxWidth = -1;
+  out.minHeight = 0;
+  out.minimized = false;
+  out.minWidth = 0;
+  out.opacity = 1;
+  out.resizable = true;
+  out.skipTaskbar = false;
+  out.title = '';
+  out.visible = true;
+  out.width = 0;
+  out.x = 0;
+  out.y = 0;
+  out.onActivate = createSignal();
+  out.onClose = createSignal();
+  out.onCloseRequest = createSignal();
+  out.onDeactivate = createSignal();
+  out.onDropFile = createSignal();
+  out.onFocusIn = createSignal();
+  out.onFocusOut = createSignal();
+  out.onFullscreenChanged = createSignal();
+  out.onMaximize = createSignal();
+  out.onMinimize = createSignal();
+  out.onMove = createSignal();
+  out.onOrientationChanged = createSignal();
+  out.onRenderContextLost = createSignal();
+  out.onRenderContextRestored = createSignal();
+  out.onResize = createSignal();
+  out.onRestore = createSignal();
+  return finishEntity(out);
 }
 
 export function detachWindowClose(win: ApplicationWindow): void {

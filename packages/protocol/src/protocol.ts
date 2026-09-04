@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   HasProtocolDefault,
   HasProtocolLaunch,
   HasProtocolOpen,
@@ -21,7 +22,9 @@ export function attachProtocolHandler(host: HasProtocolOpen, handler: ProtocolHa
 }
 
 export function createProtocolHandler(): ProtocolHandler {
-  return createEntity({ onOpenUrl: createSignal() });
+  const out = allocateEntity<ProtocolHandler>();
+  out.onOpenUrl = createSignal();
+  return finishEntity(out);
 }
 
 export function createProtocolUrl(parts: Readonly<Partial<ParsedProtocolUrl>>): string {

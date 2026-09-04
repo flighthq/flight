@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   RenderTargetColorSpace,
   WgpuRenderState,
   WgpuRenderTarget,
@@ -46,7 +47,9 @@ export function acquireWgpuRenderTarget(
 }
 
 export function createWgpuRenderTargetPool(): WgpuRenderTargetPool {
-  return createEntity({ free: [] });
+  const out = allocateEntity<WgpuRenderTargetPool>();
+  out.free = [];
+  return finishEntity(out);
 }
 
 export function destroyWgpuRenderTargetPool(state: WgpuRenderState, pool: WgpuRenderTargetPool): void {

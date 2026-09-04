@@ -1,7 +1,8 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Bitmap,
+  EntityConstruction,
   GlyphAtlas,
   GlyphAtlasOptions,
   GlyphMetrics,
@@ -19,31 +20,31 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
     ...(options.fontStyle !== undefined ? { fontStyle: options.fontStyle } : {}),
     ...(options.fontWeight !== undefined ? { fontWeight: options.fontWeight } : {}),
   };
-  return createEntity({
-    runtime: {
-      bitmaps: new Map(),
-      dirty: false,
-      dirtyMaxX: 0,
-      dirtyMaxY: 0,
-      dirtyMinX: 0,
-      dirtyMinY: 0,
-      entries: new Map(),
-      layoutVersion: 0,
-      lru: new Map(),
-      maxArea: options.maxArea ?? 0,
-      maxBytes: options.maxBytes ?? 0,
-      maxGlyphs: options.maxGlyphs ?? 0,
-      occupiedArea: 0,
-      retainedBytes: 0,
-      metrics: _resolveGlyphAtlasMetrics(rasterizerBackend, rasterizeOptions),
-      packBottom: padding,
-      padding,
-      rasterizerBackend,
-      rasterizeOptions,
-      shelves: [],
-      bitmap: createBitmap(options.width, options.height),
-    },
-  });
+  const out = allocateEntity<GlyphAtlas>();
+  out.runtime = {
+    bitmaps: new Map(),
+    dirty: false,
+    dirtyMaxX: 0,
+    dirtyMaxY: 0,
+    dirtyMinX: 0,
+    dirtyMinY: 0,
+    entries: new Map(),
+    layoutVersion: 0,
+    lru: new Map(),
+    maxArea: options.maxArea ?? 0,
+    maxBytes: options.maxBytes ?? 0,
+    maxGlyphs: options.maxGlyphs ?? 0,
+    occupiedArea: 0,
+    retainedBytes: 0,
+    metrics: _resolveGlyphAtlasMetrics(rasterizerBackend, rasterizeOptions),
+    packBottom: padding,
+    padding,
+    rasterizerBackend,
+    rasterizeOptions,
+    shelves: [],
+    bitmap: createBitmap(options.width, options.height),
+  };
+  return finishEntity(out);
 }
 
 // Estimates line metrics from a pixel font size when a real font-metrics source is not wired up. The

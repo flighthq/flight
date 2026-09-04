@@ -1,10 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Connectivity,
   ConnectivityReachability,
   ConnectivityReachabilityOptions,
   ConnectivityStatus,
+  EntityConstruction,
   HasConnectivityChange,
   HasConnectivityReachability,
   HasConnectivityStatus,
@@ -47,13 +48,13 @@ export function attachConnectivity(
 }
 
 export function createConnectivity(): Connectivity {
-  return createEntity({
-    onChange: createSignal(),
-    onConnectionTypeChange: createSignal(),
-    onMeteredChange: createSignal(),
-    onOffline: createSignal(),
-    onOnline: createSignal(),
-  });
+  const out = allocateEntity<Connectivity>();
+  out.onChange = createSignal();
+  out.onConnectionTypeChange = createSignal();
+  out.onMeteredChange = createSignal();
+  out.onOffline = createSignal();
+  out.onOnline = createSignal();
+  return finishEntity(out);
 }
 
 // Terminal provider teardown. This is deliberately separate from per-entity detach: a caller that

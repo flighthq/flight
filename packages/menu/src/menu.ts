@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   HasMenuApplication,
   HasMenuHighlight,
   HasMenuPopup,
@@ -46,7 +47,9 @@ export function cloneMenuTemplate(template: Readonly<MenuItemTemplate>): MenuIte
 // Allocates a MenuHighlight event entity with an inert signal; call attachMenuHighlight to start
 // delivery. Entity-composed, like every identity-bearing SDK object.
 export function createMenuHighlight(): MenuHighlight {
-  return createEntity({ onMenuItemHighlight: createSignal() });
+  const out = allocateEntity<MenuHighlight>();
+  out.onMenuItemHighlight = createSignal();
+  return finishEntity(out);
 }
 
 // Builds a menu item template, filling defaults (type 'normal', enabled true). Recursively normalizes
@@ -68,7 +71,9 @@ export function createMenuItemTemplate(
 
 // Allocates a MenuSelect event entity with an inert signal; call attachMenuSelect to start delivery.
 export function createMenuSelect(): MenuSelect {
-  return createEntity({ onMenuItemSelect: createSignal() });
+  const out = allocateEntity<MenuHighlight>();
+  out.onMenuItemSelect = createSignal();
+  return finishEntity(out);
 }
 
 // Stops delivery without discarding the entity: runs this entity's own unsubscribe, if it has one.
@@ -127,7 +132,12 @@ export function disposeMenuSelect(select: MenuSelect): void {
 // The module-level identity/enable state here is package state, not ambient capability resolution —
 // nothing about which provider serves a call is decided by it.
 export function enableMenuSignals(): MenuSignals {
-  _menuSignals ??= createEntity({ onContextMenuClose: createSignal(), onContextMenuOpen: createSignal() });
+  _menuSignals ??= (() => {
+    const out = allocateEntity<void>();
+    out.onContextMenuClose = createSignal();
+    out.onContextMenuOpen = createSignal();
+    return finishEntity(out);
+  })();
   return _menuSignals;
 }
 

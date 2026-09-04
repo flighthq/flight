@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   BoundsNodeAny,
+  EntityConstruction,
   MethodsOf,
   MorphShape,
   PartialNode,
@@ -47,9 +48,9 @@ export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
 }
 
 export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
-  return createEntity({
-    commands: data?.commands ?? [],
-  });
+  const out = allocateEntity<Shape>();
+  out.commands = data?.commands ?? [];
+  return finishEntity(out);
 }
 
 export function createShapeRuntime(): ShapeRuntime {

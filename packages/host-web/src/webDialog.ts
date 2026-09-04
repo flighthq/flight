@@ -1,5 +1,5 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapturePhotoDialogOptions,
   CaptureVideoDialogOptions,
@@ -7,6 +7,7 @@ import type {
   DialogVideo,
   DirectoryOpenDialogBackend,
   DirectoryOpenDialogResult,
+  EntityConstruction,
   EntityRuntimeKey,
   FileDialogFilter,
   FileDialogHandleOperations,
@@ -28,29 +29,41 @@ import type {
 
 export { webMessageDialogBackend, webPromptDialogBackend } from '@flighthq/dialog/contract';
 
-export const webDirectoryOpenDialogBackend = createEntity({
-  open: openDirectory,
-} satisfies Omit<DirectoryOpenDialogBackend, typeof EntityRuntimeKey>);
+export const webDirectoryOpenDialogBackend = (() => {
+  const out = allocateEntity<unknown>();
+  out.open = openDirectory;
+  return finishEntity(out);
+})();
 
-export const webFileOpenDialogBackend = createEntity({
-  open: openFile,
-} satisfies Omit<FileOpenDialogBackend, typeof EntityRuntimeKey>);
+export const webFileOpenDialogBackend = (() => {
+  const out = allocateEntity<unknown>();
+  out.open = openFile;
+  return finishEntity(out);
+})();
 
-export const webFileSaveDialogBackend = createEntity({
-  save: saveFile,
-} satisfies Omit<FileSaveDialogBackend, typeof EntityRuntimeKey>);
+export const webFileSaveDialogBackend = (() => {
+  const out = allocateEntity<unknown>();
+  out.save = saveFile;
+  return finishEntity(out);
+})();
 
-export const webImageOpenDialogBackend = createEntity({
-  open: openImage,
-} satisfies Omit<ImageOpenDialogBackend, typeof EntityRuntimeKey>);
+export const webImageOpenDialogBackend = (() => {
+  const out = allocateEntity<unknown>();
+  out.open = openImage;
+  return finishEntity(out);
+})();
 
-export const webPhotoCaptureDialogBackend = createEntity({
-  capture: capturePhoto,
-} satisfies Omit<PhotoCaptureDialogBackend, typeof EntityRuntimeKey>);
+export const webPhotoCaptureDialogBackend = (() => {
+  const out = allocateEntity<unknown>();
+  out.capture = capturePhoto;
+  return finishEntity(out);
+})();
 
-export const webVideoCaptureDialogBackend = createEntity({
-  capture: captureVideo,
-} satisfies Omit<VideoCaptureDialogBackend, typeof EntityRuntimeKey>);
+export const webVideoCaptureDialogBackend = (() => {
+  const out = allocateEntity<unknown>();
+  out.capture = captureVideo;
+  return finishEntity(out);
+})();
 
 async function openDirectory(options: Readonly<OpenDirectoryDialogOptions> = {}): Promise<DirectoryOpenDialogResult> {
   if (options.signal?.aborted) return { outcome: 'cancelled' };

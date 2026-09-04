@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { SpecularPbrExtension } from '@flighthq/types/contract';
 import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
 
@@ -6,15 +6,15 @@ import { isValidMaterialWeight } from './materialValidation';
 import { isValidPbrUvSet } from './pbrExtension';
 
 export function createSpecularPbrExtension(opts?: Readonly<Partial<SpecularPbrExtension>>): SpecularPbrExtension {
-  return createEntity({
-    kind: SpecularPbrExtensionKind,
-    specular: opts?.specular ?? 1,
-    specularColor: opts?.specularColor ?? 0xffffffff,
-    specularColorMap: opts?.specularColorMap ?? null,
-    specularColorMapUvSet: opts?.specularColorMapUvSet ?? 0,
-    specularMap: opts?.specularMap ?? null,
-    specularMapUvSet: opts?.specularMapUvSet ?? 0,
-  });
+  const out = allocateEntity<SpecularPbrExtension>();
+  out.kind = SpecularPbrExtensionKind;
+  out.specular = opts?.specular ?? 1;
+  out.specularColor = opts?.specularColor ?? 0xffffffff;
+  out.specularColorMap = opts?.specularColorMap ?? null;
+  out.specularColorMapUvSet = opts?.specularColorMapUvSet ?? 0;
+  out.specularMap = opts?.specularMap ?? null;
+  out.specularMapUvSet = opts?.specularMapUvSet ?? 0;
+  return finishEntity(out);
 }
 
 export function isValidSpecularPbrExtension(value: Readonly<SpecularPbrExtension>): boolean {

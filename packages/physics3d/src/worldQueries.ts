@@ -3,11 +3,12 @@ import {
   createCollisionTimeOfImpact3D,
   getCollisionShapeContainsPoint3D,
 } from '@flighthq/collision/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape3D,
   CollisionRaycastHit3D,
   CollisionTimeOfImpact3D,
+  EntityConstruction,
   NonEntityCreateResult,
   Physics3DCollider,
   Physics3DQueryFilter,
@@ -47,27 +48,33 @@ export function createPhysics3DQueryFilter(): NonEntityCreateResult<Physics3DQue
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
 // rewrite them and publish only `hitCount`, so picking can run each frame without garbage.
 export function createPhysics3DQueryResult(): Physics3DQueryResult {
-  return createEntity({ hits: [], hitCount: 0 });
+  const out = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+  out.hits = [];
+  out.hitCount = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DRayResult(): Physics3DRayResult {
-  return createEntity({ hits: [], hitCount: 0 });
+  const out = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+  out.hits = [];
+  out.hitCount = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
-  return createEntity({
-    body: null,
-    collider: null,
-    colliderIndex: -1,
-    fraction: 0,
-    hit: false,
-    normalX: 0,
-    normalY: 0,
-    normalZ: 0,
-    x: 0,
-    y: 0,
-    z: 0,
-  });
+  const out = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+  out.body = null;
+  out.collider = null;
+  out.colliderIndex = -1;
+  out.fraction = 0;
+  out.hit = false;
+  out.normalX = 0;
+  out.normalY = 0;
+  out.normalZ = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  return finishEntity(out);
 }
 
 // Writes every collider containing the world-space point. Broadphase candidates are confirmed by the
@@ -549,12 +556,11 @@ function releasePhysics3DQueryScratch(scratch: Physics3DQueryScratch): void {
 
 // A stand-in collider so a bare shape can reuse `writePhysics3DColliderBounds`. Only `world` is read by
 // that function; the rest is filled to keep the object one shape rather than a partial.
-const shapeCastProbe: Physics3DCollider = createEntity({
-  filter: { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff },
-  local: { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 },
-  material: { density: 0, friction: 0, restitution: 0 },
-  sensor: false,
-  world: { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 },
-});
+const shapeCastProbe = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+shapeCastProbe.filter = { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff };
+shapeCastProbe.local = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
+shapeCastProbe.material = { density: 0, friction: 0, restitution: 0 };
+shapeCastProbe.sensor = false;
+shapeCastProbe.world = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
 
 const physics3DQueryScratchPool: Physics3DQueryScratch[] = [createPhysics3DQueryScratch()];

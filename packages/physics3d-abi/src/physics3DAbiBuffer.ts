@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   Physics3DAbiBodyBuffer,
   Physics3DAbiCommandBuffer,
   Physics3DAbiContactBuffer,
@@ -32,24 +33,23 @@ export function clearPhysics3DAbiCommandBuffer(out: Physics3DAbiCommandBuffer): 
 
 export function createPhysics3DAbiBodyBuffer(capacity: number): Physics3DAbiBodyBuffer {
   assertCapacity(capacity, 'body');
-  return createEntity({
-    ids: new Uint32Array(capacity),
-    flags: new Uint32Array(capacity),
-    values: new Float64Array(capacity * Physics3DAbiBodyValueStride),
-    count: 0,
-    requiredCount: 0,
-  });
+  const out = allocateEntity<Physics3DAbiBodyBuffer>();
+  out.ids = new Uint32Array(capacity);
+  out.flags = new Uint32Array(capacity);
+  out.values = new Float64Array(capacity * Physics3DAbiBodyValueStride);
+  out.count = 0;
+  out.requiredCount = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DAbiCommandBuffer(byteCapacity = 4096): Physics3DAbiCommandBuffer {
   if (!Number.isSafeInteger(byteCapacity) || byteCapacity < Physics3DAbiCommandHeaderByteLength) {
     throw new RangeError(`Physics3D ABI command capacity must be at least ${Physics3DAbiCommandHeaderByteLength}`);
   }
-  const out: Physics3DAbiCommandBuffer = createEntity({
-    data: new Uint8Array(byteCapacity),
-    byteLength: 0,
-    commandCount: 0,
-  });
+  const out = allocateEntity<Physics3DAbiBodyBuffer>();
+  out.data = new Uint8Array(byteCapacity);
+  out.byteLength = 0;
+  out.commandCount = 0;
   clearPhysics3DAbiCommandBuffer(out);
   return out;
 }
@@ -60,50 +60,50 @@ export function createPhysics3DAbiContactBuffer(
 ): Physics3DAbiContactBuffer {
   assertCapacity(contactCapacity, 'contact');
   assertCapacity(pointCapacity, 'contact point');
-  return createEntity({
-    ids: new Uint32Array(contactCapacity * Physics3DAbiContactIdStride),
-    flags: new Uint32Array(contactCapacity),
-    pointStarts: new Uint32Array(contactCapacity),
-    pointCounts: new Uint32Array(contactCapacity),
-    values: new Float64Array(contactCapacity * Physics3DAbiContactValueStride),
-    pointFeatureIds: new Uint32Array(pointCapacity),
-    pointValues: new Float64Array(pointCapacity * Physics3DAbiContactPointValueStride),
-    count: 0,
-    pointCount: 0,
-    requiredCount: 0,
-    requiredPointCount: 0,
-  });
+  const out = allocateEntity<Physics3DAbiBodyBuffer>();
+  out.ids = new Uint32Array(contactCapacity * Physics3DAbiContactIdStride);
+  out.flags = new Uint32Array(contactCapacity);
+  out.pointStarts = new Uint32Array(contactCapacity);
+  out.pointCounts = new Uint32Array(contactCapacity);
+  out.values = new Float64Array(contactCapacity * Physics3DAbiContactValueStride);
+  out.pointFeatureIds = new Uint32Array(pointCapacity);
+  out.pointValues = new Float64Array(pointCapacity * Physics3DAbiContactPointValueStride);
+  out.count = 0;
+  out.pointCount = 0;
+  out.requiredCount = 0;
+  out.requiredPointCount = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DAbiExecutionResult(): Physics3DAbiExecutionResult {
-  return createEntity({
-    status: 'Complete',
-    commandIndex: 0,
-    byteOffset: Physics3DAbiCommandHeaderByteLength,
-    commandKind: 0,
-  });
+  const out = allocateEntity<Physics3DAbiBodyBuffer>();
+  out.status = 'Complete';
+  out.commandIndex = 0;
+  out.byteOffset = Physics3DAbiCommandHeaderByteLength;
+  out.commandKind = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DAbiJointBuffer(capacity: number): Physics3DAbiJointBuffer {
   assertCapacity(capacity, 'joint');
-  return createEntity({
-    ids: new Uint32Array(capacity),
-    flags: new Uint32Array(capacity),
-    values: new Float64Array(capacity * Physics3DAbiJointValueStride),
-    count: 0,
-    requiredCount: 0,
-  });
+  const out = allocateEntity<Physics3DAbiBodyBuffer>();
+  out.ids = new Uint32Array(capacity);
+  out.flags = new Uint32Array(capacity);
+  out.values = new Float64Array(capacity * Physics3DAbiJointValueStride);
+  out.count = 0;
+  out.requiredCount = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DAbiQueryBuffer(capacity: number): Physics3DAbiQueryBuffer {
   assertCapacity(capacity, 'query');
-  return createEntity({
-    bodyIds: new Uint32Array(capacity),
-    colliderIds: new Uint32Array(capacity),
-    values: new Float64Array(capacity * Physics3DAbiQueryValueStride),
-    count: 0,
-    requiredCount: 0,
-  });
+  const out = allocateEntity<Physics3DAbiBodyBuffer>();
+  out.bodyIds = new Uint32Array(capacity);
+  out.colliderIds = new Uint32Array(capacity);
+  out.values = new Float64Array(capacity * Physics3DAbiQueryValueStride);
+  out.count = 0;
+  out.requiredCount = 0;
+  return finishEntity(out);
 }
 
 export function getPhysics3DAbiCommandBufferRemainingByteLength(buffer: Readonly<Physics3DAbiCommandBuffer>): number {

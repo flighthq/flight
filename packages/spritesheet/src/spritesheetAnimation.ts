@@ -1,16 +1,16 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types/contract';
 
 export function createSpritesheetAnimation(obj?: Partial<SpritesheetAnimation>): SpritesheetAnimation {
-  return createEntity({
-    direction: obj?.direction ?? 'forward',
-    frameDuration: obj?.frameDuration ?? 0,
-    frameDurations: obj?.frameDurations ?? null,
-    frames: obj?.frames ?? [],
-    originX: obj?.originX ?? 0,
-    originY: obj?.originY ?? 0,
-    repeatCount: obj?.repeatCount ?? 0,
-  });
+  const out = allocateEntity<SpritesheetAnimation>();
+  out.direction = obj?.direction ?? 'forward';
+  out.frameDuration = obj?.frameDuration ?? 0;
+  out.frameDurations = obj?.frameDurations ?? null;
+  out.frames = obj?.frames ?? [];
+  out.originX = obj?.originX ?? 0;
+  out.originY = obj?.originY ?? 0;
+  out.repeatCount = obj?.repeatCount ?? 0;
+  return finishEntity(out);
 }
 
 // Builds a `SpritesheetAnimation` by selecting frames from a `Spritesheet` whose atlas region names

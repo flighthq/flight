@@ -1,6 +1,6 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSkeleton2D,
@@ -13,14 +13,15 @@ import type {
   AttachmentSkin2D,
   Bone2D,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
+  Skeleton2DDrawOrderTimeline,
   Skeleton2DImport,
   Skeleton2DImportAnimation,
   Skin2D,
   SkinAttachment2D,
-  Skeleton2DDrawOrderTimeline,
   Slot2D,
   TransformInherit2D,
 } from '@flighthq/types/contract';
@@ -237,39 +238,39 @@ function parseSpineMeshAttachment(
   const rawVerts = Array.isArray(raw.vertices) ? (raw.vertices as number[]) : [];
   const vertexCount = uvs.length >> 1;
   if (rawVerts.length === vertexCount * 2) {
-    return createEntity({
-      kind: MeshAttachment2DKind,
-      name,
-      skin: null,
-      triangles,
-      uvs,
-      vertexCount,
-      vertices: Float32Array.from(rawVerts),
-    }) as MeshAttachment2D;
+    const out = allocateEntity<unknown>();
+    out.kind = MeshAttachment2DKind;
+    out.name = name;
+    out.skin = null;
+    out.triangles = triangles;
+    out.uvs = uvs;
+    out.vertexCount = vertexCount;
+    out.vertices = Float32Array.from(rawVerts);
+    return finishEntity(out);
   }
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    name,
-    skin: parseSpineWeightedVertices(rawVerts, vertexCount, diagnostics),
-    triangles,
-    uvs,
-    vertexCount,
-    vertices: null,
-  }) as MeshAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.kind = MeshAttachment2DKind;
+  out.name = name;
+  out.skin = parseSpineWeightedVertices(rawVerts, vertexCount, diagnostics);
+  out.triangles = triangles;
+  out.uvs = uvs;
+  out.vertexCount = vertexCount;
+  out.vertices = null;
+  return finishEntity(out);
 }
 
 function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>): RegionAttachment2D {
-  return createEntity({
-    height: numberOr(raw.height, 0),
-    kind: RegionAttachment2DKind,
-    name,
-    rotation: numberOr(raw.rotation, 0),
-    scaleX: numberOr(raw.scaleX, 1),
-    scaleY: numberOr(raw.scaleY, 1),
-    width: numberOr(raw.width, 0),
-    x: numberOr(raw.x, 0),
-    y: numberOr(raw.y, 0),
-  }) as RegionAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.height = numberOr(raw.height, 0);
+  out.kind = RegionAttachment2DKind;
+  out.name = name;
+  out.rotation = numberOr(raw.rotation, 0);
+  out.scaleX = numberOr(raw.scaleX, 1);
+  out.scaleY = numberOr(raw.scaleY, 1);
+  out.width = numberOr(raw.width, 0);
+  out.x = numberOr(raw.x, 0);
+  out.y = numberOr(raw.y, 0);
+  return finishEntity(out);
 }
 
 // Slots bind a bone to its currently-shown attachment; their array order is the draw order. `boneIndex`

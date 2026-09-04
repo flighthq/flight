@@ -1,9 +1,10 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   ClipboardBookmark,
   ClipboardWatch,
   ClipboardWriteItem,
+  EntityConstruction,
   HasClipboardBookmark,
   HasClipboardChange,
   HasClipboardFormats,
@@ -30,7 +31,9 @@ export function clearClipboard(host: HasClipboardText): Promise<boolean> {
 // Allocates a ClipboardWatch event entity with an inert signal.
 // Call attachClipboardWatch to start delivery; call disposeClipboardWatch when done.
 export function createClipboardWatch(): ClipboardWatch {
-  return createEntity({ onChange: createSignal() });
+  const out = allocateEntity<ClipboardWatch>();
+  out.onChange = createSignal();
+  return finishEntity(out);
 }
 
 // Stops delivery to watch and forgets its subscription. Safe to call when not attached.

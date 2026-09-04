@@ -1,32 +1,33 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { GlPipeline, GlRenderRegistries } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createEmptyGlRegistries(): GlRenderRegistries {
-  return createEntity({
-    blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
-    compressedTextureDecoder: createSlotTable('GlCompressedTextureDecoder', 'Unregistered'),
-    compressedTextureUpload: createSlotTable('GlCompressedTextureUpload', 'Unregistered'),
-    customEffectShaders: createKeyedTable('GlCustomEffectShader', 'Unregistered'),
-    customMaterialShaders: createKeyedTable('GlCustomMaterialShader', 'Unregistered'),
-    materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
-    meshMaterialRenderers: createKeyedTable('GlMeshMaterialRenderer', 'StandardMaterial'),
-    modifierSnippets: createKeyedTable('GlModifierSnippet', 'Unregistered'),
-    modifierSnippetRevision: 0,
-    pbrExtensions: createKeyedTable('GlPbrExtension', 'Unregistered'),
-    pbrExtensionRevision: 0,
-    renderEffects: createKeyedTable('GlRenderEffect', 'Unregistered'),
-    renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
-    shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),
-    strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
-    textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
-    velocityWriters: createKeyedTable('GlVelocityWriter', 'Unregistered'),
-  });
+  const out = allocateEntity<GlRenderRegistries>();
+  out.blendRealizations = createKeyedTable('GlBlendRealization', 'Normal');
+  out.compressedTextureDecoder = createSlotTable('GlCompressedTextureDecoder', 'Unregistered');
+  out.compressedTextureUpload = createSlotTable('GlCompressedTextureUpload', 'Unregistered');
+  out.customEffectShaders = createKeyedTable('GlCustomEffectShader', 'Unregistered');
+  out.customMaterialShaders = createKeyedTable('GlCustomMaterialShader', 'Unregistered');
+  out.materialRenderers = createKeyedTable('GlMaterialRenderer', 'StandardMaterial');
+  out.meshMaterialRenderers = createKeyedTable('GlMeshMaterialRenderer', 'StandardMaterial');
+  out.modifierSnippets = createKeyedTable('GlModifierSnippet', 'Unregistered');
+  out.modifierSnippetRevision = 0;
+  out.pbrExtensions = createKeyedTable('GlPbrExtension', 'Unregistered');
+  out.pbrExtensionRevision = 0;
+  out.renderEffects = createKeyedTable('GlRenderEffect', 'Unregistered');
+  out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.shapeRasterizer = createSlotTable('GlShapeRasterizer', 'Unregistered');
+  out.strokeTessellator = createSlotTable('StrokeTessellator', 'Rasterize');
+  out.textureResolvers = createKeyedTable('GlTextureResolver', 'Unregistered');
+  out.velocityWriters = createKeyedTable('GlVelocityWriter', 'Unregistered');
+  return finishEntity(out);
 }
 
 export function createGlPipeline(registries: Readonly<GlRenderRegistries>): GlPipeline {
-  const pipeline = createEntity({ registries }) as GlPipeline;
+  const pipeline = allocateEntity<GlRenderRegistries>();
+  pipeline.registries = registries;
   pipeline[EntityRuntimeKey] = { binding: null };
   return pipeline;
 }

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
 import type { Entity, Matrix4Like } from '@flighthq/types/contract';
 import type {
@@ -15,11 +15,11 @@ import type {
 export function createOrthographicProjection(
   opts: Readonly<OrthographicProjectionOptions>,
 ): OrthographicProjection & Entity {
-  return createEntity({
-    halfHeight: opts.halfHeight,
-    halfWidth: opts.halfWidth,
-    kind: 'orthographic',
-  });
+  const out = allocateEntity<unknown>();
+  out.halfHeight = opts.halfHeight;
+  out.halfWidth = opts.halfWidth;
+  out.kind = 'orthographic';
+  return finishEntity(out);
 }
 
 // Builds a perspective projection descriptor from a vertical field of view (radians) and a
@@ -27,11 +27,11 @@ export function createOrthographicProjection(
 export function createPerspectiveProjection(
   opts: Readonly<PerspectiveProjectionOptions>,
 ): PerspectiveProjection & Entity {
-  return createEntity({
-    aspect: opts.aspect ?? 1,
-    fovY: opts.fovY,
-    kind: 'perspective',
-  });
+  const out = allocateEntity<unknown>();
+  out.aspect = opts.aspect ?? 1;
+  out.fovY = opts.fovY;
+  out.kind = 'perspective';
+  return finishEntity(out);
 }
 
 // Returns the larger world-space footprint of one texel across an orthographic projection. Using the

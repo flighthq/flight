@@ -1,6 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
-import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  Path,
+  PathWinding,
+  ShapeCommandToken,
+  ShapeFillRegion,
+} from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
 // Appends one shape geometry command (moveTo/lineTo/curveTo/cubicCurveTo and the drawCircle/Ellipse/
@@ -133,7 +139,13 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
         if (path !== null && path.commands.length > 0) regions.push({ path, color, alpha });
         color = commands[a] as number;
         alpha = commands[a + 1] as number;
-        path = createEntity({ commands: [] as number[], data: [] as number[], winding });
+        path = (() => {
+          const out = allocateEntity<void>();
+          out.commands = [] as number[];
+          out.data = [] as number[];
+          out.winding = winding;
+          return finishEntity(out);
+        })();
         break;
       }
       case 'endFill': {

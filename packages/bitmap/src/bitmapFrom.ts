@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap, HasGraphicsBitmapReadback, ImageResource } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Bitmap, EntityConstruction, HasGraphicsBitmapReadback, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver';
@@ -22,16 +22,16 @@ export function createBitmapFromCanvas(
   const h = height ?? canvas.height;
   const ctx = canvas.getContext('2d')!;
   const raw = ctx.getImageData(x, y, w, h);
-  return createEntity({
-    alphaType: 'straight',
-    gamut: raw.colorSpace as 'srgb' | 'display-p3',
-    data: raw.data,
-    format: 'rgba8unorm',
-    height: raw.height,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width: raw.width,
-  });
+  const out = allocateEntity<Bitmap>();
+  out.alphaType = 'straight';
+  out.gamut = raw.colorSpace as 'srgb' | 'display-p3';
+  out.data = raw.data;
+  out.format = 'rgba8unorm';
+  out.height = raw.height;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = raw.width;
+  return finishEntity(out);
 }
 
 export function createBitmapFromImageSource(

@@ -1,14 +1,14 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Requirement, RequirementFacet, RequirementSet } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Requirement, RequirementFacet, RequirementSet } from '@flighthq/types/contract';
 
 export function createRequirementSet(
   covers: readonly RequirementFacet[],
   requirements: readonly Readonly<Requirement>[],
 ): RequirementSet {
-  return createEntity({
-    covers: distinctSorted(covers),
-    requirements: distinctSortedRequirements(requirements),
-  });
+  const out = allocateEntity<RequirementSet>();
+  out.covers = distinctSorted(covers);
+  out.requirements = distinctSortedRequirements(requirements);
+  return finishEntity(out);
 }
 
 // A difference can claim completeness only where both operands inspected the facet. Requirements from

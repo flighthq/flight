@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
+  EntityConstruction,
   GlRenderState,
   GlRenderTarget,
   GlRenderTargetPool,
@@ -78,7 +79,9 @@ export function acquireGlRenderTarget(
 }
 
 export function createGlRenderTargetPool(): GlRenderTargetPool {
-  return createEntity({ free: [] });
+  const out = allocateEntity<GlRenderTargetPool>();
+  out.free = [];
+  return finishEntity(out);
 }
 
 export function destroyGlRenderTargetPool(state: GlRenderState, pool: GlRenderTargetPool): void {

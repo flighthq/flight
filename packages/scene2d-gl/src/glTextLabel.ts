@@ -1,5 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
@@ -9,13 +9,14 @@ import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
-  Scene2DRenderer,
+  EntityConstruction,
   GlRenderState,
   Raster2DSurface,
   Raster2DSurfaceProvider,
+  RenderProxy2D,
   Renderable,
   RendererData,
-  RenderProxy2D,
+  Scene2DRenderer,
   TextFormat,
   TextLabel,
   TextLabelRuntime,
@@ -49,13 +50,13 @@ function getGlTextLabelData(data: RendererData): GlTextLabelData {
 }
 
 function createGlTextLabelData(_state: GlRenderState, _source: Renderable): RendererData {
-  return createEntity({
-    surface: null,
-    lastContentId: -1,
-    lastPixelRatio: 0,
-    logW: 0,
-    logH: 0,
-  });
+  const out = allocateEntity<unknown>();
+  out.surface = null;
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.logW = 0;
+  out.logH = 0;
+  return finishEntity(out);
 }
 
 // Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to

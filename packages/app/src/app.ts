@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   App,
@@ -6,6 +6,7 @@ import type {
   AppLoginItem,
   AppLoginItemLike,
   AppPathKind,
+  EntityConstruction,
   HasAppActivate,
   HasAppActivationPolicy,
   HasAppAllWindowsClosed,
@@ -131,14 +132,14 @@ export function clearAppRecentDocuments(host: HasAppRecentDocuments): void {
 }
 
 export function createApp(): App {
-  return createEntity({
-    onActivate: createSignal(),
-    onAllWindowsClosed: createSignal(),
-    onOpenFile: createSignal(),
-    onQuitRequest: createSignal(),
-    onReady: createSignal(),
-    onSecondInstance: createSignal(),
-  });
+  const out = allocateEntity<App>();
+  out.onActivate = createSignal();
+  out.onAllWindowsClosed = createSignal();
+  out.onOpenFile = createSignal();
+  out.onQuitRequest = createSignal();
+  out.onReady = createSignal();
+  out.onSecondInstance = createSignal();
+  return finishEntity(out);
 }
 
 export function detachApp(app: App): void {

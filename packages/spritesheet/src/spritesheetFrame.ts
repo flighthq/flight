@@ -1,13 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { SpritesheetFrame } from '@flighthq/types/contract';
 
 export function createSpritesheetFrame(obj?: Partial<SpritesheetFrame>): SpritesheetFrame {
-  return createEntity({
-    id: obj?.id ?? 0,
-    offsetX: obj?.offsetX ?? 0,
-    offsetY: obj?.offsetY ?? 0,
-    pivotX: obj?.pivotX ?? null,
-    pivotY: obj?.pivotY ?? null,
-    rotated: obj?.rotated ?? false,
-  });
+  const out = allocateEntity<SpritesheetFrame>();
+  out.id = obj?.id ?? 0;
+  out.offsetX = obj?.offsetX ?? 0;
+  out.offsetY = obj?.offsetY ?? 0;
+  out.pivotX = obj?.pivotX ?? null;
+  out.pivotY = obj?.pivotY ?? null;
+  out.rotated = obj?.rotated ?? false;
+  return finishEntity(out);
 }

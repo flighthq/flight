@@ -1,13 +1,14 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
+  EntityConstruction,
   MethodsOf,
   Node,
   PartialNode,
   Rectangle,
+  RenderState,
   Renderable,
   RendererData,
-  RenderState,
   Sprite,
   SpriteData,
   SpriteIdentityRendererData,
@@ -36,16 +37,19 @@ export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
 }
 
 export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
-  return createEntity({
-    texture: data?.texture ?? null,
-  });
+  const out = allocateEntity<Sprite>();
+  out.texture = data?.texture ?? null;
+  return finishEntity(out);
 }
 
 // Creates the per-state identity stamp used by a Sprite renderer's optional dirty hook. The data is
 // attached to that state's render proxy, so separate render pipelines compare independently.
 export function createSpriteRendererData(_state: RenderState, source: Renderable): SpriteIdentityRendererData {
   const texture = (source as Sprite).data.texture;
-  return createEntity({ textureIdentity: texture, textureVersion: texture?.version ?? -1 });
+  const out = allocateEntity<Sprite>();
+  out.textureIdentity = texture;
+  out.textureVersion = texture?.version ?? -1;
+  return finishEntity(out);
 }
 
 export function createSpriteRuntime(): SpriteRuntime {

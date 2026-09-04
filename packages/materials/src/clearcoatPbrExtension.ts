@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ClearcoatPbrExtension } from '@flighthq/types/contract';
 import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
 
@@ -6,18 +6,18 @@ import { isValidMaterialWeight } from './materialValidation';
 import { isValidPbrUvSet } from './pbrExtension';
 
 export function createClearcoatPbrExtension(opts?: Readonly<Partial<ClearcoatPbrExtension>>): ClearcoatPbrExtension {
-  return createEntity({
-    clearcoat: opts?.clearcoat ?? 0,
-    clearcoatMap: opts?.clearcoatMap ?? null,
-    clearcoatMapUvSet: opts?.clearcoatMapUvSet ?? 0,
-    clearcoatNormalMap: opts?.clearcoatNormalMap ?? null,
-    clearcoatNormalMapUvSet: opts?.clearcoatNormalMapUvSet ?? 0,
-    clearcoatNormalScale: opts?.clearcoatNormalScale ?? 1,
-    clearcoatRoughness: opts?.clearcoatRoughness ?? 0,
-    clearcoatRoughnessMap: opts?.clearcoatRoughnessMap ?? null,
-    clearcoatRoughnessMapUvSet: opts?.clearcoatRoughnessMapUvSet ?? 0,
-    kind: ClearcoatPbrExtensionKind,
-  });
+  const out = allocateEntity<ClearcoatPbrExtension>();
+  out.clearcoat = opts?.clearcoat ?? 0;
+  out.clearcoatMap = opts?.clearcoatMap ?? null;
+  out.clearcoatMapUvSet = opts?.clearcoatMapUvSet ?? 0;
+  out.clearcoatNormalMap = opts?.clearcoatNormalMap ?? null;
+  out.clearcoatNormalMapUvSet = opts?.clearcoatNormalMapUvSet ?? 0;
+  out.clearcoatNormalScale = opts?.clearcoatNormalScale ?? 1;
+  out.clearcoatRoughness = opts?.clearcoatRoughness ?? 0;
+  out.clearcoatRoughnessMap = opts?.clearcoatRoughnessMap ?? null;
+  out.clearcoatRoughnessMapUvSet = opts?.clearcoatRoughnessMapUvSet ?? 0;
+  out.kind = ClearcoatPbrExtensionKind;
+  return finishEntity(out);
 }
 
 export function isValidClearcoatPbrExtension(value: Readonly<ClearcoatPbrExtension>): boolean {

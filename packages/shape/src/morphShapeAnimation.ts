@@ -1,6 +1,12 @@
 import { sampleAnimationClip } from '@flighthq/animation/contract';
-import { createEntity } from '@flighthq/entity/contract';
-import type { AnimationChannel, AnimationClip, MorphShape, MorphShapeAnimationTarget } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  AnimationChannel,
+  AnimationClip,
+  EntityConstruction,
+  MorphShape,
+  MorphShapeAnimationTarget,
+} from '@flighthq/types/contract';
 import { MorphShapeKind } from '@flighthq/types/contract';
 
 import { setMorphShapeProgress } from './morphShape';
@@ -28,7 +34,9 @@ export function applyMorphShapeAnimationSample(
 // Allocates one stable binding descriptor. Keep and reuse this identity when multiple animation
 // controllers should recognize their MorphShape progress channels as the same target.
 export function createMorphShapeAnimationTarget(shape: MorphShape): MorphShapeAnimationTarget {
-  return createEntity({ shape });
+  const out = allocateEntity<MorphShapeAnimationTarget>();
+  out.shape = shape;
+  return finishEntity(out);
 }
 
 const morphShapeAnimationScratch: number[] = [0];

@@ -1,5 +1,5 @@
 import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -13,15 +13,16 @@ import {
   getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type {
-  Scene2DRenderer,
   DomRenderState,
   DomTextInputOverlay,
-  Renderable,
-  RendererData,
+  EntityConstruction,
   RenderProxy2D,
   RenderState,
+  Renderable,
+  RendererData,
   RichText,
   RichTextRuntime,
+  Scene2DRenderer,
   TextFormat,
   TextLabelRuntime,
 } from '@flighthq/types/contract';
@@ -35,7 +36,9 @@ interface DomRichTextData extends RendererData {
 }
 
 function createDomRichTextData(_state: RenderState, _source: Renderable): DomRichTextData {
-  return createEntity({ div: null });
+  const out = allocateEntity<unknown>();
+  out.div = null;
+  return finishEntity(out);
 }
 
 let _measureCtx: CanvasRenderingContext2D | null = null;

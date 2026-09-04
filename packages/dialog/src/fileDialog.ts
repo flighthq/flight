@@ -1,6 +1,7 @@
-import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import type {
   DirectoryOpenDialogResult,
+  EntityConstruction,
   FileDialogHandle,
   FileDialogHandleOperations,
   FileDialogHandleRuntime,
@@ -23,7 +24,10 @@ export function createFileDialogHandle(
   path: string | null,
   operations: FileDialogHandleOperations | null = null,
 ): FileDialogHandle {
-  const handle = createEntity({ kind, name, path }) as FileDialogHandle;
+  const handle = allocateEntity<FileDialogHandle>();
+  handle.kind = kind;
+  handle.name = name;
+  handle.path = path;
   const runtime = createEntityRuntime() as FileDialogHandleRuntime;
   runtime.operations = operations;
   handle[EntityRuntimeKey] = runtime;

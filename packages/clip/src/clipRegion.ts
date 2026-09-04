@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   cloneRectangle,
   containsRectanglePointXY,
@@ -21,6 +21,7 @@ import {
 import type {
   ClipRegion,
   ClipRegionReleaseGuard,
+  EntityConstruction,
   MatrixLike,
   Path,
   PathWinding,
@@ -71,7 +72,12 @@ export function clipRegionIntersectsRectangle(clip: Readonly<ClipRegion>, rectan
 export function cloneClipRegion(clip: Readonly<ClipRegion>): ClipRegion {
   const rect = cloneRectangle(clip.rect);
   const contours = clip.contours === null ? null : clip.contours.map((c) => c.slice());
-  return createEntity({ contours, rect, version: clip.version, winding: clip.winding });
+  const out = allocateEntity<unknown>();
+  out.contours = contours;
+  out.rect = rect;
+  out.version = clip.version;
+  out.winding = clip.winding;
+  return finishEntity(out);
 }
 
 // Copies source into out in place; does nothing when out === source. Bumps out.version
@@ -102,7 +108,12 @@ export function createClipRegionFromContours(
   const rect = createRectangle();
   setRectangleToContoursBounds(rect, contours);
   const owned = contours.map((c) => c.slice());
-  return createEntity({ contours: owned, rect, version: 0, winding });
+  const out = allocateEntity<ClipRegion>();
+  out.contours = owned;
+  out.rect = rect;
+  out.version = 0;
+  out.winding = winding;
+  return finishEntity(out);
 }
 
 // Builds a clip region from an axis-aligned ellipse bounded by the given rectangle.
@@ -121,13 +132,23 @@ export function createClipRegionFromPath(path: Readonly<Path>, tolerance = 0.25)
   const contours = flattenPath(path, tolerance);
   const rect = createRectangle();
   setRectangleToContoursBounds(rect, contours);
-  return createEntity({ contours, rect, version: 0, winding: path.winding });
+  const out = allocateEntity<ClipRegion>();
+  out.contours = contours;
+  out.rect = rect;
+  out.version = 0;
+  out.winding = path.winding;
+  return finishEntity(out);
 }
 
 // Builds a rectangular clip region — the allocation-light, scissor-eligible form. The rectangle is
 // copied so later edits to the caller's rectangle do not mutate the region; bump via invalidateClipRegion.
 export function createClipRegionFromRectangle(rectangle: Readonly<RectangleLike>): ClipRegion {
-  return createEntity({ contours: null, rect: cloneRectangle(rectangle), version: 0, winding: 'nonZero' });
+  const out = allocateEntity<ClipRegion>();
+  out.contours = null;
+  out.rect = cloneRectangle(rectangle);
+  out.version = 0;
+  out.winding = 'nonZero';
+  return finishEntity(out);
 }
 
 // Builds a clip region from a rounded rectangle with a uniform corner radius.
@@ -469,7 +490,12 @@ const NORMALIZE_EPSILON = 1e-6;
 const clipRegionPool: ClipRegion[] = [];
 
 function makeEmptyClipRegion(): ClipRegion {
-  return createEntity({ contours: null, rect: createRectangle(), version: 0, winding: 'nonZero' });
+  const out = allocateEntity<ClipRegion>();
+  out.contours = null;
+  out.rect = createRectangle();
+  out.version = 0;
+  out.winding = 'nonZero';
+  return finishEntity(out);
 }
 
 // Returns true if (px, py) is inside the contours according to the given winding rule.

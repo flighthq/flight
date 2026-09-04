@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Entity, WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Entity, EntityConstruction, WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
 
 // The explicit browser adapter. All WebGPU discovery and host-handle acquisition stays in this
 // function's call graph so render-state creation can also consume native caller-provided handles.
@@ -32,7 +32,13 @@ export function createWebWgpuHostBackend(): WgpuHostBackend {
         const format = options.format ?? gpu.getPreferredCanvasFormat();
         const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
         if (context === null) throw new Error('Failed to get WebGPU canvas context.');
-        return createEntity({ context, device, format, ownership: 'flight', surface: canvas });
+        const out = allocateEntity<WgpuHostBackend>();
+        out.context = context;
+        out.device = device;
+        out.format = format;
+        out.ownership = 'flight';
+        out.surface = canvas;
+        return finishEntity(out);
       } catch (error) {
         device.destroy();
         throw error;

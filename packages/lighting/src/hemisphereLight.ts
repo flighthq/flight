@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HemisphereLight, HemisphereLightOptions } from '@flighthq/types/contract';
 import { HemisphereLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
@@ -17,12 +17,12 @@ export function cloneHemisphereLight(source: Readonly<HemisphereLight>): Hemisph
 // normal's vertical component. Colors are packed sRgb-albedo RGBA (0xrrggbbaa); both default to
 // opaque white at unit intensity. Hemisphere lights do not cast shadows.
 export function createHemisphereLight(options?: Readonly<HemisphereLightOptions>): HemisphereLight {
-  return createEntity({
-    enabled: options?.enabled ?? true,
-    groundColor: options?.groundColor ?? 0xffffffff,
-    intensity: options?.intensity ?? 1,
-    intensityUnit: options?.intensityUnit ?? UnitlessLightUnit,
-    kind: HemisphereLightKind,
-    skyColor: options?.skyColor ?? 0xffffffff,
-  });
+  const out = allocateEntity<HemisphereLight>();
+  out.enabled = options?.enabled ?? true;
+  out.groundColor = options?.groundColor ?? 0xffffffff;
+  out.intensity = options?.intensity ?? 1;
+  out.intensityUnit = options?.intensityUnit ?? UnitlessLightUnit;
+  out.kind = HemisphereLightKind;
+  out.skyColor = options?.skyColor ?? 0xffffffff;
+  return finishEntity(out);
 }

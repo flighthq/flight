@@ -1,7 +1,14 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeRoot, getNodeRuntime } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Node2D, Node2DRuntime, Scene2D, Scene2DRuntime, Scene2DSignals } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  Node2D,
+  Node2DRuntime,
+  Scene2D,
+  Scene2DRuntime,
+  Scene2DSignals,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createDisplayObject } from './displayObject';
@@ -15,14 +22,13 @@ export function createScene2D(
   obj?: Readonly<Partial<Pick<Scene2D, 'align' | 'color' | 'scaleMode' | 'scene2dHeight' | 'scene2dWidth'>>>,
 ): Scene2D {
   const root = createDisplayObject();
-  const scene2d = createEntity({
-    align: obj?.align ?? 'topleft',
-    color: obj?.color ?? null,
-    root,
-    scaleMode: obj?.scaleMode ?? 'noscale',
-    scene2dHeight: obj?.scene2dHeight ?? 550,
-    scene2dWidth: obj?.scene2dWidth ?? 400,
-  }) as Scene2D;
+  const scene2d = allocateEntity<Scene2D>();
+  scene2d.align = obj?.align ?? 'topleft';
+  scene2d.color = obj?.color ?? null;
+  scene2d.root = root;
+  scene2d.scaleMode = obj?.scaleMode ?? 'noscale';
+  scene2d.scene2dHeight = obj?.scene2dHeight ?? 550;
+  scene2d.scene2dWidth = obj?.scene2dWidth ?? 400;
   (getNodeRuntime(root) as Node2DRuntime).scene2d = scene2d;
   return scene2d;
 }
@@ -35,11 +41,11 @@ export function createScene2DRuntime(): Scene2DRuntime {
 }
 
 export function createScene2DSignals(): Scene2DSignals {
-  return createEntity({
-    onFullscreenChanged: createSignal(),
-    onOrientationChanged: createSignal(),
-    onResize: createSignal(),
-  });
+  const out = allocateEntity<Scene2D>();
+  out.onFullscreenChanged = createSignal();
+  out.onOrientationChanged = createSignal();
+  out.onResize = createSignal();
+  return finishEntity(out);
 }
 
 export function enableScene2DSignals(source: Scene2D): Scene2DSignals {

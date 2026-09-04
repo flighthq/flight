@@ -1,11 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createPath, flattenPath, getPathBounds } from '@flighthq/path/contract';
 import type {
   Entity,
+  EntityConstruction,
   GlyphMetrics,
   GlyphOutlineSource,
-  GlyphRasterizedBitmap,
   GlyphRasterizeOptions,
+  GlyphRasterizedBitmap,
   GlyphRasterizerBackend,
   RectangleLike,
 } from '@flighthq/types/contract';
@@ -18,21 +19,21 @@ import type {
 export function createGlyphRasterizerBackendFromGlyphOutlineSource(
   source: GlyphOutlineSource,
 ): GlyphRasterizerBackend & Entity {
-  return createEntity({
-    measureMetrics(options): GlyphMetrics | null {
-      const metrics = source.getGlyphOutlineMetrics();
-      const scale = resolveGlyphOutlineScale(metrics.unitsPerEm, options.fontSize);
-      if (scale === null) return null;
-      return {
-        ascent: metrics.ascent * scale,
-        descent: metrics.descent * scale,
-        lineGap: metrics.lineGap * scale,
-      };
-    },
-    rasterize(codePoint, options): GlyphRasterizedBitmap | null {
-      return rasterizeGlyphOutlineSource(source, codePoint, options);
-    },
-  } satisfies GlyphRasterizerBackend);
+  const out = allocateEntity<unknown>();
+  out.measureMetrics = (options): GlyphMetrics | null => {
+    const metrics = source.getGlyphOutlineMetrics();
+    const scale = resolveGlyphOutlineScale(metrics.unitsPerEm, options.fontSize);
+    if (scale === null) return null;
+    return {
+      ascent: metrics.ascent * scale,
+      descent: metrics.descent * scale,
+      lineGap: metrics.lineGap * scale,
+    };
+  };
+  out.rasterize = (codePoint, options): GlyphRasterizedBitmap | null => {
+    return rasterizeGlyphOutlineSource(source, codePoint, options);
+  };
+  return finishEntity(out);
 }
 
 function rasterizeGlyphOutlineSource(

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AnimationBlendTree,
   AnimationBlendTreeChannel,
@@ -6,6 +6,7 @@ import type {
   AnimationBlendTreeInput,
   AnimationChannel,
   AnimationPlayer,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import {
@@ -57,7 +58,12 @@ export function createAnimationBlendTree(inputs: readonly AnimationBlendTreeInpu
     }
   }
 
-  return createEntity({ channels, inputs: copiedInputs, players, sampleScratch: new Float32Array(sampleWidth) });
+  const out = allocateEntity<AnimationBlendTree>();
+  out.channels = channels;
+  out.inputs = copiedInputs;
+  out.players = players;
+  out.sampleScratch = new Float32Array(sampleWidth);
+  return finishEntity(out);
 }
 
 // Allocates one caller-visible leaf descriptor. Weight is not clamped; sampling ignores values that are
@@ -67,7 +73,11 @@ export function createAnimationBlendTreeInput(
   weight = 1,
   additive = false,
 ): AnimationBlendTreeInput {
-  return createEntity({ additive, player, weight });
+  const out = allocateEntity<AnimationBlendTree>();
+  out.additive = additive;
+  out.player = player;
+  out.weight = weight;
+  return finishEntity(out);
 }
 
 // Samples every target in stable first-appearance order. The visitor must consume `out` before returning

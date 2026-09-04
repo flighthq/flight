@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderSurface,
   CanvasRenderSurfaceCreator,
   CanvasRenderSurfaceOptions,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -46,18 +47,17 @@ function finishCanvasRenderSurface(
   const requestedContextAttributes = options.contextAttributes;
   const context = canvas.getContext('2d', requestedContextAttributes);
   if (context === null) throw new Error('Failed to get context for canvas.');
-  const surface = createEntity({
-    canvas,
-    context,
-    contextAttributes: context.getContextAttributes(),
-    creator,
-    options: Object.freeze({
-      contextAttributes: requestedContextAttributes,
-      height: options.height ?? canvas.height,
-      pixelRatio: options.pixelRatio ?? 1,
-      width: options.width ?? canvas.width,
-    }),
-  }) as CanvasRenderSurface;
+  const surface = allocateEntity<unknown>();
+  surface.canvas = canvas;
+  surface.context = context;
+  surface.contextAttributes = context.getContextAttributes();
+  surface.creator = creator;
+  surface.options = Object.freeze({
+    contextAttributes: requestedContextAttributes,
+    height: options.height ?? canvas.height,
+    pixelRatio: options.pixelRatio ?? 1,
+    width: options.width ?? canvas.width,
+  });
   surface[EntityRuntimeKey] = { binding: null };
   return surface;
 }

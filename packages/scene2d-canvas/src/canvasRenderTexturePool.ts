@@ -1,10 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   CanvasRenderState,
   CanvasRenderSurfaceCreator,
   CanvasRenderTargetPool,
   CanvasRenderTexturePool,
+  EntityConstruction,
   EntityWithoutRuntime,
   RenderTarget,
   RenderTargetDescriptor,
@@ -30,13 +31,13 @@ export function acquireCanvasRenderTexture(
 }
 
 export function createCanvasRenderTexturePool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTexturePool {
-  return createEntity<EntityWithoutRuntime<CanvasRenderTexturePool>>({
-    destroyed: false,
-    effectTargets: createEntity<EntityWithoutRuntime<CanvasRenderTargetPool>>({ creator, free: [], inUse: [] }),
-    free: [],
-    leased: new Set(),
-    owner: null,
-  });
+  const out = allocateEntity<EntityWithoutRuntime<CanvasRenderTexturePool>>();
+  out.destroyed = false;
+  out.effectTargets = createEntity<EntityWithoutRuntime<CanvasRenderTargetPool>>({ creator, free: [], inUse: [] });
+  out.free = [];
+  out.leased = new Set();
+  out.owner = null;
+  return finishEntity(out);
 }
 
 // Drops both free and outstanding handles plus effect-runner scratch canvases. A shutdown caller

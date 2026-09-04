@@ -1,20 +1,24 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  Kind,
+  EntityConstruction,
   ExtendedPbrMaterial,
+  Kind,
   Material,
   Scene3DMaterialTextureLister,
   Scene3DMaterialTextureRegistry,
   Scene3DPbrExtensionTextureLister,
-  StandardPbrMaterialProperties,
   StandardPbrMaterial,
+  StandardPbrMaterialProperties,
   Texture,
   UnlitMaterial,
 } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
 
 export function createScene3DMaterialTextureRegistry(): Scene3DMaterialTextureRegistry {
-  return createEntity({ extensionListers: new Map(), listers: new Map() });
+  const out = allocateEntity<Scene3DMaterialTextureRegistry>();
+  out.extensionListers = new Map();
+  out.listers = new Map();
+  return finishEntity(out);
 }
 
 // Looks up the lister for `material.kind` and, when present, appends the material's non-null Textures

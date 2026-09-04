@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
+  EntityConstruction,
   ImageResource,
   Matrix3Like,
   Texture,
@@ -101,15 +102,14 @@ export function setVideoTextureSource(texture: TextureLike, source: VideoResourc
 
 function createVideoImageResource(source: Readonly<VideoResource>): ImageResource | null {
   if (source.element === null) return null;
-  const image = createEntity({
-    height: 0,
-    alphaType: 'straight',
-    gamut: 'srgb',
-    kind: ImageTextureSourceKind,
-    source: source.element,
-    version: INITIAL_VIDEO_VERSION,
-    width: 0,
-  }) as ImageResource;
+  const image = allocateEntity<Texture2D>();
+  image.height = 0;
+  image.alphaType = 'straight';
+  image.gamut = 'srgb';
+  image.kind = ImageTextureSourceKind;
+  image.source = source.element;
+  image.version = INITIAL_VIDEO_VERSION;
+  image.width = 0;
   updateVideoImageSize(image);
   return image;
 }

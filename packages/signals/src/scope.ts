@@ -1,10 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { SignalScope } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, SignalScope } from '@flighthq/types/contract';
 
 import { disconnectSignalConnection } from './connection';
 
 export function createSignalScope(): SignalScope {
-  return createEntity({ connections: [] });
+  const out = allocateEntity<SignalScope>();
+  initializeSignalScope(out);
+  return finishEntity(out);
 }
 
 // The scope is emptied before the loop rather than after it, so it is never left half-drained and a
@@ -21,4 +23,8 @@ export function disconnectSignalScope(scope: SignalScope): void {
     // already fired, and a duplicate listing all cost one early return rather than a second removal.
     disconnectSignalConnection(pending[i]);
   }
+}
+
+export function initializeSignalScope(out: EntityConstruction<SignalScope>): void {
+  out.connections = [];
 }

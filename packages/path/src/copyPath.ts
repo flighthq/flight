@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Path } from '@flighthq/types/contract';
 
 // Allocates a new `Path` that is a deep copy of `source`.
@@ -12,11 +12,11 @@ export function clonePath(source: Readonly<Path>): Path {
 // is a no-op (the path is already in place). Use `clonePath` when you always want a new allocation.
 export function copyPath(source: Readonly<Path>, out?: Path): Path {
   if (out === undefined) {
-    return createEntity({
-      commands: source.commands.slice(),
-      data: source.data.slice(),
-      winding: source.winding,
-    });
+    const out = allocateEntity<unknown>();
+    out.commands = source.commands.slice();
+    out.data = source.data.slice();
+    out.winding = source.winding;
+    return finishEntity(out);
   }
   if (out !== source) {
     out.commands.length = 0;

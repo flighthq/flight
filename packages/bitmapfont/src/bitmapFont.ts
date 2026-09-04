@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   BitmapFont,
   BitmapFontData,
   BitmapFontKerningPair,
+  EntityConstruction,
   GlyphEntry,
   GlyphMetrics,
   TextureAtlas,
@@ -37,17 +38,17 @@ export function createBitmapFont(data: Readonly<BitmapFontData>): BitmapFont {
       kerning.set(packBitmapFontKerningKey(pair.left, pair.right), pair.amount);
     }
   }
-  return createEntity({
-    encoding: data.encoding ?? 'raster',
-    glyphs,
-    kerning,
-    metrics: {
-      ascent: data.metrics.ascent,
-      descent: data.metrics.descent,
-      lineGap: data.metrics.lineGap,
-    },
-    pages: data.pages.slice(),
-  });
+  const out = allocateEntity<BitmapFont>();
+  out.encoding = data.encoding ?? 'raster';
+  out.glyphs = glyphs;
+  out.kerning = kerning;
+  out.metrics = {
+    ascent: data.metrics.ascent,
+    descent: data.metrics.descent,
+    lineGap: data.metrics.lineGap,
+  };
+  out.pages = data.pages.slice();
+  return finishEntity(out);
 }
 
 // The glyph entry (atlas rectangle + advance + bearing) for a codepoint, or `null` when the font

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reserveFloat32Array } from '@flighthq/geometry/contract';
 import type { ParticleEmitterState, RandomSource } from '@flighthq/types/contract';
 
@@ -6,21 +6,21 @@ import type { ParticleEmitterState, RandomSource } from '@flighthq/types/contrac
 export const PARTICLE_VELOCITY_STRIDE = 3;
 
 export function createParticleEmitterState(random: RandomSource = Math.random): ParticleEmitterState {
-  return createEntity({
-    burstTimer: 0,
-    colorBirth: new Float32Array(),
-    colorDeath: new Float32Array(),
-    emitterAge: 0,
-    lifetimes: new Float32Array(),
-    prevX: NaN,
-    prevY: NaN,
-    prevZ: NaN,
-    random,
-    rotationSpeeds: new Float32Array(),
-    scales: new Float32Array(),
-    spawnAccumulator: 0,
-    velocities: new Float32Array(),
-  });
+  const out = allocateEntity<ParticleEmitterState>();
+  out.burstTimer = 0;
+  out.colorBirth = new Float32Array();
+  out.colorDeath = new Float32Array();
+  out.emitterAge = 0;
+  out.lifetimes = new Float32Array();
+  out.prevX = NaN;
+  out.prevY = NaN;
+  out.prevZ = NaN;
+  out.random = random;
+  out.rotationSpeeds = new Float32Array();
+  out.scales = new Float32Array();
+  out.spawnAccumulator = 0;
+  out.velocities = new Float32Array();
+  return finishEntity(out);
 }
 
 /** Grow the per-particle state arrays to hold at least `capacity` particles.

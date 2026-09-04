@@ -1,10 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Application,
   ApplicationLoopOptions,
   ApplicationStepOptions,
   ApplicationWindow,
+  EntityConstruction,
   EntityWithoutRuntime,
   HasAppExitSubscription,
   HasAppLoop,
@@ -62,21 +63,21 @@ export function attachApplicationLifecycle(app: Application, win: ApplicationWin
 }
 
 export function createApplication(): Application {
-  return createEntity<EntityWithoutRuntime<Application>>({
-    deltaTime: 0,
-    elapsedTime: 0,
-    frameCount: 0,
-    interpolationAlpha: 1,
-    isRunning: false,
-    onActivate: null,
-    onDeactivate: null,
-    onError: null,
-    onExit: createSignal(),
-    onFixedUpdate: null,
-    onRender: createSignal(),
-    onUpdate: createSignal(),
-    windows: [],
-  });
+  const out = allocateEntity<EntityWithoutRuntime<Application>>();
+  out.deltaTime = 0;
+  out.elapsedTime = 0;
+  out.frameCount = 0;
+  out.interpolationAlpha = 1;
+  out.isRunning = false;
+  out.onActivate = null;
+  out.onDeactivate = null;
+  out.onError = null;
+  out.onExit = createSignal();
+  out.onFixedUpdate = null;
+  out.onRender = createSignal();
+  out.onUpdate = createSignal();
+  out.windows = [];
+  return finishEntity(out);
 }
 
 export function detachApplicationExit(app: Application): void {

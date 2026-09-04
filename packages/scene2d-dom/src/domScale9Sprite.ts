@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   DomRenderState,
+  EntityConstruction,
   RenderProxy2D,
   RenderState,
   Renderable,
@@ -18,7 +19,10 @@ interface DomScale9SpriteData extends RendererData {
   pieces: HTMLCanvasElement[];
 }
 export function createDomScale9SpriteData(_state: RenderState, _source: Renderable): DomScale9SpriteData {
-  return createEntity({ element: null, pieces: [] });
+  const out = allocateEntity<DomScale9SpriteData>();
+  out.element = null;
+  out.pieces = [];
+  return finishEntity(out);
 }
 export function drawDomScale9Sprite(state: DomRenderState, renderProxy: RenderProxy2D): void {
   const data = renderProxy.rendererData as DomScale9SpriteData | null;

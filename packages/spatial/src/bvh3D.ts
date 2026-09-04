@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
+  EntityConstruction,
   SpatialAabb3D,
   SpatialIndexBackend3D,
   SpatialIndexingExplanation,
@@ -39,26 +40,26 @@ import { reportSpatialIndexing } from './spatialIndexingGuard';
 // same intuition.
 export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): SpatialIndexBackend3D & Entity {
   const tree = createBvh3D(margin);
-  return createEntity({
-    clearSpatialIndex: () => clearBvh3D(tree),
-    explainSpatialIndexing: (id) => explainBvh3D(tree, id),
-    insertSpatialObject: (id, bounds) => insertBvh3D(tree, id, bounds, 'insert'),
-    querySpatialPairs: (out) => queryBvh3DPairs(tree, out),
-    querySpatialPoint: (x, y, z, out) => queryBvh3DPoint(tree, x, y, z, out),
-    querySpatialRay: (x, y, z, dx, dy, dz, out) => queryBvh3DRay(tree, x, y, z, dx, dy, dz, out),
-    querySpatialRegion: (region, out) => queryBvh3DRegion(tree, region, out),
-    removeSpatialObject: (id) => {
-      const wasMissing = !tree.leafByObject.has(id) && !tree.declined.has(id);
-      removeBvh3D(tree, id);
-      if (wasMissing) reportBvh3DIndexing(tree, id, 'absent', 'remove', 'missing-id');
-    },
-    updateSpatialObject: (id, bounds) => {
-      const wasMissing = !tree.leafByObject.has(id) && !tree.declined.has(id);
-      const inserted = insertBvh3D(tree, id, bounds, 'update');
-      if (wasMissing) reportBvh3DIndexing(tree, id, explainBvh3D(tree, id).mode, 'update', 'missing-id');
-      return inserted;
-    },
-  } satisfies SpatialIndexBackend3D);
+  const out = allocateEntity<unknown>();
+  out.clearSpatialIndex = () => clearBvh3D(tree);
+  out.explainSpatialIndexing = (id) => explainBvh3D(tree, id);
+  out.insertSpatialObject = (id, bounds) => insertBvh3D(tree, id, bounds, 'insert');
+  out.querySpatialPairs = (out) => queryBvh3DPairs(tree, out);
+  out.querySpatialPoint = (x, y, z, out) => queryBvh3DPoint(tree, x, y, z, out);
+  out.querySpatialRay = (x, y, z, dx, dy, dz, out) => queryBvh3DRay(tree, x, y, z, dx, dy, dz, out);
+  out.querySpatialRegion = (region, out) => queryBvh3DRegion(tree, region, out);
+  out.removeSpatialObject = (id) => {
+    const wasMissing = !tree.leafByObject.has(id) && !tree.declined.has(id);
+    removeBvh3D(tree, id);
+    if (wasMissing) reportBvh3DIndexing(tree, id, 'absent', 'remove', 'missing-id');
+  };
+  out.updateSpatialObject = (id, bounds) => {
+    const wasMissing = !tree.leafByObject.has(id) && !tree.declined.has(id);
+    const inserted = insertBvh3D(tree, id, bounds, 'update');
+    if (wasMissing) reportBvh3DIndexing(tree, id, explainBvh3D(tree, id).mode, 'update', 'missing-id');
+    return inserted;
+  };
+  return finishEntity(out);
 }
 
 interface Bvh3D {

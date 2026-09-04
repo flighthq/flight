@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   MethodsOf,
   Node,
   PartialNode,
@@ -57,15 +58,15 @@ export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
 export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
   const columns = data?.columns ?? 0;
   const rows = data?.rows ?? 0;
-  return createEntity({
-    atlas: data?.atlas ?? null,
-    columns,
-    materialData: data?.materialData ?? null,
-    rows,
-    tileHeight: data?.tileHeight ?? 0,
-    tileWidth: data?.tileWidth ?? 0,
-    tiles: data?.tiles ?? new Int16Array(columns * rows).fill(-1),
-  });
+  const out = allocateEntity<Tilemap>();
+  out.atlas = data?.atlas ?? null;
+  out.columns = columns;
+  out.materialData = data?.materialData ?? null;
+  out.rows = rows;
+  out.tileHeight = data?.tileHeight ?? 0;
+  out.tileWidth = data?.tileWidth ?? 0;
+  out.tiles = data?.tiles ?? new Int16Array(columns * rows).fill(-1);
+  return finishEntity(out);
 }
 
 export function createTilemapRuntime(): TilemapRuntime {
@@ -73,11 +74,11 @@ export function createTilemapRuntime(): TilemapRuntime {
 }
 
 export function createTilemapSignals(): TilemapSignals {
-  return createEntity({
-    onCleared: createSignal(),
-    onTileChanged: createSignal(),
-    onTilesChanged: createSignal(),
-  });
+  const out = allocateEntity<Tilemap>();
+  out.onCleared = createSignal();
+  out.onTileChanged = createSignal();
+  out.onTilesChanged = createSignal();
+  return finishEntity(out);
 }
 
 /**
@@ -238,7 +239,11 @@ export function setTilemapTileTint(tilemap: Tilemap, column: number, row: number
   const data = tilemap.data;
   if (column < 0 || column >= data.columns || row < 0 || row >= data.rows) return;
   if (data.materialData === null) data.materialData = new Array(data.columns * data.rows).fill(null);
-  data.materialData[row * data.columns + column] = createEntity({ tint: rgba >>> 0 });
+  data.materialData[row * data.columns + column] = (() => {
+    const out = allocateEntity<void>();
+    out.tint = rgba >>> 0;
+    return finishEntity(out);
+  })();
 }
 
 const defaultMethods: Partial<MethodsOf<TilemapRuntime>> = {

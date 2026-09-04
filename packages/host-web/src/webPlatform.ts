@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { PlatformBackend, PlatformInfo } from '@flighthq/types/contract';
 import {
   detectEndianness,
@@ -13,7 +13,9 @@ import {
 } from '@flighthq/useragent/contract';
 
 export function createWebPlatformBackend(): PlatformBackend {
-  return createEntity({ getInfo: getWebPlatformInfo });
+  const out = allocateEntity<PlatformBackend>();
+  out.getInfo = getWebPlatformInfo;
+  return finishEntity(out);
 }
 
 export const webPlatformBackend: PlatformBackend = createWebPlatformBackend();

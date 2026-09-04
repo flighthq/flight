@@ -1,11 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneTexture, copyTexture, getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
+  EntityConstruction,
   RectangleLike,
+  Texture2D,
   TextureAtlas,
   TextureAtlasRegion,
   TextureAtlasRegionLike,
-  Texture2D,
   TextureAtlasRegionTextureExplanation,
   TextureAtlasRegionTextureGuard,
   Vector2Like,
@@ -118,23 +119,23 @@ export function clearTextureAtlasRegions(target: TextureAtlas): void {
 }
 
 export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>): TextureAtlasRegion {
-  return createEntity({
-    x: obj?.x ?? 0,
-    y: obj?.y ?? 0,
-    width: obj?.width ?? 0,
-    height: obj?.height ?? 0,
-    id: obj?.id ?? -1,
-    name: obj?.name ?? null,
-    originalHeight: obj?.originalHeight ?? null,
-    originalWidth: obj?.originalWidth ?? null,
-    pageName: obj?.pageName ?? null,
-    pivotX: obj?.pivotX ?? null,
-    pivotY: obj?.pivotY ?? null,
-    rotated: obj?.rotated ?? false,
-    sourceX: obj?.sourceX ?? 0,
-    sourceY: obj?.sourceY ?? 0,
-    trimmed: obj?.trimmed ?? false,
-  });
+  const out = allocateEntity<TextureAtlasRegion>();
+  out.x = obj?.x ?? 0;
+  out.y = obj?.y ?? 0;
+  out.width = obj?.width ?? 0;
+  out.height = obj?.height ?? 0;
+  out.id = obj?.id ?? -1;
+  out.name = obj?.name ?? null;
+  out.originalHeight = obj?.originalHeight ?? null;
+  out.originalWidth = obj?.originalWidth ?? null;
+  out.pageName = obj?.pageName ?? null;
+  out.pivotX = obj?.pivotX ?? null;
+  out.pivotY = obj?.pivotY ?? null;
+  out.rotated = obj?.rotated ?? false;
+  out.sourceX = obj?.sourceX ?? 0;
+  out.sourceY = obj?.sourceY ?? 0;
+  out.trimmed = obj?.trimmed ?? false;
+  return finishEntity(out);
 }
 
 // Recomputes why getTextureAtlasRegionTexture can or cannot mint the requested view. A page with a

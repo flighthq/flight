@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
@@ -133,14 +133,14 @@ function makeBitmap(
   height: number,
   source: Readonly<Bitmap>,
 ): Bitmap {
-  return createEntity({
-    alphaType: source.alphaType,
-    gamut: source.gamut,
-    data,
-    format: source.format,
-    height,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width,
-  });
+  const out = allocateEntity<unknown>();
+  out.alphaType = source.alphaType;
+  out.gamut = source.gamut;
+  out.data = data;
+  out.format = source.format;
+  out.height = height;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = width;
+  return finishEntity(out);
 }

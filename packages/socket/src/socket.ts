@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
+  EntityConstruction,
   EntityRuntimeKey,
   HasNetSocket,
   Socket,
@@ -55,7 +56,9 @@ export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions
     delivering: true,
     disposed: false,
   };
-  const socket: Socket = createEntity({ url: options.url, runtime });
+  const socket = allocateEntity<Socket>();
+  socket.url = options.url;
+  socket.runtime = runtime;
   // The provider comes from the host the caller passed. A host that carries no socket transport
   // yields no connection rather than reaching a process-global fallback: absence is an answer here,
   // and the guard reports it.
@@ -70,31 +73,31 @@ export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions
 // null connection when WebSocket is unavailable (non-browser host) rather than throwing; raw TCP/UDP
 // is likewise unsupported here and only reachable through a native backend.
 export function createWebSocketBackend(): SocketBackend & Entity {
-  return createEntity({
-    openSocket(options, events): SocketConnection | null {
-      if (typeof WebSocket === 'undefined') return null;
-      const ws =
-        options.protocols !== undefined
-          ? new WebSocket(options.url, options.protocols as string[])
-          : new WebSocket(options.url);
-      ws.binaryType = options.binaryType ?? 'arraybuffer';
-      ws.onopen = () => events.handleSocketOpen();
-      ws.onmessage = (event: MessageEvent) => events.handleSocketMessage(toSocketMessage(event.data));
-      ws.onclose = (event: CloseEvent) =>
-        events.handleSocketClose({ code: event.code, reason: event.reason, wasClean: event.wasClean });
-      ws.onerror = () => events.handleSocketError();
-      return {
-        sendSocketFrame(data): boolean {
-          if (ws.readyState !== WebSocket.OPEN) return false;
-          ws.send(data);
-          return true;
-        },
-        closeSocketConnection(code, reason): void {
-          ws.close(code, reason);
-        },
-      };
-    },
-  } satisfies Omit<SocketBackend, typeof EntityRuntimeKey>);
+  const out = allocateEntity<void>();
+  out.openSocket = (options, events): SocketConnection | null => {
+    if (typeof WebSocket === 'undefined') return null;
+    const ws =
+      options.protocols !== undefined
+        ? new WebSocket(options.url, options.protocols as string[])
+        : new WebSocket(options.url);
+    ws.binaryType = options.binaryType ?? 'arraybuffer';
+    ws.onopen = () => events.handleSocketOpen();
+    ws.onmessage = (event: MessageEvent) => events.handleSocketMessage(toSocketMessage(event.data));
+    ws.onclose = (event: CloseEvent) =>
+      events.handleSocketClose({ code: event.code, reason: event.reason, wasClean: event.wasClean });
+    ws.onerror = () => events.handleSocketError();
+    return {
+      sendSocketFrame(data): boolean {
+        if (ws.readyState !== WebSocket.OPEN) return false;
+        ws.send(data);
+        return true;
+      },
+      closeSocketConnection(code, reason): void {
+        ws.close(code, reason);
+      },
+    };
+  };
+  return finishEntity(out);
 }
 
 // Stops delivery of backend events to the socket's signals. The live connection is untouched — use
@@ -125,12 +128,14 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
   const runtime = socket.runtime;
   if (runtime.disposed) _guard?.({ operation: 'enableSocketSignals', reason: 'disposed', socket });
   if (runtime.signals === null) {
-    runtime.signals = createEntity({
-      onSocketOpen: createSignal<() => void>(),
-      onSocketMessage: createSignal<(message: Readonly<SocketMessage>) => void>(),
-      onSocketClose: createSignal<(info: Readonly<SocketCloseInfo>) => void>(),
-      onSocketError: createSignal<() => void>(),
-    });
+    runtime.signals = (() => {
+      const out = allocateEntity<void>();
+      out.onSocketOpen = createSignal<() => void>();
+      out.onSocketMessage = createSignal<(message: Readonly<SocketMessage>) => void>();
+      out.onSocketClose = createSignal<(info: Readonly<SocketCloseInfo>) => void>();
+      out.onSocketError = createSignal<() => void>();
+      return finishEntity(out);
+    })();
   }
   return runtime.signals;
 }

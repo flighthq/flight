@@ -1,18 +1,18 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AlphaType, Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
-  return createEntity({
-    alphaType: source.alphaType,
-    gamut: source.gamut,
-    data: new Uint8ClampedArray(source.data),
-    format: source.format,
-    height: source.height,
-    kind: source.kind,
-    version: 0,
-    width: source.width,
-  });
+  const out = allocateEntity<unknown>();
+  out.alphaType = source.alphaType;
+  out.gamut = source.gamut;
+  out.data = new Uint8ClampedArray(source.data);
+  out.format = source.format;
+  out.height = source.height;
+  out.kind = source.kind;
+  out.version = 0;
+  out.width = source.width;
+  return finishEntity(out);
 }
 
 /**
@@ -71,16 +71,16 @@ export function createBitmap(width: number, height: number, color: number = 0): 
       data[i + 3] = a;
     }
   }
-  return createEntity({
-    alphaType: 'straight',
-    gamut: 'srgb' as const,
-    data,
-    format: 'rgba8unorm',
-    height,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width,
-  });
+  const out = allocateEntity<Bitmap>();
+  out.alphaType = 'straight';
+  out.gamut = 'srgb' as const;
+  out.data = data;
+  out.format = 'rgba8unorm';
+  out.height = height;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = width;
+  return finishEntity(out);
 }
 
 export function invalidateBitmap(bitmap: Bitmap): void {

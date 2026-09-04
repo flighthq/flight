@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
   EasingFunction,
+  EntityConstruction,
   NumericProps,
   Tween,
   TweenManager,
@@ -82,27 +83,27 @@ export function makeTween<T extends object>(
 ): Tween<T> {
   const keys = Object.keys(propertyMap);
   const properties: TweenPropertyDetail[] = keys.map((key) => ({ change: 0, key, start: 0 }));
-  return createEntity({
-    complete: false,
-    delay: options?.delay ?? 0,
-    duration,
-    ease: options?.ease ?? defaultEase,
-    elapsed: 0,
-    initialized: false,
-    onComplete: createSignal(),
-    onRepeat: createSignal(),
-    onUpdate: createSignal(),
-    onYoyo: createSignal(),
-    paused: false,
-    properties,
-    propertyMap,
-    reflect: options?.reflect ?? false,
-    repeat: options?.repeat ?? 0,
-    reverse: options?.reverse ?? false,
-    smartRotation: options?.smartRotation ?? false,
-    snapping: options?.snapping ?? false,
-    target,
-  });
+  const out = allocateEntity<unknown>();
+  out.complete = false;
+  out.delay = options?.delay ?? 0;
+  out.duration = duration;
+  out.ease = options?.ease ?? defaultEase;
+  out.elapsed = 0;
+  out.initialized = false;
+  out.onComplete = createSignal();
+  out.onRepeat = createSignal();
+  out.onUpdate = createSignal();
+  out.onYoyo = createSignal();
+  out.paused = false;
+  out.properties = properties;
+  out.propertyMap = propertyMap;
+  out.reflect = options?.reflect ?? false;
+  out.repeat = options?.repeat ?? 0;
+  out.reverse = options?.reverse ?? false;
+  out.smartRotation = options?.smartRotation ?? false;
+  out.snapping = options?.snapping ?? false;
+  out.target = target;
+  return finishEntity(out);
 }
 
 // Proxy-backed tweens interpolate against their private target while manager operations address the

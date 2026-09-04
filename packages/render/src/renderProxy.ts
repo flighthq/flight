@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
   getNodeAppearanceRevision,
@@ -11,15 +11,16 @@ import {
 } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
-  Node2D,
+  EntityConstruction,
   HasBoundsRectangle,
   HasTransform2D,
   Node,
-  Renderable,
+  Node2D,
   RenderProxy,
   RenderProxy2D,
   RenderProxyVisitor,
   RenderState,
+  Renderable,
 } from '@flighthq/types/contract';
 import { BlendMode, RegistryEntryState, RenderRegistry } from '@flighthq/types/contract';
 
@@ -33,30 +34,30 @@ type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) =
 export function createRenderProxy(state: RenderState, source: Renderable): RenderProxy {
   const runtime = getRenderStateRuntime(state);
   const renderer = resolveRenderProxyRenderer(state, source.kind);
-  return createEntity({
-    source: source,
-    kind: source.kind,
-    next: null,
-    alpha: 1,
-    appearanceFrameId: -1,
-    blendMode: BlendMode.Normal,
-    colorScaleBias: null,
-    colorMatrix: null,
-    material: null,
-    materialData: null,
-    lastAppearanceId: -1,
-    lastChildrenId: -1,
-    lastLocalContentId: -1,
-    lastLocalTransformId: -1,
-    lastParentReferenceId: -1,
-    name: null,
-    renderer: renderer,
-    rendererData: renderer?.createData(state, source) ?? null,
-    rendererDataSource: source,
-    rendererMapId: runtime.rendererMapId,
-    transformFrameId: -1,
-    visible: true,
-  });
+  const out = allocateEntity<RenderProxy>();
+  out.source = source;
+  out.kind = source.kind;
+  out.next = null;
+  out.alpha = 1;
+  out.appearanceFrameId = -1;
+  out.blendMode = BlendMode.Normal;
+  out.colorScaleBias = null;
+  out.colorMatrix = null;
+  out.material = null;
+  out.materialData = null;
+  out.lastAppearanceId = -1;
+  out.lastChildrenId = -1;
+  out.lastLocalContentId = -1;
+  out.lastLocalTransformId = -1;
+  out.lastParentReferenceId = -1;
+  out.name = null;
+  out.renderer = renderer;
+  out.rendererData = renderer?.createData(state, source) ?? null;
+  out.rendererDataSource = source;
+  out.rendererMapId = runtime.rendererMapId;
+  out.transformFrameId = -1;
+  out.visible = true;
+  return finishEntity(out);
 }
 
 // The one render-node allocator for the 2D graph. Sprites and display objects produce the same

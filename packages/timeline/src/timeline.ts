@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  Node2D,
+  EntityConstruction,
   FrameScript,
+  Node2D,
   Timeline,
   TimelineCue,
   TimelineFrameEvent,
@@ -21,18 +22,18 @@ export function clearTimelineFrameScripts(timeline: Timeline): void {
 }
 
 export function createTimeline(obj?: Partial<Timeline>): Timeline {
-  return createEntity({
-    source: obj?.source ?? null,
-    target: obj?.target ?? null,
-    cueRegistry: obj?.cueRegistry ?? null,
-    currentFrame: obj?.currentFrame ?? 1,
-    frameScripts: obj?.frameScripts ?? null,
-    isPlaying: obj?.isPlaying ?? false,
-    lastFrameUpdate: -1,
-    playMode: obj?.playMode ?? 'loop',
-    signals: obj?.signals ?? null,
-    timeElapsed: 0,
-  });
+  const out = allocateEntity<Timeline>();
+  out.source = obj?.source ?? null;
+  out.target = obj?.target ?? null;
+  out.cueRegistry = obj?.cueRegistry ?? null;
+  out.currentFrame = obj?.currentFrame ?? 1;
+  out.frameScripts = obj?.frameScripts ?? null;
+  out.isPlaying = obj?.isPlaying ?? false;
+  out.lastFrameUpdate = -1;
+  out.playMode = obj?.playMode ?? 'loop';
+  out.signals = obj?.signals ?? null;
+  out.timeElapsed = 0;
+  return finishEntity(out);
 }
 
 // Native authoring entry: wraps an explicit per-frame `constructFrame` plus structure into a
@@ -46,13 +47,13 @@ export function createTimelineSource(obj: {
   cues?: readonly TimelineCue[];
   constructFrame?: (target: Node2D, frame: number) => void;
 }): TimelineSource {
-  return createEntity({
-    totalFrames: obj.totalFrames ?? 1,
-    frameRate: obj.frameRate ?? null,
-    labels: obj.labels ?? EMPTY_LABELS,
-    cues: obj.cues ?? EMPTY_CUES,
-    constructFrame: obj.constructFrame ?? noopConstructFrame,
-  });
+  const out = allocateEntity<Timeline>();
+  out.totalFrames = obj.totalFrames ?? 1;
+  out.frameRate = obj.frameRate ?? null;
+  out.labels = obj.labels ?? EMPTY_LABELS;
+  out.cues = obj.cues ?? EMPTY_CUES;
+  out.constructFrame = obj.constructFrame ?? noopConstructFrame;
+  return finishEntity(out);
 }
 
 export function disposeTimelineSignals(timeline: Timeline): void {

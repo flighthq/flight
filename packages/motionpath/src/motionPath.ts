@@ -1,7 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
 import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path/contract';
-import type { MotionPath, MotionPathLoopMode, Path, Vector2Like } from '@flighthq/types/contract';
+import type { EntityConstruction, MotionPath, MotionPathLoopMode, Path, Vector2Like } from '@flighthq/types/contract';
 
 // Allocate a `MotionPath` marker at the start of `path` (`distance` 0, `direction` forward).
 // `speed` is the traversal rate in path units per second (a magnitude; default 0 = stationary),
@@ -16,14 +16,14 @@ export function createMotionPath(
   loopMode: MotionPathLoopMode = 'clamp',
   tolerance?: number,
 ): MotionPath {
-  return createEntity({
-    direction: 1,
-    distance: 0,
-    length: getPathLength(path, tolerance),
-    loopMode,
-    path,
-    speed,
-  });
+  const out = allocateEntity<MotionPath>();
+  out.direction = 1;
+  out.distance = 0;
+  out.length = getPathLength(path, tolerance);
+  out.loopMode = loopMode;
+  out.path = path;
+  out.speed = speed;
+  return finishEntity(out);
 }
 
 // Return the marker's heading angle in radians — `atan2(tangentY, tangentX)` of the path tangent at

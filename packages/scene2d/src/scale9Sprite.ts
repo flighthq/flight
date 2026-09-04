@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   PartialNode,
   RectangleLike,
   Scale9Sprite,
@@ -27,10 +28,10 @@ export function createScale9SpriteData(
   scale9Grid: Readonly<RectangleLike>,
   data?: Readonly<Partial<Scale9SpriteData>>,
 ): Scale9SpriteData {
-  return createEntity({
-    scale9Grid,
-    texture: data?.texture ?? null,
-  });
+  const out = allocateEntity<Scale9Sprite>();
+  out.scale9Grid = scale9Grid;
+  out.texture = data?.texture ?? null;
+  return finishEntity(out);
 }
 
 export function createScale9SpriteRuntime(): Scale9SpriteRuntime {

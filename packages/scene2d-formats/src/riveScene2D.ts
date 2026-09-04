@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
@@ -7,10 +7,11 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
+  EntityConstruction,
   ImportDiagnostic,
   Matrix,
-  RiveArtboardGraph,
   RiveAdvancedBlend,
+  RiveArtboardGraph,
   RiveArtboardImport,
   RiveCoreObject,
   RiveDocumentImportResult,
@@ -47,19 +48,25 @@ export function createScene2DFromRiveDocument(
   diagnostics?: ImportDiagnostic[],
 ): RiveDocumentImportResult {
   const document = parseRiveDocument(source, diagnostics);
-  if (document === null) return createEntity({ artboards: [], assets: [] });
+  if (document === null)
+    return (() => {
+      const out = allocateEntity<RiveDocumentImportResult>();
+      out.artboards = [];
+      out.assets = [];
+      return finishEntity(out);
+    })();
 
   const graph = createRiveObjectGraph(document, diagnostics);
   const assets = createRiveFileAssets(document.objects, diagnostics);
   // A text style names its typeface by a position in the asset list, the same space an image
   // drawable's assetId indexes, so the names are resolved once here rather than per drawable.
   const fontNames = assets.map((asset) => asset.name);
-  return createEntity({
-    artboards: graph.artboards.map((artboard) =>
-      createRiveArtboardImport(artboard, document.objects, fontNames, diagnostics),
-    ),
-    assets,
-  });
+  const out = allocateEntity<RiveDocumentImportResult>();
+  out.artboards = graph.artboards.map((artboard) =>
+    createRiveArtboardImport(artboard, document.objects, fontNames, diagnostics),
+  );
+  out.assets = assets;
+  return finishEntity(out);
 }
 
 function createRiveArtboardImport(

@@ -1,13 +1,14 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasRenderState,
+  EntityConstruction,
+  RenderProxy2D,
   Renderable,
   RendererData,
-  RenderProxy2D,
   Scene2DRenderer,
   TextFormat,
   TextLabel,
@@ -22,7 +23,9 @@ interface CanvasTextLabelData extends RendererData {
 }
 
 function createCanvasTextLabelData(_state: CanvasRenderState, _source: Renderable): RendererData {
-  return createEntity({ lastContentId: -1 });
+  const out = allocateEntity<unknown>();
+  out.lastContentId = -1;
+  return finishEntity(out);
 }
 
 export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: RenderProxy2D): void {

@@ -1,5 +1,5 @@
 import { getCamera3DScreenToWorldRay } from '@flighthq/camera/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createAabb,
   createMatrix4,
@@ -20,12 +20,13 @@ import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@fl
 import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
+  EntityConstruction,
   Mesh,
   MeshRuntime,
+  Node3D,
   NodeAny,
   Ray3D,
   Scene3DHit,
-  Node3D,
   Scene3DPickOptions,
   Vector3,
 } from '@flighthq/types/contract';
@@ -33,20 +34,20 @@ import type {
 // Allocates a zeroed Scene3DHit. Handy for the `out` of `pickScene3D`/`pickScene3DWithRay3D` and for
 // growing the `outArray` of the multi-hit queries. `node` is null until a pick fills it.
 export function createScene3DHit(): Scene3DHit {
-  return createEntity({
-    distance: 0,
-    node: null,
-    normalX: 0,
-    normalY: 0,
-    normalZ: 0,
-    pointX: 0,
-    pointY: 0,
-    pointZ: 0,
-    triangleIndex: -1,
-    u: 0,
-    v: 0,
-    w: 0,
-  });
+  const out = allocateEntity<Scene3DHit>();
+  out.distance = 0;
+  out.node = null;
+  out.normalX = 0;
+  out.normalY = 0;
+  out.normalZ = 0;
+  out.pointX = 0;
+  out.pointY = 0;
+  out.pointZ = 0;
+  out.triangleIndex = -1;
+  out.u = 0;
+  out.v = 0;
+  out.w = 0;
+  return finishEntity(out);
 }
 
 // Resolves the nearest Mesh hit by a camera pick ray through a scene, filling `out` and returning it,

@@ -1,15 +1,15 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type { ParticleEmitterSignals } from '@flighthq/types/contract';
 
 /** Create a fresh {@link ParticleEmitterSignals} group. Called by
  *  {@link enableParticleEmitterSignals} on first use; exported for unit testing. */
 export function createParticleEmitterSignals(): ParticleEmitterSignals {
-  return createEntity({
-    onEmitterComplete: createSignal(),
-    onParticleDeath: createSignal(),
-    onParticleSpawn: createSignal(),
-  });
+  const out = allocateEntity<ParticleEmitterSignals>();
+  out.onEmitterComplete = createSignal();
+  out.onParticleDeath = createSignal();
+  out.onParticleSpawn = createSignal();
+  return finishEntity(out);
 }
 
 /** Opt-in signals for a typed-array particle emitter.
