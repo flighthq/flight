@@ -1,5 +1,4 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
-import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
@@ -57,10 +56,6 @@ function fakeCapacitor(): CapacitorApi {
     statusBar: { getInfo: async () => ({ visible: true, style: 'Default' }) },
   } as unknown as CapacitorApi;
 }
-
-afterEach(() => {
-  setGeolocationBackend(null);
-});
 
 describe('capacitor power slot coverage', () => {
   // ★ EXACT SLOT COVERAGE for C: an EMPTY group, not a guessed or stubbed one. An empty group is
@@ -133,7 +128,7 @@ describe('registerCapacitorBackends', () => {
     expect(host.connectivity.change.subscribe).toBeTypeOf('function');
     expect(host.system.device).toBeDefined();
     expect(host.storage.fileSystem.readTextFile).toBeTypeOf('function');
-    expect(getGeolocationBackend()).not.toBeNull();
+    expect(host.system.geolocation).toBeDefined();
     expect(host.notification.delivery.notify).toBeTypeOf('function');
     expect(host.notification.scheduling.scheduleNotification).toBeTypeOf('function');
     expect(host.share.content.canShareContent({ text: 'ready' })).toBe(true);

@@ -1,5 +1,4 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { setGeolocationBackend } from '@flighthq/geolocation/contract';
 import type { CapacitorApi, CapacitorHost, EntityRuntimeKey, MobileOsProfile } from '@flighthq/types/contract';
 
 import { createCapacitorAppCapabilities } from './capacitorApp';
@@ -74,7 +73,10 @@ export function capacitorHost<Profile extends MobileOsProfile>(
     // Capacitor exposes none of Shell's six native command capabilities.
     shell: {},
     storage: { fileSystem: createCapacitorFileSystemBackend(capacitor) },
-    system: { device: createCapacitorDeviceBackend(capacitor) },
+    system: {
+      device: createCapacitorDeviceBackend(capacitor),
+      geolocation: createCapacitorGeolocationBackend(capacitor),
+    },
     text: {},
     tray: {},
     ui: {
@@ -92,20 +94,12 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   } satisfies Omit<CapacitorHost<Profile>, typeof EntityRuntimeKey>);
 }
 
-// Installs every still-ambient Capacitor host backend in one call and returns the explicit host. Run
-// this once at app startup, passing an object that aggregates the official Capacitor plugin objects
-// the seams use:
-//
-//   import { App } from '@capacitor/app';
-//   // …import the other plugins…
-//   registerCapacitorBackends({ app: App, clipboard: Clipboard, /* … */ statusBar: StatusBar });
-//
-// Pass the returned host to explicit capability operations. The remaining mobile seams below still use
-// package-local registration while their domains migrate.
+// Returns the explicit Capacitor host. Run this once at app startup, passing an object that aggregates
+// the official Capacitor plugin objects the seams use. Pass the returned host to explicit capability
+// operations.
 export function registerCapacitorBackends<Profile extends MobileOsProfile>(
   capacitor: CapacitorApi,
   profile: Profile,
 ): CapacitorHost<Profile> {
-  setGeolocationBackend(createCapacitorGeolocationBackend(capacitor));
   return capacitorHost(capacitor, profile);
 }
