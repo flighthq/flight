@@ -111,7 +111,7 @@ function createScale9RenderProxy(texture: Texture2D): RenderProxy2D {
       scaleY: 3,
     } as unknown as Scale9Sprite,
     transform2D: { a: 2, b: 0, c: 0, d: 3, tx: 5, ty: 7 },
-  } as RenderProxy2D;
+  } as unknown as RenderProxy2D;
 }
 
 function readQuadGeometry(data: Float32Array): number[][] {
