@@ -1,52 +1,40 @@
-import {
-  explainAudioDeviceBackend,
-  getAudioDeviceBackend,
-  resetAudioDeviceBackendForTest,
-} from '@flighthq/media/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { enableHostWebAudioDevice, resetHostWebAudioDeviceForTest } from './webAudioDevice';
+import { createWebAudioDeviceBackend, webAudioDeviceBackend } from './webAudioDevice';
 
-afterEach(() => {
-  resetHostWebAudioDeviceForTest();
-  resetAudioDeviceBackendForTest();
-});
-
-describe('enableHostWebAudioDevice', () => {
-  it('installs the host backend', () => {
-    enableHostWebAudioDevice();
-    expect(explainAudioDeviceBackend().layer).toBe('host');
+describe('createWebAudioDeviceBackend', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createWebAudioDeviceBackend()).toBe(true);
   });
 
-  it('is idempotent', () => {
-    enableHostWebAudioDevice();
-    enableHostWebAudioDevice();
-    expect(explainAudioDeviceBackend().conflict).toBe(false);
+  it('returns a fresh instance on each call', () => {
+    expect(createWebAudioDeviceBackend()).not.toBe(createWebAudioDeviceBackend());
   });
 
-  it('provides all 13 operations', () => {
-    enableHostWebAudioDevice();
-    const backend = getAudioDeviceBackend();
-    expect(typeof backend.createBuffer).toBe('function');
-    expect(typeof backend.createDevice).toBe('function');
-    expect(typeof backend.createSource).toBe('function');
-    expect(typeof backend.destroyBuffer).toBe('function');
-    expect(typeof backend.destroyDevice).toBe('function');
-    expect(typeof backend.destroySource).toBe('function');
-    expect(typeof backend.getDeviceTime).toBe('function');
-    expect(typeof backend.onSourceEnded).toBe('function');
-    expect(typeof backend.resumeDevice).toBe('function');
-    expect(typeof backend.setSourceGain).toBe('function');
-    expect(typeof backend.setSourcePlaybackRate).toBe('function');
-    expect(typeof backend.startSource).toBe('function');
-    expect(typeof backend.stopSource).toBe('function');
+  it('exposes all required backend operations', () => {
+    const backend = createWebAudioDeviceBackend();
+    expect(backend.createBuffer).toBeTypeOf('function');
+    expect(backend.createDevice).toBeTypeOf('function');
+    expect(backend.createSource).toBeTypeOf('function');
+    expect(backend.destroyBuffer).toBeTypeOf('function');
+    expect(backend.destroyDevice).toBeTypeOf('function');
+    expect(backend.destroySource).toBeTypeOf('function');
+    expect(backend.getDeviceTime).toBeTypeOf('function');
+    expect(backend.onSourceEnded).toBeTypeOf('function');
+    expect(backend.resumeDevice).toBeTypeOf('function');
+    expect(backend.setSourceGain).toBeTypeOf('function');
+    expect(backend.setSourcePlaybackRate).toBeTypeOf('function');
+    expect(backend.startSource).toBeTypeOf('function');
+    expect(backend.stopSource).toBeTypeOf('function');
   });
 });
 
-describe('resetHostWebAudioDeviceForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebAudioDevice();
-    resetHostWebAudioDeviceForTest();
-    resetAudioDeviceBackendForTest();
-    expect(() => enableHostWebAudioDevice()).not.toThrow();
+describe('webAudioDeviceBackend', () => {
+  it('is an Entity', () => {
+    expect(EntityRuntimeKey in webAudioDeviceBackend).toBe(true);
+  });
+
+  it('is a stable singleton', () => {
+    expect(webAudioDeviceBackend).toBe(webAudioDeviceBackend);
   });
 });

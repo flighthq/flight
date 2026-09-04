@@ -4,7 +4,6 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { AudioDeviceBackend, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import { pauseAudioChannel, playAudioResource, resumeAudioChannel, stopAudioChannel } from './audioChannel';
-import { resetAudioDeviceBackendForTest, setAudioDeviceBackend } from './audioDeviceBackend';
 import {
   enableAudioChannelSignals,
   enableVideoChannelSignals,
@@ -15,6 +14,7 @@ import {
 const device = 1 as unknown as AudioDeviceHandle;
 let onEnded: Map<number, (() => void) | null>;
 let nextHandle = 1;
+let backend: AudioDeviceBackend;
 
 function mockBuffer(): AudioBuffer {
   return {
@@ -50,11 +50,7 @@ function mockBackend(): AudioDeviceBackend {
 beforeEach(() => {
   onEnded = new Map();
   nextHandle = 1;
-  setAudioDeviceBackend(mockBackend());
-});
-
-afterEach(() => {
-  resetAudioDeviceBackendForTest();
+  backend = mockBackend();
 });
 
 function recorded(channel: Parameters<typeof enableAudioChannelSignals>[0]): string[] {
@@ -70,13 +66,13 @@ function recorded(channel: Parameters<typeof enableAudioChannelSignals>[0]): str
 
 describe('enableAudioChannelSignals', () => {
   it('returns the same signals object on a second call rather than replacing listeners', () => {
-    const channel = playAudioResource(device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
     const first = enableAudioChannelSignals(channel);
     expect(enableAudioChannelSignals(channel)).toBe(first);
   });
 
   it('reports the pause, play and stop a caller drives', () => {
-    const channel = playAudioResource(device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
     const seen = recorded(channel);
     pauseAudioChannel(channel);
     resumeAudioChannel(channel);
@@ -85,7 +81,7 @@ describe('enableAudioChannelSignals', () => {
   });
 
   it('reports a loop iteration and then the completion, in that order', () => {
-    const channel = playAudioResource(device, createAudioResource(mockBuffer()), { loops: 1 })!;
+    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()), { loops: 1 })!;
     const seen = recorded(channel);
     onEnded.get(1)!();
     onEnded.get(2)!();
@@ -93,9 +89,7 @@ describe('enableAudioChannelSignals', () => {
   });
 
   it('does not report a play for a loop iteration', () => {
-    // The loop restart goes through the same start path a resume does. Emitting play there would make
-    // a looping channel indistinguishable from one the caller kept restarting.
-    const channel = playAudioResource(device, createAudioResource(mockBuffer()), { loops: 2 })!;
+    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()), { loops: 2 })!;
     const seen = recorded(channel);
     onEnded.get(1)!();
     expect(seen).toEqual(['loop']);
@@ -112,14 +106,14 @@ describe('enableVideoChannelSignals', () => {
 
 describe('getAudioChannelSignals', () => {
   it('returns null until a caller opts in, so nothing is allocated for anyone else', () => {
-    const channel = playAudioResource(device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
     expect(getAudioChannelSignals(channel)).toBeNull();
     expect(enableAudioChannelSignals(channel)).not.toBeNull();
     expect(getAudioChannelSignals(channel)).not.toBeNull();
   });
 
   it('lets an un-opted channel run its whole lifecycle without producing anything', () => {
-    const channel = playAudioResource(device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
     pauseAudioChannel(channel);
     resumeAudioChannel(channel);
     stopAudioChannel(channel);

@@ -5,7 +5,7 @@ export { webAccessibilityHost } from './webAccessibilityHost';
 export { createWebAppCapabilities } from './webApp';
 export { webAppHost } from './webAppHost';
 export { webAudioBackend } from './webAudio';
-export { enableHostWebAudioDevice } from './webAudioDevice';
+export { createWebAudioDeviceBackend, webAudioDeviceBackend } from './webAudioDevice';
 export { createWebBitmapEncodeBackend, webBitmapEncodeBackend } from './webBitmapEncode';
 export { createWebBitmapReadbackBackend, webBitmapReadbackBackend } from './webBitmapReadback';
 export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
