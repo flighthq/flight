@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AudioBackend, Entity, HasMediaAudioCodec, HasNetHttp, NetBackend } from '@flighthq/types/contract';
 
 import {
@@ -14,7 +14,7 @@ import {
 function fakeAudioCodecHost(canPlay: (type: string) => boolean): HasMediaAudioCodec {
   return {
     media: {
-      audioCodec: createEntity<Omit<AudioBackend, keyof Entity>>({ canPlayType: canPlay }),
+      audioCodec: (() => { const out = allocateEntity<Omit<AudioBackend, keyof Entity>>(); out.canPlayType = canPlay; return finishEntity(out); })(),
     },
   } as HasMediaAudioCodec;
 }
@@ -22,9 +22,8 @@ function fakeAudioCodecHost(canPlay: (type: string) => boolean): HasMediaAudioCo
 function fakeNetHost(backend?: Pick<NetBackend, 'sendNetRequest'>): HasNetHttp {
   return {
     net: {
-      http: createEntity(
-        backend ?? {
-          sendNetRequest: async () => ({ status: 200, statusText: 'OK', ok: true, headers: {}, body: null, url: '' }),
+      http: (() => { const out = allocateEntity<unknown>(); Object.assign(out, backend ?? {
+          sendNetRequest: async (); return finishEntity(out); })() => ({ status: 200, statusText: 'OK', ok: true, headers: {}, body: null, url: '' }),
         },
       ),
     },

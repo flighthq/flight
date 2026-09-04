@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardBookmark,
   ClipboardBookmarkBackend,
@@ -286,15 +286,15 @@ function hostFor(clipboard: FakeClipboardBackend): FakeClipboardHost {
 }
 
 function fakeBackend(): FakeClipboardBackend {
-  return createEntity({
-    bookmark: null,
-    formats: {},
-    html: '',
-    image: '',
-    listeners: new Set(),
-    rtf: '',
-    text: '',
-    async clear() {
+    const out = allocateEntity<Omit<FakeClipboardBackend, typeof EntityRuntimeKey>>();
+  out.bookmark = null;
+  out.formats = {};
+  out.html = '';
+  out.image = '';
+  out.listeners = new Set();
+  out.rtf = '';
+  out.text = '';
+  out.clear = async () => {
       this.bookmark = null;
       this.formats = {};
       this.html = '';
@@ -302,8 +302,8 @@ function fakeBackend(): FakeClipboardBackend {
       this.rtf = '';
       this.text = '';
       return true;
-    },
-    async getFormats() {
+    };
+  out.getFormats = async () => {
       const formats = Object.keys(this.formats);
       if (this.text.length > 0) formats.push(ClipboardFormatText);
       if (this.html.length > 0) formats.push(ClipboardFormatHtml);
@@ -311,85 +311,85 @@ function fakeBackend(): FakeClipboardBackend {
       if (this.rtf.length > 0) formats.push(ClipboardFormatRtf);
       if (this.bookmark !== null) formats.push(ClipboardFormatBookmark);
       return [...new Set(formats)];
-    },
-    async hasFormat(format) {
+    };
+  out.hasFormat = async (format) => {
       return (await this.getFormats()).includes(format);
-    },
-    async hasImage() {
+    };
+  out.hasImage = async () => {
       return this.image.length > 0;
-    },
-    async hasText() {
+    };
+  out.hasText = async () => {
       return this.text.length > 0;
-    },
-    async readBookmark() {
+    };
+  out.readBookmark = async () => {
       return this.bookmark;
-    },
-    async readFormat(format) {
+    };
+  out.readFormat = async (format) => {
       if (format === ClipboardFormatText) return this.text;
       if (format === ClipboardFormatHtml) return this.html;
       if (format === ClipboardFormatImage) return this.image;
       if (format === ClipboardFormatRtf) return this.rtf;
       return this.formats[format] ?? '';
-    },
-    async readHtml() {
+    };
+  out.readHtml = async () => {
       return this.html;
-    },
-    async readImage() {
+    };
+  out.readImage = async () => {
       return this.image;
-    },
-    async readItems(formats) {
+    };
+  out.readItems = async (formats) => {
       const result: Record<string, string> = {};
       for (const format of formats) {
         const data = await this.readFormat(format);
         if (data.length > 0) result[format] = data;
       }
       return result;
-    },
-    async readRTF() {
+    };
+  out.readRTF = async () => {
       return this.rtf;
-    },
-    async readText() {
+    };
+  out.readText = async () => {
       return this.text;
-    },
-    subscribe(callback) {
+    };
+  out.subscribe = (callback) => {
       this.listeners.add(callback);
-    },
-    unsubscribe(callback) {
+    };
+  out.unsubscribe = (callback) => {
       this.listeners.delete(callback);
-    },
-    async writeBookmark(title, url) {
+    };
+  out.writeBookmark = async (title, url) => {
       this.bookmark = { title, url };
       return true;
-    },
-    async writeFormat(format, data) {
+    };
+  out.writeFormat = async (format, data) => {
       if (format === ClipboardFormatText) this.text = data;
       else if (format === ClipboardFormatHtml) this.html = data;
       else if (format === ClipboardFormatImage) this.image = data;
       else if (format === ClipboardFormatRtf) this.rtf = data;
       else this.formats[format] = data;
       return true;
-    },
-    async writeHtml(html) {
+    };
+  out.writeHtml = async (html) => {
       this.html = html;
       return true;
-    },
-    async writeImage(dataUrl) {
+    };
+  out.writeImage = async (dataUrl) => {
       this.image = dataUrl;
       return true;
-    },
-    async writeItems(items) {
+    };
+  out.writeItems = async (items) => {
       for (const item of items) await this.writeFormat(item.format, item.data);
       return true;
-    },
-    async writeRTF(rtf) {
+    };
+  out.writeRTF = async (rtf) => {
       this.rtf = rtf;
       return true;
-    },
-    async writeText(text) {
+    };
+  out.writeText = async (text) => {
       this.text = text;
       return true;
-    },
-  } satisfies Omit<FakeClipboardBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 describe('writeClipboardRTF', () => {

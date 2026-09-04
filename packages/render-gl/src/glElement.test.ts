@@ -8,7 +8,7 @@ import {
 } from './glElement';
 
 function entityProvider(fields: Omit<GlRenderSurfaceProvider, keyof Entity>): GlRenderSurfaceProvider {
-  return createEntity(fields);
+  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
 }
 
 describe('createGlCanvasElement', () => {
@@ -169,5 +169,5 @@ function withThrowingDocument(run: () => void): void {
     else Object.defineProperty(globalThis, 'document', descriptor);
   }
 }
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, GlRenderSurfaceProvider } from '@flighthq/types/contract';

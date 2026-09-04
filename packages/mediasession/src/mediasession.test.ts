@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
@@ -23,19 +23,23 @@ import {
 } from './mediasession';
 
 function commandBackend(overrides: Partial<MediaSessionBackend> = {}): MediaSessionBackend {
-  return createEntity({
-    clearMetadata: () => ({ reason: 'ok' as const }),
-    clearPositionState: () => ({ reason: 'ok' as const }),
-    destroy: () => {},
-    setMetadata: () => ({ reason: 'ok' as const }),
-    setPlaybackState: () => ({ reason: 'ok' as const }),
-    setPositionState: () => ({ reason: 'ok' as const }),
-    ...overrides,
-  });
+    const out = allocateEntity<unknown>();
+  out.clearMetadata = () => ({ reason: 'ok' as const });
+  out.clearPositionState = () => ({ reason: 'ok' as const });
+  out.destroy = () => {};
+  out.setMetadata = () => ({ reason: 'ok' as const });
+  out.setPlaybackState = () => ({ reason: 'ok' as const });
+  out.setPositionState = () => ({ reason: 'ok' as const });
+  Object.assign(out, overrides);
+  return finishEntity(out);
 }
 
 function actionBackend(overrides: Partial<MediaSessionActionBackend> = {}): MediaSessionActionBackend {
-  return createEntity({ destroy: () => {}, subscribe: () => () => {}, ...overrides });
+    const out = allocateEntity<unknown>();
+  out.destroy = () => {};
+  out.subscribe = () => () => {};
+  Object.assign(out, overrides);
+  return finishEntity(out);
 }
 
 function host(commands = commandBackend(), actions = actionBackend()) {
@@ -131,15 +135,14 @@ describe('destroyMediaSession', () => {
 
   it('deduplicates an aliased provider identity across both Host slots', () => {
     const destroy = vi.fn();
-    const shared = createEntity({
-      clearMetadata: () => ({ reason: 'ok' as const }),
-      clearPositionState: () => ({ reason: 'ok' as const }),
-      destroy,
-      setMetadata: () => ({ reason: 'ok' as const }),
-      setPlaybackState: () => ({ reason: 'ok' as const }),
-      setPositionState: () => ({ reason: 'ok' as const }),
-      subscribe: () => () => {},
-    });
+    const shared = allocateEntity<unknown>();
+    shared.clearMetadata = () => ({ reason: 'ok' as const });
+    shared.clearPositionState = () => ({ reason: 'ok' as const });
+    shared.destroy = destroy;
+    shared.setMetadata = () => ({ reason: 'ok' as const });
+    shared.setPlaybackState = () => ({ reason: 'ok' as const });
+    shared.setPositionState = () => ({ reason: 'ok' as const });
+    shared.subscribe = () => () => {};
     destroyMediaSession(host(shared, shared));
     expect(destroy).toHaveBeenCalledOnce();
   });

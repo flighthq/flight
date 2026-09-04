@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, Skeleton2DTransformConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -33,30 +33,25 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 
 // Every channel off by default, so each test turns on exactly the one it is about.
 function transform(overrides: Partial<Skeleton2DTransformConstraint> = {}): Skeleton2DTransformConstraint {
-  return createEntity({
-    boneIndices: [0],
-    kind: Skeleton2DConstraintKind.Transform as 'Skeleton2D.TransformConstraint',
-    mix: 1,
-    mixRotate: 0,
-    mixScaleX: 0,
-    mixScaleY: 0,
-    mixShearY: 0,
-    mixX: 0,
-    mixY: 0,
-    offsetRotation: 0,
-    offsetScaleX: 0,
-    offsetScaleY: 0,
-    offsetShearY: 0,
-    offsetX: 0,
-    offsetY: 0,
-    targetBoneIndex: 1,
-    ...overrides,
-  }) as Skeleton2DTransformConstraint;
-}
-
-// This file registers a built-in solver into a module-global registry, so it restores whatever it found
-// rather than leaving the kind claimed for whichever file runs next.
-const PRIOR = getSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform);
+    const out = allocateEntity<unknown>();
+  out.boneIndices = [0];
+  out.kind = Skeleton2DConstraintKind.Transform as 'Skeleton2D.TransformConstraint';
+  out.mix = 1;
+  out.mixRotate = 0;
+  out.mixScaleX = 0;
+  out.mixScaleY = 0;
+  out.mixShearY = 0;
+  out.mixX = 0;
+  out.mixY = 0;
+  out.offsetRotation = 0;
+  out.offsetScaleX = 0;
+  out.offsetScaleY = 0;
+  out.offsetShearY = 0;
+  out.offsetX = 0;
+  out.offsetY = 0;
+  out.targetBoneIndex = 1;
+  Object.assign(out, overrides);
+  return finishEntity(out) as Skeleton2DTransformConstraint;;
 
 afterEach(() => {
   if (PRIOR === null) unregisterSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform);

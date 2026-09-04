@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -33,7 +33,7 @@ import {
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 
 function entityJoint(fields: Omit<Physics2DJoint, keyof Entity>): Physics2DJoint {
-  return createEntity(fields);
+  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
 }
 
 function boxBody(x: number, y: number) {

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, Skeleton2D, Skeleton2DIkConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -30,21 +30,16 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function ik(overrides: Partial<Skeleton2DIkConstraint> = {}): Skeleton2DIkConstraint {
-  return createEntity({
-    bendPositive: true,
-    boneIndices: [0],
-    compress: false,
-    kind: Skeleton2DConstraintKind.Ik as 'Skeleton2D.IkConstraint',
-    mix: 1,
-    stretch: false,
-    targetBoneIndex: 1,
-    ...overrides,
-  }) as Skeleton2DIkConstraint;
-}
-
-// The world position of a bone's TIP — its origin plus its length along its own x axis. That is the point
-// IK actually places, so it is what the two-bone assertions check rather than a joint angle.
-function tipOf(skeleton: Readonly<Skeleton2D>, boneIndex: number): { x: number; y: number } {
+    const out = allocateEntity<unknown>();
+  out.bendPositive = true;
+  out.boneIndices = [0];
+  out.compress = false;
+  out.kind = Skeleton2DConstraintKind.Ik as 'Skeleton2D.IkConstraint';
+  out.mix = 1;
+  out.stretch = false;
+  out.targetBoneIndex = 1;
+  Object.assign(out, overrides);
+  return finishEntity(out) as Skeleton2DIkConstraint;; y: number } {
   const world = skeleton.worldMatrices;
   const o = boneIndex * 6;
   const length = skeleton.bones[boneIndex].length;

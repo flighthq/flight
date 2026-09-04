@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -11,8 +11,8 @@ import { createGlState } from './glTestHelper';
 
 function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
   const texture = { id: 'c0' } as unknown as WebGLTexture;
-  return createEntity({
-    requestedAxes: {
+    const out = allocateEntity<GlRenderTarget>();
+  out.requestedAxes = {
       width: 32,
       height: 16,
       format: 'rgba8',
@@ -21,26 +21,26 @@ function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
       sampleCount: 1,
       depth: 'depth-stencil',
       colorSpace: 'srgb',
-    },
-    width: 32,
-    height: 16,
-    format: 'rgba8',
-    colorAttachments: 1,
-    colorFormats: ['rgba8'],
-    depth: 'depth-stencil',
-    colorSpace: 'srgb',
-    clearColors: [],
-    clearDepth: 1,
-    sampleCount: 1,
-    framebuffer: {} as WebGLFramebuffer,
-    resolveFramebuffer: null,
-    textures: [texture],
-    texture,
-    depthTexture: null,
-    colorRenderbuffers: [],
-    depthStencilRenderbuffer: { id: 'depth' } as unknown as WebGLRenderbuffer,
-    ...overrides,
-  });
+    };
+  out.width = 32;
+  out.height = 16;
+  out.format = 'rgba8';
+  out.colorAttachments = 1;
+  out.colorFormats = ['rgba8'];
+  out.depth = 'depth-stencil';
+  out.colorSpace = 'srgb';
+  out.clearColors = [];
+  out.clearDepth = 1;
+  out.sampleCount = 1;
+  out.framebuffer = {} as WebGLFramebuffer;
+  out.resolveFramebuffer = null;
+  out.textures = [texture];
+  out.texture = texture;
+  out.depthTexture = null;
+  out.colorRenderbuffers = [];
+  out.depthStencilRenderbuffer = { id: 'depth' } as unknown as WebGLRenderbuffer;
+  Object.assign(out, overrides);
+  return finishEntity(out);
 }
 
 describe('beginGlRenderPass', () => {
