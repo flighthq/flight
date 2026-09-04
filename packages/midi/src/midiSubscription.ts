@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
+  EntityConstruction,
   MidiAccess,
   MidiAccessStateSubscription,
   MidiEventAttachment,
@@ -65,15 +66,15 @@ export function attachMidiPortStateSubscription(
 }
 
 export function createMidiAccessStateSubscription(): MidiAccessStateSubscription {
-  return createMidiSubscription({ onMidiAccessStateChange: createSignal() });
+  return createMidiSubscription<MidiAccessStateSubscription>(initializeMidiAccessStateSubscription);
 }
 
 export function createMidiInputMessageSubscription(): MidiInputMessageSubscription {
-  return createMidiSubscription({ onMidiInputMessage: createSignal() });
+  return createMidiSubscription<MidiInputMessageSubscription>(initializeMidiInputMessageSubscription);
 }
 
 export function createMidiPortStateSubscription(): MidiPortStateSubscription {
-  return createMidiSubscription({ onMidiPortStateChange: createSignal() });
+  return createMidiSubscription<MidiPortStateSubscription>(initializeMidiPortStateSubscription);
 }
 
 export function detachMidiAccessStateSubscription(
@@ -112,6 +113,18 @@ export function disposeMidiPortStateSubscription(
   return disposeMidiSubscription(subscription, subscription.onMidiPortStateChange);
 }
 
+export function initializeMidiAccessStateSubscription(out: EntityConstruction<MidiAccessStateSubscription>): void {
+  out.onMidiAccessStateChange = createSignal();
+}
+
+export function initializeMidiInputMessageSubscription(out: EntityConstruction<MidiInputMessageSubscription>): void {
+  out.onMidiInputMessage = createSignal();
+}
+
+export function initializeMidiPortStateSubscription(out: EntityConstruction<MidiPortStateSubscription>): void {
+  out.onMidiPortStateChange = createSignal();
+}
+
 type MidiAttach<Arguments extends unknown[]> = (
   listener: (...args: Arguments) => void,
 ) => Promise<MidiEventBackendAttachOutcome>;
@@ -127,9 +140,11 @@ interface MidiSubscriptionRuntime {
 
 const subscriptionStates = new WeakMap<Entity, MidiSubscriptionRuntime>();
 
-function createMidiSubscription<Subscription extends Entity>(fields: Omit<Subscription, keyof Entity>): Subscription {
+function createMidiSubscription<Subscription extends Entity>(
+  init: (out: EntityConstruction<Subscription>) => void,
+): Subscription {
   const subscription = allocateEntity<Subscription>();
-  Object.assign(subscription, fields);
+  init(subscription);
   finishEntity(subscription);
   subscriptionStates.set(subscription, {
     attachment: null,

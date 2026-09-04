@@ -3,6 +3,7 @@ import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contrac
 import type {
   Accelerator,
   CreateGlobalShortcutOutcome,
+  EntityConstruction,
   GlobalShortcut,
   GlobalShortcutAttachOutcome,
   GlobalShortcutDetachOutcome,
@@ -88,8 +89,7 @@ export function createGlobalShortcut(
     reason: 'created',
     shortcut: (() => {
       const out = allocateEntity<GlobalShortcut>();
-      out.accelerator = formatParsedAccelerator(outcome);
-      out.onTrigger = createSignal();
+      initializeGlobalShortcut(out, formatParsedAccelerator(outcome));
       return finishEntity(out);
     })(),
   };
@@ -133,6 +133,11 @@ export async function disposeGlobalShortcut(
   } finally {
     clearSignal(shortcut.onTrigger);
   }
+}
+
+export function initializeGlobalShortcut(out: EntityConstruction<GlobalShortcut>, accelerator: Accelerator): void {
+  out.accelerator = accelerator;
+  out.onTrigger = createSignal();
 }
 
 export async function queryGlobalShortcutConflict(

@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   CreateExternalTextureOptions,
+  EntityConstruction,
   ExternalTexture,
   GlRenderState,
   GlTextureRealization,
@@ -20,10 +21,7 @@ export function createExternalGlTexture(
   options: Readonly<CreateExternalTextureOptions>,
 ): Texture {
   const source = allocateEntity<ExternalTexture>();
-  source.height = options.height;
-  source.kind = ExternalTextureSourceKind;
-  source.version = 0;
-  source.width = options.width;
+  initializeExternalGlTextureSource(source, options);
   const texture = createTexture({
     colorSpace: options.colorSpace,
     sampler: options.sampler ? cloneSampler(options.sampler) : undefined,
@@ -41,6 +39,16 @@ export function disposeExternalGlTexture(state: GlRenderState, texture: Readonly
   return source === null
     ? false
     : (getGlRenderStateRuntime(state).context.glExternalTextureCache?.delete(source) ?? false);
+}
+
+export function initializeExternalGlTextureSource(
+  out: EntityConstruction<ExternalTexture>,
+  options: Readonly<CreateExternalTextureOptions>,
+): void {
+  out.height = options.height;
+  out.kind = ExternalTextureSourceKind;
+  out.version = 0;
+  out.width = options.width;
 }
 
 function resolveExternalGlTexture(state: GlRenderState, texture: Readonly<TextureLike>): GlTextureRealization | null {

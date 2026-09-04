@@ -7,6 +7,7 @@ import type {
   CommandBindingTable,
   CommandHistory,
   CompositeCommand,
+  EntityConstruction,
   Kind,
   NodeAny,
   RemoveNodeChildCommand,
@@ -40,6 +41,23 @@ export function hasCommandBinding(history: Readonly<CommandHistory>, kind: Kind)
   return getCommandBinding(history, kind) !== null;
 }
 
+// Registers the five built-in kinds. An explicit call rather than a side effect at import: a history that
+// only dispatches a caller's own kinds never references these, so they shake out of the bundle.
+export function initializeSetNodePropertyCommand(
+  out: EntityConstruction<SetNodePropertyCommand>,
+  entries: SetNodePropertyCommand['entries'],
+  kind: Kind,
+  label: string,
+  mergeWindow: number,
+  time: number,
+): void {
+  out.entries = entries;
+  out.kind = kind;
+  out.label = label;
+  out.mergeWindow = mergeWindow;
+  out.time = time;
+}
+
 // Binds behaviour to a command kind. NOT called at module load anywhere in this package — a caller opts
 // in, which is what keeps unused command kinds shakeable and lets a consumer override a built-in binding
 // or add a vendor-prefixed kind of their own. Last write wins.
@@ -47,8 +65,6 @@ export function registerCommandBinding(history: CommandHistory, kind: Kind, bind
   history.bindings = withRegistryTableEntry(history.bindings, kind, binding);
 }
 
-// Registers the five built-in kinds. An explicit call rather than a side effect at import: a history that
-// only dispatches a caller's own kinds never references these, so they shake out of the bundle.
 export function registerDefaultCommandBindings(history: CommandHistory): void {
   registerCommandBinding(history, AddNodeChildCommandKind, addNodeChildCommandBinding);
   registerCommandBinding(history, CompositeCommandKind, compositeCommandBinding(history));
@@ -138,16 +154,19 @@ const setNodePropertyCommandBinding: CommandBinding = {
       if (a.entries[i].property !== b.entries[i].property) return null;
     }
     const out = allocateEntity<SetNodePropertyCommand>();
-    out.entries = a.entries.map((entry, i) => ({
-      after: b.entries[i].after,
-      before: entry.before,
-      property: entry.property,
-      target: entry.target,
-    }));
-    out.kind = a.kind;
-    out.label = b.label;
-    out.mergeWindow = b.mergeWindow;
-    out.time = b.time;
+    initializeSetNodePropertyCommand(
+      out,
+      a.entries.map((entry, i) => ({
+        after: b.entries[i].after,
+        before: entry.before,
+        property: entry.property,
+        target: entry.target,
+      })),
+      a.kind,
+      b.label,
+      b.mergeWindow,
+      b.time,
+    );
     return finishEntity(out);
   },
   undo: (command) => {

@@ -1,6 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import type { BoundsNodeAny, LassoSelection, LassoSelectionRuntime, Path } from '@flighthq/types/contract';
+import type {
+  BoundsNodeAny,
+  EntityConstruction,
+  LassoSelection,
+  LassoSelectionRuntime,
+  Path,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 export function addLassoSelectionPoint(selection: LassoSelection, x: number, y: number): void {
@@ -20,7 +26,8 @@ export function beginLassoSelection(selection: LassoSelection, startX: number, s
 }
 
 export function createLassoSelection(): LassoSelection {
-  const selection = { [EntityRuntimeKey]: undefined } as LassoSelection;
+  const selection = allocateEntity<LassoSelection>();
+  initializeLassoSelection(selection);
   const runtime = {
     active: false,
     binding: null,
@@ -33,7 +40,7 @@ export function createLassoSelection(): LassoSelection {
     })(),
   } satisfies LassoSelectionRuntime;
   selection[EntityRuntimeKey] = runtime;
-  return selection;
+  return finishEntity(selection);
 }
 
 export function endLassoSelection(selection: LassoSelection): Path {
@@ -64,6 +71,8 @@ export function findNodesInLassoSelection<NodeType extends BoundsNodeAny>(
 export function getLassoSelectionPath(selection: Readonly<LassoSelection>): Readonly<Path> {
   return getLassoSelectionRuntime(selection).path;
 }
+
+export function initializeLassoSelection(_out: EntityConstruction<LassoSelection>): void {}
 
 function getLassoSelectionRuntime(selection: Readonly<LassoSelection>): LassoSelectionRuntime {
   return selection[EntityRuntimeKey] as LassoSelectionRuntime;
