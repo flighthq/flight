@@ -1,6 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AnimatedNormalModifier, AnimatedNormalModifierOptions } from '@flighthq/types/contract';
 import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
+
+import { initializeModifier } from './modifier';
 
 // The options for `createAnimatedNormalModifier`. `map` (nullable) and `scroll` are required; the
 // optional second layer and `strength` carry documented defaults. `map` presence and `secondaryMap`
@@ -14,14 +16,12 @@ import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contra
 // second layer panning at a different rate to break up tiling — omitted leaves the modifier a single
 // layer.
 export function createAnimatedNormalModifier(options: Readonly<AnimatedNormalModifierOptions>): AnimatedNormalModifier {
-  const modifier = createEntity({
-    kind: AnimatedNormalModifierKind,
-    slot: ModifierSlot.Normal,
-    map: options.map,
-    scroll: options.scroll,
-    strength: options.strength ?? 1,
-  }) as AnimatedNormalModifier;
-  if (options.secondaryMap !== undefined) modifier.secondaryMap = options.secondaryMap;
-  if (options.secondaryScroll !== undefined) modifier.secondaryScroll = options.secondaryScroll;
-  return modifier;
+  const out = allocateEntity<AnimatedNormalModifier>();
+  initializeModifier(out, AnimatedNormalModifierKind, ModifierSlot.Normal);
+  out.map = options.map;
+  out.scroll = options.scroll;
+  out.strength = options.strength ?? 1;
+  if (options.secondaryMap !== undefined) out.secondaryMap = options.secondaryMap;
+  if (options.secondaryScroll !== undefined) out.secondaryScroll = options.secondaryScroll;
+  return finishEntity(out);
 }

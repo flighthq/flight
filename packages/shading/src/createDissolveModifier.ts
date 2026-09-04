@@ -1,6 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { DissolveModifier, DissolveModifierOptions } from '@flighthq/types/contract';
 import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
+
+import { initializeModifier } from './modifier';
 
 // The options for `createDissolveModifier`. Only `threshold` is required; the rest carry documented
 // defaults. `map` presence is compile-time structural (sampled mask vs procedural noise, driving the
@@ -13,14 +15,12 @@ import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 // RGBA (default 0xff6600ff); `edgeWidth` defaults to 0.05 (0 = hard clip); `scale` (procedural-noise
 // frequency, ignored with `map`) defaults to 8. `map` is copied by reference only when provided.
 export function createDissolveModifier(options: Readonly<DissolveModifierOptions>): DissolveModifier {
-  const modifier = createEntity({
-    kind: DissolveModifierKind,
-    slot: ModifierSlot.Effect,
-    threshold: options.threshold,
-    edgeColor: options.edgeColor ?? 0xff6600ff,
-    edgeWidth: options.edgeWidth ?? 0.05,
-    scale: options.scale ?? 8,
-  }) as DissolveModifier;
-  if (options.map !== undefined) modifier.map = options.map;
-  return modifier;
+  const out = allocateEntity<DissolveModifier>();
+  initializeModifier(out, DissolveModifierKind, ModifierSlot.Effect);
+  out.threshold = options.threshold;
+  out.edgeColor = options.edgeColor ?? 0xff6600ff;
+  out.edgeWidth = options.edgeWidth ?? 0.05;
+  out.scale = options.scale ?? 8;
+  if (options.map !== undefined) out.map = options.map;
+  return finishEntity(out);
 }
