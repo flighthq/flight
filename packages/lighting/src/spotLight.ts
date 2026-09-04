@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
-import type { SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types/contract';
+import type { SpotLight, SpotLightConeAngles, SpotLightOptions, EntityConstruction } from '@flighthq/types/contract';
 import { SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a spot light's data, including fresh `position`/`direction` vectors.
@@ -29,14 +29,27 @@ export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
   return finishEntity(out);
 }
 
+export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight {
+  const light = allocateEntity<SpotLight>();
+  initializeSpotLight(light, options);
+  return light;
+}
+
+// Reads the inner and outer cone half-angles from precomputed cosines and writes them as degrees
+// into `out`. Provides the round-trip for `createSpotLight` which accepts degrees but stores
+// cosines. The `out` object is a plain `{ innerDegrees, outerDegrees }` struct.
+export function getSpotLightConeDegrees(out: SpotLightConeAngles, source: Readonly<SpotLight>): void {
+  out.innerDegrees = (Math.acos(source.innerConeCos) * 180) / Math.PI;
+  out.outerDegrees = (Math.acos(source.outerConeCos) * 180) / Math.PI;
+}
+
 // Cone-restricted point light. `position`/`direction` are world-space; the cone is stored as the
 // precomputed cosines of its inner and outer half-angles (innerConeCos >= outerConeCos). Color is
 // packed sRgb-albedo RGBA (0xrrggbbaa); defaults to opaque white at unit intensity, at the origin
 // facing down (0, -1, 0), 0-degree inner / 45-degree outer cone, infinite range, shadows off.
-export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight {
+export function initializeSpotLight(light: EntityConstruction<SpotLight>, options?: Readonly<SpotLightOptions>): void {
   const position = options?.position;
   const direction = options?.direction;
-  const light = allocateEntity<SpotLight>();
   light.castsShadow = options?.castsShadow ?? false;
   light.color = options?.color ?? 0xffffffff;
   light.decay = options?.decay ?? 2;
@@ -59,15 +72,6 @@ export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight
   light.spotBlend = 0;
   setSpotLightCone(light, options?.innerConeDegrees ?? 0, options?.outerConeDegrees ?? 45);
   setSpotLightBlend(light, options?.spotBlend ?? 0);
-  return light;
-}
-
-// Reads the inner and outer cone half-angles from precomputed cosines and writes them as degrees
-// into `out`. Provides the round-trip for `createSpotLight` which accepts degrees but stores
-// cosines. The `out` object is a plain `{ innerDegrees, outerDegrees }` struct.
-export function getSpotLightConeDegrees(out: SpotLightConeAngles, source: Readonly<SpotLight>): void {
-  out.innerDegrees = (Math.acos(source.innerConeCos) * 180) / Math.PI;
-  out.outerDegrees = (Math.acos(source.outerConeCos) * 180) / Math.PI;
 }
 
 // Writes a normalized penumbra blend. Values outside [0, 1] are clamped rather than rejected so

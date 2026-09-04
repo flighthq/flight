@@ -9,6 +9,7 @@ import type {
   PartialNode,
   Path,
   PathMorph,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { MorphShapeKind } from '@flighthq/types/contract';
 
@@ -49,6 +50,24 @@ export function createMorphShapeData(
   morph: Readonly<PathMorph>,
   data?: Readonly<Partial<MorphShapeData>>,
 ): MorphShapeData {
+  const out = allocateEntity<MorphShapeData>();
+  initializeMorphShapeData(out, morph, data);
+  return out;
+}
+
+export function createMorphShapeRuntime(): MorphShapeRuntime {
+  return createShapeRuntime() as MorphShapeRuntime;
+}
+
+export function getMorphShapeRuntime(source: Readonly<MorphShape>): Readonly<MorphShapeRuntime> {
+  return getNode2DRuntime(source) as MorphShapeRuntime;
+}
+
+export function initializeMorphShapeData(
+  out: EntityConstruction<MorphShapeData>,
+  morph: Readonly<PathMorph>,
+  data?: Readonly<Partial<MorphShapeData>>,
+): void {
   const progress = data?.progress ?? 0;
   const path = data?.path ?? createPath(morph.winding);
   const pathBindings = [{ morph, path }];
@@ -60,7 +79,6 @@ export function createMorphShapeData(
   for (let i = 0; i < pathBindings.length; i++) {
     samplePathMorph(pathBindings[i].path, pathBindings[i].morph, progress);
   }
-  const out = allocateEntity<MorphShapeData>();
   out.commands = data?.commands ?? [];
   out.morph = morph;
   out.paintBindings = [...(data?.paintBindings ?? [])];
@@ -69,15 +87,6 @@ export function createMorphShapeData(
   out.progress = progress;
   finishEntity(out);
   sampleMorphShapePaintBindings(out, progress);
-  return out;
-}
-
-export function createMorphShapeRuntime(): MorphShapeRuntime {
-  return createShapeRuntime() as MorphShapeRuntime;
-}
-
-export function getMorphShapeRuntime(source: Readonly<MorphShape>): Readonly<MorphShapeRuntime> {
-  return getNode2DRuntime(source) as MorphShapeRuntime;
 }
 
 // Samples changed progress into every stable path and paint value retained by the command stream, then

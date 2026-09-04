@@ -11,6 +11,7 @@ import type {
   ResourceLoader,
   ResourceLoaderItemSignals,
   ResourceLoaderOptions,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 // Internal key prefix for auto-assigned keys
@@ -180,37 +181,8 @@ export function cancelResourceLoad(loader: ResourceLoader): void {
 }
 
 export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>): ResourceLoader {
-  const opts = options ?? {};
-  const throttle =
-    opts.maxBytesPerSecond !== undefined && opts.maxBytesPerSecond > 0
-      ? createTokenBucket(opts.maxBytesPerSecond)
-      : null;
   const out = allocateEntity<ResourceLoaderInternal>();
-  out.cancelled = false;
-  out.dedupeMap = new Map();
-  out.errorPolicy = opts.errorPolicy ?? 'continue';
-  out.generation = 0;
-  out.inFlight = new Set();
-  out.itemCounter = 0;
-  out.itemSignals = null;
-  out.loaded = 0;
-  out.maxConcurrent = opts.maxConcurrent ?? 6;
-  out.onCancel = createSignal();
-  out.onComplete = createSignal();
-  out.onError = createSignal();
-  out.onPause = createSignal();
-  out.onProgress = createSignal();
-  out.onResume = createSignal();
-  out.options = opts;
-  out.paused = false;
-  out.pending = [];
-  out.reports = [];
-  out.started = false;
-  out.streaming = opts.streaming ?? false;
-  out.throttle = throttle;
-  out.total = 0;
-  out.totalWeight = 0;
-  out.weightLoaded = 0;
+  initializeResourceLoader(out, options);
   return out;
 }
 
@@ -338,6 +310,42 @@ export function getResourceLoadProgress(loader: ResourceLoader, group?: string):
   // Reached only when every item was explicitly given `weight: 0`, which makes the weighted fraction
   // undefined; the item fraction is the sensible answer for a batch that declined to weight itself.
   return internal.loaded / internal.total;
+}
+
+export function initializeResourceLoader(
+  out: EntityConstruction<ResourceLoaderInternal>,
+  options?: Readonly<ResourceLoaderOptions>,
+): void {
+  const opts = options ?? {};
+  const throttle =
+    opts.maxBytesPerSecond !== undefined && opts.maxBytesPerSecond > 0
+      ? createTokenBucket(opts.maxBytesPerSecond)
+      : null;
+  out.cancelled = false;
+  out.dedupeMap = new Map();
+  out.errorPolicy = opts.errorPolicy ?? 'continue';
+  out.generation = 0;
+  out.inFlight = new Set();
+  out.itemCounter = 0;
+  out.itemSignals = null;
+  out.loaded = 0;
+  out.maxConcurrent = opts.maxConcurrent ?? 6;
+  out.onCancel = createSignal();
+  out.onComplete = createSignal();
+  out.onError = createSignal();
+  out.onPause = createSignal();
+  out.onProgress = createSignal();
+  out.onResume = createSignal();
+  out.options = opts;
+  out.paused = false;
+  out.pending = [];
+  out.reports = [];
+  out.started = false;
+  out.streaming = opts.streaming ?? false;
+  out.throttle = throttle;
+  out.total = 0;
+  out.totalWeight = 0;
+  out.weightLoaded = 0;
 }
 
 export function pauseResourceLoad(loader: ResourceLoader): void {

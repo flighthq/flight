@@ -9,6 +9,7 @@ import type {
   RegistryTable,
   RegistryTableEntry,
   SlotTable,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
@@ -88,38 +89,25 @@ export function concatRegistryTable<T>(
   return finishEntity(out);
 }
 
-/** An empty keyed table for `registry`, carrying the miss policy every replacement of it preserves. */
 export function createKeyedTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): KeyedTable<T> & Entity {
   const out = allocateEntity<KeyedTable<T> & Entity>();
-  out.entries = new Map();
-  out.onMiss = onMiss;
-  out.registry = registry;
-  out.shape = 'keyed';
+  initializeKeyedTable(out, registry, onMiss);
   return finishEntity(out);
 }
 
-/** An ordinal table over `vocabulary`, every ordinal unbound. */
 export function createOrdinalTable<T>(
   registry: RegistryId,
   onMiss: RegistryMissPolicy,
   vocabulary: readonly Kind[],
 ): OrdinalTable<T> & Entity {
   const out = allocateEntity<OrdinalTable<T> & Entity>();
-  out.entries = vocabulary.map(() => null);
-  out.onMiss = onMiss;
-  out.registry = registry;
-  out.shape = 'ordinal';
-  out.vocabulary = vocabulary;
+  initializeOrdinalTable(out, registry, onMiss, vocabulary);
   return finishEntity(out);
 }
 
-/** An empty slot table for `registry`. Its key is its own `RegistryId`. */
 export function createSlotTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): SlotTable<T> & Entity {
   const out = allocateEntity<SlotTable<T> & Entity>();
-  out.entry = null;
-  out.onMiss = onMiss;
-  out.registry = registry;
-  out.shape = 'slot';
+  initializeSlotTable(out, registry, onMiss);
   return finishEntity(out);
 }
 
@@ -166,6 +154,44 @@ export function getRegistryTableKeys(out: Kind[], table: Readonly<RegistryTable<
 export function hasRegistryTableEntry(table: Readonly<RegistryTable<unknown>>, key: Kind): boolean {
   const entry = getRegistryTableEntryState(table, key);
   return entry !== null && entry.state === RegistryEntryState.Bound;
+}
+
+/** An empty keyed table for `registry`, carrying the miss policy every replacement of it preserves. */
+export function initializeKeyedTable<T>(
+  out: EntityConstruction<KeyedTable<T> & Entity>,
+  registry: RegistryId,
+  onMiss: RegistryMissPolicy,
+): void {
+  out.entries = new Map();
+  out.onMiss = onMiss;
+  out.registry = registry;
+  out.shape = 'keyed';
+}
+
+/** An ordinal table over `vocabulary`, every ordinal unbound. */
+export function initializeOrdinalTable<T>(
+  out: EntityConstruction<OrdinalTable<T> & Entity>,
+  registry: RegistryId,
+  onMiss: RegistryMissPolicy,
+  vocabulary: readonly Kind[],
+): void {
+  out.entries = vocabulary.map(() => null);
+  out.onMiss = onMiss;
+  out.registry = registry;
+  out.shape = 'ordinal';
+  out.vocabulary = vocabulary;
+}
+
+/** An empty slot table for `registry`. Its key is its own `RegistryId`. */
+export function initializeSlotTable<T>(
+  out: EntityConstruction<SlotTable<T> & Entity>,
+  registry: RegistryId,
+  onMiss: RegistryMissPolicy,
+): void {
+  out.entry = null;
+  out.onMiss = onMiss;
+  out.registry = registry;
+  out.shape = 'slot';
 }
 
 // NO OPINION. Removes `key` from the table entirely, so under composition the base's entry is INHERITED.
