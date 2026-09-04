@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { appendPathClose } from '@flighthq/path/contract';
 import type { Path, StrokeStyle } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';

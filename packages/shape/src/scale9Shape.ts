@@ -29,8 +29,7 @@ export function createScale9ShapeData(
   data?: Readonly<Partial<Scale9ShapeData>>,
 ): Scale9ShapeData {
   const out = allocateEntity<Scale9ShapeData>();
-  out.commands = data?.commands ?? [];
-  out.scale9Grid = scale9Grid;
+  initializeScale9ShapeData(out, scale9Grid, data);
   return finishEntity(out);
 }
 
@@ -40,4 +39,13 @@ export function createScale9ShapeRuntime(): Scale9ShapeRuntime {
 
 export function getScale9ShapeRuntime(source: Readonly<Scale9Shape>): Readonly<Scale9ShapeRuntime> {
   return getNode2DRuntime(source) as Scale9ShapeRuntime;
+}
+
+export function initializeScale9ShapeData(
+  out: EntityConstruction<Scale9ShapeData>,
+  scale9Grid: Readonly<RectangleLike>,
+  data?: Readonly<Partial<Scale9ShapeData>>,
+): void {
+  out.commands = data?.commands ?? [];
+  out.scale9Grid = scale9Grid;
 }

@@ -213,15 +213,7 @@ export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
 
 export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitterData>>): ParticleEmitterData {
   const out = allocateEntity<ParticleEmitterData>();
-  out.alphas = data?.alphas ?? new Float32Array();
-  out.atlas = data?.atlas ?? null;
-  out.colors = data?.colors ?? new Float32Array();
-  out.ids = data?.ids ?? new Uint16Array();
-  out.particleCount = data?.particleCount ?? 0;
-  out.positionsZ = data?.positionsZ ?? new Float32Array();
-  out.transforms = data?.transforms ?? new Float32Array();
-  out.velocities = data?.velocities ?? new Float32Array();
-  out.worldSpace = data?.worldSpace ?? false;
+  initializeParticleEmitterData(out, data);
   return finishEntity(out);
 }
 
@@ -267,6 +259,21 @@ export function getParticleEmitter2DParticleVelocity(
 
 export function getParticleEmitter2DRuntime(source: Readonly<ParticleEmitter2D>): Readonly<ParticleEmitter2DRuntime> {
   return getNode2DRuntime(source) as ParticleEmitter2DRuntime;
+}
+
+export function initializeParticleEmitterData(
+  out: EntityConstruction<ParticleEmitterData>,
+  data?: Readonly<Partial<ParticleEmitterData>>,
+): void {
+  out.alphas = data?.alphas ?? new Float32Array();
+  out.atlas = data?.atlas ?? null;
+  out.colors = data?.colors ?? new Float32Array();
+  out.ids = data?.ids ?? new Uint16Array();
+  out.particleCount = data?.particleCount ?? 0;
+  out.positionsZ = data?.positionsZ ?? new Float32Array();
+  out.transforms = data?.transforms ?? new Float32Array();
+  out.velocities = data?.velocities ?? new Float32Array();
+  out.worldSpace = data?.worldSpace ?? false;
 }
 
 /**

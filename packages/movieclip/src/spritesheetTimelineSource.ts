@@ -4,7 +4,6 @@ import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
 import type {
   Entity,
-  EntityWithoutRuntime,
   Node2D,
   Sprite,
   Spritesheet,
@@ -12,7 +11,29 @@ import type {
   SpritesheetTimelineSourceExplanation,
   SpritesheetTimelineSourceGuard,
   TimelineSource,
+  EntityConstruction,
 } from '@flighthq/types/contract';
+
+export function createSpritesheetTimelineSource(
+  spritesheet: Readonly<Spritesheet>,
+  animation: Readonly<SpritesheetAnimation>,
+): TimelineSource & Entity {
+  const out = allocateEntity<TimelineSource>();
+  initializeSpritesheetTimelineSource(out, spritesheet, animation);
+  return finishEntity(out);
+}
+
+// Reports the authored playback fields the TimelineSource vocabulary cannot carry. Direction is exact:
+// createSpritesheetTimelineSource expands reverse and ping-pong directions into the source frame list.
+export function explainSpritesheetTimelineSource(
+  animation: Readonly<SpritesheetAnimation>,
+): SpritesheetTimelineSourceExplanation {
+  return {
+    directionMaterialized: true,
+    unsupportedFields:
+      animation.frameDurations === null ? REPEAT_COUNT_UNSUPPORTED : FRAME_DURATIONS_AND_REPEAT_COUNT_UNSUPPORTED,
+  };
+}
 
 // Exposes a spritesheet animation as a TimelineSource so a MovieClip can play it (the spritesheet side of
 // the timeline frame-source contract — `@flighthq/timeline` consumes `TimelineSource`, this produces one,
@@ -22,16 +43,16 @@ import type {
 // shareable across many MovieClips.
 //
 // Bind it with `setMovieClipSource(clip, createSpritesheetTimelineSource(sheet, anim))`, then `playMovieClip`.
-export function createSpritesheetTimelineSource(
+export function initializeSpritesheetTimelineSource(
+  out: EntityConstruction<TimelineSource>,
   spritesheet: Readonly<Spritesheet>,
   animation: Readonly<SpritesheetAnimation>,
-): TimelineSource & Entity {
+): void {
   const bitmaps = new WeakMap<Node2D, Sprite>();
   const frames = materializeSpritesheetTimelineFrames(animation);
   if (_spritesheetTimelineSourceGuard !== null) {
     _spritesheetTimelineSourceGuard(animation, explainSpritesheetTimelineSource(animation));
   }
-  const out = allocateEntity<TimelineSource>();
   out.totalFrames = frames.length;
   out.labels = [];
   out.cues = [];
@@ -53,19 +74,6 @@ export function createSpritesheetTimelineSource(
     bitmap.x = sheetFrame.offsetX - animation.originX;
     bitmap.y = sheetFrame.offsetY - animation.originY;
     invalidateNodeLocalTransform(bitmap);
-  };
-  return finishEntity(out);
-}
-
-// Reports the authored playback fields the TimelineSource vocabulary cannot carry. Direction is exact:
-// createSpritesheetTimelineSource expands reverse and ping-pong directions into the source frame list.
-export function explainSpritesheetTimelineSource(
-  animation: Readonly<SpritesheetAnimation>,
-): SpritesheetTimelineSourceExplanation {
-  return {
-    directionMaterialized: true,
-    unsupportedFields:
-      animation.frameDurations === null ? REPEAT_COUNT_UNSUPPORTED : FRAME_DURATIONS_AND_REPEAT_COUNT_UNSUPPORTED,
   };
 }
 

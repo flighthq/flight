@@ -26,9 +26,7 @@ export function createHtmlView(obj?: Readonly<PartialNode<HtmlView>>): HtmlView 
 
 export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): HtmlViewData {
   const out = allocateEntity<HtmlViewData>();
-  out.element = data?.element ?? null;
-  out.height = data?.height ?? 100;
-  out.width = data?.width ?? 100;
+  initializeHtmlViewData(out, data);
   return finishEntity(out);
 }
 
@@ -38,6 +36,15 @@ export function createHtmlViewRuntime(): HtmlViewRuntime {
 
 export function getHtmlViewRuntime(source: Readonly<HtmlView>): Readonly<HtmlViewRuntime> {
   return getNode2DRuntime(source) as HtmlViewRuntime;
+}
+
+export function initializeHtmlViewData(
+  out: EntityConstruction<HtmlViewData>,
+  data?: Readonly<Partial<HtmlViewData>>,
+): void {
+  out.element = data?.element ?? null;
+  out.height = data?.height ?? 100;
+  out.width = data?.width ?? 100;
 }
 
 export function setHtmlViewSize(source: HtmlView, width: number, height: number): void {

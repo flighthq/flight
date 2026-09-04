@@ -20,10 +20,10 @@ interface DomScale9SpriteData extends RendererData {
 }
 export function createDomScale9SpriteData(_state: RenderState, _source: Renderable): DomScale9SpriteData {
   const out = allocateEntity<DomScale9SpriteData>();
-  out.element = null;
-  out.pieces = [];
+  initializeDomScale9SpriteData(out, _state, _source);
   return finishEntity(out);
 }
+
 export function drawDomScale9Sprite(state: DomRenderState, renderProxy: RenderProxy2D): void {
   const data = renderProxy.rendererData as DomScale9SpriteData | null;
   if (data === null) return;
@@ -77,6 +77,14 @@ export function drawDomScale9Sprite(state: DomRenderState, renderProxy: RenderPr
   const sy = source.scaleY !== 0 ? t.d / source.scaleY : t.d;
   data.element.style.transform = `matrix(${sx},${t.b},${t.c},${sy},${t.tx},${t.ty})`;
   setDomRendererElement(state, data.element);
+}
+export function initializeDomScale9SpriteData(
+  out: EntityConstruction<DomScale9SpriteData>,
+  _state: RenderState,
+  _source: Renderable,
+): void {
+  out.element = null;
+  out.pieces = [];
 }
 export const defaultDomScale9SpriteRenderer: Scene2DRenderer = {
   createData: createDomScale9SpriteData,

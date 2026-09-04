@@ -8,58 +8,14 @@ import type {
 
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
-// Creates a fullscreen-pass pipeline for the given fragment WGSL source and target format.
-// The pipeline expects:
-//   @group(0) @binding(0) — optional uniform buffer (if the shader declares it)
-//   @group(1) @binding(i) — texture_2d<f32> input i, and a paired sampler at @binding(2i+1)
-// `textureInputCount` controls how many input-texture bind group layouts are built.
 export function createWgpuFullscreenPipeline(
   state: WgpuRenderState,
   fragmentWgsl: string,
   textureInputCount = 1,
   format: GPUTextureFormat = state.format,
 ): WgpuFullscreenPipeline {
-  const { device } = state;
-  const uniformBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.FRAGMENT,
-        buffer: { type: 'uniform' },
-      },
-    ],
-  });
-  const textureBindGroupLayouts: GPUBindGroupLayout[] = [];
-  for (let i = 0; i < textureInputCount; i++) {
-    textureBindGroupLayouts.push(
-      device.createBindGroupLayout({
-        entries: [
-          { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-          { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-        ],
-      }),
-    );
-  }
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [uniformBindGroupLayout, ...textureBindGroupLayouts],
-  });
-  const vsModule = device.createShaderModule({ code: FULLSCREEN_VERTEX_WGSL });
-  const fsModule = device.createShaderModule({ code: fragmentWgsl });
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: { module: vsModule, entryPoint: 'vs_main' },
-    fragment: {
-      module: fsModule,
-      entryPoint: 'fs_main',
-      targets: [{ format }],
-    },
-    primitive: { topology: 'triangle-list' },
-  });
   const out = allocateEntity<WgpuFullscreenPipeline>();
-  out.pipeline = pipeline;
-  out.pipelineLayout = pipelineLayout;
-  out.uniformBindGroupLayout = uniformBindGroupLayout;
-  out.textureBindGroupLayouts = textureBindGroupLayouts;
+  initializeWgpuFullscreenPipeline(out, state, fragmentWgsl, textureInputCount, format);
   return finishEntity(out);
 }
 
@@ -109,6 +65,60 @@ export function drawWgpuFullscreenPass(
     pass.setBindGroup(1 + i, bindGroup);
   }
   pass.draw(3);
+}
+
+// Creates a fullscreen-pass pipeline for the given fragment WGSL source and target format.
+// The pipeline expects:
+//   @group(0) @binding(0) — optional uniform buffer (if the shader declares it)
+//   @group(1) @binding(i) — texture_2d<f32> input i, and a paired sampler at @binding(2i+1)
+// `textureInputCount` controls how many input-texture bind group layouts are built.
+export function initializeWgpuFullscreenPipeline(
+  out: EntityConstruction<WgpuFullscreenPipeline>,
+  state: WgpuRenderState,
+  fragmentWgsl: string,
+  textureInputCount = 1,
+  format: GPUTextureFormat = state.format,
+): void {
+  const { device } = state;
+  const uniformBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.FRAGMENT,
+        buffer: { type: 'uniform' },
+      },
+    ],
+  });
+  const textureBindGroupLayouts: GPUBindGroupLayout[] = [];
+  for (let i = 0; i < textureInputCount; i++) {
+    textureBindGroupLayouts.push(
+      device.createBindGroupLayout({
+        entries: [
+          { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+          { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+        ],
+      }),
+    );
+  }
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [uniformBindGroupLayout, ...textureBindGroupLayouts],
+  });
+  const vsModule = device.createShaderModule({ code: FULLSCREEN_VERTEX_WGSL });
+  const fsModule = device.createShaderModule({ code: fragmentWgsl });
+  const pipeline = device.createRenderPipeline({
+    layout: pipelineLayout,
+    vertex: { module: vsModule, entryPoint: 'vs_main' },
+    fragment: {
+      module: fsModule,
+      entryPoint: 'fs_main',
+      targets: [{ format }],
+    },
+    primitive: { topology: 'triangle-list' },
+  });
+  out.pipeline = pipeline;
+  out.pipelineLayout = pipelineLayout;
+  out.uniformBindGroupLayout = uniformBindGroupLayout;
+  out.textureBindGroupLayouts = textureBindGroupLayouts;
 }
 
 // The substrate-level WebGPU fullscreen-pass primitive. Filter and effect leaf packages draw

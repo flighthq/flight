@@ -29,6 +29,7 @@ import type {
   RenderEffect,
   RenderEffectPipelineOptions,
   RenderTargetColorSpace,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass';
@@ -77,12 +78,7 @@ export function createGlRenderEffectPipeline(
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): GlRenderEffectPipeline {
   const out = allocateEntity<GlRenderEffectPipeline>();
-  out.options = { ...options };
-  out.sceneTarget = null;
-  out.pool = createGlRenderTargetPool();
-  out.lutCache = createColorLutCache();
-  out.lutTexture = { texture: null, lut: null };
-  out.velocityTexture = null;
+  initializeGlRenderEffectPipeline(out, _state, options);
   return finishEntity(out);
 }
 
@@ -184,6 +180,19 @@ export function endGlRenderEffectPipeline(
 
   if (scratchA !== null) releaseGlRenderTarget(pipeline.pool, scratchA);
   if (scratchB !== null) releaseGlRenderTarget(pipeline.pool, scratchB);
+}
+
+export function initializeGlRenderEffectPipeline(
+  out: EntityConstruction<GlRenderEffectPipeline>,
+  _state: GlRenderState,
+  options: Readonly<RenderEffectPipelineOptions> = {},
+): void {
+  out.options = { ...options };
+  out.sceneTarget = null;
+  out.pool = createGlRenderTargetPool();
+  out.lutCache = createColorLutCache();
+  out.lutTexture = { texture: null, lut: null };
+  out.velocityTexture = null;
 }
 
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame. Pass the texture

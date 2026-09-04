@@ -22,10 +22,21 @@ import {
 } from './symmetricTensor';
 import { writeRigidBody3DWorldCenter } from './world';
 
-// Allocates one contact constraint with no points. The solver owns this record; nothing here belongs
-// on `Physics3DContact`, which carries geometry and identity only.
 export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
   const out = allocateEntity<Physics3DContactConstraint>();
+  initializePhysics3DContactConstraint(out);
+  return finishEntity(out);
+}
+
+export function createPhysics3DContactConstraintPoint(): Physics3DContactConstraintPoint {
+  const out = allocateEntity<Physics3DContactConstraintPoint>();
+  initializePhysics3DContactConstraintPoint(out);
+  return finishEntity(out);
+}
+
+// Allocates one contact constraint with no points. The solver owns this record; nothing here belongs
+// on `Physics3DContact`, which carries geometry and identity only.
+export function initializePhysics3DContactConstraint(out: EntityConstruction<Physics3DContactConstraint>): void {
   out.contact = -1;
   out.pointCount = 0;
   out.points = [];
@@ -35,13 +46,13 @@ export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
   out.tangent1X = 0;
   out.tangent1Y = 0;
   out.tangent1Z = 0;
-  return finishEntity(out);
 }
 
 // Allocates one point's accumulators, zeroed. A fresh point warm-starts from nothing, which is the
 // correct behaviour for a contact that did not exist last step.
-export function createPhysics3DContactConstraintPoint(): Physics3DContactConstraintPoint {
-  const out = allocateEntity<Physics3DContactConstraintPoint>();
+export function initializePhysics3DContactConstraintPoint(
+  out: EntityConstruction<Physics3DContactConstraintPoint>,
+): void {
   out.bias = 0;
   out.featureId = 0;
   out.normalImpulse = 0;
@@ -50,7 +61,6 @@ export function createPhysics3DContactConstraintPoint(): Physics3DContactConstra
   out.tangentImpulse1 = 0;
   out.tangentMass0 = 0;
   out.tangentMass1 = 0;
-  return finishEntity(out);
 }
 
 // Rebuilds the solver's working set from the world's contact list and prepares every constraint row:

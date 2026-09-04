@@ -15,16 +15,23 @@ export function clearSpatialIndex2D(index: Readonly<SpatialIndex2D>): void {
   index.runtime.backend.clearSpatialIndex();
 }
 
+export function createSpatialIndex2D(backend?: SpatialIndexBackend2D): SpatialIndex2D {
+  const out = allocateEntity<SpatialIndex2D>();
+  initializeSpatialIndex2D(out, backend);
+  return finishEntity(out);
+}
+
 // Creates a 2D broadphase index. With no backend it defaults to a uniform grid sized for
 // medium-scale scenes; pass an explicit backend (a differently-sized grid, or a future quadtree /
 // sweep-and-prune) to select the structure for the workload. Constructing the default grid happens
 // here, on call — importing the package has no side effect.
-export function createSpatialIndex2D(backend?: SpatialIndexBackend2D): SpatialIndex2D {
-  const out = allocateEntity<SpatialIndex2D>();
+export function initializeSpatialIndex2D(
+  out: EntityConstruction<SpatialIndex2D>,
+  backend?: SpatialIndexBackend2D,
+): void {
   out.runtime = {
     backend: backend ?? createUniformGridSpatialBackend2D(DEFAULT_SPATIAL_CELL_SIZE),
   };
-  return finishEntity(out);
 }
 
 // Adds an object to the index under `id` with its current bounds. The bounds are copied; the caller

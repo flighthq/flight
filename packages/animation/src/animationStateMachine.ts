@@ -22,12 +22,38 @@ export function advanceAnimationStateMachine(machine: AnimationStateMachine, dt:
   advanceAnimationStateMachineWithScratch(machine, dt, advanced);
 }
 
-// Allocates a named-state controller with a global target correspondence layout and reusable transition
-// scratch. Gameplay conditions remain external: callers explicitly request a named timed transition.
 export function createAnimationStateMachine(
   states: readonly AnimationStateMachineState[],
   initialState: string | number = 0,
 ): AnimationStateMachine {
+  const out = allocateEntity<AnimationStateMachine>();
+  initializeAnimationStateMachine(out, states, initialState);
+  return finishEntity(out);
+}
+
+export function createAnimationStateMachineState(
+  name: string,
+  blendTree: AnimationBlendTree,
+): AnimationStateMachineState {
+  const out = allocateEntity<AnimationStateMachineState>();
+  initializeAnimationStateMachineState(out, name, blendTree);
+  return finishEntity(out);
+}
+
+// Returns the active state. During a transition this remains the source until the duration completes.
+export function getAnimationStateMachineCurrentState(
+  machine: Readonly<AnimationStateMachine>,
+): Readonly<AnimationStateMachineState> {
+  return machine.states[machine.currentStateIndex];
+}
+
+// Allocates a named-state controller with a global target correspondence layout and reusable transition
+// scratch. Gameplay conditions remain external: callers explicitly request a named timed transition.
+export function initializeAnimationStateMachine(
+  out: EntityConstruction<AnimationStateMachine>,
+  states: readonly AnimationStateMachineState[],
+  initialState: string | number = 0,
+): void {
   if (states.length === 0) throw new RangeError('AnimationStateMachine requires at least one state.');
   const copiedStates = states.slice();
   const stateByName = new Map<string, number>();
@@ -41,11 +67,9 @@ export function createAnimationStateMachine(
   if (!Number.isInteger(initialStateIndex) || initialStateIndex < 0 || initialStateIndex >= copiedStates.length) {
     throw new RangeError(`AnimationStateMachine initial state "${String(initialState)}" does not exist.`);
   }
-
   const channels = createAnimationStateMachineChannels(copiedStates);
   let sampleWidth = 0;
   for (const entry of channels) sampleWidth = Math.max(sampleWidth, entry.channel.track.components);
-  const out = allocateEntity<AnimationStateMachine>();
   out.advanceScratch = [];
   out.channels = channels;
   out.currentStateIndex = initialStateIndex;
@@ -58,25 +82,16 @@ export function createAnimationStateMachine(
   out.transitionFromStateIndex = null;
   out.transitionToStateIndex = null;
   out.transitionWeight = 0;
-  return finishEntity(out);
 }
 
 // Allocates one named state over a blend tree.
-export function createAnimationStateMachineState(
+export function initializeAnimationStateMachineState(
+  out: EntityConstruction<AnimationStateMachineState>,
   name: string,
   blendTree: AnimationBlendTree,
-): AnimationStateMachineState {
-  const out = allocateEntity<AnimationStateMachineState>();
+): void {
   out.blendTree = blendTree;
   out.name = name;
-  return finishEntity(out);
-}
-
-// Returns the active state. During a transition this remains the source until the duration completes.
-export function getAnimationStateMachineCurrentState(
-  machine: Readonly<AnimationStateMachine>,
-): Readonly<AnimationStateMachineState> {
-  return machine.states[machine.currentStateIndex];
 }
 
 // Reports whether a timed transition is active.

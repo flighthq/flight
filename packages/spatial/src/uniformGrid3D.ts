@@ -16,6 +16,12 @@ import type {
 import { reportSpatialIndexing } from './spatialIndexingGuard';
 import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
 
+export function createUniformGridSpatialBackend3D(cellSize: number): SpatialIndexBackend3D & Entity {
+  const out = allocateEntity<SpatialIndexBackend3D & Entity>();
+  initializeUniformGridSpatialBackend3D(out, cellSize);
+  return finishEntity(out);
+}
+
 // Builds a 3D uniform-grid (spatial-hash) backend: an object's AABB is mapped to the rectangular
 // block of fixed-size cells it covers, and each cell holds the ids overlapping it. Co-located objects
 // share a cell, so candidate pairs and region/point/ray hits are found by looking only at the relevant
@@ -30,7 +36,10 @@ import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
 // its job rather than a mis-set constant — the walk it prevents grows as extent divided by cellSize
 // CUBED, so the runaway it exists to stop arrives sooner and steeper. A workload whose objects
 // overflow is telling the caller its cell size is wrong, which the indexing guard reports.
-export function createUniformGridSpatialBackend3D(cellSize: number): SpatialIndexBackend3D & Entity {
+export function initializeUniformGridSpatialBackend3D(
+  out: EntityConstruction<SpatialIndexBackend3D & Entity>,
+  cellSize: number,
+): void {
   const grid: UniformGrid3D = {
     cellSize,
     cells: new Map(),
@@ -46,7 +55,6 @@ export function createUniformGridSpatialBackend3D(cellSize: number): SpatialInde
     seen: new Set(),
     pairIds: [],
   };
-  const out = allocateEntity<SpatialIndexBackend3D & Entity>();
   out.insertSpatialObject = (id, bounds) => {
     return _insertIntoGrid3D(grid, id, bounds, 'insert');
   };
@@ -81,7 +89,6 @@ export function createUniformGridSpatialBackend3D(cellSize: number): SpatialInde
   out.querySpatialRay = (x, y, z, dx, dy, dz, out) => {
     _queryGrid3DRay(grid, x, y, z, dx, dy, dz, out);
   };
-  return finishEntity(out);
 }
 
 // One occupied cell: its integer cell coordinates and the ids whose bounds cover it. The coordinates

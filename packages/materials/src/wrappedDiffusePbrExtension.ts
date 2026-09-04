@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { WrappedDiffusePbrExtension } from '@flighthq/types/contract';
+import type { WrappedDiffusePbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
 import { isValidMaterialWeight } from './materialValidation';
@@ -9,6 +9,14 @@ export function createWrappedDiffusePbrExtension(
   opts?: Readonly<Partial<WrappedDiffusePbrExtension>>,
 ): WrappedDiffusePbrExtension {
   const out = allocateEntity<WrappedDiffusePbrExtension>();
+  initializeWrappedDiffusePbrExtension(out, opts);
+  return finishEntity(out);
+}
+
+export function initializeWrappedDiffusePbrExtension(
+  out: EntityConstruction<WrappedDiffusePbrExtension>,
+  opts?: Readonly<Partial<WrappedDiffusePbrExtension>>,
+): void {
   out.kind = WrappedDiffusePbrExtensionKind;
   out.thickness = opts?.thickness ?? 0;
   out.thicknessMap = opts?.thicknessMap ?? null;
@@ -17,7 +25,6 @@ export function createWrappedDiffusePbrExtension(
   out.wrappedDiffuseMap = opts?.wrappedDiffuseMap ?? null;
   out.wrappedDiffuseMapUvSet = opts?.wrappedDiffuseMapUvSet ?? 0;
   out.wrappedDiffuseStrength = opts?.wrappedDiffuseStrength ?? 0;
-  return finishEntity(out);
 }
 
 export function isValidWrappedDiffusePbrExtension(value: Readonly<WrappedDiffusePbrExtension>): boolean {

@@ -2,7 +2,6 @@ import { notifyWindowClosed } from '@flighthq/application/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ApplicationWindow,
-  EntityWithoutRuntime,
   FullscreenBackend,
   FullscreenTargetHandle,
   NativeWindowHandle,

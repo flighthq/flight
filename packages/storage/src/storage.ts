@@ -72,7 +72,7 @@ export function clearStorageNamespace(
 
 export function createStorageSignals(): StorageSignals {
   const out = allocateEntity<StorageSignals>();
-  out.onChange = createSignal();
+  initializeStorageSignals(out);
   return finishEntity(out);
 }
 
@@ -246,6 +246,10 @@ export function getStorageNumberOr(host: HasStorageLocal, key: string, fallback:
   if (raw.value === null) return { reason: 'ok', value: fallback };
   const value = Number(raw.value);
   return Number.isFinite(value) ? { reason: 'ok', value } : { reason: 'parse-failed', value: fallback };
+}
+
+export function initializeStorageSignals(out: EntityConstruction<StorageSignals>): void {
+  out.onChange = createSignal();
 }
 
 // Validates the complete plan before reading or mutating storage. Every successful callback is followed

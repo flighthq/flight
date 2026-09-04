@@ -36,55 +36,25 @@ export function attachScreenSignals(host: HasScreenChange, signals: ScreenSignal
 
 export function createScreenInfo(): ScreenInfo {
   const out = allocateEntity<ScreenInfo>();
-  out.id = 0;
-  out.x = 0;
-  out.y = 0;
-  out.width = 0;
-  out.height = 0;
-  out.workWidth = 0;
-  out.workHeight = 0;
-  out.scaleFactor = 1;
-  out.isPrimary = false;
-  out.rotation = -1;
-  out.orientation = 'Landscape';
-  out.refreshRate = -1;
-  out.colorDepth = -1;
-  out.pixelDepth = -1;
-  out.physicalWidth = -1;
-  out.physicalHeight = -1;
-  out.isHdr = false;
-  out.colorSpace = 'srgb';
-  out.maxLuminance = -1;
-  out.depthPerComponent = -1;
-  out.dpi = -1;
-  out.label = '';
-  out.internal = false;
-  out.touchSupport = 'unknown';
-  out.monochrome = false;
+  initializeScreenInfo(out);
   return finishEntity(out);
 }
 
 export function createScreenMode(): ScreenMode {
   const out = allocateEntity<ScreenMode>();
-  out.width = 0;
-  out.height = 0;
-  out.refreshRate = -1;
-  out.colorDepth = -1;
-  out.pixelFormat = '';
+  initializeScreenMode(out);
   return finishEntity(out);
 }
 
 export function createScreenPermissionChange(): ScreenPermissionChange {
   const out = allocateEntity<ScreenPermissionChange>();
-  out.onChange = createSignal();
+  initializeScreenPermissionChange(out);
   return finishEntity(out);
 }
 
 export function createScreenSignals(): ScreenSignals {
   const out = allocateEntity<ScreenSignals>();
-  out.onScreenAdded = createSignal();
-  out.onScreenMetricsChanged = createSignal();
-  out.onScreenRemoved = createSignal();
+  initializeScreenSignals(out);
   return finishEntity(out);
 }
 
@@ -262,6 +232,52 @@ export function getScreenWorkArea(
   out.width = screen.workWidth;
   out.height = screen.workHeight;
   return out;
+}
+
+export function initializeScreenInfo(out: EntityConstruction<ScreenInfo>): void {
+  out.id = 0;
+  out.x = 0;
+  out.y = 0;
+  out.width = 0;
+  out.height = 0;
+  out.workWidth = 0;
+  out.workHeight = 0;
+  out.scaleFactor = 1;
+  out.isPrimary = false;
+  out.rotation = -1;
+  out.orientation = 'Landscape';
+  out.refreshRate = -1;
+  out.colorDepth = -1;
+  out.pixelDepth = -1;
+  out.physicalWidth = -1;
+  out.physicalHeight = -1;
+  out.isHdr = false;
+  out.colorSpace = 'srgb';
+  out.maxLuminance = -1;
+  out.depthPerComponent = -1;
+  out.dpi = -1;
+  out.label = '';
+  out.internal = false;
+  out.touchSupport = 'unknown';
+  out.monochrome = false;
+}
+
+export function initializeScreenMode(out: EntityConstruction<ScreenMode>): void {
+  out.width = 0;
+  out.height = 0;
+  out.refreshRate = -1;
+  out.colorDepth = -1;
+  out.pixelFormat = '';
+}
+
+export function initializeScreenPermissionChange(out: EntityConstruction<ScreenPermissionChange>): void {
+  out.onChange = createSignal();
+}
+
+export function initializeScreenSignals(out: EntityConstruction<ScreenSignals>): void {
+  out.onScreenAdded = createSignal();
+  out.onScreenMetricsChanged = createSignal();
+  out.onScreenRemoved = createSignal();
 }
 
 export function requestScreenDetails(host: HasScreenDetails): Promise<boolean> {

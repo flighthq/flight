@@ -195,12 +195,7 @@ export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBat
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
   const out = allocateEntity<QuadBatchData>();
-  out.atlas = data?.atlas ?? null;
-  out.ids = data?.ids ?? new Uint16Array();
-  out.instanceCount = data?.instanceCount ?? 0;
-  out.materialData = data?.materialData ?? null;
-  out.transforms = data?.transforms ?? new Float32Array();
-  out.transformType = data?.transformType ?? 'vector2';
+  initializeQuadBatchData(out, data);
   return finishEntity(out);
 }
 
@@ -213,9 +208,7 @@ export function createQuadBatchRuntime(): QuadBatchRuntime {
 
 export function createQuadBatchSignals(): QuadBatchSignals {
   const out = allocateEntity<QuadBatchSignals>();
-  out.onCleared = createSignal();
-  out.onInstanceAppended = createSignal();
-  out.onInstanceRemoved = createSignal();
+  initializeQuadBatchSignals(out);
   return finishEntity(out);
 }
 
@@ -397,6 +390,24 @@ export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, 
     }
   }
   return -1;
+}
+
+export function initializeQuadBatchData(
+  out: EntityConstruction<QuadBatchData>,
+  data?: Readonly<Partial<QuadBatchData>>,
+): void {
+  out.atlas = data?.atlas ?? null;
+  out.ids = data?.ids ?? new Uint16Array();
+  out.instanceCount = data?.instanceCount ?? 0;
+  out.materialData = data?.materialData ?? null;
+  out.transforms = data?.transforms ?? new Float32Array();
+  out.transformType = data?.transformType ?? 'vector2';
+}
+
+export function initializeQuadBatchSignals(out: EntityConstruction<QuadBatchSignals>): void {
+  out.onCleared = createSignal();
+  out.onInstanceAppended = createSignal();
+  out.onInstanceRemoved = createSignal();
 }
 
 /**

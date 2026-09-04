@@ -9,7 +9,7 @@ import type {
 
 export function createRegistryCatalog(entries: readonly Readonly<RegistryCatalogEntry>[] = []): RegistryCatalog {
   const out = allocateEntity<RegistryCatalog>();
-  out.entries = entries.map(copyCatalogEntry);
+  initializeRegistryCatalog(out, entries);
   return finishEntity(out);
 }
 
@@ -26,6 +26,13 @@ export function findRegistryCatalogEntries(
 
 export function getRegistryCatalogEntries(catalog: Readonly<RegistryCatalog>): readonly RegistryCatalogEntry[] {
   return catalog.entries.map(copyCatalogEntry);
+}
+
+export function initializeRegistryCatalog(
+  out: EntityConstruction<RegistryCatalog>,
+  entries: readonly Readonly<RegistryCatalogEntry>[] = [],
+): void {
+  out.entries = entries.map(copyCatalogEntry);
 }
 
 // The row identity includes the registrar. One requirement may need multiple registrations, so adding a

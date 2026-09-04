@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Clock, ClockOptions } from '@flighthq/types/contract';
+import type { Clock, ClockOptions, EntityConstruction } from '@flighthq/types/contract';
 
 // Attaches `child` under `parent`, detaching it from any previous parent first (reparent-safe). After
 // this, advancing `parent` cascades into `child`. A no-op if `child` is already parented here.
@@ -36,17 +36,9 @@ export function createChildClock(parent: Clock, options?: Readonly<ClockOptions>
   return child;
 }
 
-// Allocates a root clock (no parent). Defaults to realtime and running; pass options to start scaled or
-// paused. Drive it each frame with advanceClock(clock, dtSeconds).
 export function createClock(options?: Readonly<ClockOptions>): Clock {
   const out = allocateEntity<Clock>();
-  out.scale = options?.scale ?? 1;
-  out.paused = options?.paused ?? false;
-  out.deltaTime = 0;
-  out.elapsed = 0;
-  out.parent = null;
-  out.children = [];
-  out.onTick = null;
+  initializeClock(out, options);
   return finishEntity(out);
 }
 
@@ -81,6 +73,18 @@ export function getClockEffectiveScale(clock: Readonly<Clock>): number {
 // changed through addClockChild / removeClockChild, not by assigning this.
 export function getClockParent(clock: Readonly<Clock>): Clock | null {
   return clock.parent;
+}
+
+// Allocates a root clock (no parent). Defaults to realtime and running; pass options to start scaled or
+// paused. Drive it each frame with advanceClock(clock, dtSeconds).
+export function initializeClock(out: EntityConstruction<Clock>, options?: Readonly<ClockOptions>): void {
+  out.scale = options?.scale ?? 1;
+  out.paused = options?.paused ?? false;
+  out.deltaTime = 0;
+  out.elapsed = 0;
+  out.parent = null;
+  out.children = [];
+  out.onTick = null;
 }
 
 // Whether this clock receives a zero delta on the next advance: true if the clock itself or any ancestor

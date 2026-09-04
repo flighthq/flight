@@ -5,14 +5,22 @@ import type {
   NotificationRequestField,
   TauriApi,
   TauriNotificationCapabilities,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotificationCapabilities {
+  const out = allocateEntity<TauriNotificationCapabilities>();
+  initializeTauriNotificationCapabilities(out, tauri);
+  return finishEntity(out);
+}
+
+export function initializeTauriNotificationCapabilities(
+  out: EntityConstruction<TauriNotificationCapabilities>,
+  tauri: TauriApi,
+): void {
   const notification = tauri.notification;
   let destroyed = false;
   let nextId = 1;
-
-  const out = allocateEntity<TauriNotificationCapabilities>();
   out.delivery = {
     async notify(request) {
       if (destroyed) return { reason: 'operation-failed' };
@@ -70,7 +78,6 @@ export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotif
       }
     },
   };
-  return finishEntity(out);
 }
 
 function getTauriInvalidNotificationRequestFields(request: Readonly<NotificationRequest>): NotificationRequestField[] {

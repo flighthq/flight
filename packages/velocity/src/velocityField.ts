@@ -1,11 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Velocity2D,
-  VelocityExplanation,
-  VelocityField,
-  VelocitySample,
-} from '@flighthq/types/contract';
+import type { Velocity2D, VelocityExplanation, VelocityField, VelocitySample } from '@flighthq/types/contract';
 
 // The VelocityField is the generic seam: any system (physics, tween, camera, manual edit) contributes a
 // source object's screen-space velocity for the current frame, and any consumer reads it. The accessors

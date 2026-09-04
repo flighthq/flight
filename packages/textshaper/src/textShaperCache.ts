@@ -19,10 +19,9 @@ export function clearTextShaperCache(cache: TextShaperCache): void {
   cache._entries.clear();
 }
 
-// Allocates a new, empty TextShaperCache.
 export function createTextShaperCache(): TextShaperCache {
   const out = allocateEntity<TextShaperCache>();
-  out._entries = new Map();
+  initializeTextShaperCache(out);
   return finishEntity(out);
 }
 
@@ -31,6 +30,11 @@ export function createTextShaperCache(): TextShaperCache {
 // `disposeTextShaperCache` only when the cache lifetime is over.
 export function disposeTextShaperCache(cache: TextShaperCache): void {
   cache._entries.clear();
+}
+
+// Allocates a new, empty TextShaperCache.
+export function initializeTextShaperCache(out: EntityConstruction<TextShaperCache>): void {
+  out._entries = new Map();
 }
 
 // Shapes `text` in `format` with `options`, returning a cached ShapedRun when an equivalent call

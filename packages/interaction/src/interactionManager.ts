@@ -26,6 +26,7 @@ import type {
   Signal,
   SignalConnectOptions,
   Transform2DNode,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests';
@@ -165,43 +166,13 @@ export function createInteractionManager<N extends NodeAny>(
   options: Readonly<InteractionManagerOptions> = {},
 ): InteractionManager<N> {
   const out = allocateEntity<InteractionManager<N>>();
-  out.cursorBackend = options.cursorBackend ?? null;
-  out.cursorTarget = null;
-  out.dispatchLayers = null;
-  out.doubleClickDelay = options.doubleClickDelay ?? 500;
-  out.doubleClickDistance = options.doubleClickDistance ?? 4;
-  out.enabled = options.enabled ?? true;
-  out.pointerCaptures = new Map();
-  out.pointerStates = new Map();
-  out.precise = options.precise ?? false;
-  out.root = root;
-  out.spatialIndex = options.spatialIndex ?? null;
-  out.signalSubscriberCounts = new Map();
-  out.trackedSignalSlots = new Map();
-  out.trackedSubscribersOnly = options.trackedSubscribersOnly ?? false;
+  initializeInteractionManager(out, root, options);
   return finishEntity(out);
 }
 
 export function createInteractionSignals(): InteractionSignals {
   const out = allocateEntity<InteractionSignals>();
-  out.onClick = createSignal();
-  out.onContextMenu = createSignal();
-  out.onDoubleClick = createSignal();
-  out.onFocusIn = createSignal();
-  out.onFocusOut = createSignal();
-  out.onKeyDown = createSignal();
-  out.onKeyUp = createSignal();
-  out.onPointerCancel = createSignal();
-  out.onPointerDoubleClick = createSignal();
-  out.onPointerDown = createSignal();
-  out.onPointerMove = createSignal();
-  out.onPointerOut = createSignal();
-  out.onPointerOver = createSignal();
-  out.onPointerRollOut = createSignal();
-  out.onPointerRollOver = createSignal();
-  out.onPointerUp = createSignal();
-  out.onReleaseOutside = createSignal();
-  out.onWheel = createSignal();
+  initializeInteractionSignals(out);
   return finishEntity(out);
 }
 
@@ -415,6 +386,48 @@ export function enableInteractionSignals<N extends NodeAny>(source: N): Interact
 
 export function getInteractionSignals<N extends NodeAny>(source: N): InteractionSignals | null {
   return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionSignals;
+}
+
+export function initializeInteractionManager(
+  out: EntityConstruction<InteractionManager<N>>,
+  root: N,
+  options: Readonly<InteractionManagerOptions> = {},
+): void {
+  out.cursorBackend = options.cursorBackend ?? null;
+  out.cursorTarget = null;
+  out.dispatchLayers = null;
+  out.doubleClickDelay = options.doubleClickDelay ?? 500;
+  out.doubleClickDistance = options.doubleClickDistance ?? 4;
+  out.enabled = options.enabled ?? true;
+  out.pointerCaptures = new Map();
+  out.pointerStates = new Map();
+  out.precise = options.precise ?? false;
+  out.root = root;
+  out.spatialIndex = options.spatialIndex ?? null;
+  out.signalSubscriberCounts = new Map();
+  out.trackedSignalSlots = new Map();
+  out.trackedSubscribersOnly = options.trackedSubscribersOnly ?? false;
+}
+
+export function initializeInteractionSignals(out: EntityConstruction<InteractionSignals>): void {
+  out.onClick = createSignal();
+  out.onContextMenu = createSignal();
+  out.onDoubleClick = createSignal();
+  out.onFocusIn = createSignal();
+  out.onFocusOut = createSignal();
+  out.onKeyDown = createSignal();
+  out.onKeyUp = createSignal();
+  out.onPointerCancel = createSignal();
+  out.onPointerDoubleClick = createSignal();
+  out.onPointerDown = createSignal();
+  out.onPointerMove = createSignal();
+  out.onPointerOut = createSignal();
+  out.onPointerOver = createSignal();
+  out.onPointerRollOut = createSignal();
+  out.onPointerRollOver = createSignal();
+  out.onPointerUp = createSignal();
+  out.onReleaseOutside = createSignal();
+  out.onWheel = createSignal();
 }
 
 /** Re-resolves and immediately applies the cursor for the manager's current rollover target. */

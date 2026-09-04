@@ -28,23 +28,9 @@ export function comparePlatformVersions(a: string, b: string): -1 | 0 | 1 {
   return 0;
 }
 
-// Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a backend.
 export function createPlatformInfo(): PlatformInfo {
   const out = allocateEntity<PlatformInfo>();
-  out.arch = '';
-  out.distro = '';
-  out.distroVersion = '';
-  out.endianness = 'unknown';
-  out.engine = 'unknown';
-  out.engineVersion = '';
-  out.isTouch = false;
-  out.kind = 'unknown';
-  out.locale = '';
-  out.name = 'unknown';
-  out.osBuild = '';
-  out.pointerWidth = -1;
-  out.runtime = 'unknown';
-  out.version = '';
+  initializePlatformInfo(out);
   return finishEntity(out);
 }
 
@@ -73,6 +59,24 @@ export function getPlatformName(host: HasSystemPlatform): PlatformName {
 // 'unknown'. Convenience over getPlatformInfo. Distinguishes plain web from a host shell.
 export function getPlatformRuntime(host: HasSystemPlatform): PlatformRuntime {
   return getPlatformInfo(host, _scratch).runtime;
+}
+
+// Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a backend.
+export function initializePlatformInfo(out: EntityConstruction<PlatformInfo>): void {
+  out.arch = '';
+  out.distro = '';
+  out.distroVersion = '';
+  out.endianness = 'unknown';
+  out.engine = 'unknown';
+  out.engineVersion = '';
+  out.isTouch = false;
+  out.kind = 'unknown';
+  out.locale = '';
+  out.name = 'unknown';
+  out.osBuild = '';
+  out.pointerWidth = -1;
+  out.runtime = 'unknown';
+  out.version = '';
 }
 
 // True on a desktop host (Electron/Tauri/native window shell). False on mobile and plain web.

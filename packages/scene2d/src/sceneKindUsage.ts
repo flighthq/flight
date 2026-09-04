@@ -10,14 +10,9 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-// Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
-// frames without reallocating four arrays.
 export function createScene2DKindUsage(): Scene2DKindUsage & Entity {
   const out = allocateEntity<Scene2DKindUsage & Entity>();
-  out.blendModes = [];
-  out.materialKinds = [];
-  out.nodeKinds = [];
-  out.shapeCommandKeys = [];
+  initializeScene2DKindUsage(out);
   return finishEntity(out);
 }
 
@@ -63,6 +58,15 @@ export function getScene2DKindUsage(out: Scene2DKindUsage, scene: Readonly<Scene
   out.materialKinds.sort();
   out.nodeKinds.sort();
   out.shapeCommandKeys.sort();
+}
+
+// Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
+// frames without reallocating four arrays.
+export function initializeScene2DKindUsage(out: EntityConstruction<Scene2DKindUsage & Entity>): void {
+  out.blendModes = [];
+  out.materialKinds = [];
+  out.nodeKinds = [];
+  out.shapeCommandKeys = [];
 }
 
 // Linear scan rather than a Set: these lists are the handful of distinct kinds a document uses, where

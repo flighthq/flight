@@ -43,7 +43,7 @@ interface GlRichTextData extends RendererData {
 
 export function createGlRichTextData(_state: GlRenderState, _source: Renderable): RendererData {
   const out = allocateEntity<GlRichTextData>();
-  out.surface = null;
+  initializeGlRichTextData(out, _state, _source);
   return finishEntity(out);
 }
 
@@ -130,6 +130,14 @@ export function drawGlRichTextWithOverlay(
   // bounds (computeRichTextLocalBoundsRectangle applies the same offset). Zero for 'none'/'left'.
   const offsetX = computeTextBoundsOffsetX(data, result);
   drawGlQuad(state, offsetX, 0, offsetX + fieldW, fieldH, 0, 0, 1, 1);
+}
+
+export function initializeGlRichTextData(
+  out: EntityConstruction<GlRichTextData>,
+  _state: GlRenderState,
+  _source: Renderable,
+): void {
+  out.surface = null;
 }
 
 export function registerGlTextInputOverlay(overlay: GlRichTextOverlay): void {

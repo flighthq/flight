@@ -15,7 +15,6 @@ import type {
   Bone2D,
   ByteReader,
   EasingFunction,
-  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,

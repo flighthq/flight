@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapReadbackBackend, Entity, EntityConstruction } from '@flighthq/types/contract';
+import type { Bitmap, BitmapReadbackBackend, Entity } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 export function createWebBitmapReadbackBackend(): BitmapReadbackBackend & Entity {

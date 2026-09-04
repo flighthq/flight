@@ -51,7 +51,6 @@ import {
 } from '@flighthq/physics2d/contract';
 import type {
   CollisionBuiltInShape2D,
-  EntityWithoutRuntime,
   Physics2DAbi,
   Physics2DAbiBodyBuffer,
   Physics2DAbiCommandBuffer,
@@ -73,6 +72,7 @@ import type {
   Physics2DSolverConfig,
   Physics2DWorld,
   RigidBody2D,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import {
@@ -103,14 +103,18 @@ import {
   Physics2DAbiVersion,
 } from './physics2DAbiLayout';
 
+export function createReferencePhysics2DAbi(): Physics2DAbi {
+  const out = allocateEntity<Physics2DAbi>();
+  initializeReferencePhysics2DAbi(out);
+  return finishEntity(out);
+}
+
 // The executable specification for the Physics2D ABI: a real `Physics2DWorld` behind persistent
 // handles, caller-chosen ids, and packed buffers. It exists to make the wire contract testable rather
 // than to be fast — a native shadow replaces this one constructor and inherits every codec above it.
-export function createReferencePhysics2DAbi(): Physics2DAbi {
+export function initializeReferencePhysics2DAbi(out: EntityConstruction<Physics2DAbi>): void {
   const worlds = new Map<number, ReferencePhysics2DAbiWorld>();
   let nextWorldHandle = 1;
-
-  const out = allocateEntity<Physics2DAbi>();
   out.version = Physics2DAbiVersion;
   out.capabilities =
     Physics2DAbiCapability.ContactHooks |
@@ -194,7 +198,6 @@ export function createReferencePhysics2DAbi(): Physics2DAbi {
     writeShapeCastHit(state, out);
     return true;
   };
-  return finishEntity(out);
 }
 
 interface ReferencePhysics2DAbiCollider {

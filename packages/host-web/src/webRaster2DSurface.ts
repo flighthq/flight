@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
-import type { Entity, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
+import type { Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 
 export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
   const out = allocateEntity<Raster2DSurfaceProvider>();

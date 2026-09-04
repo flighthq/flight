@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioResource } from '@flighthq/types/contract';
+import type { AudioResource, EntityConstruction } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the SAME underlying AudioBuffer. The buffer is shared by
 // reference, not duplicated — clone gives an independent resource object over the same decoded PCM,
@@ -13,7 +13,7 @@ export function cloneAudioResource(resource: Readonly<AudioResource>): AudioReso
 
 export function createAudioResource(buffer?: AudioBuffer): AudioResource {
   const out = allocateEntity<AudioResource>();
-  out.buffer = buffer ?? null;
+  initializeAudioResource(out, buffer);
   return finishEntity(out);
 }
 
@@ -53,6 +53,10 @@ export function getAudioResourceSampleRate(resource: Readonly<AudioResource>): n
 
 export function hasAudioResourceBuffer(resource: Readonly<AudioResource>): boolean {
   return resource.buffer !== null;
+}
+
+export function initializeAudioResource(out: EntityConstruction<AudioResource>, buffer?: AudioBuffer): void {
+  out.buffer = buffer ?? null;
 }
 
 export function isAudioResourceEmpty(resource: Readonly<AudioResource>): boolean {

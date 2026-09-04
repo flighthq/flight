@@ -6,7 +6,6 @@ import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   DisplayObject,
-  EntityConstruction,
   ImageResourceReference,
   ImportDiagnostic,
   Node2D,

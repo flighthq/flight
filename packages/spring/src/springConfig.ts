@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { TAU } from '@flighthq/math/contract';
-import type { SpringConfig } from '@flighthq/types/contract';
+import type { SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
 // Frozen plain-data presets: spread one into a mutable object to customize it without changing the
 // shared profile. Bouncy is quick and underdamped for visible overshoot.
@@ -33,23 +33,40 @@ export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze(
   })(),
 );
 
+export function createSpringConfig(frequency: number, dampingRatio: number): SpringConfig {
+  const out = allocateEntity<SpringConfig>();
+  initializeSpringConfig(out, frequency, dampingRatio);
+  return finishEntity(out);
+}
+
+export function createSpringConfigFromPhysical(stiffness: number, damping: number, mass: number): SpringConfig {
+  const out = allocateEntity<SpringConfig>();
+  initializeSpringConfigFromPhysical(out, stiffness, damping, mass);
+  return finishEntity(out);
+}
+
 // Allocate a `SpringConfig` from the designer-intuitive `frequency` (Hz) and `dampingRatio`
 // (0 undamped, <1 underdamped/overshoots, 1 critical/fastest-no-overshoot, >1 overdamped). This is
 // the primary constructor; use `createSpringConfigFromPhysical` when starting from raw physics.
-export function createSpringConfig(frequency: number, dampingRatio: number): SpringConfig {
-  const out = allocateEntity<SpringConfig>();
+export function initializeSpringConfig(
+  out: EntityConstruction<SpringConfig>,
+  frequency: number,
+  dampingRatio: number,
+): void {
   out.dampingRatio = dampingRatio;
   out.frequency = frequency;
-  return finishEntity(out);
 }
 
 // Allocate a `SpringConfig` from a physical spring: `stiffness` (k), `damping` (c), and `mass` (m).
 // Converts to the mass-independent form via `frequency = sqrt(k / m) / (2 * PI)` and
 // `dampingRatio = c / (2 * sqrt(k * m))`, the standard undamped-natural-frequency and
 // damping-ratio identities. Expects positive `stiffness` and `mass`.
-export function createSpringConfigFromPhysical(stiffness: number, damping: number, mass: number): SpringConfig {
-  const out = allocateEntity<SpringConfig>();
+export function initializeSpringConfigFromPhysical(
+  out: EntityConstruction<SpringConfig>,
+  stiffness: number,
+  damping: number,
+  mass: number,
+): void {
   out.dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
   out.frequency = Math.sqrt(stiffness / mass) / TAU;
-  return finishEntity(out);
 }

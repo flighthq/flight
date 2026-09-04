@@ -40,17 +40,13 @@ export function clearStatusBarStyleStack(host: HasUiStatusBarStyleStack): void {
 
 export function createStatusBar(): StatusBar {
   const out = allocateEntity<StatusBar>();
-  out.onChange = createSignal();
+  initializeStatusBar(out);
   return finishEntity(out);
 }
 
 export function createStatusBarInfo(): StatusBarInfo {
   const out = allocateEntity<StatusBarInfo>();
-  out.color = 0;
-  out.height = -1;
-  out.overlaysContent = false;
-  out.style = 'default';
-  out.visible = true;
+  initializeStatusBarInfo(out);
   return finishEntity(out);
 }
 
@@ -76,6 +72,18 @@ export function getStatusBarInfo(host: HasUiStatusBarInfo, out: StatusBarInfo): 
 export function hasStatusBarStyleEntry(host: HasUiStatusBarStyleStack, handle: StatusBarStyleEntryHandle): boolean {
   if (handle === INVALID_HANDLE) return false;
   return _styleStacks.get(host)?.entries.some((entry) => entry.handle === handle) ?? false;
+}
+
+export function initializeStatusBar(out: EntityConstruction<StatusBar>): void {
+  out.onChange = createSignal();
+}
+
+export function initializeStatusBarInfo(out: EntityConstruction<StatusBarInfo>): void {
+  out.color = 0;
+  out.height = -1;
+  out.overlaysContent = false;
+  out.style = 'default';
+  out.visible = true;
 }
 
 export function packedRgbaToHexColor(color: number): string {

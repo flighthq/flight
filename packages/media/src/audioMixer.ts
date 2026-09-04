@@ -35,10 +35,7 @@ export function addAudioBusToMixer(mixer: Readonly<AudioMixer>, bus: AudioBus): 
 
 export function createAudioBus(options?: Readonly<AudioBusOptions>): AudioBus {
   const out = allocateEntity<AudioBus>();
-  out.gain = options?.gain ?? 1;
-  out.muted = options?.muted ?? false;
-  out.name = options?.name ?? '';
-  out.pan = options?.pan ?? 0;
+  initializeAudioBus(out, options);
   return finishEntity(out);
 }
 
@@ -102,6 +99,13 @@ export function getAudioMixerActiveChannels(mixer: Readonly<AudioMixer>): readon
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return [];
   return Array.from(runtime.activeChannels);
+}
+
+export function initializeAudioBus(out: EntityConstruction<AudioBus>, options?: Readonly<AudioBusOptions>): void {
+  out.gain = options?.gain ?? 1;
+  out.muted = options?.muted ?? false;
+  out.name = options?.name ?? '';
+  out.pan = options?.pan ?? 0;
 }
 
 export function pauseAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {

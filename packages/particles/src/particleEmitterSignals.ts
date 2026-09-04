@@ -1,14 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { ParticleEmitterSignals } from '@flighthq/types/contract';
+import type { ParticleEmitterSignals, EntityConstruction } from '@flighthq/types/contract';
 
-/** Create a fresh {@link ParticleEmitterSignals} group. Called by
- *  {@link enableParticleEmitterSignals} on first use; exported for unit testing. */
 export function createParticleEmitterSignals(): ParticleEmitterSignals {
   const out = allocateEntity<ParticleEmitterSignals>();
-  out.onEmitterComplete = createSignal();
-  out.onParticleDeath = createSignal();
-  out.onParticleSpawn = createSignal();
+  initializeParticleEmitterSignals(out);
   return finishEntity(out);
 }
 
@@ -31,6 +27,14 @@ export function enableParticleEmitterSignals(state: object): ParticleEmitterSign
  *  have not been enabled for this emitter. */
 export function getParticleEmitterSignals(state: object): ParticleEmitterSignals | null {
   return (state as Record<symbol, ParticleEmitterSignals | undefined>)[signalsSlot] ?? null;
+}
+
+/** Create a fresh {@link ParticleEmitterSignals} group. Called by
+ *  {@link enableParticleEmitterSignals} on first use; exported for unit testing. */
+export function initializeParticleEmitterSignals(out: EntityConstruction<ParticleEmitterSignals>): void {
+  out.onEmitterComplete = createSignal();
+  out.onParticleDeath = createSignal();
+  out.onParticleSpawn = createSignal();
 }
 
 // Per-emitter state slot for signal storage. Keyed by a module-level symbol so

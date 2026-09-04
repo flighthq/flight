@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Kind, Material } from '@flighthq/types/contract';
+import type { Kind, Material, EntityConstruction } from '@flighthq/types/contract';
 
 // Structural shallow clone of any material entity. Scalar fields and kind are copied by
 // value; Texture/map handle references are shared (they are not owned by the material).
@@ -19,8 +19,7 @@ export function copyMaterial(out: Material, source: Readonly<Material>): void {
 
 export function createMaterial(kind: Kind): Material {
   const material = allocateEntity<Material>();
-  material.kind = kind;
-  material.name = null;
+  initializeMaterial(material, kind);
   return finishEntity(material);
 }
 
@@ -50,6 +49,11 @@ export function equalsMaterial(a: Readonly<Material>, b: Readonly<Material>): bo
 // a vendor-prefixed custom kind narrows the same way.
 export function getMaterialOfKind<T extends Material>(material: Readonly<Material> | null, kind: T['kind']): T | null {
   return material !== null && material.kind === kind ? (material as T) : null;
+}
+
+export function initializeMaterial(material: EntityConstruction<Material>, kind: Kind): void {
+  material.kind = kind;
+  material.name = null;
 }
 
 // Internal helper — writes all own enumerable data fields from `src` onto `dst`. Skips

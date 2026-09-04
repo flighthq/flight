@@ -24,21 +24,51 @@ export function cloneAnimationClip(clip: Readonly<AnimationClip>): AnimationClip
   return finishEntity(out);
 }
 
-// Pairs a track with an opaque target reference (interpreted only by the domain binding layer).
 export function createAnimationChannel(track: AnimationTrack, targetRef: unknown): AnimationChannel {
   const out = allocateEntity<AnimationChannel>();
-  out.targetRef = targetRef;
-  out.track = track;
+  initializeAnimationChannel(out, track, targetRef);
   return finishEntity(out);
 }
 
-// Bundles channels and sorted clip events. `duration` defaults to the latest keyframe or event time.
-// Explicit duration must include every event so no marker is silently unreachable.
 export function createAnimationClip(
   channels: AnimationChannel[],
   duration?: number,
   events: readonly AnimationClipEvent[] = [],
 ): AnimationClip {
+  const out = allocateEntity<AnimationClip>();
+  initializeAnimationClip(out, channels, duration, events);
+  return finishEntity(out);
+}
+
+export function createAnimationClipEvent(time: number, name: string, payload: unknown = null): AnimationClipEvent {
+  const out = allocateEntity<AnimationClipEvent>();
+  initializeAnimationClipEvent(out, time, name, payload);
+  return finishEntity(out);
+}
+
+// Returns the clip's total duration in seconds.
+export function getAnimationClipDuration(clip: Readonly<AnimationClip>): number {
+  return clip.duration;
+}
+
+// Pairs a track with an opaque target reference (interpreted only by the domain binding layer).
+export function initializeAnimationChannel(
+  out: EntityConstruction<AnimationChannel>,
+  track: AnimationTrack,
+  targetRef: unknown,
+): void {
+  out.targetRef = targetRef;
+  out.track = track;
+}
+
+// Bundles channels and sorted clip events. `duration` defaults to the latest keyframe or event time.
+// Explicit duration must include every event so no marker is silently unreachable.
+export function initializeAnimationClip(
+  out: EntityConstruction<AnimationClip>,
+  channels: AnimationChannel[],
+  duration?: number,
+  events: readonly AnimationClipEvent[] = [],
+): void {
   const copiedEvents = events.slice().sort((a, b) => a.time - b.time);
   validateAnimationClipEvents(copiedEvents);
   const computedDuration = Math.max(
@@ -48,25 +78,21 @@ export function createAnimationClip(
   if (duration !== undefined && copiedEvents.length > 0 && copiedEvents[copiedEvents.length - 1].time > duration) {
     throw new RangeError('AnimationClip event time exceeds the explicit clip duration.');
   }
-  const out = allocateEntity<AnimationClip>();
   out.channels = channels;
   out.duration = duration ?? computedDuration;
   out.events = copiedEvents;
-  return finishEntity(out);
 }
 
 // Allocates one opaque-payload clip marker. Clip construction validates its time against the clip.
-export function createAnimationClipEvent(time: number, name: string, payload: unknown = null): AnimationClipEvent {
-  const out = allocateEntity<AnimationClipEvent>();
+export function initializeAnimationClipEvent(
+  out: EntityConstruction<AnimationClipEvent>,
+  time: number,
+  name: string,
+  payload: unknown = null,
+): void {
   out.name = name;
   out.payload = payload;
   out.time = time;
-  return finishEntity(out);
-}
-
-// Returns the clip's total duration in seconds.
-export function getAnimationClipDuration(clip: Readonly<AnimationClip>): number {
-  return clip.duration;
 }
 
 // Samples every channel of `clip` at `time`, reusing the caller-supplied `out` scratch buffer for each

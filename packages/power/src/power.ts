@@ -103,19 +103,9 @@ export function attachPower(host: PowerAttachHost, power: Power, idleThresholdSe
   _subscriptions.set(power, teardowns);
 }
 
-// Allocates a Power event entity with its signals left null. Call enablePowerSignals to allocate the
-// signals to connect to, and attachPower to start delivering host events into them.
 export function createPower(): Power {
   const out = allocateEntity<Power>();
-  out.onChange = null;
-  out.onCharging = null;
-  out.onDischarging = null;
-  out.onIdleStateChange = null;
-  out.onLockScreen = null;
-  out.onResume = null;
-  out.onSuspend = null;
-  out.onThermalStateChange = null;
-  out.onUnlockScreen = null;
+  initializePower(out);
   return finishEntity(out);
 }
 
@@ -217,6 +207,20 @@ export function getPowerSystemIdleTime(host: HasPowerIdle): number {
 
 export function getPowerThermalState(host: HasPowerThermal): PowerThermalState {
   return host.power.thermal.getThermalState();
+}
+
+// Allocates a Power event entity with its signals left null. Call enablePowerSignals to allocate the
+// signals to connect to, and attachPower to start delivering host events into them.
+export function initializePower(out: EntityConstruction<Power>): void {
+  out.onChange = null;
+  out.onCharging = null;
+  out.onDischarging = null;
+  out.onIdleStateChange = null;
+  out.onLockScreen = null;
+  out.onResume = null;
+  out.onSuspend = null;
+  out.onThermalStateChange = null;
+  out.onUnlockScreen = null;
 }
 
 export function isPowerKeepAwakeActive(host: HasPowerKeepAwake): boolean {

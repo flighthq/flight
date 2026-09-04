@@ -1,11 +1,17 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   PathBooleanBackend,
   PathBooleanContour,
   PathBooleanFillRule,
   PathBooleanOperation,
+  EntityConstruction,
 } from '@flighthq/types/contract';
+
+export function createMartinezPathBooleanBackend(): PathBooleanBackend {
+  const out = allocateEntity<PathBooleanBackend>();
+  initializeMartinezPathBooleanBackend(out);
+  return finishEntity(out);
+}
 
 // Builds the default boolean kernel: a from-scratch, floating-point Martinez–Rueda–Feito sweep-line.
 //
@@ -29,8 +35,7 @@ import type {
 // edge orientations fall out of the same arithmetic with no field-staleness. It trades the classic
 // algorithm's O(n log n) inline classification for an O(n²) post-pass, which is the right call for a
 // correctness-first kernel on the modest polygon sizes booleans see.
-export function createMartinezPathBooleanBackend(): PathBooleanBackend {
-  const out = allocateEntity<PathBooleanBackend>();
+export function initializeMartinezPathBooleanBackend(out: EntityConstruction<PathBooleanBackend>): void {
   out.computePathBoolean = (
     subject: readonly PathBooleanContour[],
     clip: readonly PathBooleanContour[],
@@ -39,7 +44,6 @@ export function createMartinezPathBooleanBackend(): PathBooleanBackend {
   ): readonly PathBooleanContour[] => {
     return computeMartinezBoolean(subject, clip, operation, fillRule);
   };
-  return finishEntity(out);
 }
 
 // One endpoint of a segment during the sweep. The two endpoints of an edge cross-link via `otherEvent`.

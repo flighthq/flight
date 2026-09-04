@@ -73,11 +73,7 @@ export function createNodeRuntime<Traits extends object = NodeTraits>(
 
 export function createNodeSignals(): NodeSignals {
   const out = allocateEntity<NodeSignals>();
-  out.onChildAdded = createSignal();
-  out.onChildRemoved = createSignal();
-  out.onChildrenChanged = createSignal();
-  out.onChildrenOrderChanged = createSignal();
-  out.onParentChanged = createSignal();
+  initializeNodeSignals(out);
   return finishEntity(out);
 }
 
@@ -153,6 +149,14 @@ export function getNodeRuntime<Traits extends object = NodeTraits>(
 
 export function getNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals | null {
   return (getEntityRuntime(source) as NodeRuntime<Traits>).nodeSignals;
+}
+
+export function initializeNodeSignals(out: EntityConstruction<NodeSignals>): void {
+  out.onChildAdded = createSignal();
+  out.onChildRemoved = createSignal();
+  out.onChildrenChanged = createSignal();
+  out.onChildrenOrderChanged = createSignal();
+  out.onParentChanged = createSignal();
 }
 
 export function setNodeEnabled<Traits extends object = NodeTraits>(target: Node<Traits>, value: boolean): void {

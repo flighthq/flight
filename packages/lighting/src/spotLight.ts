@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
-import type { EntityConstruction, SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types/contract';
+import type { SpotLight, SpotLightConeAngles, SpotLightOptions } from '@flighthq/types/contract';
 import { SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a spot light's data, including fresh `position`/`direction` vectors.

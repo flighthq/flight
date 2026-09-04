@@ -31,12 +31,19 @@ export function applyMorphShapeAnimationSample(
   return true;
 }
 
-// Allocates one stable binding descriptor. Keep and reuse this identity when multiple animation
-// controllers should recognize their MorphShape progress channels as the same target.
 export function createMorphShapeAnimationTarget(shape: MorphShape): MorphShapeAnimationTarget {
   const out = allocateEntity<MorphShapeAnimationTarget>();
-  out.shape = shape;
+  initializeMorphShapeAnimationTarget(out, shape);
   return finishEntity(out);
+}
+
+// Allocates one stable binding descriptor. Keep and reuse this identity when multiple animation
+// controllers should recognize their MorphShape progress channels as the same target.
+export function initializeMorphShapeAnimationTarget(
+  out: EntityConstruction<MorphShapeAnimationTarget>,
+  shape: MorphShape,
+): void {
+  out.shape = shape;
 }
 
 const morphShapeAnimationScratch: number[] = [0];

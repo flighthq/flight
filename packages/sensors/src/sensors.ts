@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HasSystemSensors } from '@flighthq/types/contract';
+import type { HasSystemSensors, EntityConstruction } from '@flighthq/types/contract';
 import type {
   AmbientLightReading,
   MotionReading,
@@ -230,109 +230,51 @@ export function computeWorldAccelerationFromDeviceAcceleration(
   out.accuracy = acceleration.accuracy;
 }
 
-// Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
 export function createAmbientLightReading(): AmbientLightReading {
   const out = allocateEntity<AmbientLightReading>();
-  out.accuracy = 'unknown';
-  out.illuminance = 0;
-  out.interval = -1;
-  out.timestamp = -1;
+  initializeAmbientLightReading(out);
   return finishEntity(out);
 }
 
-// Allocates a zeroed MotionReading with unknown accuracy/interval/timestamp.
-// Used for accelerometer (gravity-included), linear acceleration, gravity vector, and magnetometer readings.
 export function createMotionReading(): MotionReading {
   const out = allocateEntity<MotionReading>();
-  out.accuracy = 'unknown';
-  out.interval = -1;
-  out.timestamp = -1;
-  out.x = 0;
-  out.y = 0;
-  out.z = 0;
+  initializeMotionReading(out);
   return finishEntity(out);
 }
 
-// Allocates a zeroed OrientationReading. heading is -1 (unknown) and absolute is false until
-// a reading arrives.
 export function createOrientationReading(): OrientationReading {
   const out = allocateEntity<OrientationReading>();
-  out.absolute = false;
-  out.accuracy = 'unknown';
-  out.alpha = 0;
-  out.beta = 0;
-  out.gamma = 0;
-  out.heading = -1;
-  out.interval = -1;
-  out.timestamp = -1;
+  initializeOrientationReading(out);
   return finishEntity(out);
 }
 
-// Allocates a zeroed PressureReading with unknown accuracy/interval/timestamp.
-// altitude is -1 when underivable from pressure alone.
 export function createPressureReading(): PressureReading {
   const out = allocateEntity<PressureReading>();
-  out.accuracy = 'unknown';
-  out.altitude = -1;
-  out.interval = -1;
-  out.pressure = 0;
-  out.timestamp = -1;
+  initializePressureReading(out);
   return finishEntity(out);
 }
 
-// Allocates a zeroed ProximityReading with unknown accuracy/interval/timestamp.
-// distance and max are -1 when only near/far is known.
 export function createProximityReading(): ProximityReading {
   const out = allocateEntity<ProximityReading>();
-  out.accuracy = 'unknown';
-  out.distance = -1;
-  out.interval = -1;
-  out.max = -1;
-  out.near = false;
-  out.timestamp = -1;
+  initializeProximityReading(out);
   return finishEntity(out);
 }
 
-// Allocates a zeroed QuaternionReading (identity quaternion: w=1) with unknown accuracy/interval/timestamp.
 export function createQuaternionReading(): QuaternionReading {
   const out = allocateEntity<QuaternionReading>();
-  out.accuracy = 'unknown';
-  out.interval = -1;
-  out.timestamp = -1;
-  out.w = 1;
-  out.x = 0;
-  out.y = 0;
-  out.z = 0;
+  initializeQuaternionReading(out);
   return finishEntity(out);
 }
 
-// Allocates a zeroed RotationRateReading with unknown accuracy/interval/timestamp.
-// alpha/beta/gamma are angular velocity in deg/s around the device z/x/y axes respectively.
 export function createRotationRateReading(): RotationRateReading {
   const out = allocateEntity<RotationRateReading>();
-  out.accuracy = 'unknown';
-  out.alpha = 0;
-  out.beta = 0;
-  out.gamma = 0;
-  out.interval = -1;
-  out.timestamp = -1;
+  initializeRotationRateReading(out);
   return finishEntity(out);
 }
 
-// Allocates a Sensors event entity with inert signals; call attachSensors to start delivery.
 export function createSensors(): Sensors {
   const out = allocateEntity<Sensors>();
-  out.onAbsoluteOrientation = createSignal();
-  out.onAccelerometer = createSignal();
-  out.onAmbientLight = createSignal();
-  out.onBarometer = createSignal();
-  out.onGravity = createSignal();
-  out.onGyroscope = createSignal();
-  out.onLinearAcceleration = createSignal();
-  out.onMagnetometer = createSignal();
-  out.onOrientation = createSignal();
-  out.onProximity = createSignal();
-  out.onQuaternion = createSignal();
+  initializeSensors(out);
   return finishEntity(out);
 }
 
@@ -674,6 +616,96 @@ export function hasOrientationSensor(host: HasSystemSensors): boolean {
 // True if a proximity sensor is available.
 export function hasProximitySensor(host: HasSystemSensors): boolean {
   return host.system.sensors.isProximitySupported();
+}
+
+// Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
+export function initializeAmbientLightReading(out: EntityConstruction<AmbientLightReading>): void {
+  out.accuracy = 'unknown';
+  out.illuminance = 0;
+  out.interval = -1;
+  out.timestamp = -1;
+}
+
+// Allocates a zeroed MotionReading with unknown accuracy/interval/timestamp.
+// Used for accelerometer (gravity-included), linear acceleration, gravity vector, and magnetometer readings.
+export function initializeMotionReading(out: EntityConstruction<MotionReading>): void {
+  out.accuracy = 'unknown';
+  out.interval = -1;
+  out.timestamp = -1;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+}
+
+// Allocates a zeroed OrientationReading. heading is -1 (unknown) and absolute is false until
+// a reading arrives.
+export function initializeOrientationReading(out: EntityConstruction<OrientationReading>): void {
+  out.absolute = false;
+  out.accuracy = 'unknown';
+  out.alpha = 0;
+  out.beta = 0;
+  out.gamma = 0;
+  out.heading = -1;
+  out.interval = -1;
+  out.timestamp = -1;
+}
+
+// Allocates a zeroed PressureReading with unknown accuracy/interval/timestamp.
+// altitude is -1 when underivable from pressure alone.
+export function initializePressureReading(out: EntityConstruction<PressureReading>): void {
+  out.accuracy = 'unknown';
+  out.altitude = -1;
+  out.interval = -1;
+  out.pressure = 0;
+  out.timestamp = -1;
+}
+
+// Allocates a zeroed ProximityReading with unknown accuracy/interval/timestamp.
+// distance and max are -1 when only near/far is known.
+export function initializeProximityReading(out: EntityConstruction<ProximityReading>): void {
+  out.accuracy = 'unknown';
+  out.distance = -1;
+  out.interval = -1;
+  out.max = -1;
+  out.near = false;
+  out.timestamp = -1;
+}
+
+// Allocates a zeroed QuaternionReading (identity quaternion: w=1) with unknown accuracy/interval/timestamp.
+export function initializeQuaternionReading(out: EntityConstruction<QuaternionReading>): void {
+  out.accuracy = 'unknown';
+  out.interval = -1;
+  out.timestamp = -1;
+  out.w = 1;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+}
+
+// Allocates a zeroed RotationRateReading with unknown accuracy/interval/timestamp.
+// alpha/beta/gamma are angular velocity in deg/s around the device z/x/y axes respectively.
+export function initializeRotationRateReading(out: EntityConstruction<RotationRateReading>): void {
+  out.accuracy = 'unknown';
+  out.alpha = 0;
+  out.beta = 0;
+  out.gamma = 0;
+  out.interval = -1;
+  out.timestamp = -1;
+}
+
+// Allocates a Sensors event entity with inert signals; call attachSensors to start delivery.
+export function initializeSensors(out: EntityConstruction<Sensors>): void {
+  out.onAbsoluteOrientation = createSignal();
+  out.onAccelerometer = createSignal();
+  out.onAmbientLight = createSignal();
+  out.onBarometer = createSignal();
+  out.onGravity = createSignal();
+  out.onGyroscope = createSignal();
+  out.onLinearAcceleration = createSignal();
+  out.onMagnetometer = createSignal();
+  out.onOrientation = createSignal();
+  out.onProximity = createSignal();
+  out.onQuaternion = createSignal();
 }
 
 // True if any motion sensors (accelerometer or gyroscope) are available on this device.

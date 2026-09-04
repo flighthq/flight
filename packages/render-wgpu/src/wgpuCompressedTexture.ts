@@ -1,8 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CompressedImageResource,
-  Entity,
-  EntityConstruction,
   TextureColorSpace,
   TextureContainer,
   TextureContainerFormat,

@@ -4,8 +4,8 @@ import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
-  Entity,
   SafeAreaInsets,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import {
   parseUserAgentArch,
@@ -16,6 +16,43 @@ import {
 
 export function createWebDeviceBackend(): DeviceBackend {
   const out = allocateEntity<DeviceBackend>();
+  initializeWebDeviceBackend(out);
+  return finishEntity(out);
+}
+
+export function enableWebSafeAreaInsets(): () => void {
+  if (typeof document === 'undefined') return () => {};
+
+  const el = document.createElement('div');
+  el.style.cssText =
+    'position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);' +
+    'bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);' +
+    'pointer-events:none;visibility:hidden;';
+  document.body.appendChild(el);
+
+  function readInsets(): void {
+    const style = getComputedStyle(el);
+    const _entity = allocateEntity<SafeAreaInsets>();
+    _entity.bottom = parseFloat(style.bottom) || 0;
+    _entity.left = parseFloat(style.left) || 0;
+    _entity.right = parseFloat(style.right) || 0;
+    _entity.top = parseFloat(style.top) || 0;
+    _safeAreaInsets = finishEntity(_entity);
+  }
+
+  readInsets();
+
+  const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(readInsets) : null;
+  if (observer !== null) observer.observe(document.documentElement);
+
+  return () => {
+    if (observer !== null) observer.disconnect();
+    el.parentNode?.removeChild(el);
+    _safeAreaInsets = null;
+  };
+}
+
+export function initializeWebDeviceBackend(out: EntityConstruction<DeviceBackend>): void {
   out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
     const nav = typeof navigator !== 'undefined' ? navigator : null;
     // hasMouse: weak heuristic — no touch points is a strong desktop / pointer-device signal.
@@ -118,39 +155,6 @@ export function createWebDeviceBackend(): DeviceBackend {
       out.top = 0;
     }
     return out;
-  };
-  return finishEntity(out);
-}
-
-export function enableWebSafeAreaInsets(): () => void {
-  if (typeof document === 'undefined') return () => {};
-
-  const el = document.createElement('div');
-  el.style.cssText =
-    'position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);' +
-    'bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);' +
-    'pointer-events:none;visibility:hidden;';
-  document.body.appendChild(el);
-
-  function readInsets(): void {
-    const style = getComputedStyle(el);
-    const _entity = allocateEntity<SafeAreaInsets>();
-    _entity.bottom = parseFloat(style.bottom) || 0;
-    _entity.left = parseFloat(style.left) || 0;
-    _entity.right = parseFloat(style.right) || 0;
-    _entity.top = parseFloat(style.top) || 0;
-    _safeAreaInsets = finishEntity(_entity);
-  }
-
-  readInsets();
-
-  const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(readInsets) : null;
-  if (observer !== null) observer.observe(document.documentElement);
-
-  return () => {
-    if (observer !== null) observer.disconnect();
-    el.parentNode?.removeChild(el);
-    _safeAreaInsets = null;
   };
 }
 

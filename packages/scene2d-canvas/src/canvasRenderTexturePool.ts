@@ -5,8 +5,6 @@ import type {
   CanvasRenderSurfaceCreator,
   CanvasRenderTargetPool,
   CanvasRenderTexturePool,
-  EntityConstruction,
-  EntityWithoutRuntime,
   RenderTarget,
   RenderTargetDescriptor,
   RenderTexture,

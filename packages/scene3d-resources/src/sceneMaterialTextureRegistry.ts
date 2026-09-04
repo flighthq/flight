@@ -16,8 +16,7 @@ import { ExtendedPbrMaterialKind, StandardPbrMaterialKind, UnlitMaterialKind } f
 
 export function createScene3DMaterialTextureRegistry(): Scene3DMaterialTextureRegistry {
   const out = allocateEntity<Scene3DMaterialTextureRegistry>();
-  out.extensionListers = new Map();
-  out.listers = new Map();
+  initializeScene3DMaterialTextureRegistry(out);
   return finishEntity(out);
 }
 
@@ -41,6 +40,13 @@ export function hasScene3DMaterialTextureLister(
   kind: Kind,
 ): boolean {
   return registry.listers.has(kind);
+}
+
+export function initializeScene3DMaterialTextureRegistry(
+  out: EntityConstruction<Scene3DMaterialTextureRegistry>,
+): void {
+  out.extensionListers = new Map();
+  out.listers = new Map();
 }
 
 export function registerExtendedPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {

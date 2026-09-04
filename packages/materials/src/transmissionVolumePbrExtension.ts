@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { TransmissionVolumePbrExtension } from '@flighthq/types/contract';
+import type { TransmissionVolumePbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
 import { isValidMaterialIor, isValidMaterialWeight } from './materialValidation';
@@ -9,6 +9,14 @@ export function createTransmissionVolumePbrExtension(
   opts?: Readonly<Partial<TransmissionVolumePbrExtension>>,
 ): TransmissionVolumePbrExtension {
   const out = allocateEntity<TransmissionVolumePbrExtension>();
+  initializeTransmissionVolumePbrExtension(out, opts);
+  return finishEntity(out);
+}
+
+export function initializeTransmissionVolumePbrExtension(
+  out: EntityConstruction<TransmissionVolumePbrExtension>,
+  opts?: Readonly<Partial<TransmissionVolumePbrExtension>>,
+): void {
   out.attenuationColor = opts?.attenuationColor ?? 0xffffffff;
   out.attenuationDistance = opts?.attenuationDistance ?? Infinity;
   out.ior = opts?.ior ?? 1.5;
@@ -19,7 +27,6 @@ export function createTransmissionVolumePbrExtension(
   out.transmission = opts?.transmission ?? 0;
   out.transmissionMap = opts?.transmissionMap ?? null;
   out.transmissionMapUvSet = opts?.transmissionMapUvSet ?? 0;
-  return finishEntity(out);
 }
 
 export function isValidTransmissionVolumePbrExtension(value: Readonly<TransmissionVolumePbrExtension>): boolean {

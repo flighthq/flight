@@ -10,20 +10,9 @@ import type { Camera3D, Camera3DOptions, EntityConstruction, Matrix4Like, Vector
 
 import { setProjectionMatrix4 } from './projection';
 
-// Allocates a 3D camera. The camera stores its projection descriptor, a world->view Matrix4
-// (`view`, initialized to identity), the clip-plane distances `near`/`far`, the per-frame
-// sub-pixel NDC `jitter` (applied to every projection, initialized to zero), and the last
-// `inverseViewProjection` computed for a reconstruction pass (initialized to identity). The view
-// matrix is canonical: the camera has no separate Transform3D — a Matrix4 is the only world->view
-// representation.
 export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
   const out = allocateEntity<Camera3D>();
-  out.far = opts.far;
-  out.inverseViewProjection = createMatrix4();
-  out.jitter = createVector2(0, 0);
-  out.near = opts.near;
-  out.projection = opts.projection;
-  out.view = createMatrix4();
+  initializeCamera3D(out, opts);
   return finishEntity(out);
 }
 
@@ -53,6 +42,21 @@ export function getCamera3DViewProjectionMatrix4(out: Matrix4Like, camera: Reado
   setProjectionMatrix4(__scratchProjection, camera.projection, aspect, camera.near, camera.far);
   applyCamera3DProjectionJitter(__scratchProjection, camera.jitter.x, camera.jitter.y);
   multiplyMatrix4(out, __scratchProjection, camera.view);
+}
+
+// Allocates a 3D camera. The camera stores its projection descriptor, a world->view Matrix4
+// (`view`, initialized to identity), the clip-plane distances `near`/`far`, the per-frame
+// sub-pixel NDC `jitter` (applied to every projection, initialized to zero), and the last
+// `inverseViewProjection` computed for a reconstruction pass (initialized to identity). The view
+// matrix is canonical: the camera has no separate Transform3D — a Matrix4 is the only world->view
+// representation.
+export function initializeCamera3D(out: EntityConstruction<Camera3D>, opts: Readonly<Camera3DOptions>): void {
+  out.far = opts.far;
+  out.inverseViewProjection = createMatrix4();
+  out.jitter = createVector2(0, 0);
+  out.near = opts.near;
+  out.projection = opts.projection;
+  out.view = createMatrix4();
 }
 
 // Sets the viewport aspect ratio (width / height) on the camera's projection, in place. For a

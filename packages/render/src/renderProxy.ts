@@ -32,31 +32,8 @@ import { updateRenderProxy2DTransform } from './renderTransform2d';
 type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) => void;
 
 export function createRenderProxy(state: RenderState, source: Renderable): RenderProxy {
-  const runtime = getRenderStateRuntime(state);
-  const renderer = resolveRenderProxyRenderer(state, source.kind);
   const out = allocateEntity<RenderProxy>();
-  out.source = source;
-  out.kind = source.kind;
-  out.next = null;
-  out.alpha = 1;
-  out.appearanceFrameId = -1;
-  out.blendMode = BlendMode.Normal;
-  out.colorScaleBias = null;
-  out.colorMatrix = null;
-  out.material = null;
-  out.materialData = null;
-  out.lastAppearanceId = -1;
-  out.lastChildrenId = -1;
-  out.lastLocalContentId = -1;
-  out.lastLocalTransformId = -1;
-  out.lastParentReferenceId = -1;
-  out.name = null;
-  out.renderer = renderer;
-  out.rendererData = renderer?.createData(state, source) ?? null;
-  out.rendererDataSource = source;
-  out.rendererMapId = runtime.rendererMapId;
-  out.transformFrameId = -1;
-  out.visible = true;
+  initializeRenderProxy(out, state, source);
   return finishEntity(out);
 }
 
@@ -116,6 +93,37 @@ export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable)
 
 export function getRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D | undefined {
   return getRenderStateRuntime(state).renderProxyMap.get(source) as RenderProxy2D | undefined;
+}
+
+export function initializeRenderProxy(
+  out: EntityConstruction<RenderProxy>,
+  state: RenderState,
+  source: Renderable,
+): void {
+  const runtime = getRenderStateRuntime(state);
+  const renderer = resolveRenderProxyRenderer(state, source.kind);
+  out.source = source;
+  out.kind = source.kind;
+  out.next = null;
+  out.alpha = 1;
+  out.appearanceFrameId = -1;
+  out.blendMode = BlendMode.Normal;
+  out.colorScaleBias = null;
+  out.colorMatrix = null;
+  out.material = null;
+  out.materialData = null;
+  out.lastAppearanceId = -1;
+  out.lastChildrenId = -1;
+  out.lastLocalContentId = -1;
+  out.lastLocalTransformId = -1;
+  out.lastParentReferenceId = -1;
+  out.name = null;
+  out.renderer = renderer;
+  out.rendererData = renderer?.createData(state, source) ?? null;
+  out.rendererDataSource = source;
+  out.rendererMapId = runtime.rendererMapId;
+  out.transformFrameId = -1;
+  out.visible = true;
 }
 
 export function installRenderAdaptHook(state: RenderState, fn: AdaptHook): void {

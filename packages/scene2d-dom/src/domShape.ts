@@ -2,7 +2,6 @@
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import type {
   DomRenderState,
-  EntityConstruction,
   RenderProxy2D,
   RenderState,
   Renderable,

@@ -1,10 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityWithoutRuntime,
-  MenuHighlightBackend,
-  MenuItemTemplate,
-  MenuPopupBackend,
-} from '@flighthq/types/contract';
+import type { MenuHighlightBackend, MenuItemTemplate, MenuPopupBackend } from '@flighthq/types/contract';
 
 // The web menu providers. Web renders context menus itself in the DOM, so it exposes POPUP and — because
 // it owns that rendering — HIGHLIGHT. It exposes neither `application` nor `select`: a browser has no

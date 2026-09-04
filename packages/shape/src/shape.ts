@@ -49,7 +49,7 @@ export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
 
 export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
   const out = allocateEntity<ShapeData>();
-  out.commands = data?.commands ?? [];
+  initializeShapeData(out, data);
   return finishEntity(out);
 }
 
@@ -89,6 +89,10 @@ export function getShapeCommandCount(source: Readonly<Shape>): number {
 
 export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime> {
   return getNode2DRuntime(source) as ShapeRuntime;
+}
+
+export function initializeShapeData(out: EntityConstruction<ShapeData>, data?: Readonly<Partial<ShapeData>>): void {
+  out.commands = data?.commands ?? [];
 }
 
 // True when the shape has no drawing commands in its command stream.

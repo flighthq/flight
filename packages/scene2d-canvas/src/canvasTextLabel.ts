@@ -5,7 +5,6 @@ import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasRenderState,
-  EntityConstruction,
   RenderProxy2D,
   Renderable,
   RendererData,

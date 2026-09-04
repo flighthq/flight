@@ -25,8 +25,14 @@ export function createScene2DDocumentFromBytes(
 
 export function createScene2DDocumentImporterRegistry(): Scene2DDocumentImporterRegistry {
   const out = allocateEntity<Scene2DDocumentImporterRegistry>();
-  out.entries = [];
+  initializeScene2DDocumentImporterRegistry(out);
   return finishEntity(out);
+}
+
+export function initializeScene2DDocumentImporterRegistry(
+  out: EntityConstruction<Scene2DDocumentImporterRegistry>,
+): void {
+  out.entries = [];
 }
 
 export function registerScene2DDocumentImporter(

@@ -159,9 +159,7 @@ export function createRichTextRuntime(): RichTextRuntime {
 
 export function createTextFieldSignals(): TextFieldSignals {
   const out = allocateEntity<TextFieldSignals>();
-  out.onTextFieldChange = createSignal();
-  out.onTextFieldLink = createSignal();
-  out.onTextFieldScroll = createSignal();
+  initializeTextFieldSignals(out);
   return finishEntity(out);
 }
 
@@ -323,6 +321,12 @@ export function getRichTextTextWidth(source: Readonly<RichText>): number {
 
 export function getTextFieldSignals(source: Readonly<RichText>): TextFieldSignals | null {
   return (getNode2DRuntime(source) as RichTextRuntime).textFieldSignals;
+}
+
+export function initializeTextFieldSignals(out: EntityConstruction<TextFieldSignals>): void {
+  out.onTextFieldChange = createSignal();
+  out.onTextFieldLink = createSignal();
+  out.onTextFieldScroll = createSignal();
 }
 
 // Inserts `value` at the given character `index` (clamped to `[0, text.length]`), then shifts all

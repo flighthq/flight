@@ -7,7 +7,6 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
-  EntityConstruction,
   ImportDiagnostic,
   Matrix,
   RiveAdvancedBlend,

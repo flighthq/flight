@@ -1,19 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { RendererData } from '@flighthq/types/contract';
+import type { RendererData, EntityConstruction } from '@flighthq/types/contract';
 
-/**
- * Adds the Entity runtime slot required by `RendererData` to renderer-private state.
- * Use in `createData` implementations so the stored value satisfies the public contract:
- *
- * ```ts
- * function createWgpuFooData(...): RendererData {
- *   return createWgpuRendererData<WgpuFooData>({ ... });
- * }
- * ```
- */
 export function createWgpuRendererData<T extends object>(data: T): T & RendererData {
   const out = allocateEntity<T & RendererData>();
-  Object.assign(out, data);
+  initializeWgpuRendererData(out, data);
   return finishEntity(out);
 }
 
@@ -31,4 +21,18 @@ export function createWgpuRendererData<T extends object>(data: T): T & RendererD
  */
 export function getWgpuRendererData<T extends object>(data: RendererData | null): (T & RendererData) | null {
   return data as (T & RendererData) | null;
+}
+
+/**
+ * Adds the Entity runtime slot required by `RendererData` to renderer-private state.
+ * Use in `createData` implementations so the stored value satisfies the public contract:
+ *
+ * ```ts
+ * function createWgpuFooData(...): RendererData {
+ *   return createWgpuRendererData<WgpuFooData>({ ... });
+ * }
+ * ```
+ */
+export function initializeWgpuRendererData(out: EntityConstruction<T & RendererData>, data: T): void {
+  Object.assign(out, data);
 }

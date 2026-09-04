@@ -11,39 +11,8 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtlas {
-  const padding = options.padding ?? 1;
-  const rasterizerBackend = options.rasterizerBackend;
-  // Built before the runtime so the metrics probe sees the same font the glyphs will rasterize with.
-  const rasterizeOptions: GlyphRasterizeOptions = {
-    fontFamily: options.fontFamily,
-    fontSize: options.fontSize,
-    ...(options.fontStyle !== undefined ? { fontStyle: options.fontStyle } : {}),
-    ...(options.fontWeight !== undefined ? { fontWeight: options.fontWeight } : {}),
-  };
   const out = allocateEntity<GlyphAtlas>();
-  out.runtime = {
-    bitmaps: new Map(),
-    dirty: false,
-    dirtyMaxX: 0,
-    dirtyMaxY: 0,
-    dirtyMinX: 0,
-    dirtyMinY: 0,
-    entries: new Map(),
-    layoutVersion: 0,
-    lru: new Map(),
-    maxArea: options.maxArea ?? 0,
-    maxBytes: options.maxBytes ?? 0,
-    maxGlyphs: options.maxGlyphs ?? 0,
-    occupiedArea: 0,
-    retainedBytes: 0,
-    metrics: _resolveGlyphAtlasMetrics(rasterizerBackend, rasterizeOptions),
-    packBottom: padding,
-    padding,
-    rasterizerBackend,
-    rasterizeOptions,
-    shelves: [],
-    bitmap: createBitmap(options.width, options.height),
-  };
+  initializeGlyphAtlas(out, options);
   return finishEntity(out);
 }
 
@@ -91,6 +60,41 @@ export function getGlyphAtlasBitmap(atlas: Readonly<GlyphAtlas>): Bitmap {
 // valid (a glyph appended into free space), and after a repack it is both.
 export function getGlyphAtlasLayoutVersion(atlas: Readonly<GlyphAtlas>): number {
   return atlas.runtime.layoutVersion;
+}
+
+export function initializeGlyphAtlas(out: EntityConstruction<GlyphAtlas>, options: Readonly<GlyphAtlasOptions>): void {
+  const padding = options.padding ?? 1;
+  const rasterizerBackend = options.rasterizerBackend;
+  // Built before the runtime so the metrics probe sees the same font the glyphs will rasterize with.
+  const rasterizeOptions: GlyphRasterizeOptions = {
+    fontFamily: options.fontFamily,
+    fontSize: options.fontSize,
+    ...(options.fontStyle !== undefined ? { fontStyle: options.fontStyle } : {}),
+    ...(options.fontWeight !== undefined ? { fontWeight: options.fontWeight } : {}),
+  };
+  out.runtime = {
+    bitmaps: new Map(),
+    dirty: false,
+    dirtyMaxX: 0,
+    dirtyMaxY: 0,
+    dirtyMinX: 0,
+    dirtyMinY: 0,
+    entries: new Map(),
+    layoutVersion: 0,
+    lru: new Map(),
+    maxArea: options.maxArea ?? 0,
+    maxBytes: options.maxBytes ?? 0,
+    maxGlyphs: options.maxGlyphs ?? 0,
+    occupiedArea: 0,
+    retainedBytes: 0,
+    metrics: _resolveGlyphAtlasMetrics(rasterizerBackend, rasterizeOptions),
+    packBottom: padding,
+    padding,
+    rasterizerBackend,
+    rasterizeOptions,
+    shelves: [],
+    bitmap: createBitmap(options.width, options.height),
+  };
 }
 
 // Asks this atlas's bound backend to measure the font, falling back to the size heuristic when it

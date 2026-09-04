@@ -60,12 +60,7 @@ export function createBitmapText(glyphSource: GlyphSource | null, options?: Read
 
 export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): BitmapTextData {
   const out = allocateEntity<BitmapTextData>();
-  out.align = data?.align ?? 'left';
-  out.glyphSource = data?.glyphSource ?? null;
-  out.letterSpacing = data?.letterSpacing ?? 0;
-  out.lineHeight = data?.lineHeight ?? 1;
-  out.text = data?.text ?? '';
-  out.wrapWidth = data?.wrapWidth ?? null;
+  initializeBitmapTextData(out, data);
   return finishEntity(out);
 }
 
@@ -91,6 +86,18 @@ export function getBitmapTextBounds(source: Readonly<BitmapText>): Rectangle {
 // yields exactly one; the array is never empty after construction.
 export function getBitmapTextPages(source: Readonly<BitmapText>): readonly BitmapTextPage[] {
   return (getNode2DRuntime(source) as BitmapTextRuntime).pages;
+}
+
+export function initializeBitmapTextData(
+  out: EntityConstruction<BitmapTextData>,
+  data?: Readonly<Partial<BitmapTextData>>,
+): void {
+  out.align = data?.align ?? 'left';
+  out.glyphSource = data?.glyphSource ?? null;
+  out.letterSpacing = data?.letterSpacing ?? 0;
+  out.lineHeight = data?.lineHeight ?? 1;
+  out.text = data?.text ?? '';
+  out.wrapWidth = data?.wrapWidth ?? null;
 }
 
 // True when the page regions baked by the last `updateBitmapText` no longer describe the glyphs they

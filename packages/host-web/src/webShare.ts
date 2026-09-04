@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ShareContentBackend,
-  EntityRuntimeKey,
   ShareFile,
   ShareFilesBackend,
   ShareFilesContent,

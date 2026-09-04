@@ -44,11 +44,9 @@ export function cloneMenuTemplate(template: Readonly<MenuItemTemplate>): MenuIte
   return clone;
 }
 
-// Allocates a MenuHighlight event entity with an inert signal; call attachMenuHighlight to start
-// delivery. Entity-composed, like every identity-bearing SDK object.
 export function createMenuHighlight(): MenuHighlight {
   const out = allocateEntity<MenuHighlight>();
-  out.onMenuItemHighlight = createSignal();
+  initializeMenuHighlight(out);
   return finishEntity(out);
 }
 
@@ -69,10 +67,9 @@ export function createMenuItemTemplate(
   return item;
 }
 
-// Allocates a MenuSelect event entity with an inert signal; call attachMenuSelect to start delivery.
 export function createMenuSelect(): MenuSelect {
   const out = allocateEntity<MenuSelect>();
-  out.onMenuItemSelect = createSignal();
+  initializeMenuSelect(out);
   return finishEntity(out);
 }
 
@@ -143,6 +140,17 @@ export function enableMenuSignals(): MenuSignals {
 
 export function getMenuSignals(): Readonly<MenuSignals> | null {
   return _menuSignals;
+}
+
+// Allocates a MenuHighlight event entity with an inert signal; call attachMenuHighlight to start
+// delivery. Entity-composed, like every identity-bearing SDK object.
+export function initializeMenuHighlight(out: EntityConstruction<MenuHighlight>): void {
+  out.onMenuItemHighlight = createSignal();
+}
+
+// Allocates a MenuSelect event entity with an inert signal; call attachMenuSelect to start delivery.
+export function initializeMenuSelect(out: EntityConstruction<MenuSelect>): void {
+  out.onMenuItemSelect = createSignal();
 }
 
 // Installs the application menu bar through the host's provider. Returns false when the install did

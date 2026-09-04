@@ -1,15 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types/contract';
+import type { Spritesheet, SpritesheetAnimation, EntityConstruction } from '@flighthq/types/contract';
 
 export function createSpritesheetAnimation(obj?: Partial<SpritesheetAnimation>): SpritesheetAnimation {
   const out = allocateEntity<SpritesheetAnimation>();
-  out.direction = obj?.direction ?? 'forward';
-  out.frameDuration = obj?.frameDuration ?? 0;
-  out.frameDurations = obj?.frameDurations ?? null;
-  out.frames = obj?.frames ?? [];
-  out.originX = obj?.originX ?? 0;
-  out.originY = obj?.originY ?? 0;
-  out.repeatCount = obj?.repeatCount ?? 0;
+  initializeSpritesheetAnimation(out, obj);
   return finishEntity(out);
 }
 
@@ -49,4 +43,17 @@ export function createSpritesheetAnimationFromFrameNames(
     originY: options?.originY,
     repeatCount: options?.repeatCount,
   });
+}
+
+export function initializeSpritesheetAnimation(
+  out: EntityConstruction<SpritesheetAnimation>,
+  obj?: Partial<SpritesheetAnimation>,
+): void {
+  out.direction = obj?.direction ?? 'forward';
+  out.frameDuration = obj?.frameDuration ?? 0;
+  out.frameDurations = obj?.frameDurations ?? null;
+  out.frames = obj?.frames ?? [];
+  out.originX = obj?.originX ?? 0;
+  out.originY = obj?.originY ?? 0;
+  out.repeatCount = obj?.repeatCount ?? 0;
 }

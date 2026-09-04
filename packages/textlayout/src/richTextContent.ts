@@ -42,8 +42,7 @@ export function computeRichTextContent(
 
 export function createRichTextContent(): RichTextContent {
   const out = allocateEntity<RichTextContent>();
-  out.formatRanges = [];
-  out.text = '';
+  initializeRichTextContent(out);
   return finishEntity(out);
 }
 
@@ -52,6 +51,11 @@ export function getRichTextContent(runtime: RichTextRuntime): RichTextContent {
     runtime.richTextContent = createRichTextContent();
   }
   return runtime.richTextContent;
+}
+
+export function initializeRichTextContent(out: EntityConstruction<RichTextContent>): void {
+  out.formatRanges = [];
+  out.text = '';
 }
 
 function appendText(

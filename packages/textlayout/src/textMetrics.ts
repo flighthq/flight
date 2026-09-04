@@ -1,11 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { TextLayoutResult, TextMetrics } from '@flighthq/types/contract';
+import type { TextLayoutResult, TextMetrics, EntityConstruction } from '@flighthq/types/contract';
 
 export function createTextMetrics(): TextMetrics {
   const out = allocateEntity<TextMetrics>();
-  out.height = 0;
-  out.numLines = 0;
-  out.width = 0;
+  initializeTextMetrics(out);
   return finishEntity(out);
 }
 
@@ -16,4 +14,10 @@ export function getTextMetrics(out: TextMetrics, layout: Readonly<TextLayoutResu
   out.width = Math.ceil(layout.textWidth);
   out.height = Math.ceil(layout.textHeight);
   out.numLines = layout.numLines;
+}
+
+export function initializeTextMetrics(out: EntityConstruction<TextMetrics>): void {
+  out.height = 0;
+  out.numLines = 0;
+  out.width = 0;
 }

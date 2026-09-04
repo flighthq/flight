@@ -59,13 +59,17 @@ export function compareRenderQueueEntries(a: RenderQueueEntry, b: RenderQueueEnt
   return a.sortKey - b.sortKey;
 }
 
-// Creates a new empty RenderQueue. The entries array is pre-allocated empty; entries grow as
-// pushRenderQueueEntry or buildRenderQueue populates it. Cleared between frames by clearRenderQueue.
 export function createRenderQueue(): RenderQueue {
   const out = allocateEntity<RenderQueue>();
+  initializeRenderQueue(out);
+  return finishEntity(out);
+}
+
+// Creates a new empty RenderQueue. The entries array is pre-allocated empty; entries grow as
+// pushRenderQueueEntry or buildRenderQueue populates it. Cleared between frames by clearRenderQueue.
+export function initializeRenderQueue(out: EntityConstruction<RenderQueue>): void {
   out.entries = [];
   out.entryCount = 0;
-  return finishEntity(out);
 }
 
 // Packs a layer index, a normalized depth (0..1), and an opaque flag into a single sort key

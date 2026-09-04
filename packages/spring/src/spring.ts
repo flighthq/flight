@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { approxEqual, approxZero, TAU } from '@flighthq/math/contract';
-import type { Spring, SpringConfig } from '@flighthq/types/contract';
+import type { Spring, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
 // Add `velocity` to the spring's current velocity without changing its position. This is the
 // allocation-free flick/throw control: repeated impulses compose additively, and the next analytic
@@ -9,14 +9,18 @@ export function applySpringImpulse(spring: Spring, velocity: number): void {
   spring.velocity += velocity;
 }
 
+export function createSpring(value: number = 0, velocity: number = 0): Spring {
+  const out = allocateEntity<Spring>();
+  initializeSpring(out, value, velocity);
+  return finishEntity(out);
+}
+
 // Allocate a scalar spring at `value` (default 0) with `velocity` (default 0). This is the only
 // allocating function for scalar springs; `updateSpring`, `resetSpring`, and the settle query all
 // write into or read an existing spring.
-export function createSpring(value: number = 0, velocity: number = 0): Spring {
-  const out = allocateEntity<Spring>();
+export function initializeSpring(out: EntityConstruction<Spring>, value: number = 0, velocity: number = 0): void {
   out.value = value;
   out.velocity = velocity;
-  return finishEntity(out);
 }
 
 // Report whether `spring` has come to rest at `target`: its `value` is within `positionEpsilon` of

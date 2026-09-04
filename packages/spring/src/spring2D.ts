@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Spring2D, SpringConfig } from '@flighthq/types/contract';
+import type { Spring2D, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
 import { applySpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
 
@@ -9,8 +9,6 @@ export function applySpringImpulse2D(spring2D: Spring2D, velocityX: number, velo
   applySpringImpulse(spring2D.y, velocityY);
 }
 
-// Allocate a 2D spring as a pair of scalar springs, each at its `value*` (default 0) and `velocity*`
-// (default 0).
 export function createSpring2D(
   valueX: number = 0,
   valueY: number = 0,
@@ -18,9 +16,21 @@ export function createSpring2D(
   velocityY: number = 0,
 ): Spring2D {
   const out = allocateEntity<Spring2D>();
+  initializeSpring2D(out, valueX, valueY, velocityX, velocityY);
+  return finishEntity(out);
+}
+
+// Allocate a 2D spring as a pair of scalar springs, each at its `value*` (default 0) and `velocity*`
+// (default 0).
+export function initializeSpring2D(
+  out: EntityConstruction<Spring2D>,
+  valueX: number = 0,
+  valueY: number = 0,
+  velocityX: number = 0,
+  velocityY: number = 0,
+): void {
   out.x = createSpring(valueX, velocityX);
   out.y = createSpring(valueY, velocityY);
-  return finishEntity(out);
 }
 
 // Report whether both axes of `spring2D` have settled at (`targetX`, `targetY`) — the per-component

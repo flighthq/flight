@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionBuiltInShape2D, CollisionRaycastHit2D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape2D, CollisionRaycastHit2D, EntityConstruction } from '@flighthq/types/contract';
 
 import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
 import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
@@ -8,12 +8,16 @@ const RELATIVE_EPSILON = 1e-9;
 
 export function createCollisionRaycastHit2D(): CollisionRaycastHit2D {
   const out = allocateEntity<CollisionRaycastHit2D>();
+  initializeCollisionRaycastHit2D(out);
+  return finishEntity(out);
+}
+
+export function initializeCollisionRaycastHit2D(out: EntityConstruction<CollisionRaycastHit2D>): void {
   out.fraction = 0;
   out.x = 0;
   out.y = 0;
   out.normalX = 0;
   out.normalY = 0;
-  return finishEntity(out);
 }
 
 // Writes the first exact intersection of `origin + direction * fraction` with `shape`. Direction need

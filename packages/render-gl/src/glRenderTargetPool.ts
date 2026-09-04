@@ -80,13 +80,17 @@ export function acquireGlRenderTarget(
 
 export function createGlRenderTargetPool(): GlRenderTargetPool {
   const out = allocateEntity<GlRenderTargetPool>();
-  out.free = [];
+  initializeGlRenderTargetPool(out);
   return finishEntity(out);
 }
 
 export function destroyGlRenderTargetPool(state: GlRenderState, pool: GlRenderTargetPool): void {
   for (const target of pool.free) destroyGlRenderTarget(state, target);
   pool.free.length = 0;
+}
+
+export function initializeGlRenderTargetPool(out: EntityConstruction<GlRenderTargetPool>): void {
+  out.free = [];
 }
 
 export function releaseGlRenderTarget(pool: GlRenderTargetPool, target: GlRenderTarget): void {

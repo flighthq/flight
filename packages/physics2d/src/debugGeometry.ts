@@ -26,16 +26,20 @@ const DEFAULT_OPTIONS: Readonly<Physics2DDebugGeometryOptions> = {
   pointRadius: 0.04,
 };
 
+export function createPhysics2DDebugGeometry(): Physics2DDebugGeometry {
+  const out = allocateEntity<Physics2DDebugGeometry>();
+  initializePhysics2DDebugGeometry(out);
+  return finishEntity(out);
+}
+
 // Creates a reusable destination for writePhysics2DDebugGeometry. The arrays are capacity pools: the
 // writer advances counts and overwrites existing entries before growing them, so a steady scene stops
 // allocating after its first query.
-export function createPhysics2DDebugGeometry(): Physics2DDebugGeometry {
-  const out = allocateEntity<Physics2DDebugGeometry>();
+export function initializePhysics2DDebugGeometry(out: EntityConstruction<Physics2DDebugGeometry>): void {
   out.circles = [];
   out.circleCount = 0;
   out.lines = [];
   out.lineCount = 0;
-  return finishEntity(out);
 }
 
 // Extracts the world's visible constraint geometry without choosing a renderer. Collider outlines are

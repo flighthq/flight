@@ -7,6 +7,7 @@ import type {
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
   StorageSetItemFailureReason,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type StorageRecord = Record<string, string>;
@@ -14,18 +15,27 @@ type StorageRecordResult =
   | { readonly reason: 'ok'; readonly value: StorageRecord }
   | { readonly reason: StorageGetItemFailureReason; readonly value: null };
 
-// Maps synchronous Storage commands to one JSON file in Electron's userData directory. Mutations build
-// a candidate record, write it to a temporary file in the SAME directory, atomically rename it over the
-// target, and only then commit the in-memory cache. `reason: 'ok'` therefore means atomic visibility,
-// not fsync or power-loss durability; the public StorageMutationResult contract states that distinction.
 export function createElectronStorageBackend(
   electron: ElectronApi,
   fileName = 'storage.json',
 ): StorageBackend & Entity {
+  const out = allocateEntity<StorageBackend>();
+  initializeElectronStorageBackend(out, electron, fileName);
+  return finishEntity(out);
+}
+
+// Maps synchronous Storage commands to one JSON file in Electron's userData directory. Mutations build
+// a candidate record, write it to a temporary file in the SAME directory, atomically rename it over the
+// target, and only then commit the in-memory cache. `reason: 'ok'` therefore means atomic visibility,
+// not fsync or power-loss durability; the public StorageMutationResult contract states that distinction.
+export function initializeElectronStorageBackend(
+  out: EntityConstruction<StorageBackend>,
+  electron: ElectronApi,
+  fileName = 'storage.json',
+): void {
   const fs = electron.fs;
   let cache: StorageRecord | null = null;
   let temporaryId = 0;
-
   const load = (): StorageRecordResult => {
     if (cache !== null) return { reason: 'ok', value: cache };
     let path: string;
@@ -44,7 +54,6 @@ export function createElectronStorageBackend(
       return { reason: classifyReadFailure(error), value: null };
     }
   };
-
   const persist = <
     FailureReason extends StorageClearFailureReason | StorageRemoveItemFailureReason | StorageSetItemFailureReason,
   >(
@@ -69,10 +78,7 @@ export function createElectronStorageBackend(
       return { reason: classifyMutationFailure(error, fallback) };
     }
   };
-
   const storagePath = (): string => `${electron.app.getPath('userData')}/${fileName}`;
-
-  const out = allocateEntity<StorageBackend>();
   out.clear = () => {
     const candidate: StorageRecord = {};
     const result = persist(candidate, 'clear-failed');
@@ -110,7 +116,6 @@ export function createElectronStorageBackend(
     if (result.reason === 'ok') cache = candidate;
     return result;
   };
-  return finishEntity(out);
 }
 
 function classifyMutationFailure<FailureReason extends string>(

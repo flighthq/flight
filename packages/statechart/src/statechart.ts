@@ -41,41 +41,9 @@ export function advanceStatechartInstance(instance: StatechartInstance, deltaTim
   return changedRegionCount;
 }
 
-// Allocate the mutable per-actor half of `chart`. The chart itself is retained by reference and is
-// never mutated; input and region state live in independent typed arrays so one chart can drive many
-// actors. Malformed authored indices/kinds are programmer errors and fail at this construction seam.
 export function createStatechartInstance(chart: Readonly<Statechart>): StatechartInstance {
-  validateStatechart(chart);
-
-  const inputValues = new Float64Array(chart.inputs.length);
-  for (let inputIndex = 0; inputIndex < chart.inputs.length; inputIndex++) {
-    const input = chart.inputs[inputIndex];
-    inputValues[inputIndex] =
-      input.kind === StatechartInputKind.Boolean ? (input.initialValue === 0 ? 0 : 1) : input.initialValue;
-  }
-
-  const regionCount = chart.regions.length;
-  const regionBlend = new Float32Array(regionCount);
-  const regionDuration = new Float64Array(regionCount);
-  const regionElapsed = new Float64Array(regionCount);
-  const regionStates = new Int32Array(regionCount);
-  const regionTransitions = new Int32Array(regionCount);
-  regionTransitions.fill(-1);
-
-  for (let regionIndex = 0; regionIndex < regionCount; regionIndex++) {
-    regionStates[regionIndex] = chart.regions[regionIndex].initialStateIndex;
-  }
-
   const out = allocateEntity<StatechartInstance>();
-  out.chart = chart;
-  out.durationGuard = null;
-  out.inputValues = inputValues;
-  out.regionBlend = regionBlend;
-  out.regionDuration = regionDuration;
-  out.regionElapsed = regionElapsed;
-  out.regionStates = regionStates;
-  out.regionTransitions = regionTransitions;
-  out.signals = null;
+  initializeStatechartInstance(out, chart);
   return finishEntity(out);
 }
 
@@ -199,6 +167,41 @@ export function getStatechartRegionBlend(instance: Readonly<StatechartInstance>,
 // Return one concurrent region's current source-state index, or -1 for an invalid region.
 export function getStatechartRegionState(instance: Readonly<StatechartInstance>, regionIndex: number): number {
   return regionIndex >= 0 && regionIndex < instance.regionStates.length ? instance.regionStates[regionIndex] : -1;
+}
+
+// Allocate the mutable per-actor half of `chart`. The chart itself is retained by reference and is
+// never mutated; input and region state live in independent typed arrays so one chart can drive many
+// actors. Malformed authored indices/kinds are programmer errors and fail at this construction seam.
+export function initializeStatechartInstance(
+  out: EntityConstruction<StatechartInstance>,
+  chart: Readonly<Statechart>,
+): void {
+  validateStatechart(chart);
+  const inputValues = new Float64Array(chart.inputs.length);
+  for (let inputIndex = 0; inputIndex < chart.inputs.length; inputIndex++) {
+    const input = chart.inputs[inputIndex];
+    inputValues[inputIndex] =
+      input.kind === StatechartInputKind.Boolean ? (input.initialValue === 0 ? 0 : 1) : input.initialValue;
+  }
+  const regionCount = chart.regions.length;
+  const regionBlend = new Float32Array(regionCount);
+  const regionDuration = new Float64Array(regionCount);
+  const regionElapsed = new Float64Array(regionCount);
+  const regionStates = new Int32Array(regionCount);
+  const regionTransitions = new Int32Array(regionCount);
+  regionTransitions.fill(-1);
+  for (let regionIndex = 0; regionIndex < regionCount; regionIndex++) {
+    regionStates[regionIndex] = chart.regions[regionIndex].initialStateIndex;
+  }
+  out.chart = chart;
+  out.durationGuard = null;
+  out.inputValues = inputValues;
+  out.regionBlend = regionBlend;
+  out.regionDuration = regionDuration;
+  out.regionElapsed = regionElapsed;
+  out.regionStates = regionStates;
+  out.regionTransitions = regionTransitions;
+  out.signals = null;
 }
 
 // Write a Boolean input as the numeric 0/1 vocabulary used by data-only transition conditions.

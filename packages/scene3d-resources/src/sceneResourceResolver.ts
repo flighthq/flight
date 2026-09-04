@@ -5,7 +5,7 @@ import {
   disposeResourceLoader,
   startResourceLoad,
 } from '@flighthq/loader/contract';
-import type { HasGraphicsImage, Scene3DResourceResolverOptions } from '@flighthq/types/contract';
+import type { HasGraphicsImage, Scene3DResourceResolverOptions, EntityConstruction } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
@@ -34,18 +34,8 @@ export function createScene3DResourceResolver(
   host: Readonly<HasGraphicsImage>,
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolverWithRuntime {
-  const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
-  startResourceLoad(loader);
-
   const out = allocateEntity<Scene3DResourceResolverWithRuntime>();
-  out.fetch = options?.fetch ?? createWebImageResourceFetch(host);
-  out.registry = options?.registry ?? createScene3DMaterialTextureRegistry();
-  out[Scene3DResourceResolverRuntimeKey] = {
-    inFlight: new Map(),
-    loader,
-    resolved: new Map(),
-    signals: null,
-  };
+  initializeScene3DResourceResolver(out, host, options);
   return finishEntity(out);
 }
 
@@ -60,4 +50,21 @@ export function disposeScene3DResourceResolver(resolver: Scene3DResourceResolver
   }
   runtime.inFlight.clear();
   runtime.resolved.clear();
+}
+
+export function initializeScene3DResourceResolver(
+  out: EntityConstruction<Scene3DResourceResolverWithRuntime>,
+  host: Readonly<HasGraphicsImage>,
+  options?: Readonly<Scene3DResourceResolverOptions>,
+): void {
+  const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
+  startResourceLoad(loader);
+  out.fetch = options?.fetch ?? createWebImageResourceFetch(host);
+  out.registry = options?.registry ?? createScene3DMaterialTextureRegistry();
+  out[Scene3DResourceResolverRuntimeKey] = {
+    inFlight: new Map(),
+    loader,
+    resolved: new Map(),
+    signals: null,
+  };
 }

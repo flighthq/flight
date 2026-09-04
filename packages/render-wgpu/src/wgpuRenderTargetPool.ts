@@ -48,13 +48,17 @@ export function acquireWgpuRenderTarget(
 
 export function createWgpuRenderTargetPool(): WgpuRenderTargetPool {
   const out = allocateEntity<WgpuRenderTargetPool>();
-  out.free = [];
+  initializeWgpuRenderTargetPool(out);
   return finishEntity(out);
 }
 
 export function destroyWgpuRenderTargetPool(state: WgpuRenderState, pool: WgpuRenderTargetPool): void {
   for (const target of pool.free) destroyWgpuRenderTarget(state, target);
   pool.free.length = 0;
+}
+
+export function initializeWgpuRenderTargetPool(out: EntityConstruction<WgpuRenderTargetPool>): void {
+  out.free = [];
 }
 
 export function releaseWgpuRenderTarget(pool: WgpuRenderTargetPool, target: WgpuRenderTarget): void {

@@ -18,9 +18,19 @@ import type {
   NotificationRequestField,
   NotificationSchedule,
   ScheduledNotification,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
+  const out = allocateEntity<CapacitorNotificationCapabilities>();
+  initializeCapacitorNotificationCapabilities(out, capacitor);
+  return finishEntity(out);
+}
+
+export function initializeCapacitorNotificationCapabilities(
+  out: EntityConstruction<CapacitorNotificationCapabilities>,
+  capacitor: CapacitorApi,
+): void {
   const notifications = capacitor.localNotifications;
   const notificationByNumber = new Map<number, Notification>();
   const scheduledByNumber = new Map<number, ScheduledNotification>();
@@ -30,7 +40,6 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
   let destroyCompleted = false;
   let nextAttachmentId = 1;
   let nextNumericId = 1;
-
   function getNotification(number: number): Notification {
     let notification = notificationByNumber.get(number);
     if (notification === undefined) {
@@ -39,13 +48,11 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
     }
     return notification;
   }
-
   function trackScheduled(number: number, scheduled: ScheduledNotification): void {
     scheduledByNumber.set(number, scheduled);
     numberByScheduled.set(scheduled, number);
     bindScheduledNotificationCancel(scheduled, () => cancelOne(scheduled));
   }
-
   async function cancelOne(scheduled: ScheduledNotification) {
     const number = numberByScheduled.get(scheduled);
     if (number === undefined || scheduledByNumber.get(number) !== scheduled) {
@@ -60,7 +67,6 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
     numberByScheduled.delete(scheduled);
     return { reason: 'ok' } as const;
   }
-
   async function cancelAll(): Promise<NotificationLifecycleOutcome> {
     const failures: NotificationLifecycleFailure[] = [];
     for (const scheduled of [...scheduledByNumber.values()]) {
@@ -69,7 +75,6 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
     }
     return failures.length === 0 ? { reason: 'ok' } : { failures, reason: 'operation-failed' };
   }
-
   async function attachEvent(
     listener: (action: Readonly<CapacitorLocalNotificationAction>) => void,
   ): Promise<NotificationEventBackendAttachOutcome> {
@@ -97,8 +102,6 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
     liveAttachments.set(attachment, `subscription-${nextAttachmentId++}`);
     return { attachment, reason: 'ok' };
   }
-
-  const out = allocateEntity<CapacitorNotificationCapabilities>();
   out.action = {
     attach(listener) {
       return attachEvent((action) => listener(getNotification(action.notification.id), action.actionId));
@@ -240,7 +243,6 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
       return { precision: 'inexact', reason: 'scheduled', scheduled };
     },
   };
-  return finishEntity(out);
 }
 
 function getCapacitorInvalidNotificationRequestFields(

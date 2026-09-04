@@ -5,10 +5,16 @@ import type {
   GlyphRasterizedBitmap,
   GlyphRasterizeOptions,
   GlyphRasterizerBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
   const out = allocateEntity<GlyphRasterizerBackend & Entity>();
+  initializeWebGlyphRasterizerBackend(out);
+  return finishEntity(out);
+}
+
+export function initializeWebGlyphRasterizerBackend(out: EntityConstruction<GlyphRasterizerBackend & Entity>): void {
   out.measureMetrics = (options): GlyphMetrics | null => {
     const context = _acquireGlyphRasterContext();
     if (context === null) return null;
@@ -24,7 +30,6 @@ export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Enti
     if (context === null) return null;
     return _rasterizeGlyphOnContext(context, codepoint, options);
   };
-  return finishEntity(out);
 }
 
 export const webGlyphRasterizerBackend: GlyphRasterizerBackend & Entity = createWebGlyphRasterizerBackend();

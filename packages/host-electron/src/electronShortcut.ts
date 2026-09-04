@@ -6,13 +6,12 @@ import type {
   ShortcutQueryBackend,
   ShortcutTriggerBackend,
   ShortcutTriggerSubscription,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createElectronShortcutQueryBackend(electron: ElectronApi): ShortcutQueryBackend {
   const provider = allocateEntity<ShortcutQueryBackend>();
-  provider.isRegistered = async (accelerator: Accelerator) => {
-    return electron.globalShortcut.isRegistered(accelerator);
-  };
+  initializeElectronShortcutQueryBackend(provider, electron);
   return finishEntity(provider);
 }
 
@@ -59,4 +58,13 @@ export function createElectronShortcutTriggerBackend(electron: ElectronApi): Sho
     return finishEntity(out);
   })();
   return provider;
+}
+
+export function initializeElectronShortcutQueryBackend(
+  provider: EntityConstruction<ShortcutQueryBackend>,
+  electron: ElectronApi,
+): void {
+  provider.isRegistered = async (accelerator: Accelerator) => {
+    return electron.globalShortcut.isRegistered(accelerator);
+  };
 }

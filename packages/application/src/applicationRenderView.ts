@@ -1,9 +1,8 @@
-import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationRenderView,
   ApplicationRenderViewResize,
-  EntityConstruction,
   EntityRuntime,
   RenderState,
   RenderTargetDimensions,

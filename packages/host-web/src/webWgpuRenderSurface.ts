@@ -1,11 +1,22 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setWgpuRenderSurfaceProvider } from '@flighthq/render-wgpu/contract';
-import type { Entity, WgpuRenderSurfaceProvider } from '@flighthq/types/contract';
+import type { WgpuRenderSurfaceProvider, EntityConstruction } from '@flighthq/types/contract';
 
 let _enabled = false;
 
 export function createWebWgpuRenderSurfaceProvider(): WgpuRenderSurfaceProvider {
   const out = allocateEntity<WgpuRenderSurfaceProvider>();
+  initializeWebWgpuRenderSurfaceProvider(out);
+  return finishEntity(out);
+}
+
+export function enableHostWebWgpuRenderSurface(): void {
+  if (_enabled) return;
+  _enabled = true;
+  setWgpuRenderSurfaceProvider(createWebWgpuRenderSurfaceProvider());
+}
+
+export function initializeWebWgpuRenderSurfaceProvider(out: EntityConstruction<WgpuRenderSurfaceProvider>): void {
   out.createRenderSurface = (width, height, pixelRatio): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.style.width = `${width}px`;
@@ -14,13 +25,6 @@ export function createWebWgpuRenderSurfaceProvider(): WgpuRenderSurfaceProvider 
     canvas.height = height * pixelRatio;
     return canvas;
   };
-  return finishEntity(out);
-}
-
-export function enableHostWebWgpuRenderSurface(): void {
-  if (_enabled) return;
-  _enabled = true;
-  setWgpuRenderSurfaceProvider(createWebWgpuRenderSurfaceProvider());
 }
 
 export function resetHostWebWgpuRenderSurfaceForTest(): void {

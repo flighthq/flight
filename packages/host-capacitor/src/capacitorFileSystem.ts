@@ -1,5 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CapacitorApi, Entity, FileEntry, FileStat, FileSystemBasicBackend } from '@flighthq/types/contract';
+import type {
+  CapacitorApi,
+  Entity,
+  FileEntry,
+  FileStat,
+  FileSystemBasicBackend,
+  EntityConstruction,
+} from '@flighthq/types/contract';
+
+export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
+  const out = allocateEntity<FileSystemBasicBackend & Entity>();
+  initializeCapacitorFileSystemBackend(out, capacitor);
+  return finishEntity(out);
+}
 
 // Maps Flight's honest FileSystemHostBackend onto Capacitor's async `@capacitor/filesystem`. Both sides are
 // Promise-based, so the core surface maps cleanly: text via the `utf8` encoding, binary via Base64
@@ -9,9 +22,11 @@ import type { CapacitorApi, Entity, FileEntry, FileStat, FileSystemBasicBackend 
 // Capacitor-resolvable path (a `file://` URI, or a path the host's default Directory resolves).
 //
 // Operations the plugin cannot perform are absent from the returned provider.
-export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
+export function initializeCapacitorFileSystemBackend(
+  out: EntityConstruction<FileSystemBasicBackend & Entity>,
+  capacitor: CapacitorApi,
+): void {
   const filesystem = capacitor.filesystem;
-  const out = allocateEntity<FileSystemBasicBackend & Entity>();
   out.readTextFile = async (path, signal) => {
     signal?.throwIfAborted();
     let data: Blob | string;
@@ -141,7 +156,6 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
       return false;
     }
   };
-  return finishEntity(out);
 }
 
 function toFileEntry(name: string, path: string, type: string): FileEntry {

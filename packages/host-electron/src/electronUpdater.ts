@@ -6,6 +6,7 @@ import type {
   ElectronApi,
   UpdateInfo,
   UpdaterCommandBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type NativeListener = (...args: unknown[]) => void;
@@ -22,24 +23,31 @@ const NOT_AVAILABLE = Object.freeze({ reason: 'not-available' }) as AppUpdateChe
 const OPERATION_FAILED: Readonly<{ reason: 'operation-failed' }> = Object.freeze({ reason: 'operation-failed' });
 const INSTALL_OK = Object.freeze({ reason: 'ok' }) as AppUpdateInstallOutcome;
 
+export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: string): UpdaterCommandBackend {
+  const out = allocateEntity<UpdaterCommandBackend>();
+  initializeElectronUpdaterBackend(out, electron, feedUrl);
+  return finishEntity(out);
+}
+
 // Electron's built-in Squirrel updater downloads as part of checkForUpdates. Native events are scoped
 // to one awaited transaction here and never escape as a second public event surface.
-export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: string): UpdaterCommandBackend {
+export function initializeElectronUpdaterBackend(
+  out: EntityConstruction<UpdaterCommandBackend>,
+  electron: ElectronApi,
+  feedUrl?: string,
+): void {
   const autoUpdater = electron.autoUpdater;
   const providerCleanups = new Set<NativeCleanup>();
   const downloadedUpdates = new WeakSet<DownloadedUpdate>();
   let current: CheckTransaction | null = null;
   let destroyed = false;
-
   if (feedUrl !== undefined) autoUpdater.setFeedURL({ url: feedUrl });
-
   function attach(transaction: CheckTransaction, event: string, listener: NativeListener): void {
     autoUpdater.on(event, listener);
     const cleanup = () => autoUpdater.removeListener(event, listener);
     transaction.cleanups.add(cleanup);
     providerCleanups.add(cleanup);
   }
-
   function release(cleanups: Set<NativeCleanup>): unknown | undefined {
     let firstError: unknown;
     let hasError = false;
@@ -55,7 +63,6 @@ export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: st
     }
     return hasError ? firstError : undefined;
   }
-
   function settle(transaction: CheckTransaction, outcome: AppUpdateCheckOutcome): void {
     if (!transaction.active) return;
     transaction.active = false;
@@ -67,8 +74,6 @@ export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: st
     if (outcome.reason === 'downloaded') downloadedUpdates.add(outcome.update);
     transaction.resolve(outcome);
   }
-
-  const out = allocateEntity<UpdaterCommandBackend>();
   out.check = (): Promise<AppUpdateCheckOutcome> => {
     if (destroyed) return Promise.resolve(OPERATION_FAILED);
     if (current !== null) return Promise.resolve(CHECK_IN_PROGRESS);
@@ -115,7 +120,6 @@ export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: st
       return OPERATION_FAILED;
     }
   };
-  return finishEntity(out);
 }
 
 // Electron emits (event, releaseNotes, releaseName, releaseDate). Every richer metadata field remains

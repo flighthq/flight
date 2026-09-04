@@ -120,8 +120,6 @@ export function cloneAnimationPlayer(player: Readonly<AnimationPlayer>): Animati
   return finishEntity(out);
 }
 
-// Allocates a player over `clip`. Defaults: looping, 'Repeat' loop mode, infinite repeats, playing,
-// speed 1, time 0, and signal-free (onFinished/onLooped null until enableAnimationPlayerSignals).
 export function createAnimationPlayer(
   clip: AnimationClip,
   opts?: Readonly<{
@@ -134,16 +132,7 @@ export function createAnimationPlayer(
   }>,
 ): AnimationPlayer {
   const out = allocateEntity<AnimationPlayer>();
-  out.clip = clip;
-  out.loop = opts?.loop ?? true;
-  out.loopMode = opts?.loopMode ?? AnimationLoopModeRepeat;
-  out.onEvent = null;
-  out.onFinished = null;
-  out.onLooped = null;
-  out.playing = opts?.playing ?? true;
-  out.repeatCount = opts?.repeatCount ?? -1;
-  out.speed = opts?.speed ?? 1;
-  out.time = opts?.time ?? 0;
+  initializeAnimationPlayer(out, clip, opts);
   return finishEntity(out);
 }
 
@@ -162,6 +151,32 @@ export function getAnimationPlayerNormalizedTime(player: Readonly<AnimationPlaye
   if (duration <= 0) return 0;
   const n = player.time / duration;
   return n < 0 ? 0 : n > 1 ? 1 : n;
+}
+
+// Allocates a player over `clip`. Defaults: looping, 'Repeat' loop mode, infinite repeats, playing,
+// speed 1, time 0, and signal-free (onFinished/onLooped null until enableAnimationPlayerSignals).
+export function initializeAnimationPlayer(
+  out: EntityConstruction<AnimationPlayer>,
+  clip: AnimationClip,
+  opts?: Readonly<{
+    loop?: boolean;
+    loopMode?: AnimationLoopMode;
+    playing?: boolean;
+    repeatCount?: number;
+    speed?: number;
+    time?: number;
+  }>,
+): void {
+  out.clip = clip;
+  out.loop = opts?.loop ?? true;
+  out.loopMode = opts?.loopMode ?? AnimationLoopModeRepeat;
+  out.onEvent = null;
+  out.onFinished = null;
+  out.onLooped = null;
+  out.playing = opts?.playing ?? true;
+  out.repeatCount = opts?.repeatCount ?? -1;
+  out.speed = opts?.speed ?? 1;
+  out.time = opts?.time ?? 0;
 }
 
 // Resumes advancement by setting `playing` true, leaving the playhead where it is. Symmetric with

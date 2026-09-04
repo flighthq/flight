@@ -1,9 +1,8 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderSurface,
   CanvasRenderSurfaceCreator,
   CanvasRenderSurfaceOptions,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 

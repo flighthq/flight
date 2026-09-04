@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapEdgeMode, EntityConstruction, RectangleLike } from '@flighthq/types/contract';
+import type { Bitmap, BitmapEdgeMode, RectangleLike } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 /**

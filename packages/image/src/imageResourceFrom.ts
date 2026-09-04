@@ -14,6 +14,26 @@ export function createImageResourceFromBitmap(
 
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   const out = allocateEntity<ImageResource>();
+  initializeImageResourceFromCanvas(out, canvas);
+  return finishEntity(out);
+}
+
+export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
+  const out = allocateEntity<ImageResource>();
+  initializeImageResourceFromImageBitmap(out, bitmap);
+  return finishEntity(out);
+}
+
+export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
+  const out = allocateEntity<ImageResource>();
+  initializeImageResourceFromImageElement(out, img);
+  return finishEntity(out);
+}
+
+export function initializeImageResourceFromCanvas(
+  out: EntityConstruction<ImageResource>,
+  canvas: HTMLCanvasElement,
+): void {
   out.alphaType = DECODED_ALPHA_TYPE;
   out.gamut = DECODED_GAMUT;
   out.height = canvas.height;
@@ -21,11 +41,12 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageR
   out.source = canvas;
   out.version = 0;
   out.width = canvas.width;
-  return finishEntity(out);
 }
 
-export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
-  const out = allocateEntity<ImageResource>();
+export function initializeImageResourceFromImageBitmap(
+  out: EntityConstruction<ImageResource>,
+  bitmap: ImageBitmap,
+): void {
   out.alphaType = DECODED_ALPHA_TYPE;
   out.gamut = DECODED_GAMUT;
   out.height = bitmap.height;
@@ -33,11 +54,12 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageRe
   out.source = bitmap;
   out.version = 0;
   out.width = bitmap.width;
-  return finishEntity(out);
 }
 
-export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
-  const out = allocateEntity<ImageResource>();
+export function initializeImageResourceFromImageElement(
+  out: EntityConstruction<ImageResource>,
+  img: HTMLImageElement,
+): void {
   out.alphaType = DECODED_ALPHA_TYPE;
   out.gamut = DECODED_GAMUT;
   out.height = img.height;
@@ -45,7 +67,6 @@ export function createImageResourceFromImageElement(img: HTMLImageElement): Imag
   out.source = img;
   out.version = 0;
   out.width = img.width;
-  return finishEntity(out);
 }
 
 export function isImageUrlSameOrigin(url: string): boolean {

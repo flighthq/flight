@@ -55,12 +55,7 @@ export function clearPhysics3DJointReaction(out: Physics3DJointReaction): void {
 
 export function createPhysics3DJointReaction(): Physics3DJointReaction {
   const out = allocateEntity<Physics3DJointReaction>();
-  out.forceX = 0;
-  out.forceY = 0;
-  out.forceZ = 0;
-  out.torqueX = 0;
-  out.torqueY = 0;
-  out.torqueZ = 0;
+  initializePhysics3DJointReaction(out);
   return finishEntity(out);
 }
 
@@ -74,6 +69,15 @@ export function getPhysics3DJointReactionTorque(reaction: Readonly<Physics3DJoin
   return Math.sqrt(
     reaction.torqueX * reaction.torqueX + reaction.torqueY * reaction.torqueY + reaction.torqueZ * reaction.torqueZ,
   );
+}
+
+export function initializePhysics3DJointReaction(out: EntityConstruction<Physics3DJointReaction>): void {
+  out.forceX = 0;
+  out.forceY = 0;
+  out.forceZ = 0;
+  out.torqueX = 0;
+  out.torqueY = 0;
+  out.torqueZ = 0;
 }
 
 // Writes the load `joint` carried over the most recent sub-interval, and returns whether there was one to

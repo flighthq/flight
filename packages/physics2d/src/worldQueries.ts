@@ -38,25 +38,38 @@ export function createPhysics2DQueryFilter(): NonEntityCreateResult<Physics2DQue
   };
 }
 
-// Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
-// rewrite them and publish only `hitCount`, so pointer picking can run each frame without garbage.
 export function createPhysics2DQueryResult(): Physics2DQueryResult {
   const out = allocateEntity<Physics2DQueryResult>();
-  out.hits = [];
-  out.hitCount = 0;
+  initializePhysics2DQueryResult(out);
   return finishEntity(out);
 }
 
 export function createPhysics2DRayResult(): Physics2DRayResult {
   const out = allocateEntity<Physics2DRayResult>();
-  out.hits = [];
-  out.hitCount = 0;
+  initializePhysics2DRayResult(out);
   return finishEntity(out);
 }
 
-// A reusable shape-cast result, starting as a miss.
 export function createPhysics2DShapeCastResult(): Physics2DShapeCastResult {
   const out = allocateEntity<Physics2DShapeCastResult>();
+  initializePhysics2DShapeCastResult(out);
+  return finishEntity(out);
+}
+
+// Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
+// rewrite them and publish only `hitCount`, so pointer picking can run each frame without garbage.
+export function initializePhysics2DQueryResult(out: EntityConstruction<Physics2DQueryResult>): void {
+  out.hits = [];
+  out.hitCount = 0;
+}
+
+export function initializePhysics2DRayResult(out: EntityConstruction<Physics2DRayResult>): void {
+  out.hits = [];
+  out.hitCount = 0;
+}
+
+// A reusable shape-cast result, starting as a miss.
+export function initializePhysics2DShapeCastResult(out: EntityConstruction<Physics2DShapeCastResult>): void {
   out.body = null;
   out.collider = null;
   out.colliderIndex = -1;
@@ -66,7 +79,6 @@ export function createPhysics2DShapeCastResult(): Physics2DShapeCastResult {
   out.y = 0;
   out.normalX = 0;
   out.normalY = 0;
-  return finishEntity(out);
 }
 
 // Writes every collider containing the world-space point. Broadphase candidates are confirmed by the

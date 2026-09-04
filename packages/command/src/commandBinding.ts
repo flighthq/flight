@@ -7,7 +7,6 @@ import type {
   CommandBindingTable,
   CommandHistory,
   CompositeCommand,
-  KeyedTable,
   Kind,
   NodeAny,
   RemoveNodeChildCommand,

@@ -11,10 +11,37 @@ import type {
   FileSaveDialogBackend,
   FileSaveDialogResult,
   MessageDialogBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi): DirectoryOpenDialogBackend & Entity {
   const out = allocateEntity<DirectoryOpenDialogBackend>();
+  initializeElectronDirectoryOpenDialogBackend(out, electron);
+  return finishEntity(out);
+}
+
+export function createElectronFileOpenDialogBackend(electron: ElectronApi): FileOpenDialogBackend & Entity {
+  const out = allocateEntity<FileOpenDialogBackend>();
+  initializeElectronFileOpenDialogBackend(out, electron);
+  return finishEntity(out);
+}
+
+export function createElectronFileSaveDialogBackend(electron: ElectronApi): FileSaveDialogBackend & Entity {
+  const out = allocateEntity<FileSaveDialogBackend>();
+  initializeElectronFileSaveDialogBackend(out, electron);
+  return finishEntity(out);
+}
+
+export function createElectronMessageDialogBackend(electron: ElectronApi): MessageDialogBackend {
+  const out = allocateEntity<MessageDialogBackend>();
+  initializeElectronMessageDialogBackend(out, electron);
+  return finishEntity(out);
+}
+
+export function initializeElectronDirectoryOpenDialogBackend(
+  out: EntityConstruction<DirectoryOpenDialogBackend>,
+  electron: ElectronApi,
+): void {
   out.open = async (options): Promise<DirectoryOpenDialogResult> => {
     if (options?.signal?.aborted) return { outcome: 'cancelled' };
     const dialog = electron.dialog;
@@ -32,11 +59,12 @@ export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi):
       return { outcome: classifyFailure(error, 'directory-open-failed') };
     }
   };
-  return finishEntity(out);
 }
 
-export function createElectronFileOpenDialogBackend(electron: ElectronApi): FileOpenDialogBackend & Entity {
-  const out = allocateEntity<FileOpenDialogBackend>();
+export function initializeElectronFileOpenDialogBackend(
+  out: EntityConstruction<FileOpenDialogBackend>,
+  electron: ElectronApi,
+): void {
   out.open = async (options): Promise<FileOpenDialogResult> => {
     if (options.signal?.aborted) return { outcome: 'cancelled' };
     const dialog = electron.dialog;
@@ -59,11 +87,12 @@ export function createElectronFileOpenDialogBackend(electron: ElectronApi): File
       return { outcome: classifyFailure(error, 'file-open-failed') };
     }
   };
-  return finishEntity(out);
 }
 
-export function createElectronFileSaveDialogBackend(electron: ElectronApi): FileSaveDialogBackend & Entity {
-  const out = allocateEntity<FileSaveDialogBackend>();
+export function initializeElectronFileSaveDialogBackend(
+  out: EntityConstruction<FileSaveDialogBackend>,
+  electron: ElectronApi,
+): void {
   out.save = async (options): Promise<FileSaveDialogResult> => {
     if (options.signal?.aborted) return { outcome: 'cancelled' };
     const dialog = electron.dialog;
@@ -80,14 +109,15 @@ export function createElectronFileSaveDialogBackend(electron: ElectronApi): File
       return { outcome: classifyFailure(error, 'file-save-failed') };
     }
   };
-  return finishEntity(out);
 }
 
 // Electron provides message boxes and confirmation, but no native text-input prompt. Consumers can
 // therefore assemble dialog.message while leaving dialog.prompt absent.
-export function createElectronMessageDialogBackend(electron: ElectronApi): MessageDialogBackend {
+export function initializeElectronMessageDialogBackend(
+  out: EntityConstruction<MessageDialogBackend>,
+  electron: ElectronApi,
+): void {
   const dialog = electron.dialog;
-  const out = allocateEntity<MessageDialogBackend>();
   out.message = async (options) => {
     if (options.signal?.aborted) {
       return {
@@ -128,7 +158,6 @@ export function createElectronMessageDialogBackend(electron: ElectronApi): Messa
     });
     return result.response === 0;
   };
-  return finishEntity(out);
 }
 
 function createNativeHandle(path: string, kind: 'File' | 'Directory') {

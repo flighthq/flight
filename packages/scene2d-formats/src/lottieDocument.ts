@@ -44,7 +44,6 @@ import type {
   AnimationTrack,
   DisplayObject,
   EasingFunction,
-  EntityConstruction,
   ImportDiagnostic,
   LottieAdvancedBlend,
   LottieAnimatable,

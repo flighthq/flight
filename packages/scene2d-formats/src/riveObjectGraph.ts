@@ -12,6 +12,15 @@ import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
+export function createRiveObjectGraph(
+  document: Readonly<RiveDocument>,
+  diagnostics?: ImportDiagnostic[],
+): RiveObjectGraph {
+  const out = allocateEntity<RiveObjectGraph>();
+  initializeRiveObjectGraph(out, document, diagnostics);
+  return finishEntity(out);
+}
+
 /**
  * Recovers each artboard's component tree from the flat core-object stream.
  *
@@ -25,10 +34,11 @@ import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
  * A parent that cannot be resolved is reported and the component becomes a root, so one bad
  * reference costs its own placement rather than the whole artboard.
  */
-export function createRiveObjectGraph(
+export function initializeRiveObjectGraph(
+  out: EntityConstruction<RiveObjectGraph>,
   document: Readonly<RiveDocument>,
   diagnostics?: ImportDiagnostic[],
-): RiveObjectGraph {
+): void {
   const artboards: RiveArtboardGraph[] = [];
   let current: RiveCoreObject[] | null = null;
   for (let index = 0; index < document.objects.length; index++) {
@@ -44,11 +54,8 @@ export function createRiveObjectGraph(
     if (current === null || !isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_COMPONENT_TYPE_KEY)) continue;
     current.push(object);
   }
-
   for (const artboard of artboards) resolveRiveParentIndices(artboard, diagnostics);
-  const out = allocateEntity<RiveObjectGraph>();
   out.artboards = artboards;
-  return finishEntity(out);
 }
 
 function resolveRiveParentIndices(artboard: RiveArtboardGraph, diagnostics: ImportDiagnostic[] | undefined): void {

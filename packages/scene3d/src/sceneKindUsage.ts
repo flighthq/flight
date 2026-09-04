@@ -12,15 +12,9 @@ import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { isMesh } from './mesh';
 
-// Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
-// frames without reallocating five arrays.
 export function createScene3DKindUsage(): Scene3DKindUsage {
   const out = allocateEntity<Scene3DKindUsage>();
-  out.materialKinds = [];
-  out.modifierKinds = [];
-  out.nodeKinds = [];
-  out.resourceMimeTypes = [];
-  out.textureSourceKinds = [];
+  initializeScene3DKindUsage(out);
   return finishEntity(out);
 }
 
@@ -74,6 +68,16 @@ export function getScene3DKindUsage(out: Scene3DKindUsage, scene: Readonly<Scene
   out.nodeKinds.sort();
   out.resourceMimeTypes.sort();
   out.textureSourceKinds.sort();
+}
+
+// Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
+// frames without reallocating five arrays.
+export function initializeScene3DKindUsage(out: EntityConstruction<Scene3DKindUsage>): void {
+  out.materialKinds = [];
+  out.modifierKinds = [];
+  out.nodeKinds = [];
+  out.resourceMimeTypes = [];
+  out.textureSourceKinds = [];
 }
 
 // Linear scan rather than a Set: these lists are the handful of distinct kinds a document uses, where

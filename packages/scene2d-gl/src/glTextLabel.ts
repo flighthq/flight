@@ -9,7 +9,6 @@ import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
-  EntityConstruction,
   GlRenderState,
   Raster2DSurface,
   Raster2DSurfaceProvider,

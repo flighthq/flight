@@ -31,14 +31,22 @@ export function copyFlyCameraController(out: FlyCameraController, source: Readon
   out.yaw = source.yaw;
 }
 
+export function createFlyCameraController(options?: Readonly<FlyCameraControllerOptions>): FlyCameraController {
+  const out = allocateEntity<FlyCameraController>();
+  initializeFlyCameraController(out, options);
+  return finishEntity(out);
+}
+
 // Allocates a fly / first-person controller. `position` defaults to the origin, `yaw`/`pitch` to 0
 // (looking down -Z), `pitch` limits to just inside ±90° (no gimbal flip), and `smoothTime` to 0 (the
 // look angles snap to their goal each update). Current and goal angles start equal.
-export function createFlyCameraController(options?: Readonly<FlyCameraControllerOptions>): FlyCameraController {
+export function initializeFlyCameraController(
+  out: EntityConstruction<FlyCameraController>,
+  options?: Readonly<FlyCameraControllerOptions>,
+): void {
   const yaw = options?.yaw ?? 0;
   const pitch = options?.pitch ?? 0;
   const position = options?.position;
-  const out = allocateEntity<FlyCameraController>();
   out.goalPitch = pitch;
   out.goalYaw = yaw;
   out.maxPitch = options?.maxPitch ?? DEFAULT_MAX_PITCH;
@@ -47,7 +55,6 @@ export function createFlyCameraController(options?: Readonly<FlyCameraController
   out.position = createVector3(position?.x ?? 0, position?.y ?? 0, position?.z ?? 0);
   out.smoothTime = options?.smoothTime ?? 0;
   out.yaw = yaw;
-  return finishEntity(out);
 }
 
 // Moves the goal look angles by the given radian deltas: `deltaYaw` turns horizontally (unbounded),

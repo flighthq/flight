@@ -1,5 +1,5 @@
 ﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlBitmapShader, GlShaderLocations } from '@flighthq/types/contract';
+import type { GlBitmapShader, GlShaderLocations, EntityConstruction } from '@flighthq/types/contract';
 import type { GlContext, GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
 
 import { createGlProgram } from './glProgram';
@@ -53,6 +53,34 @@ export function compileGlBitmapProgram(gl: GlContext, fragmentSrc: string = FRAG
 
 export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrixArray: Float32Array): GlBitmapShader {
   const out = allocateEntity<GlBitmapShader>();
+  initializeDefaultGlBitmapShader(out, shaderLoc, matrixArray);
+  return finishEntity(out);
+}
+
+export function createGlBitmapShader(
+  gl: GlContext,
+  fragmentSrc: string,
+  onBind?: (gl: GlContext, locations: GlShaderLocations, renderProxy: RenderProxy2D) => void,
+): GlBitmapShader {
+  const out = allocateEntity<GlBitmapShader>();
+  initializeGlBitmapShader(out, gl, fragmentSrc, onBind);
+  return finishEntity(out);
+}
+
+export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShader {
+  const runtime = getGlRenderStateRuntime(state);
+  if (runtime.defaultBitmapShader !== null) return runtime.defaultBitmapShader;
+  const shaderLoc = compileDefaultGlProgram(state.gl);
+  const shader = createDefaultGlBitmapShader(shaderLoc, runtime.matrixArray);
+  runtime.defaultBitmapShader = shader;
+  return shader;
+}
+
+export function initializeDefaultGlBitmapShader(
+  out: EntityConstruction<GlBitmapShader>,
+  shaderLoc: GlShaderLocations,
+  matrixArray: Float32Array,
+): void {
   out.locations = shaderLoc;
   out.program = shaderLoc.program;
   out.bind = (gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void => {
@@ -68,7 +96,6 @@ export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrix
     );
     setGlBaseUniforms(gl, shaderLoc, renderProxy);
   };
-  return finishEntity(out);
 }
 
 /**
@@ -78,13 +105,13 @@ export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrix
  * any extra uniforms can be set per draw via `onBind` (resolve them against
  * `locations.program`).
  */
-export function createGlBitmapShader(
+export function initializeGlBitmapShader(
+  out: EntityConstruction<GlBitmapShader>,
   gl: GlContext,
   fragmentSrc: string,
   onBind?: (gl: GlContext, locations: GlShaderLocations, renderProxy: RenderProxy2D) => void,
-): GlBitmapShader {
+): void {
   const locations = compileGlBitmapProgram(gl, fragmentSrc);
-  const out = allocateEntity<GlBitmapShader>();
   out.locations = locations;
   out.program = locations.program;
   out.bind = (gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void => {
@@ -101,16 +128,6 @@ export function createGlBitmapShader(
     setGlBaseUniforms(gl, locations, renderProxy);
     onBind?.(gl, locations, renderProxy);
   };
-  return finishEntity(out);
-}
-
-export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShader {
-  const runtime = getGlRenderStateRuntime(state);
-  if (runtime.defaultBitmapShader !== null) return runtime.defaultBitmapShader;
-  const shaderLoc = compileDefaultGlProgram(state.gl);
-  const shader = createDefaultGlBitmapShader(shaderLoc, runtime.matrixArray);
-  runtime.defaultBitmapShader = shader;
-  return shader;
 }
 
 export function setGlAttributes(gl: GlContext, loc: GlShaderLocations): void {

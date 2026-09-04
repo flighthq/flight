@@ -74,20 +74,9 @@ export function acquireAsset<T = unknown>(library: Readonly<AssetLibrary>, id: s
   return loadPromise as Promise<T>;
 }
 
-// Allocates an empty asset library — an open adapter registry, an empty descriptor map, an empty cache,
-// and an empty group index. Registers no adapters and knows how to load nothing until the caller opts
-// in with registerAssetLoader.
 export function createAssetLibrary(): AssetLibrary {
-  const runtime: AssetLibraryRuntime = {
-    acquireGuard: null,
-    adapters: new Map(),
-    descriptors: new Map(),
-    entries: new Map(),
-    freedIds: new Set(),
-    groups: new Map(),
-  };
   const out = allocateEntity<AssetLibrary>();
-  out.runtime = runtime;
+  initializeAssetLibrary(out);
   return finishEntity(out);
 }
 
@@ -134,6 +123,21 @@ export function getAssetIds(library: Readonly<AssetLibrary>): readonly string[] 
 export function getAssetRefCount(library: Readonly<AssetLibrary>, id: string): number {
   const entry = library.runtime.entries.get(id);
   return entry !== undefined ? entry.refcount : 0;
+}
+
+// Allocates an empty asset library — an open adapter registry, an empty descriptor map, an empty cache,
+// and an empty group index. Registers no adapters and knows how to load nothing until the caller opts
+// in with registerAssetLoader.
+export function initializeAssetLibrary(out: EntityConstruction<AssetLibrary>): void {
+  const runtime: AssetLibraryRuntime = {
+    acquireGuard: null,
+    adapters: new Map(),
+    descriptors: new Map(),
+    entries: new Map(),
+    freedIds: new Set(),
+    groups: new Map(),
+  };
+  out.runtime = runtime;
 }
 
 // Preloads a named group through @flighthq/loader: every member that is not already resident is

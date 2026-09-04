@@ -18,6 +18,7 @@ import type {
   Physics3DJointOptions,
   Physics3DSliderJoint,
   Physics3DSliderJointOptions,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import {
@@ -30,28 +31,75 @@ import {
   Physics3DSliderJointKind,
 } from './joints';
 
+export function createPhysics3DBallAndSocketJoint(
+  options: Readonly<Physics3DBallAndSocketJointOptions>,
+): Physics3DBallAndSocketJoint {
+  const out = allocateEntity<Physics3DBallAndSocketJoint>();
+  initializePhysics3DBallAndSocketJoint(out, options);
+  return finishEntity(out);
+}
+
+export function createPhysics3DConeTwistJoint(
+  options: Readonly<Physics3DConeTwistJointOptions>,
+): Physics3DConeTwistJoint {
+  const out = allocateEntity<Physics3DConeTwistJoint>();
+  initializePhysics3DConeTwistJoint(out, options);
+  return finishEntity(out);
+}
+
+export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistanceJointOptions>): Physics3DDistanceJoint {
+  const out = allocateEntity<Physics3DDistanceJoint>();
+  initializePhysics3DDistanceJoint(out, options);
+  return finishEntity(out);
+}
+
+export function createPhysics3DFixedJoint(options: Readonly<Physics3DFixedJointOptions>): Physics3DFixedJoint {
+  const out = allocateEntity<Physics3DFixedJoint>();
+  initializePhysics3DFixedJoint(out, options);
+  return finishEntity(out);
+}
+
+export function createPhysics3DGeneric6DofJoint(
+  options: Readonly<Physics3DGeneric6DofJointOptions>,
+): Physics3DGeneric6DofJoint {
+  const out = allocateEntity<Physics3DGeneric6DofJoint>();
+  initializePhysics3DGeneric6DofJoint(out, options);
+  return finishEntity(out);
+}
+
+export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointOptions>): Physics3DHingeJoint {
+  const out = allocateEntity<Physics3DHingeJoint>();
+  initializePhysics3DHingeJoint(out, options);
+  return finishEntity(out);
+}
+
+export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJointOptions>): Physics3DSliderJoint {
+  const out = allocateEntity<Physics3DSliderJoint>();
+  initializePhysics3DSliderJoint(out, options);
+  return finishEntity(out);
+}
+
 // Joint factories allocate plain data, take one readonly options object, and make only authoring choices.
 // Registration and world membership stay explicit operations, so constructing a joint links no solver math
 // and touches no world.
 //
 // The two shared helpers are also the boundary that keeps solver-owned cache out of every public options
 // type: a caller names anchors, frames, and limits, and never the accumulators.
-export function createPhysics3DBallAndSocketJoint(
+export function initializePhysics3DBallAndSocketJoint(
+  out: EntityConstruction<Physics3DBallAndSocketJoint>,
   options: Readonly<Physics3DBallAndSocketJointOptions>,
-): Physics3DBallAndSocketJoint {
-  const out = allocateEntity<Physics3DBallAndSocketJoint>();
+): void {
   out.kind = Physics3DBallAndSocketJointKind;
   initJointBase(out, options);
-  return finishEntity(out);
 }
 
 // Defaults to a cone of 45 degrees in both directions and a free twist. A cone-twist with no limits at all is
 // a ball-and-socket that costs more, so the swing limit defaults ON and the twist limit — which has no
 // natural neutral range — defaults off.
-export function createPhysics3DConeTwistJoint(
+export function initializePhysics3DConeTwistJoint(
+  out: EntityConstruction<Physics3DConeTwistJoint>,
   options: Readonly<Physics3DConeTwistJointOptions>,
-): Physics3DConeTwistJoint {
-  const out = allocateEntity<Physics3DConeTwistJoint>();
+): void {
   out.kind = Physics3DConeTwistJointKind;
   initJointBase(out, options);
   initJointFrames(out, options);
@@ -67,14 +115,15 @@ export function createPhysics3DConeTwistJoint(
   out.swingLimitImpulse = 0;
   out.lowerTwistImpulse = 0;
   out.upperTwistImpulse = 0;
-  return finishEntity(out);
 }
 
 // Defaults to a RIGID strut: no spring, no limit, and a rest length of zero, which holds the two anchors
 // coincident until a caller names a length. The limit interval defaults to `[0, Infinity]` so that switching
 // `enableLimit` on alone gives a rope with no stated bound rather than one pinned to zero length.
-export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistanceJointOptions>): Physics3DDistanceJoint {
-  const out = allocateEntity<Physics3DDistanceJoint>();
+export function initializePhysics3DDistanceJoint(
+  out: EntityConstruction<Physics3DDistanceJoint>,
+  options: Readonly<Physics3DDistanceJointOptions>,
+): void {
   out.kind = Physics3DDistanceJointKind;
   initJointBase(out, options);
   out.length = options.length ?? 0;
@@ -86,24 +135,24 @@ export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistance
   out.maxLength = options.maxLength ?? Number.POSITIVE_INFINITY;
   out.lowerLimitImpulse = 0;
   out.upperLimitImpulse = 0;
-  return finishEntity(out);
 }
 
-export function createPhysics3DFixedJoint(options: Readonly<Physics3DFixedJointOptions>): Physics3DFixedJoint {
-  const out = allocateEntity<Physics3DFixedJoint>();
+export function initializePhysics3DFixedJoint(
+  out: EntityConstruction<Physics3DFixedJoint>,
+  options: Readonly<Physics3DFixedJointOptions>,
+): void {
   out.kind = Physics3DFixedJointKind;
   initJointBase(out, options);
   initJointFrames(out, options);
-  return finishEntity(out);
 }
 
 // Defaults every axis to FREE, so a joint built with no bounds constrains nothing and each axis is opted into
 // by naming its interval. The alternative — defaulting to locked — would make a partially configured joint
 // silently rigid, which is the harder failure to see.
-export function createPhysics3DGeneric6DofJoint(
+export function initializePhysics3DGeneric6DofJoint(
+  out: EntityConstruction<Physics3DGeneric6DofJoint>,
   options: Readonly<Physics3DGeneric6DofJointOptions>,
-): Physics3DGeneric6DofJoint {
-  const out = allocateEntity<Physics3DGeneric6DofJoint>();
+): void {
   out.kind = Physics3DGeneric6DofJointKind;
   initJointBase(out, options);
   initJointFrames(out, options);
@@ -124,11 +173,12 @@ export function createPhysics3DGeneric6DofJoint(
   out.limitDampingRatio = options.limitDampingRatio ?? 0;
   out.lowerLimitImpulses = [0, 0, 0, 0, 0, 0];
   out.upperLimitImpulses = [0, 0, 0, 0, 0, 0];
-  return finishEntity(out);
 }
 
-export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointOptions>): Physics3DHingeJoint {
-  const out = allocateEntity<Physics3DHingeJoint>();
+export function initializePhysics3DHingeJoint(
+  out: EntityConstruction<Physics3DHingeJoint>,
+  options: Readonly<Physics3DHingeJointOptions>,
+): void {
   out.kind = Physics3DHingeJointKind;
   initJointBase(out, options);
   initJointFrames(out, options);
@@ -144,11 +194,12 @@ export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointO
   out.motorImpulse = 0;
   out.lowerLimitImpulse = 0;
   out.upperLimitImpulse = 0;
-  return finishEntity(out);
 }
 
-export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJointOptions>): Physics3DSliderJoint {
-  const out = allocateEntity<Physics3DSliderJoint>();
+export function initializePhysics3DSliderJoint(
+  out: EntityConstruction<Physics3DSliderJoint>,
+  options: Readonly<Physics3DSliderJointOptions>,
+): void {
   out.kind = Physics3DSliderJointKind;
   initJointBase(out, options);
   initJointFrames(out, options);
@@ -164,7 +215,6 @@ export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJoin
   out.motorImpulse = 0;
   out.lowerLimitImpulse = 0;
   out.upperLimitImpulse = 0;
-  return finishEntity(out);
 }
 
 function initJointBase(out: Physics3DJoint, options: Readonly<Physics3DJointOptions>): void {

@@ -19,17 +19,9 @@ import {
   substituteFlightDocumentTokenValue,
 } from './flightDocumentTokenReference';
 
-// The value kinds the SDK itself describes. A caller composes vendor kinds onto the returned table
-// with withRegistryTableEntry; nothing is registered at module scope, so a caller that never asks for
-// the built-ins never pays for them.
 export function createFlightDocumentTokenResolverRegistry(): FlightDocumentTokenResolverRegistry {
-  let resolvers = createKeyedTable<FlightDocumentTokenResolver>(TOKEN_RESOLVER_REGISTRY_ID, TOKEN_RESOLVER_MISS_POLICY);
-  resolvers = withRegistryTableEntry(resolvers, 'Boolean', resolveBooleanTokenValue);
-  resolvers = withRegistryTableEntry(resolvers, 'Color', resolveColorTokenValue);
-  resolvers = withRegistryTableEntry(resolvers, 'Number', resolveNumberTokenValue);
-  resolvers = withRegistryTableEntry(resolvers, 'String', resolveStringTokenValue);
   const out = allocateEntity<FlightDocumentTokenResolverRegistry>();
-  out.resolvers = resolvers;
+  initializeFlightDocumentTokenResolverRegistry(out);
   return finishEntity(out);
 }
 
@@ -39,6 +31,20 @@ export function explainFlightDocumentSceneTokenResolution(
   resolvers?: Readonly<FlightDocumentTokenResolverRegistry>,
 ): FlightDocumentRefusalExplanation | null {
   return readSceneTokens(scene, mode, resolvers).refusal;
+}
+
+// The value kinds the SDK itself describes. A caller composes vendor kinds onto the returned table
+// with withRegistryTableEntry; nothing is registered at module scope, so a caller that never asks for
+// the built-ins never pays for them.
+export function initializeFlightDocumentTokenResolverRegistry(
+  out: EntityConstruction<FlightDocumentTokenResolverRegistry>,
+): void {
+  let resolvers = createKeyedTable<FlightDocumentTokenResolver>(TOKEN_RESOLVER_REGISTRY_ID, TOKEN_RESOLVER_MISS_POLICY);
+  resolvers = withRegistryTableEntry(resolvers, 'Boolean', resolveBooleanTokenValue);
+  resolvers = withRegistryTableEntry(resolvers, 'Color', resolveColorTokenValue);
+  resolvers = withRegistryTableEntry(resolvers, 'Number', resolveNumberTokenValue);
+  resolvers = withRegistryTableEntry(resolvers, 'String', resolveStringTokenValue);
+  out.resolvers = resolvers;
 }
 
 export function resolveFlightDocumentSceneTokens(

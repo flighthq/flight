@@ -1,14 +1,22 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BitmapFont, Entity, EntityWithoutRuntime, GlyphSource } from '@flighthq/types/contract';
+import type { BitmapFont, Entity, GlyphSource, EntityConstruction } from '@flighthq/types/contract';
 
 import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from './bitmapFont';
+
+export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource & Entity {
+  const out = allocateEntity<GlyphSource>();
+  initializeGlyphSourceFromBitmapFont(out, font);
+  return finishEntity(out);
+}
 
 // Adapts a `BitmapFont` into the `GlyphSource` seam a text renderer consumes, binding the font's pure
 // lookups into the method object. `getGlyphEntry` is the static map lookup (no side effects) — the
 // static counterpart to `@flighthq/glyphatlas`'s `createGlyphSourceFromGlyphAtlas`, whose
 // `getGlyphEntry` rasterizes on miss. A renderer holds either behind the one seam without knowing which.
-export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource & Entity {
-  const out = allocateEntity<GlyphSource>();
+export function initializeGlyphSourceFromBitmapFont(
+  out: EntityConstruction<GlyphSource>,
+  font: Readonly<BitmapFont>,
+): void {
   out.getGlyphAtlasImage = (page = 0) => {
     // Each page's atlas image, indexed by the glyph's `page`. An out-of-range page (or a page whose
     // atlas carries no image yet) yields null — the renderer skips glyphs it cannot sample.
@@ -30,5 +38,4 @@ export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): Gly
   out.getGlyphMetrics = () => {
     return getBitmapFontMetrics(font);
   };
-  return finishEntity(out);
 }

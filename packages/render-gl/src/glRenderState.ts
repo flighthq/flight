@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
   createRenderState as _createRenderState,
@@ -7,7 +7,6 @@ import {
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type {
-  EntityConstruction,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlContext,

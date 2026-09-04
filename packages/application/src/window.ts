@@ -250,42 +250,7 @@ export function computeWindowDeviceTransform(win: Readonly<ApplicationWindow>, o
 
 export function createApplicationWindow(): ApplicationWindow {
   const out = allocateEntity<ApplicationWindow>();
-  out.alwaysOnTop = false;
-  out.devicePixelRatio = 1;
-  out.focused = false;
-  out.fullscreen = false;
-  out.height = 0;
-  out.icon = '';
-  out.maxHeight = -1;
-  out.maximized = false;
-  out.maxWidth = -1;
-  out.minHeight = 0;
-  out.minimized = false;
-  out.minWidth = 0;
-  out.opacity = 1;
-  out.resizable = true;
-  out.skipTaskbar = false;
-  out.title = '';
-  out.visible = true;
-  out.width = 0;
-  out.x = 0;
-  out.y = 0;
-  out.onActivate = createSignal();
-  out.onClose = createSignal();
-  out.onCloseRequest = createSignal();
-  out.onDeactivate = createSignal();
-  out.onDropFile = createSignal();
-  out.onFocusIn = createSignal();
-  out.onFocusOut = createSignal();
-  out.onFullscreenChanged = createSignal();
-  out.onMaximize = createSignal();
-  out.onMinimize = createSignal();
-  out.onMove = createSignal();
-  out.onOrientationChanged = createSignal();
-  out.onRenderContextLost = createSignal();
-  out.onRenderContextRestored = createSignal();
-  out.onResize = createSignal();
-  out.onRestore = createSignal();
+  initializeApplicationWindow(out);
   return finishEntity(out);
 }
 
@@ -393,6 +358,45 @@ export function hideWindow(host: WindowOperationHost<'hide'>, win: ApplicationWi
   if (!win.visible) return;
   win.visible = false;
   host.window.hide(win);
+}
+
+export function initializeApplicationWindow(out: EntityConstruction<ApplicationWindow>): void {
+  out.alwaysOnTop = false;
+  out.devicePixelRatio = 1;
+  out.focused = false;
+  out.fullscreen = false;
+  out.height = 0;
+  out.icon = '';
+  out.maxHeight = -1;
+  out.maximized = false;
+  out.maxWidth = -1;
+  out.minHeight = 0;
+  out.minimized = false;
+  out.minWidth = 0;
+  out.opacity = 1;
+  out.resizable = true;
+  out.skipTaskbar = false;
+  out.title = '';
+  out.visible = true;
+  out.width = 0;
+  out.x = 0;
+  out.y = 0;
+  out.onActivate = createSignal();
+  out.onClose = createSignal();
+  out.onCloseRequest = createSignal();
+  out.onDeactivate = createSignal();
+  out.onDropFile = createSignal();
+  out.onFocusIn = createSignal();
+  out.onFocusOut = createSignal();
+  out.onFullscreenChanged = createSignal();
+  out.onMaximize = createSignal();
+  out.onMinimize = createSignal();
+  out.onMove = createSignal();
+  out.onOrientationChanged = createSignal();
+  out.onRenderContextLost = createSignal();
+  out.onRenderContextRestored = createSignal();
+  out.onResize = createSignal();
+  out.onRestore = createSignal();
 }
 
 // Requests Pointer Lock on an opaque target, hiding and confining the cursor so raw mouse deltas are

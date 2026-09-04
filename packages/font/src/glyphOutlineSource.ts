@@ -11,15 +11,23 @@ import type {
   RectangleLike,
 } from '@flighthq/types/contract';
 
+export function createGlyphRasterizerBackendFromGlyphOutlineSource(
+  source: GlyphOutlineSource,
+): GlyphRasterizerBackend & Entity {
+  const out = allocateEntity<GlyphRasterizerBackend & Entity>();
+  initializeGlyphRasterizerBackendFromGlyphOutlineSource(out, source);
+  return finishEntity(out);
+}
+
 // Adapts an index-keyed vector font into the codepoint-keyed rasterizer consumed by glyphatlas. The
 // adapter is bound to one source, so callers can install it on one GlyphAtlas through
 // `GlyphAtlasOptions.rasterizerBackend` without changing the process-wide backend. Rasterization is a
 // portable 4x4 coverage scan over flattened contours: it needs no DOM/canvas and therefore works for
 // imported fonts in browser, worker, native-host, and headless environments alike.
-export function createGlyphRasterizerBackendFromGlyphOutlineSource(
+export function initializeGlyphRasterizerBackendFromGlyphOutlineSource(
+  out: EntityConstruction<GlyphRasterizerBackend & Entity>,
   source: GlyphOutlineSource,
-): GlyphRasterizerBackend & Entity {
-  const out = allocateEntity<GlyphRasterizerBackend & Entity>();
+): void {
   out.measureMetrics = (options): GlyphMetrics | null => {
     const metrics = source.getGlyphOutlineMetrics();
     const scale = resolveGlyphOutlineScale(metrics.unitsPerEm, options.fontSize);
@@ -33,7 +41,6 @@ export function createGlyphRasterizerBackendFromGlyphOutlineSource(
   out.rasterize = (codePoint, options): GlyphRasterizedBitmap | null => {
     return rasterizeGlyphOutlineSource(source, codePoint, options);
   };
-  return finishEntity(out);
 }
 
 function rasterizeGlyphOutlineSource(

@@ -1,6 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types/contract';
+import type {
+  Spritesheet,
+  SpritesheetAnimation,
+  SpritesheetFrame,
+  SpritesheetPlayer,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 
 export function acquireSpritesheetPlayer(): SpritesheetPlayer {
   if (playerPool.length > 0) {
@@ -34,15 +40,7 @@ export function cloneSpritesheetPlayer(player: Readonly<SpritesheetPlayer>): Spr
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
   const out = allocateEntity<SpritesheetPlayer>();
-  out.animation = obj?.animation ?? null;
-  out.complete = obj?.complete ?? true;
-  out.elapsed = obj?.elapsed ?? 0;
-  out.frameIndex = obj?.frameIndex ?? 0;
-  out.onComplete = obj?.onComplete ?? createSignal();
-  out.onLoop = obj?.onLoop ?? createSignal();
-  out.paused = obj?.paused ?? false;
-  out.queue = obj?.queue ?? [];
-  out.speed = obj?.speed ?? 1;
+  initializeSpritesheetPlayer(out, obj);
   return finishEntity(out);
 }
 
@@ -81,6 +79,21 @@ export function getSpritesheetPlayerFrameAt(
   const targetIndex = (((frameIndex + frameOffset) % n) + n) % n;
   const spriteFrameIndex = animation.frames[targetIndex];
   return spritesheet.frames[spriteFrameIndex] ?? null;
+}
+
+export function initializeSpritesheetPlayer(
+  out: EntityConstruction<SpritesheetPlayer>,
+  obj?: Partial<SpritesheetPlayer>,
+): void {
+  out.animation = obj?.animation ?? null;
+  out.complete = obj?.complete ?? true;
+  out.elapsed = obj?.elapsed ?? 0;
+  out.frameIndex = obj?.frameIndex ?? 0;
+  out.onComplete = obj?.onComplete ?? createSignal();
+  out.onLoop = obj?.onLoop ?? createSignal();
+  out.paused = obj?.paused ?? false;
+  out.queue = obj?.queue ?? [];
+  out.speed = obj?.speed ?? 1;
 }
 
 export function pauseSpritesheetPlayer(player: SpritesheetPlayer): void {

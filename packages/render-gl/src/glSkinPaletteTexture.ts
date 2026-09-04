@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlContext, GlSkinPaletteTexture } from '@flighthq/types/contract';
+import type { GlContext, GlSkinPaletteTexture, EntityConstruction } from '@flighthq/types/contract';
 
 // The GPU skinning bone-palette data texture: the per-mesh joint-matrix palette in an RGBA32F texture
 // the vertex shader reads with texelFetch (GLSL ES 3.0 core), one mat4 packed as four consecutive
@@ -8,13 +8,9 @@ import type { GlContext, GlSkinPaletteTexture } from '@flighthq/types/contract';
 // MAX_TEXTURE_SIZE (thousands of joints) rather than the vertex-uniform budget, so there is no
 // per-context capacity cap and no CPU fallback above capacity.
 
-// Creates the palette texture struct with no storage allocated yet (jointCapacity 0). The first
-// uploadGlSkinPaletteTexture allocates storage sized to the palette. The caller owns the returned
-// struct and frees it with destroyGlSkinPaletteTexture.
 export function createGlSkinPaletteTexture(gl: GlContext): GlSkinPaletteTexture {
   const out = allocateEntity<GlSkinPaletteTexture>();
-  out.jointCapacity = 0;
-  out.texture = gl.createTexture()!;
+  initializeGlSkinPaletteTexture(out, gl);
   return finishEntity(out);
 }
 
@@ -22,6 +18,14 @@ export function createGlSkinPaletteTexture(gl: GlContext): GlSkinPaletteTexture 
 // already-deleted GL texture is a silent no-op, so this is safe to call more than once.
 export function destroyGlSkinPaletteTexture(gl: GlContext, palette: Readonly<GlSkinPaletteTexture>): void {
   gl.deleteTexture(palette.texture);
+}
+
+// Creates the palette texture struct with no storage allocated yet (jointCapacity 0). The first
+// uploadGlSkinPaletteTexture allocates storage sized to the palette. The caller owns the returned
+// struct and frees it with destroyGlSkinPaletteTexture.
+export function initializeGlSkinPaletteTexture(out: EntityConstruction<GlSkinPaletteTexture>, gl: GlContext): void {
+  out.jointCapacity = 0;
+  out.texture = gl.createTexture()!;
 }
 
 // Uploads a joint-matrix palette into the data texture and binds it. `jointMatrices` is the flat

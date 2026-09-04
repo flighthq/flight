@@ -1,11 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorLut,
-  EntityWithoutRuntime,
-  WgpuColorLutTextureCache,
-  WgpuRenderState,
-  WgpuRenderTarget,
-} from '@flighthq/types/contract';
+import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
 import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';

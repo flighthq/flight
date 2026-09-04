@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/contract';
+import type { Physics3DContact, Physics3DContactPoint, EntityConstruction } from '@flighthq/types/contract';
 
 // Constructors for the contact records the step consumes.
 //
@@ -13,6 +13,18 @@ import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/co
 // nothing. Note that a contact the step does not re-find is retired at the end of the next step, because
 // contact lifetime is owned by intake — a hand-built contact survives only as long as the geometry that
 // justifies it does.
+
+export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA = 0, colliderB = 0): Physics3DContact {
+  const out = allocateEntity<Physics3DContact>();
+  initializePhysics3DContact(out, bodyA, bodyB, colliderA, colliderB);
+  return finishEntity(out);
+}
+
+export function createPhysics3DContactPoint(): Physics3DContactPoint {
+  const out = allocateEntity<Physics3DContactPoint>();
+  initializePhysics3DContactPoint(out);
+  return finishEntity(out);
+}
 
 // Allocates one contact between two bodies, in canonical order.
 //
@@ -28,9 +40,14 @@ import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/co
 // The normal is NOT reordered with the bodies, because there is nothing yet to reorder: a fresh contact
 // carries a zero normal, and the caller writing the geometry is the one who knows which way it points. It
 // must point so that resolving pushes A out of B.
-export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA = 0, colliderB = 0): Physics3DContact {
+export function initializePhysics3DContact(
+  out: EntityConstruction<Physics3DContact>,
+  bodyA: number,
+  bodyB: number,
+  colliderA = 0,
+  colliderB = 0,
+): void {
   const ordered = bodyA <= bodyB;
-  const out = allocateEntity<Physics3DContact>();
   out.bodyA = ordered ? bodyA : bodyB;
   out.bodyB = ordered ? bodyB : bodyA;
   out.colliderA = ordered ? colliderA : colliderB;
@@ -45,14 +62,12 @@ export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA =
   out.enabled = true;
   out.sensor = false;
   out.touching = false;
-  return finishEntity(out);
 }
 
 // Allocates one contact point, zeroed. `featureId` is the caller's to assign and is opaque to this
 // package: its only contract is that the SAME physical feature carries the SAME id between steps, which is
 // what lets the solver match this step's points against last step's accumulators.
-export function createPhysics3DContactPoint(): Physics3DContactPoint {
-  const out = allocateEntity<Physics3DContactPoint>();
+export function initializePhysics3DContactPoint(out: EntityConstruction<Physics3DContactPoint>): void {
   out.x = 0;
   out.y = 0;
   out.z = 0;
@@ -64,5 +79,4 @@ export function createPhysics3DContactPoint(): Physics3DContactPoint {
   out.rBX = 0;
   out.rBY = 0;
   out.rBZ = 0;
-  return finishEntity(out);
 }

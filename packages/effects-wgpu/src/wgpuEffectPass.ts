@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getWgpuRenderStateRuntime, getWgpuSurfaceRenderExtent } from '@flighthq/render-wgpu/contract';
 import type {
   EntityConstruction,
-  EntityWithoutRuntime,
   WgpuDualSourceEffectPipeline,
   WgpuEffectBlendMode,
   WgpuEffectPipeline,
@@ -227,78 +226,24 @@ export function clearWgpuEffectTarget(state: WgpuRenderState, target: WgpuRender
   pass.end();
 }
 
-/** Compiles a dual-source WGSL effect pipeline (source0 = group 1, source1 = group 2). */
 export function createWgpuDualSourceEffectPipeline(
   state: WgpuRenderState,
   fragmentWGSL: string,
   blend: WgpuEffectBlendMode = 'premul',
 ): WgpuDualSourceEffectPipeline {
-  const fs = getOrCreateEffectPassState(state);
-  const { device } = state;
-
-  const shaderModule = device.createShaderModule({ code: EFFECT_VERTEX_WGSL + fragmentWGSL });
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout],
-  });
-
-  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
-    device.createRenderPipeline({
-      layout: pipelineLayout,
-      vertex: { module: shaderModule, entryPoint: 'vs_main' },
-      fragment: {
-        module: shaderModule,
-        entryPoint: 'fs_main',
-        targets: [{ format, blend: getBlendState(blend) }],
-      },
-      primitive: { topology: 'triangle-list' },
-    });
-
   const out = allocateEntity<WgpuEffectPipeline>();
-  out.pipeline = compileForFormat(fs.format);
-  out.blendMode = blend;
-  out.compileForFormat = compileForFormat;
-  out.variants = new Map();
+  initializeWgpuDualSourceEffectPipeline(out, state, fragmentWGSL, blend);
   return finishEntity(out);
 }
 
-/** Compiles a WGSL effect pipeline, creating the combined vertex+fragment shader module. */
 export function createWgpuEffectPipeline(
   state: WgpuRenderState,
   fragmentWGSL: string,
   blend: WgpuEffectBlendMode = 'premul',
 ): WgpuEffectPipeline {
-  const fs = getOrCreateEffectPassState(state);
-  const { device } = state;
-
-  const shaderModule = device.createShaderModule({ code: EFFECT_VERTEX_WGSL + fragmentWGSL });
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout],
-  });
-
-  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
-    device.createRenderPipeline({
-      layout: pipelineLayout,
-      vertex: { module: shaderModule, entryPoint: 'vs_main' },
-      fragment: {
-        module: shaderModule,
-        entryPoint: 'fs_main',
-        targets: [{ format, blend: getBlendState(blend) }],
-      },
-      primitive: { topology: 'triangle-list' },
-    });
-
   const out = allocateEntity<WgpuEffectPipeline>();
-  out.pipeline = compileForFormat(fs.format);
-  out.blendMode = blend;
-  out.compileForFormat = compileForFormat;
-  out.variants = new Map();
+  initializeWgpuEffectPipeline(out, state, fragmentWGSL, blend);
   return finishEntity(out);
-}
-
-function getBlendState(blend: WgpuEffectBlendMode): GPUBlendState {
-  if (blend === 'replace') return REPLACE_BLEND;
-  if (blend === 'erase') return ERASE_BLEND;
-  return PREMUL_BLEND;
 }
 
 /**
@@ -360,6 +305,12 @@ export function drawWgpuEffectPass(
   pass.end();
 }
 
+function getBlendState(blend: WgpuEffectBlendMode): GPUBlendState {
+  if (blend === 'replace') return REPLACE_BLEND;
+  if (blend === 'erase') return ERASE_BLEND;
+  return PREMUL_BLEND;
+}
+
 /**
  * Returns the effect-pass state for the given render state, for use in shaders
  * that need to bind a custom texture (e.g., a gradient ramp) as group 2 or 3.
@@ -383,4 +334,64 @@ export function getWgpuEffectPassState(state: WgpuRenderState): {
     writeSlot: (offset, fn) => writeUniformSlot(state, fs, offset, fn),
     beginPass: (dest, loadOp) => beginEffectPass(state, dest, loadOp),
   };
+}
+
+/** Compiles a dual-source WGSL effect pipeline (source0 = group 1, source1 = group 2). */
+export function initializeWgpuDualSourceEffectPipeline(
+  out: EntityConstruction<WgpuEffectPipeline>,
+  state: WgpuRenderState,
+  fragmentWGSL: string,
+  blend: WgpuEffectBlendMode = 'premul',
+): void {
+  const fs = getOrCreateEffectPassState(state);
+  const { device } = state;
+  const shaderModule = device.createShaderModule({ code: EFFECT_VERTEX_WGSL + fragmentWGSL });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout],
+  });
+  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
+    device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: { module: shaderModule, entryPoint: 'vs_main' },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fs_main',
+        targets: [{ format, blend: getBlendState(blend) }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
+  out.pipeline = compileForFormat(fs.format);
+  out.blendMode = blend;
+  out.compileForFormat = compileForFormat;
+  out.variants = new Map();
+}
+
+/** Compiles a WGSL effect pipeline, creating the combined vertex+fragment shader module. */
+export function initializeWgpuEffectPipeline(
+  out: EntityConstruction<WgpuEffectPipeline>,
+  state: WgpuRenderState,
+  fragmentWGSL: string,
+  blend: WgpuEffectBlendMode = 'premul',
+): void {
+  const fs = getOrCreateEffectPassState(state);
+  const { device } = state;
+  const shaderModule = device.createShaderModule({ code: EFFECT_VERTEX_WGSL + fragmentWGSL });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout],
+  });
+  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
+    device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: { module: shaderModule, entryPoint: 'vs_main' },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fs_main',
+        targets: [{ format, blend: getBlendState(blend) }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
+  out.pipeline = compileForFormat(fs.format);
+  out.blendMode = blend;
+  out.compileForFormat = compileForFormat;
+  out.variants = new Map();
 }

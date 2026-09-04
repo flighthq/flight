@@ -1,8 +1,7 @@
-import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentUnsupportedGuard,
-  EntityConstruction,
   RenderState,
   RenderStateRuntime,
   Renderable,

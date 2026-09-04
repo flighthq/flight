@@ -38,8 +38,7 @@ export function clearMediaSessionPositionState(host: HasMediaSession): MediaSess
 
 export function createMediaSessionActionSignal(action: MediaSessionAction): MediaSessionActionSignal {
   const out = allocateEntity<MediaSessionActionSignal>();
-  out.action = action;
-  out.onAction = createSignal();
+  initializeMediaSessionActionSignal(out, action);
   return finishEntity(out);
 }
 
@@ -76,6 +75,14 @@ export function disposeMediaSessionActionSignal(signal: MediaSessionActionSignal
   } finally {
     clearSignal(signal.onAction);
   }
+}
+
+export function initializeMediaSessionActionSignal(
+  out: EntityConstruction<MediaSessionActionSignal>,
+  action: MediaSessionAction,
+): void {
+  out.action = action;
+  out.onAction = createSignal();
 }
 
 export function setMediaSessionMetadata(

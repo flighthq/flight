@@ -91,8 +91,6 @@ export function collideCollisionTriangleMesh3D(
   return true;
 }
 
-// Allocates a heightfield descriptor with an identity pose. The height payload is copied so its
-// ownership is unambiguous; edit the returned array and invalidate the descriptor when terrain changes.
 export function createCollisionHeightfield3D(
   columns: number,
   rows: number,
@@ -101,41 +99,16 @@ export function createCollisionHeightfield3D(
   cellSizeZ = 1,
 ): CollisionHeightfield3D {
   const out = allocateEntity<CollisionHeightfield3D>();
-  out.kind = 'heightfield';
-  out.columns = columns;
-  out.rows = rows;
-  out.heights = heights.slice();
-  out.cellSizeX = cellSizeX;
-  out.cellSizeZ = cellSizeZ;
-  out.version = 0;
-  out.x = 0;
-  out.y = 0;
-  out.z = 0;
-  out.rotationX = 0;
-  out.rotationY = 0;
-  out.rotationZ = 0;
-  out.rotationW = 1;
+  initializeCollisionHeightfield3D(out, columns, rows, heights, cellSizeX, cellSizeZ);
   return finishEntity(out);
 }
 
-// Allocates a triangle-mesh descriptor with an identity pose. Points and indices are copied; callers
-// may release their source arrays immediately.
 export function createCollisionTriangleMesh3D(
   points: readonly number[],
   indices: readonly number[],
 ): CollisionTriangleMesh3D {
   const out = allocateEntity<CollisionTriangleMesh3D>();
-  out.kind = 'triangle-mesh';
-  out.points = points.slice();
-  out.indices = indices.slice();
-  out.version = 0;
-  out.x = 0;
-  out.y = 0;
-  out.z = 0;
-  out.rotationX = 0;
-  out.rotationY = 0;
-  out.rotationZ = 0;
-  out.rotationW = 1;
+  initializeCollisionTriangleMesh3D(out, points, indices);
   return finishEntity(out);
 }
 
@@ -239,6 +212,52 @@ export function getCollisionTriangleMeshValidationStatus3D(
     status,
   });
   return status;
+}
+
+// Allocates a heightfield descriptor with an identity pose. The height payload is copied so its
+// ownership is unambiguous; edit the returned array and invalidate the descriptor when terrain changes.
+export function initializeCollisionHeightfield3D(
+  out: EntityConstruction<CollisionHeightfield3D>,
+  columns: number,
+  rows: number,
+  heights: readonly number[],
+  cellSizeX = 1,
+  cellSizeZ = 1,
+): void {
+  out.kind = 'heightfield';
+  out.columns = columns;
+  out.rows = rows;
+  out.heights = heights.slice();
+  out.cellSizeX = cellSizeX;
+  out.cellSizeZ = cellSizeZ;
+  out.version = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  out.rotationX = 0;
+  out.rotationY = 0;
+  out.rotationZ = 0;
+  out.rotationW = 1;
+}
+
+// Allocates a triangle-mesh descriptor with an identity pose. Points and indices are copied; callers
+// may release their source arrays immediately.
+export function initializeCollisionTriangleMesh3D(
+  out: EntityConstruction<CollisionTriangleMesh3D>,
+  points: readonly number[],
+  indices: readonly number[],
+): void {
+  out.kind = 'triangle-mesh';
+  out.points = points.slice();
+  out.indices = indices.slice();
+  out.version = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  out.rotationX = 0;
+  out.rotationY = 0;
+  out.rotationZ = 0;
+  out.rotationW = 1;
 }
 
 // Marks in-place height edits. The retained implicit mesh and its BVH rebuild at the next query.

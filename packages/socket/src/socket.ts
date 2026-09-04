@@ -3,7 +3,6 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
-  EntityRuntimeKey,
   HasNetSocket,
   Socket,
   SocketBackend,
@@ -68,35 +67,9 @@ export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions
   return socket;
 }
 
-// Builds the web backend over the DOM WebSocket. Nothing constructs one at import time, so importing
-// the package has no side effect; a host composes this value into its own net group. Returns a
-// null connection when WebSocket is unavailable (non-browser host) rather than throwing; raw TCP/UDP
-// is likewise unsupported here and only reachable through a native backend.
 export function createWebSocketBackend(): SocketBackend & Entity {
   const out = allocateEntity<SocketBackend & Entity>();
-  out.openSocket = (options, events): SocketConnection | null => {
-    if (typeof WebSocket === 'undefined') return null;
-    const ws =
-      options.protocols !== undefined
-        ? new WebSocket(options.url, options.protocols as string[])
-        : new WebSocket(options.url);
-    ws.binaryType = options.binaryType ?? 'arraybuffer';
-    ws.onopen = () => events.handleSocketOpen();
-    ws.onmessage = (event: MessageEvent) => events.handleSocketMessage(toSocketMessage(event.data));
-    ws.onclose = (event: CloseEvent) =>
-      events.handleSocketClose({ code: event.code, reason: event.reason, wasClean: event.wasClean });
-    ws.onerror = () => events.handleSocketError();
-    return {
-      sendSocketFrame(data): boolean {
-        if (ws.readyState !== WebSocket.OPEN) return false;
-        ws.send(data);
-        return true;
-      },
-      closeSocketConnection(code, reason): void {
-        ws.close(code, reason);
-      },
-    };
-  };
+  initializeWebSocketBackend(out);
   return finishEntity(out);
 }
 
@@ -143,6 +116,36 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
 // The socket's current connection phase, tracked on the runtime from backend events and closeSocket.
 export function getSocketReadyState(socket: Readonly<Socket>): SocketReadyState {
   return socket.runtime.readyState;
+}
+
+// Builds the web backend over the DOM WebSocket. Nothing constructs one at import time, so importing
+// the package has no side effect; a host composes this value into its own net group. Returns a
+// null connection when WebSocket is unavailable (non-browser host) rather than throwing; raw TCP/UDP
+// is likewise unsupported here and only reachable through a native backend.
+export function initializeWebSocketBackend(out: EntityConstruction<SocketBackend & Entity>): void {
+  out.openSocket = (options, events): SocketConnection | null => {
+    if (typeof WebSocket === 'undefined') return null;
+    const ws =
+      options.protocols !== undefined
+        ? new WebSocket(options.url, options.protocols as string[])
+        : new WebSocket(options.url);
+    ws.binaryType = options.binaryType ?? 'arraybuffer';
+    ws.onopen = () => events.handleSocketOpen();
+    ws.onmessage = (event: MessageEvent) => events.handleSocketMessage(toSocketMessage(event.data));
+    ws.onclose = (event: CloseEvent) =>
+      events.handleSocketClose({ code: event.code, reason: event.reason, wasClean: event.wasClean });
+    ws.onerror = () => events.handleSocketError();
+    return {
+      sendSocketFrame(data): boolean {
+        if (ws.readyState !== WebSocket.OPEN) return false;
+        ws.send(data);
+        return true;
+      },
+      closeSocketConnection(code, reason): void {
+        ws.close(code, reason);
+      },
+    };
+  };
 }
 
 // Opens a raw TCP byte stream through the socket provider selected by the caller's host. Browser and

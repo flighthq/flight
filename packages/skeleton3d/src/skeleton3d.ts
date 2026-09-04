@@ -9,13 +9,7 @@ import {
   setMatrix4Identity,
 } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import type {
-  EntityConstruction,
-  Matrix4Like,
-  Node3D,
-  Skeleton3D,
-  Skeleton3DValidationDiagnostic,
-} from '@flighthq/types/contract';
+import type { Matrix4Like, Node3D, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types/contract';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
   const clone = allocateEntity<Skeleton3D>();

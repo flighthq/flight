@@ -1,8 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, FontLoadingBackend } from '@flighthq/types/contract';
+import type { Entity, FontLoadingBackend, EntityConstruction } from '@flighthq/types/contract';
 
 export function createWebFontLoadingBackend(): FontLoadingBackend & Entity {
   const out = allocateEntity<FontLoadingBackend & Entity>();
+  initializeWebFontLoadingBackend(out);
+  return finishEntity(out);
+}
+
+export function initializeWebFontLoadingBackend(out: EntityConstruction<FontLoadingBackend & Entity>): void {
   out.addFontFace = (face: FontFace): void => {
     document.fonts.add(face);
   };
@@ -15,7 +20,6 @@ export function createWebFontLoadingBackend(): FontLoadingBackend & Entity {
   out.whenReady = async (): Promise<void> => {
     await document.fonts.ready;
   };
-  return finishEntity(out);
 }
 
 export const webFontLoadingBackend: FontLoadingBackend & Entity = createWebFontLoadingBackend();

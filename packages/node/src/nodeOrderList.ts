@@ -124,9 +124,7 @@ export function clearNodeOrderList<Traits extends object = NodeTraits>(list: Nod
 
 export function createNodeOrderList<Traits extends object = NodeTraits>(): NodeOrderList<Traits> {
   const out = allocateEntity<NodeOrderList<Traits>>();
-  out.entryCount = 0;
-  out.nodes = [];
-  out.sortKeys = [];
+  initializeNodeOrderList(out);
   return finishEntity(out);
 }
 
@@ -171,6 +169,12 @@ export function hasNodeOrderListEntry<Traits extends object = NodeTraits>(
   node: Readonly<Node<Traits>>,
 ): boolean {
   return findNodeOrderListEntryIndex(list, node) !== -1;
+}
+
+export function initializeNodeOrderList(out: EntityConstruction<NodeOrderList<Traits>>): void {
+  out.entryCount = 0;
+  out.nodes = [];
+  out.sortKeys = [];
 }
 
 /**

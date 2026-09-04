@@ -22,9 +22,6 @@ export function cloneAnimationTrack(track: Readonly<AnimationTrack>): AnimationT
   return finishEntity(out);
 }
 
-// Allocates an AnimationTrack. `times` must be ascending; `values` is the flat keyframe buffer
-// (`components` numbers per keyframe for step/linear, 3 * `components` for cubic). Defaults:
-// linear interpolation, 1 component, non-quaternion, no easing.
 export function createAnimationTrack(opts: {
   times: ArrayLike<number>;
   values: ArrayLike<number>;
@@ -35,6 +32,25 @@ export function createAnimationTrack(opts: {
   segmentEasings?: AnimationTrack['segmentEasings'];
 }): AnimationTrack {
   const out = allocateEntity<AnimationTrack>();
+  initializeAnimationTrack(out, opts);
+  return finishEntity(out);
+}
+
+// Allocates an AnimationTrack. `times` must be ascending; `values` is the flat keyframe buffer
+// (`components` numbers per keyframe for step/linear, 3 * `components` for cubic). Defaults:
+// linear interpolation, 1 component, non-quaternion, no easing.
+export function initializeAnimationTrack(
+  out: EntityConstruction<AnimationTrack>,
+  opts: {
+    times: ArrayLike<number>;
+    values: ArrayLike<number>;
+    components?: number;
+    interpolation?: AnimationInterpolation;
+    quaternion?: boolean;
+    easing?: AnimationTrack['easing'];
+    segmentEasings?: AnimationTrack['segmentEasings'];
+  },
+): void {
   out.components = opts.components ?? 1;
   out.easing = opts.easing ?? null;
   out.interpolation = opts.interpolation ?? AnimationInterpolationLinear;
@@ -42,7 +58,6 @@ export function createAnimationTrack(opts: {
   out.segmentEasings = opts.segmentEasings ?? null;
   out.times = opts.times;
   out.values = opts.values;
-  return finishEntity(out);
 }
 
 // Samples `track` at time `t`, writing `track.components` numbers into `out`. `t` is clamped to the

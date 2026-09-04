@@ -1,12 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { Scene3DResourceResolverWithRuntime, Scene3DResourceSignals } from '@flighthq/types/contract';
+import type {
+  Scene3DResourceResolverWithRuntime,
+  Scene3DResourceSignals,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 
 export function createScene3DResourceSignals(): Scene3DResourceSignals {
   const out = allocateEntity<Scene3DResourceSignals>();
-  out.onResourceFailed = createSignal();
-  out.onResourceResolved = createSignal();
+  initializeScene3DResourceSignals(out);
   return finishEntity(out);
 }
 
@@ -25,4 +28,9 @@ export function getScene3DResourceSignals(
   resolver: Readonly<Scene3DResourceResolverWithRuntime>,
 ): Scene3DResourceSignals | null {
   return resolver[Scene3DResourceResolverRuntimeKey].signals;
+}
+
+export function initializeScene3DResourceSignals(out: EntityConstruction<Scene3DResourceSignals>): void {
+  out.onResourceFailed = createSignal();
+  out.onResourceResolved = createSignal();
 }

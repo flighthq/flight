@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AlphaType, Bitmap } from '@flighthq/types/contract';
+import type { AlphaType, Bitmap, EntityConstruction } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
@@ -58,6 +58,17 @@ export function convertBitmapAlphaType(out: Bitmap, target: AlphaType): void {
 }
 
 export function createBitmap(width: number, height: number, color: number = 0): Bitmap {
+  const out = allocateEntity<Bitmap>();
+  initializeBitmap(out, width, height, color);
+  return finishEntity(out);
+}
+
+export function initializeBitmap(
+  out: EntityConstruction<Bitmap>,
+  width: number,
+  height: number,
+  color: number = 0,
+): void {
   const data = new Uint8ClampedArray(width * height * 4);
   if (color !== 0) {
     const r = (color >>> 24) & 0xff;
@@ -71,7 +82,6 @@ export function createBitmap(width: number, height: number, color: number = 0): 
       data[i + 3] = a;
     }
   }
-  const out = allocateEntity<Bitmap>();
   out.alphaType = 'straight';
   out.gamut = 'srgb' as const;
   out.data = data;
@@ -80,7 +90,6 @@ export function createBitmap(width: number, height: number, color: number = 0): 
   out.kind = BitmapTextureSourceKind;
   out.version = 0;
   out.width = width;
-  return finishEntity(out);
 }
 
 export function invalidateBitmap(bitmap: Bitmap): void {

@@ -265,6 +265,24 @@ export function createDocumentRefusal(
   path: string,
 ): FlightDocumentRefusalExplanation {
   const out = allocateEntity<FlightDocumentRefusalExplanation>();
+  initializeDocumentRefusal(out, reason, path);
+  return finishEntity(out);
+}
+
+export function createSceneRefusal(
+  reason: FlightDocumentRefusalReasonType,
+  sceneIndex: number,
+  innerPath: string,
+): FlightDocumentRefusalExplanation {
+  const path = innerPath === '' ? `scenes[${sceneIndex}]` : `scenes[${sceneIndex}].${innerPath}`;
+  return createDocumentRefusal(reason, path);
+}
+
+export function initializeDocumentRefusal(
+  out: EntityConstruction<FlightDocumentRefusalExplanation>,
+  reason: FlightDocumentRefusalReasonType,
+  path: string,
+): void {
   out.actual = null;
   out.column = null;
   out.kind = null;
@@ -277,16 +295,6 @@ export function createDocumentRefusal(
   out.resourceKey = null;
   out.tokenKey = null;
   out.version = null;
-  return finishEntity(out);
-}
-
-export function createSceneRefusal(
-  reason: FlightDocumentRefusalReasonType,
-  sceneIndex: number,
-  innerPath: string,
-): FlightDocumentRefusalExplanation {
-  const path = innerPath === '' ? `scenes[${sceneIndex}]` : `scenes[${sceneIndex}].${innerPath}`;
-  return createDocumentRefusal(reason, path);
 }
 
 function createKindRefusal(

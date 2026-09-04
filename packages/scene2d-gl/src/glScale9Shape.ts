@@ -53,13 +53,7 @@ export function acquireGlScale9ShapeRasterSurface(
 
 export function createGlScale9ShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
   const out = allocateEntity<GlScale9ShapeData>();
-  out.lastH = 0;
-  out.lastScaleX = -1;
-  out.lastScaleY = -1;
-  out.lastContentId = -1;
-  out.lastPixelRatio = 0;
-  out.lastW = 0;
-  out.surface = null;
+  initializeGlScale9ShapeData(out, _state, _source);
   return finishEntity(out);
 }
 
@@ -167,14 +161,28 @@ export function drawGlScale9ShapeMask(state: GlRenderState, data: RenderProxy2D)
   drawGlScale9Shape(state, data);
 }
 
+export function getGlScale9ShapeData(data: RendererData): GlScale9ShapeData {
+  return data as GlScale9ShapeData;
+}
+
 export const defaultGlScale9ShapeRenderer: Scene2DRenderer = {
   createData: createGlScale9ShapeData,
   destroyData: destroyGlScale9ShapeData,
   submit: drawGlScale9Shape,
 };
 
-export function getGlScale9ShapeData(data: RendererData): GlScale9ShapeData {
-  return data as GlScale9ShapeData;
+export function initializeGlScale9ShapeData(
+  out: EntityConstruction<GlScale9ShapeData>,
+  _state: GlRenderState,
+  _source: Renderable,
+): void {
+  out.lastH = 0;
+  out.lastScaleX = -1;
+  out.lastScaleY = -1;
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.lastW = 0;
+  out.surface = null;
 }
 
 function setStrippedGlMatrixFromValues(

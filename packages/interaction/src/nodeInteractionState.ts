@@ -9,19 +9,9 @@ import type {
   NodeRuntime,
 } from '@flighthq/types/contract';
 
-/**
- * Allocates a `NodeInteractionState` with all fields at their defaults: NOT a hit candidate (hit
- * testing is opt-in), no hit area, no cursor, not focusable. Prefer this over an object literal so
- * every field is set consistently.
- */
 export function createNodeInteractionState(): NodeInteractionState {
   const out = allocateEntity<NodeInteractionState>();
-  out.cursor = null;
-  out.focusable = false;
-  out.hitArea = null;
-  out.hitTestEnabled = false;
-  out.pointerDoubleClickEnabled = false;
-  out.tabIndex = -1;
+  initializeNodeInteractionState(out);
   return finishEntity(out);
 }
 
@@ -52,6 +42,20 @@ export function getNodeInteractionState(source: Readonly<NodeAny>): NodeInteract
 /** Focus-order key for this node; `-1` (the default) means natural order. */
 export function getNodeTabIndex(source: Readonly<NodeAny>): number {
   return getNodeInteractionState(source)?.tabIndex ?? -1;
+}
+
+/**
+ * Allocates a `NodeInteractionState` with all fields at their defaults: NOT a hit candidate (hit
+ * testing is opt-in), no hit area, no cursor, not focusable. Prefer this over an object literal so
+ * every field is set consistently.
+ */
+export function initializeNodeInteractionState(out: EntityConstruction<NodeInteractionState>): void {
+  out.cursor = null;
+  out.focusable = false;
+  out.hitArea = null;
+  out.hitTestEnabled = false;
+  out.pointerDoubleClickEnabled = false;
+  out.tabIndex = -1;
 }
 
 /** Whether this node is a keyboard focus target (default `false` — focus is opt-in). */

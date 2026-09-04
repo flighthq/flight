@@ -36,23 +36,13 @@ export function createAudioResourceFailure(cause: unknown): AudioResourceFailure
   return finishEntity(out);
 }
 
-// `bytes` is retained as the view the container handed over, not a copy: a parser carves a sound payload
-// out of its source and the reference borrows it, so a document that never resolves a sound never pays for
-// its samples. The `resource` is allocated here rather than by the caller, because a trigger has to have
-// something to bind to before anything decodes.
 export function createEmbeddedAudioResourceReference(
   bytes: Uint8Array,
   mimeType: string | null = null,
   name: string | null = null,
 ): EmbeddedAudioResourceReference {
   const out = allocateEntity<EmbeddedAudioResourceReference>();
-  out.bytes = bytes;
-  out.failure = null;
-  out.kind = AudioResourceReferenceKind.Embedded;
-  out.mimeType = mimeType;
-  out.name = name;
-  out.resource = createAudioResource();
-  out.state = ResourceResolutionState.Unresolved;
+  initializeEmbeddedAudioResourceReference(out, bytes, mimeType, name);
   return finishEntity(out);
 }
 
@@ -63,14 +53,7 @@ export function createExternalAudioResourceReference(
   name: string | null = null,
 ): ExternalAudioResourceReference {
   const out = allocateEntity<ExternalAudioResourceReference>();
-  out.basePath = basePath;
-  out.failure = null;
-  out.kind = AudioResourceReferenceKind.External;
-  out.mimeType = mimeType;
-  out.name = name;
-  out.resource = createAudioResource();
-  out.state = ResourceResolutionState.Unresolved;
-  out.uri = uri;
+  initializeExternalAudioResourceReference(out, uri, basePath, mimeType, name);
   return finishEntity(out);
 }
 
@@ -98,6 +81,42 @@ export function findAudioResourceReferenceByName(
     if (references[i].name === name) return references[i];
   }
   return null;
+}
+
+// `bytes` is retained as the view the container handed over, not a copy: a parser carves a sound payload
+// out of its source and the reference borrows it, so a document that never resolves a sound never pays for
+// its samples. The `resource` is allocated here rather than by the caller, because a trigger has to have
+// something to bind to before anything decodes.
+export function initializeEmbeddedAudioResourceReference(
+  out: EntityConstruction<EmbeddedAudioResourceReference>,
+  bytes: Uint8Array,
+  mimeType: string | null = null,
+  name: string | null = null,
+): void {
+  out.bytes = bytes;
+  out.failure = null;
+  out.kind = AudioResourceReferenceKind.Embedded;
+  out.mimeType = mimeType;
+  out.name = name;
+  out.resource = createAudioResource();
+  out.state = ResourceResolutionState.Unresolved;
+}
+
+export function initializeExternalAudioResourceReference(
+  out: EntityConstruction<ExternalAudioResourceReference>,
+  uri: string,
+  basePath: string | null = null,
+  mimeType: string | null = null,
+  name: string | null = null,
+): void {
+  out.basePath = basePath;
+  out.failure = null;
+  out.kind = AudioResourceReferenceKind.External;
+  out.mimeType = mimeType;
+  out.name = name;
+  out.resource = createAudioResource();
+  out.state = ResourceResolutionState.Unresolved;
+  out.uri = uri;
 }
 
 // Returns a failed reference to the requestable state. Loading/resolved/unresolved references are unchanged

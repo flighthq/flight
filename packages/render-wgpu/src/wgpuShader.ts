@@ -163,30 +163,10 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
 };
 
 export function createWgpuBindGroupLayouts(device: GPUDevice): WgpuBindGroupLayouts {
-  const uniformBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: UNIFORM_BYTE_SIZE },
-      },
-    ],
-  });
-
-  const textureBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-    ],
-  });
-
   const out = allocateEntity<WgpuBindGroupLayouts>();
-  out.uniformBindGroupLayout = uniformBindGroupLayout;
-  out.textureBindGroupLayout = textureBindGroupLayout;
+  initializeWgpuBindGroupLayouts(out, device);
   return finishEntity(out);
 }
-
-// ---- Pipeline creation ----
 
 export function createWgpuPipelineLayout(
   device: GPUDevice,
@@ -198,6 +178,8 @@ export function createWgpuPipelineLayout(
   });
 }
 
+// ---- Pipeline creation ----
+
 export function getActiveWgpuPipeline(state: WgpuRenderState): GPURenderPipeline {
   const runtime = getWgpuRenderStateRuntime(state);
   const stencilMode: StencilMode = runtime.maskWriteMode
@@ -208,6 +190,13 @@ export function getActiveWgpuPipeline(state: WgpuRenderState): GPURenderPipeline
   return getWgpuPipeline(state, runtime.currentBlendMode, stencilMode);
 }
 
+// Shared by every immutable 2D pipeline family. WebGPU bakes blend state into the pipeline, so the
+// bitmap, quad-batch writer, and tessellated-shape paths must resolve the same node BlendMode table rather
+// than each maintaining a partial copy. Unknown/shader-composited modes deliberately fall back to Normal.
+export function getWgpuBlendState(blendMode: BlendMode | null): GPUBlendState {
+  return (blendMode !== null ? BLEND_MODES[blendMode] : null) ?? NORMAL_BLEND;
+}
+
 function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
   if (stencilMode === 'maskwrite') {
     return { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
@@ -216,13 +205,6 @@ function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
     return { compare: 'equal', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
   }
   return { compare: 'always', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' };
-}
-
-// Shared by every immutable 2D pipeline family. WebGPU bakes blend state into the pipeline, so the
-// bitmap, quad-batch writer, and tessellated-shape paths must resolve the same node BlendMode table rather
-// than each maintaining a partial copy. Unknown/shader-composited modes deliberately fall back to Normal.
-export function getWgpuBlendState(blendMode: BlendMode | null): GPUBlendState {
-  return (blendMode !== null ? BLEND_MODES[blendMode] : null) ?? NORMAL_BLEND;
 }
 
 export function getWgpuPipeline(
@@ -277,6 +259,26 @@ export function getWgpuPipeline(
 
   ctx.pipelineCache.set(key, pipeline);
   return pipeline;
+}
+
+export function initializeWgpuBindGroupLayouts(out: EntityConstruction<WgpuBindGroupLayouts>, device: GPUDevice): void {
+  const uniformBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: UNIFORM_BYTE_SIZE },
+      },
+    ],
+  });
+  const textureBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+    ],
+  });
+  out.uniformBindGroupLayout = uniformBindGroupLayout;
+  out.textureBindGroupLayout = textureBindGroupLayout;
 }
 
 // ---- Matrix helpers ----

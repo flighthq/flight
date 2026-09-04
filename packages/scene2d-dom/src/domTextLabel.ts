@@ -5,7 +5,6 @@ import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   DomRenderState,
-  EntityConstruction,
   RenderProxy2D,
   RenderState,
   Renderable,

@@ -10,7 +10,16 @@ import type {
   TauriWindow,
   WindowAttachmentOwnership,
   WindowBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
+
+export function createTauriWindowBackend(
+  tauri: TauriApi,
+): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> & Entity {
+  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
+  initializeTauriWindowBackend(out, tauri);
+  return finishEntity(out);
+}
 
 // Maps Flight's WindowBackend onto Tauri's `@tauri-apps/api/window`. Every Tauri window call is async
 // while WindowBackend's commands are synchronous (void), so the adapter fires each call and forgets,
@@ -20,9 +29,10 @@ import type {
 // changes. `getBounds` cannot read Tauri's async position/size synchronously, so it reports the entity's
 // mirrored fields. Scope: this is the single current window (the browser-page-window analogue); creating
 // additional OS windows is a `WebviewWindow`-label concern left to the host and not modeled here.
-export function createTauriWindowBackend(
+export function initializeTauriWindowBackend(
+  out: EntityConstruction<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>,
   tauri: TauriApi,
-): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> & Entity {
+): void {
   const windowModule = tauri.window;
   const handles = new WeakMap<TauriWindow, ApplicationWindow>();
   const windows = new WeakMap<ApplicationWindow, TauriWindowRecord>();
@@ -91,7 +101,6 @@ export function createTauriWindowBackend(
     );
     return true;
   };
-  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
   out.attach = (win, handle, ownership) => {
     if (!isTauriWindow(handle)) return false;
     return attach(win, handle, ownership);
@@ -198,7 +207,6 @@ export function createTauriWindowBackend(
   out.setHasShadow = (win, hasShadow) => {
     run(win, (w) => w.setShadow(hasShadow));
   };
-  return finishEntity(out);
 }
 
 interface TauriWindowRecord {

@@ -41,8 +41,7 @@ export function connectInputToTextInput(input: TextInputSource, manager: TextInp
 
 export function createTextInputManager(): TextInputManager {
   const out = allocateEntity<TextInputManager>();
-  out.enabled = true;
-  out.focused = null;
+  initializeTextInputManager(out);
   return finishEntity(out);
 }
 
@@ -108,6 +107,11 @@ export function focusTextInput(manager: TextInputManager, target: RichText): voi
   }
   manager.focused = target;
   setTextInputFocused(target, true);
+}
+
+export function initializeTextInputManager(out: EntityConstruction<TextInputManager>): void {
+  out.enabled = true;
+  out.focused = null;
 }
 
 function getTextInputFocusTarget(manager: TextInputManager): RichText | null {
