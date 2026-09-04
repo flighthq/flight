@@ -1,13 +1,16 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { ColorMatrixAdjustment } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { AdjustmentKind, ColorMatrixAdjustment, EntityConstruction } from '@flighthq/types/contract';
 
+import { initializeAdjustment } from './adjustment';
 import { COLOR_MATRIX_LENGTH } from './colorMatrixMath';
 
 export function createColorMatrixAdjustment(colorMatrix: readonly number[]): ColorMatrixAdjustment {
   if (colorMatrix.length !== COLOR_MATRIX_LENGTH) {
     throw new Error(`Color matrix must contain ${COLOR_MATRIX_LENGTH} values.`);
   }
-  return createEntity({ kind: 'ColorMatrixAdjustment', colorMatrix: [...colorMatrix] });
+  const out = allocateEntity<ColorMatrixAdjustment>();
+  initializeColorMatrixAdjustment(out, 'ColorMatrixAdjustment', [...colorMatrix]);
+  return finishEntity(out);
 }
 
 // Returns the 4×5 color matrix a stack operation contributes to the fused matrix-tier pass, or null if
@@ -17,6 +20,15 @@ export function createColorMatrixAdjustment(colorMatrix: readonly number[]): Col
 export function getAdjustmentColorMatrix(operation: Readonly<{ kind: string }>): readonly number[] | null {
   const matrix = (operation as Readonly<Partial<ColorMatrixAdjustment>>).colorMatrix;
   return Array.isArray(matrix) && matrix.length === COLOR_MATRIX_LENGTH ? matrix : null;
+}
+
+export function initializeColorMatrixAdjustment<T extends ColorMatrixAdjustment>(
+  out: EntityConstruction<T>,
+  kind: AdjustmentKind,
+  colorMatrix: number[],
+): void {
+  initializeAdjustment(out, kind);
+  out.colorMatrix = colorMatrix;
 }
 
 // Type guard: true when `operation` contributes a fusable 4×5 color matrix.

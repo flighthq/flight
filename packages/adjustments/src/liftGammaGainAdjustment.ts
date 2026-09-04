@@ -1,5 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorTransformFunction, EntityRuntimeKey, LiftGammaGainAdjustment } from '@flighthq/types/contract';
+
+import { initializeColorLutAdjustment } from './colorLutAdjustment';
 
 // Lift/gamma/gain as a LUT-tier adjustment (gamma is the nonlinear part). Ported faithfully from the old
 // liftGammaGainEffect shader: gain multiplies, lift offsets toward the packed neutral, gamma applies a
@@ -21,7 +23,12 @@ export function createLiftGammaGainAdjustment(
     out[1] = clamp01(Math.pow(Math.max(g * gain[1] + lift[1] * (1 - g), 0), gammaExp[1]));
     out[2] = clamp01(Math.pow(Math.max(b * gain[2] + lift[2] * (1 - b), 0), gammaExp[2]));
   };
-  return createEntity({ kind: 'LiftGammaGainAdjustment', ...options, transform });
+  const out = allocateEntity<LiftGammaGainAdjustment>();
+  initializeColorLutAdjustment(out, 'LiftGammaGainAdjustment', transform);
+  out.lift = options.lift ?? 0x000000ff;
+  out.gamma = options.gamma ?? 0x808080ff;
+  out.gain = options.gain ?? 0xffffffff;
+  return finishEntity(out);
 }
 
 function clamp01(v: number): number {

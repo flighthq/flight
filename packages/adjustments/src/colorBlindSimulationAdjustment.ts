@@ -1,5 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorBlindSimulationAdjustment, ColorBlindType, EntityRuntimeKey } from '@flighthq/types/contract';
+
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
 
 // Color-vision-deficiency simulation as a matrix-tier adjustment — this op's FIRST backend realization
 // (it was previously a descriptor-only effect with no pass). Each type bakes a fixed linear 3×3 RGB→RGB
@@ -22,7 +24,10 @@ export function createColorBlindSimulationAdjustment(
     m[6], m[7], m[8], 0, 0,
     0, 0, 0, 1, 0,
   ];
-  return createEntity({ kind: 'ColorBlindSimulationAdjustment', ...options, colorMatrix });
+  const out = allocateEntity<ColorBlindSimulationAdjustment>();
+  initializeColorMatrixAdjustment(out, 'ColorBlindSimulationAdjustment', colorMatrix);
+  out.type = type;
+  return finishEntity(out);
 }
 
 // Row-major 3×3 RGB→RGB coefficients per deficiency (HCIRN / Wickline simulation set).

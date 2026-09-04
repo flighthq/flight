@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorTransformFunction, EntityRuntimeKey, LookupTableGradeAdjustment } from '@flighthq/types/contract';
 
 import { sampleColorLut } from './colorLut';
+import { initializeColorLutAdjustment } from './colorLutAdjustment';
 
 // A supplied 3D color grade LUT applied at `strength`. Unlike the other LUT-tier ops it is ALREADY a LUT,
 // so it carries one directly; its transform trilinearly samples the carried `lut` and mixes toward it by
@@ -25,5 +26,9 @@ export function createLookupTableGradeAdjustment(
     out[1] = g + (out[1] - g) * strength;
     out[2] = b + (out[2] - b) * strength;
   };
-  return createEntity({ kind: 'LookupTableGradeAdjustment', ...options, transform });
+  const out = allocateEntity<LookupTableGradeAdjustment>();
+  initializeColorLutAdjustment(out, 'LookupTableGradeAdjustment', transform);
+  out.lut = options.lut;
+  out.strength = options.strength ?? 1;
+  return finishEntity(out);
 }

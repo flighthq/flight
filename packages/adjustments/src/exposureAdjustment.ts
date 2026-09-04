@@ -1,5 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, ExposureAdjustment } from '@flighthq/types/contract';
+
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
 
 // Linear exposure as a matrix-tier adjustment: RGB is scaled by `2^exposure` (a per-channel diagonal
 // multiply, no offset), reproducing the prior full-frame `rgb·2^exposure` shader. Alpha is unchanged.
@@ -10,7 +12,8 @@ import type { EntityRuntimeKey, ExposureAdjustment } from '@flighthq/types/contr
 export function createExposureAdjustment(
   options: Readonly<Omit<ExposureAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},
 ): ExposureAdjustment {
-  const m = Math.pow(2, options.exposure ?? 0);
+  const exposure = options.exposure ?? 0;
+  const m = Math.pow(2, exposure);
   // prettier-ignore
   const colorMatrix = [
     m, 0, 0, 0, 0,
@@ -18,5 +21,8 @@ export function createExposureAdjustment(
     0, 0, m, 0, 0,
     0, 0, 0, 1, 0,
   ];
-  return createEntity({ kind: 'ExposureAdjustment', ...options, colorMatrix });
+  const out = allocateEntity<ExposureAdjustment>();
+  initializeColorMatrixAdjustment(out, 'ExposureAdjustment', colorMatrix);
+  out.exposure = exposure;
+  return finishEntity(out);
 }

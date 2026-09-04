@@ -1,5 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, InvertAdjustment } from '@flighthq/types/contract';
+
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
 
 // Channel invert as a matrix-tier adjustment. `mix(rgb, 1 - rgb, intensity)` is affine per channel —
 // scale `1 - 2·intensity`, normalized-linear bias `intensity`. Alpha is unchanged. At intensity 1
@@ -17,5 +19,8 @@ export function createInvertAdjustment(
     0, 0, s, 0, o,
     0, 0, 0, 1, 0,
   ];
-  return createEntity({ kind: 'InvertAdjustment', ...options, colorMatrix });
+  const out = allocateEntity<InvertAdjustment>();
+  initializeColorMatrixAdjustment(out, 'InvertAdjustment', colorMatrix);
+  out.intensity = intensity;
+  return finishEntity(out);
 }
