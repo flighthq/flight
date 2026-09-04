@@ -132,9 +132,9 @@ describe('lerpRenderEffect', () => {
 
   it('boolean fields snap at t=0.5 boundary', () => {
     const a = createVignetteEffect();
-    (a as Record<string, unknown>).enabled = false;
+    (a as unknown as Record<string, unknown>).enabled = false;
     const b = createVignetteEffect();
-    (b as Record<string, unknown>).enabled = true;
+    (b as unknown as Record<string, unknown>).enabled = true;
     const out = createVignetteEffect();
     lerpRenderEffect(a, b, 0.4, out);
     expect((out as unknown as Record<string, unknown>).enabled).toBe(false);
