@@ -508,9 +508,13 @@ const physics2DQueryScratchPool: Physics2DQueryScratch[] = [createPhysics2DQuery
 // A stand-in collider so a bare shape can reuse the collider bounds writer. Its `world` shape is REBOUND
 // per call rather than copied, so this never retains the caller's shape past the call, and its material
 // and filter are never read on this path.
-const shapeCastProbe = allocateEntity<Physics2DCollider>();
-shapeCastProbe.local = { kind: 'point', x: 0, y: 0 };
-shapeCastProbe.world = { kind: 'point', x: 0, y: 0 };
-shapeCastProbe.material = { density: 0, friction: 0, restitution: 0 };
-shapeCastProbe.filter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
-shapeCastProbe.sensor = false;
+function createShapeCastProbe(): Physics2DCollider {
+  const out = allocateEntity<Physics2DCollider>();
+  out.local = { kind: 'point', x: 0, y: 0 };
+  out.world = { kind: 'point', x: 0, y: 0 };
+  out.material = { density: 0, friction: 0, restitution: 0 };
+  out.filter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
+  out.sensor = false;
+  return out;
+}
+const shapeCastProbe = createShapeCastProbe();
