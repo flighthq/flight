@@ -1,9 +1,14 @@
+import type { Entity } from '@flighthq/types/contract';
 import type { EntityRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { attachEntityBinding } from './binding';
-import { createEntity } from './entity';
+import { allocateEntity, finishEntity } from './entity';
 import { createEntityRuntime, getEntityRuntime, hasEntityRuntime } from './runtime';
+
+function createTestEntity(): Entity {
+  return finishEntity(allocateEntity<Entity>());
+}
 
 describe('createEntityRuntime', () => {
   it('returns an object', () => {
@@ -19,7 +24,7 @@ describe('createEntityRuntime', () => {
 
 describe('getEntityRuntime', () => {
   it('returns the runtime object', () => {
-    const entity = createEntity();
+    const entity = createTestEntity();
     expect(getEntityRuntime(entity)).toBeUndefined();
     const runtime = {} as EntityRuntime;
     entity[EntityRuntimeKey] = runtime;
@@ -29,12 +34,12 @@ describe('getEntityRuntime', () => {
 
 describe('hasEntityRuntime', () => {
   it('returns false for a fresh entity', () => {
-    const entity = createEntity();
+    const entity = createTestEntity();
     expect(hasEntityRuntime(entity)).toBe(false);
   });
 
   it('returns true after a binding is attached', () => {
-    const entity = createEntity();
+    const entity = createTestEntity();
     attachEntityBinding(entity, {});
     expect(hasEntityRuntime(entity)).toBe(true);
   });

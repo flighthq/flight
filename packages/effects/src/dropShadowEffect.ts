@@ -1,19 +1,23 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   DropShadowEffect,
+  EntityConstruction,
+  EntityWithoutRuntime,
   RenderEffect,
   RenderEffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
+import { initializeRenderEffect } from './renderEffect';
 import { getDirectionalRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 export function createDropShadowEffect(
   options: Readonly<Omit<EntityWithoutRuntime<DropShadowEffect>, 'kind'>> = {},
 ): DropShadowEffect {
-  return createEntity({ kind: 'DropShadowEffect', ...options });
+  const out = allocateEntity<DropShadowEffect>();
+  initializeDropShadowEffect(out, options);
+  return finishEntity(out);
 }
 
 export function getDropShadowEffectPadding(effect: Readonly<DropShadowEffect>): RenderEffectPadding {
@@ -25,6 +29,22 @@ export function getDropShadowEffectPadding(effect: Readonly<DropShadowEffect>): 
     Math.cos(angle) * distance,
     Math.sin(angle) * distance,
   );
+}
+
+export function initializeDropShadowEffect(
+  out: EntityConstruction<DropShadowEffect>,
+  options: Readonly<Omit<EntityWithoutRuntime<DropShadowEffect>, 'kind'>>,
+): void {
+  initializeRenderEffect(out, 'DropShadowEffect');
+  out.alpha = options.alpha;
+  out.angle = options.angle;
+  out.blurX = options.blurX;
+  out.blurY = options.blurY;
+  out.color = options.color;
+  out.distance = options.distance;
+  out.quality = options.quality;
+  out.sourceMode = options.sourceMode;
+  out.strength = options.strength;
 }
 
 export function registerDropShadowEffectPaddingResolver(state: RenderState): void {

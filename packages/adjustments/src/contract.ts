@@ -1,3 +1,4 @@
+export * from './adjustment';
 export * from './brightnessContrastAdjustment';
 export * from './channelMixerAdjustment';
 export * from './colorAdjustmentResolution';

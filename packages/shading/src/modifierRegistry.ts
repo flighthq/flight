@@ -27,7 +27,7 @@ export function createModifierRegistry(): ModifierRegistry {
   return finishEntity(out);
 }
 
-function initializeModifierRegistry(out: EntityConstruction<ModifierRegistry>): void {
+export function initializeModifierRegistry(out: EntityConstruction<ModifierRegistry>): void {
   out.definitions = new Map();
 }
 

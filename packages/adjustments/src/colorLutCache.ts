@@ -44,7 +44,7 @@ export function createColorLutCache(): ColorLutCache {
   return finishEntity(out);
 }
 
-function initializeColorLutCache(out: EntityConstruction<ColorLutCache>): void {
+export function initializeColorLutCache(out: EntityConstruction<ColorLutCache>): void {
   out.signature = null;
   out.lut = null;
 }

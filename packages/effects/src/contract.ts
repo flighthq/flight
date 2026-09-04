@@ -51,6 +51,7 @@ export * from './panniniProjectionEffect';
 export * from './pixelateEffect';
 export * from './posterizeEffect';
 export * from './radialBlurEffect';
+export * from './renderEffect';
 export * from './renderEffectDefaults';
 export * from './renderEffectCaptureGeometry';
 export * from './renderEffectInputs';

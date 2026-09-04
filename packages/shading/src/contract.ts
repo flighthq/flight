@@ -1,4 +1,5 @@
 export * from './createAnimatedNormalModifier';
+export * from './modifier';
 export * from './createDissolveModifier';
 export * from './createEmissiveModifier';
 export * from './createEnvReflectModifier';

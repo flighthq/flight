@@ -1,15 +1,20 @@
+import type { Entity } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createEntity } from './entity';
+import { allocateEntity, finishEntity } from './entity';
 
-describe('createEntity', () => {
-  it('returns an object', () => {
-    const entity = createEntity();
-    expect(entity).not.toBeNull();
+describe('allocateEntity', () => {
+  it('returns an object with an undefined runtime', () => {
+    const out = allocateEntity<Entity>();
+    expect(out).not.toBeNull();
+    expect(out[EntityRuntimeKey]).toBeUndefined();
   });
+});
 
-  it('has an undefined runtime', () => {
-    const entity = createEntity();
-    expect(entity[EntityRuntimeKey]).toBeUndefined();
+describe('finishEntity', () => {
+  it('returns the same object', () => {
+    const out = allocateEntity<Entity>();
+    const entity = finishEntity(out);
+    expect(entity).toBe(out);
   });
 });
