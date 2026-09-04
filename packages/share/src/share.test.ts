@@ -140,6 +140,7 @@ describe('Share contract surface', () => {
       'disposeShareSignals',
       'enableShareSignals',
       'hasShareContentFields',
+      'initializeShareSignals',
       'shareContent',
       'shareContentWithResult',
       'shareFiles',
