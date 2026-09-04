@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityWithoutRuntime, PlatformBackend, PlatformName, TauriApi } from '@flighthq/types/contract';
+import type { PlatformBackend, PlatformName, TauriApi } from '@flighthq/types/contract';
 
 // Maps Flight's PlatformBackend onto Tauri's `@tauri-apps/plugin-os`. Locale is the plugin's one async
 // identity accessor, so it is prefetched once and cached for the synchronous getInfo seam. Writes into
