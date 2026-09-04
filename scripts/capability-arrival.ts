@@ -616,17 +616,6 @@ export async function capabilityArrivalFailures(
     const generated = sourceInstallations(generatedSource, registry, page.suite === 'functional');
     const installed = new Set([...generated.values, ...reached.installations]);
 
-    // The generated verifier's renderer discriminator is runtime data, so a path-insensitive call graph
-    // would charge every page for every verification branch. Its source only reaches the host Bitmap
-    // readback slot on the Canvas/WebGL legs; WebGPU maps its retained GPU buffer and DOM is supplied a
-    // browser screenshot. Presence of the call is still derived from the emitted entry.
-    if (
-      /\bverifyCaptureTarget\s*\(/.test(generatedSource) &&
-      (page.renderer === 'canvas' || page.renderer === 'webgl')
-    ) {
-      reached.capabilities.add('BitmapReadback');
-    }
-
     if (page.suite === 'examples' && generated.aggregate) {
       failures.push({
         consumer: page.consumer,

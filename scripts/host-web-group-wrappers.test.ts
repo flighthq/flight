@@ -69,9 +69,16 @@ const WRAPPERS = [
   {
     file: 'webGraphicsHost.ts',
     group: 'graphics',
-    imports: ['@flighthq/entity/contract', '@flighthq/types/contract', './webInputTarget'],
+    imports: [
+      '@flighthq/entity/contract',
+      '@flighthq/types/contract',
+      './webBitmapEncode',
+      './webBitmapReadback',
+      './webImage',
+      './webInputTarget',
+    ],
     name: 'webGraphicsHost',
-    slots: ['renderContext', 'renderSurface'],
+    slots: ['bitmapEncode', 'bitmapReadback', 'image', 'renderContext', 'renderSurface'],
   },
   {
     file: 'webInputHost.ts',
