@@ -2,6 +2,7 @@ export type Kind = string;
 export interface Entity {
   [EntityRuntimeKey]: EntityRuntime | undefined;
 }
+export type EntityConstruction<Type extends Entity> = { -readonly [Key in keyof Type]: Type[Key] };
 export type EntityWithoutRuntime<Type extends Entity> = Omit<Type, typeof EntityRuntimeKey>;
 export interface EntityRuntime {
   binding: object | null;
