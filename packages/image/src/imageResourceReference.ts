@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   decodeImage,
   decodeImagePremultiplied,
@@ -32,15 +32,15 @@ export function createEmbeddedImageResourceReference(
   mimeType: string | null = null,
   alphaType: AlphaType = 'straight',
 ): EmbeddedImageResourceReference {
-  return createEntity({
-    alphaType,
-    bytes,
-    failure: null,
-    kind: ImageResourceReferenceKind.Embedded,
-    mimeType,
-    state: ResourceResolutionState.Unresolved,
-    textures: [],
-  });
+    const out = allocateEntity<EmbeddedImageResourceReference>();
+  out.alphaType = alphaType;
+  out.bytes = bytes;
+  out.failure = null;
+  out.kind = ImageResourceReferenceKind.Embedded;
+  out.mimeType = mimeType;
+  out.state = ResourceResolutionState.Unresolved;
+  out.textures = [];
+  return finishEntity(out);
 }
 
 // The one encoded-byte producer for image resource references. A registered decoder owns format
@@ -77,24 +77,32 @@ export function createExternalImageResourceReference(
   uri: string,
   basePath: string | null = null,
 ): ExternalImageResourceReference {
-  return createEntity({
-    basePath,
-    failure: null,
-    kind: ImageResourceReferenceKind.External,
-    mimeType: null,
-    state: ResourceResolutionState.Unresolved,
-    textures: [],
-    uri,
-  });
+    const out = allocateEntity<EmbeddedImageResourceReference>();
+  out.basePath = basePath;
+  out.failure = null;
+  out.kind = ImageResourceReferenceKind.External;
+  out.mimeType = null;
+  out.state = ResourceResolutionState.Unresolved;
+  out.textures = [];
+  out.uri = uri;
+  return finishEntity(out);
 }
 
 // Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
 export function createImageResourceFailure(cause: unknown): ImageResourceFailure {
   if (cause instanceof Error) {
-    return createEntity({ kind: ImageResourceFailureKind.Error, message: cause.message, name: cause.name });
+        const out = allocateEntity<EmbeddedImageResourceReference>();
+    out.kind = ImageResourceFailureKind.Error;
+    out.message = cause.message;
+    out.name = cause.name;
+    return finishEntity(out);
   }
-  return createEntity({ kind: ImageResourceFailureKind.Error, message: String(cause), name: null });
+    const out = allocateEntity<EmbeddedImageResourceReference>();
+  out.kind = ImageResourceFailureKind.Error;
+  out.message = String(cause);
+  out.name = null;
+  return finishEntity(out);
 }
 
 async function resolveImageBitmapComposition(
@@ -179,11 +187,11 @@ export async function resolveImageResourceReference(
       const decodeFailure = usesOrdinaryEmbeddedDecode
         ? explainImageDecodeFailure(ref.bytes, ref.mimeType ?? undefined)
         : null;
-      ref.failure = createEntity({
-        kind: ImageResourceFailureKind.Unavailable,
-        message: decodeFailure?.reason ?? 'Image resource unavailable',
-        name: null,
-      });
+            const _entity = allocateEntity<EmbeddedImageResourceReference>();
+      _entity.kind = ImageResourceFailureKind.Unavailable;
+      _entity.message = decodeFailure?.reason ?? 'Image resource unavailable';
+      _entity.name = null;
+      ref.failure = finishEntity(_entity);
       ref.state = ResourceResolutionState.Failed;
       return null;
     }

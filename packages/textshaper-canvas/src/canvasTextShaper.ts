@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import type { CanvasTextShaperBackend, EntityWithoutRuntime, FontMetrics, TextFormat } from '@flighthq/types/contract';
 

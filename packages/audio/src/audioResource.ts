@@ -6,7 +6,7 @@ import type { AudioResource } from '@flighthq/types/contract';
 // e.g. to hand one decoded sound to two playback subsystems. Use createAudioResourceFromSamples with
 // copied channel data when you need the samples themselves duplicated.
 export function cloneAudioResource(resource: Readonly<AudioResource>): AudioResource {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AudioResource>();
   out.buffer = resource.buffer;
   return finishEntity(out);
 }

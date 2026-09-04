@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   EntityWithoutRuntime,
@@ -10,8 +10,8 @@ import type {
 // has no native file picker; consumers leave the three file-dialog slots absent instead of advertising sentinels.
 export function createCapacitorMessageDialogBackend(capacitor: CapacitorApi): MessageDialogBackend {
   const dialog = capacitor.dialog;
-  return createEntity({
-    async message(options) {
+    const out = allocateEntity<MessageDialogBackend>();
+  out.message = async (options) => {
       if (options.signal?.aborted) {
         return {
           buttonIndex: options.cancelId ?? 0,
@@ -22,19 +22,19 @@ export function createCapacitorMessageDialogBackend(capacitor: CapacitorApi): Me
       await dialog.alert({ title: options.title, message: options.message });
       // Capacitor's alert is a single-button acknowledgement; it reports no button choice or checkbox.
       return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
-    },
-    async confirm(options) {
+    };
+  out.confirm = async (options) => {
       if (options.signal?.aborted) return false;
       const result = await dialog.confirm({ title: options.title, message: options.message });
       return result.value;
-    },
-  } satisfies EntityWithoutRuntime<MessageDialogBackend>);
+    };
+  return finishEntity(out);
 }
 
 export function createCapacitorPromptDialogBackend(capacitor: CapacitorApi): PromptDialogBackend {
   const dialog = capacitor.dialog;
-  return createEntity({
-    async prompt(options) {
+    const out = allocateEntity<MessageDialogBackend>();
+  out.prompt = async (options) => {
       if (options.signal?.aborted) return null;
       const result = await dialog.prompt({
         title: options.title,
@@ -43,6 +43,6 @@ export function createCapacitorPromptDialogBackend(capacitor: CapacitorApi): Pro
         inputPlaceholder: options.placeholder,
       });
       return result.cancelled ? null : result.value;
-    },
-  } satisfies EntityWithoutRuntime<PromptDialogBackend>);
+    };
+  return finishEntity(out);
 }

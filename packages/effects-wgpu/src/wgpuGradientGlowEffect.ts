@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   EntityWithoutRuntime,
@@ -127,7 +127,10 @@ function getLookupPipeline(state: WgpuRenderState): WgpuEffectPipeline {
       fragment: { module: shaderModule, entryPoint: 'fs_main', targets: [{ format }] },
       primitive: { topology: 'triangle-list' },
     });
-    p = createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({ pipeline, blendMode: 'premul' });
+        const _entity = allocateEntity<WgpuEffectPipeline>();
+    _entity.pipeline = pipeline;
+    _entity.blendMode = 'premul';
+    p = finishEntity(_entity);
     lookupPipelines.set(state, p);
   }
   return p;

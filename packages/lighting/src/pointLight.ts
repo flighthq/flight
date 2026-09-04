@@ -5,7 +5,7 @@ import { PointLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a point light's data, including a fresh `position` vector.
 export function clonePointLight(source: Readonly<PointLight>): PointLight {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<PointLight>();
   out.castsShadow = source.castsShadow;
   out.color = source.color;
   out.decay = source.decay;

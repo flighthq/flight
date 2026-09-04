@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityWithoutRuntime,
   PowerChangeBackend,
@@ -26,10 +26,11 @@ import type {
 // Keep-awake over the Wake Lock API. Both operations AWAIT the platform, so the reported outcome is the
 // real one: the previous backend called request() fire-and-forget, swallowed the rejection and returned
 // `true` synchronously, so a denied lock read as success and a lost lock still read as active.
-export const webPowerKeepAwakeBackend: PowerKeepAwakeBackend = createEntity<
+  export const webPowerKeepAwakeBackend = (() => {
+    const out = allocateEntity<
   EntityWithoutRuntime<PowerKeepAwakeBackend>
->({
-  async acquire(mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> {
+>();
+    out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
     // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
     if (mode === 'PreventAppSuspension') return { reason: 'unavailable' };
     const wakeLock = _getWebWakeLock();
@@ -53,18 +54,18 @@ export const webPowerKeepAwakeBackend: PowerKeepAwakeBackend = createEntity<
     _wakeLockReleaseListeners.set(sentinel, onRelease);
     sentinel.addEventListener?.('release', onRelease);
     return { reason: 'ok' };
-  },
-  destroy(): void {
+  };
+    out.destroy = (): void => {
     void _releaseSentinel();
     for (const [sentinel, onRelease] of _wakeLockReleaseListeners) {
       sentinel.removeEventListener?.('release', onRelease);
     }
     _wakeLockReleaseListeners.clear();
-  },
-  isActive(): boolean {
+  };
+    out.isActive = (): boolean => {
     return _wakeLockSentinel !== null;
-  },
-  async release(): Promise<PowerKeepAwakeReleaseResult> {
+  };
+    out.release = async (): Promise<PowerKeepAwakeReleaseResult> => {
     const sentinel = _wakeLockSentinel;
     // Nothing held is an ordinary outcome, not a fault — reported distinctly from 'ok' so a caller that
     // believed it held a lock can tell that it did not.
@@ -81,24 +82,27 @@ export const webPowerKeepAwakeBackend: PowerKeepAwakeBackend = createEntity<
     if (onRelease !== undefined) sentinel.removeEventListener?.('release', onRelease);
     _wakeLockReleaseListeners.delete(sentinel);
     return { reason: 'ok' };
-  },
-});
+  };
+    return finishEntity(out);
+  })();
 
 // Suspend/resume over the Page Lifecycle API. freeze/resume are the spec'd pair and both really fire.
-export const webPowerSuspensionBackend: PowerSuspensionBackend = createEntity<
+  export const webPowerSuspensionBackend = (() => {
+    const out = allocateEntity<
   EntityWithoutRuntime<PowerSuspensionBackend>
->({
-  subscribeResume(listener: () => void): () => void {
+>();
+    out.subscribeResume = (listener: () => void): () => void => {
     if (typeof document === 'undefined') return () => {};
     document.addEventListener('resume', listener);
     return () => document.removeEventListener('resume', listener);
-  },
-  subscribeSuspend(listener: () => void): () => void {
+  };
+    out.subscribeSuspend = (listener: () => void): () => void => {
     if (typeof document === 'undefined') return () => {};
     document.addEventListener('freeze', listener);
     return () => document.removeEventListener('freeze', listener);
-  },
-});
+  };
+    return finishEntity(out);
+  })();
 
 // change and status SHARE one closure-owned battery cache. The readings used to be module-scoped with a
 // `destroy` to reset them — but cached readings are not an externally freeable resource, they are just
@@ -110,8 +114,8 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
   let cachedDischargingTime = -1;
   let cachedLevel = -1;
 
-  return createEntity({
-    change: createEntity<EntityWithoutRuntime<PowerChangeBackend>>({
+    const out = allocateEntity<WebPowerReadingCapabilities>();
+  out.change = createEntity<EntityWithoutRuntime<PowerChangeBackend>>({
       subscribe(listener: () => void): () => void {
         const battery = _getWebBatteryManagerPromise();
         if (battery === null) return () => {};
@@ -165,8 +169,8 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
           manager = null;
         };
       },
-    }),
-    status: createEntity<EntityWithoutRuntime<PowerStatusBackend>>({
+    });
+  out.status = createEntity<EntityWithoutRuntime<PowerStatusBackend>>({
       getStatus(out: PowerStatus): PowerStatus {
         out.batteryLevel = cachedLevel;
         out.chargingTime = cachedChargingTime;
@@ -180,8 +184,8 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
         out.thermalState = 'Unknown';
         return out;
       },
-    }),
-  });
+    });
+  return finishEntity(out);
 }
 
 // The web power capability group, for composing into a Host.

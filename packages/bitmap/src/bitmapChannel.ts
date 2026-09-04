@@ -133,7 +133,7 @@ function makeBitmap(
   height: number,
   source: Readonly<Bitmap>,
 ): Bitmap {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Bitmap>();
   out.alphaType = source.alphaType;
   out.gamut = source.gamut;
   out.data = data;

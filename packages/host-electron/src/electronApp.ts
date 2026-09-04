@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AppLoginItem,
   AppPathKind,
@@ -147,10 +147,10 @@ function createElectronLoginItemBackend(electron: ElectronApi) {
 }
 
 function createElectronRecentDocumentsBackend(electron: ElectronApi) {
-  return createEntity({
-    addRecentDocument: (path: string) => electron.app.addRecentDocument(path),
-    clearRecentDocuments: () => electron.app.clearRecentDocuments(),
-  });
+    const out = allocateEntity<ElectronRecentDocumentsBackend>();
+  out.addRecentDocument = (path: string) => electron.app.addRecentDocument(path);
+  out.clearRecentDocuments = () => electron.app.clearRecentDocuments();
+  return finishEntity(out);
 }
 
 function toElectronPathName(kind: AppPathKind): string {

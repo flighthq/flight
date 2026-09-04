@@ -164,7 +164,7 @@ export function createInteractionManager<N extends NodeAny>(
   root: N,
   options: Readonly<InteractionManagerOptions> = {},
 ): InteractionManager<N> {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<InteractionManager<N>>();
   out.cursorBackend = options.cursorBackend ?? null;
   out.cursorTarget = null;
   out.dispatchLayers = null;

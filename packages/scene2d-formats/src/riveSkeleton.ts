@@ -51,7 +51,7 @@ export function createRiveSkeleton2D(artboard: Readonly<RiveArtboardGraph>): Riv
       component,
     ),
   );
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<RiveSkeleton2DImport>();
   out.boneIndices = boneIndices;
   out.skeleton = createSkeleton2D(bones);
   return finishEntity(out);

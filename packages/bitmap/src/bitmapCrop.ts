@@ -34,7 +34,7 @@ export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLik
       data[di + 3] = sd[si + 3];
     }
   }
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Bitmap>();
   out.alphaType = source.alphaType;
   out.gamut = source.gamut;
   out.data = data;
@@ -107,7 +107,7 @@ export function extendBitmap(
       }
     }
   }
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Bitmap>();
   out.alphaType = source.alphaType;
   out.gamut = source.gamut;
   out.data = data;
@@ -145,7 +145,7 @@ export function trimBitmap(source: Readonly<Bitmap>): Bitmap {
     }
   }
   if (maxX < 0) {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<Bitmap>();
     out.alphaType = source.alphaType;
     out.gamut = source.gamut;
     out.data = new Uint8ClampedArray(4);

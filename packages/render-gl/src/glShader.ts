@@ -1,4 +1,4 @@
-﻿import { createEntity } from '@flighthq/entity/contract';
+﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { GlBitmapShader, GlShaderLocations } from '@flighthq/types/contract';
 import type { GlContext, GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
 
@@ -52,10 +52,10 @@ export function compileGlBitmapProgram(gl: GlContext, fragmentSrc: string = FRAG
 }
 
 export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrixArray: Float32Array): GlBitmapShader {
-  return createEntity({
-    locations: shaderLoc,
-    program: shaderLoc.program,
-    bind(gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
+    const out = allocateEntity<GlShaderLocations>();
+  out.locations = shaderLoc;
+  out.program = shaderLoc.program;
+  out.bind = (gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void => {
       const runtime = getGlRenderStateRuntime(state);
       setGlAttributes(gl, shaderLoc);
       setGlMatrixFromTransform(
@@ -67,8 +67,8 @@ export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrix
         runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight,
       );
       setGlBaseUniforms(gl, shaderLoc, renderProxy);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 /**
@@ -84,10 +84,10 @@ export function createGlBitmapShader(
   onBind?: (gl: GlContext, locations: GlShaderLocations, renderProxy: RenderProxy2D) => void,
 ): GlBitmapShader {
   const locations = compileGlBitmapProgram(gl, fragmentSrc);
-  return createEntity({
-    locations,
-    program: locations.program,
-    bind(gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
+    const out = allocateEntity<GlShaderLocations>();
+  out.locations = locations;
+  out.program = locations.program;
+  out.bind = (gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void => {
       const runtime = getGlRenderStateRuntime(state);
       setGlAttributes(gl, locations);
       setGlMatrixFromTransform(
@@ -100,8 +100,8 @@ export function createGlBitmapShader(
       );
       setGlBaseUniforms(gl, locations, renderProxy);
       onBind?.(gl, locations, renderProxy);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShader {

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorConnectionStatus,
@@ -67,18 +67,18 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
       // Failure leaves the status unknown. Unknown means wait; it is not an offline observation.
     });
 
-  return createEntity({
-    destroy() {
+    const out = allocateEntity<CapacitorConnectivityBackend>();
+  out.destroy = () => {
       if (destroyed) return;
       destroyed = true;
       subscribers.clear();
       removeHandle();
-    },
-    getStatus(out) {
+    };
+  out.getStatus = (out) => {
       copyStatus(out, mirror);
       return out;
-    },
-    subscribe(listener) {
+    };
+  out.subscribe = (listener) => {
       if (destroyed) return null;
       subscribers.add(listener);
       let active = true;
@@ -87,8 +87,8 @@ export function createCapacitorConnectivityBackend(capacitor: CapacitorApi): Cap
         active = false;
         subscribers.delete(listener);
       };
-    },
-  } satisfies Omit<CapacitorConnectivityBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 function copyStatus(out: ConnectivityStatus, source: Readonly<ConnectivityStatus>): void {

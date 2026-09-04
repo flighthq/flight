@@ -11,7 +11,7 @@ import { AnimationInterpolationLinear } from '@flighthq/types/contract';
 // vs number[] backing) so the clone shares no mutable state with the source. Easing functions are
 // carried by reference; the segment-easing array itself is copied.
 export function cloneAnimationTrack(track: Readonly<AnimationTrack>): AnimationTrack {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AnimationTrack>();
   out.components = track.components;
   out.easing = track.easing;
   out.interpolation = track.interpolation;
@@ -34,7 +34,7 @@ export function createAnimationTrack(opts: {
   easing?: AnimationTrack['easing'];
   segmentEasings?: AnimationTrack['segmentEasings'];
 }): AnimationTrack {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AnimationTrack>();
   out.components = opts.components ?? 1;
   out.easing = opts.easing ?? null;
   out.interpolation = opts.interpolation ?? AnimationInterpolationLinear;
@@ -128,7 +128,7 @@ export function trimAnimationTrack(
     const off = k * stride;
     for (let c = 0; c < stride; c++) outValues.push(track.values[off + c]);
   }
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AnimationTrack>();
   out.components = components;
   out.easing = track.easing;
   out.interpolation = track.interpolation;

@@ -8,7 +8,7 @@ import {
   registerBuiltInCollisionPairTests3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -119,14 +119,13 @@ export function createReferencePhysics3DAbi(): Physics3DAbi {
   const worlds = new Map<number, ReferencePhysics3DAbiWorld>();
   let nextWorldHandle = 1;
 
-  return createEntity({
-    version: Physics3DAbiVersion,
-    capabilities:
-      Physics3DAbiCapability.ContactHooks |
+    const out = allocateEntity<Physics3DAbi>();
+  out.version = Physics3DAbiVersion;
+  out.capabilities = Physics3DAbiCapability.ContactHooks |
       Physics3DAbiCapability.PersistentWorlds |
       Physics3DAbiCapability.Queries |
-      Physics3DAbiCapability.SelectiveReadback,
-    createWorld(): Physics3DAbiWorldHandle {
+      Physics3DAbiCapability.SelectiveReadback;
+  out.createWorld = (): Physics3DAbiWorldHandle => {
       if (nextWorldHandle > 0xffffffff) return 0;
       const handle = nextWorldHandle;
       nextWorldHandle += 1;
@@ -134,54 +133,54 @@ export function createReferencePhysics3DAbi(): Physics3DAbi {
       registerBuiltInPhysics3DJointSolvers(world);
       worlds.set(handle, createReferenceWorld(world));
       return handle;
-    },
-    destroyWorld(handle): boolean {
+    };
+  out.destroyWorld = (handle): boolean => {
       if (worlds.get(handle)?.stepping === true) return false;
       return worlds.delete(handle);
-    },
-    getWorldStatus(handle): Physics3DAbiWorldStatus {
+    };
+  out.getWorldStatus = (handle): Physics3DAbiWorldStatus => {
       const state = worlds.get(handle);
       if (state === undefined) return 'Stale';
       return state.stepping ? 'Busy' : 'Ready';
-    },
-    execute(handle, commands, out): boolean {
+    };
+  out.execute = (handle, commands, out): boolean => {
       const state = worlds.get(handle);
       if (state === undefined) return failExecution(out, 'StaleWorld', 0, Physics3DAbiCommandHeaderByteLength, 0);
       if (state.stepping) return failExecution(out, 'BusyWorld', 0, Physics3DAbiCommandHeaderByteLength, 0);
       return executeCommands(state, commands, out);
-    },
-    step(handle, dt, hooks): Physics3DAbiStepStatus {
+    };
+  out.step = (handle, dt, hooks): Physics3DAbiStepStatus => {
       const state = worlds.get(handle);
       if (state === undefined) return 'StaleWorld';
       if (state.stepping) return 'BusyWorld';
       return stepReferenceWorld(state, dt, hooks);
-    },
-    readBodies(handle, bodyIds, out): boolean {
+    };
+  out.readBodies = (handle, bodyIds, out): boolean => {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       readBodies(state, bodyIds, out);
       return true;
-    },
-    readContacts(handle, selection, out): boolean {
+    };
+  out.readContacts = (handle, selection, out): boolean => {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       readContacts(state, selection, out);
       return true;
-    },
-    readJoints(handle, out): boolean {
+    };
+  out.readJoints = (handle, out): boolean => {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       readJoints(state, out);
       return true;
-    },
-    queryPoint(handle, x, y, z, filter, out): boolean {
+    };
+  out.queryPoint = (handle, x, y, z, filter, out): boolean => {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       queryPhysics3DPoint(state.world, x, y, z, state.query, filter ?? undefined);
       writeQueryHits(state, state.query, out);
       return true;
-    },
-    queryRay(handle, originX, originY, originZ, directionX, directionY, directionZ, maxFraction, closest, filter, out) {
+    };
+  out.queryRay = (handle, originX, originY, originZ, directionX, directionY, directionZ, maxFraction, closest, filter, out) => {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       const query = closest ? queryPhysics3DRayClosest : queryPhysics3DRay;
@@ -199,22 +198,22 @@ export function createReferencePhysics3DAbi(): Physics3DAbi {
       );
       writeRayHits(state, out);
       return true;
-    },
-    queryRegion(handle, region, filter, out): boolean {
+    };
+  out.queryRegion = (handle, region, filter, out): boolean => {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       queryPhysics3DRegion(state.world, region, state.query, filter ?? undefined);
       writeQueryHits(state, state.query, out);
       return true;
-    },
-    queryShapeCast(handle, shape, dx, dy, dz, maxFraction, filter, out): boolean {
+    };
+  out.queryShapeCast = (handle, shape, dx, dy, dz, maxFraction, filter, out): boolean => {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       queryPhysics3DShapeCast(state.world, shape, dx, dy, dz, state.shapeCast, maxFraction, filter ?? undefined);
       writeShapeCastHit(state, out);
       return true;
-    },
-  } satisfies Omit<Physics3DAbi, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 interface ReferencePhysics3DAbiCollider {
@@ -473,18 +472,7 @@ function executeSetBody(
   }
   setRigidBody3DMassData(
     body,
-    createEntity({
-      mass: values[19],
-      inertiaXX: values[20],
-      inertiaYY: values[21],
-      inertiaZZ: values[22],
-      inertiaXY: values[23],
-      inertiaXZ: values[24],
-      inertiaYZ: values[25],
-      centerX: values[26],
-      centerY: values[27],
-      centerZ: values[28],
-    }),
+    (() => { const out = allocateEntity<Physics3DAbi>(); out.mass = values[19]; out.inertiaXX = values[20]; out.inertiaYY = values[21]; out.inertiaZZ = values[22]; out.inertiaXY = values[23]; out.inertiaXZ = values[24]; out.inertiaYZ = values[25]; out.centerX = values[26]; out.centerY = values[27]; out.centerZ = values[28]; return finishEntity(out); })(),
   );
   refreshRigidBody3DWorldInertia(body);
   writeBodyDynamicValues(body, values, flags);

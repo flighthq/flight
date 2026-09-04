@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   DeviceBackend,
   DeviceCapabilities,
@@ -15,8 +15,8 @@ import {
 } from '@flighthq/useragent/contract';
 
 export function createWebDeviceBackend(): DeviceBackend {
-  return createEntity<Omit<DeviceBackend, keyof Entity>>({
-    getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
+    const out = allocateEntity<DeviceBackend>();
+  out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
       const nav = typeof navigator !== 'undefined' ? navigator : null;
       // hasMouse: weak heuristic — no touch points is a strong desktop / pointer-device signal.
       // This is best-effort; the browser cannot confirm whether a physical mouse is attached.
@@ -29,8 +29,8 @@ export function createWebDeviceBackend(): DeviceBackend {
       // hasStylus: no reliable UA or API signal in browsers — always false.
       out.hasStylus = false;
       return out;
-    },
-    getDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics {
+    };
+  out.getDisplayMetrics = (out: DeviceDisplayMetrics): DeviceDisplayMetrics => {
       const win = typeof window !== 'undefined' ? window : null;
       const scr = typeof screen !== 'undefined' ? screen : null;
       out.colorDepth = scr !== null ? scr.colorDepth : -1;
@@ -43,8 +43,8 @@ export function createWebDeviceBackend(): DeviceBackend {
       out.physicalWidth = scr !== null && pixelRatio > 0 ? Math.round(scr.width * pixelRatio) : -1;
       out.physicalHeight = scr !== null && pixelRatio > 0 ? Math.round(scr.height * pixelRatio) : -1;
       return out;
-    },
-    getId(): string {
+    };
+  out.getId = (): string => {
       // Web: crypto.randomUUID() persisted to localStorage as a stable install id.
       // Returns '' when storage is unavailable (SSR, private browsing with blocked storage).
       // This is an install id — it resets if localStorage is cleared. Not a hardware serial.
@@ -60,8 +60,8 @@ export function createWebDeviceBackend(): DeviceBackend {
       } catch {
         return '';
       }
-    },
-    getInfo(out: DeviceInfo): DeviceInfo {
+    };
+  out.getInfo = (out: DeviceInfo): DeviceInfo => {
       const nav = typeof navigator !== 'undefined' ? navigator : null;
       const ua = nav?.userAgent ?? '';
       const uadPlatform: string | undefined = (nav as { userAgentData?: { platform?: string } } | null)?.userAgentData
@@ -101,8 +101,8 @@ export function createWebDeviceBackend(): DeviceBackend {
       // webViewVersion is not exposed by browsers (we are the browser).
       out.webViewVersion = '';
       return out;
-    },
-    getSafeAreaInsets(out: SafeAreaInsets): SafeAreaInsets {
+    };
+  out.getSafeAreaInsets = (out: SafeAreaInsets): SafeAreaInsets => {
       // Reading CSS env(safe-area-inset-*) requires a probe element in the DOM. The web backend
       // returns zero insets by default. Call enableWebSafeAreaInsets() to mount a live CSS-var probe
       // that updates this when the device reports real insets (notched PWAs).
@@ -119,8 +119,8 @@ export function createWebDeviceBackend(): DeviceBackend {
         out.top = 0;
       }
       return out;
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 export function enableWebSafeAreaInsets(): () => void {
@@ -135,12 +135,12 @@ export function enableWebSafeAreaInsets(): () => void {
 
   function readInsets(): void {
     const style = getComputedStyle(el);
-    _safeAreaInsets = createEntity({
-      bottom: parseFloat(style.bottom) || 0,
-      left: parseFloat(style.left) || 0,
-      right: parseFloat(style.right) || 0,
-      top: parseFloat(style.top) || 0,
-    });
+        const _entity = allocateEntity<DeviceBackend>();
+    _entity.bottom = parseFloat(style.bottom) || 0;
+    _entity.left = parseFloat(style.left) || 0;
+    _entity.right = parseFloat(style.right) || 0;
+    _entity.top = parseFloat(style.top) || 0;
+    _safeAreaInsets = finishEntity(_entity);
   }
 
   readInsets();

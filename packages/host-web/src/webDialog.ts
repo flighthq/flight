@@ -30,37 +30,37 @@ import type {
 export { webMessageDialogBackend, webPromptDialogBackend } from '@flighthq/dialog/contract';
 
 export const webDirectoryOpenDialogBackend = (() => {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<DirectoryOpenDialogBackend>();
   out.open = openDirectory;
   return finishEntity(out);
 })();
 
 export const webFileOpenDialogBackend = (() => {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<FileOpenDialogBackend>();
   out.open = openFile;
   return finishEntity(out);
 })();
 
 export const webFileSaveDialogBackend = (() => {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<FileSaveDialogBackend>();
   out.save = saveFile;
   return finishEntity(out);
 })();
 
 export const webImageOpenDialogBackend = (() => {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<ImageOpenDialogBackend>();
   out.open = openImage;
   return finishEntity(out);
 })();
 
 export const webPhotoCaptureDialogBackend = (() => {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<PhotoCaptureDialogBackend>();
   out.capture = capturePhoto;
   return finishEntity(out);
 })();
 
 export const webVideoCaptureDialogBackend = (() => {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<VideoCaptureDialogBackend>();
   out.capture = captureVideo;
   return finishEntity(out);
 })();

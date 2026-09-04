@@ -83,7 +83,7 @@ export function makeTween<T extends object>(
 ): Tween<T> {
   const keys = Object.keys(propertyMap);
   const properties: TweenPropertyDetail[] = keys.map((key) => ({ change: 0, key, start: 0 }));
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Tween<T>>();
   out.complete = false;
   out.delay = options?.delay ?? 0;
   out.duration = duration;

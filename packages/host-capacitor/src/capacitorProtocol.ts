@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorPluginListenerHandle,
@@ -6,13 +6,13 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createCapacitorProtocolCapabilities(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
-  return createEntity({
-    open: createEntity({
+    const out = allocateEntity<CapacitorProtocolCapabilities>();
+  out.open = createEntity({
       subscribe: (listener: (url: string) => void) => {
         return toCapacitorUnsubscribe(capacitor.app.addListener('appUrlOpen', (event) => listener(event.url)));
       },
-    }),
-  });
+    });
+  return finishEntity(out);
 }
 
 function toCapacitorUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {

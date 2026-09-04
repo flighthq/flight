@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronPowerCapabilities,
@@ -31,15 +31,13 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
   const powerSaveBlocker = electron.powerSaveBlocker;
   let blockerId = -1;
 
-  const backends: Omit<ElectronPowerCapabilities, 'thermal'> = createEntity({
-    // The main process reports no battery detail, so every field stays at the domain's unknown
-    // encoding. The slot exists because Electron IS the host that would carry it once available.
-    batteryHealth: createEntity<EntityWithoutRuntime<PowerBatteryHealthBackend>>({
+  const backends = allocateEntity<ElectronPowerCapabilities>();
+  backends.batteryHealth = createEntity<EntityWithoutRuntime<PowerBatteryHealthBackend>>({
       getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth {
         return out;
       },
-    }),
-    change: createEntity<EntityWithoutRuntime<PowerChangeBackend>>({
+    });
+  backends.change = createEntity<EntityWithoutRuntime<PowerChangeBackend>>({
       subscribe(listener: () => void): () => void {
         powerMonitor.on('on-battery', listener);
         powerMonitor.on('on-ac', listener);
@@ -48,18 +46,16 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
           powerMonitor.removeListener('on-ac', listener);
         };
       },
-    }),
-    idle: createEntity<EntityWithoutRuntime<PowerIdleBackend>>({
+    });
+  backends.idle = createEntity<EntityWithoutRuntime<PowerIdleBackend>>({
       getIdleState(thresholdSeconds: number): PowerIdleState {
         return toIdleState(powerMonitor.getSystemIdleState(thresholdSeconds));
       },
       getIdleTimeSeconds(): number {
         return powerMonitor.getSystemIdleTime();
       },
-    }),
-    // powerSaveBlocker is synchronous; it lifts into the common async result by resolving immediately,
-    // so a caller writes one code path for every host.
-    keepAwake: createEntity<EntityWithoutRuntime<PowerKeepAwakeBackend>>({
+    });
+  backends.keepAwake = createEntity<EntityWithoutRuntime<PowerKeepAwakeBackend>>({
       acquire(mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> {
         if (blockerId >= 0) return Promise.resolve({ reason: 'ok' });
         try {
@@ -91,8 +87,8 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
         blockerId = -1;
         return Promise.resolve({ reason: 'ok' });
       },
-    }),
-    sessionLock: createEntity<EntityWithoutRuntime<PowerSessionLockBackend>>({
+    });
+  backends.sessionLock = createEntity<EntityWithoutRuntime<PowerSessionLockBackend>>({
       subscribeLock(listener: () => void): () => void {
         powerMonitor.on('lock-screen', listener);
         return () => powerMonitor.removeListener('lock-screen', listener);
@@ -101,8 +97,8 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
         powerMonitor.on('unlock-screen', listener);
         return () => powerMonitor.removeListener('unlock-screen', listener);
       },
-    }),
-    status: createEntity<EntityWithoutRuntime<PowerStatusBackend>>({
+    });
+  backends.status = createEntity<EntityWithoutRuntime<PowerStatusBackend>>({
       getStatus(out: PowerStatus): PowerStatus {
         const onBattery = powerMonitor.onBatteryPower === true;
         out.batteryLevel = -1;
@@ -115,8 +111,8 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
         out.thermalState = readThermalState(powerMonitor);
         return out;
       },
-    }),
-    suspension: createEntity<EntityWithoutRuntime<PowerSuspensionBackend>>({
+    });
+  backends.suspension = createEntity<EntityWithoutRuntime<PowerSuspensionBackend>>({
       subscribeResume(listener: () => void): () => void {
         powerMonitor.on('resume', listener);
         return () => powerMonitor.removeListener('resume', listener);
@@ -125,8 +121,7 @@ export function createElectronPowerBackends(electron: ElectronApi): ElectronPowe
         powerMonitor.on('suspend', listener);
         return () => powerMonitor.removeListener('suspend', listener);
       },
-    }),
-  });
+    });
 
   // ★ THE SLOT EXISTS ONLY IF THE STATE IS READABLE. Electron's thermal-state-change event carries no
   // payload, so an installed API without getCurrentThermalState could only announce that something

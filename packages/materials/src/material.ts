@@ -4,7 +4,7 @@ import type { Kind, Material } from '@flighthq/types/contract';
 // Structural shallow clone of any material entity. Scalar fields and kind are copied by
 // value; Texture/map handle references are shared (they are not owned by the material).
 export function cloneMaterial(source: Readonly<Material>): Material {
-  const clone = allocateEntity<unknown>();
+  const clone = allocateEntity<Material>();
   clone.kind = source.kind;
   copyMaterialFields(clone, source, source.kind);
   return clone;

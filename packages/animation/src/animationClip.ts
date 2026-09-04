@@ -17,7 +17,7 @@ export function cloneAnimationClip(clip: Readonly<AnimationClip>): AnimationClip
     channels.push(createAnimationChannel(cloneAnimationTrack(channel.track), channel.targetRef));
   }
   const events = clip.events.map((event) => createAnimationClipEvent(event.time, event.name, event.payload));
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AnimationClip>();
   out.channels = channels;
   out.duration = clip.duration;
   out.events = events;

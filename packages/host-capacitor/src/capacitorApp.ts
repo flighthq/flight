@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorAndroidAppCapabilities,
@@ -34,18 +34,20 @@ export function createCapacitorAppCapabilities(
       version = info.version;
     })
     .catch(() => {});
-  const common: CapacitorCommonAppCapabilities = createEntity({
-    activate: createEntity({
+  const common = (() => {
+    const out = allocateEntity<CapacitorCommonAppCapabilities>();
+    out.activate = createEntity({
       subscribe: (listener: () => void) =>
         toCapacitorUnsubscribe(
           capacitor.app.addListener('appStateChange', (state) => {
             if (state.isActive) listener();
           }),
         ),
-    }),
-    name: createEntity({ getName: () => name }),
-    version: createEntity({ getVersion: () => version }),
-  });
+    });
+    out.name = createEntity({ getName: () => name });
+    out.version = createEntity({ getVersion: () => version });
+    return finishEntity(out);
+  })();
   if (profile === 'ios') return common;
   return createEntity({
     ...common,

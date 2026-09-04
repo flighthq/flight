@@ -719,7 +719,7 @@ function parseDragonBonesMeshDisplay(
     return null;
   }
   const uvs = toFloat32Array(display.uvs);
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<MeshAttachment2D>();
   out.kind = MeshAttachment2DKind;
   out.name = typeof display.name === 'string' ? display.name : null;
   out.skin = null;
@@ -827,7 +827,7 @@ function parseDragonBonesWeightedMesh(
       { meshes: 1 },
     );
   }
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<MeshAttachment2D>();
   out.kind = MeshAttachment2DKind;
   out.name = typeof display.name === 'string' ? display.name : null;
   out.skin = createSkin2D(influenceCounts, Float32Array.from(influences));
@@ -857,7 +857,7 @@ function parseDragonBonesDisplayList(
 // are left 0 here to be resolved at atlas-binding time, mirroring how a display references its region by name.
 function parseDragonBonesRegionDisplay(display: Record<string, unknown>): RegionAttachment2D {
   const transform = parseDragonBonesBoneTransform(display.transform);
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<RegionAttachment2D>();
   out.height = 0;
   out.kind = RegionAttachment2DKind;
   out.name = typeof display.name === 'string' ? display.name : null;

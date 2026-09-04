@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityWithoutRuntime,
   InputDropFileBackend,
@@ -16,8 +16,9 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
   webkitTapHighlightColor: string;
 }
 
-export const webInputDropFileBackend = createEntity<EntityWithoutRuntime<InputDropFileBackend>>({
-  subscribe(target: InputTargetHandle, listener: (path: string) => void) {
+  export const webInputDropFileBackend = (() => {
+    const out = allocateEntity<InputDropFileBackend>();
+    out.subscribe = (target: InputTargetHandle, listener: (path: string) => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     const onDragOver = (event: DragEvent): void => event.preventDefault();
@@ -31,11 +32,13 @@ export const webInputDropFileBackend = createEntity<EntityWithoutRuntime<InputDr
       element.removeEventListener('dragover', onDragOver);
       element.removeEventListener('drop', onDrop);
     });
-  },
-}) satisfies InputDropFileBackend;
+  };
+    return finishEntity(out);
+  })();
 
-export const webInputFocusBackend = createEntity<EntityWithoutRuntime<InputFocusBackend>>({
-  subscribe(target: InputTargetHandle, onFocus: () => void, onBlur: () => void) {
+  export const webInputFocusBackend = (() => {
+    const out = allocateEntity<InputFocusBackend>();
+    out.subscribe = (target: InputTargetHandle, onFocus: () => void, onBlur: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return noop;
     element.addEventListener('focus', onFocus);
@@ -44,11 +47,13 @@ export const webInputFocusBackend = createEntity<EntityWithoutRuntime<InputFocus
       element.removeEventListener('focus', onFocus);
       element.removeEventListener('blur', onBlur);
     });
-  },
-}) satisfies InputFocusBackend;
+  };
+    return finishEntity(out);
+  })();
 
-export const webInputPointerLockBackend = createEntity<EntityWithoutRuntime<InputPointerLockBackend>>({
-  exit() {
+  export const webInputPointerLockBackend = (() => {
+    const out = allocateEntity<InputPointerLockBackend>();
+    out.exit = () => {
     if (typeof document === 'undefined') return Promise.resolve(POINTER_LOCK_API_UNAVAILABLE);
     if (document.pointerLockElement === null) return Promise.resolve(POINTER_LOCK_OK);
     const exitPointerLock = document.exitPointerLock;
@@ -65,8 +70,8 @@ export const webInputPointerLockBackend = createEntity<EntityWithoutRuntime<Inpu
       return Promise.resolve(POINTER_LOCK_OK);
     }
     return observation.outcome;
-  },
-  request(target: InputTargetHandle) {
+  };
+    out.request = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return Promise.resolve(POINTER_LOCK_TARGET_NOT_FOUND);
     const requestPointerLock = element.requestPointerLock;
@@ -85,11 +90,13 @@ export const webInputPointerLockBackend = createEntity<EntityWithoutRuntime<Inpu
       () => POINTER_LOCK_OK,
       (error: unknown) => classifyPointerLockRequestFailure(error),
     );
-  },
-}) satisfies InputPointerLockBackend;
+  };
+    return finishEntity(out);
+  })();
 
-export const webInputTargetBackend = createEntity<{ prepare(target: InputTargetHandle): void }>({
-  prepare(target: InputTargetHandle) {
+  export const webInputTargetBackend = (() => {
+    const out = allocateEntity<{ prepare(target: InputTargetHandle): void }>();
+    out.prepare = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;
     element.style.touchAction = 'none';
@@ -97,11 +104,13 @@ export const webInputTargetBackend = createEntity<{ prepare(target: InputTargetH
     element.style.webkitUserSelect = 'none';
     (element.style as WebInputTargetStyle).webkitTapHighlightColor = 'transparent';
     if (element instanceof HTMLCanvasElement) element.style.transform = 'translateZ(0)';
-  },
-}) satisfies InputTargetBackend;
+  };
+    return finishEntity(out);
+  })();
 
-export const webRenderContextBackend = createEntity<EntityWithoutRuntime<RenderContextBackend>>({
-  subscribe(target: InputTargetHandle, onLost: () => void, onRestored: () => void) {
+  export const webRenderContextBackend = (() => {
+    const out = allocateEntity<RenderContextBackend>();
+    out.subscribe = (target: InputTargetHandle, onLost: () => void, onRestored: () => void) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
       return noop;
@@ -116,22 +125,26 @@ export const webRenderContextBackend = createEntity<EntityWithoutRuntime<RenderC
       element.removeEventListener('webglcontextlost', onContextLost);
       element.removeEventListener('webglcontextrestored', onRestored);
     });
-  },
-}) satisfies RenderContextBackend;
+  };
+    return finishEntity(out);
+  })();
 
-export const webRenderSurfaceBackend = createEntity<EntityWithoutRuntime<RenderSurfaceBackend>>({
-  resize(target: InputTargetHandle, width: number, height: number) {
+  export const webRenderSurfaceBackend = (() => {
+    const out = allocateEntity<RenderSurfaceBackend>();
+    out.resize = (target: InputTargetHandle, width: number, height: number) => {
     const element = _inputTargets.get(target);
     if (element === undefined || typeof HTMLCanvasElement === 'undefined' || !(element instanceof HTMLCanvasElement)) {
       return;
     }
     element.width = width;
     element.height = height;
-  },
-}) satisfies RenderSurfaceBackend;
+  };
+    return finishEntity(out);
+  })();
 
 export function createWebInputTargetHandle(element: HTMLElement): InputTargetHandle {
-  const target: InputTargetHandle = createEntity({ __brand: 'InputTargetHandle' as const });
+  const target = allocateEntity<InputTargetHandle>();
+  target.__brand = 'InputTargetHandle' as const;
   _inputTargets.set(target, element);
   return target;
 }

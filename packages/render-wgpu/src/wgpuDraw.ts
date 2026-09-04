@@ -320,7 +320,7 @@ export function createWgpuTextureEntry(
 
   const view = texture.createView();
 
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<WgpuTextureEntry>();
   out.bindings = new Map();
   out.mipLevelCount = 1;
   out.texture = texture;
@@ -563,7 +563,7 @@ function uploadWgpuBitmapEntry(
   device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
   if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<WgpuTextureEntry>();
   out.bindings = new Map();
   out.mipLevelCount = mipLevelCount;
   out.texture = texture;
@@ -625,7 +625,7 @@ function uploadWgpuImageResourceEntry(
   }
   if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<WgpuTextureEntry>();
   out.bindings = new Map();
   out.mipLevelCount = mipLevelCount;
   out.texture = texture;

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorDeviceInfo,
@@ -39,15 +39,15 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
     .catch(() => {
       /* leave '' */
     });
-  return createEntity<Omit<DeviceBackend, keyof Entity>>({
-    getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
+    const out = allocateEntity<DeviceBackend>();
+  out.getCapabilities = (out: DeviceCapabilities): DeviceCapabilities => {
       // `@capacitor/device` reports no input capabilities; report the false sentinels.
       out.hasKeyboard = false;
       out.hasMouse = false;
       out.hasStylus = false;
       return out;
-    },
-    getDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics {
+    };
+  out.getDisplayMetrics = (out: DeviceDisplayMetrics): DeviceDisplayMetrics => {
       // No display metrics on `@capacitor/device`; report the -1 sentinels.
       out.colorDepth = -1;
       out.densityDpi = -1;
@@ -57,11 +57,11 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
       out.physicalWidth = -1;
       out.pixelRatio = -1;
       return out;
-    },
-    getId(): string {
+    };
+  out.getId = (): string => {
       return cachedId;
-    },
-    getInfo(out: DeviceInfo): DeviceInfo {
+    };
+  out.getInfo = (out: DeviceInfo): DeviceInfo => {
       const info = cachedInfo;
       out.arch = '';
       out.availableMemory = -1;
@@ -89,16 +89,16 @@ export function createCapacitorDeviceBackend(capacitor: CapacitorApi): DeviceBac
       out.totalMemory = -1;
       out.webViewVersion = info?.webViewVersion ?? '';
       return out;
-    },
-    getSafeAreaInsets(out: SafeAreaInsets): SafeAreaInsets {
+    };
+  out.getSafeAreaInsets = (out: SafeAreaInsets): SafeAreaInsets => {
       // No safe-area call on `@capacitor/device`; report zero insets.
       out.top = 0;
       out.right = 0;
       out.bottom = 0;
       out.left = 0;
       return out;
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Capacitor's platform is 'ios' | 'android' | 'web'; a mobile platform is a phone (no tablet signal),

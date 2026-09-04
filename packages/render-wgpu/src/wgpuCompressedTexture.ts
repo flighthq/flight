@@ -175,7 +175,7 @@ function uploadWgpuCompressedImage(
   const view = texture.createView();
   const resources = getWgpuRenderStateDeviceResources(state);
   const sampler = state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
-  const out = allocateEntity<Omit<WgpuTextureEntry, keyof Entity>>();
+  const out = allocateEntity<WgpuTextureEntry>();
   out.bindings = new Map();
   out.mipLevelCount = container.mipLevels;
   out.sampler = sampler;

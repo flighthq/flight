@@ -15,7 +15,7 @@ import type {
 export function createOrthographicProjection(
   opts: Readonly<OrthographicProjectionOptions>,
 ): OrthographicProjection & Entity {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<OrthographicProjection>();
   out.halfHeight = opts.halfHeight;
   out.halfWidth = opts.halfWidth;
   out.kind = 'orthographic';
@@ -27,7 +27,7 @@ export function createOrthographicProjection(
 export function createPerspectiveProjection(
   opts: Readonly<PerspectiveProjectionOptions>,
 ): PerspectiveProjection & Entity {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<PerspectiveProjection>();
   out.aspect = opts.aspect ?? 1;
   out.fovY = opts.fovY;
   out.kind = 'perspective';

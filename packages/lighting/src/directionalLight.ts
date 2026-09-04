@@ -5,7 +5,7 @@ import { DirectionalLightKind, UnitlessLightUnit } from '@flighthq/types/contrac
 
 // Independent copy of a directional light's data, including a fresh `direction` vector.
 export function cloneDirectionalLight(source: Readonly<DirectionalLight>): DirectionalLight {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<DirectionalLight>();
   out.cascadeCount = source.cascadeCount;
   out.cascadeSplits = source.cascadeSplits.slice();
   out.castsShadow = source.castsShadow;

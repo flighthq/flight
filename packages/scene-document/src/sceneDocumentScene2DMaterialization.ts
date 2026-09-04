@@ -1,4 +1,4 @@
-import { createEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
@@ -56,16 +56,13 @@ export function createFlightDocumentFromScene2D(
   const writtenNodes = new Map<Readonly<NodeAny>, FlightDocumentNode>();
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
-  return createEntity({
-    backgroundColor: source.color,
-    kind: 'Scene2D',
-    layouts: writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes),
-    scene,
-    // A live scene carries substituted values, not the references that produced them, so a token
-    // section cannot be recovered by writing one back. Callers that round-trip an authored document
-    // keep its tokens from the parsed entry rather than from the scene.
-    tokens: [],
-  });
+    const out = allocateEntity<FlightDocumentScene2D>();
+  out.backgroundColor = source.color;
+  out.kind = 'Scene2D';
+  out.layouts = writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes);
+  out.scene = scene;
+  out.tokens = [];
+  return finishEntity(out);
 }
 
 export function createFlightDocumentScene2DMaterialization(
@@ -123,7 +120,11 @@ export function createFlightDocumentScene2DMaterialization(
     materializedNodes,
   );
   if (layoutBindings === null) return null;
-  return createEntity({ interactiveStateBindings, layoutBindings, scene });
+    const out = allocateEntity<FlightDocumentScene2DMaterialization>();
+  out.interactiveStateBindings = interactiveStateBindings;
+  out.layoutBindings = layoutBindings;
+  out.scene = scene;
+  return finishEntity(out);
 }
 
 export function createFlightDocumentScene2DMaterializationFromText(

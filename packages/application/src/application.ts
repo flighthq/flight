@@ -63,7 +63,7 @@ export function attachApplicationLifecycle(app: Application, win: ApplicationWin
 }
 
 export function createApplication(): Application {
-  const out = allocateEntity<EntityWithoutRuntime<Application>>();
+  const out = allocateEntity<Application>();
   out.deltaTime = 0;
   out.elapsedTime = 0;
   out.frameCount = 0;

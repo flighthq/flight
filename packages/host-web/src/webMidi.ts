@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createMidiAccessResource,
   createMidiInputPortResource,
@@ -108,21 +108,28 @@ function createWebMidiProfile(
     return access;
   }
 
-  const access = createEntity({
-    async requestAccess() {
+  const access = (() => {
+    const out = allocateEntity<WebMidiAccessCapabilities>();
+    out.requestAccess = async () => {
       try {
         const native = await api.requestMIDIAccess();
         return { access: toAccess(native), reason: 'accepted' } as const;
       } catch (error) {
         return { reason: classifyWebMidiRequestFailure(error) } as const;
       }
-    },
-  });
-  if (!includePermission) return createEntity({ access });
-  const permission = createEntity({
-    getPermission: () => queryWebMidiPermission(api.permissions),
-  });
-  return createEntity({ access, permission });
+    };
+    return finishEntity(out);
+  })();
+  if (!includePermission) return (() => { const out = allocateEntity<WebMidiAccessCapabilities>(); out.access = access; return finishEntity(out); })();
+  const permission = (() => {
+    const out = allocateEntity<WebMidiAccessCapabilities>();
+    out.getPermission = () => queryWebMidiPermission(api.permissions);
+    return finishEntity(out);
+  })();
+    const out = allocateEntity<WebMidiAccessCapabilities>();
+  out.access = access;
+  out.permission = permission;
+  return finishEntity(out);
 }
 
 function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>(
@@ -137,8 +144,9 @@ function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>
     return Promise.resolve({ reason: 'operation-failed', releaseFailed: false });
   }
   let released = false;
-  const attachmentEntity = createEntity({
-    async release() {
+  const attachmentEntity = (() => {
+    const out = allocateEntity<WebMidiAccessCapabilities>();
+    out.release = async () => {
       if (released) return { reason: 'ok' } as const;
       try {
         target.removeEventListener(type, eventListener);
@@ -147,8 +155,9 @@ function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>
       } catch {
         return { reason: 'operation-failed' } as const;
       }
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
   const attachment: MidiEventAttachment = attachmentEntity;
   return Promise.resolve({
     attachment,

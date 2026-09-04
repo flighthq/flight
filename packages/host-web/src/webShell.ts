@@ -1,10 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, ShellExternalBackend } from '@flighthq/types/contract';
 
 // Web has exactly one genuine Shell capability. A stable Entity lets every web Host share provider
 // identity without an enabler, reset, ambient selector, or native-operation stubs.
-export const webShellExternalBackend: ShellExternalBackend = createEntity({
-  async open(url) {
+  export const webShellExternalBackend = (() => {
+    const out = allocateEntity<ShellExternalBackend>();
+    out.open = async (url) => {
     if (typeof window === 'undefined' || typeof window.open !== 'function') {
       return { reason: 'operation-failed' };
     }
@@ -13,5 +14,6 @@ export const webShellExternalBackend: ShellExternalBackend = createEntity({
     } catch {
       return { reason: 'operation-failed' };
     }
-  },
-} satisfies Omit<ShellExternalBackend, typeof EntityRuntimeKey>);
+  };
+    return finishEntity(out);
+  })();

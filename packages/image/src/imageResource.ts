@@ -10,7 +10,7 @@ import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@fligh
 // Allocates a new resource identity over the same borrowed host image. The host handle is shared by
 // reference; the clone owns an independent version counter for renderer cache invalidation.
 export function cloneImageResource(resource: Readonly<ImageResource>): ImageResource {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<ImageResource>();
   out.alphaType = resource.alphaType;
   out.gamut = resource.gamut;
   out.height = resource.height;

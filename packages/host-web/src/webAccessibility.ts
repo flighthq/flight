@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AccessibilityBackend,
   AccessibilityLiveness,
@@ -44,22 +44,22 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
     liveRegions.clear();
   }
 
-  return createEntity<EntityWithoutRuntime<AccessibilityBackend>>({
-    announce(message, liveness) {
+    const out = allocateEntity<AccessibilityBackend>();
+  out.announce = (message, liveness) => {
       const unavailable = unavailableRootReason();
       if (unavailable !== null) return { reason: unavailable };
       const overlayRoot = root as HTMLElement;
       const region = getAccessibilityLiveRegion(overlayRoot, liveRegions, liveness);
       region.textContent = message;
       return _OK;
-    },
-    clear() {
+    };
+  out.clear = () => {
       const unavailable = unavailableRootReason();
       if (unavailable !== null) return { reason: unavailable };
       removeOwnedAccessibilityDom();
       return _OK;
-    },
-    destroy() {
+    };
+  out.destroy = () => {
       if (destroyed) return;
       destroyed = true;
       removeOwnedAccessibilityDom();
@@ -67,8 +67,8 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
       root = null;
       // A destroyed provider is terminal and cannot resurrect a new root on a later command.
       rootResolved = true;
-    },
-    removeNode(id) {
+    };
+  out.removeNode = (id) => {
       const unavailable = unavailableRootReason();
       if (unavailable !== null) return { reason: unavailable };
       const element = elements.get(id);
@@ -79,16 +79,16 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
       }
       element.remove();
       return _OK;
-    },
-    setFocus(id) {
+    };
+  out.setFocus = (id) => {
       const unavailable = unavailableRootReason();
       if (unavailable !== null) return { reason: unavailable };
       const element = elements.get(id);
       if (element === undefined) return _NODE_NOT_FOUND;
       element.focus();
       return element.ownerDocument.activeElement === element ? _OK : _FOCUS_NOT_MOVED;
-    },
-    setNode(node) {
+    };
+  out.setNode = (node) => {
       const unavailable = unavailableRootReason();
       if (unavailable !== null) return { reason: unavailable };
       const overlayRoot = root as HTMLElement;
@@ -101,8 +101,8 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
       applyAccessibilityElementAttributes(element, node);
       reparentAccessibilityElement(element, node.parentId, elements, overlayRoot);
       return _OK;
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // The stable provider composed into webHost. It remains passive until a command first needs its root.

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
   ElectronApi,
@@ -8,11 +8,10 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createElectronShortcutQueryBackend(electron: ElectronApi): ShortcutQueryBackend {
-  const provider = createEntity({
-    async isRegistered(accelerator: Accelerator) {
+  const provider = allocateEntity<ShortcutQueryBackend>();
+  provider.isRegistered = async (accelerator: Accelerator) => {
       return electron.globalShortcut.isRegistered(accelerator);
-    },
-  });
+    };
   return provider;
 }
 
@@ -29,8 +28,9 @@ export function createElectronShortcutTriggerBackend(electron: ElectronApi): Sho
     }
   }
 
-  const provider = createEntity({
-    async destroy() {
+  const provider = (() => {
+    const out = allocateEntity<ShortcutQueryBackend>();
+    out.destroy = async () => {
       let firstError: unknown;
       const accelerators = new Set(registrations.values());
       for (const accelerator of accelerators) {
@@ -41,20 +41,21 @@ export function createElectronShortcutTriggerBackend(electron: ElectronApi): Sho
         }
       }
       if (firstError !== undefined) throw firstError;
-    },
-    async subscribe(accelerator: Accelerator, trigger: () => void) {
+    };
+    out.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
       const subscription = createEntity();
       const registered = globalShortcut.register(accelerator, trigger);
       if (!registered) return { reason: 'refused' as const };
       registrations.set(subscription, accelerator);
       return { reason: 'subscribed' as const, subscription };
-    },
-    async unsubscribe(subscription: ShortcutTriggerSubscription) {
+    };
+    out.unsubscribe = async (subscription: ShortcutTriggerSubscription) => {
       const accelerator = registrations.get(subscription);
       if (accelerator === undefined) return { reason: 'unknown-subscription' as const };
       await releaseAccelerator(accelerator);
       return { reason: 'unsubscribed' as const };
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
   return provider;
 }

@@ -6,7 +6,7 @@ import type { SpringConfig } from '@flighthq/types/contract';
 // shared profile. Bouncy is quick and underdamped for visible overshoot.
 export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze(
   (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<SpringConfig>();
     out.dampingRatio = 0.35;
     out.frequency = 2;
     return finishEntity(out);
@@ -16,7 +16,7 @@ export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze(
 // A slower, well-damped profile for soft UI movement with only a restrained overshoot.
 export const SpringPresetGentle: Readonly<SpringConfig> = Object.freeze(
   (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<SpringConfig>();
     out.dampingRatio = 0.8;
     out.frequency = 1.5;
     return finishEntity(out);
@@ -26,7 +26,7 @@ export const SpringPresetGentle: Readonly<SpringConfig> = Object.freeze(
 // A high-frequency critical profile for a fast response without overshoot.
 export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze(
   (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<SpringConfig>();
     out.dampingRatio = 1;
     out.frequency = 4;
     return finishEntity(out);

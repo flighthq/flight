@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityWithoutRuntime,
   MenuApplicationBackend,
@@ -24,8 +24,8 @@ export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities 
   const menuModule = tauri.menu;
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
-  return createEntity({
-    application: createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
+    const out = allocateEntity<TauriMenuCapabilities>();
+  out.application = createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
       // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
       // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
       // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
@@ -45,8 +45,8 @@ export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities 
         });
         return true;
       },
-    }),
-    popup: createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
+    });
+  out.popup = createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
       popup(items, x, y): Promise<string | null> {
         return new Promise<string | null>((resolve) => {
           void (async () => {
@@ -56,16 +56,16 @@ export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities 
           })().catch(() => resolve(null));
         });
       },
-    }),
-    select: createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
+    });
+  out.select = createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
       subscribe(listener): () => void {
         selectListener = listener;
         return () => {
           if (selectListener === listener) selectListener = null;
         };
       },
-    }),
-  });
+    });
+  return finishEntity(out);
 }
 
 // Recursively builds Tauri menu item handles from Flight templates. Separators become a predefined

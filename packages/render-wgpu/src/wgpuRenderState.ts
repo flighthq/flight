@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
   createRenderState as _createRenderState,
@@ -52,8 +52,8 @@ export async function createWgpuAcquisitionFromCanvasElement(
 
 export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
   const deviceRuntime = createMinimalDeviceRuntime(device);
-  const state = createEntity({ device }) as WgpuDeviceState;
-  state[EntityRuntimeKey] = deviceRuntime;
+  const state = allocateEntity<WgpuDeviceState>();
+  state.device = device;
   return state;
 }
 
@@ -80,7 +80,7 @@ export function createWgpuOffscreenRenderState(
   const source = sourceOrDeviceState as WgpuRenderState;
   const sourceRuntime = getWgpuRenderStateRuntime(source);
   const lost = sourceRuntime.context.lost;
-  if (lost !== null) return createEntity({ reason: 'device-lost', info: lost });
+  if (lost !== null) return (() => { const out = allocateEntity<WgpuDeviceState>(); out.reason = 'device-lost'; out.info = lost; return finishEntity(out); })();
 
   const derivedPipeline = createWgpuPipeline(sourceRuntime.registries);
   const state = initializeWgpuDeviceRenderState(source.deviceState, derivedPipeline, {
@@ -98,7 +98,10 @@ export function createWgpuOffscreenRenderState(
   runtime.mipmapGenerator = sourceRuntime.mipmapGenerator;
   runtime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   runtime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
-  return createEntity({ reason: 'ok', state });
+    const out = allocateEntity<WgpuDeviceState>();
+  out.reason = 'ok';
+  out.state = state;
+  return finishEntity(out);
 }
 
 // Synchronous: with the handles already in hand there is nothing left to await. Everything asynchronous

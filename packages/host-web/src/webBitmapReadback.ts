@@ -3,7 +3,7 @@ import type { Bitmap, BitmapReadbackBackend, Entity, EntityConstruction } from '
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 export function createWebBitmapReadbackBackend(): BitmapReadbackBackend & Entity {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<BitmapReadbackBackend>();
   out.readBitmap = (source, width, height, mode) => {
     if (typeof document === 'undefined') return { bitmap: null, reason: 'no-canvas' };
     const canvas = document.createElement('canvas');

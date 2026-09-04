@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createNotificationResource } from '@flighthq/notification/contract';
 import type {
   NotificationRequest,
@@ -12,8 +12,8 @@ export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotif
   let destroyed = false;
   let nextId = 1;
 
-  return createEntity({
-    delivery: {
+    const out = allocateEntity<TauriNotificationCapabilities>();
+  out.delivery = {
       async notify(request) {
         if (destroyed) return { reason: 'operation-failed' };
         const invalid = getTauriInvalidNotificationRequestFields(request);
@@ -40,15 +40,15 @@ export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotif
           reason: 'accepted',
         };
       },
-    },
-    lifecycle: {
+    };
+  out.lifecycle = {
       async destroy() {
         if (destroyed) return { reason: 'already-destroyed' };
         destroyed = true;
         return { reason: 'ok' };
       },
-    },
-    permission: {
+    };
+  out.permission = {
       async getPermission() {
         try {
           return {
@@ -69,8 +69,8 @@ export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotif
           return { reason: 'operation-failed' };
         }
       },
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function getTauriInvalidNotificationRequestFields(request: Readonly<NotificationRequest>): NotificationRequestField[] {

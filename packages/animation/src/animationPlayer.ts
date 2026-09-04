@@ -106,7 +106,7 @@ export function advanceAnimationPlayer(player: AnimationPlayer, dt: number): voi
 // by reference — players are lightweight drivers over a clip; clone the clip separately for independent
 // buffers. The clone starts signal-free (onFinished/onLooped null) so listeners are never shared.
 export function cloneAnimationPlayer(player: Readonly<AnimationPlayer>): AnimationPlayer {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AnimationPlayer>();
   out.clip = player.clip;
   out.loop = player.loop;
   out.loopMode = player.loopMode;
@@ -133,7 +133,7 @@ export function createAnimationPlayer(
     time?: number;
   }>,
 ): AnimationPlayer {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AnimationPlayer>();
   out.clip = clip;
   out.loop = opts?.loop ?? true;
   out.loopMode = opts?.loopMode ?? AnimationLoopModeRepeat;

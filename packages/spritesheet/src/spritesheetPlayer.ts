@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from '@flighthq/types/contract';
 
@@ -33,17 +33,17 @@ export function cloneSpritesheetPlayer(player: Readonly<SpritesheetPlayer>): Spr
 }
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
-  return createEntity({
-    animation: obj?.animation ?? null,
-    complete: obj?.complete ?? true,
-    elapsed: obj?.elapsed ?? 0,
-    frameIndex: obj?.frameIndex ?? 0,
-    onComplete: obj?.onComplete ?? createSignal(),
-    onLoop: obj?.onLoop ?? createSignal(),
-    paused: obj?.paused ?? false,
-    queue: obj?.queue ?? [],
-    speed: obj?.speed ?? 1,
-  });
+    const out = allocateEntity<SpritesheetPlayer>();
+  out.animation = obj?.animation ?? null;
+  out.complete = obj?.complete ?? true;
+  out.elapsed = obj?.elapsed ?? 0;
+  out.frameIndex = obj?.frameIndex ?? 0;
+  out.onComplete = obj?.onComplete ?? createSignal();
+  out.onLoop = obj?.onLoop ?? createSignal();
+  out.paused = obj?.paused ?? false;
+  out.queue = obj?.queue ?? [];
+  out.speed = obj?.speed ?? 1;
+  return finishEntity(out);
 }
 
 export function disposeSpritesheetPlayer(player: SpritesheetPlayer): void {

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderOptions,
   CanvasRenderState,
@@ -20,20 +20,19 @@ export * from './canvasRenderTarget';
 export * from './canvasTextureResolver';
 
 export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = (() => {
-  const creator = createEntity({
-    createRenderSurface(width: number, height: number, pixelRatio: number): HTMLCanvasElement {
+  const creator = allocateEntity<CanvasRenderSurfaceCreator>();
+  creator.createRenderSurface = (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
       const canvas = globalThis.document.createElement('canvas');
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       canvas.width = width * pixelRatio;
       canvas.height = height * pixelRatio;
       return canvas;
-    },
-    destroyRenderSurface(canvas: HTMLCanvasElement): void {
+    };
+  creator.destroyRenderSurface = (canvas: HTMLCanvasElement): void => {
       canvas.width = 0;
       canvas.height = 0;
-    },
-  });
+    };
   creator[EntityRuntimeKey] = { binding: null };
   return creator;
 })();

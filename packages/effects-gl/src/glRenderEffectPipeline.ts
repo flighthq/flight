@@ -5,7 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireGlRenderTarget,
   beginGlRenderPass,

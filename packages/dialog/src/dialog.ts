@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityWithoutRuntime,
   HasDialogMessage,
@@ -16,8 +16,8 @@ export const webMessageDialogBackend = createWebMessageDialogBackend();
 export const webPromptDialogBackend = createWebPromptDialogBackend();
 
 function createWebMessageDialogBackend(): MessageDialogBackend {
-  return createEntity<EntityWithoutRuntime<MessageDialogBackend>>({
-    async confirm(options) {
+    const out = allocateEntity<MessageDialogBackend>();
+  out.confirm = async (options) => {
       if (options.signal?.aborted) return false;
       if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
       try {
@@ -25,8 +25,8 @@ function createWebMessageDialogBackend(): MessageDialogBackend {
       } catch {
         return false;
       }
-    },
-    async message(options) {
+    };
+  out.message = async (options) => {
       const checkboxChecked = options.checkboxChecked ?? false;
       if (options.signal?.aborted) return { buttonIndex: options.cancelId ?? 0, cancelled: true, checkboxChecked };
       if (typeof window === 'undefined' || typeof window.alert !== 'function') {
@@ -38,13 +38,13 @@ function createWebMessageDialogBackend(): MessageDialogBackend {
         return { buttonIndex: 0, cancelled: false, checkboxChecked };
       }
       return { buttonIndex: 0, cancelled: false, checkboxChecked };
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function createWebPromptDialogBackend(): PromptDialogBackend {
-  return createEntity<EntityWithoutRuntime<PromptDialogBackend>>({
-    async prompt(options) {
+    const out = allocateEntity<PromptDialogBackend>();
+  out.prompt = async (options) => {
       if (options.signal?.aborted) return null;
       if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
       try {
@@ -52,8 +52,8 @@ function createWebPromptDialogBackend(): PromptDialogBackend {
       } catch {
         return null;
       }
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 export function showConfirmDialog(host: HasDialogMessage, options: Readonly<MessageDialogOptions>): Promise<boolean> {

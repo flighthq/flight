@@ -1,5 +1,5 @@
 import { notifyWindowClosed } from '@flighthq/application/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationWindow,
@@ -92,12 +92,12 @@ export function createTauriWindowBackend(
     );
     return true;
   };
-  return createEntity({
-    attach(win, handle, ownership) {
+    const out = allocateEntity<WindowBackend>();
+  out.attach = (win, handle, ownership) => {
       if (!isTauriWindow(handle)) return false;
       return attach(win, handle, ownership);
-    },
-    open(win, options) {
+    };
+  out.open = (win, options) => {
       const w = windowModule.getCurrentWindow();
       if (!attach(win, w, 'host')) return false;
       if (options.title !== undefined) w.setTitle(options.title).catch(() => {});
@@ -121,88 +121,85 @@ export function createTauriWindowBackend(
       if (options.visible === false) w.hide().catch(() => {});
       else w.show().catch(() => {});
       return true;
-    },
-    close(win) {
+    };
+  out.close = (win) => {
       const record = detach(win);
       if (record?.ownership === 'flight') record.handle.close().catch(() => {});
-    },
-    setTitle(win, title) {
+    };
+  out.setTitle = (win, title) => {
       run(win, (w) => w.setTitle(title));
-    },
-    setPosition(win, x, y) {
+    };
+  out.setPosition = (win, x, y) => {
       run(win, (w) => w.setPosition(new windowModule.LogicalPosition(x, y)));
-    },
-    setSize(win, width, height) {
+    };
+  out.setSize = (win, width, height) => {
       run(win, (w) => w.setSize(new windowModule.LogicalSize(width, height)));
-    },
-    getBounds(win, out) {
+    };
+  out.getBounds = (win, out) => {
       // Tauri's position/size are async; report the entity's mirrored bounds rather than block.
       out.x = win.x;
       out.y = win.y;
       out.width = win.width;
       out.height = win.height;
       return out;
-    },
-    minimize(win) {
+    };
+  out.minimize = (win) => {
       run(win, (w) => w.minimize());
-    },
-    maximize(win) {
+    };
+  out.maximize = (win) => {
       run(win, (w) => w.maximize());
-    },
-    restore(win) {
+    };
+  out.restore = (win) => {
       run(win, (w) => w.unmaximize());
-    },
-    focus(win) {
+    };
+  out.focus = (win) => {
       run(win, (w) => w.setFocus());
-    },
-    show(win) {
+    };
+  out.show = (win) => {
       run(win, (w) => w.show());
-    },
-    hide(win) {
+    };
+  out.hide = (win) => {
       run(win, (w) => w.hide());
-    },
-    center(win) {
+    };
+  out.center = (win) => {
       run(win, (w) => w.center());
-    },
-    setResizable(win, resizable) {
+    };
+  out.setResizable = (win, resizable) => {
       run(win, (w) => w.setResizable(resizable));
-    },
-    setAlwaysOnTop(win, alwaysOnTop) {
+    };
+  out.setAlwaysOnTop = (win, alwaysOnTop) => {
       run(win, (w) => w.setAlwaysOnTop(alwaysOnTop));
-    },
-    setMinimumSize(win, width, height) {
+    };
+  out.setMinimumSize = (win, width, height) => {
       run(win, (w) => w.setMinSize(new windowModule.LogicalSize(width, height)));
-    },
-    setMaximumSize(win, width, height) {
+    };
+  out.setMaximumSize = (win, width, height) => {
       run(win, (w) => w.setMaxSize(new windowModule.LogicalSize(width, height)));
-    },
-    setFullscreen(win, fullscreen) {
+    };
+  out.setFullscreen = (win, fullscreen) => {
       run(win, (w) => w.setFullscreen(fullscreen));
-    },
-    setIcon(win, icon) {
+    };
+  out.setIcon = (win, icon) => {
       run(win, (w) => w.setIcon(icon));
-    },
-    setSkipTaskbar(win, skip) {
+    };
+  out.setSkipTaskbar = (win, skip) => {
       run(win, (w) => w.setSkipTaskbar(skip));
-    },
-    requestAttention(win, attention) {
+    };
+  out.requestAttention = (win, attention) => {
       // Tauri's requestUserAttention takes a UserAttentionType (1 = Critical) or null to cancel.
       run(win, (w) => w.requestUserAttention(attention ? 1 : null));
-    },
-    setContentProtection(win, enabled) {
+    };
+  out.setContentProtection = (win, enabled) => {
       run(win, (w) => w.setContentProtected(enabled));
-    },
-    flashWindowFrame(win) {
+    };
+  out.flashWindowFrame = (win) => {
       // Map a one-shot frame flash to an informational (2) attention request.
       run(win, (w) => w.requestUserAttention(2));
-    },
-    setHasShadow(win, hasShadow) {
+    };
+  out.setHasShadow = (win, hasShadow) => {
       run(win, (w) => w.setShadow(hasShadow));
-    },
-  } satisfies Omit<
-    WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>,
-    typeof EntityRuntimeKey
-  >);
+    };
+  return finishEntity(out);
 }
 
 interface TauriWindowRecord {

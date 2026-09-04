@@ -24,7 +24,7 @@ interface DomTextData extends RendererData {
 }
 
 function createDomTextData(_state: RenderState, _source: Renderable): DomTextData {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<DomTextData>();
   out.div = null;
   return finishEntity(out);
 }

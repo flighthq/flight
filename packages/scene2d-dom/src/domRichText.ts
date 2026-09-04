@@ -36,7 +36,7 @@ interface DomRichTextData extends RendererData {
 }
 
 function createDomRichTextData(_state: RenderState, _source: Renderable): DomRichTextData {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<DomRichTextData>();
   out.div = null;
   return finishEntity(out);
 }

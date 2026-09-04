@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -233,68 +233,108 @@ export function computeWorldAccelerationFromDeviceAcceleration(
 
 // Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
 export function createAmbientLightReading(): AmbientLightReading {
-  return createEntity({ accuracy: 'unknown', illuminance: 0, interval: -1, timestamp: -1 });
+    const out = allocateEntity<void>();
+  out.accuracy = 'unknown';
+  out.illuminance = 0;
+  out.interval = -1;
+  out.timestamp = -1;
+  return finishEntity(out);
 }
 
 // Allocates a zeroed MotionReading with unknown accuracy/interval/timestamp.
 // Used for accelerometer (gravity-included), linear acceleration, gravity vector, and magnetometer readings.
 export function createMotionReading(): MotionReading {
-  return createEntity({ accuracy: 'unknown', interval: -1, timestamp: -1, x: 0, y: 0, z: 0 });
+    const out = allocateEntity<void>();
+  out.accuracy = 'unknown';
+  out.interval = -1;
+  out.timestamp = -1;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  return finishEntity(out);
 }
 
 // Allocates a zeroed OrientationReading. heading is -1 (unknown) and absolute is false until
 // a reading arrives.
 export function createOrientationReading(): OrientationReading {
-  return createEntity({
-    absolute: false,
-    accuracy: 'unknown',
-    alpha: 0,
-    beta: 0,
-    gamma: 0,
-    heading: -1,
-    interval: -1,
-    timestamp: -1,
-  });
+    const out = allocateEntity<void>();
+  out.absolute = false;
+  out.accuracy = 'unknown';
+  out.alpha = 0;
+  out.beta = 0;
+  out.gamma = 0;
+  out.heading = -1;
+  out.interval = -1;
+  out.timestamp = -1;
+  return finishEntity(out);
 }
 
 // Allocates a zeroed PressureReading with unknown accuracy/interval/timestamp.
 // altitude is -1 when underivable from pressure alone.
 export function createPressureReading(): PressureReading {
-  return createEntity({ accuracy: 'unknown', altitude: -1, interval: -1, pressure: 0, timestamp: -1 });
+    const out = allocateEntity<void>();
+  out.accuracy = 'unknown';
+  out.altitude = -1;
+  out.interval = -1;
+  out.pressure = 0;
+  out.timestamp = -1;
+  return finishEntity(out);
 }
 
 // Allocates a zeroed ProximityReading with unknown accuracy/interval/timestamp.
 // distance and max are -1 when only near/far is known.
 export function createProximityReading(): ProximityReading {
-  return createEntity({ accuracy: 'unknown', distance: -1, interval: -1, max: -1, near: false, timestamp: -1 });
+    const out = allocateEntity<void>();
+  out.accuracy = 'unknown';
+  out.distance = -1;
+  out.interval = -1;
+  out.max = -1;
+  out.near = false;
+  out.timestamp = -1;
+  return finishEntity(out);
 }
 
 // Allocates a zeroed QuaternionReading (identity quaternion: w=1) with unknown accuracy/interval/timestamp.
 export function createQuaternionReading(): QuaternionReading {
-  return createEntity({ accuracy: 'unknown', interval: -1, timestamp: -1, w: 1, x: 0, y: 0, z: 0 });
+    const out = allocateEntity<void>();
+  out.accuracy = 'unknown';
+  out.interval = -1;
+  out.timestamp = -1;
+  out.w = 1;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  return finishEntity(out);
 }
 
 // Allocates a zeroed RotationRateReading with unknown accuracy/interval/timestamp.
 // alpha/beta/gamma are angular velocity in deg/s around the device z/x/y axes respectively.
 export function createRotationRateReading(): RotationRateReading {
-  return createEntity({ accuracy: 'unknown', alpha: 0, beta: 0, gamma: 0, interval: -1, timestamp: -1 });
+    const out = allocateEntity<void>();
+  out.accuracy = 'unknown';
+  out.alpha = 0;
+  out.beta = 0;
+  out.gamma = 0;
+  out.interval = -1;
+  out.timestamp = -1;
+  return finishEntity(out);
 }
 
 // Allocates a Sensors event entity with inert signals; call attachSensors to start delivery.
 export function createSensors(): Sensors {
-  return createEntity({
-    onAbsoluteOrientation: createSignal(),
-    onAccelerometer: createSignal(),
-    onAmbientLight: createSignal(),
-    onBarometer: createSignal(),
-    onGravity: createSignal(),
-    onGyroscope: createSignal(),
-    onLinearAcceleration: createSignal(),
-    onMagnetometer: createSignal(),
-    onOrientation: createSignal(),
-    onProximity: createSignal(),
-    onQuaternion: createSignal(),
-  });
+    const out = allocateEntity<void>();
+  out.onAbsoluteOrientation = createSignal();
+  out.onAccelerometer = createSignal();
+  out.onAmbientLight = createSignal();
+  out.onBarometer = createSignal();
+  out.onGravity = createSignal();
+  out.onGyroscope = createSignal();
+  out.onLinearAcceleration = createSignal();
+  out.onMagnetometer = createSignal();
+  out.onOrientation = createSignal();
+  out.onProximity = createSignal();
+  out.onQuaternion = createSignal();
+  return finishEntity(out);
 }
 
 // Builds the default web backend over the devicemotion, deviceorientation, and deviceorientationabsolute
@@ -309,46 +349,46 @@ export function createWebSensorsBackend(): SensorsBackend {
   // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
   // the runtime slot: `createEntity<SensorsBackend>` cannot work, because createEntity's type parameter
   // IS its parameter type, so naming the finished type would demand the slot it exists to add.
-  return createEntity<Omit<SensorsBackend, typeof EntityRuntimeKey>>({
-    getPermissionState(sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> {
+    const out = allocateEntity<SensorsBackend>();
+  out.getPermissionState = (sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> => {
       return getWebSensorsPermissionState(sensor);
-    },
-    isAmbientLightSupported(): boolean {
+    };
+  out.isAmbientLightSupported = (): boolean => {
       return getWebGenericSensorConstructor('AmbientLightSensor') !== null;
-    },
-    isBarometerSupported(): boolean {
+    };
+  out.isBarometerSupported = (): boolean => {
       // The web platform has no standard Barometer API; always return false.
       return false;
-    },
-    isGravitySupported(): boolean {
+    };
+  out.isGravitySupported = (): boolean => {
       // Gravity is derived from devicemotion (accelerationIncludingGravity - acceleration).
       if (typeof window === 'undefined') return false;
       return typeof DeviceMotionEvent !== 'undefined';
-    },
-    isGyroscopeSupported(): boolean {
+    };
+  out.isGyroscopeSupported = (): boolean => {
       if (typeof window === 'undefined') return false;
       return typeof DeviceMotionEvent !== 'undefined';
-    },
-    isLinearAccelerationSupported(): boolean {
+    };
+  out.isLinearAccelerationSupported = (): boolean => {
       // Linear acceleration is the event.acceleration field of devicemotion.
       if (typeof window === 'undefined') return false;
       return typeof DeviceMotionEvent !== 'undefined';
-    },
-    isMagnetometerSupported(): boolean {
+    };
+  out.isMagnetometerSupported = (): boolean => {
       return getWebMagnetometerConstructor() !== null;
-    },
-    isMotionSupported(): boolean {
+    };
+  out.isMotionSupported = (): boolean => {
       if (typeof window === 'undefined') return false;
       return typeof DeviceMotionEvent !== 'undefined';
-    },
-    isOrientationSupported(): boolean {
+    };
+  out.isOrientationSupported = (): boolean => {
       if (typeof window === 'undefined') return false;
       return typeof DeviceOrientationEvent !== 'undefined';
-    },
-    isProximitySupported(): boolean {
+    };
+  out.isProximitySupported = (): boolean => {
       return false;
-    },
-    async requestPermission() {
+    };
+  out.requestPermission = async () => {
       const request = getWebMotionPermissionRequest();
       if (request === null) return true;
       try {
@@ -357,8 +397,8 @@ export function createWebSensorsBackend(): SensorsBackend {
       } catch {
         return false;
       }
-    },
-    subscribeAbsoluteOrientation(listener, options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeAbsoluteOrientation = (listener, options?: Readonly<SensorSubscribeOptions>) => {
       if (typeof window === 'undefined') return () => {};
       // Try Generic Sensor AbsoluteOrientationSensor first.
       const ctor = getWebGenericSensorConstructor('AbsoluteOrientationSensor');
@@ -405,8 +445,8 @@ export function createWebSensorsBackend(): SensorsBackend {
       return () => {
         window.removeEventListener('deviceorientationabsolute', handler as EventListener);
       };
-    },
-    subscribeAmbientLight(listener, options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeAmbientLight = (listener, options?: Readonly<SensorSubscribeOptions>) => {
       const ctor = getWebGenericSensorConstructor('AmbientLightSensor');
       if (ctor === null) return () => {};
       try {
@@ -427,12 +467,12 @@ export function createWebSensorsBackend(): SensorsBackend {
       } catch {
         return () => {};
       }
-    },
-    subscribeBarometer(_listener, _options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeBarometer = (_listener, _options?: Readonly<SensorSubscribeOptions>) => {
       // No barometer support on the web platform.
       return () => {};
-    },
-    subscribeGravity(listener, _options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeGravity = (listener, _options?: Readonly<SensorSubscribeOptions>) => {
       if (typeof window === 'undefined') return () => {};
       // Derive gravity from the devicemotion event: gravity = accelerationIncludingGravity - acceleration.
       // When acceleration (gravity-removed) is unavailable, we cannot derive gravity.
@@ -451,8 +491,8 @@ export function createWebSensorsBackend(): SensorsBackend {
       return () => {
         window.removeEventListener('devicemotion', handler as EventListener);
       };
-    },
-    subscribeLinearAcceleration(listener, _options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeLinearAcceleration = (listener, _options?: Readonly<SensorSubscribeOptions>) => {
       if (typeof window === 'undefined') return () => {};
       // event.acceleration is the gravity-removed linear acceleration vector.
       const handler = (event: WebDeviceMotionEvent) => {
@@ -469,8 +509,8 @@ export function createWebSensorsBackend(): SensorsBackend {
       return () => {
         window.removeEventListener('devicemotion', handler as EventListener);
       };
-    },
-    subscribeMagnetometer(listener, options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeMagnetometer = (listener, options?: Readonly<SensorSubscribeOptions>) => {
       const ctor = getWebMagnetometerConstructor();
       if (ctor === null) return () => {};
       try {
@@ -493,8 +533,8 @@ export function createWebSensorsBackend(): SensorsBackend {
       } catch {
         return () => {};
       }
-    },
-    subscribeMotion(listener, _options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeMotion = (listener, _options?: Readonly<SensorSubscribeOptions>) => {
       if (typeof window === 'undefined') return () => {};
       const handler = (event: WebDeviceMotionEvent) => {
         const accel = event.accelerationIncludingGravity;
@@ -515,8 +555,8 @@ export function createWebSensorsBackend(): SensorsBackend {
       return () => {
         window.removeEventListener('devicemotion', handler as EventListener);
       };
-    },
-    subscribeOrientation(listener, _options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeOrientation = (listener, _options?: Readonly<SensorSubscribeOptions>) => {
       if (typeof window === 'undefined') return () => {};
       const handler = (event: WebDeviceOrientationEvent) => {
         _orientation.alpha = event.alpha ?? 0;
@@ -534,12 +574,12 @@ export function createWebSensorsBackend(): SensorsBackend {
       return () => {
         window.removeEventListener('deviceorientation', handler as EventListener);
       };
-    },
-    subscribeProximity(_listener, _options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeProximity = (_listener, _options?: Readonly<SensorSubscribeOptions>) => {
       // No proximity sensor support on the standard web platform.
       return () => {};
-    },
-    subscribeQuaternion(listener, options?: Readonly<SensorSubscribeOptions>) {
+    };
+  out.subscribeQuaternion = (listener, options?: Readonly<SensorSubscribeOptions>) => {
       const ctor = getWebGenericSensorConstructor('AbsoluteOrientationSensor');
       if (ctor === null) return () => {};
       try {
@@ -564,8 +604,8 @@ export function createWebSensorsBackend(): SensorsBackend {
       } catch {
         return () => {};
       }
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Stops delivery to `sensors` and forgets its subscription. Safe to call when not attached.

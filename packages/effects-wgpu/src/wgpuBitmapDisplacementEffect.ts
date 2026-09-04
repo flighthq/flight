@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import type {
   EntityWithoutRuntime,
@@ -139,9 +139,9 @@ function getBitmapDisplacementPipeline(state: WgpuRenderState, format: GPUTextur
   const layout = state.device.createPipelineLayout({
     bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout],
   });
-  pipeline = createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({
-    blendMode: 'replace',
-    pipeline: state.device.createRenderPipeline({
+    const _entity = allocateEntity<WgpuEffectPipeline>();
+  _entity.blendMode = 'replace';
+  _entity.pipeline = state.device.createRenderPipeline({
       layout,
       vertex: { module: shaderModule, entryPoint: 'vs_main' },
       fragment: {
@@ -150,8 +150,8 @@ function getBitmapDisplacementPipeline(state: WgpuRenderState, format: GPUTextur
         targets: [{ format, blend: REPLACE_BLEND }],
       },
       primitive: { topology: 'triangle-list' },
-    }),
-  });
+    });
+  pipeline = finishEntity(_entity);
   byFormat.set(format, pipeline);
   return pipeline;
 }

@@ -1,5 +1,5 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   DirectoryOpenDialogBackend,
   DirectoryOpenDialogResult,
@@ -17,8 +17,8 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createTauriDirectoryOpenDialogBackend(tauri: TauriApi): DirectoryOpenDialogBackend & Entity {
-  return createEntity({
-    async open(options): Promise<DirectoryOpenDialogResult> {
+    const out = allocateEntity<DirectoryOpenDialogBackend>();
+  out.open = async (options): Promise<DirectoryOpenDialogResult> => {
       if (options?.signal?.aborted) return { outcome: 'cancelled' };
       const open = tauri.dialog?.open;
       if (typeof open !== 'function') return { outcome: 'runtime-unavailable' };
@@ -35,8 +35,8 @@ export function createTauriDirectoryOpenDialogBackend(tauri: TauriApi): Director
       } catch (error) {
         return { outcome: classifyFailure(error, 'directory-open-failed') };
       }
-    },
-  } satisfies Omit<DirectoryOpenDialogBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 export function createTauriFileOpenDialogBackend(tauri: TauriApi): FileOpenDialogBackend & Entity {
@@ -67,8 +67,8 @@ export function createTauriFileOpenDialogBackend(tauri: TauriApi): FileOpenDialo
 }
 
 export function createTauriFileSaveDialogBackend(tauri: TauriApi): FileSaveDialogBackend & Entity {
-  return createEntity({
-    async save(options): Promise<FileSaveDialogResult> {
+    const out = allocateEntity<FileSaveDialogBackend>();
+  out.save = async (options): Promise<FileSaveDialogResult> => {
       if (options.signal?.aborted) return { outcome: 'cancelled' };
       const save = tauri.dialog?.save;
       if (typeof save !== 'function') return { outcome: 'runtime-unavailable' };
@@ -83,16 +83,16 @@ export function createTauriFileSaveDialogBackend(tauri: TauriApi): FileSaveDialo
       } catch (error) {
         return { outcome: classifyFailure(error, 'file-save-failed') };
       }
-    },
-  } satisfies Omit<FileSaveDialogBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 // Tauri provides message and confirmation surfaces but no native text-input prompt. Consumers can
 // therefore assemble dialog.message while leaving dialog.prompt absent.
 export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogBackend & Entity {
   const dialog = tauri.dialog;
-  return createEntity({
-    async message(options) {
+    const out = allocateEntity<MessageDialogBackend>();
+  out.message = async (options) => {
       if (options.signal?.aborted) {
         return {
           buttonIndex: options.cancelId ?? 0,
@@ -105,15 +105,15 @@ export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogB
         kind: toTauriMessageKind(options.kind),
       });
       return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
-    },
-    async confirm(options) {
+    };
+  out.confirm = async (options) => {
       if (options.signal?.aborted) return false;
       return dialog.confirm(options.message, {
         title: options.title,
         kind: toTauriMessageKind(options.kind),
       });
-    },
-  } satisfies Omit<MessageDialogBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 function createNativeHandle(path: string, kind: 'File' | 'Directory') {

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type {
   ElectronApi,
@@ -9,21 +9,22 @@ import type {
   ScreenColorSpace,
   ScreenInfo,
   ScreenOrientation,
+  ScreenQueryBackend,
 } from '@flighthq/types/contract';
 
 export function createElectronScreenCapabilities(
   electron: ElectronApi,
 ): NonEntityCreateResult<Required<Pick<HostScreenCapabilities, 'change' | 'query'>>, 'type-only'> {
   const screen = electron.screen;
-  const query = createEntity({
-    getCursorPosition(out: { x: number; y: number }) {
+  const query = allocateEntity<ScreenQueryBackend>();
+  query.getCursorPosition = (out: { x: number; y: number }) => {
       Object.assign(out, screen.getCursorScreenPoint());
       return out;
-    },
-    getPrimaryScreen(out: ScreenInfo) {
+    };
+  query.getPrimaryScreen = (out: ScreenInfo) => {
       return fillScreenInfo(out, screen.getPrimaryDisplay(), true);
-    },
-    getScreens(out: ScreenInfo[]) {
+    };
+  query.getScreens = (out: ScreenInfo[]) => {
       const displays = screen.getAllDisplays();
       const primaryId = screen.getPrimaryDisplay().id;
       out.length = displays.length;
@@ -32,8 +33,7 @@ export function createElectronScreenCapabilities(
         fillScreenInfo(out[index], display, display.id === primaryId);
       });
       return out;
-    },
-  });
+    };
   const change = createEntity({
     subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void) {
       const makeHandler =
@@ -69,33 +69,33 @@ export function createElectronScreenCapabilities(
 }
 
 function emptyScreenInfo(): ScreenInfo {
-  return createEntity({
-    id: 0,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-    workWidth: 0,
-    workHeight: 0,
-    scaleFactor: 1,
-    isPrimary: false,
-    rotation: -1,
-    orientation: 'Landscape' as ScreenOrientation,
-    refreshRate: -1,
-    colorDepth: -1,
-    pixelDepth: -1,
-    physicalWidth: -1,
-    physicalHeight: -1,
-    isHdr: false,
-    colorSpace: 'srgb' as ScreenColorSpace,
-    maxLuminance: -1,
-    depthPerComponent: -1,
-    dpi: -1,
-    label: '',
-    internal: false,
-    touchSupport: 'unknown',
-    monochrome: false,
-  });
+    const out = allocateEntity<ScreenInfo>();
+  out.id = 0;
+  out.x = 0;
+  out.y = 0;
+  out.width = 0;
+  out.height = 0;
+  out.workWidth = 0;
+  out.workHeight = 0;
+  out.scaleFactor = 1;
+  out.isPrimary = false;
+  out.rotation = -1;
+  out.orientation = 'Landscape' as ScreenOrientation;
+  out.refreshRate = -1;
+  out.colorDepth = -1;
+  out.pixelDepth = -1;
+  out.physicalWidth = -1;
+  out.physicalHeight = -1;
+  out.isHdr = false;
+  out.colorSpace = 'srgb' as ScreenColorSpace;
+  out.maxLuminance = -1;
+  out.depthPerComponent = -1;
+  out.dpi = -1;
+  out.label = '';
+  out.internal = false;
+  out.touchSupport = 'unknown';
+  out.monochrome = false;
+  return finishEntity(out);
 }
 
 function fillScreenInfo(out: ScreenInfo, display: Readonly<ElectronDisplay>, isPrimary: boolean): ScreenInfo {
