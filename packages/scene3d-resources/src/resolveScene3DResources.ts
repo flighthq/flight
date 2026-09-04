@@ -3,6 +3,7 @@ import { createImageResourceFailure, resolveImageResourceReference } from '@flig
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   ImageResourceFailure,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,
@@ -19,6 +20,17 @@ import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
+
+export function initializeImageResourceFailure(
+  out: EntityConstruction<ImageResourceFailure>,
+  kind: ImageResourceFailure['kind'],
+  message: ImageResourceFailure['message'],
+  name: ImageResourceFailure['name'],
+): void {
+  out.kind = kind;
+  out.message = message;
+  out.name = name;
+}
 
 // Resolves one texture's ref to a TextureSource (or null for an expected failure): Embedded bytes
 // decode through @flighthq/image; External URIs go through the resolver's fetch seam. Cancellation is
@@ -142,9 +154,12 @@ function finishScene3DResourceResolution(
   if (source === null) {
     ref.failure ??= (() => {
       const out = allocateEntity<ImageResourceFailure>();
-      out.kind = ImageResourceFailureKind.Unavailable;
-      out.message = 'Image resource resolution returned no source';
-      out.name = null;
+      initializeImageResourceFailure(
+        out,
+        ImageResourceFailureKind.Unavailable,
+        'Image resource resolution returned no source',
+        null,
+      );
       return finishEntity(out);
     })();
     ref.state = ResourceResolutionState.Failed;

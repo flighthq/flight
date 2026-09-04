@@ -1,6 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
-import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  Path,
+  PathWinding,
+  ShapeCommandToken,
+  ShapeFillRegion,
+} from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
 // Appends one shape geometry command (moveTo/lineTo/curveTo/cubicCurveTo and the drawCircle/Ellipse/
@@ -135,9 +141,7 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
         alpha = commands[a + 1] as number;
         path = (() => {
           const out = allocateEntity<Path>();
-          out.commands = [] as number[];
-          out.data = [] as number[];
-          out.winding = winding;
+          initializePath(out, [] as number[], [] as number[], winding);
           return finishEntity(out);
         })();
         break;
@@ -186,6 +190,17 @@ export function hasShapeFill(commands: readonly ShapeCommandToken[]): boolean {
     i += 2 + (commands[i + 1] as number);
   }
   return false;
+}
+
+function initializePath(
+  out: EntityConstruction<Path>,
+  commands: number[],
+  data: number[],
+  winding: Path['winding'],
+): void {
+  out.commands = commands;
+  out.data = data;
+  out.winding = winding;
 }
 
 function appendEllipseToPath(path: Path, cx: number, cy: number, rx: number, ry: number): void {

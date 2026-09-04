@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import type {
   BitmapDisplacementEffect,
+  EntityConstruction,
   RenderEffect,
   Sampler,
   TextureFilter,
@@ -81,6 +82,15 @@ export const defaultWgpuBitmapDisplacementEffectRunner: WgpuRenderEffectRunner =
   applyBitmapDisplacementEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BitmapDisplacementEffect);
 };
 
+export function initializeWgpuEffectPipeline(
+  out: EntityConstruction<WgpuEffectPipeline>,
+  blendMode: WgpuEffectPipeline['blendMode'],
+  pipeline: WgpuEffectPipeline['pipeline'],
+): void {
+  out.blendMode = blendMode;
+  out.pipeline = pipeline;
+}
+
 export function isWgpuBitmapDisplacementEffectResolvable(
   state: WgpuRenderState,
   effect: Readonly<RenderEffect>,
@@ -139,17 +149,20 @@ function getBitmapDisplacementPipeline(state: WgpuRenderState, format: GPUTextur
     bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout],
   });
   const _entity = allocateEntity<WgpuEffectPipeline>();
-  _entity.blendMode = 'replace';
-  _entity.pipeline = state.device.createRenderPipeline({
-    layout,
-    vertex: { module: shaderModule, entryPoint: 'vs_main' },
-    fragment: {
-      module: shaderModule,
-      entryPoint: 'fs_main',
-      targets: [{ format, blend: REPLACE_BLEND }],
-    },
-    primitive: { topology: 'triangle-list' },
-  });
+  initializeWgpuEffectPipeline(
+    _entity,
+    'replace',
+    state.device.createRenderPipeline({
+      layout,
+      vertex: { module: shaderModule, entryPoint: 'vs_main' },
+      fragment: {
+        module: shaderModule,
+        entryPoint: 'fs_main',
+        targets: [{ format, blend: REPLACE_BLEND }],
+      },
+      primitive: { topology: 'triangle-list' },
+    }),
+  );
   pipeline = finishEntity(_entity);
   byFormat.set(format, pipeline);
   return pipeline;

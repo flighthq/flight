@@ -7,11 +7,18 @@ import type {
   AppRelaunchBackend,
   AppShowBackend,
   AppVersionBackend,
+  EntityConstruction,
   TauriApi,
   TauriAppCapabilities,
 } from '@flighthq/types/contract';
 
 export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilities {
+  const out = allocateEntity<TauriAppCapabilities>();
+  initializeTauriAppCapabilities(out, tauri);
+  return finishEntity(out);
+}
+
+export function initializeTauriAppCapabilities(out: EntityConstruction<TauriAppCapabilities>, tauri: TauriApi): void {
   let locale = '';
   let name = '';
   let version = '';
@@ -27,7 +34,9 @@ export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilitie
     .locale()
     .then((value) => (locale = value ?? ''))
     .catch(() => {});
-  const out = allocateEntity<TauriAppCapabilities>();
+  const hideBackend = allocateEntity<AppHideBackend>();
+  hideBackend.hideApp = () => void tauri.app.hide().catch(() => {});
+  out.hide = finishEntity(hideBackend);
   const localeBackend = allocateEntity<AppLocaleBackend>();
   localeBackend.getLocale = () => locale;
   localeBackend.getPreferredSystemLanguages = () => (locale === '' ? [] : [locale]);
@@ -36,9 +45,6 @@ export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilitie
   const nameBackend = allocateEntity<AppNameBackend>();
   nameBackend.getName = () => name;
   out.name = finishEntity(nameBackend);
-  const hideBackend = allocateEntity<AppHideBackend>();
-  hideBackend.hideApp = () => void tauri.app.hide().catch(() => {});
-  out.hide = finishEntity(hideBackend);
   const quitBackend = allocateEntity<AppQuitBackend>();
   quitBackend.quit = () => void tauri.process.exit(0).catch(() => {});
   out.quit = finishEntity(quitBackend);
@@ -51,5 +57,4 @@ export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilitie
   const versionBackend = allocateEntity<AppVersionBackend>();
   versionBackend.getVersion = () => version;
   out.version = finishEntity(versionBackend);
-  return finishEntity(out);
 }

@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronShortcutDetails,
+  EntityConstruction,
   HostShellCapabilities,
   PlatformName,
   ShellBeepBackend,
@@ -13,74 +14,61 @@ import type {
   ShellTrashBackend,
 } from '@flighthq/types/contract';
 
-// Builds Electron's exact Shell capability group. platform is caller-injected because shortcut-link
-// support is a construction-time Windows fact, not something capability resolution reads ambiently.
-export function makeElectronShellCapabilities(
-  electron: ElectronApi,
-  platform: PlatformName,
-): HostShellCapabilities &
-  Required<Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>> {
-  const shell = electron.shell;
-  const beep = allocateEntity<ShellBeepBackend>();
-  beep.beep = () => {
+export function initializeShellBeepBackend(
+  out: EntityConstruction<ShellBeepBackend>,
+  shell: ElectronApi['shell'],
+): void {
+  out.beep = () => {
     shell.beep();
   };
-  const external = (() => {
-    const out = allocateEntity<ShellExternalBackend>();
-    out.open = async (url) => {
-      try {
-        await shell.openExternal(url);
-        return { reason: 'ok' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    };
-    return finishEntity(out);
-  })();
-  const pathOpen = (() => {
-    const out = allocateEntity<ShellPathOpenBackend>();
-    out.open = async (path) => {
-      try {
-        const message = await shell.openPath(path);
-        return message === '' ? { reason: 'ok' } : { message, reason: 'operation-failed' };
-      } catch (error) {
-        return { message: errorMessage(error), reason: 'operation-failed' };
-      }
-    };
-    return finishEntity(out);
-  })();
-  const pathReveal = (() => {
-    const out = allocateEntity<ShellPathRevealBackend>();
-    out.reveal = async (path) => {
-      try {
-        shell.showItemInFolder(path);
-        return { reason: 'ok' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    };
-    return finishEntity(out);
-  })();
-  const trash = (() => {
-    const out = allocateEntity<ShellTrashBackend>();
-    out.moveToTrash = async (path) => {
-      try {
-        await shell.trashItem(path);
-        return { reason: 'ok' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    };
-    return finishEntity(out);
-  })();
-  const shared = { beep, external, pathOpen, pathReveal, trash };
-  if (platform !== 'windows') return shared;
-  return { ...shared, shortcutLink: createElectronShellShortcutLinkBackend(electron) };
 }
 
-function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellShortcutLinkBackend {
-  const shell = electron.shell;
-  const out = allocateEntity<ShellShortcutLinkBackend>();
+export function initializeShellExternalBackend(
+  out: EntityConstruction<ShellExternalBackend>,
+  shell: ElectronApi['shell'],
+): void {
+  out.open = async (url) => {
+    try {
+      await shell.openExternal(url);
+      return { reason: 'ok' };
+    } catch {
+      return { reason: 'operation-failed' };
+    }
+  };
+}
+
+export function initializeShellPathOpenBackend(
+  out: EntityConstruction<ShellPathOpenBackend>,
+  shell: ElectronApi['shell'],
+): void {
+  out.open = async (path) => {
+    try {
+      const message = await shell.openPath(path);
+      return message === '' ? { reason: 'ok' } : { message, reason: 'operation-failed' };
+    } catch (error) {
+      return { message: errorMessage(error), reason: 'operation-failed' };
+    }
+  };
+}
+
+export function initializeShellPathRevealBackend(
+  out: EntityConstruction<ShellPathRevealBackend>,
+  shell: ElectronApi['shell'],
+): void {
+  out.reveal = async (path) => {
+    try {
+      shell.showItemInFolder(path);
+      return { reason: 'ok' };
+    } catch {
+      return { reason: 'operation-failed' };
+    }
+  };
+}
+
+export function initializeShellShortcutLinkBackend(
+  out: EntityConstruction<ShellShortcutLinkBackend>,
+  shell: ElectronApi['shell'],
+): void {
   out.read = async (shortcutPath) => {
     try {
       const details = shell.readShortcutLink(shortcutPath);
@@ -114,6 +102,60 @@ function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellSho
       return { reason: 'operation-failed' };
     }
   };
+}
+
+export function initializeShellTrashBackend(
+  out: EntityConstruction<ShellTrashBackend>,
+  shell: ElectronApi['shell'],
+): void {
+  out.moveToTrash = async (path) => {
+    try {
+      await shell.trashItem(path);
+      return { reason: 'ok' };
+    } catch {
+      return { reason: 'operation-failed' };
+    }
+  };
+}
+
+// Builds Electron's exact Shell capability group. platform is caller-injected because shortcut-link
+// support is a construction-time Windows fact, not something capability resolution reads ambiently.
+export function makeElectronShellCapabilities(
+  electron: ElectronApi,
+  platform: PlatformName,
+): HostShellCapabilities &
+  Required<Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>> {
+  const shell = electron.shell;
+  const beep = allocateEntity<ShellBeepBackend>();
+  initializeShellBeepBackend(beep, shell);
+  const external = (() => {
+    const out = allocateEntity<ShellExternalBackend>();
+    initializeShellExternalBackend(out, shell);
+    return finishEntity(out);
+  })();
+  const pathOpen = (() => {
+    const out = allocateEntity<ShellPathOpenBackend>();
+    initializeShellPathOpenBackend(out, shell);
+    return finishEntity(out);
+  })();
+  const pathReveal = (() => {
+    const out = allocateEntity<ShellPathRevealBackend>();
+    initializeShellPathRevealBackend(out, shell);
+    return finishEntity(out);
+  })();
+  const trash = (() => {
+    const out = allocateEntity<ShellTrashBackend>();
+    initializeShellTrashBackend(out, shell);
+    return finishEntity(out);
+  })();
+  const shared = { beep, external, pathOpen, pathReveal, trash };
+  if (platform !== 'windows') return shared;
+  return { ...shared, shortcutLink: createElectronShellShortcutLinkBackend(electron) };
+}
+
+function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellShortcutLinkBackend {
+  const out = allocateEntity<ShellShortcutLinkBackend>();
+  initializeShellShortcutLinkBackend(out, electron.shell);
   return finishEntity(out);
 }
 

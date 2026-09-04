@@ -1,5 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Path, ShapeCommandToken, ShapeFillRegion, StrokeStyle } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  Path,
+  ShapeCommandToken,
+  ShapeFillRegion,
+  StrokeStyle,
+} from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
 import { compactStrokePath } from './compactStrokePath';
@@ -70,9 +76,7 @@ export function getShapeStrokeOutlineRegions(commands: readonly ShapeCommandToke
         };
         centerline = (() => {
           const out = allocateEntity<Path>();
-          out.commands = [] as number[];
-          out.data = [] as number[];
-          out.winding = 'nonZero' as const;
+          initializePath(out, [] as number[], [] as number[], 'nonZero');
           return finishEntity(out);
         })();
       } else {
@@ -105,6 +109,17 @@ export function getShapeStrokeOutlineRegions(commands: readonly ShapeCommandToke
   }
   flush();
   return deferred ? null : regions;
+}
+
+function initializePath(
+  out: EntityConstruction<Path>,
+  commands: number[],
+  data: number[],
+  winding: Path['winding'],
+): void {
+  out.commands = commands;
+  out.data = data;
+  out.winding = winding;
 }
 
 // True if the stream uses a stroke the GPU outline path cannot express (a gradient or bitmap stroke),

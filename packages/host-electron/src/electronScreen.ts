@@ -3,6 +3,7 @@ import type { NonEntityCreateResult } from '@flighthq/types/contract';
 import type {
   ElectronApi,
   ElectronDisplay,
+  EntityConstruction,
   HostScreenCapabilities,
   ScreenChangeBackend,
   ScreenChangeEvent,
@@ -18,26 +19,47 @@ export function createElectronScreenCapabilities(
 ): NonEntityCreateResult<Required<Pick<HostScreenCapabilities, 'change' | 'query'>>, 'type-only'> {
   const screen = electron.screen;
   const query = allocateEntity<ScreenQueryBackend>();
-  query.getCursorPosition = (out: { x: number; y: number }) => {
-    Object.assign(out, screen.getCursorScreenPoint());
-    return out;
-  };
-  query.getPrimaryScreen = (out: ScreenInfo) => {
-    return fillScreenInfo(out, screen.getPrimaryDisplay(), true);
-  };
-  query.getScreens = (out: ScreenInfo[]) => {
-    const displays = screen.getAllDisplays();
-    const primaryId = screen.getPrimaryDisplay().id;
-    out.length = displays.length;
-    displays.forEach((display, index) => {
-      out[index] ??= emptyScreenInfo();
-      fillScreenInfo(out[index], display, display.id === primaryId);
-    });
-    return out;
-  };
+  initializeScreenQueryBackend(query, screen);
   finishEntity(query);
   const change = allocateEntity<ScreenChangeBackend>();
-  change.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
+  initializeScreenChangeBackend(change, screen);
+  finishEntity(change);
+  return { change, query };
+}
+
+export function initializeEmptyScreenInfo(out: EntityConstruction<ScreenInfo>): void {
+  out.colorDepth = -1;
+  out.colorSpace = 'srgb' as ScreenColorSpace;
+  out.depthPerComponent = -1;
+  out.dpi = -1;
+  out.height = 0;
+  out.id = 0;
+  out.internal = false;
+  out.isHdr = false;
+  out.isPrimary = false;
+  out.label = '';
+  out.maxLuminance = -1;
+  out.monochrome = false;
+  out.orientation = 'Landscape' as ScreenOrientation;
+  out.physicalHeight = -1;
+  out.physicalWidth = -1;
+  out.pixelDepth = -1;
+  out.refreshRate = -1;
+  out.rotation = -1;
+  out.scaleFactor = 1;
+  out.touchSupport = 'unknown';
+  out.width = 0;
+  out.workHeight = 0;
+  out.workWidth = 0;
+  out.x = 0;
+  out.y = 0;
+}
+
+export function initializeScreenChangeBackend(
+  out: EntityConstruction<ScreenChangeBackend>,
+  screen: ElectronApi['screen'],
+): void {
+  out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
     const makeHandler =
       (kind: ScreenChangeKind) =>
       (...args: unknown[]): void => {
@@ -66,37 +88,34 @@ export function createElectronScreenCapabilities(
       screen.removeListener('display-metrics-changed', metrics);
     };
   };
-  finishEntity(change);
-  return { change, query };
+}
+
+export function initializeScreenQueryBackend(
+  out: EntityConstruction<ScreenQueryBackend>,
+  screen: ElectronApi['screen'],
+): void {
+  out.getCursorPosition = (target: { x: number; y: number }) => {
+    Object.assign(target, screen.getCursorScreenPoint());
+    return target;
+  };
+  out.getPrimaryScreen = (target: ScreenInfo) => {
+    return fillScreenInfo(target, screen.getPrimaryDisplay(), true);
+  };
+  out.getScreens = (target: ScreenInfo[]) => {
+    const displays = screen.getAllDisplays();
+    const primaryId = screen.getPrimaryDisplay().id;
+    target.length = displays.length;
+    displays.forEach((display, index) => {
+      target[index] ??= emptyScreenInfo();
+      fillScreenInfo(target[index], display, display.id === primaryId);
+    });
+    return target;
+  };
 }
 
 function emptyScreenInfo(): ScreenInfo {
   const out = allocateEntity<ScreenInfo>();
-  out.id = 0;
-  out.x = 0;
-  out.y = 0;
-  out.width = 0;
-  out.height = 0;
-  out.workWidth = 0;
-  out.workHeight = 0;
-  out.scaleFactor = 1;
-  out.isPrimary = false;
-  out.rotation = -1;
-  out.orientation = 'Landscape' as ScreenOrientation;
-  out.refreshRate = -1;
-  out.colorDepth = -1;
-  out.pixelDepth = -1;
-  out.physicalWidth = -1;
-  out.physicalHeight = -1;
-  out.isHdr = false;
-  out.colorSpace = 'srgb' as ScreenColorSpace;
-  out.maxLuminance = -1;
-  out.depthPerComponent = -1;
-  out.dpi = -1;
-  out.label = '';
-  out.internal = false;
-  out.touchSupport = 'unknown';
-  out.monochrome = false;
+  initializeEmptyScreenInfo(out);
   return finishEntity(out);
 }
 

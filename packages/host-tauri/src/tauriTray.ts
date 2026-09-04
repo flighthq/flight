@@ -3,6 +3,7 @@ import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
   Entity,
+  EntityConstruction,
   MenuItemTemplate,
   Signal,
   TauriApi,
@@ -225,11 +226,17 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   if (profile === 'linux') {
     // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
     const out = allocateEntity<Entity>();
-    (out as any).image = common.image;
-    (out as any).lifecycle = common.lifecycle;
-    (out as any).menu = common.menu;
-    (out as any).menuSelectionEvents = common.menuSelectionEvents;
-    (out as any).title = title;
+    initializeTauriTrayCapabilities(
+      out,
+      common.image,
+      null,
+      common.lifecycle,
+      common.menu,
+      common.menuSelectionEvents,
+      null,
+      title,
+      null,
+    );
     return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
 
@@ -259,12 +266,17 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   if (profile === 'windows') {
     // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
     const out = allocateEntity<Entity>();
-    (out as any).image = common.image;
-    (out as any).lifecycle = common.lifecycle;
-    (out as any).menu = common.menu;
-    (out as any).menuSelectionEvents = common.menuSelectionEvents;
-    (out as any).interactionEvents = interactionEvents;
-    (out as any).tooltip = tooltip;
+    initializeTauriTrayCapabilities(
+      out,
+      common.image,
+      interactionEvents,
+      common.lifecycle,
+      common.menu,
+      common.menuSelectionEvents,
+      null,
+      null,
+      tooltip,
+    );
     return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
   const templateImageEntity = allocateEntity<TrayTemplateImageBackend>();
@@ -276,15 +288,39 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   const templateImage = finishEntity(templateImageEntity);
   // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
   const out = allocateEntity<Entity>();
-  (out as any).image = common.image;
-  (out as any).lifecycle = common.lifecycle;
-  (out as any).menu = common.menu;
-  (out as any).menuSelectionEvents = common.menuSelectionEvents;
-  (out as any).interactionEvents = interactionEvents;
-  (out as any).templateImage = templateImage;
-  (out as any).title = title;
-  (out as any).tooltip = tooltip;
+  initializeTauriTrayCapabilities(
+    out,
+    common.image,
+    interactionEvents,
+    common.lifecycle,
+    common.menu,
+    common.menuSelectionEvents,
+    templateImage,
+    title,
+    tooltip,
+  );
   return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
+}
+
+export function initializeTauriTrayCapabilities(
+  out: EntityConstruction<Entity>,
+  image: TrayImageBackend,
+  interactionEvents: TrayInteractionEventsBackend | null,
+  lifecycle: TrayLifecycleBackend,
+  menu: TrayMenuBackend,
+  menuSelectionEvents: TrayMenuSelectionEventsBackend,
+  templateImage: TrayTemplateImageBackend | null,
+  title: TrayTitleBackend | null,
+  tooltip: TrayTooltipBackend | null,
+): void {
+  (out as any).image = image;
+  if (interactionEvents !== null) (out as any).interactionEvents = interactionEvents;
+  (out as any).lifecycle = lifecycle;
+  (out as any).menu = menu;
+  (out as any).menuSelectionEvents = menuSelectionEvents;
+  if (templateImage !== null) (out as any).templateImage = templateImage;
+  if (title !== null) (out as any).title = title;
+  if (tooltip !== null) (out as any).tooltip = tooltip;
 }
 
 function activeRecord(records: ReadonlyMap<TrayIcon, TrayRecord>, tray: TrayIcon): TrayRecord | null {

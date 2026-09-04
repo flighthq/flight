@@ -2,6 +2,7 @@ import { allocateEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { getPathLength, getPathPositionAtDistance } from '@flighthq/path/contract';
 import type {
+  EntityConstruction,
   Path,
   PathAttachment2D,
   Skeleton2D,
@@ -22,6 +23,17 @@ import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint';
 
 // 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
 const MATRIX_STRIDE = 6;
+
+export function initializePath(
+  out: EntityConstruction<Path>,
+  commands: number[],
+  data: number[],
+  winding: Path['winding'],
+): void {
+  out.commands = commands;
+  out.data = data;
+  out.winding = winding;
+}
 
 // Opts a bundle into path constraints. This is the only module in skeleton2d that reaches for
 // `@flighthq/path`, and a consumer that never calls this registrar never imports it — measured, not
@@ -199,9 +211,7 @@ function wrapSkeleton2DAngle(degrees: number): number {
 
 const MINIMUM_DETERMINANT = 1e-9;
 const _path = allocateEntity<Path>();
-_path.commands = [] as number[];
-_path.data = [] as number[];
-_path.winding = 'nonZero' as const;
+initializePath(_path, [] as number[], [] as number[], 'nonZero');
 const _point = { x: 0, y: 0 };
 const _tangent = { x: 0, y: 0 };
 let _positions = new Float64Array(0);

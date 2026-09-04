@@ -5,6 +5,7 @@ import type {
   Command,
   CommandPropertyEntry,
   CompositeCommand,
+  EntityConstruction,
   NodeAny,
   RemoveNodeChildCommand,
   ReorderNodeChildCommand,
@@ -34,20 +35,14 @@ export function createAddNodeChildCommand(
   index = -1,
 ): AddNodeChildCommand {
   const out = allocateEntity<AddNodeChildCommand>();
-  out.child = child;
-  out.index = index;
-  out.kind = AddNodeChildCommandKind;
-  out.label = label;
-  out.parent = parent;
+  initializeAddNodeChildCommand(out, label, parent, child, index);
   return finishEntity(out);
 }
 
 /** Applies `children` as one history entry, in order; undo runs them in reverse. Nesting is allowed. */
 export function createCompositeCommand(label: string, children: readonly Command[]): CompositeCommand {
   const out = allocateEntity<CompositeCommand>();
-  out.children = [...children];
-  out.kind = CompositeCommandKind;
-  out.label = label;
+  initializeCompositeCommand(out, label, children);
   return finishEntity(out);
 }
 
@@ -55,11 +50,7 @@ export function createCompositeCommand(label: string, children: readonly Command
 // membership. Build this before removing the child — once it is detached the index is gone.
 export function createRemoveNodeChildCommand(label: string, parent: NodeAny, child: NodeAny): RemoveNodeChildCommand {
   const out = allocateEntity<RemoveNodeChildCommand>();
-  out.child = child;
-  out.index = getNodeChildIndex(parent, child);
-  out.kind = RemoveNodeChildCommandKind;
-  out.label = label;
-  out.parent = parent;
+  initializeRemoveNodeChildCommand(out, label, parent, child);
   return finishEntity(out);
 }
 
@@ -71,12 +62,7 @@ export function createReorderNodeChildCommand(
   toIndex: number,
 ): ReorderNodeChildCommand {
   const out = allocateEntity<ReorderNodeChildCommand>();
-  out.child = child;
-  out.fromIndex = getNodeChildIndex(parent, child);
-  out.kind = ReorderNodeChildCommandKind;
-  out.label = label;
-  out.parent = parent;
-  out.toIndex = toIndex;
+  initializeReorderNodeChildCommand(out, label, parent, child, toIndex);
   return finishEntity(out);
 }
 
@@ -95,11 +81,7 @@ export function createSetNodePropertyCommand(
   time = 0,
 ): SetNodePropertyCommand {
   const out = allocateEntity<SetNodePropertyCommand>();
-  out.entries = [{ after: value, before: readNodeProperty(target, property), property, target }];
-  out.kind = SetNodePropertyCommandKind;
-  out.label = label;
-  out.mergeWindow = mergeWindow;
-  out.time = time;
+  initializeSetNodePropertyCommand(out, label, target, property, value, mergeWindow, time);
   return finishEntity(out);
 }
 
@@ -124,6 +106,74 @@ export function createSetNodePropertyCommandBatch(
   out.mergeWindow = mergeWindow;
   out.time = time;
   return finishEntity(out);
+}
+
+export function initializeAddNodeChildCommand(
+  out: EntityConstruction<AddNodeChildCommand>,
+  label: string,
+  parent: NodeAny,
+  child: NodeAny,
+  index: number,
+): void {
+  out.child = child;
+  out.index = index;
+  out.kind = AddNodeChildCommandKind;
+  out.label = label;
+  out.parent = parent;
+}
+
+export function initializeCompositeCommand(
+  out: EntityConstruction<CompositeCommand>,
+  label: string,
+  children: readonly Command[],
+): void {
+  out.children = [...children];
+  out.kind = CompositeCommandKind;
+  out.label = label;
+}
+
+export function initializeRemoveNodeChildCommand(
+  out: EntityConstruction<RemoveNodeChildCommand>,
+  label: string,
+  parent: NodeAny,
+  child: NodeAny,
+): void {
+  out.child = child;
+  out.index = getNodeChildIndex(parent, child);
+  out.kind = RemoveNodeChildCommandKind;
+  out.label = label;
+  out.parent = parent;
+}
+
+export function initializeReorderNodeChildCommand(
+  out: EntityConstruction<ReorderNodeChildCommand>,
+  label: string,
+  parent: NodeAny,
+  child: NodeAny,
+  toIndex: number,
+): void {
+  out.child = child;
+  out.fromIndex = getNodeChildIndex(parent, child);
+  out.kind = ReorderNodeChildCommandKind;
+  out.label = label;
+  out.parent = parent;
+  out.toIndex = toIndex;
+}
+
+function initializeSetNodePropertyCommand(
+  out: EntityConstruction<SetNodePropertyCommand>,
+  label: string,
+  target: NodeAny,
+  property: string,
+  value: unknown,
+  mergeWindow: number,
+  time: number,
+): void {
+  out.entries = [{ after: value, before: readNodeProperty(target, property), property, target }];
+  out.kind = SetNodePropertyCommandKind;
+  out.label = label;
+  out.mergeWindow = mergeWindow;
+  out.time = time;
 }
 
 function readNodeProperty(target: Readonly<NodeAny>, property: string): unknown {

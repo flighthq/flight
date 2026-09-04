@@ -4,6 +4,7 @@ import type {
   ClipboardBookmark,
   ClipboardWatch,
   ClipboardWriteItem,
+  EntityConstruction,
   HasClipboardBookmark,
   HasClipboardChange,
   HasClipboardFormats,
@@ -31,7 +32,7 @@ export function clearClipboard(host: HasClipboardText): Promise<boolean> {
 // Call attachClipboardWatch to start delivery; call disposeClipboardWatch when done.
 export function createClipboardWatch(): ClipboardWatch {
   const out = allocateEntity<ClipboardWatch>();
-  out.onChange = createSignal();
+  initializeClipboardWatch(out);
   return finishEntity(out);
 }
 
@@ -83,6 +84,10 @@ export function hasClipboardRTF(host: HasClipboardFormats): Promise<boolean> {
 // True when the clipboard currently holds non-empty text. Returns false when access is denied.
 export function hasClipboardText(host: HasClipboardText): Promise<boolean> {
   return host.clipboard.text.hasText();
+}
+
+export function initializeClipboardWatch(out: EntityConstruction<ClipboardWatch>): void {
+  out.onChange = createSignal();
 }
 
 // Reads multiple formats in one round-trip; missing formats are omitted from the result.

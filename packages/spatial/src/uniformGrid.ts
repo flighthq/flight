@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
+  EntityConstruction,
   SpatialAabb2D,
   SpatialIndexBackend2D,
   SpatialDeclineReason,
@@ -59,13 +60,14 @@ export function createUniformGridSpatialBackend2D(cellSize: number): SpatialInde
     pairIds: [],
   };
   const out = allocateEntity<SpatialIndexBackend2D & Entity>();
-  out.insertSpatialObject = (id, bounds) => _insertIntoGrid(grid, id, bounds, 'insert');
-  out.updateSpatialObject = (id, bounds) => _updateGridObject(grid, id, bounds);
-  out.removeSpatialObject = (id) => {
-    const wasMissing = !grid.bounds.has(id) && !grid.declined.has(id);
-    _removeFromGrid(grid, id);
-    if (wasMissing) _reportGridIndexing(grid, id, 'absent', 'remove', 'missing-id', 0);
-  };
+  initializeUniformGridSpatialBackend2D(out, grid);
+  return finishEntity(out);
+}
+
+export function initializeUniformGridSpatialBackend2D(
+  out: EntityConstruction<SpatialIndexBackend2D & Entity>,
+  grid: UniformGrid,
+): void {
   out.clearSpatialIndex = () => {
     grid.cells.clear();
     grid.bounds.clear();
@@ -75,11 +77,9 @@ export function createUniformGridSpatialBackend2D(cellSize: number): SpatialInde
     grid.pairIds.length = 0;
   };
   out.explainSpatialIndexing = (id) => _explainGridIndexing(grid, id);
+  out.insertSpatialObject = (id, bounds) => _insertIntoGrid(grid, id, bounds, 'insert');
   out.querySpatialPairs = (queryOut) => {
     _queryGridPairs(grid, queryOut);
-  };
-  out.querySpatialRegion = (region, queryOut) => {
-    _queryGridRegion(grid, region, queryOut);
   };
   out.querySpatialPoint = (x, y, queryOut) => {
     _queryGridPoint(grid, x, y, queryOut);
@@ -87,7 +87,15 @@ export function createUniformGridSpatialBackend2D(cellSize: number): SpatialInde
   out.querySpatialRay = (x, y, dx, dy, queryOut) => {
     _queryGridRay(grid, x, y, dx, dy, queryOut);
   };
-  return finishEntity(out);
+  out.querySpatialRegion = (region, queryOut) => {
+    _queryGridRegion(grid, region, queryOut);
+  };
+  out.removeSpatialObject = (id) => {
+    const wasMissing = !grid.bounds.has(id) && !grid.declined.has(id);
+    _removeFromGrid(grid, id);
+    if (wasMissing) _reportGridIndexing(grid, id, 'absent', 'remove', 'missing-id', 0);
+  };
+  out.updateSpatialObject = (id, bounds) => _updateGridObject(grid, id, bounds);
 }
 
 // One occupied cell: its integer cell coordinates and the ids whose bounds cover it. The coordinates

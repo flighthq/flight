@@ -1,9 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
-import type { Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
+import type { EntityConstruction, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 
 export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
   const out = allocateEntity<Raster2DSurfaceProvider>();
+  initializeWebRaster2DSurfaceProvider(out);
+  return finishEntity(out);
+}
+
+export function initializeWebRaster2DSurfaceProvider(out: EntityConstruction<Raster2DSurfaceProvider>): void {
   out.createRaster2DSurface = (width, height) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -39,7 +44,6 @@ export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
     surface.width = 0;
     surface.height = 0;
   };
-  return finishEntity(out);
 }
 
 export const webRaster2DSurfaceProvider: Raster2DSurfaceProvider = createWebRaster2DSurfaceProvider();

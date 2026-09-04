@@ -9,6 +9,7 @@ import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
+  EntityConstruction,
   GlRenderState,
   Raster2DSurface,
   Raster2DSurfaceProvider,
@@ -50,11 +51,7 @@ function getGlTextLabelData(data: RendererData): GlTextLabelData {
 
 function createGlTextLabelData(_state: GlRenderState, _source: Renderable): RendererData {
   const out = allocateEntity<GlTextLabelData>();
-  out.surface = null;
-  out.lastContentId = -1;
-  out.lastPixelRatio = 0;
-  out.logW = 0;
-  out.logH = 0;
+  initializeGlTextLabelData(out);
   return finishEntity(out);
 }
 
@@ -184,6 +181,14 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startInstance);
   recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startInstance);
   runtime.quadBatchWriterCount++;
+}
+
+export function initializeGlTextLabelData(out: EntityConstruction<GlTextLabelData>): void {
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.logH = 0;
+  out.logW = 0;
+  out.surface = null;
 }
 
 export const defaultGlTextLabelRenderer: Scene2DRenderer = {

@@ -7,6 +7,7 @@ import {
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type {
+  EntityConstruction,
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
@@ -45,8 +46,7 @@ export async function createWgpuAcquisitionFromCanvasElement(
   try {
     const acquired = await getWgpuHostBackend().acquire(canvas, options);
     const out = allocateEntity<WgpuHostAcquisition>();
-    Object.assign(out, acquired);
-    out.ownership = 'caller';
+    initializeWgpuHostAcquisition(out, acquired, 'caller');
     return finishEntity(out);
   } catch {
     return null;
@@ -56,7 +56,7 @@ export async function createWgpuAcquisitionFromCanvasElement(
 export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
   const deviceRuntime = createMinimalDeviceRuntime(device);
   const state = allocateEntity<WgpuDeviceState>();
-  state.device = device;
+  initializeWgpuDeviceState(state, device);
   return finishEntity(state);
 }
 
@@ -86,8 +86,7 @@ export function createWgpuOffscreenRenderState(
   if (lost !== null)
     return (() => {
       const out = allocateEntity<Extract<WgpuOffscreenRenderStateResult, { reason: 'device-lost' }>>();
-      out.reason = 'device-lost';
-      out.info = lost;
+      initializeWgpuOffscreenRenderStateDeviceLostResult(out, lost);
       return finishEntity(out);
     })();
 
@@ -108,8 +107,7 @@ export function createWgpuOffscreenRenderState(
   runtime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   runtime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
   const out = allocateEntity<Extract<WgpuOffscreenRenderStateResult, { reason: 'ok' }>>();
-  out.reason = 'ok';
-  out.state = state;
+  initializeWgpuOffscreenRenderStateOkResult(out, state);
   return finishEntity(out);
 }
 
@@ -437,6 +435,38 @@ export function getWgpuSampler(
     cache.set(key, sampler);
   }
   return sampler;
+}
+
+export function initializeWgpuDeviceState(
+  out: EntityConstruction<WgpuDeviceState>,
+  device: WgpuDeviceState['device'],
+): void {
+  out.device = device;
+}
+
+export function initializeWgpuHostAcquisition(
+  out: EntityConstruction<WgpuHostAcquisition>,
+  acquired: Partial<WgpuHostAcquisition>,
+  ownership: WgpuHostAcquisition['ownership'],
+): void {
+  Object.assign(out, acquired);
+  out.ownership = ownership;
+}
+
+export function initializeWgpuOffscreenRenderStateDeviceLostResult(
+  out: EntityConstruction<Extract<WgpuOffscreenRenderStateResult, { reason: 'device-lost' }>>,
+  info: GPUDeviceLostInfo,
+): void {
+  out.info = info;
+  out.reason = 'device-lost';
+}
+
+export function initializeWgpuOffscreenRenderStateOkResult(
+  out: EntityConstruction<Extract<WgpuOffscreenRenderStateResult, { reason: 'ok' }>>,
+  state: WgpuRenderState,
+): void {
+  out.reason = 'ok';
+  out.state = state;
 }
 
 export function isWgpuSupported(): boolean {

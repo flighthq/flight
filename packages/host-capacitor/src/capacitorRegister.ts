@@ -1,5 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CapacitorApi, CapacitorHost, MobileOsProfile, WindowBackend } from '@flighthq/types/contract';
+import type {
+  CapacitorApi,
+  CapacitorHost,
+  EntityConstruction,
+  MobileOsProfile,
+  WindowBackend,
+} from '@flighthq/types/contract';
 
 import { createCapacitorAppCapabilities } from './capacitorApp';
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
@@ -29,11 +35,20 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   capacitor: CapacitorApi,
   profile: Profile,
 ): CapacitorHost<Profile> {
+  const out = allocateEntity<CapacitorHost<Profile>>();
+  initializeCapacitorHost(out, capacitor, profile);
+  return finishEntity(out);
+}
+
+export function initializeCapacitorHost<Profile extends MobileOsProfile>(
+  out: EntityConstruction<CapacitorHost<Profile>>,
+  capacitor: CapacitorApi,
+  profile: Profile,
+): void {
   const app = createCapacitorAppCapabilities(capacitor, profile);
   const clipboard = createCapacitorClipboardBackend(capacitor);
   const connectivity = createCapacitorConnectivityBackend(capacitor);
   const statusBar = createCapacitorStatusBarBackend(capacitor);
-  const out = allocateEntity<CapacitorHost<Profile>>();
   out.accessibility = {};
   out.app = app;
   out.clipboard = { image: clipboard, text: clipboard };
@@ -58,13 +73,13 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   out.menu = {};
   out.midi = {};
   out.net = {};
+  out.notification = createCapacitorNotificationCapabilities(capacitor);
   out.power = {};
   out.protocol = createCapacitorProtocolCapabilities(capacitor);
-  out.notification = createCapacitorNotificationCapabilities(capacitor);
-  out.shortcut = {};
   out.screen = {};
   out.share = { content: createCapacitorShareContentBackend(capacitor) };
   out.shell = {};
+  out.shortcut = {};
   out.storage = { fileSystem: createCapacitorFileSystemBackend(capacitor) };
   out.system = {
     device: createCapacitorDeviceBackend(capacitor),
@@ -81,7 +96,6 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   };
   out.updater = {};
   out.window = finishEntity(allocateEntity<WindowBackend>());
-  return finishEntity(out);
 }
 
 // Returns the explicit Capacitor host. Run this once at app startup, passing an object that aggregates

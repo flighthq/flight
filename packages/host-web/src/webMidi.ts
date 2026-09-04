@@ -5,6 +5,7 @@ import {
   createMidiOutputPortResource,
 } from '@flighthq/midi/contract';
 import type {
+  EntityConstruction,
   MidiAccess,
   MidiAccessBackend,
   MidiEventAttachment,
@@ -29,6 +30,63 @@ export function createWebMidiPermissionAccessCapabilities(
   api: Readonly<Pick<Navigator, 'permissions' | 'requestMIDIAccess'>>,
 ): WebMidiPermissionAccessCapabilities {
   return createWebMidiProfile(api, true);
+}
+
+export function initializeWebMidiAccessBackend(
+  out: EntityConstruction<MidiAccessBackend>,
+  api: Readonly<WebMidiProfileApi>,
+  toAccess: (native: MIDIAccess) => MidiAccess,
+): void {
+  out.requestAccess = async () => {
+    try {
+      const native = await api.requestMIDIAccess();
+      return { access: toAccess(native), reason: 'accepted' } as const;
+    } catch (error) {
+      return { reason: classifyWebMidiRequestFailure(error) } as const;
+    }
+  };
+}
+
+export function initializeWebMidiAccessCapabilities(
+  out: EntityConstruction<WebMidiAccessCapabilities>,
+  access: MidiAccessBackend,
+): void {
+  out.access = access;
+}
+
+export function initializeWebMidiEventAttachment(
+  out: EntityConstruction<MidiEventAttachment>,
+  target: EventTarget,
+  type: string,
+  eventListener: EventListener,
+): void {
+  let released = false;
+  out.release = async () => {
+    if (released) return { reason: 'ok' } as const;
+    try {
+      target.removeEventListener(type, eventListener);
+      released = true;
+      return { reason: 'ok' } as const;
+    } catch {
+      return { reason: 'operation-failed' } as const;
+    }
+  };
+}
+
+export function initializeWebMidiPermissionAccessCapabilities(
+  out: EntityConstruction<WebMidiPermissionAccessCapabilities>,
+  access: MidiAccessBackend,
+  permission: MidiPermissionBackend,
+): void {
+  out.access = access;
+  out.permission = permission;
+}
+
+export function initializeWebMidiPermissionBackend(
+  out: EntityConstruction<MidiPermissionBackend>,
+  permissions: Permissions | undefined,
+): void {
+  out.getPermission = () => queryWebMidiPermission(permissions);
 }
 
 interface WebMidiProfileApi {
@@ -112,30 +170,22 @@ function createWebMidiProfile(
 
   const access = (() => {
     const out = allocateEntity<MidiAccessBackend>();
-    out.requestAccess = async () => {
-      try {
-        const native = await api.requestMIDIAccess();
-        return { access: toAccess(native), reason: 'accepted' } as const;
-      } catch (error) {
-        return { reason: classifyWebMidiRequestFailure(error) } as const;
-      }
-    };
+    initializeWebMidiAccessBackend(out, api, toAccess);
     return finishEntity(out);
   })();
   if (!includePermission)
     return (() => {
       const out = allocateEntity<WebMidiAccessCapabilities>();
-      out.access = access;
+      initializeWebMidiAccessCapabilities(out, access);
       return finishEntity(out);
     })();
   const permission = (() => {
     const out = allocateEntity<MidiPermissionBackend>();
-    out.getPermission = () => queryWebMidiPermission(api.permissions);
+    initializeWebMidiPermissionBackend(out, api.permissions);
     return finishEntity(out);
   })();
   const out = allocateEntity<WebMidiPermissionAccessCapabilities>();
-  out.access = access;
-  out.permission = permission;
+  initializeWebMidiPermissionAccessCapabilities(out, access, permission);
   return finishEntity(out);
 }
 
@@ -150,19 +200,9 @@ function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>
   } catch {
     return Promise.resolve({ reason: 'operation-failed', releaseFailed: false });
   }
-  let released = false;
   const attachmentEntity = (() => {
     const out = allocateEntity<MidiEventAttachment>();
-    out.release = async () => {
-      if (released) return { reason: 'ok' } as const;
-      try {
-        target.removeEventListener(type, eventListener);
-        released = true;
-        return { reason: 'ok' } as const;
-      } catch {
-        return { reason: 'operation-failed' } as const;
-      }
-    };
+    initializeWebMidiEventAttachment(out, target, type, eventListener);
     return finishEntity(out);
   })();
   const attachment: MidiEventAttachment = attachmentEntity;

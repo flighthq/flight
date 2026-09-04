@@ -7,6 +7,7 @@ import type {
   ClipboardTextBackend,
   ElectronApi,
   ElectronClipboardData,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type ElectronClipboardBackend = ClipboardBookmarkBackend &
@@ -20,55 +21,33 @@ type ElectronClipboardBackend = ClipboardBookmarkBackend &
 export function createElectronClipboardBackend(electron: ElectronApi): ElectronClipboardBackend {
   const cb = electron.clipboard;
   const out = allocateEntity<ElectronClipboardBackend>();
-  out.readText = async () => {
+  initializeElectronClipboardBackend(out, cb, electron);
+  return finishEntity(out);
+}
+
+export function initializeElectronClipboardBackend(
+  out: EntityConstruction<ElectronClipboardBackend>,
+  cb: ElectronApi['clipboard'],
+  electron: ElectronApi,
+): void {
+  out.clear = async () => {
     try {
-      return cb.readText();
-    } catch {
-      return '';
-    }
-  };
-  out.writeText = async (text) => {
-    try {
-      cb.writeText(text);
+      cb.clear();
       return true;
     } catch {
       return false;
     }
   };
-  out.readHtml = async () => {
+  out.getFormats = async () => {
     try {
-      return cb.readHTML();
+      return cb.availableFormats();
     } catch {
-      return '';
+      return [];
     }
   };
-  out.writeHtml = async (html) => {
+  out.hasFormat = async (format) => {
     try {
-      cb.writeHTML(html);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  out.hasText = async () => {
-    try {
-      return cb.readText().length > 0;
-    } catch {
-      return false;
-    }
-  };
-  out.readImage = async () => {
-    try {
-      const image = cb.readImage();
-      return image.isEmpty() ? '' : image.toDataURL();
-    } catch {
-      return '';
-    }
-  };
-  out.writeImage = async (dataUrl) => {
-    try {
-      cb.writeImage(electron.nativeImage.createFromDataURL(dataUrl));
-      return true;
+      return cb.has(format);
     } catch {
       return false;
     }
@@ -80,17 +59,9 @@ export function createElectronClipboardBackend(electron: ElectronApi): ElectronC
       return false;
     }
   };
-  out.readRTF = async () => {
+  out.hasText = async () => {
     try {
-      return cb.readRTF();
-    } catch {
-      return '';
-    }
-  };
-  out.writeRTF = async (rtf) => {
-    try {
-      cb.writeRTF(rtf);
-      return true;
+      return cb.readText().length > 0;
     } catch {
       return false;
     }
@@ -105,14 +76,6 @@ export function createElectronClipboardBackend(electron: ElectronApi): ElectronC
       return null;
     }
   };
-  out.writeBookmark = async (title, url) => {
-    try {
-      cb.writeBookmark(title, url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
   out.readFormat = async (format) => {
     try {
       return cb.read(format);
@@ -120,28 +83,19 @@ export function createElectronClipboardBackend(electron: ElectronApi): ElectronC
       return '';
     }
   };
-  out.writeFormat = async (format, data) => {
+  out.readHtml = async () => {
     try {
-      const payload: ElectronClipboardData = {};
-      payload[formatKey(format)] = data;
-      cb.write(payload);
-      return true;
+      return cb.readHTML();
     } catch {
-      return false;
+      return '';
     }
   };
-  out.hasFormat = async (format) => {
+  out.readImage = async () => {
     try {
-      return cb.has(format);
+      const image = cb.readImage();
+      return image.isEmpty() ? '' : image.toDataURL();
     } catch {
-      return false;
-    }
-  };
-  out.getFormats = async () => {
-    try {
-      return cb.availableFormats();
-    } catch {
-      return [];
+      return '';
     }
   };
   out.readItems = async (formats) => {
@@ -155,6 +109,54 @@ export function createElectronClipboardBackend(electron: ElectronApi): ElectronC
     }
     return items;
   };
+  out.readRTF = async () => {
+    try {
+      return cb.readRTF();
+    } catch {
+      return '';
+    }
+  };
+  out.readText = async () => {
+    try {
+      return cb.readText();
+    } catch {
+      return '';
+    }
+  };
+  out.writeBookmark = async (title, url) => {
+    try {
+      cb.writeBookmark(title, url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  out.writeFormat = async (format, data) => {
+    try {
+      const payload: ElectronClipboardData = {};
+      payload[formatKey(format)] = data;
+      cb.write(payload);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  out.writeHtml = async (html) => {
+    try {
+      cb.writeHTML(html);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  out.writeImage = async (dataUrl) => {
+    try {
+      cb.writeImage(electron.nativeImage.createFromDataURL(dataUrl));
+      return true;
+    } catch {
+      return false;
+    }
+  };
   out.writeItems = async (items) => {
     try {
       const data: ElectronClipboardData = {};
@@ -165,15 +167,22 @@ export function createElectronClipboardBackend(electron: ElectronApi): ElectronC
       return false;
     }
   };
-  out.clear = async () => {
+  out.writeRTF = async (rtf) => {
     try {
-      cb.clear();
+      cb.writeRTF(rtf);
       return true;
     } catch {
       return false;
     }
   };
-  return finishEntity(out);
+  out.writeText = async (text) => {
+    try {
+      cb.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 }
 
 // Maps a MIME/flavor string to the keyed field Electron's clipboard.write accepts. Unknown flavors

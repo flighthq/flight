@@ -4,31 +4,51 @@ import type {
   AudioDeviceBackend,
   AudioDeviceHandle,
   AudioSourceHandle,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createWebAudioDeviceBackend(): AudioDeviceBackend {
   let nextHandle = 1;
   const devices = new Map<number, AudioContext>();
   const buffers = new Map<number, AudioBuffer>();
-  const sources = new Map<
-    number,
-    {
-      buffer: AudioBuffer;
-      context: AudioContext;
-      gainNode: GainNode;
-      pannerNode: StereoPannerNode;
-      onEnded: (() => void) | null;
-      sourceNode: AudioBufferSourceNode | null;
-      state: 'playing' | 'stopped';
-    }
-  >();
+  const sources = new Map<number, AudioSourceEntry>();
 
   function handle(): number {
     return nextHandle++;
   }
 
   const out = allocateEntity<AudioDeviceBackend & AudioDeviceBackendWebExtension>();
+  initializeWebAudioDeviceBackend(out, devices, buffers, sources, handle);
+  return finishEntity(out);
+}
 
+export function getAudioSourceBufferSourceNode(
+  backend: Readonly<AudioDeviceBackend>,
+  source: AudioSourceHandle,
+): AudioBufferSourceNode | null {
+  if (isWebExtendedBackend(backend)) return backend.getSourceBufferSourceNode(source);
+  return null;
+}
+
+export function getAudioSourceGainNode(
+  backend: Readonly<AudioDeviceBackend>,
+  source: AudioSourceHandle,
+): GainNode | null {
+  if (isWebExtendedBackend(backend)) return backend.getSourceGainNode(source);
+  return null;
+}
+
+export function hasAudioDeviceWebNodeAccess(backend: Readonly<AudioDeviceBackend>): boolean {
+  return isWebExtendedBackend(backend);
+}
+
+export function initializeWebAudioDeviceBackend(
+  out: EntityConstruction<AudioDeviceBackend & AudioDeviceBackendWebExtension>,
+  devices: Map<number, AudioContext>,
+  buffers: Map<number, AudioBuffer>,
+  sources: Map<number, AudioSourceEntry>,
+  handle: () => number,
+): void {
   out.createBuffer = (
     device: AudioDeviceHandle,
     channels: number,
@@ -111,6 +131,16 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend {
     return context !== undefined ? context.currentTime : 0;
   };
 
+  out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
+    const s = sources.get(source as number);
+    return s?.sourceNode ?? null;
+  };
+
+  out.getSourceGainNode = (source: AudioSourceHandle): GainNode | null => {
+    const s = sources.get(source as number);
+    return s?.gainNode ?? null;
+  };
+
   out.onSourceEnded = (source: AudioSourceHandle, callback: (() => void) | null): void => {
     const s = sources.get(source as number);
     if (s === undefined) return;
@@ -179,43 +209,21 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend {
     s.sourceNode = null;
     s.state = 'stopped';
   };
-
-  out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
-    const s = sources.get(source as number);
-    return s?.sourceNode ?? null;
-  };
-
-  out.getSourceGainNode = (source: AudioSourceHandle): GainNode | null => {
-    const s = sources.get(source as number);
-    return s?.gainNode ?? null;
-  };
-
-  return finishEntity(out);
-}
-
-export function getAudioSourceBufferSourceNode(
-  backend: Readonly<AudioDeviceBackend>,
-  source: AudioSourceHandle,
-): AudioBufferSourceNode | null {
-  if (isWebExtendedBackend(backend)) return backend.getSourceBufferSourceNode(source);
-  return null;
-}
-
-export function getAudioSourceGainNode(
-  backend: Readonly<AudioDeviceBackend>,
-  source: AudioSourceHandle,
-): GainNode | null {
-  if (isWebExtendedBackend(backend)) return backend.getSourceGainNode(source);
-  return null;
-}
-
-export function hasAudioDeviceWebNodeAccess(backend: Readonly<AudioDeviceBackend>): boolean {
-  return isWebExtendedBackend(backend);
 }
 
 interface AudioDeviceBackendWebExtension extends AudioDeviceBackend {
   getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null;
   getSourceGainNode(source: AudioSourceHandle): GainNode | null;
+}
+
+interface AudioSourceEntry {
+  buffer: AudioBuffer;
+  context: AudioContext;
+  gainNode: GainNode;
+  onEnded: (() => void) | null;
+  pannerNode: StereoPannerNode;
+  sourceNode: AudioBufferSourceNode | null;
+  state: 'playing' | 'stopped';
 }
 
 function isWebExtendedBackend(backend: Readonly<AudioDeviceBackend>): backend is AudioDeviceBackendWebExtension {

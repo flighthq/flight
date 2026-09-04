@@ -6,6 +6,8 @@ import type {
   ElectronHost,
   ElectronIpcTarget,
   ElectronMacosHost,
+  EntityConstruction,
+  EntityWithoutRuntime,
 } from '@flighthq/types/contract';
 
 import { createElectronAppCapabilities } from './electronApp';
@@ -33,6 +35,38 @@ import { createElectronStorageBackend } from './electronStorage';
 import { createElectronTrayCapabilities } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
+
+export function initializeElectronHost(
+  out: EntityConstruction<ElectronHost<DesktopOsProfile>>,
+  values: Readonly<EntityWithoutRuntime<ElectronHost<DesktopOsProfile>>>,
+): void {
+  out.accessibility = values.accessibility;
+  out.app = values.app;
+  out.clipboard = values.clipboard;
+  out.connectivity = values.connectivity;
+  out.dialog = values.dialog;
+  out.graphics = values.graphics;
+  out.input = values.input;
+  out.ipc = values.ipc;
+  out.media = values.media;
+  out.menu = values.menu;
+  out.midi = values.midi;
+  out.net = values.net;
+  out.notification = values.notification;
+  out.power = values.power;
+  out.protocol = values.protocol;
+  out.screen = values.screen;
+  out.share = values.share;
+  out.shell = values.shell;
+  out.shortcut = values.shortcut;
+  out.storage = values.storage;
+  out.system = values.system;
+  out.text = values.text;
+  out.tray = values.tray;
+  out.ui = values.ui;
+  out.updater = values.updater;
+  out.window = values.window;
+}
 
 // Builds the explicit Electron host and installs capabilities that have not yet migrated from their
 // package-local seams. Run this once in the Electron main process, passing the `electron` module plus
@@ -90,36 +124,33 @@ export function registerElectronBackends(
   const shell = makeElectronShellCapabilities(electron, options.platform);
   const window = createElectronWindowBackend(electron);
   const out = allocateEntity<ElectronHost<DesktopOsProfile>>();
-  out.accessibility = {};
-  out.app = app;
-  out.clipboard = {
-    bookmark: clipboard,
-    formats: clipboard,
-    image: clipboard,
-    text: clipboard,
-  };
-  out.connectivity = {};
-  out.dialog = dialog;
-  out.graphics = {};
-  out.input = {};
-  out.ipc = ipc;
-  out.media = {};
-  out.menu = menu;
-  out.midi = {};
-  out.net = {};
-  out.power = power;
-  out.protocol = protocol;
-  out.notification = notification;
-  out.shortcut = { query, trigger };
-  out.screen = screen;
-  out.share = {};
-  out.shell = shell;
-  out.storage = { local: storage };
-  out.system = { platform: createElectronPlatformBackend(electron) };
-  out.text = {};
-  out.tray = createElectronTrayCapabilities(electron, options.platform);
-  out.ui = {};
-  out.updater = { command: updater };
-  out.window = window;
+  initializeElectronHost(out, {
+    accessibility: {},
+    app,
+    clipboard: { bookmark: clipboard, formats: clipboard, image: clipboard, text: clipboard },
+    connectivity: {},
+    dialog,
+    graphics: {},
+    input: {},
+    ipc,
+    media: {},
+    menu,
+    midi: {},
+    net: {},
+    notification,
+    power,
+    protocol,
+    screen,
+    share: {},
+    shell,
+    shortcut: { query, trigger },
+    storage: { local: storage },
+    system: { platform: createElectronPlatformBackend(electron) },
+    text: {},
+    tray: createElectronTrayCapabilities(electron, options.platform),
+    ui: {},
+    updater: { command: updater },
+    window,
+  });
   return finishEntity(out);
 }

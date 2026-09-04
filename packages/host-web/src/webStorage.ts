@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   StorageBackend,
   StorageChangeBackend,
   StorageClearFailureReason,
@@ -13,11 +14,7 @@ type WebStorageBackend = StorageBackend & StorageChangeBackend;
 const releases = new Set<() => void>();
 let destroyed = false;
 
-// One stable Entity supplies the two truthful Web Host facets: synchronous local commands and external
-// `storage` events. The command facet remains usable without event listeners; destroy is terminal for
-// event acquisition and releases every exact listener pair retained by the change facet.
-export const webStorageBackend = (() => {
-  const out = allocateEntity<WebStorageBackend>();
+export function initializeWebStorageBackend(out: EntityConstruction<WebStorageBackend>): void {
   out.clear = () => {
     try {
       const storage = getWebLocalStorage();
@@ -113,6 +110,14 @@ export const webStorageBackend = (() => {
     releases.add(release);
     return release;
   };
+}
+
+// One stable Entity supplies the two truthful Web Host facets: synchronous local commands and external
+// `storage` events. The command facet remains usable without event listeners; destroy is terminal for
+// event acquisition and releases every exact listener pair retained by the change facet.
+export const webStorageBackend = (() => {
+  const out = allocateEntity<WebStorageBackend>();
+  initializeWebStorageBackend(out);
   return finishEntity(out);
 })();
 

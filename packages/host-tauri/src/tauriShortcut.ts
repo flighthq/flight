@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
   Entity,
+  EntityConstruction,
   ShortcutQueryBackend,
   ShortcutTriggerBackend,
   ShortcutTriggerSubscription,
@@ -10,16 +11,31 @@ import type {
 
 export function createTauriShortcutQueryBackend(tauri: TauriApi): ShortcutQueryBackend {
   const provider = allocateEntity<ShortcutQueryBackend>();
-  provider.isRegistered = async (accelerator: Accelerator) => {
-    return await tauri.globalShortcut.isRegistered(accelerator);
-  };
+  initializeTauriShortcutQueryBackend(provider, tauri.globalShortcut);
   return provider;
 }
 
 // Tauri's plugin is async at every boundary. Registrations enter the owned ledger only after native
 // acquisition settles; failed unregisters remain there so destroy or an exact-token retry can release them.
 export function createTauriShortcutTriggerBackend(tauri: TauriApi): ShortcutTriggerBackend {
-  const globalShortcut = tauri.globalShortcut;
+  const provider = allocateEntity<ShortcutTriggerBackend>();
+  initializeTauriShortcutTriggerBackend(provider, tauri.globalShortcut);
+  return finishEntity(provider);
+}
+
+export function initializeTauriShortcutQueryBackend(
+  out: EntityConstruction<ShortcutQueryBackend>,
+  globalShortcut: TauriApi['globalShortcut'],
+): void {
+  out.isRegistered = async (accelerator: Accelerator) => {
+    return await globalShortcut.isRegistered(accelerator);
+  };
+}
+
+export function initializeTauriShortcutTriggerBackend(
+  out: EntityConstruction<ShortcutTriggerBackend>,
+  globalShortcut: TauriApi['globalShortcut'],
+): void {
   const registrations = new Map<ShortcutTriggerSubscription, Accelerator>();
   const pending = new Set<Promise<void>>();
 
@@ -30,8 +46,7 @@ export function createTauriShortcutTriggerBackend(tauri: TauriApi): ShortcutTrig
     }
   }
 
-  const provider = allocateEntity<ShortcutTriggerBackend>();
-  provider.destroy = async () => {
+  out.destroy = async () => {
     await Promise.allSettled([...pending]);
     let firstError: unknown;
     const accelerators = new Set(registrations.values());
@@ -44,7 +59,7 @@ export function createTauriShortcutTriggerBackend(tauri: TauriApi): ShortcutTrig
     }
     if (firstError !== undefined) throw firstError;
   };
-  provider.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
+  out.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
     const subscription = finishEntity(allocateEntity<Entity>());
     const registration = globalShortcut.register(accelerator, (event) => {
       if (event.state === 'Pressed' && registrations.has(subscription)) trigger();
@@ -58,11 +73,10 @@ export function createTauriShortcutTriggerBackend(tauri: TauriApi): ShortcutTrig
       pending.delete(registration);
     }
   };
-  provider.unsubscribe = async (subscription: ShortcutTriggerSubscription) => {
+  out.unsubscribe = async (subscription: ShortcutTriggerSubscription) => {
     const accelerator = registrations.get(subscription);
     if (accelerator === undefined) return { reason: 'unknown-subscription' as const };
     await releaseAccelerator(accelerator);
     return { reason: 'unsubscribed' as const };
   };
-  return finishEntity(provider);
 }

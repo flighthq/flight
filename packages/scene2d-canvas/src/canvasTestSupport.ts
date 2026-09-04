@@ -6,6 +6,7 @@ import type {
   CanvasRenderSurfaceCreator,
   CanvasRenderTarget,
   CanvasTextureResolvers,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -21,18 +22,21 @@ export * from './canvasTextureResolver';
 
 export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = (() => {
   const creator = allocateEntity<CanvasRenderSurfaceCreator>();
-  creator.createRenderSurface = (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
-    const canvas = globalThis.document.createElement('canvas');
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
-    return canvas;
-  };
-  creator.destroyRenderSurface = (canvas: HTMLCanvasElement): void => {
-    canvas.width = 0;
-    canvas.height = 0;
-  };
+  initializeCanvasRenderSurfaceCreator(
+    creator,
+    (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
+      const canvas = globalThis.document.createElement('canvas');
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      canvas.width = width * pixelRatio;
+      canvas.height = height * pixelRatio;
+      return canvas;
+    },
+    (canvas: HTMLCanvasElement): void => {
+      canvas.width = 0;
+      canvas.height = 0;
+    },
+  );
   creator[EntityRuntimeKey] = { binding: null };
   return finishEntity(creator);
 })();
@@ -61,4 +65,13 @@ export function createCanvasRenderTarget(width: number, height: number): CanvasR
 
 export function createCanvasTextureResolvers(): CanvasTextureResolvers {
   return createExplicitCanvasTextureResolvers(canvasTestSurfaceCreator);
+}
+
+export function initializeCanvasRenderSurfaceCreator(
+  out: EntityConstruction<CanvasRenderSurfaceCreator>,
+  createRenderSurface: CanvasRenderSurfaceCreator['createRenderSurface'],
+  destroyRenderSurface: CanvasRenderSurfaceCreator['destroyRenderSurface'],
+): void {
+  out.createRenderSurface = createRenderSurface;
+  out.destroyRenderSurface = destroyRenderSurface;
 }

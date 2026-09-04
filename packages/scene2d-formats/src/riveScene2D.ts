@@ -7,6 +7,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
+  EntityConstruction,
   ImportDiagnostic,
   Matrix,
   RiveAdvancedBlend,
@@ -50,8 +51,7 @@ export function createScene2DFromRiveDocument(
   if (document === null)
     return (() => {
       const out = allocateEntity<RiveDocumentImportResult>();
-      out.artboards = [];
-      out.assets = [];
+      initializeRiveDocumentImportResult(out, [], []);
       return finishEntity(out);
     })();
 
@@ -61,11 +61,21 @@ export function createScene2DFromRiveDocument(
   // drawable's assetId indexes, so the names are resolved once here rather than per drawable.
   const fontNames = assets.map((asset) => asset.name);
   const out = allocateEntity<RiveDocumentImportResult>();
-  out.artboards = graph.artboards.map((artboard) =>
-    createRiveArtboardImport(artboard, document.objects, fontNames, diagnostics),
+  initializeRiveDocumentImportResult(
+    out,
+    graph.artboards.map((artboard) => createRiveArtboardImport(artboard, document.objects, fontNames, diagnostics)),
+    assets,
   );
-  out.assets = assets;
   return finishEntity(out);
+}
+
+export function initializeRiveDocumentImportResult(
+  out: EntityConstruction<RiveDocumentImportResult>,
+  artboards: RiveDocumentImportResult['artboards'],
+  assets: RiveDocumentImportResult['assets'],
+): void {
+  out.artboards = artboards;
+  out.assets = assets;
 }
 
 function createRiveArtboardImport(

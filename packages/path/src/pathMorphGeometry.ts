@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Path, PathMorph } from '@flighthq/types/contract';
+import type { EntityConstruction, Path, PathMorph } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
 import { forEachPathSegment } from './forEachPathSegment';
@@ -60,13 +60,23 @@ export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): Path
     issue: PathMorphIssueNone,
     morph: (() => {
       const out = allocateEntity<PathMorph>();
-      out.commands = commands;
-      out.endData = endData;
-      out.startData = startData;
-      out.winding = start.winding;
+      initializePathMorph(out, commands, endData, startData, start.winding);
       return finishEntity(out);
     })(),
   };
+}
+
+export function initializePathMorph(
+  out: EntityConstruction<PathMorph>,
+  commands: number[],
+  endData: number[],
+  startData: number[],
+  winding: Path['winding'],
+): void {
+  out.commands = commands;
+  out.endData = endData;
+  out.startData = startData;
+  out.winding = winding;
 }
 
 // Opposite traversal makes equally-authored closed shapes fold through themselves during coordinate

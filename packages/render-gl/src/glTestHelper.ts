@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { GlBitmapShader, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { EntityConstruction, GlBitmapShader, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 
@@ -54,9 +54,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     renderTargetViewport: null,
     defaultBitmapShader: (() => {
       const out = allocateEntity<GlBitmapShader>();
-      out.locations = shaderLoc;
-      out.program = shaderLoc.program;
-      out.bind = vi.fn();
+      initializeGlBitmapShader(out, vi.fn(), shaderLoc, shaderLoc.program);
       return finishEntity(out);
     })(),
     quadVertexData: new Float32Array(16),
@@ -75,6 +73,17 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
   state[EntityRuntimeKey] = runtime;
 
   return { state, gl, canvas, shaderLoc };
+}
+
+export function initializeGlBitmapShader(
+  out: EntityConstruction<GlBitmapShader>,
+  bind: GlBitmapShader['bind'],
+  locations: GlBitmapShader['locations'],
+  program: GlBitmapShader['program'],
+): void {
+  out.bind = bind;
+  out.locations = locations;
+  out.program = program;
 }
 
 // makeGL returns a fresh isolated mock for unit tests that call GL functions
