@@ -59,6 +59,7 @@
     "@flighthq/velocity": "*"
   },
   "devDependencies": {
+    "@flighthq/bitmap": "*",
     "@flighthq/bitmaptext": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",
