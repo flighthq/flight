@@ -1,11 +1,9 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { ColorScaleBiasAdjustment, ColorScaleBiasLike } from '@flighthq/types/contract';
 
-export function createColorScaleBiasAdjustment(
-  colorScaleBias: Readonly<ColorScaleBiasLike>,
-): NonEntityCreateResult<ColorScaleBiasAdjustment, 'descriptor'> {
+export function createColorScaleBiasAdjustment(colorScaleBias: Readonly<ColorScaleBiasLike>): ColorScaleBiasAdjustment {
   const value = { ...colorScaleBias };
-  return {
+  return createEntity({
     kind: 'ColorScaleBiasAdjustment',
     colorScaleBias: value,
     colorMatrix: [
@@ -30,5 +28,5 @@ export function createColorScaleBiasAdjustment(
       value.alphaScale,
       value.alphaBias,
     ],
-  };
+  });
 }

@@ -1,5 +1,6 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSkeleton2D,
@@ -236,7 +237,7 @@ function parseSpineMeshAttachment(
   const rawVerts = Array.isArray(raw.vertices) ? (raw.vertices as number[]) : [];
   const vertexCount = uvs.length >> 1;
   if (rawVerts.length === vertexCount * 2) {
-    return {
+    return createEntity({
       kind: MeshAttachment2DKind,
       name,
       skin: null,
@@ -244,9 +245,9 @@ function parseSpineMeshAttachment(
       uvs,
       vertexCount,
       vertices: Float32Array.from(rawVerts),
-    };
+    }) as MeshAttachment2D;
   }
-  return {
+  return createEntity({
     kind: MeshAttachment2DKind,
     name,
     skin: parseSpineWeightedVertices(rawVerts, vertexCount, diagnostics),
@@ -254,11 +255,11 @@ function parseSpineMeshAttachment(
     uvs,
     vertexCount,
     vertices: null,
-  };
+  }) as MeshAttachment2D;
 }
 
 function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>): RegionAttachment2D {
-  return {
+  return createEntity({
     height: numberOr(raw.height, 0),
     kind: RegionAttachment2DKind,
     name,
@@ -268,7 +269,7 @@ function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>):
     width: numberOr(raw.width, 0),
     x: numberOr(raw.x, 0),
     y: numberOr(raw.y, 0),
-  };
+  }) as RegionAttachment2D;
 }
 
 // Slots bind a bone to its currently-shown attachment; their array order is the draw order. `boneIndex`

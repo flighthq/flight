@@ -2755,12 +2755,12 @@ function appendSwfStreamSoundCue(
   }
   const resource = createAudioResource();
   state.streamSounds.push({ bytes, mimeType: 'audio/mpeg', resource });
-  const cue: TimelineStreamAudioCue = {
+  const cue: TimelineStreamAudioCue = createEntity({
     frame: startFrame,
     gain: 1,
     kind: TimelineStreamAudioCueKind,
     resource,
-  };
+  });
   cues.push(cue);
 }
 
@@ -2832,7 +2832,7 @@ function readSwfSoundInfo(body: SwfReader): SwfSoundInfo | null {
 // Builds the cue one trigger becomes. A stop names the sound to silence and nothing else: every play field
 // SOUNDINFO carries alongside it describes a playback being ended rather than started.
 function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource: AudioResource): TimelineAudioCue {
-  return {
+  return createEntity({
     duration: info.stop || info.outPointSamples < 0 ? null : info.outPointSamples,
     envelope: info.stop ? [] : info.envelope,
     frame,
@@ -2846,7 +2846,7 @@ function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource
     // stacks a fresh copy every time the frame is entered.
     skipIfPlaying: !info.stop && info.skipIfPlaying,
     stop: info.stop,
-  };
+  });
 }
 
 // Pairs every class-named trigger with the character its class was bound to, now that the whole tag stream

@@ -1,5 +1,5 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
-import type { ColorBlindSimulationAdjustment, ColorBlindType } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ColorBlindSimulationAdjustment, ColorBlindType, EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Color-vision-deficiency simulation as a matrix-tier adjustment — this op's FIRST backend realization
 // (it was previously a descriptor-only effect with no pass). Each type bakes a fixed linear 3×3 RGB→RGB
@@ -11,8 +11,8 @@ import type { ColorBlindSimulationAdjustment, ColorBlindType } from '@flighthq/t
 // simulations; the -omaly forms are the published partial (anomalous-trichromacy) matrices; achromatopsia
 // is full luma monochromacy and achromatomaly its partial form.
 export function createColorBlindSimulationAdjustment(
-  options: Readonly<Omit<ColorBlindSimulationAdjustment, 'kind' | 'colorMatrix'>> = {},
-): NonEntityCreateResult<ColorBlindSimulationAdjustment, 'descriptor'> {
+  options: Readonly<Omit<ColorBlindSimulationAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},
+): ColorBlindSimulationAdjustment {
   const type: ColorBlindType = options.type ?? 'deuteranopia';
   const m = COLOR_BLIND_MATRICES[type];
   // prettier-ignore
@@ -22,7 +22,7 @@ export function createColorBlindSimulationAdjustment(
     m[6], m[7], m[8], 0, 0,
     0, 0, 0, 1, 0,
   ];
-  return { kind: 'ColorBlindSimulationAdjustment', ...options, colorMatrix };
+  return createEntity({ kind: 'ColorBlindSimulationAdjustment', ...options, colorMatrix });
 }
 
 // Row-major 3×3 RGB→RGB coefficients per deficiency (HCIRN / Wickline simulation set).

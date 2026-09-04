@@ -1,12 +1,12 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
-import type { ColorTransformFunction, LiftGammaGainAdjustment } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ColorTransformFunction, EntityRuntimeKey, LiftGammaGainAdjustment } from '@flighthq/types/contract';
 
 // Lift/gamma/gain as a LUT-tier adjustment (gamma is the nonlinear part). Ported faithfully from the old
 // liftGammaGainEffect shader: gain multiplies, lift offsets toward the packed neutral, gamma applies a
 // per-channel power curve. Packed-RGBA neutrals: lift 0x000000ff, gamma 0x808080ff, gain 0xffffffff.
 export function createLiftGammaGainAdjustment(
-  options: Readonly<Omit<LiftGammaGainAdjustment, 'kind' | 'transform'>> = {},
-): NonEntityCreateResult<LiftGammaGainAdjustment, 'descriptor'> {
+  options: Readonly<Omit<LiftGammaGainAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
+): LiftGammaGainAdjustment {
   const lift = unpackRgb(options.lift ?? 0x000000ff);
   const gammaRaw = unpackRgb(options.gamma ?? 0x808080ff);
   const gain = unpackRgb(options.gain ?? 0xffffffff);
@@ -21,7 +21,7 @@ export function createLiftGammaGainAdjustment(
     out[1] = clamp01(Math.pow(Math.max(g * gain[1] + lift[1] * (1 - g), 0), gammaExp[1]));
     out[2] = clamp01(Math.pow(Math.max(b * gain[2] + lift[2] * (1 - b), 0), gammaExp[2]));
   };
-  return { kind: 'LiftGammaGainAdjustment', ...options, transform };
+  return createEntity({ kind: 'LiftGammaGainAdjustment', ...options, transform });
 }
 
 function clamp01(v: number): number {

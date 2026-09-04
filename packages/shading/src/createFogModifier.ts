@@ -1,4 +1,5 @@
-import type { FogModifier, FogModifierOptions, NonEntityCreateResult } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { FogModifier, FogModifierOptions } from '@flighthq/types/contract';
 import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createFogModifier`. Only `color` is required; `mode`/`near`/`far`/`density` carry
@@ -11,10 +12,8 @@ import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/
 // endpoints, defaults 0 and 1); the Exponential/Exponential2 modes use `density` (default 1) as the
 // falloff rate. This is the per-material forward-shaded fog term, the compiled sibling of the
 // post-process ScreenSpaceFogEffect.
-export function createFogModifier(
-  options: Readonly<FogModifierOptions>,
-): NonEntityCreateResult<FogModifier, 'descriptor'> {
-  return {
+export function createFogModifier(options: Readonly<FogModifierOptions>): FogModifier {
+  return createEntity({
     kind: FogModifierKind,
     slot: ModifierSlot.Effect,
     color: options.color,
@@ -22,5 +21,5 @@ export function createFogModifier(
     near: options.near ?? 0,
     far: options.far ?? 1,
     density: options.density ?? 1,
-  };
+  });
 }

@@ -1,5 +1,6 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSkeleton2D,
@@ -717,7 +718,7 @@ function parseDragonBonesMeshDisplay(
     return null;
   }
   const uvs = toFloat32Array(display.uvs);
-  return {
+  return createEntity({
     kind: MeshAttachment2DKind,
     name: typeof display.name === 'string' ? display.name : null,
     skin: null,
@@ -725,7 +726,7 @@ function parseDragonBonesMeshDisplay(
     uvs,
     vertexCount: uvs.length >> 1,
     vertices: toFloat32Array(display.vertices),
-  };
+  }) as MeshAttachment2D;
 }
 
 // Converts a DragonBones WEIGHTED mesh to a MeshAttachment2D whose Skin2D carries per-bone LOCAL offsets by
@@ -825,7 +826,7 @@ function parseDragonBonesWeightedMesh(
       { meshes: 1 },
     );
   }
-  return {
+  return createEntity({
     kind: MeshAttachment2DKind,
     name: typeof display.name === 'string' ? display.name : null,
     skin: createSkin2D(influenceCounts, Float32Array.from(influences)),
@@ -833,7 +834,7 @@ function parseDragonBonesWeightedMesh(
     uvs,
     vertexCount,
     vertices: null,
-  };
+  }) as MeshAttachment2D;
 }
 
 // Maps a slot's `display` array to Flight attachments, POSITION-PRESERVING: result index i is displayIndex
@@ -855,7 +856,7 @@ function parseDragonBonesDisplayList(
 // are left 0 here to be resolved at atlas-binding time, mirroring how a display references its region by name.
 function parseDragonBonesRegionDisplay(display: Record<string, unknown>): RegionAttachment2D {
   const transform = parseDragonBonesBoneTransform(display.transform);
-  return {
+  return createEntity({
     height: 0,
     kind: RegionAttachment2DKind,
     name: typeof display.name === 'string' ? display.name : null,
@@ -865,7 +866,7 @@ function parseDragonBonesRegionDisplay(display: Record<string, unknown>): Region
     width: 0,
     x: transform.x,
     y: transform.y,
-  };
+  }) as RegionAttachment2D;
 }
 
 // DragonBones slots bind a bone to their shown display; `slot` array order is the draw order. `boneIndex`

@@ -238,7 +238,7 @@ export function setTilemapTileTint(tilemap: Tilemap, column: number, row: number
   const data = tilemap.data;
   if (column < 0 || column >= data.columns || row < 0 || row >= data.rows) return;
   if (data.materialData === null) data.materialData = new Array(data.columns * data.rows).fill(null);
-  data.materialData[row * data.columns + column] = { tint: rgba >>> 0 };
+  data.materialData[row * data.columns + column] = createEntity({ tint: rgba >>> 0 });
 }
 
 const defaultMethods: Partial<MethodsOf<TilemapRuntime>> = {

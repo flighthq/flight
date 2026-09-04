@@ -1,11 +1,11 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
-import type { SepiaAdjustment } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey, SepiaAdjustment } from '@flighthq/types/contract';
 
 // Sepia tone as a matrix-tier adjustment. `mix(rgb, sepia·rgb, intensity)` is affine 3×3 (no offset);
 // alpha is unchanged. At intensity 1 this is the standard sepia matrix used across CSS/Flash.
 export function createSepiaAdjustment(
-  options: Readonly<Omit<SepiaAdjustment, 'kind' | 'colorMatrix'>> = {},
-): NonEntityCreateResult<SepiaAdjustment, 'descriptor'> {
+  options: Readonly<Omit<SepiaAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},
+): SepiaAdjustment {
   const k = options.intensity ?? 1;
   const j = 1 - k;
   // prettier-ignore
@@ -15,5 +15,5 @@ export function createSepiaAdjustment(
     0.272 * k, 0.534 * k, j + 0.131 * k, 0, 0,
     0, 0, 0, 1, 0,
   ];
-  return { kind: 'SepiaAdjustment', ...options, colorMatrix };
+  return createEntity({ kind: 'SepiaAdjustment', ...options, colorMatrix });
 }

@@ -1,15 +1,13 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { ColorMatrixAdjustment } from '@flighthq/types/contract';
 
 import { COLOR_MATRIX_LENGTH } from './colorMatrixMath';
 
-export function createColorMatrixAdjustment(
-  colorMatrix: readonly number[],
-): NonEntityCreateResult<ColorMatrixAdjustment, 'descriptor'> {
+export function createColorMatrixAdjustment(colorMatrix: readonly number[]): ColorMatrixAdjustment {
   if (colorMatrix.length !== COLOR_MATRIX_LENGTH) {
     throw new Error(`Color matrix must contain ${COLOR_MATRIX_LENGTH} values.`);
   }
-  return { kind: 'ColorMatrixAdjustment', colorMatrix: [...colorMatrix] };
+  return createEntity({ kind: 'ColorMatrixAdjustment', colorMatrix: [...colorMatrix] });
 }
 
 // Returns the 4×5 color matrix a stack operation contributes to the fused matrix-tier pass, or null if

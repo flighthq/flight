@@ -1,5 +1,5 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
-import type { ColorGradeAdjustment, ColorTransformFunction } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ColorGradeAdjustment, ColorTransformFunction, EntityRuntimeKey } from '@flighthq/types/contract';
 
 // The full color grade as one LUT-tier adjustment. The exposure/brightness/temperature/tint/saturation/
 // contrast scene2d is ported faithfully from the old colorGradeEffect shader; a lift/gamma/gain scene2d
@@ -8,8 +8,8 @@ import type { ColorGradeAdjustment, ColorTransformFunction } from '@flighthq/typ
 // LUT. Note: the old colorGradeEffect default had contrast 0 (its shader read `contrast ?? 1`); the
 // identity default here is contrast 1.
 export function createColorGradeAdjustment(
-  options: Readonly<Omit<ColorGradeAdjustment, 'kind' | 'transform'>> = {},
-): NonEntityCreateResult<ColorGradeAdjustment, 'descriptor'> {
+  options: Readonly<Omit<ColorGradeAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
+): ColorGradeAdjustment {
   const exposure = Math.pow(2, options.exposure ?? 0);
   const brightness = options.brightness ?? 0;
   const contrast = options.contrast ?? 1;
@@ -43,7 +43,7 @@ export function createColorGradeAdjustment(
     out[1] = clamp01(cg);
     out[2] = clamp01(cb);
   };
-  return { kind: 'ColorGradeAdjustment', ...options, transform };
+  return createEntity({ kind: 'ColorGradeAdjustment', ...options, transform });
 }
 
 function clamp01(v: number): number {

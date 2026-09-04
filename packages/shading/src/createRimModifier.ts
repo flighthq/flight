@@ -1,4 +1,5 @@
-import type { NonEntityCreateResult, RimModifier, RimModifierOptions } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { RimModifier, RimModifierOptions } from '@flighthq/types/contract';
 import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 
 // The options for `createRimModifier`. Only `color` is required; `power`/`intensity`/`bias` carry
@@ -10,15 +11,13 @@ import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 // halo, force-field shields, and NPR rim light. `color` is packed sRgb-albedo RGBA (0xrrggbbaa);
 // `power` (falloff exponent, higher = tighter) defaults to 3, `intensity` to 1, and `bias` (the
 // constant floor before the falloff) to 0 (pure Fresnel).
-export function createRimModifier(
-  options: Readonly<RimModifierOptions>,
-): NonEntityCreateResult<RimModifier, 'descriptor'> {
-  return {
+export function createRimModifier(options: Readonly<RimModifierOptions>): RimModifier {
+  return createEntity({
     kind: RimModifierKind,
     slot: ModifierSlot.Effect,
     color: options.color,
     power: options.power ?? 3,
     intensity: options.intensity ?? 1,
     bias: options.bias ?? 0,
-  };
+  });
 }

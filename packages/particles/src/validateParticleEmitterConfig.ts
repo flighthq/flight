@@ -190,7 +190,7 @@ function isFiniteCurve(curve: ReadonlyArray<number> | null): curve is ReadonlyAr
 function reportCurve(
   issues: ParticleConfigIssue[],
   curve: ReadonlyArray<number> | null,
-  field: keyof ParticleEmitterConfig,
+  field: string & keyof ParticleEmitterConfig,
   stride: number,
 ): void {
   if (curve == null) return;
@@ -216,8 +216,8 @@ function reportCurve(
 function reportInvertedRange(
   issues: ParticleConfigIssue[],
   config: Readonly<ParticleEmitterConfig>,
-  minField: keyof ParticleEmitterConfig,
-  maxField: keyof ParticleEmitterConfig,
+  minField: string & keyof ParticleEmitterConfig,
+  maxField: string & keyof ParticleEmitterConfig,
 ): void {
   const min = config[minField];
   const max = config[maxField];
@@ -233,7 +233,7 @@ function reportInvertedRange(
 function reportUnitRange(
   issues: ParticleConfigIssue[],
   config: Readonly<ParticleEmitterConfig>,
-  field: keyof ParticleEmitterConfig,
+  field: string & keyof ParticleEmitterConfig,
 ): void {
   const value = config[field];
   if (Number.isFinite(value) && ((value as number) < 0 || (value as number) > 1)) {
