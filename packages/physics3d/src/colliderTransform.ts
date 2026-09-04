@@ -213,7 +213,7 @@ export function initializeCollisionCylinder3D(
   out.z1 = z1;
 }
 
-export function initializeCollisionHeightfield3D(
+function initializeCollisionHeightfield3D(
   out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'heightfield' }> & Entity>,
   cellSizeX: number,
   cellSizeZ: number,
@@ -261,7 +261,7 @@ export function initializeCollisionSphere3D(
   out.z = z;
 }
 
-export function initializeCollisionTriangleMesh3D(
+function initializeCollisionTriangleMesh3D(
   out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' }> & Entity>,
   indices: number[],
   kind: 'triangle-mesh',

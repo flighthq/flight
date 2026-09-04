@@ -76,7 +76,7 @@ export function createScene3DsFromDocument(document: Readonly<Scene3DDocument>):
   return scenes;
 }
 
-export function initializeSkeleton3D(
+function initializeSkeleton3D(
   out: EntityConstruction<Skeleton3D>,
   inverseBindMatrices: Float32Array,
   jointMatrices: Float32Array,

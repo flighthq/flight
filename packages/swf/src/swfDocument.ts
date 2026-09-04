@@ -260,7 +260,7 @@ export function initializeTimelineAudioCue(
   out.stop = stop;
 }
 
-export function initializeTimelineSource(
+function initializeTimelineSource(
   out: EntityConstruction<TimelineSource>,
   constructFrame: (target: Node2D, frame: number) => void,
   cues: readonly TimelineCue[],

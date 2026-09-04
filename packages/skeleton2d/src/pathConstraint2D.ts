@@ -24,7 +24,7 @@ import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint';
 // 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
 const MATRIX_STRIDE = 6;
 
-export function initializePath(
+function initializePath(
   out: EntityConstruction<Path>,
   commands: number[],
   data: number[],

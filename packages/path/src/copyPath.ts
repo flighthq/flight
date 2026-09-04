@@ -26,12 +26,7 @@ export function copyPath(source: Readonly<Path>, out?: Path): Path {
   return out;
 }
 
-export function initializePath(
-  out: EntityConstruction<Path>,
-  commands: number[],
-  data: number[],
-  winding: PathWinding,
-): void {
+function initializePath(out: EntityConstruction<Path>, commands: number[], data: number[], winding: PathWinding): void {
   out.commands = commands;
   out.data = data;
   out.winding = winding;
