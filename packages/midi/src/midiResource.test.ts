@@ -108,7 +108,7 @@ function inputPort(): MidiInputPort {
 }
 
 function outputPort(): MidiOutputPort {
-  const out = allocateEntity<MidiInputPort>();
+  const out = allocateEntity<MidiOutputPort>();
   out.id = 'same';
   out.manufacturer = null;
   out.name = null;

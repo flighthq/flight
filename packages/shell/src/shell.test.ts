@@ -52,7 +52,7 @@ describe('moveShellItemsToTrash', () => {
     const host = trashHost(
       (() => {
         const out = allocateEntity<any>();
-        out.moveToTrash = (path) => {
+        out.moveToTrash = (path: string) => {
           paths.push(path);
           return new Promise((resolve) => resolvers.push(resolve));
         };
@@ -122,7 +122,7 @@ describe('openShellExternalUrl', () => {
     const first = externalHost(
       (() => {
         const out = allocateEntity<any>();
-        out.open = async (url) => {
+        out.open = async (url: string) => {
           calls.push(`first:${url}`);
           return { reason: 'ok' };
         };
@@ -132,7 +132,7 @@ describe('openShellExternalUrl', () => {
     const second = externalHost(
       (() => {
         const out = allocateEntity<any>();
-        out.open = async (url) => {
+        out.open = async (url: string) => {
           calls.push(`second:${url}`);
           return { reason: 'operation-failed' };
         };
@@ -149,11 +149,11 @@ describe('openShellExternalUrl', () => {
 
 describe('openShellPath', () => {
   it('preserves a provider failure and its message', async () => {
-    const provider = allocateEntity<any>();
+    const provider = allocateEntity<ShellPathOpenBackend>();
     provider.open = async () => {
       return { message: '', reason: 'operation-failed' as const };
     };
-    await expect(openShellPath(pathOpenHost(provider), '/missing')).resolves.toEqual({
+    await expect(openShellPath(pathOpenHost(finishEntity(provider)), '/missing')).resolves.toEqual({
       message: '',
       reason: 'operation-failed',
     });

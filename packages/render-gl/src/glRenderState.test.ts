@@ -16,6 +16,7 @@ import {
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
+  GlBitmapShader,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlRenderOptions,
@@ -556,10 +557,11 @@ describe('destroyGlRenderState', () => {
     const owner = createTestGlRenderState(gl);
     const owned = ensureDefaultGlBitmapShader(owner);
     const callerProgram = { callerOwned: true } as unknown as WebGLProgram;
-    const shader = allocateEntity<void>();
-    shader.bind = vi.fn();
-    shader.locations = { ...owned.locations, program: callerProgram };
-    shader.program = callerProgram;
+    const out = allocateEntity<GlBitmapShader>();
+    out.bind = vi.fn();
+    out.locations = { ...owned.locations, program: callerProgram };
+    out.program = callerProgram;
+    const shader = finishEntity(out);
     const deleteProgram = vi.spyOn(gl, 'deleteProgram');
     useGlProgram(owner, shader);
 

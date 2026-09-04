@@ -295,98 +295,98 @@ function fakeBackend(): FakeClipboardBackend {
   out.rtf = '';
   out.text = '';
   out.clear = async () => {
-    this.bookmark = null;
-    this.formats = {};
-    this.html = '';
-    this.image = '';
-    this.rtf = '';
-    this.text = '';
+    out.bookmark = null;
+    out.formats = {};
+    out.html = '';
+    out.image = '';
+    out.rtf = '';
+    out.text = '';
     return true;
   };
   out.getFormats = async () => {
-    const formats = Object.keys(this.formats);
-    if (this.text.length > 0) formats.push(ClipboardFormatText);
-    if (this.html.length > 0) formats.push(ClipboardFormatHtml);
-    if (this.image.length > 0) formats.push(ClipboardFormatImage);
-    if (this.rtf.length > 0) formats.push(ClipboardFormatRtf);
-    if (this.bookmark !== null) formats.push(ClipboardFormatBookmark);
+    const formats = Object.keys(out.formats);
+    if (out.text.length > 0) formats.push(ClipboardFormatText);
+    if (out.html.length > 0) formats.push(ClipboardFormatHtml);
+    if (out.image.length > 0) formats.push(ClipboardFormatImage);
+    if (out.rtf.length > 0) formats.push(ClipboardFormatRtf);
+    if (out.bookmark !== null) formats.push(ClipboardFormatBookmark);
     return [...new Set(formats)];
   };
-  out.hasFormat = async (format) => {
-    return (await this.getFormats()).includes(format);
+  out.hasFormat = async (format: string) => {
+    return (await out.getFormats()).includes(format);
   };
   out.hasImage = async () => {
-    return this.image.length > 0;
+    return out.image.length > 0;
   };
   out.hasText = async () => {
-    return this.text.length > 0;
+    return out.text.length > 0;
   };
   out.readBookmark = async () => {
-    return this.bookmark;
+    return out.bookmark;
   };
-  out.readFormat = async (format) => {
-    if (format === ClipboardFormatText) return this.text;
-    if (format === ClipboardFormatHtml) return this.html;
-    if (format === ClipboardFormatImage) return this.image;
-    if (format === ClipboardFormatRtf) return this.rtf;
-    return this.formats[format] ?? '';
+  out.readFormat = async (format: string) => {
+    if (format === ClipboardFormatText) return out.text;
+    if (format === ClipboardFormatHtml) return out.html;
+    if (format === ClipboardFormatImage) return out.image;
+    if (format === ClipboardFormatRtf) return out.rtf;
+    return out.formats[format] ?? '';
   };
   out.readHtml = async () => {
-    return this.html;
+    return out.html;
   };
   out.readImage = async () => {
-    return this.image;
+    return out.image;
   };
-  out.readItems = async (formats) => {
+  out.readItems = async (formats: string[]) => {
     const result: Record<string, string> = {};
     for (const format of formats) {
-      const data = await this.readFormat(format);
+      const data = await out.readFormat(format);
       if (data.length > 0) result[format] = data;
     }
     return result;
   };
   out.readRTF = async () => {
-    return this.rtf;
+    return out.rtf;
   };
   out.readText = async () => {
-    return this.text;
+    return out.text;
   };
-  out.subscribe = (callback) => {
-    this.listeners.add(callback);
+  out.subscribe = (callback: () => void) => {
+    out.listeners.add(callback);
   };
-  out.unsubscribe = (callback) => {
-    this.listeners.delete(callback);
+  out.unsubscribe = (callback: () => void) => {
+    out.listeners.delete(callback);
   };
-  out.writeBookmark = async (title, url) => {
-    this.bookmark = { title, url };
+  out.writeBookmark = async (title: string, url: string) => {
+    out.bookmark = { title, url };
     return true;
   };
-  out.writeFormat = async (format, data) => {
-    if (format === ClipboardFormatText) this.text = data;
-    else if (format === ClipboardFormatHtml) this.html = data;
-    else if (format === ClipboardFormatImage) this.image = data;
-    else if (format === ClipboardFormatRtf) this.rtf = data;
-    else this.formats[format] = data;
+  out.writeFormat = async (format: string, data: string) => {
+    if (format === ClipboardFormatText) out.text = data;
+    else if (format === ClipboardFormatHtml) out.html = data;
+    else if (format === ClipboardFormatImage) out.image = data;
+    else if (format === ClipboardFormatRtf) out.rtf = data;
+    else out.formats[format] = data;
     return true;
   };
-  out.writeHtml = async (html) => {
-    this.html = html;
+  out.writeHtml = async (html: string) => {
+    out.html = html;
     return true;
   };
-  out.writeImage = async (dataUrl) => {
-    this.image = dataUrl;
+  out.writeImage = async (dataUrl: string) => {
+    out.image = dataUrl;
     return true;
   };
-  out.writeItems = async (items) => {
-    for (const item of items) await this.writeFormat(item.format, item.data);
+  out.writeItems = async (items: ReadonlyArray<{ format: string; data: string }>) => {
+    for (const item of items) await out.writeFormat(item.format, item.data);
     return true;
   };
-  out.writeRTF = async (rtf) => {
-    this.rtf = rtf;
+  out.writeRTF = async (rtf: string) => {
+    out.rtf = rtf;
     return true;
   };
-  out.writeText = async (text) => {
-    this.text = text;
+  out.writeText = async (text: string) => {
+    out.text = text;
     return true;
   };
   return finishEntity(out);

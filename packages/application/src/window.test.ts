@@ -157,7 +157,7 @@ function recordingWindowBackend(): RecordingWindowBackend {
   const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
   const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
-  const out = allocateEntity<any>();
+  const out = allocateEntity<RecordingWindowBackend>();
   out.calls = calls;
   out.emitCloseRequest = () => {
     let cancelled = false;
@@ -1459,7 +1459,7 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = allocateEntity<any>();
+    const backend = allocateEntity<InputTargetBackend>();
     backend.prepare = prepare;
     const target = (() => {
       const out = allocateEntity<any>();
@@ -1476,7 +1476,7 @@ describe('prepareElementForInput', () => {
 
 describe('requestApplicationFullscreen', () => {
   it('passes the opaque target to the fullscreen capability', async () => {
-    const target = allocateEntity<any>();
+    const target = allocateEntity<FullscreenTargetHandle>();
     target.__brand = 'FullscreenTargetHandle' as const;
     await expect(requestApplicationFullscreen(host, target)).resolves.toBe(true);
     expect(host.ui.fullscreen.calls).toEqual(['request']);

@@ -103,7 +103,7 @@ describe('explainAudioResourceReferenceResolution', () => {
     expect(explanation.retryable).toBe(true);
     expect(explanation.failure).not.toBe(reference.failure);
     explanation.failure!.message = 'changed';
-    expect(reference.failure.message).toBe('boom');
+    expect(reference.failure!.message).toBe('boom');
   });
 });
 

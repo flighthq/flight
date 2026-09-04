@@ -23,7 +23,7 @@ import {
 } from './mediasession';
 
 function commandBackend(overrides: Partial<MediaSessionBackend> = {}): MediaSessionBackend {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<MediaSessionBackend>();
   out.clearMetadata = () => ({ reason: 'ok' as const });
   out.clearPositionState = () => ({ reason: 'ok' as const });
   out.destroy = () => {};
@@ -35,7 +35,7 @@ function commandBackend(overrides: Partial<MediaSessionBackend> = {}): MediaSess
 }
 
 function actionBackend(overrides: Partial<MediaSessionActionBackend> = {}): MediaSessionActionBackend {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<MediaSessionActionBackend>();
   out.destroy = () => {};
   out.subscribe = () => () => {};
   Object.assign(out, overrides);
@@ -135,14 +135,15 @@ describe('destroyMediaSession', () => {
 
   it('deduplicates an aliased provider identity across both Host slots', () => {
     const destroy = vi.fn();
-    const shared = allocateEntity<any>();
-    shared.clearMetadata = () => ({ reason: 'ok' as const });
-    shared.clearPositionState = () => ({ reason: 'ok' as const });
-    shared.destroy = destroy;
-    shared.setMetadata = () => ({ reason: 'ok' as const });
-    shared.setPlaybackState = () => ({ reason: 'ok' as const });
-    shared.setPositionState = () => ({ reason: 'ok' as const });
-    shared.subscribe = () => () => {};
+    const _shared = allocateEntity<MediaSessionBackend & MediaSessionActionBackend>();
+    _shared.clearMetadata = () => ({ reason: 'ok' as const });
+    _shared.clearPositionState = () => ({ reason: 'ok' as const });
+    _shared.destroy = destroy;
+    _shared.setMetadata = () => ({ reason: 'ok' as const });
+    _shared.setPlaybackState = () => ({ reason: 'ok' as const });
+    _shared.setPositionState = () => ({ reason: 'ok' as const });
+    _shared.subscribe = () => () => {};
+    const shared = finishEntity(_shared);
     destroyMediaSession(host(shared, shared));
     expect(destroy).toHaveBeenCalledOnce();
   });

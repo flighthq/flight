@@ -23,8 +23,8 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
   out.cleared = [];
   out.lastWatch = 0;
   out.promptForAccess = () => Promise.resolve({ reason: 'granted' as const });
-  out.clearWatch = (id) => {
-    this.cleared.push(id);
+  out.clearWatch = (id: number) => {
+    out.cleared.push(id);
   };
   out.getCurrentPosition = async () => {
     const position = createGeoPosition();
@@ -41,12 +41,16 @@ function fakeBackend(available: boolean = true): GeolocationBackend & { cleared:
   out.isAvailable = () => {
     return available;
   };
-  out.watchPosition = (listener, _options, onError) => {
+  out.watchPosition = (
+    listener: (position: GeoPosition) => void,
+    _options: Record<string, unknown>,
+    onError?: (reason: GeolocationErrorReason) => void,
+  ) => {
     const position = createGeoPosition();
     position.latitude = 3;
     listener(position);
     if (onError) onError('denied');
-    return ++this.lastWatch;
+    return ++out.lastWatch;
   };
   return finishEntity(out);
 }

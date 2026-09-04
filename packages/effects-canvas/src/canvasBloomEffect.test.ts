@@ -17,7 +17,7 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
   const data = new Uint8ClampedArray(pixels);
   const canvas = { __data: data };
-  const out = allocateEntity<CanvasRenderTarget>();
+  const out = allocateEntity<any>();
   out.canvas = canvas;
   out.context = {
     clearRect: () => {},
@@ -43,7 +43,7 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
   };
   out.height = 1;
   out.width = pixels.length / 4;
-  return finishEntity(out) as unknown;
+  return finishEntity(out) as CanvasRenderTarget;
 }
 
 // The pool hands out targets that start as copies of the source, which is what the real
@@ -57,7 +57,7 @@ function createPool(width: number): CanvasRenderTargetPool {
   out.creator = canvasTestSurfaceCreator;
   out.free = [blank(), blank()];
   out.inUse = [];
-  return finishEntity(out) as unknown;
+  return finishEntity(out) as CanvasRenderTargetPool;
 }
 
 const read = (target: CanvasRenderTarget): number[] => [...target.context.getImageData(0, 0, 1, 1).data];

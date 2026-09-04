@@ -42,8 +42,11 @@ describe('computeRenderEffectPadding', () => {
   });
 
   it('returns a zero sentinel for an unregistered kind', () => {
-    const effect = allocateEntity<any>();
-    effect.kind = 'acme.Missing';
+    const effect = (() => {
+      const out = allocateEntity<any>();
+      out.kind = 'acme.Missing';
+      return finishEntity(out) as RenderEffect;
+    })();
     expect(computeRenderEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
   });
 

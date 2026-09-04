@@ -82,7 +82,7 @@ describe('acquireGlShapeRasterSurface', () => {
   });
 
   it('preserves expected absence without caching it when the provider refuses', () => {
-    const provider = allocateEntity<any>();
+    const provider = allocateEntity<Raster2DSurfaceProvider>();
     provider.createRaster2DSurface = () => null;
     provider.destroyRaster2DSurface = destroySurface;
     const data = emptyData();

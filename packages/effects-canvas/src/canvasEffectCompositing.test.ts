@@ -65,5 +65,5 @@ function makeTarget(w = 4, h = 4): CanvasRenderTarget {
   out.context = context;
   out.width = w;
   out.height = h;
-  return finishEntity(out) as unknown;
+  return finishEntity(out) as CanvasRenderTarget;
 }

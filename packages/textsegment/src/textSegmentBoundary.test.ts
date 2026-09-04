@@ -73,12 +73,12 @@ describe('getPreviousWordBoundary', () => {
 
 describe('getWordRangeAt', () => {
   it('threads an explicit host through the boundary helper', () => {
-    const explicit = allocateEntity<any>();
-    explicit.segment = (text) => [{ start: 0, end: text.length, text, isWordLike: true }];
-    const host: HasTextSegmenter = { text: { segmenter: explicit } };
+    const explicit = allocateEntity<TextSegmenterBackend>();
+    explicit.segment = (text: string) => [{ start: 0, end: text.length, text, isWordLike: true }];
+    const host: HasTextSegmenter = { text: { segmenter: finishEntity(explicit) } };
     setTextSegmenterBackend(
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<TextSegmenterBackend>();
         out.segment = () => [];
         return finishEntity(out);
       })(),
@@ -106,8 +106,8 @@ describe('getWordRangeAt', () => {
     let seenLocale: string | undefined = 'unset';
     setTextSegmenterBackend(
       (() => {
-        const out = allocateEntity<any>();
-        out.segment = (text, _granularity, locale) => {
+        const out = allocateEntity<TextSegmenterBackend>();
+        out.segment = (text: string, _granularity: string, locale: string) => {
           seenLocale = locale;
           return [{ start: 0, end: text.length, text, isWordLike: true }];
         };

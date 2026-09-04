@@ -25,7 +25,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     out.context = { getImageData: () => imageData };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as unknown;
+    return finishEntity(out) as CanvasRenderTarget;
   })();
   const dest = (() => {
     const out = allocateEntity<any>();
@@ -43,7 +43,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as unknown;
+    return finishEntity(out) as CanvasRenderTarget;
   })();
   return { dest, source, written };
 }

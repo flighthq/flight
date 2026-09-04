@@ -104,7 +104,7 @@ describe('createImageResourceFromBitmap', () => {
   });
 
   it('returns an ImageResource with matching dimensions', () => {
-    const bitmap = allocateEntity<any>();
+    const bitmap = allocateEntity<Bitmap>();
     bitmap.alphaType = 'straight';
     bitmap.gamut = 'srgb';
     bitmap.data = new Uint8ClampedArray(4 * 4 * 4);
@@ -123,7 +123,7 @@ describe('createImageResourceFromBitmap', () => {
 });
 
 function createTestBitmap(width: number, height: number): Bitmap {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<Bitmap>();
   out.alphaType = 'straight';
   out.gamut = 'srgb';
   out.data = new Uint8ClampedArray(width * height * 4);

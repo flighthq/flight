@@ -33,7 +33,7 @@ function createTargets(
     out.context = { getImageData: () => imageData };
     out.height = height;
     out.width = width;
-    return finishEntity(out) as unknown;
+    return finishEntity(out) as CanvasRenderTarget;
   })();
   const dest = (() => {
     const out = allocateEntity<any>();
@@ -51,7 +51,7 @@ function createTargets(
     };
     out.height = height;
     out.width = width;
-    return finishEntity(out) as unknown;
+    return finishEntity(out) as CanvasRenderTarget;
   })();
   return { dest, source, written };
 }

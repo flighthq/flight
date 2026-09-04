@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Adjustment, ColorScaleBias } from '@flighthq/types/contract';
+import type { Adjustment, ColorMatrixAdjustment, ColorScaleBias } from '@flighthq/types/contract';
 
 import {
   COLOR_ADJUSTMENT_AFFINE,
@@ -39,7 +39,7 @@ describe('isAffineColorMatrix', () => {
 describe('resolveColorAdjustmentsColorMatrix', () => {
   it('returns the complete fused matrix for matrix-tier adjustments', () => {
     const saturation = createSaturationColorMatrix(0);
-    const adjustment = allocateEntity<any>();
+    const adjustment = allocateEntity<ColorMatrixAdjustment>();
     adjustment.kind = 'Saturation';
     adjustment.colorMatrix = saturation;
     expect(resolveColorAdjustmentsColorMatrix([adjustment])).toEqual(saturation);
@@ -50,7 +50,7 @@ describe('resolveColorAdjustmentsColorMatrix', () => {
     expect(
       resolveColorAdjustmentsColorMatrix([
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<Adjustment>();
           out.kind = 'acme.Lut';
           return finishEntity(out);
         })() as Adjustment,
@@ -85,7 +85,7 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('reports channel-mixing and writes only the affine part for an off-diagonal stack', () => {
-    const saturation = allocateEntity<any>();
+    const saturation = allocateEntity<ColorMatrixAdjustment>();
     saturation.kind = 'Saturation';
     saturation.colorMatrix = createSaturationColorMatrix(0);
     const out = makeColorScaleBias();
@@ -95,7 +95,7 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('reports channel-mixing when a non-matrix (LUT) op is present', () => {
-    const lut = allocateEntity<any>();
+    const lut = allocateEntity<Adjustment>();
     lut.kind = 'acme.Lut';
     const out = makeColorScaleBias();
     expect(resolveColorAdjustmentsColorScaleBias([lut], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);

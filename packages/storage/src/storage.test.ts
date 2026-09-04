@@ -68,7 +68,7 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   const getFailures = new Map<string, StorageGetItemFailureReason>();
   const removeFailures = new Map<string, StorageRemoveItemFailureReason>();
   const setFailures = new Map<string, StorageSetItemFailureReason>();
-  const out = allocateEntity<any>();
+  const out = allocateEntity<MemoryStorageBackend>();
   out.clearFailure = null;
   out.data = data;
   out.getCalls = 0;
@@ -77,28 +77,28 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   out.removeFailures = removeFailures;
   out.setFailures = setFailures;
   out.clear = () => {
-    if (this.clearFailure !== null) return { reason: this.clearFailure };
+    if (out.clearFailure !== null) return { reason: out.clearFailure };
     for (const key of Object.keys(data)) delete data[key];
     return { reason: 'ok' };
   };
-  out.getItem = (key) => {
-    this.getCalls++;
+  out.getItem = (key: string) => {
+    out.getCalls++;
     const failure = getFailures.get(key);
     if (failure !== undefined) return { reason: failure, value: null };
     return { reason: 'ok', value: Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null };
   };
   out.keys = () => {
-    return this.keysFailure === null
+    return out.keysFailure === null
       ? { reason: 'ok', value: Object.keys(data) }
-      : { reason: this.keysFailure, value: null };
+      : { reason: out.keysFailure, value: null };
   };
-  out.removeItem = (key) => {
+  out.removeItem = (key: string) => {
     const failure = removeFailures.get(key);
     if (failure !== undefined) return { reason: failure };
     delete data[key];
     return { reason: 'ok' };
   };
-  out.setItem = (key, value) => {
+  out.setItem = (key: string, value: string) => {
     const failure = setFailures.get(key);
     if (failure !== undefined) return { reason: failure };
     data[key] = value;
@@ -120,7 +120,7 @@ describe('attachStorage', () => {
     const released: string[] = [];
     const captured: { listener?: (change: Readonly<StorageChange>) => void } = {};
     const a = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<StorageChangeBackend>();
       out.destroy = () => {};
       out.subscribe = (listener: (change: Readonly<StorageChange>) => void) => {
         captured.listener = listener;
@@ -129,7 +129,7 @@ describe('attachStorage', () => {
       return finishEntity(out);
     })();
     const b = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<StorageChangeBackend>();
       out.destroy = () => {};
       out.subscribe = () => {
         return () => released.push('b');
@@ -150,11 +150,11 @@ describe('attachStorage', () => {
   });
 
   it('returns false and retains no cleanup when acquisition fails', () => {
-    const provider = allocateEntity<any>();
+    const provider = allocateEntity<StorageChangeBackend>();
     provider.destroy = () => {};
     provider.subscribe = () => null;
     const signals = createStorageSignals();
-    expect(attachStorage(changeHost(provider), signals)).toBe(false);
+    expect(attachStorage(changeHost(finishEntity(provider)), signals)).toBe(false);
     expect(() => detachStorage(signals)).not.toThrow();
   });
 });
@@ -209,10 +209,10 @@ describe('createStorageSignals', () => {
 describe('destroyStorage', () => {
   it('runs the explicit change-provider teardown', () => {
     let destroyed = 0;
-    const provider = allocateEntity<any>();
+    const provider = allocateEntity<StorageChangeBackend>();
     provider.destroy = () => destroyed++;
     provider.subscribe = () => null;
-    destroyStorage(changeHost(provider));
+    destroyStorage(changeHost(finishEntity(provider)));
     expect(destroyed).toBe(1);
   });
 });
@@ -220,11 +220,11 @@ describe('destroyStorage', () => {
 describe('detachStorage', () => {
   it('is idempotent', () => {
     let released = 0;
-    const provider = allocateEntity<any>();
+    const provider = allocateEntity<StorageChangeBackend>();
     provider.destroy = () => {};
     provider.subscribe = () => () => released++;
     const signals = createStorageSignals();
-    attachStorage(changeHost(provider), signals);
+    attachStorage(changeHost(finishEntity(provider)), signals);
     detachStorage(signals);
     detachStorage(signals);
     expect(released).toBe(1);

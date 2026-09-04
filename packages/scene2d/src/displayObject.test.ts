@@ -6,7 +6,15 @@ import {
   setNodeColorAdjustments,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/node/contract';
-import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, PartialNode, Rectangle } from '@flighthq/types/contract';
+import type {
+  BoundsNode,
+  ClipRegion,
+  Node2D,
+  Node2DData,
+  Node2DRuntime,
+  PartialNode,
+  Rectangle,
+} from '@flighthq/types/contract';
 import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/contract';
 
 import {
@@ -165,7 +173,7 @@ describe('setNode2DClip', () => {
   });
 
   it('sets clip', () => {
-    const clip = allocateEntity<any>();
+    const clip = allocateEntity<ClipRegion>();
     clip.contours = null;
     clip.rect = { x: 0, y: 0, width: 100, height: 50 } as Rectangle;
     clip.winding = 'nonZero' as const;
@@ -184,7 +192,7 @@ describe('setNode2DClip', () => {
     setNode2DClip(
       obj,
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<ClipRegion>();
         out.contours = null;
         out.rect = { x: 0, y: 0, width: 10, height: 10 } as Rectangle;
         out.winding = 'nonZero' as const;

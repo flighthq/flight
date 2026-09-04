@@ -268,13 +268,14 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
 
 describe('setWgpuRenderEffectVelocityTexture', () => {
   it('sets the velocity texture on the pipeline', () => {
-    const pipeline = allocateEntity<any>();
-    pipeline.options = {};
-    pipeline.sceneTarget = null;
-    pipeline.pool = { [EntityRuntimeKey]: undefined, free: [] };
-    pipeline.lutCache = createColorLutCache();
-    pipeline.lutTexture = { texture: null, size: 0, lut: null };
-    pipeline.velocityTexture = null;
+    const _pipeline = allocateEntity<any>();
+    _pipeline.options = {};
+    _pipeline.sceneTarget = null;
+    _pipeline.pool = { [EntityRuntimeKey]: undefined, free: [] };
+    _pipeline.lutCache = createColorLutCache();
+    _pipeline.lutTexture = { texture: null, size: 0, lut: null };
+    _pipeline.velocityTexture = null;
+    const pipeline = finishEntity(_pipeline);
     const texture = {} as GPUTexture;
     setWgpuRenderEffectVelocityTexture(pipeline, texture);
     expect(pipeline.velocityTexture).toBe(texture);
