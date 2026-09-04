@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, BoundingBoxAttachment2D, Skin2D } from '@flighthq/types/contract';
 import { BoundingBoxAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -24,7 +25,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function box(skin: Skin2D | null, vertices: Float32Array | null, pointCount: number): BoundingBoxAttachment2D {
-  return { kind: BoundingBoxAttachment2DKind, pointCount, skin, vertices };
+  return createEntity({ kind: BoundingBoxAttachment2DKind, pointCount, skin, vertices }) as BoundingBoxAttachment2D;
 }
 
 describe('computeSkeleton2DBoundingBoxAttachmentVertices', () => {

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   createEmissiveModifier,
   createEnvReflectModifier,
@@ -232,7 +233,7 @@ describe('ensureGlShadedProgram', () => {
 
   it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
     const { gl, state } = makeGlScene3DState();
-    const modifier = { kind: 'acme.Replace', slot: ModifierSlot.Effect };
+    const modifier = createEntity({ kind: 'acme.Replace', slot: ModifierSlot.Effect }) as Modifier;
     registerGlModifierSnippet(state, {
       contribution: () => '// compiler-marker-A',
       kind: modifier.kind,

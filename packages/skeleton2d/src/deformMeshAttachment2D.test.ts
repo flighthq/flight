@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, MeshAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -25,14 +26,14 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function weightedMesh(skin: Skin2D, vertexCount: number): MeshAttachment2D {
-  return {
+  return createEntity({
     kind: MeshAttachment2DKind,
     skin,
     triangles: new Uint16Array(),
     uvs: new Float32Array(vertexCount * 2),
     vertexCount,
     vertices: null,
-  };
+  }) as MeshAttachment2D;
 }
 
 describe('deformSkeleton2DMeshAttachment', () => {
@@ -102,14 +103,14 @@ describe('deformSkeleton2DMeshAttachment', () => {
   it('adds a rigid deform offset to the setup vertices before the bone transform', () => {
     const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
-    const mesh: MeshAttachment2D = {
+    const mesh = createEntity({
       kind: MeshAttachment2DKind,
       skin: null,
       triangles: new Uint16Array(),
       uvs: new Float32Array(2),
       vertexCount: 1,
       vertices: new Float32Array([2, 0]),
-    };
+    }) as MeshAttachment2D;
     const out = new Float32Array(2);
 
     deformSkeleton2DMeshAttachment(out, mesh, s, 0, new Float32Array([1, 0]));
@@ -137,14 +138,14 @@ describe('deformSkeleton2DMeshAttachment', () => {
     const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
     const verts = new Float32Array([2, 0]); // one vertex, local to the bone
-    const mesh: MeshAttachment2D = {
+    const mesh = createEntity({
       kind: MeshAttachment2DKind,
       skin: null,
       triangles: new Uint16Array(),
       uvs: new Float32Array(2),
       vertexCount: 1,
       vertices: verts,
-    };
+    }) as MeshAttachment2D;
     // Deform in place (out === vertices) to exercise alias safety.
     deformSkeleton2DMeshAttachment(verts, mesh, s, 0);
     // (2,0) rotated 90° = (0,2), + (5,0) → (5,2).

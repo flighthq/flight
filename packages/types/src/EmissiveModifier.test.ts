@@ -1,5 +1,6 @@
 import type { EmissiveModifier } from './EmissiveModifier';
 import { EmissiveModifierFacing, EmissiveModifierKind } from './EmissiveModifier';
+import { EntityRuntimeKey } from './Entity';
 import type { Modifier } from './Modifier';
 
 describe('EmissiveModifier', () => {
@@ -20,6 +21,7 @@ describe('EmissiveModifier', () => {
   describe('descriptor shape', () => {
     it('is assignable to the open Modifier base with slot Emissive', () => {
       const nightSide: EmissiveModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'EmissiveModifier',
         slot: 'Emissive',
         color: 0xffdd88ff,

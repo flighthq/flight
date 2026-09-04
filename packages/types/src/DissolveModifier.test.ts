@@ -1,5 +1,6 @@
 import { DissolveModifierKind } from './DissolveModifier';
 import type { DissolveModifier } from './DissolveModifier';
+import { EntityRuntimeKey } from './Entity';
 import type { Modifier } from './Modifier';
 
 describe('DissolveModifier', () => {
@@ -12,6 +13,7 @@ describe('DissolveModifier', () => {
   describe('descriptor shape', () => {
     it('is assignable to the open Modifier base with slot Effect', () => {
       const burn: DissolveModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'DissolveModifier',
         slot: 'Effect',
         threshold: 0.4,

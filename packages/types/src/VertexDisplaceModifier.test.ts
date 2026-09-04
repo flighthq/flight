@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from './Entity';
 import type { Modifier } from './Modifier';
 import { VertexDisplaceModifierKind, VertexDisplaceModifierSource } from './VertexDisplaceModifier';
 import type { VertexDisplaceModifier } from './VertexDisplaceModifier';
@@ -19,6 +20,7 @@ describe('VertexDisplaceModifier', () => {
   describe('descriptor shape', () => {
     it('is assignable to the open Modifier base with the vertex-scene2d slot', () => {
       const flag: VertexDisplaceModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'VertexDisplaceModifier',
         slot: 'Vertex',
         source: VertexDisplaceModifierSource.Sine,

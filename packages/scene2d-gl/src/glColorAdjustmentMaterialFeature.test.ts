@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
@@ -144,7 +145,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    recordGlQuadBatchColorScaleBias(state, { tint: 0x808080ff }, 0);
+    recordGlQuadBatchColorScaleBias(state, createEntity({ tint: 0x808080ff }), 0);
     recordGlQuadBatchColorScaleBias(state, MIX_RED_GREEN, 1);
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_MATRIX);
     expect(runtime.quadBatchWriterColorMatrixData![0]).toBeCloseTo(128 / 255);
@@ -158,7 +159,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
     recordGlQuadBatchColorScaleBias(state, null, 0);
-    recordGlQuadBatchColorScaleBias(state, { tint: 0x12345678 }, 1);
+    recordGlQuadBatchColorScaleBias(state, createEntity({ tint: 0x12345678 }), 1);
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
     expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 4, 4))).toEqual([
       0x12, 0x34, 0x56, 0x78,

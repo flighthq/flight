@@ -59,7 +59,8 @@ describe('Material', () => {
 
   describe('MaterialData', () => {
     it('accepts any plain object', () => {
-      const data: MaterialData = { color: 0xff0000ff, opacity: 1 };
+      const obj = { [EntityRuntimeKey]: undefined, color: 0xff0000ff, opacity: 1 };
+      const data: MaterialData = obj;
       expect(data).toBeTruthy();
     });
   });

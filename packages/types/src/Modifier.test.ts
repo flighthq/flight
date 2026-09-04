@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from './Entity';
 import type { Modifier } from './Modifier';
 import { ModifierSlot } from './ModifierSlot';
 
@@ -10,6 +11,7 @@ describe('Modifier', () => {
       }
 
       const modifier: AcmeModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'acme.Dissolve',
         slot: ModifierSlot.Effect,
         threshold: 0.5,
@@ -30,6 +32,7 @@ describe('Modifier', () => {
       }
 
       const mod: RedModifier | BlueModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'RedModifier',
         slot: ModifierSlot.Diffuse,
         strength: 2,
@@ -41,7 +44,7 @@ describe('Modifier', () => {
     });
 
     it('accepts any string kind and slot', () => {
-      const modifier: Modifier = { kind: 'SomeModifier', slot: 'SomeSlot' };
+      const modifier: Modifier = { [EntityRuntimeKey]: undefined, kind: 'SomeModifier', slot: 'SomeSlot' };
       expect(modifier.kind).toBe('SomeModifier');
     });
   });

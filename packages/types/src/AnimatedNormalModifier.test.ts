@@ -1,5 +1,6 @@
 import type { AnimatedNormalModifier } from './AnimatedNormalModifier';
 import { AnimatedNormalModifierKind } from './AnimatedNormalModifier';
+import { EntityRuntimeKey } from './Entity';
 import type { Modifier } from './Modifier';
 
 describe('AnimatedNormalModifier', () => {
@@ -12,6 +13,7 @@ describe('AnimatedNormalModifier', () => {
   describe('descriptor shape', () => {
     it('is assignable to the open Modifier base with slot Normal', () => {
       const ocean: AnimatedNormalModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'AnimatedNormalModifier',
         slot: 'Normal',
         map: null,
@@ -25,6 +27,7 @@ describe('AnimatedNormalModifier', () => {
 
     it('supports an optional dual-scroll second layer', () => {
       const water: AnimatedNormalModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'AnimatedNormalModifier',
         slot: 'Normal',
         map: null,

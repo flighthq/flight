@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import {
   createAnimatedNormalModifier,
@@ -111,7 +112,7 @@ describe('ensureWgpuShadedPipeline', () => {
 
   it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const modifier = { kind: 'acme.Replace', slot: ModifierSlot.Effect };
+    const modifier = createEntity({ kind: 'acme.Replace', slot: ModifierSlot.Effect }) as Modifier;
     registerWgpuModifierSnippet(state, {
       contribution: () => ({ source: '// compiler-marker-A' }),
       kind: modifier.kind,
@@ -209,8 +210,8 @@ describe('getWgpuShadedModuleSource', () => {
       slot: ModifierSlot.Effect,
     };
     registerWgpuModifierSnippet(state, vendor);
-    const registered = { kind: 'acme.Glow', slot: ModifierSlot.Effect } as Modifier;
-    const missing = { kind: 'acme.Missing', slot: ModifierSlot.Effect } as Modifier;
+    const registered = createEntity({ kind: 'acme.Glow', slot: ModifierSlot.Effect }) as Modifier;
+    const missing = createEntity({ kind: 'acme.Missing', slot: ModifierSlot.Effect }) as Modifier;
     const material = createShadedMaterial({ modifiers: [registered, missing] });
     const registry = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
     const source = getWgpuShadedModuleSource(material, registry);
@@ -247,7 +248,7 @@ describe('getWgpuShadedModuleSource', () => {
         kind,
         slot: slots[i],
       });
-      modifiers.push({ kind, slot: slots[i] });
+      modifiers.push(createEntity({ kind, slot: slots[i] }) as Modifier);
     }
     const registry = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
     const source = getWgpuShadedModuleSource(createShadedMaterial({ modifiers }), registry);
@@ -273,8 +274,8 @@ describe('getWgpuShadedModuleSource', () => {
       modifiers: [
         createDissolveModifier({ threshold: 0.1 }),
         createDissolveModifier({ threshold: 0.2 }),
-        { kind: 'acme.DeclarationA', slot: ModifierSlot.Effect },
-        { kind: 'acme.DeclarationB', slot: ModifierSlot.Effect },
+        createEntity({ kind: 'acme.DeclarationA', slot: ModifierSlot.Effect }) as Modifier,
+        createEntity({ kind: 'acme.DeclarationB', slot: ModifierSlot.Effect }) as Modifier,
       ],
     });
     const source = getWgpuShadedModuleSource(material, getWgpuRenderStateRuntime(state).registries.modifierSnippets);
@@ -404,7 +405,7 @@ describe('shaded binding cache', () => {
   it('reuses the compiled plan and GPU resource arrays on an unchanged draw', () => {
     const { fake, state } = makeWgpuScene3DState();
     let contributions = 0;
-    const modifier = { kind: 'acme.Stable', slot: ModifierSlot.Effect };
+    const modifier = createEntity({ kind: 'acme.Stable', slot: ModifierSlot.Effect }) as Modifier;
     registerWgpuModifierSnippet(state, {
       contribution: () => {
         contributions++;

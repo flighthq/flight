@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from './Entity';
 import { FogModifierKind, FogModifierMode } from './FogModifier';
 import type { FogModifier } from './FogModifier';
 import type { Modifier } from './Modifier';
@@ -20,6 +21,7 @@ describe('FogModifier', () => {
   describe('descriptor shape', () => {
     it('is assignable to the open Modifier base with slot Effect', () => {
       const haze: FogModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'FogModifier',
         slot: 'Effect',
         color: 0xaabbccff,

@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from './Entity';
 import type { Modifier } from './Modifier';
 import type { RimModifier } from './RimModifier';
 import { RimModifierKind } from './RimModifier';
@@ -12,6 +13,7 @@ describe('RimModifier', () => {
   describe('descriptor shape', () => {
     it('is assignable to the open Modifier base with slot Effect', () => {
       const atmosphere: RimModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'RimModifier',
         slot: 'Effect',
         color: 0x88bbffff,
@@ -24,7 +26,12 @@ describe('RimModifier', () => {
     });
 
     it('allows the falloff params to be omitted (defaults live in the constructor)', () => {
-      const minimal: RimModifier = { kind: 'RimModifier', slot: 'Effect', color: 0xffffffff };
+      const minimal: RimModifier = {
+        [EntityRuntimeKey]: undefined,
+        kind: 'RimModifier',
+        slot: 'Effect',
+        color: 0xffffffff,
+      };
       expect(minimal.power).toBeUndefined();
     });
   });

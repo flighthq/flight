@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, Path, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathAttachment2DKind, PathCommand, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -29,7 +30,14 @@ function emptyPath(): Path {
 }
 
 function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): PathAttachment2D {
-  return { commands, kind: PathAttachment2DKind, pointCount, skin, vertices: null, winding: 'evenOdd' };
+  return createEntity({
+    commands,
+    kind: PathAttachment2DKind,
+    pointCount,
+    skin,
+    vertices: null,
+    winding: 'evenOdd',
+  }) as PathAttachment2D;
 }
 
 describe('deformSkeleton2DPathAttachment', () => {
@@ -141,14 +149,14 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('transforms a rigid path by the slot bone world matrix', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment: PathAttachment2D = {
+    const attachment = createEntity({
       commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
       kind: PathAttachment2DKind,
       pointCount: 2,
       skin: null,
       vertices: new Float32Array([2, 0, 0, 3]),
       winding: 'nonZero',
-    };
+    }) as PathAttachment2D;
     const out = emptyPath();
 
     deformSkeleton2DPathAttachment(out, attachment, skeleton, 0, new Float32Array([0, 0, 0, 0]));
@@ -162,14 +170,14 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('writes nothing for a rigid path with no setup vertices rather than throwing', () => {
     const skeleton = createSkeleton2D([makeBone()]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment: PathAttachment2D = {
+    const attachment = createEntity({
       commands: [],
       kind: PathAttachment2DKind,
       pointCount: 0,
       skin: null,
       vertices: null,
       winding: 'nonZero',
-    };
+    }) as PathAttachment2D;
     const out = emptyPath();
 
     expect(() => deformSkeleton2DPathAttachment(out, attachment, skeleton, 0)).not.toThrow();

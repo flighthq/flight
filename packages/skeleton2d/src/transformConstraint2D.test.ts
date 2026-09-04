@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, Skeleton2DTransformConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -32,7 +33,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 
 // Every channel off by default, so each test turns on exactly the one it is about.
 function transform(overrides: Partial<Skeleton2DTransformConstraint> = {}): Skeleton2DTransformConstraint {
-  return {
+  return createEntity({
     boneIndices: [0],
     kind: Skeleton2DConstraintKind.Transform as 'Skeleton2D.TransformConstraint',
     mix: 1,
@@ -50,7 +51,7 @@ function transform(overrides: Partial<Skeleton2DTransformConstraint> = {}): Skel
     offsetY: 0,
     targetBoneIndex: 1,
     ...overrides,
-  };
+  }) as Skeleton2DTransformConstraint;
 }
 
 // This file registers a built-in solver into a module-global registry, so it restores whatever it found

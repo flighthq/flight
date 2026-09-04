@@ -1,4 +1,5 @@
 import type { Adjustment } from './Adjustment';
+import { EntityRuntimeKey } from './Entity';
 
 describe('Adjustment', () => {
   describe('open base contract', () => {
@@ -8,7 +9,7 @@ describe('Adjustment', () => {
         shadow: number;
       }
 
-      const adjustment: AcmeDuotone = { kind: 'acme.Duotone', shadow: 0x000000ff };
+      const adjustment: AcmeDuotone = { [EntityRuntimeKey]: undefined, kind: 'acme.Duotone', shadow: 0x000000ff };
       // A custom adjustment is assignable to the open base
       const base: Adjustment = adjustment;
       expect(base.kind).toBe('acme.Duotone');
@@ -24,7 +25,11 @@ describe('Adjustment', () => {
         amount: number;
       }
 
-      const adjustment: BrightnessAdjustment | ContrastAdjustment = { kind: 'Brightness', amount: 0.2 };
+      const adjustment: BrightnessAdjustment | ContrastAdjustment = {
+        [EntityRuntimeKey]: undefined,
+        kind: 'Brightness',
+        amount: 0.2,
+      };
       if (adjustment.kind === 'Brightness') {
         expectTypeOf(adjustment).toHaveProperty('amount');
       }
@@ -32,7 +37,7 @@ describe('Adjustment', () => {
     });
 
     it('accepts any string kind', () => {
-      const adjustment: Adjustment = { kind: 'ColorScaleBiasAdjustment' };
+      const adjustment: Adjustment = { [EntityRuntimeKey]: undefined, kind: 'ColorScaleBiasAdjustment' };
       expect(adjustment.kind).toBe('ColorScaleBiasAdjustment');
     });
   });

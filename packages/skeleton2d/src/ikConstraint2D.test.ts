@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, Skeleton2D, Skeleton2DIkConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -29,7 +30,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function ik(overrides: Partial<Skeleton2DIkConstraint> = {}): Skeleton2DIkConstraint {
-  return {
+  return createEntity({
     bendPositive: true,
     boneIndices: [0],
     compress: false,
@@ -38,7 +39,7 @@ function ik(overrides: Partial<Skeleton2DIkConstraint> = {}): Skeleton2DIkConstr
     stretch: false,
     targetBoneIndex: 1,
     ...overrides,
-  };
+  }) as Skeleton2DIkConstraint;
 }
 
 // The world position of a bone's TIP — its origin plus its length along its own x axis. That is the point
