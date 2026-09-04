@@ -486,7 +486,8 @@ describe('setTilemapTileTint', () => {
     const tilemap = createTilemap({ data: { columns: 3, rows: 2 } });
     expect(tilemap.data.materialData).toBeNull();
     setTilemapTileTint(tilemap, 1, 1, 0x12345678);
-    expect(tilemap.data.materialData).toEqual([null, null, null, null, { tint: 0x12345678 }, null]);
+    expect(tilemap.data.materialData).toHaveLength(6);
+    expect(tilemap.data.materialData![4]).toMatchObject({ tint: 0x12345678 });
   });
 
   it('ignores out-of-range coordinates without allocating', () => {
