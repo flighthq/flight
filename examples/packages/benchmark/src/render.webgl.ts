@@ -1,3 +1,4 @@
+import { webRaster2DSurfaceProvider } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene2dGlPipeline,
@@ -31,6 +32,7 @@ export const state = createGlRenderState(
     pixelRatio,
     backgroundColor: 0x2a2a3aff,
     sceneGraphSyncPolicy: 'requiresInvalidation',
+    raster2DSurfaceProvider: webRaster2DSurfaceProvider,
   },
 );
 enableFlightDiagnostics(state);

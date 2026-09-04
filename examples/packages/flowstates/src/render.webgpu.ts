@@ -1,4 +1,8 @@
-import { webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web/contract';
+import {
+  webCanvasRenderSurfaceCreator,
+  webGraphicsHost,
+  webRaster2DSurfaceProvider,
+} from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   connectCanvasTextureResolverMisses,
@@ -34,6 +38,7 @@ export const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2
   pixelRatio,
   backgroundColor: 0x222222ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
+  raster2DSurfaceProvider: webRaster2DSurfaceProvider,
 });
 enableFlightDiagnostics(state);
 
