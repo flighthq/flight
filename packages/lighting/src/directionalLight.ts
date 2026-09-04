@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
-import type { DirectionalLight, DirectionalLightOptions } from '@flighthq/types/contract';
+import type { DirectionalLight, DirectionalLightOptions, EntityConstruction } from '@flighthq/types/contract';
 import { DirectionalLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a directional light's data, including a fresh `direction` vector.
@@ -25,12 +25,20 @@ export function cloneDirectionalLight(source: Readonly<DirectionalLight>): Direc
   return finishEntity(out);
 }
 
+export function createDirectionalLight(options?: Readonly<DirectionalLightOptions>): DirectionalLight {
+  const light = allocateEntity<DirectionalLight>();
+  initializeDirectionalLight(light, options);
+  return light;
+}
+
 // Infinitely distant directional light (sun). `direction` is the world-space travel direction
 // of the light; surfaces are lit from -direction. Color is packed sRgb-albedo RGBA (0xrrggbbaa);
 // defaults to opaque white at unit intensity, pointing straight down (0, -1, 0) with shadows off.
-export function createDirectionalLight(options?: Readonly<DirectionalLightOptions>): DirectionalLight {
+export function initializeDirectionalLight(
+  light: EntityConstruction<DirectionalLight>,
+  options?: Readonly<DirectionalLightOptions>,
+): void {
   const direction = options?.direction;
-  const light = allocateEntity<DirectionalLight>();
   light.cascadeCount = options?.cascadeCount ?? 1;
   light.cascadeSplits = options?.cascadeSplits?.slice() ?? [1];
   light.castsShadow = options?.castsShadow ?? false;
@@ -48,7 +56,6 @@ export function createDirectionalLight(options?: Readonly<DirectionalLightOption
   light.shadowNear = options?.shadowNear ?? 0.5;
   light.shadowStrength = options?.shadowStrength ?? 1;
   if (direction) setDirectionalLightDirection(light, direction.x, direction.y, direction.z);
-  return light;
 }
 
 // Writes a normalized direction into `out.direction`. Normalizes the supplied x/y/z components

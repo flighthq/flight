@@ -8,6 +8,7 @@ import type {
   WindowAttachmentOwnership,
   WindowBackend,
   WindowResizeTargetHandle,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 type WebWindowBackend = WindowBackend &
@@ -199,16 +200,30 @@ export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenB
 
 export function createWebFullscreenTargetHandle(element: Element): FullscreenTargetHandle {
   const target = allocateEntity<FullscreenTargetHandle>();
-  target.__brand = 'FullscreenTargetHandle' as const;
-  _fullscreenTargets.set(target, element);
+  initializeWebFullscreenTargetHandle(target, element);
   return target;
 }
 
 export function createWebWindowResizeTargetHandle(element: Element): WindowResizeTargetHandle {
   const target = allocateEntity<WindowResizeTargetHandle>();
+  initializeWebWindowResizeTargetHandle(target, element);
+  return target;
+}
+
+export function initializeWebFullscreenTargetHandle(
+  target: EntityConstruction<FullscreenTargetHandle>,
+  element: Element,
+): void {
+  target.__brand = 'FullscreenTargetHandle' as const;
+  _fullscreenTargets.set(target, element);
+}
+
+export function initializeWebWindowResizeTargetHandle(
+  target: EntityConstruction<WindowResizeTargetHandle>,
+  element: Element,
+): void {
   target.__brand = 'WindowResizeTargetHandle' as const;
   _windowResizeTargets.set(target, element);
-  return target;
 }
 
 export function resetWebWindowBackendForTest(): void {

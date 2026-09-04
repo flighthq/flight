@@ -8,6 +8,7 @@ import type {
   WebWindowStoragePersistenceCapabilities,
   WebWorkerStoragePersistenceApi,
   WebWorkerStoragePersistenceCapabilities,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function createWebWindowStoragePersistenceCapabilities(
@@ -32,8 +33,15 @@ export function createWebWorkerStoragePersistenceCapabilities(
   api: Readonly<WebWorkerStoragePersistenceApi>,
 ): WebWorkerStoragePersistenceCapabilities {
   const capabilities = allocateEntity<WebWorkerStoragePersistenceCapabilities>();
-  capabilities.persistenceQuery = createPersistenceQueryBackend(api);
+  initializeWebWorkerStoragePersistenceCapabilities(capabilities, api);
   return capabilities;
+}
+
+export function initializeWebWorkerStoragePersistenceCapabilities(
+  capabilities: EntityConstruction<WebWorkerStoragePersistenceCapabilities>,
+  api: Readonly<WebWorkerStoragePersistenceApi>,
+): void {
+  capabilities.persistenceQuery = createPersistenceQueryBackend(api);
 }
 
 function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistenceApi>) {

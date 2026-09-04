@@ -9,6 +9,7 @@ import type {
   InputTargetHandle,
   RenderContextBackend,
   RenderSurfaceBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 interface WebInputTargetStyle extends CSSStyleDeclaration {
@@ -143,9 +144,16 @@ export const webRenderSurfaceBackend = (() => {
 
 export function createWebInputTargetHandle(element: HTMLElement): InputTargetHandle {
   const target = allocateEntity<InputTargetHandle>();
+  initializeWebInputTargetHandle(target, element);
+  return target;
+}
+
+export function initializeWebInputTargetHandle(
+  target: EntityConstruction<InputTargetHandle>,
+  element: HTMLElement,
+): void {
   target.__brand = 'InputTargetHandle' as const;
   _inputTargets.set(target, element);
-  return target;
 }
 
 export function resetWebInputTargetBackendForTest(): void {
