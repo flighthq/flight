@@ -19,7 +19,7 @@ import {
 } from './geolocation';
 
 function fakeBackend(available: boolean = true): GeolocationBackend & { cleared: number[]; lastWatch: number } {
-  const out = allocateEntity<Omit<GeolocationBackend & { cleared: number[]; lastWatch: number }, keyof Entity>>();
+  const out = allocateEntity<any>();
   out.cleared = [];
   out.lastWatch = 0;
   out.promptForAccess = () => Promise.resolve({ reason: 'granted' as const });

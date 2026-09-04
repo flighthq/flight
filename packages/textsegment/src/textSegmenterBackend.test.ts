@@ -20,7 +20,7 @@ interface RecordingBackend extends TextSegmenterBackend {
 
 function recordingBackend(): RecordingBackend {
   const calls: RecordingBackend['calls'] = [];
-  const out = allocateEntity<Omit<RecordingBackend, typeof EntityRuntimeKey>>();
+  const out = allocateEntity<any>();
   out.calls = calls;
   out.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
     calls.push({ text, granularity, locale });

@@ -70,7 +70,7 @@ function fakeBackend(): SensorsBackend & {
   let proximityListener: ((reading: Readonly<ProximityReading>) => void) | null = null;
   let quaternionListener: ((reading: Readonly<QuaternionReading>) => void) | null = null;
 
-  const out = allocateEntity<Omit<ReturnType<typeof fakeBackend>, typeof EntityRuntimeKey>>();
+  const out = allocateEntity<any>();
   out.getPermissionState = async (): Promise<SensorsPermissionState> => 'granted';
   out.isAmbientLightSupported = () => true;
   out.isBarometerSupported = () => false;

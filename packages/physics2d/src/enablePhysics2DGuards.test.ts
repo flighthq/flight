@@ -41,7 +41,7 @@ function unregisteredJointWorld(): Physics2DWorld {
   const world = createPhysics2DWorld(0, -10);
   const anchor = ball(world, 'static', 0, 0);
   const bob = ball(world, 'dynamic', 0, -3);
-  const joint = allocateEntity<Omit<Physics2DDistanceJoint, keyof Entity>>();
+  const joint = allocateEntity<any>();
   joint.kind = Physics2DDistanceJointKind;
   joint.bodyA = anchor.index;
   joint.bodyB = bob.index;

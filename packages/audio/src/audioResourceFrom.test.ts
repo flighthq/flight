@@ -12,7 +12,7 @@ import {
 } from './audioResourceFrom';
 
 function fakeAudioCodecHost(canPlay: (type: string) => boolean): HasMediaAudioCodec {
-  const out = allocateEntity<Omit<AudioBackend, keyof Entity>>();
+  const out = allocateEntity<any>();
   out.canPlayType = canPlay;
   return {
     media: {

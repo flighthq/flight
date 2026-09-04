@@ -286,7 +286,7 @@ function hostFor(clipboard: FakeClipboardBackend): FakeClipboardHost {
 }
 
 function fakeBackend(): FakeClipboardBackend {
-  const out = allocateEntity<Omit<FakeClipboardBackend, typeof EntityRuntimeKey>>();
+  const out = allocateEntity<any>();
   out.bookmark = null;
   out.formats = {};
   out.html = '';
