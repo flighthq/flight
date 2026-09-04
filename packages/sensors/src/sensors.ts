@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { HasSystemSensors } from '@flighthq/types/contract';
 import type {
   AmbientLightReading,
@@ -233,7 +232,7 @@ export function computeWorldAccelerationFromDeviceAcceleration(
 
 // Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
 export function createAmbientLightReading(): AmbientLightReading {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<AmbientLightReading>();
   out.accuracy = 'unknown';
   out.illuminance = 0;
   out.interval = -1;
@@ -244,7 +243,7 @@ export function createAmbientLightReading(): AmbientLightReading {
 // Allocates a zeroed MotionReading with unknown accuracy/interval/timestamp.
 // Used for accelerometer (gravity-included), linear acceleration, gravity vector, and magnetometer readings.
 export function createMotionReading(): MotionReading {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<MotionReading>();
   out.accuracy = 'unknown';
   out.interval = -1;
   out.timestamp = -1;
@@ -257,7 +256,7 @@ export function createMotionReading(): MotionReading {
 // Allocates a zeroed OrientationReading. heading is -1 (unknown) and absolute is false until
 // a reading arrives.
 export function createOrientationReading(): OrientationReading {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<OrientationReading>();
   out.absolute = false;
   out.accuracy = 'unknown';
   out.alpha = 0;
@@ -272,7 +271,7 @@ export function createOrientationReading(): OrientationReading {
 // Allocates a zeroed PressureReading with unknown accuracy/interval/timestamp.
 // altitude is -1 when underivable from pressure alone.
 export function createPressureReading(): PressureReading {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<PressureReading>();
   out.accuracy = 'unknown';
   out.altitude = -1;
   out.interval = -1;
@@ -284,7 +283,7 @@ export function createPressureReading(): PressureReading {
 // Allocates a zeroed ProximityReading with unknown accuracy/interval/timestamp.
 // distance and max are -1 when only near/far is known.
 export function createProximityReading(): ProximityReading {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<ProximityReading>();
   out.accuracy = 'unknown';
   out.distance = -1;
   out.interval = -1;
@@ -296,7 +295,7 @@ export function createProximityReading(): ProximityReading {
 
 // Allocates a zeroed QuaternionReading (identity quaternion: w=1) with unknown accuracy/interval/timestamp.
 export function createQuaternionReading(): QuaternionReading {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<QuaternionReading>();
   out.accuracy = 'unknown';
   out.interval = -1;
   out.timestamp = -1;
@@ -310,7 +309,7 @@ export function createQuaternionReading(): QuaternionReading {
 // Allocates a zeroed RotationRateReading with unknown accuracy/interval/timestamp.
 // alpha/beta/gamma are angular velocity in deg/s around the device z/x/y axes respectively.
 export function createRotationRateReading(): RotationRateReading {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<RotationRateReading>();
   out.accuracy = 'unknown';
   out.alpha = 0;
   out.beta = 0;
@@ -322,7 +321,7 @@ export function createRotationRateReading(): RotationRateReading {
 
 // Allocates a Sensors event entity with inert signals; call attachSensors to start delivery.
 export function createSensors(): Sensors {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<Sensors>();
   out.onAbsoluteOrientation = createSignal();
   out.onAccelerometer = createSignal();
   out.onAmbientLight = createSignal();
@@ -347,7 +346,7 @@ export function createSensors(): Sensors {
 export function createWebSensorsBackend(): SensorsBackend {
   // Explicit type argument so the literal keeps its contextual method parameter types — without one,
   // inference from the return annotation drops them to implicit `any`. The argument is the shape MINUS
-  // the runtime slot: `createEntity<SensorsBackend>` cannot work, because createEntity's type parameter
+  // the runtime slot: `allocateEntity<SensorsBackend>` cannot work, because allocateEntity's type parameter
   // IS its parameter type, so naming the finished type would demand the slot it exists to add.
     const out = allocateEntity<SensorsBackend>();
   out.getPermissionState = (sensor?: 'motion' | 'orientation' | 'magnetometer'): Promise<SensorsPermissionState> => {

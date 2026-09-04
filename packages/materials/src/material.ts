@@ -7,7 +7,7 @@ export function cloneMaterial(source: Readonly<Material>): Material {
   const clone = allocateEntity<Material>();
   clone.kind = source.kind;
   copyMaterialFields(clone, source, source.kind);
-  return clone;
+  return finishEntity(clone);
 }
 
 // Structural copy for pooling and reuse. Writes all own enumerable fields from `source`
@@ -21,7 +21,7 @@ export function createMaterial(kind: Kind): Material {
   const material = allocateEntity<Material>();
   material.kind = kind;
   material.name = null;
-  return material;
+  return finishEntity(material);
 }
 
 // Structural equality for dedup, pooling, and serialization round-trips — NOT the batch
@@ -68,6 +68,6 @@ function copyMaterialFields(dst: Material, src: Readonly<Material>, kind: Kind):
       dstFields[key] = value;
     }
   }
-  // Ensure `kind` is always the source kind (createEntity may set it, but verify).
+  // Ensure `kind` is always the source kind (the caller may have already set it, but verify).
   dstFields['kind'] = kind;
 }

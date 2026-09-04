@@ -82,26 +82,26 @@ export function createGlRenderTarget(
   };
 
   const texture = allocateGlRenderTargetStorage(state, storage);
-  const target = createEntity({
-    requestedAxes: copyRenderTargetAxes(requested),
-    width: storage.width,
-    height: storage.height,
-    format: storage.format,
-    colorAttachments: storage.colorAttachments,
-    colorFormats: [...storage.colorFormats],
-    depth: storage.depth,
-    colorSpace: storage.colorSpace,
-    clearColors: [...requested.clearColors],
-    clearDepth: requested.clearDepth,
-    sampleCount: storage.sampleCount,
-    framebuffer: storage.framebuffer,
-    resolveFramebuffer: storage.resolveFramebuffer,
-    textures: storage.textures,
-    texture,
-    depthTexture: storage.depthTexture,
-    colorRenderbuffers: storage.colorRenderbuffers,
-    depthStencilRenderbuffer: storage.depthStencilRenderbuffer,
-  });
+  const target = allocateEntity<GlRenderTarget>();
+  target.requestedAxes = copyRenderTargetAxes(requested);
+  target.width = storage.width;
+  target.height = storage.height;
+  target.format = storage.format;
+  target.colorAttachments = storage.colorAttachments;
+  target.colorFormats = [...storage.colorFormats];
+  target.depth = storage.depth;
+  target.colorSpace = storage.colorSpace;
+  target.clearColors = [...requested.clearColors];
+  target.clearDepth = requested.clearDepth;
+  target.sampleCount = storage.sampleCount;
+  target.framebuffer = storage.framebuffer;
+  target.resolveFramebuffer = storage.resolveFramebuffer;
+  target.textures = storage.textures;
+  target.texture = texture;
+  target.depthTexture = storage.depthTexture;
+  target.colorRenderbuffers = storage.colorRenderbuffers;
+  target.depthStencilRenderbuffer = storage.depthStencilRenderbuffer;
+  finishEntity(target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   bindGlTextureRealization(state, null);

@@ -12,7 +12,9 @@ import type { RendererData } from '@flighthq/types/contract';
  * ```
  */
 export function createWgpuRendererData<T extends object>(data: T): T & RendererData {
-  return createEntity(data);
+  const out = allocateEntity<T & RendererData>();
+  Object.assign(out, data);
+  return finishEntity(out);
 }
 
 /**

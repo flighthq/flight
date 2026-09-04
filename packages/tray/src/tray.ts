@@ -72,17 +72,21 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
   host: HostType,
   options: Readonly<TrayIconOptions> = {},
 ): Promise<TrayCreateResult<TrayIconForHost<HostType>>> {
-  const tray = finishEntity(allocateEntity<Entity>()) as TrayIconForHost<HostType>;
+  const tray = finishEntity(allocateEntity<TrayIcon>()) as TrayIconForHost<HostType>;
   let result: TrayCreateProviderResult;
   try {
     result = await host.tray.lifecycle.create(tray, options);
   } catch (error) {
-        const out = allocateEntity<TrayIcon>();
+    const out = allocateEntity<TrayCreateResult<TrayIconForHost<HostType>>>();
     out.error = error;
     out.outcome = 'tray-create-failed' as const;
     return finishEntity(out);
   }
-  if (result.outcome !== 'created') return createEntity({ ...result });
+  if (result.outcome !== 'created') {
+    const out = allocateEntity<TrayCreateResult<TrayIconForHost<HostType>>>();
+    Object.assign(out, result);
+    return finishEntity(out);
+  }
 
   const runtime = createEntityRuntime() as TrayRuntime;
   runtime.animationGeneration = 0;
@@ -94,7 +98,7 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
   runtime.releases = new Set();
   runtime.state = 'active';
   tray[EntityRuntimeKey] = runtime;
-    const out = allocateEntity<Promise<TrayCreateResult<TrayIconForHost<HostType>>();
+  const out = allocateEntity<TrayCreateResult<TrayIconForHost<HostType>>>();
   out.outcome = 'created' as const;
   out.tray = tray;
   return finishEntity(out);

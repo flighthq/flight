@@ -34,14 +34,11 @@ import {
   Physics2DWheelJointKind,
 } from './joints';
 
-type Physics2DJointBase = Omit<Physics2DJoint, 'kind'>;
-
 // Joint factories mirror Flight's other descriptor factories: they allocate plain data, accept one
 // readonly options object, and make only authoring choices. Registration and world mutation remain
 // explicit operations. The common helper is also the boundary that keeps solver-owned cache out of
 // every public options type.
-function createJointBase(options: Readonly<Physics2DJointOptions>): Physics2DJointBase {
-    const out = allocateEntity<Physics2DJointBase>();
+function initJointBase(out: Physics2DJoint, options: Readonly<Physics2DJointOptions>): void {
   out.bodyA = options.bodyA;
   out.bodyB = options.bodyB;
   out.localAnchorAX = options.localAnchorAX ?? 0;
@@ -58,36 +55,35 @@ function createJointBase(options: Readonly<Physics2DJointOptions>): Physics2DJoi
   out.rAY = 0;
   out.rBX = 0;
   out.rBY = 0;
-  return finishEntity(out);
 }
 
 export function createPhysics2DDistanceJoint(options: Readonly<Physics2DDistanceJointOptions>): Physics2DDistanceJoint {
-  return createEntity({
-    kind: Physics2DDistanceJointKind,
-    ...createJointBase(options),
-    length: options.length,
-    frequencyHz: options.frequencyHz ?? 0,
-    dampingRatio: options.dampingRatio ?? 0,
-  });
+  const out = allocateEntity<Physics2DDistanceJoint>();
+  out.kind = Physics2DDistanceJointKind;
+  initJointBase(out, options);
+  out.length = options.length;
+  out.frequencyHz = options.frequencyHz ?? 0;
+  out.dampingRatio = options.dampingRatio ?? 0;
+  return finishEntity(out);
 }
 
 export function createPhysics2DGearJoint(options: Readonly<Physics2DGearJointOptions>): Physics2DGearJoint {
-  return createEntity({
-    kind: Physics2DGearJointKind,
-    ...createJointBase(options),
-    coordinateA: options.coordinateA,
-    coordinateB: options.coordinateB,
-    axisAX: options.axisAX ?? 1,
-    axisAY: options.axisAY ?? 0,
-    axisBX: options.axisBX ?? 1,
-    axisBY: options.axisBY ?? 0,
-    ratio: options.ratio ?? 1,
-    constant: options.constant,
-  });
+  const out = allocateEntity<Physics2DGearJoint>();
+  out.kind = Physics2DGearJointKind;
+  initJointBase(out, options);
+  out.coordinateA = options.coordinateA;
+  out.coordinateB = options.coordinateB;
+  out.axisAX = options.axisAX ?? 1;
+  out.axisAY = options.axisAY ?? 0;
+  out.axisBX = options.axisBX ?? 1;
+  out.axisBY = options.axisBY ?? 0;
+  out.ratio = options.ratio ?? 1;
+  out.constant = options.constant;
+  return finishEntity(out);
 }
 
 export function createPhysics2DMouseJoint(options: Readonly<Physics2DMouseJointOptions>): Physics2DMouseJoint {
-    const out = allocateEntity<Physics2DDistanceJoint>();
+  const out = allocateEntity<Physics2DMouseJoint>();
   out.kind = Physics2DMouseJointKind;
   out.bodyA = options.body;
   out.bodyB = options.body;
@@ -116,84 +112,84 @@ export function createPhysics2DMouseJoint(options: Readonly<Physics2DMouseJointO
 export function createPhysics2DPrismaticJoint(
   options: Readonly<Physics2DPrismaticJointOptions>,
 ): Physics2DPrismaticJoint {
-  return createEntity({
-    kind: Physics2DPrismaticJointKind,
-    ...createJointBase(options),
-    localAxisAX: options.localAxisAX ?? 1,
-    localAxisAY: options.localAxisAY ?? 0,
-    referenceAngle: options.referenceAngle ?? 0,
-    enableMotor: options.enableMotor ?? false,
-    motorSpeed: options.motorSpeed ?? 0,
-    maxMotorForce: options.maxMotorForce ?? 0,
-    motorImpulse: 0,
-    enableLimit: options.enableLimit ?? false,
-    lowerTranslation: options.lowerTranslation ?? 0,
-    upperTranslation: options.upperTranslation ?? 0,
-    enableLimitSpring: options.enableLimitSpring ?? false,
-    limitFrequencyHz: options.limitFrequencyHz ?? 0,
-    limitDampingRatio: options.limitDampingRatio ?? 0,
-  });
+  const out = allocateEntity<Physics2DPrismaticJoint>();
+  out.kind = Physics2DPrismaticJointKind;
+  initJointBase(out, options);
+  out.localAxisAX = options.localAxisAX ?? 1;
+  out.localAxisAY = options.localAxisAY ?? 0;
+  out.referenceAngle = options.referenceAngle ?? 0;
+  out.enableMotor = options.enableMotor ?? false;
+  out.motorSpeed = options.motorSpeed ?? 0;
+  out.maxMotorForce = options.maxMotorForce ?? 0;
+  out.motorImpulse = 0;
+  out.enableLimit = options.enableLimit ?? false;
+  out.lowerTranslation = options.lowerTranslation ?? 0;
+  out.upperTranslation = options.upperTranslation ?? 0;
+  out.enableLimitSpring = options.enableLimitSpring ?? false;
+  out.limitFrequencyHz = options.limitFrequencyHz ?? 0;
+  out.limitDampingRatio = options.limitDampingRatio ?? 0;
+  return finishEntity(out);
 }
 
 export function createPhysics2DPulleyJoint(options: Readonly<Physics2DPulleyJointOptions>): Physics2DPulleyJoint {
-  return createEntity({
-    kind: Physics2DPulleyJointKind,
-    ...createJointBase(options),
-    groundAnchorAX: options.groundAnchorAX,
-    groundAnchorAY: options.groundAnchorAY,
-    groundAnchorBX: options.groundAnchorBX,
-    groundAnchorBY: options.groundAnchorBY,
-    ratio: options.ratio ?? 1,
-    constant: options.constant,
-  });
+  const out = allocateEntity<Physics2DPulleyJoint>();
+  out.kind = Physics2DPulleyJointKind;
+  initJointBase(out, options);
+  out.groundAnchorAX = options.groundAnchorAX;
+  out.groundAnchorAY = options.groundAnchorAY;
+  out.groundAnchorBX = options.groundAnchorBX;
+  out.groundAnchorBY = options.groundAnchorBY;
+  out.ratio = options.ratio ?? 1;
+  out.constant = options.constant;
+  return finishEntity(out);
 }
 
 export function createPhysics2DRevoluteJoint(options: Readonly<Physics2DRevoluteJointOptions>): Physics2DRevoluteJoint {
-  return createEntity({
-    kind: Physics2DRevoluteJointKind,
-    ...createJointBase(options),
-    enableMotor: options.enableMotor ?? false,
-    motorSpeed: options.motorSpeed ?? 0,
-    maxMotorTorque: options.maxMotorTorque ?? 0,
-    motorImpulse: 0,
-    enableLimit: options.enableLimit ?? false,
-    lowerAngle: options.lowerAngle ?? 0,
-    upperAngle: options.upperAngle ?? 0,
-    referenceAngle: options.referenceAngle ?? 0,
-    enableLimitSpring: options.enableLimitSpring ?? false,
-    limitFrequencyHz: options.limitFrequencyHz ?? 0,
-    limitDampingRatio: options.limitDampingRatio ?? 0,
-  });
+  const out = allocateEntity<Physics2DRevoluteJoint>();
+  out.kind = Physics2DRevoluteJointKind;
+  initJointBase(out, options);
+  out.enableMotor = options.enableMotor ?? false;
+  out.motorSpeed = options.motorSpeed ?? 0;
+  out.maxMotorTorque = options.maxMotorTorque ?? 0;
+  out.motorImpulse = 0;
+  out.enableLimit = options.enableLimit ?? false;
+  out.lowerAngle = options.lowerAngle ?? 0;
+  out.upperAngle = options.upperAngle ?? 0;
+  out.referenceAngle = options.referenceAngle ?? 0;
+  out.enableLimitSpring = options.enableLimitSpring ?? false;
+  out.limitFrequencyHz = options.limitFrequencyHz ?? 0;
+  out.limitDampingRatio = options.limitDampingRatio ?? 0;
+  return finishEntity(out);
 }
 
 export function createPhysics2DRopeJoint(options: Readonly<Physics2DRopeJointOptions>): Physics2DRopeJoint {
-  return createEntity({
-    kind: Physics2DRopeJointKind,
-    ...createJointBase(options),
-    maxLength: options.maxLength,
-  });
+  const out = allocateEntity<Physics2DRopeJoint>();
+  out.kind = Physics2DRopeJointKind;
+  initJointBase(out, options);
+  out.maxLength = options.maxLength;
+  return finishEntity(out);
 }
 
 export function createPhysics2DWeldJoint(options: Readonly<Physics2DWeldJointOptions>): Physics2DWeldJoint {
-  return createEntity({
-    kind: Physics2DWeldJointKind,
-    ...createJointBase(options),
-    referenceAngle: options.referenceAngle ?? 0,
-  });
+  const out = allocateEntity<Physics2DWeldJoint>();
+  out.kind = Physics2DWeldJointKind;
+  initJointBase(out, options);
+  out.referenceAngle = options.referenceAngle ?? 0;
+  return finishEntity(out);
 }
 
 export function createPhysics2DWheelJoint(options: Readonly<Physics2DWheelJointOptions>): Physics2DWheelJoint {
-  return createEntity({
-    kind: Physics2DWheelJointKind,
-    ...createJointBase(options),
-    localAxisAX: options.localAxisAX ?? 0,
-    localAxisAY: options.localAxisAY ?? 1,
-    restTranslation: options.restTranslation ?? 0,
-    frequencyHz: options.frequencyHz ?? 0,
-    dampingRatio: options.dampingRatio ?? 0,
-    enableMotor: options.enableMotor ?? false,
-    motorSpeed: options.motorSpeed ?? 0,
-    maxMotorTorque: options.maxMotorTorque ?? 0,
-    motorImpulse: 0,
-  });
+  const out = allocateEntity<Physics2DWheelJoint>();
+  out.kind = Physics2DWheelJointKind;
+  initJointBase(out, options);
+  out.localAxisAX = options.localAxisAX ?? 0;
+  out.localAxisAY = options.localAxisAY ?? 1;
+  out.restTranslation = options.restTranslation ?? 0;
+  out.frequencyHz = options.frequencyHz ?? 0;
+  out.dampingRatio = options.dampingRatio ?? 0;
+  out.enableMotor = options.enableMotor ?? false;
+  out.motorSpeed = options.motorSpeed ?? 0;
+  out.maxMotorTorque = options.maxMotorTorque ?? 0;
+  out.motorImpulse = 0;
+  return finishEntity(out);
 }

@@ -42,25 +42,34 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
     version: source.version >>> 0,
   };
   switch (source.dimension) {
-    case '2d':
-      return createEntity({ ...common, dimension: '2d' as const, source: source.source }) as Texture2D;
-    case '2d-array':
-      return createEntity({
-        ...common,
-        dimension: '2d-array' as const,
-        sources: source.sources.slice(),
-      }) as Extract<Texture, { dimension: '2d-array' }>;
-    case '3d':
-      return createEntity({ ...common, dimension: '3d' as const, source: source.source }) as Extract<
-        Texture,
-        { dimension: '3d' }
-      >;
-    case 'cube':
-      return createEntity({
-        ...common,
-        dimension: 'cube' as const,
-        sources: source.sources.slice() as unknown as TextureSourceCubeFaces,
-      }) as Extract<Texture, { dimension: 'cube' }>;
+    case '2d': {
+      const out = allocateEntity<Texture2D>();
+      Object.assign(out, common);
+      out.dimension = '2d';
+      out.source = source.source;
+      return finishEntity(out) as Texture2D;
+    }
+    case '2d-array': {
+      const out = allocateEntity<Extract<Texture, { dimension: '2d-array' }>>();
+      Object.assign(out, common);
+      out.dimension = '2d-array';
+      out.sources = source.sources.slice();
+      return finishEntity(out) as Extract<Texture, { dimension: '2d-array' }>;
+    }
+    case '3d': {
+      const out = allocateEntity<Extract<Texture, { dimension: '3d' }>>();
+      Object.assign(out, common);
+      out.dimension = '3d';
+      out.source = source.source;
+      return finishEntity(out) as Extract<Texture, { dimension: '3d' }>;
+    }
+    case 'cube': {
+      const out = allocateEntity<Extract<Texture, { dimension: 'cube' }>>();
+      Object.assign(out, common);
+      out.dimension = 'cube';
+      out.sources = source.sources.slice() as unknown as TextureSourceCubeFaces;
+      return finishEntity(out) as Extract<Texture, { dimension: 'cube' }>;
+    }
   }
 }
 
@@ -115,27 +124,37 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
   const common = createCommonTextureFields(opts);
   let texture: Texture;
   switch (opts?.dimension) {
-    case '2d-array':
-      texture = createEntity({
-        ...common,
-        dimension: '2d-array' as const,
-        sources: opts.sources?.slice() ?? [],
-      }) as Extract<Texture, { dimension: '2d-array' }>;
+    case '2d-array': {
+      const out = allocateEntity<Extract<Texture, { dimension: '2d-array' }>>();
+      Object.assign(out, common);
+      out.dimension = '2d-array';
+      out.sources = opts.sources?.slice() ?? [];
+      texture = finishEntity(out) as Extract<Texture, { dimension: '2d-array' }>;
       break;
-    case '3d':
-      texture = createEntity({
-        ...common,
-        dimension: '3d' as const,
-        source: opts.source ?? null,
-      }) as Extract<Texture, { dimension: '3d' }>;
+    }
+    case '3d': {
+      const out = allocateEntity<Extract<Texture, { dimension: '3d' }>>();
+      Object.assign(out, common);
+      out.dimension = '3d';
+      out.source = opts.source ?? null;
+      texture = finishEntity(out) as Extract<Texture, { dimension: '3d' }>;
       break;
-    case 'cube':
-      texture = createEntity({
-        ...common,
-        dimension: 'cube' as const,
-        sources: (opts.sources?.slice() ?? [null, null, null, null, null, null]) as unknown as TextureSourceCubeFaces,
-      }) as Extract<Texture, { dimension: 'cube' }>;
+    }
+    case 'cube': {
+      const out = allocateEntity<Extract<Texture, { dimension: 'cube' }>>();
+      Object.assign(out, common);
+      out.dimension = 'cube';
+      out.sources = (opts.sources?.slice() ?? [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ]) as unknown as TextureSourceCubeFaces;
+      texture = finishEntity(out) as Extract<Texture, { dimension: 'cube' }>;
       break;
+    }
     // The 2D case returns straight from the leaf, which attaches the resource itself — falling through
     // to the shared attach below would push the same texture onto the resource twice.
     default:
@@ -150,11 +169,11 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
 // runs to serve every variant. `createTexture` composes this one for its own 2D case, so there is a
 // single place that decides what a 2D texture is.
 export function createTexture2D(opts?: Readonly<CreateTexture2DOptions>): Texture2D {
-  const texture = createEntity({
-    ...createCommonTextureFields(opts),
-    dimension: '2d' as const,
-    source: opts?.source ?? null,
-  }) as Texture2D;
+  const out = allocateEntity<Texture2D>();
+  Object.assign(out, createCommonTextureFields(opts));
+  out.dimension = '2d';
+  out.source = opts?.source ?? null;
+  const texture = finishEntity(out) as Texture2D;
   attachTextureToResource(texture, opts?.resource);
   return texture;
 }

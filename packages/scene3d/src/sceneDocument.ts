@@ -13,6 +13,7 @@ import type {
   Scene3DDocument,
   Scene3DDocumentNode,
   Node3D,
+  Skeleton3D,
   Skin,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -102,12 +103,12 @@ function applyDocumentSkins(document: Readonly<Scene3DDocument>, nodes: readonly
       inverseBindMatrices.set(skin.inverseBind[j].m, j * 16);
     }
     // The Skeleton3D palette (jointMatrices) is filled per-frame by computeSkeleton3DJointMatrices; here it
-    // starts zeroed. Built inline through createEntity rather than via @flighthq/skeleton3d because that
+    // starts zeroed. Built inline through allocateEntity rather than via @flighthq/skeleton3d because that
     // package depends on @flighthq/scene3d (createMesh/createNode3D), which would form a cycle; the
     // Entity shape invariant still holds at this assembly seam.
     // Joint names are recovered from the resolved joint nodes; null when the source named none.
     const skeleton = (() => {
-      const out = allocateEntity<Scene3D>();
+      const out = allocateEntity<Skeleton3D>();
       out.inverseBindMatrices = inverseBindMatrices;
       out.jointMatrices = new Float32Array(joints.length * 16);
       out.joints = joints;

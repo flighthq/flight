@@ -37,16 +37,16 @@ export function createScene3DResourceResolver(
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
   startResourceLoad(loader);
 
-  return createEntity({
-    fetch: options?.fetch ?? createWebImageResourceFetch(host),
-    registry: options?.registry ?? createScene3DMaterialTextureRegistry(),
-    [Scene3DResourceResolverRuntimeKey]: {
-      inFlight: new Map(),
-      loader,
-      resolved: new Map(),
-      signals: null,
-    },
-  });
+  const out = allocateEntity<Scene3DResourceResolverWithRuntime>();
+  out.fetch = options?.fetch ?? createWebImageResourceFetch(host);
+  out.registry = options?.registry ?? createScene3DMaterialTextureRegistry();
+  out[Scene3DResourceResolverRuntimeKey] = {
+    inFlight: new Map(),
+    loader,
+    resolved: new Map(),
+    signals: null,
+  };
+  return finishEntity(out);
 }
 
 // Releases the resolver: cancels and disposes the loader, aborts every in-flight controller, and

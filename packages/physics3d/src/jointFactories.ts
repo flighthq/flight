@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   Physics3DBallAndSocketJoint,
   Physics3DBallAndSocketJointOptions,
   Physics3DConeTwistJoint,
@@ -40,7 +39,10 @@ import {
 export function createPhysics3DBallAndSocketJoint(
   options: Readonly<Physics3DBallAndSocketJointOptions>,
 ): Physics3DBallAndSocketJoint {
-  return createEntity({ kind: Physics3DBallAndSocketJointKind, ...createJointBase(options) });
+  const out = allocateEntity<Physics3DBallAndSocketJoint>();
+  out.kind = Physics3DBallAndSocketJointKind;
+  initJointBase(out, options);
+  return finishEntity(out);
 }
 
 // Defaults to a cone of 45 degrees in both directions and a free twist. A cone-twist with no limits at all is
@@ -49,46 +51,50 @@ export function createPhysics3DBallAndSocketJoint(
 export function createPhysics3DConeTwistJoint(
   options: Readonly<Physics3DConeTwistJointOptions>,
 ): Physics3DConeTwistJoint {
-  return createEntity({
-    kind: Physics3DConeTwistJointKind,
-    ...createJointBase(options),
-    ...createJointFrames(options),
-    enableSwingLimit: options.enableSwingLimit ?? true,
-    swingLimitY: options.swingLimitY ?? Math.PI / 4,
-    swingLimitZ: options.swingLimitZ ?? Math.PI / 4,
-    enableTwistLimit: options.enableTwistLimit ?? false,
-    lowerTwistAngle: options.lowerTwistAngle ?? 0,
-    upperTwistAngle: options.upperTwistAngle ?? 0,
-    enableLimitSpring: options.enableLimitSpring ?? false,
-    limitFrequencyHz: options.limitFrequencyHz ?? 0,
-    limitDampingRatio: options.limitDampingRatio ?? 0,
-    swingLimitImpulse: 0,
-    lowerTwistImpulse: 0,
-    upperTwistImpulse: 0,
-  });
+  const out = allocateEntity<Physics3DConeTwistJoint>();
+  out.kind = Physics3DConeTwistJointKind;
+  initJointBase(out, options);
+  initJointFrames(out, options);
+  out.enableSwingLimit = options.enableSwingLimit ?? true;
+  out.swingLimitY = options.swingLimitY ?? Math.PI / 4;
+  out.swingLimitZ = options.swingLimitZ ?? Math.PI / 4;
+  out.enableTwistLimit = options.enableTwistLimit ?? false;
+  out.lowerTwistAngle = options.lowerTwistAngle ?? 0;
+  out.upperTwistAngle = options.upperTwistAngle ?? 0;
+  out.enableLimitSpring = options.enableLimitSpring ?? false;
+  out.limitFrequencyHz = options.limitFrequencyHz ?? 0;
+  out.limitDampingRatio = options.limitDampingRatio ?? 0;
+  out.swingLimitImpulse = 0;
+  out.lowerTwistImpulse = 0;
+  out.upperTwistImpulse = 0;
+  return finishEntity(out);
 }
 
 // Defaults to a RIGID strut: no spring, no limit, and a rest length of zero, which holds the two anchors
 // coincident until a caller names a length. The limit interval defaults to `[0, Infinity]` so that switching
 // `enableLimit` on alone gives a rope with no stated bound rather than one pinned to zero length.
 export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistanceJointOptions>): Physics3DDistanceJoint {
-  return createEntity({
-    kind: Physics3DDistanceJointKind,
-    ...createJointBase(options),
-    length: options.length ?? 0,
-    enableSpring: options.enableSpring ?? false,
-    frequencyHz: options.frequencyHz ?? 0,
-    dampingRatio: options.dampingRatio ?? 0,
-    enableLimit: options.enableLimit ?? false,
-    minLength: options.minLength ?? 0,
-    maxLength: options.maxLength ?? Number.POSITIVE_INFINITY,
-    lowerLimitImpulse: 0,
-    upperLimitImpulse: 0,
-  });
+  const out = allocateEntity<Physics3DDistanceJoint>();
+  out.kind = Physics3DDistanceJointKind;
+  initJointBase(out, options);
+  out.length = options.length ?? 0;
+  out.enableSpring = options.enableSpring ?? false;
+  out.frequencyHz = options.frequencyHz ?? 0;
+  out.dampingRatio = options.dampingRatio ?? 0;
+  out.enableLimit = options.enableLimit ?? false;
+  out.minLength = options.minLength ?? 0;
+  out.maxLength = options.maxLength ?? Number.POSITIVE_INFINITY;
+  out.lowerLimitImpulse = 0;
+  out.upperLimitImpulse = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DFixedJoint(options: Readonly<Physics3DFixedJointOptions>): Physics3DFixedJoint {
-  return createEntity({ kind: Physics3DFixedJointKind, ...createJointBase(options), ...createJointFrames(options) });
+  const out = allocateEntity<Physics3DFixedJoint>();
+  out.kind = Physics3DFixedJointKind;
+  initJointBase(out, options);
+  initJointFrames(out, options);
+  return finishEntity(out);
 }
 
 // Defaults every axis to FREE, so a joint built with no bounds constrains nothing and each axis is opted into
@@ -97,108 +103,104 @@ export function createPhysics3DFixedJoint(options: Readonly<Physics3DFixedJointO
 export function createPhysics3DGeneric6DofJoint(
   options: Readonly<Physics3DGeneric6DofJointOptions>,
 ): Physics3DGeneric6DofJoint {
-  return createEntity({
-    kind: Physics3DGeneric6DofJointKind,
-    ...createJointBase(options),
-    ...createJointFrames(options),
-    lowerLinearX: options.lowerLinearX ?? 1,
-    lowerLinearY: options.lowerLinearY ?? 1,
-    lowerLinearZ: options.lowerLinearZ ?? 1,
-    upperLinearX: options.upperLinearX ?? -1,
-    upperLinearY: options.upperLinearY ?? -1,
-    upperLinearZ: options.upperLinearZ ?? -1,
-    lowerAngularX: options.lowerAngularX ?? 1,
-    lowerAngularY: options.lowerAngularY ?? 1,
-    lowerAngularZ: options.lowerAngularZ ?? 1,
-    upperAngularX: options.upperAngularX ?? -1,
-    upperAngularY: options.upperAngularY ?? -1,
-    upperAngularZ: options.upperAngularZ ?? -1,
-    enableLimitSpring: options.enableLimitSpring ?? false,
-    limitFrequencyHz: options.limitFrequencyHz ?? 0,
-    limitDampingRatio: options.limitDampingRatio ?? 0,
-    lowerLimitImpulses: [0, 0, 0, 0, 0, 0],
-    upperLimitImpulses: [0, 0, 0, 0, 0, 0],
-  });
+  const out = allocateEntity<Physics3DGeneric6DofJoint>();
+  out.kind = Physics3DGeneric6DofJointKind;
+  initJointBase(out, options);
+  initJointFrames(out, options);
+  out.lowerLinearX = options.lowerLinearX ?? 1;
+  out.lowerLinearY = options.lowerLinearY ?? 1;
+  out.lowerLinearZ = options.lowerLinearZ ?? 1;
+  out.upperLinearX = options.upperLinearX ?? -1;
+  out.upperLinearY = options.upperLinearY ?? -1;
+  out.upperLinearZ = options.upperLinearZ ?? -1;
+  out.lowerAngularX = options.lowerAngularX ?? 1;
+  out.lowerAngularY = options.lowerAngularY ?? 1;
+  out.lowerAngularZ = options.lowerAngularZ ?? 1;
+  out.upperAngularX = options.upperAngularX ?? -1;
+  out.upperAngularY = options.upperAngularY ?? -1;
+  out.upperAngularZ = options.upperAngularZ ?? -1;
+  out.enableLimitSpring = options.enableLimitSpring ?? false;
+  out.limitFrequencyHz = options.limitFrequencyHz ?? 0;
+  out.limitDampingRatio = options.limitDampingRatio ?? 0;
+  out.lowerLimitImpulses = [0, 0, 0, 0, 0, 0];
+  out.upperLimitImpulses = [0, 0, 0, 0, 0, 0];
+  return finishEntity(out);
 }
 
 export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointOptions>): Physics3DHingeJoint {
-  return createEntity({
-    kind: Physics3DHingeJointKind,
-    ...createJointBase(options),
-    ...createJointFrames(options),
-    enableLimit: options.enableLimit ?? false,
-    lowerAngle: options.lowerAngle ?? 0,
-    upperAngle: options.upperAngle ?? 0,
-    enableMotor: options.enableMotor ?? false,
-    motorSpeed: options.motorSpeed ?? 0,
-    maxMotorTorque: options.maxMotorTorque ?? 0,
-    enableLimitSpring: options.enableLimitSpring ?? false,
-    limitFrequencyHz: options.limitFrequencyHz ?? 0,
-    limitDampingRatio: options.limitDampingRatio ?? 0,
-    motorImpulse: 0,
-    lowerLimitImpulse: 0,
-    upperLimitImpulse: 0,
-  });
+  const out = allocateEntity<Physics3DHingeJoint>();
+  out.kind = Physics3DHingeJointKind;
+  initJointBase(out, options);
+  initJointFrames(out, options);
+  out.enableLimit = options.enableLimit ?? false;
+  out.lowerAngle = options.lowerAngle ?? 0;
+  out.upperAngle = options.upperAngle ?? 0;
+  out.enableMotor = options.enableMotor ?? false;
+  out.motorSpeed = options.motorSpeed ?? 0;
+  out.maxMotorTorque = options.maxMotorTorque ?? 0;
+  out.enableLimitSpring = options.enableLimitSpring ?? false;
+  out.limitFrequencyHz = options.limitFrequencyHz ?? 0;
+  out.limitDampingRatio = options.limitDampingRatio ?? 0;
+  out.motorImpulse = 0;
+  out.lowerLimitImpulse = 0;
+  out.upperLimitImpulse = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJointOptions>): Physics3DSliderJoint {
-  return createEntity({
-    kind: Physics3DSliderJointKind,
-    ...createJointBase(options),
-    ...createJointFrames(options),
-    enableLimit: options.enableLimit ?? false,
-    lowerTranslation: options.lowerTranslation ?? 0,
-    upperTranslation: options.upperTranslation ?? 0,
-    enableMotor: options.enableMotor ?? false,
-    motorSpeed: options.motorSpeed ?? 0,
-    maxMotorForce: options.maxMotorForce ?? 0,
-    enableLimitSpring: options.enableLimitSpring ?? false,
-    limitFrequencyHz: options.limitFrequencyHz ?? 0,
-    limitDampingRatio: options.limitDampingRatio ?? 0,
-    motorImpulse: 0,
-    lowerLimitImpulse: 0,
-    upperLimitImpulse: 0,
-  });
+  const out = allocateEntity<Physics3DSliderJoint>();
+  out.kind = Physics3DSliderJointKind;
+  initJointBase(out, options);
+  initJointFrames(out, options);
+  out.enableLimit = options.enableLimit ?? false;
+  out.lowerTranslation = options.lowerTranslation ?? 0;
+  out.upperTranslation = options.upperTranslation ?? 0;
+  out.enableMotor = options.enableMotor ?? false;
+  out.motorSpeed = options.motorSpeed ?? 0;
+  out.maxMotorForce = options.maxMotorForce ?? 0;
+  out.enableLimitSpring = options.enableLimitSpring ?? false;
+  out.limitFrequencyHz = options.limitFrequencyHz ?? 0;
+  out.limitDampingRatio = options.limitDampingRatio ?? 0;
+  out.motorImpulse = 0;
+  out.lowerLimitImpulse = 0;
+  out.upperLimitImpulse = 0;
+  return finishEntity(out);
 }
 
-function createJointBase(options: Readonly<Physics3DJointOptions>): Omit<EntityWithoutRuntime<Physics3DJoint>, 'kind'> {
-  return {
-    bodyA: options.bodyA,
-    bodyB: options.bodyB,
-    localAnchorAX: options.localAnchorAX ?? 0,
-    localAnchorAY: options.localAnchorAY ?? 0,
-    localAnchorAZ: options.localAnchorAZ ?? 0,
-    localAnchorBX: options.localAnchorBX ?? 0,
-    localAnchorBY: options.localAnchorBY ?? 0,
-    localAnchorBZ: options.localAnchorBZ ?? 0,
-    collideConnected: options.collideConnected ?? false,
-    breakForce: options.breakForce ?? Number.POSITIVE_INFINITY,
-    breakTorque: options.breakTorque ?? Number.POSITIVE_INFINITY,
-    broken: false,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    impulse3: 0,
-    impulse4: 0,
-    impulse5: 0,
-    rAX: 0,
-    rAY: 0,
-    rAZ: 0,
-    rBX: 0,
-    rBY: 0,
-    rBZ: 0,
-  };
+function initJointBase(out: Physics3DJoint, options: Readonly<Physics3DJointOptions>): void {
+  out.bodyA = options.bodyA;
+  out.bodyB = options.bodyB;
+  out.localAnchorAX = options.localAnchorAX ?? 0;
+  out.localAnchorAY = options.localAnchorAY ?? 0;
+  out.localAnchorAZ = options.localAnchorAZ ?? 0;
+  out.localAnchorBX = options.localAnchorBX ?? 0;
+  out.localAnchorBY = options.localAnchorBY ?? 0;
+  out.localAnchorBZ = options.localAnchorBZ ?? 0;
+  out.collideConnected = options.collideConnected ?? false;
+  out.breakForce = options.breakForce ?? Number.POSITIVE_INFINITY;
+  out.breakTorque = options.breakTorque ?? Number.POSITIVE_INFINITY;
+  out.broken = false;
+  out.impulse0 = 0;
+  out.impulse1 = 0;
+  out.impulse2 = 0;
+  out.impulse3 = 0;
+  out.impulse4 = 0;
+  out.impulse5 = 0;
+  out.rAX = 0;
+  out.rAY = 0;
+  out.rAZ = 0;
+  out.rBX = 0;
+  out.rBY = 0;
+  out.rBZ = 0;
 }
 
-function createJointFrames(options: Readonly<Physics3DJointFrameOptions>): Physics3DJointFrames {
-  return {
-    localRotationAX: options.localRotationAX ?? 0,
-    localRotationAY: options.localRotationAY ?? 0,
-    localRotationAZ: options.localRotationAZ ?? 0,
-    localRotationAW: options.localRotationAW ?? 1,
-    localRotationBX: options.localRotationBX ?? 0,
-    localRotationBY: options.localRotationBY ?? 0,
-    localRotationBZ: options.localRotationBZ ?? 0,
-    localRotationBW: options.localRotationBW ?? 1,
-  };
+function initJointFrames(out: Physics3DJointFrames, options: Readonly<Physics3DJointFrameOptions>): void {
+  out.localRotationAX = options.localRotationAX ?? 0;
+  out.localRotationAY = options.localRotationAY ?? 0;
+  out.localRotationAZ = options.localRotationAZ ?? 0;
+  out.localRotationAW = options.localRotationAW ?? 1;
+  out.localRotationBX = options.localRotationBX ?? 0;
+  out.localRotationBY = options.localRotationBY ?? 0;
+  out.localRotationBZ = options.localRotationBZ ?? 0;
+  out.localRotationBW = options.localRotationBW ?? 1;
 }

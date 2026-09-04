@@ -9,7 +9,6 @@ import type {
   AlphaType,
   Bitmap,
   EmbeddedImageResourceReference,
-  EntityWithoutRuntime,
   ExternalImageResourceReference,
   ImageResourceFailure,
   ImageResourceFetch,
@@ -32,7 +31,7 @@ export function createEmbeddedImageResourceReference(
   mimeType: string | null = null,
   alphaType: AlphaType = 'straight',
 ): EmbeddedImageResourceReference {
-    const out = allocateEntity<EmbeddedImageResourceReference>();
+  const out = allocateEntity<EmbeddedImageResourceReference>();
   out.alphaType = alphaType;
   out.bytes = bytes;
   out.failure = null;
@@ -60,24 +59,23 @@ async function decodeEmbeddedImageResourceReference(
     : decodeImage(ref.bytes, ref.mimeType ?? undefined));
   signal.throwIfAborted();
   if (decoded === null) return null;
-  const bitmap: EntityWithoutRuntime<Bitmap> = {
-    alphaType: ref.alphaType,
-    data: new Uint8ClampedArray(decoded.data),
-    format: 'rgba8unorm' as const,
-    gamut: 'srgb' as const,
-    height: decoded.height,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width: decoded.width,
-  };
-  return createEntity(bitmap);
+  const out = allocateEntity<Bitmap>();
+  out.alphaType = ref.alphaType;
+  out.data = new Uint8ClampedArray(decoded.data);
+  out.format = 'rgba8unorm' as const;
+  out.gamut = 'srgb' as const;
+  out.height = decoded.height;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = decoded.width;
+  return finishEntity(out);
 }
 
 export function createExternalImageResourceReference(
   uri: string,
   basePath: string | null = null,
 ): ExternalImageResourceReference {
-    const out = allocateEntity<EmbeddedImageResourceReference>();
+  const out = allocateEntity<ExternalImageResourceReference>();
   out.basePath = basePath;
   out.failure = null;
   out.kind = ImageResourceReferenceKind.External;
@@ -92,13 +90,13 @@ export function createExternalImageResourceReference(
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
 export function createImageResourceFailure(cause: unknown): ImageResourceFailure {
   if (cause instanceof Error) {
-        const out = allocateEntity<EmbeddedImageResourceReference>();
+    const out = allocateEntity<ImageResourceFailure>();
     out.kind = ImageResourceFailureKind.Error;
     out.message = cause.message;
     out.name = cause.name;
     return finishEntity(out);
   }
-    const out = allocateEntity<EmbeddedImageResourceReference>();
+  const out = allocateEntity<ImageResourceFailure>();
   out.kind = ImageResourceFailureKind.Error;
   out.message = String(cause);
   out.name = null;
@@ -187,11 +185,11 @@ export async function resolveImageResourceReference(
       const decodeFailure = usesOrdinaryEmbeddedDecode
         ? explainImageDecodeFailure(ref.bytes, ref.mimeType ?? undefined)
         : null;
-            const _entity = allocateEntity<EmbeddedImageResourceReference>();
-      _entity.kind = ImageResourceFailureKind.Unavailable;
-      _entity.message = decodeFailure?.reason ?? 'Image resource unavailable';
-      _entity.name = null;
-      ref.failure = finishEntity(_entity);
+      const out = allocateEntity<ImageResourceFailure>();
+      out.kind = ImageResourceFailureKind.Unavailable;
+      out.message = decodeFailure?.reason ?? 'Image resource unavailable';
+      out.name = null;
+      ref.failure = finishEntity(out);
       ref.state = ResourceResolutionState.Failed;
       return null;
     }

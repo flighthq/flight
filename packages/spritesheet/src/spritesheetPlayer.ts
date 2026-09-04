@@ -19,17 +19,17 @@ export function acquireSpritesheetPlayer(): SpritesheetPlayer {
 }
 
 export function cloneSpritesheetPlayer(player: Readonly<SpritesheetPlayer>): SpritesheetPlayer {
-  return createEntity({
-    animation: player.animation,
-    complete: player.complete,
-    elapsed: player.elapsed,
-    frameIndex: player.frameIndex,
-    onComplete: createSignal(),
-    onLoop: createSignal(),
-    paused: player.paused,
-    queue: [...player.queue],
-    speed: player.speed,
-  });
+  const out = allocateEntity<SpritesheetPlayer>();
+  out.animation = player.animation;
+  out.complete = player.complete;
+  out.elapsed = player.elapsed;
+  out.frameIndex = player.frameIndex;
+  out.onComplete = createSignal();
+  out.onLoop = createSignal();
+  out.paused = player.paused;
+  out.queue = [...player.queue];
+  out.speed = player.speed;
+  return finishEntity(out);
 }
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
