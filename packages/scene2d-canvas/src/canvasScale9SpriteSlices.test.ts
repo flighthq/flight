@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 
-import { CANVAS_SCALE9_SPRITE_SLICE_STRIDE, writeCanvasScale9SpriteSlices } from './canvasScale9Sprite';
+import { CANVAS_SCALE9_SPRITE_SLICE_STRIDE, writeCanvasScale9SpriteSlices } from './canvasScale9SpriteSlices';
 
 // Reads one slice back as the eight numbers drawImage takes, so a failure names the slice rather than an
 // index into a flat array.
