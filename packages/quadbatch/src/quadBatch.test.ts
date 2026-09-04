@@ -9,6 +9,7 @@ import type {
   Texture2D,
   TextureAtlas,
   TextureAtlasRegion,
+  TintMaterialData,
 } from '@flighthq/types/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
 
@@ -829,7 +830,7 @@ describe('setQuadBatchInstanceTint', () => {
     setQuadBatchInstanceTint(batch, 1, 0x12345678);
     expect(batch.data.materialData).toHaveLength(3);
     expect(batch.data.materialData![0]).toBeNull();
-    expect((batch.data.materialData![1] as { tint: number }).tint).toBe(0x12345678);
+    expect((batch.data.materialData![1] as TintMaterialData).tint).toBe(0x12345678);
     expect(batch.data.materialData![2]).toBeNull();
   });
 
