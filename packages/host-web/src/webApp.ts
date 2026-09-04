@@ -1,5 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AppBadgeBackend, AppFocusBackend, AppLocaleBackend, AppNameBackend, AppQuitBackend, AppReadyBackend, AppRelaunchBackend, Entity, HostAppCapabilities } from '@flighthq/types/contract';
+import type {
+  AppBadgeBackend,
+  AppFocusBackend,
+  AppLocaleBackend,
+  AppNameBackend,
+  AppQuitBackend,
+  AppReadyBackend,
+  AppRelaunchBackend,
+  Entity,
+  HostAppCapabilities,
+} from '@flighthq/types/contract';
 
 type WebAppCapabilities = Entity &
   Required<Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>>;

@@ -8,25 +8,25 @@ import type {
   ShareResult,
 } from '@flighthq/types/contract';
 
-  export const webShareContentBackend = (() => {
-    const out = allocateEntity<ShareContentBackend>();
-    out.canShareContent = (content) => {
+export const webShareContentBackend = (() => {
+  const out = allocateEntity<ShareContentBackend>();
+  out.canShareContent = (content) => {
     return hasShareableContent(content) && canNavigatorShare(contentToNavigatorData(content));
   };
-    out.shareContent = async (content) => {
+  out.shareContent = async (content) => {
     if (!hasShareableContent(content)) return false;
     return invokeNavigatorShare(contentToNavigatorData(content));
   };
-    out.shareContentWithResult = async (content) => {
+  out.shareContentWithResult = async (content) => {
     if (!hasShareableContent(content)) return failedResult(false);
     return invokeNavigatorShareWithResult(contentToNavigatorData(content));
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
-  export const webShareFilesBackend = (() => {
-    const out = allocateEntity<ShareFilesBackend>();
-    out.canShareContent = (content) => {
+export const webShareFilesBackend = (() => {
+  const out = allocateEntity<ShareFilesBackend>();
+  out.canShareContent = (content) => {
     if (content.files.length === 0) return false;
     try {
       return canNavigatorShare(filesToNavigatorData(content));
@@ -34,7 +34,7 @@ import type {
       return false;
     }
   };
-    out.shareContent = async (content) => {
+  out.shareContent = async (content) => {
     if (content.files.length === 0) return false;
     try {
       return await invokeNavigatorShare(filesToNavigatorData(content));
@@ -42,7 +42,7 @@ import type {
       return false;
     }
   };
-    out.shareContentWithResult = async (content) => {
+  out.shareContentWithResult = async (content) => {
     if (content.files.length === 0) return failedResult(false);
     try {
       return await invokeNavigatorShareWithResult(filesToNavigatorData(content));
@@ -50,8 +50,8 @@ import type {
       return failedResult(false);
     }
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
 function canNavigatorShare(data: ShareData): boolean {
   if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;

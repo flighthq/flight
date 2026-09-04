@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createCapacitorProtocolCapabilities(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
-    const out = allocateEntity<CapacitorProtocolCapabilities>();
+  const out = allocateEntity<CapacitorProtocolCapabilities>();
   out.open = (() => {
     const o = allocateEntity<ProtocolOpenBackend>();
     o.subscribe = (listener: (url: string) => void) => {

@@ -33,7 +33,7 @@ export function cloneSpritesheetPlayer(player: Readonly<SpritesheetPlayer>): Spr
 }
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
-    const out = allocateEntity<SpritesheetPlayer>();
+  const out = allocateEntity<SpritesheetPlayer>();
   out.animation = obj?.animation ?? null;
   out.complete = obj?.complete ?? true;
   out.elapsed = obj?.elapsed ?? 0;

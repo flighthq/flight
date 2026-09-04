@@ -16,43 +16,43 @@ export const webMessageDialogBackend = createWebMessageDialogBackend();
 export const webPromptDialogBackend = createWebPromptDialogBackend();
 
 function createWebMessageDialogBackend(): MessageDialogBackend {
-    const out = allocateEntity<MessageDialogBackend>();
+  const out = allocateEntity<MessageDialogBackend>();
   out.confirm = async (options) => {
-      if (options.signal?.aborted) return false;
-      if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
-      try {
-        return window.confirm(options.message) === true;
-      } catch {
-        return false;
-      }
-    };
+    if (options.signal?.aborted) return false;
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
+    try {
+      return window.confirm(options.message) === true;
+    } catch {
+      return false;
+    }
+  };
   out.message = async (options) => {
-      const checkboxChecked = options.checkboxChecked ?? false;
-      if (options.signal?.aborted) return { buttonIndex: options.cancelId ?? 0, cancelled: true, checkboxChecked };
-      if (typeof window === 'undefined' || typeof window.alert !== 'function') {
-        return { buttonIndex: 0, cancelled: false, checkboxChecked };
-      }
-      try {
-        window.alert(options.message);
-      } catch {
-        return { buttonIndex: 0, cancelled: false, checkboxChecked };
-      }
+    const checkboxChecked = options.checkboxChecked ?? false;
+    if (options.signal?.aborted) return { buttonIndex: options.cancelId ?? 0, cancelled: true, checkboxChecked };
+    if (typeof window === 'undefined' || typeof window.alert !== 'function') {
       return { buttonIndex: 0, cancelled: false, checkboxChecked };
-    };
+    }
+    try {
+      window.alert(options.message);
+    } catch {
+      return { buttonIndex: 0, cancelled: false, checkboxChecked };
+    }
+    return { buttonIndex: 0, cancelled: false, checkboxChecked };
+  };
   return finishEntity(out);
 }
 
 function createWebPromptDialogBackend(): PromptDialogBackend {
-    const out = allocateEntity<PromptDialogBackend>();
+  const out = allocateEntity<PromptDialogBackend>();
   out.prompt = async (options) => {
-      if (options.signal?.aborted) return null;
-      if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
-      try {
-        return window.prompt(options.message, options.defaultValue ?? '');
-      } catch {
-        return null;
-      }
-    };
+    if (options.signal?.aborted) return null;
+    if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
+    try {
+      return window.prompt(options.message, options.defaultValue ?? '');
+    } catch {
+      return null;
+    }
+  };
   return finishEntity(out);
 }
 

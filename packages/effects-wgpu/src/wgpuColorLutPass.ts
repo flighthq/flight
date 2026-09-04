@@ -100,7 +100,7 @@ function getLutPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuE
       },
       primitive: { topology: 'triangle-list' },
     });
-        const _entity = allocateEntity<WgpuEffectPipeline>();
+    const _entity = allocateEntity<WgpuEffectPipeline>();
     _entity.pipeline = gpuPipeline;
     _entity.blendMode = 'replace';
     pipeline = finishEntity(_entity);

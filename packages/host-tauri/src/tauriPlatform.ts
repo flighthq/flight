@@ -14,17 +14,17 @@ export function createTauriPlatformBackend(tauri: TauriApi): PlatformBackend {
     .catch(() => {
       /* leave '' */
     });
-    const out = allocateEntity<PlatformBackend>();
+  const out = allocateEntity<PlatformBackend>();
   out.getInfo = (out) => {
-      out.name = toPlatformName(os.platform());
-      out.kind = 'desktop';
-      out.version = os.version();
-      out.arch = os.arch();
-      out.locale = cachedLocale;
-      out.isTouch = false;
-      out.runtime = 'tauri';
-      return out;
-    };
+    out.name = toPlatformName(os.platform());
+    out.kind = 'desktop';
+    out.version = os.version();
+    out.arch = os.arch();
+    out.locale = cachedLocale;
+    out.isTouch = false;
+    out.runtime = 'tauri';
+    return out;
+  };
   return finishEntity(out);
 }
 

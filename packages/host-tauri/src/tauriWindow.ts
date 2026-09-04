@@ -92,113 +92,113 @@ export function createTauriWindowBackend(
     );
     return true;
   };
-    const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
+  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
   out.attach = (win, handle, ownership) => {
-      if (!isTauriWindow(handle)) return false;
-      return attach(win, handle, ownership);
-    };
+    if (!isTauriWindow(handle)) return false;
+    return attach(win, handle, ownership);
+  };
   out.open = (win, options) => {
-      const w = windowModule.getCurrentWindow();
-      if (!attach(win, w, 'host')) return false;
-      if (options.title !== undefined) w.setTitle(options.title).catch(() => {});
-      if (options.width !== undefined && options.height !== undefined) {
-        w.setSize(new windowModule.LogicalSize(options.width, options.height)).catch(() => {});
-      }
-      if (options.x !== undefined && options.y !== undefined) {
-        w.setPosition(new windowModule.LogicalPosition(options.x, options.y)).catch(() => {});
-      }
-      if (options.resizable !== undefined) w.setResizable(options.resizable).catch(() => {});
-      if (options.alwaysOnTop !== undefined) w.setAlwaysOnTop(options.alwaysOnTop).catch(() => {});
-      if (options.fullscreen !== undefined) w.setFullscreen(options.fullscreen).catch(() => {});
-      if (options.minWidth !== undefined && options.minHeight !== undefined) {
-        w.setMinSize(new windowModule.LogicalSize(options.minWidth, options.minHeight)).catch(() => {});
-      }
-      if (options.maxWidth !== undefined && options.maxWidth >= 0 && options.maxHeight !== undefined) {
-        w.setMaxSize(new windowModule.LogicalSize(options.maxWidth, options.maxHeight)).catch(() => {});
-      }
-      if (options.maximized) w.maximize().catch(() => {});
-      if (options.minimized) w.minimize().catch(() => {});
-      if (options.visible === false) w.hide().catch(() => {});
-      else w.show().catch(() => {});
-      return true;
-    };
+    const w = windowModule.getCurrentWindow();
+    if (!attach(win, w, 'host')) return false;
+    if (options.title !== undefined) w.setTitle(options.title).catch(() => {});
+    if (options.width !== undefined && options.height !== undefined) {
+      w.setSize(new windowModule.LogicalSize(options.width, options.height)).catch(() => {});
+    }
+    if (options.x !== undefined && options.y !== undefined) {
+      w.setPosition(new windowModule.LogicalPosition(options.x, options.y)).catch(() => {});
+    }
+    if (options.resizable !== undefined) w.setResizable(options.resizable).catch(() => {});
+    if (options.alwaysOnTop !== undefined) w.setAlwaysOnTop(options.alwaysOnTop).catch(() => {});
+    if (options.fullscreen !== undefined) w.setFullscreen(options.fullscreen).catch(() => {});
+    if (options.minWidth !== undefined && options.minHeight !== undefined) {
+      w.setMinSize(new windowModule.LogicalSize(options.minWidth, options.minHeight)).catch(() => {});
+    }
+    if (options.maxWidth !== undefined && options.maxWidth >= 0 && options.maxHeight !== undefined) {
+      w.setMaxSize(new windowModule.LogicalSize(options.maxWidth, options.maxHeight)).catch(() => {});
+    }
+    if (options.maximized) w.maximize().catch(() => {});
+    if (options.minimized) w.minimize().catch(() => {});
+    if (options.visible === false) w.hide().catch(() => {});
+    else w.show().catch(() => {});
+    return true;
+  };
   out.close = (win) => {
-      const record = detach(win);
-      if (record?.ownership === 'flight') record.handle.close().catch(() => {});
-    };
+    const record = detach(win);
+    if (record?.ownership === 'flight') record.handle.close().catch(() => {});
+  };
   out.setTitle = (win, title) => {
-      run(win, (w) => w.setTitle(title));
-    };
+    run(win, (w) => w.setTitle(title));
+  };
   out.setPosition = (win, x, y) => {
-      run(win, (w) => w.setPosition(new windowModule.LogicalPosition(x, y)));
-    };
+    run(win, (w) => w.setPosition(new windowModule.LogicalPosition(x, y)));
+  };
   out.setSize = (win, width, height) => {
-      run(win, (w) => w.setSize(new windowModule.LogicalSize(width, height)));
-    };
+    run(win, (w) => w.setSize(new windowModule.LogicalSize(width, height)));
+  };
   out.getBounds = (win, out) => {
-      // Tauri's position/size are async; report the entity's mirrored bounds rather than block.
-      out.x = win.x;
-      out.y = win.y;
-      out.width = win.width;
-      out.height = win.height;
-      return out;
-    };
+    // Tauri's position/size are async; report the entity's mirrored bounds rather than block.
+    out.x = win.x;
+    out.y = win.y;
+    out.width = win.width;
+    out.height = win.height;
+    return out;
+  };
   out.minimize = (win) => {
-      run(win, (w) => w.minimize());
-    };
+    run(win, (w) => w.minimize());
+  };
   out.maximize = (win) => {
-      run(win, (w) => w.maximize());
-    };
+    run(win, (w) => w.maximize());
+  };
   out.restore = (win) => {
-      run(win, (w) => w.unmaximize());
-    };
+    run(win, (w) => w.unmaximize());
+  };
   out.focus = (win) => {
-      run(win, (w) => w.setFocus());
-    };
+    run(win, (w) => w.setFocus());
+  };
   out.show = (win) => {
-      run(win, (w) => w.show());
-    };
+    run(win, (w) => w.show());
+  };
   out.hide = (win) => {
-      run(win, (w) => w.hide());
-    };
+    run(win, (w) => w.hide());
+  };
   out.center = (win) => {
-      run(win, (w) => w.center());
-    };
+    run(win, (w) => w.center());
+  };
   out.setResizable = (win, resizable) => {
-      run(win, (w) => w.setResizable(resizable));
-    };
+    run(win, (w) => w.setResizable(resizable));
+  };
   out.setAlwaysOnTop = (win, alwaysOnTop) => {
-      run(win, (w) => w.setAlwaysOnTop(alwaysOnTop));
-    };
+    run(win, (w) => w.setAlwaysOnTop(alwaysOnTop));
+  };
   out.setMinimumSize = (win, width, height) => {
-      run(win, (w) => w.setMinSize(new windowModule.LogicalSize(width, height)));
-    };
+    run(win, (w) => w.setMinSize(new windowModule.LogicalSize(width, height)));
+  };
   out.setMaximumSize = (win, width, height) => {
-      run(win, (w) => w.setMaxSize(new windowModule.LogicalSize(width, height)));
-    };
+    run(win, (w) => w.setMaxSize(new windowModule.LogicalSize(width, height)));
+  };
   out.setFullscreen = (win, fullscreen) => {
-      run(win, (w) => w.setFullscreen(fullscreen));
-    };
+    run(win, (w) => w.setFullscreen(fullscreen));
+  };
   out.setIcon = (win, icon) => {
-      run(win, (w) => w.setIcon(icon));
-    };
+    run(win, (w) => w.setIcon(icon));
+  };
   out.setSkipTaskbar = (win, skip) => {
-      run(win, (w) => w.setSkipTaskbar(skip));
-    };
+    run(win, (w) => w.setSkipTaskbar(skip));
+  };
   out.requestAttention = (win, attention) => {
-      // Tauri's requestUserAttention takes a UserAttentionType (1 = Critical) or null to cancel.
-      run(win, (w) => w.requestUserAttention(attention ? 1 : null));
-    };
+    // Tauri's requestUserAttention takes a UserAttentionType (1 = Critical) or null to cancel.
+    run(win, (w) => w.requestUserAttention(attention ? 1 : null));
+  };
   out.setContentProtection = (win, enabled) => {
-      run(win, (w) => w.setContentProtected(enabled));
-    };
+    run(win, (w) => w.setContentProtected(enabled));
+  };
   out.flashWindowFrame = (win) => {
-      // Map a one-shot frame flash to an informational (2) attention request.
-      run(win, (w) => w.requestUserAttention(2));
-    };
+    // Map a one-shot frame flash to an informational (2) attention request.
+    run(win, (w) => w.requestUserAttention(2));
+  };
   out.setHasShadow = (win, hasShadow) => {
-      run(win, (w) => w.setShadow(hasShadow));
-    };
+    run(win, (w) => w.setShadow(hasShadow));
+  };
   return finishEntity(out);
 }
 

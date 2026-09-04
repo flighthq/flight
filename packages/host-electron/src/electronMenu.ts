@@ -22,7 +22,7 @@ import { toElectronTemplate } from './electronMenuTemplate';
 export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuCapabilities {
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
-    const out = allocateEntity<ElectronMenuCapabilities>();
+  const out = allocateEntity<ElectronMenuCapabilities>();
   out.application = (() => {
     const b = allocateEntity<MenuApplicationBackend>();
     // Provider lifecycle: releases the OS menu this provider installed. It deliberately does NOT end

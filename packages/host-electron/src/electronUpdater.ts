@@ -130,7 +130,13 @@ function createDownloadedUpdate(args: readonly unknown[]): DownloadedUpdate {
     sha512: null,
     version: knownString(args[2]),
   });
-  return Object.freeze((() => { const out = allocateEntity<DownloadedUpdate>(); out.info = info; return finishEntity(out); })());
+  return Object.freeze(
+    (() => {
+      const out = allocateEntity<DownloadedUpdate>();
+      out.info = info;
+      return finishEntity(out);
+    })(),
+  );
 }
 
 function knownString(value: unknown): string | null {

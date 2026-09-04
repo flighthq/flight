@@ -31,29 +31,29 @@ export function createSpritesheetTimelineSource(
   if (_spritesheetTimelineSourceGuard !== null) {
     _spritesheetTimelineSourceGuard(animation, explainSpritesheetTimelineSource(animation));
   }
-    const out = allocateEntity<TimelineSource>();
+  const out = allocateEntity<TimelineSource>();
   out.totalFrames = frames.length;
   out.labels = [];
   out.cues = [];
   out.frameRate = 1000 / animation.frameDuration;
   out.constructFrame = (target: Node2D, frame: number): void => {
-      const atlas = spritesheet.atlas;
-      if (atlas === null) return;
+    const atlas = spritesheet.atlas;
+    if (atlas === null) return;
 
-      let bitmap = bitmaps.get(target);
-      if (bitmap === undefined) {
-        bitmap = createSprite();
-        addNodeChild(target, bitmap);
-        bitmaps.set(target, bitmap);
-      }
+    let bitmap = bitmaps.get(target);
+    if (bitmap === undefined) {
+      bitmap = createSprite();
+      addNodeChild(target, bitmap);
+      bitmaps.set(target, bitmap);
+    }
 
-      const sheetFrame = spritesheet.frames[frames[frame - 1]];
-      if (sheetFrame === undefined) return;
-      bitmap.data.texture = getTextureAtlasRegionTexture(atlas, sheetFrame.id);
-      bitmap.x = sheetFrame.offsetX - animation.originX;
-      bitmap.y = sheetFrame.offsetY - animation.originY;
-      invalidateNodeLocalTransform(bitmap);
-    };
+    const sheetFrame = spritesheet.frames[frames[frame - 1]];
+    if (sheetFrame === undefined) return;
+    bitmap.data.texture = getTextureAtlasRegionTexture(atlas, sheetFrame.id);
+    bitmap.x = sheetFrame.offsetX - animation.originX;
+    bitmap.y = sheetFrame.offsetY - animation.originY;
+    invalidateNodeLocalTransform(bitmap);
+  };
   return finishEntity(out);
 }
 

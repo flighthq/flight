@@ -349,214 +349,214 @@ export function createInputState(): InputState {
 /** Explicit browser adapter for the process-wide input-ingress seam. */
 export function createWebInputIngressBackend(): InputIngressBackend & Entity {
   const out = allocateEntity<InputIngressBackend & Entity>();
-  out.attachGamepad = (source, sink): () => void => {
-      const target = getWebInputEventTarget(source);
-      if (target === null) return noopInputIngressRelease;
+  out.attachGamepad = (source, sink): (() => void) => {
+    const target = getWebInputEventTarget(source);
+    if (target === null) return noopInputIngressRelease;
 
-      const previousAxes = new Map<number, number[]>();
-      const previousButtons = new Map<number, boolean[]>();
-      let released = false;
-      let frameHandle = 0;
+    const previousAxes = new Map<number, number[]>();
+    const previousButtons = new Map<number, boolean[]>();
+    let released = false;
+    let frameHandle = 0;
 
-      const onGamepadConnected = (event: Event) => {
-        if (released || !sink.isEnabled()) return;
-        const gamepad = (event as GamepadEvent).gamepad;
-        previousAxes.set(gamepad.index, Array.from(gamepad.axes));
-        previousButtons.set(
-          gamepad.index,
-          Array.from(gamepad.buttons, (button) => button.pressed),
-        );
-        setInputGamepadConnectData(_connectData, gamepad);
-        sink.gamepadConnect(_connectData);
-      };
-      const onGamepadDisconnected = (event: Event) => {
-        if (released || !sink.isEnabled()) return;
-        const gamepad = (event as GamepadEvent).gamepad;
-        previousAxes.delete(gamepad.index);
-        previousButtons.delete(gamepad.index);
-        setInputGamepadConnectData(_connectData, gamepad);
-        sink.gamepadDisconnect(_connectData);
-      };
+    const onGamepadConnected = (event: Event) => {
+      if (released || !sink.isEnabled()) return;
+      const gamepad = (event as GamepadEvent).gamepad;
+      previousAxes.set(gamepad.index, Array.from(gamepad.axes));
+      previousButtons.set(
+        gamepad.index,
+        Array.from(gamepad.buttons, (button) => button.pressed),
+      );
+      setInputGamepadConnectData(_connectData, gamepad);
+      sink.gamepadConnect(_connectData);
+    };
+    const onGamepadDisconnected = (event: Event) => {
+      if (released || !sink.isEnabled()) return;
+      const gamepad = (event as GamepadEvent).gamepad;
+      previousAxes.delete(gamepad.index);
+      previousButtons.delete(gamepad.index);
+      setInputGamepadConnectData(_connectData, gamepad);
+      sink.gamepadDisconnect(_connectData);
+    };
 
-      const poll = () => {
-        if (!sink.isEnabled() || typeof navigator.getGamepads !== 'function') return;
-        const now = performance.now();
-        for (const gamepad of navigator.getGamepads()) {
-          if (gamepad === null) continue;
-          const axes = previousAxes.get(gamepad.index) ?? [];
-          const buttons = previousButtons.get(gamepad.index) ?? [];
-          for (let index = 0; index < gamepad.axes.length; index++) {
-            const value = gamepad.axes[index]!;
-            if (value === axes[index]) continue;
-            axes[index] = value;
-            _axisData.axis = index;
-            _axisData.gamepad = gamepad.index;
-            _axisData.timeStamp = now;
-            _axisData.value = value;
-            sink.gamepadAxisMove(_axisData);
-            if (released) return;
-          }
-          for (let index = 0; index < gamepad.buttons.length; index++) {
-            const button = gamepad.buttons[index]!;
-            const wasPressed = buttons[index] ?? false;
-            if (button.pressed === wasPressed) continue;
-            buttons[index] = button.pressed;
-            _buttonData.button = index;
-            _buttonData.gamepad = gamepad.index;
-            _buttonData.timeStamp = now;
-            _buttonData.value = button.value;
-            if (button.pressed) sink.gamepadButtonDown(_buttonData);
-            else sink.gamepadButtonUp(_buttonData);
-            if (released) return;
-          }
-          previousAxes.set(gamepad.index, axes);
-          previousButtons.set(gamepad.index, buttons);
+    const poll = () => {
+      if (!sink.isEnabled() || typeof navigator.getGamepads !== 'function') return;
+      const now = performance.now();
+      for (const gamepad of navigator.getGamepads()) {
+        if (gamepad === null) continue;
+        const axes = previousAxes.get(gamepad.index) ?? [];
+        const buttons = previousButtons.get(gamepad.index) ?? [];
+        for (let index = 0; index < gamepad.axes.length; index++) {
+          const value = gamepad.axes[index]!;
+          if (value === axes[index]) continue;
+          axes[index] = value;
+          _axisData.axis = index;
+          _axisData.gamepad = gamepad.index;
+          _axisData.timeStamp = now;
+          _axisData.value = value;
+          sink.gamepadAxisMove(_axisData);
+          if (released) return;
         }
-      };
-      const loop = () => {
-        if (released) return;
-        // Schedule first so a signal handler that detaches reentrantly cancels the only future frame.
-        frameHandle = requestAnimationFrame(loop);
-        poll();
-      };
-
-      target.addEventListener('gamepadconnected', onGamepadConnected);
-      target.addEventListener('gamepaddisconnected', onGamepadDisconnected);
+        for (let index = 0; index < gamepad.buttons.length; index++) {
+          const button = gamepad.buttons[index]!;
+          const wasPressed = buttons[index] ?? false;
+          if (button.pressed === wasPressed) continue;
+          buttons[index] = button.pressed;
+          _buttonData.button = index;
+          _buttonData.gamepad = gamepad.index;
+          _buttonData.timeStamp = now;
+          _buttonData.value = button.value;
+          if (button.pressed) sink.gamepadButtonDown(_buttonData);
+          else sink.gamepadButtonUp(_buttonData);
+          if (released) return;
+        }
+        previousAxes.set(gamepad.index, axes);
+        previousButtons.set(gamepad.index, buttons);
+      }
+    };
+    const loop = () => {
+      if (released) return;
+      // Schedule first so a signal handler that detaches reentrantly cancels the only future frame.
       frameHandle = requestAnimationFrame(loop);
-      return () => {
-        if (released) return;
-        released = true;
-        target.removeEventListener('gamepadconnected', onGamepadConnected);
-        target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
-        cancelAnimationFrame(frameHandle);
-      };
+      poll();
     };
-  out.attachKeyboard = (source, sink, options): () => void => {
-      const target = getWebInputEventTarget(source);
-      if (target === null) return noopInputIngressRelease;
-      const preventDefault = options?.preventDefault ?? true;
-      const onKeyDown = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        const keyboardEvent = event as KeyboardEvent;
-        if (preventDefault) keyboardEvent.preventDefault();
-        setInputKeyboardData(_keyboardData, keyboardEvent);
-        sink.keyDown(_keyboardData);
-      };
-      const onKeyUp = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        const keyboardEvent = event as KeyboardEvent;
-        if (preventDefault) keyboardEvent.preventDefault();
-        setInputKeyboardData(_keyboardData, keyboardEvent);
-        sink.keyUp(_keyboardData);
-      };
 
-      target.addEventListener('keydown', onKeyDown);
-      target.addEventListener('keyup', onKeyUp);
-      return () => {
-        target.removeEventListener('keydown', onKeyDown);
-        target.removeEventListener('keyup', onKeyUp);
-      };
+    target.addEventListener('gamepadconnected', onGamepadConnected);
+    target.addEventListener('gamepaddisconnected', onGamepadDisconnected);
+    frameHandle = requestAnimationFrame(loop);
+    return () => {
+      if (released) return;
+      released = true;
+      target.removeEventListener('gamepadconnected', onGamepadConnected);
+      target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
+      cancelAnimationFrame(frameHandle);
     };
-  out.attachPointer = (source, sink, options): () => void => {
-      const target = getWebInputEventTarget(source);
-      if (target === null) return noopInputIngressRelease;
-      const preventDefault = options?.preventDefault ?? true;
-      const onContextMenu = (event: Event) => {
-        if (preventDefault) event.preventDefault();
-      };
-      const onPointerCancel = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        if (preventDefault) event.preventDefault();
-        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
-        sink.pointerCancel(_pointerData);
-      };
-      const onPointerDown = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        if (preventDefault) event.preventDefault();
-        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
-        sink.pointerDown(_pointerData);
-      };
-      const onPointerMove = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        if (preventDefault) event.preventDefault();
-        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
-        sink.pointerMove(_pointerData);
-      };
-      const onPointerUp = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        if (preventDefault) event.preventDefault();
-        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
-        sink.pointerUp(_pointerData);
-      };
+  };
+  out.attachKeyboard = (source, sink, options): (() => void) => {
+    const target = getWebInputEventTarget(source);
+    if (target === null) return noopInputIngressRelease;
+    const preventDefault = options?.preventDefault ?? true;
+    const onKeyDown = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      const keyboardEvent = event as KeyboardEvent;
+      if (preventDefault) keyboardEvent.preventDefault();
+      setInputKeyboardData(_keyboardData, keyboardEvent);
+      sink.keyDown(_keyboardData);
+    };
+    const onKeyUp = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      const keyboardEvent = event as KeyboardEvent;
+      if (preventDefault) keyboardEvent.preventDefault();
+      setInputKeyboardData(_keyboardData, keyboardEvent);
+      sink.keyUp(_keyboardData);
+    };
 
-      target.addEventListener('contextmenu', onContextMenu);
-      target.addEventListener('pointercancel', onPointerCancel);
-      target.addEventListener('pointerdown', onPointerDown);
-      target.addEventListener('pointermove', onPointerMove);
-      target.addEventListener('pointerup', onPointerUp);
-      return () => {
-        target.removeEventListener('contextmenu', onContextMenu);
-        target.removeEventListener('pointercancel', onPointerCancel);
-        target.removeEventListener('pointerdown', onPointerDown);
-        target.removeEventListener('pointermove', onPointerMove);
-        target.removeEventListener('pointerup', onPointerUp);
-      };
+    target.addEventListener('keydown', onKeyDown);
+    target.addEventListener('keyup', onKeyUp);
+    return () => {
+      target.removeEventListener('keydown', onKeyDown);
+      target.removeEventListener('keyup', onKeyUp);
     };
-  out.attachRelativePointer = (source, sink, options): () => void => {
-      const target = getWebInputOwnerDocumentTarget(source);
-      if (target === null) return noopInputIngressRelease;
-      const preventDefault = options?.preventDefault ?? true;
-      const onMouseMove = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        const mouseEvent = event as MouseEvent;
-        if (preventDefault) mouseEvent.preventDefault();
-        setInputPointerData(_pointerData, mouseEvent, mouseEvent.movementX, mouseEvent.movementY);
-        sink.pointerMoveRelative(_pointerData);
-      };
+  };
+  out.attachPointer = (source, sink, options): (() => void) => {
+    const target = getWebInputEventTarget(source);
+    if (target === null) return noopInputIngressRelease;
+    const preventDefault = options?.preventDefault ?? true;
+    const onContextMenu = (event: Event) => {
+      if (preventDefault) event.preventDefault();
+    };
+    const onPointerCancel = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      if (preventDefault) event.preventDefault();
+      setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+      sink.pointerCancel(_pointerData);
+    };
+    const onPointerDown = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      if (preventDefault) event.preventDefault();
+      setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+      sink.pointerDown(_pointerData);
+    };
+    const onPointerMove = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      if (preventDefault) event.preventDefault();
+      setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+      sink.pointerMove(_pointerData);
+    };
+    const onPointerUp = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      if (preventDefault) event.preventDefault();
+      setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+      sink.pointerUp(_pointerData);
+    };
 
-      target.addEventListener('mousemove', onMouseMove);
-      return () => target.removeEventListener('mousemove', onMouseMove);
+    target.addEventListener('contextmenu', onContextMenu);
+    target.addEventListener('pointercancel', onPointerCancel);
+    target.addEventListener('pointerdown', onPointerDown);
+    target.addEventListener('pointermove', onPointerMove);
+    target.addEventListener('pointerup', onPointerUp);
+    return () => {
+      target.removeEventListener('contextmenu', onContextMenu);
+      target.removeEventListener('pointercancel', onPointerCancel);
+      target.removeEventListener('pointerdown', onPointerDown);
+      target.removeEventListener('pointermove', onPointerMove);
+      target.removeEventListener('pointerup', onPointerUp);
     };
-  out.attachText = (source, sink): () => void => {
-      const target = getWebInputEventTarget(source);
-      if (target === null) return noopInputIngressRelease;
-      const onBeforeInput = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        const inputEvent = event as InputEvent;
-        _textData.isComposing = inputEvent.isComposing;
-        _textData.text = inputEvent.data ?? '';
-        sink.textInput(_textData);
-      };
-      const onCompositionUpdate = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        _textData.isComposing = true;
-        _textData.text = (event as CompositionEvent).data ?? '';
-        sink.textEdit(_textData);
-      };
+  };
+  out.attachRelativePointer = (source, sink, options): (() => void) => {
+    const target = getWebInputOwnerDocumentTarget(source);
+    if (target === null) return noopInputIngressRelease;
+    const preventDefault = options?.preventDefault ?? true;
+    const onMouseMove = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      const mouseEvent = event as MouseEvent;
+      if (preventDefault) mouseEvent.preventDefault();
+      setInputPointerData(_pointerData, mouseEvent, mouseEvent.movementX, mouseEvent.movementY);
+      sink.pointerMoveRelative(_pointerData);
+    };
 
-      target.addEventListener('beforeinput', onBeforeInput);
-      target.addEventListener('compositionupdate', onCompositionUpdate);
-      return () => {
-        target.removeEventListener('beforeinput', onBeforeInput);
-        target.removeEventListener('compositionupdate', onCompositionUpdate);
-      };
+    target.addEventListener('mousemove', onMouseMove);
+    return () => target.removeEventListener('mousemove', onMouseMove);
+  };
+  out.attachText = (source, sink): (() => void) => {
+    const target = getWebInputEventTarget(source);
+    if (target === null) return noopInputIngressRelease;
+    const onBeforeInput = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      const inputEvent = event as InputEvent;
+      _textData.isComposing = inputEvent.isComposing;
+      _textData.text = inputEvent.data ?? '';
+      sink.textInput(_textData);
     };
-  out.attachWheel = (source, sink, options): () => void => {
-      const target = getWebInputEventTarget(source);
-      if (target === null) return noopInputIngressRelease;
-      const preventDefault = options?.preventDefault ?? true;
-      const onWheel = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        const wheelEvent = event as WheelEvent;
-        if (preventDefault) wheelEvent.preventDefault();
-        setInputPointerData(_pointerData, wheelEvent, wheelEvent.deltaX, wheelEvent.deltaY);
-        _pointerData.wheelMode = getMouseWheelModeFromDomWheelEvent(wheelEvent);
-        sink.wheel(_pointerData);
-      };
+    const onCompositionUpdate = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      _textData.isComposing = true;
+      _textData.text = (event as CompositionEvent).data ?? '';
+      sink.textEdit(_textData);
+    };
 
-      target.addEventListener('wheel', onWheel, { passive: !preventDefault });
-      return () => target.removeEventListener('wheel', onWheel);
+    target.addEventListener('beforeinput', onBeforeInput);
+    target.addEventListener('compositionupdate', onCompositionUpdate);
+    return () => {
+      target.removeEventListener('beforeinput', onBeforeInput);
+      target.removeEventListener('compositionupdate', onCompositionUpdate);
     };
+  };
+  out.attachWheel = (source, sink, options): (() => void) => {
+    const target = getWebInputEventTarget(source);
+    if (target === null) return noopInputIngressRelease;
+    const preventDefault = options?.preventDefault ?? true;
+    const onWheel = (event: Event) => {
+      if (!sink.isEnabled()) return;
+      const wheelEvent = event as WheelEvent;
+      if (preventDefault) wheelEvent.preventDefault();
+      setInputPointerData(_pointerData, wheelEvent, wheelEvent.deltaX, wheelEvent.deltaY);
+      _pointerData.wheelMode = getMouseWheelModeFromDomWheelEvent(wheelEvent);
+      sink.wheel(_pointerData);
+    };
+
+    target.addEventListener('wheel', onWheel, { passive: !preventDefault });
+    return () => target.removeEventListener('wheel', onWheel);
+  };
   return finishEntity(out);
 }
 

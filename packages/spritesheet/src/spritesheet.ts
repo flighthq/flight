@@ -22,7 +22,7 @@ export function cloneSpritesheet(spritesheet: Readonly<Spritesheet>): Spriteshee
 }
 
 export function createSpritesheet(obj?: Partial<Spritesheet>): Spritesheet {
-    const out = allocateEntity<Spritesheet>();
+  const out = allocateEntity<Spritesheet>();
   out.atlas = obj?.atlas ?? null;
   out.animations = obj?.animations ?? {};
   out.frames = obj?.frames ?? [];

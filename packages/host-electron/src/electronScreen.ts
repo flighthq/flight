@@ -19,59 +19,59 @@ export function createElectronScreenCapabilities(
   const screen = electron.screen;
   const query = allocateEntity<ScreenQueryBackend>();
   query.getCursorPosition = (out: { x: number; y: number }) => {
-      Object.assign(out, screen.getCursorScreenPoint());
-      return out;
-    };
+    Object.assign(out, screen.getCursorScreenPoint());
+    return out;
+  };
   query.getPrimaryScreen = (out: ScreenInfo) => {
-      return fillScreenInfo(out, screen.getPrimaryDisplay(), true);
-    };
+    return fillScreenInfo(out, screen.getPrimaryDisplay(), true);
+  };
   query.getScreens = (out: ScreenInfo[]) => {
-      const displays = screen.getAllDisplays();
-      const primaryId = screen.getPrimaryDisplay().id;
-      out.length = displays.length;
-      displays.forEach((display, index) => {
-        out[index] ??= emptyScreenInfo();
-        fillScreenInfo(out[index], display, display.id === primaryId);
-      });
-      return out;
-    };
+    const displays = screen.getAllDisplays();
+    const primaryId = screen.getPrimaryDisplay().id;
+    out.length = displays.length;
+    displays.forEach((display, index) => {
+      out[index] ??= emptyScreenInfo();
+      fillScreenInfo(out[index], display, display.id === primaryId);
+    });
+    return out;
+  };
   finishEntity(query);
   const change = allocateEntity<ScreenChangeBackend>();
   change.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
-      const makeHandler =
-        (kind: ScreenChangeKind) =>
-        (...args: unknown[]): void => {
-          const display = args[1] as ElectronDisplay | undefined;
-          listener({
-            kind,
-            screen:
-              display === undefined
-                ? emptyScreenInfo()
-                : fillScreenInfo(emptyScreenInfo(), display, display.id === screen.getPrimaryDisplay().id),
-            changedMetrics:
-              kind === 'ScreenMetricsChanged'
-                ? { bounds: true, workArea: true, scaleFactor: true, orientation: true }
-                : null,
-          });
-        };
-      const added = makeHandler('ScreenAdded');
-      const removed = makeHandler('ScreenRemoved');
-      const metrics = makeHandler('ScreenMetricsChanged');
-      screen.on('display-added', added);
-      screen.on('display-removed', removed);
-      screen.on('display-metrics-changed', metrics);
-      return () => {
-        screen.removeListener('display-added', added);
-        screen.removeListener('display-removed', removed);
-        screen.removeListener('display-metrics-changed', metrics);
+    const makeHandler =
+      (kind: ScreenChangeKind) =>
+      (...args: unknown[]): void => {
+        const display = args[1] as ElectronDisplay | undefined;
+        listener({
+          kind,
+          screen:
+            display === undefined
+              ? emptyScreenInfo()
+              : fillScreenInfo(emptyScreenInfo(), display, display.id === screen.getPrimaryDisplay().id),
+          changedMetrics:
+            kind === 'ScreenMetricsChanged'
+              ? { bounds: true, workArea: true, scaleFactor: true, orientation: true }
+              : null,
+        });
       };
+    const added = makeHandler('ScreenAdded');
+    const removed = makeHandler('ScreenRemoved');
+    const metrics = makeHandler('ScreenMetricsChanged');
+    screen.on('display-added', added);
+    screen.on('display-removed', removed);
+    screen.on('display-metrics-changed', metrics);
+    return () => {
+      screen.removeListener('display-added', added);
+      screen.removeListener('display-removed', removed);
+      screen.removeListener('display-metrics-changed', metrics);
     };
+  };
   finishEntity(change);
   return { change, query };
 }
 
 function emptyScreenInfo(): ScreenInfo {
-    const out = allocateEntity<ScreenInfo>();
+  const out = allocateEntity<ScreenInfo>();
   out.id = 0;
   out.x = 0;
   out.y = 0;

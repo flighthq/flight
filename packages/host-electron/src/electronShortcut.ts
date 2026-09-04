@@ -11,8 +11,8 @@ import type {
 export function createElectronShortcutQueryBackend(electron: ElectronApi): ShortcutQueryBackend {
   const provider = allocateEntity<ShortcutQueryBackend>();
   provider.isRegistered = async (accelerator: Accelerator) => {
-      return electron.globalShortcut.isRegistered(accelerator);
-    };
+    return electron.globalShortcut.isRegistered(accelerator);
+  };
   return finishEntity(provider);
 }
 

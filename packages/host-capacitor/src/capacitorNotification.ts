@@ -133,10 +133,7 @@ export function createCapacitorNotificationCapabilities(capacitor: CapacitorApi)
         return { reason: 'operation-failed' };
       }
       if (!result.notifications.some((entry) => entry.id === number)) return { reason: 'operation-failed' };
-      const notification = createNotificationResource(
-        request.id ?? `capacitor-notification-${number}`,
-        request.title,
-      );
+      const notification = createNotificationResource(request.id ?? `capacitor-notification-${number}`, request.title);
       notificationByNumber.set(number, notification);
       return { notification, reason: 'accepted' };
     },

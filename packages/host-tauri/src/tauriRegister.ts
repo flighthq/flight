@@ -46,7 +46,7 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
   const menu = createTauriMenuBackends(tauri);
   const shell = makeTauriShellCapabilities(tauri);
   const window = createTauriWindowBackend(tauri);
-    const out = allocateEntity<TauriHost<Profile>>();
+  const out = allocateEntity<TauriHost<Profile>>();
   out.accessibility = {};
   out.app = app;
   out.clipboard = { text: clipboard };

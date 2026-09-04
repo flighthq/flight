@@ -193,7 +193,7 @@ function getApplyPipeline(state: WgpuRenderState): WgpuEffectPipeline {
       fragment: { module: shaderModule, entryPoint: 'fs_main', targets: [{ format }] },
       primitive: { topology: 'triangle-list' },
     });
-        const _entity = allocateEntity<WgpuEffectPipeline>();
+    const _entity = allocateEntity<WgpuEffectPipeline>();
     _entity.pipeline = pipeline;
     _entity.blendMode = 'premul';
     p = finishEntity(_entity);
@@ -217,7 +217,7 @@ function getEncodePipeline(state: WgpuRenderState): WgpuEffectPipeline {
       fragment: { module: shaderModule, entryPoint: 'fs_main', targets: [{ format }] },
       primitive: { topology: 'triangle-list' },
     });
-        const _entity = allocateEntity<WgpuEffectPipeline>();
+    const _entity = allocateEntity<WgpuEffectPipeline>();
     _entity.pipeline = pipeline;
     _entity.blendMode = 'replace';
     p = finishEntity(_entity);

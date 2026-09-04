@@ -33,26 +33,26 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   const clipboard = createCapacitorClipboardBackend(capacitor);
   const connectivity = createCapacitorConnectivityBackend(capacitor);
   const statusBar = createCapacitorStatusBarBackend(capacitor);
-    const out = allocateEntity<CapacitorHost<Profile>>();
+  const out = allocateEntity<CapacitorHost<Profile>>();
   out.accessibility = {};
   out.app = app;
   out.clipboard = { image: clipboard, text: clipboard };
   out.connectivity = { change: connectivity, status: connectivity };
   out.dialog = {
-      message: createCapacitorMessageDialogBackend(capacitor),
-      prompt: createCapacitorPromptDialogBackend(capacitor),
-    };
+    message: createCapacitorMessageDialogBackend(capacitor),
+    prompt: createCapacitorPromptDialogBackend(capacitor),
+  };
   out.graphics = {};
   out.input = {
-      haptics: createCapacitorHapticsBackend(capacitor),
-      softKeyboardAccessoryBar: createCapacitorSoftKeyboardAccessoryBarBackend(capacitor),
-      softKeyboardChange: createCapacitorSoftKeyboardChangeBackend(capacitor),
-      softKeyboardInfo: createCapacitorSoftKeyboardInfoBackend(capacitor),
-      softKeyboardResizeModeWrite: createCapacitorSoftKeyboardResizeModeWriteBackend(capacitor),
-      softKeyboardScrollAssist: createCapacitorSoftKeyboardScrollAssistBackend(capacitor),
-      softKeyboardStyle: createCapacitorSoftKeyboardStyleBackend(capacitor),
-      softKeyboardVisibility: createCapacitorSoftKeyboardVisibilityBackend(capacitor),
-    };
+    haptics: createCapacitorHapticsBackend(capacitor),
+    softKeyboardAccessoryBar: createCapacitorSoftKeyboardAccessoryBarBackend(capacitor),
+    softKeyboardChange: createCapacitorSoftKeyboardChangeBackend(capacitor),
+    softKeyboardInfo: createCapacitorSoftKeyboardInfoBackend(capacitor),
+    softKeyboardResizeModeWrite: createCapacitorSoftKeyboardResizeModeWriteBackend(capacitor),
+    softKeyboardScrollAssist: createCapacitorSoftKeyboardScrollAssistBackend(capacitor),
+    softKeyboardStyle: createCapacitorSoftKeyboardStyleBackend(capacitor),
+    softKeyboardVisibility: createCapacitorSoftKeyboardVisibilityBackend(capacitor),
+  };
   out.ipc = {};
   out.media = {};
   out.menu = {};
@@ -67,18 +67,18 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   out.shell = {};
   out.storage = { fileSystem: createCapacitorFileSystemBackend(capacitor) };
   out.system = {
-      device: createCapacitorDeviceBackend(capacitor),
-      geolocation: createCapacitorGeolocationBackend(capacitor),
-    };
+    device: createCapacitorDeviceBackend(capacitor),
+    geolocation: createCapacitorGeolocationBackend(capacitor),
+  };
   out.text = {};
   out.tray = {};
   out.ui = {
-      statusBarColor: statusBar,
-      statusBarInfo: statusBar,
-      statusBarOverlays: statusBar,
-      statusBarStyle: statusBar,
-      statusBarVisibility: statusBar,
-    };
+    statusBarColor: statusBar,
+    statusBarInfo: statusBar,
+    statusBarOverlays: statusBar,
+    statusBarStyle: statusBar,
+    statusBarVisibility: statusBar,
+  };
   out.updater = {};
   out.window = finishEntity(allocateEntity<WindowBackend>());
   return finishEntity(out);

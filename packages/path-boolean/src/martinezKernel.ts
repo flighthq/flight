@@ -30,15 +30,15 @@ import type {
 // algorithm's O(n log n) inline classification for an O(n²) post-pass, which is the right call for a
 // correctness-first kernel on the modest polygon sizes booleans see.
 export function createMartinezPathBooleanBackend(): PathBooleanBackend {
-    const out = allocateEntity<PathBooleanBackend>();
+  const out = allocateEntity<PathBooleanBackend>();
   out.computePathBoolean = (
-      subject: readonly PathBooleanContour[],
-      clip: readonly PathBooleanContour[],
-      operation: PathBooleanOperation,
-      fillRule: PathBooleanFillRule,
-    ): readonly PathBooleanContour[] => {
-      return computeMartinezBoolean(subject, clip, operation, fillRule);
-    };
+    subject: readonly PathBooleanContour[],
+    clip: readonly PathBooleanContour[],
+    operation: PathBooleanOperation,
+    fillRule: PathBooleanFillRule,
+  ): readonly PathBooleanContour[] => {
+    return computeMartinezBoolean(subject, clip, operation, fillRule);
+  };
   return finishEntity(out);
 }
 

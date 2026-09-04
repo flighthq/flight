@@ -90,15 +90,15 @@ export function registerElectronBackends(
   const updater = createElectronUpdaterBackend(electron, options.updaterFeedUrl);
   const shell = makeElectronShellCapabilities(electron, options.platform);
   const window = createElectronWindowBackend(electron);
-    const out = allocateEntity<ElectronHost<DesktopOsProfile>>();
+  const out = allocateEntity<ElectronHost<DesktopOsProfile>>();
   out.accessibility = {};
   out.app = app;
   out.clipboard = {
-      bookmark: clipboard,
-      formats: clipboard,
-      image: clipboard,
-      text: clipboard,
-    };
+    bookmark: clipboard,
+    formats: clipboard,
+    image: clipboard,
+    text: clipboard,
+  };
   out.connectivity = {};
   out.dialog = dialog;
   out.graphics = {};

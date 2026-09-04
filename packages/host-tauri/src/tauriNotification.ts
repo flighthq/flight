@@ -12,64 +12,64 @@ export function createTauriNotificationCapabilities(tauri: TauriApi): TauriNotif
   let destroyed = false;
   let nextId = 1;
 
-    const out = allocateEntity<TauriNotificationCapabilities>();
+  const out = allocateEntity<TauriNotificationCapabilities>();
   out.delivery = {
-      async notify(request) {
-        if (destroyed) return { reason: 'operation-failed' };
-        const invalid = getTauriInvalidNotificationRequestFields(request);
-        if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
-        let granted: boolean;
-        try {
-          granted = await notification.isPermissionGranted();
-        } catch {
-          return { reason: 'operation-failed' };
-        }
-        if (!granted) return { reason: 'permission-denied' };
-        const id = request.id ?? `tauri-notification-${nextId++}`;
-        try {
-          notification.sendNotification({
-            body: request.body,
-            icon: request.icon,
-            title: request.title,
-          });
-        } catch {
-          return { reason: 'operation-failed' };
-        }
-        return {
-          notification: createNotificationResource(id, request.title),
-          reason: 'accepted',
-        };
-      },
-    };
+    async notify(request) {
+      if (destroyed) return { reason: 'operation-failed' };
+      const invalid = getTauriInvalidNotificationRequestFields(request);
+      if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
+      let granted: boolean;
+      try {
+        granted = await notification.isPermissionGranted();
+      } catch {
+        return { reason: 'operation-failed' };
+      }
+      if (!granted) return { reason: 'permission-denied' };
+      const id = request.id ?? `tauri-notification-${nextId++}`;
+      try {
+        notification.sendNotification({
+          body: request.body,
+          icon: request.icon,
+          title: request.title,
+        });
+      } catch {
+        return { reason: 'operation-failed' };
+      }
+      return {
+        notification: createNotificationResource(id, request.title),
+        reason: 'accepted',
+      };
+    },
+  };
   out.lifecycle = {
-      async destroy() {
-        if (destroyed) return { reason: 'already-destroyed' };
-        destroyed = true;
-        return { reason: 'ok' };
-      },
-    };
+    async destroy() {
+      if (destroyed) return { reason: 'already-destroyed' };
+      destroyed = true;
+      return { reason: 'ok' };
+    },
+  };
   out.permission = {
-      async getPermission() {
-        try {
-          return {
-            permission: (await notification.isPermissionGranted()) ? 'granted' : 'default',
-            reason: 'ok',
-          };
-        } catch {
-          return { reason: 'operation-failed' };
-        }
-      },
-      async requestPermission() {
-        try {
-          const permission = await notification.requestPermission();
-          return {
-            reason: permission === 'default' ? 'dismissed' : permission,
-          };
-        } catch {
-          return { reason: 'operation-failed' };
-        }
-      },
-    };
+    async getPermission() {
+      try {
+        return {
+          permission: (await notification.isPermissionGranted()) ? 'granted' : 'default',
+          reason: 'ok',
+        };
+      } catch {
+        return { reason: 'operation-failed' };
+      }
+    },
+    async requestPermission() {
+      try {
+        const permission = await notification.requestPermission();
+        return {
+          reason: permission === 'default' ? 'dismissed' : permission,
+        };
+      } catch {
+        return { reason: 'operation-failed' };
+      }
+    },
+  };
   return finishEntity(out);
 }
 

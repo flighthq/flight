@@ -11,8 +11,8 @@ import type {
 export function createTauriShortcutQueryBackend(tauri: TauriApi): ShortcutQueryBackend {
   const provider = allocateEntity<ShortcutQueryBackend>();
   provider.isRegistered = async (accelerator: Accelerator) => {
-      return await tauri.globalShortcut.isRegistered(accelerator);
-    };
+    return await tauri.globalShortcut.isRegistered(accelerator);
+  };
   return provider;
 }
 

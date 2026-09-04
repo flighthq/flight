@@ -14,24 +14,24 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi): DirectoryOpenDialogBackend & Entity {
-    const out = allocateEntity<DirectoryOpenDialogBackend>();
+  const out = allocateEntity<DirectoryOpenDialogBackend>();
   out.open = async (options): Promise<DirectoryOpenDialogResult> => {
-      if (options?.signal?.aborted) return { outcome: 'cancelled' };
-      const dialog = electron.dialog;
-      if (typeof dialog?.showOpenDialog !== 'function') return { outcome: 'runtime-unavailable' };
-      try {
-        const result = await dialog.showOpenDialog(undefined, { properties: ['openDirectory'] });
-        if (result.canceled) return { outcome: 'cancelled' };
-        const [path] = result.filePaths;
-        if (path === undefined) return { outcome: 'directory-open-failed' };
-        return {
-          handle: createNativeHandle(path, 'Directory'),
-          outcome: 'selected',
-        };
-      } catch (error) {
-        return { outcome: classifyFailure(error, 'directory-open-failed') };
-      }
-    };
+    if (options?.signal?.aborted) return { outcome: 'cancelled' };
+    const dialog = electron.dialog;
+    if (typeof dialog?.showOpenDialog !== 'function') return { outcome: 'runtime-unavailable' };
+    try {
+      const result = await dialog.showOpenDialog(undefined, { properties: ['openDirectory'] });
+      if (result.canceled) return { outcome: 'cancelled' };
+      const [path] = result.filePaths;
+      if (path === undefined) return { outcome: 'directory-open-failed' };
+      return {
+        handle: createNativeHandle(path, 'Directory'),
+        outcome: 'selected',
+      };
+    } catch (error) {
+      return { outcome: classifyFailure(error, 'directory-open-failed') };
+    }
+  };
   return finishEntity(out);
 }
 
@@ -63,23 +63,23 @@ export function createElectronFileOpenDialogBackend(electron: ElectronApi): File
 }
 
 export function createElectronFileSaveDialogBackend(electron: ElectronApi): FileSaveDialogBackend & Entity {
-    const out = allocateEntity<FileSaveDialogBackend>();
+  const out = allocateEntity<FileSaveDialogBackend>();
   out.save = async (options): Promise<FileSaveDialogResult> => {
-      if (options.signal?.aborted) return { outcome: 'cancelled' };
-      const dialog = electron.dialog;
-      if (typeof dialog?.showSaveDialog !== 'function') return { outcome: 'runtime-unavailable' };
-      try {
-        const result = await dialog.showSaveDialog(undefined, {
-          defaultPath: options.defaultName,
-          filters: toElectronFilters(options.filters),
-        });
-        if (result.canceled) return { outcome: 'cancelled' };
-        if (result.filePath === undefined || result.filePath === '') return { outcome: 'file-save-failed' };
-        return { handle: createNativeHandle(result.filePath, 'File'), outcome: 'selected' };
-      } catch (error) {
-        return { outcome: classifyFailure(error, 'file-save-failed') };
-      }
-    };
+    if (options.signal?.aborted) return { outcome: 'cancelled' };
+    const dialog = electron.dialog;
+    if (typeof dialog?.showSaveDialog !== 'function') return { outcome: 'runtime-unavailable' };
+    try {
+      const result = await dialog.showSaveDialog(undefined, {
+        defaultPath: options.defaultName,
+        filters: toElectronFilters(options.filters),
+      });
+      if (result.canceled) return { outcome: 'cancelled' };
+      if (result.filePath === undefined || result.filePath === '') return { outcome: 'file-save-failed' };
+      return { handle: createNativeHandle(result.filePath, 'File'), outcome: 'selected' };
+    } catch (error) {
+      return { outcome: classifyFailure(error, 'file-save-failed') };
+    }
+  };
   return finishEntity(out);
 }
 

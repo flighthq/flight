@@ -26,13 +26,13 @@ type WebWindowBackend = WindowBackend &
     >
   >;
 
-  export const webWindowBackend = (() => {
-    const out = allocateEntity<WebWindowBackend>();
-    out.attach = (win, handle, ownership) => {
+export const webWindowBackend = (() => {
+  const out = allocateEntity<WebWindowBackend>();
+  out.attach = (win, handle, ownership) => {
     if (!isWebWindow(handle)) return false;
     return attachWebWindow(win, handle, ownership);
   };
-    out.center = (win) => {
+  out.center = (win) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.moveTo !== 'function') return;
     try {
@@ -44,14 +44,14 @@ type WebWindowBackend = WindowBackend &
       /* browser rejected script-driven movement */
     }
   };
-    out.close = (win) => {
+  out.close = (win) => {
     detachWebWindow(win, true);
   };
-    out.focus = (win) => {
+  out.focus = (win) => {
     const handle = getWebWindowHandle(win);
     if (handle !== null && typeof handle.focus === 'function') handle.focus();
   };
-    out.getBounds = (win, out) => {
+  out.getBounds = (win, out) => {
     const handle = getWebWindowHandle(win);
     out.x = handle?.screenX ?? win.x;
     out.y = handle?.screenY ?? win.y;
@@ -59,10 +59,10 @@ type WebWindowBackend = WindowBackend &
     out.height = handle?.innerHeight ?? win.height;
     return out;
   };
-    out.open = (win) => {
+  out.open = (win) => {
     return typeof window !== 'undefined' && attachWebWindow(win, window, 'host');
   };
-    out.setFullscreen = (win, fullscreen) => {
+  out.setFullscreen = (win, fullscreen) => {
     const document = getWebWindowHandle(win)?.document;
     if (document === undefined) return;
     try {
@@ -72,7 +72,7 @@ type WebWindowBackend = WindowBackend &
       /* browser rejected the fullscreen request synchronously */
     }
   };
-    out.setIcon = (win, icon) => {
+  out.setIcon = (win, icon) => {
     const document = getWebWindowHandle(win)?.document;
     if (document === undefined) return;
     let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
@@ -83,7 +83,7 @@ type WebWindowBackend = WindowBackend &
     }
     link.href = icon;
   };
-    out.setPosition = (win, x, y) => {
+  out.setPosition = (win, x, y) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.moveTo !== 'function') return;
     try {
@@ -92,7 +92,7 @@ type WebWindowBackend = WindowBackend &
       /* browser rejected script-driven movement */
     }
   };
-    out.setSize = (win, width, height) => {
+  out.setSize = (win, width, height) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.resizeTo !== 'function') return;
     try {
@@ -101,11 +101,11 @@ type WebWindowBackend = WindowBackend &
       /* browser rejected script-driven resizing */
     }
   };
-    out.setTitle = (win, title) => {
+  out.setTitle = (win, title) => {
     const document = getWebWindowHandle(win)?.document;
     if (document !== undefined) document.title = title;
   };
-    out.subscribeClose = (onCloseRequest, onClose) => {
+  out.subscribeClose = (onCloseRequest, onClose) => {
     if (typeof window === 'undefined') return noop;
     const pageWindow = window;
     const onBeforeUnload = (event: BeforeUnloadEvent): void => {
@@ -120,7 +120,7 @@ type WebWindowBackend = WindowBackend &
       pageWindow.removeEventListener('pagehide', onClose);
     });
   };
-    out.subscribeMove = (listener) => {
+  out.subscribeMove = (listener) => {
     if (typeof window === 'undefined') return noop;
     const pageWindow = window;
     const handler = (): void => {
@@ -131,13 +131,13 @@ type WebWindowBackend = WindowBackend &
     pageWindow.addEventListener('resize', handler);
     return trackWebWindowSubscription(() => pageWindow.removeEventListener('resize', handler));
   };
-    out.subscribeOrientation = (listener) => {
+  out.subscribeOrientation = (listener) => {
     if (typeof screen === 'undefined' || screen.orientation === undefined) return noop;
     const orientation = screen.orientation;
     orientation.addEventListener('change', listener);
     return trackWebWindowSubscription(() => orientation.removeEventListener('change', listener));
   };
-    out.subscribeResize = (target, listener) => {
+  out.subscribeResize = (target, listener) => {
     const element = _windowResizeTargets.get(target);
     if (element === undefined || typeof ResizeObserver === 'undefined') return noop;
     const observer = new ResizeObserver((entries) => {
@@ -152,15 +152,15 @@ type WebWindowBackend = WindowBackend &
     observer.observe(element);
     return trackWebWindowSubscription(() => observer.disconnect());
   };
-    out.subscribeVisibility = (listener) => {
+  out.subscribeVisibility = (listener) => {
     if (typeof document === 'undefined') return noop;
     const pageDocument = document;
     const handler = (): void => listener(!pageDocument.hidden);
     pageDocument.addEventListener('visibilitychange', handler);
     return trackWebWindowSubscription(() => pageDocument.removeEventListener('visibilitychange', handler));
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();
 
 export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> =
   {

@@ -16,13 +16,13 @@ export function makeTauriShellCapabilities(
   const opener = tauri.opener;
   const external = allocateEntity<ShellExternalBackend>();
   external.open = async (url) => {
-      try {
-        await opener.openUrl(url);
-        return { reason: 'ok' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    };
+    try {
+      await opener.openUrl(url);
+      return { reason: 'ok' };
+    } catch {
+      return { reason: 'operation-failed' };
+    }
+  };
   const pathOpen = (() => {
     const out = allocateEntity<ShellPathOpenBackend>();
     out.open = async (path) => {

@@ -12,28 +12,28 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createWebNetBackend(): NetBackend {
-    const out = allocateEntity<NetBackend>();
+  const out = allocateEntity<NetBackend>();
   out.sendNetRequest = async (request, options): Promise<NetResponse> => {
-      const controller = new AbortController();
-      const teardownAbort = _wireNetAbort(controller, request.timeoutMs, options?.signal);
-      try {
-        const response = await fetch(request.url, _toNetFetchInit(request, controller.signal));
-        const headers = _readNetResponseHeaders(response.headers);
-        const body = await _readNetResponseBody(response, request.responseType ?? 'text', options?.progress);
-        return {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok,
-          headers,
-          body,
-          url: response.url !== '' ? response.url : request.url,
-        };
-      } catch (error) {
-        return _netTransportFailure(request.url, controller.signal, error);
-      } finally {
-        teardownAbort();
-      }
-    };
+    const controller = new AbortController();
+    const teardownAbort = _wireNetAbort(controller, request.timeoutMs, options?.signal);
+    try {
+      const response = await fetch(request.url, _toNetFetchInit(request, controller.signal));
+      const headers = _readNetResponseHeaders(response.headers);
+      const body = await _readNetResponseBody(response, request.responseType ?? 'text', options?.progress);
+      return {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers,
+        body,
+        url: response.url !== '' ? response.url : request.url,
+      };
+    } catch (error) {
+      return _netTransportFailure(request.url, controller.signal, error);
+    } finally {
+      teardownAbort();
+    }
+  };
   return finishEntity(out);
 }
 
