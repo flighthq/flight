@@ -53,7 +53,7 @@ export function destroyCanvasRenderTexturePool(state: CanvasRenderState, pool: C
   pool.destroyed = true;
 }
 
-export function initializeCanvasRenderTargetPool(
+function initializeCanvasRenderTargetPool(
   out: EntityConstruction<CanvasRenderTargetPool>,
   creator: Readonly<CanvasRenderSurfaceCreator>,
 ): void {
