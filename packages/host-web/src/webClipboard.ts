@@ -4,6 +4,7 @@ import type {
   ClipboardFormatsBackend,
   ClipboardImageBackend,
   ClipboardTextBackend,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
 
@@ -14,7 +15,7 @@ type WebClipboardBackend = ClipboardFormatsBackend &
   ClipboardTextBackend &
   Required<Pick<ClipboardChangeBackend, 'subscribe' | 'unsubscribe'>>;
 
-const createWebClipboardProviderBackend = (): WebClipboardBackend => {
+export function initializeWebClipboardBackend(out: EntityConstruction<WebClipboardBackend>): void {
   async function blobFromFormatData(format: string, data: string): Promise<Blob> {
     if (format.startsWith('image/') && data.startsWith('data:')) {
       const response = await fetch(data);
@@ -58,13 +59,13 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
     if (cb === null || typeof cb.read !== 'function') return [];
     try {
       const items = await cb.read();
-      const out: string[] = [];
+      const formats: string[] = [];
       for (const item of items) {
         for (const type of item.types) {
-          if (!out.includes(type)) out.push(type);
+          if (!formats.includes(type)) formats.push(type);
         }
       }
-      return out;
+      return formats;
     } catch {
       return [];
     }
@@ -109,8 +110,7 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
     return '';
   }
 
-  const _out = allocateEntity<WebClipboardBackend>();
-  Object.assign(_out, {
+  Object.assign(out, {
     readFormat,
     writeFormat,
     async hasFormat(format: string) {
@@ -196,6 +196,11 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
       window.removeEventListener('clipboardchange' as keyof WindowEventMap, callback as EventListener);
     },
   });
+}
+
+const createWebClipboardProviderBackend = (): WebClipboardBackend => {
+  const _out = allocateEntity<WebClipboardBackend>();
+  initializeWebClipboardBackend(_out);
   return finishEntity(_out);
 };
 

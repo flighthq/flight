@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { DesktopOsProfile, TauriApi, TauriHost } from '@flighthq/types/contract';
+import type { DesktopOsProfile, EntityConstruction, TauriApi, TauriHost } from '@flighthq/types/contract';
 
 import { createTauriAppCapabilities } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
@@ -28,30 +28,29 @@ import { createTauriWindowBackend } from './tauriWindow';
 // Pass the returned host to clipboard, menu, window, dialog, and notification operations. Unmigrated
 // seams Tauri does not cover here (storage, protocol, ipc, power, screen) retain their web
 // defaults because a Tauri app runs in a webview; each set*Backend(null) still reverts one of those.
-export function registerTauriBackends<Profile extends DesktopOsProfile>(
+export function initializeTauriHost<Profile extends DesktopOsProfile>(
+  out: EntityConstruction<TauriHost<Profile>>,
   tauri: TauriApi,
   profile: Profile,
-): TauriHost<Profile> {
-  const clipboard = createTauriClipboardBackend(tauri);
+): void {
   const app = createTauriAppCapabilities(tauri);
-  const dialog = {
+  const clipboard = createTauriClipboardBackend(tauri);
+  const menu = createTauriMenuBackends(tauri);
+  const notification = createTauriNotificationCapabilities(tauri);
+  const query = createTauriShortcutQueryBackend(tauri);
+  const shell = makeTauriShellCapabilities(tauri);
+  const trigger = createTauriShortcutTriggerBackend(tauri);
+  const window = createTauriWindowBackend(tauri);
+  out.accessibility = {};
+  out.app = app;
+  out.clipboard = { text: clipboard };
+  out.connectivity = {};
+  out.dialog = {
     directoryOpen: createTauriDirectoryOpenDialogBackend(tauri),
     fileOpen: createTauriFileOpenDialogBackend(tauri),
     fileSave: createTauriFileSaveDialogBackend(tauri),
     message: createTauriMessageDialogBackend(tauri),
   };
-  const notification = createTauriNotificationCapabilities(tauri);
-  const query = createTauriShortcutQueryBackend(tauri);
-  const trigger = createTauriShortcutTriggerBackend(tauri);
-  const menu = createTauriMenuBackends(tauri);
-  const shell = makeTauriShellCapabilities(tauri);
-  const window = createTauriWindowBackend(tauri);
-  const out = allocateEntity<TauriHost<Profile>>();
-  out.accessibility = {};
-  out.app = app;
-  out.clipboard = { text: clipboard };
-  out.connectivity = {};
-  out.dialog = dialog;
   out.graphics = {};
   out.input = {};
   out.ipc = {};
@@ -59,13 +58,13 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
   out.menu = menu;
   out.midi = {};
   out.net = {};
+  out.notification = notification;
   out.power = {};
   out.protocol = {};
-  out.notification = notification;
-  out.shortcut = { query, trigger };
   out.screen = {};
   out.share = {};
   out.shell = shell;
+  out.shortcut = { query, trigger };
   out.storage = {};
   out.system = { platform: createTauriPlatformBackend(tauri) };
   out.text = {};
@@ -73,5 +72,13 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
   out.ui = {};
   out.updater = {};
   out.window = window;
+}
+
+export function registerTauriBackends<Profile extends DesktopOsProfile>(
+  tauri: TauriApi,
+  profile: Profile,
+): TauriHost<Profile> {
+  const out = allocateEntity<TauriHost<Profile>>();
+  initializeTauriHost(out, tauri, profile);
   return finishEntity(out);
 }

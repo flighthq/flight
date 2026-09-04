@@ -1,21 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   HapticImpactStyle,
   HapticNotificationType,
   HapticsBackend,
   HapticsCapabilities,
 } from '@flighthq/types/contract';
 
-// The web haptics provider, over navigator.vibrate. Every method returns false when the Vibration API is
-// absent (jsdom, desktop browsers) or the call throws, rather than propagating — an unavailable motor is
-// an expected outcome here, not a programmer error.
-//
-// Web vibration is a coarse approximation of native haptics: it can only buzz the motor for a duration or
-// a pattern, which is why `capabilities` reports no intensity and no amplitude control even when the API
-// is present. `vibrateWaveform` is deliberately absent rather than faked, so callers fall back to
-// `vibratePattern` and drop amplitudes honestly instead of silently ignoring them here.
-export const webHapticsBackend = (() => {
-  const out = allocateEntity<HapticsBackend>();
+export function initializeWebHapticsBackend(out: EntityConstruction<HapticsBackend>): void {
   out.cancel = (): boolean => {
     return _webVibrate(0);
   };
@@ -51,6 +43,19 @@ export const webHapticsBackend = (() => {
     if (pattern.length === 0) return false;
     return _webVibrate(pattern as number[]);
   };
+}
+
+// The web haptics provider, over navigator.vibrate. Every method returns false when the Vibration API is
+// absent (jsdom, desktop browsers) or the call throws, rather than propagating — an unavailable motor is
+// an expected outcome here, not a programmer error.
+//
+// Web vibration is a coarse approximation of native haptics: it can only buzz the motor for a duration or
+// a pattern, which is why `capabilities` reports no intensity and no amplitude control even when the API
+// is present. `vibrateWaveform` is deliberately absent rather than faked, so callers fall back to
+// `vibratePattern` and drop amplitudes honestly instead of silently ignoring them here.
+export const webHapticsBackend = (() => {
+  const out = allocateEntity<HapticsBackend>();
+  initializeWebHapticsBackend(out);
   return finishEntity(out);
 })();
 

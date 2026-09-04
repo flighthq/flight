@@ -7,6 +7,7 @@ import type {
   ElectronNotification,
   ElectronNotificationCapabilities,
   DesktopOsProfile,
+  EntityConstruction,
   EntityRuntimeKey,
   Notification,
   NotificationEventBackendAttachOutcome,
@@ -176,24 +177,45 @@ export function createElectronNotificationCapabilities(
 
   if (options.platform !== 'macos') {
     const out = allocateEntity<ElectronNotificationCapabilities>();
-    out.click = capabilities.click;
-    out.close = capabilities.close;
-    out.delivery = capabilities.delivery;
-    out.dismiss = capabilities.dismiss;
-    out.lifecycle = capabilities.lifecycle;
-    out.received = capabilities.received;
+    initializeElectronNotificationCapabilities(out, capabilities);
     return finishEntity(out);
   }
   const out = allocateEntity<ElectronMacosNotificationCapabilities>();
+  initializeElectronMacosNotificationCapabilities(
+    out,
+    capabilities,
+    createElectronNotificationEventBackend(actionListeners, () => destroyed),
+    createElectronNotificationEventBackend(replyListeners, () => destroyed),
+  );
+  return finishEntity(out);
+}
+
+export function initializeElectronMacosNotificationCapabilities(
+  out: EntityConstruction<ElectronMacosNotificationCapabilities>,
+  capabilities: Readonly<Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey>>,
+  action: ElectronMacosNotificationCapabilities['action'],
+  reply: ElectronMacosNotificationCapabilities['reply'],
+): void {
+  out.action = action;
   out.click = capabilities.click;
   out.close = capabilities.close;
   out.delivery = capabilities.delivery;
   out.dismiss = capabilities.dismiss;
   out.lifecycle = capabilities.lifecycle;
   out.received = capabilities.received;
-  out.action = createElectronNotificationEventBackend(actionListeners, () => destroyed);
-  out.reply = createElectronNotificationEventBackend(replyListeners, () => destroyed);
-  return finishEntity(out);
+  out.reply = reply;
+}
+
+export function initializeElectronNotificationCapabilities(
+  out: EntityConstruction<ElectronNotificationCapabilities>,
+  capabilities: Readonly<Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey>>,
+): void {
+  out.click = capabilities.click;
+  out.close = capabilities.close;
+  out.delivery = capabilities.delivery;
+  out.dismiss = capabilities.dismiss;
+  out.lifecycle = capabilities.lifecycle;
+  out.received = capabilities.received;
 }
 
 function createElectronNotificationEventBackend<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {

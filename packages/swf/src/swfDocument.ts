@@ -41,6 +41,7 @@ import type {
   BoundsNodeAny,
   ClipRegion,
   EmbeddedImageResourceReference,
+  EntityConstruction,
   FrameScript,
   GlyphOutlineSource,
   ImageResourceReference,
@@ -148,16 +149,19 @@ export function createScene2DImportFromSwf(
   const imageResources = createSwfImageResources(parsed);
 
   const out = allocateEntity<SwfDocumentImport>();
-  out.appearances = instantiation.appearances;
-  out.document = createScene2DDocument(
-    root,
-    slots,
-    'swf',
-    parsed.backgroundColor,
-    imageResources.resources,
-    createSwfAudioResources(parsed),
+  initializeSwfDocumentImport(
+    out,
+    instantiation.appearances,
+    createScene2DDocument(
+      root,
+      slots,
+      'swf',
+      parsed.backgroundColor,
+      imageResources.resources,
+      createSwfAudioResources(parsed),
+    ),
+    createSwfJpegAlphaPayloads(parsed, imageResources.references),
   );
-  out.jpegAlphaPayloads = createSwfJpegAlphaPayloads(parsed, imageResources.references);
   return finishEntity(out);
 }
 
@@ -220,6 +224,66 @@ export function createScene2DSymbolFromSwf(
     createSwfImageResources(parsed).resources,
     createSwfAudioResources(parsed),
   );
+}
+
+export function initializeSwfDocumentImport(
+  out: EntityConstruction<SwfDocumentImport>,
+  appearances: SwfNodeAppearance[],
+  document: Scene2DDocument,
+  jpegAlphaPayloads: SwfJpegAlphaPayload[],
+): void {
+  out.appearances = appearances;
+  out.document = document;
+  out.jpegAlphaPayloads = jpegAlphaPayloads;
+}
+
+export function initializeTimelineAudioCue(
+  out: EntityConstruction<TimelineAudioCue>,
+  duration: number | null,
+  envelope: readonly TimelineAudioEnvelopePoint[],
+  frame: number,
+  loops: number,
+  offset: number,
+  resource: AudioResource,
+  skipIfPlaying: boolean,
+  stop: boolean,
+): void {
+  out.duration = duration;
+  out.envelope = envelope;
+  out.frame = frame;
+  out.gain = 1;
+  out.kind = TimelineAudioCueKind;
+  out.loops = loops;
+  out.offset = offset;
+  out.resource = resource;
+  out.skipIfPlaying = skipIfPlaying;
+  out.stop = stop;
+}
+
+export function initializeTimelineSource(
+  out: EntityConstruction<TimelineSource>,
+  constructFrame: (target: Node2D, frame: number) => void,
+  cues: readonly TimelineCue[],
+  frameRate: number | null,
+  labels: readonly TimelineLabel[],
+  totalFrames: number,
+): void {
+  out.constructFrame = constructFrame;
+  out.cues = cues;
+  out.frameRate = frameRate;
+  out.labels = labels;
+  out.totalFrames = totalFrames;
+}
+
+export function initializeTimelineStreamAudioCue(
+  out: EntityConstruction<TimelineStreamAudioCue>,
+  frame: number,
+  resource: AudioResource,
+): void {
+  out.frame = frame;
+  out.gain = 1;
+  out.kind = TimelineStreamAudioCueKind;
+  out.resource = resource;
 }
 
 // Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
@@ -857,12 +921,7 @@ function createSwfTimelineSource(
   const appliedAlphas = new Map<Node2D, number>();
   const appliedColorAdjustments = new Map<Node2D, readonly Adjustment[] | null>();
   const appliedRatios = new Map<Node2D, number>();
-  const out = allocateEntity<TimelineSource>();
-  out.totalFrames = frames.length;
-  out.labels = labels;
-  out.frameRate = frameRate;
-  out.cues = cues;
-  out.constructFrame = (target: Node2D, frame: number): void => {
+  const constructFrame = (target: Node2D, frame: number): void => {
     const entries = frames[frame - 1];
     if (entries === undefined) return;
 
@@ -935,6 +994,8 @@ function createSwfTimelineSource(
       }
     }
   };
+  const out = allocateEntity<TimelineSource>();
+  initializeTimelineSource(out, constructFrame, cues, frameRate, labels, frames.length);
   return finishEntity(out);
 }
 
@@ -2754,10 +2815,7 @@ function appendSwfStreamSoundCue(
   state.streamSounds.push({ bytes, mimeType: 'audio/mpeg', resource });
   const cue = (() => {
     const out = allocateEntity<TimelineStreamAudioCue>();
-    out.frame = startFrame;
-    out.gain = 1;
-    out.kind = TimelineStreamAudioCueKind;
-    out.resource = resource;
+    initializeTimelineStreamAudioCue(out, startFrame, resource);
     return finishEntity(out);
   })();
   cues.push(cue);
@@ -2832,16 +2890,17 @@ function readSwfSoundInfo(body: SwfReader): SwfSoundInfo | null {
 // SOUNDINFO carries alongside it describes a playback being ended rather than started.
 function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource: AudioResource): TimelineAudioCue {
   const out = allocateEntity<TimelineAudioCue>();
-  out.duration = info.stop || info.outPointSamples < 0 ? null : info.outPointSamples;
-  out.envelope = info.stop ? [] : info.envelope;
-  out.frame = frame;
-  out.gain = 1;
-  out.kind = TimelineAudioCueKind;
-  out.loops = info.stop ? 1 : Math.max(1, info.loopCount);
-  out.offset = info.stop ? 0 : info.inPointSamples;
-  out.resource = resource;
-  out.skipIfPlaying = !info.stop && info.skipIfPlaying;
-  out.stop = info.stop;
+  initializeTimelineAudioCue(
+    out,
+    info.stop || info.outPointSamples < 0 ? null : info.outPointSamples,
+    info.stop ? [] : info.envelope,
+    frame,
+    info.stop ? 1 : Math.max(1, info.loopCount),
+    info.stop ? 0 : info.inPointSamples,
+    resource,
+    !info.stop && info.skipIfPlaying,
+    info.stop,
+  );
   return finishEntity(out);
 }
 

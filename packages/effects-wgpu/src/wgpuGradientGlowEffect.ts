@@ -9,6 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
+import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect';
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
@@ -127,8 +128,7 @@ function getLookupPipeline(state: WgpuRenderState): WgpuEffectPipeline {
       primitive: { topology: 'triangle-list' },
     });
     const _entity = allocateEntity<WgpuEffectPipeline>();
-    _entity.pipeline = pipeline;
-    _entity.blendMode = 'premul';
+    initializeWgpuEffectPipeline(_entity, 'premul', pipeline);
     p = finishEntity(_entity);
     lookupPipelines.set(state, p);
   }

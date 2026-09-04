@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   HasShareContent,
   HasShareFiles,
   ShareContent,
@@ -36,7 +37,7 @@ export function disposeShareSignals(signals: ShareSignals): void {
 
 export function enableShareSignals(): ShareSignals {
   const out = allocateEntity<ShareSignals>();
-  out.onShareResult = createSignal();
+  initializeShareSignals(out);
   return finishEntity(out);
 }
 
@@ -45,6 +46,10 @@ export function hasShareContentFields(content: Readonly<ShareContent>): boolean 
   if (content.text !== undefined && content.text !== '') return true;
   if (content.url !== undefined && content.url !== '') return true;
   return false;
+}
+
+export function initializeShareSignals(out: EntityConstruction<ShareSignals>): void {
+  out.onShareResult = createSignal();
 }
 
 export function shareContent(host: HasShareContent, content: Readonly<ShareContent>): Promise<boolean> {

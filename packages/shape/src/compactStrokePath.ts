@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { appendPathClose } from '@flighthq/path/contract';
-import type { Path, StrokeStyle } from '@flighthq/types/contract';
+import type { EntityConstruction, Path, StrokeStyle } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
 // Converts the centerline `path` into a fillable outline `Path` by offsetting both sides by
@@ -20,9 +20,7 @@ export function compactStrokePath(path: Readonly<Path>, style: Readonly<StrokeSt
   const miterLimit = style.miterLimit ?? 4;
   const halfWidth = width / 2;
   const result = allocateEntity<Path>();
-  result.commands = [] as number[];
-  result.data = [] as number[];
-  result.winding = 'nonZero' as const;
+  initializePath(result, [] as number[], [] as number[], 'nonZero');
   // Decode path into flat subpath polylines, respecting the closed flag.
   const subpaths = decodeSubpaths(path, tolerance);
   const dash = style.dash && style.dash.length > 0 ? style.dash : null;
@@ -38,6 +36,17 @@ export function compactStrokePath(path: Readonly<Path>, style: Readonly<StrokeSt
     }
   }
   return finishEntity(result);
+}
+
+function initializePath(
+  out: EntityConstruction<Path>,
+  commands: number[],
+  data: number[],
+  winding: Path['winding'],
+): void {
+  out.commands = commands;
+  out.data = data;
+  out.winding = winding;
 }
 
 // Adds arc sample points from `startAngle` to `endAngle` around center (cx,cy) at radius `r`

@@ -5,6 +5,7 @@ import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   DomRenderState,
+  EntityConstruction,
   RenderProxy2D,
   RenderState,
   Renderable,
@@ -24,7 +25,7 @@ interface DomTextData extends RendererData {
 
 function createDomTextData(_state: RenderState, _source: Renderable): DomTextData {
   const out = allocateEntity<DomTextData>();
-  out.div = null;
+  initializeDomTextData(out);
   return finishEntity(out);
 }
 
@@ -95,6 +96,10 @@ export function drawDomTextLabel(state: DomRenderState, renderProxy: RenderProxy
 
   applyDomStyle(state, data.div, renderProxy);
   setDomRendererElement(state, data.div);
+}
+
+export function initializeDomTextData(out: EntityConstruction<DomTextData>): void {
+  out.div = null;
 }
 
 export const defaultDomTextLabelRenderer: Scene2DRenderer = {

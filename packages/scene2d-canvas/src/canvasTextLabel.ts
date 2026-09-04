@@ -5,6 +5,7 @@ import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasRenderState,
+  EntityConstruction,
   RenderProxy2D,
   Renderable,
   RendererData,
@@ -23,7 +24,7 @@ interface CanvasTextLabelData extends RendererData {
 
 function createCanvasTextLabelData(_state: CanvasRenderState, _source: Renderable): RendererData {
   const out = allocateEntity<CanvasTextLabelData>();
-  out.lastContentId = -1;
+  initializeCanvasTextLabelData(out);
   return finishEntity(out);
 }
 
@@ -83,6 +84,10 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
       context.stroke();
     }
   }
+}
+
+export function initializeCanvasTextLabelData(out: EntityConstruction<CanvasTextLabelData>): void {
+  out.lastContentId = -1;
 }
 
 export const defaultCanvasTextLabelRenderer: Scene2DRenderer = {

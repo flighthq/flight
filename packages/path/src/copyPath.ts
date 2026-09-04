@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Path } from '@flighthq/types/contract';
+import type { EntityConstruction, Path, PathWinding } from '@flighthq/types/contract';
 
 // Allocates a new `Path` that is a deep copy of `source`.
 // Use `copyPath(source, out)` to write into an existing path without allocating.
@@ -13,9 +13,7 @@ export function clonePath(source: Readonly<Path>): Path {
 export function copyPath(source: Readonly<Path>, out?: Path): Path {
   if (out === undefined) {
     const out = allocateEntity<Path>();
-    out.commands = source.commands.slice();
-    out.data = source.data.slice();
-    out.winding = source.winding;
+    initializePath(out, source.commands.slice(), source.data.slice(), source.winding);
     return finishEntity(out);
   }
   if (out !== source) {
@@ -26,4 +24,15 @@ export function copyPath(source: Readonly<Path>, out?: Path): Path {
     out.winding = source.winding;
   }
   return out;
+}
+
+export function initializePath(
+  out: EntityConstruction<Path>,
+  commands: number[],
+  data: number[],
+  winding: PathWinding,
+): void {
+  out.commands = commands;
+  out.data = data;
+  out.winding = winding;
 }

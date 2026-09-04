@@ -1,8 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type {
+  Entity,
+  EntityConstruction,
+  GlyphRasterizedBitmap,
+  GlyphRasterizerBackend,
+} from '@flighthq/types/contract';
 
 export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
   const out = allocateEntity<GlyphRasterizerBackend & Entity>();
+  initializeStubGlyphRasterizerBackend(out);
+  return finishEntity(out);
+}
+
+export function initializeStubGlyphRasterizerBackend(out: EntityConstruction<GlyphRasterizerBackend & Entity>): void {
   out.rasterize = (_codepoint, options): GlyphRasterizedBitmap | null => {
     const size = Math.max(1, Math.round(options.fontSize));
     const width = Math.max(1, Math.round(size * 0.6));
@@ -18,5 +28,4 @@ export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend & Ent
       width,
     };
   };
-  return finishEntity(out);
 }

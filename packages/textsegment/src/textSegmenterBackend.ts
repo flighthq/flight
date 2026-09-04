@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   HasTextSegmenter,
   TextSegment,
   TextSegmentGranularity,
@@ -14,7 +15,7 @@ import type {
 // the host for those environments.
 export function createWebTextSegmenterBackend(): TextSegmenterBackend {
   const out = allocateEntity<TextSegmenterBackend>();
-  out.segment = segmentWithIntlSegmenter;
+  initializeWebTextSegmenterBackend(out);
   return finishEntity(out);
 }
 
@@ -27,6 +28,10 @@ export const webTextSegmenterBackend: TextSegmenterBackend = createWebTextSegmen
 // can interleave different hosts without mutating shared capability state.
 export function getTextSegmenterBackend(host?: HasTextSegmenter): TextSegmenterBackend {
   return host?.text.segmenter ?? _backend ?? webTextSegmenterBackend;
+}
+
+export function initializeWebTextSegmenterBackend(out: EntityConstruction<TextSegmenterBackend>): void {
+  out.segment = segmentWithIntlSegmenter;
 }
 
 /**

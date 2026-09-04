@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
+  EntityConstruction,
   ScreenChangeBackend,
   ScreenChangeEvent,
   ScreenDetailsBackend,
@@ -307,11 +308,21 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
   })();
 
   const out = allocateEntity<WebScreenCapabilities>();
+  initializeWebScreenCapabilities(out, change, detailsBackend, permissionChange, query);
+  return finishEntity(out);
+}
+
+export function initializeWebScreenCapabilities(
+  out: EntityConstruction<WebScreenCapabilities>,
+  change: ScreenChangeBackend,
+  detailsBackend: ScreenDetailsBackend,
+  permissionChange: ScreenPermissionChangeBackend,
+  query: ScreenQueryBackend,
+): void {
   out.change = change;
   out.details = detailsBackend;
   out.permissionChange = permissionChange;
   out.query = query;
-  return finishEntity(out);
 }
 
 export const webScreenCapabilities = createWebScreenCapabilities();

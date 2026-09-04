@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
   CollisionBuiltInShape2D,
+  EntityConstruction,
   NonEntityCreateResult,
   Physics2DCollisionFilter,
   Physics2DCollider,
@@ -181,11 +182,14 @@ export function createPhysics2DCollider(
 ): Physics2DCollider {
   const ownedLocal = clonePhysics2DLocalShape(local);
   const out = allocateEntity<Physics2DCollider>();
-  out.local = ownedLocal;
-  out.world = createPhysics2DColliderWorldShape(ownedLocal);
-  out.material = { ...material };
-  out.filter = filter === undefined ? { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 } : { ...filter };
-  out.sensor = sensor;
+  initializePhysics2DCollider(
+    out,
+    filter === undefined ? { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 } : { ...filter },
+    ownedLocal,
+    { ...material },
+    sensor,
+    createPhysics2DColliderWorldShape(ownedLocal),
+  );
   return finishEntity(out);
 }
 
@@ -243,36 +247,13 @@ export function createPhysics2DSolverConfig(): NonEntityCreateResult<Physics2DSo
 // adds no second one over it.
 export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: SpatialIndexBackend2D): Physics2DWorld {
   const out = allocateEntity<Physics2DWorld>();
-  out.version = Physics2DWorldVersion;
-  out.bodies = [];
-  out.bodyByIndex = new Map();
-  out.contacts = [];
-  out.joints = [];
-  out.jointSolvers = new Map();
-  out.jointCollisionSuppressions = new Map();
-  out.events = { began: [], ended: [] };
-  out.jointEvents = { broke: [] };
-  out.contactHooks = { preSolve: null, postSolve: null };
-  out.index = index ?? createUniformGridSpatialBackend2D(1);
-  out.config = createPhysics2DSolverConfig();
-  out.islandParents = new Map();
-  out.islandSleepTimers = new Map();
-  out.solveIslandByRoot = new Map();
-  out.solveIslandRoots = [];
-  out.solveIslandBodyStarts = [];
-  out.solveIslandBodyCounts = [];
-  out.solveIslandContactStarts = [];
-  out.solveIslandContactCounts = [];
-  out.solveIslandJointStarts = [];
-  out.solveIslandJointCounts = [];
-  out.solveIslandBodyIndices = [];
-  out.solveIslandContactIndices = [];
-  out.solveIslandJointIndices = [];
-  out.solveIslandCursors = [];
-  out.gravityX = gravityX;
-  out.gravityY = gravityY;
-  out.previousTimestep = 0;
-  out.nextBodyIndex = 0;
+  initializePhysics2DWorld(
+    out,
+    createPhysics2DSolverConfig(),
+    gravityX,
+    gravityY,
+    index ?? createUniformGridSpatialBackend2D(1),
+  );
   return finishEntity(out);
 }
 
@@ -281,32 +262,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
 // disagree with its shape.
 export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: number, angle = 0): RigidBody2D {
   const out = allocateEntity<RigidBody2D>();
-  out.index = -1;
-  out.type = type;
-  out.x = x;
-  out.y = y;
-  out.angle = angle;
-  out.velocityX = 0;
-  out.velocityY = 0;
-  out.angularVelocity = 0;
-  out.forceX = 0;
-  out.forceY = 0;
-  out.torque = 0;
-  out.mass = 0;
-  out.inverseMass = 0;
-  out.inertia = 0;
-  out.inverseInertia = 0;
-  out.centerX = 0;
-  out.centerY = 0;
-  out.linearDamping = 0;
-  out.angularDamping = 0;
-  out.gravityScale = 1;
-  out.fixedRotation = false;
-  out.bullet = false;
-  out.sleeping = false;
-  out.sleepEnabled = true;
-  out.sleepTimer = 0;
-  out.colliders = [];
+  initializeRigidBody2D(out, angle, type, x, y);
   return finishEntity(out);
 }
 
@@ -346,6 +302,95 @@ export function hydratePhysics2DWorld(world: Physics2DWorld): boolean {
   }
   world.version = Physics2DWorldVersion;
   return true;
+}
+
+export function initializePhysics2DCollider(
+  out: EntityConstruction<Physics2DCollider>,
+  filter: Physics2DCollisionFilter,
+  local: CollisionBuiltInShape2D,
+  material: Physics2DMaterial,
+  sensor: boolean,
+  world: Physics2DCollider['world'],
+): void {
+  out.filter = filter;
+  out.local = local;
+  out.material = material;
+  out.sensor = sensor;
+  out.world = world;
+}
+
+export function initializePhysics2DWorld(
+  out: EntityConstruction<Physics2DWorld>,
+  config: NonEntityCreateResult<Physics2DSolverConfig, 'options'>,
+  gravityX: number,
+  gravityY: number,
+  index: SpatialIndexBackend2D,
+): void {
+  out.bodies = [];
+  out.bodyByIndex = new Map();
+  out.config = config;
+  out.contactHooks = { preSolve: null, postSolve: null };
+  out.contacts = [];
+  out.events = { began: [], ended: [] };
+  out.gravityX = gravityX;
+  out.gravityY = gravityY;
+  out.index = index;
+  out.islandParents = new Map();
+  out.islandSleepTimers = new Map();
+  out.jointCollisionSuppressions = new Map();
+  out.jointEvents = { broke: [] };
+  out.jointSolvers = new Map();
+  out.joints = [];
+  out.nextBodyIndex = 0;
+  out.previousTimestep = 0;
+  out.solveIslandBodyCounts = [];
+  out.solveIslandBodyIndices = [];
+  out.solveIslandBodyStarts = [];
+  out.solveIslandByRoot = new Map();
+  out.solveIslandContactCounts = [];
+  out.solveIslandContactIndices = [];
+  out.solveIslandContactStarts = [];
+  out.solveIslandCursors = [];
+  out.solveIslandJointCounts = [];
+  out.solveIslandJointIndices = [];
+  out.solveIslandJointStarts = [];
+  out.solveIslandRoots = [];
+  out.version = Physics2DWorldVersion;
+}
+
+export function initializeRigidBody2D(
+  out: EntityConstruction<RigidBody2D>,
+  angle: number,
+  type: RigidBody2D['type'],
+  x: number,
+  y: number,
+): void {
+  out.angle = angle;
+  out.angularDamping = 0;
+  out.angularVelocity = 0;
+  out.bullet = false;
+  out.centerX = 0;
+  out.centerY = 0;
+  out.colliders = [];
+  out.fixedRotation = false;
+  out.forceX = 0;
+  out.forceY = 0;
+  out.gravityScale = 1;
+  out.index = -1;
+  out.inertia = 0;
+  out.inverseInertia = 0;
+  out.inverseMass = 0;
+  out.linearDamping = 0;
+  out.mass = 0;
+  out.sleepEnabled = true;
+  out.sleepTimer = 0;
+  out.sleeping = false;
+  out.torque = 0;
+  out.type = type;
+  out.velocityX = 0;
+  out.velocityY = 0;
+  out.x = x;
+  out.y = y;
 }
 
 // Rebuilds everything derived from a collider after its authored shape, material, filter, or sensor

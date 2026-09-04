@@ -7,6 +7,7 @@ import type {
   DialogVideo,
   DirectoryOpenDialogBackend,
   DirectoryOpenDialogResult,
+  EntityConstruction,
   FileDialogFilter,
   FileDialogHandleOperations,
   FileOpenDialogBackend,
@@ -27,39 +28,63 @@ import type {
 
 export { webMessageDialogBackend, webPromptDialogBackend } from '@flighthq/dialog/contract';
 
+export function initializeWebDirectoryOpenDialogBackend(out: EntityConstruction<DirectoryOpenDialogBackend>): void {
+  out.open = openDirectory;
+}
+
+export function initializeWebFileOpenDialogBackend(out: EntityConstruction<FileOpenDialogBackend>): void {
+  out.open = openFile;
+}
+
+export function initializeWebFileSaveDialogBackend(out: EntityConstruction<FileSaveDialogBackend>): void {
+  out.save = saveFile;
+}
+
+export function initializeWebImageOpenDialogBackend(out: EntityConstruction<ImageOpenDialogBackend>): void {
+  out.open = openImage;
+}
+
+export function initializeWebPhotoCaptureDialogBackend(out: EntityConstruction<PhotoCaptureDialogBackend>): void {
+  out.capture = capturePhoto;
+}
+
+export function initializeWebVideoCaptureDialogBackend(out: EntityConstruction<VideoCaptureDialogBackend>): void {
+  out.capture = captureVideo;
+}
+
 export const webDirectoryOpenDialogBackend = (() => {
   const out = allocateEntity<DirectoryOpenDialogBackend>();
-  out.open = openDirectory;
+  initializeWebDirectoryOpenDialogBackend(out);
   return finishEntity(out);
 })();
 
 export const webFileOpenDialogBackend = (() => {
   const out = allocateEntity<FileOpenDialogBackend>();
-  out.open = openFile;
+  initializeWebFileOpenDialogBackend(out);
   return finishEntity(out);
 })();
 
 export const webFileSaveDialogBackend = (() => {
   const out = allocateEntity<FileSaveDialogBackend>();
-  out.save = saveFile;
+  initializeWebFileSaveDialogBackend(out);
   return finishEntity(out);
 })();
 
 export const webImageOpenDialogBackend = (() => {
   const out = allocateEntity<ImageOpenDialogBackend>();
-  out.open = openImage;
+  initializeWebImageOpenDialogBackend(out);
   return finishEntity(out);
 })();
 
 export const webPhotoCaptureDialogBackend = (() => {
   const out = allocateEntity<PhotoCaptureDialogBackend>();
-  out.capture = capturePhoto;
+  initializeWebPhotoCaptureDialogBackend(out);
   return finishEntity(out);
 })();
 
 export const webVideoCaptureDialogBackend = (() => {
   const out = allocateEntity<VideoCaptureDialogBackend>();
-  out.capture = captureVideo;
+  initializeWebVideoCaptureDialogBackend(out);
   return finishEntity(out);
 })();
 

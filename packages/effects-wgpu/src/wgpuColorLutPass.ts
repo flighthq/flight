@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
+import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect';
 import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 
 // Generic pointwise color-LUT pass — the single fold-in realization for the whole LUT-tier Adjustment
@@ -95,8 +96,7 @@ function getLutPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuE
       primitive: { topology: 'triangle-list' },
     });
     const _entity = allocateEntity<WgpuEffectPipeline>();
-    _entity.pipeline = gpuPipeline;
-    _entity.blendMode = 'replace';
+    initializeWgpuEffectPipeline(_entity, 'replace', gpuPipeline);
     pipeline = finishEntity(_entity);
     byFormat.set(format, pipeline);
   }

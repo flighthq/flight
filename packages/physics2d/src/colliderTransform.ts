@@ -8,6 +8,7 @@ import type {
   CollisionPolygon2D,
   CollisionSegment2D,
   Entity,
+  EntityConstruction,
   Physics2DCollider,
   RigidBody2D,
 } from '@flighthq/types/contract';
@@ -21,63 +22,123 @@ export function createPhysics2DColliderWorldShape(
   switch (local.kind) {
     case 'circle': {
       const out = allocateEntity<(CollisionCircle2D & { kind: 'circle' }) & Entity>();
-      out.kind = 'circle';
-      out.x = local.x;
-      out.y = local.y;
-      out.radius = local.radius;
+      initializeCollisionCircle2D(out, 'circle', local.radius, local.x, local.y);
       return finishEntity(out);
     }
     case 'aabb':
     case 'obb': {
       const out = allocateEntity<(CollisionObb2D & { kind: 'obb' }) & Entity>();
-      out.kind = 'obb';
-      out.x = 0;
-      out.y = 0;
-      out.halfW = 0;
-      out.halfH = 0;
-      out.rotation = 0;
+      initializeCollisionObb2D(out, 0, 0, 'obb', 0, 0, 0);
       return finishEntity(out);
     }
     case 'capsule': {
       const out = allocateEntity<(CollisionCapsule2D & { kind: 'capsule' }) & Entity>();
-      out.kind = 'capsule';
-      out.x0 = 0;
-      out.y0 = 0;
-      out.x1 = 0;
-      out.y1 = 0;
-      out.radius = local.radius;
+      initializeCollisionCapsule2D(out, 'capsule', local.radius, 0, 0, 0, 0);
       return finishEntity(out);
     }
     case 'polygon': {
       const out = allocateEntity<(CollisionPolygon2D & { kind: 'polygon' }) & Entity>();
-      out.kind = 'polygon';
-      out.points = local.points.slice();
+      initializeCollisionPolygon2D(out, 'polygon', local.points.slice());
       return finishEntity(out);
     }
     case 'segment': {
       const out = allocateEntity<(CollisionSegment2D & { kind: 'segment' }) & Entity>();
-      out.kind = 'segment';
-      out.x0 = local.x0;
-      out.y0 = local.y0;
-      out.x1 = local.x1;
-      out.y1 = local.y1;
+      initializeCollisionSegment2D(out, 'segment', local.x0, local.x1, local.y0, local.y1);
       return finishEntity(out);
     }
     case 'point': {
       const out = allocateEntity<(CollisionPoint2D & { kind: 'point' }) & Entity>();
-      out.kind = 'point';
-      out.x = local.x;
-      out.y = local.y;
+      initializeCollisionPoint2D(out, 'point', local.x, local.y);
       return finishEntity(out);
     }
     default: {
       const out = allocateEntity<(CollisionPoint2D & { kind: 'point' }) & Entity>();
-      out.kind = 'point';
-      out.x = 0;
-      out.y = 0;
+      initializeCollisionPoint2D(out, 'point', 0, 0);
       return finishEntity(out);
     }
   }
+}
+
+export function initializeCollisionCapsule2D(
+  out: EntityConstruction<CollisionCapsule2D & { kind: 'capsule' } & Entity>,
+  kind: 'capsule',
+  radius: number,
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+): void {
+  out.kind = kind;
+  out.radius = radius;
+  out.x0 = x0;
+  out.x1 = x1;
+  out.y0 = y0;
+  out.y1 = y1;
+}
+
+export function initializeCollisionCircle2D(
+  out: EntityConstruction<CollisionCircle2D & { kind: 'circle' } & Entity>,
+  kind: 'circle',
+  radius: number,
+  x: number,
+  y: number,
+): void {
+  out.kind = kind;
+  out.radius = radius;
+  out.x = x;
+  out.y = y;
+}
+
+export function initializeCollisionObb2D(
+  out: EntityConstruction<CollisionObb2D & { kind: 'obb' } & Entity>,
+  halfH: number,
+  halfW: number,
+  kind: 'obb',
+  rotation: number,
+  x: number,
+  y: number,
+): void {
+  out.halfH = halfH;
+  out.halfW = halfW;
+  out.kind = kind;
+  out.rotation = rotation;
+  out.x = x;
+  out.y = y;
+}
+
+export function initializeCollisionPoint2D(
+  out: EntityConstruction<CollisionPoint2D & { kind: 'point' } & Entity>,
+  kind: 'point',
+  x: number,
+  y: number,
+): void {
+  out.kind = kind;
+  out.x = x;
+  out.y = y;
+}
+
+export function initializeCollisionPolygon2D(
+  out: EntityConstruction<CollisionPolygon2D & { kind: 'polygon' } & Entity>,
+  kind: 'polygon',
+  points: number[],
+): void {
+  out.kind = kind;
+  out.points = points;
+}
+
+export function initializeCollisionSegment2D(
+  out: EntityConstruction<CollisionSegment2D & { kind: 'segment' } & Entity>,
+  kind: 'segment',
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+): void {
+  out.kind = kind;
+  out.x0 = x0;
+  out.x1 = x1;
+  out.y0 = y0;
+  out.y1 = y1;
 }
 
 // Rewrites `collider.world` from its local shape and the body's current transform. Called once per

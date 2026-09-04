@@ -2,6 +2,7 @@ import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/ent
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
+  EntityConstruction,
   HasTrayLifecycle,
   HostTrayCapabilities,
   MenuItemTemplate,
@@ -79,13 +80,12 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
     result = await host.tray.lifecycle.create(tray, options);
   } catch (error) {
     const out = allocateEntity<Entity & { error?: unknown; outcome: 'tray-create-failed' }>();
-    out.error = error;
-    out.outcome = 'tray-create-failed' as const;
+    initializeTrayCreateFailedResult(out, error, 'tray-create-failed');
     return finishEntity(out);
   }
   if (result.outcome !== 'created') {
     const out = allocateEntity<TrayCreateResult<TrayIconForHost<HostType>>>();
-    Object.assign(out, result);
+    initializeTrayCreateProviderFailureResult(out, 'error' in result ? result.error : undefined, result.outcome);
     return finishEntity(out);
   }
 
@@ -100,8 +100,7 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
   runtime.state = 'active';
   tray[EntityRuntimeKey] = runtime;
   const out = allocateEntity<Entity & { outcome: 'created'; tray: TrayIconForHost<HostType> }>();
-  out.outcome = 'created' as const;
-  out.tray = tray;
+  initializeTrayCreateSuccessResult(out, 'created', tray);
   return finishEntity(out);
 }
 
@@ -154,6 +153,33 @@ export function getTrayIconTitle(tray: TrayWithTitle): Promise<TrayTitleReadResu
 
 export function getTrayIconTooltip(tray: TrayWithTooltip): Promise<TrayTooltipReadResult> {
   return invokeRead(tray, 'tooltip', 'tooltip-read-failed', (backend) => backend.get(tray));
+}
+
+export function initializeTrayCreateFailedResult(
+  out: EntityConstruction<Entity & { error?: unknown; outcome: 'tray-create-failed' }>,
+  error: unknown,
+  outcome: 'tray-create-failed',
+): void {
+  out.error = error;
+  out.outcome = outcome;
+}
+
+export function initializeTrayCreateProviderFailureResult(
+  out: EntityConstruction<Entity & { error?: unknown; outcome: string }>,
+  error: unknown,
+  outcome: Exclude<TrayCreateProviderResult, { readonly outcome: 'created' }>['outcome'],
+): void {
+  out.error = error;
+  out.outcome = outcome;
+}
+
+export function initializeTrayCreateSuccessResult<Tray extends TrayIcon>(
+  out: EntityConstruction<Entity & { outcome: 'created'; tray: Tray }>,
+  outcome: 'created',
+  tray: Tray,
+): void {
+  out.outcome = outcome;
+  out.tray = tray;
 }
 
 export function isTrayDestroyed(tray: Readonly<TrayIcon>): boolean {

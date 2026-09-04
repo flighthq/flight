@@ -13,6 +13,7 @@ import type {
   AttachmentSkin2D,
   Bone2D,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
@@ -36,6 +37,48 @@ import {
 } from '@flighthq/types/contract';
 
 import { resolveSpineDrawOrdering } from './spineDrawOrder';
+
+function initializeMeshAttachment2D(
+  out: EntityConstruction<MeshAttachment2D>,
+  kind: MeshAttachment2D['kind'],
+  name: MeshAttachment2D['name'],
+  skin: MeshAttachment2D['skin'],
+  triangles: MeshAttachment2D['triangles'],
+  uvs: MeshAttachment2D['uvs'],
+  vertexCount: MeshAttachment2D['vertexCount'],
+  vertices: MeshAttachment2D['vertices'],
+): void {
+  out.kind = kind;
+  out.name = name;
+  out.skin = skin;
+  out.triangles = triangles;
+  out.uvs = uvs;
+  out.vertexCount = vertexCount;
+  out.vertices = vertices;
+}
+
+function initializeRegionAttachment2D(
+  out: EntityConstruction<RegionAttachment2D>,
+  height: number,
+  kind: RegionAttachment2D['kind'],
+  name: RegionAttachment2D['name'],
+  rotation: number,
+  scaleX: number,
+  scaleY: number,
+  width: number,
+  x: number,
+  y: number,
+): void {
+  out.height = height;
+  out.kind = kind;
+  out.name = name;
+  out.rotation = rotation;
+  out.scaleX = scaleX;
+  out.scaleY = scaleY;
+  out.width = width;
+  out.x = x;
+  out.y = y;
+}
 
 /**
  * Reads a draw-order timeline into the orderings `Skeleton2DImport` carries.
@@ -238,37 +281,46 @@ function parseSpineMeshAttachment(
   const vertexCount = uvs.length >> 1;
   if (rawVerts.length === vertexCount * 2) {
     const out = allocateEntity<MeshAttachment2D>();
-    out.kind = MeshAttachment2DKind;
-    out.name = name;
-    out.skin = null;
-    out.triangles = triangles;
-    out.uvs = uvs;
-    out.vertexCount = vertexCount;
-    out.vertices = Float32Array.from(rawVerts);
+    initializeMeshAttachment2D(
+      out,
+      MeshAttachment2DKind,
+      name,
+      null,
+      triangles,
+      uvs,
+      vertexCount,
+      Float32Array.from(rawVerts),
+    );
     return finishEntity(out);
   }
   const out = allocateEntity<MeshAttachment2D>();
-  out.kind = MeshAttachment2DKind;
-  out.name = name;
-  out.skin = parseSpineWeightedVertices(rawVerts, vertexCount, diagnostics);
-  out.triangles = triangles;
-  out.uvs = uvs;
-  out.vertexCount = vertexCount;
-  out.vertices = null;
+  initializeMeshAttachment2D(
+    out,
+    MeshAttachment2DKind,
+    name,
+    parseSpineWeightedVertices(rawVerts, vertexCount, diagnostics),
+    triangles,
+    uvs,
+    vertexCount,
+    null,
+  );
   return finishEntity(out);
 }
 
 function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>): RegionAttachment2D {
   const out = allocateEntity<RegionAttachment2D>();
-  out.height = numberOr(raw.height, 0);
-  out.kind = RegionAttachment2DKind;
-  out.name = name;
-  out.rotation = numberOr(raw.rotation, 0);
-  out.scaleX = numberOr(raw.scaleX, 1);
-  out.scaleY = numberOr(raw.scaleY, 1);
-  out.width = numberOr(raw.width, 0);
-  out.x = numberOr(raw.x, 0);
-  out.y = numberOr(raw.y, 0);
+  initializeRegionAttachment2D(
+    out,
+    numberOr(raw.height, 0),
+    RegionAttachment2DKind,
+    name,
+    numberOr(raw.rotation, 0),
+    numberOr(raw.scaleX, 1),
+    numberOr(raw.scaleY, 1),
+    numberOr(raw.width, 0),
+    numberOr(raw.x, 0),
+    numberOr(raw.y, 0),
+  );
   return finishEntity(out);
 }
 

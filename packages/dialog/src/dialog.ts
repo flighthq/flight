@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   HasDialogMessage,
   HasDialogPrompt,
   MessageDialogBackend,
@@ -16,6 +17,17 @@ export const webPromptDialogBackend = createWebPromptDialogBackend();
 
 function createWebMessageDialogBackend(): MessageDialogBackend {
   const out = allocateEntity<MessageDialogBackend>();
+  initializeWebMessageDialogBackend(out);
+  return finishEntity(out);
+}
+
+function createWebPromptDialogBackend(): PromptDialogBackend {
+  const out = allocateEntity<PromptDialogBackend>();
+  initializeWebPromptDialogBackend(out);
+  return finishEntity(out);
+}
+
+export function initializeWebMessageDialogBackend(out: EntityConstruction<MessageDialogBackend>): void {
   out.confirm = async (options) => {
     if (options.signal?.aborted) return false;
     if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
@@ -38,11 +50,9 @@ function createWebMessageDialogBackend(): MessageDialogBackend {
     }
     return { buttonIndex: 0, cancelled: false, checkboxChecked };
   };
-  return finishEntity(out);
 }
 
-function createWebPromptDialogBackend(): PromptDialogBackend {
-  const out = allocateEntity<PromptDialogBackend>();
+export function initializeWebPromptDialogBackend(out: EntityConstruction<PromptDialogBackend>): void {
   out.prompt = async (options) => {
     if (options.signal?.aborted) return null;
     if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
@@ -52,7 +62,6 @@ function createWebPromptDialogBackend(): PromptDialogBackend {
       return null;
     }
   };
-  return finishEntity(out);
 }
 
 export function showConfirmDialog(host: HasDialogMessage, options: Readonly<MessageDialogOptions>): Promise<boolean> {

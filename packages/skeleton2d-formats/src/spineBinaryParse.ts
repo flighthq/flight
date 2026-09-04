@@ -15,6 +15,7 @@ import type {
   Bone2D,
   ByteReader,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
@@ -50,6 +51,48 @@ import {
   skipSpineBinaryBytes,
 } from './spineBinaryReader';
 import { resolveSpineDrawOrdering } from './spineDrawOrder';
+
+function initializeMeshAttachment2D(
+  out: EntityConstruction<MeshAttachment2D>,
+  kind: MeshAttachment2D['kind'],
+  name: MeshAttachment2D['name'],
+  skin: MeshAttachment2D['skin'],
+  triangles: MeshAttachment2D['triangles'],
+  uvs: MeshAttachment2D['uvs'],
+  vertexCount: MeshAttachment2D['vertexCount'],
+  vertices: MeshAttachment2D['vertices'],
+): void {
+  out.kind = kind;
+  out.name = name;
+  out.skin = skin;
+  out.triangles = triangles;
+  out.uvs = uvs;
+  out.vertexCount = vertexCount;
+  out.vertices = vertices;
+}
+
+function initializeRegionAttachment2D(
+  out: EntityConstruction<RegionAttachment2D>,
+  height: number,
+  kind: RegionAttachment2D['kind'],
+  name: RegionAttachment2D['name'],
+  rotation: number,
+  scaleX: number,
+  scaleY: number,
+  width: number,
+  x: number,
+  y: number,
+): void {
+  out.height = height;
+  out.kind = kind;
+  out.name = name;
+  out.rotation = rotation;
+  out.scaleX = scaleX;
+  out.scaleY = scaleY;
+  out.width = width;
+  out.x = x;
+  out.y = y;
+}
 
 // Parses Spine's `.skel` BINARY skeleton into the same `Skeleton2DImport` `parseSpineSkeleton` produces from
 // `.json` — the binary sibling of that parser, mirroring how `parseGlb` sits beside `parseGltf`. Tolerant and
@@ -967,13 +1010,7 @@ function rejectSpineBinaryMesh(
   );
   skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
   const out = allocateEntity<MeshAttachment2D>();
-  out.kind = MeshAttachment2DKind;
-  out.name = name;
-  out.skin = null;
-  out.triangles = new Uint16Array();
-  out.uvs = new Float32Array();
-  out.vertexCount = 0;
-  out.vertices = null;
+  initializeMeshAttachment2D(out, MeshAttachment2DKind, name, null, new Uint16Array(), new Float32Array(), 0, null);
   return finishEntity(out);
 }
 
@@ -1015,13 +1052,16 @@ function readSpineBinaryMeshAttachment(
     skipSpineBinaryBytes(reader, edges * 2 + 8); // editor edge list, then width and height
   }
   const out = allocateEntity<MeshAttachment2D>();
-  out.kind = MeshAttachment2DKind;
-  out.name = name;
-  out.skin = geometry.skin;
-  out.triangles = triangles;
-  out.uvs = uvs;
-  out.vertexCount = vertexCount;
-  out.vertices = geometry.vertices;
+  initializeMeshAttachment2D(
+    out,
+    MeshAttachment2DKind,
+    name,
+    geometry.skin,
+    triangles,
+    uvs,
+    vertexCount,
+    geometry.vertices,
+  );
   return finishEntity(out);
 }
 
@@ -1043,15 +1083,7 @@ function readSpineBinaryRegionAttachment(
   skipSpineBinaryBytes(reader, SPINE_BINARY_COLOR_BYTES);
   skipSpineBinarySequence(reader);
   const out = allocateEntity<RegionAttachment2D>();
-  out.height = height;
-  out.kind = RegionAttachment2DKind;
-  out.name = name;
-  out.rotation = rotation;
-  out.scaleX = scaleX;
-  out.scaleY = scaleY;
-  out.width = width;
-  out.x = x;
-  out.y = y;
+  initializeRegionAttachment2D(out, height, RegionAttachment2DKind, name, rotation, scaleX, scaleY, width, x, y);
   return finishEntity(out);
 }
 

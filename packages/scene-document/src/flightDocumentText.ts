@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import type {
+  EntityConstruction,
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentInteractiveState,
@@ -56,6 +57,35 @@ export function formatFlightDocumentText(document: Readonly<FlightDocument>): Fl
     throw new RangeError('FlightDocument cannot be represented by the YAML subset: ' + emitted.kind);
   }
   return text;
+}
+
+export function initializeFlightDocumentRefusalExplanation(
+  out: EntityConstruction<FlightDocumentRefusalExplanation>,
+  actual: number | null,
+  column: number | null,
+  kind: string | null,
+  limit: number | null,
+  line: number | null,
+  mode: string | null,
+  offset: number | null,
+  path: string,
+  reason: FlightDocumentRefusalReason,
+  resourceKey: string | null,
+  tokenKey: string | null,
+  version: number | null,
+): void {
+  out.actual = actual;
+  out.column = column;
+  out.kind = kind;
+  out.limit = limit;
+  out.line = line;
+  out.mode = mode;
+  out.offset = offset;
+  out.path = path;
+  out.reason = reason;
+  out.resourceKey = resourceKey;
+  out.tokenKey = tokenKey;
+  out.version = version;
 }
 
 export function parseFlightDocumentText(text: FlightDocumentText): FlightDocument | null {
@@ -475,18 +505,21 @@ function readFlightDocumentText(text: FlightDocumentText): FlightDocumentTextRea
       document: null,
       refusal: (() => {
         const out = allocateEntity<FlightDocumentRefusalExplanation>();
-        out.actual = parsed.actual;
-        out.column = parsed.column;
-        out.kind = null;
-        out.limit = parsed.limit;
-        out.line = parsed.line;
-        out.mode = null;
-        out.offset = parsed.offset;
-        out.path = '';
-        out.reason = parsed.kind;
-        out.resourceKey = null;
-        out.tokenKey = null;
-        out.version = null;
+        initializeFlightDocumentRefusalExplanation(
+          out,
+          parsed.actual,
+          parsed.column,
+          null,
+          parsed.limit,
+          parsed.line,
+          null,
+          parsed.offset,
+          '',
+          parsed.kind,
+          null,
+          null,
+          null,
+        );
         return finishEntity(out);
       })(),
     };

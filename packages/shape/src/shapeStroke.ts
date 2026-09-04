@@ -1,5 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Path, ShapeCommandToken, ShapeStrokeRegion, StrokeStyle } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  Path,
+  ShapeCommandToken,
+  ShapeStrokeRegion,
+  StrokeStyle,
+} from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
 import { appendShapeGeometryCommand } from './shapeFill';
@@ -51,9 +57,7 @@ export function getShapeStrokeRegions(commands: readonly ShapeCommandToken[]): S
         };
         centerline = (() => {
           const out = allocateEntity<Path>();
-          out.commands = [] as number[];
-          out.data = [] as number[];
-          out.winding = 'nonZero' as const;
+          initializePath(out, [] as number[], [] as number[], 'nonZero');
           return finishEntity(out);
         })();
       } else {
@@ -93,6 +97,17 @@ export function hasNonSolidShapeStroke(commands: readonly ShapeCommandToken[]): 
     i += 2 + (commands[i + 1] as number);
   }
   return false;
+}
+
+function initializePath(
+  out: EntityConstruction<Path>,
+  commands: number[],
+  data: number[],
+  winding: Path['winding'],
+): void {
+  out.commands = commands;
+  out.data = data;
+  out.winding = winding;
 }
 
 function isShapeGeometryCommand(name: string): boolean {

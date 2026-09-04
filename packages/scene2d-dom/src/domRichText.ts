@@ -15,6 +15,7 @@ import {
 import type {
   DomRenderState,
   DomTextInputOverlay,
+  EntityConstruction,
   RenderProxy2D,
   RenderState,
   Renderable,
@@ -36,7 +37,7 @@ interface DomRichTextData extends RendererData {
 
 function createDomRichTextData(_state: RenderState, _source: Renderable): DomRichTextData {
   const out = allocateEntity<DomRichTextData>();
-  out.div = null;
+  initializeDomRichTextData(out);
   return finishEntity(out);
 }
 
@@ -61,6 +62,10 @@ export function drawDomRichText(state: DomRenderState, renderProxy: RenderProxy2
 
 export function drawDomRichTextMask(state: DomRenderState, renderProxy: RenderProxy2D): void {
   drawDomRichText(state, renderProxy);
+}
+
+export function initializeDomRichTextData(out: EntityConstruction<DomRichTextData>): void {
+  out.div = null;
 }
 
 function drawDomRichTextField(state: DomRenderState, renderProxy: RenderProxy2D): void {

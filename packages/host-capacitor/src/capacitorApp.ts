@@ -10,6 +10,7 @@ import type {
   CapacitorAppCapabilitiesFor,
   CapacitorCommonAppCapabilities,
   CapacitorPluginListenerHandle,
+  EntityConstruction,
   MobileOsProfile,
 } from '@flighthq/types/contract';
 
@@ -30,6 +31,35 @@ export function createCapacitorAppCapabilities(
   capacitor: CapacitorApi,
   profile: MobileOsProfile,
 ): CapacitorAndroidAppCapabilities | CapacitorCommonAppCapabilities {
+  const common = allocateEntity<CapacitorCommonAppCapabilities>();
+  initializeCapacitorCommonAppCapabilities(common, capacitor);
+  const finished = finishEntity(common);
+  if (profile === 'ios') return finished;
+  const android = allocateEntity<CapacitorAndroidAppCapabilities>();
+  initializeCapacitorAndroidAppCapabilities(android, finished, capacitor);
+  return finishEntity(android);
+}
+
+export function initializeCapacitorAndroidAppCapabilities(
+  out: EntityConstruction<CapacitorAndroidAppCapabilities>,
+  common: CapacitorCommonAppCapabilities,
+  capacitor: CapacitorApi,
+): void {
+  out.activate = common.activate;
+  const h = allocateEntity<AppHideBackend>();
+  h.hideApp = () => void capacitor.app.minimizeApp().catch(() => {});
+  out.hide = finishEntity(h);
+  out.name = common.name;
+  const q = allocateEntity<AppQuitBackend>();
+  q.quit = () => void capacitor.app.exitApp().catch(() => {});
+  out.quit = finishEntity(q);
+  out.version = common.version;
+}
+
+export function initializeCapacitorCommonAppCapabilities(
+  out: EntityConstruction<CapacitorCommonAppCapabilities>,
+  capacitor: CapacitorApi,
+): void {
   let name = '';
   let version = '';
   void capacitor.app
@@ -39,46 +69,20 @@ export function createCapacitorAppCapabilities(
       version = info.version;
     })
     .catch(() => {});
-  const common = (() => {
-    const out = allocateEntity<CapacitorCommonAppCapabilities>();
-    out.activate = (() => {
-      const a = allocateEntity<AppActivateBackend>();
-      a.subscribe = (listener: () => void) =>
-        toCapacitorUnsubscribe(
-          capacitor.app.addListener('appStateChange', (state) => {
-            if (state.isActive) listener();
-          }),
-        );
-      return finishEntity(a);
-    })();
-    out.name = (() => {
-      const n = allocateEntity<AppNameBackend>();
-      n.getName = () => name;
-      return finishEntity(n);
-    })();
-    out.version = (() => {
-      const v = allocateEntity<AppVersionBackend>();
-      v.getVersion = () => version;
-      return finishEntity(v);
-    })();
-    return finishEntity(out);
-  })();
-  if (profile === 'ios') return common;
-  const android = allocateEntity<CapacitorAndroidAppCapabilities>();
-  android.activate = common.activate;
-  android.name = common.name;
-  android.version = common.version;
-  android.hide = (() => {
-    const h = allocateEntity<AppHideBackend>();
-    h.hideApp = () => void capacitor.app.minimizeApp().catch(() => {});
-    return finishEntity(h);
-  })();
-  android.quit = (() => {
-    const q = allocateEntity<AppQuitBackend>();
-    q.quit = () => void capacitor.app.exitApp().catch(() => {});
-    return finishEntity(q);
-  })();
-  return finishEntity(android);
+  const a = allocateEntity<AppActivateBackend>();
+  a.subscribe = (listener: () => void) =>
+    toCapacitorUnsubscribe(
+      capacitor.app.addListener('appStateChange', (state) => {
+        if (state.isActive) listener();
+      }),
+    );
+  out.activate = finishEntity(a);
+  const n = allocateEntity<AppNameBackend>();
+  n.getName = () => name;
+  out.name = finishEntity(n);
+  const v = allocateEntity<AppVersionBackend>();
+  v.getVersion = () => version;
+  out.version = finishEntity(v);
 }
 
 function toCapacitorUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {

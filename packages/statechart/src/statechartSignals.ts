@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { StatechartInstance, StatechartSignals } from '@flighthq/types/contract';
+import type { EntityConstruction, StatechartInstance, StatechartSignals } from '@flighthq/types/contract';
 
 // Allocate the optional observer group on first use. The nullable slot lives on the mutable instance,
 // never on the immutable chart, so authored/imported state remains closure-free and serializable. This
@@ -8,7 +8,7 @@ import type { StatechartInstance, StatechartSignals } from '@flighthq/types/cont
 export function enableStatechartSignals(instance: StatechartInstance): StatechartSignals {
   return (instance.signals ??= (() => {
     const out = allocateEntity<StatechartSignals>();
-    out.onStateChange = createSignal();
+    initializeStatechartSignals(out);
     return finishEntity(out);
   })());
 }
@@ -17,4 +17,8 @@ export function enableStatechartSignals(instance: StatechartInstance): Statechar
 // has been called for this actor.
 export function getStatechartSignals(instance: Readonly<StatechartInstance>): StatechartSignals | null {
   return instance.signals;
+}
+
+export function initializeStatechartSignals(out: EntityConstruction<StatechartSignals>): void {
+  out.onStateChange = createSignal();
 }

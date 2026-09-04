@@ -1,7 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeRoot, getNodeRuntime } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Node2D, Node2DRuntime, Scene2D, Scene2DRuntime, Scene2DSignals } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  Node2D,
+  Node2DRuntime,
+  Scene2D,
+  Scene2DRuntime,
+  Scene2DSignals,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createDisplayObject } from './displayObject';
@@ -16,12 +23,7 @@ export function createScene2D(
 ): Scene2D {
   const root = createDisplayObject();
   const scene2d = allocateEntity<Scene2D>();
-  scene2d.align = obj?.align ?? 'topleft';
-  scene2d.color = obj?.color ?? null;
-  scene2d.root = root;
-  scene2d.scaleMode = obj?.scaleMode ?? 'noscale';
-  scene2d.scene2dHeight = obj?.scene2dHeight ?? 550;
-  scene2d.scene2dWidth = obj?.scene2dWidth ?? 400;
+  initializeScene2D(scene2d, root, obj);
   (getNodeRuntime(root) as Node2DRuntime).scene2d = scene2d;
   return scene2d;
 }
@@ -35,9 +37,7 @@ export function createScene2DRuntime(): Scene2DRuntime {
 
 export function createScene2DSignals(): Scene2DSignals {
   const out = allocateEntity<Scene2DSignals>();
-  out.onFullscreenChanged = createSignal();
-  out.onOrientationChanged = createSignal();
-  out.onResize = createSignal();
+  initializeScene2DSignals(out);
   return finishEntity(out);
 }
 
@@ -62,6 +62,25 @@ export function getScene2DRuntime(source: Readonly<Scene2D>): Readonly<Scene2DRu
 export function getScene2DSignals(source: Readonly<Scene2D>): Scene2DSignals | null {
   const runtime = source[EntityRuntimeKey] as Scene2DRuntime | undefined;
   return runtime?.scene2dSignals ?? null;
+}
+
+export function initializeScene2D(
+  out: EntityConstruction<Scene2D>,
+  root: Node2D,
+  obj?: Readonly<Partial<Pick<Scene2D, 'align' | 'color' | 'scaleMode' | 'scene2dHeight' | 'scene2dWidth'>>>,
+): void {
+  out.align = obj?.align ?? 'topleft';
+  out.color = obj?.color ?? null;
+  out.root = root;
+  out.scaleMode = obj?.scaleMode ?? 'noscale';
+  out.scene2dHeight = obj?.scene2dHeight ?? 550;
+  out.scene2dWidth = obj?.scene2dWidth ?? 400;
+}
+
+export function initializeScene2DSignals(out: EntityConstruction<Scene2DSignals>): void {
+  out.onFullscreenChanged = createSignal();
+  out.onOrientationChanged = createSignal();
+  out.onResize = createSignal();
 }
 
 export function setScene2DSize(source: Scene2D, width: number, height: number): void {

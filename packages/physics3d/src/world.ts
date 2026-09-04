@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
   CollisionColliderShape3D,
+  EntityConstruction,
   NonEntityCreateResult,
   Physics3DBodyType,
   Physics3DCollider,
@@ -255,19 +256,22 @@ export function createPhysics3DCollider(
 ): Physics3DCollider {
   const ownedLocal = cloneCollisionColliderShape3D(local);
   const out = allocateEntity<Physics3DCollider>();
-  out.filter = {
-    categoryBits: filter?.categoryBits ?? 1,
-    groupIndex: filter?.groupIndex ?? 0,
-    maskBits: filter?.maskBits ?? 0xffff,
-  };
-  out.local = ownedLocal;
-  out.material = {
-    density: material?.density ?? 1,
-    friction: material?.friction ?? 0.2,
-    restitution: material?.restitution ?? 0,
-  };
-  out.sensor = sensor;
-  out.world = createPhysics3DColliderWorldShape(ownedLocal);
+  initializePhysics3DCollider(
+    out,
+    {
+      categoryBits: filter?.categoryBits ?? 1,
+      groupIndex: filter?.groupIndex ?? 0,
+      maskBits: filter?.maskBits ?? 0xffff,
+    },
+    ownedLocal,
+    {
+      density: material?.density ?? 1,
+      friction: material?.friction ?? 0.2,
+      restitution: material?.restitution ?? 0,
+    },
+    sensor,
+    createPhysics3DColliderWorldShape(ownedLocal),
+  );
   return finishEntity(out);
 }
 
@@ -311,20 +315,105 @@ export function createPhysics3DSolverConfig(): NonEntityCreateResult<Physics3DSo
 // its own implementation without this package changing.
 export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWorld {
   const out = allocateEntity<Physics3DWorld>();
-  out.bodies = [];
-  out.bodyByIndex = new Map();
-  out.config = createPhysics3DSolverConfig();
-  out.contactHooks = { postSolve: null, preSolve: null };
-  out.contacts = [];
-  out.events = { began: [], ended: [] };
-  out.gravityX = 0;
-  out.gravityY = -9.80665;
-  out.gravityZ = 0;
   // One world unit per cell, matching `createPhysics2DWorld`. A physics world is authored in metres and
   // its bodies are metre-scale, so `@flighthq/spatial`'s own 128-unit default — sized for a scene-graph
   // culling index measured in pixels — would put an entire scene in one cell and reduce the broadphase
   // to a full pairwise scan.
-  out.index = index ?? createUniformGridSpatialBackend3D(1);
+  initializePhysics3DWorld(
+    out,
+    createPhysics3DSolverConfig(),
+    0,
+    -9.80665,
+    0,
+    index ?? createUniformGridSpatialBackend3D(1),
+  );
+  return finishEntity(out);
+}
+
+// Allocates a body at rest at the origin, with no mass. It is not in any world until added, and it will
+// not move until given mass: a dynamic body with zero mass carries a zero inverse mass, which is the
+// same immovable sentinel a static body carries.
+export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBody3D {
+  const out = allocateEntity<RigidBody3D>();
+  initializeRigidBody3D(out, type);
+  return finishEntity(out);
+}
+
+// Looks a body up by its persistent index, or null when no body in this world carries it. The
+// expected-failure sentinel: a caller holding an index across a removal gets null, not a throw.
+export function findPhysics3DBody(world: Readonly<Physics3DWorld>, index: number): RigidBody3D | null {
+  return world.bodyByIndex.get(index) ?? null;
+}
+
+// Upgrades a reconstructed serialized world to the current plain-data shape. Runtime registries remain
+// the format layer's responsibility; this function owns only versioned physics fields and replaces
+// solver caches, which are answers about a previous process and must never survive a load.
+export function hydratePhysics3DWorld(world: Physics3DWorld): boolean {
+  assertPhysics3DWorldNotStepping(world);
+  const serializedVersion = (world as unknown as { version?: unknown }).version;
+  if (serializedVersion !== undefined && typeof serializedVersion !== 'number') return false;
+  const version = serializedVersion ?? 0;
+  if (!Number.isSafeInteger(version) || version < 0 || version > Physics3DWorldVersion) {
+    return false;
+  }
+  if (version === Physics3DWorldVersion) return true;
+
+  const serializedWorld = world as unknown as SerializedPhysics3DWorld;
+  const serializedConfig = world.config as unknown as SerializedPhysics3DSolverConfig;
+  if (version < 2) {
+    serializedWorld.index ??= createUniformGridSpatialBackend3D(1);
+    for (const body of world.bodies) {
+      (body as unknown as SerializedPhysics3DBody).colliders ??= [];
+    }
+    for (const contact of world.contacts) {
+      const serializedContact = contact as unknown as SerializedPhysics3DContact;
+      serializedContact.colliderA ??= 0;
+      serializedContact.colliderB ??= 0;
+    }
+  }
+
+  serializedWorld.jointEvents ??= { broke: [] };
+  serializedConfig.maxCcdRotationSubsteps ??= createPhysics3DSolverConfig().maxCcdRotationSubsteps;
+  world.solver.constraints = [];
+  world.solver.constraintByContact = new Map();
+  delete serializedWorld.solver.constraintByPair;
+  world.version = Physics3DWorldVersion;
+  return true;
+}
+
+export function initializePhysics3DCollider(
+  out: EntityConstruction<Physics3DCollider>,
+  filter: Physics3DCollisionFilter,
+  local: CollisionColliderShape3D,
+  material: Physics3DMaterial,
+  sensor: boolean,
+  world: Physics3DCollider['world'],
+): void {
+  out.filter = filter;
+  out.local = local;
+  out.material = material;
+  out.sensor = sensor;
+  out.world = world;
+}
+
+export function initializePhysics3DWorld(
+  out: EntityConstruction<Physics3DWorld>,
+  config: NonEntityCreateResult<Physics3DSolverConfig, 'options'>,
+  gravityX: number,
+  gravityY: number,
+  gravityZ: number,
+  index: SpatialIndexBackend3D,
+): void {
+  out.bodies = [];
+  out.bodyByIndex = new Map();
+  out.config = config;
+  out.contactHooks = { postSolve: null, preSolve: null };
+  out.contacts = [];
+  out.events = { began: [], ended: [] };
+  out.gravityX = gravityX;
+  out.gravityY = gravityY;
+  out.gravityZ = gravityZ;
+  out.index = index;
   out.islandParents = new Map();
   out.islandSleepTimers = new Map();
   out.jointCollisionSuppressions = new Map();
@@ -347,14 +436,9 @@ export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWo
   out.solveIslandRoots = [];
   out.solver = { constraintByContact: new Map(), constraints: [] };
   out.version = Physics3DWorldVersion;
-  return finishEntity(out);
 }
 
-// Allocates a body at rest at the origin, with no mass. It is not in any world until added, and it will
-// not move until given mass: a dynamic body with zero mass carries a zero inverse mass, which is the
-// same immovable sentinel a static body carries.
-export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBody3D {
-  const out = allocateEntity<RigidBody3D>();
+export function initializeRigidBody3D(out: EntityConstruction<RigidBody3D>, type: Physics3DBodyType): void {
   out.angularDamping = 0;
   out.angularVelocityX = 0;
   out.angularVelocityY = 0;
@@ -408,49 +492,6 @@ export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBod
   out.x = 0;
   out.y = 0;
   out.z = 0;
-  return finishEntity(out);
-}
-
-// Looks a body up by its persistent index, or null when no body in this world carries it. The
-// expected-failure sentinel: a caller holding an index across a removal gets null, not a throw.
-export function findPhysics3DBody(world: Readonly<Physics3DWorld>, index: number): RigidBody3D | null {
-  return world.bodyByIndex.get(index) ?? null;
-}
-
-// Upgrades a reconstructed serialized world to the current plain-data shape. Runtime registries remain
-// the format layer's responsibility; this function owns only versioned physics fields and replaces
-// solver caches, which are answers about a previous process and must never survive a load.
-export function hydratePhysics3DWorld(world: Physics3DWorld): boolean {
-  assertPhysics3DWorldNotStepping(world);
-  const serializedVersion = (world as unknown as { version?: unknown }).version;
-  if (serializedVersion !== undefined && typeof serializedVersion !== 'number') return false;
-  const version = serializedVersion ?? 0;
-  if (!Number.isSafeInteger(version) || version < 0 || version > Physics3DWorldVersion) {
-    return false;
-  }
-  if (version === Physics3DWorldVersion) return true;
-
-  const serializedWorld = world as unknown as SerializedPhysics3DWorld;
-  const serializedConfig = world.config as unknown as SerializedPhysics3DSolverConfig;
-  if (version < 2) {
-    serializedWorld.index ??= createUniformGridSpatialBackend3D(1);
-    for (const body of world.bodies) {
-      (body as unknown as SerializedPhysics3DBody).colliders ??= [];
-    }
-    for (const contact of world.contacts) {
-      const serializedContact = contact as unknown as SerializedPhysics3DContact;
-      serializedContact.colliderA ??= 0;
-      serializedContact.colliderB ??= 0;
-    }
-  }
-
-  serializedWorld.jointEvents ??= { broke: [] };
-  serializedConfig.maxCcdRotationSubsteps ??= createPhysics3DSolverConfig().maxCcdRotationSubsteps;
-  world.solver.constraints = [];
-  world.solver.constraintByContact = new Map();
-  delete serializedWorld.solver.constraintByPair;
-  world.version = Physics3DWorldVersion;
-  return true;
 }
 
 // Rebuilds a collider's derived state after its authored LOCAL shape has been edited in place. Returns

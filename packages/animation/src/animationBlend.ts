@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AnimationSampleAccumulator } from '@flighthq/types/contract';
+import type { AnimationSampleAccumulator, EntityConstruction } from '@flighthq/types/contract';
 
 // Adds a non-negative weighted sample into caller-owned accumulation state. Quaternion samples are
 // sign-aligned with the current sum so equivalent q/-q inputs do not cancel. No target or clip state
@@ -85,10 +85,7 @@ export function blendAnimationSamples(
 export function createAnimationSampleAccumulator(components: number, quaternion = false): AnimationSampleAccumulator {
   const width = Math.max(0, components | 0);
   const out = allocateEntity<AnimationSampleAccumulator>();
-  out.components = width;
-  out.quaternion = quaternion;
-  out.values = new Float32Array(width);
-  out.weight = 0;
+  initializeAnimationSampleAccumulator(out, width, quaternion);
   return finishEntity(out);
 }
 
@@ -110,6 +107,17 @@ export function finishAnimationSample(
     out[component] = accumulator.values[component] * inverseWeight;
   }
   return true;
+}
+
+export function initializeAnimationSampleAccumulator(
+  out: EntityConstruction<AnimationSampleAccumulator>,
+  width: number,
+  quaternion: boolean,
+): void {
+  out.components = width;
+  out.quaternion = quaternion;
+  out.values = new Float32Array(width);
+  out.weight = 0;
 }
 
 // Clears weighted state in place for reuse without reallocating the component buffer.

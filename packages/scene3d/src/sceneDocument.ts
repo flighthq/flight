@@ -5,6 +5,7 @@ import { createMaterial } from '@flighthq/materials/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type {
   AnimationChannel,
+  EntityConstruction,
   Material,
   MaterialLike,
   Mesh,
@@ -75,6 +76,21 @@ export function createScene3DsFromDocument(document: Readonly<Scene3DDocument>):
   return scenes;
 }
 
+export function initializeSkeleton3D(
+  out: EntityConstruction<Skeleton3D>,
+  inverseBindMatrices: Float32Array,
+  jointMatrices: Float32Array,
+  joints: Node3D[],
+  names: Skeleton3D['names'],
+  normalMatrices: Float32Array,
+): void {
+  out.inverseBindMatrices = inverseBindMatrices;
+  out.jointMatrices = jointMatrices;
+  out.joints = joints;
+  out.names = names;
+  out.normalMatrices = normalMatrices;
+}
+
 // Applies a document node's authored TRS transform, marking the local matrix stale so the world matrix
 // recomposes from the fields.
 function applyDocumentNodeTransform(node: Node3D, source: Readonly<Scene3DDocumentNode>): void {
@@ -109,11 +125,14 @@ function applyDocumentSkins(document: Readonly<Scene3DDocument>, nodes: readonly
     // Joint names are recovered from the resolved joint nodes; null when the source named none.
     const skeleton = (() => {
       const out = allocateEntity<Skeleton3D>();
-      out.inverseBindMatrices = inverseBindMatrices;
-      out.jointMatrices = new Float32Array(joints.length * 16);
-      out.joints = joints;
-      out.names = names.some((name) => name.length > 0) ? names : null;
-      out.normalMatrices = new Float32Array(joints.length * 12);
+      initializeSkeleton3D(
+        out,
+        inverseBindMatrices,
+        new Float32Array(joints.length * 16),
+        joints,
+        names.some((name) => name.length > 0) ? names : null,
+        new Float32Array(joints.length * 12),
+      );
       return finishEntity(out);
     })();
     return { skeleton, skeletonRoot: null };

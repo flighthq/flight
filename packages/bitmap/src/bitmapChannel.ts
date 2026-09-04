@@ -1,8 +1,27 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
+import type { Bitmap, BitmapRegion, EntityConstruction } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { invalidateBitmap } from './bitmap';
+
+export function initializeBitmap(
+  out: EntityConstruction<Bitmap>,
+  alphaType: Bitmap['alphaType'],
+  data: Uint8ClampedArray<ArrayBuffer>,
+  format: Bitmap['format'],
+  gamut: Bitmap['gamut'],
+  height: number,
+  width: number,
+): void {
+  out.alphaType = alphaType;
+  out.data = data;
+  out.format = format;
+  out.gamut = gamut;
+  out.height = height;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = width;
+}
 
 /**
  * Merges four single-channel bitmaps (or any full-RGBA bitmaps) into `out`
@@ -134,13 +153,6 @@ function makeBitmap(
   source: Readonly<Bitmap>,
 ): Bitmap {
   const out = allocateEntity<Bitmap>();
-  out.alphaType = source.alphaType;
-  out.gamut = source.gamut;
-  out.data = data;
-  out.format = source.format;
-  out.height = height;
-  out.kind = BitmapTextureSourceKind;
-  out.version = 0;
-  out.width = width;
+  initializeBitmap(out, source.alphaType, data, source.format, source.gamut, height, width);
   return finishEntity(out);
 }

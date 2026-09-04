@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   MenuApplicationBackend,
   MenuItemTemplate,
   MenuPopupBackend,
@@ -20,10 +21,15 @@ import type {
 // Built together because `application` and `select` share the listener closure; kept as separate slots
 // because their shapes are incompatible.
 export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities {
+  const out = allocateEntity<TauriMenuCapabilities>();
+  initializeTauriMenuBackends(out, tauri);
+  return finishEntity(out);
+}
+
+export function initializeTauriMenuBackends(out: EntityConstruction<TauriMenuCapabilities>, tauri: TauriApi): void {
   const menuModule = tauri.menu;
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
-  const out = allocateEntity<TauriMenuCapabilities>();
   // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
   // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
   // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
@@ -64,7 +70,6 @@ export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities 
     };
   };
   out.select = finishEntity(selectBackend);
-  return finishEntity(out);
 }
 
 // Recursively builds Tauri menu item handles from Flight templates. Separators become a predefined

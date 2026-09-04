@@ -3,6 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionColliderShape3D,
   Entity,
+  EntityConstruction,
   Physics3DCollider,
   RigidBody3D,
   SpatialAabb3D,
@@ -17,114 +18,274 @@ export function createPhysics3DColliderWorldShape(
   switch (local.kind) {
     case 'sphere': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'sphere' }> & Entity>();
-      out.kind = 'sphere';
-      out.x = local.x;
-      out.y = local.y;
-      out.z = local.z;
-      out.radius = local.radius;
+      initializeCollisionSphere3D(out, 'sphere', local.radius, local.x, local.y, local.z);
       return finishEntity(out);
     }
     case 'aabb':
     case 'box': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'box' }> & Entity>();
-      out.kind = 'box';
-      out.x = 0;
-      out.y = 0;
-      out.z = 0;
-      out.halfX = 0;
-      out.halfY = 0;
-      out.halfZ = 0;
-      out.rotationX = 0;
-      out.rotationY = 0;
-      out.rotationZ = 0;
-      out.rotationW = 1;
+      initializeCollisionBox3D(out, 'box');
       return finishEntity(out);
     }
     case 'capsule': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'capsule' }> & Entity>();
-      out.kind = 'capsule';
-      out.x0 = local.x0;
-      out.y0 = local.y0;
-      out.z0 = local.z0;
-      out.x1 = local.x1;
-      out.y1 = local.y1;
-      out.z1 = local.z1;
-      out.radius = local.radius;
+      initializeCollisionCapsule3D(
+        out,
+        'capsule',
+        local.radius,
+        local.x0,
+        local.x1,
+        local.y0,
+        local.y1,
+        local.z0,
+        local.z1,
+      );
       return finishEntity(out);
     }
     case 'cylinder': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'cylinder' }> & Entity>();
-      out.kind = 'cylinder';
-      out.x0 = local.x0;
-      out.y0 = local.y0;
-      out.z0 = local.z0;
-      out.x1 = local.x1;
-      out.y1 = local.y1;
-      out.z1 = local.z1;
-      out.radius = local.radius;
+      initializeCollisionCylinder3D(
+        out,
+        'cylinder',
+        local.radius,
+        local.x0,
+        local.x1,
+        local.y0,
+        local.y1,
+        local.z0,
+        local.z1,
+      );
       return finishEntity(out);
     }
     case 'cone': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'cone' }> & Entity>();
-      out.kind = 'cone';
-      out.apexX = local.apexX;
-      out.apexY = local.apexY;
-      out.apexZ = local.apexZ;
-      out.baseX = local.baseX;
-      out.baseY = local.baseY;
-      out.baseZ = local.baseZ;
-      out.radius = local.radius;
+      initializeCollisionCone3D(
+        out,
+        local.apexX,
+        local.apexY,
+        local.apexZ,
+        local.baseX,
+        local.baseY,
+        local.baseZ,
+        'cone',
+        local.radius,
+      );
       return finishEntity(out);
     }
     case 'convex': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'convex' }> & Entity>();
-      out.kind = 'convex';
-      out.points = local.points.slice();
+      initializeCollisionConvex3D(out, 'convex', local.points.slice());
       return finishEntity(out);
     }
     case 'triangle-mesh': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' }> & Entity>();
-      out.kind = 'triangle-mesh';
-      out.points = local.points;
-      out.indices = local.indices;
-      out.version = local.version;
-      out.x = local.x;
-      out.y = local.y;
-      out.z = local.z;
-      out.rotationX = local.rotationX;
-      out.rotationY = local.rotationY;
-      out.rotationZ = local.rotationZ;
-      out.rotationW = local.rotationW;
+      initializeCollisionTriangleMesh3D(
+        out,
+        local.indices,
+        'triangle-mesh',
+        local.points,
+        local.rotationW,
+        local.rotationX,
+        local.rotationY,
+        local.rotationZ,
+        local.version,
+        local.x,
+        local.y,
+        local.z,
+      );
       return finishEntity(out);
     }
     case 'heightfield': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'heightfield' }> & Entity>();
-      out.kind = 'heightfield';
-      out.columns = local.columns;
-      out.rows = local.rows;
-      out.heights = local.heights;
-      out.cellSizeX = local.cellSizeX;
-      out.cellSizeZ = local.cellSizeZ;
-      out.version = local.version;
-      out.x = local.x;
-      out.y = local.y;
-      out.z = local.z;
-      out.rotationX = local.rotationX;
-      out.rotationY = local.rotationY;
-      out.rotationZ = local.rotationZ;
-      out.rotationW = local.rotationW;
+      initializeCollisionHeightfield3D(
+        out,
+        local.cellSizeX,
+        local.cellSizeZ,
+        local.columns,
+        local.heights,
+        'heightfield',
+        local.rotationW,
+        local.rotationX,
+        local.rotationY,
+        local.rotationZ,
+        local.rows,
+        local.version,
+        local.x,
+        local.y,
+        local.z,
+      );
       return finishEntity(out);
     }
     default: {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'sphere' }> & Entity>();
-      out.kind = 'sphere';
-      out.x = 0;
-      out.y = 0;
-      out.z = 0;
-      out.radius = 0;
+      initializeCollisionSphere3D(out, 'sphere', 0, 0, 0, 0);
       return finishEntity(out);
     }
   }
+}
+
+export function initializeCollisionBox3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'box' }> & Entity>,
+  kind: 'box',
+): void {
+  out.halfX = 0;
+  out.halfY = 0;
+  out.halfZ = 0;
+  out.kind = kind;
+  out.rotationW = 1;
+  out.rotationX = 0;
+  out.rotationY = 0;
+  out.rotationZ = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+}
+
+export function initializeCollisionCapsule3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'capsule' }> & Entity>,
+  kind: 'capsule',
+  radius: number,
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+  z0: number,
+  z1: number,
+): void {
+  out.kind = kind;
+  out.radius = radius;
+  out.x0 = x0;
+  out.x1 = x1;
+  out.y0 = y0;
+  out.y1 = y1;
+  out.z0 = z0;
+  out.z1 = z1;
+}
+
+export function initializeCollisionCone3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'cone' }> & Entity>,
+  apexX: number,
+  apexY: number,
+  apexZ: number,
+  baseX: number,
+  baseY: number,
+  baseZ: number,
+  kind: 'cone',
+  radius: number,
+): void {
+  out.apexX = apexX;
+  out.apexY = apexY;
+  out.apexZ = apexZ;
+  out.baseX = baseX;
+  out.baseY = baseY;
+  out.baseZ = baseZ;
+  out.kind = kind;
+  out.radius = radius;
+}
+
+export function initializeCollisionConvex3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'convex' }> & Entity>,
+  kind: 'convex',
+  points: number[],
+): void {
+  out.kind = kind;
+  out.points = points;
+}
+
+export function initializeCollisionCylinder3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'cylinder' }> & Entity>,
+  kind: 'cylinder',
+  radius: number,
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+  z0: number,
+  z1: number,
+): void {
+  out.kind = kind;
+  out.radius = radius;
+  out.x0 = x0;
+  out.x1 = x1;
+  out.y0 = y0;
+  out.y1 = y1;
+  out.z0 = z0;
+  out.z1 = z1;
+}
+
+export function initializeCollisionHeightfield3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'heightfield' }> & Entity>,
+  cellSizeX: number,
+  cellSizeZ: number,
+  columns: number,
+  heights: number[],
+  kind: 'heightfield',
+  rotationW: number,
+  rotationX: number,
+  rotationY: number,
+  rotationZ: number,
+  rows: number,
+  version: number,
+  x: number,
+  y: number,
+  z: number,
+): void {
+  out.cellSizeX = cellSizeX;
+  out.cellSizeZ = cellSizeZ;
+  out.columns = columns;
+  out.heights = heights;
+  out.kind = kind;
+  out.rotationW = rotationW;
+  out.rotationX = rotationX;
+  out.rotationY = rotationY;
+  out.rotationZ = rotationZ;
+  out.rows = rows;
+  out.version = version;
+  out.x = x;
+  out.y = y;
+  out.z = z;
+}
+
+export function initializeCollisionSphere3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'sphere' }> & Entity>,
+  kind: 'sphere',
+  radius: number,
+  x: number,
+  y: number,
+  z: number,
+): void {
+  out.kind = kind;
+  out.radius = radius;
+  out.x = x;
+  out.y = y;
+  out.z = z;
+}
+
+export function initializeCollisionTriangleMesh3D(
+  out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' }> & Entity>,
+  indices: number[],
+  kind: 'triangle-mesh',
+  points: number[],
+  rotationW: number,
+  rotationX: number,
+  rotationY: number,
+  rotationZ: number,
+  version: number,
+  x: number,
+  y: number,
+  z: number,
+): void {
+  out.indices = indices;
+  out.kind = kind;
+  out.points = points;
+  out.rotationW = rotationW;
+  out.rotationX = rotationX;
+  out.rotationY = rotationY;
+  out.rotationZ = rotationZ;
+  out.version = version;
+  out.x = x;
+  out.y = y;
+  out.z = z;
 }
 
 // Rewrites `collider.world` from its local shape and the body's current pose. Called once per collider

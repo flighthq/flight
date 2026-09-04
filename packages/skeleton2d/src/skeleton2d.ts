@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
-import type { AttachmentSkin2D, Bone2D, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
+import type { AttachmentSkin2D, Bone2D, EntityConstruction, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
 
 // 6 floats per bone in the flat 2×3 affine buffers (a, b, c, d, tx, ty), matching the Matrix field order.
 const MATRIX_STRIDE = 6;
@@ -11,13 +11,15 @@ const MATRIX_STRIDE = 6;
 // skin/slot editing layer for per-instance attachment swaps.
 export function cloneSkeleton2D(skeleton: Readonly<Skeleton2D>): Skeleton2D {
   const out = allocateEntity<Skeleton2D>();
-  out.boneMatrices = skeleton.boneMatrices.slice();
-  out.bones = skeleton.bones.map((bone) => ({ ...bone }));
-  out.inverseBindMatrices = skeleton.inverseBindMatrices.slice();
-  out.skins = skeleton.skins;
-  out.slots =
-    skeleton.slots === null || skeleton.slots === undefined ? skeleton.slots : skeleton.slots.map((s) => ({ ...s }));
-  out.worldMatrices = skeleton.worldMatrices.slice();
+  initializeSkeleton2D(
+    out,
+    skeleton.boneMatrices.slice(),
+    skeleton.bones.map((bone) => ({ ...bone })),
+    skeleton.inverseBindMatrices.slice(),
+    skeleton.skins,
+    skeleton.slots === null || skeleton.slots === undefined ? skeleton.slots : skeleton.slots.map((s) => ({ ...s })),
+    skeleton.worldMatrices.slice(),
+  );
   return finishEntity(out);
 }
 
@@ -151,11 +153,15 @@ export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>)
 export function createSkeleton2D(bones: Bone2D[], slots: Skeleton2D['slots'] = null): Skeleton2D {
   const count = bones.length;
   const out = allocateEntity<Skeleton2D>();
-  out.boneMatrices = new Float32Array(count * MATRIX_STRIDE);
-  out.bones = bones;
-  out.inverseBindMatrices = new Float32Array(count * MATRIX_STRIDE);
-  out.slots = slots;
-  out.worldMatrices = new Float32Array(count * MATRIX_STRIDE);
+  initializeSkeleton2D(
+    out,
+    new Float32Array(count * MATRIX_STRIDE),
+    bones,
+    new Float32Array(count * MATRIX_STRIDE),
+    null,
+    slots,
+    new Float32Array(count * MATRIX_STRIDE),
+  );
   return finishEntity(out);
 }
 
@@ -223,6 +229,23 @@ export function getSkeleton2DSkin(skeleton: Readonly<Skeleton2D>, name: string):
     if (skin.name === name) return skin;
   }
   return null;
+}
+
+export function initializeSkeleton2D(
+  out: EntityConstruction<Skeleton2D>,
+  boneMatrices: Float32Array,
+  bones: Bone2D[],
+  inverseBindMatrices: Float32Array,
+  skins: Skeleton2D['skins'],
+  slots: Skeleton2D['slots'],
+  worldMatrices: Float32Array,
+): void {
+  out.boneMatrices = boneMatrices;
+  out.bones = bones;
+  out.inverseBindMatrices = inverseBindMatrices;
+  out.skins = skins;
+  out.slots = slots;
+  out.worldMatrices = worldMatrices;
 }
 
 // inverse-bind at identity (`inverseMatrix` returns false) rather than producing NaNs.

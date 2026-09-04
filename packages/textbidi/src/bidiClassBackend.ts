@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BidiClass, BidiClassBackend } from '@flighthq/types/contract';
+import type { BidiClass, BidiClassBackend, EntityConstruction } from '@flighthq/types/contract';
 
 // Builds the compact bundled bidi-class backend: a from-scratch UAX #9 class lookup over a sorted
 // range table (binary search), covering the COMMON scripts — Basic Latin + Latin-1, the combining
@@ -11,7 +11,7 @@ import type { BidiClass, BidiClassBackend } from '@flighthq/types/contract';
 // bracket-pairing data) is the designated flight-rs table backend, passed explicitly to the resolver.
 export function createCompactBidiClassBackend(): BidiClassBackend {
   const out = allocateEntity<BidiClassBackend>();
-  out.getBidiClass = getCompactBidiClass;
+  initializeCompactBidiClassBackend(out);
   return finishEntity(out);
 }
 
@@ -21,6 +21,10 @@ export function createCompactBidiClassBackend(): BidiClassBackend {
 export function getBidiClassBackend(): BidiClassBackend {
   if (_backend === null) _backend = createCompactBidiClassBackend();
   return _backend;
+}
+
+export function initializeCompactBidiClassBackend(out: EntityConstruction<BidiClassBackend>): void {
+  out.getBidiClass = getCompactBidiClass;
 }
 
 /**

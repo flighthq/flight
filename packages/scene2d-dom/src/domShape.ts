@@ -2,6 +2,7 @@
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import type {
   DomRenderState,
+  EntityConstruction,
   RenderProxy2D,
   RenderState,
   Renderable,
@@ -23,8 +24,7 @@ interface DomShapeData extends RendererData {
 
 function createDomShapeData(_state: RenderState, _source: Renderable): DomShapeData {
   const out = allocateEntity<DomShapeData>();
-  out.canvas = null;
-  out.context = null;
+  initializeDomShapeData(out);
   return finishEntity(out);
 }
 
@@ -76,6 +76,11 @@ export function drawDomShape(state: DomRenderState, renderProxy: RenderProxy2D):
   setDomTransformWithOffset(data.canvas, renderProxy.transform2D, bounds.x, bounds.y, state.roundPixels);
 
   setDomRendererElement(state, data.canvas);
+}
+
+export function initializeDomShapeData(out: EntityConstruction<DomShapeData>): void {
+  out.canvas = null;
+  out.context = null;
 }
 
 export const defaultDomShapeRenderer: Scene2DRenderer = {

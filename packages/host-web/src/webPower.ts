@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   PowerChangeBackend,
   PowerKeepAwakeAcquireResult,
   PowerKeepAwakeBackend,
@@ -27,75 +28,14 @@ import type {
 // `true` synchronously, so a denied lock read as success and a lost lock still read as active.
 export const webPowerKeepAwakeBackend = (() => {
   const out = allocateEntity<PowerKeepAwakeBackend>();
-  out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
-    // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
-    if (mode === 'PreventAppSuspension') return { reason: 'unavailable' };
-    const wakeLock = _getWebWakeLock();
-    if (wakeLock === null) return { reason: 'unavailable' };
-    let sentinel: WebWakeLockSentinel;
-    try {
-      sentinel = await wakeLock.request('screen');
-    } catch (error) {
-      // A refusal by policy (hidden page, no user gesture) is a DENIAL the caller can act on; anything
-      // else is an operation failure. Both are reported; neither is swallowed.
-      return { reason: _isDenial(error) ? 'denied' : 'failed' };
-    }
-    _wakeLockSentinel = sentinel;
-    // ★ THE EXACT PAIR, retained so it can be detached by identity: removeEventListener matches on the
-    // SAME reference that was added. On an OS-initiated release the sentinel is cleared IMMEDIATELY —
-    // a re-acquire is a new tracked operation, never an assumption that the lock came back.
-    const onRelease = (): void => {
-      if (_wakeLockSentinel === sentinel) _wakeLockSentinel = null;
-      _wakeLockReleaseListeners.delete(sentinel);
-    };
-    _wakeLockReleaseListeners.set(sentinel, onRelease);
-    sentinel.addEventListener?.('release', onRelease);
-    return { reason: 'ok' };
-  };
-  out.destroy = (): void => {
-    void _releaseSentinel();
-    for (const [sentinel, onRelease] of _wakeLockReleaseListeners) {
-      sentinel.removeEventListener?.('release', onRelease);
-    }
-    _wakeLockReleaseListeners.clear();
-  };
-  out.isActive = (): boolean => {
-    return _wakeLockSentinel !== null;
-  };
-  out.release = async (): Promise<PowerKeepAwakeReleaseResult> => {
-    const sentinel = _wakeLockSentinel;
-    // Nothing held is an ordinary outcome, not a fault — reported distinctly from 'ok' so a caller that
-    // believed it held a lock can tell that it did not.
-    if (sentinel === null) return { reason: 'inactive' };
-    try {
-      await sentinel.release?.();
-    } catch {
-      // State is NOT cleared: the lock may still be held, and publishing "released" here would be the
-      // same lie in the opposite direction.
-      return { reason: 'failed' };
-    }
-    if (_wakeLockSentinel === sentinel) _wakeLockSentinel = null;
-    const onRelease = _wakeLockReleaseListeners.get(sentinel);
-    if (onRelease !== undefined) sentinel.removeEventListener?.('release', onRelease);
-    _wakeLockReleaseListeners.delete(sentinel);
-    return { reason: 'ok' };
-  };
+  initializeWebPowerKeepAwakeBackend(out);
   return finishEntity(out);
 })();
 
 // Suspend/resume over the Page Lifecycle API. freeze/resume are the spec'd pair and both really fire.
 export const webPowerSuspensionBackend = (() => {
   const out = allocateEntity<PowerSuspensionBackend>();
-  out.subscribeResume = (listener: () => void): (() => void) => {
-    if (typeof document === 'undefined') return () => {};
-    document.addEventListener('resume', listener);
-    return () => document.removeEventListener('resume', listener);
-  };
-  out.subscribeSuspend = (listener: () => void): (() => void) => {
-    if (typeof document === 'undefined') return () => {};
-    document.addEventListener('freeze', listener);
-    return () => document.removeEventListener('freeze', listener);
-  };
+  initializeWebPowerSuspensionBackend(out);
   return finishEntity(out);
 })();
 
@@ -164,7 +104,6 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
       manager = null;
     };
   };
-  out.change = finishEntity(changeEntity);
   const statusEntity = allocateEntity<PowerStatusBackend>();
   statusEntity.getStatus = (statusOut: PowerStatus): PowerStatus => {
     statusOut.batteryLevel = cachedLevel;
@@ -179,18 +118,103 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
     statusOut.thermalState = 'Unknown';
     return statusOut;
   };
-  out.status = finishEntity(statusEntity);
+  initializeWebPowerReadings(out, finishEntity(changeEntity), finishEntity(statusEntity));
   return finishEntity(out);
+}
+
+export function initializeWebPowerCapabilities(
+  out: EntityConstruction<WebPowerCapabilities>,
+  readings: WebPowerReadingCapabilities,
+): void {
+  out.change = readings.change;
+  out.keepAwake = webPowerKeepAwakeBackend;
+  out.status = readings.status;
+  out.suspension = webPowerSuspensionBackend;
+}
+
+export function initializeWebPowerKeepAwakeBackend(out: EntityConstruction<PowerKeepAwakeBackend>): void {
+  out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
+    // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
+    if (mode === 'PreventAppSuspension') return { reason: 'unavailable' };
+    const wakeLock = _getWebWakeLock();
+    if (wakeLock === null) return { reason: 'unavailable' };
+    let sentinel: WebWakeLockSentinel;
+    try {
+      sentinel = await wakeLock.request('screen');
+    } catch (error) {
+      // A refusal by policy (hidden page, no user gesture) is a DENIAL the caller can act on; anything
+      // else is an operation failure. Both are reported; neither is swallowed.
+      return { reason: _isDenial(error) ? 'denied' : 'failed' };
+    }
+    _wakeLockSentinel = sentinel;
+    // ★ THE EXACT PAIR, retained so it can be detached by identity: removeEventListener matches on the
+    // SAME reference that was added. On an OS-initiated release the sentinel is cleared IMMEDIATELY —
+    // a re-acquire is a new tracked operation, never an assumption that the lock came back.
+    const onRelease = (): void => {
+      if (_wakeLockSentinel === sentinel) _wakeLockSentinel = null;
+      _wakeLockReleaseListeners.delete(sentinel);
+    };
+    _wakeLockReleaseListeners.set(sentinel, onRelease);
+    sentinel.addEventListener?.('release', onRelease);
+    return { reason: 'ok' };
+  };
+  out.destroy = (): void => {
+    void _releaseSentinel();
+    for (const [sentinel, onRelease] of _wakeLockReleaseListeners) {
+      sentinel.removeEventListener?.('release', onRelease);
+    }
+    _wakeLockReleaseListeners.clear();
+  };
+  out.isActive = (): boolean => {
+    return _wakeLockSentinel !== null;
+  };
+  out.release = async (): Promise<PowerKeepAwakeReleaseResult> => {
+    const sentinel = _wakeLockSentinel;
+    // Nothing held is an ordinary outcome, not a fault — reported distinctly from 'ok' so a caller that
+    // believed it held a lock can tell that it did not.
+    if (sentinel === null) return { reason: 'inactive' };
+    try {
+      await sentinel.release?.();
+    } catch {
+      // State is NOT cleared: the lock may still be held, and publishing "released" here would be the
+      // same lie in the opposite direction.
+      return { reason: 'failed' };
+    }
+    if (_wakeLockSentinel === sentinel) _wakeLockSentinel = null;
+    const onRelease = _wakeLockReleaseListeners.get(sentinel);
+    if (onRelease !== undefined) sentinel.removeEventListener?.('release', onRelease);
+    _wakeLockReleaseListeners.delete(sentinel);
+    return { reason: 'ok' };
+  };
+}
+
+export function initializeWebPowerReadings(
+  out: EntityConstruction<WebPowerReadingCapabilities>,
+  change: PowerChangeBackend,
+  status: PowerStatusBackend,
+): void {
+  out.change = change;
+  out.status = status;
+}
+
+export function initializeWebPowerSuspensionBackend(out: EntityConstruction<PowerSuspensionBackend>): void {
+  out.subscribeResume = (listener: () => void): (() => void) => {
+    if (typeof document === 'undefined') return () => {};
+    document.addEventListener('resume', listener);
+    return () => document.removeEventListener('resume', listener);
+  };
+  out.subscribeSuspend = (listener: () => void): (() => void) => {
+    if (typeof document === 'undefined') return () => {};
+    document.addEventListener('freeze', listener);
+    return () => document.removeEventListener('freeze', listener);
+  };
 }
 
 // The web power capability group, for composing into a Host.
 export const webPowerCapabilities: WebPowerCapabilities = (() => {
   const readings = createWebPowerReadings();
   const out = allocateEntity<WebPowerCapabilities>();
-  out.change = readings.change;
-  out.status = readings.status;
-  out.keepAwake = webPowerKeepAwakeBackend;
-  out.suspension = webPowerSuspensionBackend;
+  initializeWebPowerCapabilities(out, readings);
   return finishEntity(out);
 })();
 

@@ -15,6 +15,7 @@ import type {
   AttachmentSkin2D,
   Bone2D,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
@@ -37,6 +38,48 @@ import {
 // Resolves a DragonBones armature-file-order bone index to the topo-sorted output index (the axis-12 remap).
 // Local to this file — a value, not an exported API type.
 type DragonBonesBoneRemap = (rawBoneIndex: number) => number;
+
+function initializeMeshAttachment2D(
+  out: EntityConstruction<MeshAttachment2D>,
+  kind: MeshAttachment2D['kind'],
+  name: MeshAttachment2D['name'],
+  skin: MeshAttachment2D['skin'],
+  triangles: MeshAttachment2D['triangles'],
+  uvs: MeshAttachment2D['uvs'],
+  vertexCount: MeshAttachment2D['vertexCount'],
+  vertices: MeshAttachment2D['vertices'],
+): void {
+  out.kind = kind;
+  out.name = name;
+  out.skin = skin;
+  out.triangles = triangles;
+  out.uvs = uvs;
+  out.vertexCount = vertexCount;
+  out.vertices = vertices;
+}
+
+function initializeRegionAttachment2D(
+  out: EntityConstruction<RegionAttachment2D>,
+  height: number,
+  kind: RegionAttachment2D['kind'],
+  name: RegionAttachment2D['name'],
+  rotation: number,
+  scaleX: number,
+  scaleY: number,
+  width: number,
+  x: number,
+  y: number,
+): void {
+  out.height = height;
+  out.kind = kind;
+  out.name = name;
+  out.rotation = rotation;
+  out.scaleX = scaleX;
+  out.scaleY = scaleY;
+  out.width = width;
+  out.x = x;
+  out.y = y;
+}
 
 // Parses a DragonBones `.json` skeleton document (text) into a Skeleton2DImport. Tolerant and best-effort,
 // mirroring parseSpineSkeleton: a malformed / non-DragonBones document returns the sentinel `null`, and a
@@ -719,13 +762,16 @@ function parseDragonBonesMeshDisplay(
   }
   const uvs = toFloat32Array(display.uvs);
   const out = allocateEntity<MeshAttachment2D>();
-  out.kind = MeshAttachment2DKind;
-  out.name = typeof display.name === 'string' ? display.name : null;
-  out.skin = null;
-  out.triangles = toUint16Array(display.triangles);
-  out.uvs = uvs;
-  out.vertexCount = uvs.length >> 1;
-  out.vertices = toFloat32Array(display.vertices);
+  initializeMeshAttachment2D(
+    out,
+    MeshAttachment2DKind,
+    typeof display.name === 'string' ? display.name : null,
+    null,
+    toUint16Array(display.triangles),
+    uvs,
+    uvs.length >> 1,
+    toFloat32Array(display.vertices),
+  );
   return finishEntity(out);
 }
 
@@ -827,13 +873,16 @@ function parseDragonBonesWeightedMesh(
     );
   }
   const out = allocateEntity<MeshAttachment2D>();
-  out.kind = MeshAttachment2DKind;
-  out.name = typeof display.name === 'string' ? display.name : null;
-  out.skin = createSkin2D(influenceCounts, Float32Array.from(influences));
-  out.triangles = toUint16Array(display.triangles);
-  out.uvs = uvs;
-  out.vertexCount = vertexCount;
-  out.vertices = null;
+  initializeMeshAttachment2D(
+    out,
+    MeshAttachment2DKind,
+    typeof display.name === 'string' ? display.name : null,
+    createSkin2D(influenceCounts, Float32Array.from(influences)),
+    toUint16Array(display.triangles),
+    uvs,
+    vertexCount,
+    null,
+  );
   return finishEntity(out);
 }
 
@@ -857,15 +906,18 @@ function parseDragonBonesDisplayList(
 function parseDragonBonesRegionDisplay(display: Record<string, unknown>): RegionAttachment2D {
   const transform = parseDragonBonesBoneTransform(display.transform);
   const out = allocateEntity<RegionAttachment2D>();
-  out.height = 0;
-  out.kind = RegionAttachment2DKind;
-  out.name = typeof display.name === 'string' ? display.name : null;
-  out.rotation = transform.rotation;
-  out.scaleX = transform.scaleX;
-  out.scaleY = transform.scaleY;
-  out.width = 0;
-  out.x = transform.x;
-  out.y = transform.y;
+  initializeRegionAttachment2D(
+    out,
+    0,
+    RegionAttachment2DKind,
+    typeof display.name === 'string' ? display.name : null,
+    transform.rotation,
+    transform.scaleX,
+    transform.scaleY,
+    0,
+    transform.x,
+    transform.y,
+  );
   return finishEntity(out);
 }
 

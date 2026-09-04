@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CompressedImageResource,
+  EntityConstruction,
   TextureColorSpace,
   TextureContainer,
   TextureContainerFormat,
@@ -48,6 +49,23 @@ export function hasWgpuCompressedTextureFormat(
   if (format.startsWith('bc')) return support.bc;
   if (format.startsWith('astc')) return support.astc;
   return support.etc2;
+}
+
+function initializeWgpuTextureEntry(
+  out: EntityConstruction<WgpuTextureEntry>,
+  bindings: WgpuTextureEntry['bindings'],
+  mipLevelCount: WgpuTextureEntry['mipLevelCount'],
+  sampler: WgpuTextureEntry['sampler'],
+  straightAlpha: WgpuTextureEntry['straightAlpha'],
+  texture: WgpuTextureEntry['texture'],
+  view: WgpuTextureEntry['view'],
+): void {
+  out.bindings = bindings;
+  out.mipLevelCount = mipLevelCount;
+  out.sampler = sampler;
+  out.straightAlpha = straightAlpha;
+  out.texture = texture;
+  out.view = view;
 }
 
 export function registerWgpuCompressedTextureDecoder(
@@ -174,12 +192,7 @@ function uploadWgpuCompressedImage(
   const resources = getWgpuRenderStateDeviceResources(state);
   const sampler = state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
   const out = allocateEntity<WgpuTextureEntry>();
-  out.bindings = new Map();
-  out.mipLevelCount = container.mipLevels;
-  out.sampler = sampler;
-  out.straightAlpha = native;
-  out.texture = texture;
-  out.view = view;
+  initializeWgpuTextureEntry(out, new Map(), container.mipLevels, sampler, native, texture, view);
   return finishEntity(out);
 }
 
