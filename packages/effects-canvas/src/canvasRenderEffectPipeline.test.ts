@@ -73,12 +73,12 @@ describe('endCanvasRenderEffectPipeline', () => {
 
     endCanvasRenderEffectPipeline(state, pipeline, [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'UnregisteredEffect';
         return finishEntity(out);
       })(),
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'RealizedEffect';
         return finishEntity(out);
       })(),

@@ -49,7 +49,7 @@ function fakeProvider(
   let destroyed = false;
   return Object.assign(
     (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.destroy = () => {
         if (destroyed) return;
         destroyed = true;
@@ -217,7 +217,7 @@ describe('detachConnectivity', () => {
 describe('detectConnectivityReachability', () => {
   it('dispatches reachability only to the supplied reachability slot', async () => {
     let calls = 0;
-    const reachability = allocateEntity<unknown>();
+    const reachability = allocateEntity<any>();
     reachability.detectReachability = async (_options, out) => {
       calls++;
       out.latency = 7;

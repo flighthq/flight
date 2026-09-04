@@ -95,7 +95,7 @@ describe('disposeMidiPort', () => {
     const input = createInputPort({
       attachMessage: async () => ({
         attachment: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.release = messageRelease;
           return finishEntity(out);
         })(),
@@ -103,7 +103,7 @@ describe('disposeMidiPort', () => {
       }),
       attachStateChange: async () => ({
         attachment: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.release = stateRelease;
           return finishEntity(out);
         })(),

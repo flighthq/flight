@@ -44,7 +44,7 @@ describe('isWgpuRenderEffectResolvable', () => {
       isWgpuRenderEffectResolvable(
         state,
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Always';
           return finishEntity(out);
         })(),
@@ -59,7 +59,7 @@ describe('isWgpuRenderEffectResolvable', () => {
       isWgpuRenderEffectResolvable(
         state,
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Named';
           return finishEntity(out);
         })(),
@@ -69,7 +69,7 @@ describe('isWgpuRenderEffectResolvable', () => {
       isWgpuRenderEffectResolvable(
         state,
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.key = 'ready';
           out.kind = 'acme.Named';
           return finishEntity(out) as never;

@@ -458,7 +458,7 @@ describe('explainLifecycleOperation', () => {
   it('reports an operation the host provider omits as unimplemented', () => {
     const host = hostOf(
       (() => {
-        const out = allocateEntity<HasSystemLifecycle>();
+        const out = allocateEntity<any>();
         out.getState = () => 'active' as const;
         out.subscribe = () => () => {};
         return finishEntity(out);
@@ -477,7 +477,7 @@ describe('explainLifecycleOperation', () => {
     const rich = hostOf(fakeBackend());
     const bare = hostOf(
       (() => {
-        const out = allocateEntity<HasSystemLifecycle>();
+        const out = allocateEntity<any>();
         out.getState = () => 'active' as const;
         out.subscribe = () => () => {};
         return finishEntity(out);
@@ -496,7 +496,7 @@ describe('getAppLaunchKind', () => {
   });
 
   it('delegates to backend.getLaunchKind when present', () => {
-    const backend = allocateEntity<HasSystemLifecycle>();
+    const backend = allocateEntity<any>();
     backend.getState = () => 'active';
     backend.subscribe = () => () => {};
     backend.getLaunchKind = () => 'cold';
@@ -523,7 +523,7 @@ describe('hasLifecycleOperation', () => {
   it('is false for an operation the host provider omits', () => {
     const host = hostOf(
       (() => {
-        const out = allocateEntity<HasSystemLifecycle>();
+        const out = allocateEntity<any>();
         out.getState = () => 'active' as const;
         out.subscribe = () => () => {};
         return finishEntity(out);
@@ -579,7 +579,7 @@ const OPTIONAL_OPERATIONS: readonly LifecycleOperation[] = ['getLaunchKind', 'su
 
 // A host implementing only the REQUIRED members — partial support declared by absence.
 function partialBackend(): LifecycleBackend {
-  const out = allocateEntity<HasSystemLifecycle>();
+  const out = allocateEntity<any>();
   out.getState = (() => undefined) as never;
   out.subscribe = (() => undefined) as never;
   return finishEntity(out);

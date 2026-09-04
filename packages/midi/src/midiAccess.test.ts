@@ -36,7 +36,7 @@ describe('disposeMidiAccess', () => {
         accessListener.current = listener;
         return {
           attachment: (() => {
-            const out = allocateEntity<unknown>();
+            const out = allocateEntity<any>();
             out.release = release;
             return finishEntity(out);
           })(),
@@ -82,7 +82,7 @@ describe('disposeMidiAccess', () => {
 
 describe('getMidiAccessInputPorts', () => {
   it('returns the provider current stable input identities without routing through ids', () => {
-    const input = allocateEntity<unknown>();
+    const input = allocateEntity<any>();
     input.id = 'duplicate';
     const access = createAccess([input], []);
     const getMidiAccessInputPorts = requiredFunction('getMidiAccessInputPorts');
@@ -93,7 +93,7 @@ describe('getMidiAccessInputPorts', () => {
 
 describe('getMidiAccessOutputPorts', () => {
   it('accepts an access with zero devices and preserves the provider output identities', () => {
-    const output = allocateEntity<unknown>();
+    const output = allocateEntity<any>();
     output.id = 'duplicate';
     const getMidiAccessOutputPorts = requiredFunction('getMidiAccessOutputPorts');
     expect(getMidiAccessOutputPorts(createAccess([], []))).toEqual({ ports: [], reason: 'ok' });
@@ -114,7 +114,7 @@ describe('requestMidiAccess', () => {
     const host = {
       midi: {
         access: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.requestAccess = requestAccess;
           return finishEntity(out);
         })(),

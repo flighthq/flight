@@ -101,7 +101,7 @@ describe('enableWgpuRenderEffectGuards', () => {
     const pipeline = createWgpuRenderEffectPipeline(state);
     const chain = [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-dropped-kind';
         return finishEntity(out);
       })(),
@@ -193,7 +193,7 @@ function applyChain(state: WgpuRenderState, kinds: readonly string[]): boolean {
   const effects = kinds.map(
     (kind) =>
       (() => {
-        const out = allocateEntity<boolean>();
+        const out = allocateEntity<any>();
         out.kind = kind;
         return finishEntity(out) as unknown;
       })() as Readonly<RenderEffect>,

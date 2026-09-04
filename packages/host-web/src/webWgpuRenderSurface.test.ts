@@ -87,20 +87,20 @@ describe('GL and WGPU surface provider independence', () => {
   });
 
   it('preserves the full one-sided install, replacement and reset matrix', () => {
-    const glFirst = allocateEntity<unknown>();
+    const glFirst = allocateEntity<any>();
     glFirst.createRenderSurface = () => ({ kind: 'gl-first' }) as unknown as HTMLCanvasElement;
     const glSecond = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.createRenderSurface = () => ({ kind: 'gl-second' }) as unknown as HTMLCanvasElement;
       return finishEntity(out);
     })();
     const wgpuFirst = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.createRenderSurface = () => ({ kind: 'wgpu-first' }) as unknown as HTMLCanvasElement;
       return finishEntity(out);
     })();
     const wgpuSecond = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.createRenderSurface = () => ({ kind: 'wgpu-second' }) as unknown as HTMLCanvasElement;
       return finishEntity(out);
     })();

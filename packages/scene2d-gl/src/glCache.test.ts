@@ -30,7 +30,7 @@ beforeEach(() => {
     descriptor: { width: number; height: number },
   ): GlRenderTarget => {
     const texture = {} as WebGLTexture;
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     out.requestedAxes = {
       width: descriptor.width,
       height: descriptor.height,

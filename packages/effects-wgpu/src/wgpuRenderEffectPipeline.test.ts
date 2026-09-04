@@ -219,7 +219,7 @@ describe('endWgpuRenderEffectPipeline', () => {
     const pipeline = createWgpuRenderEffectPipeline(state);
     const chain = [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-unregistered';
         return finishEntity(out);
       })() as RenderEffect,
@@ -242,7 +242,7 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
     const dropped: string[] = [];
     const chain = [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-skip-seam';
         return finishEntity(out);
       })() as RenderEffect,
@@ -268,7 +268,7 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
 
 describe('setWgpuRenderEffectVelocityTexture', () => {
   it('sets the velocity texture on the pipeline', () => {
-    const pipeline = allocateEntity<unknown>();
+    const pipeline = allocateEntity<any>();
     pipeline.options = {};
     pipeline.sceneTarget = null;
     pipeline.pool = { [EntityRuntimeKey]: undefined, free: [] };

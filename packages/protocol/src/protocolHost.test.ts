@@ -13,12 +13,12 @@ describe('protocol explicit Host ownership', () => {
     const host = {
       protocol: {
         launch: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.getLaunchUrl = getLaunchUrl;
           return finishEntity(out);
         })(),
         registration: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.getRegisteredSchemes = () => ['flight'];
           out.register = register;
           return finishEntity(out);
@@ -41,7 +41,7 @@ describe('protocol explicit Host ownership', () => {
     const host = {
       protocol: {
         open: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.subscribe = subscribe;
           return finishEntity(out);
         })(),

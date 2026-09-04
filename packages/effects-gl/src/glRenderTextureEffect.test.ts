@@ -57,12 +57,12 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
     expect(
       applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.First';
           return finishEntity(out);
         })(),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Second';
           return finishEntity(out);
         })(),
@@ -87,7 +87,7 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
     expect(
       applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
           return finishEntity(out);
         })(),
@@ -207,13 +207,13 @@ describe('explainGlRenderEffectApplication', () => {
     );
     const chain = [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.explain-i';
         out.shaderKey = 'present';
         return finishEntity(out);
       })(),
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.explain-i';
         out.shaderKey = 'absent';
         return finishEntity(out);
@@ -331,7 +331,7 @@ function effects(kinds: readonly string[]): ReadonlyArray<Readonly<RenderEffect>
   return kinds.map(
     (kind) =>
       (() => {
-        const out = allocateEntity<GlRenderState>();
+        const out = allocateEntity<any>();
         out.kind = kind;
         return finishEntity(out) as unknown;
       })() as Readonly<RenderEffect>,

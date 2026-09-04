@@ -27,7 +27,7 @@ function mockBuffer(): AudioBuffer {
 }
 
 function mockBackend(): AudioDeviceBackend {
-  const out = allocateEntity<AudioBuffer>();
+  const out = allocateEntity<any>();
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
   out.createSource = vi.fn(() => nextHandle++ as unknown as AudioSourceHandle);

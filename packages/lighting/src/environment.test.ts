@@ -6,14 +6,14 @@ import { EnvironmentKind } from '@flighthq/types/contract';
 import { cloneEnvironment, createEnvironment } from './environment';
 
 function createTestCubeTexture(): Texture {
-  const sampler = allocateEntity<Texture>();
+  const sampler = allocateEntity<any>();
   sampler.anisotropy = 1;
   sampler.magFilter = 'linear';
   sampler.minFilter = 'linear';
   sampler.mipmaps = false;
   sampler.wrapU = 'clamp-to-edge';
   sampler.wrapV = 'clamp-to-edge';
-  const out = allocateEntity<Texture>();
+  const out = allocateEntity<any>();
   out.colorSpace = 'linear';
   out.flipX = false;
   out.flipY = false;

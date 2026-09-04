@@ -133,7 +133,7 @@ describe('defaultCanvasCompositeEffectRunner', () => {
         source,
         dest,
         pool: (() => {
-          const out = allocateEntity<CanvasRenderTarget>();
+          const out = allocateEntity<any>();
           out.creator = canvasTestSurfaceCreator;
           out.free = [];
           out.inUse = [];

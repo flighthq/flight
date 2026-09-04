@@ -24,7 +24,7 @@ function makeCamera(): Camera3D {
 }
 
 function makeTarget(): GlRenderTarget {
-  const out = allocateEntity<Camera3D>();
+  const out = allocateEntity<any>();
   out.requestedAxes = {
     width: 256,
     height: 256,

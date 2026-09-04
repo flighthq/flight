@@ -20,7 +20,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
   });
   return {
     pool: (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.creator = canvasTestSurfaceCreator;
       out.free = [...targets].reverse();
       out.inUse = [];

@@ -161,7 +161,7 @@ describe('getLightLuminance', () => {
   });
 
   it('returns zero for an open custom kind even when it resembles a colored light', () => {
-    const light = allocateEntity<unknown>();
+    const light = allocateEntity<any>();
     light.color = 0xffffffff;
     light.enabled = true;
     light.intensity = 5;
@@ -292,7 +292,7 @@ describe('isLightCastingShadow', () => {
   // is the assertion that separates the two: a truthiness check would accept `undefined` and report
   // this as working.
   it('returns strict false for a custom light kind that declares no castsShadow', () => {
-    const light = allocateEntity<unknown>();
+    const light = allocateEntity<any>();
     light.color = 0xffffffff;
     light.intensity = 1;
     light.kind = 'acme:GlowLight';
@@ -302,7 +302,7 @@ describe('isLightCastingShadow', () => {
   // Guards the return TYPE rather than its truthiness, so the contract cannot regress to `undefined`
   // while every `toBe(false)` assertion still passes by coincidence.
   it('returns a boolean for every light, including custom kinds', () => {
-    const custom = allocateEntity<unknown>();
+    const custom = allocateEntity<any>();
     custom.color = 0xffffffff;
     custom.intensity = 1;
     custom.kind = 'acme:GlowLight';
@@ -314,10 +314,10 @@ describe('isLightCastingShadow', () => {
   // A custom kind that DOES opt in must still be honoured — the fix must not flatten every custom
   // light to false, which would be the easy over-correction.
   it('honours castsShadow on a custom light kind that declares it', () => {
-    const casting = allocateEntity<unknown>();
+    const casting = allocateEntity<any>();
     casting.castsShadow = true;
     casting.kind = 'acme:GlowLight';
-    const notCasting = allocateEntity<unknown>();
+    const notCasting = allocateEntity<any>();
     notCasting.castsShadow = false;
     notCasting.kind = 'acme:GlowLight';
     expect(isLightCastingShadow(casting)).toBe(true);
@@ -327,7 +327,7 @@ describe('isLightCastingShadow', () => {
   // A non-boolean `castsShadow` is a programmer error, not a configuration; the query still has to
   // return a boolean rather than leaking the foreign value to a caller that declared it cannot get one.
   it('returns a boolean when a custom kind carries a non-boolean castsShadow', () => {
-    const light = allocateEntity<unknown>();
+    const light = allocateEntity<any>();
     light.castsShadow = 1;
     light.kind = 'acme:GlowLight';
     expect(typeof isLightCastingShadow(light)).toBe('boolean');

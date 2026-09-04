@@ -24,7 +24,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function region(overrides: Partial<RegionAttachment2D> = {}): RegionAttachment2D {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.kind = RegionAttachment2DKind;
   out.height = 2;
   out.rotation = 0;

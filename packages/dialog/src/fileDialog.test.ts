@@ -18,21 +18,21 @@ function fakeHost() {
   return {
     dialog: {
       directoryOpen: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.open = async () => {
           return { handle: directory, outcome: 'selected' as const };
         };
         return finishEntity(out);
       })(),
       fileOpen: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.open = async () => {
           return { handles: [first, second] as const, outcome: 'selected' as const };
         };
         return finishEntity(out);
       })(),
       fileSave: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.save = async () => {
           return { handle: saved, outcome: 'selected' as const };
         };
@@ -73,7 +73,7 @@ describe('showOpenDirectoryDialog', () => {
     const host = {
       dialog: {
         directoryOpen: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.open = async () => {
             return { outcome: 'runtime-unavailable' as const };
           };
@@ -89,7 +89,7 @@ describe('showOpenDirectoryDialog', () => {
     const host = {
       dialog: {
         directoryOpen: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.open = open;
           return finishEntity(out);
         })(),
@@ -115,7 +115,7 @@ describe('showOpenFileDialog', () => {
     const host = {
       dialog: {
         fileOpen: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.open = async () => {
             return { outcome: 'security-denied' as const };
           };
@@ -137,7 +137,7 @@ describe('showSaveFileDialog', () => {
     const host = {
       dialog: {
         fileSave: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.save = async () => {
             return { outcome: 'file-save-failed' as const };
           };

@@ -54,7 +54,7 @@ function pathSlot(attachment: PathAttachment2D | null): Slot2D {
 }
 
 function constraint(overrides: Partial<Skeleton2DPathConstraint> = {}): Skeleton2DPathConstraint {
-  const out = allocateEntity<PathAttachment2D>();
+  const out = allocateEntity<any>();
   out.boneIndices = [1];
   out.kind = Skeleton2DConstraintKind.Path as 'Skeleton2D.PathConstraint';
   out.mix = 1;

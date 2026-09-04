@@ -13,7 +13,7 @@ describe('attachMidiAccessStateSubscription', () => {
       listener.current = next;
       return {
         attachment: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.release = release;
           return finishEntity(out);
         })(),
@@ -115,7 +115,7 @@ describe('detachMidiAccessStateSubscription', () => {
       .mockResolvedValueOnce({ reason: 'ok' });
     const access = createAccess(async () => ({
       attachment: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.release = release;
         return finishEntity(out);
       })(),
@@ -144,7 +144,7 @@ describe('detachMidiAccessStateSubscription', () => {
     const detaching = requiredFunction('detachMidiAccessStateSubscription')(subscription);
     settle.current?.({
       attachment: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.release = release;
         return finishEntity(out);
       })(),
@@ -165,7 +165,7 @@ describe('detachMidiInputMessageSubscription', () => {
     const input = createInputPort({
       attachMessage: async () => ({
         attachment: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.release = release;
           return finishEntity(out);
         })(),
@@ -187,7 +187,7 @@ describe('detachMidiPortStateSubscription', () => {
     const port = createInputPort({
       attachStateChange: async () => ({
         attachment: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.release = release;
           return finishEntity(out);
         })(),
@@ -218,7 +218,7 @@ describe('disposeMidiAccessStateSubscription', () => {
     const disposing = requiredFunction('disposeMidiAccessStateSubscription')(subscription);
     settle.current?.({
       attachment: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.release = release;
         return finishEntity(out);
       })(),
@@ -247,7 +247,7 @@ describe('disposeMidiInputMessageSubscription', () => {
     const input = createInputPort({
       attachMessage: async () => ({
         attachment: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.release = release;
           return finishEntity(out);
         })(),
@@ -328,7 +328,7 @@ function requiredFunction(name: string): (...args: unknown[]) => unknown {
 }
 
 function successfulAttachment(): object {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.release = async () => ({ reason: 'ok' });
   return finishEntity(out);
 }

@@ -34,12 +34,12 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
     expect(
       applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.First';
           return finishEntity(out);
         })(),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Second';
           return finishEntity(out);
         })(),
@@ -64,7 +64,7 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
     expect(
       applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
           return finishEntity(out);
         })(),

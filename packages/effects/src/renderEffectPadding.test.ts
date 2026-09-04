@@ -32,7 +32,7 @@ describe('computeRenderEffectPadding', () => {
       computeRenderEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 1 }),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Pointwise';
           return finishEntity(out) as RenderEffect;
         })(),
@@ -42,7 +42,7 @@ describe('computeRenderEffectPadding', () => {
   });
 
   it('returns a zero sentinel for an unregistered kind', () => {
-    const effect = allocateEntity<unknown>();
+    const effect = allocateEntity<any>();
     effect.kind = 'acme.Missing';
     expect(computeRenderEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
   });
@@ -69,7 +69,7 @@ describe('computeRenderEffectPadding', () => {
       computeRenderEffectPadding(
         state,
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
           return finishEntity(out) as RenderEffect;
         })(),
@@ -93,7 +93,7 @@ describe('explainRenderEffectPadding', () => {
       explainRenderEffectPadding(state, [
         createBlurEffect({ blurX: 2, blurY: 3 }),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
           return finishEntity(out) as RenderEffect;
         })(),

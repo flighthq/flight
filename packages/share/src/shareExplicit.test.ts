@@ -4,7 +4,7 @@ import type { EntityRuntimeKey, HasShareContent, ShareContentBackend } from '@fl
 import { shareText } from './share';
 
 function createRecordingHost(label: string, calls: string[]): HasShareContent {
-  const content = allocateEntity<HasShareContent>();
+  const content = allocateEntity<any>();
   content.canShareContent = () => true;
   content.shareContent = async (payload) => {
     calls.push(`${label}:${payload.text ?? ''}`);

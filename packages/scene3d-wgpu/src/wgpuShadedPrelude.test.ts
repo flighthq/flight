@@ -113,7 +113,7 @@ describe('ensureWgpuShadedPipeline', () => {
   it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
     const { fake, state } = makeWgpuScene3DState();
     const modifier = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'acme.Replace';
       out.slot = ModifierSlot.Effect;
       return finishEntity(out) as Modifier;
@@ -216,13 +216,13 @@ describe('getWgpuShadedModuleSource', () => {
     };
     registerWgpuModifierSnippet(state, vendor);
     const registered = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'acme.Glow';
       out.slot = ModifierSlot.Effect;
       return finishEntity(out) as Modifier;
     })();
     const missing = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'acme.Missing';
       out.slot = ModifierSlot.Effect;
       return finishEntity(out) as Modifier;
@@ -265,7 +265,7 @@ describe('getWgpuShadedModuleSource', () => {
       });
       modifiers.push(
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = kind;
           out.slot = slots[i];
           return finishEntity(out) as Modifier;
@@ -297,13 +297,13 @@ describe('getWgpuShadedModuleSource', () => {
         createDissolveModifier({ threshold: 0.1 }),
         createDissolveModifier({ threshold: 0.2 }),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.DeclarationA';
           out.slot = ModifierSlot.Effect;
           return finishEntity(out) as Modifier;
         })(),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.DeclarationB';
           out.slot = ModifierSlot.Effect;
           return finishEntity(out) as Modifier;
@@ -438,7 +438,7 @@ describe('shaded binding cache', () => {
     const { fake, state } = makeWgpuScene3DState();
     let contributions = 0;
     const modifier = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'acme.Stable';
       out.slot = ModifierSlot.Effect;
       return finishEntity(out) as Modifier;

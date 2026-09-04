@@ -68,7 +68,7 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   const getFailures = new Map<string, StorageGetItemFailureReason>();
   const removeFailures = new Map<string, StorageRemoveItemFailureReason>();
   const setFailures = new Map<string, StorageSetItemFailureReason>();
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.clearFailure = null;
   out.data = data;
   out.getCalls = 0;
@@ -120,7 +120,7 @@ describe('attachStorage', () => {
     const released: string[] = [];
     const captured: { listener?: (change: Readonly<StorageChange>) => void } = {};
     const a = (() => {
-      const out = allocateEntity<HasStorageLocal>();
+      const out = allocateEntity<any>();
       out.destroy = () => {};
       out.subscribe = (listener: (change: Readonly<StorageChange>) => void) => {
         captured.listener = listener;
@@ -129,7 +129,7 @@ describe('attachStorage', () => {
       return finishEntity(out);
     })();
     const b = (() => {
-      const out = allocateEntity<HasStorageLocal>();
+      const out = allocateEntity<any>();
       out.destroy = () => {};
       out.subscribe = () => {
         return () => released.push('b');
@@ -150,7 +150,7 @@ describe('attachStorage', () => {
   });
 
   it('returns false and retains no cleanup when acquisition fails', () => {
-    const provider = allocateEntity<HasStorageLocal>();
+    const provider = allocateEntity<any>();
     provider.destroy = () => {};
     provider.subscribe = () => null;
     const signals = createStorageSignals();
@@ -209,7 +209,7 @@ describe('createStorageSignals', () => {
 describe('destroyStorage', () => {
   it('runs the explicit change-provider teardown', () => {
     let destroyed = 0;
-    const provider = allocateEntity<HasStorageLocal>();
+    const provider = allocateEntity<any>();
     provider.destroy = () => destroyed++;
     provider.subscribe = () => null;
     destroyStorage(changeHost(provider));
@@ -220,7 +220,7 @@ describe('destroyStorage', () => {
 describe('detachStorage', () => {
   it('is idempotent', () => {
     let released = 0;
-    const provider = allocateEntity<HasStorageLocal>();
+    const provider = allocateEntity<any>();
     provider.destroy = () => {};
     provider.subscribe = () => () => released++;
     const signals = createStorageSignals();

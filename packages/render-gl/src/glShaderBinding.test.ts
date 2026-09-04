@@ -13,7 +13,7 @@ import {
 import { createGlState } from './glTestHelper';
 
 function makeShader() {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.locations = {} as never;
   out.program = {} as never;
   out.bind = vi.fn();

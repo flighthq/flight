@@ -25,7 +25,7 @@ describe('isModifierStackValid', () => {
     const stack: Modifier[] = [
       createEmissiveModifier({ color: 0xffffffff }),
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Missing';
         out.slot = 'Effect';
         return finishEntity(out);

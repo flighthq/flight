@@ -165,7 +165,7 @@ describe('setNode2DClip', () => {
   });
 
   it('sets clip', () => {
-    const clip = allocateEntity<Node2DRuntime>();
+    const clip = allocateEntity<any>();
     clip.contours = null;
     clip.rect = { x: 0, y: 0, width: 100, height: 50 } as Rectangle;
     clip.winding = 'nonZero' as const;
@@ -184,7 +184,7 @@ describe('setNode2DClip', () => {
     setNode2DClip(
       obj,
       (() => {
-        const out = allocateEntity<Node2DRuntime>();
+        const out = allocateEntity<any>();
         out.contours = null;
         out.rect = { x: 0, y: 0, width: 10, height: 10 } as Rectangle;
         out.winding = 'nonZero' as const;
@@ -249,7 +249,7 @@ interface Node2DTestData extends Node2DData {
 }
 
 function createNode2DTestData(data?: Partial<Node2DTestData>): Node2DTestData {
-  const out = allocateEntity<Node2DRuntime>();
+  const out = allocateEntity<any>();
   out.foo = data?.foo ?? 'bar';
   return finishEntity(out);
 }

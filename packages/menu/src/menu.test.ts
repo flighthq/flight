@@ -202,7 +202,7 @@ describe('destroyMenuApplication', () => {
     return {
       menu: {
         application: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           Object.assign(out, provider);
           return finishEntity(out);
         })(),

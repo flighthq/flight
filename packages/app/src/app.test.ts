@@ -67,7 +67,7 @@ function createFixture() {
   };
   const subscribe = <Key extends keyof typeof listeners>(key: Key) =>
     (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.subscribe = (listener: NonNullable<(typeof listeners)[Key]>) => {
         listeners[key] = listener;
         return unsubscribes[key];
@@ -78,18 +78,18 @@ function createFixture() {
     app: {
       activate: subscribe('activate'),
       activationPolicy: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.setActivationPolicy = (policy: string) => calls.push(`policy:${policy}`);
         return finishEntity(out);
       })(),
       allWindowsClosed: subscribe('allWindowsClosed'),
       badge: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.setBadgeCount = async (count: number) => (calls.push(`badge:${count}`), true);
         return finishEntity(out);
       })(),
       dock: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.bounceDock = () => 17;
         out.cancelAttention = (id: number) => calls.push(`cancelAttention:${id}`);
         out.cancelDockBounce = (id: number) => calls.push(`cancelBounce:${id}`);
@@ -99,89 +99,89 @@ function createFixture() {
         return finishEntity(out);
       })(),
       focus: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.focus = () => calls.push('focus');
         return finishEntity(out);
       })(),
       hiddenQuery: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.isAppHidden = () => true;
         return finishEntity(out);
       })(),
       hide: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.hideApp = () => calls.push('hide');
         return finishEntity(out);
       })(),
       locale: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.getLocale = () => 'en-GB';
         out.getPreferredSystemLanguages = () => ['en-GB', 'fr'];
         out.getSystemLocale = () => 'en-US';
         return finishEntity(out);
       })(),
       loginItem: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.getLoginItem = () => ({ args: ['--start'], openAsHidden: true, openAtLogin: true, path: '/app' });
         out.setLoginItem = () => calls.push('loginItem');
         return finishEntity(out);
       })(),
       name: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.getName = () => 'Flight';
         return finishEntity(out);
       })(),
       nameWrite: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.setName = (name: string) => calls.push(`name:${name}`);
         return finishEntity(out);
       })(),
       openFile: subscribe('openFile'),
       path: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.getAppDirectoryPath = (kind: string) => `/app/${kind}`;
         out.getAppPath = () => '/app';
         out.getExecutablePath = () => '/app/flight';
         return finishEntity(out);
       })(),
       quit: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.quit = () => calls.push('quit');
         return finishEntity(out);
       })(),
       quitRequest: subscribe('quitRequest'),
       ready: subscribe('ready'),
       recentDocuments: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.addRecentDocument = (path: string) => calls.push(`recent:${path}`);
         out.clearRecentDocuments = () => calls.push('clearRecent');
         return finishEntity(out);
       })(),
       relaunch: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.relaunch = () => calls.push('relaunch');
         return finishEntity(out);
       })(),
       secondInstance: subscribe('secondInstance'),
       show: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.showApp = () => calls.push('show');
         return finishEntity(out);
       })(),
       singleInstance: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.hasSingleInstanceLock = () => true;
         out.releaseSingleInstanceLock = () => calls.push('releaseLock');
         out.requestSingleInstanceLock = () => true;
         return finishEntity(out);
       })(),
       userModelId: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.setUserModelId = (id: string) => calls.push(`userModel:${id}`);
         return finishEntity(out);
       })(),
       version: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.getVersion = () => '1.2.3';
         return finishEntity(out);
       })(),

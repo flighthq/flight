@@ -26,7 +26,7 @@ function host() {
   return {
     tray: {
       lifecycle: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.create = async (tray: TrayIcon) => {
           live.push(tray);
           return { outcome: 'created' as const };
@@ -40,7 +40,7 @@ function host() {
         return finishEntity(out);
       })(),
       image: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.set = async () => {
           return { outcome: 'updated' as const };
         };

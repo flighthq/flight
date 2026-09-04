@@ -90,7 +90,7 @@ function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuD
 
 function entityHostBackend(fields: Omit<WgpuHostBackend, keyof Entity>): WgpuHostBackend {
   return (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     Object.assign(out, fields);
     return finishEntity(out);
   })();
@@ -473,7 +473,7 @@ describe('createWgpuRenderState', () => {
   it('keeps exact caller-owned handles usable through every shared-state teardown', async () => {
     const owner = await createWgpuRenderStateForTest();
     const canvas = document.createElement('canvas');
-    const acquisition = allocateEntity<WgpuHostBackend>();
+    const acquisition = allocateEntity<any>();
     acquisition.context = owner.context;
     acquisition.device = owner.device;
     acquisition.format = owner.format;
@@ -1108,7 +1108,7 @@ describe('wgpu acquisition lifecycle', () => {
 });
 
 function ownerAcquisition(owner: WgpuPresentationRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
-  const out = allocateEntity<WgpuHostBackend>();
+  const out = allocateEntity<any>();
   out.context = owner.context;
   out.device = owner.device;
   out.format = owner.format;
@@ -1191,7 +1191,7 @@ describe('WgpuPresentationSurface', () => {
       },
     };
     const acquisition = (() => {
-      const out = allocateEntity<WgpuHostBackend>();
+      const out = allocateEntity<any>();
       out.context = owner.context;
       out.device = owner.device;
       out.format = owner.format;

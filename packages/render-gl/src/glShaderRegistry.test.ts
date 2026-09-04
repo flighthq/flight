@@ -9,7 +9,7 @@ describe('registerGlBitmapShader', () => {
     const { state } = createGlState();
     const loc = makeShaderLoc();
     const shader = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.bind = vi.fn();
       out.locations = loc;
       out.program = loc.program;

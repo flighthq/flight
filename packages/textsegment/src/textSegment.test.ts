@@ -63,7 +63,7 @@ function segmenterHost(segmenter: TextSegmenterBackend): HasTextSegmenter {
 }
 
 function taggingBackend(tag: string): TextSegmenterBackend {
-  const out = allocateEntity<HasTextSegmenter>();
+  const out = allocateEntity<any>();
   out.segment = () => [{ start: 0, end: tag.length, text: tag }];
   return finishEntity(out);
 }

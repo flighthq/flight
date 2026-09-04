@@ -51,7 +51,7 @@ describe('moveShellItemsToTrash', () => {
     const resolvers: Array<(outcome: { reason: 'ok' | 'operation-failed' }) => void> = [];
     const host = trashHost(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.moveToTrash = (path) => {
           paths.push(path);
           return new Promise((resolve) => resolvers.push(resolve));
@@ -81,7 +81,7 @@ describe('moveShellItemToTrash', () => {
       moveShellItemToTrash(
         trashHost(
           (() => {
-            const out = allocateEntity<unknown>();
+            const out = allocateEntity<any>();
             out.moveToTrash = moveToTrash;
             return finishEntity(out);
           })(),
@@ -106,7 +106,7 @@ describe('openShellExternalUrl', () => {
     const open = vi.fn(async () => ({ reason: 'ok' as const }));
     const host = externalHost(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.open = open;
         return finishEntity(out);
       })(),
@@ -121,7 +121,7 @@ describe('openShellExternalUrl', () => {
     const calls: string[] = [];
     const first = externalHost(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.open = async (url) => {
           calls.push(`first:${url}`);
           return { reason: 'ok' };
@@ -131,7 +131,7 @@ describe('openShellExternalUrl', () => {
     );
     const second = externalHost(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.open = async (url) => {
           calls.push(`second:${url}`);
           return { reason: 'operation-failed' };
@@ -149,7 +149,7 @@ describe('openShellExternalUrl', () => {
 
 describe('openShellPath', () => {
   it('preserves a provider failure and its message', async () => {
-    const provider = allocateEntity<unknown>();
+    const provider = allocateEntity<any>();
     provider.open = async () => {
       return { message: '', reason: 'operation-failed' as const };
     };
@@ -177,7 +177,7 @@ describe('revealShellPath', () => {
       revealShellPath(
         pathRevealHost(
           (() => {
-            const out = allocateEntity<unknown>();
+            const out = allocateEntity<any>();
             out.reveal = reveal;
             return finishEntity(out);
           })(),
@@ -196,7 +196,7 @@ describe('shellBeep', () => {
     shellBeep(
       beepHost(
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.beep = beep;
           return finishEntity(out);
         })(),
@@ -219,7 +219,7 @@ describe('spawnShellProcess', () => {
     const spawn = vi.fn(() => process);
     const host = processHost(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.spawn = spawn;
         return finishEntity(out);
       })(),
@@ -269,7 +269,7 @@ function processHost(process: ShellProcessBackend): ShellProcessHost {
 }
 
 function shellProcess(): ShellProcess {
-  const out = allocateEntity<HasShellBeep>();
+  const out = allocateEntity<any>();
   out.exit = Promise.resolve({ code: 0, signal: null });
   out.stderr = new ReadableStream<Uint8Array>();
   out.stdin = new WritableStream<Uint8Array>();
@@ -283,7 +283,7 @@ function shortcutLinkHost(shortcutLink: ShellShortcutLinkBackend): HasShellShort
 }
 
 function shortcutLinkProvider(): ShellShortcutLinkBackend & { write: ReturnType<typeof vi.fn> } {
-  const out = allocateEntity<HasShellBeep>();
+  const out = allocateEntity<any>();
   out.read = async () => {
     return { link: { target: '/app' }, reason: 'ok' };
   };

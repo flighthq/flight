@@ -23,7 +23,7 @@ describe('enableCommandHistorySignals', () => {
     executeCommand(
       history,
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.Counter';
         out.label = 'One';
         return finishEntity(out);
@@ -42,7 +42,7 @@ describe('enableCommandHistorySignals', () => {
     executeCommand(
       history,
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Unbound';
         out.label = 'Nope';
         return finishEntity(out);

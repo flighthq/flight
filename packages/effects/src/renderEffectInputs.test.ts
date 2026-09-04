@@ -37,7 +37,7 @@ describe('getRenderEffectInputs', () => {
     expect(
       getRenderEffectInputs(
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.UnknownEffect';
           return finishEntity(out) as never;
         })(),
