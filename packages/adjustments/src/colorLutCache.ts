@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorLut, ColorLutCache, ColorTransformFunction } from '@flighthq/types/contract';
 
 import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE } from './colorLut';
@@ -39,7 +39,10 @@ export function bakeColorLutForRun(
 // Allocates an empty bake memo (no baked LUT yet). The effect pipeline owns one and passes it to
 // bakeColorLutForRun each frame; it is plain GC-managed memory, so resetting it is dropping the object.
 export function createColorLutCache(): ColorLutCache {
-  return createEntity({ signature: null, lut: null });
+  const out = allocateEntity<ColorLutCache>();
+  out.signature = null;
+  out.lut = null;
+  return finishEntity(out);
 }
 
 // Content signature of a run for cache keying: the per-axis size plus each op's serialized data fields.

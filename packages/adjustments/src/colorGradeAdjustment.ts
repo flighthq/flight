@@ -1,5 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorGradeAdjustment, ColorTransformFunction, EntityRuntimeKey } from '@flighthq/types/contract';
+
+import { initializeColorLutAdjustment } from './colorLutAdjustment';
 
 // The full color grade as one LUT-tier adjustment. The exposure/brightness/temperature/tint/saturation/
 // contrast scene2d is ported faithfully from the old colorGradeEffect shader; a lift/gamma/gain scene2d
@@ -43,7 +45,18 @@ export function createColorGradeAdjustment(
     out[1] = clamp01(cg);
     out[2] = clamp01(cb);
   };
-  return createEntity({ kind: 'ColorGradeAdjustment', ...options, transform });
+  const out = allocateEntity<ColorGradeAdjustment>();
+  initializeColorLutAdjustment(out, 'ColorGradeAdjustment', transform);
+  out.exposure = options.exposure ?? 0;
+  out.brightness = options.brightness ?? 0;
+  out.contrast = options.contrast ?? 1;
+  out.saturation = options.saturation ?? 1;
+  out.temperature = options.temperature ?? 0;
+  out.tint = options.tint ?? 0;
+  out.lift = options.lift ?? 0x000000ff;
+  out.gamma = options.gamma ?? 0x808080ff;
+  out.gain = options.gain ?? 0xffffffff;
+  return finishEntity(out);
 }
 
 function clamp01(v: number): number {

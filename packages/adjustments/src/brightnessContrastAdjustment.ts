@@ -1,5 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { BrightnessContrastAdjustment, EntityRuntimeKey } from '@flighthq/types/contract';
+
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
 
 // Brightness/contrast as a matrix-tier adjustment. Reproduces the prior full-frame shader
 // `rgb = (rgb + brightness − 0.5)·contrast + 0.5` (a shift by brightness, then scale about mid-grey 0.5).
@@ -22,5 +24,9 @@ export function createBrightnessContrastAdjustment(
     0, 0, s, 0, o,
     0, 0, 0, 1, 0,
   ];
-  return createEntity({ kind: 'BrightnessContrastAdjustment', ...options, colorMatrix });
+  const out = allocateEntity<BrightnessContrastAdjustment>();
+  initializeColorMatrixAdjustment(out, 'BrightnessContrastAdjustment', colorMatrix);
+  out.brightness = brightness;
+  out.contrast = contrast;
+  return finishEntity(out);
 }

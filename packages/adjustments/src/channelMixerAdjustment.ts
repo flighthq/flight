@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ChannelMixerAdjustment, EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
 import { createChannelMixerColorMatrix } from './colorMatrixMath';
 
 // Channel mixer as a matrix-tier adjustment. `matrix` is the prior effect's 3×4 row-major RGB→RGB mix
@@ -18,7 +19,10 @@ export function createChannelMixerAdjustment(
   colorMatrix[4] = m(3);
   colorMatrix[9] = m(7);
   colorMatrix[14] = m(11);
-  return createEntity({ kind: 'ChannelMixerAdjustment', ...options, matrix, colorMatrix });
+  const out = allocateEntity<ChannelMixerAdjustment>();
+  initializeColorMatrixAdjustment(out, 'ChannelMixerAdjustment', colorMatrix);
+  out.matrix = matrix;
+  return finishEntity(out);
 }
 
 const IDENTITY_CHANNEL_MIXER: readonly number[] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];

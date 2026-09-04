@@ -1,5 +1,11 @@
-import type { ColorLutAdjustment, ColorTransformFunction } from '@flighthq/types/contract';
+import type {
+  AdjustmentKind,
+  ColorLutAdjustment,
+  ColorTransformFunction,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 
+import { initializeAdjustment } from './adjustment';
 import { getAdjustmentColorMatrix } from './colorMatrixAdjustment';
 
 // Returns the rgb→rgb transform a pointwise adjustment contributes to a baked LUT, or null if it is not
@@ -12,6 +18,15 @@ export function getAdjustmentColorTransform(operation: Readonly<{ kind: string }
   if (typeof transform === 'function') return transform;
   const matrix = getAdjustmentColorMatrix(operation);
   return matrix === null ? null : colorMatrixTransform(matrix);
+}
+
+export function initializeColorLutAdjustment<T extends ColorLutAdjustment>(
+  out: EntityConstruction<T>,
+  kind: AdjustmentKind,
+  transform: ColorTransformFunction,
+): void {
+  initializeAdjustment(out, kind);
+  out.transform = transform;
 }
 
 // Type guard: true when `operation` carries a nonlinear rgb→rgb transform (LUT-tier). Matrix-tier

@@ -1,5 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, GrayscaleAdjustment } from '@flighthq/types/contract';
+
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
 
 // Luma desaturation as a matrix-tier adjustment. `mix(rgb, vec3(luma), intensity)` with ITU-R BT.709
 // weights is a full affine 3×3 (no offset); alpha is unchanged. At intensity 1 every channel becomes
@@ -20,5 +22,8 @@ export function createGrayscaleAdjustment(
     lr, lg, j + lb, 0, 0,
     0, 0, 0, 1, 0,
   ];
-  return createEntity({ kind: 'GrayscaleAdjustment', ...options, colorMatrix });
+  const out = allocateEntity<GrayscaleAdjustment>();
+  initializeColorMatrixAdjustment(out, 'GrayscaleAdjustment', colorMatrix);
+  out.intensity = intensity;
+  return finishEntity(out);
 }
