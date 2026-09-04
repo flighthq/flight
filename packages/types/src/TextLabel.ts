@@ -1,11 +1,10 @@
-import type { Entity } from './Entity';
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormat } from './TextFormat';
 import type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from './TextLayout';
 import type { TextVerticalAlign } from './TextVerticalAlign';
 
-export interface TextLabelData extends Node2DData, Entity {
+export interface TextLabelData extends Node2DData {
   autoSize: TextAutoSize;
   height: number;
   text: string;

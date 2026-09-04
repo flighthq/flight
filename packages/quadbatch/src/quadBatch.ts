@@ -5,7 +5,6 @@ import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/s
 import { createSignal } from '@flighthq/signals/contract';
 import type {
   MethodsOf,
-  NonEntityCreateResult,
   Node,
   PartialNode,
   QuadBatch,
@@ -192,17 +191,15 @@ export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBat
   return createNode2D(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
 }
 
-export function createQuadBatchData(
-  data?: Readonly<Partial<QuadBatchData>>,
-): NonEntityCreateResult<QuadBatchData, 'descriptor'> {
-  return {
+export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
+  return createEntity({
     atlas: data?.atlas ?? null,
     ids: data?.ids ?? new Uint16Array(),
     instanceCount: data?.instanceCount ?? 0,
     materialData: data?.materialData ?? null,
     transforms: data?.transforms ?? new Float32Array(),
     transformType: data?.transformType ?? 'vector2',
-  };
+  });
 }
 
 export function createQuadBatchRuntime(): QuadBatchRuntime {

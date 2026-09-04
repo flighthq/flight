@@ -7,7 +7,7 @@ declare const NodeTraitsKey: unique symbol;
 export type NodeTraitsKey<T extends object> = symbol & {
   readonly [NodeTraitsKey]?: T;
 };
-export type NodeData = object;
+export interface NodeData extends Entity {}
 export type NodeDataFactory<D extends NodeData> = (obj?: Readonly<Partial<D>>) => D;
 export type NodeRuntimeFactory<R extends EntityRuntime> = (obj?: Readonly<Partial<R>>) => R;
 export interface NodeTraits {

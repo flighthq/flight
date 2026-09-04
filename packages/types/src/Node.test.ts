@@ -1,7 +1,7 @@
 import type { Entity, EntityRuntime } from './Entity';
 import type { EntityRuntimeKey } from './Entity';
 import type { Transform2DNode } from './HasTransform2D';
-import type { Node, NodeAny, NodeRuntime, NodeTraits } from './Node';
+import type { Node, NodeAny, NodeData, NodeRuntime, NodeTraits } from './Node';
 import { NodeKind } from './Node';
 
 describe('Node', () => {
@@ -13,8 +13,11 @@ describe('Node', () => {
 
   describe('NodeOf', () => {
     it('intersects Node<Traits> with Traits', () => {
+      interface MyData extends NodeData {
+        score: number;
+      }
       interface MyTraits extends NodeTraits {
-        data: { score: number } | null;
+        data: MyData | null;
         enabled: boolean;
         kind: 'MyNode';
         name: string | null;

@@ -50,6 +50,7 @@ import type {
   MovieClip,
   MovieClipData,
   Node2D,
+  NodeData,
   Node2DData,
   Node2DRuntime,
   Node2DTraits,
@@ -249,7 +250,7 @@ interface SwfRectangle {
   y: number;
 }
 
-interface SwfAuthoredBoundsData {
+interface SwfAuthoredBoundsData extends NodeData {
   authoredBounds: SwfRectangle;
 }
 

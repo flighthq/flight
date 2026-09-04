@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import {
   addTimelineFrameScript,
@@ -21,7 +22,6 @@ import type {
   MovieClipData,
   MovieClipRuntime,
   MovieClipSignals,
-  NonEntityCreateResult,
   PartialNode,
   TimelineLabel,
   TimelineSource,
@@ -39,12 +39,10 @@ export function createMovieClip(obj?: Readonly<PartialNode<MovieClip>>): MovieCl
   return createNode2D(MovieClipKind, obj, createMovieClipData, createMovieClipRuntime) as MovieClip;
 }
 
-export function createMovieClipData(
-  data?: Readonly<Partial<MovieClipData>>,
-): NonEntityCreateResult<MovieClipData, 'descriptor'> {
-  return {
+export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): MovieClipData {
+  return createEntity({
     timeline: data?.timeline ?? null,
-  };
+  });
 }
 
 export function createMovieClipRuntime(): MovieClipRuntime {
