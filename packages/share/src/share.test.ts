@@ -26,14 +26,11 @@ import {
   shareUrl,
 } from './share';
 
-type ContentImplementation = Omit<ShareContentBackend, typeof EntityRuntimeKey>;
-type FilesImplementation = Omit<ShareFilesBackend, typeof EntityRuntimeKey>;
-
-function contentHost(overrides: Partial<ContentImplementation> = {}): HasShareContent {
+function contentHost(overrides: Partial<ShareContentBackend> = {}): HasShareContent {
   return {
     share: {
       content: (() => {
-        const out = allocateEntity<ContentImplementation>();
+        const out = allocateEntity<ShareContentBackend>();
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });
@@ -44,11 +41,11 @@ function contentHost(overrides: Partial<ContentImplementation> = {}): HasShareCo
   };
 }
 
-function filesHost(overrides: Partial<FilesImplementation> = {}): HasShareFiles {
+function filesHost(overrides: Partial<ShareFilesBackend> = {}): HasShareFiles {
   return {
     share: {
       files: (() => {
-        const out = allocateEntity<FilesImplementation>();
+        const out = allocateEntity<ShareFilesBackend>();
         out.canShareContent = () => true;
         out.shareContent = async () => true;
         out.shareContentWithResult = async () => ({ activityType: null, completed: true, dismissed: false });

@@ -217,7 +217,7 @@ describe('detachConnectivity', () => {
 describe('detectConnectivityReachability', () => {
   it('dispatches reachability only to the supplied reachability slot', async () => {
     let calls = 0;
-    const reachability = allocateEntity<any>();
+    const reachability = allocateEntity<ConnectivityReachabilityBackend>();
     reachability.detectReachability = async (_options, out) => {
       calls++;
       out.latency = 7;

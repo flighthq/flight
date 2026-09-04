@@ -1,6 +1,6 @@
 import { createAudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
+import type { AudioDeviceBackend, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
   connectAudioChannelToNode,
@@ -208,7 +208,7 @@ describe('fadeAudioChannelGain', () => {
   });
 
   it('falls back to setSourceGain when no web nodes are available', () => {
-    const plainMock = allocateEntity<any>();
+    const plainMock = allocateEntity<AudioDeviceBackend>();
     plainMock.createBuffer = vi.fn().mockReturnValue(1);
     plainMock.createDevice = vi.fn().mockReturnValue(1);
     plainMock.createSource = vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle);
@@ -291,7 +291,7 @@ describe('hasAudioChannelFade', () => {
   });
 
   it('returns false when no web backend is active', () => {
-    const plainBackend = allocateEntity<any>();
+    const plainBackend = allocateEntity<AudioDeviceBackend>();
     plainBackend.createBuffer = vi.fn().mockReturnValue(1);
     plainBackend.createDevice = vi.fn().mockReturnValue(1);
     plainBackend.createSource = vi.fn().mockReturnValue(1);
@@ -316,7 +316,7 @@ describe('hasAudioChannelNodeAccess', () => {
   });
 
   it('returns false when no web backend is active', () => {
-    const plainBackend = allocateEntity<any>();
+    const plainBackend = allocateEntity<AudioDeviceBackend>();
     plainBackend.createBuffer = vi.fn().mockReturnValue(1);
     plainBackend.createDevice = vi.fn().mockReturnValue(1);
     plainBackend.createSource = vi.fn().mockReturnValue(1);
@@ -605,7 +605,7 @@ describe('setAudioChannelPan', () => {
   });
 
   it('survives a backend with no web node access', () => {
-    const plainMock = allocateEntity<any>();
+    const plainMock = allocateEntity<AudioDeviceBackend>();
     plainMock.createBuffer = vi.fn().mockReturnValue(1);
     plainMock.createDevice = vi.fn().mockReturnValue(1);
     plainMock.createSource = vi.fn(() => 1 as unknown as AudioSourceHandle);

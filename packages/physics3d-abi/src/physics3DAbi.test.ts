@@ -17,6 +17,8 @@ import {
 } from '@flighthq/physics3d/contract';
 import type {
   CollisionColliderShape3D,
+  CollisionHeightfield3D,
+  CollisionTriangleMesh3D,
   Physics3DAbi,
   Physics3DAbiBodyBuffer,
   Physics3DAbiCommandBuffer,
@@ -611,7 +613,7 @@ function getColliderShapes(): CollisionColliderShape3D[] {
     { kind: 'cone', apexX: 0, apexY: 1, apexZ: 0, baseX: 0, baseY: -1, baseZ: 0, radius: 1 },
     { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] },
     (() => {
-      const out = allocateEntity<void>();
+      const out = allocateEntity<CollisionTriangleMesh3D>();
       out.kind = 'triangle-mesh';
       out.version = 0;
       out.x = 0;
@@ -626,7 +628,7 @@ function getColliderShapes(): CollisionColliderShape3D[] {
       return finishEntity(out);
     })(),
     (() => {
-      const out = allocateEntity<void>();
+      const out = allocateEntity<CollisionHeightfield3D>();
       out.kind = 'heightfield';
       out.columns = 2;
       out.rows = 2;

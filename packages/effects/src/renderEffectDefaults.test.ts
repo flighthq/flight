@@ -48,6 +48,7 @@ describe('normalizeRenderEffect', () => {
       out.kind = 'BloomEffect';
       return finishEntity(out) as BloomEffect;
     })();
+    const ok = normalizeRenderEffect(effect, out);
     expect(ok).toBe(true);
     expect(out.threshold).toBe(0.9); // preserved
     expect((out as unknown as Record<string, unknown>).brightness).toBe(1); // filled from defaults
@@ -60,6 +61,7 @@ describe('normalizeRenderEffect', () => {
       out.kind = 'BloomEffect';
       return finishEntity(out) as BloomEffect;
     })();
+    normalizeRenderEffect(effect, out);
     expect(out.threshold).toBe(0); // 0 is explicit, should not be replaced by default 0.8
   });
   it('carries over fields not in the defaults table', () => {
@@ -69,13 +71,22 @@ describe('normalizeRenderEffect', () => {
       out.kind = 'VignetteEffect';
       return finishEntity(out) as VignetteEffect;
     })();
+    normalizeRenderEffect(effect, out);
     expect(out.intensity).toBe(0.3);
     expect(out.radius).toBe(1);
     expect(out.softness).toBe(0.5);
   });
   it('returns false for unknown kind', () => {
-    const effect = allocateEntity<any>();
-    effect.kind = 'acme.UnknownEffect';
+    const effect = (() => {
+      const e = allocateEntity<any>();
+      e.kind = 'acme.UnknownEffect';
+      return finishEntity(e) as RenderEffect;
+    })();
+    const out = (() => {
+      const o = allocateEntity<any>();
+      o.kind = 'acme.UnknownEffect';
+      return finishEntity(o) as RenderEffect;
+    })();
     expect(normalizeRenderEffect(effect, out)).toBe(false);
   });
   it('is alias-safe when out === effect', () => {

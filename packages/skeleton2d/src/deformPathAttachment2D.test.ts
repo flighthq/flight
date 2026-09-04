@@ -172,7 +172,7 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('writes nothing for a rigid path with no setup vertices rather than throwing', () => {
     const skeleton = createSkeleton2D([makeBone()]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment = allocateEntity<any>();
+    const attachment = allocateEntity<PathAttachment2D>();
     attachment.commands = [];
     attachment.kind = PathAttachment2DKind;
     attachment.pointCount = 0;

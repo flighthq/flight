@@ -6,6 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { createSkin2D } from './skin2D';
 import { getSkeleton2DSlotDeformOffsets, setSkeleton2DSlotDeform } from './slotDeform2D';
 
+function slot(attachment: Attachment2D | null): Slot2D {
+  return { attachment, boneIndex: 0, color: 0xffffffff, name: 's' };
+}
+
 function mesh(pointCount: number): MeshAttachment2D {
   const skin: Skin2D = createSkin2D(new Uint16Array(pointCount).fill(1), new Float32Array(pointCount * 4));
   const out = allocateEntity<MeshAttachment2D>();

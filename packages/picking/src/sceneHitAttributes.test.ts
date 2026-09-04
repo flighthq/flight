@@ -3,7 +3,7 @@ import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geom
 import { createMeshGeometry, createMeshGeometryFromAttributes, setMeshGeometrySubsets } from '@flighthq/mesh/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh } from '@flighthq/scene3d/contract';
-import type { Mesh, Scene3DHit, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { Material, Mesh, Scene3DHit, VertexAttributeLayout } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DHit } from './pickScene3D';
@@ -53,7 +53,7 @@ describe('empty Scene3DHit attribute queries', () => {
 describe('getScene3DHitMaterial', () => {
   it('returns the subset material or null for the default slot', () => {
     const hit = attributedHit();
-    const material = allocateEntity<any>();
+    const material = allocateEntity<Material>();
     material.kind = 'TestMaterial';
     hit.node.materials = [material];
     expect(getScene3DHitMaterial(hit)).toBe(material);

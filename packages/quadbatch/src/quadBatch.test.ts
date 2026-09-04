@@ -3,6 +3,7 @@ import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
+  Entity,
   MaterialData,
   QuadBatch,
   QuadTransformType,

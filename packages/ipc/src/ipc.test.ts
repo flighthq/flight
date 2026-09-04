@@ -74,8 +74,8 @@ function operationHost(): HasIpcHandle &
     invocations,
     ipc: {
       handle: (() => {
-        const out = allocateEntity<any>();
-        out.handle = (channel, handler) => {
+        const out = allocateEntity<IpcHandleBackend>();
+        out.handle = (channel: string, handler: (...args: readonly unknown[]) => unknown | Promise<unknown>) => {
           handlers.set(channel, handler);
           return () => {
             if (handlers.get(channel) === handler) handlers.delete(channel);
@@ -84,23 +84,23 @@ function operationHost(): HasIpcHandle &
         return finishEntity(out);
       })(),
       invoke: (() => {
-        const out = allocateEntity<any>();
-        out.invoke = (channel, args) => {
+        const out = allocateEntity<IpcInvokeBackend>();
+        out.invoke = (channel: string, args: readonly unknown[]) => {
           invocations.push({ args, channel });
           return Promise.resolve({ args, channel });
         };
         return finishEntity(out);
       })(),
       send: (() => {
-        const out = allocateEntity<any>();
-        out.send = (channel, args) => {
+        const out = allocateEntity<IpcSendBackend>();
+        out.send = (channel: string, args: readonly unknown[]) => {
           sent.push({ args, channel });
         };
         return finishEntity(out);
       })(),
       targetedSend: (() => {
-        const out = allocateEntity<any>();
-        out.send = (target, channel, args) => {
+        const out = allocateEntity<IpcTargetedSendBackend<TestIpcTarget>>();
+        out.send = (target: TestIpcTarget, channel: string, args: readonly unknown[]) => {
           sentTo.push({ args, channel, target });
         };
         return finishEntity(out);
@@ -172,8 +172,8 @@ describe('onceIpcMessage', () => {
     const host: HasIpcMessage = {
       ipc: {
         message: (() => {
-          const out = allocateEntity<any>();
-          out.subscribe = (_channel, listener): (() => void) => {
+          const out = allocateEntity<IpcMessageBackend>();
+          out.subscribe = (_channel: string, listener: (args: readonly unknown[]) => void): (() => void) => {
             listener([42]);
             return () => (released = true);
           };

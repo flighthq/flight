@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, WgpuHostBackend } from '@flighthq/types/contract';
+import type { Entity, WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -27,7 +27,7 @@ function fakeBackend(): WgpuHostBackend {
 
 function entityBackend(fields: Omit<WgpuHostBackend, keyof Entity>): WgpuHostBackend {
   return (() => {
-    const out = allocateEntity<any>();
+    const out = allocateEntity<WgpuHostBackend>();
     Object.assign(out, fields);
     return finishEntity(out);
   })();
@@ -60,7 +60,7 @@ describe('createWebWgpuHostBackend', () => {
   it('tears down whatever it is handed, leaving the ownership decision to the caller', async () => {
     const backend = createWebWgpuHostBackend();
     const acquired = await backend.acquire(document.createElement('canvas'), {});
-    const acquisition = allocateEntity<any>();
+    const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'caller' as const;
     const unconfigure = vi.spyOn(acquisition.context, 'unconfigure');
@@ -122,7 +122,7 @@ describe('setWgpuHostBackend', () => {
     const acquired = await web.acquire(document.createElement('canvas'), {});
     // Flight-owned: the state acquired these, so destroying it releases them. The caller-owned case is the
     // opposite assertion and lives in its own test below.
-    const acquisition = allocateEntity<any>();
+    const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'flight' as const;
     const backend = entityBackend({
@@ -148,7 +148,7 @@ describe('setWgpuHostBackend', () => {
   it('releases flight-owned handles through the selected backend when initialization fails', async () => {
     const web = createWebWgpuHostBackend();
     const acquired = await web.acquire(document.createElement('canvas'), {});
-    const acquisition = allocateEntity<any>();
+    const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'flight' as const;
     const configure = vi.spyOn(acquisition.context, 'configure').mockImplementationOnce(() => {
@@ -176,7 +176,7 @@ describe('setWgpuHostBackend', () => {
   it('O2: never releases caller-owned handles when initialization fails, whatever the backend does', async () => {
     const web = createWebWgpuHostBackend();
     const acquired = await web.acquire(document.createElement('canvas'), {});
-    const acquisition = allocateEntity<any>();
+    const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'caller' as const;
     const configure = vi.spyOn(acquisition.context, 'configure').mockImplementationOnce(() => {
@@ -209,7 +209,7 @@ describe('setWgpuHostBackend', () => {
   it('O1: never releases caller-owned handles when the state is destroyed', async () => {
     const web = createWebWgpuHostBackend();
     const acquired = await web.acquire(document.createElement('canvas'), {});
-    const acquisition = allocateEntity<any>();
+    const acquisition = allocateEntity<WgpuHostAcquisition>();
     Object.assign(acquisition, acquired);
     acquisition.ownership = 'caller' as const;
     const destroy = vi.spyOn(acquisition.device, 'destroy');
