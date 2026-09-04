@@ -1,4 +1,5 @@
 import { createTintAdjustment } from '@flighthq/adjustments/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -34,7 +35,7 @@ describe('enableColorAdjustmentGuards', () => {
     enableColorAdjustmentGuards(state);
     enableColorAdjustments(state);
     const node = createDisplayObject();
-    const lut: Adjustment = { kind: 'acme.Lut' };
+    const lut = createEntity({ kind: 'acme.Lut' }) as Adjustment;
     setNodeColorAdjustments(node, [lut]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);

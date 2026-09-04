@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, Skeleton2DConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -28,7 +29,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function constraint(kind: string): Skeleton2DConstraint {
-  return { kind, mix: 1 };
+  return createEntity({ kind, mix: 1 }) as Skeleton2DConstraint;
 }
 
 // The registry is a module GLOBAL, deliberately: last-write-wins is what lets a caller replace a built-in
@@ -100,7 +101,7 @@ describe('solveSkeleton2DConstraints', () => {
       seen = value;
     });
     const skeleton = createSkeleton2D([makeBone()]);
-    const rope = { kind: 'acme.Rope', mix: 0.25, slack: 3 };
+    const rope = createEntity({ kind: 'acme.Rope', mix: 0.25, slack: 3 }) as Skeleton2DConstraint;
 
     solveSkeleton2DConstraints(skeleton, [rope]);
     unregisterSkeleton2DConstraintSolver('acme.Rope');

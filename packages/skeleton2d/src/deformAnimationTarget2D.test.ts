@@ -1,4 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, Skeleton2DAnimationTargetKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -32,14 +33,14 @@ function makeBone(): Bone2D {
 
 function mesh(pointCount: number): MeshAttachment2D {
   const skin: Skin2D = createSkin2D(new Uint16Array(pointCount).fill(1), new Float32Array(pointCount * 4));
-  return {
+  return createEntity({
     kind: MeshAttachment2DKind,
     skin,
     triangles: new Uint16Array(),
     uvs: new Float32Array(pointCount * 2),
     vertexCount: pointCount,
     vertices: null,
-  };
+  }) as MeshAttachment2D;
 }
 
 function rig(attachment: MeshAttachment2D | null): {

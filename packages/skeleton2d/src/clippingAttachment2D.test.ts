@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, ClippingAttachment2D } from '@flighthq/types/contract';
 import { ClippingAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -26,13 +27,13 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function clip(endSlotIndex: number, vertices: Float32Array | null = null): ClippingAttachment2D {
-  return {
+  return createEntity({
     endSlotIndex,
     kind: ClippingAttachment2DKind,
     pointCount: vertices === null ? 0 : vertices.length / 2,
     skin: null,
     vertices,
-  };
+  }) as ClippingAttachment2D;
 }
 
 describe('computeSkeleton2DClippingAttachmentVertices', () => {

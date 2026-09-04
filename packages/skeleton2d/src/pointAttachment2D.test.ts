@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, PointAttachment2D } from '@flighthq/types/contract';
 import { PointAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -26,7 +27,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function point(x: number, y: number, rotation: number): PointAttachment2D {
-  return { kind: PointAttachment2DKind, rotation, x, y };
+  return createEntity({ kind: PointAttachment2DKind, rotation, x, y }) as PointAttachment2D;
 }
 
 describe('computeSkeleton2DPointAttachmentPosition', () => {

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
   SpritesheetFormatKindAseprite,
   SpritesheetFormatKindCocosPlist,
@@ -124,7 +125,7 @@ describe('getSpritesheetFormat', () => {
     const detect = (text: string) => text.startsWith('GFT:');
     registerSpritesheetFormat(kind, {
       detect,
-      parse: () => ({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
+      parse: () => createEntity({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
     });
     const entry = getSpritesheetFormat(kind);
     unregisterSpritesheetFormat(kind);
@@ -138,7 +139,7 @@ describe('getSpritesheetFormatKinds', () => {
     const kind = 'test.Enumeration';
     registerSpritesheetFormat(kind, {
       detect: () => false,
-      parse: () => ({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
+      parse: () => createEntity({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
     });
     expect(getSpritesheetFormatKinds()).toEqual([
       SpritesheetFormatKindAseprite,
@@ -210,29 +211,30 @@ describe('registerSpritesheetFormat', () => {
     const customKind = 'test.CustomFormat';
     registerSpritesheetFormat(customKind, {
       detect: (text) => text.startsWith('CUSTOM:'),
-      parse: () => ({
-        animations: [],
-        frames: [
-          {
-            height: 10,
-            name: 'custom',
-            offsetX: 0,
-            offsetY: 0,
-            pivotX: null,
-            pivotY: null,
-            rotated: false,
-            sourceHeight: 10,
-            sourceWidth: 10,
-            width: 10,
-            x: 0,
-            y: 0,
-          },
-        ],
-        imageFile: 'custom.png',
-        imageHeight: 10,
-        imageWidth: 10,
-        scale: 1,
-      }),
+      parse: () =>
+        createEntity({
+          animations: [],
+          frames: [
+            createEntity({
+              height: 10,
+              name: 'custom',
+              offsetX: 0,
+              offsetY: 0,
+              pivotX: null,
+              pivotY: null,
+              rotated: false,
+              sourceHeight: 10,
+              sourceWidth: 10,
+              width: 10,
+              x: 0,
+              y: 0,
+            }),
+          ],
+          imageFile: 'custom.png',
+          imageHeight: 10,
+          imageWidth: 10,
+          scale: 1,
+        }),
     });
 
     expect(detectSpritesheetFormat('CUSTOM: data here')).toBe(customKind);
@@ -274,7 +276,7 @@ describe('unregisterSpritesheetFormat', () => {
     const kind = 'test.RemovedFormat';
     registerSpritesheetFormat(kind, {
       detect: (text) => text.startsWith('REMOVED:'),
-      parse: () => ({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
+      parse: () => createEntity({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
     });
 
     unregisterSpritesheetFormat(kind);

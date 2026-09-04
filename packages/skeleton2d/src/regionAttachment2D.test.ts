@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Bone2D, RegionAttachment2D } from '@flighthq/types/contract';
 import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -23,7 +24,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function region(overrides: Partial<RegionAttachment2D> = {}): RegionAttachment2D {
-  return {
+  return createEntity({
     kind: RegionAttachment2DKind,
     height: 2,
     rotation: 0,
@@ -33,7 +34,7 @@ function region(overrides: Partial<RegionAttachment2D> = {}): RegionAttachment2D
     x: 0,
     y: 0,
     ...overrides,
-  };
+  }) as RegionAttachment2D;
 }
 
 describe('computeSkeleton2DRegionAttachmentVertices', () => {

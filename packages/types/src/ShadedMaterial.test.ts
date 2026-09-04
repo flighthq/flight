@@ -15,12 +15,18 @@ describe('ShadedMaterial', () => {
   describe('composable base material', () => {
     it('carries an ordered modifier stack across slots', () => {
       const emissive: EmissiveModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'EmissiveModifier',
         slot: 'Emissive',
         color: 0xffdd88ff,
         strength: 2,
       };
-      const rim: RimModifier = { kind: 'RimModifier', slot: 'Effect', color: 0x88bbffff };
+      const rim: RimModifier = {
+        [EntityRuntimeKey]: undefined,
+        kind: 'RimModifier',
+        slot: 'Effect',
+        color: 0x88bbffff,
+      };
 
       const material: ShadedMaterial = {
         [EntityRuntimeKey]: undefined,

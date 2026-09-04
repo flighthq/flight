@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity/contract';
 import type { Adjustment, ColorScaleBias } from '@flighthq/types/contract';
 
 import {
@@ -12,7 +13,7 @@ import { createColorMatrixAdjustment } from './colorMatrixAdjustment';
 import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath';
 
 function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBias {
-  return {
+  return createEntity({
     redScale: 1,
     greenScale: 1,
     blueScale: 1,
@@ -22,7 +23,7 @@ function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBia
     blueBias: 0,
     alphaBias: 0,
     ...fields,
-  } as ColorScaleBias;
+  }) as ColorScaleBias;
 }
 
 describe('isAffineColorMatrix', () => {
@@ -38,13 +39,13 @@ describe('isAffineColorMatrix', () => {
 describe('resolveColorAdjustmentsColorMatrix', () => {
   it('returns the complete fused matrix for matrix-tier adjustments', () => {
     const saturation = createSaturationColorMatrix(0);
-    const adjustment = { kind: 'Saturation', colorMatrix: saturation } as Adjustment;
+    const adjustment = createEntity({ kind: 'Saturation', colorMatrix: saturation }) as Adjustment;
     expect(resolveColorAdjustmentsColorMatrix([adjustment])).toEqual(saturation);
   });
 
   it('returns null for empty stacks and non-matrix adjustments', () => {
     expect(resolveColorAdjustmentsColorMatrix([])).toBeNull();
-    expect(resolveColorAdjustmentsColorMatrix([{ kind: 'acme.Lut' } as Adjustment])).toBeNull();
+    expect(resolveColorAdjustmentsColorMatrix([createEntity({ kind: 'acme.Lut' }) as Adjustment])).toBeNull();
   });
 });
 
@@ -74,7 +75,7 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('reports channel-mixing and writes only the affine part for an off-diagonal stack', () => {
-    const saturation: Adjustment = { kind: 'Saturation', colorMatrix: createSaturationColorMatrix(0) } as Adjustment;
+    const saturation = createEntity({ kind: 'Saturation', colorMatrix: createSaturationColorMatrix(0) }) as Adjustment;
     const out = makeColorScaleBias();
     expect(resolveColorAdjustmentsColorScaleBias([saturation], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
     // Only the diagonal (grayscale luma weight for red) is written; off-diagonal mix is dropped.
@@ -82,7 +83,7 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('reports channel-mixing when a non-matrix (LUT) op is present', () => {
-    const lut: Adjustment = { kind: 'acme.Lut' };
+    const lut = createEntity({ kind: 'acme.Lut' }) as Adjustment;
     const out = makeColorScaleBias();
     expect(resolveColorAdjustmentsColorScaleBias([lut], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);
   });

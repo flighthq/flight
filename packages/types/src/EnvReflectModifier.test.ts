@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from './Entity';
 import { EnvReflectModifierKind } from './EnvReflectModifier';
 import type { EnvReflectModifier } from './EnvReflectModifier';
 import type { Modifier } from './Modifier';
@@ -12,6 +13,7 @@ describe('EnvReflectModifier', () => {
   describe('descriptor shape', () => {
     it('is assignable to the open Modifier base with slot Effect', () => {
       const chrome: EnvReflectModifier = {
+        [EntityRuntimeKey]: undefined,
         kind: 'EnvReflectModifier',
         slot: 'Effect',
         tint: 0xffffffff,
