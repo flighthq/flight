@@ -11,7 +11,7 @@ describe('createExtendedPbrMaterial', () => {
     const extensions = [
       createClearcoatPbrExtension(),
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'VendorPbrExtension';
         return finishEntity(out);
       })(),

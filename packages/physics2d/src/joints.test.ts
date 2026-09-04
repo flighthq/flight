@@ -46,7 +46,7 @@ function box(world: ReturnType<typeof createPhysics2DWorld>, type: 'dynamic' | '
 }
 
 function baseJoint(kind: string, bodyA: number, bodyB: number) {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.kind = kind;
   out.bodyA = bodyA;
   out.bodyB = bodyB;

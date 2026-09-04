@@ -8,7 +8,7 @@ import {
 
 function entityProvider(fields: Omit<WgpuRenderSurfaceProvider, keyof Entity>): WgpuRenderSurfaceProvider {
   return (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     Object.assign(out, fields);
     return finishEntity(out);
   })();

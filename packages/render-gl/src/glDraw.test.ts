@@ -1066,7 +1066,7 @@ describe('useGlProgram', () => {
     const program = {} as WebGLProgram;
     const locations = { ...runtime.defaultBitmapShader!.locations, program };
     const shader = (() => {
-      const out = allocateEntity<CompressedImageResource>();
+      const out = allocateEntity<any>();
       out.bind = vi.fn();
       out.locations = locations;
       out.program = program;

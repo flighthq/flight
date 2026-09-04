@@ -13,7 +13,7 @@ import { createColorMatrixAdjustment } from './colorMatrixAdjustment';
 import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath';
 
 function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBias {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.redScale = 1;
   out.greenScale = 1;
   out.blueScale = 1;
@@ -39,7 +39,7 @@ describe('isAffineColorMatrix', () => {
 describe('resolveColorAdjustmentsColorMatrix', () => {
   it('returns the complete fused matrix for matrix-tier adjustments', () => {
     const saturation = createSaturationColorMatrix(0);
-    const adjustment = allocateEntity<unknown>();
+    const adjustment = allocateEntity<any>();
     adjustment.kind = 'Saturation';
     adjustment.colorMatrix = saturation;
     expect(resolveColorAdjustmentsColorMatrix([adjustment])).toEqual(saturation);
@@ -50,7 +50,7 @@ describe('resolveColorAdjustmentsColorMatrix', () => {
     expect(
       resolveColorAdjustmentsColorMatrix([
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Lut';
           return finishEntity(out);
         })() as Adjustment,
@@ -85,7 +85,7 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('reports channel-mixing and writes only the affine part for an off-diagonal stack', () => {
-    const saturation = allocateEntity<unknown>();
+    const saturation = allocateEntity<any>();
     saturation.kind = 'Saturation';
     saturation.colorMatrix = createSaturationColorMatrix(0);
     const out = makeColorScaleBias();
@@ -95,7 +95,7 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('reports channel-mixing when a non-matrix (LUT) op is present', () => {
-    const lut = allocateEntity<unknown>();
+    const lut = allocateEntity<any>();
     lut.kind = 'acme.Lut';
     const out = makeColorScaleBias();
     expect(resolveColorAdjustmentsColorScaleBias([lut], out)).toBe(COLOR_ADJUSTMENT_CHANNEL_MIXING);

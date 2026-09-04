@@ -9,7 +9,7 @@ import {
 
 function entityProvider(fields: Omit<GlRenderSurfaceProvider, keyof Entity>): GlRenderSurfaceProvider {
   return (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     Object.assign(out, fields);
     return finishEntity(out);
   })();

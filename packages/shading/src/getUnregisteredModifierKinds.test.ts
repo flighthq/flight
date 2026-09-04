@@ -26,20 +26,20 @@ describe('getUnregisteredModifierKinds', () => {
     registerBuiltInModifiers(registry);
     const stack: Modifier[] = [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Missing';
         out.slot = 'Effect';
         return finishEntity(out);
       })(),
       createEmissiveModifier({ color: 0xffffffff }),
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Other';
         out.slot = 'Normal';
         return finishEntity(out);
       })(),
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Missing';
         out.slot = 'Effect';
         return finishEntity(out);

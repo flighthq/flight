@@ -53,7 +53,7 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
 // never ran.
 function createPool(width: number): CanvasRenderTargetPool {
   const blank = (): CanvasRenderTarget => createTarget(new Array(width * 4).fill(0));
-  const out = allocateEntity<CanvasRenderTarget>();
+  const out = allocateEntity<any>();
   out.creator = canvasTestSurfaceCreator;
   out.free = [blank(), blank()];
   out.inUse = [];

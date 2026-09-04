@@ -13,7 +13,7 @@ describe('explainCommandDispatch', () => {
       explainCommandDispatch(
         history,
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Unbound';
           out.label = 'Nope';
           return finishEntity(out);
@@ -32,7 +32,7 @@ describe('explainCommandDispatch', () => {
       explainCommandDispatch(
         history,
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Bound';
           out.label = 'Yes';
           return finishEntity(out);
@@ -51,7 +51,7 @@ describe('explainCommandDispatch', () => {
     registerCommandBinding(history, 'CompositeCommand', { execute: () => undefined, undo: () => undefined });
     const composite = createCompositeCommand('Group', [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Unbound';
         out.label = 'Child';
         return finishEntity(out);
@@ -66,7 +66,7 @@ describe('explainCommandDispatch', () => {
     registerCommandBinding(history, 'acme.Bound', { execute: () => undefined, undo: () => undefined });
     const composite = createCompositeCommand('Group', [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Bound';
         out.label = 'Child';
         return finishEntity(out);

@@ -148,7 +148,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<WebGLTexture>();
+        const out = allocateEntity<any>();
         out.tint = 0x808080ff;
         return finishEntity(out);
       })(),
@@ -170,7 +170,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<WebGLTexture>();
+        const out = allocateEntity<any>();
         out.tint = 0x12345678;
         return finishEntity(out);
       })(),

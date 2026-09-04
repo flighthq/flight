@@ -105,7 +105,7 @@ describe('solveSkeleton2DConstraints', () => {
     });
     const skeleton = createSkeleton2D([makeBone()]);
     const rope = (() => {
-      const out = allocateEntity<Skeleton2DConstraint>();
+      const out = allocateEntity<any>();
       out.kind = 'acme.Rope';
       out.mix = 0.25;
       out.slack = 3;

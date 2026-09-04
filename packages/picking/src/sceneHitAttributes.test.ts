@@ -53,7 +53,7 @@ describe('empty Scene3DHit attribute queries', () => {
 describe('getScene3DHitMaterial', () => {
   it('returns the subset material or null for the default slot', () => {
     const hit = attributedHit();
-    const material = allocateEntity<unknown>();
+    const material = allocateEntity<any>();
     material.kind = 'TestMaterial';
     hit.node.materials = [material];
     expect(getScene3DHitMaterial(hit)).toBe(material);

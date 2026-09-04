@@ -20,7 +20,7 @@ describe('getStoragePersistence', () => {
     const getPersistence = vi.fn(async (): Promise<StoragePersistenceResult> => result);
     const host = queryHost(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.getPersistence = getPersistence;
         return finishEntity(out);
       })(),
@@ -32,13 +32,13 @@ describe('getStoragePersistence', () => {
 
   it('captures the query slot once and never crosses into request', async () => {
     const events: string[] = [];
-    const query = allocateEntity<unknown>();
+    const query = allocateEntity<any>();
     query.getPersistence = async (): Promise<StoragePersistenceResult> => {
       events.push('query');
       return { outcome: 'persistent', permissionState: 'granted' };
     };
     const request = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.requestPersistence = async (): Promise<StoragePersistenceResult> => {
         events.push('request');
         return { outcome: 'persistent', permissionState: 'granted' };
@@ -76,7 +76,7 @@ describe('requestStoragePersistence', () => {
     const requestPersistence = vi.fn(async (): Promise<StoragePersistenceResult> => result);
     const host = requestHost(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.requestPersistence = requestPersistence;
         return finishEntity(out);
       })(),
@@ -88,13 +88,13 @@ describe('requestStoragePersistence', () => {
 
   it('captures the request slot once and never crosses into query', async () => {
     const events: string[] = [];
-    const query = allocateEntity<unknown>();
+    const query = allocateEntity<any>();
     query.getPersistence = async (): Promise<StoragePersistenceResult> => {
       events.push('query');
       return { outcome: 'persistent', permissionState: 'granted' };
     };
     const request = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.requestPersistence = async (): Promise<StoragePersistenceResult> => {
         events.push('request');
         return { outcome: 'best-effort', permissionState: null };

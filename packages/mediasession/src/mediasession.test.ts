@@ -23,7 +23,7 @@ import {
 } from './mediasession';
 
 function commandBackend(overrides: Partial<MediaSessionBackend> = {}): MediaSessionBackend {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.clearMetadata = () => ({ reason: 'ok' as const });
   out.clearPositionState = () => ({ reason: 'ok' as const });
   out.destroy = () => {};
@@ -35,7 +35,7 @@ function commandBackend(overrides: Partial<MediaSessionBackend> = {}): MediaSess
 }
 
 function actionBackend(overrides: Partial<MediaSessionActionBackend> = {}): MediaSessionActionBackend {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.destroy = () => {};
   out.subscribe = () => () => {};
   Object.assign(out, overrides);
@@ -135,7 +135,7 @@ describe('destroyMediaSession', () => {
 
   it('deduplicates an aliased provider identity across both Host slots', () => {
     const destroy = vi.fn();
-    const shared = allocateEntity<unknown>();
+    const shared = allocateEntity<any>();
     shared.clearMetadata = () => ({ reason: 'ok' as const });
     shared.clearPositionState = () => ({ reason: 'ok' as const });
     shared.destroy = destroy;

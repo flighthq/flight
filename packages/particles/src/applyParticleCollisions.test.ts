@@ -9,7 +9,7 @@ import { createParticleObjectsState } from './particleObjectsState';
 // Node-free SoA emitter fixture: applyParticleCollisions reads only `emitter.data`, so the display
 // node from @flighthq/particleemitter is not needed to unit-test the collision pass.
 function createEmitterFixture(capacity: number): ParticleEmitter2D {
-  const data = allocateEntity<ParticleEmitter2D>();
+  const data = allocateEntity<any>();
   data.alphas = new Float32Array(capacity);
   data.atlas = null;
   data.colors = new Float32Array(capacity * 3);

@@ -53,7 +53,7 @@ describe('registerCommandBinding', () => {
     executeCommand(
       history,
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'acme.Custom';
         out.label = 'Custom';
         return finishEntity(out);

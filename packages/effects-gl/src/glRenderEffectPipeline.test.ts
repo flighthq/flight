@@ -68,7 +68,7 @@ describe('setGlRenderEffectPipelineSkipGuard', () => {
     const dropped: string[] = [];
     const chain = [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.pipeline-skip-seam';
         return finishEntity(out);
       })() as RenderEffect,

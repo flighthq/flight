@@ -21,14 +21,14 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
   const imageData = { data: new Uint8ClampedArray(pixels) };
   const written: { data: Uint8ClampedArray | null } = { data: null };
   const source = (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     out.context = { getImageData: () => imageData };
     out.height = 1;
     out.width = pixels.length / 4;
     return finishEntity(out) as unknown;
   })();
   const dest = (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     out.context = {
       clearRect: () => {},
       filter: 'none',

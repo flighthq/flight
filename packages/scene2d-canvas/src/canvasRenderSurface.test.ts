@@ -13,7 +13,7 @@ function makeCreator(createRenderSurface = () => document.createElement('canvas'
     canvas.height = 0;
   });
   const creator = (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     out.createRenderSurface = createRenderSurface;
     out.destroyRenderSurface = destroyRenderSurface;
     return finishEntity(out);

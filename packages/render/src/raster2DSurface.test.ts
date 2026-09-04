@@ -5,7 +5,7 @@ import { createRaster2DSurface, destroyRaster2DSurface } from './raster2DSurface
 
 function entityProvider(fields: Omit<Raster2DSurfaceProvider, keyof Entity>): Raster2DSurfaceProvider {
   return (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     Object.assign(out, fields);
     return finishEntity(out);
   })();

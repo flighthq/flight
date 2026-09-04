@@ -29,14 +29,14 @@ function createTargets(
   const imageData = { data: pixels };
   const written: { data: Uint8ClampedArray | null } = { data: null };
   const source = (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     out.context = { getImageData: () => imageData };
     out.height = height;
     out.width = width;
     return finishEntity(out) as unknown;
   })();
   const dest = (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<any>();
     out.context = {
       clearRect: () => {},
       filter: 'none',
@@ -138,7 +138,7 @@ describe('defaultCanvasLensDistortionEffectRunner', () => {
     const { dest, pool, source, written } = {
       ...createTargets(8, 8),
       pool: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.creator = canvasTestSurfaceCreator;
         out.free = [];
         out.inUse = [];

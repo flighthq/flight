@@ -78,7 +78,7 @@ describe('getWordRangeAt', () => {
     const host: HasTextSegmenter = { text: { segmenter: explicit } };
     setTextSegmenterBackend(
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.segment = () => [];
         return finishEntity(out);
       })(),

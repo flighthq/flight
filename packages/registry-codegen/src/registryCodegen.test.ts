@@ -65,7 +65,7 @@ describe('createRegistryCodegenPlan', () => {
       createRegistryCodegenPlan(
         createRegistryCatalog(),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.covers = [];
           out.requirements = [];
           return finishEntity(out);

@@ -162,7 +162,7 @@ describe('enableGlRenderEffectGuards', () => {
       beginGlRenderEffectPipeline(state, pipeline);
       endGlRenderEffectPipeline(state, pipeline, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
           return finishEntity(out) as RenderEffect;
         })(),
@@ -179,7 +179,7 @@ describe('enableGlRenderEffectGuards', () => {
       beginGlRenderEffectPipeline(state, pipeline);
       endGlRenderEffectPipeline(state, pipeline, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
           return finishEntity(out) as RenderEffect;
         })(),
@@ -225,7 +225,7 @@ function applyChain(state: GlRenderState, kinds: readonly string[], publishDesti
   const effects = kinds.map(
     (kind) =>
       (() => {
-        const out = allocateEntity<boolean>();
+        const out = allocateEntity<any>();
         out.kind = kind;
         return finishEntity(out) as unknown;
       })() as Readonly<RenderEffect>,

@@ -44,7 +44,7 @@ describe('registerModifier', () => {
     expect(
       definition?.getDefineSignature?.(
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Foo';
           out.slot = 'Effect';
           return finishEntity(out);

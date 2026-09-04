@@ -234,7 +234,7 @@ describe('ensureGlShadedProgram', () => {
   it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
     const { gl, state } = makeGlScene3DState();
     const modifier = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'acme.Replace';
       out.slot = ModifierSlot.Effect;
       return finishEntity(out) as Modifier;

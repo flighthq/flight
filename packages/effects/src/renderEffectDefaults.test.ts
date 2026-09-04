@@ -44,7 +44,7 @@ describe('normalizeRenderEffect', () => {
   it('fills in missing fields from defaults', () => {
     const effect = createBloomEffect({ threshold: 0.9 });
     const out = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'BloomEffect';
       return finishEntity(out) as BloomEffect;
     })();
@@ -56,7 +56,7 @@ describe('normalizeRenderEffect', () => {
   it('preserves explicitly set zero and false', () => {
     const effect = createBloomEffect({ threshold: 0 });
     const out = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'BloomEffect';
       return finishEntity(out) as BloomEffect;
     })();
@@ -65,7 +65,7 @@ describe('normalizeRenderEffect', () => {
   it('carries over fields not in the defaults table', () => {
     const effect = createVignetteEffect({ intensity: 0.3 });
     const out = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.kind = 'VignetteEffect';
       return finishEntity(out) as VignetteEffect;
     })();
@@ -74,7 +74,7 @@ describe('normalizeRenderEffect', () => {
     expect(out.softness).toBe(0.5);
   });
   it('returns false for unknown kind', () => {
-    const effect = allocateEntity<unknown>();
+    const effect = allocateEntity<any>();
     effect.kind = 'acme.UnknownEffect';
     expect(normalizeRenderEffect(effect, out)).toBe(false);
   });

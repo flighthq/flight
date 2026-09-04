@@ -30,7 +30,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function ik(overrides: Partial<Skeleton2DIkConstraint> = {}): Skeleton2DIkConstraint {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<any>();
   out.bendPositive = true;
   out.boneIndices = [0];
   out.compress = false;

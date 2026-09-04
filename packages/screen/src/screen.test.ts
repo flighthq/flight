@@ -536,7 +536,7 @@ function createPermissionChangeHarness() {
   const host = {
     screen: {
       permissionChange: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.subscribe = (next: (state: ScreenPermissionState) => void): (() => void) => {
           listener = next;
           return unsubscribe;
@@ -554,7 +554,7 @@ function createScreenChangeHarness() {
   const host = {
     screen: {
       change: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.subscribe = (next: (event: Readonly<ScreenChangeEvent>) => void): (() => void) => {
           listener = next;
           return unsubscribe;
@@ -570,7 +570,7 @@ function createScreenDetailsHost(permission: ScreenPermissionState, requestResul
   return {
     screen: {
       details: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.queryPermission = vi.fn(async () => permission);
         out.request = vi.fn(async () => requestResult);
         return finishEntity(out);
@@ -586,7 +586,7 @@ function createScreenQueryHost(
   return {
     screen: {
       query: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.getCursorPosition = vi.fn((out: { x: number; y: number }) => {
           out.x = cursor.x;
           out.y = cursor.y;

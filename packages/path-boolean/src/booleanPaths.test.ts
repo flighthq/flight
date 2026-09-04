@@ -145,7 +145,7 @@ describe('unionPaths', () => {
     let seen = false;
     setPathBooleanBackend(
       (() => {
-        const out = allocateEntity<Path>();
+        const out = allocateEntity<any>();
         out.computePathBoolean = () => {
           seen = true;
           return [];

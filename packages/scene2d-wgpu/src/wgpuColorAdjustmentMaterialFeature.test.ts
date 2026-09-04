@@ -146,7 +146,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<ColorScaleBias>();
+        const out = allocateEntity<any>();
         out.tint = 0x12345678;
         return finishEntity(out);
       })(),
@@ -165,7 +165,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<ColorScaleBias>();
+        const out = allocateEntity<any>();
         out.tint = 0x808080ff;
         return finishEntity(out);
       })(),
@@ -184,7 +184,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<ColorScaleBias>();
+        const out = allocateEntity<any>();
         out.tint = 0x808080ff;
         return finishEntity(out);
       })(),

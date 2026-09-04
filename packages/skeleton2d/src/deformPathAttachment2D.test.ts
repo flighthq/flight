@@ -30,7 +30,7 @@ function emptyPath(): Path {
 }
 
 function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): PathAttachment2D {
-  const out = allocateEntity<Path>();
+  const out = allocateEntity<any>();
   out.commands = commands;
   out.kind = PathAttachment2DKind;
   out.pointCount = pointCount;
@@ -150,7 +150,7 @@ describe('deformSkeleton2DPathAttachment', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(skeleton);
     const attachment = (() => {
-      const out = allocateEntity<Path>();
+      const out = allocateEntity<any>();
       out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO];
       out.kind = PathAttachment2DKind;
       out.pointCount = 2;
@@ -172,7 +172,7 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('writes nothing for a rigid path with no setup vertices rather than throwing', () => {
     const skeleton = createSkeleton2D([makeBone()]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment = allocateEntity<Path>();
+    const attachment = allocateEntity<any>();
     attachment.commands = [];
     attachment.kind = PathAttachment2DKind;
     attachment.pointCount = 0;

@@ -15,22 +15,22 @@ describe('app explicit Host ownership', () => {
     const host = {
       app: {
         badge: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.setBadgeCount = setBadgeCount;
           return finishEntity(out);
         })(),
         focus: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.focus = focus;
           return finishEntity(out);
         })(),
         name: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.getName = getName;
           return finishEntity(out);
         })(),
         quit: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.quit = quit;
           return finishEntity(out);
         })(),
@@ -55,7 +55,7 @@ describe('app explicit Host ownership', () => {
       return vi.fn();
     });
     const inert = (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<any>();
       out.subscribe = () => vi.fn();
       return finishEntity(out);
     })();
@@ -66,7 +66,7 @@ describe('app explicit Host ownership', () => {
         openFile: inert,
         quitRequest: inert,
         ready: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.subscribe = subscribe;
           return finishEntity(out);
         })(),

@@ -299,7 +299,7 @@ function getColliderShapeCases(): ReadonlyArray<{
     {
       name: 'triangle mesh',
       shape: (() => {
-        const out = allocateEntity<DataView>();
+        const out = allocateEntity<any>();
         out.kind = 'triangle-mesh';
         out.version = 2;
         out.x = 0;
@@ -318,7 +318,7 @@ function getColliderShapeCases(): ReadonlyArray<{
     {
       name: 'heightfield',
       shape: (() => {
-        const out = allocateEntity<DataView>();
+        const out = allocateEntity<any>();
         out.kind = 'heightfield';
         out.columns = 2;
         out.rows = 2;

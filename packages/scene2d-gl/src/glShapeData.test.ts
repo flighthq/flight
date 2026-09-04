@@ -56,7 +56,7 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
 }
 
 function createTestProvider(): Raster2DSurfaceProvider {
-  const out = allocateEntity<GlShapeRendererData>();
+  const out = allocateEntity<any>();
   out.createRaster2DSurface = createTestRaster2DSurface;
   out.destroyRaster2DSurface = destroySurface;
   return finishEntity(out);
@@ -82,7 +82,7 @@ describe('acquireGlShapeRasterSurface', () => {
   });
 
   it('preserves expected absence without caching it when the provider refuses', () => {
-    const provider = allocateEntity<GlShapeRendererData>();
+    const provider = allocateEntity<any>();
     provider.createRaster2DSurface = () => null;
     provider.destroyRaster2DSurface = destroySurface;
     const data = emptyData();

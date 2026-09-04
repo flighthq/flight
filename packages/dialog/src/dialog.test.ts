@@ -17,7 +17,7 @@ function fakeHost() {
   return {
     dialog: {
       message: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.confirm = async () => {
           return true;
         };
@@ -27,7 +27,7 @@ function fakeHost() {
         return finishEntity(out);
       })(),
       prompt: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.prompt = async () => {
           return 'typed';
         };
@@ -41,7 +41,7 @@ function severityHost(observed: string[]) {
   return {
     dialog: {
       message: (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.confirm = async () => {
           return true;
         };
@@ -65,7 +65,7 @@ describe('showConfirmDialog', () => {
     const host = {
       dialog: {
         message: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.confirm = confirm;
           out.message = vi.fn();
           return finishEntity(out);

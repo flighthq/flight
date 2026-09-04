@@ -41,12 +41,12 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
     expect(
       applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.First';
           return finishEntity(out);
         })(),
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Second';
           return finishEntity(out);
         })(),
@@ -91,7 +91,7 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
     expect(
       applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
           return finishEntity(out);
         })(),
@@ -112,12 +112,12 @@ describe('explainWgpuRenderEffectApplication', () => {
 
     const explanation = explainWgpuRenderEffectApplication(state, source, dest, [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.explain-registered';
         return finishEntity(out);
       })(),
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.explain-missing';
         return finishEntity(out);
       })(),
@@ -143,7 +143,7 @@ describe('explainWgpuRenderEffectApplication', () => {
     expect(
       explainWgpuRenderEffectApplication(state, source, dest, [
         (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.kind = 'test.explain-unresolved';
           return finishEntity(out);
         })(),
@@ -194,7 +194,7 @@ describe('setWgpuRenderEffectApplicationGuard', () => {
     const seen: string[] = [];
     const chain = [
       (() => {
-        const out = allocateEntity<unknown>();
+        const out = allocateEntity<any>();
         out.kind = 'test.seam-missing';
         return finishEntity(out);
       })(),

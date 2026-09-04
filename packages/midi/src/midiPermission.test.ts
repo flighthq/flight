@@ -13,7 +13,7 @@ describe('getMidiPermission', () => {
     const host = {
       midi: {
         permission: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.getPermission = getPermission;
           return finishEntity(out);
         })(),

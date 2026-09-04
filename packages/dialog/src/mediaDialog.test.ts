@@ -22,7 +22,7 @@ describe('showCapturePhotoDialog', () => {
     const host: HasDialogPhotoCapture = {
       dialog: {
         photoCapture: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.capture = capture;
           return finishEntity(out) as PhotoCaptureDialogBackend;
         })(),
@@ -44,7 +44,7 @@ describe('showCapturePhotoDialog', () => {
     const host: HasDialogPhotoCapture = {
       dialog: {
         photoCapture: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.capture = capture;
           return finishEntity(out) as PhotoCaptureDialogBackend;
         })(),
@@ -64,7 +64,7 @@ describe('showCaptureVideoDialog', () => {
     const host: HasDialogVideoCapture = {
       dialog: {
         videoCapture: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.capture = capture;
           return finishEntity(out) as VideoCaptureDialogBackend;
         })(),
@@ -85,7 +85,7 @@ describe('showOpenImageDialog', () => {
     const host: HasDialogImageOpen = {
       dialog: {
         imageOpen: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.open = open;
           return finishEntity(out) as ImageOpenDialogBackend;
         })(),
@@ -102,7 +102,7 @@ describe('showOpenImageDialog', () => {
     const host: HasDialogImageOpen = {
       dialog: {
         imageOpen: (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<any>();
           out.open = open;
           return finishEntity(out) as ImageOpenDialogBackend;
         })(),

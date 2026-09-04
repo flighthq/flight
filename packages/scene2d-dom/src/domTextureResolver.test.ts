@@ -9,7 +9,7 @@ import { registerDomTextureResolver, resolveDomTexture } from './domTextureResol
 describe('registerDomTextureResolver', () => {
   it('registers and removes one state-scoped resolver', () => {
     const state = createDomRenderState(document.createElement('div'));
-    const textureSource = allocateEntity<unknown>();
+    const textureSource = allocateEntity<any>();
     textureSource.height = 1;
     textureSource.kind = 'acme.test';
     textureSource.version = 0;
