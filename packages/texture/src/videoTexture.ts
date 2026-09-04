@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
+  EntityConstruction,
+  HostImageSource,
   ImageResource,
   Matrix3Like,
   Texture,
@@ -76,6 +78,20 @@ export function getVideoTextureWidth(texture: Readonly<TextureLike>): number {
   return element !== null && element.videoWidth > 0 ? element.videoWidth : -1;
 }
 
+export function initializeVideoImageResource(
+  out: EntityConstruction<ImageResource>,
+  source: HostImageSource,
+  version: number,
+): void {
+  out.alphaType = 'straight';
+  out.gamut = 'srgb';
+  out.height = 0;
+  out.kind = ImageTextureSourceKind;
+  out.source = source;
+  out.version = version;
+  out.width = 0;
+}
+
 // True once the borrowed host element exposes a decoded current frame and non-zero dimensions.
 export function isVideoTextureFrameReady(texture: Readonly<TextureLike>): boolean {
   const element = getVideoElement(texture);
@@ -102,13 +118,7 @@ export function setVideoTextureSource(texture: TextureLike, source: VideoResourc
 function createVideoImageResource(source: Readonly<VideoResource>): ImageResource | null {
   if (source.element === null) return null;
   const image = allocateEntity<ImageResource>();
-  image.height = 0;
-  image.alphaType = 'straight';
-  image.gamut = 'srgb';
-  image.kind = ImageTextureSourceKind;
-  image.source = source.element;
-  image.version = INITIAL_VIDEO_VERSION;
-  image.width = 0;
+  initializeVideoImageResource(image, source.element, INITIAL_VIDEO_VERSION);
   updateVideoImageSize(image);
   return finishEntity(image);
 }
