@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createConvolutionEffect,
   getConvolutionEffectPadding,
+  initializeConvolutionEffect,
   registerConvolutionEffectPaddingResolver,
 } from './convolutionEffect';
 
@@ -36,6 +37,11 @@ describe('getConvolutionEffectPadding', () => {
   });
 });
 
+describe('initializeConvolutionEffect', () => {
+  it('is the construction initializer of createConvolutionEffect', () => {
+    expect(typeof initializeConvolutionEffect).toBe('function');
+  });
+});
 describe('registerConvolutionEffectPaddingResolver', () => {
   it('registers the convolution footprint on only the supplied state', () => {
     const state = createRenderState();

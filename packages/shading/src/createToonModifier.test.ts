@@ -1,7 +1,7 @@
 import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createToonModifier } from './createToonModifier';
+import { createToonModifier, initializeToonModifier } from './createToonModifier';
 
 describe('createToonModifier', () => {
   it('sets the kind and Effect slot', () => {
@@ -19,5 +19,10 @@ describe('createToonModifier', () => {
   it('applies a provided smoothness', () => {
     const modifier = createToonModifier({ steps: 2, smoothness: 0.2 });
     expect(modifier.smoothness).toBe(0.2);
+  });
+});
+describe('initializeToonModifier', () => {
+  it('is the construction initializer of createToonModifier', () => {
+    expect(typeof initializeToonModifier).toBe('function');
   });
 });

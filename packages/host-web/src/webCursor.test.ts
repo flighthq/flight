@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createWebCursorBackend } from './webCursor';
+import { createWebCursorBackend, initializeWebCursorBackend } from './webCursor';
 
 describe('createWebCursorBackend', () => {
   it('returns an Entity', () => {
@@ -28,5 +28,10 @@ describe('createWebCursorBackend', () => {
     const element = document.createElement('div');
     createWebCursorBackend(element);
     expect(element.style.cursor).toBe('');
+  });
+});
+describe('initializeWebCursorBackend', () => {
+  it('is the construction initializer of createWebCursorBackend', () => {
+    expect(typeof initializeWebCursorBackend).toBe('function');
   });
 });

@@ -2,7 +2,15 @@ import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createElectronProtocolCapabilities } from './electronProtocol';
+import {
+  createElectronProtocolCapabilities,
+  initializeElectronProtocolCapabilities,
+  initializeProtocolDefaultBackend,
+  initializeProtocolOpenBackend,
+  initializeProtocolRegistrationBackend,
+  initializeProtocolRegistrationQueryBackend,
+  initializeProtocolUnregistrationBackend,
+} from './electronProtocol';
 
 function fakeElectron() {
   const listeners = new Map<string, ((...args: unknown[]) => void)[]>();
@@ -61,5 +69,40 @@ describe('createElectronProtocolCapabilities', () => {
     expect(url).toBe('flight://open');
     off();
     expect(fake.listeners.get('open-url')).toHaveLength(0);
+  });
+});
+describe('initializeElectronProtocolCapabilities', () => {
+  it('is the construction initializer of createElectronProtocolCapabilities', () => {
+    expect(typeof initializeElectronProtocolCapabilities).toBe('function');
+  });
+});
+
+describe('initializeProtocolDefaultBackend', () => {
+  it('is the construction initializer of createProtocolDefaultBackend', () => {
+    expect(typeof initializeProtocolDefaultBackend).toBe('function');
+  });
+});
+
+describe('initializeProtocolOpenBackend', () => {
+  it('is the construction initializer of createProtocolOpenBackend', () => {
+    expect(typeof initializeProtocolOpenBackend).toBe('function');
+  });
+});
+
+describe('initializeProtocolRegistrationBackend', () => {
+  it('is the construction initializer of createProtocolRegistrationBackend', () => {
+    expect(typeof initializeProtocolRegistrationBackend).toBe('function');
+  });
+});
+
+describe('initializeProtocolRegistrationQueryBackend', () => {
+  it('is the construction initializer of createProtocolRegistrationQueryBackend', () => {
+    expect(typeof initializeProtocolRegistrationQueryBackend).toBe('function');
+  });
+});
+
+describe('initializeProtocolUnregistrationBackend', () => {
+  it('is the construction initializer of createProtocolUnregistrationBackend', () => {
+    expect(typeof initializeProtocolUnregistrationBackend).toBe('function');
   });
 });

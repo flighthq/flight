@@ -3,7 +3,7 @@ import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 
-import { registerElectronBackends } from './electronRegister';
+import { initializeElectronHost, registerElectronBackends } from './electronRegister';
 
 // A fake Electron module broad enough that every createElectron*Backend constructs without touching
 // missing members. Backends close over `electron` and only call into it when their methods run, so a
@@ -47,6 +47,11 @@ function fakeElectron(): ElectronApi {
   } as unknown as ElectronApi;
 }
 
+describe('initializeElectronHost', () => {
+  it('is the construction initializer of createElectronHost', () => {
+    expect(typeof initializeElectronHost).toBe('function');
+  });
+});
 describe('registerElectronBackends', () => {
   it('routes capability seams to the Electron backends without throwing', async () => {
     const host = registerElectronBackends(fakeElectron(), {

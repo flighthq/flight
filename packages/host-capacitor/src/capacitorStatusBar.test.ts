@@ -1,7 +1,7 @@
 import type { StatusBarInfo, CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorStatusBarBackend } from './capacitorStatusBar';
+import { createCapacitorStatusBarBackend, initializeCapacitorStatusBarBackend } from './capacitorStatusBar';
 
 const flush = async () => {
   await Promise.resolve();
@@ -73,5 +73,10 @@ describe('createCapacitorStatusBarBackend', () => {
     expect(info.color).toBe(0x112233ff);
     expect(info.overlaysContent).toBe(true);
     expect(info.height).toBe(-1);
+  });
+});
+describe('initializeCapacitorStatusBarBackend', () => {
+  it('is the construction initializer of createCapacitorStatusBarBackend', () => {
+    expect(typeof initializeCapacitorStatusBarBackend).toBe('function');
   });
 });

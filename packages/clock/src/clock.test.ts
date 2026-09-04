@@ -8,6 +8,7 @@ import {
   disposeClock,
   getClockEffectiveScale,
   getClockParent,
+  initializeClock,
   isClockEffectivelyPaused,
   pauseClock,
   removeClockChild,
@@ -226,6 +227,12 @@ describe('getClockParent', () => {
   });
 });
 
+describe('initializeClock', () => {
+  it('is the construction initializer of createClock', () => {
+    expect(typeof initializeClock).toBe('function');
+  });
+});
+
 describe('isClockEffectivelyPaused', () => {
   it('is false for a running root', () => {
     expect(isClockEffectivelyPaused(createClock())).toBe(false);
@@ -288,7 +295,6 @@ describe('resumeClock', () => {
     expect(clock.paused).toBe(false);
   });
 });
-
 describe('setClockScale', () => {
   it('updates the local scale', () => {
     const clock = createClock();

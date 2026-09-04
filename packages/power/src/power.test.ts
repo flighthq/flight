@@ -30,6 +30,7 @@ import {
   getPowerSystemIdleState,
   getPowerSystemIdleTime,
   getPowerThermalState,
+  initializePower,
   isPowerKeepAwakeActive,
   makePowerBatteryHealth,
   makePowerStatus,
@@ -429,6 +430,12 @@ describe('getPowerThermalState', () => {
   });
 });
 
+describe('initializePower', () => {
+  it('is the construction initializer of createPower', () => {
+    expect(typeof initializePower).toBe('function');
+  });
+});
+
 describe('isPowerKeepAwakeActive', () => {
   it('reports the provider state', () => {
     expect(isPowerKeepAwakeActive(keepAwakeHost({ isActive: () => true }))).toBe(true);
@@ -477,7 +484,6 @@ describe('releasePowerKeepAwake', () => {
     await expect(releasePowerKeepAwake(host)).resolves.toEqual({ reason: 'inactive' });
   });
 });
-
 describe('setPowerIdlePollingIntervalMs', () => {
   it('clamps a non-positive interval to 1ms', () => {
     setPowerIdlePollingIntervalMs(0);

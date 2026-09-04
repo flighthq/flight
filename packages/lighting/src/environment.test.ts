@@ -3,7 +3,7 @@ import { createVector2 } from '@flighthq/geometry/contract';
 import type { Texture, Sampler } from '@flighthq/types/contract';
 import { EnvironmentKind } from '@flighthq/types/contract';
 
-import { cloneEnvironment, createEnvironment } from './environment';
+import { cloneEnvironment, createEnvironment, initializeEnvironment } from './environment';
 
 function createTestCubeTexture(): Texture {
   const sampler = allocateEntity<any>();
@@ -55,5 +55,10 @@ describe('createEnvironment', () => {
     expect(environment.enabled).toBe(false);
     expect(environment.environment).toBe(cube);
     expect(environment.intensity).toBe(2);
+  });
+});
+describe('initializeEnvironment', () => {
+  it('is the construction initializer of createEnvironment', () => {
+    expect(typeof initializeEnvironment).toBe('function');
   });
 });

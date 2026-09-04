@@ -4,6 +4,7 @@ import { createScene2DDocument } from './scene2DDocument';
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
+  initializeScene2DDocumentImporterRegistry,
   registerScene2DDocumentImporter,
   unregisterScene2DDocumentImporter,
 } from './scene2DDocumentImporterRegistry';
@@ -35,6 +36,12 @@ describe('createScene2DDocumentImporterRegistry', () => {
   });
 });
 
+describe('initializeScene2DDocumentImporterRegistry', () => {
+  it('is the construction initializer of createScene2DDocumentImporterRegistry', () => {
+    expect(typeof initializeScene2DDocumentImporterRegistry).toBe('function');
+  });
+});
+
 describe('registerScene2DDocumentImporter', () => {
   it('replaces a kind in place with last-write-wins behavior', () => {
     const registry = createScene2DDocumentImporterRegistry();
@@ -46,7 +53,6 @@ describe('registerScene2DDocumentImporter', () => {
     expect(registry.entries[0].importDocument).toBe(second);
   });
 });
-
 describe('unregisterScene2DDocumentImporter', () => {
   it('removes an existing kind and reports absence', () => {
     const registry = createScene2DDocumentImporterRegistry();

@@ -1,7 +1,13 @@
 import type { TextLayoutParams, TextLayoutResult } from '@flighthq/types/contract';
 
 import { createTextFormatRange } from './textFormatRange';
-import { computeTextLayout, createTextLayoutResult, isTextLayoutTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
+import {
+  TEXT_LAYOUT_GUTTER,
+  computeTextLayout,
+  createTextLayoutResult,
+  initializeTextLayoutResult,
+  isTextLayoutTruncated,
+} from './textLayout';
 
 // Fixed-width measure: every character is 10px regardless of font settings.
 const fixedMeasure = (text: string) => text.length * 10;
@@ -754,6 +760,12 @@ describe('createTextLayoutResult', () => {
   });
 });
 
+describe('initializeTextLayoutResult', () => {
+  it('is the construction initializer of createTextLayoutResult', () => {
+    expect(typeof initializeTextLayoutResult).toBe('function');
+  });
+});
+
 describe('isTextLayoutTruncated', () => {
   it('returns false when maxLines is -1', () => {
     const params = singleRangeParams('hello');
@@ -761,7 +773,6 @@ describe('isTextLayoutTruncated', () => {
     expect(isTextLayoutTruncated(result, params)).toBe(false);
   });
 });
-
 describe('TEXT_LAYOUT_GUTTER', () => {
   it('is a positive number', () => {
     expect(TEXT_LAYOUT_GUTTER).toBeGreaterThan(0);

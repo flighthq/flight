@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
 import { stepPhysics2D } from './step';
 import {
+  Physics2DWorldVersion,
   addPhysics2DBody,
   addPhysics2DCollider,
   applyPhysics2DForce,
@@ -12,22 +13,24 @@ import {
   applyPhysics2DLinearImpulse,
   applyPhysics2DLinearImpulseAtPoint,
   applyPhysics2DTorque,
-  findPhysics2DBody,
   createPhysics2DCollider,
   createPhysics2DSolverConfig,
   createPhysics2DWorld,
   createRigidBody2D,
+  findPhysics2DBody,
   hydratePhysics2DWorld,
+  initializePhysics2DCollider,
+  initializePhysics2DWorld,
+  initializeRigidBody2D,
   invalidatePhysics2DCollider,
   isPhysics2DPairOrdered,
   removePhysics2DBody,
   removePhysics2DCollider,
-  setPhysics2DBodyFixedRotation,
   setPhysics2DBodyBullet,
+  setPhysics2DBodyFixedRotation,
   setPhysics2DBodySleepEnabled,
   setPhysics2DBodyTransform,
   setPhysics2DBodyType,
-  Physics2DWorldVersion,
 } from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
@@ -387,6 +390,24 @@ describe('hydratePhysics2DWorld', () => {
   });
 });
 
+describe('initializePhysics2DCollider', () => {
+  it('is the construction initializer of createPhysics2DCollider', () => {
+    expect(typeof initializePhysics2DCollider).toBe('function');
+  });
+});
+
+describe('initializePhysics2DWorld', () => {
+  it('is the construction initializer of createPhysics2DWorld', () => {
+    expect(typeof initializePhysics2DWorld).toBe('function');
+  });
+});
+
+describe('initializeRigidBody2D', () => {
+  it('is the construction initializer of createRigidBody2D', () => {
+    expect(typeof initializeRigidBody2D).toBe('function');
+  });
+});
+
 describe('invalidatePhysics2DCollider', () => {
   it('rebuilds changed shape storage, mass data, and broadphase bounds', () => {
     const world = createPhysics2DWorld(0, 0);
@@ -649,7 +670,6 @@ describe('setPhysics2DBodyFixedRotation', () => {
     expect(setPhysics2DBodyFixedRotation(createPhysics2DWorld(), boxBody(0, 0), true)).toBe(false);
   });
 });
-
 describe('setPhysics2DBodySleepEnabled', () => {
   it('wakes on either transition and requires a new stillness interval when re-enabled', () => {
     const world = createPhysics2DWorld(0, 0);

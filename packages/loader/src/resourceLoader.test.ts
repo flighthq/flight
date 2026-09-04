@@ -6,16 +6,17 @@ import {
   createResourceLoader,
   disposeResourceLoader,
   enableResourceLoaderItemSignals,
-  getResourceLoadItemStatus,
   getResourceLoadBytes,
   getResourceLoadCounts,
+  getResourceLoadItemStatus,
   getResourceLoadProgress,
+  initializeResourceLoader,
   pauseResourceLoad,
   queueResourceLoad,
   resetResourceLoader,
   resumeResourceLoad,
-  setResourceLoaderConcurrency,
   setResourceLoadPriority,
+  setResourceLoaderConcurrency,
   startResourceLoad,
 } from './resourceLoader';
 
@@ -781,6 +782,12 @@ describe('getResourceLoadProgress', () => {
   });
 });
 
+describe('initializeResourceLoader', () => {
+  it('is the construction initializer of createResourceLoader', () => {
+    expect(typeof initializeResourceLoader).toBe('function');
+  });
+});
+
 describe('pauseResourceLoad', () => {
   it('stops dispatching new items', async () => {
     const loader = createResourceLoader({ maxConcurrent: 1 });
@@ -1397,7 +1404,6 @@ describe('weight-aware progress', () => {
     expect(progressValues[1]).toBeCloseTo(1.0);
   });
 });
-
 describe('weighted progress across outcomes', () => {
   // The regression these pin: weightLoaded advanced only on success, so any batch containing a
   // failure, a cancellation, or a fail-fast skip left getResourceLoadProgress permanently short of 1

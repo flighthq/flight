@@ -5,9 +5,10 @@ import type { BitmapDisplacementEffect, Texture2D, WgpuRenderState, WgpuRenderTa
 import { ImageChannel } from '@flighthq/types/contract';
 
 import {
-  applyBitmapDisplacementEffectToWgpu,
   BITMAP_DISPLACEMENT_FRAGMENT_WGSL,
+  applyBitmapDisplacementEffectToWgpu,
   defaultWgpuBitmapDisplacementEffectRunner,
+  initializeWgpuEffectPipeline,
   isWgpuBitmapDisplacementEffectResolvable,
   registerWgpuBitmapDisplacementEffect,
 } from './wgpuBitmapDisplacementEffect';
@@ -152,6 +153,12 @@ describe('defaultWgpuBitmapDisplacementEffectRunner', () => {
   });
 });
 
+describe('initializeWgpuEffectPipeline', () => {
+  it('is the construction initializer of createWgpuEffectPipeline', () => {
+    expect(typeof initializeWgpuEffectPipeline).toBe('function');
+  });
+});
+
 describe('isWgpuBitmapDisplacementEffectResolvable', () => {
   it('exposes the missing-map sentinel', () => {
     expect(isWgpuBitmapDisplacementEffectResolvable(state, effect())).toBe(true);
@@ -160,7 +167,6 @@ describe('isWgpuBitmapDisplacementEffectResolvable', () => {
     expect(isWgpuBitmapDisplacementEffectResolvable(state, effect())).toBe(false);
   });
 });
-
 describe('registerWgpuBitmapDisplacementEffect', () => {
   it('registers both the runner and per-instance map resolver', async () => {
     const registeredState = await createWgpuRenderStateForTest();

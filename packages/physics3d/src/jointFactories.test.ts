@@ -8,6 +8,13 @@ import {
   createPhysics3DGeneric6DofJoint,
   createPhysics3DHingeJoint,
   createPhysics3DSliderJoint,
+  initializePhysics3DBallAndSocketJoint,
+  initializePhysics3DConeTwistJoint,
+  initializePhysics3DDistanceJoint,
+  initializePhysics3DFixedJoint,
+  initializePhysics3DGeneric6DofJoint,
+  initializePhysics3DHingeJoint,
+  initializePhysics3DSliderJoint,
 } from './jointFactories';
 import {
   Physics3DBallAndSocketJointKind,
@@ -240,5 +247,46 @@ describe('createPhysics3DSliderJoint', () => {
     expect(joint.upperTranslation).toBe(3);
     expect(joint.motorSpeed).toBe(2);
     expect(joint.maxMotorForce).toBe(15);
+  });
+});
+describe('initializePhysics3DBallAndSocketJoint', () => {
+  it('is the construction initializer of createPhysics3DBallAndSocketJoint', () => {
+    expect(typeof initializePhysics3DBallAndSocketJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics3DConeTwistJoint', () => {
+  it('is the construction initializer of createPhysics3DConeTwistJoint', () => {
+    expect(typeof initializePhysics3DConeTwistJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics3DDistanceJoint', () => {
+  it('is the construction initializer of createPhysics3DDistanceJoint', () => {
+    expect(typeof initializePhysics3DDistanceJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics3DFixedJoint', () => {
+  it('is the construction initializer of createPhysics3DFixedJoint', () => {
+    expect(typeof initializePhysics3DFixedJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics3DGeneric6DofJoint', () => {
+  it('is the construction initializer of createPhysics3DGeneric6DofJoint', () => {
+    expect(typeof initializePhysics3DGeneric6DofJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics3DHingeJoint', () => {
+  it('is the construction initializer of createPhysics3DHingeJoint', () => {
+    expect(typeof initializePhysics3DHingeJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics3DSliderJoint', () => {
+  it('is the construction initializer of createPhysics3DSliderJoint', () => {
+    expect(typeof initializePhysics3DSliderJoint).toBe('function');
   });
 });

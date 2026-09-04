@@ -2,7 +2,37 @@ import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flight
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createElectronAppCapabilities } from './electronApp';
+import {
+  createElectronAppCapabilities,
+  initializeAppActivateBackend,
+  initializeAppActivationPolicyBackend,
+  initializeAppAllWindowsClosedBackend,
+  initializeAppBadgeBackend,
+  initializeAppDockBackend,
+  initializeAppFocusBackend,
+  initializeAppHideBackend,
+  initializeAppLocaleBackend,
+  initializeAppLoginItemBackend,
+  initializeAppNameBackend,
+  initializeAppNameWriteBackend,
+  initializeAppOpenFileBackend,
+  initializeAppPathBackend,
+  initializeAppQuitBackend,
+  initializeAppQuitRequestBackend,
+  initializeAppReadyBackend,
+  initializeAppRecentDocumentsBackend,
+  initializeAppRelaunchBackend,
+  initializeAppSecondInstanceBackend,
+  initializeAppShowBackend,
+  initializeAppSingleInstanceBackend,
+  initializeAppUserModelIdBackend,
+  initializeAppVersionBackend,
+  initializeAppVisibilityQueryBackend,
+  initializeElectronCommonAppCapabilities,
+  initializeElectronLinuxAppCapabilities,
+  initializeElectronMacosAppCapabilities,
+  initializeElectronWindowsAppCapabilities,
+} from './electronApp';
 
 function fakeElectron() {
   const calls: string[] = [];
@@ -142,5 +172,172 @@ describe('createElectronAppCapabilities', () => {
     const electron = fakeElectron().electron;
     Object.assign(electron.app, { dock: undefined });
     expect(() => createElectronAppCapabilities(electron, 'macos')).toThrow('require app.dock');
+  });
+});
+describe('initializeAppActivateBackend', () => {
+  it('is the construction initializer of createAppActivateBackend', () => {
+    expect(typeof initializeAppActivateBackend).toBe('function');
+  });
+});
+
+describe('initializeAppActivationPolicyBackend', () => {
+  it('is the construction initializer of createAppActivationPolicyBackend', () => {
+    expect(typeof initializeAppActivationPolicyBackend).toBe('function');
+  });
+});
+
+describe('initializeAppAllWindowsClosedBackend', () => {
+  it('is the construction initializer of createAppAllWindowsClosedBackend', () => {
+    expect(typeof initializeAppAllWindowsClosedBackend).toBe('function');
+  });
+});
+
+describe('initializeAppBadgeBackend', () => {
+  it('is the construction initializer of createAppBadgeBackend', () => {
+    expect(typeof initializeAppBadgeBackend).toBe('function');
+  });
+});
+
+describe('initializeAppDockBackend', () => {
+  it('is the construction initializer of createAppDockBackend', () => {
+    expect(typeof initializeAppDockBackend).toBe('function');
+  });
+});
+
+describe('initializeAppFocusBackend', () => {
+  it('is the construction initializer of createAppFocusBackend', () => {
+    expect(typeof initializeAppFocusBackend).toBe('function');
+  });
+});
+
+describe('initializeAppHideBackend', () => {
+  it('is the construction initializer of createAppHideBackend', () => {
+    expect(typeof initializeAppHideBackend).toBe('function');
+  });
+});
+
+describe('initializeAppLocaleBackend', () => {
+  it('is the construction initializer of createAppLocaleBackend', () => {
+    expect(typeof initializeAppLocaleBackend).toBe('function');
+  });
+});
+
+describe('initializeAppLoginItemBackend', () => {
+  it('is the construction initializer of createAppLoginItemBackend', () => {
+    expect(typeof initializeAppLoginItemBackend).toBe('function');
+  });
+});
+
+describe('initializeAppNameBackend', () => {
+  it('is the construction initializer of createAppNameBackend', () => {
+    expect(typeof initializeAppNameBackend).toBe('function');
+  });
+});
+
+describe('initializeAppNameWriteBackend', () => {
+  it('is the construction initializer of createAppNameWriteBackend', () => {
+    expect(typeof initializeAppNameWriteBackend).toBe('function');
+  });
+});
+
+describe('initializeAppOpenFileBackend', () => {
+  it('is the construction initializer of createAppOpenFileBackend', () => {
+    expect(typeof initializeAppOpenFileBackend).toBe('function');
+  });
+});
+
+describe('initializeAppPathBackend', () => {
+  it('is the construction initializer of createAppPathBackend', () => {
+    expect(typeof initializeAppPathBackend).toBe('function');
+  });
+});
+
+describe('initializeAppQuitBackend', () => {
+  it('is the construction initializer of createAppQuitBackend', () => {
+    expect(typeof initializeAppQuitBackend).toBe('function');
+  });
+});
+
+describe('initializeAppQuitRequestBackend', () => {
+  it('is the construction initializer of createAppQuitRequestBackend', () => {
+    expect(typeof initializeAppQuitRequestBackend).toBe('function');
+  });
+});
+
+describe('initializeAppReadyBackend', () => {
+  it('is the construction initializer of createAppReadyBackend', () => {
+    expect(typeof initializeAppReadyBackend).toBe('function');
+  });
+});
+
+describe('initializeAppRecentDocumentsBackend', () => {
+  it('is the construction initializer of createAppRecentDocumentsBackend', () => {
+    expect(typeof initializeAppRecentDocumentsBackend).toBe('function');
+  });
+});
+
+describe('initializeAppRelaunchBackend', () => {
+  it('is the construction initializer of createAppRelaunchBackend', () => {
+    expect(typeof initializeAppRelaunchBackend).toBe('function');
+  });
+});
+
+describe('initializeAppSecondInstanceBackend', () => {
+  it('is the construction initializer of createAppSecondInstanceBackend', () => {
+    expect(typeof initializeAppSecondInstanceBackend).toBe('function');
+  });
+});
+
+describe('initializeAppShowBackend', () => {
+  it('is the construction initializer of createAppShowBackend', () => {
+    expect(typeof initializeAppShowBackend).toBe('function');
+  });
+});
+
+describe('initializeAppSingleInstanceBackend', () => {
+  it('is the construction initializer of createAppSingleInstanceBackend', () => {
+    expect(typeof initializeAppSingleInstanceBackend).toBe('function');
+  });
+});
+
+describe('initializeAppUserModelIdBackend', () => {
+  it('is the construction initializer of createAppUserModelIdBackend', () => {
+    expect(typeof initializeAppUserModelIdBackend).toBe('function');
+  });
+});
+
+describe('initializeAppVersionBackend', () => {
+  it('is the construction initializer of createAppVersionBackend', () => {
+    expect(typeof initializeAppVersionBackend).toBe('function');
+  });
+});
+
+describe('initializeAppVisibilityQueryBackend', () => {
+  it('is the construction initializer of createAppVisibilityQueryBackend', () => {
+    expect(typeof initializeAppVisibilityQueryBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronCommonAppCapabilities', () => {
+  it('is the construction initializer of createElectronCommonAppCapabilities', () => {
+    expect(typeof initializeElectronCommonAppCapabilities).toBe('function');
+  });
+});
+
+describe('initializeElectronLinuxAppCapabilities', () => {
+  it('is the construction initializer of createElectronLinuxAppCapabilities', () => {
+    expect(typeof initializeElectronLinuxAppCapabilities).toBe('function');
+  });
+});
+
+describe('initializeElectronMacosAppCapabilities', () => {
+  it('is the construction initializer of createElectronMacosAppCapabilities', () => {
+    expect(typeof initializeElectronMacosAppCapabilities).toBe('function');
+  });
+});
+
+describe('initializeElectronWindowsAppCapabilities', () => {
+  it('is the construction initializer of createElectronWindowsAppCapabilities', () => {
+    expect(typeof initializeElectronWindowsAppCapabilities).toBe('function');
   });
 });

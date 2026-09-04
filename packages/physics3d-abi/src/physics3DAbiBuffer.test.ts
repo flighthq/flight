@@ -9,6 +9,11 @@ import {
   createPhysics3DAbiJointBuffer,
   createPhysics3DAbiQueryBuffer,
   getPhysics3DAbiCommandBufferRemainingByteLength,
+  initializePhysics3DAbiBodyBuffer,
+  initializePhysics3DAbiContactBuffer,
+  initializePhysics3DAbiExecutionResult,
+  initializePhysics3DAbiJointBuffer,
+  initializePhysics3DAbiQueryBuffer,
 } from './physics3DAbiBuffer';
 import {
   Physics3DAbiBodyValueStride,
@@ -113,5 +118,34 @@ describe('getPhysics3DAbiCommandBufferRemainingByteLength', () => {
     expect(getPhysics3DAbiCommandBufferRemainingByteLength(out)).toBe(48);
     out.byteLength = 80;
     expect(getPhysics3DAbiCommandBufferRemainingByteLength(out)).toBe(0);
+  });
+});
+describe('initializePhysics3DAbiBodyBuffer', () => {
+  it('is the construction initializer of createPhysics3DAbiBodyBuffer', () => {
+    expect(typeof initializePhysics3DAbiBodyBuffer).toBe('function');
+  });
+});
+
+describe('initializePhysics3DAbiContactBuffer', () => {
+  it('is the construction initializer of createPhysics3DAbiContactBuffer', () => {
+    expect(typeof initializePhysics3DAbiContactBuffer).toBe('function');
+  });
+});
+
+describe('initializePhysics3DAbiExecutionResult', () => {
+  it('is the construction initializer of createPhysics3DAbiExecutionResult', () => {
+    expect(typeof initializePhysics3DAbiExecutionResult).toBe('function');
+  });
+});
+
+describe('initializePhysics3DAbiJointBuffer', () => {
+  it('is the construction initializer of createPhysics3DAbiJointBuffer', () => {
+    expect(typeof initializePhysics3DAbiJointBuffer).toBe('function');
+  });
+});
+
+describe('initializePhysics3DAbiQueryBuffer', () => {
+  it('is the construction initializer of createPhysics3DAbiQueryBuffer', () => {
+    expect(typeof initializePhysics3DAbiQueryBuffer).toBe('function');
   });
 });

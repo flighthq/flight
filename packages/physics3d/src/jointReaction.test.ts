@@ -8,6 +8,7 @@ import {
   createPhysics3DJointReaction,
   getPhysics3DJointReactionForce,
   getPhysics3DJointReactionTorque,
+  initializePhysics3DJointReaction,
   writePhysics3DJointReaction,
 } from './jointReaction';
 import { addPhysics3DJoint } from './jointRegistry';
@@ -117,6 +118,42 @@ describe('getPhysics3DJointReactionTorque', () => {
   });
 });
 
+describe('initializePhysics3DJointReaction', () => {
+  it('is the construction initializer of createPhysics3DJointReaction', () => {
+    expect(typeof initializePhysics3DJointReaction).toBe('function');
+  });
+});
+
+interface HangingScene {
+  world: Physics3DWorld;
+  joint: ReturnType<typeof createPhysics3DBallAndSocketJoint>;
+}
+
+// One body hanging from a static anchor by a ball-and-socket, which is the simplest arrangement whose
+// reaction has a value known without reference to the solver: it is the hanging weight.
+function createHangingScene(mass: number, gravity: number): HangingScene {
+  const world = createPhysics3DWorld();
+  world.gravityY = -gravity;
+  registerBuiltInPhysics3DJointSolvers(world);
+  const anchor = createRigidBody3D('static');
+  addPhysics3DBody(world, anchor);
+  const hanging = createUnitBody(mass);
+  addPhysics3DBody(world, hanging);
+  const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+  addPhysics3DJoint(world, joint);
+  return { world, joint };
+}
+
+function createUnitBody(mass: number): RigidBody3D {
+  const body = createRigidBody3D('dynamic');
+  const data = createPhysics3DMassData();
+  data.mass = mass;
+  data.inertiaXX = mass;
+  data.inertiaYY = mass;
+  data.inertiaZZ = mass;
+  setRigidBody3DMassData(body, data);
+  return body;
+}
 describe('writePhysics3DJointReaction', () => {
   it('MEASURES THE WEIGHT A JOINT IS HOLDING UP', () => {
     // The reading that makes the API worth having, checked against a number derived from outside the
@@ -208,34 +245,3 @@ describe('writePhysics3DJointReaction', () => {
     expect(Math.abs(out.forceY)).toBeCloseTo(20, 0);
   });
 });
-
-interface HangingScene {
-  world: Physics3DWorld;
-  joint: ReturnType<typeof createPhysics3DBallAndSocketJoint>;
-}
-
-// One body hanging from a static anchor by a ball-and-socket, which is the simplest arrangement whose
-// reaction has a value known without reference to the solver: it is the hanging weight.
-function createHangingScene(mass: number, gravity: number): HangingScene {
-  const world = createPhysics3DWorld();
-  world.gravityY = -gravity;
-  registerBuiltInPhysics3DJointSolvers(world);
-  const anchor = createRigidBody3D('static');
-  addPhysics3DBody(world, anchor);
-  const hanging = createUnitBody(mass);
-  addPhysics3DBody(world, hanging);
-  const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
-  addPhysics3DJoint(world, joint);
-  return { world, joint };
-}
-
-function createUnitBody(mass: number): RigidBody3D {
-  const body = createRigidBody3D('dynamic');
-  const data = createPhysics3DMassData();
-  data.mass = mass;
-  data.inertiaXX = mass;
-  data.inertiaYY = mass;
-  data.inertiaZZ = mass;
-  setRigidBody3DMassData(body, data);
-  return body;
-}

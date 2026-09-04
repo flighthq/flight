@@ -1,4 +1,7 @@
-import { createColorBlindSimulationAdjustment } from './colorBlindSimulationAdjustment';
+import {
+  createColorBlindSimulationAdjustment,
+  initializeColorBlindSimulationAdjustment,
+} from './colorBlindSimulationAdjustment';
 import { applyColorMatrixToColor } from './colorMatrixMath';
 
 describe('createColorBlindSimulationAdjustment', () => {
@@ -23,5 +26,10 @@ describe('createColorBlindSimulationAdjustment', () => {
     expect(applyColorMatrixToColor(protan.colorMatrix as number[], green)).not.toBe(
       applyColorMatrixToColor(tritan.colorMatrix as number[], green),
     );
+  });
+});
+describe('initializeColorBlindSimulationAdjustment', () => {
+  it('is the construction initializer of createColorBlindSimulationAdjustment', () => {
+    expect(typeof initializeColorBlindSimulationAdjustment).toBe('function');
   });
 });

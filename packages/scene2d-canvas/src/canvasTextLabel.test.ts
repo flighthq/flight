@@ -3,7 +3,7 @@ import { createTextLabel } from '@flighthq/text/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasTestSupport';
-import { defaultCanvasTextLabelRenderer, drawCanvasTextLabel } from './canvasTextLabel';
+import { defaultCanvasTextLabelRenderer, drawCanvasTextLabel, initializeCanvasTextLabelData } from './canvasTextLabel';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -71,5 +71,10 @@ describe('drawCanvasTextLabel', () => {
     drawCanvasTextLabel(state, renderProxy);
 
     expect(fills).toEqual(['rgba(0, 0, 0, 0)']);
+  });
+});
+describe('initializeCanvasTextLabelData', () => {
+  it('is the construction initializer of createCanvasTextLabelData', () => {
+    expect(typeof initializeCanvasTextLabelData).toBe('function');
   });
 });

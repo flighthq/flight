@@ -10,6 +10,7 @@ import {
   getAssetGroupIds,
   getAssetIds,
   getAssetRefCount,
+  initializeAssetLibrary,
   loadAssetGroup,
   registerAssetDescriptor,
   registerAssetLoader,
@@ -214,6 +215,12 @@ describe('getAssetRefCount', () => {
     expect(getAssetRefCount(library, 'hero')).toBe(1);
     releaseAsset(library, 'hero');
     expect(getAssetRefCount(library, 'hero')).toBe(0);
+  });
+});
+
+describe('initializeAssetLibrary', () => {
+  it('is the construction initializer of createAssetLibrary', () => {
+    expect(typeof initializeAssetLibrary).toBe('function');
   });
 });
 
@@ -469,7 +476,6 @@ describe('releaseAssetGroup', () => {
     expect(() => releaseAssetGroup(library, 'nope')).not.toThrow();
   });
 });
-
 describe('setAssetAcquireGuard', () => {
   it('installs and removes the per-library acquire failure hook', async () => {
     const library = createAssetLibrary();

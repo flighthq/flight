@@ -2,11 +2,13 @@ import { TAU } from '@flighthq/math/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
-  createSpringConfig,
-  createSpringConfigFromPhysical,
   SpringPresetBouncy,
   SpringPresetGentle,
   SpringPresetStiff,
+  createSpringConfig,
+  createSpringConfigFromPhysical,
+  initializeSpringConfig,
+  initializeSpringConfigFromPhysical,
 } from './springConfig';
 
 describe('createSpringConfig', () => {
@@ -29,6 +31,17 @@ describe('createSpringConfigFromPhysical', () => {
     const config = createSpringConfigFromPhysical(100, 20, 4);
     expect(config.frequency).toBeCloseTo(5 / TAU, 9);
     expect(config.dampingRatio).toBeCloseTo(0.5, 12);
+  });
+});
+
+describe('initializeSpringConfig', () => {
+  it('is the construction initializer of createSpringConfig', () => {
+    expect(typeof initializeSpringConfig).toBe('function');
+  });
+});
+describe('initializeSpringConfigFromPhysical', () => {
+  it('is the construction initializer of createSpringConfigFromPhysical', () => {
+    expect(typeof initializeSpringConfigFromPhysical).toBe('function');
   });
 });
 

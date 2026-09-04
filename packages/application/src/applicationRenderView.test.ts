@@ -6,6 +6,7 @@ import {
   attachApplicationRenderView,
   createApplicationRenderView,
   detachApplicationRenderView,
+  initializeApplicationRenderView,
   synchronizeApplicationRenderView,
 } from './applicationRenderView';
 import { createApplicationWindow } from './window';
@@ -52,31 +53,9 @@ describe('detachApplicationRenderView', () => {
   });
 });
 
-describe('synchronizeApplicationRenderView', () => {
-  it('writes device-pixel target, viewport, and render-state values from the window authority', () => {
-    const { resize, state, target, view, viewport, window } = makeView();
-    window.width = 100;
-    window.height = 60;
-    window.devicePixelRatio = 1.5;
-    viewport.x = 8;
-    viewport.y = 9;
-    resize.mockClear();
-
-    synchronizeApplicationRenderView(view);
-
-    expect(resize).toHaveBeenCalledWith(state, target, 150, 90);
-    expect(viewport).toMatchObject({ devicePixelRatio: 1.5, height: 90, width: 150, x: 0, y: 0 });
-    expect(state.pixelRatio).toBe(1.5);
-    expect(state.renderTransform2D).toMatchObject({ a: 1.5, b: 0, c: 0, d: 1.5, tx: 0, ty: 0 });
-  });
-
-  it('invokes the backend resize seam even when the requested extent is unchanged', () => {
-    const { resize, view } = makeView();
-    resize.mockClear();
-
-    synchronizeApplicationRenderView(view);
-
-    expect(resize).toHaveBeenCalledOnce();
+describe('initializeApplicationRenderView', () => {
+  it('is the construction initializer of createApplicationRenderView', () => {
+    expect(typeof initializeApplicationRenderView).toBe('function');
   });
 });
 
@@ -108,3 +87,30 @@ function makeView() {
 function makeMatrix(): Matrix {
   return { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as Matrix;
 }
+describe('synchronizeApplicationRenderView', () => {
+  it('writes device-pixel target, viewport, and render-state values from the window authority', () => {
+    const { resize, state, target, view, viewport, window } = makeView();
+    window.width = 100;
+    window.height = 60;
+    window.devicePixelRatio = 1.5;
+    viewport.x = 8;
+    viewport.y = 9;
+    resize.mockClear();
+
+    synchronizeApplicationRenderView(view);
+
+    expect(resize).toHaveBeenCalledWith(state, target, 150, 90);
+    expect(viewport).toMatchObject({ devicePixelRatio: 1.5, height: 90, width: 150, x: 0, y: 0 });
+    expect(state.pixelRatio).toBe(1.5);
+    expect(state.renderTransform2D).toMatchObject({ a: 1.5, b: 0, c: 0, d: 1.5, tx: 0, ty: 0 });
+  });
+
+  it('invokes the backend resize seam even when the requested extent is unchanged', () => {
+    const { resize, view } = makeView();
+    resize.mockClear();
+
+    synchronizeApplicationRenderView(view);
+
+    expect(resize).toHaveBeenCalledOnce();
+  });
+});

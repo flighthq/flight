@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from '@flighthq/types/contract';
 
-import { createTauriNotificationCapabilities } from './tauriNotification';
+import { createTauriNotificationCapabilities, initializeTauriNotificationCapabilities } from './tauriNotification';
 
 function fakeTauri(granted = true, permission: TauriNotificationPermission = 'granted') {
   const sent: TauriNotificationOptions[] = [];
@@ -65,5 +65,10 @@ describe('createTauriNotificationCapabilities', () => {
       fields: ['silent'],
       reason: 'invalid-request',
     });
+  });
+});
+describe('initializeTauriNotificationCapabilities', () => {
+  it('is the construction initializer of createTauriNotificationCapabilities', () => {
+    expect(typeof initializeTauriNotificationCapabilities).toBe('function');
   });
 });

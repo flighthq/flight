@@ -3,7 +3,7 @@ import { createRegistryCatalog } from '@flighthq/registry-catalog/contract';
 import type { RegistryCatalogEntry, RequirementSet } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RequirementFacet } from '@flighthq/types/contract';
 
-import { createRegistryCodegenPlan } from './registryCodegen';
+import { createRegistryCodegenPlan, initializeRegistryCodegenPlan } from './registryCodegen';
 
 const shapeRenderer: RegistryCatalogEntry = {
   backend: 'webgl',
@@ -77,5 +77,10 @@ describe('createRegistryCodegenPlan', () => {
       entries: [],
       unresolved: [],
     });
+  });
+});
+describe('initializeRegistryCodegenPlan', () => {
+  it('is the construction initializer of createRegistryCodegenPlan', () => {
+    expect(typeof initializeRegistryCodegenPlan).toBe('function');
   });
 });

@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { createMatrix4 } from './matrix4';
 import { createQuaternion } from './quaternion';
-import { composeMatrix4FromTransform3D, createTransform3D, decomposeMatrix4ToTransform3D } from './transform3d';
+import {
+  composeMatrix4FromTransform3D,
+  createTransform3D,
+  decomposeMatrix4ToTransform3D,
+  initializeTransform3D,
+} from './transform3d';
 import { createVector3 } from './vector3';
 
 describe('composeMatrix4FromTransform3D', () => {
@@ -46,5 +51,10 @@ describe('decomposeMatrix4ToTransform3D', () => {
     expect(out.scale.x).toBeCloseTo(2);
     expect(out.scale.y).toBeCloseTo(3);
     expect(out.scale.z).toBeCloseTo(4);
+  });
+});
+describe('initializeTransform3D', () => {
+  it('is the construction initializer of createTransform3D', () => {
+    expect(typeof initializeTransform3D).toBe('function');
   });
 });

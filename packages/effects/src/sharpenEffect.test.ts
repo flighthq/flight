@@ -1,4 +1,4 @@
-import { createSharpenEffect } from './sharpenEffect';
+import { createSharpenEffect, initializeSharpenEffect } from './sharpenEffect';
 
 describe('createSharpenEffect', () => {
   it('tags the intent type', () => {
@@ -7,5 +7,10 @@ describe('createSharpenEffect', () => {
 
   it('carries options', () => {
     expect(createSharpenEffect({ amount: 0.6 })).toMatchObject({ amount: 0.6 });
+  });
+});
+describe('initializeSharpenEffect', () => {
+  it('is the construction initializer of createSharpenEffect', () => {
+    expect(typeof initializeSharpenEffect).toBe('function');
   });
 });

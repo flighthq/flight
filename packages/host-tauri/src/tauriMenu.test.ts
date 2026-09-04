@@ -2,7 +2,7 @@ import type { MenuApplicationBackend, MenuPopupBackend, MenuSelectBackend } from
 import type { MenuItemTemplate, TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createTauriMenuBackends } from './tauriMenu';
+import { createTauriMenuBackends, initializeTauriMenuBackends } from './tauriMenu';
 
 function fakeTauri() {
   const state = {
@@ -205,3 +205,8 @@ function _slots(api: TauriApi): {
     subscribeSelect: select.subscribe,
   };
 }
+describe('initializeTauriMenuBackends', () => {
+  it('is the construction initializer of createTauriMenuBackends', () => {
+    expect(typeof initializeTauriMenuBackends).toBe('function');
+  });
+});

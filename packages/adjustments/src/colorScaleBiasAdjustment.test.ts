@@ -1,4 +1,4 @@
-import { createColorScaleBiasAdjustment } from './colorScaleBiasAdjustment';
+import { createColorScaleBiasAdjustment, initializeColorScaleBiasAdjustment } from './colorScaleBiasAdjustment';
 
 describe('createColorScaleBiasAdjustment', () => {
   it('keeps a legible bridge payload and contributes its diagonal matrix', () => {
@@ -17,5 +17,10 @@ describe('createColorScaleBiasAdjustment', () => {
     expect(adjustment.colorScaleBias.redScale).toBe(0.5);
     expect(adjustment.colorMatrix[0]).toBe(0.5);
     expect(adjustment.colorMatrix[9]).toBe(0.25);
+  });
+});
+describe('initializeColorScaleBiasAdjustment', () => {
+  it('is the construction initializer of createColorScaleBiasAdjustment', () => {
+    expect(typeof initializeColorScaleBiasAdjustment).toBe('function');
   });
 });

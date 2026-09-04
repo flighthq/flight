@@ -1,7 +1,11 @@
 import type { ConnectivityStatus } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createWebConnectivityBackend, webConnectivityBackend } from './webConnectivity';
+import {
+  createWebConnectivityBackend,
+  initializeWebConnectivityBackend,
+  webConnectivityBackend,
+} from './webConnectivity';
 import { webHost } from './webHost';
 
 afterEach(() => {
@@ -88,6 +92,11 @@ describe('createWebConnectivityBackend', () => {
   });
 });
 
+describe('initializeWebConnectivityBackend', () => {
+  it('is the construction initializer of createWebConnectivityBackend', () => {
+    expect(typeof initializeWebConnectivityBackend).toBe('function');
+  });
+});
 describe('webHost connectivity', () => {
   it('publishes stable status/change/reachability slots backed by one Entity', () => {
     expect(webHost.connectivity).toEqual({

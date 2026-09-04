@@ -13,6 +13,7 @@ import {
   enableNodeSignals,
   getNodeRuntime,
   getNodeSignals,
+  initializeNodeSignals,
   setNodeEnabled,
 } from './node';
 
@@ -234,18 +235,9 @@ describe('getNodeSignals', () => {
   });
 });
 
-describe('setNodeEnabled', () => {
-  it('sets enabled to false', () => {
-    const node = createNode(NodeTestKind);
-    setNodeEnabled(node, false);
-    expect(node.enabled).toBe(false);
-  });
-
-  it('sets enabled back to true', () => {
-    const node = createNode(NodeTestKind);
-    setNodeEnabled(node, false);
-    setNodeEnabled(node, true);
-    expect(node.enabled).toBe(true);
+describe('initializeNodeSignals', () => {
+  it('is the construction initializer of createNodeSignals', () => {
+    expect(typeof initializeNodeSignals).toBe('function');
   });
 });
 
@@ -274,3 +266,17 @@ function createGraphNodeTestRuntime(): NodeTestRuntime {
   obj.testRuntimeField = 'testRuntimeField';
   return obj;
 }
+describe('setNodeEnabled', () => {
+  it('sets enabled to false', () => {
+    const node = createNode(NodeTestKind);
+    setNodeEnabled(node, false);
+    expect(node.enabled).toBe(false);
+  });
+
+  it('sets enabled back to true', () => {
+    const node = createNode(NodeTestKind);
+    setNodeEnabled(node, false);
+    setNodeEnabled(node, true);
+    expect(node.enabled).toBe(true);
+  });
+});

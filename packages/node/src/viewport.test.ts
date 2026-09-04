@@ -1,4 +1,4 @@
-import { createViewport, getViewportAspect } from './viewport';
+import { createViewport, getViewportAspect, initializeViewport } from './viewport';
 
 describe('createViewport', () => {
   it('returns a zero rect at unit device-pixel ratio by default', () => {
@@ -27,5 +27,10 @@ describe('getViewportAspect', () => {
 
   it('returns 1 for a zero-height rect', () => {
     expect(getViewportAspect(createViewport({ height: 0, width: 800 }))).toBe(1);
+  });
+});
+describe('initializeViewport', () => {
+  it('is the construction initializer of createViewport', () => {
+    expect(typeof initializeViewport).toBe('function');
   });
 });

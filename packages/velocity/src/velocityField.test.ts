@@ -10,6 +10,7 @@ import {
   explainVelocity,
   getVelocity,
   hasVelocity,
+  initializeVelocityField,
   isVelocityZero,
   lengthOfVelocity,
   lerpVelocity,
@@ -211,6 +212,12 @@ describe('hasVelocity', () => {
   });
 });
 
+describe('initializeVelocityField', () => {
+  it('is the construction initializer of createVelocityField', () => {
+    expect(typeof initializeVelocityField).toBe('function');
+  });
+});
+
 describe('isVelocityZero', () => {
   it('returns true for exact zero', () => {
     expect(isVelocityZero({ x: 0, y: 0 })).toBe(true);
@@ -321,7 +328,6 @@ describe('suppressVelocity', () => {
     expect(getVelocity(field, source, { x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
   });
 });
-
 describe('zeroVelocity', () => {
   it('sets both components to zero', () => {
     const v = { x: 5, y: -3 };

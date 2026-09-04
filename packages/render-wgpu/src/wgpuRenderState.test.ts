@@ -38,12 +38,11 @@ import { setWgpuHostBackend } from './wgpuHost';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import { createEmptyWgpuRegistries, createWgpuPipeline } from './wgpuPipeline';
 import {
-  createWgpuOffscreenRenderState as createDeviceOnlyWgpuRenderState,
   createWgpuAcquisitionFromCanvasElement,
+  createWgpuDeviceState,
+  createWgpuOffscreenRenderState as createDeviceOnlyWgpuRenderState,
   createWgpuRenderState as createWgpuRenderStateWithPipeline,
   createWgpuRenderStateFromCanvasElement as createWgpuRenderStateFromCanvasElementWithPipeline,
-  releaseWgpuAcquisition,
-  createWgpuDeviceState,
   createWgpuRenderStateRuntime as createWgpuRenderStateRuntimeWithPipeline,
   destroyWgpuRenderState,
   getWgpuColorAdjustmentMaterialFeature,
@@ -52,9 +51,14 @@ import {
   getWgpuRenderStateDeviceResources,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
+  initializeWgpuDeviceState,
+  initializeWgpuHostAcquisition,
+  initializeWgpuOffscreenRenderStateDeviceLostResult,
+  initializeWgpuOffscreenRenderStateOkResult,
   isWgpuSupported,
   registerWgpuDeviceTeardown,
   registerWgpuRenderStateTeardown,
+  releaseWgpuAcquisition,
   resolveWgpuApplyBlendMode,
 } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -933,6 +937,30 @@ describe('getWgpuSampler', () => {
   });
 });
 
+describe('initializeWgpuDeviceState', () => {
+  it('is the construction initializer of createWgpuDeviceState', () => {
+    expect(typeof initializeWgpuDeviceState).toBe('function');
+  });
+});
+
+describe('initializeWgpuHostAcquisition', () => {
+  it('is the construction initializer of createWgpuHostAcquisition', () => {
+    expect(typeof initializeWgpuHostAcquisition).toBe('function');
+  });
+});
+
+describe('initializeWgpuOffscreenRenderStateDeviceLostResult', () => {
+  it('is the construction initializer of createWgpuOffscreenRenderStateDeviceLostResult', () => {
+    expect(typeof initializeWgpuOffscreenRenderStateDeviceLostResult).toBe('function');
+  });
+});
+
+describe('initializeWgpuOffscreenRenderStateOkResult', () => {
+  it('is the construction initializer of createWgpuOffscreenRenderStateOkResult', () => {
+    expect(typeof initializeWgpuOffscreenRenderStateOkResult).toBe('function');
+  });
+});
+
 describe('isWgpuSupported', () => {
   it('returns true when navigator.gpu is present', () => {
     expect(isWgpuSupported()).toBe(true);
@@ -963,6 +991,15 @@ describe('registerWgpuDeviceTeardown', () => {
     expect(teardown).toHaveBeenCalledWith(state.device);
   });
 });
+
+function ownerAcquisition(owner: WgpuPresentationRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
+  const out = allocateEntity<any>();
+  out.context = owner.context;
+  out.device = owner.device;
+  out.format = owner.format;
+  out.surface = owner.surface;
+  return finishEntity(out);
+}
 
 describe('registerWgpuRenderStateTeardown', () => {
   it('runs a state-owned callback exactly once on teardown', async () => {
@@ -1000,7 +1037,6 @@ describe('releaseWgpuAcquisition', () => {
     destroyWgpuRenderState(owner);
   });
 });
-
 describe('resolveWgpuApplyBlendMode', () => {
   it('returns a hook installed directly on the state', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -1107,15 +1143,6 @@ describe('wgpu acquisition lifecycle', () => {
     destroyWgpuRenderState(owner);
   });
 });
-
-function ownerAcquisition(owner: WgpuPresentationRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
-  const out = allocateEntity<any>();
-  out.context = owner.context;
-  out.device = owner.device;
-  out.format = owner.format;
-  out.surface = owner.surface;
-  return finishEntity(out);
-}
 
 describe('WgpuPipeline snapshots', () => {
   it('captures late Wgpu registrations only when an explicit pipeline is created', async () => {

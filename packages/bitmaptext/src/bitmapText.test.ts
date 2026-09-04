@@ -11,6 +11,7 @@ import {
   createBitmapTextRuntime,
   getBitmapTextBounds,
   getBitmapTextPages,
+  initializeBitmapTextData,
   isBitmapTextGlyphLayoutStale,
   reserveBitmapText,
   setBitmapTextAlign,
@@ -154,6 +155,12 @@ describe('getBitmapTextPages', () => {
   });
 });
 
+describe('initializeBitmapTextData', () => {
+  it('is the construction initializer of createBitmapTextData', () => {
+    expect(typeof initializeBitmapTextData).toBe('function');
+  });
+});
+
 describe('isBitmapTextGlyphLayoutStale', () => {
   it('reads stale before the first layout and settled after it', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
@@ -232,7 +239,6 @@ describe('setBitmapTextText', () => {
     expect(text.data.text).toBe('changed');
   });
 });
-
 describe('setBitmapTextWrapWidth', () => {
   it('mutates the wrapWidth field', () => {
     const text = createBitmapText(createTestGlyphSource());

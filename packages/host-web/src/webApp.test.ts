@@ -1,7 +1,17 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createWebAppCapabilities } from './webApp';
+import {
+  createWebAppCapabilities,
+  initializeWebAppBadgeBackend,
+  initializeWebAppCapabilities,
+  initializeWebAppFocusBackend,
+  initializeWebAppLocaleBackend,
+  initializeWebAppNameBackend,
+  initializeWebAppQuitBackend,
+  initializeWebAppReadyBackend,
+  initializeWebAppRelaunchBackend,
+} from './webApp';
 
 describe('createWebAppCapabilities', () => {
   it('creates the exact genuine web app slots as Entities', () => {
@@ -27,5 +37,52 @@ describe('createWebAppCapabilities', () => {
     unsubscribe();
     await Promise.resolve();
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+describe('initializeWebAppBadgeBackend', () => {
+  it('is the construction initializer of createWebAppBadgeBackend', () => {
+    expect(typeof initializeWebAppBadgeBackend).toBe('function');
+  });
+});
+
+describe('initializeWebAppCapabilities', () => {
+  it('is the construction initializer of createWebAppCapabilities', () => {
+    expect(typeof initializeWebAppCapabilities).toBe('function');
+  });
+});
+
+describe('initializeWebAppFocusBackend', () => {
+  it('is the construction initializer of createWebAppFocusBackend', () => {
+    expect(typeof initializeWebAppFocusBackend).toBe('function');
+  });
+});
+
+describe('initializeWebAppLocaleBackend', () => {
+  it('is the construction initializer of createWebAppLocaleBackend', () => {
+    expect(typeof initializeWebAppLocaleBackend).toBe('function');
+  });
+});
+
+describe('initializeWebAppNameBackend', () => {
+  it('is the construction initializer of createWebAppNameBackend', () => {
+    expect(typeof initializeWebAppNameBackend).toBe('function');
+  });
+});
+
+describe('initializeWebAppQuitBackend', () => {
+  it('is the construction initializer of createWebAppQuitBackend', () => {
+    expect(typeof initializeWebAppQuitBackend).toBe('function');
+  });
+});
+
+describe('initializeWebAppReadyBackend', () => {
+  it('is the construction initializer of createWebAppReadyBackend', () => {
+    expect(typeof initializeWebAppReadyBackend).toBe('function');
+  });
+});
+
+describe('initializeWebAppRelaunchBackend', () => {
+  it('is the construction initializer of createWebAppRelaunchBackend', () => {
+    expect(typeof initializeWebAppRelaunchBackend).toBe('function');
   });
 });

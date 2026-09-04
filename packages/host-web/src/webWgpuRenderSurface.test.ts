@@ -6,6 +6,7 @@ import type { GlRenderSurfaceProvider, WgpuRenderSurfaceProvider } from '@flight
 import {
   createWebWgpuRenderSurfaceProvider,
   enableHostWebWgpuRenderSurface,
+  initializeWebWgpuRenderSurfaceProvider,
   resetHostWebWgpuRenderSurfaceForTest,
 } from './webWgpuRenderSurface';
 
@@ -139,6 +140,11 @@ describe('GL and WGPU surface provider independence', () => {
   });
 });
 
+describe('initializeWebWgpuRenderSurfaceProvider', () => {
+  it('is the construction initializer of createWebWgpuRenderSurfaceProvider', () => {
+    expect(typeof initializeWebWgpuRenderSurfaceProvider).toBe('function');
+  });
+});
 describe('resetHostWebWgpuRenderSurfaceForTest', () => {
   afterEach(() => {
     resetHostWebWgpuRenderSurfaceForTest();

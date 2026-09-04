@@ -3,7 +3,11 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setSpatialIndexingGuard } from './spatialIndexingGuard';
-import { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid';
+import {
+  MAX_INDEXED_CELLS_PER_OBJECT,
+  createUniformGridSpatialBackend2D,
+  initializeUniformGridSpatialBackend2D,
+} from './uniformGrid';
 
 afterEach(() => {
   setSpatialIndexingGuard(null);
@@ -433,6 +437,12 @@ describe('createUniformGridSpatialBackend2D', () => {
   });
 });
 
+describe('initializeUniformGridSpatialBackend2D', () => {
+  it('is the construction initializer of createUniformGridSpatialBackend2D', () => {
+    expect(typeof initializeUniformGridSpatialBackend2D).toBe('function');
+  });
+});
+
 describe('MAX_INDEXED_CELLS_PER_OBJECT', () => {
   it('is the per-object cell budget the oversized path is chosen by', () => {
     const grid = createUniformGridSpatialBackend2D(1);
@@ -688,7 +698,6 @@ describe('ray edge cases', () => {
     expect(out).toEqual([1]);
   });
 });
-
 describe('updateSpatialObject2D', () => {
   it('refreshes exact bounds without retaining the caller object when the covered cells stay unchanged', () => {
     const grid = createUniformGridSpatialBackend2D(10);

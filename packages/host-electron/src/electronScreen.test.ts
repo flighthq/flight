@@ -1,7 +1,12 @@
 import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronScreenCapabilities } from './electronScreen';
+import {
+  createElectronScreenCapabilities,
+  initializeEmptyScreenInfo,
+  initializeScreenChangeBackend,
+  initializeScreenQueryBackend,
+} from './electronScreen';
 
 function display(id: number, x: number): ElectronDisplay {
   return {
@@ -96,5 +101,22 @@ describe('createElectronScreenCapabilities', () => {
     expect(fake.listeners.get('display-added')).toHaveLength(0);
     expect(fake.listeners.get('display-removed')).toHaveLength(0);
     expect(fake.listeners.get('display-metrics-changed')).toHaveLength(0);
+  });
+});
+describe('initializeEmptyScreenInfo', () => {
+  it('is the construction initializer of createEmptyScreenInfo', () => {
+    expect(typeof initializeEmptyScreenInfo).toBe('function');
+  });
+});
+
+describe('initializeScreenChangeBackend', () => {
+  it('is the construction initializer of createScreenChangeBackend', () => {
+    expect(typeof initializeScreenChangeBackend).toBe('function');
+  });
+});
+
+describe('initializeScreenQueryBackend', () => {
+  it('is the construction initializer of createScreenQueryBackend', () => {
+    expect(typeof initializeScreenQueryBackend).toBe('function');
   });
 });

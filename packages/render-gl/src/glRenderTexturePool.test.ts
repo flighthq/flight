@@ -3,6 +3,7 @@ import {
   acquireGlRenderTexture,
   createGlRenderTexturePool,
   destroyGlRenderTexturePool,
+  initializeGlRenderTexturePool,
   releaseGlRenderTexture,
   withGlRenderTextures,
 } from './glRenderTexturePool';
@@ -100,6 +101,12 @@ describe('destroyGlRenderTexturePool', () => {
   });
 });
 
+describe('initializeGlRenderTexturePool', () => {
+  it('is the construction initializer of createGlRenderTexturePool', () => {
+    expect(typeof initializeGlRenderTexturePool).toBe('function');
+  });
+});
+
 describe('releaseGlRenderTexture', () => {
   it('rejects a double release', () => {
     const { state } = createGlState();
@@ -110,7 +117,6 @@ describe('releaseGlRenderTexture', () => {
     expect(() => releaseGlRenderTexture(state, pool, texture)).toThrow('texture is not leased');
   });
 });
-
 describe('withGlRenderTextures', () => {
   it('releases every lease when the bracket callback throws', () => {
     const { state } = createGlState();

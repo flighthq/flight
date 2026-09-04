@@ -6,6 +6,8 @@ import { webHost } from './webHost';
 import {
   createWebMediaSessionActionBackend,
   createWebMediaSessionBackend,
+  initializeWebMediaSessionActionBackend,
+  initializeWebMediaSessionBackend,
   webMediaSessionActionBackend,
   webMediaSessionBackend,
 } from './webMediasession';
@@ -278,6 +280,17 @@ describe('createWebMediaSessionBackend', () => {
   });
 });
 
+describe('initializeWebMediaSessionActionBackend', () => {
+  it('is the construction initializer of createWebMediaSessionActionBackend', () => {
+    expect(typeof initializeWebMediaSessionActionBackend).toBe('function');
+  });
+});
+
+describe('initializeWebMediaSessionBackend', () => {
+  it('is the construction initializer of createWebMediaSessionBackend', () => {
+    expect(typeof initializeWebMediaSessionBackend).toBe('function');
+  });
+});
 describe('web media-session command ownership', () => {
   it('releases only lanes it published and never touches action handlers', () => {
     const session = installFakeMediaSession();

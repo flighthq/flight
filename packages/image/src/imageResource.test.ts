@@ -5,6 +5,7 @@ import {
   cloneImageResource,
   createCompressedImageResource,
   createImageResource,
+  initializeCompressedImageResource,
   invalidateImageResource,
   isImageResourceEmpty,
 } from './imageResource';
@@ -66,6 +67,12 @@ describe('createImageResource', () => {
   });
 });
 
+describe('initializeCompressedImageResource', () => {
+  it('is the construction initializer of createCompressedImageResource', () => {
+    expect(typeof initializeCompressedImageResource).toBe('function');
+  });
+});
+
 describe('invalidateImageResource', () => {
   it('refreshes host dimensions and advances the version', () => {
     const source = document.createElement('canvas');
@@ -78,7 +85,6 @@ describe('invalidateImageResource', () => {
     expect(resource.version).toBe(1);
   });
 });
-
 describe('isImageResourceEmpty', () => {
   it('reports a zero-sized host image', () => {
     expect(isImageResourceEmpty(createImageResource(globalThis.document.createElement('img')))).toBe(true);

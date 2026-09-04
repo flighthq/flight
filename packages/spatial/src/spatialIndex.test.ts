@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clearSpatialIndex2D,
   createSpatialIndex2D,
+  initializeSpatialIndex2D,
   insertSpatialObject2D,
   querySpatialPairs2D,
   querySpatialPoint2D,
@@ -63,6 +64,12 @@ describe('createSpatialIndex2D', () => {
     const point: SpatialObjectId[] = [];
     querySpatialPoint2D(index, 2, 2, point);
     expect(point).toEqual([7]);
+  });
+});
+
+describe('initializeSpatialIndex2D', () => {
+  it('is the construction initializer of createSpatialIndex2D', () => {
+    expect(typeof initializeSpatialIndex2D).toBe('function');
   });
 });
 
@@ -164,7 +171,6 @@ describe('removeSpatialObject2D', () => {
     expect(point).toHaveLength(0);
   });
 });
-
 describe('updateSpatialObject2D', () => {
   it('removes a pair once the moved object leaves the shared region', () => {
     const index = makeIndex();

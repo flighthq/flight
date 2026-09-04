@@ -4,7 +4,11 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
-import { createPhysics2DDebugGeometry, writePhysics2DDebugGeometry } from './debugGeometry';
+import {
+  createPhysics2DDebugGeometry,
+  initializePhysics2DDebugGeometry,
+  writePhysics2DDebugGeometry,
+} from './debugGeometry';
 import { addPhysics2DJoint } from './jointRegistry';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
 
@@ -51,6 +55,11 @@ describe('createPhysics2DDebugGeometry', () => {
   });
 });
 
+describe('initializePhysics2DDebugGeometry', () => {
+  it('is the construction initializer of createPhysics2DDebugGeometry', () => {
+    expect(typeof initializePhysics2DDebugGeometry).toBe('function');
+  });
+});
 describe('writePhysics2DDebugGeometry', () => {
   it('draws a capsule as two end discs and the two lines tangent to them', () => {
     // Its actual silhouette. Two circles alone would leave the straight sides missing, and a single

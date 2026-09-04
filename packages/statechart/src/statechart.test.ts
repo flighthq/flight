@@ -15,6 +15,7 @@ import {
   getStatechartInputIndex,
   getStatechartRegionBlend,
   getStatechartRegionState,
+  initializeStatechartInstance,
   setStatechartBooleanInput,
   setStatechartNumberInput,
   setStatechartRegionDuration,
@@ -314,6 +315,12 @@ describe('getStatechartRegionState', () => {
   });
 });
 
+describe('initializeStatechartInstance', () => {
+  it('is the construction initializer of createStatechartInstance', () => {
+    expect(typeof initializeStatechartInstance).toBe('function');
+  });
+});
+
 describe('setStatechartBooleanInput', () => {
   it('writes the Boolean input vocabulary as numeric 0/1', () => {
     const instance = createStatechartInstance(
@@ -349,27 +356,6 @@ describe('setStatechartNumberInput', () => {
     );
     expect(() => setStatechartNumberInput(instance, 1, 2)).toThrow(RangeError);
     expect(() => setStatechartNumberInput(instance, 0, 2)).toThrow(TypeError);
-  });
-});
-
-describe('setStatechartRegionDuration', () => {
-  it('sets the plain per-region exit-time denominator', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    setStatechartRegionDuration(instance, 0, 250);
-    expect(instance.regionDuration[0]).toBe(250);
-  });
-
-  it('accepts zero as an explicit unavailable duration', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    setStatechartRegionDuration(instance, 0, 0);
-    expect(instance.regionDuration[0]).toBe(0);
-  });
-
-  it('throws for an invalid region or invalid duration', () => {
-    const instance = createStatechartInstance(createEmptyChart());
-    expect(() => setStatechartRegionDuration(instance, 1, 1)).toThrow(RangeError);
-    expect(() => setStatechartRegionDuration(instance, 0, -1)).toThrow(RangeError);
-    expect(() => setStatechartRegionDuration(instance, 0, Number.NaN)).toThrow(RangeError);
   });
 });
 
@@ -433,3 +419,23 @@ function transition(
     targetStateIndex,
   };
 }
+describe('setStatechartRegionDuration', () => {
+  it('sets the plain per-region exit-time denominator', () => {
+    const instance = createStatechartInstance(createEmptyChart());
+    setStatechartRegionDuration(instance, 0, 250);
+    expect(instance.regionDuration[0]).toBe(250);
+  });
+
+  it('accepts zero as an explicit unavailable duration', () => {
+    const instance = createStatechartInstance(createEmptyChart());
+    setStatechartRegionDuration(instance, 0, 0);
+    expect(instance.regionDuration[0]).toBe(0);
+  });
+
+  it('throws for an invalid region or invalid duration', () => {
+    const instance = createStatechartInstance(createEmptyChart());
+    expect(() => setStatechartRegionDuration(instance, 1, 1)).toThrow(RangeError);
+    expect(() => setStatechartRegionDuration(instance, 0, -1)).toThrow(RangeError);
+    expect(() => setStatechartRegionDuration(instance, 0, Number.NaN)).toThrow(RangeError);
+  });
+});

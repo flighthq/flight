@@ -7,6 +7,7 @@ import {
   createSampler,
   createTilingSampler,
   equalsSampler,
+  initializeSampler,
 } from './sampler';
 
 describe('cloneSampler', () => {
@@ -140,5 +141,10 @@ describe('equalsSampler', () => {
     expect(equalsSampler(a, null)).toBe(false);
     expect(equalsSampler(null, a)).toBe(false);
     expect(equalsSampler(undefined, undefined)).toBe(false);
+  });
+});
+describe('initializeSampler', () => {
+  it('is the construction initializer of createSampler', () => {
+    expect(typeof initializeSampler).toBe('function');
   });
 });

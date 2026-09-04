@@ -1,7 +1,12 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createWebProtocolCapabilities } from './webProtocol';
+import {
+  createWebProtocolCapabilities,
+  initializeWebProtocolCapabilities,
+  initializeWebProtocolLaunchBackend,
+  initializeWebProtocolRegistrationBackend,
+} from './webProtocol';
 
 describe('createWebProtocolCapabilities', () => {
   it('creates only launch and registration as Entities', () => {
@@ -19,5 +24,22 @@ describe('createWebProtocolCapabilities', () => {
     expect(capabilities.registration.register('flight')).toBe(true);
     expect(capabilities.registration.getRegisteredSchemes()).toEqual(['flight']);
     expect(registerProtocolHandler).toHaveBeenCalledExactlyOnceWith('flight', location.origin + '/?url=%s');
+  });
+});
+describe('initializeWebProtocolCapabilities', () => {
+  it('is the construction initializer of createWebProtocolCapabilities', () => {
+    expect(typeof initializeWebProtocolCapabilities).toBe('function');
+  });
+});
+
+describe('initializeWebProtocolLaunchBackend', () => {
+  it('is the construction initializer of createWebProtocolLaunchBackend', () => {
+    expect(typeof initializeWebProtocolLaunchBackend).toBe('function');
+  });
+});
+
+describe('initializeWebProtocolRegistrationBackend', () => {
+  it('is the construction initializer of createWebProtocolRegistrationBackend', () => {
+    expect(typeof initializeWebProtocolRegistrationBackend).toBe('function');
   });
 });

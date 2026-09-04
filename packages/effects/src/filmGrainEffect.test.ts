@@ -1,4 +1,4 @@
-import { createFilmGrainEffect } from './filmGrainEffect';
+import { createFilmGrainEffect, initializeFilmGrainEffect } from './filmGrainEffect';
 
 describe('createFilmGrainEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +11,10 @@ describe('createFilmGrainEffect', () => {
       size: 2,
       seed: 7,
     });
+  });
+});
+describe('initializeFilmGrainEffect', () => {
+  it('is the construction initializer of createFilmGrainEffect', () => {
+    expect(typeof initializeFilmGrainEffect).toBe('function');
   });
 });

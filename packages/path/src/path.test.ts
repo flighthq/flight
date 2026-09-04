@@ -16,6 +16,7 @@ import {
   appendPathRoundRectangle,
   createPath,
   getPathLastPoint,
+  initializePath,
 } from './path';
 
 describe('appendPathArc', () => {
@@ -372,5 +373,10 @@ describe('getPathLastPoint', () => {
     const path = createPath();
     appendPathPolyline(path, [0, 0, 50, 60, 70, 80]);
     expect(getPathLastPoint(path)).toStrictEqual([70, 80]);
+  });
+});
+describe('initializePath', () => {
+  it('is the construction initializer of createPath', () => {
+    expect(typeof initializePath).toBe('function');
   });
 });

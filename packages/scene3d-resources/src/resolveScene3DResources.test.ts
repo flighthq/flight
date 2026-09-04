@@ -23,6 +23,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { waitForScene3DResourceResolver } from './loadScene3DResources';
 import {
+  initializeImageResourceFailure,
   resolveOneScene3DResourceTexture,
   resolveScene3DResources,
   updateScene3DResourceStreaming,
@@ -96,6 +97,12 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe('initializeImageResourceFailure', () => {
+  it('is the construction initializer of createImageResourceFailure', () => {
+    expect(typeof initializeImageResourceFailure).toBe('function');
+  });
 });
 
 describe('resolveOneScene3DResourceTexture', () => {
@@ -196,7 +203,6 @@ describe('resolveScene3DResources', () => {
     disposeScene3DResourceResolver(resolver);
   });
 });
-
 describe('updateScene3DResourceStreaming', () => {
   it('resolves every pending texture, binding the image and advancing state', async () => {
     vi.mocked(imageModule.resolveImageResourceReference).mockResolvedValue(fakeImage);

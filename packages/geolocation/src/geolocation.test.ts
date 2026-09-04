@@ -14,6 +14,8 @@ import {
   createWebGeolocationBackend,
   getCurrentGeoPosition,
   getCurrentGeoPositionResult,
+  initializeGeoPosition,
+  initializeWebGeolocationBackend,
   isGeolocationAvailable,
   watchGeolocationPosition,
 } from './geolocation';
@@ -172,6 +174,17 @@ describe('getCurrentGeoPositionResult', () => {
   });
 });
 
+describe('initializeGeoPosition', () => {
+  it('is the construction initializer of createGeoPosition', () => {
+    expect(typeof initializeGeoPosition).toBe('function');
+  });
+});
+
+describe('initializeWebGeolocationBackend', () => {
+  it('is the construction initializer of createWebGeolocationBackend', () => {
+    expect(typeof initializeWebGeolocationBackend).toBe('function');
+  });
+});
 describe('isGeolocationAvailable', () => {
   it('routes the host backend availability', () => {
     expect(isGeolocationAvailable(hostWith(fakeBackend(true)))).toBe(true);

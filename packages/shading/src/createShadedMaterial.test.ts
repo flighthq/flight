@@ -2,7 +2,7 @@ import { EntityRuntimeKey, ShadedMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createEmissiveModifier } from './createEmissiveModifier';
-import { createShadedMaterial } from './createShadedMaterial';
+import { createShadedMaterial, initializeShadedMaterial } from './createShadedMaterial';
 
 describe('createShadedMaterial', () => {
   it('builds an entity with the ShadedMaterial kind', () => {
@@ -47,5 +47,10 @@ describe('createShadedMaterial', () => {
     expect(material.diffuse).toBe(0x102030ff);
     expect(material.shininess).toBe(8);
     expect(material.modifiers).toBe(modifiers);
+  });
+});
+describe('initializeShadedMaterial', () => {
+  it('is the construction initializer of createShadedMaterial', () => {
+    expect(typeof initializeShadedMaterial).toBe('function');
   });
 });

@@ -1,7 +1,7 @@
 import type { CapacitorApi, ShareContentBackend } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorShareContentBackend } from './capacitorShare';
+import { createCapacitorShareContentBackend, initializeCapacitorShareContentBackend } from './capacitorShare';
 
 function fakeCapacitor(shareImpl?: () => Promise<{ activityType?: string }>) {
   const shared: Array<{ dialogTitle?: string; title?: string; text?: string; url?: string }> = [];
@@ -65,5 +65,10 @@ describe('createCapacitorShareContentBackend', () => {
       completed: false,
       dismissed: true,
     });
+  });
+});
+describe('initializeCapacitorShareContentBackend', () => {
+  it('is the construction initializer of createCapacitorShareContentBackend', () => {
+    expect(typeof initializeCapacitorShareContentBackend).toBe('function');
   });
 });

@@ -13,6 +13,7 @@ import {
   getSkeleton3DJointIndexByName,
   getSkeleton3DJointWorldMatrix,
   getSkeleton3DJointWorldMatrixByName,
+  initializeSkeleton3D,
   setSkeleton3DBindPose,
   setSkeleton3DBindPoseGuard,
   validateSkeleton3D,
@@ -284,6 +285,12 @@ describe('getSkeleton3DJointWorldMatrixByName', () => {
   });
 });
 
+describe('initializeSkeleton3D', () => {
+  it('is the construction initializer of createSkeleton3D', () => {
+    expect(typeof initializeSkeleton3D).toBe('function');
+  });
+});
+
 describe('setSkeleton3DBindPose', () => {
   // A zero-scale joint makes its world matrix singular. Writing the failed inverse puts NaN in the
   // palette, which reaches the skinned vertices silently; identity costs that one joint its bind pose
@@ -339,7 +346,6 @@ describe('setSkeleton3DBindPoseGuard', () => {
     }
   });
 });
-
 describe('validateSkeleton3D', () => {
   it('returns null for a well-formed skeleton', () => {
     expect(validateSkeleton3D(createSkeleton3D([createNode3D(), createNode3D()]))).toBeNull();

@@ -13,6 +13,8 @@ import {
   createCollisionTriangleMesh3D,
   getCollisionHeightfieldValidationStatus3D,
   getCollisionTriangleMeshValidationStatus3D,
+  initializeCollisionHeightfield3D,
+  initializeCollisionTriangleMesh3D,
   invalidateCollisionHeightfield3D,
   invalidateCollisionTriangleMesh3D,
   raycastCollisionHeightfield3D,
@@ -157,6 +159,18 @@ describe('getCollisionTriangleMeshValidationStatus3D', () => {
   });
 });
 
+describe('initializeCollisionHeightfield3D', () => {
+  it('is the construction initializer of createCollisionHeightfield3D', () => {
+    expect(typeof initializeCollisionHeightfield3D).toBe('function');
+  });
+});
+
+describe('initializeCollisionTriangleMesh3D', () => {
+  it('is the construction initializer of createCollisionTriangleMesh3D', () => {
+    expect(typeof initializeCollisionTriangleMesh3D).toBe('function');
+  });
+});
+
 describe('invalidateCollisionHeightfield3D', () => {
   it('increments the payload version', () => {
     const heightfield = createCollisionHeightfield3D(2, 2, [0, 0, 0, 0]);
@@ -217,6 +231,9 @@ describe('sweepCollisionTriangleMesh3D', () => {
   });
 });
 
+function createFloorMesh() {
+  return createCollisionTriangleMesh3D([-5, 0, -5, 5, 0, -5, 5, 0, 5, -5, 0, 5], [0, 2, 1, 0, 3, 2]);
+}
 describe('writeCollisionHeightfieldBounds3D', () => {
   it('includes the height samples and pose', () => {
     const heightfield = createCollisionHeightfield3D(2, 2, [0, 1, -1, 0], 2, 3);
@@ -241,7 +258,3 @@ describe('writeCollisionTriangleMeshBounds3D', () => {
     expect(bounds.maxY).toBeCloseTo(5, 12);
   });
 });
-
-function createFloorMesh() {
-  return createCollisionTriangleMesh3D([-5, 0, -5, 5, 0, -5, 5, 0, 5, -5, 0, 5], [0, 2, 1, 0, 3, 2]);
-}

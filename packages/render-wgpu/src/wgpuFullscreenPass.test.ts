@@ -3,6 +3,7 @@ import {
   createWgpuFullscreenPipeline,
   destroyWgpuFullscreenPipeline,
   drawWgpuFullscreenPass,
+  initializeWgpuFullscreenPipeline,
 } from './wgpuFullscreenPass';
 import { createWgpuRenderTarget } from './wgpuRenderTarget';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -60,5 +61,10 @@ describe('drawWgpuFullscreenPass', () => {
     const pipeline = createWgpuFullscreenPipeline(state, SIMPLE_FRAGMENT_WGSL, 1);
     const target = createWgpuRenderTarget(state, 64, 64);
     expect(() => drawWgpuFullscreenPass(state, pipeline, [target], null, null)).not.toThrow();
+  });
+});
+describe('initializeWgpuFullscreenPipeline', () => {
+  it('is the construction initializer of createWgpuFullscreenPipeline', () => {
+    expect(typeof initializeWgpuFullscreenPipeline).toBe('function');
   });
 });

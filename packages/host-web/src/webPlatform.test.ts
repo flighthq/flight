@@ -1,6 +1,6 @@
 import { createPlatformInfo } from '@flighthq/platform/contract';
 
-import { createWebPlatformBackend, webPlatformBackend } from './webPlatform';
+import { createWebPlatformBackend, initializeWebPlatformBackend, webPlatformBackend } from './webPlatform';
 
 describe('createWebPlatformBackend', () => {
   it('produces a backend that fills the out info', () => {
@@ -52,6 +52,12 @@ describe('createWebPlatformBackend', () => {
     expect(out.osBuild).toBe('');
     expect(out.distro).toBe('');
     expect(out.distroVersion).toBe('');
+  });
+});
+
+describe('initializeWebPlatformBackend', () => {
+  it('is the construction initializer of createWebPlatformBackend', () => {
+    expect(typeof initializeWebPlatformBackend).toBe('function');
   });
 });
 
@@ -300,7 +306,6 @@ describe('web backend UA detection', () => {
     });
   });
 });
-
 describe('webPlatformBackend', () => {
   it('is a pre-constructed singleton', () => {
     expect(webPlatformBackend).toBeDefined();

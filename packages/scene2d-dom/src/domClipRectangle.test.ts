@@ -6,6 +6,7 @@ import type { DomRenderState, DomScene2DRectangle } from '@flighthq/types/contra
 import {
   applyDomClipRectangles,
   createDomScene2DRectangle,
+  initializeDomScene2DRectangle,
   pushDomClipRectangle,
   setDomClipHooks,
 } from './domClipRectangle';
@@ -54,6 +55,12 @@ describe('createDomScene2DRectangle', () => {
   });
 });
 
+describe('initializeDomScene2DRectangle', () => {
+  it('is the construction initializer of createDomScene2DRectangle', () => {
+    expect(typeof initializeDomScene2DRectangle).toBe('function');
+  });
+});
+
 describe('pushDomClipRectangle', () => {
   it('pushes a transformed scene2d rectangle', () => {
     const rectangles: DomScene2DRectangle[] = [];
@@ -63,7 +70,6 @@ describe('pushDomClipRectangle', () => {
     expect(rectangles).toMatchObject([{ bottom: 23, left: 2, right: 12, top: 3 }]);
   });
 });
-
 describe('setDomClipHooks', () => {
   it('sets DOM clip hooks on the render state', () => {
     const state = makeState();

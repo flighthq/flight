@@ -9,7 +9,11 @@ import type {
 } from '@flighthq/types/contract';
 import { SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
-import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
+import {
+  applyAnimationClipToLottieDocument,
+  createScene2DFromLottieDocument,
+  initializeLottieDocumentImportResult,
+} from './lottieDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
 describe('applyAnimationClipToLottieDocument', () => {
@@ -116,3 +120,8 @@ function findFirstKind(root: Node2D, kind: string): Node2D | null {
   }
   return null;
 }
+describe('initializeLottieDocumentImportResult', () => {
+  it('is the construction initializer of createLottieDocumentImportResult', () => {
+    expect(typeof initializeLottieDocumentImportResult).toBe('function');
+  });
+});

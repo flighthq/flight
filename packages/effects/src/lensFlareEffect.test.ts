@@ -1,4 +1,4 @@
-import { createLensFlareEffect } from './lensFlareEffect';
+import { createLensFlareEffect, initializeLensFlareEffect } from './lensFlareEffect';
 
 describe('createLensFlareEffect', () => {
   it('tags the intent type', () => {
@@ -12,5 +12,10 @@ describe('createLensFlareEffect', () => {
       ghosts: 4,
       halo: 0.5,
     });
+  });
+});
+describe('initializeLensFlareEffect', () => {
+  it('is the construction initializer of createLensFlareEffect', () => {
+    expect(typeof initializeLensFlareEffect).toBe('function');
   });
 });

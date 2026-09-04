@@ -5,13 +5,14 @@ import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { resolveWgpuSmoothingBindGroup } from './wgpuDraw';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
-  getWgpuRenderTargetSupersampleScale,
   beginWgpuRenderPass,
   createWgpuRenderTarget,
   declareWgpuRenderTargetColorSpace,
   destroyWgpuRenderTarget,
   drawWgpuRenderTargetResult,
   endWgpuRenderPass,
+  getWgpuRenderTargetSupersampleScale,
+  initializeWgpuRenderTarget,
   resizeWgpuRenderTarget,
   setWgpuRenderTransform2D,
 } from './wgpuRenderTarget';
@@ -195,6 +196,12 @@ describe('getWgpuRenderTargetSupersampleScale', () => {
   });
 });
 
+describe('initializeWgpuRenderTarget', () => {
+  it('is the construction initializer of createWgpuRenderTarget', () => {
+    expect(typeof initializeWgpuRenderTarget).toBe('function');
+  });
+});
+
 describe('resizeWgpuRenderTarget', () => {
   it('preserves the allocation when dimensions are unchanged', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -237,7 +244,6 @@ describe('resizeWgpuRenderTarget', () => {
     expect(target.texture).not.toBe(previousTexture);
   });
 });
-
 describe('setWgpuRenderTransform2D', () => {
   it('installs a copy of the transform, restored by the enclosing pass', async () => {
     const state = await createWgpuRenderStateForTest();

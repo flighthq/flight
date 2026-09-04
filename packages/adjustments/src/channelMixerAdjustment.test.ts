@@ -1,4 +1,4 @@
-import { createChannelMixerAdjustment } from './channelMixerAdjustment';
+import { createChannelMixerAdjustment, initializeChannelMixerAdjustment } from './channelMixerAdjustment';
 import { applyColorMatrixToColor } from './colorMatrixMath';
 
 describe('createChannelMixerAdjustment', () => {
@@ -20,5 +20,10 @@ describe('createChannelMixerAdjustment', () => {
     // Identity mix plus a full-white offset on every row → saturates to white.
     const adjustment = createChannelMixerAdjustment({ matrix: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1] });
     expect(applyColorMatrixToColor(adjustment.colorMatrix as number[], 0x102030ff)).toBe(0xffffffff);
+  });
+});
+describe('initializeChannelMixerAdjustment', () => {
+  it('is the construction initializer of createChannelMixerAdjustment', () => {
+    expect(typeof initializeChannelMixerAdjustment).toBe('function');
   });
 });

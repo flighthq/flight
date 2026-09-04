@@ -2,7 +2,7 @@ import type { Texture, Vector2Like } from '@flighthq/types/contract';
 import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAnimatedNormalModifier } from './createAnimatedNormalModifier';
+import { createAnimatedNormalModifier, initializeAnimatedNormalModifier } from './createAnimatedNormalModifier';
 
 describe('createAnimatedNormalModifier', () => {
   const scroll: Vector2Like = { x: 0.1, y: 0 };
@@ -45,5 +45,10 @@ describe('createAnimatedNormalModifier', () => {
     expect(modifier.strength).toBe(0.5);
     expect(modifier.secondaryMap).toBe(secondaryMap);
     expect(modifier.secondaryScroll).toBe(secondaryScroll);
+  });
+});
+describe('initializeAnimatedNormalModifier', () => {
+  it('is the construction initializer of createAnimatedNormalModifier', () => {
+    expect(typeof initializeAnimatedNormalModifier).toBe('function');
   });
 });

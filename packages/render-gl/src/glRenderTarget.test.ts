@@ -11,10 +11,11 @@ import {
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
   explainGlRenderTarget,
+  initializeGlRenderTarget,
   isGlRenderTargetFormatSupported,
   resizeGlRenderTarget,
-  resolveGlRenderTargetAxes,
   resolveGlRenderTarget,
+  resolveGlRenderTargetAxes,
 } from './glRenderTarget';
 import { createGlState } from './glTestHelper';
 
@@ -291,6 +292,12 @@ describe('explainGlRenderTarget', () => {
   });
 });
 
+describe('initializeGlRenderTarget', () => {
+  it('is the construction initializer of createGlRenderTarget', () => {
+    expect(typeof initializeGlRenderTarget).toBe('function');
+  });
+});
+
 describe('isGlRenderTargetFormatSupported', () => {
   it('reports rgba8 independently of float extension support', () => {
     const { state, gl } = makeState();
@@ -501,7 +508,6 @@ describe('resolveGlRenderTarget', () => {
     expect(gl.scissor).toHaveBeenLastCalledWith(3, 4, 16, 12);
   });
 });
-
 describe('resolveGlRenderTargetAxes', () => {
   it('queries effective axes without allocating target storage', () => {
     const { state, gl } = makeState();

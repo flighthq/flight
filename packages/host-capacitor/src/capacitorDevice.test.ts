@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorDeviceBackend } from './capacitorDevice';
+import { createCapacitorDeviceBackend, initializeCapacitorDeviceBackend } from './capacitorDevice';
 
 const flush = async () => {
   await Promise.resolve();
@@ -112,5 +112,10 @@ describe('createCapacitorDeviceBackend', () => {
     expect(backend.getCapabilities(caps)).toMatchObject({ hasKeyboard: false, hasMouse: false, hasStylus: false });
     const insets: SafeAreaInsets = { [EntityRuntimeKey]: undefined, top: 9, right: 9, bottom: 9, left: 9 };
     expect(backend.getSafeAreaInsets(insets)).toMatchObject({ top: 0, right: 0, bottom: 0, left: 0 });
+  });
+});
+describe('initializeCapacitorDeviceBackend', () => {
+  it('is the construction initializer of createCapacitorDeviceBackend', () => {
+    expect(typeof initializeCapacitorDeviceBackend).toBe('function');
   });
 });

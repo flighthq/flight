@@ -3,6 +3,7 @@ import type { AcceleratorParseError, Entity, Signal } from '@flighthq/types/cont
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as shortcutExports from './shortcutExplicitDependency';
+import { initializeGlobalShortcut } from './shortcutExplicitDependency';
 
 interface GlobalShortcutLike extends Entity {
   readonly accelerator: string;
@@ -227,13 +228,18 @@ describe('disposeGlobalShortcut', () => {
   });
 });
 
+describe('initializeGlobalShortcut', () => {
+  it('is the construction initializer of createGlobalShortcut', () => {
+    expect(typeof initializeGlobalShortcut).toBe('function');
+  });
+});
+
 describe('queryGlobalShortcutConflict', () => {
   it('uses the exact query witness and preserves its method-tight outcome', async () => {
     const host = queryHost({ [EntityRuntimeKey]: undefined, isRegistered: async () => true });
     await expect(api().queryGlobalShortcutConflict(host, 'Control+Q')).resolves.toEqual({ reason: 'registered' });
   });
 });
-
 describe('queryGlobalShortcutRegistration', () => {
   it('parses before querying and returns the exact parse error without calling the provider', async () => {
     const isRegistered = vi.fn(async () => false);

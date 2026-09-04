@@ -5,6 +5,8 @@ import {
   advanceAnimationBlendTree,
   createAnimationBlendTree,
   createAnimationBlendTreeInput,
+  initializeAnimationBlendTree,
+  initializeAnimationBlendTreeInput,
   sampleAnimationBlendTree,
   sampleAnimationBlendTreeChannel,
   setAnimationBlendTreeInputWeight,
@@ -88,6 +90,18 @@ describe('createAnimationBlendTreeInput', () => {
   });
 });
 
+describe('initializeAnimationBlendTree', () => {
+  it('is the construction initializer of createAnimationBlendTree', () => {
+    expect(typeof initializeAnimationBlendTree).toBe('function');
+  });
+});
+
+describe('initializeAnimationBlendTreeInput', () => {
+  it('is the construction initializer of createAnimationBlendTreeInput', () => {
+    expect(typeof initializeAnimationBlendTreeInput).toBe('function');
+  });
+});
+
 describe('sampleAnimationBlendTree', () => {
   it('normalizes an N-way weighted pose by target identity', () => {
     const target = {};
@@ -167,7 +181,6 @@ describe('sampleAnimationBlendTree', () => {
     expect(visit).not.toHaveBeenCalled();
   });
 });
-
 describe('sampleAnimationBlendTreeChannel', () => {
   it('returns false and preserves output for an absent channel', () => {
     const out = [9];

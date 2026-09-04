@@ -2,13 +2,15 @@ import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
 import {
+  EFFECT_VERTEX_WGSL,
   clearWgpuEffectTarget,
   createWgpuDualSourceEffectPipeline,
   createWgpuEffectPipeline,
   drawWgpuDualSourceEffectPass,
   drawWgpuEffectPass,
-  EFFECT_VERTEX_WGSL,
   getWgpuEffectPassState,
+  initializeWgpuDualSourceEffectPipeline,
+  initializeWgpuEffectPipeline,
 } from './wgpuEffectPass';
 
 let runtimeMockCurrent: unknown = null;
@@ -345,5 +347,16 @@ describe('getWgpuEffectPassState', () => {
     expect(() => getWgpuEffectPassState(harness.state).beginPass(createTarget('dest'), 'load')).toThrow(
       'renderWgpuBackground',
     );
+  });
+});
+describe('initializeWgpuDualSourceEffectPipeline', () => {
+  it('is the construction initializer of createWgpuDualSourceEffectPipeline', () => {
+    expect(typeof initializeWgpuDualSourceEffectPipeline).toBe('function');
+  });
+});
+
+describe('initializeWgpuEffectPipeline', () => {
+  it('is the construction initializer of createWgpuEffectPipeline', () => {
+    expect(typeof initializeWgpuEffectPipeline).toBe('function');
   });
 });

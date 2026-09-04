@@ -6,7 +6,12 @@ import {
 } from '@flighthq/device/contract';
 import { DeviceFormFactorDesktop, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-import { createWebDeviceBackend, enableWebSafeAreaInsets, webDeviceBackend } from './webDevice';
+import {
+  createWebDeviceBackend,
+  enableWebSafeAreaInsets,
+  initializeWebDeviceBackend,
+  webDeviceBackend,
+} from './webDevice';
 
 describe('createWebDeviceBackend', () => {
   it('fills the snapshot with sentinels without throwing (jsdom)', () => {
@@ -107,6 +112,11 @@ describe('enableWebSafeAreaInsets', () => {
   });
 });
 
+describe('initializeWebDeviceBackend', () => {
+  it('is the construction initializer of createWebDeviceBackend', () => {
+    expect(typeof initializeWebDeviceBackend).toBe('function');
+  });
+});
 describe('webDeviceBackend', () => {
   it('is a pre-constructed singleton', () => {
     expect(webDeviceBackend).toBeDefined();

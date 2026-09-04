@@ -17,6 +17,8 @@ import {
   setColorScaleBiasBiasRgba,
 } from '@flighthq/materials/contract';
 
+import { initializeColorScaleBias } from './colorScaleBias';
+
 describe('cloneColorScaleBias', () => {
   it('returns a new object with identical values', () => {
     const ct = createColorScaleBias({ redScale: 0.5, greenBias: 64 });
@@ -311,6 +313,12 @@ describe('getColorScaleBiasBiasRgba', () => {
   });
 });
 
+describe('initializeColorScaleBias', () => {
+  it('is the construction initializer of createColorScaleBias', () => {
+    expect(typeof initializeColorScaleBias).toBe('function');
+  });
+});
+
 describe('invertColorScaleBias', () => {
   it('reciprocates scales', () => {
     const source = createColorScaleBias({
@@ -425,7 +433,6 @@ describe('setColorScaleBiasBiasRgba', () => {
     expect(ct.alphaScale).toBe(0);
   });
 });
-
 describe('setColorScaleBiasIdentity', () => {
   it('resets scales to 1 and biases to 0', () => {
     const ct = createColorScaleBias({ redScale: 0.5, greenBias: 128, alphaScale: 0, blueBias: 64 });

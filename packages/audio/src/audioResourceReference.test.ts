@@ -10,6 +10,8 @@ import {
   createExternalAudioResourceReference,
   explainAudioResourceReferenceResolution,
   findAudioResourceReferenceByName,
+  initializeEmbeddedAudioResourceReference,
+  initializeExternalAudioResourceReference,
   resetFailedAudioResourceReference,
   resolveAudioResourceReference,
 } from './audioResourceReference';
@@ -121,6 +123,17 @@ describe('findAudioResourceReferenceByName', () => {
   });
 });
 
+describe('initializeEmbeddedAudioResourceReference', () => {
+  it('is the construction initializer of createEmbeddedAudioResourceReference', () => {
+    expect(typeof initializeEmbeddedAudioResourceReference).toBe('function');
+  });
+});
+
+describe('initializeExternalAudioResourceReference', () => {
+  it('is the construction initializer of createExternalAudioResourceReference', () => {
+    expect(typeof initializeExternalAudioResourceReference).toBe('function');
+  });
+});
 describe('resetFailedAudioResourceReference', () => {
   it('returns a failed reference to unresolved', () => {
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1]));

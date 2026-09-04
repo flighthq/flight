@@ -5,6 +5,7 @@ import {
   cloneSpotLight,
   createSpotLight,
   getSpotLightConeDegrees,
+  initializeSpotLight,
   setSpotLightBlend,
   setSpotLightCone,
   setSpotLightDirection,
@@ -125,6 +126,12 @@ describe('getSpotLightConeDegrees', () => {
   });
 });
 
+describe('initializeSpotLight', () => {
+  it('is the construction initializer of createSpotLight', () => {
+    expect(typeof initializeSpotLight).toBe('function');
+  });
+});
+
 describe('setSpotLightBlend', () => {
   it('stores a blend within the normalized range', () => {
     const light = createSpotLight();
@@ -171,7 +178,6 @@ describe('setSpotLightDirection', () => {
     expect(light.direction.y).toBeCloseTo(-1, 6);
   });
 });
-
 describe('setSpotLightTarget', () => {
   it('sets direction from position toward target', () => {
     const light = createSpotLight({ position: createVector3(0, 0, 0) });

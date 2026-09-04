@@ -11,6 +11,8 @@ import {
   getScene2DRoot,
   getScene2DRuntime,
   getScene2DSignals,
+  initializeScene2D,
+  initializeScene2DSignals,
   setScene2DSize,
 } from './scene2d';
 
@@ -127,6 +129,17 @@ describe('getScene2DSignals', () => {
     const scene2d = createScene2D();
     const signals = enableScene2DSignals(scene2d);
     expect(getScene2DSignals(scene2d)).toBe(signals);
+  });
+});
+
+describe('initializeScene2D', () => {
+  it('is the construction initializer of createScene2D', () => {
+    expect(typeof initializeScene2D).toBe('function');
+  });
+});
+describe('initializeScene2DSignals', () => {
+  it('is the construction initializer of createScene2DSignals', () => {
+    expect(typeof initializeScene2DSignals).toBe('function');
   });
 });
 

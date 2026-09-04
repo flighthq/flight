@@ -10,6 +10,7 @@ import {
   getBitmapFontPage,
   getBitmapFontPages,
   hasBitmapFontGlyph,
+  initializeBitmapFont,
   packBitmapFontKerningKey,
   setBitmapFontGuard,
   unpackBitmapFontKerningKey,
@@ -209,6 +210,12 @@ describe('hasBitmapFontGlyph', () => {
   });
 });
 
+describe('initializeBitmapFont', () => {
+  it('is the construction initializer of createBitmapFont', () => {
+    expect(typeof initializeBitmapFont).toBe('function');
+  });
+});
+
 describe('packBitmapFontKerningKey', () => {
   it('gives every distinct pair a distinct key across the full codepoint space', () => {
     const pairs: readonly (readonly [number, number])[] = [
@@ -275,7 +282,6 @@ describe('setBitmapFontGuard', () => {
     expect(calls).toEqual([]);
   });
 });
-
 describe('unpackBitmapFontKerningKey', () => {
   it('recovers the pair a key was packed from', () => {
     // The pairs are the ones a 16-bit inverse (`key >>> 16` / `key & 0xffff`) reads back wrong: an

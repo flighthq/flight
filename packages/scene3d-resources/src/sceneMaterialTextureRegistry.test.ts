@@ -20,11 +20,12 @@ import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   hasScene3DMaterialTextureLister,
+  initializeScene3DMaterialTextureRegistry,
+  registerExtendedPbrScene3DMaterialTextures,
+  registerScene3DMaterialTextures,
+  registerScene3DPbrExtensionTextures,
   registerStandardPbrScene3DMaterialTextures,
   registerUnlitScene3DMaterialTextures,
-  registerExtendedPbrScene3DMaterialTextures,
-  registerScene3DPbrExtensionTextures,
-  registerScene3DMaterialTextures,
 } from './sceneMaterialTextureRegistry';
 
 describe('createScene3DMaterialTextureRegistry', () => {
@@ -66,6 +67,12 @@ describe('hasScene3DMaterialTextureLister', () => {
     registerUnlitScene3DMaterialTextures(registry);
     expect(hasScene3DMaterialTextureLister(registry, UnlitMaterialKind)).toBe(true);
     expect(hasScene3DMaterialTextureLister(registry, StandardPbrMaterialKind)).toBe(false);
+  });
+});
+
+describe('initializeScene3DMaterialTextureRegistry', () => {
+  it('is the construction initializer of createScene3DMaterialTextureRegistry', () => {
+    expect(typeof initializeScene3DMaterialTextureRegistry).toBe('function');
   });
 });
 
@@ -168,7 +175,6 @@ describe('registerStandardPbrScene3DMaterialTextures', () => {
     expect(out).toEqual([baseColorMap]);
   });
 });
-
 describe('registerUnlitScene3DMaterialTextures', () => {
   it('registers only the Unlit lister, leaving other kinds unlisted', () => {
     // The point of splitting the built-in bag apart: each door registers exactly the family it names,

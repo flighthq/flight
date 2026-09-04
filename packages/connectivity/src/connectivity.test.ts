@@ -11,13 +11,14 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import {
   attachConnectivity,
   createConnectivity,
+  destroyConnectivity,
   detachConnectivity,
   detectConnectivityReachability,
   disposeConnectivity,
-  destroyConnectivity,
   getConnectivityOnline,
   getConnectivityStatus,
   hasConnectivityStatusChanged,
+  initializeConnectivity,
   isConnectivityMetered,
   isConnectivitySaveDataEnabled,
 } from './connectivity';
@@ -308,12 +309,17 @@ describe('hasConnectivityStatusChanged', () => {
   });
 });
 
+describe('initializeConnectivity', () => {
+  it('is the construction initializer of createConnectivity', () => {
+    expect(typeof initializeConnectivity).toBe('function');
+  });
+});
+
 describe('isConnectivityMetered', () => {
   it('reads the metered level from the supplied status witness', () => {
     expect(isConnectivityMetered(hostFor(fakeProvider({ metered: true })))).toBe(true);
   });
 });
-
 describe('isConnectivitySaveDataEnabled', () => {
   it('reads the save-data level from the supplied status witness', () => {
     expect(isConnectivitySaveDataEnabled(hostFor(fakeProvider({ saveData: true })))).toBe(true);

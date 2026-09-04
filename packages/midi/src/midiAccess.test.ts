@@ -3,6 +3,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as midi from './contract';
+import { initializeMidiAccessResource } from './midiAccess';
 
 describe('createMidiAccessResource', () => {
   it('creates an Entity whose provider operations stay outside its public fields', () => {
@@ -101,6 +102,30 @@ describe('getMidiAccessOutputPorts', () => {
   });
 });
 
+describe('initializeMidiAccessResource', () => {
+  it('is the construction initializer of createMidiAccessResource', () => {
+    expect(typeof initializeMidiAccessResource).toBe('function');
+  });
+});
+
+function createAccess(inputs: readonly object[], outputs: readonly object[]): unknown {
+  return requiredFunction('createMidiAccessResource')({
+    attachStateChange: vi.fn(),
+    getInputPorts: () => inputs,
+    getOutputPorts: () => outputs,
+  });
+}
+
+function createEmptyAccess(): unknown {
+  return createAccess([], []);
+}
+
+function requiredFunction(name: string): (...args: unknown[]) => unknown {
+  const value: unknown = Reflect.get(midi, name);
+  expect(value, `${name} export`).toBeTypeOf('function');
+  if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
+  return value as (...args: unknown[]) => unknown;
+}
 describe('requestMidiAccess', () => {
   it('retains accepted access and keeps denial, security restriction, and provider failure distinct', async () => {
     const requestMidiAccess = requiredFunction('requestMidiAccess');
@@ -126,22 +151,3 @@ describe('requestMidiAccess', () => {
     await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'operation-failed' });
   });
 });
-
-function createAccess(inputs: readonly object[], outputs: readonly object[]): unknown {
-  return requiredFunction('createMidiAccessResource')({
-    attachStateChange: vi.fn(),
-    getInputPorts: () => inputs,
-    getOutputPorts: () => outputs,
-  });
-}
-
-function createEmptyAccess(): unknown {
-  return createAccess([], []);
-}
-
-function requiredFunction(name: string): (...args: unknown[]) => unknown {
-  const value: unknown = Reflect.get(midi, name);
-  expect(value, `${name} export`).toBeTypeOf('function');
-  if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
-  return value as (...args: unknown[]) => unknown;
-}

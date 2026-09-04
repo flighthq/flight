@@ -1,7 +1,7 @@
 import { createVector3 } from '@flighthq/geometry/contract';
 import { CandelaLightUnit, PointLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
-import { clonePointLight, createPointLight } from './pointLight';
+import { clonePointLight, createPointLight, initializePointLight } from './pointLight';
 
 describe('clonePointLight', () => {
   it('creates an independent copy with a fresh position vector', () => {
@@ -72,5 +72,10 @@ describe('createPointLight', () => {
     const light = createPointLight({ position });
     expect(light.position).not.toBe(position);
     expect(light.position.y).toBe(2);
+  });
+});
+describe('initializePointLight', () => {
+  it('is the construction initializer of createPointLight', () => {
+    expect(typeof initializePointLight).toBe('function');
   });
 });

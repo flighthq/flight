@@ -17,6 +17,8 @@ import { setRigidBody3DMassData } from './massProperties';
 import {
   createPhysics3DContactConstraint,
   createPhysics3DContactConstraintPoint,
+  initializePhysics3DContactConstraint,
+  initializePhysics3DContactConstraintPoint,
   preparePhysics3DContactConstraints,
   solvePhysics3DContactPositions,
   solvePhysics3DContactVelocities,
@@ -52,6 +54,18 @@ describe('createPhysics3DContactConstraintPoint', () => {
     expect(point.tangentImpulse0).toBe(0);
     expect(point.tangentImpulse1).toBe(0);
     expect(point.bias).toBe(0);
+  });
+});
+
+describe('initializePhysics3DContactConstraint', () => {
+  it('is the construction initializer of createPhysics3DContactConstraint', () => {
+    expect(typeof initializePhysics3DContactConstraint).toBe('function');
+  });
+});
+
+describe('initializePhysics3DContactConstraintPoint', () => {
+  it('is the construction initializer of createPhysics3DContactConstraintPoint', () => {
+    expect(typeof initializePhysics3DContactConstraintPoint).toBe('function');
   });
 });
 
@@ -293,6 +307,93 @@ describe('solvePhysics3DContactPositions', () => {
   });
 });
 
+function createContactPoint(featureId: number, depth: number): Physics3DContactPoint {
+  const point = createPhysics3DContactPointRecord();
+  point.depth = depth;
+  point.featureId = featureId;
+  point.rAY = -0.5;
+  point.rBY = 0.5;
+  return point;
+}
+
+function createContact(bodyA: number, bodyB: number): Physics3DContact {
+  const contact = createPhysics3DContactRecord(bodyA, bodyB);
+  contact.normalY = 1;
+  contact.pointCount = 1;
+  contact.points.push(createContactPoint(1, 0.01));
+  contact.touching = true;
+  return contact;
+}
+
+function createUnitBox(world: Physics3DWorld): RigidBody3D {
+  const body = createRigidBody3D();
+  const mass = createPhysics3DMassData();
+  computePhysics3DBoxMassData(0.5, 0.5, 0.5, 1, mass);
+  setRigidBody3DMassData(body, mass);
+  refreshRigidBody3DWorldInertia(body);
+  addPhysics3DBody(world, body);
+  return body;
+}
+
+// The solver reads the SOLVE ISLAND contact slices rather than `world.contacts`, so a world assembled
+// by hand needs the same workspace `stepPhysics3D` builds before it reaches the solver. Without it every
+// prepare finds nothing to do — which is the correct answer for a world with no awake islands, and the
+// reason this is a factory step rather than something prepare rebuilds for itself.
+//
+// A test that changes what belongs in an island AFTER this — putting a body to sleep, disabling a
+// contact, making a body static — has to call it again, exactly as a real step rebuilds every step.
+function buildSolveWorkspace(world: Physics3DWorld): Physics3DWorld {
+  updatePhysics3DSleep(world, 1 / 60);
+  buildPhysics3DSolveIslands(world);
+  return world;
+}
+
+// One dynamic box whose single contact point references a body that is not in the world's contact
+// partner slot — used for the basis and mass-denominator tests, where only body A matters.
+function createFallingBoxWorld(): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const box = createUnitBox(world);
+  const other = createUnitBox(world);
+  world.contacts.push(createContact(box.index, other.index));
+  return buildSolveWorkspace(world);
+}
+
+// Two unit boxes with REAL colliders, overlapping vertically by `depth`, with contacts generated the
+// way a step generates them. The position pass reads geometry, so this is the only fixture shape its
+// tests can be written against.
+function createOverlappingBoxWorld(depth: number): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const upper = createUnitBox(world);
+  const lower = createUnitBox(world);
+  setPhysics3DBodyType(lower, 'static');
+  for (const body of [upper, lower]) {
+    addPhysics3DCollider(
+      world,
+      body,
+      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+    );
+  }
+  upper.y = 1 - depth;
+  buildPhysics3DContacts(world);
+  return buildSolveWorkspace(world);
+}
+
+function createBoxOnGroundWorld(): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const box = createUnitBox(world);
+  const ground = createUnitBox(world);
+  setPhysics3DBodyType(ground, 'static');
+  world.contacts.push(createContact(box.index, ground.index));
+  return buildSolveWorkspace(world);
+}
+
+function createTwoDynamicBodyWorld(): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const upper = createUnitBox(world);
+  const lower = createUnitBox(world);
+  world.contacts.push(createContact(upper.index, lower.index));
+  return buildSolveWorkspace(world);
+}
 describe('solvePhysics3DContactVelocities', () => {
   it('removes the approach velocity of a body resting on static ground', () => {
     const world = createBoxOnGroundWorld();
@@ -464,91 +565,3 @@ describe('warmStartPhysics3DContacts', () => {
     expect(Math.abs(warm.bodies[0].velocityY)).toBeLessThanOrEqual(Math.abs(cold.bodies[0].velocityY));
   });
 });
-
-function createContactPoint(featureId: number, depth: number): Physics3DContactPoint {
-  const point = createPhysics3DContactPointRecord();
-  point.depth = depth;
-  point.featureId = featureId;
-  point.rAY = -0.5;
-  point.rBY = 0.5;
-  return point;
-}
-
-function createContact(bodyA: number, bodyB: number): Physics3DContact {
-  const contact = createPhysics3DContactRecord(bodyA, bodyB);
-  contact.normalY = 1;
-  contact.pointCount = 1;
-  contact.points.push(createContactPoint(1, 0.01));
-  contact.touching = true;
-  return contact;
-}
-
-function createUnitBox(world: Physics3DWorld): RigidBody3D {
-  const body = createRigidBody3D();
-  const mass = createPhysics3DMassData();
-  computePhysics3DBoxMassData(0.5, 0.5, 0.5, 1, mass);
-  setRigidBody3DMassData(body, mass);
-  refreshRigidBody3DWorldInertia(body);
-  addPhysics3DBody(world, body);
-  return body;
-}
-
-// The solver reads the SOLVE ISLAND contact slices rather than `world.contacts`, so a world assembled
-// by hand needs the same workspace `stepPhysics3D` builds before it reaches the solver. Without it every
-// prepare finds nothing to do — which is the correct answer for a world with no awake islands, and the
-// reason this is a factory step rather than something prepare rebuilds for itself.
-//
-// A test that changes what belongs in an island AFTER this — putting a body to sleep, disabling a
-// contact, making a body static — has to call it again, exactly as a real step rebuilds every step.
-function buildSolveWorkspace(world: Physics3DWorld): Physics3DWorld {
-  updatePhysics3DSleep(world, 1 / 60);
-  buildPhysics3DSolveIslands(world);
-  return world;
-}
-
-// One dynamic box whose single contact point references a body that is not in the world's contact
-// partner slot — used for the basis and mass-denominator tests, where only body A matters.
-function createFallingBoxWorld(): Physics3DWorld {
-  const world = createPhysics3DWorld();
-  const box = createUnitBox(world);
-  const other = createUnitBox(world);
-  world.contacts.push(createContact(box.index, other.index));
-  return buildSolveWorkspace(world);
-}
-
-// Two unit boxes with REAL colliders, overlapping vertically by `depth`, with contacts generated the
-// way a step generates them. The position pass reads geometry, so this is the only fixture shape its
-// tests can be written against.
-function createOverlappingBoxWorld(depth: number): Physics3DWorld {
-  const world = createPhysics3DWorld();
-  const upper = createUnitBox(world);
-  const lower = createUnitBox(world);
-  setPhysics3DBodyType(lower, 'static');
-  for (const body of [upper, lower]) {
-    addPhysics3DCollider(
-      world,
-      body,
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
-    );
-  }
-  upper.y = 1 - depth;
-  buildPhysics3DContacts(world);
-  return buildSolveWorkspace(world);
-}
-
-function createBoxOnGroundWorld(): Physics3DWorld {
-  const world = createPhysics3DWorld();
-  const box = createUnitBox(world);
-  const ground = createUnitBox(world);
-  setPhysics3DBodyType(ground, 'static');
-  world.contacts.push(createContact(box.index, ground.index));
-  return buildSolveWorkspace(world);
-}
-
-function createTwoDynamicBodyWorld(): Physics3DWorld {
-  const world = createPhysics3DWorld();
-  const upper = createUnitBox(world);
-  const lower = createUnitBox(world);
-  world.contacts.push(createContact(upper.index, lower.index));
-  return buildSolveWorkspace(world);
-}

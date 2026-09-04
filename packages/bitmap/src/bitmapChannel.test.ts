@@ -1,7 +1,13 @@
 import { createBitmap } from './bitmap';
-import { mergeBitmapChannels, splitBitmapChannels } from './bitmapChannel';
+import { initializeBitmap, mergeBitmapChannels, splitBitmapChannels } from './bitmapChannel';
 import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
 import { createBitmapRegion } from './bitmapRegion';
+
+describe('initializeBitmap', () => {
+  it('is the construction initializer of createBitmap', () => {
+    expect(typeof initializeBitmap).toBe('function');
+  });
+});
 
 describe('mergeBitmapChannels', () => {
   it('combines one channel from each input into the output', () => {
@@ -39,7 +45,6 @@ describe('mergeBitmapChannels', () => {
     expect(getBitmapPixel(out, 1, 0)).toBe(0x00000000);
   });
 });
-
 describe('splitBitmapChannels', () => {
   it('returns four bitmaps of the same dimensions', () => {
     const src = createBitmap(3, 2, 0x112233ff);

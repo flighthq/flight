@@ -36,6 +36,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Vector2 } from '@flighthq/types/contract';
 
+import { initializeVector2 } from './vector2';
+
 let pt: Vector2;
 let pt2: Vector2;
 
@@ -508,6 +510,12 @@ describe('getVector2LengthSquared', () => {
   it('allows a vector-like object', () => {
     const pt = { x: 3, y: 4 };
     expect(getVector2LengthSquared(pt)).toBe(9 + 16); // 3^2 + 4^2 = 9 + 16 = 25
+  });
+});
+
+describe('initializeVector2', () => {
+  it('is the construction initializer of createVector2', () => {
+    expect(typeof initializeVector2).toBe('function');
   });
 });
 
@@ -1181,7 +1189,6 @@ describe('subtractVector2', () => {
     expect(result).not.toBe(pt2);
   });
 });
-
 describe('writeVector2ToFloat32Array', () => {
   it('writes 2 values at the offset', () => {
     const array = new Float32Array(6);

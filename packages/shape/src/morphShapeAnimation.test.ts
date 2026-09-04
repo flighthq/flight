@@ -17,6 +17,7 @@ import {
   applyAnimationClipToMorphShape,
   applyMorphShapeAnimationSample,
   createMorphShapeAnimationTarget,
+  initializeMorphShapeAnimationTarget,
 } from './morphShapeAnimation';
 import { appendMorphShapeBeginFill } from './morphShapePaint';
 
@@ -149,3 +150,8 @@ function createTestMorph(offset = 0) {
   appendPathLineTo(end, offset + 40, offset + 30);
   return createPathMorph(start, end)!;
 }
+describe('initializeMorphShapeAnimationTarget', () => {
+  it('is the construction initializer of createMorphShapeAnimationTarget', () => {
+    expect(typeof initializeMorphShapeAnimationTarget).toBe('function');
+  });
+});

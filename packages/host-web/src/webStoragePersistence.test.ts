@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createWebWindowStoragePersistenceCapabilities,
   createWebWorkerStoragePersistenceCapabilities,
+  initializeWebWorkerStoragePersistenceCapabilities,
 } from './webStoragePersistence';
 
 describe('createWebWindowStoragePersistenceCapabilities', () => {
@@ -159,3 +160,8 @@ function windowApi(options: Readonly<FakeOptions> = {}) {
   const api: WebWindowStoragePersistenceApi = { ...worker.api, persist };
   return { ...worker, api, persist };
 }
+describe('initializeWebWorkerStoragePersistenceCapabilities', () => {
+  it('is the construction initializer of createWebWorkerStoragePersistenceCapabilities', () => {
+    expect(typeof initializeWebWorkerStoragePersistenceCapabilities).toBe('function');
+  });
+});

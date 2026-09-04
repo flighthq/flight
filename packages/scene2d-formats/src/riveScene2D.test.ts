@@ -3,7 +3,7 @@ import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { createScene2DFromRiveDocument } from './riveScene2D';
+import { createScene2DFromRiveDocument, initializeRiveDocumentImportResult } from './riveScene2D';
 
 // Rive states rotation in RADIANS, established from the corpus: 1,299 rotation values with a maximum
 // of 6.93 and exact landmarks at 3PI/2 and 2PI, where degrees would show 90/180/360. Node2D.rotation
@@ -443,3 +443,8 @@ function buildRive(objects: Array<{ properties: TestProperty[]; typeKey: number 
   }
   return new Uint8Array(bytes);
 }
+describe('initializeRiveDocumentImportResult', () => {
+  it('is the construction initializer of createRiveDocumentImportResult', () => {
+    expect(typeof initializeRiveDocumentImportResult).toBe('function');
+  });
+});

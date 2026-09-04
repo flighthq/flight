@@ -7,6 +7,7 @@ import {
   disposeGlyphAtlas,
   getGlyphAtlasBitmap,
   getGlyphAtlasLayoutVersion,
+  initializeGlyphAtlas,
 } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
 
@@ -198,5 +199,10 @@ describe('getGlyphAtlasLayoutVersion', () => {
     getGlyphAtlasEntry(atlas, 65);
     expect(atlas.runtime.dirty).toBe(true);
     expect(getGlyphAtlasLayoutVersion(atlas)).toBe(0);
+  });
+});
+describe('initializeGlyphAtlas', () => {
+  it('is the construction initializer of createGlyphAtlas', () => {
+    expect(typeof initializeGlyphAtlas).toBe('function');
   });
 });

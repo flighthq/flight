@@ -1,5 +1,5 @@
 import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createGrayscaleAdjustment } from './grayscaleAdjustment';
+import { createGrayscaleAdjustment, initializeGrayscaleAdjustment } from './grayscaleAdjustment';
 
 describe('createGrayscaleAdjustment', () => {
   it('defaults to full BT.709 luma desaturation', () => {
@@ -19,5 +19,10 @@ describe('createGrayscaleAdjustment', () => {
   it('intensity 0 leaves color unchanged', () => {
     const adjustment = createGrayscaleAdjustment({ intensity: 0 });
     expect(applyColorMatrixToColor(adjustment.colorMatrix as number[], 0x2040a0ff)).toBe(0x2040a0ff);
+  });
+});
+describe('initializeGrayscaleAdjustment', () => {
+  it('is the construction initializer of createGrayscaleAdjustment', () => {
+    expect(typeof initializeGrayscaleAdjustment).toBe('function');
   });
 });

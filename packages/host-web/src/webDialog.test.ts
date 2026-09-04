@@ -2,6 +2,12 @@ import { getFileDialogHandleOperations } from '@flighthq/dialog/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
+  initializeWebDirectoryOpenDialogBackend,
+  initializeWebFileOpenDialogBackend,
+  initializeWebFileSaveDialogBackend,
+  initializeWebImageOpenDialogBackend,
+  initializeWebPhotoCaptureDialogBackend,
+  initializeWebVideoCaptureDialogBackend,
   webDirectoryOpenDialogBackend,
   webFileOpenDialogBackend,
   webFileSaveDialogBackend,
@@ -28,6 +34,91 @@ describe('existing web message providers', () => {
   });
 });
 
+describe('initializeWebDirectoryOpenDialogBackend', () => {
+  it('is the construction initializer of createWebDirectoryOpenDialogBackend', () => {
+    expect(typeof initializeWebDirectoryOpenDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeWebFileOpenDialogBackend', () => {
+  it('is the construction initializer of createWebFileOpenDialogBackend', () => {
+    expect(typeof initializeWebFileOpenDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeWebFileSaveDialogBackend', () => {
+  it('is the construction initializer of createWebFileSaveDialogBackend', () => {
+    expect(typeof initializeWebFileSaveDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeWebImageOpenDialogBackend', () => {
+  it('is the construction initializer of createWebImageOpenDialogBackend', () => {
+    expect(typeof initializeWebImageOpenDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeWebPhotoCaptureDialogBackend', () => {
+  it('is the construction initializer of createWebPhotoCaptureDialogBackend', () => {
+    expect(typeof initializeWebPhotoCaptureDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeWebVideoCaptureDialogBackend', () => {
+  it('is the construction initializer of createWebVideoCaptureDialogBackend', () => {
+    expect(typeof initializeWebVideoCaptureDialogBackend).toBe('function');
+  });
+});
+
+function mockImagePicker(width: number, height: number): { input: HTMLInputElement } {
+  const input = document.createElement('input');
+  const createElement = document.createElement.bind(document);
+  Object.defineProperty(input, 'files', {
+    configurable: true,
+    value: [new File(['image'], 'photo.png', { type: 'image/png' })],
+  });
+  class LoadedImage {
+    naturalHeight = height;
+    naturalWidth = width;
+    onerror: (() => void) | null = null;
+    onload: (() => void) | null = null;
+
+    set src(_value: string) {
+      queueMicrotask(() => this.onload?.());
+    }
+  }
+  vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+    if (tag === 'input') return input;
+    if (tag === 'img') return new LoadedImage();
+    return createElement(tag);
+  }) as typeof document.createElement);
+  return { input };
+}
+
+function fileSystemHandle(
+  name: string,
+  text: string,
+  writable?: { abort?(reason?: unknown): Promise<void>; close(): Promise<void>; write(data: unknown): Promise<void> },
+) {
+  return {
+    kind: 'file' as const,
+    name,
+    async createWritable() {
+      if (writable === undefined) throw new Error('not writable');
+      return writable;
+    },
+    async getFile() {
+      return {
+        async arrayBuffer() {
+          return new TextEncoder().encode(text).buffer;
+        },
+        async text() {
+          return text;
+        },
+      };
+    },
+  };
+}
 describe('webDirectoryOpenDialogBackend', () => {
   it('is an Entity installed in the independent directory-open slot', () => {
     expect(EntityRuntimeKey in webDirectoryOpenDialogBackend).toBe(true);
@@ -316,53 +407,3 @@ describe('webVideoCaptureDialogBackend', () => {
     });
   });
 });
-
-function mockImagePicker(width: number, height: number): { input: HTMLInputElement } {
-  const input = document.createElement('input');
-  const createElement = document.createElement.bind(document);
-  Object.defineProperty(input, 'files', {
-    configurable: true,
-    value: [new File(['image'], 'photo.png', { type: 'image/png' })],
-  });
-  class LoadedImage {
-    naturalHeight = height;
-    naturalWidth = width;
-    onerror: (() => void) | null = null;
-    onload: (() => void) | null = null;
-
-    set src(_value: string) {
-      queueMicrotask(() => this.onload?.());
-    }
-  }
-  vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
-    if (tag === 'input') return input;
-    if (tag === 'img') return new LoadedImage();
-    return createElement(tag);
-  }) as typeof document.createElement);
-  return { input };
-}
-
-function fileSystemHandle(
-  name: string,
-  text: string,
-  writable?: { abort?(reason?: unknown): Promise<void>; close(): Promise<void>; write(data: unknown): Promise<void> },
-) {
-  return {
-    kind: 'file' as const,
-    name,
-    async createWritable() {
-      if (writable === undefined) throw new Error('not writable');
-      return writable;
-    },
-    async getFile() {
-      return {
-        async arrayBuffer() {
-          return new TextEncoder().encode(text).buffer;
-        },
-        async text() {
-          return text;
-        },
-      };
-    },
-  };
-}

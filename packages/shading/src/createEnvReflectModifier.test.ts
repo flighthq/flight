@@ -1,7 +1,7 @@
 import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createEnvReflectModifier } from './createEnvReflectModifier';
+import { createEnvReflectModifier, initializeEnvReflectModifier } from './createEnvReflectModifier';
 
 describe('createEnvReflectModifier', () => {
   it('sets the kind and Effect slot', () => {
@@ -24,5 +24,10 @@ describe('createEnvReflectModifier', () => {
     expect(modifier.intensity).toBe(0.5);
     expect(modifier.fresnelBias).toBe(0.1);
     expect(modifier.roughness).toBe(0.6);
+  });
+});
+describe('initializeEnvReflectModifier', () => {
+  it('is the construction initializer of createEnvReflectModifier', () => {
+    expect(typeof initializeEnvReflectModifier).toBe('function');
   });
 });

@@ -8,6 +8,9 @@ import {
   createImageResourceFromCanvas,
   createImageResourceFromImageBitmap,
   createImageResourceFromImageElement,
+  initializeImageResourceFromCanvas,
+  initializeImageResourceFromImageBitmap,
+  initializeImageResourceFromImageElement,
   isImageUrlSameOrigin,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
@@ -203,6 +206,24 @@ describe('createImageResourceFromImageElement', () => {
   });
 });
 
+describe('initializeImageResourceFromCanvas', () => {
+  it('is the construction initializer of createImageResourceFromCanvas', () => {
+    expect(typeof initializeImageResourceFromCanvas).toBe('function');
+  });
+});
+
+describe('initializeImageResourceFromImageBitmap', () => {
+  it('is the construction initializer of createImageResourceFromImageBitmap', () => {
+    expect(typeof initializeImageResourceFromImageBitmap).toBe('function');
+  });
+});
+
+describe('initializeImageResourceFromImageElement', () => {
+  it('is the construction initializer of createImageResourceFromImageElement', () => {
+    expect(typeof initializeImageResourceFromImageElement).toBe('function');
+  });
+});
+
 describe('isImageUrlSameOrigin', () => {
   it('returns true for data: URLs', () => {
     expect(isImageUrlSameOrigin('data:image/png;base64,abc')).toBe(true);
@@ -233,7 +254,6 @@ describe('loadImageResourceFromBase64', () => {
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 });
-
 describe('loadImageResourceFromBlob', () => {
   it('resolves to an ImageResource', async () => {
     const blob = new Blob([], { type: 'image/png' });

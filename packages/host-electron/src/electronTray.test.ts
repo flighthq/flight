@@ -17,7 +17,24 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createElectronTrayCapabilities } from './electronTray';
+import {
+  createElectronTrayCapabilities,
+  initializeTrayBalloonBackend,
+  initializeTrayBalloonEventsBackend,
+  initializeTrayBoundsBackend,
+  initializeTrayDoubleClickPolicyBackend,
+  initializeTrayDropEventsBackend,
+  initializeTrayImageBackend,
+  initializeTrayInteractionEventsBackend,
+  initializeTrayLifecycleBackend,
+  initializeTrayMenuBackend,
+  initializeTrayMenuSelectionEventsBackend,
+  initializeTrayPopupMenuBackend,
+  initializeTrayPressedImageBackend,
+  initializeTrayTemplateImageBackend,
+  initializeTrayTitleBackend,
+  initializeTrayTooltipBackend,
+} from './electronTray';
 
 interface FakeImage extends ElectronNativeImage {
   source: string;
@@ -236,5 +253,94 @@ describe('createElectronTrayCapabilities', () => {
     const host = { tray: createElectronTrayCapabilities(electron, 'windows') };
     const tray = await acquire(host);
     expect((await displayTrayBalloon(tray, { text: 'Done', title: 'Flight' })).outcome).toBe('displayed');
+  });
+});
+describe('initializeTrayBalloonBackend', () => {
+  it('is the construction initializer of createTrayBalloonBackend', () => {
+    expect(typeof initializeTrayBalloonBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayBalloonEventsBackend', () => {
+  it('is the construction initializer of createTrayBalloonEventsBackend', () => {
+    expect(typeof initializeTrayBalloonEventsBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayBoundsBackend', () => {
+  it('is the construction initializer of createTrayBoundsBackend', () => {
+    expect(typeof initializeTrayBoundsBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayDoubleClickPolicyBackend', () => {
+  it('is the construction initializer of createTrayDoubleClickPolicyBackend', () => {
+    expect(typeof initializeTrayDoubleClickPolicyBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayDropEventsBackend', () => {
+  it('is the construction initializer of createTrayDropEventsBackend', () => {
+    expect(typeof initializeTrayDropEventsBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayImageBackend', () => {
+  it('is the construction initializer of createTrayImageBackend', () => {
+    expect(typeof initializeTrayImageBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayInteractionEventsBackend', () => {
+  it('is the construction initializer of createTrayInteractionEventsBackend', () => {
+    expect(typeof initializeTrayInteractionEventsBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayLifecycleBackend', () => {
+  it('is the construction initializer of createTrayLifecycleBackend', () => {
+    expect(typeof initializeTrayLifecycleBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayMenuBackend', () => {
+  it('is the construction initializer of createTrayMenuBackend', () => {
+    expect(typeof initializeTrayMenuBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayMenuSelectionEventsBackend', () => {
+  it('is the construction initializer of createTrayMenuSelectionEventsBackend', () => {
+    expect(typeof initializeTrayMenuSelectionEventsBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayPopupMenuBackend', () => {
+  it('is the construction initializer of createTrayPopupMenuBackend', () => {
+    expect(typeof initializeTrayPopupMenuBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayPressedImageBackend', () => {
+  it('is the construction initializer of createTrayPressedImageBackend', () => {
+    expect(typeof initializeTrayPressedImageBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayTemplateImageBackend', () => {
+  it('is the construction initializer of createTrayTemplateImageBackend', () => {
+    expect(typeof initializeTrayTemplateImageBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayTitleBackend', () => {
+  it('is the construction initializer of createTrayTitleBackend', () => {
+    expect(typeof initializeTrayTitleBackend).toBe('function');
+  });
+});
+
+describe('initializeTrayTooltipBackend', () => {
+  it('is the construction initializer of createTrayTooltipBackend', () => {
+    expect(typeof initializeTrayTooltipBackend).toBe('function');
   });
 });

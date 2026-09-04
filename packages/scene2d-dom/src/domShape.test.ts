@@ -13,7 +13,12 @@ import {
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultDomMorphShapeRenderer, defaultDomShapeRenderer, drawDomShape } from './domShape';
+import {
+  defaultDomMorphShapeRenderer,
+  defaultDomShapeRenderer,
+  drawDomShape,
+  initializeDomShapeData,
+} from './domShape';
 import { registerDomShapeRasterizer } from './domShapeRasterizer';
 
 const noopRasterizer = (): void => {};
@@ -109,5 +114,10 @@ describe('drawDomShape', () => {
     const secondCanvas = drawGetEl(state, () => drawDomShape(state, renderProxy));
 
     expect(firstCanvas).toBe(secondCanvas);
+  });
+});
+describe('initializeDomShapeData', () => {
+  it('is the construction initializer of createDomShapeData', () => {
+    expect(typeof initializeDomShapeData).toBe('function');
   });
 });

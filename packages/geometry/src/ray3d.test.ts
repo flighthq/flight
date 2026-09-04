@@ -9,6 +9,7 @@ import {
   getClosestPointBetweenRay3Ds,
   getClosestPointOnRay3D,
   getRay3DPointAt,
+  initializeRay3D,
   intersectRay3DAabb,
   intersectRay3DPlane,
   intersectRay3DSphere,
@@ -201,6 +202,12 @@ describe('getRay3DPointAt', () => {
     expect(ray.origin.x).toBe(1);
     expect(ray.origin.y).toBe(5);
     expect(ray.origin.z).toBe(3);
+  });
+});
+
+describe('initializeRay3D', () => {
+  it('is the construction initializer of createRay3D', () => {
+    expect(typeof initializeRay3D).toBe('function');
   });
 });
 
@@ -489,6 +496,18 @@ describe('setRay3D', () => {
   });
 });
 
+// Six rays, one per side of the box spanning (-1, -4, -6) to (2, 3, 5), each starting 10 units out
+// along an axis and aimed at it. The last number is where that ray meets the box: all six differ,
+// so a slab reading another axis' bound gives a different answer rather than the same one.
+// Reversing the direction of each turns the set into six rays aimed away from the box.
+const RAYS_INTO_LOPSIDED_BOX: ReadonlyArray<readonly [number, number, number, number, number, number, number]> = [
+  [-10, 0, 0, 1, 0, 0, 9],
+  [10, 0, 0, -1, 0, 0, 8],
+  [0, -10, 0, 0, 1, 0, 6],
+  [0, 10, 0, 0, -1, 0, 7],
+  [0, 0, -10, 0, 0, 1, 4],
+  [0, 0, 10, 0, 0, -1, 5],
+];
 describe('transformRay3DByMatrix4', () => {
   it('leaves the ray unchanged under the identity matrix', () => {
     const ray = createRay3D(1, 2, 3, 0, 0, 1);
@@ -530,16 +549,3 @@ describe('transformRay3DByMatrix4', () => {
     expect(ray.direction.z).toBeCloseTo(1);
   });
 });
-
-// Six rays, one per side of the box spanning (-1, -4, -6) to (2, 3, 5), each starting 10 units out
-// along an axis and aimed at it. The last number is where that ray meets the box: all six differ,
-// so a slab reading another axis' bound gives a different answer rather than the same one.
-// Reversing the direction of each turns the set into six rays aimed away from the box.
-const RAYS_INTO_LOPSIDED_BOX: ReadonlyArray<readonly [number, number, number, number, number, number, number]> = [
-  [-10, 0, 0, 1, 0, 0, 9],
-  [10, 0, 0, -1, 0, 0, 8],
-  [0, -10, 0, 0, 1, 0, 6],
-  [0, 10, 0, 0, -1, 0, 7],
-  [0, 0, -10, 0, 0, 1, 4],
-  [0, 0, 10, 0, 0, -1, 5],
-];

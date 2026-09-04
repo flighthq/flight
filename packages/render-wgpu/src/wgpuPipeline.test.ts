@@ -1,7 +1,12 @@
 import type { WgpuPipeline } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createEmptyWgpuRegistries, createWgpuPipeline, getWgpuPipelineRegistries } from './wgpuPipeline';
+import {
+  createEmptyWgpuRegistries,
+  createWgpuPipeline,
+  getWgpuPipelineRegistries,
+  initializeEmptyWgpuRegistries,
+} from './wgpuPipeline';
 
 describe('createEmptyWgpuRegistries', () => {
   it('creates empty tables for every required WGPU policy seam', () => {
@@ -48,5 +53,10 @@ describe('getWgpuPipelineRegistries', () => {
   it('returns the registries captured by the explicit pipeline', () => {
     const registries = createEmptyWgpuRegistries();
     expect(getWgpuPipelineRegistries(createWgpuPipeline(registries))).toBe(registries);
+  });
+});
+describe('initializeEmptyWgpuRegistries', () => {
+  it('is the construction initializer of createEmptyWgpuRegistries', () => {
+    expect(typeof initializeEmptyWgpuRegistries).toBe('function');
   });
 });

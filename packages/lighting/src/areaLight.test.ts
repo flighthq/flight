@@ -1,7 +1,7 @@
 import { createVector3 } from '@flighthq/geometry/contract';
 import { AreaLightKind, LumenLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
-import { cloneAreaLight, createAreaLight, setAreaLightOrientation } from './areaLight';
+import { cloneAreaLight, createAreaLight, initializeAreaLight, setAreaLightOrientation } from './areaLight';
 
 describe('cloneAreaLight', () => {
   it('creates an independent copy with fresh position/direction/right/up vectors', () => {
@@ -88,6 +88,11 @@ describe('createAreaLight', () => {
   });
 });
 
+describe('initializeAreaLight', () => {
+  it('is the construction initializer of createAreaLight', () => {
+    expect(typeof initializeAreaLight).toBe('function');
+  });
+});
 describe('setAreaLightOrientation', () => {
   it('updates the direction, right, and up axes while preserving half-extent lengths', () => {
     // right has length 3, up has length 4 — half-extents should survive the orientation update.

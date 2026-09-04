@@ -1,7 +1,12 @@
 import type { TauriApi, TauriShortcutEvent } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createTauriShortcutQueryBackend, createTauriShortcutTriggerBackend } from './tauriShortcut';
+import {
+  createTauriShortcutQueryBackend,
+  createTauriShortcutTriggerBackend,
+  initializeTauriShortcutQueryBackend,
+  initializeTauriShortcutTriggerBackend,
+} from './tauriShortcut';
 
 interface Deferred {
   readonly promise: Promise<void>;
@@ -99,5 +104,16 @@ describe('createTauriShortcutTriggerBackend', () => {
     expect(fake.unregisterCalls).toHaveLength(3);
     expect(fake.unregisterCalls.filter((accelerator) => accelerator === 'Control+A')).toHaveLength(2);
     expect(fake.unregisterCalls.filter((accelerator) => accelerator === 'Control+B')).toHaveLength(1);
+  });
+});
+describe('initializeTauriShortcutQueryBackend', () => {
+  it('is the construction initializer of createTauriShortcutQueryBackend', () => {
+    expect(typeof initializeTauriShortcutQueryBackend).toBe('function');
+  });
+});
+
+describe('initializeTauriShortcutTriggerBackend', () => {
+  it('is the construction initializer of createTauriShortcutTriggerBackend', () => {
+    expect(typeof initializeTauriShortcutTriggerBackend).toBe('function');
   });
 });

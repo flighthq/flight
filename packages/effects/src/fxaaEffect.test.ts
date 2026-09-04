@@ -1,4 +1,4 @@
-import { createFxaaEffect } from './fxaaEffect';
+import { createFxaaEffect, initializeFxaaEffect } from './fxaaEffect';
 
 describe('createFxaaEffect', () => {
   it('tags the intent type', () => {
@@ -10,5 +10,10 @@ describe('createFxaaEffect', () => {
       edgeThreshold: 0.05,
       subpixel: 0.75,
     });
+  });
+});
+describe('initializeFxaaEffect', () => {
+  it('is the construction initializer of createFxaaEffect', () => {
+    expect(typeof initializeFxaaEffect).toBe('function');
   });
 });

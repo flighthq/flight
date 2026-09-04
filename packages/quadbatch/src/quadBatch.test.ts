@@ -15,6 +15,7 @@ import type {
 import { QuadBatchKind } from '@flighthq/types/contract';
 
 import {
+  QUAD_BATCH_DELETED_ID,
   appendQuadBatchInstance,
   clearQuadBatch,
   cloneQuadBatch,
@@ -35,15 +36,16 @@ import {
   hitTestQuadBatchPointExact,
   hitTestQuadBatchPointExactXY,
   hitTestQuadBatchPointXY,
+  initializeQuadBatchData,
+  initializeQuadBatchSignals,
   iterateQuadBatchInstances,
-  QUAD_BATCH_DELETED_ID,
   removeQuadBatchInstance,
   reserveQuadBatch,
   resizeQuadBatch,
   setQuadBatchInstance,
-  setQuadBatchInstanceTint,
   setQuadBatchInstanceMatrix,
   setQuadBatchInstanceRange,
+  setQuadBatchInstanceTint,
   setQuadBatchLocalBoundsRectangle,
   setQuadBatchTransformType,
 } from './quadBatch';
@@ -606,6 +608,18 @@ describe('hitTestQuadBatchPointXY', () => {
   });
 });
 
+describe('initializeQuadBatchData', () => {
+  it('is the construction initializer of createQuadBatchData', () => {
+    expect(typeof initializeQuadBatchData).toBe('function');
+  });
+});
+
+describe('initializeQuadBatchSignals', () => {
+  it('is the construction initializer of createQuadBatchSignals', () => {
+    expect(typeof initializeQuadBatchSignals).toBe('function');
+  });
+});
+
 describe('iterateQuadBatchInstances', () => {
   it('visits each live instance in order with id and transform view', () => {
     const qb = createQuadBatch();
@@ -841,7 +855,6 @@ describe('setQuadBatchInstanceTint', () => {
     expect(batch.data.materialData).toBeNull();
   });
 });
-
 describe('setQuadBatchLocalBoundsRectangle', () => {
   it('makes getNodeLocalBoundsRectangle reflect the new bounds', () => {
     const quadBatch = createQuadBatch();

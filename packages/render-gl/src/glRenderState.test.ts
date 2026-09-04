@@ -40,6 +40,7 @@ import {
   getGlColorAdjustmentMaterialFeatureGuard,
   getGlContextRuntime,
   getGlRenderStateRuntime,
+  initializeGlContextState,
   invalidateGlRenderStateCache,
   registerGlContextTeardown,
   registerGlRenderStateTeardown,
@@ -726,6 +727,12 @@ describe('getGlRenderStateRuntime', () => {
   });
 });
 
+describe('initializeGlContextState', () => {
+  it('is the construction initializer of createGlContextState', () => {
+    expect(typeof initializeGlContextState).toBe('function');
+  });
+});
+
 describe('invalidateGlRenderStateCache', () => {
   it('nulls the cached GL binding slots so the next draw re-binds from scratch', () => {
     const { gl } = makeContext();
@@ -843,7 +850,6 @@ describe('registerGlContextTeardown', () => {
     expect(teardown).toHaveBeenCalledWith(gl);
   });
 });
-
 describe('registerGlRenderStateTeardown', () => {
   it('pushes a callback that fires on state teardown', () => {
     const { gl } = makeContext();

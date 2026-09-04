@@ -9,6 +9,7 @@ import {
   createScale9SpriteData,
   createScale9SpriteRuntime,
   getScale9SpriteRuntime,
+  initializeScale9SpriteData,
 } from './scale9Sprite';
 import { computeSpriteLocalBoundsRectangle } from './sprite';
 
@@ -85,6 +86,15 @@ describe('getScale9SpriteRuntime', () => {
   });
 });
 
+describe('initializeScale9SpriteData', () => {
+  it('is the construction initializer of createScale9SpriteData', () => {
+    expect(typeof initializeScale9SpriteData).toBe('function');
+  });
+});
+
+function texture(width: number, height: number) {
+  return createTexture({ dimension: '2d', source: { height, width } as ImageResource });
+}
 describe('Scale9Sprite local bounds', () => {
   it('derives bounds from the texture like a plain Sprite', () => {
     const sprite = createScale9Sprite(grid, { data: { texture: texture(100, 50) } });
@@ -103,7 +113,3 @@ describe('Scale9Sprite local bounds', () => {
     expect(runtime.localBoundsId).toBe(localBoundsId);
   });
 });
-
-function texture(width: number, height: number) {
-  return createTexture({ dimension: '2d', source: { height, width } as ImageResource });
-}

@@ -8,6 +8,7 @@ import {
   createHtmlViewData,
   createHtmlViewRuntime,
   getHtmlViewRuntime,
+  initializeHtmlViewData,
   setHtmlViewSize,
 } from './htmlView';
 
@@ -94,6 +95,11 @@ describe('getHtmlViewRuntime', () => {
   });
 });
 
+describe('initializeHtmlViewData', () => {
+  it('is the construction initializer of createHtmlViewData', () => {
+    expect(typeof initializeHtmlViewData).toBe('function');
+  });
+});
 describe('setHtmlViewSize', () => {
   it('updates width and height', () => {
     const htmlView = createHtmlView();

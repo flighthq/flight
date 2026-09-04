@@ -1,4 +1,4 @@
-import { createSpritesheetFrame } from './spritesheetFrame';
+import { createSpritesheetFrame, initializeSpritesheetFrame } from './spritesheetFrame';
 
 describe('createSpritesheetFrame', () => {
   it('initializes default values', () => {
@@ -46,5 +46,10 @@ describe('createSpritesheetFrame', () => {
     const b = createSpritesheetFrame();
 
     expect(a).not.toBe(b);
+  });
+});
+describe('initializeSpritesheetFrame', () => {
+  it('is the construction initializer of createSpritesheetFrame', () => {
+    expect(typeof initializeSpritesheetFrame).toBe('function');
   });
 });

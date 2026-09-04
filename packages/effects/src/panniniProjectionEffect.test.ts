@@ -1,4 +1,4 @@
-import { createPanniniProjectionEffect } from './panniniProjectionEffect';
+import { createPanniniProjectionEffect, initializePanniniProjectionEffect } from './panniniProjectionEffect';
 
 describe('createPanniniProjectionEffect', () => {
   it('carries options', () => {
@@ -10,5 +10,10 @@ describe('createPanniniProjectionEffect', () => {
 
   it('tags the intent type', () => {
     expect(createPanniniProjectionEffect().kind).toBe('PanniniProjectionEffect');
+  });
+});
+describe('initializePanniniProjectionEffect', () => {
+  it('is the construction initializer of createPanniniProjectionEffect', () => {
+    expect(typeof initializePanniniProjectionEffect).toBe('function');
   });
 });

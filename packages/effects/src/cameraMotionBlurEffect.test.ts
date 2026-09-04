@@ -1,4 +1,4 @@
-import { createCameraMotionBlurEffect } from './cameraMotionBlurEffect';
+import { createCameraMotionBlurEffect, initializeCameraMotionBlurEffect } from './cameraMotionBlurEffect';
 
 describe('createCameraMotionBlurEffect', () => {
   it('tags the intent type', () => {
@@ -10,5 +10,10 @@ describe('createCameraMotionBlurEffect', () => {
       intensity: 0.5,
       samples: 12,
     });
+  });
+});
+describe('initializeCameraMotionBlurEffect', () => {
+  it('is the construction initializer of createCameraMotionBlurEffect', () => {
+    expect(typeof initializeCameraMotionBlurEffect).toBe('function');
   });
 });

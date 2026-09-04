@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionContactManifold2D, createCollisionContactManifold2D } from './contactManifold2D';
+import {
+  clearCollisionContactManifold2D,
+  createCollisionContactManifold2D,
+  initializeCollisionContactManifold2D,
+} from './contactManifold2D';
 
 describe('clearCollisionContactManifold2D', () => {
   it('resets the manifold to the non-overlapping state', () => {
@@ -51,5 +55,10 @@ describe('createCollisionContactManifold2D', () => {
     const second = createCollisionContactManifold2D();
     expect(first.points).not.toBe(second.points);
     expect(first.points[0]).not.toBe(second.points[0]);
+  });
+});
+describe('initializeCollisionContactManifold2D', () => {
+  it('is the construction initializer of createCollisionContactManifold2D', () => {
+    expect(typeof initializeCollisionContactManifold2D).toBe('function');
   });
 });

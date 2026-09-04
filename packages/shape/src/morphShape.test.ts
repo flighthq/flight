@@ -15,6 +15,7 @@ import {
   createMorphShapeData,
   createMorphShapeRuntime,
   getMorphShapeRuntime,
+  initializeMorphShapeData,
   setMorphShapeProgress,
 } from './morphShape';
 import { getShapeBounds } from './shape';
@@ -158,6 +159,21 @@ describe('getMorphShapeRuntime', () => {
   });
 });
 
+describe('initializeMorphShapeData', () => {
+  it('is the construction initializer of createMorphShapeData', () => {
+    expect(typeof initializeMorphShapeData).toBe('function');
+  });
+});
+
+function createTestMorph(offset = 0): PathMorph {
+  const start = createPath();
+  appendPathMoveTo(start, offset, offset);
+  appendPathLineTo(start, offset + 10, offset);
+  const end = createPath();
+  appendPathMoveTo(end, offset + 10, offset + 20);
+  appendPathLineTo(end, offset + 30, offset + 20);
+  return createPathMorph(start, end)!;
+}
 describe('setMorphShapeProgress', () => {
   it('does not invalidate or resample unchanged progress', () => {
     const shape = createMorphShape(createTestMorph());
@@ -207,13 +223,3 @@ describe('setMorphShapeProgress', () => {
     expect(shape.data.path.data.slice(0, 2)).toStrictEqual([15, 30]);
   });
 });
-
-function createTestMorph(offset = 0): PathMorph {
-  const start = createPath();
-  appendPathMoveTo(start, offset, offset);
-  appendPathLineTo(start, offset + 10, offset);
-  const end = createPath();
-  appendPathMoveTo(end, offset + 10, offset + 20);
-  appendPathLineTo(end, offset + 30, offset + 20);
-  return createPathMorph(start, end)!;
-}

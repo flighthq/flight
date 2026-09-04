@@ -20,6 +20,7 @@ import {
   disposeSocket,
   enableSocketSignals,
   getSocketReadyState,
+  initializeWebSocketBackend,
   sendSocketMessage,
   setSocketGuard,
 } from './socket';
@@ -393,6 +394,12 @@ describe('getSocketReadyState', () => {
   });
 });
 
+describe('initializeWebSocketBackend', () => {
+  it('is the construction initializer of createWebSocketBackend', () => {
+    expect(typeof initializeWebSocketBackend).toBe('function');
+  });
+});
+
 describe('openTcpSocket', () => {
   it('forwards the endpoint unchanged and returns the backend connection by identity', () => {
     const expected = tcpConnection();
@@ -482,33 +489,6 @@ describe('sendSocketMessage', () => {
   });
 });
 
-describe('setSocketGuard', () => {
-  it('installs and removes the core notice hook', () => {
-    const notices: string[] = [];
-    setSocketGuard((notice) => notices.push(`${notice.operation}:${notice.reason}`));
-    const unsupported = fakeBackend();
-    unsupported.openReturnsNull = true;
-    const host = hostOf(unsupported.backend);
-    createSocket(host, { url: 'tcp://x' });
-
-    const supported = fakeBackend();
-    const socket = createSocket(hostOf(supported.backend), { url: 'ws://x' });
-    disposeSocket(socket);
-    closeSocket(socket);
-    sendSocketMessage(socket, 'x');
-    enableSocketSignals(socket);
-    setSocketGuard(null);
-    closeSocket(socket);
-
-    expect(notices).toEqual([
-      'createSocket:no-connection',
-      'closeSocket:disposed',
-      'sendSocketMessage:disposed',
-      'enableSocketSignals:disposed',
-    ]);
-  });
-});
-
 function noopSink(): SocketEventSink {
   return {
     handleSocketOpen() {},
@@ -565,3 +545,29 @@ function installFakeWebSocket(): () => void {
     (globalThis as { WebSocket?: unknown }).WebSocket = original;
   };
 }
+describe('setSocketGuard', () => {
+  it('installs and removes the core notice hook', () => {
+    const notices: string[] = [];
+    setSocketGuard((notice) => notices.push(`${notice.operation}:${notice.reason}`));
+    const unsupported = fakeBackend();
+    unsupported.openReturnsNull = true;
+    const host = hostOf(unsupported.backend);
+    createSocket(host, { url: 'tcp://x' });
+
+    const supported = fakeBackend();
+    const socket = createSocket(hostOf(supported.backend), { url: 'ws://x' });
+    disposeSocket(socket);
+    closeSocket(socket);
+    sendSocketMessage(socket, 'x');
+    enableSocketSignals(socket);
+    setSocketGuard(null);
+    closeSocket(socket);
+
+    expect(notices).toEqual([
+      'createSocket:no-connection',
+      'closeSocket:disposed',
+      'sendSocketMessage:disposed',
+      'enableSocketSignals:disposed',
+    ]);
+  });
+});

@@ -1,7 +1,7 @@
 import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronClipboardBackend } from './electronClipboard';
+import { createElectronClipboardBackend, initializeElectronClipboardBackend } from './electronClipboard';
 
 function fakeElectron(): ElectronApi {
   const store = { text: '', html: '', rtf: '', imageDataUrl: '', bookmarkTitle: '', bookmarkUrl: '' };
@@ -86,5 +86,10 @@ describe('createElectronClipboardBackend', () => {
     await backend.writeText('x');
     expect(await backend.clear()).toBe(true);
     expect(await backend.readText()).toBe('');
+  });
+});
+describe('initializeElectronClipboardBackend', () => {
+  it('is the construction initializer of createElectronClipboardBackend', () => {
+    expect(typeof initializeElectronClipboardBackend).toBe('function');
   });
 });

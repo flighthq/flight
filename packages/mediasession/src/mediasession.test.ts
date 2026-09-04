@@ -14,9 +14,10 @@ import {
   clearMediaSessionMetadata,
   clearMediaSessionPositionState,
   createMediaSessionActionSignal,
-  detachMediaSessionAction,
   destroyMediaSession,
+  detachMediaSessionAction,
   disposeMediaSessionActionSignal,
+  initializeMediaSessionActionSignal,
   setMediaSessionMetadata,
   setMediaSessionPlaybackState,
   setMediaSessionPositionState,
@@ -238,6 +239,12 @@ describe('disposeMediaSessionActionSignal', () => {
   });
 });
 
+describe('initializeMediaSessionActionSignal', () => {
+  it('is the construction initializer of createMediaSessionActionSignal', () => {
+    expect(typeof initializeMediaSessionActionSignal).toBe('function');
+  });
+});
+
 describe('setMediaSessionMetadata', () => {
   it('passes metadata to the explicit Host provider and returns its exact outcome', () => {
     const metadata = { title: 'A', artist: 'B', album: 'C', artwork: [] };
@@ -264,7 +271,6 @@ describe('setMediaSessionPlaybackState', () => {
     expect(setPlaybackState).not.toHaveBeenCalled();
   });
 });
-
 describe('setMediaSessionPositionState', () => {
   it('passes a valid position to the explicit Host provider and returns its exact outcome', () => {
     const position = { duration: 20, playbackRate: 1, position: 4 };

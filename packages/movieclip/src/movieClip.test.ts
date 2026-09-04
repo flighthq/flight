@@ -17,6 +17,7 @@ import {
   getMovieClipTotalFrames,
   gotoAndPlayMovieClip,
   gotoAndStopMovieClip,
+  initializeMovieClipData,
   isMovieClipPlaying,
   nextFrameMovieClip,
   playMovieClip,
@@ -285,6 +286,12 @@ describe('gotoAndStopMovieClip', () => {
   });
 });
 
+describe('initializeMovieClipData', () => {
+  it('is the construction initializer of createMovieClipData', () => {
+    expect(typeof initializeMovieClipData).toBe('function');
+  });
+});
+
 describe('isMovieClipPlaying', () => {
   it('returns false when timeline is null', () => {
     const clip = createMovieClip();
@@ -397,7 +404,6 @@ describe('stopMovieClip', () => {
     expect(clip.data.timeline.isPlaying).toBe(false);
   });
 });
-
 describe('updateMovieClip', () => {
   it('does nothing when timeline is null', () => {
     const clip = createMovieClip();

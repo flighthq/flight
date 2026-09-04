@@ -1,4 +1,4 @@
-import { createBarrelDistortionEffect } from './barrelDistortionEffect';
+import { createBarrelDistortionEffect, initializeBarrelDistortionEffect } from './barrelDistortionEffect';
 
 describe('createBarrelDistortionEffect', () => {
   it('carries options', () => {
@@ -7,5 +7,10 @@ describe('createBarrelDistortionEffect', () => {
 
   it('tags the intent type', () => {
     expect(createBarrelDistortionEffect().kind).toBe('BarrelDistortionEffect');
+  });
+});
+describe('initializeBarrelDistortionEffect', () => {
+  it('is the construction initializer of createBarrelDistortionEffect', () => {
+    expect(typeof initializeBarrelDistortionEffect).toBe('function');
   });
 });

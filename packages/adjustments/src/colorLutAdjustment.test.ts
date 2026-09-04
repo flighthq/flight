@@ -1,4 +1,4 @@
-import { getAdjustmentColorTransform, isColorLutAdjustment } from './colorLutAdjustment';
+import { getAdjustmentColorTransform, initializeColorLutAdjustment, isColorLutAdjustment } from './colorLutAdjustment';
 import { createHueSaturationAdjustment } from './hueSaturationAdjustment';
 import { createInvertAdjustment } from './invertAdjustment';
 
@@ -25,6 +25,11 @@ describe('getAdjustmentColorTransform', () => {
   });
 });
 
+describe('initializeColorLutAdjustment', () => {
+  it('is the construction initializer of createColorLutAdjustment', () => {
+    expect(typeof initializeColorLutAdjustment).toBe('function');
+  });
+});
 describe('isColorLutAdjustment', () => {
   it('is true for a LUT-tier adjustment', () => {
     expect(isColorLutAdjustment(createHueSaturationAdjustment())).toBe(true);

@@ -1,4 +1,4 @@
-import { createHueSaturationAdjustment } from './hueSaturationAdjustment';
+import { createHueSaturationAdjustment, initializeHueSaturationAdjustment } from './hueSaturationAdjustment';
 
 describe('createHueSaturationAdjustment', () => {
   it('defaults to the identity and carries a fusable transform', () => {
@@ -29,5 +29,10 @@ describe('createHueSaturationAdjustment', () => {
     expect(out[1]).toBeCloseTo(1, 4);
     expect(out[0]).toBeCloseTo(0, 4);
     expect(out[2]).toBeCloseTo(0, 4);
+  });
+});
+describe('initializeHueSaturationAdjustment', () => {
+  it('is the construction initializer of createHueSaturationAdjustment', () => {
+    expect(typeof initializeHueSaturationAdjustment).toBe('function');
   });
 });

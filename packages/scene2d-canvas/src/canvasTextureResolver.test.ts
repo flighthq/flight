@@ -4,16 +4,17 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, RenderRegistry } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
 import {
   acquireCanvasTextureResolverSurface,
   connectCanvasTextureResolverMisses,
+  createCanvasRenderState,
   createCanvasTextureResolvers,
   destroyCanvasTextureResolvers,
+  getCanvasRenderStateTextureResolvers,
   registerCanvasTextureResolver,
   resolveCanvasTexture,
 } from './canvasTestSupport';
+import { initializeCanvasTextureResolvers } from './canvasTextureResolver';
 
 describe('acquireCanvasTextureResolverSurface', () => {
   it('acquires through the resolver set’s pinned creator', () => {
@@ -121,6 +122,12 @@ describe('destroyCanvasTextureResolvers', () => {
   });
 });
 
+describe('initializeCanvasTextureResolvers', () => {
+  it('is the construction initializer of createCanvasTextureResolvers', () => {
+    expect(typeof initializeCanvasTextureResolvers).toBe('function');
+  });
+});
+
 describe('registerCanvasTextureResolver', () => {
   it('registers and removes one state-scoped resolver', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
@@ -138,7 +145,6 @@ describe('registerCanvasTextureResolver', () => {
     expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture)).toBeNull();
   });
 });
-
 describe('resolveCanvasTexture', () => {
   it('returns null without a matching resolver', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));

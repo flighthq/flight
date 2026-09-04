@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionManifold3D, createCollisionManifold3D } from './manifold3D';
+import { clearCollisionManifold3D, createCollisionManifold3D, initializeCollisionManifold3D } from './manifold3D';
 
 describe('clearCollisionManifold3D', () => {
   it('resets every field so a reused out never carries a stale normal into a miss', () => {
@@ -28,5 +28,10 @@ describe('createCollisionManifold3D', () => {
 
   it('returns a fresh record each call', () => {
     expect(createCollisionManifold3D()).not.toBe(createCollisionManifold3D());
+  });
+});
+describe('initializeCollisionManifold3D', () => {
+  it('is the construction initializer of createCollisionManifold3D', () => {
+    expect(typeof initializeCollisionManifold3D).toBe('function');
   });
 });

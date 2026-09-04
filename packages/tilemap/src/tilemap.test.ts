@@ -22,6 +22,8 @@ import {
   getTilemapTileAtPoint,
   getTilemapTileAtPointXY,
   getTilemapTileRect,
+  initializeTilemapData,
+  initializeTilemapSignals,
   resizeTilemap,
   setTilemapTile,
   setTilemapTileTint,
@@ -371,6 +373,18 @@ describe('getTilemapTileRect', () => {
   });
 });
 
+describe('initializeTilemapData', () => {
+  it('is the construction initializer of createTilemapData', () => {
+    expect(typeof initializeTilemapData).toBe('function');
+  });
+});
+
+describe('initializeTilemapSignals', () => {
+  it('is the construction initializer of createTilemapSignals', () => {
+    expect(typeof initializeTilemapSignals).toBe('function');
+  });
+});
+
 describe('resizeTilemap', () => {
   it('updates columns and rows', () => {
     const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
@@ -429,7 +443,6 @@ describe('setTilemapTile', () => {
     expect(getTilemapTile(tilemap, 0, 0)).toBe(-1);
   });
 });
-
 describe('setTilemapTiles', () => {
   it('blits a sub-grid at offset (0, 0)', () => {
     const tilemap = createTilemap({ data: { columns: 4, rows: 3 } });

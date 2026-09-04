@@ -2,6 +2,7 @@ import {
   acquireGlRenderTarget,
   createGlRenderTargetPool,
   destroyGlRenderTargetPool,
+  initializeGlRenderTargetPool,
   releaseGlRenderTarget,
 } from './glRenderTargetPool';
 import { createGlState } from './glTestHelper';
@@ -214,6 +215,11 @@ describe('destroyGlRenderTargetPool', () => {
   });
 });
 
+describe('initializeGlRenderTargetPool', () => {
+  it('is the construction initializer of createGlRenderTargetPool', () => {
+    expect(typeof initializeGlRenderTargetPool).toBe('function');
+  });
+});
 describe('releaseGlRenderTarget', () => {
   it('returns the target to the free list without destroying it', () => {
     const { state, gl } = createGlState();

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createTintAdjustment } from './tintAdjustment';
+import { createTintAdjustment, initializeTintAdjustment } from './tintAdjustment';
 
 describe('createTintAdjustment', () => {
   it('carries the TintAdjustment kind and a 20-length diagonal matrix', () => {
@@ -27,5 +27,10 @@ describe('createTintAdjustment', () => {
   it('scales an arbitrary pixel per channel', () => {
     // Half-tint on mid-grey halves each colour channel; full alpha leaves alpha unchanged.
     expect(applyColorMatrixToColor(createTintAdjustment(0x808080ff).colorMatrix, 0x808080ff)).toBe(0x404040ff);
+  });
+});
+describe('initializeTintAdjustment', () => {
+  it('is the construction initializer of createTintAdjustment', () => {
+    expect(typeof initializeTintAdjustment).toBe('function');
   });
 });

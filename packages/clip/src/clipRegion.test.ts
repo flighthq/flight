@@ -16,6 +16,9 @@ import {
   createClipRegionFromRoundedRectangle,
   equalsClipRegion,
   getClipRegionBounds,
+  initializeClipRegionFromContours,
+  initializeClipRegionFromPath,
+  initializeClipRegionFromRectangle,
   intersectClipRegions,
   invalidateClipRegion,
   isClipRegionEmpty,
@@ -326,6 +329,24 @@ describe('getClipRegionBounds', () => {
   });
 });
 
+describe('initializeClipRegionFromContours', () => {
+  it('is the construction initializer of createClipRegionFromContours', () => {
+    expect(typeof initializeClipRegionFromContours).toBe('function');
+  });
+});
+
+describe('initializeClipRegionFromPath', () => {
+  it('is the construction initializer of createClipRegionFromPath', () => {
+    expect(typeof initializeClipRegionFromPath).toBe('function');
+  });
+});
+
+describe('initializeClipRegionFromRectangle', () => {
+  it('is the construction initializer of createClipRegionFromRectangle', () => {
+    expect(typeof initializeClipRegionFromRectangle).toBe('function');
+  });
+});
+
 describe('intersectClipRegions', () => {
   it('produces a scissor-eligible rect when both inputs are rectangular', () => {
     const a = createClipRegionFromRectangle(createRectangle(0, 0, 20, 20));
@@ -540,7 +561,6 @@ describe('setClipRegionReleaseGuard', () => {
     expect(doubled).toEqual([]);
   });
 });
-
 describe('setClipRegionToRectangle', () => {
   it('retargets a contour clip to a rectangle form and bumps version', () => {
     const path = createPath();

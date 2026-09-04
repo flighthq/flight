@@ -1,4 +1,4 @@
-import { createCustomShaderEffect } from './customShaderEffect';
+import { createCustomShaderEffect, initializeCustomShaderEffect } from './customShaderEffect';
 
 describe('createCustomShaderEffect', () => {
   it('carries options', () => {
@@ -10,5 +10,10 @@ describe('createCustomShaderEffect', () => {
 
   it('tags the intent type', () => {
     expect(createCustomShaderEffect({ shaderKey: 'test' }).kind).toBe('CustomShaderEffect');
+  });
+});
+describe('initializeCustomShaderEffect', () => {
+  it('is the construction initializer of createCustomShaderEffect', () => {
+    expect(typeof initializeCustomShaderEffect).toBe('function');
   });
 });

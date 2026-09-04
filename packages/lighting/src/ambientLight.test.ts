@@ -1,6 +1,6 @@
 import { AmbientLightKind, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
-import { cloneAmbientLight, createAmbientLight } from './ambientLight';
+import { cloneAmbientLight, createAmbientLight, initializeAmbientLight } from './ambientLight';
 
 describe('cloneAmbientLight', () => {
   it('creates an independent copy with the same fields', () => {
@@ -36,5 +36,10 @@ describe('createAmbientLight', () => {
     expect(light.enabled).toBe(false);
     expect(light.intensity).toBe(2);
     expect(light.intensityUnit).toBe(LuxLightUnit);
+  });
+});
+describe('initializeAmbientLight', () => {
+  it('is the construction initializer of createAmbientLight', () => {
+    expect(typeof initializeAmbientLight).toBe('function');
   });
 });

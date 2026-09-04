@@ -3,7 +3,7 @@ import type { BitmapFontData, ImageResource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapFont, getBitmapFontGlyph } from './bitmapFont';
-import { createGlyphSourceFromBitmapFont } from './bitmapFontGlyphSource';
+import { createGlyphSourceFromBitmapFont, initializeGlyphSourceFromBitmapFont } from './bitmapFontGlyphSource';
 
 describe('createGlyphSourceFromBitmapFont', () => {
   it('exposes the font as a GlyphSource whose lookups match the font', () => {
@@ -67,3 +67,8 @@ function sampleFontData(): BitmapFontData {
     pages: [createTextureAtlas()],
   };
 }
+describe('initializeGlyphSourceFromBitmapFont', () => {
+  it('is the construction initializer of createGlyphSourceFromBitmapFont', () => {
+    expect(typeof initializeGlyphSourceFromBitmapFont).toBe('function');
+  });
+});

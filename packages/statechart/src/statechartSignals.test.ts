@@ -8,7 +8,7 @@ import {
   fireStatechartTrigger,
   setStatechartRegionDuration,
 } from './statechart';
-import { enableStatechartSignals, getStatechartSignals } from './statechartSignals';
+import { enableStatechartSignals, getStatechartSignals, initializeStatechartSignals } from './statechartSignals';
 
 describe('enableStatechartSignals', () => {
   it('lazily attaches one standard signal group to the mutable instance', () => {
@@ -94,3 +94,8 @@ function createImmediateChart(): Statechart {
     ],
   };
 }
+describe('initializeStatechartSignals', () => {
+  it('is the construction initializer of createStatechartSignals', () => {
+    expect(typeof initializeStatechartSignals).toBe('function');
+  });
+});

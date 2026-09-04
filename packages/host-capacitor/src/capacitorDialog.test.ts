@@ -1,7 +1,12 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorMessageDialogBackend, createCapacitorPromptDialogBackend } from './capacitorDialog';
+import {
+  createCapacitorMessageDialogBackend,
+  createCapacitorPromptDialogBackend,
+  initializeCapacitorMessageDialogBackend,
+  initializeCapacitorPromptDialogBackend,
+} from './capacitorDialog';
 
 function fakeCapacitor(promptResult = { value: 'typed', cancelled: false }) {
   const calls: string[] = [];
@@ -64,5 +69,16 @@ describe('createCapacitorPromptDialogBackend', () => {
     const backend = createCapacitorPromptDialogBackend(capacitor);
     await expect(backend.prompt({ message: 'name?', signal: controller.signal })).resolves.toBeNull();
     expect(calls).toEqual([]);
+  });
+});
+describe('initializeCapacitorMessageDialogBackend', () => {
+  it('is the construction initializer of createCapacitorMessageDialogBackend', () => {
+    expect(typeof initializeCapacitorMessageDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeCapacitorPromptDialogBackend', () => {
+  it('is the construction initializer of createCapacitorPromptDialogBackend', () => {
+    expect(typeof initializeCapacitorPromptDialogBackend).toBe('function');
   });
 });

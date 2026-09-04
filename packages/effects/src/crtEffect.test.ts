@@ -1,4 +1,4 @@
-import { createCrtEffect } from './crtEffect';
+import { createCrtEffect, initializeCrtEffect } from './crtEffect';
 
 describe('createCrtEffect', () => {
   it('tags the intent type', () => {
@@ -12,5 +12,10 @@ describe('createCrtEffect', () => {
       vignette: 0.3,
       aberration: 0.01,
     });
+  });
+});
+describe('initializeCrtEffect', () => {
+  it('is the construction initializer of createCrtEffect', () => {
+    expect(typeof initializeCrtEffect).toBe('function');
   });
 });

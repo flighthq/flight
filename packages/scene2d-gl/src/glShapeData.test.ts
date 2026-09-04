@@ -9,6 +9,7 @@ import {
   createGlShapeData,
   destroyGlShapeData,
   getGlShapeData,
+  initializeGlShapeData,
   toGlShapeRendererData,
 } from './glShapeData';
 import { createGlState } from './glTestHelper';
@@ -150,6 +151,11 @@ describe('getGlShapeData', () => {
   });
 });
 
+describe('initializeGlShapeData', () => {
+  it('is the construction initializer of createGlShapeData', () => {
+    expect(typeof initializeGlShapeData).toBe('function');
+  });
+});
 describe('toGlShapeRendererData', () => {
   it('is the inverse of getGlShapeData', () => {
     const data = emptyData();

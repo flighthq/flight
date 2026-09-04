@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createDirectionalBlurEffect,
   getDirectionalBlurEffectPadding,
+  initializeDirectionalBlurEffect,
   registerDirectionalBlurEffectPaddingResolver,
 } from './directionalBlurEffect';
 
@@ -27,6 +28,11 @@ describe('getDirectionalBlurEffectPadding', () => {
   });
 });
 
+describe('initializeDirectionalBlurEffect', () => {
+  it('is the construction initializer of createDirectionalBlurEffect', () => {
+    expect(typeof initializeDirectionalBlurEffect).toBe('function');
+  });
+});
 describe('registerDirectionalBlurEffectPaddingResolver', () => {
   it('registers the directional-blur footprint on only the supplied state', () => {
     const state = createRenderState();

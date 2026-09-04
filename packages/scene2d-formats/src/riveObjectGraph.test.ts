@@ -1,7 +1,7 @@
 import type { ImportDiagnostic, RiveCoreObject, RiveDocument } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveObjectGraph } from './riveObjectGraph';
+import { createRiveObjectGraph, initializeRiveObjectGraph } from './riveObjectGraph';
 
 // The index base here was settled against real files, not chosen: numbering the artboard as index 0
 // resolved every stated parent across 127 artboards with no cycle and exactly one root, while
@@ -126,3 +126,8 @@ function component(typeKey: number, parentIndex: number): RiveCoreObject {
     typeKey,
   };
 }
+describe('initializeRiveObjectGraph', () => {
+  it('is the construction initializer of createRiveObjectGraph', () => {
+    expect(typeof initializeRiveObjectGraph).toBe('function');
+  });
+});

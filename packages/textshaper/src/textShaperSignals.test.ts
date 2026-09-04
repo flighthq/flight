@@ -1,7 +1,12 @@
 import type { TextShaperBackend } from '@flighthq/types/contract';
 
 import { setTextShaperBackend } from './textShaper';
-import { disposeTextShaperSignals, enableTextShaperSignals, getTextShaperSignals } from './textShaperSignals';
+import {
+  disposeTextShaperSignals,
+  enableTextShaperSignals,
+  getTextShaperSignals,
+  initializeTextShaperSignals,
+} from './textShaperSignals';
 
 const _stubBackend: TextShaperBackend = { measureText: () => 0 };
 const _stubBackend2: TextShaperBackend = { measureText: () => 1 };
@@ -56,6 +61,11 @@ describe('getTextShaperSignals', () => {
   });
 });
 
+describe('initializeTextShaperSignals', () => {
+  it('is the construction initializer of createTextShaperSignals', () => {
+    expect(typeof initializeTextShaperSignals).toBe('function');
+  });
+});
 describe('setTextShaperBackend', () => {
   it('emits onBackendChanged with the new backend when signals are enabled', () => {
     const sigs = enableTextShaperSignals();

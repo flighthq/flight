@@ -1,6 +1,11 @@
 import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
 
-import { createOutlineEffect, getOutlineEffectPadding, registerOutlineEffectPaddingResolver } from './outlineEffect';
+import {
+  createOutlineEffect,
+  getOutlineEffectPadding,
+  initializeOutlineEffect,
+  registerOutlineEffectPaddingResolver,
+} from './outlineEffect';
 
 describe('createOutlineEffect', () => {
   it('tags the intent type', () => {
@@ -27,6 +32,11 @@ describe('getOutlineEffectPadding', () => {
   });
 });
 
+describe('initializeOutlineEffect', () => {
+  it('is the construction initializer of createOutlineEffect', () => {
+    expect(typeof initializeOutlineEffect).toBe('function');
+  });
+});
 describe('registerOutlineEffectPaddingResolver', () => {
   it('registers the outline footprint on only the supplied state', () => {
     const state = createRenderState();

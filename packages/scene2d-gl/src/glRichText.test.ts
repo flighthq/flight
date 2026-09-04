@@ -12,6 +12,7 @@ import {
   destroyGlRichTextData,
   drawGlRichText,
   drawGlRichTextWithOverlay,
+  initializeGlRichTextData,
   registerGlTextInputOverlay,
 } from './glRichText';
 import { createGlState } from './glTestHelper';
@@ -219,6 +220,11 @@ describe('drawGlRichTextWithOverlay', () => {
   });
 });
 
+describe('initializeGlRichTextData', () => {
+  it('is the construction initializer of createGlRichTextData', () => {
+    expect(typeof initializeGlRichTextData).toBe('function');
+  });
+});
 describe('registerGlTextInputOverlay', () => {
   it('invokes the registered overlay only for a RichText with an input slot', () => {
     const overlay = vi.fn();

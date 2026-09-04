@@ -1,7 +1,7 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorClipboardBackend } from './capacitorClipboard';
+import { createCapacitorClipboardBackend, initializeCapacitorClipboardBackend } from './capacitorClipboard';
 
 function fakeCapacitor() {
   const store = { value: '', type: 'text/plain' };
@@ -60,5 +60,10 @@ describe('createCapacitorClipboardBackend', () => {
     const backend = createCapacitorClipboardBackend(capacitor);
     expect(await backend.readText()).toBe('');
     expect(await backend.hasText()).toBe(false);
+  });
+});
+describe('initializeCapacitorClipboardBackend', () => {
+  it('is the construction initializer of createCapacitorClipboardBackend', () => {
+    expect(typeof initializeCapacitorClipboardBackend).toBe('function');
   });
 });

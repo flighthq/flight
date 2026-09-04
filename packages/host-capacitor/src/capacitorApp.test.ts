@@ -2,7 +2,11 @@ import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCapacitorAppCapabilities } from './capacitorApp';
+import {
+  createCapacitorAppCapabilities,
+  initializeCapacitorAndroidAppCapabilities,
+  initializeCapacitorCommonAppCapabilities,
+} from './capacitorApp';
 
 const flush = async () => {
   await Promise.resolve();
@@ -72,5 +76,16 @@ describe('createCapacitorAppCapabilities', () => {
     off();
     await flush();
     expect(calls).toEqual(['remove:appStateChange']);
+  });
+});
+describe('initializeCapacitorAndroidAppCapabilities', () => {
+  it('is the construction initializer of createCapacitorAndroidAppCapabilities', () => {
+    expect(typeof initializeCapacitorAndroidAppCapabilities).toBe('function');
+  });
+});
+
+describe('initializeCapacitorCommonAppCapabilities', () => {
+  it('is the construction initializer of createCapacitorCommonAppCapabilities', () => {
+    expect(typeof initializeCapacitorCommonAppCapabilities).toBe('function');
   });
 });

@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createSheenPbrExtension, isValidSheenPbrExtension } from './sheenPbrExtension';
+import { createSheenPbrExtension, initializeSheenPbrExtension, isValidSheenPbrExtension } from './sheenPbrExtension';
 
 describe('createSheenPbrExtension', () => {
   it('creates an Entity with independent color and roughness UV sets', () => {
@@ -12,6 +12,11 @@ describe('createSheenPbrExtension', () => {
   });
 });
 
+describe('initializeSheenPbrExtension', () => {
+  it('is the construction initializer of createSheenPbrExtension', () => {
+    expect(typeof initializeSheenPbrExtension).toBe('function');
+  });
+});
 describe('isValidSheenPbrExtension', () => {
   it('rejects invalid roughness and UV selection', () => {
     expect(isValidSheenPbrExtension(createSheenPbrExtension({ sheenRoughness: 1 }))).toBe(true);

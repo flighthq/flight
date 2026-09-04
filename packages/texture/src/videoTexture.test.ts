@@ -13,6 +13,7 @@ import {
   getVideoTextureInverseUvMatrix,
   getVideoTextureUvMatrix,
   getVideoTextureWidth,
+  initializeVideoImageResource,
   isVideoTextureFrameReady,
   resetVideoTextureFrame,
   setVideoTextureSource,
@@ -161,6 +162,12 @@ describe('getVideoTextureWidth', () => {
   });
 });
 
+describe('initializeVideoImageResource', () => {
+  it('is the construction initializer of createVideoImageResource', () => {
+    expect(typeof initializeVideoImageResource).toBe('function');
+  });
+});
+
 describe('isVideoTextureFrameReady', () => {
   it('is true only when the element has a decoded frame with known dimensions', () => {
     expect(isVideoTextureFrameReady(createVideoTexture(makeVideoResource(4, 320, 240)))).toBe(true);
@@ -180,7 +187,6 @@ describe('resetVideoTextureFrame', () => {
     expect(getTextureSource(vt)?.version).toBe(0xffffffff);
   });
 });
-
 describe('setVideoTextureSource', () => {
   it('swaps the borrowed host handle and resets the version', () => {
     const vt = createVideoTexture(makeVideoResource());

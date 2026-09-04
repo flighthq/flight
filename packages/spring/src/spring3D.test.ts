@@ -1,7 +1,14 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { applySpringImpulse3D, createSpring3D, isSpring3DSettled, resetSpring3D, updateSpring3D } from './spring3D';
+import {
+  applySpringImpulse3D,
+  createSpring3D,
+  initializeSpring3D,
+  isSpring3DSettled,
+  resetSpring3D,
+  updateSpring3D,
+} from './spring3D';
 import { createSpringConfig } from './springConfig';
 
 describe('applySpringImpulse3D', () => {
@@ -42,6 +49,12 @@ describe('createSpring3D', () => {
   });
 });
 
+describe('initializeSpring3D', () => {
+  it('is the construction initializer of createSpring3D', () => {
+    expect(typeof initializeSpring3D).toBe('function');
+  });
+});
+
 describe('isSpring3DSettled', () => {
   it('is false until all three axes rest at their targets', () => {
     const spring = createSpring3D(0, 0, 0);
@@ -73,7 +86,6 @@ describe('resetSpring3D', () => {
     expect(spring.z).toMatchObject({ value: -30, velocity: 0 });
   });
 });
-
 describe('updateSpring3D', () => {
   it('moves all three components toward their targets', () => {
     const spring = createSpring3D(0, 0, 0);

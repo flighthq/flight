@@ -25,11 +25,12 @@ import {
   bindWgpuTexture,
   bindWgpuVideoTexture,
   createWgpuTextureEntry,
+  destroyWgpuVideoTexture,
   drawWgpuQuad,
   drawWgpuQuadWithTransform,
-  destroyWgpuVideoTexture,
   enableWgpuBlendModeSupport,
   getWgpuRenderProxyColorScaleBias,
+  initializeWgpuTextureEntry,
   resolveWgpuSmoothingBindGroup,
   submitWgpuQuadDraw,
   updateWgpuTextureEntry,
@@ -475,6 +476,12 @@ describe('getWgpuRenderProxyColorScaleBias', () => {
   });
 });
 
+describe('initializeWgpuTextureEntry', () => {
+  it('is the construction initializer of createWgpuTextureEntry', () => {
+    expect(typeof initializeWgpuTextureEntry).toBe('function');
+  });
+});
+
 describe('resolveWgpuSmoothingBindGroup', () => {
   it('follows the state smoothing policy for a null smoothing', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -590,7 +597,6 @@ describe('updateWgpuTextureEntry', () => {
     expect(() => updateWgpuTextureEntry(state, entry, canvas)).not.toThrow();
   });
 });
-
 describe('warmWgpuPipelines', () => {
   it('pre-populates the pipeline cache', async () => {
     const state = await createWgpuRenderStateForTest();

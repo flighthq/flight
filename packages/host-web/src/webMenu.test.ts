@@ -1,6 +1,23 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { webMenuHighlightBackend, webMenuPopupBackend } from './webMenu';
+import {
+  initializeWebMenuHighlightBackend,
+  initializeWebMenuPopupBackend,
+  webMenuHighlightBackend,
+  webMenuPopupBackend,
+} from './webMenu';
+
+describe('initializeWebMenuHighlightBackend', () => {
+  it('is the construction initializer of createWebMenuHighlightBackend', () => {
+    expect(typeof initializeWebMenuHighlightBackend).toBe('function');
+  });
+});
+
+describe('initializeWebMenuPopupBackend', () => {
+  it('is the construction initializer of createWebMenuPopupBackend', () => {
+    expect(typeof initializeWebMenuPopupBackend).toBe('function');
+  });
+});
 
 describe('webMenuHighlightBackend', () => {
   it('is an Entity provider', () => {
@@ -27,7 +44,6 @@ describe('webMenuHighlightBackend', () => {
     expect(() => unsubscribeSecond()).not.toThrow();
   });
 });
-
 describe('webMenuPopupBackend', () => {
   it('is an Entity provider', () => {
     expect(EntityRuntimeKey in webMenuPopupBackend).toBe(true);

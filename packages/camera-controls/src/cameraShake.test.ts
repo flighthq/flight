@@ -4,6 +4,8 @@ import {
   addCameraShakeTrauma,
   createCameraShake,
   createCameraShakeOffset,
+  initializeCameraShake,
+  initializeCameraShakeOffset,
   resetCameraShake,
   updateCameraShake,
 } from './cameraShake';
@@ -58,6 +60,17 @@ describe('createCameraShakeOffset', () => {
   });
 });
 
+describe('initializeCameraShake', () => {
+  it('is the construction initializer of createCameraShake', () => {
+    expect(typeof initializeCameraShake).toBe('function');
+  });
+});
+
+describe('initializeCameraShakeOffset', () => {
+  it('is the construction initializer of createCameraShakeOffset', () => {
+    expect(typeof initializeCameraShakeOffset).toBe('function');
+  });
+});
 describe('resetCameraShake', () => {
   it('zeros trauma and time', () => {
     const shake = createCameraShake();

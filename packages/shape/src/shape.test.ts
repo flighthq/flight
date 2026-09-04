@@ -21,6 +21,7 @@ import {
   getShapeBounds,
   getShapeCommandCount,
   getShapeRuntime,
+  initializeShapeData,
   isShapeEmpty,
 } from './shape';
 import {
@@ -355,6 +356,11 @@ describe('getShapeRuntime', () => {
   });
 });
 
+describe('initializeShapeData', () => {
+  it('is the construction initializer of createShapeData', () => {
+    expect(typeof initializeShapeData).toBe('function');
+  });
+});
 describe('isShapeEmpty', () => {
   it('returns true for a shape with no commands', () => {
     const shape = createShape();

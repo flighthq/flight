@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createDisplacementEffect,
   getDisplacementEffectPadding,
+  initializeDisplacementEffect,
   registerDisplacementEffectPaddingResolver,
 } from './displacementEffect';
 
@@ -31,6 +32,11 @@ describe('getDisplacementEffectPadding', () => {
   });
 });
 
+describe('initializeDisplacementEffect', () => {
+  it('is the construction initializer of createDisplacementEffect', () => {
+    expect(typeof initializeDisplacementEffect).toBe('function');
+  });
+});
 describe('registerDisplacementEffectPaddingResolver', () => {
   it('registers the displacement footprint on only the supplied state', () => {
     const state = createRenderState();

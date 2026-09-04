@@ -1,7 +1,11 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
-import { createExternalGlTexture, disposeExternalGlTexture } from './glExternalTexture';
+import {
+  createExternalGlTexture,
+  disposeExternalGlTexture,
+  initializeExternalGlTextureSource,
+} from './glExternalTexture';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
 import { resolveGlTexture } from './glTextureResolver';
@@ -39,5 +43,10 @@ describe('disposeExternalGlTexture', () => {
     const texture = createExternalGlTexture(state, state.gl.createTexture()!, { height: 1, width: 1 });
     expect(disposeExternalGlTexture(state, texture)).toBe(true);
     expect(disposeExternalGlTexture(state, texture)).toBe(false);
+  });
+});
+describe('initializeExternalGlTextureSource', () => {
+  it('is the construction initializer of createExternalGlTextureSource', () => {
+    expect(typeof initializeExternalGlTextureSource).toBe('function');
   });
 });

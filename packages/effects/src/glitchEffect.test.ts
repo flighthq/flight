@@ -1,6 +1,11 @@
 import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
 
-import { createGlitchEffect, getGlitchEffectPadding, registerGlitchEffectPaddingResolver } from './glitchEffect';
+import {
+  createGlitchEffect,
+  getGlitchEffectPadding,
+  initializeGlitchEffect,
+  registerGlitchEffectPaddingResolver,
+} from './glitchEffect';
 
 describe('createGlitchEffect', () => {
   it('tags the intent type', () => {
@@ -28,6 +33,11 @@ describe('getGlitchEffectPadding', () => {
   });
 });
 
+describe('initializeGlitchEffect', () => {
+  it('is the construction initializer of createGlitchEffect', () => {
+    expect(typeof initializeGlitchEffect).toBe('function');
+  });
+});
 describe('registerGlitchEffectPaddingResolver', () => {
   it('registers the glitch footprint on only the supplied state', () => {
     const state = createRenderState();

@@ -17,6 +17,7 @@ import {
   getMeshGeometrySkinBindPose,
   getMeshGeometryVertexCount,
   hasMeshGeometrySkin,
+  initializeMeshGeometry,
   invalidateMeshGeometry,
   setMeshGeometryMorphBindPose,
   setMeshGeometrySkinBindPose,
@@ -208,6 +209,12 @@ describe('hasMeshGeometrySkin', () => {
   });
 });
 
+describe('initializeMeshGeometry', () => {
+  it('is the construction initializer of createMeshGeometry', () => {
+    expect(typeof initializeMeshGeometry).toBe('function');
+  });
+});
+
 describe('invalidateMeshGeometry', () => {
   it('advances the shared upload revision as a wrapping u32', () => {
     const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(1) });
@@ -239,7 +246,6 @@ describe('setMeshGeometryMorphBindPose', () => {
     expect(getMeshGeometryMorphBindPose(geometry)).toBeNull();
   });
 });
-
 describe('setMeshGeometrySkinBindPose', () => {
   it('stores and clears the skinning bind pose on the runtime slot', () => {
     const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });

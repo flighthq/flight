@@ -5,7 +5,7 @@ import {
   resumeSignalConnection,
 } from './connection';
 import { emitSignal } from './emitter';
-import { createSignalScope, disconnectSignalScope } from './scope';
+import { createSignalScope, disconnectSignalScope, initializeSignalScope } from './scope';
 import { createSignal } from './signal';
 import { connectSignal, hasSignalSlots, isSlotConnected } from './slot';
 
@@ -221,5 +221,10 @@ describe('disconnectSignalScope', () => {
     emitSignal(signal);
     expect(calls).toBe(0);
     expect(isSlotConnected(signal, connection.slot)).toBe(false);
+  });
+});
+describe('initializeSignalScope', () => {
+  it('is the construction initializer of createSignalScope', () => {
+    expect(typeof initializeSignalScope).toBe('function');
   });
 });

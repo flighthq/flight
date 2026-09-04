@@ -20,6 +20,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix4, Obb, Vector3 } from '@flighthq/types/contract';
 
+import { initializeObb } from './obb';
+
 describe('createObb', () => {
   it('stores center, half-extents, and orientation', () => {
     const o = createObb(1, 2, 3, 4, 5, 6, 0, 0, 0, 1);
@@ -69,6 +71,12 @@ describe('getClosestPointOnObb', () => {
     const p = createVector3(5, 0, 0);
     getClosestPointOnObb(p, o, p);
     expect(p.x).toBeCloseTo(1, 6);
+  });
+});
+
+describe('initializeObb', () => {
+  it('is the construction initializer of createObb', () => {
+    expect(typeof initializeObb).toBe('function');
   });
 });
 
@@ -293,91 +301,6 @@ describe('setObb', () => {
   });
 });
 
-describe('transformObbByMatrix4', () => {
-  it('translates the center by a translation matrix', () => {
-    const o = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
-    const m = createMatrix4();
-    setMatrix4Position(m, createVector3(5, 0, 0));
-    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
-    transformObbByMatrix4(out, o, m);
-    expect(out.centerX).toBeCloseTo(5, 6);
-    expect(out.centerY).toBeCloseTo(0, 6);
-    expect(out.halfExtentX).toBeCloseTo(1, 6);
-    expect(out.orientationW).toBeCloseTo(1, 5);
-  });
-
-  it('scales half-extents by a uniform scale matrix', () => {
-    const o = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
-    const m = createMatrix4(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1);
-    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
-    transformObbByMatrix4(out, o, m);
-    expect(out.halfExtentX).toBeCloseTo(2, 6);
-    expect(out.halfExtentY).toBeCloseTo(2, 6);
-    expect(out.halfExtentZ).toBeCloseTo(2, 6);
-  });
-
-  it('supports out === obb', () => {
-    const o = createObb(1, 0, 0, 1, 1, 1, 0, 0, 0, 1);
-    const m = createMatrix4();
-    setMatrix4Position(m, createVector3(0, 3, 0));
-    transformObbByMatrix4(o, o, m);
-    expect(o.centerX).toBeCloseTo(1, 6);
-    expect(o.centerY).toBeCloseTo(3, 6);
-    expect(o.halfExtentX).toBeCloseTo(1, 6);
-  });
-
-  it('rotates the box the same way the matrix rotates points', () => {
-    // The orientation extracted from the matrix must turn the box in the matrix's own direction.
-    // A conjugated extraction turns it by the same angle about the opposite axis, which is
-    // invisible for axis-aligned boxes and half turns but wrong for every general rotation.
-    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(1, 0, 0, 0.7), createTiltedObb());
-    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(1, 2, 3, 0.9), createTiltedObb());
-  });
-
-  it('rotates the box correctly near a half turn about each axis', () => {
-    // A half turn drives the three `trace <= 0` branches of the matrix-to-quaternion extraction,
-    // one per dominant diagonal term. Just short of pi so the conjugate is a different rotation:
-    // at exactly pi the quaternion equals its own conjugate up to sign and hides an error.
-    const nearHalfTurn = Math.PI - 0.01;
-    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(1, 0, 0, nearHalfTurn), createTiltedObb());
-    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(0, 1, 0, nearHalfTurn), createTiltedObb());
-    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(0, 0, 1, nearHalfTurn), createTiltedObb());
-  });
-
-  it('flattens the box along a collapsed matrix column and keeps the other extents', () => {
-    // A zero-length column has no direction to read, so that axis falls back to its identity
-    // direction rather than dividing by zero, and the half-extent along it goes to zero.
-    const o = createObb(0, 0, 0, 2, 3, 4, 0, 0, 0, 1);
-    const m = createMatrix4(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
-    transformObbByMatrix4(out, o, m);
-    expect(out.halfExtentX).toBe(0);
-    expect(out.halfExtentY).toBeCloseTo(3, 6);
-    expect(out.halfExtentZ).toBeCloseTo(4, 6);
-    expect(out.orientationW).toBeCloseTo(1, 6);
-  });
-
-  it('collapses the box to a point at the matrix position when every column is zero', () => {
-    // All three columns collapse, so the fallback rotation is the identity and the box keeps the
-    // orientation it came in with — the transform contributes nothing but the translation.
-    const tilt = orientationFromAxisAngle(1, 1, 1, 0.6);
-    const o = createObb(1, 2, 3, 2, 3, 4, ...tilt);
-    const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 7, 1);
-    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
-    transformObbByMatrix4(out, o, m);
-    expect(out.centerX).toBeCloseTo(5, 6);
-    expect(out.centerY).toBeCloseTo(6, 6);
-    expect(out.centerZ).toBeCloseTo(7, 6);
-    expect(out.halfExtentX).toBe(0);
-    expect(out.halfExtentY).toBe(0);
-    expect(out.halfExtentZ).toBe(0);
-    expect(out.orientationX).toBeCloseTo(tilt[0], 6);
-    expect(out.orientationY).toBeCloseTo(tilt[1], 6);
-    expect(out.orientationZ).toBeCloseTo(tilt[2], 6);
-    expect(out.orientationW).toBeCloseTo(tilt[3], 6);
-  });
-});
-
 // A thin rod: long along one of its own local axes, barely thick along the other two, so the
 // dominant feature of the box is a single edge direction.
 function createRodObb(
@@ -486,3 +409,87 @@ const FACE_AXIS_SEPARATIONS: ReadonlyArray<{
   { axis: 1, clear: 4.7, extents: [0.5, 1.5, 2.5], ofTurnedBox: true },
   { axis: 2, clear: 3.7, extents: [2.5, 1.5, 0.5], ofTurnedBox: true },
 ];
+describe('transformObbByMatrix4', () => {
+  it('translates the center by a translation matrix', () => {
+    const o = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const m = createMatrix4();
+    setMatrix4Position(m, createVector3(5, 0, 0));
+    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+    transformObbByMatrix4(out, o, m);
+    expect(out.centerX).toBeCloseTo(5, 6);
+    expect(out.centerY).toBeCloseTo(0, 6);
+    expect(out.halfExtentX).toBeCloseTo(1, 6);
+    expect(out.orientationW).toBeCloseTo(1, 5);
+  });
+
+  it('scales half-extents by a uniform scale matrix', () => {
+    const o = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const m = createMatrix4(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1);
+    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+    transformObbByMatrix4(out, o, m);
+    expect(out.halfExtentX).toBeCloseTo(2, 6);
+    expect(out.halfExtentY).toBeCloseTo(2, 6);
+    expect(out.halfExtentZ).toBeCloseTo(2, 6);
+  });
+
+  it('supports out === obb', () => {
+    const o = createObb(1, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const m = createMatrix4();
+    setMatrix4Position(m, createVector3(0, 3, 0));
+    transformObbByMatrix4(o, o, m);
+    expect(o.centerX).toBeCloseTo(1, 6);
+    expect(o.centerY).toBeCloseTo(3, 6);
+    expect(o.halfExtentX).toBeCloseTo(1, 6);
+  });
+
+  it('rotates the box the same way the matrix rotates points', () => {
+    // The orientation extracted from the matrix must turn the box in the matrix's own direction.
+    // A conjugated extraction turns it by the same angle about the opposite axis, which is
+    // invisible for axis-aligned boxes and half turns but wrong for every general rotation.
+    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(1, 0, 0, 0.7), createTiltedObb());
+    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(1, 2, 3, 0.9), createTiltedObb());
+  });
+
+  it('rotates the box correctly near a half turn about each axis', () => {
+    // A half turn drives the three `trace <= 0` branches of the matrix-to-quaternion extraction,
+    // one per dominant diagonal term. Just short of pi so the conjugate is a different rotation:
+    // at exactly pi the quaternion equals its own conjugate up to sign and hides an error.
+    const nearHalfTurn = Math.PI - 0.01;
+    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(1, 0, 0, nearHalfTurn), createTiltedObb());
+    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(0, 1, 0, nearHalfTurn), createTiltedObb());
+    expectTransformedObbMatchesRotatedPoints(rotationMatrix4(0, 0, 1, nearHalfTurn), createTiltedObb());
+  });
+
+  it('flattens the box along a collapsed matrix column and keeps the other extents', () => {
+    // A zero-length column has no direction to read, so that axis falls back to its identity
+    // direction rather than dividing by zero, and the half-extent along it goes to zero.
+    const o = createObb(0, 0, 0, 2, 3, 4, 0, 0, 0, 1);
+    const m = createMatrix4(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+    transformObbByMatrix4(out, o, m);
+    expect(out.halfExtentX).toBe(0);
+    expect(out.halfExtentY).toBeCloseTo(3, 6);
+    expect(out.halfExtentZ).toBeCloseTo(4, 6);
+    expect(out.orientationW).toBeCloseTo(1, 6);
+  });
+
+  it('collapses the box to a point at the matrix position when every column is zero', () => {
+    // All three columns collapse, so the fallback rotation is the identity and the box keeps the
+    // orientation it came in with — the transform contributes nothing but the translation.
+    const tilt = orientationFromAxisAngle(1, 1, 1, 0.6);
+    const o = createObb(1, 2, 3, 2, 3, 4, ...tilt);
+    const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 7, 1);
+    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+    transformObbByMatrix4(out, o, m);
+    expect(out.centerX).toBeCloseTo(5, 6);
+    expect(out.centerY).toBeCloseTo(6, 6);
+    expect(out.centerZ).toBeCloseTo(7, 6);
+    expect(out.halfExtentX).toBe(0);
+    expect(out.halfExtentY).toBe(0);
+    expect(out.halfExtentZ).toBe(0);
+    expect(out.orientationX).toBeCloseTo(tilt[0], 6);
+    expect(out.orientationY).toBeCloseTo(tilt[1], 6);
+    expect(out.orientationZ).toBeCloseTo(tilt[2], 6);
+    expect(out.orientationW).toBeCloseTo(tilt[3], 6);
+  });
+});

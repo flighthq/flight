@@ -7,6 +7,7 @@ import {
   getApplicationWindowForElectronId,
   getElectronBrowserWindow,
   getElectronWindowId,
+  initializeElectronWindowBackend,
   resetElectronWindowBackendForTest,
 } from './electronWindow';
 
@@ -329,6 +330,11 @@ describe('getElectronWindowId', () => {
   });
 });
 
+describe('initializeElectronWindowBackend', () => {
+  it('is the construction initializer of createElectronWindowBackend', () => {
+    expect(typeof initializeElectronWindowBackend).toBe('function');
+  });
+});
 describe('resetElectronWindowBackendForTest', () => {
   it('clears the window identity maps', () => {
     const { electron, created } = fakeElectron();

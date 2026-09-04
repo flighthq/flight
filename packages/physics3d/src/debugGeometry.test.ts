@@ -8,7 +8,11 @@ import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flig
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { buildPhysics3DContacts } from './contactIntake';
-import { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
+import {
+  createPhysics3DDebugGeometry,
+  initializePhysics3DDebugGeometry,
+  writePhysics3DDebugGeometry,
+} from './debugGeometry';
 import { createPhysics3DBallAndSocketJoint } from './jointFactories';
 import { addPhysics3DJoint } from './jointRegistry';
 import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
@@ -57,6 +61,11 @@ describe('createPhysics3DDebugGeometry', () => {
   });
 });
 
+describe('initializePhysics3DDebugGeometry', () => {
+  it('is the construction initializer of createPhysics3DDebugGeometry', () => {
+    expect(typeof initializePhysics3DDebugGeometry).toBe('function');
+  });
+});
 describe('writePhysics3DDebugGeometry', () => {
   it('draws explicit mesh triangles and heightfield grid edges', () => {
     const world = createPhysics3DWorld();

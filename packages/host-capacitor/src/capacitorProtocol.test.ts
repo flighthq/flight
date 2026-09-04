@@ -2,7 +2,7 @@ import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCapacitorProtocolCapabilities } from './capacitorProtocol';
+import { createCapacitorProtocolCapabilities, initializeCapacitorProtocolCapabilities } from './capacitorProtocol';
 
 const flush = async () => {
   await Promise.resolve();
@@ -37,5 +37,10 @@ describe('createCapacitorProtocolCapabilities', () => {
     off();
     await flush();
     expect(removed).toBe(1);
+  });
+});
+describe('initializeCapacitorProtocolCapabilities', () => {
+  it('is the construction initializer of createCapacitorProtocolCapabilities', () => {
+    expect(typeof initializeCapacitorProtocolCapabilities).toBe('function');
   });
 });

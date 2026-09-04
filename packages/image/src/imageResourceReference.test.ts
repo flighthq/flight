@@ -20,6 +20,8 @@ import {
   disableImageBitmapComposition,
   enableImageBitmapComposition,
   explainImageResourceReferenceResolution,
+  initializeEmbeddedImageResourceReference,
+  initializeExternalImageResourceReference,
   resetFailedImageResourceReference,
   resolveImageResourceReference,
 } from './imageResourceReference';
@@ -138,6 +140,30 @@ describe('explainImageResourceReferenceResolution', () => {
   });
 });
 
+describe('initializeEmbeddedImageResourceReference', () => {
+  it('is the construction initializer of createEmbeddedImageResourceReference', () => {
+    expect(typeof initializeEmbeddedImageResourceReference).toBe('function');
+  });
+});
+
+describe('initializeExternalImageResourceReference', () => {
+  it('is the construction initializer of createExternalImageResourceReference', () => {
+    expect(typeof initializeExternalImageResourceReference).toBe('function');
+  });
+});
+
+function createTestBitmap(alphaType: Bitmap['alphaType']): Bitmap {
+  const out = allocateEntity<Bitmap>();
+  out.alphaType = alphaType;
+  out.data = new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]);
+  out.format = 'rgba8unorm';
+  out.gamut = 'srgb';
+  out.height = 1;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = 1;
+  return finishEntity(out);
+}
 describe('resetFailedImageResourceReference', () => {
   it('clears a failed reference back to unresolved', () => {
     const ref = createExternalImageResourceReference('a.png');
@@ -289,16 +315,3 @@ describe('resolveImageResourceReference', () => {
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
   });
 });
-
-function createTestBitmap(alphaType: Bitmap['alphaType']): Bitmap {
-  const out = allocateEntity<Bitmap>();
-  out.alphaType = alphaType;
-  out.data = new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]);
-  out.format = 'rgba8unorm';
-  out.gamut = 'srgb';
-  out.height = 1;
-  out.kind = BitmapTextureSourceKind;
-  out.version = 0;
-  out.width = 1;
-  return finishEntity(out);
-}

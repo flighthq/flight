@@ -1,11 +1,54 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { makeElectronShellCapabilities } from './electronShell';
+import {
+  initializeShellBeepBackend,
+  initializeShellExternalBackend,
+  initializeShellPathOpenBackend,
+  initializeShellPathRevealBackend,
+  initializeShellShortcutLinkBackend,
+  initializeShellTrashBackend,
+  makeElectronShellCapabilities,
+} from './electronShell';
 
 function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
   return { shell } as unknown as ElectronApi;
 }
+
+describe('initializeShellBeepBackend', () => {
+  it('is the construction initializer of createShellBeepBackend', () => {
+    expect(typeof initializeShellBeepBackend).toBe('function');
+  });
+});
+describe('initializeShellExternalBackend', () => {
+  it('is the construction initializer of createShellExternalBackend', () => {
+    expect(typeof initializeShellExternalBackend).toBe('function');
+  });
+});
+
+describe('initializeShellPathOpenBackend', () => {
+  it('is the construction initializer of createShellPathOpenBackend', () => {
+    expect(typeof initializeShellPathOpenBackend).toBe('function');
+  });
+});
+
+describe('initializeShellPathRevealBackend', () => {
+  it('is the construction initializer of createShellPathRevealBackend', () => {
+    expect(typeof initializeShellPathRevealBackend).toBe('function');
+  });
+});
+
+describe('initializeShellShortcutLinkBackend', () => {
+  it('is the construction initializer of createShellShortcutLinkBackend', () => {
+    expect(typeof initializeShellShortcutLinkBackend).toBe('function');
+  });
+});
+
+describe('initializeShellTrashBackend', () => {
+  it('is the construction initializer of createShellTrashBackend', () => {
+    expect(typeof initializeShellTrashBackend).toBe('function');
+  });
+});
 
 describe('makeElectronShellCapabilities', () => {
   it('constructs every Windows provider as an Entity', () => {

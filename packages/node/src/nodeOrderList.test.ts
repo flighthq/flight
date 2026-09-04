@@ -13,6 +13,7 @@ import {
   forEachNodeOrderListEntry,
   getNodeOrderListEntrySortKey,
   hasNodeOrderListEntry,
+  initializeNodeOrderList,
   removeNodeOrderListEntry,
   setNodeOrderListEntry,
   setNodeOrderListEntryAbove,
@@ -431,6 +432,12 @@ describe('hasNodeOrderListEntry', () => {
   });
 });
 
+describe('initializeNodeOrderList', () => {
+  it('is the construction initializer of createNodeOrderList', () => {
+    expect(typeof initializeNodeOrderList).toBe('function');
+  });
+});
+
 describe('removeNodeOrderListEntry', () => {
   it('removes the entry and reports that it did', () => {
     const list = createNodeOrderList();
@@ -650,7 +657,6 @@ describe('setNodeOrderListFromNodeChildren', () => {
     expect(list.entryCount).toBe(0);
   });
 });
-
 describe('swapNodeOrderListEntries', () => {
   it('exchanges the sort keys of two entered nodes', () => {
     attachAll();

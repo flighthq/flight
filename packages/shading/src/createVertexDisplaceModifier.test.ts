@@ -2,7 +2,7 @@ import type { Texture, Vector3Like } from '@flighthq/types/contract';
 import { ModifierSlot, VertexDisplaceModifierKind, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createVertexDisplaceModifier } from './createVertexDisplaceModifier';
+import { createVertexDisplaceModifier, initializeVertexDisplaceModifier } from './createVertexDisplaceModifier';
 
 describe('createVertexDisplaceModifier', () => {
   it('sets the kind and the Vertex slot', () => {
@@ -32,5 +32,10 @@ describe('createVertexDisplaceModifier', () => {
     expect(modifier.source).toBe(VertexDisplaceModifierSource.HeightMap);
     expect(modifier.axis).toBe(axis);
     expect(modifier.map).toBe(map);
+  });
+});
+describe('initializeVertexDisplaceModifier', () => {
+  it('is the construction initializer of createVertexDisplaceModifier', () => {
+    expect(typeof initializeVertexDisplaceModifier).toBe('function');
   });
 });

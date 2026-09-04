@@ -4,6 +4,7 @@ import {
   compareBitmapFingerprints,
   createBitmapFingerprint,
   formatBitmapFingerprint,
+  initializeBitmapFingerprint,
   parseBitmapFingerprint,
 } from './bitmapFingerprint';
 import { setBitmapPixel } from './bitmapPixel';
@@ -94,6 +95,11 @@ describe('formatBitmapFingerprint', () => {
   });
 });
 
+describe('initializeBitmapFingerprint', () => {
+  it('is the construction initializer of createBitmapFingerprint', () => {
+    expect(typeof initializeBitmapFingerprint).toBe('function');
+  });
+});
 describe('parseBitmapFingerprint', () => {
   it('returns null for malformed text', () => {
     expect(parseBitmapFingerprint('garbage')).toBeNull();

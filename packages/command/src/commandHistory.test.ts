@@ -16,6 +16,7 @@ import {
   getCommandHistoryIndex,
   getCommandHistoryRedoLabel,
   getCommandHistoryUndoLabel,
+  initializeCommandHistory,
   notifyCommandHistoryChanged,
   redoCommand,
   undoCommand,
@@ -144,6 +145,12 @@ describe('getCommandHistoryUndoLabel', () => {
   });
 });
 
+describe('initializeCommandHistory', () => {
+  it('is the construction initializer of createCommandHistory', () => {
+    expect(typeof initializeCommandHistory).toBe('function');
+  });
+});
+
 describe('notifyCommandHistoryChanged', () => {
   it('is inert when no signal was enabled', () => {
     expect(() => notifyCommandHistoryChanged(createCommandHistory())).not.toThrow();
@@ -159,26 +166,6 @@ describe('redoCommand', () => {
     expect(redoCommand(history)).toBe(true);
     expect((target as unknown as Record<string, unknown>).x).toBe(100);
     expect(redoCommand(history)).toBe(false);
-  });
-});
-
-describe('undoCommand', () => {
-  it('returns false with nothing to undo', () => {
-    expect(undoCommand(createCommandHistory())).toBe(false);
-  });
-
-  it('reverses entries newest first', () => {
-    const history = counting();
-    const order: string[] = [];
-    registerCommandBinding(history, 'test.Ordered', {
-      execute: () => undefined,
-      undo: (command) => order.push(command.label),
-    });
-    executeCommand(history, command('test.Ordered', 'One'));
-    executeCommand(history, command('test.Ordered', 'Two'));
-    undoCommand(history);
-    undoCommand(history);
-    expect(order).toEqual(['Two', 'One']);
   });
 });
 
@@ -209,3 +196,22 @@ function withDefaults(): CommandHistory {
   registerDefaultCommandBindings(history);
   return history;
 }
+describe('undoCommand', () => {
+  it('returns false with nothing to undo', () => {
+    expect(undoCommand(createCommandHistory())).toBe(false);
+  });
+
+  it('reverses entries newest first', () => {
+    const history = counting();
+    const order: string[] = [];
+    registerCommandBinding(history, 'test.Ordered', {
+      execute: () => undefined,
+      undo: (command) => order.push(command.label),
+    });
+    executeCommand(history, command('test.Ordered', 'One'));
+    executeCommand(history, command('test.Ordered', 'Two'));
+    undoCommand(history);
+    undoCommand(history);
+    expect(order).toEqual(['Two', 'One']);
+  });
+});

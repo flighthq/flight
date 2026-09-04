@@ -1,4 +1,4 @@
-import { createFontResource } from './fontResource';
+import { createFontResource, initializeFontResource } from './fontResource';
 
 describe('createFontResource', () => {
   it('creates a FontResource with the given family name', () => {
@@ -13,5 +13,10 @@ describe('createFontResource', () => {
 
   it('returns a new object each call', () => {
     expect(createFontResource('Arial')).not.toBe(createFontResource('Arial'));
+  });
+});
+describe('initializeFontResource', () => {
+  it('is the construction initializer of createFontResource', () => {
+    expect(typeof initializeFontResource).toBe('function');
   });
 });

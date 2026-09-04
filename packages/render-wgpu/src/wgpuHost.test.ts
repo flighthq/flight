@@ -5,6 +5,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   createWebWgpuHostBackend,
   getWgpuHostBackend,
+  initializeWebWgpuHostBackend,
   installWgpuHostBackend,
   resetWgpuHostBackendForTest,
   setWgpuHostBackend,
@@ -94,6 +95,12 @@ describe('getWgpuHostBackend', () => {
   });
 });
 
+describe('initializeWebWgpuHostBackend', () => {
+  it('is the construction initializer of createWebWgpuHostBackend', () => {
+    expect(typeof initializeWebWgpuHostBackend).toBe('function');
+  });
+});
+
 describe('installWgpuHostBackend', () => {
   it('preserves the first installed host identity', () => {
     const first = fakeBackend();
@@ -115,7 +122,6 @@ describe('resetWgpuHostBackendForTest', () => {
     expect(getWgpuHostBackend()).toBe(fallback);
   });
 });
-
 describe('setWgpuHostBackend', () => {
   it('routes acquisition and release through the same selected backend', async () => {
     const web = createWebWgpuHostBackend();

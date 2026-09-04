@@ -1,6 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createSpecularPbrExtension, isValidSpecularPbrExtension } from './specularPbrExtension';
+import {
+  createSpecularPbrExtension,
+  initializeSpecularPbrExtension,
+  isValidSpecularPbrExtension,
+} from './specularPbrExtension';
 
 describe('createSpecularPbrExtension', () => {
   it('creates an Entity with independent strength and color UV sets', () => {
@@ -12,6 +16,11 @@ describe('createSpecularPbrExtension', () => {
   });
 });
 
+describe('initializeSpecularPbrExtension', () => {
+  it('is the construction initializer of createSpecularPbrExtension', () => {
+    expect(typeof initializeSpecularPbrExtension).toBe('function');
+  });
+});
 describe('isValidSpecularPbrExtension', () => {
   it('rejects invalid strength and UV selection', () => {
     expect(isValidSpecularPbrExtension(createSpecularPbrExtension())).toBe(true);

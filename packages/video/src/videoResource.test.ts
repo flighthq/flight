@@ -6,6 +6,7 @@ import {
   getVideoResourceHeight,
   getVideoResourceWidth,
   hasVideoResourceElement,
+  initializeVideoResource,
   isVideoResourceEmpty,
   isVideoResourceReady,
 } from './videoResource';
@@ -262,6 +263,12 @@ describe('hasVideoResourceElement', () => {
   });
 });
 
+describe('initializeVideoResource', () => {
+  it('is the construction initializer of createVideoResource', () => {
+    expect(typeof initializeVideoResource).toBe('function');
+  });
+});
+
 describe('isVideoResourceEmpty', () => {
   it('is true when there is no element', () => {
     expect(isVideoResourceEmpty(createVideoResource())).toBe(true);
@@ -277,7 +284,6 @@ describe('isVideoResourceEmpty', () => {
     expect(isVideoResourceEmpty(createVideoResource(element))).toBe(false);
   });
 });
-
 describe('isVideoResourceReady', () => {
   it('is false when there is no element', () => {
     expect(isVideoResourceReady(createVideoResource())).toBe(false);

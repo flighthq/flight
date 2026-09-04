@@ -2,7 +2,7 @@ import type { Texture } from '@flighthq/types/contract';
 import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createEmissiveModifier } from './createEmissiveModifier';
+import { createEmissiveModifier, initializeEmissiveModifier } from './createEmissiveModifier';
 
 describe('createEmissiveModifier', () => {
   it('sets the kind and Emissive slot', () => {
@@ -40,5 +40,10 @@ describe('createEmissiveModifier', () => {
     const mask = {} as Texture;
     const modifier = createEmissiveModifier({ color: 0xffffffff, mask });
     expect(modifier.mask).toBe(mask);
+  });
+});
+describe('initializeEmissiveModifier', () => {
+  it('is the construction initializer of createEmissiveModifier', () => {
+    expect(typeof initializeEmissiveModifier).toBe('function');
   });
 });

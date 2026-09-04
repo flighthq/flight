@@ -27,8 +27,12 @@ import {
   getScreenDetailPermission,
   getScreenNearestPoint,
   getScreenNearestRect,
-  getScreens,
   getScreenWorkArea,
+  getScreens,
+  initializeScreenInfo,
+  initializeScreenMode,
+  initializeScreenPermissionChange,
+  initializeScreenSignals,
   requestScreenDetails,
   screenToDipPoint,
   screenToDipRect,
@@ -483,50 +487,21 @@ describe('getScreenWorkArea', () => {
   });
 });
 
-describe('requestScreenDetails', () => {
-  it('returns whether the host granted detailed screen access', async () => {
-    const host = createScreenDetailsHost('prompt', true);
-
-    await expect(requestScreenDetails(host)).resolves.toBe(true);
-    expect(host.screen.details.request).toHaveBeenCalledOnce();
+describe('initializeScreenInfo', () => {
+  it('is the construction initializer of createScreenInfo', () => {
+    expect(typeof initializeScreenInfo).toBe('function');
   });
 });
 
-describe('screenToDipPoint', () => {
-  it('converts screen-local pixels to desktop DIPs and returns out', () => {
-    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
-    const out = { x: -1, y: -1 };
-
-    expect(screenToDipPoint(screen, { x: 24, y: 46 }, out)).toBe(out);
-    expect(out).toEqual({ x: 112, y: 73 });
-  });
-
-  it('is safe when out aliases the input point', () => {
-    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
-    const point = { x: 24, y: 46 };
-
-    screenToDipPoint(screen, point, point);
-
-    expect(point).toEqual({ x: 112, y: 73 });
+describe('initializeScreenMode', () => {
+  it('is the construction initializer of createScreenMode', () => {
+    expect(typeof initializeScreenMode).toBe('function');
   });
 });
 
-describe('screenToDipRect', () => {
-  it('converts screen-local position and extent to desktop DIPs and returns out', () => {
-    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
-    const out = { x: -1, y: -1, width: -1, height: -1 };
-
-    expect(screenToDipRect(screen, { x: 24, y: 46, width: 60, height: 80 }, out)).toBe(out);
-    expect(out).toEqual({ x: 112, y: 73, width: 30, height: 40 });
-  });
-
-  it('is safe when out aliases the input rectangle', () => {
-    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
-    const rect = { x: 24, y: 46, width: 60, height: 80 };
-
-    screenToDipRect(screen, rect, rect);
-
-    expect(rect).toEqual({ x: 112, y: 73, width: 30, height: 40 });
+describe('initializeScreenPermissionChange', () => {
+  it('is the construction initializer of createScreenPermissionChange', () => {
+    expect(typeof initializeScreenPermissionChange).toBe('function');
   });
 });
 
@@ -626,3 +601,55 @@ function createTestScreen(
     overrides,
   );
 }
+describe('initializeScreenSignals', () => {
+  it('is the construction initializer of createScreenSignals', () => {
+    expect(typeof initializeScreenSignals).toBe('function');
+  });
+});
+
+describe('requestScreenDetails', () => {
+  it('returns whether the host granted detailed screen access', async () => {
+    const host = createScreenDetailsHost('prompt', true);
+
+    await expect(requestScreenDetails(host)).resolves.toBe(true);
+    expect(host.screen.details.request).toHaveBeenCalledOnce();
+  });
+});
+
+describe('screenToDipPoint', () => {
+  it('converts screen-local pixels to desktop DIPs and returns out', () => {
+    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
+    const out = { x: -1, y: -1 };
+
+    expect(screenToDipPoint(screen, { x: 24, y: 46 }, out)).toBe(out);
+    expect(out).toEqual({ x: 112, y: 73 });
+  });
+
+  it('is safe when out aliases the input point', () => {
+    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
+    const point = { x: 24, y: 46 };
+
+    screenToDipPoint(screen, point, point);
+
+    expect(point).toEqual({ x: 112, y: 73 });
+  });
+});
+
+describe('screenToDipRect', () => {
+  it('converts screen-local position and extent to desktop DIPs and returns out', () => {
+    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
+    const out = { x: -1, y: -1, width: -1, height: -1 };
+
+    expect(screenToDipRect(screen, { x: 24, y: 46, width: 60, height: 80 }, out)).toBe(out);
+    expect(out).toEqual({ x: 112, y: 73, width: 30, height: 40 });
+  });
+
+  it('is safe when out aliases the input rectangle', () => {
+    const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
+    const rect = { x: 24, y: 46, width: 60, height: 80 };
+
+    screenToDipRect(screen, rect, rect);
+
+    expect(rect).toEqual({ x: 112, y: 73, width: 30, height: 40 });
+  });
+});

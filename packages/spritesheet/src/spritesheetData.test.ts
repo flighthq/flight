@@ -1,4 +1,11 @@
-import { createSpritesheetAnimationData, createSpritesheetData, createSpritesheetFrameData } from './spritesheetData';
+import {
+  createSpritesheetAnimationData,
+  createSpritesheetData,
+  createSpritesheetFrameData,
+  initializeSpritesheetAnimationData,
+  initializeSpritesheetData,
+  initializeSpritesheetFrameData,
+} from './spritesheetData';
 
 describe('createSpritesheetAnimationData', () => {
   it('creates with all defaults when no argument is passed', () => {
@@ -145,5 +152,22 @@ describe('createSpritesheetFrameData', () => {
     const frame = createSpritesheetFrameData({ pivotX: null, pivotY: null });
     expect(frame.pivotX).toBeNull();
     expect(frame.pivotY).toBeNull();
+  });
+});
+describe('initializeSpritesheetAnimationData', () => {
+  it('is the construction initializer of createSpritesheetAnimationData', () => {
+    expect(typeof initializeSpritesheetAnimationData).toBe('function');
+  });
+});
+
+describe('initializeSpritesheetData', () => {
+  it('is the construction initializer of createSpritesheetData', () => {
+    expect(typeof initializeSpritesheetData).toBe('function');
+  });
+});
+
+describe('initializeSpritesheetFrameData', () => {
+  it('is the construction initializer of createSpritesheetFrameData', () => {
+    expect(typeof initializeSpritesheetFrameData).toBe('function');
   });
 });

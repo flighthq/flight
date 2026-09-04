@@ -20,6 +20,8 @@ import {
   getAppLaunchKind,
   getAppLifecycleState,
   hasLifecycleOperation,
+  initializeAppLifecycle,
+  initializeWebLifecycleBackend,
   isAppActive,
   isAppBackground,
   isAppInactive,
@@ -535,6 +537,31 @@ describe('hasLifecycleOperation', () => {
   });
 });
 
+describe('initializeAppLifecycle', () => {
+  it('is the construction initializer of createAppLifecycle', () => {
+    expect(typeof initializeAppLifecycle).toBe('function');
+  });
+});
+
+describe('initializeWebLifecycleBackend', () => {
+  it('is the construction initializer of createWebLifecycleBackend', () => {
+    expect(typeof initializeWebLifecycleBackend).toBe('function');
+  });
+});
+
+// Per-operation availability for LifecycleBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly LifecycleOperation[] = ['getLaunchKind', 'subscribeMemoryWarning'];
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): LifecycleBackend {
+  const out = allocateEntity<LifecycleBackend>();
+  out.getState = (() => undefined) as never;
+  out.subscribe = (() => undefined) as never;
+  return finishEntity(out);
+}
+
 describe('isAppActive', () => {
   it("returns true when state is 'active'", () => {
     const backend = fakeBackend();
@@ -573,20 +600,6 @@ describe('isAppBackground', () => {
     expect(isAppBackground(host)).toBe(false);
   });
 });
-
-// Per-operation availability for LifecycleBackend. The operations below are the ones the interface declares
-// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
-// ruling, and this is the query that makes it observable.
-const OPTIONAL_OPERATIONS: readonly LifecycleOperation[] = ['getLaunchKind', 'subscribeMemoryWarning'];
-
-// A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): LifecycleBackend {
-  const out = allocateEntity<LifecycleBackend>();
-  out.getState = (() => undefined) as never;
-  out.subscribe = (() => undefined) as never;
-  return finishEntity(out);
-}
-
 describe('isAppInactive', () => {
   it("returns true when state is 'inactive'", () => {
     const backend = fakeBackend();

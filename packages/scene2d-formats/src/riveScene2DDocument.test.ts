@@ -10,6 +10,7 @@ import {
 import {
   createRiveImageSprite,
   createScene2DDocumentFromRiveDocument,
+  initializeRiveScene2DDocumentResult,
   markRiveNestedArtboard,
 } from './riveScene2DDocument';
 
@@ -183,14 +184,9 @@ describe('createScene2DDocumentFromRiveDocument', () => {
   });
 });
 
-describe('markRiveNestedArtboard', () => {
-  it('records a slot site without putting format knowledge on the node', () => {
-    const result = createScene2DDocumentFromRiveDocument(buildRive([artboard('Board')]))!;
-    const node = getNodeChildAt(result.root, 0) as Node2D;
-    markRiveNestedArtboard(node, 0);
-
-    // The mark is side data; the node itself gains no field.
-    expect(Object.keys(node)).not.toContain('nestedArtboard');
+describe('initializeRiveScene2DDocumentResult', () => {
+  it('is the construction initializer of createRiveScene2DDocumentResult', () => {
+    expect(typeof initializeRiveScene2DDocumentResult).toBe('function');
   });
 });
 
@@ -246,3 +242,13 @@ function buildRive(objects: Array<{ properties: TestProperty[]; typeKey: number 
   }
   return new Uint8Array(out);
 }
+describe('markRiveNestedArtboard', () => {
+  it('records a slot site without putting format knowledge on the node', () => {
+    const result = createScene2DDocumentFromRiveDocument(buildRive([artboard('Board')]))!;
+    const node = getNodeChildAt(result.root, 0) as Node2D;
+    markRiveNestedArtboard(node, 0);
+
+    // The mark is side data; the node itself gains no field.
+    expect(Object.keys(node)).not.toContain('nestedArtboard');
+  });
+});

@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig } from './particleEmitterConfig';
+import { createParticleEmitterConfig, initializeParticleEmitterConfig } from './particleEmitterConfig';
 
 describe('createParticleEmitterConfig', () => {
   it('returns defaults when called with no arguments', () => {
@@ -65,5 +65,10 @@ describe('createParticleEmitterConfig', () => {
     const a = createParticleEmitterConfig();
     const b = createParticleEmitterConfig();
     expect(a).not.toBe(b);
+  });
+});
+describe('initializeParticleEmitterConfig', () => {
+  it('is the construction initializer of createParticleEmitterConfig', () => {
+    expect(typeof initializeParticleEmitterConfig).toBe('function');
   });
 });

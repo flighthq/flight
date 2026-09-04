@@ -7,6 +7,11 @@ import {
   createElectronIpcMessageBackend,
   createElectronIpcSendBackend,
   createElectronIpcTargetedSendBackend,
+  initializeElectronIpcHandleBackend,
+  initializeElectronIpcInvokeBackend,
+  initializeElectronIpcMessageBackend,
+  initializeElectronIpcSendBackend,
+  initializeElectronIpcTargetedSendBackend,
 } from './electronIpc';
 
 function fakeElectron(): {
@@ -165,5 +170,34 @@ describe('createElectronIpcTargetedSendBackend', () => {
   it('returns an Entity', () => {
     const backend: Entity = createElectronIpcTargetedSendBackend<ElectronIpcTarget>();
     expect(EntityRuntimeKey in backend).toBe(true);
+  });
+});
+describe('initializeElectronIpcHandleBackend', () => {
+  it('is the construction initializer of createElectronIpcHandleBackend', () => {
+    expect(typeof initializeElectronIpcHandleBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronIpcInvokeBackend', () => {
+  it('is the construction initializer of createElectronIpcInvokeBackend', () => {
+    expect(typeof initializeElectronIpcInvokeBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronIpcMessageBackend', () => {
+  it('is the construction initializer of createElectronIpcMessageBackend', () => {
+    expect(typeof initializeElectronIpcMessageBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronIpcSendBackend', () => {
+  it('is the construction initializer of createElectronIpcSendBackend', () => {
+    expect(typeof initializeElectronIpcSendBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronIpcTargetedSendBackend', () => {
+  it('is the construction initializer of createElectronIpcTargetedSendBackend', () => {
+    expect(typeof initializeElectronIpcTargetedSendBackend).toBe('function');
   });
 });

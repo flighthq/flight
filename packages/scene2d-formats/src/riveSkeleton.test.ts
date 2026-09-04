@@ -2,7 +2,7 @@ import { RAD_TO_DEG } from '@flighthq/math/contract';
 import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveSkeleton2D } from './riveSkeleton';
+import { createRiveSkeleton2D, initializeRiveSkeleton2DImport } from './riveSkeleton';
 
 // Rive keeps bones in the artboard's component tree as TransformComponents, while Skeleton2D needs a
 // flat parent-before-child array. Bone(40) and RootBone(41) are the two concrete types; a RootBone
@@ -144,3 +144,8 @@ function object(typeKey: number, properties: Readonly<Record<number, number>>, n
   if (name !== undefined) entries.push({ key: NAME, type: RiveFieldType.String, value: name });
   return { properties: entries, typeKey };
 }
+describe('initializeRiveSkeleton2DImport', () => {
+  it('is the construction initializer of createRiveSkeleton2DImport', () => {
+    expect(typeof initializeRiveSkeleton2DImport).toBe('function');
+  });
+});

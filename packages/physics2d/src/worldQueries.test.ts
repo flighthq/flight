@@ -7,6 +7,9 @@ import {
   createPhysics2DQueryResult,
   createPhysics2DRayResult,
   createPhysics2DShapeCastResult,
+  initializePhysics2DQueryResult,
+  initializePhysics2DRayResult,
+  initializePhysics2DShapeCastResult,
   queryPhysics2DPoint,
   queryPhysics2DRay,
   queryPhysics2DRayClosest,
@@ -60,6 +63,24 @@ describe('createPhysics2DShapeCastResult', () => {
       normalX: 0,
       normalY: 0,
     });
+  });
+});
+
+describe('initializePhysics2DQueryResult', () => {
+  it('is the construction initializer of createPhysics2DQueryResult', () => {
+    expect(typeof initializePhysics2DQueryResult).toBe('function');
+  });
+});
+
+describe('initializePhysics2DRayResult', () => {
+  it('is the construction initializer of createPhysics2DRayResult', () => {
+    expect(typeof initializePhysics2DRayResult).toBe('function');
+  });
+});
+
+describe('initializePhysics2DShapeCastResult', () => {
+  it('is the construction initializer of createPhysics2DShapeCastResult', () => {
+    expect(typeof initializePhysics2DShapeCastResult).toBe('function');
   });
 });
 
@@ -254,7 +275,6 @@ describe('queryPhysics2DRay', () => {
     expect(out.hits[0]).toMatchObject({ body, fraction: 0, normalX: 0, normalY: 0, x: 3, y: 4 });
   });
 });
-
 describe('queryPhysics2DRayClosest', () => {
   it('writes only the deterministic nearest filtered hit and reuses its retained record', () => {
     const world = createPhysics2DWorld(0, 0);

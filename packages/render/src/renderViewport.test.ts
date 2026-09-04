@@ -13,8 +13,9 @@ import { createRenderState } from './renderState';
 import {
   computeRenderProxyWorldBounds,
   createRenderViewport2D,
-  isRenderableInViewport,
+  initializeRenderViewport2D,
   isRenderProxyInViewport,
+  isRenderableInViewport,
 } from './renderViewport';
 
 function makeMinimalProxy(): RenderProxy2D {
@@ -89,6 +90,12 @@ describe('createRenderViewport2D', () => {
     expect(vp.y).toBe(20);
     expect(vp.width).toBe(800);
     expect(vp.height).toBe(600);
+  });
+});
+
+describe('initializeRenderViewport2D', () => {
+  it('is the construction initializer of createRenderViewport2D', () => {
+    expect(typeof initializeRenderViewport2D).toBe('function');
   });
 });
 
@@ -173,7 +180,6 @@ describe('isRenderableInViewport', () => {
     expect(isRenderableInViewport(child, smallVp)).toBe(false);
   });
 });
-
 describe('isRenderProxyInViewport', () => {
   it('returns true when the proxy source has no spatial traits', () => {
     const proxy = makeMinimalProxy();

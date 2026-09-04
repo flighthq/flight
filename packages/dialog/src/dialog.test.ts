@@ -2,6 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityWithoutRuntime, MessageDialogBackend, PromptDialogBackend } from '@flighthq/types/contract';
 
 import {
+  initializeWebMessageDialogBackend,
+  initializeWebPromptDialogBackend,
   showConfirmDialog,
   showErrorBox,
   showErrorDialog,
@@ -55,6 +57,18 @@ function severityHost(observed: string[]) {
   };
 }
 
+describe('initializeWebMessageDialogBackend', () => {
+  it('is the construction initializer of createWebMessageDialogBackend', () => {
+    expect(typeof initializeWebMessageDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeWebPromptDialogBackend', () => {
+  it('is the construction initializer of createWebPromptDialogBackend', () => {
+    expect(typeof initializeWebPromptDialogBackend).toBe('function');
+  });
+});
+
 describe('showConfirmDialog', () => {
   it('delegates confirmation through the explicit message slot', async () => {
     expect(await showConfirmDialog(fakeHost(), { message: 'sure?' })).toBe(true);
@@ -107,7 +121,6 @@ describe('showMessageDialog', () => {
     expect((await showMessageDialog(fakeHost(), { message: 'hello' })).buttonIndex).toBe(2);
   });
 });
-
 describe('showPromptDialog', () => {
   it('delegates prompts through the explicit prompt slot', async () => {
     expect(await showPromptDialog(fakeHost(), { message: 'name?' })).toBe('typed');

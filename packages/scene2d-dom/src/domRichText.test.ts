@@ -10,6 +10,7 @@ import {
   defaultDomRichTextRenderer,
   drawDomRichText,
   drawDomRichTextMask,
+  initializeDomRichTextData,
   registerDomTextInputOverlay,
 } from './domRichText';
 
@@ -210,6 +211,11 @@ describe('drawDomRichTextMask', () => {
   });
 });
 
+describe('initializeDomRichTextData', () => {
+  it('is the construction initializer of createDomRichTextData', () => {
+    expect(typeof initializeDomRichTextData).toBe('function');
+  });
+});
 describe('registerDomTextInputOverlay', () => {
   it('invokes the registered overlay only for a RichText with an input slot', () => {
     const overlay = vi.fn();

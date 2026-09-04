@@ -17,6 +17,10 @@ import {
   createReorderNodeChildCommand,
   createSetNodePropertyCommand,
   createSetNodePropertyCommandBatch,
+  initializeAddNodeChildCommand,
+  initializeCompositeCommand,
+  initializeRemoveNodeChildCommand,
+  initializeReorderNodeChildCommand,
 } from './command';
 
 describe('createAddNodeChildCommand', () => {
@@ -115,3 +119,26 @@ describe('createSetNodePropertyCommandBatch', () => {
 function node(): NodeAny {
   return createNode('test.CommandTarget') as NodeAny;
 }
+describe('initializeAddNodeChildCommand', () => {
+  it('is the construction initializer of createAddNodeChildCommand', () => {
+    expect(typeof initializeAddNodeChildCommand).toBe('function');
+  });
+});
+
+describe('initializeCompositeCommand', () => {
+  it('is the construction initializer of createCompositeCommand', () => {
+    expect(typeof initializeCompositeCommand).toBe('function');
+  });
+});
+
+describe('initializeRemoveNodeChildCommand', () => {
+  it('is the construction initializer of createRemoveNodeChildCommand', () => {
+    expect(typeof initializeRemoveNodeChildCommand).toBe('function');
+  });
+});
+
+describe('initializeReorderNodeChildCommand', () => {
+  it('is the construction initializer of createReorderNodeChildCommand', () => {
+    expect(typeof initializeReorderNodeChildCommand).toBe('function');
+  });
+});

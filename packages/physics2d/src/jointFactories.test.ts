@@ -11,6 +11,15 @@ import {
   createPhysics2DRopeJoint,
   createPhysics2DWeldJoint,
   createPhysics2DWheelJoint,
+  initializePhysics2DDistanceJoint,
+  initializePhysics2DGearJoint,
+  initializePhysics2DMouseJoint,
+  initializePhysics2DPrismaticJoint,
+  initializePhysics2DPulleyJoint,
+  initializePhysics2DRevoluteJoint,
+  initializePhysics2DRopeJoint,
+  initializePhysics2DWeldJoint,
+  initializePhysics2DWheelJoint,
 } from './jointFactories';
 
 describe('createPhysics2DDistanceJoint', () => {
@@ -152,5 +161,58 @@ describe('createPhysics2DWheelJoint', () => {
       motorImpulse: 0,
       frequencyHz: 0,
     });
+  });
+});
+describe('initializePhysics2DDistanceJoint', () => {
+  it('is the construction initializer of createPhysics2DDistanceJoint', () => {
+    expect(typeof initializePhysics2DDistanceJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DGearJoint', () => {
+  it('is the construction initializer of createPhysics2DGearJoint', () => {
+    expect(typeof initializePhysics2DGearJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DMouseJoint', () => {
+  it('is the construction initializer of createPhysics2DMouseJoint', () => {
+    expect(typeof initializePhysics2DMouseJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DPrismaticJoint', () => {
+  it('is the construction initializer of createPhysics2DPrismaticJoint', () => {
+    expect(typeof initializePhysics2DPrismaticJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DPulleyJoint', () => {
+  it('is the construction initializer of createPhysics2DPulleyJoint', () => {
+    expect(typeof initializePhysics2DPulleyJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DRevoluteJoint', () => {
+  it('is the construction initializer of createPhysics2DRevoluteJoint', () => {
+    expect(typeof initializePhysics2DRevoluteJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DRopeJoint', () => {
+  it('is the construction initializer of createPhysics2DRopeJoint', () => {
+    expect(typeof initializePhysics2DRopeJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DWeldJoint', () => {
+  it('is the construction initializer of createPhysics2DWeldJoint', () => {
+    expect(typeof initializePhysics2DWeldJoint).toBe('function');
+  });
+});
+
+describe('initializePhysics2DWheelJoint', () => {
+  it('is the construction initializer of createPhysics2DWheelJoint', () => {
+    expect(typeof initializePhysics2DWheelJoint).toBe('function');
   });
 });

@@ -10,6 +10,7 @@ import {
   destroyAudioMixer,
   fadeAudioBusGain,
   getAudioMixerActiveChannels,
+  initializeAudioBus,
   pauseAllAudioMixerChannels,
   resumeAllAudioMixerChannels,
   routeAudioChannelToMixerBus,
@@ -189,6 +190,12 @@ describe('getAudioMixerActiveChannels', () => {
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     expect(getAudioMixerActiveChannels(mixer)).toHaveLength(1);
+  });
+});
+
+describe('initializeAudioBus', () => {
+  it('is the construction initializer of createAudioBus', () => {
+    expect(typeof initializeAudioBus).toBe('function');
   });
 });
 
@@ -422,7 +429,6 @@ describe('stopAllAudioMixerChannels', () => {
     expect(getAudioMixerActiveChannels(mixer)).toEqual([]);
   });
 });
-
 describe('unrouteAudioChannelFromMixerBus', () => {
   it('removes the channel from the mixer active channels', () => {
     const mixer = createAudioMixer(ctx);

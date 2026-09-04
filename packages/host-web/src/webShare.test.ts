@@ -1,9 +1,25 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
-import { webShareContentBackend, webShareFilesBackend } from './webShare';
+import {
+  initializeWebShareContentBackend,
+  initializeWebShareFilesBackend,
+  webShareContentBackend,
+  webShareFilesBackend,
+} from './webShare';
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe('initializeWebShareContentBackend', () => {
+  it('is the construction initializer of createWebShareContentBackend', () => {
+    expect(typeof initializeWebShareContentBackend).toBe('function');
+  });
+});
+describe('initializeWebShareFilesBackend', () => {
+  it('is the construction initializer of createWebShareFilesBackend', () => {
+    expect(typeof initializeWebShareFilesBackend).toBe('function');
+  });
+});
 
 describe('Web Share providers', () => {
   it('are Entity-composed and exposed through their honest host slots', () => {

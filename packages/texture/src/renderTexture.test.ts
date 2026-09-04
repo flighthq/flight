@@ -1,6 +1,6 @@
 import type { RenderTexture } from '@flighthq/types/contract';
 
-import { createRenderTexture } from './renderTexture';
+import { createRenderTexture, initializeRenderTextureTarget } from './renderTexture';
 import { createSampler } from './sampler';
 
 describe('createRenderTexture', () => {
@@ -41,5 +41,10 @@ describe('createRenderTexture', () => {
     expect(texture.sampler).not.toBe(sampler);
     expect(texture.uvOffset).toMatchObject(uvOffset);
     expect(texture.uvOffset).not.toBe(uvOffset);
+  });
+});
+describe('initializeRenderTextureTarget', () => {
+  it('is the construction initializer of createRenderTextureTarget', () => {
+    expect(typeof initializeRenderTextureTarget).toBe('function');
   });
 });

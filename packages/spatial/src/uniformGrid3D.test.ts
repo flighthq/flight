@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { setSpatialIndexingGuard } from './spatialIndexingGuard';
 import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
-import { createUniformGridSpatialBackend3D } from './uniformGrid3D';
+import { createUniformGridSpatialBackend3D, initializeUniformGridSpatialBackend3D } from './uniformGrid3D';
 
 afterEach(() => {
   setSpatialIndexingGuard(null);
@@ -130,6 +130,12 @@ describe('createUniformGridSpatialBackend3D', () => {
       expect(out).toEqual([]);
     }
     expect(grid.explainSpatialIndexing(1).mode).toBe('absent');
+  });
+});
+
+describe('initializeUniformGridSpatialBackend3D', () => {
+  it('is the construction initializer of createUniformGridSpatialBackend3D', () => {
+    expect(typeof initializeUniformGridSpatialBackend3D).toBe('function');
   });
 });
 
@@ -310,7 +316,6 @@ describe('querySpatialRegion3D', () => {
     expect(out).toEqual([]);
   });
 });
-
 describe('updateSpatialObject3D', () => {
   it('refreshes bounds without retaining the caller object when the covered cells are unchanged', () => {
     const grid = createUniformGridSpatialBackend3D(10);

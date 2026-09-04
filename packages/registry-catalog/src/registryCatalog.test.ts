@@ -5,6 +5,7 @@ import {
   createRegistryCatalog,
   findRegistryCatalogEntries,
   getRegistryCatalogEntries,
+  initializeRegistryCatalog,
   registerRegistryCatalogEntry,
   unregisterRegistryCatalogEntry,
 } from './registryCatalog';
@@ -51,6 +52,12 @@ describe('getRegistryCatalogEntries', () => {
   });
 });
 
+describe('initializeRegistryCatalog', () => {
+  it('is the construction initializer of createRegistryCatalog', () => {
+    expect(typeof initializeRegistryCatalog).toBe('function');
+  });
+});
+
 describe('registerRegistryCatalogEntry', () => {
   it('replaces a matching key in place and copies caller data', () => {
     const catalog = createRegistryCatalog([first]);
@@ -75,7 +82,6 @@ describe('registerRegistryCatalogEntry', () => {
     expect(catalog.entries).toEqual([first, commands]);
   });
 });
-
 describe('unregisterRegistryCatalogEntry', () => {
   it('removes only the requested kind and registry', () => {
     const catalog = createRegistryCatalog([first]);

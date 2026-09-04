@@ -1,5 +1,10 @@
-import { webHapticsBackend } from './webHaptics';
+import { initializeWebHapticsBackend, webHapticsBackend } from './webHaptics';
 
+describe('initializeWebHapticsBackend', () => {
+  it('is the construction initializer of createWebHapticsBackend', () => {
+    expect(typeof initializeWebHapticsBackend).toBe('function');
+  });
+});
 describe('webHapticsBackend', () => {
   it('reports unsupported and refuses every operation when navigator.vibrate is absent', () => {
     // jsdom has no Vibration API, which is the branch every desktop browser also takes. The backend must

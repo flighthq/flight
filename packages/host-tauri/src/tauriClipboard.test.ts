@@ -1,7 +1,7 @@
 import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createTauriClipboardBackend } from './tauriClipboard';
+import { createTauriClipboardBackend, initializeTauriClipboardBackend } from './tauriClipboard';
 
 function fakeTauri() {
   const store = { text: '' };
@@ -57,5 +57,10 @@ describe('createTauriClipboardBackend', () => {
     const backend = createTauriClipboardBackend(tauri);
     expect(await backend.readText()).toBe('');
     expect(await backend.hasText()).toBe(false);
+  });
+});
+describe('initializeTauriClipboardBackend', () => {
+  it('is the construction initializer of createTauriClipboardBackend', () => {
+    expect(typeof initializeTauriClipboardBackend).toBe('function');
   });
 });

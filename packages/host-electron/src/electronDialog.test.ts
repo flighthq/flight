@@ -11,6 +11,10 @@ import {
   createElectronFileOpenDialogBackend,
   createElectronFileSaveDialogBackend,
   createElectronMessageDialogBackend,
+  initializeElectronDirectoryOpenDialogBackend,
+  initializeElectronFileOpenDialogBackend,
+  initializeElectronFileSaveDialogBackend,
+  initializeElectronMessageDialogBackend,
 } from './electronDialog';
 
 function fakeElectron(overrides: {
@@ -159,5 +163,28 @@ describe('createElectronMessageDialogBackend', () => {
     const signal = new AbortController().signal;
     await createElectronMessageDialogBackend(electron).message({ message: 'wait', signal });
     expect(calls.messageOptions?.signal).toBe(signal);
+  });
+});
+describe('initializeElectronDirectoryOpenDialogBackend', () => {
+  it('is the construction initializer of createElectronDirectoryOpenDialogBackend', () => {
+    expect(typeof initializeElectronDirectoryOpenDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronFileOpenDialogBackend', () => {
+  it('is the construction initializer of createElectronFileOpenDialogBackend', () => {
+    expect(typeof initializeElectronFileOpenDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronFileSaveDialogBackend', () => {
+  it('is the construction initializer of createElectronFileSaveDialogBackend', () => {
+    expect(typeof initializeElectronFileSaveDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeElectronMessageDialogBackend', () => {
+  it('is the construction initializer of createElectronMessageDialogBackend', () => {
+    expect(typeof initializeElectronMessageDialogBackend).toBe('function');
   });
 });

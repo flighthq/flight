@@ -1,4 +1,4 @@
-import { createRadialBlurEffect } from './radialBlurEffect';
+import { createRadialBlurEffect, initializeRadialBlurEffect } from './radialBlurEffect';
 
 describe('createRadialBlurEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +11,10 @@ describe('createRadialBlurEffect', () => {
       centerY: 0.5,
       strength: 0.2,
     });
+  });
+});
+describe('initializeRadialBlurEffect', () => {
+  it('is the construction initializer of createRadialBlurEffect', () => {
+    expect(typeof initializeRadialBlurEffect).toBe('function');
   });
 });

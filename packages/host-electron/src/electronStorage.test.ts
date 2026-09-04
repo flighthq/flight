@@ -1,7 +1,7 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronStorageBackend } from './electronStorage';
+import { createElectronStorageBackend, initializeElectronStorageBackend } from './electronStorage';
 
 const STORAGE_PATH = '/userData/storage.json';
 
@@ -177,5 +177,10 @@ describe('createElectronStorageBackend', () => {
     expect(backend.setItem('a', 'visible')).toEqual({ reason: 'ok' });
     expect(state.renamed).toHaveLength(1);
     expect(backend.getItem('a')).toEqual({ reason: 'ok', value: 'visible' });
+  });
+});
+describe('initializeElectronStorageBackend', () => {
+  it('is the construction initializer of createElectronStorageBackend', () => {
+    expect(typeof initializeElectronStorageBackend).toBe('function');
   });
 });

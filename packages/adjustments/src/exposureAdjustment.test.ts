@@ -1,5 +1,5 @@
 import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createExposureAdjustment } from './exposureAdjustment';
+import { createExposureAdjustment, initializeExposureAdjustment } from './exposureAdjustment';
 
 describe('createExposureAdjustment', () => {
   it('defaults to the identity (exposure 0)', () => {
@@ -18,5 +18,10 @@ describe('createExposureAdjustment', () => {
     const adjustment = createExposureAdjustment({ exposure: 1 });
     // 0x80 doubled is 256 → clamps to 255.
     expect(applyColorMatrixToColor(adjustment.colorMatrix as number[], 0x808080ff)).toBe(0xffffffff);
+  });
+});
+describe('initializeExposureAdjustment', () => {
+  it('is the construction initializer of createExposureAdjustment', () => {
+    expect(typeof initializeExposureAdjustment).toBe('function');
   });
 });

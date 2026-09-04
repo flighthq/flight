@@ -10,6 +10,7 @@ import {
   createCamera3D,
   getCamera3DInverseViewProjectionMatrix4,
   getCamera3DViewProjectionMatrix4,
+  initializeCamera3D,
   setCamera3DAspect,
   setCamera3DJitter,
   setCamera3DViewGuard,
@@ -124,6 +125,12 @@ describe('getCamera3DViewProjectionMatrix4', () => {
   });
 });
 
+describe('initializeCamera3D', () => {
+  it('is the construction initializer of createCamera3D', () => {
+    expect(typeof initializeCamera3D).toBe('function');
+  });
+});
+
 describe('setCamera3DAspect', () => {
   it('writes the aspect on a perspective projection in place', () => {
     const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
@@ -216,7 +223,6 @@ describe('setCamera3DViewMatrix4FromMatrix4', () => {
     }
   });
 });
-
 describe('updateCamera3DInverseViewProjection', () => {
   it('refreshes the required cache from the jittered projection', () => {
     const camera = createCamera3D({

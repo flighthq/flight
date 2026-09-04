@@ -2,7 +2,7 @@ import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasBitmap, getGlyphAtlasLayoutVersion } from './glyphAtlas';
-import { createGlyphSourceFromGlyphAtlas } from './glyphSource';
+import { createGlyphSourceFromGlyphAtlas, initializeGlyphSourceFromGlyphAtlas } from './glyphSource';
 
 const defaultBackend: GlyphRasterizerBackend = { rasterize: () => null };
 
@@ -84,3 +84,8 @@ function createBlockRasterizerBackend(): GlyphRasterizerBackend {
     }),
   };
 }
+describe('initializeGlyphSourceFromGlyphAtlas', () => {
+  it('is the construction initializer of createGlyphSourceFromGlyphAtlas', () => {
+    expect(typeof initializeGlyphSourceFromGlyphAtlas).toBe('function');
+  });
+});

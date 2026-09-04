@@ -3,7 +3,12 @@ import type { BitmapReadbackBackend, HasGraphicsBitmapReadback } from '@flighthq
 import { vi } from 'vitest';
 
 import { createBitmap } from './bitmap';
-import { captureBitmapFromImageResource, createBitmapFromCanvas, createBitmapFromImageSource } from './bitmapFrom';
+import {
+  captureBitmapFromImageResource,
+  createBitmapFromCanvas,
+  createBitmapFromImageSource,
+  initializeBitmapFromCanvas,
+} from './bitmapFrom';
 
 function hostWith(backend: BitmapReadbackBackend): HasGraphicsBitmapReadback {
   return { graphics: { bitmapReadback: backend } } as HasGraphicsBitmapReadback;
@@ -83,5 +88,10 @@ describe('createBitmapFromImageSource', () => {
     });
 
     expect(createBitmapFromImageSource(host, document.createElement('canvas'), 8, 4)).toBe(expected);
+  });
+});
+describe('initializeBitmapFromCanvas', () => {
+  it('is the construction initializer of createBitmapFromCanvas', () => {
+    expect(typeof initializeBitmapFromCanvas).toBe('function');
   });
 });

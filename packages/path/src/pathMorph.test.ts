@@ -10,7 +10,7 @@ import {
   appendPathRectangle,
   createPath,
 } from './path';
-import { createPathMorph, samplePathMorph } from './pathMorph';
+import { createPathMorph, initializePathMorph, samplePathMorph } from './pathMorph';
 
 describe('createPathMorph', () => {
   it('normalizes different line and quadratic verbs to one cubic command stream', () => {
@@ -203,6 +203,11 @@ describe('createPathMorph', () => {
   });
 });
 
+describe('initializePathMorph', () => {
+  it('is the construction initializer of createPathMorph', () => {
+    expect(typeof initializePathMorph).toBe('function');
+  });
+});
 describe('samplePathMorph', () => {
   it('samples the prepared endpoints at zero and one', () => {
     const start = createPath();

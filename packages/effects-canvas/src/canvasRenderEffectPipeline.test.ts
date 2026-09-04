@@ -10,6 +10,8 @@ import {
   createCanvasRenderTargetPool,
   destroyCanvasRenderEffectPipeline,
   endCanvasRenderEffectPipeline,
+  initializeCanvasRenderEffectPipeline,
+  initializeCanvasRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
@@ -94,6 +96,17 @@ describe('endCanvasRenderEffectPipeline', () => {
     );
     expect(realizedDest!.context.drawImage).toHaveBeenCalledWith(unregisteredDest!.canvas, 0, 0);
     expect(state.context.drawImage).toHaveBeenCalledWith(realizedDest!.canvas, 0, 0);
+  });
+});
+
+describe('initializeCanvasRenderEffectPipeline', () => {
+  it('is the construction initializer of createCanvasRenderEffectPipeline', () => {
+    expect(typeof initializeCanvasRenderEffectPipeline).toBe('function');
+  });
+});
+describe('initializeCanvasRenderTargetPool', () => {
+  it('is the construction initializer of createCanvasRenderTargetPool', () => {
+    expect(typeof initializeCanvasRenderTargetPool).toBe('function');
   });
 });
 

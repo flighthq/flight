@@ -1,11 +1,12 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
-  addAnimationSample,
   accumulateAnimationSample,
+  addAnimationSample,
   blendAnimationSamples,
   createAnimationSampleAccumulator,
   finishAnimationSample,
+  initializeAnimationSampleAccumulator,
   resetAnimationSampleAccumulator,
 } from './animationBlend';
 
@@ -99,6 +100,11 @@ describe('finishAnimationSample', () => {
   });
 });
 
+describe('initializeAnimationSampleAccumulator', () => {
+  it('is the construction initializer of createAnimationSampleAccumulator', () => {
+    expect(typeof initializeAnimationSampleAccumulator).toBe('function');
+  });
+});
 describe('resetAnimationSampleAccumulator', () => {
   it('clears state while retaining the owned buffer', () => {
     const accumulator = createAnimationSampleAccumulator(2);

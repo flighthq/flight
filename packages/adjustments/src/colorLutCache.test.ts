@@ -1,7 +1,7 @@
 import { createColorGradeAdjustment } from './colorGradeAdjustment';
 import { bakeColorLut } from './colorLut';
 import { getAdjustmentColorTransform } from './colorLutAdjustment';
-import { bakeColorLutForRun, createColorLutCache } from './colorLutCache';
+import { bakeColorLutForRun, createColorLutCache, initializeColorLutCache } from './colorLutCache';
 import { createHueSaturationAdjustment } from './hueSaturationAdjustment';
 
 describe('bakeColorLutForRun', () => {
@@ -57,5 +57,10 @@ describe('createColorLutCache', () => {
     const cache = createColorLutCache();
     expect(cache.signature).toBeNull();
     expect(cache.lut).toBeNull();
+  });
+});
+describe('initializeColorLutCache', () => {
+  it('is the construction initializer of createColorLutCache', () => {
+    expect(typeof initializeColorLutCache).toBe('function');
   });
 });

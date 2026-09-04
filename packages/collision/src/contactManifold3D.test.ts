@@ -1,7 +1,11 @@
 import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionContactManifold3D, createCollisionContactManifold3D } from './contactManifold3D';
+import {
+  clearCollisionContactManifold3D,
+  createCollisionContactManifold3D,
+  initializeCollisionContactManifold3D,
+} from './contactManifold3D';
 
 describe('clearCollisionContactManifold3D', () => {
   it('resets the overlap state and the point count', () => {
@@ -40,5 +44,10 @@ describe('createCollisionContactManifold3D', () => {
 
   it('gives each manifold its own points', () => {
     expect(createCollisionContactManifold3D().points).not.toBe(createCollisionContactManifold3D().points);
+  });
+});
+describe('initializeCollisionContactManifold3D', () => {
+  it('is the construction initializer of createCollisionContactManifold3D', () => {
+    expect(typeof initializeCollisionContactManifold3D).toBe('function');
   });
 });

@@ -1,6 +1,6 @@
 import type { TextLayoutResult } from '@flighthq/types/contract';
 
-import { createTextMetrics, getTextMetrics } from './textMetrics';
+import { createTextMetrics, getTextMetrics, initializeTextMetrics } from './textMetrics';
 
 describe('createTextMetrics', () => {
   it('creates a zeroed metrics object', () => {
@@ -15,5 +15,10 @@ describe('getTextMetrics', () => {
     expect(out.width).toBe(13);
     expect(out.height).toBe(9);
     expect(out.numLines).toBe(2);
+  });
+});
+describe('initializeTextMetrics', () => {
+  it('is the construction initializer of createTextMetrics', () => {
+    expect(typeof initializeTextMetrics).toBe('function');
   });
 });

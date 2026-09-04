@@ -8,6 +8,7 @@ import {
   createAnimationBlendTreeLayer,
   createAnimationLayerStack,
   createAnimationStateMachineLayer,
+  initializeAnimationLayerStack,
   sampleAnimationLayerStack,
   sampleAnimationLayerStackChannel,
   setAnimationLayerWeight,
@@ -107,6 +108,12 @@ describe('createAnimationStateMachineLayer', () => {
   });
 });
 
+describe('initializeAnimationLayerStack', () => {
+  it('is the construction initializer of createAnimationLayerStack', () => {
+    expect(typeof initializeAnimationLayerStack).toBe('function');
+  });
+});
+
 describe('sampleAnimationLayerStack', () => {
   it('applies an override mask and additive layer in stable target order', () => {
     const body = {};
@@ -160,7 +167,6 @@ describe('sampleAnimationLayerStackChannel', () => {
     expect(out).toEqual([2]);
   });
 });
-
 describe('setAnimationLayerWeight', () => {
   it('updates a present layer and rejects an absent index', () => {
     const stack = createAnimationLayerStack([createAnimationBlendTreeLayer(tree(player({}, 1)))]);

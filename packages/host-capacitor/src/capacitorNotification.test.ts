@@ -6,7 +6,10 @@ import type {
   CapacitorLocalNotificationSchema,
 } from '@flighthq/types/contract';
 
-import { createCapacitorNotificationCapabilities } from './capacitorNotification';
+import {
+  createCapacitorNotificationCapabilities,
+  initializeCapacitorNotificationCapabilities,
+} from './capacitorNotification';
 
 function fakeCapacitor(display = 'granted') {
   const scheduled: CapacitorLocalNotificationSchema[] = [];
@@ -136,5 +139,10 @@ describe('createCapacitorNotificationCapabilities', () => {
     if (action.reason === 'ok') await action.attachment.release();
     fixture.fire({ actionId: 'tap', notification: { id: 7 } });
     expect(seen).toHaveLength(2);
+  });
+});
+describe('initializeCapacitorNotificationCapabilities', () => {
+  it('is the construction initializer of createCapacitorNotificationCapabilities', () => {
+    expect(typeof initializeCapacitorNotificationCapabilities).toBe('function');
   });
 });

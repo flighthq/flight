@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createMatrix } from './matrix';
-import { createTransform2D, decomposeMatrixToTransform2D } from './transform2d';
+import { createTransform2D, decomposeMatrixToTransform2D, initializeTransform2D } from './transform2d';
 
 const DEG_TO_RAD = Math.PI / 180;
 
@@ -120,3 +120,8 @@ function expectRoundTrip(source: Readonly<ReturnType<typeof createMatrix>>) {
   expect(rebuilt.c).toBeCloseTo(source.c);
   expect(rebuilt.d).toBeCloseTo(source.d);
 }
+describe('initializeTransform2D', () => {
+  it('is the construction initializer of createTransform2D', () => {
+    expect(typeof initializeTransform2D).toBe('function');
+  });
+});

@@ -12,10 +12,12 @@ import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D
 import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d';
 import {
   createSkeleton2DBoneAnimationTarget,
-  findSkeleton2DStepKeyframe,
   createSkeleton2DSlotAnimationTarget,
+  findSkeleton2DStepKeyframe,
   getSkeleton2DAnimationTargetBinder,
   getSkeleton2DAnimationTargetBinderKinds,
+  initializeSkeleton2DBoneAnimationTarget,
+  initializeSkeleton2DSlotAnimationTarget,
   registerSkeleton2DAnimationTargetBinder,
   unregisterSkeleton2DAnimationTargetBinder,
 } from './skeleton2dAnimationTarget';
@@ -94,6 +96,41 @@ describe('getSkeleton2DAnimationTargetBinderKinds', () => {
   });
 });
 
+describe('initializeSkeleton2DBoneAnimationTarget', () => {
+  it('is the construction initializer of createSkeleton2DBoneAnimationTarget', () => {
+    expect(typeof initializeSkeleton2DBoneAnimationTarget).toBe('function');
+  });
+});
+
+describe('initializeSkeleton2DSlotAnimationTarget', () => {
+  it('is the construction initializer of createSkeleton2DSlotAnimationTarget', () => {
+    expect(typeof initializeSkeleton2DSlotAnimationTarget).toBe('function');
+  });
+});
+
+function makeBone(): Bone2D {
+  return {
+    length: 0,
+    name: null,
+    parentIndex: -1,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+    shearX: 0,
+    shearY: 0,
+    transformMode: TransformMode2D.Normal,
+    x: 0,
+    y: 0,
+  };
+}
+
+function makeSkeleton(): Skeleton2D {
+  return createSkeleton2D([makeBone()], [{ attachment: null, boneIndex: 0, color: 0xffffffff, name: 's' }]);
+}
+
+function track(times: number[], values: number[], components: number) {
+  return createAnimationTrack({ components, times, values });
+}
 describe('registerSkeleton2DAnimationTargetBinder', () => {
   it('binds a family this package does not own from the same single pass as bones', () => {
     const seen: number[] = [];
@@ -153,27 +190,3 @@ describe('unregisterSkeleton2DAnimationTargetBinder', () => {
     expect(getSkeleton2DAnimationTargetBinder('acme.RopeTarget')).toBeNull();
   });
 });
-
-function makeBone(): Bone2D {
-  return {
-    length: 0,
-    name: null,
-    parentIndex: -1,
-    rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
-    shearX: 0,
-    shearY: 0,
-    transformMode: TransformMode2D.Normal,
-    x: 0,
-    y: 0,
-  };
-}
-
-function makeSkeleton(): Skeleton2D {
-  return createSkeleton2D([makeBone()], [{ attachment: null, boneIndex: 0, color: 0xffffffff, name: 's' }]);
-}
-
-function track(times: number[], values: number[], components: number) {
-  return createAnimationTrack({ components, times, values });
-}

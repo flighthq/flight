@@ -3,7 +3,12 @@ import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flight
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { createDomScale9ShapeData, defaultDomScale9ShapeRenderer, drawDomScale9Shape } from './domScale9Shape';
+import {
+  createDomScale9ShapeData,
+  defaultDomScale9ShapeRenderer,
+  drawDomScale9Shape,
+  initializeDomScale9ShapeData,
+} from './domScale9Shape';
 import { registerDomShapeRasterizer } from './domShapeRasterizer';
 
 const noopRasterizer = (): void => {};
@@ -84,5 +89,10 @@ describe('drawDomScale9Shape', () => {
     expect(element.width).toBe(200);
     expect(element.height).toBe(300);
     expect(element.style.transform).toBe('matrix(1,0,0,1,0,0)');
+  });
+});
+describe('initializeDomScale9ShapeData', () => {
+  it('is the construction initializer of createDomScale9ShapeData', () => {
+    expect(typeof initializeDomScale9ShapeData).toBe('function');
   });
 });

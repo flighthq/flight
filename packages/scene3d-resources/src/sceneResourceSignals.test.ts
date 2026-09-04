@@ -8,6 +8,7 @@ import {
   createScene3DResourceSignals,
   enableScene3DResourceSignals,
   getScene3DResourceSignals,
+  initializeScene3DResourceSignals,
 } from './sceneResourceSignals';
 
 const host: HasGraphicsImage = {
@@ -52,5 +53,10 @@ describe('getScene3DResourceSignals', () => {
     const signals = enableScene3DResourceSignals(resolver);
     expect(getScene3DResourceSignals(resolver)).toBe(signals);
     disposeScene3DResourceResolver(resolver);
+  });
+});
+describe('initializeScene3DResourceSignals', () => {
+  it('is the construction initializer of createScene3DResourceSignals', () => {
+    expect(typeof initializeScene3DResourceSignals).toBe('function');
   });
 });

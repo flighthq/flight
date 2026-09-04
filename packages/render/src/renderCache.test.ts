@@ -3,14 +3,16 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
+  RenderCacheKind,
   createRenderCache,
   createRenderCacheAdapter,
   enableRenderCacheAdapterSignals,
   getRenderProxyCache,
+  initializeRenderCache,
+  initializeRenderCacheAdapter,
   isRenderCache,
   isRenderCacheAdapter,
   registerRenderCacheRenderer,
-  RenderCacheKind,
   useRenderCache,
 } from './renderCache';
 import { createRenderProxy2D } from './renderProxy';
@@ -116,6 +118,18 @@ describe('getRenderProxyCache', () => {
   });
 });
 
+describe('initializeRenderCache', () => {
+  it('is the construction initializer of createRenderCache', () => {
+    expect(typeof initializeRenderCache).toBe('function');
+  });
+});
+
+describe('initializeRenderCacheAdapter', () => {
+  it('is the construction initializer of createRenderCacheAdapter', () => {
+    expect(typeof initializeRenderCacheAdapter).toBe('function');
+  });
+});
+
 describe('isRenderCache', () => {
   it('returns true for a render cache handle', () => {
     expect(isRenderCache(createRenderCache())).toBe(true);
@@ -138,7 +152,7 @@ describe('isRenderCacheAdapter', () => {
     expect(isRenderCacheAdapter(null)).toBe(false);
   });
 });
-
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
 describe('registerRenderCacheRenderer', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = createRenderState();
@@ -176,4 +190,3 @@ describe('useRenderCache', () => {
     expect(getRenderProxyAdapter(stateB, obj as any)).toBeNull();
   });
 });
-import { getRegistryTableEntry } from '@flighthq/registry/contract';

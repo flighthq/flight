@@ -43,6 +43,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types/contract';
 
+import { initializeMatrix } from './matrix';
+
 describe('cloneMatrix', () => {
   it('should clone the matrix3x2 correctly', () => {
     const m1 = createMatrix(2, 3, 4, 5, 6, 7);
@@ -302,6 +304,12 @@ describe('equalsMatrix', () => {
     const mat2 = createMatrix();
     mat2.tx = 100;
     expect(equalsMatrix(mat1, mat2, true)).toBe(false);
+  });
+});
+
+describe('initializeMatrix', () => {
+  it('is the construction initializer of createMatrix', () => {
+    expect(typeof initializeMatrix).toBe('function');
   });
 });
 
@@ -1180,7 +1188,6 @@ describe('translateMatrixByVectorXY', () => {
     expect(matrix).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 28, ty: 36 });
   });
 });
-
 describe('writeMatrixToFloat32Array', () => {
   it('writes 6 values at the offset', () => {
     const array = new Float32Array(6);

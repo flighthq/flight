@@ -1,7 +1,12 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
-import { createExternalWgpuTexture, disposeExternalWgpuTexture } from './wgpuExternalTexture';
+import {
+  createExternalWgpuTexture,
+  disposeExternalWgpuTexture,
+  initializeExternalWgpuTextureEntry,
+  initializeExternalWgpuTextureSource,
+} from './wgpuExternalTexture';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 import { resolveWgpuTexture } from './wgpuTextureResolver';
 
@@ -31,5 +36,16 @@ describe('disposeExternalWgpuTexture', () => {
     const texture = createExternalWgpuTexture(state, handle, { height: 1, width: 1 });
     expect(disposeExternalWgpuTexture(state, texture)).toBe(true);
     expect(disposeExternalWgpuTexture(state, texture)).toBe(false);
+  });
+});
+describe('initializeExternalWgpuTextureEntry', () => {
+  it('is the construction initializer of createExternalWgpuTextureEntry', () => {
+    expect(typeof initializeExternalWgpuTextureEntry).toBe('function');
+  });
+});
+
+describe('initializeExternalWgpuTextureSource', () => {
+  it('is the construction initializer of createExternalWgpuTextureSource', () => {
+    expect(typeof initializeExternalWgpuTextureSource).toBe('function');
   });
 });

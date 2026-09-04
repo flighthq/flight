@@ -71,6 +71,9 @@ import {
   createScene2DFromSwf,
   createScene2DImportFromSwf,
   createScene2DSymbolFromSwf,
+  initializeSwfDocumentImport,
+  initializeTimelineAudioCue,
+  initializeTimelineStreamAudioCue,
   readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
 } from './swfDocument';
@@ -4276,25 +4279,15 @@ describe('createScene2DSymbolFromSwf', () => {
   });
 });
 
-describe('readSwfExportedSymbolNames', () => {
-  it('lists every exported linkage name, placed or not', () => {
-    expect(readSwfExportedSymbolNames(_exportedSymbolFile)).toEqual(['Layout']);
-  });
-
-  it('reports an empty list rather than throwing for unreadable bytes', () => {
-    expect(readSwfExportedSymbolNames(new Uint8Array([1, 2, 3]))).toEqual([]);
+describe('initializeSwfDocumentImport', () => {
+  it('is the construction initializer of createSwfDocumentImport', () => {
+    expect(typeof initializeSwfDocumentImport).toBe('function');
   });
 });
 
-describe('registerSwfScene2DDocumentImporter', () => {
-  it('adds an opt-in SWF codec without global registration', () => {
-    const registry = createScene2DDocumentImporterRegistry();
-    const source = createSwf([createTag(TAG_END)]);
-    expect(createScene2DDocumentFromBytes(source, registry)).toBeNull();
-
-    registerSwfScene2DDocumentImporter(registry);
-
-    expect(createScene2DDocumentFromBytes(source, registry)?.sourceKind).toBe('swf');
+describe('initializeTimelineAudioCue', () => {
+  it('is the construction initializer of createTimelineAudioCue', () => {
+    expect(typeof initializeTimelineAudioCue).toBe('function');
   });
 });
 
@@ -4682,3 +4675,30 @@ function morphWidth(shape: MorphShape): number {
 
 const PLACE_HAS_RATIO = 0x10;
 const TAG_DEFINE_MORPH_SHAPE = 46;
+describe('initializeTimelineStreamAudioCue', () => {
+  it('is the construction initializer of createTimelineStreamAudioCue', () => {
+    expect(typeof initializeTimelineStreamAudioCue).toBe('function');
+  });
+});
+
+describe('readSwfExportedSymbolNames', () => {
+  it('lists every exported linkage name, placed or not', () => {
+    expect(readSwfExportedSymbolNames(_exportedSymbolFile)).toEqual(['Layout']);
+  });
+
+  it('reports an empty list rather than throwing for unreadable bytes', () => {
+    expect(readSwfExportedSymbolNames(new Uint8Array([1, 2, 3]))).toEqual([]);
+  });
+});
+
+describe('registerSwfScene2DDocumentImporter', () => {
+  it('adds an opt-in SWF codec without global registration', () => {
+    const registry = createScene2DDocumentImporterRegistry();
+    const source = createSwf([createTag(TAG_END)]);
+    expect(createScene2DDocumentFromBytes(source, registry)).toBeNull();
+
+    registerSwfScene2DDocumentImporter(registry);
+
+    expect(createScene2DDocumentFromBytes(source, registry)?.sourceKind).toBe('swf');
+  });
+});

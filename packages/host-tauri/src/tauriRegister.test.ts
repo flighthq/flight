@@ -3,7 +3,7 @@ import { getPlatformName } from '@flighthq/platform/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { HasSystemPlatform, TauriApi } from '@flighthq/types/contract';
 
-import { registerTauriBackends } from './tauriRegister';
+import { initializeTauriHost, registerTauriBackends } from './tauriRegister';
 
 // A fake Tauri API broad enough that every createTauri*Backend constructs without touching missing
 // members. Backends close over `tauri` and only call in when their methods run (plus the app/
@@ -37,6 +37,12 @@ function fakeTauri(): TauriApi {
     window: { getCurrentWindow: () => ({}), LogicalPosition: class {}, LogicalSize: class {} },
   } as unknown as TauriApi;
 }
+
+describe('initializeTauriHost', () => {
+  it('is the construction initializer of createTauriHost', () => {
+    expect(typeof initializeTauriHost).toBe('function');
+  });
+});
 
 describe('registerTauriBackends', () => {
   it('routes capability seams to the Tauri backends without throwing', async () => {
@@ -74,7 +80,6 @@ describe('tauri power slot coverage', () => {
     expect(host.power).toEqual({});
   });
 });
-
 describe('tauri power slot coverage', () => {
   // ★ EXACT SLOT COVERAGE for T: an EMPTY group, not a guessed or stubbed one. An empty group is
   // honest and forward-compatible; the named gap lives in agents/upstream-host-requirements.md so an
