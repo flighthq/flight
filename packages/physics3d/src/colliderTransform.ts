@@ -79,7 +79,7 @@ export function createPhysics3DColliderWorldShape(
     }
     case 'triangle-mesh': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' }> & Entity>();
-      initializeCollisionTriangleMesh3D(
+      assignCollisionTriangleMesh3DFields(
         out,
         local.indices,
         'triangle-mesh',
@@ -97,7 +97,7 @@ export function createPhysics3DColliderWorldShape(
     }
     case 'heightfield': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'heightfield' }> & Entity>();
-      initializeCollisionHeightfield3D(
+      assignCollisionHeightfield3DFields(
         out,
         local.cellSizeX,
         local.cellSizeZ,
@@ -213,7 +213,7 @@ export function initializeCollisionCylinder3D(
   out.z1 = z1;
 }
 
-function initializeCollisionHeightfield3D(
+function assignCollisionHeightfield3DFields(
   out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'heightfield' }> & Entity>,
   cellSizeX: number,
   cellSizeZ: number,
@@ -261,7 +261,7 @@ export function initializeCollisionSphere3D(
   out.z = z;
 }
 
-function initializeCollisionTriangleMesh3D(
+function assignCollisionTriangleMesh3DFields(
   out: EntityConstruction<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' }> & Entity>,
   indices: number[],
   kind: 'triangle-mesh',

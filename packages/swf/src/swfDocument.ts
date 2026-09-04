@@ -260,7 +260,7 @@ export function initializeTimelineAudioCue(
   out.stop = stop;
 }
 
-function initializeTimelineSource(
+function assignTimelineSourceFields(
   out: EntityConstruction<TimelineSource>,
   constructFrame: (target: Node2D, frame: number) => void,
   cues: readonly TimelineCue[],
@@ -995,7 +995,7 @@ function createSwfTimelineSource(
     }
   };
   const out = allocateEntity<TimelineSource>();
-  initializeTimelineSource(out, constructFrame, cues, frameRate, labels, frames.length);
+  assignTimelineSourceFields(out, constructFrame, cues, frameRate, labels, frames.length);
   return finishEntity(out);
 }
 

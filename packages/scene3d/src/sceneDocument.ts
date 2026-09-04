@@ -76,7 +76,7 @@ export function createScene3DsFromDocument(document: Readonly<Scene3DDocument>):
   return scenes;
 }
 
-function initializeSkeleton3D(
+function assignSkeleton3DFields(
   out: EntityConstruction<Skeleton3D>,
   inverseBindMatrices: Float32Array,
   jointMatrices: Float32Array,
@@ -125,7 +125,7 @@ function applyDocumentSkins(document: Readonly<Scene3DDocument>, nodes: readonly
     // Joint names are recovered from the resolved joint nodes; null when the source named none.
     const skeleton = (() => {
       const out = allocateEntity<Skeleton3D>();
-      initializeSkeleton3D(
+      assignSkeleton3DFields(
         out,
         inverseBindMatrices,
         new Float32Array(joints.length * 16),

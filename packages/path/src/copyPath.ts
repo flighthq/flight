@@ -13,7 +13,7 @@ export function clonePath(source: Readonly<Path>): Path {
 export function copyPath(source: Readonly<Path>, out?: Path): Path {
   if (out === undefined) {
     const out = allocateEntity<Path>();
-    initializePath(out, source.commands.slice(), source.data.slice(), source.winding);
+    assignPathFields(out, source.commands.slice(), source.data.slice(), source.winding);
     return finishEntity(out);
   }
   if (out !== source) {
@@ -26,7 +26,12 @@ export function copyPath(source: Readonly<Path>, out?: Path): Path {
   return out;
 }
 
-function initializePath(out: EntityConstruction<Path>, commands: number[], data: number[], winding: PathWinding): void {
+function assignPathFields(
+  out: EntityConstruction<Path>,
+  commands: number[],
+  data: number[],
+  winding: PathWinding,
+): void {
   out.commands = commands;
   out.data = data;
   out.winding = winding;

@@ -31,7 +31,7 @@ export function acquireCanvasRenderTexture(
 
 export function createCanvasRenderTexturePool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTexturePool {
   const effectTargets = allocateEntity<CanvasRenderTargetPool>();
-  initializeCanvasRenderTargetPool(effectTargets, creator);
+  assignCanvasRenderTargetPoolFields(effectTargets, creator);
   const out = allocateEntity<CanvasRenderTexturePool>();
   initializeCanvasRenderTexturePool(out, finishEntity(effectTargets));
   return finishEntity(out);
@@ -53,7 +53,7 @@ export function destroyCanvasRenderTexturePool(state: CanvasRenderState, pool: C
   pool.destroyed = true;
 }
 
-function initializeCanvasRenderTargetPool(
+function assignCanvasRenderTargetPoolFields(
   out: EntityConstruction<CanvasRenderTargetPool>,
   creator: Readonly<CanvasRenderSurfaceCreator>,
 ): void {
