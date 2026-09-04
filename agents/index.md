@@ -59,6 +59,7 @@ working in that area, but do not build on it as settled. New architecture record
 - [bounded expected-image descriptions](functional-bounded-descriptions.md) — functional scenes whose expected picture is genuinely undecided, and therefore cannot be commissioned as a permanent reference.
 - [effect / adjustment / material](effect-adjustment-architecture.md) — before adding an image operation or touching the adjustments/effects boundary. The three-tier Material / Adjustment / Effect model.
 - [effect-pass UV origin](effect-uv-origin-architecture.md) — the GL/WGPU positional-UV sweep and the proposed sampler-local normalization seam.
+- [entity construction model](entity-construction-model.md) — **unratified.** before adding a `create*` factory or changing how a hierarchical entity is constructed. The allocate-initialize discipline: one allocation, base-to-derived initialization, strict per-layer field ownership.
 - [host-web architecture](host-web-architecture.md) — before touching `webHost`, `web*Backend` consts, or the capability/host boundary. The domain census, extraction plan, and types spine.
 - [host-web document-absence outcomes](host-web-no-dom-outcomes.md) — the post-Accessibility R17 census of nine provider operations whose no-DOM outcome remains silent.
 - [upstream host requirements](upstream-host-requirements.md) — before extracting host backends, changing backend lifecycle or operation availability, or adding a native host package.
