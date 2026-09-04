@@ -1,4 +1,3 @@
-import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import type { Host } from '@flighthq/types/contract';
 
 import type { HostProbeCapability } from './expectations';
@@ -43,7 +42,7 @@ export function captureHostProbeBackends(
     device: host.system?.device ?? null,
     dialog: host.dialog ?? null,
     filesystem: host.storage?.fileSystem ?? null,
-    geolocation: getGeolocationBackend(),
+    geolocation: host.system?.geolocation ?? null,
     'glyph-rasterizer': extras?.glyphRasterizer ?? null,
     haptics: host.input?.haptics ?? null,
     ipc: firstProvidedSlot(host.ipc),
