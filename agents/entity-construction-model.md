@@ -47,32 +47,39 @@ One allocation. Base-to-derived initialization. Strict field ownership.
 ### Source shape
 
 Initializers call their own base — the inheritance chain is encoded in the initializers, not repeated
-at every `create*` call site:
+at every `create*` call site. Derived-determined fields (`kind`, `data`) are positional arguments;
+user-configurable fields (`enabled`, `name`, `x`, `y`) live in the options bag, which flows through
+every layer as a single reference with no intermediate allocations:
 
 ```typescript
 function initializeNode<T extends Node>(
   out: EntityConstruction<T>,
-  options: Readonly<NodeOptions>,
+  kind: Kind,
+  data: NodeData | null,
+  options: Readonly<NodeOptions> | undefined,
 ): void {
-  out.enabled = options.enabled ?? true;
-  out.name = options.name ?? null;
+  out.kind = kind;
+  out.data = data;
+  out.enabled = options?.enabled ?? true;
+  out.name = options?.name ?? null;
 }
 
 function initializeNode2D<T extends Node2D>(
   out: EntityConstruction<T>,
-  options: Readonly<Node2DOptions>,
+  kind: Kind,
+  data: NodeData | null,
+  options: Readonly<Node2DOptions> | undefined,
 ): void {
-  initializeNode(out, options);
+  initializeNode(out, kind, data, options);
   initializeTransform2D(out, options);
   initializeBoundsRectangle(out, options);
 }
 
 function initializeSprite(
   out: EntityConstruction<Sprite>,
-  options: Readonly<SpriteOptions>,
+  options: Readonly<SpriteOptions> | undefined,
 ): void {
-  initializeNode2D(out, options);
-  out.data = createSpriteData(options.data);
+  initializeNode2D(out, SpriteKind, createSpriteData(options?.data), options);
 }
 ```
 
@@ -81,13 +88,13 @@ Each public constructor allocates its own concrete type exactly once:
 ```typescript
 export function createNode2D(options?: Readonly<Node2DOptions>): Node2D {
   const out = allocateEntity<Node2D>();
-  initializeNode2D(out, options ?? {});
+  initializeNode2D(out, Node2DKind, null, options);
   return finishEntity(out);
 }
 
 export function createSprite(options?: Readonly<SpriteOptions>): Sprite {
   const out = allocateEntity<Sprite>();
-  initializeSprite(out, options ?? {});
+  initializeSprite(out, options);
   return finishEntity(out);
 }
 ```
@@ -138,23 +145,31 @@ An interface such as `HasTransform2D` declares fields but does not assign them; 
 initializer (`initializeTransform2D`) owns the assignment, called from within the layer that
 introduces the trait.
 
-### Base-field customization
+### Positional arguments vs options
 
-When a derived type supplies the value of a base field, it passes that value down through the options
-to the base initializer:
+The split is mechanical: **does the value always come from the derived type, or can the user supply
+it?**
+
+- **Always derived-supplied** (the concrete type determines it, the user never picks it) → positional
+  argument to the base initializer. `kind` is the clearest: every Sprite is `SpriteKind`. `data` is
+  the same — `SpriteData` is created by the Sprite layer.
+- **User-configurable with a default** (`enabled`, `name`, `x`, `y`, `rotation`) → options bag. The
+  derived type does not know or care about the value; it flows through.
+
+The base initializer owns the field assignment in both cases (property 3). The derived caller
+supplies the *value* via a positional argument, never by overwriting after the base runs:
 
 ```typescript
-// SpriteOptions extends Node2DOptions extends NodeOptions
-// kind is a NodeOptions field; the derived type supplies it
-initializeSprite(out, { ...userOptions, kind: SpriteKind });
+// Correct: derived supplies kind and data as positional args
+initializeNode2D(out, SpriteKind, createSpriteData(options?.data), options);
+
+// Wrong: derived overwrites base-owned storage
+initializeNode(out, Node2DKind, null, options);
+out.kind = SpriteKind;
 ```
 
-It must not do this:
-
-```typescript
-initializeNode(out, options);
-out.kind = SpriteKind;  // derived layer overwrites base-owned storage
-```
+This avoids GC pressure from intermediate options objects: one user-supplied options reference (or
+`undefined`) flows through every layer untouched.
 
 For an interface-declared field with no concrete base storage — such as a platform Host narrowing an
 abstract capability — the concrete platform layer owns the assignment.
@@ -174,20 +189,36 @@ abstract capability — the concrete platform layer owns the assignment.
 
 ## Flat entities
 
-For completely flat, non-inherited entities (a `Matrix`, a `Rectangle`, a `SpriteData`), the model
-is the same but trivial: `allocateEntity` + one initializer + `finishEntity`.
+Every entity type gets an `initialize*` function, even flat ones with no inheritance. The model is
+the same: `allocateEntity` + `initialize*` + `finishEntity`.
 
 ```typescript
-export function createMatrix(): Matrix {
-  const out = allocateEntity<Matrix>();
-  initializeMatrix(out);
+function initializeColorLutCache(
+  out: EntityConstruction<ColorLutCache>,
+): void {
+  out.signature = null;
+  out.lut = null;
+}
+
+export function createColorLutCache(): ColorLutCache {
+  const out = allocateEntity<ColorLutCache>();
+  initializeColorLutCache(out);
   return finishEntity(out);
 }
 ```
 
-One uniform model avoids the refactoring cliff where a formerly flat type must be rewritten when it
-gains a base or trait initializer. A flat entity that uses `createEntity({...})` today works, but
-when it becomes hierarchical it changes construction dialect entirely. One dialect prevents that.
+Three reasons for the uniform rule:
+
+1. **Pooling.** A pool's `acquire` can return a recycled object and call `initializeColorLutCache(out)`
+   to reset it. Without an `initialize*` function, the reset logic is duplicated in the pool or the
+   `create*` function must be split apart when pooling arrives.
+
+2. **No refactoring cliff.** A flat entity that gains a base type or trait initializer does not change
+   construction dialect — it already has an `initialize*` that the new base chains through.
+
+3. **Fully mechanical shape.** Every `create*` is exactly `allocateEntity` + one `initialize*` call +
+   `finishEntity`, no exceptions. A script or agent can verify the pattern without distinguishing
+   flat from hierarchical.
 
 ## `createEntity` disposition
 
@@ -266,10 +297,26 @@ cannot be tested (same deferral pattern as explicit-dependency-model R4).
 ## `NodeDataFactory` pattern
 
 `createNode` currently takes a `createData` factory parameter that allocates the node's data payload
-and threads it through the base. Under the new model, data initialization belongs in the leaf
-initializer (`initializeSprite` assigns `out.data = createSpriteData(options.data)`), not as a
-factory parameter threaded through the base — the base has no reason to know about derived data
-shapes.
+and threads it through the base. Under the new model, the leaf initializer creates the data and
+passes it as a positional argument to the base (`initializeNode2D(out, SpriteKind, createSpriteData(options?.data), options)`). The base has no reason to know about derived data shapes; it
+receives and assigns the value.
+
+## Pooling
+
+The uniform `initialize*` rule makes pooling mechanical. A pool's `acquire` returns a recycled
+object and resets it through the same initializer `create*` uses:
+
+```typescript
+function acquireColorLutCache(pool: Pool<ColorLutCache>): ColorLutCache {
+  const out = pool.recycle() as EntityConstruction<ColorLutCache>;
+  initializeColorLutCache(out);
+  return finishEntity(out);
+}
+```
+
+For hierarchical types, the leaf initializer resets the full chain — `initializeSprite` calls
+`initializeNode2D`, which calls `initializeNode` — so the pool calls one function and every layer
+is reset in base-to-derived order. No separate reset logic, no field-list duplication.
 
 ## Relationship to existing work
 
