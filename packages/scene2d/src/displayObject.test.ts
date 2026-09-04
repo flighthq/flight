@@ -248,7 +248,7 @@ interface Node2DTestData extends Node2DData {
 }
 
 function createNode2DTestData(data?: Partial<Node2DTestData>): Node2DTestData {
-  return {
+  return createEntity({
     foo: data?.foo ?? 'bar',
-  };
+  });
 }

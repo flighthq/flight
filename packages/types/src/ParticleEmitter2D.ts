@@ -1,9 +1,8 @@
-import type { Entity } from './Entity';
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { Rectangle } from './Rectangle';
 import type { TextureAtlas } from './TextureAtlas';
 
-export interface ParticleEmitterData extends Entity, Node2DData {
+export interface ParticleEmitterData extends Node2DData {
   alphas: Float32Array;
   atlas: TextureAtlas | null;
   colors: Float32Array; // [r, g, b] × capacity — interpolated from colorStart→colorEnd

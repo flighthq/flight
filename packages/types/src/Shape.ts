@@ -1,8 +1,7 @@
-import type { Entity } from './Entity';
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { ShapeCommandToken } from './ShapeCommand';
 
-export interface ShapeData extends Entity, Node2DData {
+export interface ShapeData extends Node2DData {
   commands: ShapeCommandToken[];
 }
 

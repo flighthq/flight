@@ -1,4 +1,3 @@
-import type { Entity } from './Entity';
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormatAlign } from './TextFormat';
@@ -25,7 +24,7 @@ export interface NativeTextStyle {
   size?: number;
 }
 
-export interface NativeTextData extends Node2DData, Entity {
+export interface NativeTextData extends Node2DData {
   autoSize: TextAutoSize;
   height: number;
   style: NativeTextStyle;
