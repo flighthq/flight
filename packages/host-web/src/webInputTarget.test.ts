@@ -100,7 +100,7 @@ describe('webInputPointerLockBackend', () => {
     const target = createWebInputTargetHandle(document.createElement('div'));
     const fallbackExit = vi.fn(async () => ({ reason: 'ok' as const }));
     const fallbackBackend = (() => {
-      const out = allocateEntity<EntityWithoutRuntime<InputPointerLockBackend>>();
+      const out = allocateEntity<any>();
       out.exit = fallbackExit;
       out.request = async () => ({ reason: 'ok' });
       return finishEntity(out);

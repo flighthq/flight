@@ -47,7 +47,7 @@ describe('segmentGraphemes', () => {
 
   it('threads the locale argument to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    const fake = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>();
+    const fake = allocateEntity<any>();
     fake.segment = (text: string, _granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
       seenLocale = locale;
       return [{ start: 0, end: text.length, text }];

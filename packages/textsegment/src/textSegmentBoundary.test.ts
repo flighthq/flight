@@ -73,7 +73,7 @@ describe('getPreviousWordBoundary', () => {
 
 describe('getWordRangeAt', () => {
   it('threads an explicit host through the boundary helper', () => {
-    const explicit = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>();
+    const explicit = allocateEntity<any>();
     explicit.segment = (text) => [{ start: 0, end: text.length, text, isWordLike: true }];
     const host: HasTextSegmenter = { text: { segmenter: explicit } };
     setTextSegmenterBackend(
@@ -106,7 +106,7 @@ describe('getWordRangeAt', () => {
     let seenLocale: string | undefined = 'unset';
     setTextSegmenterBackend(
       (() => {
-        const out = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>();
+        const out = allocateEntity<any>();
         out.segment = (text, _granularity, locale) => {
           seenLocale = locale;
           return [{ start: 0, end: text.length, text, isWordLike: true }];

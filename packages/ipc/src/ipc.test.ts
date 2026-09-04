@@ -28,7 +28,7 @@ function messageHost(): HasIpcMessage & {
     },
     ipc: {
       message: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>();
+        const out = allocateEntity<any>();
         out.subscribe = (channel: string, listener: (args: readonly unknown[]) => void): (() => void) => {
           const set = channels.get(channel) ?? new Set();
           channels.set(channel, set);
@@ -74,7 +74,7 @@ function operationHost(): HasIpcHandle &
     invocations,
     ipc: {
       handle: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<IpcHandleBackend>>();
+        const out = allocateEntity<any>();
         out.handle = (channel, handler) => {
           handlers.set(channel, handler);
           return () => {
@@ -84,7 +84,7 @@ function operationHost(): HasIpcHandle &
         return finishEntity(out);
       })(),
       invoke: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<IpcInvokeBackend>>();
+        const out = allocateEntity<any>();
         out.invoke = (channel, args) => {
           invocations.push({ args, channel });
           return Promise.resolve({ args, channel });
@@ -92,14 +92,14 @@ function operationHost(): HasIpcHandle &
         return finishEntity(out);
       })(),
       send: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<IpcSendBackend>>();
+        const out = allocateEntity<any>();
         out.send = (channel, args) => {
           sent.push({ args, channel });
         };
         return finishEntity(out);
       })(),
       targetedSend: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<IpcTargetedSendBackend<TestIpcTarget>>>();
+        const out = allocateEntity<any>();
         out.send = (target, channel, args) => {
           sentTo.push({ args, channel, target });
         };
@@ -150,7 +150,7 @@ describe('onceIpcMessage', () => {
     const host: HasIpcMessage = {
       ipc: {
         message: (() => {
-          const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>();
+          const out = allocateEntity<any>();
           out.subscribe = (): (() => void) => {
             return () => releases++;
           };
@@ -172,7 +172,7 @@ describe('onceIpcMessage', () => {
     const host: HasIpcMessage = {
       ipc: {
         message: (() => {
-          const out = allocateEntity<EntityWithoutRuntime<IpcMessageBackend>>();
+          const out = allocateEntity<any>();
           out.subscribe = (_channel, listener): (() => void) => {
             listener([42]);
             return () => (released = true);

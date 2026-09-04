@@ -157,7 +157,7 @@ function recordingWindowBackend(): RecordingWindowBackend {
   const resizeListeners = new Set<(width: number, height: number, devicePixelRatio: number) => void>();
   const visibilityListeners = new Set<(visible: boolean) => void>();
   const calls: string[] = [];
-  const out = allocateEntity<EntityWithoutRuntime<RecordingWindowBackend>>();
+  const out = allocateEntity<any>();
   out.calls = calls;
   out.emitCloseRequest = () => {
     let cancelled = false;
@@ -341,7 +341,7 @@ function recordingFullscreenBackend(): RecordingFullscreenBackend {
 function recordingInputDropFileBackend(): RecordingInputDropFileBackend {
   let listener: ((path: string) => void) | null = null;
   const calls: string[] = [];
-  const out = allocateEntity<EntityWithoutRuntime<RecordingInputDropFileBackend>>();
+  const out = allocateEntity<any>();
   out.calls = calls;
   out.emit = (path: string) => {
     listener?.(path);
@@ -361,7 +361,7 @@ function recordingInputFocusBackend(): RecordingInputFocusBackend {
   let onBlur: (() => void) | null = null;
   let onFocus: (() => void) | null = null;
   const calls: string[] = [];
-  const out = allocateEntity<EntityWithoutRuntime<RecordingInputFocusBackend>>();
+  const out = allocateEntity<any>();
   out.calls = calls;
   out.emitBlur = () => {
     onBlur?.();
@@ -384,7 +384,7 @@ function recordingInputFocusBackend(): RecordingInputFocusBackend {
 
 function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
   const calls: string[] = [];
-  const out = allocateEntity<EntityWithoutRuntime<RecordingInputPointerLockBackend>>();
+  const out = allocateEntity<any>();
   out.calls = calls;
   out.exit = async () => {
     calls.push('exit');
@@ -401,7 +401,7 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
   let onLost: (() => void) | null = null;
   let onRestored: (() => void) | null = null;
   const calls: string[] = [];
-  const out = allocateEntity<EntityWithoutRuntime<RecordingRenderContextBackend>>();
+  const out = allocateEntity<any>();
   out.calls = calls;
   out.emitLost = () => {
     onLost?.();
@@ -424,7 +424,7 @@ function recordingRenderContextBackend(): RecordingRenderContextBackend {
 
 function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
   const calls: string[] = [];
-  const out = allocateEntity<EntityWithoutRuntime<RecordingRenderSurfaceBackend>>();
+  const out = allocateEntity<any>();
   out.calls = calls;
   out.resize = (_target: InputTargetHandle, width: number, height: number) => {
     calls.push(`resize:${width},${height}`);
@@ -1459,7 +1459,7 @@ describe('openWindow', () => {
 describe('prepareElementForInput', () => {
   it('passes the opaque target to the explicit input preparation capability', () => {
     const prepare = vi.fn();
-    const backend = allocateEntity<{ prepare: typeof prepare }>();
+    const backend = allocateEntity<any>();
     backend.prepare = prepare;
     const target = (() => {
       const out = allocateEntity<any>();

@@ -38,7 +38,7 @@ function hostOf(backend: LifecycleBackend): HasSystemLifecycle {
 function fakeBackend(): FakeBackend {
   let stateListener: (() => void) | null = null;
   let memoryListener: ((level: AppMemoryPressure) => void) | null = null;
-  const out = allocateEntity<Omit<FakeBackend, keyof Entity>>();
+  const out = allocateEntity<any>();
   out.state = 'active';
   out.getState = () => {
     return this.state;

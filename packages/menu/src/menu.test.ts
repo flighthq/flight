@@ -39,7 +39,7 @@ function popupHost(result: string | null, calls: string[] = []): HasMenuPopup & 
     calls,
     menu: {
       popup: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<MenuPopupBackend>>();
+        const out = allocateEntity<any>();
         out.popup = (_items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
           calls.push(`popup@${x},${y}`);
           return Promise.resolve(result);
@@ -54,7 +54,7 @@ function applicationHost(accepted: boolean, seen: MenuItemTemplate[][] = []): Ha
   return {
     menu: {
       application: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<MenuApplicationBackend>>();
+        const out = allocateEntity<any>();
         out.setApplicationMenu = (items: readonly MenuItemTemplate[]): boolean => {
           seen.push([...items]);
           return accepted;
@@ -73,7 +73,7 @@ function selectHost(): HasMenuSelect & { emit(id: string): void; subscriberCount
     },
     menu: {
       select: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<MenuSelectBackend>>();
+        const out = allocateEntity<any>();
         out.subscribe = (listener: (id: string) => void): (() => void) => {
           listeners.add(listener);
           return () => {
@@ -97,7 +97,7 @@ function highlightHost(): HasMenuHighlight & { emit(id: string): void } {
     },
     menu: {
       highlight: (() => {
-        const out = allocateEntity<EntityWithoutRuntime<MenuHighlightBackend>>();
+        const out = allocateEntity<any>();
         out.subscribe = (listener: (id: string) => void): (() => void) => {
           listeners.add(listener);
           return () => {
