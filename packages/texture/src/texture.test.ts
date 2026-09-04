@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { ImageResource, RenderTarget, Texture2D } from '@flighthq/types/contract';
 import { ImageTextureSourceKind, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
@@ -32,16 +32,12 @@ import {
 const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as ImageResource;
 
 function makeRenderTarget(width: number, height: number): RenderTarget {
-  return createEntity({
-    height,
-    kind: RenderTargetTextureSourceKind,
-    version: 0,
-    width,
-  }) as RenderTarget;
-}
-
-// Applies a column-major 3×3 uv matrix to (u, v, 1), writing the transformed coordinate into out.
-function multiplyMatrix3Uv(out: { x: number; y: number }, matrix: { m: ArrayLike<number> }, u: number, v: number) {
+    const out = allocateEntity<RenderTarget>();
+  out.height = height;
+  out.kind = RenderTargetTextureSourceKind;
+  out.version = 0;
+  out.width = width;
+  return finishEntity(out) as RenderTarget;; y: number }, matrix: { m: ArrayLike<number> }, u: number, v: number) {
   const m = matrix.m;
   out.x = m[0] * u + m[3] * v + m[6];
   out.y = m[1] * u + m[4] * v + m[7];

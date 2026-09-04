@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HasTextSegmenter,
@@ -20,13 +20,13 @@ interface RecordingBackend extends TextSegmenterBackend {
 
 function recordingBackend(): RecordingBackend {
   const calls: RecordingBackend['calls'] = [];
-  return createEntity<Omit<RecordingBackend, typeof EntityRuntimeKey>>({
-    calls,
-    segment(text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] {
+    const out = allocateEntity<Omit<RecordingBackend, typeof EntityRuntimeKey>>();
+  out.calls = calls;
+  out.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
       calls.push({ text, granularity, locale });
       return [{ start: 0, end: text.length, text }];
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 afterEach(() => setTextSegmenterBackend(null));

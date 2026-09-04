@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HasTextSegmenter,
@@ -47,12 +47,11 @@ describe('segmentGraphemes', () => {
 
   it('threads the locale argument to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
-    const fake = createEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>({
-      segment(text: string, _granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] {
+    const fake = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>();
+    fake.segment = (text: string, _granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
         seenLocale = locale;
         return [{ start: 0, end: text.length, text }];
-      },
-    });
+      };
     setTextSegmenterBackend(fake);
     segmentGraphemes('hi', 'de-DE');
     expect(seenLocale).toBe('de-DE');
@@ -64,9 +63,9 @@ function segmenterHost(segmenter: TextSegmenterBackend): HasTextSegmenter {
 }
 
 function taggingBackend(tag: string): TextSegmenterBackend {
-  return createEntity({
-    segment: () => [{ start: 0, end: tag.length, text: tag }],
-  });
+    const out = allocateEntity<HasTextSegmenter>();
+  out.segment = () => [{ start: 0, end: tag.length, text: tag }];
+  return finishEntity(out);
 }
 
 describe('segmentSentences', () => {

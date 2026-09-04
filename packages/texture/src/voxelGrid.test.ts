@@ -1,24 +1,19 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { VoxelGrid } from '@flighthq/types/contract';
 import { VoxelGridTextureSourceKind } from '@flighthq/types/contract';
 
 import { invalidateVoxelGrid } from './voxelGrid';
 
 function voxelGrid(version: number): VoxelGrid {
-  return createEntity({
-    data: new Uint8Array(32),
-    depth: 2,
-    format: 'rgba8unorm' as const,
-    height: 2,
-    kind: VoxelGridTextureSourceKind,
-    version,
-    width: 2,
-  }) as VoxelGrid;
-}
-
-describe('invalidateVoxelGrid', () => {
-  it('advances the shared content version without replacing voxel bytes', () => {
-    const grid = voxelGrid(0);
+    const out = allocateEntity<VoxelGrid>();
+  out.data = new Uint8Array(32);
+  out.depth = 2;
+  out.format = 'rgba8unorm' as const;
+  out.height = 2;
+  out.kind = VoxelGridTextureSourceKind;
+  out.version = version;
+  out.width = 2;
+  return finishEntity(out) as VoxelGrid;;
     const data = grid.data;
 
     invalidateVoxelGrid(grid);

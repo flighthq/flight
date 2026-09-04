@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import type { Bone2D, RegionAttachment2D, Slot2D } from '@flighthq/types/contract';
 import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
@@ -494,15 +494,15 @@ function testSlot(name: string, boneIndex: number): Slot2D {
 }
 
 function testRegion(name: string): RegionAttachment2D {
-  return createEntity({
-    height: 0,
-    kind: RegionAttachment2DKind,
-    name,
-    rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
-    width: 0,
-    x: 0,
-    y: 0,
-  }) as RegionAttachment2D;
+    const out = allocateEntity<Slot2D>();
+  out.height = 0;
+  out.kind = RegionAttachment2DKind;
+  out.name = name;
+  out.rotation = 0;
+  out.scaleX = 1;
+  out.scaleY = 1;
+  out.width = 0;
+  out.x = 0;
+  out.y = 0;
+  return finishEntity(out) as RegionAttachment2D;;
 }

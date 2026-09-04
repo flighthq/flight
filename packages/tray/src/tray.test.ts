@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
   HasTrayBalloon,
@@ -103,96 +103,64 @@ function testHost(): { host: TestHost; state: TestState } {
   ): Signal<(event: Readonly<Event>) => void> | null => map.get(tray) ?? null;
   const host = {
     tray: {
-      lifecycle: createEntity({
-        async create(tray: TrayIcon) {
+      lifecycle: (() => { const out = allocateEntity<unknown>(); out.create = async (tray: TrayIcon) => {
           state.live.push(tray);
           state.balloonEvents.set(tray, createSignal());
           state.dropEvents.set(tray, createSignal());
           state.interactionEvents.set(tray, createSignal());
           state.menuSelectionEvents.set(tray, createSignal());
           return { outcome: 'created' as const };
-        },
-        async destroy(tray: TrayIcon) {
+        }; out.destroy = async (tray: TrayIcon) => {
           if (state.destroyFailures-- > 0) {
             return { failures: [{ step: 'native-resource' as const }], outcome: 'tray-destroy-failed' as const };
           }
           state.destroyed.add(tray);
           state.live = state.live.filter((item) => item !== tray);
           return { outcome: 'destroyed' as const };
-        },
-        isDestroyed: (tray: TrayIcon) => state.destroyed.has(tray),
-        list: () => state.live.slice(),
-      }),
-      image: createEntity({
-        async set(_tray: TrayIcon, icon: string) {
+        }; out.isDestroyed = (tray: TrayIcon) => state.destroyed.has(tray); out.list = () => state.live.slice(); return finishEntity(out); })(),
+      image: (() => { const out = allocateEntity<unknown>(); out.set = async (_tray: TrayIcon, icon: string) => {
           state.images.push(icon);
           return { outcome: 'updated' as const };
-        },
-      }),
-      title: createEntity({
-        async get() {
+        }; return finishEntity(out); })(),
+      title: (() => { const out = allocateEntity<unknown>(); out.get = async () => {
           return { outcome: 'available' as const, title: state.title };
-        },
-        async set(_tray: TrayIcon, title: string) {
+        }; out.set = async (_tray: TrayIcon, title: string) => {
           state.title = title;
           return { outcome: 'updated' as const };
-        },
-      }),
-      tooltip: createEntity({
-        async get() {
+        }; return finishEntity(out); })(),
+      tooltip: (() => { const out = allocateEntity<unknown>(); out.get = async () => {
           return { outcome: 'available' as const, tooltip: state.tooltip };
-        },
-        async set(_tray: TrayIcon, tooltip: string) {
+        }; out.set = async (_tray: TrayIcon, tooltip: string) => {
           state.tooltip = tooltip;
           return { outcome: 'updated' as const };
-        },
-      }),
-      menu: createEntity({
-        async set() {
+        }; return finishEntity(out); })(),
+      menu: (() => { const out = allocateEntity<unknown>(); out.set = async () => {
           return { outcome: 'updated' as const };
-        },
-      }),
-      templateImage: createEntity({
-        async set() {
+        }; return finishEntity(out); })(),
+      templateImage: (() => { const out = allocateEntity<unknown>(); out.set = async () => {
           return { outcome: 'updated' as const };
-        },
-      }),
-      bounds: createEntity({
-        async get() {
+        }; return finishEntity(out); })(),
+      bounds: (() => { const out = allocateEntity<unknown>(); out.get = async () => {
           return { bounds: { height: 2, width: 1, x: 3, y: 4 } satisfies RectangleLike, outcome: 'available' as const };
-        },
-      }),
-      popupMenu: createEntity({
-        async popup() {
+        }; return finishEntity(out); })(),
+      popupMenu: (() => { const out = allocateEntity<unknown>(); out.popup = async () => {
           return { outcome: 'shown' as const };
-        },
-      }),
-      doubleClickPolicy: createEntity({
-        async setIgnore() {
+        }; return finishEntity(out); })(),
+      doubleClickPolicy: (() => { const out = allocateEntity<unknown>(); out.setIgnore = async () => {
           return { outcome: 'updated' as const };
-        },
-      }),
-      pressedImage: createEntity({
-        async set() {
+        }; return finishEntity(out); })(),
+      pressedImage: (() => { const out = allocateEntity<unknown>(); out.set = async () => {
           return { outcome: 'updated' as const };
-        },
-      }),
-      balloon: createEntity({
-        async display() {
+        }; return finishEntity(out); })(),
+      balloon: (() => { const out = allocateEntity<unknown>(); out.display = async () => {
           return { outcome: 'displayed' as const };
-        },
-        async remove() {
+        }; out.remove = async () => {
           return { outcome: 'removed' as const };
-        },
-      }),
-      interactionEvents: createEntity({
-        getSignal: (tray: TrayIcon) => signalFor(state.interactionEvents, tray),
-      }),
-      menuSelectionEvents: createEntity({
-        getSignal: (tray: TrayIcon) => signalFor(state.menuSelectionEvents, tray),
-      }),
-      balloonEvents: createEntity({ getSignal: (tray: TrayIcon) => signalFor(state.balloonEvents, tray) }),
-      dropEvents: createEntity({ getSignal: (tray: TrayIcon) => signalFor(state.dropEvents, tray) }),
+        }; return finishEntity(out); })(),
+      interactionEvents: (() => { const out = allocateEntity<unknown>(); out.getSignal = (tray: TrayIcon) => signalFor(state.interactionEvents, tray); return finishEntity(out); })(),
+      menuSelectionEvents: (() => { const out = allocateEntity<unknown>(); out.getSignal = (tray: TrayIcon) => signalFor(state.menuSelectionEvents, tray); return finishEntity(out); })(),
+      balloonEvents: (() => { const out = allocateEntity<unknown>(); out.getSignal = (tray: TrayIcon) => signalFor(state.balloonEvents, tray); return finishEntity(out); })(),
+      dropEvents: (() => { const out = allocateEntity<unknown>(); out.getSignal = (tray: TrayIcon) => signalFor(state.dropEvents, tray); return finishEntity(out); })(),
     },
   };
   return { host: host as TestHost, state };
