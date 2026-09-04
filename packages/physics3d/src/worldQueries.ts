@@ -568,11 +568,15 @@ function releasePhysics3DQueryScratch(scratch: Physics3DQueryScratch): void {
 
 // A stand-in collider so a bare shape can reuse `writePhysics3DColliderBounds`. Only `world` is read by
 // that function; the rest is filled to keep the object one shape rather than a partial.
-const shapeCastProbe = allocateEntity<Physics3DCollider>();
-shapeCastProbe.filter = { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff };
-shapeCastProbe.local = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
-shapeCastProbe.material = { density: 0, friction: 0, restitution: 0 };
-shapeCastProbe.sensor = false;
-shapeCastProbe.world = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
+function createShapeCastProbe(): Physics3DCollider {
+  const out = allocateEntity<Physics3DCollider>();
+  out.filter = { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff };
+  out.local = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
+  out.material = { density: 0, friction: 0, restitution: 0 };
+  out.sensor = false;
+  out.world = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
+  return out;
+}
+const shapeCastProbe = createShapeCastProbe();
 
 const physics3DQueryScratchPool: Physics3DQueryScratch[] = [createPhysics3DQueryScratch()];

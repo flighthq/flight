@@ -210,8 +210,12 @@ function wrapSkeleton2DAngle(degrees: number): number {
 }
 
 const MINIMUM_DETERMINANT = 1e-9;
-const _path = allocateEntity<Path>();
-assignPathFields(_path, [] as number[], [] as number[], 'nonZero');
+function createScratchPath(): Path {
+  const out = allocateEntity<Path>();
+  assignPathFields(out, [] as number[], [] as number[], 'nonZero');
+  return out;
+}
+const _path = createScratchPath();
 const _point = { x: 0, y: 0 };
 const _tangent = { x: 0, y: 0 };
 let _positions = new Float64Array(0);
