@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityRuntimeKey,
   StorageBackend,
   StorageChangeBackend,
   StorageClearFailureReason,
@@ -17,8 +16,9 @@ let destroyed = false;
 // One stable Entity supplies the two truthful Web Host facets: synchronous local commands and external
 // `storage` events. The command facet remains usable without event listeners; destroy is terminal for
 // event acquisition and releases every exact listener pair retained by the change facet.
-export const webStorageBackend = createEntity({
-  clear() {
+export const webStorageBackend = (() => {
+  const out = allocateEntity<WebStorageBackend>();
+  out.clear = () => {
     try {
       const storage = getWebLocalStorage();
       if (storage === null) return { reason: 'runtime-unavailable' };
@@ -27,14 +27,14 @@ export const webStorageBackend = createEntity({
     } catch (error) {
       return { reason: classifyWebStorageClearFailure(error) };
     }
-  },
-  destroy() {
+  };
+  out.destroy = () => {
     if (destroyed) return;
     destroyed = true;
     for (const release of [...releases]) release();
     releases.clear();
-  },
-  getItem(key) {
+  };
+  out.getItem = (key) => {
     try {
       const storage = getWebLocalStorage();
       if (storage === null) return { reason: 'runtime-unavailable', value: null };
@@ -42,8 +42,8 @@ export const webStorageBackend = createEntity({
     } catch (error) {
       return { reason: classifyWebStorageReadFailure(error), value: null };
     }
-  },
-  keys() {
+  };
+  out.keys = () => {
     try {
       const storage = getWebLocalStorage();
       if (storage === null) return { reason: 'runtime-unavailable', value: null };
@@ -56,8 +56,8 @@ export const webStorageBackend = createEntity({
     } catch (error) {
       return { reason: classifyWebStorageReadFailure(error), value: null };
     }
-  },
-  removeItem(key) {
+  };
+  out.removeItem = (key) => {
     try {
       const storage = getWebLocalStorage();
       if (storage === null) return { reason: 'runtime-unavailable' };
@@ -66,8 +66,8 @@ export const webStorageBackend = createEntity({
     } catch (error) {
       return { reason: classifyWebStorageRemoveFailure(error) };
     }
-  },
-  setItem(key, value) {
+  };
+  out.setItem = (key, value) => {
     try {
       const storage = getWebLocalStorage();
       if (storage === null) return { reason: 'runtime-unavailable' };
@@ -76,8 +76,8 @@ export const webStorageBackend = createEntity({
     } catch (error) {
       return { reason: classifyWebStorageSetFailure(error) };
     }
-  },
-  subscribe(listener) {
+  };
+  out.subscribe = (listener) => {
     if (
       destroyed ||
       typeof window === 'undefined' ||
@@ -112,8 +112,9 @@ export const webStorageBackend = createEntity({
     };
     releases.add(release);
     return release;
-  },
-} satisfies Omit<WebStorageBackend, typeof EntityRuntimeKey>);
+  };
+  return finishEntity(out);
+})();
 
 function classifyWebStorageClearFailure(error: unknown): StorageClearFailureReason {
   const name = getErrorName(error);

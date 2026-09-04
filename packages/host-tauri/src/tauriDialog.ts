@@ -4,7 +4,6 @@ import type {
   DirectoryOpenDialogBackend,
   DirectoryOpenDialogResult,
   Entity,
-  EntityRuntimeKey,
   FileDialogFilter,
   FileOpenDialogBackend,
   FileOpenDialogResult,
@@ -40,30 +39,30 @@ export function createTauriDirectoryOpenDialogBackend(tauri: TauriApi): Director
 }
 
 export function createTauriFileOpenDialogBackend(tauri: TauriApi): FileOpenDialogBackend & Entity {
-  return createEntity({
-    async open(options): Promise<FileOpenDialogResult> {
-      if (options.signal?.aborted) return { outcome: 'cancelled' };
-      const open = tauri.dialog?.open;
-      if (typeof open !== 'function') return { outcome: 'runtime-unavailable' };
-      try {
-        const result = await open.call(tauri.dialog, {
-          directory: false,
-          filters: toTauriFilters(options.filters),
-          multiple: options.multiple ?? false,
-        });
-        const paths = normalizePaths(result);
-        if (paths === null) return { outcome: 'cancelled' };
-        if (paths.length === 0) return { outcome: 'file-open-failed' };
-        const handles = paths.map((path) => createNativeHandle(path, 'File'));
-        return {
-          handles: handles as [(typeof handles)[number], ...(typeof handles)[number][]],
-          outcome: 'selected',
-        };
-      } catch (error) {
-        return { outcome: classifyFailure(error, 'file-open-failed') };
-      }
-    },
-  } satisfies Omit<FileOpenDialogBackend, typeof EntityRuntimeKey>);
+  const out = allocateEntity<FileOpenDialogBackend>();
+  out.open = async (options): Promise<FileOpenDialogResult> => {
+    if (options.signal?.aborted) return { outcome: 'cancelled' };
+    const open = tauri.dialog?.open;
+    if (typeof open !== 'function') return { outcome: 'runtime-unavailable' };
+    try {
+      const result = await open.call(tauri.dialog, {
+        directory: false,
+        filters: toTauriFilters(options.filters),
+        multiple: options.multiple ?? false,
+      });
+      const paths = normalizePaths(result);
+      if (paths === null) return { outcome: 'cancelled' };
+      if (paths.length === 0) return { outcome: 'file-open-failed' };
+      const handles = paths.map((path) => createNativeHandle(path, 'File'));
+      return {
+        handles: handles as [(typeof handles)[number], ...(typeof handles)[number][]],
+        outcome: 'selected',
+      };
+    } catch (error) {
+      return { outcome: classifyFailure(error, 'file-open-failed') };
+    }
+  };
+  return finishEntity(out);
 }
 
 export function createTauriFileSaveDialogBackend(tauri: TauriApi): FileSaveDialogBackend & Entity {

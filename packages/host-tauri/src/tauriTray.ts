@@ -36,8 +36,9 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
 ): TauriTrayCapabilitiesFor<Profile> {
   const records = new Map<TrayIcon, TrayRecord>();
 
-  const lifecycle = createEntity({
-    async create(tray: TrayIcon, options: Readonly<TrayIconOptions>) {
+  const lifecycle = (() => {
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
       if (options.signal?.aborted) return { outcome: 'cancelled' as const };
       const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
       const menuSelectionEvents = createSignal<(event: Readonly<TrayMenuSelectionEvent>) => void>();
@@ -75,8 +76,8 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
         tooltip: options.tooltip ?? '',
       });
       return { outcome: 'created' as const };
-    },
-    async destroy(tray: TrayIcon) {
+    };
+    out.destroy = async (tray: TrayIcon) => {
       const record = records.get(tray);
       if (record === undefined) return { outcome: 'destroyed' as const };
       record.destroying = true;
@@ -104,10 +105,11 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
       if (failures.length > 0) return { failures, outcome: 'tray-destroy-failed' as const };
       records.delete(tray);
       return { outcome: 'destroyed' as const };
-    },
-    isDestroyed: (tray: TrayIcon) => records.get(tray)?.destroying ?? true,
-    list: () => [...records.entries()].filter(([, record]) => !record.destroying).map(([tray]) => tray),
-  });
+    };
+    out.isDestroyed = (tray: TrayIcon) => records.get(tray)?.destroying ?? true;
+    out.list = () => [...records.entries()].filter(([, record]) => !record.destroying).map(([tray]) => tray);
+    return finishEntity(out);
+  })();
 
   const image = (() => {
     const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
@@ -207,7 +209,15 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     return finishEntity(out);
   })();
 
-  if (profile === 'linux') return createEntity({ ...common, title }) as unknown as TauriTrayCapabilitiesFor<Profile>;
+  if (profile === 'linux') {
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.image = common.image;
+    out.lifecycle = common.lifecycle;
+    out.menu = common.menu;
+    out.menuSelectionEvents = common.menuSelectionEvents;
+    out.title = title;
+    return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
+  }
 
   const interactionEvents = (() => {
     const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
@@ -233,23 +243,34 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   })();
 
   if (profile === 'windows') {
-    return createEntity({ ...common, interactionEvents, tooltip }) as unknown as TauriTrayCapabilitiesFor<Profile>;
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.image = common.image;
+    out.lifecycle = common.lifecycle;
+    out.menu = common.menu;
+    out.menuSelectionEvents = common.menuSelectionEvents;
+    out.interactionEvents = interactionEvents;
+    out.tooltip = tooltip;
+    return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
-  // The double cast is what a generic conditional return costs; createEntity is what makes the Entity
-  // arm of that claim true at runtime rather than only in the annotation.
-  return createEntity({
-    ...common,
-    interactionEvents,
-    templateImage: createEntity({
-      async set(tray: TrayIcon, isTemplate: boolean) {
-        return update(records, tray, 'template-image-update-failed', async (record) =>
-          record.icon.setIconAsTemplate(isTemplate),
-        );
-      },
-    }),
-    title,
-    tooltip,
-  }) as unknown as TauriTrayCapabilitiesFor<Profile>;
+  // The double cast is what a generic conditional return costs; allocateEntity/finishEntity is what
+  // makes the Entity arm of that claim true at runtime rather than only in the annotation.
+  const templateImageEntity = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+  templateImageEntity.set = async (tray: TrayIcon, isTemplate: boolean) => {
+    return update(records, tray, 'template-image-update-failed', async (record) =>
+      record.icon.setIconAsTemplate(isTemplate),
+    );
+  };
+  const templateImage = finishEntity(templateImageEntity);
+  const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+  out.image = common.image;
+  out.lifecycle = common.lifecycle;
+  out.menu = common.menu;
+  out.menuSelectionEvents = common.menuSelectionEvents;
+  out.interactionEvents = interactionEvents;
+  out.templateImage = templateImage;
+  out.title = title;
+  out.tooltip = tooltip;
+  return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
 }
 
 function activeRecord(records: ReadonlyMap<TrayIcon, TrayRecord>, tray: TrayIcon): TrayRecord | null {

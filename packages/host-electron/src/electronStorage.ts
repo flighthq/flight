@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   Entity,
-  EntityRuntimeKey,
   StorageBackend,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
@@ -73,45 +72,45 @@ export function createElectronStorageBackend(
 
   const storagePath = (): string => `${electron.app.getPath('userData')}/${fileName}`;
 
-  return createEntity({
-    clear() {
-      const candidate: StorageRecord = {};
-      const result = persist(candidate, 'clear-failed');
-      if (result.reason === 'ok') cache = candidate;
-      return result;
-    },
-    getItem(key) {
-      const loaded = load();
-      if (loaded.reason !== 'ok') return loaded;
-      return {
-        reason: 'ok',
-        value: Object.prototype.hasOwnProperty.call(loaded.value, key) ? loaded.value[key] : null,
-      };
-    },
-    keys() {
-      const loaded = load();
-      if (loaded.reason !== 'ok') return loaded;
-      return { reason: 'ok', value: Object.keys(loaded.value) };
-    },
-    removeItem(key) {
-      const loaded = load();
-      if (loaded.reason !== 'ok') return { reason: loaded.reason };
-      if (!Object.prototype.hasOwnProperty.call(loaded.value, key)) return { reason: 'ok' };
-      const candidate = { ...loaded.value };
-      delete candidate[key];
-      const result = persist(candidate, 'remove-failed');
-      if (result.reason === 'ok') cache = candidate;
-      return result;
-    },
-    setItem(key, value) {
-      const loaded = load();
-      if (loaded.reason !== 'ok') return { reason: loaded.reason };
-      const candidate = { ...loaded.value, [key]: value };
-      const result = persist(candidate, 'write-failed');
-      if (result.reason === 'ok') cache = candidate;
-      return result;
-    },
-  } satisfies Omit<StorageBackend, typeof EntityRuntimeKey>);
+  const out = allocateEntity<StorageBackend>();
+  out.clear = () => {
+    const candidate: StorageRecord = {};
+    const result = persist(candidate, 'clear-failed');
+    if (result.reason === 'ok') cache = candidate;
+    return result;
+  };
+  out.getItem = (key) => {
+    const loaded = load();
+    if (loaded.reason !== 'ok') return loaded;
+    return {
+      reason: 'ok',
+      value: Object.prototype.hasOwnProperty.call(loaded.value, key) ? loaded.value[key] : null,
+    };
+  };
+  out.keys = () => {
+    const loaded = load();
+    if (loaded.reason !== 'ok') return loaded;
+    return { reason: 'ok', value: Object.keys(loaded.value) };
+  };
+  out.removeItem = (key) => {
+    const loaded = load();
+    if (loaded.reason !== 'ok') return { reason: loaded.reason };
+    if (!Object.prototype.hasOwnProperty.call(loaded.value, key)) return { reason: 'ok' };
+    const candidate = { ...loaded.value };
+    delete candidate[key];
+    const result = persist(candidate, 'remove-failed');
+    if (result.reason === 'ok') cache = candidate;
+    return result;
+  };
+  out.setItem = (key, value) => {
+    const loaded = load();
+    if (loaded.reason !== 'ok') return { reason: loaded.reason };
+    const candidate = { ...loaded.value, [key]: value };
+    const result = persist(candidate, 'write-failed');
+    if (result.reason === 'ok') cache = candidate;
+    return result;
+  };
+  return finishEntity(out);
 }
 
 function classifyMutationFailure<FailureReason extends string>(

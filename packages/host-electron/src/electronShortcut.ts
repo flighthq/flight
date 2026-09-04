@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
   ElectronApi,
+  Entity,
   ShortcutQueryBackend,
   ShortcutTriggerBackend,
   ShortcutTriggerSubscription,
@@ -12,7 +13,7 @@ export function createElectronShortcutQueryBackend(electron: ElectronApi): Short
   provider.isRegistered = async (accelerator: Accelerator) => {
       return electron.globalShortcut.isRegistered(accelerator);
     };
-  return provider;
+  return finishEntity(provider);
 }
 
 // Electron registration is synchronous, but the provider lifts it into the same awaited subscription
@@ -43,7 +44,7 @@ export function createElectronShortcutTriggerBackend(electron: ElectronApi): Sho
       if (firstError !== undefined) throw firstError;
     };
     out.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
-      const subscription = createEntity();
+      const subscription = finishEntity(allocateEntity<Entity>());
       const registered = globalShortcut.register(accelerator, trigger);
       if (!registered) return { reason: 'refused' as const };
       registrations.set(subscription, accelerator);

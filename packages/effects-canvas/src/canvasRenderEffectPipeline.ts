@@ -69,12 +69,12 @@ export function createCanvasRenderEffectPipeline(
   state: CanvasRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): CanvasRenderEffectPipeline {
-  return createEntity({
-    options: { ...options },
-    sceneTarget: null,
-    pool: createCanvasRenderTargetPool(state.surface.creator),
-    lutCache: createColorLutCache(),
-  });
+  const out = allocateEntity<CanvasRenderEffectPipeline>();
+  out.options = { ...options };
+  out.sceneTarget = null;
+  out.pool = createCanvasRenderTargetPool(state.surface.creator);
+  out.lutCache = createColorLutCache();
+  return finishEntity(out);
 }
 
 export function createCanvasRenderTargetPool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTargetPool {

@@ -48,8 +48,9 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
 ): ElectronTrayCapabilitiesFor<Profile> {
   const records = new Map<TrayIcon, TrayRecord>();
 
-  const lifecycle = createEntity({
-    async create(tray: TrayIcon, options: Readonly<TrayIconOptions>) {
+  const lifecycle = (() => {
+    const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
+    out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
       if (options.signal?.aborted) return { outcome: 'cancelled' as const };
       let image: ElectronNativeImage;
       try {
@@ -98,18 +99,19 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
         await releaseRecord(record);
         return { error, outcome: 'tray-create-failed' as const };
       }
-    },
-    async destroy(tray: TrayIcon) {
+    };
+    out.destroy = async (tray: TrayIcon) => {
       const record = records.get(tray);
       if (record === undefined) return { outcome: 'destroyed' as const };
       const failures = await releaseRecord(record);
       if (failures.length > 0) return { failures, outcome: 'tray-destroy-failed' as const };
       records.delete(tray);
       return { outcome: 'destroyed' as const };
-    },
-    isDestroyed: (tray: TrayIcon) => records.get(tray)?.tray.isDestroyed() ?? true,
-    list: () => [...records.keys()],
-  });
+    };
+    out.isDestroyed = (tray: TrayIcon) => records.get(tray)?.tray.isDestroyed() ?? true;
+    out.list = () => [...records.keys()];
+    return finishEntity(out);
+  })();
 
   const image = (() => {
     const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
@@ -260,10 +262,21 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
           }
         }; return finishEntity(out); })(),
     };
-    return createEntity({
-      ...common,
-      ...macos,
-    }) as unknown as ElectronTrayCapabilitiesFor<Profile>;
+    const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
+    out.bounds = common.bounds;
+    out.image = common.image;
+    out.interactionEvents = common.interactionEvents;
+    out.lifecycle = common.lifecycle;
+    out.menu = common.menu;
+    out.menuSelectionEvents = common.menuSelectionEvents;
+    out.popupMenu = common.popupMenu;
+    out.tooltip = common.tooltip;
+    out.doubleClickPolicy = macos.doubleClickPolicy;
+    out.dropEvents = macos.dropEvents;
+    out.pressedImage = macos.pressedImage;
+    out.templateImage = macos.templateImage;
+    out.title = macos.title;
+    return finishEntity(out) as unknown as ElectronTrayCapabilitiesFor<Profile>;
   }
 
   if (profile === 'windows') {
@@ -300,15 +313,25 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
         }; return finishEntity(out); })(),
       balloonEvents: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.getSignal = (tray: TrayIcon) => records.get(tray)?.balloonEvents ?? null; return finishEntity(out); })(),
     };
-    return createEntity({
-      ...common,
-      ...windows,
-    }) as unknown as ElectronTrayCapabilitiesFor<Profile>;
+    const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
+    out.bounds = common.bounds;
+    out.image = common.image;
+    out.interactionEvents = common.interactionEvents;
+    out.lifecycle = common.lifecycle;
+    out.menu = common.menu;
+    out.menuSelectionEvents = common.menuSelectionEvents;
+    out.popupMenu = common.popupMenu;
+    out.tooltip = common.tooltip;
+    out.balloon = windows.balloon;
+    out.balloonEvents = windows.balloonEvents;
+    return finishEntity(out) as unknown as ElectronTrayCapabilitiesFor<Profile>;
   }
 
-  // The double cast is what a generic conditional return costs; createEntity is what makes the Entity
-  // arm of that claim true at runtime rather than only in the annotation.
-  return createEntity(common) as unknown as ElectronTrayCapabilitiesFor<Profile>;
+  // The double cast is what a generic conditional return costs; allocateEntity/finishEntity is what
+  // makes the Entity arm of that claim true at runtime rather than only in the annotation.
+  const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
+  Object.assign(out, common);
+  return finishEntity(out) as unknown as ElectronTrayCapabilitiesFor<Profile>;
 
   function attachNativeListeners(record: TrayRecord, osProfile: DesktopOsProfile): void {
     const interaction =

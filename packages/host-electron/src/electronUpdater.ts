@@ -68,54 +68,54 @@ export function createElectronUpdaterBackend(electron: ElectronApi, feedUrl?: st
     transaction.resolve(outcome);
   }
 
-  return createEntity({
-    check(): Promise<AppUpdateCheckOutcome> {
-      if (destroyed) return Promise.resolve(OPERATION_FAILED);
-      if (current !== null) return Promise.resolve(CHECK_IN_PROGRESS);
+  const out = allocateEntity<UpdaterCommandBackend>();
+  out.check = (): Promise<AppUpdateCheckOutcome> => {
+    if (destroyed) return Promise.resolve(OPERATION_FAILED);
+    if (current !== null) return Promise.resolve(CHECK_IN_PROGRESS);
 
-      return new Promise((resolve) => {
-        const transaction: CheckTransaction = { active: true, cleanups: new Set(), resolve };
-        current = transaction;
-        const activeNoop = () => {
-          if (!transaction.active) return;
-        };
-        try {
-          attach(transaction, 'checking-for-update', activeNoop);
-          attach(transaction, 'update-available', activeNoop);
-          attach(transaction, 'update-not-available', () => settle(transaction, NOT_AVAILABLE));
-          attach(transaction, 'update-downloaded', (...args) => {
-            const update = createDownloadedUpdate(args);
-            settle(transaction, Object.freeze({ reason: 'downloaded', update }));
-          });
-          attach(transaction, 'error', () => settle(transaction, OPERATION_FAILED));
-          autoUpdater.checkForUpdates();
-        } catch {
-          settle(transaction, OPERATION_FAILED);
-        }
-      });
-    },
-    destroy(): void {
-      destroyed = true;
-      const transaction = current;
-      if (transaction !== null && transaction.active) {
-        transaction.active = false;
-        current = null;
-      }
-      const cleanupError = release(providerCleanups);
-      transaction?.resolve(OPERATION_FAILED);
-      if (cleanupError !== undefined) throw cleanupError;
-    },
-    async install(update): Promise<AppUpdateInstallOutcome> {
-      if (destroyed || !downloadedUpdates.has(update)) return OPERATION_FAILED;
+    return new Promise((resolve) => {
+      const transaction: CheckTransaction = { active: true, cleanups: new Set(), resolve };
+      current = transaction;
+      const activeNoop = () => {
+        if (!transaction.active) return;
+      };
       try {
-        autoUpdater.quitAndInstall();
-        downloadedUpdates.delete(update);
-        return INSTALL_OK;
+        attach(transaction, 'checking-for-update', activeNoop);
+        attach(transaction, 'update-available', activeNoop);
+        attach(transaction, 'update-not-available', () => settle(transaction, NOT_AVAILABLE));
+        attach(transaction, 'update-downloaded', (...args) => {
+          const update = createDownloadedUpdate(args);
+          settle(transaction, Object.freeze({ reason: 'downloaded', update }));
+        });
+        attach(transaction, 'error', () => settle(transaction, OPERATION_FAILED));
+        autoUpdater.checkForUpdates();
       } catch {
-        return OPERATION_FAILED;
+        settle(transaction, OPERATION_FAILED);
       }
-    },
-  } satisfies Omit<UpdaterCommandBackend, symbol>);
+    });
+  };
+  out.destroy = (): void => {
+    destroyed = true;
+    const transaction = current;
+    if (transaction !== null && transaction.active) {
+      transaction.active = false;
+      current = null;
+    }
+    const cleanupError = release(providerCleanups);
+    transaction?.resolve(OPERATION_FAILED);
+    if (cleanupError !== undefined) throw cleanupError;
+  };
+  out.install = async (update): Promise<AppUpdateInstallOutcome> => {
+    if (destroyed || !downloadedUpdates.has(update)) return OPERATION_FAILED;
+    try {
+      autoUpdater.quitAndInstall();
+      downloadedUpdates.delete(update);
+      return INSTALL_OK;
+    } catch {
+      return OPERATION_FAILED;
+    }
+  };
+  return finishEntity(out);
 }
 
 // Electron emits (event, releaseNotes, releaseName, releaseDate). Every richer metadata field remains
@@ -130,7 +130,7 @@ function createDownloadedUpdate(args: readonly unknown[]): DownloadedUpdate {
     sha512: null,
     version: knownString(args[2]),
   });
-  return Object.freeze((() => { const out = allocateEntity<UpdaterCommandBackend>(); out.info = info; return finishEntity(out); })());
+  return Object.freeze((() => { const out = allocateEntity<DownloadedUpdate>(); out.info = info; return finishEntity(out); })());
 }
 
 function knownString(value: unknown): string | null {
