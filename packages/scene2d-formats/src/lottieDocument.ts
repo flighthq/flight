@@ -76,6 +76,7 @@ import type {
   Node2DAnimationTarget,
   Path,
   Shape,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
@@ -110,11 +111,7 @@ export function createScene2DFromLottieDocument(
       'createScene2DFromLottieDocument',
     );
     const out = allocateEntity<LottieDocumentImportResult>();
-    out.advancedBlends = [];
-    out.clip = createAnimationClip([]);
-    out.duration = 0;
-    out.frameRate = 0;
-    out.root = root;
+    initializeLottieDocumentImportResult(out, root, [], createAnimationClip([]), 0, 0);
     return finishEntity(out);
   }
 
@@ -137,12 +134,30 @@ export function createScene2DFromLottieDocument(
     }),
   );
   const out = allocateEntity<LottieDocumentImportResult>();
-  out.advancedBlends = context.advancedBlends;
-  out.clip = createAnimationClip(context.channels, duration, events);
-  out.duration = duration;
-  out.frameRate = document.fr;
-  out.root = root;
+  initializeLottieDocumentImportResult(
+    out,
+    root,
+    context.advancedBlends,
+    createAnimationClip(context.channels, duration, events),
+    duration,
+    document.fr,
+  );
   return finishEntity(out);
+}
+
+export function initializeLottieDocumentImportResult(
+  out: EntityConstruction<LottieDocumentImportResult>,
+  root: DisplayObject,
+  advancedBlends: LottieAdvancedBlend[],
+  clip: AnimationClip,
+  duration: number,
+  frameRate: number,
+): void {
+  out.advancedBlends = advancedBlends;
+  out.clip = clip;
+  out.duration = duration;
+  out.frameRate = frameRate;
+  out.root = root;
 }
 
 interface LottieImportContext {

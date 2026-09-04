@@ -4,6 +4,7 @@ import type {
   Bitmap,
   ColorScaleBias,
   CompressedImageResource,
+  EntityConstruction,
   HasColorScaleBias,
   ImageResource,
   RenderProxy,
@@ -320,10 +321,7 @@ export function createWgpuTextureEntry(
   const view = texture.createView();
 
   const out = allocateEntity<WgpuTextureEntry>();
-  out.bindings = new Map();
-  out.mipLevelCount = 1;
-  out.texture = texture;
-  out.view = view;
+  initializeWgpuTextureEntry(out, texture, view);
   return finishEntity(out);
 }
 
@@ -340,26 +338,6 @@ export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Re
     destroyed = true;
   }
   return destroyed;
-}
-
-function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
-  return state.device.createBindGroup({
-    layout: getWgpuRenderStateDeviceResources(state).textureBindGroupLayout,
-    entries: [
-      { binding: 0, resource: view },
-      { binding: 1, resource: sampler },
-    ],
-  });
-}
-
-function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<Texture>): GPUSampler {
-  const sampler = videoTexture.sampler;
-  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  // A live frame carries base level only; mip-aware filters collapse to their base filter rather than
-  // sampling absent levels. Regenerating a full chain for every decoded frame would defeat the video
-  // dirty gate.
-  return getWgpuSampler(state, minFilter, magFilter, sampler.wrapU, sampler.wrapV, undefined, sampler.anisotropy);
 }
 
 export function drawWgpuQuad(
@@ -394,6 +372,26 @@ export function drawWgpuQuad(
     textureEntry.straightAlpha === true,
   );
   submitWgpuQuadDraw(state, uniformOffset, resolveWgpuSmoothingBindGroup(state, textureEntry, null));
+}
+
+function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
+  return state.device.createBindGroup({
+    layout: getWgpuRenderStateDeviceResources(state).textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: view },
+      { binding: 1, resource: sampler },
+    ],
+  });
+}
+
+function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<Texture>): GPUSampler {
+  const sampler = videoTexture.sampler;
+  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  // A live frame carries base level only; mip-aware filters collapse to their base filter rather than
+  // sampling absent levels. Regenerating a full chain for every decoded frame would defeat the video
+  // dirty gate.
+  return getWgpuSampler(state, minFilter, magFilter, sampler.wrapU, sampler.wrapV, undefined, sampler.anisotropy);
 }
 
 export function drawWgpuQuadWithTransform(
@@ -438,6 +436,17 @@ export function enableWgpuBlendModeSupport(state: WgpuRenderState): void {
 // by the immediate (display-object) draw path; the batch path folds it per-instance instead.
 export function getWgpuRenderProxyColorScaleBias(renderProxy: Readonly<RenderProxy>): ColorScaleBias | null {
   return (renderProxy as Readonly<Partial<HasColorScaleBias>>).colorScaleBias ?? null;
+}
+
+export function initializeWgpuTextureEntry(
+  out: EntityConstruction<WgpuTextureEntry>,
+  texture: GPUTexture,
+  view: GPUTextureView,
+): void {
+  out.bindings = new Map();
+  out.mipLevelCount = 1;
+  out.texture = texture;
+  out.view = view;
 }
 
 // The group(1) bind group a 2D bitmap should sample through for a per-bitmap `smoothing` preference:
