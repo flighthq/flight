@@ -55,7 +55,8 @@ function backdropTarget(): CanvasRenderTarget {
 }
 
 function blendEffect(over: Partial<BlendEffect> = {}): BlendEffect {
-  return createBlendEffect('Overlay', over);
+  const { mode = 'Overlay', ...rest } = over;
+  return createBlendEffect(mode, rest);
 }
 
 afterEach(() => {

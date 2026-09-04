@@ -12,6 +12,7 @@ import type {
   MenuPopupBackend,
   MenuSelectBackend,
 } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   attachMenuHighlight,
@@ -199,15 +200,8 @@ describe('createMenuSelect', () => {
 
 describe('destroyMenuApplication', () => {
   function applicationHostWith(provider: EntityWithoutRuntime<MenuApplicationBackend>): HasMenuApplication {
-    return {
-      menu: {
-        application: (() => {
-          const out = allocateEntity<any>();
-          Object.assign(out, provider);
-          return finishEntity(out);
-        })(),
-      },
-    };
+    (provider as Record<symbol, unknown>)[EntityRuntimeKey] = undefined;
+    return { menu: { application: provider as MenuApplicationBackend } };
   }
 
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {

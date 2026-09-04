@@ -15,11 +15,11 @@ describe('Shortcut explicit dependency structure', () => {
     expect(hostTypes).toContain('export interface HasShortcutTrigger');
     expect(hostTypes).toContain('export interface HasShortcutQuery');
 
-    expect(source('packages/host-web/src/webHost.ts')).toMatch(/shortcut:\s*\{\}/u);
-    expect(source('packages/host-capacitor/src/capacitorRegister.ts')).toMatch(/shortcut:\s*\{\}/u);
+    expect(source('packages/host-web/src/webHost.ts')).toMatch(/shortcut\s*[:=]\s*\{\}/u);
+    expect(source('packages/host-capacitor/src/capacitorRegister.ts')).toMatch(/shortcut\s*[:=]\s*\{\}/u);
     for (const path of ['packages/host-electron/src/electronRegister.ts', 'packages/host-tauri/src/tauriRegister.ts']) {
       const host = source(path);
-      expect(host).toMatch(/shortcut:\s*\{\s*query,\s*trigger\s*\}/u);
+      expect(host).toMatch(/shortcut\s*[:=]\s*\{\s*query,\s*trigger\s*\}/u);
       expect(host).not.toContain('setShortcutBackend');
     }
   });

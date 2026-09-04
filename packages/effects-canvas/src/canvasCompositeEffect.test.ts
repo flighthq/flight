@@ -46,7 +46,8 @@ function backdropTarget(): CanvasRenderTarget {
 }
 
 function compositeEffect(over: Partial<CompositeEffect> = {}): CompositeEffect {
-  return createCompositeEffect('SourceOver', over);
+  const { operator = 'SourceOver', ...rest } = over;
+  return createCompositeEffect(operator, rest);
 }
 
 afterEach(() => {

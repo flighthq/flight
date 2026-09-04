@@ -108,6 +108,7 @@ describe('computeRenderEffectCaptureGeometry', () => {
     const state = createRenderState();
     const effect = allocateEntity<Node2D>();
     effect.kind = 'acme.Asymmetric';
+    registerRenderEffectPaddingResolver(state, effect.kind, () => ({ bottom: 7, left: 2, right: 5, top: 3 }));
     const source = createCaptureNode(createRectangle(-10, 6, 20.4, 11.2));
     source.x = 50;
     source.y = -30;
