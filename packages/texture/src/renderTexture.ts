@@ -1,5 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CreateRenderTextureOptions, RenderTarget, RenderTexture } from '@flighthq/types/contract';
+import type {
+  CreateRenderTextureOptions,
+  EntityConstruction,
+  RenderTarget,
+  RenderTargetColorSpace,
+  RenderTexture,
+} from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { copySampler } from './sampler';
@@ -17,18 +23,7 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
     dimension: '2d',
     source: (() => {
       const out = allocateEntity<RenderTarget>();
-      out.colorAttachments = options.colorAttachments;
-      out.colorFormats = options.colorFormats;
-      out.colorSpace = colorSpace;
-      out.clearColors = options.clearColors;
-      out.clearDepth = options.clearDepth;
-      out.depth = options.depth;
-      out.format = options.format;
-      out.height = options.height;
-      out.kind = RenderTargetTextureSourceKind;
-      out.sampleCount = options.sampleCount;
-      out.version = 0;
-      out.width = options.width;
+      initializeRenderTextureTarget(out, options, colorSpace);
       return finishEntity(out) as RenderTarget;
     })(),
     uvRotation: options.uvRotation,
@@ -43,4 +38,23 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
     texture.uvScale.y = options.uvScale.y;
   }
   return texture;
+}
+
+export function initializeRenderTextureTarget(
+  out: EntityConstruction<RenderTarget>,
+  options: Readonly<CreateRenderTextureOptions>,
+  colorSpace: RenderTargetColorSpace,
+): void {
+  out.colorAttachments = options.colorAttachments;
+  out.colorFormats = options.colorFormats;
+  out.colorSpace = colorSpace;
+  out.clearColors = options.clearColors;
+  out.clearDepth = options.clearDepth;
+  out.depth = options.depth;
+  out.format = options.format;
+  out.height = options.height;
+  out.kind = RenderTargetTextureSourceKind;
+  out.sampleCount = options.sampleCount;
+  out.version = 0;
+  out.width = options.width;
 }

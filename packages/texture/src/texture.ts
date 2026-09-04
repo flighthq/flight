@@ -3,6 +3,7 @@ import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@fligh
 import type {
   CreateTexture2DOptions,
   CreateTextureOptions,
+  EntityConstruction,
   ImageResourceReference,
   Matrix3Like,
   Texture,
@@ -44,28 +45,28 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
   switch (source.dimension) {
     case '2d': {
       const out = allocateEntity<Texture2D>();
-      Object.assign(out, common);
+      applyCommonTextureFields(out, common);
       out.dimension = '2d';
       out.source = source.source;
       return finishEntity(out) as Texture2D;
     }
     case '2d-array': {
       const out = allocateEntity<Extract<Texture, { dimension: '2d-array' }>>();
-      Object.assign(out, common);
+      applyCommonTextureFields(out, common);
       out.dimension = '2d-array';
       out.sources = source.sources.slice();
       return finishEntity(out) as Extract<Texture, { dimension: '2d-array' }>;
     }
     case '3d': {
       const out = allocateEntity<Extract<Texture, { dimension: '3d' }>>();
-      Object.assign(out, common);
+      applyCommonTextureFields(out, common);
       out.dimension = '3d';
       out.source = source.source;
       return finishEntity(out) as Extract<Texture, { dimension: '3d' }>;
     }
     case 'cube': {
       const out = allocateEntity<Extract<Texture, { dimension: 'cube' }>>();
-      Object.assign(out, common);
+      applyCommonTextureFields(out, common);
       out.dimension = 'cube';
       out.sources = source.sources.slice() as unknown as TextureSourceCubeFaces;
       return finishEntity(out) as Extract<Texture, { dimension: 'cube' }>;
@@ -126,7 +127,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
   switch (opts?.dimension) {
     case '2d-array': {
       const out = allocateEntity<Extract<Texture, { dimension: '2d-array' }>>();
-      Object.assign(out, common);
+      applyCommonTextureFields(out, common);
       out.dimension = '2d-array';
       out.sources = opts.sources?.slice() ?? [];
       texture = finishEntity(out) as Extract<Texture, { dimension: '2d-array' }>;
@@ -134,7 +135,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
     }
     case '3d': {
       const out = allocateEntity<Extract<Texture, { dimension: '3d' }>>();
-      Object.assign(out, common);
+      applyCommonTextureFields(out, common);
       out.dimension = '3d';
       out.source = opts.source ?? null;
       texture = finishEntity(out) as Extract<Texture, { dimension: '3d' }>;
@@ -142,7 +143,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
     }
     case 'cube': {
       const out = allocateEntity<Extract<Texture, { dimension: 'cube' }>>();
-      Object.assign(out, common);
+      applyCommonTextureFields(out, common);
       out.dimension = 'cube';
       out.sources = (opts.sources?.slice() ?? [
         null,
@@ -170,9 +171,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
 // single place that decides what a 2D texture is.
 export function createTexture2D(opts?: Readonly<CreateTexture2DOptions>): Texture2D {
   const out = allocateEntity<Texture2D>();
-  Object.assign(out, createCommonTextureFields(opts));
-  out.dimension = '2d';
-  out.source = opts?.source ?? null;
+  initializeTexture2D(out, opts);
   const texture = finishEntity(out) as Texture2D;
   attachTextureToResource(texture, opts?.resource);
   return texture;
@@ -288,6 +287,12 @@ export function hasTextureUvTransform(texture: Readonly<TextureUvTransform>): bo
   );
 }
 
+export function initializeTexture2D(out: EntityConstruction<Texture2D>, opts?: Readonly<CreateTexture2DOptions>): void {
+  applyCommonTextureFields(out, createCommonTextureFields(opts));
+  out.dimension = '2d';
+  out.source = opts?.source ?? null;
+}
+
 // True once the texture references a pixel source. A null source is treated as an absent slot by
 // materials, so this is the gate a material samples behind.
 export function isTextureReady(texture: Readonly<TextureLike>): boolean {
@@ -401,6 +406,20 @@ export function transformTextureUv(out: Vector2Like, texture: Readonly<TextureLi
 }
 
 // Every dimension shares these, so the leaf and the switching constructor cannot drift on a default.
+function applyCommonTextureFields(
+  out: { -readonly [K in keyof TextureLike]: TextureLike[K] },
+  fields: ReturnType<typeof createCommonTextureFields>,
+): void {
+  out.colorSpace = fields.colorSpace;
+  out.flipX = fields.flipX;
+  out.flipY = fields.flipY;
+  out.sampler = fields.sampler;
+  out.uvOffset = fields.uvOffset;
+  out.uvRotation = fields.uvRotation;
+  out.uvScale = fields.uvScale;
+  out.version = fields.version;
+}
+
 function createCommonTextureFields(opts?: Readonly<CreateTextureOptions>) {
   return {
     colorSpace: opts?.colorSpace ?? 'srgb',
