@@ -145,6 +145,12 @@ An interface such as `HasTransform2D` declares fields but does not assign them; 
 initializer (`initializeTransform2D`) owns the assignment, called from within the layer that
 introduces the trait.
 
+All `initialize*` functions are exported on the **contract lane** (`./contract`), never on the
+public lane (`.`). End-user code calls `createSprite`, not `initializeSprite`. The contract export
+serves three internal consumers: derived types in other packages that chain through the initializer,
+pools that call it to reset a recycled object, and tests. `create*` remains on the public lane.
+`allocateEntity`, `finishEntity`, and `EntityConstruction<T>` are likewise contract-only.
+
 ### Positional arguments vs options
 
 The split is mechanical: **does the value always come from the derived type, or can the user supply
