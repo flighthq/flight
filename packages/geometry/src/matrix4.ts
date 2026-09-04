@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   Matrix3Like,
   Matrix4,
   Matrix4Like,
@@ -357,7 +358,6 @@ export function createMatrix4(
   m33?: number,
 ): Matrix4 {
   const m = new Float32Array(__identity);
-  const out: Matrix4 = createEntity({ m: m });
   if (m00 !== undefined) m[0] = m00;
   if (m01 !== undefined) m[1] = m01;
   if (m02 !== undefined) m[2] = m02;
@@ -374,7 +374,9 @@ export function createMatrix4(
   if (m31 !== undefined) m[13] = m31;
   if (m32 !== undefined) m[14] = m32;
   if (m33 !== undefined) m[15] = m33;
-  return out;
+  const out = allocateEntity<Matrix4>();
+  initializeMatrix4(out, m);
+  return finishEntity(out);
 }
 
 /**
@@ -535,6 +537,10 @@ export function getMatrix4Position(out: Vector3Like, source: Readonly<Matrix4Lik
   out.x = _source[12];
   out.y = _source[13];
   out.z = _source[14];
+}
+
+export function initializeMatrix4(out: EntityConstruction<Matrix4>, m: Float32Array): void {
+  out.m = m;
 }
 
 /**

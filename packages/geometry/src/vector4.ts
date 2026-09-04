@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Vector3Like, Vector4, Vector4Like } from '@flighthq/types/contract';
 
 /**
  * Adds the x, y, z and w components of two vector objects
@@ -86,7 +86,9 @@ export function copyVector4(out: Vector4Like, source: Readonly<Vector4Like>): vo
  * - `lengthSquared = x ** 2 + y ** 2 + z ** 2 + w ** 2;`
  */
 export function createVector4(x?: number, y?: number, z?: number, w?: number): Vector4 {
-  return createEntity({ x: x ?? 0, y: y ?? 0, z: z ?? 0, w: w ?? 0 });
+  const out = allocateEntity<Vector4>();
+  initializeVector4(out, x ?? 0, y ?? 0, z ?? 0, w ?? 0);
+  return finishEntity(out);
 }
 
 /**
@@ -191,6 +193,13 @@ export function getVector4Length(source: Readonly<Vector4Like>): number {
  **/
 export function getVector4LengthSquared(source: Readonly<Vector4Like>): number {
   return source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2;
+}
+
+export function initializeVector4(out: EntityConstruction<Vector4>, x: number, y: number, z: number, w: number): void {
+  out.x = x;
+  out.y = y;
+  out.z = z;
+  out.w = w;
 }
 
 /**

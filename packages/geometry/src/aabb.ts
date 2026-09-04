@@ -1,5 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Aabb, AabbLike, BoundingSphereLike, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  Aabb,
+  AabbLike,
+  BoundingSphereLike,
+  EntityConstruction,
+  Matrix4Like,
+  Vector3,
+  Vector3Like,
+} from '@flighthq/types/contract';
 
 import { createVector3 } from './vector3';
 
@@ -64,7 +72,9 @@ export function createAabb(
     maxY ?? Number.NEGATIVE_INFINITY,
     maxZ ?? Number.NEGATIVE_INFINITY,
   );
-  return createEntity({ max: max, min: min });
+  const out = allocateEntity<Aabb>();
+  initializeAabb(out, min, max);
+  return finishEntity(out);
 }
 
 /**
@@ -187,6 +197,11 @@ export function getClosestPointOnAabb(out: Vector3Like, aabb: Readonly<AabbLike>
   out.x = Math.min(Math.max(px, minX), maxX);
   out.y = Math.min(Math.max(py, minY), maxY);
   out.z = Math.min(Math.max(pz, minZ), maxZ);
+}
+
+export function initializeAabb(out: EntityConstruction<Aabb>, min: Vector3, max: Vector3): void {
+  out.min = min;
+  out.max = max;
 }
 
 /**

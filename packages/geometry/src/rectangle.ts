@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Rectangle, RectangleLike, Vector2Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Rectangle, RectangleLike, Vector2Like } from '@flighthq/types/contract';
 
 export function cloneRectangle(source: Readonly<RectangleLike>): Rectangle {
   return createRectangle(source.x, source.y, source.width, source.height);
@@ -50,12 +50,9 @@ export function copyRectangle(out: RectangleLike, source: Readonly<RectangleLike
 }
 
 export function createRectangle(x?: number, y?: number, width?: number, height?: number): Rectangle {
-  return createEntity({
-    x: x ?? 0,
-    y: y ?? 0,
-    width: width ?? 0,
-    height: height ?? 0,
-  });
+  const out = allocateEntity<Rectangle>();
+  initializeRectangle(out, x ?? 0, y ?? 0, width ?? 0, height ?? 0);
+  return finishEntity(out);
 }
 
 export function enclosesRectangle(source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): boolean {
@@ -183,6 +180,19 @@ export function inflateRectangle(out: RectangleLike, source: Readonly<RectangleL
   out.width = width + dx * 2;
   out.y = y - dy;
   out.height = height + dy * 2;
+}
+
+export function initializeRectangle(
+  out: EntityConstruction<Rectangle>,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
+  out.x = x;
+  out.y = y;
+  out.width = width;
+  out.height = height;
 }
 
 export function intersectsRectangle(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {

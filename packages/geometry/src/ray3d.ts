@@ -1,11 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AabbLike,
   BoundingSphereLike,
+  EntityConstruction,
   Matrix4Like,
   PlaneLike,
   Ray3D,
   Ray3DLike,
+  Vector3,
   Vector3Like,
 } from '@flighthq/types/contract';
 
@@ -21,10 +23,11 @@ export function createRay3D(
   directionY?: number,
   directionZ?: number,
 ): Ray3D {
-  return createEntity({
-    direction: createVector3(directionX ?? 0, directionY ?? 0, directionZ ?? 1),
-    origin: createVector3(originX ?? 0, originY ?? 0, originZ ?? 0),
-  });
+  const origin = createVector3(originX ?? 0, originY ?? 0, originZ ?? 0);
+  const direction = createVector3(directionX ?? 0, directionY ?? 0, directionZ ?? 1);
+  const out = allocateEntity<Ray3D>();
+  initializeRay3D(out, origin, direction);
+  return finishEntity(out);
 }
 
 /**
@@ -137,6 +140,11 @@ export function getRay3DPointAt(out: Vector3Like, ray: Readonly<Ray3DLike>, t: n
   out.x = ox + dx * t;
   out.y = oy + dy * t;
   out.z = oz + dz * t;
+}
+
+export function initializeRay3D(out: EntityConstruction<Ray3D>, origin: Vector3, direction: Vector3): void {
+  out.origin = origin;
+  out.direction = direction;
 }
 
 /**

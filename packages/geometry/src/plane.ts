@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Plane, PlaneLike, Vector3Like } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Plane, PlaneLike, Vector3Like } from '@flighthq/types/contract';
 
 export function clonePlane(source: Readonly<PlaneLike>): Plane {
   return createPlane(source.a, source.b, source.c, source.d);
@@ -23,7 +23,9 @@ export function copyPlane(out: PlaneLike, source: Readonly<PlaneLike>): void {
  * degenerate plane), populated by the caller or by frustum extraction.
  */
 export function createPlane(a?: number, b?: number, c?: number, d?: number): Plane {
-  return createEntity({ a: a ?? 0, b: b ?? 0, c: c ?? 0, d: d ?? 0 });
+  const out = allocateEntity<Plane>();
+  initializePlane(out, a ?? 0, b ?? 0, c ?? 0, d ?? 0);
+  return finishEntity(out);
 }
 
 /**
@@ -64,6 +66,13 @@ export function getPlaneCoplanarPoint(out: Vector3Like, plane: Readonly<PlaneLik
  */
 export function getPlaneSignedDistanceToPoint(plane: Readonly<PlaneLike>, point: Readonly<Vector3Like>): number {
   return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
+}
+
+export function initializePlane(out: EntityConstruction<Plane>, a: number, b: number, c: number, d: number): void {
+  out.a = a;
+  out.b = b;
+  out.c = c;
+  out.d = d;
 }
 
 /**

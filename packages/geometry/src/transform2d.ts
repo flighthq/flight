@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { MatrixLike, Transform2D, Transform2DLike } from '@flighthq/types/contract';
+import type { EntityConstruction, MatrixLike, Transform2D, Transform2DLike } from '@flighthq/types/contract';
 
 // Allocates a decomposed 2D transform carrier. Defaults are the identity transform (no translation,
 // no rotation, unit scale, no skew, pivot at origin).
@@ -15,17 +15,20 @@ export function createTransform2D(
   pivotX?: number,
   pivotY?: number,
 ): Transform2D {
-  return createEntity({
-    pivotX: pivotX ?? 0,
-    pivotY: pivotY ?? 0,
-    rotation: rotation ?? 0,
-    scaleX: scaleX ?? 1,
-    scaleY: scaleY ?? 1,
-    skewX: skewX ?? 0,
-    skewY: skewY ?? 0,
-    x: x ?? 0,
-    y: y ?? 0,
-  });
+  const out = allocateEntity<Transform2D>();
+  initializeTransform2D(
+    out,
+    x ?? 0,
+    y ?? 0,
+    rotation ?? 0,
+    scaleX ?? 1,
+    scaleY ?? 1,
+    skewX ?? 0,
+    skewY ?? 0,
+    pivotX ?? 0,
+    pivotY ?? 0,
+  );
+  return finishEntity(out);
 }
 
 // Decomposes a 2D affine matrix into a `Transform2D` carrier's fields — the inverse of the display
@@ -64,4 +67,27 @@ export function decomposeMatrixToTransform2D(out: Transform2DLike, source: Reado
   out.scaleY = scaleY;
   out.x = source.tx;
   out.y = source.ty;
+}
+
+export function initializeTransform2D(
+  out: EntityConstruction<Transform2D>,
+  x: number,
+  y: number,
+  rotation: number,
+  scaleX: number,
+  scaleY: number,
+  skewX: number,
+  skewY: number,
+  pivotX: number,
+  pivotY: number,
+): void {
+  out.x = x;
+  out.y = y;
+  out.rotation = rotation;
+  out.scaleX = scaleX;
+  out.scaleY = scaleY;
+  out.skewX = skewX;
+  out.skewY = skewY;
+  out.pivotX = pivotX;
+  out.pivotY = pivotY;
 }
