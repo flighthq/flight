@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronMenuCapabilities,
-  EntityWithoutRuntime,
   MenuApplicationBackend,
   MenuPopupBackend,
   MenuSelectBackend,
@@ -24,43 +23,49 @@ export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuC
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
     const out = allocateEntity<ElectronMenuCapabilities>();
-  out.application = createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
-      // Provider lifecycle: releases the OS menu this provider installed. It deliberately does NOT end
-      // select subscriptions — those are ended by their own unsubscribe.
-      destroy(): void {
-        if (destroyed) return;
-        destroyed = true;
-        electron.Menu.setApplicationMenu(null);
-      },
-      setApplicationMenu(items): boolean {
-        electron.Menu.setApplicationMenu(
-          electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => selectListener?.(id))),
-        );
-        return true;
-      },
-    });
-  out.popup = createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
-      // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
-      // and never resolves to null from a dismissal — callers treat a non-resolving Promise as "still
-      // open". We resolve null only if popup throws.
-      popup(items, x, y): Promise<string | null> {
-        return new Promise<string | null>((resolve) => {
-          const menu = electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => resolve(id)));
-          try {
-            menu.popup({ x, y });
-          } catch {
-            resolve(null);
-          }
-        });
-      },
-    });
-  out.select = createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
-      subscribe(listener): () => void {
-        selectListener = listener;
-        return () => {
-          if (selectListener === listener) selectListener = null;
-        };
-      },
-    });
+  out.application = (() => {
+    const b = allocateEntity<MenuApplicationBackend>();
+    // Provider lifecycle: releases the OS menu this provider installed. It deliberately does NOT end
+    // select subscriptions — those are ended by their own unsubscribe.
+    b.destroy = (): void => {
+      if (destroyed) return;
+      destroyed = true;
+      electron.Menu.setApplicationMenu(null);
+    };
+    b.setApplicationMenu = (items): boolean => {
+      electron.Menu.setApplicationMenu(
+        electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => selectListener?.(id))),
+      );
+      return true;
+    };
+    return finishEntity(b);
+  })();
+  out.popup = (() => {
+    const b = allocateEntity<MenuPopupBackend>();
+    // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
+    // and never resolves to null from a dismissal — callers treat a non-resolving Promise as "still
+    // open". We resolve null only if popup throws.
+    b.popup = (items, x, y): Promise<string | null> => {
+      return new Promise<string | null>((resolve) => {
+        const menu = electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => resolve(id)));
+        try {
+          menu.popup({ x, y });
+        } catch {
+          resolve(null);
+        }
+      });
+    };
+    return finishEntity(b);
+  })();
+  out.select = (() => {
+    const b = allocateEntity<MenuSelectBackend>();
+    b.subscribe = (listener): (() => void) => {
+      selectListener = listener;
+      return () => {
+        if (selectListener === listener) selectListener = null;
+      };
+    };
+    return finishEntity(b);
+  })();
   return finishEntity(out);
 }

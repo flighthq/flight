@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
+  Entity,
   ShortcutQueryBackend,
   ShortcutTriggerBackend,
   ShortcutTriggerSubscription,
@@ -29,40 +30,39 @@ export function createTauriShortcutTriggerBackend(tauri: TauriApi): ShortcutTrig
     }
   }
 
-  const provider = createEntity({
-    async destroy() {
-      await Promise.allSettled([...pending]);
-      let firstError: unknown;
-      const accelerators = new Set(registrations.values());
-      for (const accelerator of accelerators) {
-        try {
-          await releaseAccelerator(accelerator);
-        } catch (error) {
-          if (firstError === undefined) firstError = error;
-        }
-      }
-      if (firstError !== undefined) throw firstError;
-    },
-    async subscribe(accelerator: Accelerator, trigger: () => void) {
-      const subscription = createEntity();
-      const registration = globalShortcut.register(accelerator, (event) => {
-        if (event.state === 'Pressed' && registrations.has(subscription)) trigger();
-      });
-      pending.add(registration);
+  const provider = allocateEntity<ShortcutTriggerBackend>();
+  provider.destroy = async () => {
+    await Promise.allSettled([...pending]);
+    let firstError: unknown;
+    const accelerators = new Set(registrations.values());
+    for (const accelerator of accelerators) {
       try {
-        await registration;
-        registrations.set(subscription, accelerator);
-        return { reason: 'subscribed' as const, subscription };
-      } finally {
-        pending.delete(registration);
+        await releaseAccelerator(accelerator);
+      } catch (error) {
+        if (firstError === undefined) firstError = error;
       }
-    },
-    async unsubscribe(subscription: ShortcutTriggerSubscription) {
-      const accelerator = registrations.get(subscription);
-      if (accelerator === undefined) return { reason: 'unknown-subscription' as const };
-      await releaseAccelerator(accelerator);
-      return { reason: 'unsubscribed' as const };
-    },
-  });
-  return provider;
+    }
+    if (firstError !== undefined) throw firstError;
+  };
+  provider.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
+    const subscription = finishEntity(allocateEntity<Entity>());
+    const registration = globalShortcut.register(accelerator, (event) => {
+      if (event.state === 'Pressed' && registrations.has(subscription)) trigger();
+    });
+    pending.add(registration);
+    try {
+      await registration;
+      registrations.set(subscription, accelerator);
+      return { reason: 'subscribed' as const, subscription };
+    } finally {
+      pending.delete(registration);
+    }
+  };
+  provider.unsubscribe = async (subscription: ShortcutTriggerSubscription) => {
+    const accelerator = registrations.get(subscription);
+    if (accelerator === undefined) return { reason: 'unknown-subscription' as const };
+    await releaseAccelerator(accelerator);
+    return { reason: 'unsubscribed' as const };
+  };
+  return finishEntity(provider);
 }

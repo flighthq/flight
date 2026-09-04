@@ -4,6 +4,7 @@ import type {
   ElectronApi,
   ElectronDisplay,
   HostScreenCapabilities,
+  ScreenChangeBackend,
   ScreenChangeEvent,
   ScreenChangeKind,
   ScreenColorSpace,
@@ -34,8 +35,9 @@ export function createElectronScreenCapabilities(
       });
       return out;
     };
-  const change = createEntity({
-    subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void) {
+  finishEntity(query);
+  const change = allocateEntity<ScreenChangeBackend>();
+  change.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
       const makeHandler =
         (kind: ScreenChangeKind) =>
         (...args: unknown[]): void => {
@@ -63,8 +65,8 @@ export function createElectronScreenCapabilities(
         screen.removeListener('display-removed', removed);
         screen.removeListener('display-metrics-changed', metrics);
       };
-    },
-  });
+    };
+  finishEntity(change);
   return { change, query };
 }
 

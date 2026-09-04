@@ -174,12 +174,26 @@ export function createElectronNotificationCapabilities(
     received: createElectronNotificationEventBackend(receivedListeners, () => destroyed),
   };
 
-  if (options.platform !== 'macos') return createEntity(capabilities);
-  return createEntity({
-    ...capabilities,
-    action: createElectronNotificationEventBackend(actionListeners, () => destroyed),
-    reply: createElectronNotificationEventBackend(replyListeners, () => destroyed),
-  });
+  if (options.platform !== 'macos') {
+    const out = allocateEntity<ElectronNotificationCapabilities>();
+    out.click = capabilities.click;
+    out.close = capabilities.close;
+    out.delivery = capabilities.delivery;
+    out.dismiss = capabilities.dismiss;
+    out.lifecycle = capabilities.lifecycle;
+    out.received = capabilities.received;
+    return finishEntity(out);
+  }
+  const out = allocateEntity<ElectronMacosNotificationCapabilities>();
+  out.click = capabilities.click;
+  out.close = capabilities.close;
+  out.delivery = capabilities.delivery;
+  out.dismiss = capabilities.dismiss;
+  out.lifecycle = capabilities.lifecycle;
+  out.received = capabilities.received;
+  out.action = createElectronNotificationEventBackend(actionListeners, () => destroyed);
+  out.reply = createElectronNotificationEventBackend(replyListeners, () => destroyed);
+  return finishEntity(out);
 }
 
 function createElectronNotificationEventBackend<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {

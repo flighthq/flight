@@ -1,12 +1,10 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   DirectoryOpenDialogBackend,
   DirectoryOpenDialogResult,
   ElectronApi,
   Entity,
-  EntityRuntimeKey,
   FileDialogFilter,
   FileOpenDialogBackend,
   FileOpenDialogResult,
@@ -38,30 +36,30 @@ export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi):
 }
 
 export function createElectronFileOpenDialogBackend(electron: ElectronApi): FileOpenDialogBackend & Entity {
-  return createEntity({
-    async open(options): Promise<FileOpenDialogResult> {
-      if (options.signal?.aborted) return { outcome: 'cancelled' };
-      const dialog = electron.dialog;
-      if (typeof dialog?.showOpenDialog !== 'function') return { outcome: 'runtime-unavailable' };
-      try {
-        const properties = ['openFile'];
-        if (options.multiple === true) properties.push('multiSelections');
-        const result = await dialog.showOpenDialog(undefined, {
-          filters: toElectronFilters(options.filters),
-          properties,
-        });
-        if (result.canceled) return { outcome: 'cancelled' };
-        if (result.filePaths.length === 0) return { outcome: 'file-open-failed' };
-        const handles = result.filePaths.map((path) => createNativeHandle(path, 'File'));
-        return {
-          handles: handles as [(typeof handles)[number], ...(typeof handles)[number][]],
-          outcome: 'selected',
-        };
-      } catch (error) {
-        return { outcome: classifyFailure(error, 'file-open-failed') };
-      }
-    },
-  } satisfies Omit<FileOpenDialogBackend, typeof EntityRuntimeKey>);
+  const out = allocateEntity<FileOpenDialogBackend>();
+  out.open = async (options): Promise<FileOpenDialogResult> => {
+    if (options.signal?.aborted) return { outcome: 'cancelled' };
+    const dialog = electron.dialog;
+    if (typeof dialog?.showOpenDialog !== 'function') return { outcome: 'runtime-unavailable' };
+    try {
+      const properties = ['openFile'];
+      if (options.multiple === true) properties.push('multiSelections');
+      const result = await dialog.showOpenDialog(undefined, {
+        filters: toElectronFilters(options.filters),
+        properties,
+      });
+      if (result.canceled) return { outcome: 'cancelled' };
+      if (result.filePaths.length === 0) return { outcome: 'file-open-failed' };
+      const handles = result.filePaths.map((path) => createNativeHandle(path, 'File'));
+      return {
+        handles: handles as [(typeof handles)[number], ...(typeof handles)[number][]],
+        outcome: 'selected',
+      };
+    } catch (error) {
+      return { outcome: classifyFailure(error, 'file-open-failed') };
+    }
+  };
+  return finishEntity(out);
 }
 
 export function createElectronFileSaveDialogBackend(electron: ElectronApi): FileSaveDialogBackend & Entity {
@@ -89,48 +87,48 @@ export function createElectronFileSaveDialogBackend(electron: ElectronApi): File
 // therefore assemble dialog.message while leaving dialog.prompt absent.
 export function createElectronMessageDialogBackend(electron: ElectronApi): MessageDialogBackend {
   const dialog = electron.dialog;
-  return createEntity<EntityWithoutRuntime<MessageDialogBackend>>({
-    async message(options) {
-      if (options.signal?.aborted) {
-        return {
-          buttonIndex: options.cancelId ?? 0,
-          cancelled: true,
-          checkboxChecked: options.checkboxChecked ?? false,
-        };
-      }
-      const result = await dialog.showMessageBox(undefined, {
-        type: options.kind,
-        title: options.title,
-        message: options.message,
-        detail: options.detail,
-        buttons: options.buttons,
-        defaultId: options.defaultId,
-        cancelId: options.cancelId,
-        ...(options.signal === undefined ? {} : { signal: options.signal }),
-        checkboxLabel: options.checkboxLabel,
-        checkboxChecked: options.checkboxChecked,
-      });
+  const out = allocateEntity<MessageDialogBackend>();
+  out.message = async (options) => {
+    if (options.signal?.aborted) {
       return {
-        buttonIndex: result.response,
-        cancelled: options.cancelId !== undefined && result.response === options.cancelId,
-        checkboxChecked: result.checkboxChecked,
+        buttonIndex: options.cancelId ?? 0,
+        cancelled: true,
+        checkboxChecked: options.checkboxChecked ?? false,
       };
-    },
-    async confirm(options) {
-      if (options.signal?.aborted) return false;
-      const result = await dialog.showMessageBox(undefined, {
-        type: options.kind,
-        title: options.title,
-        message: options.message,
-        detail: options.detail,
-        buttons: ['OK', 'Cancel'],
-        defaultId: 0,
-        cancelId: 1,
-        ...(options.signal === undefined ? {} : { signal: options.signal }),
-      });
-      return result.response === 0;
-    },
-  });
+    }
+    const result = await dialog.showMessageBox(undefined, {
+      type: options.kind,
+      title: options.title,
+      message: options.message,
+      detail: options.detail,
+      buttons: options.buttons,
+      defaultId: options.defaultId,
+      cancelId: options.cancelId,
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      checkboxLabel: options.checkboxLabel,
+      checkboxChecked: options.checkboxChecked,
+    });
+    return {
+      buttonIndex: result.response,
+      cancelled: options.cancelId !== undefined && result.response === options.cancelId,
+      checkboxChecked: result.checkboxChecked,
+    };
+  };
+  out.confirm = async (options) => {
+    if (options.signal?.aborted) return false;
+    const result = await dialog.showMessageBox(undefined, {
+      type: options.kind,
+      title: options.title,
+      message: options.message,
+      detail: options.detail,
+      buttons: ['OK', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+    });
+    return result.response === 0;
+  };
+  return finishEntity(out);
 }
 
 function createNativeHandle(path: string, kind: 'File' | 'Directory') {

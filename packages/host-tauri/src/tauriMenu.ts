@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   MenuApplicationBackend,
   MenuItemTemplate,
   MenuPopupBackend,
@@ -25,46 +24,46 @@ export function createTauriMenuBackends(tauri: TauriApi): TauriMenuCapabilities 
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
     const out = allocateEntity<TauriMenuCapabilities>();
-  out.application = createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
-      // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
-      // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
-      // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
-      // it with an empty one. Destroy therefore releases JS-owned state only; the native menu stays
-      // until a replacement installs its own.
-      destroy(): void {
-        if (destroyed) return;
-        destroyed = true;
-      },
-      setApplicationMenu(items): boolean {
-        void (async () => {
-          const built = await buildItems(menuModule, items, (id) => selectListener?.(id));
-          const menu = await menuModule.Menu.new({ items: built });
-          await menu.setAsAppMenu();
-        })().catch(() => {
-          /* build/install failed — the previous menu stays in place */
-        });
-        return true;
-      },
+  // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
+  // A fire-and-forget async clear races with a replacement's setApplicationMenu: the outgoing
+  // destroy's empty-menu promise can settle AFTER the successor installs its real menu, overwriting
+  // it with an empty one. Destroy therefore releases JS-owned state only; the native menu stays
+  // until a replacement installs its own.
+  const applicationBackend = allocateEntity<MenuApplicationBackend>();
+  applicationBackend.destroy = (): void => {
+    if (destroyed) return;
+    destroyed = true;
+  };
+  applicationBackend.setApplicationMenu = (items): boolean => {
+    void (async () => {
+      const built = await buildItems(menuModule, items, (id) => selectListener?.(id));
+      const menu = await menuModule.Menu.new({ items: built });
+      await menu.setAsAppMenu();
+    })().catch(() => {
+      /* build/install failed — the previous menu stays in place */
     });
-  out.popup = createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
-      popup(items, x, y): Promise<string | null> {
-        return new Promise<string | null>((resolve) => {
-          void (async () => {
-            const built = await buildItems(menuModule, items, (id) => resolve(id));
-            const menu = await menuModule.Menu.new({ items: built });
-            await menu.popup(new tauri.window.LogicalPosition(x, y));
-          })().catch(() => resolve(null));
-        });
-      },
+    return true;
+  };
+  out.application = finishEntity(applicationBackend);
+  const popupBackend = allocateEntity<MenuPopupBackend>();
+  popupBackend.popup = (items, x, y): Promise<string | null> => {
+    return new Promise<string | null>((resolve) => {
+      void (async () => {
+        const built = await buildItems(menuModule, items, (id) => resolve(id));
+        const menu = await menuModule.Menu.new({ items: built });
+        await menu.popup(new tauri.window.LogicalPosition(x, y));
+      })().catch(() => resolve(null));
     });
-  out.select = createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
-      subscribe(listener): () => void {
-        selectListener = listener;
-        return () => {
-          if (selectListener === listener) selectListener = null;
-        };
-      },
-    });
+  };
+  out.popup = finishEntity(popupBackend);
+  const selectBackend = allocateEntity<MenuSelectBackend>();
+  selectBackend.subscribe = (listener): (() => void) => {
+    selectListener = listener;
+    return () => {
+      if (selectListener === listener) selectListener = null;
+    };
+  };
+  out.select = finishEntity(selectBackend);
   return finishEntity(out);
 }
 

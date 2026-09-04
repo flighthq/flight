@@ -76,14 +76,14 @@ export function createGlRenderEffectPipeline(
   _state: GlRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): GlRenderEffectPipeline {
-  return createEntity({
-    options: { ...options },
-    sceneTarget: null,
-    pool: createGlRenderTargetPool(),
-    lutCache: createColorLutCache(),
-    lutTexture: { texture: null, lut: null },
-    velocityTexture: null,
-  });
+  const out = allocateEntity<GlRenderEffectPipeline>();
+  out.options = { ...options };
+  out.sceneTarget = null;
+  out.pool = createGlRenderTargetPool();
+  out.lutCache = createColorLutCache();
+  out.lutTexture = { texture: null, lut: null };
+  out.velocityTexture = null;
+  return finishEntity(out);
 }
 
 export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRenderEffectPipeline): void {

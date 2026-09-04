@@ -120,7 +120,9 @@ export function createWebMediaSessionActionBackend(): MediaSessionActionBackend 
     },
   };
 
-  return createEntity(backend);
+  const out = allocateEntity<MediaSessionActionBackend>();
+  Object.assign(out, backend);
+  return finishEntity(out);
 }
 
 // Web command provider. Every publication is pinned to the exact MediaSession identity and an opaque
@@ -319,7 +321,9 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
     },
   };
 
-  return createEntity(backend);
+  const out = allocateEntity<MediaSessionBackend>();
+  Object.assign(out, backend);
+  return finishEntity(out);
 }
 
 export const webMediaSessionBackend = createWebMediaSessionBackend();

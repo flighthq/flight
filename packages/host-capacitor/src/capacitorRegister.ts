@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CapacitorApi, CapacitorHost, EntityRuntimeKey, MobileOsProfile } from '@flighthq/types/contract';
+import type { CapacitorApi, CapacitorHost, MobileOsProfile, WindowBackend } from '@flighthq/types/contract';
 
 import { createCapacitorAppCapabilities } from './capacitorApp';
 import { createCapacitorClipboardBackend } from './capacitorClipboard';
@@ -80,7 +80,7 @@ export function capacitorHost<Profile extends MobileOsProfile>(
       statusBarVisibility: statusBar,
     };
   out.updater = {};
-  out.window = createEntity({});
+  out.window = finishEntity(allocateEntity<WindowBackend>());
   return finishEntity(out);
 }
 

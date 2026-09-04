@@ -115,85 +115,89 @@ export function createWebPowerReadings(): WebPowerReadingCapabilities {
   let cachedLevel = -1;
 
     const out = allocateEntity<WebPowerReadingCapabilities>();
-  out.change = createEntity<EntityWithoutRuntime<PowerChangeBackend>>({
-      subscribe(listener: () => void): () => void {
-        const battery = _getWebBatteryManagerPromise();
-        if (battery === null) return () => {};
-        let manager: WebBatteryManager | null = null;
-        const onLevelChange = (): void => {
-          if (manager !== null) cachedLevel = manager.level;
-          listener();
-        };
-        const onChargingChange = (): void => {
-          if (manager !== null) cachedCharging = manager.charging;
-          listener();
-        };
-        const onChargingTimeChange = (): void => {
-          if (manager !== null) {
-            const t = manager.chargingTime;
-            cachedChargingTime = t === Infinity ? -1 : t;
-          }
-          listener();
-        };
-        const onDischargingTimeChange = (): void => {
-          if (manager !== null) {
-            const t = manager.dischargingTime;
-            cachedDischargingTime = t === Infinity ? -1 : t;
-          }
-          listener();
-        };
-        let cancelled = false;
-        battery
-          .then((m) => {
-            if (cancelled) return;
-            manager = m;
-            cachedLevel = m.level;
-            cachedCharging = m.charging;
-            cachedChargingTime = m.chargingTime === Infinity ? -1 : m.chargingTime;
-            cachedDischargingTime = m.dischargingTime === Infinity ? -1 : m.dischargingTime;
-            m.addEventListener?.('levelchange', onLevelChange);
-            m.addEventListener?.('chargingchange', onChargingChange);
-            m.addEventListener?.('chargingtimechange', onChargingTimeChange);
-            m.addEventListener?.('dischargingtimechange', onDischargingTimeChange);
-            listener();
-          })
-          .catch(() => {});
-        // The per-subscription cleanup owns everything this call acquired — which is why the slot needs
-        // no provider-level destroy.
-        return () => {
-          cancelled = true;
-          manager?.removeEventListener?.('levelchange', onLevelChange);
-          manager?.removeEventListener?.('chargingchange', onChargingChange);
-          manager?.removeEventListener?.('chargingtimechange', onChargingTimeChange);
-          manager?.removeEventListener?.('dischargingtimechange', onDischargingTimeChange);
-          manager = null;
-        };
-      },
-    });
-  out.status = createEntity<EntityWithoutRuntime<PowerStatusBackend>>({
-      getStatus(out: PowerStatus): PowerStatus {
-        out.batteryLevel = cachedLevel;
-        out.chargingTime = cachedChargingTime;
-        out.dischargingTime = cachedDischargingTime;
-        out.isBatteryLow = cachedLevel >= 0 && cachedLevel <= 0.2 && !cachedCharging;
-        out.isCharging = cachedCharging;
-        out.isLowPower = false;
-        out.isOnBattery = cachedLevel >= 0 && !cachedCharging;
-        // Web cannot read thermal pressure at all, which is why there is no web thermal slot. The field
-        // stays at the domain's unknown encoding rather than implying a reading.
-        out.thermalState = 'Unknown';
-        return out;
-      },
-    });
+  const changeEntity = allocateEntity<PowerChangeBackend>();
+  changeEntity.subscribe = (listener: () => void) => {
+    const battery = _getWebBatteryManagerPromise();
+    if (battery === null) return () => {};
+    let manager: WebBatteryManager | null = null;
+    const onLevelChange = (): void => {
+      if (manager !== null) cachedLevel = manager.level;
+      listener();
+    };
+    const onChargingChange = (): void => {
+      if (manager !== null) cachedCharging = manager.charging;
+      listener();
+    };
+    const onChargingTimeChange = (): void => {
+      if (manager !== null) {
+        const t = manager.chargingTime;
+        cachedChargingTime = t === Infinity ? -1 : t;
+      }
+      listener();
+    };
+    const onDischargingTimeChange = (): void => {
+      if (manager !== null) {
+        const t = manager.dischargingTime;
+        cachedDischargingTime = t === Infinity ? -1 : t;
+      }
+      listener();
+    };
+    let cancelled = false;
+    battery
+      .then((m) => {
+        if (cancelled) return;
+        manager = m;
+        cachedLevel = m.level;
+        cachedCharging = m.charging;
+        cachedChargingTime = m.chargingTime === Infinity ? -1 : m.chargingTime;
+        cachedDischargingTime = m.dischargingTime === Infinity ? -1 : m.dischargingTime;
+        m.addEventListener?.('levelchange', onLevelChange);
+        m.addEventListener?.('chargingchange', onChargingChange);
+        m.addEventListener?.('chargingtimechange', onChargingTimeChange);
+        m.addEventListener?.('dischargingtimechange', onDischargingTimeChange);
+        listener();
+      })
+      .catch(() => {});
+    // The per-subscription cleanup owns everything this call acquired — which is why the slot needs
+    // no provider-level destroy.
+    return () => {
+      cancelled = true;
+      manager?.removeEventListener?.('levelchange', onLevelChange);
+      manager?.removeEventListener?.('chargingchange', onChargingChange);
+      manager?.removeEventListener?.('chargingtimechange', onChargingTimeChange);
+      manager?.removeEventListener?.('dischargingtimechange', onDischargingTimeChange);
+      manager = null;
+    };
+  };
+  out.change = finishEntity(changeEntity);
+  const statusEntity = allocateEntity<PowerStatusBackend>();
+  statusEntity.getStatus = (statusOut: PowerStatus): PowerStatus => {
+    statusOut.batteryLevel = cachedLevel;
+    statusOut.chargingTime = cachedChargingTime;
+    statusOut.dischargingTime = cachedDischargingTime;
+    statusOut.isBatteryLow = cachedLevel >= 0 && cachedLevel <= 0.2 && !cachedCharging;
+    statusOut.isCharging = cachedCharging;
+    statusOut.isLowPower = false;
+    statusOut.isOnBattery = cachedLevel >= 0 && !cachedCharging;
+    // Web cannot read thermal pressure at all, which is why there is no web thermal slot. The field
+    // stays at the domain's unknown encoding rather than implying a reading.
+    statusOut.thermalState = 'Unknown';
+    return statusOut;
+  };
+  out.status = finishEntity(statusEntity);
   return finishEntity(out);
 }
 
 // The web power capability group, for composing into a Host.
-export const webPowerCapabilities: WebPowerCapabilities = createEntity({
-  ...createWebPowerReadings(),
-  keepAwake: webPowerKeepAwakeBackend,
-  suspension: webPowerSuspensionBackend,
-});
+export const webPowerCapabilities: WebPowerCapabilities = (() => {
+  const readings = createWebPowerReadings();
+  const out = allocateEntity<WebPowerCapabilities>();
+  out.change = readings.change;
+  out.status = readings.status;
+  out.keepAwake = webPowerKeepAwakeBackend;
+  out.suspension = webPowerSuspensionBackend;
+  return finishEntity(out);
+})();
 
 function _getWebBatteryManagerPromise(): Promise<WebBatteryManager> | null {
   if (typeof navigator === 'undefined') return null;

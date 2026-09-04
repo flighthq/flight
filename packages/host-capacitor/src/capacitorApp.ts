@@ -1,5 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  AppActivateBackend,
+  AppHideBackend,
+  AppNameBackend,
+  AppQuitBackend,
+  AppVersionBackend,
   CapacitorApi,
   CapacitorAndroidAppCapabilities,
   CapacitorAppCapabilitiesFor,
@@ -36,24 +41,44 @@ export function createCapacitorAppCapabilities(
     .catch(() => {});
   const common = (() => {
     const out = allocateEntity<CapacitorCommonAppCapabilities>();
-    out.activate = createEntity({
-      subscribe: (listener: () => void) =>
+    out.activate = (() => {
+      const a = allocateEntity<AppActivateBackend>();
+      a.subscribe = (listener: () => void) =>
         toCapacitorUnsubscribe(
           capacitor.app.addListener('appStateChange', (state) => {
             if (state.isActive) listener();
           }),
-        ),
-    });
-    out.name = createEntity({ getName: () => name });
-    out.version = createEntity({ getVersion: () => version });
+        );
+      return finishEntity(a);
+    })();
+    out.name = (() => {
+      const n = allocateEntity<AppNameBackend>();
+      n.getName = () => name;
+      return finishEntity(n);
+    })();
+    out.version = (() => {
+      const v = allocateEntity<AppVersionBackend>();
+      v.getVersion = () => version;
+      return finishEntity(v);
+    })();
     return finishEntity(out);
   })();
   if (profile === 'ios') return common;
-  return createEntity({
-    ...common,
-    hide: createEntity({ hideApp: () => void capacitor.app.minimizeApp().catch(() => {}) }),
-    quit: createEntity({ quit: () => void capacitor.app.exitApp().catch(() => {}) }),
-  });
+  const android = allocateEntity<CapacitorAndroidAppCapabilities>();
+  android.activate = common.activate;
+  android.name = common.name;
+  android.version = common.version;
+  android.hide = (() => {
+    const h = allocateEntity<AppHideBackend>();
+    h.hideApp = () => void capacitor.app.minimizeApp().catch(() => {});
+    return finishEntity(h);
+  })();
+  android.quit = (() => {
+    const q = allocateEntity<AppQuitBackend>();
+    q.quit = () => void capacitor.app.exitApp().catch(() => {});
+    return finishEntity(q);
+  })();
+  return finishEntity(android);
 }
 
 function toCapacitorUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {
