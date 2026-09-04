@@ -1,5 +1,5 @@
 import { createBloomEffect } from '@flighthq/effects/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import {
@@ -17,9 +17,9 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
   const data = new Uint8ClampedArray(pixels);
   const canvas = { __data: data };
-  return createEntity({
-    canvas,
-    context: {
+    const out = allocateEntity<CanvasRenderTarget>();
+  out.canvas = canvas;
+  out.context = {
       clearRect: () => {},
       // Modelled rather than stubbed away: the effect copies the scene into dest and the bright branch
       // into the blur target through drawImage, so a no-op here would leave both empty and the
@@ -40,10 +40,10 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
       restore: () => {},
       save: () => {},
       setTransform: () => {},
-    },
-    height: 1,
-    width: pixels.length / 4,
-  }) as unknown as CanvasRenderTarget;
+    };
+  out.height = 1;
+  out.width = pixels.length / 4;
+  return finishEntity(out) as unknown;
 }
 
 // The pool hands out targets that start as copies of the source, which is what the real
@@ -53,11 +53,11 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
 // never ran.
 function createPool(width: number): CanvasRenderTargetPool {
   const blank = (): CanvasRenderTarget => createTarget(new Array(width * 4).fill(0));
-  return createEntity({
-    creator: canvasTestSurfaceCreator,
-    free: [blank(), blank()],
-    inUse: [],
-  }) as unknown as CanvasRenderTargetPool;
+    const out = allocateEntity<CanvasRenderTarget>();
+  out.creator = canvasTestSurfaceCreator;
+  out.free = [blank(), blank()];
+  out.inUse = [];
+  return finishEntity(out) as unknown;
 }
 
 const read = (target: CanvasRenderTarget): number[] => [...target.context.getImageData(0, 0, 1, 1).data];

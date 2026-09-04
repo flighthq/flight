@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -12,10 +12,12 @@ function makeCreator(createRenderSurface = () => document.createElement('canvas'
     canvas.width = 0;
     canvas.height = 0;
   });
-  const creator = createEntity({
-    createRenderSurface,
-    destroyRenderSurface,
-  });
+  const creator = (() => {
+    const out = allocateEntity<unknown>();
+    out.createRenderSurface = createRenderSurface;
+    out.destroyRenderSurface = destroyRenderSurface;
+    return finishEntity(out);
+  })();
   return { creator, destroyRenderSurface };
 }
 

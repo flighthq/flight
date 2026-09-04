@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 
@@ -87,18 +87,23 @@ describe('GL and WGPU surface provider independence', () => {
   });
 
   it('preserves the full one-sided install, replacement and reset matrix', () => {
-    const glFirst = createEntity({
-      createRenderSurface: () => ({ kind: 'gl-first' }) as unknown as HTMLCanvasElement,
-    });
-    const glSecond = createEntity({
-      createRenderSurface: () => ({ kind: 'gl-second' }) as unknown as HTMLCanvasElement,
-    });
-    const wgpuFirst = createEntity({
-      createRenderSurface: () => ({ kind: 'wgpu-first' }) as unknown as HTMLCanvasElement,
-    });
-    const wgpuSecond = createEntity({
-      createRenderSurface: () => ({ kind: 'wgpu-second' }) as unknown as HTMLCanvasElement,
-    });
+    const glFirst = allocateEntity<unknown>();
+    glFirst.createRenderSurface = () => ({ kind: 'gl-first' }) as unknown as HTMLCanvasElement;
+    const glSecond = (() => {
+      const out = allocateEntity<unknown>();
+      out.createRenderSurface = () => ({ kind: 'gl-second' }) as unknown as HTMLCanvasElement;
+      return finishEntity(out);
+    })();
+    const wgpuFirst = (() => {
+      const out = allocateEntity<unknown>();
+      out.createRenderSurface = () => ({ kind: 'wgpu-first' }) as unknown as HTMLCanvasElement;
+      return finishEntity(out);
+    })();
+    const wgpuSecond = (() => {
+      const out = allocateEntity<unknown>();
+      out.createRenderSurface = () => ({ kind: 'wgpu-second' }) as unknown as HTMLCanvasElement;
+      return finishEntity(out);
+    })();
     renderGlContract.setGlRenderSurfaceProvider(glFirst);
     expect(renderGlContract.getGlRenderSurfaceProvider()).toBe(glFirst);
     expect(renderGlContract.createGlRenderSurface(1, 1)).toEqual({ kind: 'gl-first' });

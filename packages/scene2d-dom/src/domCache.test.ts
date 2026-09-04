@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -101,15 +101,17 @@ describe('releaseDomRenderCache', () => {
   });
 });
 
-const canvasSurfaceCreator = createEntity({
-  createRenderSurface(width: number, height: number, pixelRatio: number): HTMLCanvasElement {
+  const canvasSurfaceCreator = (() => {
+    const out = allocateEntity<any>();
+    out.createRenderSurface = (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.width = width * pixelRatio;
     canvas.height = height * pixelRatio;
     return canvas;
-  },
-  destroyRenderSurface(canvas: HTMLCanvasElement): void {
+  };
+    out.destroyRenderSurface = (canvas: HTMLCanvasElement): void => {
     canvas.width = 0;
     canvas.height = 0;
-  },
-});
+  };
+    return finishEntity(out);
+  })();

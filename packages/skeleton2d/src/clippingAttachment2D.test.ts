@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, ClippingAttachment2D } from '@flighthq/types/contract';
 import { ClippingAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -27,18 +27,13 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function clip(endSlotIndex: number, vertices: Float32Array | null = null): ClippingAttachment2D {
-  return createEntity({
-    endSlotIndex,
-    kind: ClippingAttachment2DKind,
-    pointCount: vertices === null ? 0 : vertices.length / 2,
-    skin: null,
-    vertices,
-  }) as ClippingAttachment2D;
-}
-
-describe('computeSkeleton2DClippingAttachmentVertices', () => {
-  it('carries the polygon through the slot bone world transform', () => {
-    const skeleton = createSkeleton2D([makeBone({ x: 4 })]);
+    const out = allocateEntity<ClippingAttachment2D>();
+  out.endSlotIndex = endSlotIndex;
+  out.kind = ClippingAttachment2DKind;
+  out.pointCount = vertices === null ? 0 : vertices.length / 2;
+  out.skin = null;
+  out.vertices = vertices;
+  return finishEntity(out) as ClippingAttachment2D;;
     computeSkeleton2DWorldTransforms(skeleton);
     const out = new Float32Array(4);
 

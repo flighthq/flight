@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createPhysics3DBallAndSocketJoint,
   createPhysics3DCollider,
@@ -298,39 +298,12 @@ function getColliderShapeCases(): ReadonlyArray<{
     },
     {
       name: 'triangle mesh',
-      shape: createEntity({
-        kind: 'triangle-mesh',
-        version: 2,
-        x: 0,
-        y: 0,
-        z: 0,
-        rotationX: 0,
-        rotationY: 0,
-        rotationZ: 0,
-        rotationW: 1,
-        points: [0, 0, 0, 1, 0, 0, 0, 0, 1],
-        indices: [0, 1, 2],
-      }),
+      shape: (() => { const out = allocateEntity<DataView>(); out.kind = 'triangle-mesh'; out.version = 2; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1]; out.indices = [0, 1, 2]; return finishEntity(out); })(),
       code: Physics3DAbiShapeKind.TriangleMesh,
     },
     {
       name: 'heightfield',
-      shape: createEntity({
-        kind: 'heightfield',
-        columns: 2,
-        rows: 2,
-        version: 3,
-        cellSizeX: 1,
-        cellSizeZ: 1,
-        x: 0,
-        y: 0,
-        z: 0,
-        rotationX: 0,
-        rotationY: 0,
-        rotationZ: 0,
-        rotationW: 1,
-        heights: [0, 0, 0, 0],
-      }),
+      shape: (() => { const out = allocateEntity<DataView>(); out.kind = 'heightfield'; out.columns = 2; out.rows = 2; out.version = 3; out.cellSizeX = 1; out.cellSizeZ = 1; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.heights = [0, 0, 0, 0]; return finishEntity(out); })(),
       code: Physics3DAbiShapeKind.Heightfield,
     },
   ];

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import {
   createAnimatedNormalModifier,
@@ -112,12 +112,12 @@ describe('ensureWgpuShadedPipeline', () => {
 
   it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const modifier = createEntity({ kind: 'acme.Replace', slot: ModifierSlot.Effect }) as Modifier;
-    registerWgpuModifierSnippet(state, {
-      contribution: () => ({ source: '// compiler-marker-A' }),
-      kind: modifier.kind,
-      slot: modifier.slot,
-    });
+    const modifier = (() => {
+      const out = allocateEntity<unknown>();
+      out.kind = 'acme.Replace';
+      out.slot = ModifierSlot.Effect;
+      return finishEntity(out) as Modifier;;
+    })();
     const material = createShadedMaterial({ modifiers: [modifier] });
     ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
     const before = fake.calls.filter((call) => call.name === 'createShaderModule').length;
@@ -210,8 +210,12 @@ describe('getWgpuShadedModuleSource', () => {
       slot: ModifierSlot.Effect,
     };
     registerWgpuModifierSnippet(state, vendor);
-    const registered = createEntity({ kind: 'acme.Glow', slot: ModifierSlot.Effect }) as Modifier;
-    const missing = createEntity({ kind: 'acme.Missing', slot: ModifierSlot.Effect }) as Modifier;
+    const registered = (() => {
+      const out = allocateEntity<unknown>();
+      out.kind = 'acme.Glow';
+      out.slot = ModifierSlot.Effect;
+      return finishEntity(out) as Modifier;;
+    })();
     const material = createShadedMaterial({ modifiers: [registered, missing] });
     const registry = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
     const source = getWgpuShadedModuleSource(material, registry);
@@ -248,7 +252,7 @@ describe('getWgpuShadedModuleSource', () => {
         kind,
         slot: slots[i],
       });
-      modifiers.push(createEntity({ kind, slot: slots[i] }) as Modifier);
+      modifiers.push((() => { const out = allocateEntity<unknown>(); out.kind = kind; out.slot = slots[i]; return finishEntity(out) as Modifier);; })()
     }
     const registry = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
     const source = getWgpuShadedModuleSource(createShadedMaterial({ modifiers }), registry);
@@ -274,8 +278,8 @@ describe('getWgpuShadedModuleSource', () => {
       modifiers: [
         createDissolveModifier({ threshold: 0.1 }),
         createDissolveModifier({ threshold: 0.2 }),
-        createEntity({ kind: 'acme.DeclarationA', slot: ModifierSlot.Effect }) as Modifier,
-        createEntity({ kind: 'acme.DeclarationB', slot: ModifierSlot.Effect }) as Modifier,
+        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.DeclarationA'; out.slot = ModifierSlot.Effect; return finishEntity(out) as Modifier,; })()
+        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.DeclarationB'; out.slot = ModifierSlot.Effect; return finishEntity(out) as Modifier,; })()
       ],
     });
     const source = getWgpuShadedModuleSource(material, getWgpuRenderStateRuntime(state).registries.modifierSnippets);
@@ -405,10 +409,12 @@ describe('shaded binding cache', () => {
   it('reuses the compiled plan and GPU resource arrays on an unchanged draw', () => {
     const { fake, state } = makeWgpuScene3DState();
     let contributions = 0;
-    const modifier = createEntity({ kind: 'acme.Stable', slot: ModifierSlot.Effect }) as Modifier;
-    registerWgpuModifierSnippet(state, {
-      contribution: () => {
-        contributions++;
+    const modifier = (() => {
+      const out = allocateEntity<unknown>();
+      out.kind = 'acme.Stable';
+      out.slot = ModifierSlot.Effect;
+      return finishEntity(out) as Modifier;;
+    })();
         return { source: 'radiance = radiance;' };
       },
       kind: modifier.kind,

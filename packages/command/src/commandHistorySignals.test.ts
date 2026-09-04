@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -20,7 +20,7 @@ describe('enableCommandHistorySignals', () => {
     let changes = 0;
     connectSignal(enableCommandHistorySignals(history), () => changes++);
 
-    executeCommand(history, createEntity({ kind: 'test.Counter', label: 'One' }));
+    executeCommand(history, (() => { const out = allocateEntity<unknown>(); out.kind = 'test.Counter'; out.label = 'One'; return finishEntity(out); })());
     expect(changes).toBe(1);
     undoCommand(history);
     expect(changes).toBe(2);
@@ -31,7 +31,7 @@ describe('enableCommandHistorySignals', () => {
     const history = createCommandHistory();
     let changes = 0;
     connectSignal(enableCommandHistorySignals(history), () => changes++);
-    executeCommand(history, createEntity({ kind: 'acme.Unbound', label: 'Nope' }));
+    executeCommand(history, (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Unbound'; out.label = 'Nope'; return finishEntity(out); })());
     expect(changes).toBe(0);
   });
 });

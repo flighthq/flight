@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlShapeRendererData, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
@@ -16,15 +16,15 @@ import { createGlState } from './glTestHelper';
 const destroySurface = vi.fn();
 
 function emptyData(): GlShapeRendererData {
-  return createEntity({
-    surface: null,
-    lastContentId: -1,
-    lastPixelRatio: 0,
-    lastW: 0,
-    lastH: 0,
-    meshVersion: -1,
-    meshes: null,
-  });
+    const out = allocateEntity<GlShapeRendererData>();
+  out.surface = null;
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.lastW = 0;
+  out.lastH = 0;
+  out.meshVersion = -1;
+  out.meshes = null;
+  return finishEntity(out);
 }
 
 beforeEach(() => {
@@ -56,10 +56,10 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
 }
 
 function createTestProvider(): Raster2DSurfaceProvider {
-  return createEntity({
-    createRaster2DSurface: createTestRaster2DSurface,
-    destroyRaster2DSurface: destroySurface,
-  });
+    const out = allocateEntity<GlShapeRendererData>();
+  out.createRaster2DSurface = createTestRaster2DSurface;
+  out.destroyRaster2DSurface = destroySurface;
+  return finishEntity(out);
 }
 
 function setTestRasterProvider(state: { raster2DSurfaceProvider: unknown }): void {
@@ -82,10 +82,9 @@ describe('acquireGlShapeRasterSurface', () => {
   });
 
   it('preserves expected absence without caching it when the provider refuses', () => {
-    const provider = createEntity({
-      createRaster2DSurface: () => null,
-      destroyRaster2DSurface: destroySurface,
-    });
+    const provider = allocateEntity<GlShapeRendererData>();
+    provider.createRaster2DSurface = () => null;
+    provider.destroyRaster2DSurface = destroySurface;
     const data = emptyData();
     expect(acquireGlShapeRasterSurface(provider, data)).toBeNull();
     expect(data.surface).toBeNull();

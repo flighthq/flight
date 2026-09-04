@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -24,7 +24,7 @@ describe('isModifierStackValid', () => {
     registerBuiltInModifiers(registry);
     const stack: Modifier[] = [
       createEmissiveModifier({ color: 0xffffffff }),
-      createEntity({ kind: 'acme.Missing', slot: 'Effect' }),
+      (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; out.slot = 'Effect'; return finishEntity(out); })(),
     ];
     expect(isModifierStackValid(registry, stack)).toBe(false);
   });

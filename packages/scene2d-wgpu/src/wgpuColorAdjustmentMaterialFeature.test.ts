@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
@@ -143,7 +143,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
     recordWgpuQuadBatchColorScaleBias(state, null, 0);
-    recordWgpuQuadBatchColorScaleBias(state, createEntity({ tint: 0x12345678 }), 1);
+    recordWgpuQuadBatchColorScaleBias(state, (() => { const out = allocateEntity<ColorScaleBias>(); out.tint = 0x12345678; return finishEntity(out); })(), 1);
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PACKED_TINT);
     expect(Array.from(new Uint8Array(runtime.quadBatchWriterColorTintData!.buffer, 4, 4))).toEqual([
       0x12, 0x34, 0x56, 0x78,
@@ -154,7 +154,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuQuadBatchColorScaleBias(state, createEntity({ tint: 0x808080ff }), 0);
+    recordWgpuQuadBatchColorScaleBias(state, (() => { const out = allocateEntity<ColorScaleBias>(); out.tint = 0x808080ff; return finishEntity(out); })(), 0);
     recordWgpuQuadBatchColorScaleBias(state, ct(1, 1, 1, 1, 1), 1);
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_PER_INSTANCE);
     expect(runtime.quadBatchWriterColorScaleBiasData![0]).toBeCloseTo(128 / 255);
@@ -165,7 +165,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    recordWgpuQuadBatchColorScaleBias(state, createEntity({ tint: 0x808080ff }), 0);
+    recordWgpuQuadBatchColorScaleBias(state, (() => { const out = allocateEntity<ColorScaleBias>(); out.tint = 0x808080ff; return finishEntity(out); })(), 0);
     recordWgpuQuadBatchColorScaleBias(state, MIX_RED_GREEN, 1);
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(CT_MODE_MATRIX);
     expect(runtime.quadBatchWriterColorMatrixData![0]).toBeCloseTo(128 / 255);

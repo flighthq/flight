@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createNode, getNodeChildCount } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Command, CommandHistory, NodeAny } from '@flighthq/types/contract';
@@ -187,7 +187,10 @@ function counter(label: string): Command {
 }
 
 function command(kind: string, label: string): Command {
-  return createEntity({ kind, label });
+    const out = allocateEntity<Command>();
+  out.kind = kind;
+  out.label = label;
+  return finishEntity(out);
 }
 
 // A history bound to one inert kind, so stack behaviour can be tested without any graph mutation.

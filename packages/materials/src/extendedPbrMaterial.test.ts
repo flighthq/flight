@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
 import { createClearcoatPbrExtension } from './clearcoatPbrExtension';
@@ -8,7 +8,7 @@ import { createStandardPbrMaterialProperties } from './pbrMaterials';
 describe('createExtendedPbrMaterial', () => {
   it('composes a standard property block with an ordered extension list', () => {
     const standard = createStandardPbrMaterialProperties({ roughness: 0.25 });
-    const extensions = [createClearcoatPbrExtension(), createEntity({ kind: 'VendorPbrExtension' })];
+    const extensions = [createClearcoatPbrExtension(), (() => { const out = allocateEntity<unknown>(); out.kind = 'VendorPbrExtension'; return finishEntity(out); })()];
 
     const material = createExtendedPbrMaterial({ extensions, standard });
 

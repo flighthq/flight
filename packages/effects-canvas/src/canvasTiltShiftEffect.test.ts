@@ -1,5 +1,5 @@
 import { createTiltShiftEffect } from '@flighthq/effects/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
@@ -32,13 +32,16 @@ function createImpulseTargets(
   }
   const imageData = { data: pixels };
   const written: { data: Uint8ClampedArray | null } = { data: null };
-  const source = createEntity({
-    context: { getImageData: () => imageData },
-    height,
-    width,
-  }) as unknown as CanvasRenderTarget;
-  const dest = createEntity({
-    context: {
+  const source = (() => {
+    const out = allocateEntity<unknown>();
+    out.context = { getImageData: () => imageData };
+    out.height = height;
+    out.width = width;
+    return finishEntity(out) as unknown;
+  })();
+  const dest = (() => {
+    const out = allocateEntity<unknown>();
+    out.context = {
       clearRect: () => {},
       filter: 'none',
       globalAlpha: 1,
@@ -49,10 +52,11 @@ function createImpulseTargets(
       restore: () => {},
       save: () => {},
       setTransform: () => {},
-    },
-    height,
-    width,
-  }) as unknown as CanvasRenderTarget;
+    };
+    out.height = height;
+    out.width = width;
+    return finishEntity(out) as unknown;
+  })();
   return { dest, source, written };
 }
 
@@ -138,11 +142,7 @@ describe('defaultCanvasTiltShiftEffectRunner', () => {
     defaultCanvasTiltShiftEffectRunner(
       {
         dest,
-        pool: createEntity({
-          creator: canvasTestSurfaceCreator,
-          free: [],
-          inUse: [],
-        }) as unknown as CanvasRenderTargetPool,
+        pool: (() => { const out = allocateEntity<unknown>(); out.creator = canvasTestSurfaceCreator; out.free = []; out.inUse = []; return finishEntity(out) as unknown; })() as CanvasRenderTargetPool,
         source,
         state: {} as never,
       },

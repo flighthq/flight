@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -27,25 +27,25 @@ function body(world: ReturnType<typeof createPhysics2DWorld>, x: number, y: numb
 }
 
 function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorBX = 0): Physics2DJoint {
-  return createEntity({
-    kind,
-    bodyA,
-    bodyB,
-    localAnchorAX: anchorAX,
-    localAnchorAY: 0,
-    localAnchorBX: anchorBX,
-    localAnchorBY: 0,
-    collideConnected: false,
-    breakForce: Number.POSITIVE_INFINITY,
-    breakTorque: Number.POSITIVE_INFINITY,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    rAX: 0,
-    rAY: 0,
-    rBX: 0,
-    rBY: 0,
-  });
+    const out = allocateEntity<Physics2DJoint>();
+  out.kind = kind;
+  out.bodyA = bodyA;
+  out.bodyB = bodyB;
+  out.localAnchorAX = anchorAX;
+  out.localAnchorAY = 0;
+  out.localAnchorBX = anchorBX;
+  out.localAnchorBY = 0;
+  out.collideConnected = false;
+  out.breakForce = Number.POSITIVE_INFINITY;
+  out.breakTorque = Number.POSITIVE_INFINITY;
+  out.impulse0 = 0;
+  out.impulse1 = 0;
+  out.impulse2 = 0;
+  out.rAX = 0;
+  out.rAY = 0;
+  out.rBX = 0;
+  out.rBY = 0;
+  return finishEntity(out);
 }
 
 describe('addPhysics2DJoint', () => {

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle, setRectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
@@ -106,8 +106,8 @@ describe('computeRenderEffectCaptureGeometry', () => {
 
   it('writes asymmetric padding, target dimensions, and the matching Scene2D capture transform', () => {
     const state = createRenderState();
-    const effect = createEntity({ kind: 'acme.Asymmetric' }) as RenderEffect;
-    registerRenderEffectPaddingResolver(state, effect.kind, () => ({ bottom: 7, left: 2, right: 5, top: 3 }));
+    const effect = allocateEntity<Node2D>();
+    effect.kind = 'acme.Asymmetric';
     const source = createCaptureNode(createRectangle(-10, 6, 20.4, 11.2));
     source.x = 50;
     source.y = -30;
@@ -127,8 +127,8 @@ describe('computeRenderEffectCaptureGeometry', () => {
 
   it('matches the existing bounds, padding, target-size, and capture-transform primitives', () => {
     const state = createRenderState();
-    const first = createEntity({ kind: 'acme.First' }) as RenderEffect;
-    const second = createEntity({ kind: 'acme.Second' }) as RenderEffect;
+    const first = allocateEntity<Node2D>();
+    first.kind = 'acme.First';
     registerRenderEffectPaddingResolver(state, first.kind, () => ({ bottom: 1, left: 2, right: 3, top: 4 }));
     registerRenderEffectPaddingResolver(state, second.kind, () => ({ bottom: 5, left: 6, right: 7, top: 8 }));
     const source = createCaptureNode(createRectangle(-2, -3, 10.25, 20.75));

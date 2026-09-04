@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -66,63 +66,36 @@ function createFixture() {
     secondInstance: vi.fn(),
   };
   const subscribe = <Key extends keyof typeof listeners>(key: Key) =>
-    createEntity({
-      subscribe(listener: NonNullable<(typeof listeners)[Key]>) {
+    (() => { const out = allocateEntity<unknown>(); out.subscribe = (listener: NonNullable<(typeof listeners)[Key]>) => {
         listeners[key] = listener;
         return unsubscribes[key];
-      },
-    });
+      }; return finishEntity(out); })();
   const host = {
     app: {
       activate: subscribe('activate'),
-      activationPolicy: createEntity({ setActivationPolicy: (policy: string) => calls.push(`policy:${policy}`) }),
+      activationPolicy: (() => { const out = allocateEntity<unknown>(); out.setActivationPolicy = (policy: string) => calls.push(`policy:${policy}`); return finishEntity(out); })(),
       allWindowsClosed: subscribe('allWindowsClosed'),
-      badge: createEntity({ setBadgeCount: async (count: number) => (calls.push(`badge:${count}`), true) }),
-      dock: createEntity({
-        bounceDock: () => 17,
-        cancelAttention: (id: number) => calls.push(`cancelAttention:${id}`),
-        cancelDockBounce: (id: number) => calls.push(`cancelBounce:${id}`),
-        requestAttention: (critical: boolean) => (calls.push(`attention:${critical}`), 19),
-        setDockBadge: (text: string) => calls.push(`dockBadge:${text}`),
-        setDockMenu: (items: readonly unknown[]) => calls.push(`dockMenu:${items.length}`),
-      }),
-      focus: createEntity({ focus: () => calls.push('focus') }),
-      hiddenQuery: createEntity({ isAppHidden: () => true }),
-      hide: createEntity({ hideApp: () => calls.push('hide') }),
-      locale: createEntity({
-        getLocale: () => 'en-GB',
-        getPreferredSystemLanguages: () => ['en-GB', 'fr'],
-        getSystemLocale: () => 'en-US',
-      }),
-      loginItem: createEntity({
-        getLoginItem: () => ({ args: ['--start'], openAsHidden: true, openAtLogin: true, path: '/app' }),
-        setLoginItem: () => calls.push('loginItem'),
-      }),
-      name: createEntity({ getName: () => 'Flight' }),
-      nameWrite: createEntity({ setName: (name: string) => calls.push(`name:${name}`) }),
+      badge: (() => { const out = allocateEntity<unknown>(); out.setBadgeCount = async (count: number) => (calls.push(`badge:${count}`), true); return finishEntity(out); })(),
+      dock: (() => { const out = allocateEntity<unknown>(); out.bounceDock = () => 17; out.cancelAttention = (id: number) => calls.push(`cancelAttention:${id}`); out.cancelDockBounce = (id: number) => calls.push(`cancelBounce:${id}`); out.requestAttention = (critical: boolean) => (calls.push(`attention:${critical}`), 19); out.setDockBadge = (text: string) => calls.push(`dockBadge:${text}`); out.setDockMenu = (items: readonly unknown[]) => calls.push(`dockMenu:${items.length}`); return finishEntity(out); })(),
+      focus: (() => { const out = allocateEntity<unknown>(); out.focus = () => calls.push('focus'); return finishEntity(out); })(),
+      hiddenQuery: (() => { const out = allocateEntity<unknown>(); out.isAppHidden = () => true; return finishEntity(out); })(),
+      hide: (() => { const out = allocateEntity<unknown>(); out.hideApp = () => calls.push('hide'); return finishEntity(out); })(),
+      locale: (() => { const out = allocateEntity<unknown>(); out.getLocale = () => 'en-GB'; out.getPreferredSystemLanguages = () => ['en-GB', 'fr']; out.getSystemLocale = () => 'en-US'; return finishEntity(out); })(),
+      loginItem: (() => { const out = allocateEntity<unknown>(); out.getLoginItem = () => ({ args: ['--start'], openAsHidden: true, openAtLogin: true, path: '/app' }); out.setLoginItem = () => calls.push('loginItem'); return finishEntity(out); })(),
+      name: (() => { const out = allocateEntity<unknown>(); out.getName = () => 'Flight'; return finishEntity(out); })(),
+      nameWrite: (() => { const out = allocateEntity<unknown>(); out.setName = (name: string) => calls.push(`name:${name}`); return finishEntity(out); })(),
       openFile: subscribe('openFile'),
-      path: createEntity({
-        getAppDirectoryPath: (kind: string) => `/app/${kind}`,
-        getAppPath: () => '/app',
-        getExecutablePath: () => '/app/flight',
-      }),
-      quit: createEntity({ quit: () => calls.push('quit') }),
+      path: (() => { const out = allocateEntity<unknown>(); out.getAppDirectoryPath = (kind: string) => `/app/${kind}`; out.getAppPath = () => '/app'; out.getExecutablePath = () => '/app/flight'; return finishEntity(out); })(),
+      quit: (() => { const out = allocateEntity<unknown>(); out.quit = () => calls.push('quit'); return finishEntity(out); })(),
       quitRequest: subscribe('quitRequest'),
       ready: subscribe('ready'),
-      recentDocuments: createEntity({
-        addRecentDocument: (path: string) => calls.push(`recent:${path}`),
-        clearRecentDocuments: () => calls.push('clearRecent'),
-      }),
-      relaunch: createEntity({ relaunch: () => calls.push('relaunch') }),
+      recentDocuments: (() => { const out = allocateEntity<unknown>(); out.addRecentDocument = (path: string) => calls.push(`recent:${path}`); out.clearRecentDocuments = () => calls.push('clearRecent'); return finishEntity(out); })(),
+      relaunch: (() => { const out = allocateEntity<unknown>(); out.relaunch = () => calls.push('relaunch'); return finishEntity(out); })(),
       secondInstance: subscribe('secondInstance'),
-      show: createEntity({ showApp: () => calls.push('show') }),
-      singleInstance: createEntity({
-        hasSingleInstanceLock: () => true,
-        releaseSingleInstanceLock: () => calls.push('releaseLock'),
-        requestSingleInstanceLock: () => true,
-      }),
-      userModelId: createEntity({ setUserModelId: (id: string) => calls.push(`userModel:${id}`) }),
-      version: createEntity({ getVersion: () => '1.2.3' }),
+      show: (() => { const out = allocateEntity<unknown>(); out.showApp = () => calls.push('show'); return finishEntity(out); })(),
+      singleInstance: (() => { const out = allocateEntity<unknown>(); out.hasSingleInstanceLock = () => true; out.releaseSingleInstanceLock = () => calls.push('releaseLock'); out.requestSingleInstanceLock = () => true; return finishEntity(out); })(),
+      userModelId: (() => { const out = allocateEntity<unknown>(); out.setUserModelId = (id: string) => calls.push(`userModel:${id}`); return finishEntity(out); })(),
+      version: (() => { const out = allocateEntity<unknown>(); out.getVersion = () => '1.2.3'; return finishEntity(out); })(),
     },
   };
   return { calls, host, listeners, unsubscribes };

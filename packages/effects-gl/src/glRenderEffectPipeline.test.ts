@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createGlContextState,
   createEmptyGlRegistries,
@@ -66,7 +66,7 @@ describe('setGlRenderEffectPipelineSkipGuard', () => {
     );
     const pipeline = createGlRenderEffectPipeline(state);
     const dropped: string[] = [];
-    const chain = [createEntity({ kind: 'test.pipeline-skip-seam' }) as RenderEffect];
+    const chain = [(() => { const out = allocateEntity<unknown>(); out.kind = 'test.pipeline-skip-seam'; return finishEntity(out) as RenderEffect];; })()
 
     setGlRenderEffectPipelineSkipGuard(state, (_state, kind) => dropped.push(kind));
     beginGlRenderEffectPipeline(state, pipeline);

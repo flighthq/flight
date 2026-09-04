@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as midi from './contract';
@@ -10,7 +10,7 @@ describe('getMidiPermission', () => {
       .mockResolvedValueOnce({ reason: 'ok', state: 'prompt' })
       .mockResolvedValueOnce({ reason: 'unsupported' })
       .mockRejectedValueOnce(new Error('provider fault'));
-    const host = { midi: { permission: createEntity({ getPermission }) } };
+    const host = { midi: { permission: (() => { const out = allocateEntity<unknown>(); out.getPermission = getPermission; return finishEntity(out); })() } };
     const getMidiPermission = requiredFunction('getMidiPermission');
     await expect(getMidiPermission(host)).resolves.toEqual({ reason: 'ok', state: 'prompt' });
     await expect(getMidiPermission(host)).resolves.toEqual({ reason: 'unsupported' });

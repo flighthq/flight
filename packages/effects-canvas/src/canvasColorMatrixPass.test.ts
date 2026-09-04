@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorMatrixPassToCanvas, applyColorMatrixToImageDataBytes } from './canvasColorMatrixPass';
@@ -13,13 +13,16 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
 } {
   const imageData = { data: new Uint8ClampedArray(pixels) };
   const written: { data: Uint8ClampedArray | null } = { data: null };
-  const source = createEntity({
-    context: { getImageData: () => imageData },
-    height: 1,
-    width: pixels.length / 4,
-  }) as unknown as CanvasRenderTarget;
-  const dest = createEntity({
-    context: {
+  const source = (() => {
+    const out = allocateEntity<unknown>();
+    out.context = { getImageData: () => imageData };
+    out.height = 1;
+    out.width = pixels.length / 4;
+    return finishEntity(out) as unknown;
+  })();
+  const dest = (() => {
+    const out = allocateEntity<unknown>();
+    out.context = {
       clearRect: () => {},
       filter: 'none',
       globalAlpha: 1,
@@ -30,10 +33,11 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
       restore: () => {},
       save: () => {},
       setTransform: () => {},
-    },
-    height: 1,
-    width: pixels.length / 4,
-  }) as unknown as CanvasRenderTarget;
+    };
+    out.height = 1;
+    out.width = pixels.length / 4;
+    return finishEntity(out) as unknown;
+  })();
   return { dest, source, written };
 }
 

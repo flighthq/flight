@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geometry/contract';
 import { createMeshGeometry, createMeshGeometryFromAttributes, setMeshGeometrySubsets } from '@flighthq/mesh/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
@@ -53,7 +53,8 @@ describe('empty Scene3DHit attribute queries', () => {
 describe('getScene3DHitMaterial', () => {
   it('returns the subset material or null for the default slot', () => {
     const hit = attributedHit();
-    const material = createEntity({ kind: 'TestMaterial' });
+    const material = allocateEntity<unknown>();
+    material.kind = 'TestMaterial';
     hit.node.materials = [material];
     expect(getScene3DHitMaterial(hit)).toBe(material);
     hit.node.materials[0] = null;

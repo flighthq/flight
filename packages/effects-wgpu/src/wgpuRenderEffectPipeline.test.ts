@@ -1,5 +1,5 @@
 import { createColorLutCache } from '@flighthq/adjustments/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { beginWgpuFrame, createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { RenderEffect } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -217,7 +217,7 @@ describe('endWgpuRenderEffectPipeline', () => {
   it('returns pooled scratch targets after running a chain', async () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuRenderEffectPipeline(state);
-    const chain = [createEntity({ kind: 'test.wgpu-pipeline-unregistered' }) as RenderEffect];
+    const chain = [(() => { const out = allocateEntity<unknown>(); out.kind = 'test.wgpu-pipeline-unregistered'; return finishEntity(out) as RenderEffect];; })()
 
     beginWgpuFrame(state);
     beginWgpuRenderEffectPipeline(state, pipeline);
@@ -234,7 +234,7 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
     const state = await createWgpuRenderStateForTest();
     const pipeline = createWgpuRenderEffectPipeline(state);
     const dropped: string[] = [];
-    const chain = [createEntity({ kind: 'test.wgpu-pipeline-skip-seam' }) as RenderEffect];
+    const chain = [(() => { const out = allocateEntity<unknown>(); out.kind = 'test.wgpu-pipeline-skip-seam'; return finishEntity(out) as RenderEffect];; })()
 
     setWgpuRenderEffectPipelineSkipGuard(state, (_state, kind) => dropped.push(kind));
     beginWgpuFrame(state);
@@ -256,14 +256,13 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
 
 describe('setWgpuRenderEffectVelocityTexture', () => {
   it('sets the velocity texture on the pipeline', () => {
-    const pipeline = createEntity({
-      options: {},
-      sceneTarget: null,
-      pool: { [EntityRuntimeKey]: undefined, free: [] },
-      lutCache: createColorLutCache(),
-      lutTexture: { texture: null, size: 0, lut: null },
-      velocityTexture: null,
-    });
+    const pipeline = allocateEntity<unknown>();
+    pipeline.options = {};
+    pipeline.sceneTarget = null;
+    pipeline.pool = { [EntityRuntimeKey]: undefined, free: [] };
+    pipeline.lutCache = createColorLutCache();
+    pipeline.lutTexture = { texture: null, size: 0, lut: null };
+    pipeline.velocityTexture = null;
     const texture = {} as GPUTexture;
     setWgpuRenderEffectVelocityTexture(pipeline, texture);
     expect(pipeline.velocityTexture).toBe(texture);

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, Path, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathAttachment2DKind, PathCommand, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -30,19 +30,14 @@ function emptyPath(): Path {
 }
 
 function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): PathAttachment2D {
-  return createEntity({
-    commands,
-    kind: PathAttachment2DKind,
-    pointCount,
-    skin,
-    vertices: null,
-    winding: 'evenOdd',
-  }) as PathAttachment2D;
-}
-
-describe('deformSkeleton2DPathAttachment', () => {
-  it('carries the verb stream and winding through untouched, since bones move points and not verbs', () => {
-    const skeleton = createSkeleton2D([makeBone()]);
+    const out = allocateEntity<Path>();
+  out.commands = commands;
+  out.kind = PathAttachment2DKind;
+  out.pointCount = pointCount;
+  out.skin = skin;
+  out.vertices = null;
+  out.winding = 'evenOdd';
+  return finishEntity(out) as PathAttachment2D;;
     computeSkeleton2DWorldTransforms(skeleton);
     const attachment = weightedPath(createSkin2D(new Uint16Array([1]), new Float32Array([0, 3, 4, 1])), 1, [
       PathCommand.MOVE_TO,
@@ -149,15 +144,16 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('transforms a rigid path by the slot bone world matrix', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment = createEntity({
-      commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
-      kind: PathAttachment2DKind,
-      pointCount: 2,
-      skin: null,
-      vertices: new Float32Array([2, 0, 0, 3]),
-      winding: 'nonZero',
-    }) as PathAttachment2D;
-    const out = emptyPath();
+    const attachment = (() => {
+      const out = allocateEntity<Path>();
+      out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO];
+      out.kind = PathAttachment2DKind;
+      out.pointCount = 2;
+      out.skin = null;
+      out.vertices = new Float32Array([2, 0, 0, 3]);
+      out.winding = 'nonZero';
+      return finishEntity(out) as PathAttachment2D;;
+    })();
 
     deformSkeleton2DPathAttachment(out, attachment, skeleton, 0, new Float32Array([0, 0, 0, 0]));
 
@@ -170,15 +166,13 @@ describe('deformSkeleton2DPathAttachment', () => {
   it('writes nothing for a rigid path with no setup vertices rather than throwing', () => {
     const skeleton = createSkeleton2D([makeBone()]);
     computeSkeleton2DWorldTransforms(skeleton);
-    const attachment = createEntity({
-      commands: [],
-      kind: PathAttachment2DKind,
-      pointCount: 0,
-      skin: null,
-      vertices: null,
-      winding: 'nonZero',
-    }) as PathAttachment2D;
-    const out = emptyPath();
+    const attachment = allocateEntity<Path>();
+    attachment.commands = [];
+    attachment.kind = PathAttachment2DKind;
+    attachment.pointCount = 0;
+    attachment.skin = null;
+    attachment.vertices = null;
+    attachment.winding = 'nonZero';
 
     expect(() => deformSkeleton2DPathAttachment(out, attachment, skeleton, 0)).not.toThrow();
     expect(out.data).toEqual([]);

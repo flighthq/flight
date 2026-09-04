@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
 import type { Texture, Sampler } from '@flighthq/types/contract';
 import { EnvironmentKind } from '@flighthq/types/contract';
@@ -6,26 +6,25 @@ import { EnvironmentKind } from '@flighthq/types/contract';
 import { cloneEnvironment, createEnvironment } from './environment';
 
 function createTestCubeTexture(): Texture {
-  const sampler: Sampler = createEntity({
-    anisotropy: 1,
-    magFilter: 'linear',
-    minFilter: 'linear',
-    mipmaps: false,
-    wrapU: 'clamp-to-edge',
-    wrapV: 'clamp-to-edge',
-  });
-  return createEntity({
-    colorSpace: 'linear',
-    flipX: false,
-    flipY: false,
-    sampler,
-    dimension: 'cube',
-    sources: [null, null, null, null, null, null],
-    uvOffset: createVector2(),
-    uvRotation: 0,
-    uvScale: createVector2(1, 1),
-    version: 0,
-  });
+  const sampler = allocateEntity<Texture>();
+  sampler.anisotropy = 1;
+  sampler.magFilter = 'linear';
+  sampler.minFilter = 'linear';
+  sampler.mipmaps = false;
+  sampler.wrapU = 'clamp-to-edge';
+  sampler.wrapV = 'clamp-to-edge';
+    const out = allocateEntity<Texture>();
+  out.colorSpace = 'linear';
+  out.flipX = false;
+  out.flipY = false;
+  out.sampler = sampler;
+  out.dimension = 'cube';
+  out.sources = [null, null, null, null, null, null];
+  out.uvOffset = createVector2();
+  out.uvRotation = 0;
+  out.uvScale = createVector2(1, 1);
+  out.version = 0;
+  return finishEntity(out);
 }
 
 describe('cloneEnvironment', () => {

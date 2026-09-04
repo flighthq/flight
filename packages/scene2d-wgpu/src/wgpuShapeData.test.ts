@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
@@ -53,15 +53,15 @@ function createTestRaster2DSurfaceProvider() {
 }
 
 function emptyData(): WgpuShapeRendererData {
-  return createEntity({
-    surface: null,
-    lastContentId: -1,
-    lastPixelRatio: 0,
-    lastW: 0,
-    lastH: 0,
-    meshVersion: -1,
-    meshes: null,
-    meshBuffers: {
+    const out = allocateEntity<WgpuShapeRendererData>();
+  out.surface = null;
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.lastW = 0;
+  out.lastH = 0;
+  out.meshVersion = -1;
+  out.meshes = null;
+  out.meshBuffers = {
       vertexBuffers: [],
       vertexCapacities: [],
       indexBuffers: [],
@@ -70,8 +70,8 @@ function emptyData(): WgpuShapeRendererData {
       bindGroups: [],
       colorScaleBiasUniformBuffers: [],
       colorScaleBiasBindGroups: [],
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 describe('acquireWgpuShapeRasterSurface', () => {

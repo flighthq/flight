@@ -1,19 +1,18 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, HasShareContent, ShareContentBackend } from '@flighthq/types/contract';
 
 import { shareText } from './share';
 
 function createRecordingHost(label: string, calls: string[]): HasShareContent {
-  const content = createEntity({
-    canShareContent: () => true,
-    async shareContent(payload) {
+  const content = allocateEntity<HasShareContent>();
+  content.canShareContent = () => true;
+  content.shareContent = async (payload) => {
       calls.push(`${label}:${payload.text ?? ''}`);
       return true;
-    },
-    async shareContentWithResult() {
+    };
+  content.shareContentWithResult = async () => {
       return { activityType: null, completed: true, dismissed: false };
-    },
-  } satisfies Omit<ShareContentBackend, typeof EntityRuntimeKey>);
+    };
   return { share: { content } };
 }
 

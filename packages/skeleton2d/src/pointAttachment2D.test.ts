@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bone2D, PointAttachment2D } from '@flighthq/types/contract';
 import { PointAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -27,12 +27,12 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function point(x: number, y: number, rotation: number): PointAttachment2D {
-  return createEntity({ kind: PointAttachment2DKind, rotation, x, y }) as PointAttachment2D;
-}
-
-describe('computeSkeleton2DPointAttachmentPosition', () => {
-  it('carries the local offset through the bone world transform', () => {
-    const skeleton = createSkeleton2D([makeBone({ rotation: 90, x: 5 })]);
+    const out = allocateEntity<PointAttachment2D>();
+  out.kind = PointAttachment2DKind;
+  out.rotation = rotation;
+  out.x = x;
+  out.y = y;
+  return finishEntity(out) as PointAttachment2D;;
     computeSkeleton2DWorldTransforms(skeleton);
     const out = { x: 0, y: 0 };
 

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,8 +12,8 @@ describe('protocol explicit Host ownership', () => {
     const getLaunchUrl = vi.fn(() => 'flight://cold-start');
     const host = {
       protocol: {
-        launch: createEntity({ getLaunchUrl }),
-        registration: createEntity({ getRegisteredSchemes: () => ['flight'], register }),
+        launch: (() => { const out = allocateEntity<unknown>(); out.getLaunchUrl = getLaunchUrl; return finishEntity(out); })(),
+        registration: (() => { const out = allocateEntity<unknown>(); out.getRegisteredSchemes = () => ['flight']; out.register = register; return finishEntity(out); })(),
       },
     };
 
@@ -29,7 +29,7 @@ describe('protocol explicit Host ownership', () => {
       listeners.open = listener;
       return vi.fn();
     });
-    const host = { protocol: { open: createEntity({ subscribe }) } };
+    const host = { protocol: { open: (() => { const out = allocateEntity<unknown>(); out.subscribe = subscribe; return finishEntity(out); })() } };
     const handler = createProtocolHandler();
     let received = '';
     connectSignal(handler.onOpenUrl, (url) => (received = url));

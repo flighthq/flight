@@ -1,5 +1,5 @@
 import { exitApplicationPointerLock, lockApplicationPointer } from '@flighthq/application/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { EntityWithoutRuntime, HasInputPointerLock, InputPointerLockBackend } from '@flighthq/types/contract';
 
@@ -99,10 +99,12 @@ describe('webInputPointerLockBackend', () => {
   it('does not pin the Web provider when the target is unknown', async () => {
     const target = createWebInputTargetHandle(document.createElement('div'));
     const fallbackExit = vi.fn(async () => ({ reason: 'ok' as const }));
-    const fallbackBackend = createEntity<EntityWithoutRuntime<InputPointerLockBackend>>({
-      exit: fallbackExit,
-      request: async () => ({ reason: 'ok' }),
-    });
+    const fallbackBackend = (() => {
+      const out = allocateEntity<EntityWithoutRuntime<InputPointerLockBackend>>();
+      out.exit = fallbackExit;
+      out.request = async () => ({ reason: 'ok' });
+      return finishEntity(out);
+    })();
     const fallbackHost: HasInputPointerLock = { input: { pointerLock: fallbackBackend } };
     resetWebInputTargetBackendForTest();
 

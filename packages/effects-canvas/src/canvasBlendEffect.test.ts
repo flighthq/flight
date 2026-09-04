@@ -1,5 +1,5 @@
 import { createBlendEffect } from '@flighthq/effects/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   BlendEffect,
   CanvasRenderState,
@@ -121,11 +121,7 @@ describe('defaultCanvasBlendEffectRunner', () => {
         state,
         source,
         dest,
-        pool: createEntity({
-          creator: canvasTestSurfaceCreator,
-          free: [],
-          inUse: [],
-        }) as unknown as CanvasRenderTargetPool,
+        pool: (() => { const out = allocateEntity<CanvasRenderTarget>(); out.creator = canvasTestSurfaceCreator; out.free = []; out.inUse = []; return finishEntity(out) as unknown; })() as CanvasRenderTargetPool,
       },
       blendEffect({ mode: 'Screen', backdropKey: 'scene' }),
     );

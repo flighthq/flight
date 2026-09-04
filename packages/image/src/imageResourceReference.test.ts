@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   clearImageBitmapComposers,
   clearImageDecoders,
@@ -291,14 +291,14 @@ describe('resolveImageResourceReference', () => {
 });
 
 function createTestBitmap(alphaType: Bitmap['alphaType']): Bitmap {
-  return createEntity({
-    alphaType,
-    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
-    format: 'rgba8unorm',
-    gamut: 'srgb',
-    height: 1,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width: 1,
-  });
+    const out = allocateEntity<Bitmap>();
+  out.alphaType = alphaType;
+  out.data = new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]);
+  out.format = 'rgba8unorm';
+  out.gamut = 'srgb';
+  out.height = 1;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = 1;
+  return finishEntity(out);
 }

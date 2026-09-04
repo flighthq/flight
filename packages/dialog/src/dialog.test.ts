@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityWithoutRuntime, MessageDialogBackend, PromptDialogBackend } from '@flighthq/types/contract';
 
 import {
@@ -16,19 +16,14 @@ import {
 function fakeHost() {
   return {
     dialog: {
-      message: createEntity({
-        async confirm() {
+      message: (() => { const out = allocateEntity<unknown>(); out.confirm = async () => {
           return true;
-        },
-        async message() {
+        }; out.message = async () => {
           return { buttonIndex: 2, cancelled: false, checkboxChecked: false };
-        },
-      } satisfies EntityWithoutRuntime<MessageDialogBackend>),
-      prompt: createEntity({
-        async prompt() {
+        }; return finishEntity(out); })(),
+      prompt: (() => { const out = allocateEntity<unknown>(); out.prompt = async () => {
           return 'typed';
-        },
-      } satisfies EntityWithoutRuntime<PromptDialogBackend>),
+        }; return finishEntity(out); })(),
     },
   };
 }
@@ -36,15 +31,12 @@ function fakeHost() {
 function severityHost(observed: string[]) {
   return {
     dialog: {
-      message: createEntity({
-        async confirm() {
+      message: (() => { const out = allocateEntity<unknown>(); out.confirm = async () => {
           return true;
-        },
-        async message(options: Parameters<MessageDialogBackend['message']>[0]) {
+        }; out.message = async (options: Parameters<MessageDialogBackend['message']>[0]) => {
           observed.push(options.kind ?? 'none');
           return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
-        },
-      }),
+        }; return finishEntity(out); })(),
     },
   };
 }
@@ -56,7 +48,7 @@ describe('showConfirmDialog', () => {
 
   it('forwards a live signal through the explicit message slot', async () => {
     const confirm = vi.fn(async () => true);
-    const host = { dialog: { message: createEntity({ confirm, message: vi.fn() }) } };
+    const host = { dialog: { message: (() => { const out = allocateEntity<unknown>(); out.confirm = confirm; out.message = vi.fn(); return finishEntity(out); })() } };
     const signal = new AbortController().signal;
     await showConfirmDialog(host, { message: 'sure?', signal });
     expect(confirm).toHaveBeenCalledWith({ message: 'sure?', signal });

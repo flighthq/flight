@@ -1,5 +1,5 @@
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
@@ -24,8 +24,8 @@ function makeCamera(): Camera3D {
 }
 
 function makeTarget(): GlRenderTarget {
-  return createEntity({
-    requestedAxes: {
+    const out = allocateEntity<Camera3D>();
+  out.requestedAxes = {
       width: 256,
       height: 256,
       format: 'rgba16f',
@@ -34,25 +34,25 @@ function makeTarget(): GlRenderTarget {
       sampleCount: 1,
       depth: 'depth-stencil',
       colorSpace: 'linear',
-    },
-    width: 256,
-    height: 256,
-    format: 'rgba16f',
-    colorAttachments: 1,
-    colorFormats: ['rgba16f'],
-    depth: 'depth-stencil',
-    colorSpace: 'linear',
-    clearColors: [],
-    clearDepth: 1,
-    sampleCount: 1,
-    framebuffer: { id: 'sceneFb' } as unknown as WebGLFramebuffer,
-    resolveFramebuffer: null,
-    textures: [{ id: 'sceneTex' } as unknown as WebGLTexture],
-    texture: { id: 'sceneTex' } as unknown as WebGLTexture,
-    depthTexture: null,
-    colorRenderbuffers: [],
-    depthStencilRenderbuffer: { id: 'sceneDepth' } as unknown as WebGLRenderbuffer,
-  });
+    };
+  out.width = 256;
+  out.height = 256;
+  out.format = 'rgba16f';
+  out.colorAttachments = 1;
+  out.colorFormats = ['rgba16f'];
+  out.depth = 'depth-stencil';
+  out.colorSpace = 'linear';
+  out.clearColors = [];
+  out.clearDepth = 1;
+  out.sampleCount = 1;
+  out.framebuffer = { id: 'sceneFb' } as unknown as WebGLFramebuffer;
+  out.resolveFramebuffer = null;
+  out.textures = [{ id: 'sceneTex' } as unknown as WebGLTexture];
+  out.texture = { id: 'sceneTex' } as unknown as WebGLTexture;
+  out.depthTexture = null;
+  out.colorRenderbuffers = [];
+  out.depthStencilRenderbuffer = { id: 'sceneDepth' } as unknown as WebGLRenderbuffer;
+  return finishEntity(out);
 }
 
 const LIGHTS: Scene3DLightsLike = {
