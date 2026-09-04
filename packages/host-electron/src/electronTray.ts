@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
@@ -111,8 +111,9 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
     list: () => [...records.keys()],
   });
 
-  const image = createEntity({
-    async set(tray: TrayIcon, source: string) {
+  const image = (() => {
+    const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
+    out.set = async (tray: TrayIcon, source: string) => {
       const record = records.get(tray);
       if (record === undefined) return { outcome: 'tray-destroyed' as const };
       let decoded: ElectronNativeImage;
@@ -128,17 +129,19 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
       } catch (error) {
         return { error, outcome: 'image-update-failed' as const };
       }
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
-  const tooltip = createEntity({
-    async get(tray: TrayIcon) {
+  const tooltip = (() => {
+    const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
+    out.get = async (tray: TrayIcon) => {
       const record = records.get(tray);
       return record === undefined
         ? ({ outcome: 'tray-destroyed' as const } as const)
         : ({ outcome: 'available' as const, tooltip: record.tooltip } as const);
-    },
-    async set(tray: TrayIcon, value: string) {
+    };
+    out.set = async (tray: TrayIcon, value: string) => {
       const record = records.get(tray);
       if (record === undefined) return { outcome: 'tray-destroyed' as const };
       try {
@@ -148,11 +151,13 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
       } catch (error) {
         return { error, outcome: 'tooltip-update-failed' as const };
       }
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
-  const menu = createEntity({
-    async set(tray: TrayIcon, items: readonly MenuItemTemplate[]) {
+  const menu = (() => {
+    const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>();
+    out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
       const record = records.get(tray);
       if (record === undefined) return { outcome: 'tray-destroyed' as const };
       let built: ElectronMenu;
@@ -170,12 +175,12 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
       } catch (error) {
         return { error, outcome: 'menu-install-failed' as const };
       }
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
   const common = {
-    bounds: createEntity({
-      async get(tray: TrayIcon) {
+    bounds: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.get = async (tray: TrayIcon) => {
         const record = records.get(tray);
         if (record === undefined) return { outcome: 'tray-destroyed' as const };
         try {
@@ -183,17 +188,13 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
         } catch (error) {
           return { error, outcome: 'bounds-read-failed' as const };
         }
-      },
-    }),
+      }; return finishEntity(out); })(),
     image,
-    interactionEvents: createEntity({ getSignal: (tray: TrayIcon) => records.get(tray)?.interactionEvents ?? null }),
+    interactionEvents: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.getSignal = (tray: TrayIcon) => records.get(tray)?.interactionEvents ?? null; return finishEntity(out); })(),
     lifecycle,
     menu,
-    menuSelectionEvents: createEntity({
-      getSignal: (tray: TrayIcon) => records.get(tray)?.menuSelectionEvents ?? null,
-    }),
-    popupMenu: createEntity({
-      async popup(tray: TrayIcon, position?: Readonly<Vector2Like>) {
+    menuSelectionEvents: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.getSignal = (tray: TrayIcon) => records.get(tray)?.menuSelectionEvents ?? null; return finishEntity(out); })(),
+    popupMenu: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.popup = async (tray: TrayIcon, position?: Readonly<Vector2Like>) => {
         const record = records.get(tray);
         if (record === undefined) return { outcome: 'tray-destroyed' as const };
         if (record.menu === null) return { outcome: 'menu-not-set' as const };
@@ -203,23 +204,19 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
         } catch (error) {
           return { error, outcome: 'popup-failed' as const };
         }
-      },
-    }),
+      }; return finishEntity(out); })(),
     tooltip,
   };
 
   if (profile === 'macos') {
     const macos = {
-      doubleClickPolicy: createEntity({
-        async setIgnore(tray: TrayIcon, ignore: boolean) {
+      doubleClickPolicy: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.setIgnore = async (tray: TrayIcon, ignore: boolean) => {
           return update(records, tray, 'double-click-policy-update-failed', (record) =>
             record.tray.setIgnoreDoubleClickEvents(ignore),
           );
-        },
-      }),
-      dropEvents: createEntity({ getSignal: (tray: TrayIcon) => records.get(tray)?.dropEvents ?? null }),
-      pressedImage: createEntity({
-        async set(tray: TrayIcon, source: string) {
+        }; return finishEntity(out); })(),
+      dropEvents: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.getSignal = (tray: TrayIcon) => records.get(tray)?.dropEvents ?? null; return finishEntity(out); })(),
+      pressedImage: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.set = async (tray: TrayIcon, source: string) => {
           const record = records.get(tray);
           if (record === undefined) return { outcome: 'tray-destroyed' as const };
           let decoded: ElectronNativeImage;
@@ -234,10 +231,8 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
           } catch (error) {
             return { error, outcome: 'pressed-image-update-failed' as const };
           }
-        },
-      }),
-      templateImage: createEntity({
-        async set(tray: TrayIcon, isTemplate: boolean) {
+        }; return finishEntity(out); })(),
+      templateImage: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.set = async (tray: TrayIcon, isTemplate: boolean) => {
           const record = records.get(tray);
           if (record === undefined) return { outcome: 'tray-destroyed' as const };
           try {
@@ -247,16 +242,13 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
           } catch (error) {
             return { error, outcome: 'template-image-update-failed' as const };
           }
-        },
-      }),
-      title: createEntity({
-        async get(tray: TrayIcon) {
+        }; return finishEntity(out); })(),
+      title: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.get = async (tray: TrayIcon) => {
           const record = records.get(tray);
           return record === undefined
             ? ({ outcome: 'tray-destroyed' as const } as const)
             : ({ outcome: 'available' as const, title: record.title } as const);
-        },
-        async set(tray: TrayIcon, value: string) {
+        }; out.set = async (tray: TrayIcon, value: string) => {
           const record = records.get(tray);
           if (record === undefined) return { outcome: 'tray-destroyed' as const };
           try {
@@ -266,8 +258,7 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
           } catch (error) {
             return { error, outcome: 'title-update-failed' as const };
           }
-        },
-      }),
+        }; return finishEntity(out); })(),
     };
     return createEntity({
       ...common,
@@ -277,8 +268,7 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
 
   if (profile === 'windows') {
     const windows = {
-      balloon: createEntity({
-        async display(tray: TrayIcon, options: Parameters<NonNullable<HostTrayCapabilities['balloon']>['display']>[1]) {
+      balloon: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.display = async (tray: TrayIcon, options: Parameters<NonNullable<HostTrayCapabilities['balloon']>['display']>[1]) => {
           const record = records.get(tray);
           if (record === undefined) return { outcome: 'tray-destroyed' as const };
           try {
@@ -296,8 +286,7 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
           } catch (error) {
             return { error, outcome: 'balloon-display-failed' as const };
           }
-        },
-        async remove(tray: TrayIcon) {
+        }; out.remove = async (tray: TrayIcon) => {
           const record = records.get(tray);
           if (record === undefined) return { outcome: 'tray-destroyed' as const };
           if (!record.balloonActive) return { outcome: 'balloon-not-active' as const };
@@ -308,9 +297,8 @@ export function createElectronTrayCapabilities<Profile extends DesktopOsProfile>
           } catch (error) {
             return { error, outcome: 'balloon-remove-failed' as const };
           }
-        },
-      }),
-      balloonEvents: createEntity({ getSignal: (tray: TrayIcon) => records.get(tray)?.balloonEvents ?? null }),
+        }; return finishEntity(out); })(),
+      balloonEvents: (() => { const out = allocateEntity<ElectronTrayCapabilitiesFor<Profile>>(); out.getSignal = (tray: TrayIcon) => records.get(tray)?.balloonEvents ?? null; return finishEntity(out); })(),
     };
     return createEntity({
       ...common,

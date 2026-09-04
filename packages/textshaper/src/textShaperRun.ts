@@ -23,7 +23,7 @@ export function clearShapedRun(run: ShapedRun): ShapedRun {
 }
 
 export function createShapedRun(): ShapedRun & Entity {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<ShapedRun>();
   out.advanceWidth = 0;
   out.direction = 'LeftToRight';
   out.font = null;

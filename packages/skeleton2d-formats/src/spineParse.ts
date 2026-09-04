@@ -238,7 +238,7 @@ function parseSpineMeshAttachment(
   const rawVerts = Array.isArray(raw.vertices) ? (raw.vertices as number[]) : [];
   const vertexCount = uvs.length >> 1;
   if (rawVerts.length === vertexCount * 2) {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<MeshAttachment2D>();
     out.kind = MeshAttachment2DKind;
     out.name = name;
     out.skin = null;
@@ -248,7 +248,7 @@ function parseSpineMeshAttachment(
     out.vertices = Float32Array.from(rawVerts);
     return finishEntity(out);
   }
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<MeshAttachment2D>();
   out.kind = MeshAttachment2DKind;
   out.name = name;
   out.skin = parseSpineWeightedVertices(rawVerts, vertexCount, diagnostics);
@@ -260,7 +260,7 @@ function parseSpineMeshAttachment(
 }
 
 function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>): RegionAttachment2D {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<RegionAttachment2D>();
   out.height = numberOr(raw.height, 0);
   out.kind = RegionAttachment2DKind;
   out.name = name;

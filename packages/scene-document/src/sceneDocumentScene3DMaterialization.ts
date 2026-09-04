@@ -1,5 +1,5 @@
 import { createCamera3D, setCamera3DViewMatrix4FromMatrix4 } from '@flighthq/camera/contract';
-import { createEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import {
   acquireMatrix4,
   composeMatrix4FromTransform3D,
@@ -145,7 +145,13 @@ export function createFlightDocumentScene3DMaterialization(
   const materializedNodes = getMaterializedNodes(scene.root);
   const cameras = materializeCameras(documentScene.cameras, materializedNodes);
   const lights = materializeLights(documentScene.lights, materializedNodes);
-  return createEntity({ cameras, interactiveStateBindings, layoutBindings, lights, scene });
+    const out = allocateEntity<FlightDocumentScene3DMaterialization>();
+  out.cameras = cameras;
+  out.interactiveStateBindings = interactiveStateBindings;
+  out.layoutBindings = layoutBindings;
+  out.lights = lights;
+  out.scene = scene;
+  return finishEntity(out);
 }
 
 export function createFlightDocumentScene3DMaterializationFromText(

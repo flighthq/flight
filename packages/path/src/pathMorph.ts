@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Path, PathMorph } from '@flighthq/types/contract';
 
 export type { PathMorph } from '@flighthq/types/contract';

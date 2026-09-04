@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronMenuCapabilities,
@@ -23,8 +23,8 @@ import { toElectronTemplate } from './electronMenuTemplate';
 export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuCapabilities {
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
-  return createEntity({
-    application: createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
+    const out = allocateEntity<ElectronMenuCapabilities>();
+  out.application = createEntity<EntityWithoutRuntime<MenuApplicationBackend>>({
       // Provider lifecycle: releases the OS menu this provider installed. It deliberately does NOT end
       // select subscriptions — those are ended by their own unsubscribe.
       destroy(): void {
@@ -38,8 +38,8 @@ export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuC
         );
         return true;
       },
-    }),
-    popup: createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
+    });
+  out.popup = createEntity<EntityWithoutRuntime<MenuPopupBackend>>({
       // The Electron seam exposes no menu close event, so the Promise resolves on the first item click
       // and never resolves to null from a dismissal — callers treat a non-resolving Promise as "still
       // open". We resolve null only if popup throws.
@@ -53,14 +53,14 @@ export function createElectronMenuBackends(electron: ElectronApi): ElectronMenuC
           }
         });
       },
-    }),
-    select: createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
+    });
+  out.select = createEntity<EntityWithoutRuntime<MenuSelectBackend>>({
       subscribe(listener): () => void {
         selectListener = listener;
         return () => {
           if (selectListener === listener) selectListener = null;
         };
       },
-    }),
-  });
+    });
+  return finishEntity(out);
 }

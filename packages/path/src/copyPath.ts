@@ -12,7 +12,7 @@ export function clonePath(source: Readonly<Path>): Path {
 // is a no-op (the path is already in place). Use `clonePath` when you always want a new allocation.
 export function copyPath(source: Readonly<Path>, out?: Path): Path {
   if (out === undefined) {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<Path>();
     out.commands = source.commands.slice();
     out.data = source.data.slice();
     out.winding = source.winding;

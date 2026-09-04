@@ -2,7 +2,7 @@ import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import { createAudioResource, createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -148,18 +148,18 @@ export function createScene2DImportFromSwf(
   }
   const imageResources = createSwfImageResources(parsed);
 
-  return createEntity({
-    appearances: instantiation.appearances,
-    document: createScene2DDocument(
+    const out = allocateEntity<SwfDocumentImport>();
+  out.appearances = instantiation.appearances;
+  out.document = createScene2DDocument(
       root,
       slots,
       'swf',
       parsed.backgroundColor,
       imageResources.resources,
       createSwfAudioResources(parsed),
-    ),
-    jpegAlphaPayloads: createSwfJpegAlphaPayloads(parsed, imageResources.references),
-  });
+    );
+  out.jpegAlphaPayloads = createSwfJpegAlphaPayloads(parsed, imageResources.references);
+  return finishEntity(out);
 }
 
 // Instantiates a symbol the file exported by linkage name but never placed on a timeline. A library
@@ -858,14 +858,12 @@ function createSwfTimelineSource(
   const appliedAlphas = new Map<Node2D, number>();
   const appliedColorAdjustments = new Map<Node2D, readonly Adjustment[] | null>();
   const appliedRatios = new Map<Node2D, number>();
-  return createEntity<EntityWithoutRuntime<TimelineSource>>({
-    totalFrames: frames.length,
-    labels,
-    frameRate,
-    // A source with nothing to dispatch carries an empty array rather than null, so a caller never
-    // branches on absence.
-    cues,
-    constructFrame(target: Node2D, frame: number): void {
+    const out = allocateEntity<TimelineSource>();
+  out.totalFrames = frames.length;
+  out.labels = labels;
+  out.frameRate = frameRate;
+  out.cues = cues;
+  out.constructFrame = (target: Node2D, frame: number): void => {
       const entries = frames[frame - 1];
       if (entries === undefined) return;
 
@@ -937,8 +935,8 @@ function createSwfTimelineSource(
           appliedClips.set(node, entry.clip);
         }
       }
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Pairs each drawn placement of a frame with the clip its mask imposes. SWF masks by depth range — a
@@ -2755,12 +2753,14 @@ function appendSwfStreamSoundCue(
   }
   const resource = createAudioResource();
   state.streamSounds.push({ bytes, mimeType: 'audio/mpeg', resource });
-  const cue: TimelineStreamAudioCue = createEntity({
-    frame: startFrame,
-    gain: 1,
-    kind: TimelineStreamAudioCueKind,
-    resource,
-  });
+  const cue = (() => {
+    const out = allocateEntity<void>();
+    out.frame = startFrame;
+    out.gain = 1;
+    out.kind = TimelineStreamAudioCueKind;
+    out.resource = resource;
+    return finishEntity(out);
+  })();
   cues.push(cue);
 }
 
@@ -2832,21 +2832,18 @@ function readSwfSoundInfo(body: SwfReader): SwfSoundInfo | null {
 // Builds the cue one trigger becomes. A stop names the sound to silence and nothing else: every play field
 // SOUNDINFO carries alongside it describes a playback being ended rather than started.
 function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource: AudioResource): TimelineAudioCue {
-  return createEntity({
-    duration: info.stop || info.outPointSamples < 0 ? null : info.outPointSamples,
-    envelope: info.stop ? [] : info.envelope,
-    frame,
-    gain: 1,
-    kind: TimelineAudioCueKind,
-    // SWF counts the first play as a loop; a timeline cue counts repeats, so one means play once.
-    loops: info.stop ? 1 : Math.max(1, info.loopCount),
-    offset: info.stop ? 0 : info.inPointSamples,
-    resource,
-    // Do not start this sound if it is already playing — Flash's "Start" sync, as against "Event", which
-    // stacks a fresh copy every time the frame is entered.
-    skipIfPlaying: !info.stop && info.skipIfPlaying,
-    stop: info.stop,
-  });
+    const out = allocateEntity<void>();
+  out.duration = info.stop || info.outPointSamples < 0 ? null : info.outPointSamples;
+  out.envelope = info.stop ? [] : info.envelope;
+  out.frame = frame;
+  out.gain = 1;
+  out.kind = TimelineAudioCueKind;
+  out.loops = info.stop ? 1 : Math.max(1, info.loopCount);
+  out.offset = info.stop ? 0 : info.inPointSamples;
+  out.resource = resource;
+  out.skipIfPlaying = !info.stop && info.skipIfPlaying;
+  out.stop = info.stop;
+  return finishEntity(out);
 }
 
 // Pairs every class-named trigger with the character its class was bound to, now that the whole tag stream

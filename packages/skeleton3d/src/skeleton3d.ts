@@ -18,7 +18,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
-  const clone = allocateEntity<unknown>();
+  const clone = allocateEntity<Skeleton3D>();
   clone.inverseBindMatrices = new Float32Array(skeleton.inverseBindMatrices);
   clone.jointMatrices = new Float32Array(skeleton.jointMatrices);
   clone.joints = skeleton.joints.slice();
@@ -51,7 +51,7 @@ export function cloneSkeleton3DJointHierarchy(
     const parentClone = clonesBySource.get(sourceParent);
     if (parentClone !== undefined) addNodeChild(parentClone, joints[i]);
   }
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Skeleton3D>();
   out.inverseBindMatrices = new Float32Array(skeleton.inverseBindMatrices);
   out.jointMatrices = new Float32Array(skeleton.jointMatrices);
   out.joints = joints;

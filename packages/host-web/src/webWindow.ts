@@ -1,5 +1,5 @@
 import { notifyWindowClosed } from '@flighthq/application/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ApplicationWindow,
   EntityWithoutRuntime,
@@ -26,12 +26,13 @@ type WebWindowBackend = WindowBackend &
     >
   >;
 
-export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRuntime<WebWindowBackend>>({
-  attach(win, handle, ownership) {
+  export const webWindowBackend = (() => {
+    const out = allocateEntity<WebWindowBackend>();
+    out.attach = (win, handle, ownership) => {
     if (!isWebWindow(handle)) return false;
     return attachWebWindow(win, handle, ownership);
-  },
-  center(win) {
+  };
+    out.center = (win) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.moveTo !== 'function') return;
     try {
@@ -42,26 +43,26 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
     } catch {
       /* browser rejected script-driven movement */
     }
-  },
-  close(win) {
+  };
+    out.close = (win) => {
     detachWebWindow(win, true);
-  },
-  focus(win) {
+  };
+    out.focus = (win) => {
     const handle = getWebWindowHandle(win);
     if (handle !== null && typeof handle.focus === 'function') handle.focus();
-  },
-  getBounds(win, out) {
+  };
+    out.getBounds = (win, out) => {
     const handle = getWebWindowHandle(win);
     out.x = handle?.screenX ?? win.x;
     out.y = handle?.screenY ?? win.y;
     out.width = handle?.innerWidth ?? win.width;
     out.height = handle?.innerHeight ?? win.height;
     return out;
-  },
-  open(win) {
+  };
+    out.open = (win) => {
     return typeof window !== 'undefined' && attachWebWindow(win, window, 'host');
-  },
-  setFullscreen(win, fullscreen) {
+  };
+    out.setFullscreen = (win, fullscreen) => {
     const document = getWebWindowHandle(win)?.document;
     if (document === undefined) return;
     try {
@@ -70,8 +71,8 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
     } catch {
       /* browser rejected the fullscreen request synchronously */
     }
-  },
-  setIcon(win, icon) {
+  };
+    out.setIcon = (win, icon) => {
     const document = getWebWindowHandle(win)?.document;
     if (document === undefined) return;
     let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
@@ -81,8 +82,8 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
       document.head.appendChild(link);
     }
     link.href = icon;
-  },
-  setPosition(win, x, y) {
+  };
+    out.setPosition = (win, x, y) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.moveTo !== 'function') return;
     try {
@@ -90,8 +91,8 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
     } catch {
       /* browser rejected script-driven movement */
     }
-  },
-  setSize(win, width, height) {
+  };
+    out.setSize = (win, width, height) => {
     const handle = getWebWindowHandle(win);
     if (handle === null || typeof handle.resizeTo !== 'function') return;
     try {
@@ -99,12 +100,12 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
     } catch {
       /* browser rejected script-driven resizing */
     }
-  },
-  setTitle(win, title) {
+  };
+    out.setTitle = (win, title) => {
     const document = getWebWindowHandle(win)?.document;
     if (document !== undefined) document.title = title;
-  },
-  subscribeClose(onCloseRequest, onClose) {
+  };
+    out.subscribeClose = (onCloseRequest, onClose) => {
     if (typeof window === 'undefined') return noop;
     const pageWindow = window;
     const onBeforeUnload = (event: BeforeUnloadEvent): void => {
@@ -118,8 +119,8 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
       pageWindow.removeEventListener('beforeunload', onBeforeUnload);
       pageWindow.removeEventListener('pagehide', onClose);
     });
-  },
-  subscribeMove(listener) {
+  };
+    out.subscribeMove = (listener) => {
     if (typeof window === 'undefined') return noop;
     const pageWindow = window;
     const handler = (): void => {
@@ -129,14 +130,14 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
     };
     pageWindow.addEventListener('resize', handler);
     return trackWebWindowSubscription(() => pageWindow.removeEventListener('resize', handler));
-  },
-  subscribeOrientation(listener) {
+  };
+    out.subscribeOrientation = (listener) => {
     if (typeof screen === 'undefined' || screen.orientation === undefined) return noop;
     const orientation = screen.orientation;
     orientation.addEventListener('change', listener);
     return trackWebWindowSubscription(() => orientation.removeEventListener('change', listener));
-  },
-  subscribeResize(target, listener) {
+  };
+    out.subscribeResize = (target, listener) => {
     const element = _windowResizeTargets.get(target);
     if (element === undefined || typeof ResizeObserver === 'undefined') return noop;
     const observer = new ResizeObserver((entries) => {
@@ -150,15 +151,16 @@ export const webWindowBackend: WebWindowBackend = createEntity<EntityWithoutRunt
     });
     observer.observe(element);
     return trackWebWindowSubscription(() => observer.disconnect());
-  },
-  subscribeVisibility(listener) {
+  };
+    out.subscribeVisibility = (listener) => {
     if (typeof document === 'undefined') return noop;
     const pageDocument = document;
     const handler = (): void => listener(!pageDocument.hidden);
     pageDocument.addEventListener('visibilitychange', handler);
     return trackWebWindowSubscription(() => pageDocument.removeEventListener('visibilitychange', handler));
-  },
-});
+  };
+    return finishEntity(out);
+  })();
 
 export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenBackend, 'subscribe' | 'unsubscribe'>> =
   {
@@ -197,13 +199,15 @@ export const webFullscreenBackend: FullscreenBackend & Required<Pick<FullscreenB
   };
 
 export function createWebFullscreenTargetHandle(element: Element): FullscreenTargetHandle {
-  const target: FullscreenTargetHandle = createEntity({ __brand: 'FullscreenTargetHandle' as const });
+  const target = allocateEntity<FullscreenTargetHandle>();
+  target.__brand = 'FullscreenTargetHandle' as const;
   _fullscreenTargets.set(target, element);
   return target;
 }
 
 export function createWebWindowResizeTargetHandle(element: Element): WindowResizeTargetHandle {
-  const target: WindowResizeTargetHandle = createEntity({ __brand: 'WindowResizeTargetHandle' as const });
+  const target = allocateEntity<FullscreenTargetHandle>();
+  target.__brand = 'WindowResizeTargetHandle' as const;
   _windowResizeTargets.set(target, element);
   return target;
 }

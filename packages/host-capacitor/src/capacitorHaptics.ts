@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HapticImpactStyle,
   EntityWithoutRuntime,
@@ -17,43 +17,43 @@ import type {
 // omitted; the intensity argument to `impact` is not expressible and is ignored.
 export function createCapacitorHapticsBackend(capacitor: CapacitorApi): HapticsBackend {
   const haptics = capacitor.haptics;
-  return createEntity<EntityWithoutRuntime<HapticsBackend>>({
-    cancel() {
+    const out = allocateEntity<HapticsBackend>();
+  out.cancel = () => {
       // Capacitor exposes no cancel-vibration call.
       return false;
-    },
-    capabilities(out: HapticsCapabilities): HapticsCapabilities {
+    };
+  out.capabilities = (out: HapticsCapabilities): HapticsCapabilities => {
       out.supported = true;
       out.intensity = false;
       out.patterns = false;
       out.amplitudeControl = false;
       out.customEvents = false;
       return out;
-    },
-    impact(style: HapticImpactStyle) {
+    };
+  out.impact = (style: HapticImpactStyle) => {
       haptics.impact({ style: toCapacitorImpactStyle(style) }).catch(() => {});
       return true;
-    },
-    isSupported() {
+    };
+  out.isSupported = () => {
       return true;
-    },
-    notification(type: HapticNotificationType) {
+    };
+  out.notification = (type: HapticNotificationType) => {
       haptics.notification({ type: type.toUpperCase() }).catch(() => {});
       return true;
-    },
-    selection() {
+    };
+  out.selection = () => {
       haptics.selectionChanged().catch(() => {});
       return true;
-    },
-    vibrate(durationMs: number) {
+    };
+  out.vibrate = (durationMs: number) => {
       haptics.vibrate({ duration: durationMs }).catch(() => {});
       return true;
-    },
-    vibratePattern() {
+    };
+  out.vibratePattern = () => {
       // Capacitor's vibrate takes a single duration, not an on/off pattern; report unsupported.
       return false;
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Capacitor's ImpactStyle is HEAVY/MEDIUM/LIGHT; Flight's extra 'soft'/'rigid' fold onto the nearest.

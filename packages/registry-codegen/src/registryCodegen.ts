@@ -34,7 +34,7 @@ export function createRegistryCodegenPlan(
     }
   }
 
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<RegistryCodegenPlan>();
   out.backend = backend;
   out.entries = entries;
   out.unresolved = unresolved;

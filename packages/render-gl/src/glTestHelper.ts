@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlBitmapShader, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 
@@ -53,7 +53,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     flushPendingDraws: null,
     renderTargetViewport: null,
     defaultBitmapShader: (() => {
-      const out = allocateEntity<unknown>();
+      const out = allocateEntity<GlBitmapShader>();
       out.locations = shaderLoc;
       out.program = shaderLoc.program;
       out.bind = vi.fn();

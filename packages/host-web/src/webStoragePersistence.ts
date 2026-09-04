@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   PermissionState,
   StoragePersistenceResult,
@@ -11,35 +11,36 @@ import type {
 export function createWebWindowStoragePersistenceCapabilities(
   api: Readonly<WebWindowStoragePersistenceApi>,
 ): WebWindowStoragePersistenceCapabilities {
-  const persistenceRequest = createEntity({
-    async requestPersistence(): Promise<StoragePersistenceResult> {
+  const persistenceRequest = allocateEntity<WebWindowStoragePersistenceCapabilities>();
+  persistenceRequest.requestPersistence = async (): Promise<StoragePersistenceResult> => {
       const outcome = await observePersistenceOutcome(() => api.persist());
       const permissionState = await observePermissionState(() => api.getPermissionState());
       return { outcome, permissionState };
-    },
-  });
-  const capabilities = createEntity({
-    persistenceQuery: createPersistenceQueryBackend(api),
-    persistenceRequest,
-  });
+    };
+  const capabilities = (() => {
+    const out = allocateEntity<WebWindowStoragePersistenceCapabilities>();
+    out.persistenceQuery = createPersistenceQueryBackend(api);
+    out.persistenceRequest = persistenceRequest;
+    return finishEntity(out);
+  })();
   return capabilities;
 }
 
 export function createWebWorkerStoragePersistenceCapabilities(
   api: Readonly<WebWorkerStoragePersistenceApi>,
 ): WebWorkerStoragePersistenceCapabilities {
-  const capabilities = createEntity({ persistenceQuery: createPersistenceQueryBackend(api) });
+  const capabilities = allocateEntity<WebWindowStoragePersistenceCapabilities>();
+  capabilities.persistenceQuery = createPersistenceQueryBackend(api);
   return capabilities;
 }
 
 function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistenceApi>) {
-  const backend = createEntity({
-    async getPersistence(): Promise<StoragePersistenceResult> {
+  const backend = allocateEntity<WebWindowStoragePersistenceCapabilities>();
+  backend.getPersistence = async (): Promise<StoragePersistenceResult> => {
       const outcome = await observePersistenceOutcome(() => api.persisted());
       const permissionState = await observePermissionState(() => api.getPermissionState());
       return { outcome, permissionState };
-    },
-  });
+    };
   return backend;
 }
 

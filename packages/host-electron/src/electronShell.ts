@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronShortcutDetails,
@@ -22,51 +22,58 @@ export function makeElectronShellCapabilities(
 ): HostShellCapabilities &
   Required<Pick<HostShellCapabilities, 'beep' | 'external' | 'pathOpen' | 'pathReveal' | 'trash'>> {
   const shell = electron.shell;
-  const beep: ShellBeepBackend = createEntity({
-    beep() {
+  const beep = allocateEntity<ShellBeepBackend>();
+  beep.beep = () => {
       shell.beep();
-    },
-  } satisfies Omit<ShellBeepBackend, typeof EntityRuntimeKey>);
-  const external: ShellExternalBackend = createEntity({
-    async open(url) {
+    };
+  const external = (() => {
+    const out = allocateEntity<ShellExternalBackend>();
+    out.open = async (url) => {
       try {
         await shell.openExternal(url);
         return { reason: 'ok' };
       } catch {
         return { reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellExternalBackend, typeof EntityRuntimeKey>);
-  const pathOpen: ShellPathOpenBackend = createEntity({
-    async open(path) {
+    };
+    return finishEntity(out);
+  })();
+  const pathOpen = (() => {
+    const out = allocateEntity<ShellPathOpenBackend>();
+    out.open = async (path) => {
       try {
         const message = await shell.openPath(path);
         return message === '' ? { reason: 'ok' } : { message, reason: 'operation-failed' };
       } catch (error) {
         return { message: errorMessage(error), reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellPathOpenBackend, typeof EntityRuntimeKey>);
-  const pathReveal: ShellPathRevealBackend = createEntity({
-    async reveal(path) {
+    };
+    return finishEntity(out);
+  })();
+  const pathReveal = (() => {
+    const out = allocateEntity<ShellPathRevealBackend>();
+    out.reveal = async (path) => {
       try {
         shell.showItemInFolder(path);
         return { reason: 'ok' };
       } catch {
         return { reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellPathRevealBackend, typeof EntityRuntimeKey>);
-  const trash: ShellTrashBackend = createEntity({
-    async moveToTrash(path) {
+    };
+    return finishEntity(out);
+  })();
+  const trash = (() => {
+    const out = allocateEntity<ShellTrashBackend>();
+    out.moveToTrash = async (path) => {
       try {
         await shell.trashItem(path);
         return { reason: 'ok' };
       } catch {
         return { reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellTrashBackend, typeof EntityRuntimeKey>);
+    };
+    return finishEntity(out);
+  })();
   const shared = { beep, external, pathOpen, pathReveal, trash };
   if (platform !== 'windows') return shared;
   return { ...shared, shortcutLink: createElectronShellShortcutLinkBackend(electron) };
@@ -74,8 +81,8 @@ export function makeElectronShellCapabilities(
 
 function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellShortcutLinkBackend {
   const shell = electron.shell;
-  return createEntity({
-    async read(shortcutPath) {
+    const out = allocateEntity<ShellShortcutLinkBackend>();
+  out.read = async (shortcutPath) => {
       try {
         const details = shell.readShortcutLink(shortcutPath);
         const link: ShellShortcutLink = {
@@ -91,8 +98,8 @@ function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellSho
       } catch (error) {
         return { message: errorMessage(error), reason: 'operation-failed' };
       }
-    },
-    async write(shortcutPath, link, operation) {
+    };
+  out.write = async (shortcutPath, link, operation) => {
       try {
         const details: ElectronShortcutDetails = {
           target: link.target,
@@ -107,8 +114,8 @@ function createElectronShellShortcutLinkBackend(electron: ElectronApi): ShellSho
       } catch {
         return { reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellShortcutLinkBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 function errorMessage(error: unknown): string {

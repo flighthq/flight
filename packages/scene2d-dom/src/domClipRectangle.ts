@@ -78,7 +78,7 @@ export function createDomScene2DRectangle(
   const x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<DomScene2DRectangle>();
   out.bottom = Math.max(y0, y1, y2, y3);
   out.left = Math.min(x0, x1, x2, x3);
   out.right = Math.max(x0, x1, x2, x3);

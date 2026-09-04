@@ -1,5 +1,5 @@
 import { writeCollisionHeightfieldBounds3D, writeCollisionTriangleMeshBounds3D } from '@flighthq/collision/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionColliderShape3D,
   Entity,
@@ -16,90 +16,105 @@ export function createPhysics3DColliderWorldShape(
 ): CollisionColliderShape3D & Entity {
   switch (local.kind) {
     case 'sphere':
-      return createEntity({ kind: 'sphere', x: local.x, y: local.y, z: local.z, radius: local.radius });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'sphere';
+      out.x = local.x;
+      out.y = local.y;
+      out.z = local.z;
+      out.radius = local.radius;
+      return finishEntity(out);
     case 'aabb':
     case 'box':
-      return createEntity({
-        kind: 'box',
-        x: 0,
-        y: 0,
-        z: 0,
-        halfX: 0,
-        halfY: 0,
-        halfZ: 0,
-        rotationX: 0,
-        rotationY: 0,
-        rotationZ: 0,
-        rotationW: 1,
-      });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'box';
+      out.x = 0;
+      out.y = 0;
+      out.z = 0;
+      out.halfX = 0;
+      out.halfY = 0;
+      out.halfZ = 0;
+      out.rotationX = 0;
+      out.rotationY = 0;
+      out.rotationZ = 0;
+      out.rotationW = 1;
+      return finishEntity(out);
     case 'capsule':
-      return createEntity({
-        kind: 'capsule',
-        x0: local.x0,
-        y0: local.y0,
-        z0: local.z0,
-        x1: local.x1,
-        y1: local.y1,
-        z1: local.z1,
-        radius: local.radius,
-      });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'capsule';
+      out.x0 = local.x0;
+      out.y0 = local.y0;
+      out.z0 = local.z0;
+      out.x1 = local.x1;
+      out.y1 = local.y1;
+      out.z1 = local.z1;
+      out.radius = local.radius;
+      return finishEntity(out);
     case 'cylinder':
-      return createEntity({
-        kind: 'cylinder',
-        x0: local.x0,
-        y0: local.y0,
-        z0: local.z0,
-        x1: local.x1,
-        y1: local.y1,
-        z1: local.z1,
-        radius: local.radius,
-      });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'cylinder';
+      out.x0 = local.x0;
+      out.y0 = local.y0;
+      out.z0 = local.z0;
+      out.x1 = local.x1;
+      out.y1 = local.y1;
+      out.z1 = local.z1;
+      out.radius = local.radius;
+      return finishEntity(out);
     case 'cone':
-      return createEntity({
-        kind: 'cone',
-        apexX: local.apexX,
-        apexY: local.apexY,
-        apexZ: local.apexZ,
-        baseX: local.baseX,
-        baseY: local.baseY,
-        baseZ: local.baseZ,
-        radius: local.radius,
-      });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'cone';
+      out.apexX = local.apexX;
+      out.apexY = local.apexY;
+      out.apexZ = local.apexZ;
+      out.baseX = local.baseX;
+      out.baseY = local.baseY;
+      out.baseZ = local.baseZ;
+      out.radius = local.radius;
+      return finishEntity(out);
     case 'convex':
-      return createEntity({ kind: 'convex', points: local.points.slice() });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'convex';
+      out.points = local.points.slice();
+      return finishEntity(out);
     case 'triangle-mesh':
-      return createEntity({
-        kind: 'triangle-mesh',
-        points: local.points,
-        indices: local.indices,
-        version: local.version,
-        x: local.x,
-        y: local.y,
-        z: local.z,
-        rotationX: local.rotationX,
-        rotationY: local.rotationY,
-        rotationZ: local.rotationZ,
-        rotationW: local.rotationW,
-      });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'triangle-mesh';
+      out.points = local.points;
+      out.indices = local.indices;
+      out.version = local.version;
+      out.x = local.x;
+      out.y = local.y;
+      out.z = local.z;
+      out.rotationX = local.rotationX;
+      out.rotationY = local.rotationY;
+      out.rotationZ = local.rotationZ;
+      out.rotationW = local.rotationW;
+      return finishEntity(out);
     case 'heightfield':
-      return createEntity({
-        kind: 'heightfield',
-        columns: local.columns,
-        rows: local.rows,
-        heights: local.heights,
-        cellSizeX: local.cellSizeX,
-        cellSizeZ: local.cellSizeZ,
-        version: local.version,
-        x: local.x,
-        y: local.y,
-        z: local.z,
-        rotationX: local.rotationX,
-        rotationY: local.rotationY,
-        rotationZ: local.rotationZ,
-        rotationW: local.rotationW,
-      });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'heightfield';
+      out.columns = local.columns;
+      out.rows = local.rows;
+      out.heights = local.heights;
+      out.cellSizeX = local.cellSizeX;
+      out.cellSizeZ = local.cellSizeZ;
+      out.version = local.version;
+      out.x = local.x;
+      out.y = local.y;
+      out.z = local.z;
+      out.rotationX = local.rotationX;
+      out.rotationY = local.rotationY;
+      out.rotationZ = local.rotationZ;
+      out.rotationW = local.rotationW;
+      return finishEntity(out);
     default:
-      return createEntity({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 0 });
+            const out = allocateEntity<Physics3DColliderWorldShape>();
+      out.kind = 'sphere';
+      out.x = 0;
+      out.y = 0;
+      out.z = 0;
+      out.radius = 0;
+      return finishEntity(out);
   }
 }
 

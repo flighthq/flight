@@ -967,7 +967,7 @@ function rejectSpineBinaryMesh(
     { attachment: name ?? '', declared, field, remaining: reader.view.byteLength - reader.offset },
   );
   skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<MeshAttachment2D>();
   out.kind = MeshAttachment2DKind;
   out.name = name;
   out.skin = null;
@@ -1015,7 +1015,7 @@ function readSpineBinaryMeshAttachment(
     const edges = readSpineBinaryVarint(reader);
     skipSpineBinaryBytes(reader, edges * 2 + 8); // editor edge list, then width and height
   }
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<MeshAttachment2D>();
   out.kind = MeshAttachment2DKind;
   out.name = name;
   out.skin = geometry.skin;
@@ -1043,7 +1043,7 @@ function readSpineBinaryRegionAttachment(
   const height = readSpineBinaryFloat(reader);
   skipSpineBinaryBytes(reader, SPINE_BINARY_COLOR_BYTES);
   skipSpineBinarySequence(reader);
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<RegionAttachment2D>();
   out.height = height;
   out.kind = RegionAttachment2DKind;
   out.name = name;

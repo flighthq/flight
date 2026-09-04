@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityWithoutRuntime,
   HapticImpactStyle,
@@ -15,11 +15,12 @@ import type {
 // a pattern, which is why `capabilities` reports no intensity and no amplitude control even when the API
 // is present. `vibrateWaveform` is deliberately absent rather than faked, so callers fall back to
 // `vibratePattern` and drop amplitudes honestly instead of silently ignoring them here.
-export const webHapticsBackend: HapticsBackend = createEntity<EntityWithoutRuntime<HapticsBackend>>({
-  cancel(): boolean {
+  export const webHapticsBackend = (() => {
+    const out = allocateEntity<HapticsBackend>();
+    out.cancel = (): boolean => {
     return _webVibrate(0);
-  },
-  capabilities(out: HapticsCapabilities): HapticsCapabilities {
+  };
+    out.capabilities = (out: HapticsCapabilities): HapticsCapabilities => {
     const supported = _isVibrateAvailable();
     out.amplitudeControl = false;
     out.customEvents = false;
@@ -27,31 +28,32 @@ export const webHapticsBackend: HapticsBackend = createEntity<EntityWithoutRunti
     out.patterns = supported;
     out.supported = supported;
     return out;
-  },
-  impact(style: HapticImpactStyle, intensity?: number): boolean {
+  };
+    out.impact = (style: HapticImpactStyle, intensity?: number): boolean => {
     const base = style === 'heavy' || style === 'rigid' ? 30 : style === 'medium' ? 20 : style === 'soft' ? 25 : 10;
     const ms = intensity !== undefined ? Math.round(base * Math.max(0, Math.min(1, intensity))) : base;
     return _webVibrate(ms);
-  },
-  isSupported(): boolean {
+  };
+    out.isSupported = (): boolean => {
     return _isVibrateAvailable();
-  },
-  notification(type: HapticNotificationType): boolean {
+  };
+    out.notification = (type: HapticNotificationType): boolean => {
     const pattern = type === 'error' ? [20, 60, 20] : type === 'warning' ? [20, 60, 20, 60] : [15, 50, 15];
     return _webVibrate(pattern);
-  },
-  prepare(): void {},
-  selection(): boolean {
+  };
+    out.prepare = (): void => {};
+    out.selection = (): boolean => {
     return _webVibrate(5);
-  },
-  vibrate(durationMs: number): boolean {
+  };
+    out.vibrate = (durationMs: number): boolean => {
     return _webVibrate(durationMs);
-  },
-  vibratePattern(pattern: Readonly<number[]>): boolean {
+  };
+    out.vibratePattern = (pattern: Readonly<number[]>): boolean => {
     if (pattern.length === 0) return false;
     return _webVibrate(pattern as number[]);
-  },
-});
+  };
+    return finishEntity(out);
+  })();
 
 function _isVibrateAvailable(): boolean {
   return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';

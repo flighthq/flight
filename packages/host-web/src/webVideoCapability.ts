@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, VideoCapabilityBackend } from '@flighthq/types/contract';
 
 export function createWebVideoCapabilityBackend(): VideoCapabilityBackend & Entity {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<VideoCapabilityBackend>();
   out.canPlayType = (mimeType): boolean => {
     try {
       const result = document.createElement('video').canPlayType(mimeType);

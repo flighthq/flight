@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
   CapacitorStatusBarInfoResult,
@@ -37,8 +37,8 @@ export function createCapacitorStatusBarBackend(
     .catch(() => {
       /* leave null → defaults */
     });
-  return createEntity({
-    getInfo(out: StatusBarInfo): StatusBarInfo {
+    const out = allocateEntity<Entity>();
+  out.getInfo = (out: StatusBarInfo): StatusBarInfo => {
       const info = cachedInfo;
       out.color = info?.color !== undefined ? hexToRgba(info.color) : 0;
       // Capacitor does not report a status-bar height; -1 sentinel per the contract.
@@ -47,21 +47,21 @@ export function createCapacitorStatusBarBackend(
       out.style = info !== null ? toStatusBarStyle(info.style) : 'default';
       out.visible = info?.visible ?? true;
       return out;
-    },
-    setBackgroundColor(color: number) {
+    };
+  out.setBackgroundColor = (color: number) => {
       statusBar.setBackgroundColor({ color: rgbaToHex(color) }).catch(() => {});
-    },
-    setOverlaysContent(overlay: boolean) {
+    };
+  out.setOverlaysContent = (overlay: boolean) => {
       statusBar.setOverlaysWebView({ overlay }).catch(() => {});
-    },
-    setStyle(style: StatusBarStyle) {
+    };
+  out.setStyle = (style: StatusBarStyle) => {
       statusBar.setStyle({ style: toCapacitorStyle(style) }).catch(() => {});
-    },
-    setVisible(visible: boolean) {
+    };
+  out.setVisible = (visible: boolean) => {
       if (visible) statusBar.show().catch(() => {});
       else statusBar.hide().catch(() => {});
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Flight status-bar style ('light' | 'dark' | 'default') → Capacitor Style ('Light' | 'Dark' | 'Default').

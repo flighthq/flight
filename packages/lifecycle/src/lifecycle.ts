@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { BackendOperationExplanation, LifecycleOperation } from '@flighthq/types/contract';
 import type {
@@ -62,15 +62,15 @@ export function attachAppLifecycle(host: HasSystemLifecycle, app: AppLifecycle):
 
 // Allocates an AppLifecycle event entity with inert signals; call attachAppLifecycle to start delivery.
 export function createAppLifecycle(): AppLifecycle {
-  return createEntity({
-    onStateChange: createSignal(),
-    onResume: createSignal(),
-    onPause: createSignal(),
-    onBackButton: createSignal(),
-    onMemoryWarning: createSignal(),
-    onSaveState: createSignal(),
-    onRestoreState: createSignal(),
-  });
+    const out = allocateEntity<void>();
+  out.onStateChange = createSignal();
+  out.onResume = createSignal();
+  out.onPause = createSignal();
+  out.onBackButton = createSignal();
+  out.onMemoryWarning = createSignal();
+  out.onSaveState = createSignal();
+  out.onRestoreState = createSignal();
+  return finishEntity(out);
 }
 
 // Builds the default web backend over document visibility, window focus/blur, and pagehide/pageshow
@@ -92,13 +92,13 @@ export function createAppLifecycle(): AppLifecycle {
 // no-op unsubscribe when the event is not supported (no standard API is widely deployed as of 2026).
 export function createWebLifecycleBackend(): LifecycleBackend {
   let _windowFocused = typeof document !== 'undefined';
-  return createEntity<Omit<LifecycleBackend, keyof Entity>>({
-    getState(): AppLifecycleState {
+    const out = allocateEntity<LifecycleBackend>();
+  out.getState = (): AppLifecycleState => {
       if (typeof document === 'undefined') return 'active';
       if (document.hidden) return 'background';
       return _windowFocused ? 'active' : 'inactive';
-    },
-    subscribe(listener: () => void): () => void {
+    };
+  out.subscribe = (listener: () => void): () => void => {
       if (typeof document === 'undefined' || typeof window === 'undefined') return () => {};
       // Initialize focus state at subscribe time.
       _windowFocused = document.hasFocus();
@@ -122,8 +122,8 @@ export function createWebLifecycleBackend(): LifecycleBackend {
         window.removeEventListener('focus', onFocus);
         window.removeEventListener('blur', onBlur);
       };
-    },
-    getLaunchKind(): AppLaunchKind {
+    };
+  out.getLaunchKind = (): AppLaunchKind => {
       // PerformanceNavigationTiming.type === 'back_forward' indicates the page was restored from the
       // browser's back/forward cache (bfcache). The JS heap was frozen and thawed without a fresh
       // process start — the closest analog to a mobile warm-resume. All other navigation types
@@ -132,8 +132,8 @@ export function createWebLifecycleBackend(): LifecycleBackend {
       const entries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
       if (entries.length > 0 && entries[0].type === 'back_forward') return 'warm';
       return 'cold';
-    },
-    subscribeMemoryWarning(listener: (level: AppMemoryPressure) => void): () => void {
+    };
+  out.subscribeMemoryWarning = (listener: (level: AppMemoryPressure) => void): () => void => {
       // The 'memory-pressure' window event is an experimental Chrome API (origin trial / behind
       // flags as of 2026). The event carries a detail object with a 'pressure' string. This backend
       // maps 'critical' pressure to AppMemoryPressure 'critical'; a pressure-resolved / 'moderate'
@@ -164,8 +164,8 @@ export function createWebLifecycleBackend(): LifecycleBackend {
         window.removeEventListener('memory-pressure', onPressure);
         window.removeEventListener('memory-pressure-relieved', onPressureRelieved);
       };
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Stops delivery to `app` and forgets its subscription. Safe to call when not attached.

@@ -1,10 +1,10 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createImageResourceFromCanvas, createImageResourceFromImageElement } from '@flighthq/image/contract';
 import type { Entity, EntityWithoutRuntime, ImageBackend, ImageResource } from '@flighthq/types/contract';
 
 export function createWebImageBackend(): ImageBackend & Entity {
-  return createEntity<EntityWithoutRuntime<ImageBackend>>({
-    createImageFromBitmap(bitmap): ImageResource {
+    const out = allocateEntity<ImageBackend>();
+  out.createImageFromBitmap = (bitmap): ImageResource => {
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
       canvas.height = bitmap.height;
@@ -12,8 +12,8 @@ export function createWebImageBackend(): ImageBackend & Entity {
       domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
       canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
       return createImageResourceFromCanvas(canvas);
-    },
-    async loadImageFromUrl(url, crossOrigin, signal): Promise<ImageResource> {
+    };
+  out.loadImageFromUrl = async (url, crossOrigin, signal): Promise<ImageResource> => {
       signal?.throwIfAborted();
       const img = new Image();
       if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
@@ -37,8 +37,8 @@ export function createWebImageBackend(): ImageBackend & Entity {
         await img.decode();
       }
       return createImageResourceFromImageElement(img);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 export const webImageBackend: ImageBackend & Entity = createWebImageBackend();

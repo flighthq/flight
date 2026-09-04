@@ -4,8 +4,8 @@ import type { Entity, EntityConstruction, WgpuHostAcquisition, WgpuHostBackend }
 // The explicit browser adapter. All WebGPU discovery and host-handle acquisition stays in this
 // function's call graph so render-state creation can also consume native caller-provided handles.
 export function createWebWgpuHostBackend(): WgpuHostBackend {
-  return createEntity<Omit<WgpuHostBackend, keyof Entity>>({
-    async acquire(canvas, options): Promise<WgpuHostAcquisition> {
+    const out = allocateEntity<WgpuHostBackend>();
+  out.acquire = async (canvas, options): Promise<WgpuHostAcquisition> => {
       const gpu = getWebWgpu();
       if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
 
@@ -43,20 +43,15 @@ export function createWebWgpuHostBackend(): WgpuHostBackend {
         device.destroy();
         throw error;
       }
-    },
-
-    isSupported(): boolean {
+    };
+  out.isSupported = (): boolean => {
       return getWebWgpu() !== null;
-    },
-
-    // Unconditional teardown. Ownership policy is NOT decided here: Flight never calls this for a
-    // caller-owned acquisition, and `releaseWgpuAcquisition` calls it because the caller asked. A backend
-    // that re-checked ownership would silently make the caller's own release verb a no-op.
-    release(acquisition): void {
+    };
+  out.release = (acquisition): void => {
       acquisition.context.unconfigure();
       acquisition.device.destroy();
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 export function getWgpuHostBackend(): WgpuHostBackend {

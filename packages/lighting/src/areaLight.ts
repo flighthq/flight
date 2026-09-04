@@ -5,7 +5,7 @@ import { AreaLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of an area light's data, including fresh position/direction/right/up vectors.
 export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<AreaLight>();
   out.castsShadow = source.castsShadow;
   out.color = source.color;
   out.decay = source.decay;

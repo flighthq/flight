@@ -47,7 +47,7 @@ function finishCanvasRenderSurface(
   const requestedContextAttributes = options.contextAttributes;
   const context = canvas.getContext('2d', requestedContextAttributes);
   if (context === null) throw new Error('Failed to get context for canvas.');
-  const surface = allocateEntity<unknown>();
+  const surface = allocateEntity<CanvasRenderSurface>();
   surface.canvas = canvas;
   surface.context = context;
   surface.contextAttributes = context.getContextAttributes();

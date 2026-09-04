@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AppUpdateCheckOutcome,
   AppUpdateInstallOutcome,
@@ -130,7 +130,7 @@ function createDownloadedUpdate(args: readonly unknown[]): DownloadedUpdate {
     sha512: null,
     version: knownString(args[2]),
   });
-  return Object.freeze(createEntity({ info }));
+  return Object.freeze((() => { const out = allocateEntity<UpdaterCommandBackend>(); out.info = info; return finishEntity(out); })());
 }
 
 function knownString(value: unknown): string | null {

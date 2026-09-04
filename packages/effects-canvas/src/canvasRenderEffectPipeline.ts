@@ -5,7 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   beginCanvasRenderPass,
   createCanvasRenderTarget,
@@ -78,7 +78,11 @@ export function createCanvasRenderEffectPipeline(
 }
 
 export function createCanvasRenderTargetPool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTargetPool {
-  return createEntity({ creator, free: [], inUse: [] });
+    const out = allocateEntity<CanvasRenderTarget>();
+  out.creator = creator;
+  out.free = [];
+  out.inUse = [];
+  return finishEntity(out);
 }
 
 export function destroyCanvasRenderEffectPipeline(

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityRuntimeKey,
   HostShellCapabilities,
@@ -14,36 +14,39 @@ export function makeTauriShellCapabilities(
   tauri: TauriApi,
 ): HostShellCapabilities & Required<Pick<HostShellCapabilities, 'external' | 'pathOpen' | 'pathReveal'>> {
   const opener = tauri.opener;
-  const external: ShellExternalBackend = createEntity({
-    async open(url) {
+  const external = allocateEntity<ShellExternalBackend>();
+  external.open = async (url) => {
       try {
         await opener.openUrl(url);
         return { reason: 'ok' };
       } catch {
         return { reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellExternalBackend, typeof EntityRuntimeKey>);
-  const pathOpen: ShellPathOpenBackend = createEntity({
-    async open(path) {
+    };
+  const pathOpen = (() => {
+    const out = allocateEntity<ShellPathOpenBackend>();
+    out.open = async (path) => {
       try {
         await opener.openPath(path);
         return { reason: 'ok' };
       } catch (error) {
         return { message: errorMessage(error), reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellPathOpenBackend, typeof EntityRuntimeKey>);
-  const pathReveal: ShellPathRevealBackend = createEntity({
-    async reveal(path) {
+    };
+    return finishEntity(out);
+  })();
+  const pathReveal = (() => {
+    const out = allocateEntity<ShellPathRevealBackend>();
+    out.reveal = async (path) => {
       try {
         await opener.revealItemInDir(path);
         return { reason: 'ok' };
       } catch {
         return { reason: 'operation-failed' };
       }
-    },
-  } satisfies Omit<ShellPathRevealBackend, typeof EntityRuntimeKey>);
+    };
+    return finishEntity(out);
+  })();
   return { external, pathOpen, pathReveal };
 }
 

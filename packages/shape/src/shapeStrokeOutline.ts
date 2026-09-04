@@ -75,7 +75,7 @@ export function getShapeStrokeOutlineRegions(commands: readonly ShapeCommandToke
           miterLimit: commands[a + 7] as number,
         };
         centerline = (() => {
-          const out = allocateEntity<unknown>();
+          const out = allocateEntity<Path>();
           out.commands = [] as number[];
           out.data = [] as number[];
           out.winding = 'nonZero' as const;

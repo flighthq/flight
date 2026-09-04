@@ -1,5 +1,5 @@
 import { getDecompressor } from '@flighthq/compression/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { detectFontFormat } from '@flighthq/font/contract';
 import type {
   CffTable,
@@ -72,8 +72,8 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
 
   // A bound method object rather than a plain record, because the source owns tables the methods close
   // over. The scratch-free contract is the caller's: `getGlyphOutline` writes into their `out`.
-  return createEntity({
-    getGlyphOutline(out: Path, glyphIndex: number): boolean {
+    const out = allocateEntity<GlyphOutlineSourceFromOpenTypeFont>();
+  out.getGlyphOutline = (out: Path, glyphIndex: number): boolean => {
       if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
       if (cff !== null) {
         const charstring = cff.charstrings[glyphIndex];
@@ -85,17 +85,17 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
         return runCffCharstring(out, bytes, charstring, localSubrs, cff.globalSubrs);
       }
       return ranges === null ? false : readOpenTypeGlyphOutline(out, bytes, directory, ranges, glyphIndex);
-    },
-    getGlyphOutlineAdvance(glyphIndex: number): number {
+    };
+  out.getGlyphOutlineAdvance = (glyphIndex: number): number => {
       return glyphIndex < 0 || glyphIndex >= glyphCount ? 0 : advances[glyphIndex]!;
-    },
-    getGlyphOutlineIndexForCodePoint(codePoint: number): number {
+    };
+  out.getGlyphOutlineIndexForCodePoint = (codePoint: number): number => {
       return codepoints.get(codePoint) ?? -1;
-    },
-    getGlyphOutlineMetrics() {
+    };
+  out.getGlyphOutlineMetrics = () => {
       return metrics;
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Why `createGlyphOutlineSourceFromOpenTypeFont` returned null, as plain data.

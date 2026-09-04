@@ -72,7 +72,7 @@ export function clipRegionIntersectsRectangle(clip: Readonly<ClipRegion>, rectan
 export function cloneClipRegion(clip: Readonly<ClipRegion>): ClipRegion {
   const rect = cloneRectangle(clip.rect);
   const contours = clip.contours === null ? null : clip.contours.map((c) => c.slice());
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<ClipRegion>();
   out.contours = contours;
   out.rect = rect;
   out.version = clip.version;

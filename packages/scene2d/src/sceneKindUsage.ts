@@ -13,7 +13,7 @@ import { BlendMode } from '@flighthq/types/contract';
 // Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
 // frames without reallocating four arrays.
 export function createScene2DKindUsage(): Scene2DKindUsage & Entity {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Scene2DKindUsage>();
   out.blendModes = [];
   out.materialKinds = [];
   out.nodeKinds = [];

@@ -3,7 +3,7 @@ import type { AlphaType, Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Bitmap>();
   out.alphaType = source.alphaType;
   out.gamut = source.gamut;
   out.data = new Uint8ClampedArray(source.data);

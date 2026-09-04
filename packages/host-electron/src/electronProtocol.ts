@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ElectronApi, ElectronProtocolCapabilities } from '@flighthq/types/contract';
 
 export function createElectronProtocolCapabilities(electron: ElectronApi): ElectronProtocolCapabilities {

@@ -23,7 +23,7 @@ interface CanvasTextLabelData extends RendererData {
 }
 
 function createCanvasTextLabelData(_state: CanvasRenderState, _source: Renderable): RendererData {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<RendererData>();
   out.lastContentId = -1;
   return finishEntity(out);
 }

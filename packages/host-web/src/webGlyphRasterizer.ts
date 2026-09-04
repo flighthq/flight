@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
   GlyphMetrics,
@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
-  return createEntity({
-    measureMetrics(options): GlyphMetrics | null {
+    const out = allocateEntity<GlyphRasterizerBackend>();
+  out.measureMetrics = (options): GlyphMetrics | null => {
       const context = _acquireGlyphRasterContext();
       if (context === null) return null;
       _applyGlyphRasterFont(context, options);
@@ -18,13 +18,13 @@ export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Enti
       const descent = metrics.fontBoundingBoxDescent;
       if (!(ascent > 0) || !(descent >= 0)) return null;
       return { ascent, descent, lineGap: 0 };
-    },
-    rasterize(codepoint, options): GlyphRasterizedBitmap | null {
+    };
+  out.rasterize = (codepoint, options): GlyphRasterizedBitmap | null => {
       const context = _acquireGlyphRasterContext();
       if (context === null) return null;
       return _rasterizeGlyphOnContext(context, codepoint, options);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 export const webGlyphRasterizerBackend: GlyphRasterizerBackend & Entity = createWebGlyphRasterizerBackend();

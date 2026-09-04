@@ -1,5 +1,5 @@
 import { notifyWindowClosed } from '@flighthq/application/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationWindow,

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { DesktopOsProfile, EntityRuntimeKey, TauriApi, TauriHost } from '@flighthq/types/contract';
 
 import { createTauriAppCapabilities } from './tauriApp';
@@ -46,37 +46,32 @@ export function registerTauriBackends<Profile extends DesktopOsProfile>(
   const menu = createTauriMenuBackends(tauri);
   const shell = makeTauriShellCapabilities(tauri);
   const window = createTauriWindowBackend(tauri);
-  return createEntity({
-    accessibility: {},
-    app,
-    clipboard: { text: clipboard },
-    connectivity: {},
-    dialog,
-    graphics: {},
-    input: {},
-    // No IPC provider: Tauri's event system is not wired to this seam. Its emit/listen pair could supply
-    // a message slot, but nothing here builds one, so the group stays honestly empty.
-    ipc: {},
-    media: {},
-    menu,
-    midi: {},
-    net: {},
-    // No power provider: Tauri exposes no battery, idle, session-lock, thermal or keep-awake
-    // API through the seams this host wires. The group is empty rather than stubbed.
-    power: {},
-    protocol: {},
-    notification,
-    shortcut: { query, trigger },
-    screen: {},
-    share: {},
-    shell,
-    storage: {},
-    system: { platform: createTauriPlatformBackend(tauri) },
-    text: {},
-    tray: createTauriTrayCapabilities(tauri, profile),
-    ui: {},
-    // This injected Tauri API exposes no updater plugin, so no transaction provider is claimed.
-    updater: {},
-    window,
-  } satisfies Omit<TauriHost<Profile>, typeof EntityRuntimeKey>);
+    const out = allocateEntity<TauriHost<Profile>>();
+  out.accessibility = {};
+  out.app = app;
+  out.clipboard = { text: clipboard };
+  out.connectivity = {};
+  out.dialog = dialog;
+  out.graphics = {};
+  out.input = {};
+  out.ipc = {};
+  out.media = {};
+  out.menu = menu;
+  out.midi = {};
+  out.net = {};
+  out.power = {};
+  out.protocol = {};
+  out.notification = notification;
+  out.shortcut = { query, trigger };
+  out.screen = {};
+  out.share = {};
+  out.shell = shell;
+  out.storage = {};
+  out.system = { platform: createTauriPlatformBackend(tauri) };
+  out.text = {};
+  out.tray = createTauriTrayCapabilities(tauri, profile);
+  out.ui = {};
+  out.updater = {};
+  out.window = window;
+  return finishEntity(out);
 }

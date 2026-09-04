@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
   ScreenChangeEvent,
@@ -179,8 +179,9 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
       }
     };
 
-  const query = createEntity({
-    destroy() {
+  const query = (() => {
+    const out = allocateEntity<WebScreenCapabilities>();
+    out.destroy = () => {
       if (typeof window !== 'undefined') {
         for (const subscription of subscriptions) {
           window.removeEventListener('resize', subscription.handle);
@@ -196,8 +197,8 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
       cursorY = 0;
       cached = [];
       details = null;
-    },
-    getCursorPosition(out: { x: number; y: number }) {
+    };
+    out.getCursorPosition = (out: { x: number; y: number }) => {
       if (pointerHandler === null && typeof window !== 'undefined') {
         pointerHandler = (event) => {
           cursorX = event.screenX;
@@ -208,8 +209,8 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
       out.x = cursorX;
       out.y = cursorY;
       return out;
-    },
-    getPrimaryScreen(out: ScreenInfo) {
+    };
+    out.getPrimaryScreen = (out: ScreenInfo) => {
       if (details !== null && details.screens.length > 0) {
         const index = Math.max(
           0,
@@ -218,12 +219,14 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
         return fillDetailed(out, details.screens[index], index, index);
       }
       return fillCurrent(out);
-    },
-    getScreens: enumerate,
-  });
+    };
+    out.getScreens = enumerate;
+    return finishEntity(out);
+  })();
 
-  const change = createEntity({
-    subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void) {
+  const change = (() => {
+    const out = allocateEntity<WebScreenCapabilities>();
+    out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
       if (typeof window === 'undefined') return () => {};
       const subscription: DisplaySubscription = {
         details,
@@ -240,11 +243,13 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
         subscription.details?.removeEventListener('screenschange', subscription.handle);
         subscriptions.delete(subscription);
       };
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
-  const detailsBackend = createEntity({
-    async queryPermission(): Promise<ScreenPermissionState> {
+  const detailsBackend = (() => {
+    const out = allocateEntity<WebScreenCapabilities>();
+    out.queryPermission = async (): Promise<ScreenPermissionState> => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return 'prompt';
       try {
         const status = await navigator.permissions.query({ name: 'window-management' as PermissionName });
@@ -252,8 +257,8 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
       } catch {
         return 'prompt';
       }
-    },
-    async request(): Promise<boolean> {
+    };
+    out.request = async (): Promise<boolean> => {
       if (typeof window === 'undefined') return false;
       const request = (window as WebScreenDetailsWindow).getScreenDetails;
       if (request === undefined) return false;
@@ -270,11 +275,13 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
       } catch {
         return false;
       }
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
-  const permissionChange = createEntity({
-    subscribe(listener: (state: ScreenPermissionState) => void) {
+  const permissionChange = (() => {
+    const out = allocateEntity<WebScreenCapabilities>();
+    out.subscribe = (listener: (state: ScreenPermissionState) => void) => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return () => {};
       let cancelled = false;
       let status: PermissionStatus | null = null;
@@ -291,10 +298,16 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
         cancelled = true;
         status?.removeEventListener('change', handle);
       };
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
-  return createEntity({ change, details: detailsBackend, permissionChange, query });
+    const out = allocateEntity<WebScreenCapabilities>();
+  out.change = change;
+  out.details = detailsBackend;
+  out.permissionChange = permissionChange;
+  out.query = query;
+  return finishEntity(out);
 }
 
 export const webScreenCapabilities = createWebScreenCapabilities();

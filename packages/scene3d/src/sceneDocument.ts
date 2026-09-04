@@ -1,5 +1,5 @@
 import { createAnimationChannel, createAnimationClip } from '@flighthq/animation/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
 import { createMaterial } from '@flighthq/materials/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
@@ -106,15 +106,15 @@ function applyDocumentSkins(document: Readonly<Scene3DDocument>, nodes: readonly
     // package depends on @flighthq/scene3d (createMesh/createNode3D), which would form a cycle; the
     // Entity shape invariant still holds at this assembly seam.
     // Joint names are recovered from the resolved joint nodes; null when the source named none.
-    const skeleton = createEntity({
-      inverseBindMatrices,
-      jointMatrices: new Float32Array(joints.length * 16),
-      joints,
-      names: names.some((name) => name.length > 0) ? names : null,
-      // Filled per-frame alongside the palette by computeSkeleton3DJointMatrices: one 3x3 per joint as
-      // three padded vec4 columns, 12 floats, so it uploads to the GPU data texture without repacking.
-      normalMatrices: new Float32Array(joints.length * 12),
-    });
+    const skeleton = (() => {
+      const out = allocateEntity<Scene3D>();
+      out.inverseBindMatrices = inverseBindMatrices;
+      out.jointMatrices = new Float32Array(joints.length * 16);
+      out.joints = joints;
+      out.names = names.some((name) => name.length > 0) ? names : null;
+      out.normalMatrices = new Float32Array(joints.length * 12);
+      return finishEntity(out);
+    })();
     return { skeleton, skeletonRoot: null };
   });
   for (let i = 0; i < document.nodes.length; i++) {

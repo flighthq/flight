@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ShareContentBackend,
   EntityRuntimeKey,
@@ -8,50 +8,50 @@ import type {
   ShareResult,
 } from '@flighthq/types/contract';
 
-export const webShareContentBackend: ShareContentBackend = createEntity({
-  canShareContent(content) {
+  export const webShareContentBackend = (() => {
+    const out = allocateEntity<ShareContentBackend>();
+    out.canShareContent = (content) => {
     return hasShareableContent(content) && canNavigatorShare(contentToNavigatorData(content));
-  },
-
-  async shareContent(content) {
+  };
+    out.shareContent = async (content) => {
     if (!hasShareableContent(content)) return false;
     return invokeNavigatorShare(contentToNavigatorData(content));
-  },
-
-  async shareContentWithResult(content) {
+  };
+    out.shareContentWithResult = async (content) => {
     if (!hasShareableContent(content)) return failedResult(false);
     return invokeNavigatorShareWithResult(contentToNavigatorData(content));
-  },
-} satisfies Omit<ShareContentBackend, typeof EntityRuntimeKey>);
+  };
+    return finishEntity(out);
+  })();
 
-export const webShareFilesBackend: ShareFilesBackend = createEntity({
-  canShareContent(content) {
+  export const webShareFilesBackend = (() => {
+    const out = allocateEntity<ShareFilesBackend>();
+    out.canShareContent = (content) => {
     if (content.files.length === 0) return false;
     try {
       return canNavigatorShare(filesToNavigatorData(content));
     } catch {
       return false;
     }
-  },
-
-  async shareContent(content) {
+  };
+    out.shareContent = async (content) => {
     if (content.files.length === 0) return false;
     try {
       return await invokeNavigatorShare(filesToNavigatorData(content));
     } catch {
       return false;
     }
-  },
-
-  async shareContentWithResult(content) {
+  };
+    out.shareContentWithResult = async (content) => {
     if (content.files.length === 0) return failedResult(false);
     try {
       return await invokeNavigatorShareWithResult(filesToNavigatorData(content));
     } catch {
       return failedResult(false);
     }
-  },
-} satisfies Omit<ShareFilesBackend, typeof EntityRuntimeKey>);
+  };
+    return finishEntity(out);
+  })();
 
 function canNavigatorShare(data: ShareData): boolean {
   if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return false;

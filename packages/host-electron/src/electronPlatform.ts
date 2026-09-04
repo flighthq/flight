@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ElectronApi, Entity, PlatformBackend, PlatformName } from '@flighthq/types/contract';
 
 // Maps Flight's PlatformBackend onto the Node `process` running the Electron main process, with the
@@ -6,8 +6,8 @@ import type { ElectronApi, Entity, PlatformBackend, PlatformName } from '@flight
 // typed without @types/node) and falls back to '' / 'unknown' sentinels. Writes into caller-owned
 // `out` so callers control allocation.
 export function createElectronPlatformBackend(electron: ElectronApi): PlatformBackend & Entity {
-  return createEntity<Omit<PlatformBackend, keyof Entity>>({
-    getInfo(out) {
+    const out = allocateEntity<PlatformBackend>();
+  out.getInfo = (out) => {
       const proc =
         typeof process !== 'undefined'
           ? (process as { platform?: string; arch?: string; getSystemVersion?: () => string })
@@ -19,8 +19,8 @@ export function createElectronPlatformBackend(electron: ElectronApi): PlatformBa
       out.locale = electron.app.getLocale();
       out.isTouch = false;
       return out;
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 function toPlatformName(platform: string | undefined): PlatformName {

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TauriApi, TauriAppCapabilities } from '@flighthq/types/contract';
 
 export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilities {
@@ -17,17 +17,17 @@ export function createTauriAppCapabilities(tauri: TauriApi): TauriAppCapabilitie
     .locale()
     .then((value) => (locale = value ?? ''))
     .catch(() => {});
-  return createEntity({
-    locale: createEntity({
+    const out = allocateEntity<TauriAppCapabilities>();
+  out.locale = createEntity({
       getLocale: () => locale,
       getPreferredSystemLanguages: () => (locale === '' ? [] : [locale]),
       getSystemLocale: () => locale,
-    }),
-    name: createEntity({ getName: () => name }),
-    hide: createEntity({ hideApp: () => void tauri.app.hide().catch(() => {}) }),
-    quit: createEntity({ quit: () => void tauri.process.exit(0).catch(() => {}) }),
-    relaunch: createEntity({ relaunch: () => void tauri.process.relaunch().catch(() => {}) }),
-    show: createEntity({ showApp: () => void tauri.app.show().catch(() => {}) }),
-    version: createEntity({ getVersion: () => version }),
-  });
+    });
+  out.name = createEntity({ getName: () => name });
+  out.hide = createEntity({ hideApp: () => void tauri.app.hide().catch(() => {}) });
+  out.quit = createEntity({ quit: () => void tauri.process.exit(0).catch(() => {}) });
+  out.relaunch = createEntity({ relaunch: () => void tauri.process.relaunch().catch(() => {}) });
+  out.show = createEntity({ showApp: () => void tauri.app.show().catch(() => {}) });
+  out.version = createEntity({ getVersion: () => version });
+  return finishEntity(out);
 }

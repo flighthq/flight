@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CollisionBuiltInShape2D, Entity, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
@@ -9,20 +9,56 @@ export function createPhysics2DColliderWorldShape(
 ): CollisionBuiltInShape2D & Entity {
   switch (local.kind) {
     case 'circle':
-      return createEntity({ kind: 'circle', x: local.x, y: local.y, radius: local.radius });
+            const out = allocateEntity<Physics2DColliderWorldShape>();
+      out.kind = 'circle';
+      out.x = local.x;
+      out.y = local.y;
+      out.radius = local.radius;
+      return finishEntity(out);
     case 'aabb':
     case 'obb':
-      return createEntity({ kind: 'obb', x: 0, y: 0, halfW: 0, halfH: 0, rotation: 0 });
+            const out = allocateEntity<Physics2DColliderWorldShape>();
+      out.kind = 'obb';
+      out.x = 0;
+      out.y = 0;
+      out.halfW = 0;
+      out.halfH = 0;
+      out.rotation = 0;
+      return finishEntity(out);
     case 'capsule':
-      return createEntity({ kind: 'capsule', x0: 0, y0: 0, x1: 0, y1: 0, radius: local.radius });
+            const out = allocateEntity<Physics2DColliderWorldShape>();
+      out.kind = 'capsule';
+      out.x0 = 0;
+      out.y0 = 0;
+      out.x1 = 0;
+      out.y1 = 0;
+      out.radius = local.radius;
+      return finishEntity(out);
     case 'polygon':
-      return createEntity({ kind: 'polygon', points: local.points.slice() });
+            const out = allocateEntity<Physics2DColliderWorldShape>();
+      out.kind = 'polygon';
+      out.points = local.points.slice();
+      return finishEntity(out);
     case 'segment':
-      return createEntity({ kind: 'segment', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1 });
+            const out = allocateEntity<Physics2DColliderWorldShape>();
+      out.kind = 'segment';
+      out.x0 = local.x0;
+      out.y0 = local.y0;
+      out.x1 = local.x1;
+      out.y1 = local.y1;
+      return finishEntity(out);
     case 'point':
-      return createEntity({ kind: 'point', x: local.x, y: local.y });
+            const out = allocateEntity<Physics2DColliderWorldShape>();
+      out.kind = 'point';
+      out.x = local.x;
+      out.y = local.y;
+      return finishEntity(out);
     default:
-      return createEntity({ kind: 'point', x: 0, y: 0 });
+            const out = allocateEntity<Physics2DColliderWorldShape>();
+      out.kind = 'point';
+      out.x = 0;
+      out.y = 0;
+      return finishEntity(out);
   }
 }
 

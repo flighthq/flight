@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ColorLut,
   EntityWithoutRuntime,
@@ -100,7 +100,10 @@ function getLutPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuE
       },
       primitive: { topology: 'triangle-list' },
     });
-    pipeline = createEntity<EntityWithoutRuntime<WgpuEffectPipeline>>({ pipeline: gpuPipeline, blendMode: 'replace' });
+        const _entity = allocateEntity<WgpuEffectPipeline>();
+    _entity.pipeline = gpuPipeline;
+    _entity.blendMode = 'replace';
+    pipeline = finishEntity(_entity);
     byFormat.set(format, pipeline);
   }
   return pipeline;

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CapacitorApi, CapacitorHost, EntityRuntimeKey, MobileOsProfile } from '@flighthq/types/contract';
 
 import { createCapacitorAppCapabilities } from './capacitorApp';
@@ -33,17 +33,17 @@ export function capacitorHost<Profile extends MobileOsProfile>(
   const clipboard = createCapacitorClipboardBackend(capacitor);
   const connectivity = createCapacitorConnectivityBackend(capacitor);
   const statusBar = createCapacitorStatusBarBackend(capacitor);
-  return createEntity({
-    accessibility: {},
-    app,
-    clipboard: { image: clipboard, text: clipboard },
-    connectivity: { change: connectivity, status: connectivity },
-    dialog: {
+    const out = allocateEntity<CapacitorHost<Profile>>();
+  out.accessibility = {};
+  out.app = app;
+  out.clipboard = { image: clipboard, text: clipboard };
+  out.connectivity = { change: connectivity, status: connectivity };
+  out.dialog = {
       message: createCapacitorMessageDialogBackend(capacitor),
       prompt: createCapacitorPromptDialogBackend(capacitor),
-    },
-    graphics: {},
-    input: {
+    };
+  out.graphics = {};
+  out.input = {
       haptics: createCapacitorHapticsBackend(capacitor),
       softKeyboardAccessoryBar: createCapacitorSoftKeyboardAccessoryBarBackend(capacitor),
       softKeyboardChange: createCapacitorSoftKeyboardChangeBackend(capacitor),
@@ -52,46 +52,36 @@ export function capacitorHost<Profile extends MobileOsProfile>(
       softKeyboardScrollAssist: createCapacitorSoftKeyboardScrollAssistBackend(capacitor),
       softKeyboardStyle: createCapacitorSoftKeyboardStyleBackend(capacitor),
       softKeyboardVisibility: createCapacitorSoftKeyboardVisibilityBackend(capacitor),
-    },
-    // No IPC provider: a Capacitor webview app has no second process to exchange channel messages with.
-    ipc: {},
-    media: {},
-    // Capacitor exposes no menu capability: a webview app has no native menu bar, and its context
-    // menus are the web overlay's job, not Capacitor's.
-    menu: {},
-    midi: {},
-    net: {},
-    // No power provider: Capacitor exposes no battery, idle, session-lock, thermal or keep-awake
-    // API through the seams this host wires. The group is empty rather than stubbed.
-    power: {},
-    protocol: createCapacitorProtocolCapabilities(capacitor),
-    notification: createCapacitorNotificationCapabilities(capacitor),
-    // The supported Capacitor plugin set exposes no OS-global shortcut provider.
-    shortcut: {},
-    screen: {},
-    share: { content: createCapacitorShareContentBackend(capacitor) },
-    // Capacitor exposes none of Shell's six native command capabilities.
-    shell: {},
-    storage: { fileSystem: createCapacitorFileSystemBackend(capacitor) },
-    system: {
+    };
+  out.ipc = {};
+  out.media = {};
+  out.menu = {};
+  out.midi = {};
+  out.net = {};
+  out.power = {};
+  out.protocol = createCapacitorProtocolCapabilities(capacitor);
+  out.notification = createCapacitorNotificationCapabilities(capacitor);
+  out.shortcut = {};
+  out.screen = {};
+  out.share = { content: createCapacitorShareContentBackend(capacitor) };
+  out.shell = {};
+  out.storage = { fileSystem: createCapacitorFileSystemBackend(capacitor) };
+  out.system = {
       device: createCapacitorDeviceBackend(capacitor),
       geolocation: createCapacitorGeolocationBackend(capacitor),
-    },
-    text: {},
-    tray: {},
-    ui: {
+    };
+  out.text = {};
+  out.tray = {};
+  out.ui = {
       statusBarColor: statusBar,
       statusBarInfo: statusBar,
       statusBarOverlays: statusBar,
       statusBarStyle: statusBar,
       statusBarVisibility: statusBar,
-    },
-    // The supported Capacitor plugin set has no Squirrel-compatible updater transaction.
-    updater: {},
-    // Every WindowBackend member is optional, so {} is the honest claim: a Capacitor app runs in a
-    // webview and provides no native window operations of its own.
-    window: createEntity({}),
-  } satisfies Omit<CapacitorHost<Profile>, typeof EntityRuntimeKey>);
+    };
+  out.updater = {};
+  out.window = createEntity({});
+  return finishEntity(out);
 }
 
 // Returns the explicit Capacitor host. Run this once at app startup, passing an object that aggregates

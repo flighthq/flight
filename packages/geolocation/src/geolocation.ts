@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
   GeolocationAccessOutcome,
@@ -15,22 +15,22 @@ export function clearGeolocationWatch(host: Readonly<HasSystemGeolocation>, id: 
 }
 
 export function createGeoPosition(): GeoPosition {
-  return createEntity({
-    accuracy: 0,
-    altitude: 0,
-    altitudeAccuracy: 0,
-    floorLevel: 0,
-    heading: 0,
-    latitude: 0,
-    longitude: 0,
-    speed: 0,
-    timestamp: 0,
-  });
+    const out = allocateEntity<void>();
+  out.accuracy = 0;
+  out.altitude = 0;
+  out.altitudeAccuracy = 0;
+  out.floorLevel = 0;
+  out.heading = 0;
+  out.latitude = 0;
+  out.longitude = 0;
+  out.speed = 0;
+  out.timestamp = 0;
+  return finishEntity(out);
 }
 
 export function createWebGeolocationBackend(): GeolocationBackend {
-  return createEntity<Omit<GeolocationBackend, keyof Entity>>({
-    clearWatch(id) {
+    const out = allocateEntity<GeolocationBackend>();
+  out.clearWatch = (id) => {
       const geo = getWebGeolocation();
       if (geo === null || typeof geo.clearWatch !== 'function') return;
       try {
@@ -38,8 +38,8 @@ export function createWebGeolocationBackend(): GeolocationBackend {
       } catch {
         // Expected failure: the watch may already be gone or the host may deny access.
       }
-    },
-    getCurrentPosition(options) {
+    };
+  out.getCurrentPosition = (options) => {
       return new Promise((resolve) => {
         const geo = getWebGeolocation();
         if (geo === null || typeof geo.getCurrentPosition !== 'function') {
@@ -56,8 +56,8 @@ export function createWebGeolocationBackend(): GeolocationBackend {
           resolve(null);
         }
       });
-    },
-    getCurrentPositionResult(options) {
+    };
+  out.getCurrentPositionResult = (options) => {
       return new Promise((resolve) => {
         const geo = getWebGeolocation();
         if (geo === null || typeof geo.getCurrentPosition !== 'function') {
@@ -74,12 +74,12 @@ export function createWebGeolocationBackend(): GeolocationBackend {
           resolve({ position: null, reason: 'unavailable' });
         }
       });
-    },
-    isAvailable() {
+    };
+  out.isAvailable = () => {
       if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
       return getWebGeolocation() !== null;
-    },
-    promptForAccess() {
+    };
+  out.promptForAccess = () => {
       return new Promise<GeolocationAccessOutcome>((resolve) => {
         const geo = getWebGeolocation();
         if (geo === null || typeof geo.getCurrentPosition !== 'function') {
@@ -95,8 +95,8 @@ export function createWebGeolocationBackend(): GeolocationBackend {
           resolve({ reason: 'operation-failed' });
         }
       });
-    },
-    watchPosition(listener, options, onError) {
+    };
+  out.watchPosition = (listener, options, onError) => {
       const geo = getWebGeolocation();
       if (geo === null || typeof geo.watchPosition !== 'function') return -1;
       try {
@@ -108,8 +108,8 @@ export function createWebGeolocationBackend(): GeolocationBackend {
       } catch {
         return -1;
       }
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 export function getCurrentGeoPosition(
@@ -148,17 +148,17 @@ function getWebGeolocation(): Geolocation | null {
 
 function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosition {
   const coords = position.coords;
-  return createEntity({
-    accuracy: coords.accuracy,
-    altitude: coords.altitude ?? 0,
-    altitudeAccuracy: coords.altitudeAccuracy ?? 0,
-    floorLevel: (coords as { floorLevel?: number }).floorLevel ?? 0,
-    heading: coords.heading ?? 0,
-    latitude: coords.latitude,
-    longitude: coords.longitude,
-    speed: coords.speed ?? 0,
-    timestamp: position.timestamp,
-  });
+    const out = allocateEntity<void>();
+  out.accuracy = coords.accuracy;
+  out.altitude = coords.altitude ?? 0;
+  out.altitudeAccuracy = coords.altitudeAccuracy ?? 0;
+  out.floorLevel = (coords as { floorLevel?: number }).floorLevel ?? 0;
+  out.heading = coords.heading ?? 0;
+  out.latitude = coords.latitude;
+  out.longitude = coords.longitude;
+  out.speed = coords.speed ?? 0;
+  out.timestamp = position.timestamp;
+  return finishEntity(out);
 }
 
 function mapWebAccessError(error: GeolocationPositionError): GeolocationAccessOutcome['reason'] {

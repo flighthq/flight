@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureAtlasRegionTexture } from '@flighthq/textureatlas/contract';
@@ -31,13 +31,12 @@ export function createSpritesheetTimelineSource(
   if (_spritesheetTimelineSourceGuard !== null) {
     _spritesheetTimelineSourceGuard(animation, explainSpritesheetTimelineSource(animation));
   }
-  return createEntity<EntityWithoutRuntime<TimelineSource>>({
-    totalFrames: frames.length,
-    labels: [],
-    // A spritesheet animation is pure frame content; the format carries nothing to cue.
-    cues: [],
-    frameRate: 1000 / animation.frameDuration,
-    constructFrame(target: Node2D, frame: number): void {
+    const out = allocateEntity<TimelineSource>();
+  out.totalFrames = frames.length;
+  out.labels = [];
+  out.cues = [];
+  out.frameRate = 1000 / animation.frameDuration;
+  out.constructFrame = (target: Node2D, frame: number): void => {
       const atlas = spritesheet.atlas;
       if (atlas === null) return;
 
@@ -54,8 +53,8 @@ export function createSpritesheetTimelineSource(
       bitmap.x = sheetFrame.offsetX - animation.originX;
       bitmap.y = sheetFrame.offsetY - animation.originY;
       invalidateNodeLocalTransform(bitmap);
-    },
-  });
+    };
+  return finishEntity(out);
 }
 
 // Reports the authored playback fields the TimelineSource vocabulary cannot carry. Direction is exact:

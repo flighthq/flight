@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   DesktopOsProfile,
   ElectronApi,
@@ -90,39 +90,37 @@ export function registerElectronBackends(
   const updater = createElectronUpdaterBackend(electron, options.updaterFeedUrl);
   const shell = makeElectronShellCapabilities(electron, options.platform);
   const window = createElectronWindowBackend(electron);
-  return createEntity({
-    accessibility: {},
-    app,
-    clipboard: {
+    const out = allocateEntity<ElectronHost<DesktopOsProfile>>();
+  out.accessibility = {};
+  out.app = app;
+  out.clipboard = {
       bookmark: clipboard,
       formats: clipboard,
       image: clipboard,
       text: clipboard,
-    },
-    connectivity: {},
-    dialog,
-    graphics: {},
-    input: {},
-    ipc,
-    media: {},
-    menu,
-    midi: {},
-    net: {},
-    power,
-    protocol,
-    notification,
-    shortcut: { query, trigger },
-    screen,
-    share: {},
-    shell,
-    storage: { local: storage },
-    system: { platform: createElectronPlatformBackend(electron) },
-    text: {},
-    tray: createElectronTrayCapabilities(electron, options.platform),
-    ui: {},
-    updater: { command: updater },
-    window,
-  } satisfies
-    | Omit<ElectronHost<DesktopOsProfile>, typeof EntityRuntimeKey>
-    | Omit<ElectronMacosHost, typeof EntityRuntimeKey>);
+    };
+  out.connectivity = {};
+  out.dialog = dialog;
+  out.graphics = {};
+  out.input = {};
+  out.ipc = ipc;
+  out.media = {};
+  out.menu = menu;
+  out.midi = {};
+  out.net = {};
+  out.power = power;
+  out.protocol = protocol;
+  out.notification = notification;
+  out.shortcut = { query, trigger };
+  out.screen = screen;
+  out.share = {};
+  out.shell = shell;
+  out.storage = { local: storage };
+  out.system = { platform: createElectronPlatformBackend(electron) };
+  out.text = {};
+  out.tray = createElectronTrayCapabilities(electron, options.platform);
+  out.ui = {};
+  out.updater = { command: updater };
+  out.window = window;
+  return finishEntity(out);
 }

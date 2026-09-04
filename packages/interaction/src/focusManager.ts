@@ -54,7 +54,7 @@ export function createFocusManager<N extends NodeAny>(
   root: N,
   options: Readonly<FocusManagerOptions> = {},
 ): FocusManager<N> {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<FocusManager<N>>();
   out.focused = null;
   out.root = root;
   out.wrap = options.wrap ?? true;

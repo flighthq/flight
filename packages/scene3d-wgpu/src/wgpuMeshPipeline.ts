@@ -174,7 +174,7 @@ export function createWgpuMeshPipeline(
     },
     depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: !options.blended, depthCompare: 'less' },
   });
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<WgpuMeshPipeline>();
   out.hasIblGroup = options.iblBindGroupLayout !== undefined;
   out.hasPbrSampleGroup = options.pbrSampleBindGroupLayout !== undefined;
   out.hasShadowGroup = options.shadowBindGroupLayout !== undefined;

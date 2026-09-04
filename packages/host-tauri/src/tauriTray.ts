@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
@@ -109,14 +109,17 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     list: () => [...records.entries()].filter(([, record]) => !record.destroying).map(([tray]) => tray),
   });
 
-  const image = createEntity({
-    async set(tray: TrayIcon, icon: string) {
+  const image = (() => {
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.set = async (tray: TrayIcon, icon: string) => {
       return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
-  const menu = createEntity({
-    async set(tray: TrayIcon, items: readonly MenuItemTemplate[]) {
+  const menu = (() => {
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
       const record = activeRecord(records, tray);
       if (record === null) return { outcome: 'tray-destroyed' as const };
       let finishOperation!: () => void;
@@ -177,52 +180,57 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
         record.pendingMenuOperations.delete(pendingOperation);
         finishOperation();
       }
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
   const common = {
     image,
     lifecycle,
     menu,
-    menuSelectionEvents: createEntity({
-      getSignal: (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null,
-    }),
+    menuSelectionEvents: (() => { const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>(); out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null; return finishEntity(out); })(),
   };
 
-  const title = createEntity({
-    async get(tray: TrayIcon) {
+  const title = (() => {
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.get = async (tray: TrayIcon) => {
       const record = activeRecord(records, tray);
       return record === null
         ? ({ outcome: 'tray-destroyed' as const } as const)
         : ({ outcome: 'available' as const, title: record.title } as const);
-    },
-    async set(tray: TrayIcon, value: string) {
+    };
+    out.set = async (tray: TrayIcon, value: string) => {
       const result = await update(records, tray, 'title-update-failed', async (record) => record.icon.setTitle(value));
       if (result.outcome === 'updated') records.get(tray)!.title = value;
       return result;
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
   if (profile === 'linux') return createEntity({ ...common, title }) as unknown as TauriTrayCapabilitiesFor<Profile>;
 
-  const interactionEvents = createEntity({
-    getSignal: (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null,
-  });
-  const tooltip = createEntity({
-    async get(tray: TrayIcon) {
+  const interactionEvents = (() => {
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null;
+    return finishEntity(out);
+  })();
+  const tooltip = (() => {
+    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    out.get = async (tray: TrayIcon) => {
       const record = activeRecord(records, tray);
       return record === null
         ? ({ outcome: 'tray-destroyed' as const } as const)
         : ({ outcome: 'available' as const, tooltip: record.tooltip } as const);
-    },
-    async set(tray: TrayIcon, value: string) {
+    };
+    out.set = async (tray: TrayIcon, value: string) => {
       const result = await update(records, tray, 'tooltip-update-failed', async (record) =>
         record.icon.setTooltip(value),
       );
       if (result.outcome === 'updated') records.get(tray)!.tooltip = value;
       return result;
-    },
-  });
+    };
+    return finishEntity(out);
+  })();
 
   if (profile === 'windows') {
     return createEntity({ ...common, interactionEvents, tooltip }) as unknown as TauriTrayCapabilitiesFor<Profile>;

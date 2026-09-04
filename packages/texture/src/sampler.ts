@@ -4,7 +4,7 @@ import type { Sampler, SamplerLike } from '@flighthq/types/contract';
 // Allocates an independent Sampler with the same sampling state. Sampler holds only plain values,
 // so the clone shares nothing mutable with its source.
 export function cloneSampler(source: Readonly<SamplerLike>): Sampler {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<Sampler>();
   out.anisotropy = source.anisotropy;
   out.magFilter = source.magFilter;
   out.minFilter = source.minFilter;

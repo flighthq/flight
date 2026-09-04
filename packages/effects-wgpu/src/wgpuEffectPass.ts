@@ -253,7 +253,7 @@ export function createWgpuDualSourceEffectPipeline(
       primitive: { topology: 'triangle-list' },
     });
 
-  const out = allocateEntity<EntityWithoutRuntime<WgpuEffectPipeline>>();
+  const out = allocateEntity<WgpuEffectPipeline>();
   out.pipeline = compileForFormat(fs.format);
   out.blendMode = blend;
   out.compileForFormat = compileForFormat;
@@ -287,7 +287,7 @@ export function createWgpuEffectPipeline(
       primitive: { topology: 'triangle-list' },
     });
 
-  const out = allocateEntity<EntityWithoutRuntime<WgpuEffectPipeline>>();
+  const out = allocateEntity<WgpuEffectPipeline>();
   out.pipeline = compileForFormat(fs.format);
   out.blendMode = blend;
   out.compileForFormat = compileForFormat;

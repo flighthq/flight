@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
@@ -22,7 +22,10 @@ export { RenderCacheKind };
  * when the cache is first refreshed.
  */
 export function createRenderCache(): RenderCache {
-  return createEntity({ kind: RenderCacheKind, transform: createMatrix() });
+    const out = allocateEntity<RenderCache>();
+  out.kind = RenderCacheKind;
+  out.transform = createMatrix();
+  return finishEntity(out);
 }
 
 /**
@@ -34,11 +37,10 @@ export function createRenderCacheAdapter(cache: RenderCache | null = null): Rend
   // Built through createEntity like createRenderCache above it, so the adapter carries the standard
   // runtime slot. `adapt` closes over `adapter` rather than `this`: createEntity returns the same
   // object it was given, and the closure only runs long after construction.
-  const adapter: RenderCacheAdapter = createEntity({
-    cache,
-    signals: null as RenderCacheAdapter['signals'],
-
-    adapt(_state: RenderState, _source: Renderable, node: RenderProxy2D): boolean | null {
+  const adapter = allocateEntity<RenderCache>();
+  adapter.cache = cache;
+  adapter.signals = null as RenderCacheAdapter['signals'];
+  adapter.adapt = (_state: RenderState, _source: Renderable, node: RenderProxy2D): boolean | null => {
       adapter.signals?.onPrepare.emit();
       const attached = adapter.cache ?? null;
       if (attached === null) return null;
@@ -49,8 +51,7 @@ export function createRenderCacheAdapter(cache: RenderCache | null = null): Rend
       node.kind = RenderCacheKind;
       multiplyMatrix(node.transform2D, node.transform2D, attached.transform);
       return false;
-    },
-  });
+    };
   return adapter;
 }
 

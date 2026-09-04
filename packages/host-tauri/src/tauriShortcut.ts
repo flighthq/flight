@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
   ShortcutQueryBackend,
@@ -8,11 +8,10 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createTauriShortcutQueryBackend(tauri: TauriApi): ShortcutQueryBackend {
-  const provider = createEntity({
-    async isRegistered(accelerator: Accelerator) {
+  const provider = allocateEntity<ShortcutQueryBackend>();
+  provider.isRegistered = async (accelerator: Accelerator) => {
       return await tauri.globalShortcut.isRegistered(accelerator);
-    },
-  });
+    };
   return provider;
 }
 

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Entity,
@@ -185,7 +185,11 @@ export function createNotificationReplySubscription(): NotificationReplySubscrip
 
 // Provider-contract constructor. Provider-local native keys never enter this public Entity.
 export function createNotificationResource(id: string, title: string, tag: string = ''): Notification {
-  return createEntity({ id, tag, title });
+    const out = allocateEntity<void>();
+  out.id = id;
+  out.tag = tag;
+  out.title = title;
+  return finishEntity(out);
 }
 
 // Provider-contract constructor for one pending native schedule.
@@ -194,7 +198,11 @@ export function createScheduledNotificationResource(
   request: Readonly<NotificationRequest>,
   schedule: Readonly<NotificationSchedule>,
 ): ScheduledNotification {
-  return createEntity({ id, request, schedule });
+    const out = allocateEntity<void>();
+  out.id = id;
+  out.request = request;
+  out.schedule = schedule;
+  return finishEntity(out);
 }
 
 export function destroyNotificationCapabilities(host: HasNotificationLifecycle): Promise<NotificationLifecycleOutcome> {

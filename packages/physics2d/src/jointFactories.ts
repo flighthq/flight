@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Physics2DDistanceJoint,
   Physics2DDistanceJointOptions,
@@ -41,26 +41,24 @@ type Physics2DJointBase = Omit<Physics2DJoint, 'kind'>;
 // explicit operations. The common helper is also the boundary that keeps solver-owned cache out of
 // every public options type.
 function createJointBase(options: Readonly<Physics2DJointOptions>): Physics2DJointBase {
-  return createEntity({
-    bodyA: options.bodyA,
-    bodyB: options.bodyB,
-    localAnchorAX: options.localAnchorAX ?? 0,
-    localAnchorAY: options.localAnchorAY ?? 0,
-    localAnchorBX: options.localAnchorBX ?? 0,
-    localAnchorBY: options.localAnchorBY ?? 0,
-    collideConnected: options.collideConnected ?? false,
-    // Unbreakable unless the caller says otherwise: a joint that silently failed under load would be a
-    // worse default than one that never does.
-    breakForce: options.breakForce ?? Number.POSITIVE_INFINITY,
-    breakTorque: options.breakTorque ?? Number.POSITIVE_INFINITY,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    rAX: 0,
-    rAY: 0,
-    rBX: 0,
-    rBY: 0,
-  });
+    const out = allocateEntity<Physics2DJointBase>();
+  out.bodyA = options.bodyA;
+  out.bodyB = options.bodyB;
+  out.localAnchorAX = options.localAnchorAX ?? 0;
+  out.localAnchorAY = options.localAnchorAY ?? 0;
+  out.localAnchorBX = options.localAnchorBX ?? 0;
+  out.localAnchorBY = options.localAnchorBY ?? 0;
+  out.collideConnected = options.collideConnected ?? false;
+  out.breakForce = options.breakForce ?? Number.POSITIVE_INFINITY;
+  out.breakTorque = options.breakTorque ?? Number.POSITIVE_INFINITY;
+  out.impulse0 = 0;
+  out.impulse1 = 0;
+  out.impulse2 = 0;
+  out.rAX = 0;
+  out.rAY = 0;
+  out.rBX = 0;
+  out.rBY = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics2DDistanceJoint(options: Readonly<Physics2DDistanceJointOptions>): Physics2DDistanceJoint {
@@ -89,30 +87,30 @@ export function createPhysics2DGearJoint(options: Readonly<Physics2DGearJointOpt
 }
 
 export function createPhysics2DMouseJoint(options: Readonly<Physics2DMouseJointOptions>): Physics2DMouseJoint {
-  return createEntity({
-    kind: Physics2DMouseJointKind,
-    bodyA: options.body,
-    bodyB: options.body,
-    localAnchorAX: 0,
-    localAnchorAY: 0,
-    localAnchorBX: options.localAnchorX ?? 0,
-    localAnchorBY: options.localAnchorY ?? 0,
-    collideConnected: false,
-    breakForce: options.breakForce ?? Number.POSITIVE_INFINITY,
-    breakTorque: options.breakTorque ?? Number.POSITIVE_INFINITY,
-    impulse0: 0,
-    impulse1: 0,
-    impulse2: 0,
-    rAX: 0,
-    rAY: 0,
-    rBX: 0,
-    rBY: 0,
-    targetX: options.targetX,
-    targetY: options.targetY,
-    maxForce: options.maxForce,
-    frequencyHz: options.frequencyHz ?? 5,
-    dampingRatio: options.dampingRatio ?? 0.7,
-  });
+    const out = allocateEntity<Physics2DDistanceJoint>();
+  out.kind = Physics2DMouseJointKind;
+  out.bodyA = options.body;
+  out.bodyB = options.body;
+  out.localAnchorAX = 0;
+  out.localAnchorAY = 0;
+  out.localAnchorBX = options.localAnchorX ?? 0;
+  out.localAnchorBY = options.localAnchorY ?? 0;
+  out.collideConnected = false;
+  out.breakForce = options.breakForce ?? Number.POSITIVE_INFINITY;
+  out.breakTorque = options.breakTorque ?? Number.POSITIVE_INFINITY;
+  out.impulse0 = 0;
+  out.impulse1 = 0;
+  out.impulse2 = 0;
+  out.rAX = 0;
+  out.rAY = 0;
+  out.rBX = 0;
+  out.rBY = 0;
+  out.targetX = options.targetX;
+  out.targetY = options.targetY;
+  out.maxForce = options.maxForce;
+  out.frequencyHz = options.frequencyHz ?? 5;
+  out.dampingRatio = options.dampingRatio ?? 0.7;
+  return finishEntity(out);
 }
 
 export function createPhysics2DPrismaticJoint(

@@ -1,5 +1,5 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityWithoutRuntime,
   DirectoryOpenDialogBackend,
@@ -16,8 +16,8 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi): DirectoryOpenDialogBackend & Entity {
-  return createEntity({
-    async open(options): Promise<DirectoryOpenDialogResult> {
+    const out = allocateEntity<DirectoryOpenDialogBackend>();
+  out.open = async (options): Promise<DirectoryOpenDialogResult> => {
       if (options?.signal?.aborted) return { outcome: 'cancelled' };
       const dialog = electron.dialog;
       if (typeof dialog?.showOpenDialog !== 'function') return { outcome: 'runtime-unavailable' };
@@ -33,8 +33,8 @@ export function createElectronDirectoryOpenDialogBackend(electron: ElectronApi):
       } catch (error) {
         return { outcome: classifyFailure(error, 'directory-open-failed') };
       }
-    },
-  } satisfies Omit<DirectoryOpenDialogBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 export function createElectronFileOpenDialogBackend(electron: ElectronApi): FileOpenDialogBackend & Entity {
@@ -65,8 +65,8 @@ export function createElectronFileOpenDialogBackend(electron: ElectronApi): File
 }
 
 export function createElectronFileSaveDialogBackend(electron: ElectronApi): FileSaveDialogBackend & Entity {
-  return createEntity({
-    async save(options): Promise<FileSaveDialogResult> {
+    const out = allocateEntity<FileSaveDialogBackend>();
+  out.save = async (options): Promise<FileSaveDialogResult> => {
       if (options.signal?.aborted) return { outcome: 'cancelled' };
       const dialog = electron.dialog;
       if (typeof dialog?.showSaveDialog !== 'function') return { outcome: 'runtime-unavailable' };
@@ -81,8 +81,8 @@ export function createElectronFileSaveDialogBackend(electron: ElectronApi): File
       } catch (error) {
         return { outcome: classifyFailure(error, 'file-save-failed') };
       }
-    },
-  } satisfies Omit<FileSaveDialogBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 // Electron provides message boxes and confirmation, but no native text-input prompt. Consumers can

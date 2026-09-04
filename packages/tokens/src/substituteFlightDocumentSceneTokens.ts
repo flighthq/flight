@@ -98,7 +98,7 @@ function refuse(
   tokenKey: string | null,
 ): void {
   state.refusal ??= (() => {
-    const out = allocateEntity<unknown>();
+    const out = allocateEntity<FlightDocumentRefusalExplanation>();
     out.actual = null;
     out.column = null;
     out.kind = null;

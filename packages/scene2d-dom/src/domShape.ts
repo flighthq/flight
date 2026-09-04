@@ -23,7 +23,7 @@ interface DomShapeData extends RendererData {
 }
 
 function createDomShapeData(_state: RenderState, _source: Renderable): DomShapeData {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<DomShapeData>();
   out.canvas = null;
   out.context = null;
   return finishEntity(out);

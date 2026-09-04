@@ -36,7 +36,7 @@ export function disposeShareSignals(signals: ShareSignals): void {
 }
 
 export function enableShareSignals(): ShareSignals {
-  const out = allocateEntity<unknown>();
+  const out = allocateEntity<ShareSignals>();
   out.onShareResult = createSignal();
   return finishEntity(out);
 }

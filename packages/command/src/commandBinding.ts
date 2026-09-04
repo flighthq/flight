@@ -142,7 +142,7 @@ const setNodePropertyCommandBinding: CommandBinding = {
       if (a.entries[i].target !== b.entries[i].target) return null;
       if (a.entries[i].property !== b.entries[i].property) return null;
     }
-    const out = allocateEntity<Omit<SetNodePropertyCommand, keyof Entity>>();
+    const out = allocateEntity<SetNodePropertyCommand>();
     out.entries = a.entries.map((entry, i) => ({
       after: b.entries[i].after,
       before: entry.before,
