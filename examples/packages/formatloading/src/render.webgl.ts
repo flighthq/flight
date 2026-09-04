@@ -1,4 +1,8 @@
-import { webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web/contract';
+import {
+  webCanvasRenderSurfaceCreator,
+  webGraphicsHost,
+  webRaster2DSurfaceProvider,
+} from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   scene2dGlPipeline,
@@ -42,6 +46,7 @@ export const state = createGlRenderState(
     backgroundColor: 0x101827ff,
     pixelRatio,
     sceneGraphSyncPolicy: 'requiresInvalidation',
+    raster2DSurfaceProvider: webRaster2DSurfaceProvider,
   },
 );
 enableFlightDiagnostics(state);
