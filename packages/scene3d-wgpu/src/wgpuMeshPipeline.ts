@@ -213,30 +213,6 @@ export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
 const instanceBuffers = new WeakMap<WgpuRenderState, { buffer: GPUBuffer; capacity: number }>();
 const identityInstance = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
-function ensureWgpuInstanceBuffer(
-  state: WgpuRenderState,
-  matrices: Readonly<Float32Array> | null | undefined,
-  instanceCount: number,
-): GPUBuffer {
-  const source = matrices !== null && matrices !== undefined ? matrices : identityInstance;
-  const required = Math.max(1, instanceCount) * 64;
-  let cached = instanceBuffers.get(state);
-  if (cached === undefined || cached.capacity < required) {
-    cached?.buffer.destroy();
-    const capacity = Math.max(required, 64 * 64);
-    cached = {
-      buffer: state.device.createBuffer({
-        size: capacity,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-      }),
-      capacity,
-    };
-    instanceBuffers.set(state, cached);
-  }
-  state.device.queue.writeBuffer(cached.buffer, 0, source.buffer, source.byteOffset, required);
-  return cached.buffer;
-}
-
 // Resolves the shared IBL sample bind group a caller binds when its pipeline carries the
 // legacy standalone IBL layout — the WGSL counterpart of scene-gl's IBL texture-unit + u_ibl* uniform binds in
 // bindGlMeshLightBlock. Lazily creates the IBL uniform buffer (enabled/intensity/maxMip), a filtering
@@ -330,6 +306,30 @@ export function ensureWgpuIblSampleLayout(state: WgpuRenderState): GPUBindGroupL
     });
   }
   return scene.iblSampleLayout;
+}
+
+export function ensureWgpuInstanceBuffer(
+  state: WgpuRenderState,
+  matrices: Readonly<Float32Array> | null | undefined,
+  instanceCount: number,
+): GPUBuffer {
+  const source = matrices !== null && matrices !== undefined ? matrices : identityInstance;
+  const required = Math.max(1, instanceCount) * 64;
+  let cached = instanceBuffers.get(state);
+  if (cached === undefined || cached.capacity < required) {
+    cached?.buffer.destroy();
+    const capacity = Math.max(required, 64 * 64);
+    cached = {
+      buffer: state.device.createBuffer({
+        size: capacity,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      }),
+      capacity,
+    };
+    instanceBuffers.set(state, cached);
+  }
+  state.device.queue.writeBuffer(cached.buffer, 0, source.buffer, source.byteOffset, required);
+  return cached.buffer;
 }
 
 // Fetches (or on first use creates) the per-material binding cached under `key`, rebuilding its bind

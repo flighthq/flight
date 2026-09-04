@@ -14,7 +14,12 @@ import type {
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, writeWgpuDrawUniform, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import {
+  beginWgpuMeshDraw,
+  ensureWgpuInstanceBuffer,
+  writeWgpuDrawUniform,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { bindWgpuWireframeColor, ensureWgpuWireframePipeline } from './wgpuWireframePrelude';
 import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
@@ -71,6 +76,7 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     pass.setBindGroup(1, drawBindGroup, _dynamicOffsets);
     pass.setVertexBuffer(0, upload.vertexBuffer);
+    pass.setVertexBuffer(1, ensureWgpuInstanceBuffer(state, null, 1));
     pass.setIndexBuffer(upload.lineIndexBuffer, upload.indexFormat);
     // Each triangle index contributes two line indices, so the subset's line range is its triangle
     // range scaled by 2.
