@@ -291,7 +291,7 @@ describe('resolveImageResourceReference', () => {
 });
 
 function createTestBitmap(alphaType: Bitmap['alphaType']): Bitmap {
-    const out = allocateEntity<Bitmap>();
+  const out = allocateEntity<Bitmap>();
   out.alphaType = alphaType;
   out.data = new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]);
   out.format = 'rgba8unorm';

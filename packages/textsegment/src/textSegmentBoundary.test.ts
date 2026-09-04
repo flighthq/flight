@@ -76,7 +76,13 @@ describe('getWordRangeAt', () => {
     const explicit = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>();
     explicit.segment = (text) => [{ start: 0, end: text.length, text, isWordLike: true }];
     const host: HasTextSegmenter = { text: { segmenter: explicit } };
-    setTextSegmenterBackend((() => { const out = allocateEntity<unknown>(); out.segment = () => []; return finishEntity(out); })());
+    setTextSegmenterBackend(
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.segment = () => [];
+        return finishEntity(out);
+      })(),
+    );
     expect(getWordRangeAt('word', 1, undefined, host)).toEqual({ start: 0, end: 4 });
   });
 
@@ -99,10 +105,14 @@ describe('getWordRangeAt', () => {
   it('threads the locale to the active backend', () => {
     let seenLocale: string | undefined = 'unset';
     setTextSegmenterBackend(
-      (() => { const out = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>(); out.segment = (text, _granularity, locale) => {
+      (() => {
+        const out = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>();
+        out.segment = (text, _granularity, locale) => {
           seenLocale = locale;
           return [{ start: 0, end: text.length, text, isWordLike: true }];
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     );
     getWordRangeAt('word', 1, 'ja-JP');
     expect(seenLocale).toBe('ja-JP');

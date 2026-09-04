@@ -5,17 +5,17 @@ import { drawGlLinearToSrgbPass, LINEAR_TO_SRGB_FRAGMENT_SRC } from './glLinearT
 import { createGlState } from './glTestHelper';
 
 function makeTarget(framebuffer: WebGLFramebuffer, texture: WebGLTexture, width = 32, height = 16): GlRenderTarget {
-    const out = allocateEntity<GlRenderTarget>();
+  const out = allocateEntity<GlRenderTarget>();
   out.requestedAxes = {
-      width,
-      height,
-      format: 'rgba16f',
-      colorAttachments: 1,
-      colorFormats: ['rgba16f'],
-      sampleCount: 1,
-      depth: 'none',
-      colorSpace: 'linear',
-    };
+    width,
+    height,
+    format: 'rgba16f',
+    colorAttachments: 1,
+    colorFormats: ['rgba16f'],
+    sampleCount: 1,
+    depth: 'none',
+    colorSpace: 'linear',
+  };
   out.width = width;
   out.height = height;
   out.format = 'rgba16f';

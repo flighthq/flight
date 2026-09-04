@@ -123,7 +123,7 @@ describe('createImageResourceFromBitmap', () => {
 });
 
 function createTestBitmap(width: number, height: number): Bitmap {
-    const out = allocateEntity<HasGraphicsImage>();
+  const out = allocateEntity<HasGraphicsImage>();
   out.alphaType = 'straight';
   out.gamut = 'srgb';
   out.data = new Uint8ClampedArray(width * height * 4);

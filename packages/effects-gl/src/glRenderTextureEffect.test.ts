@@ -56,8 +56,16 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
 
     expect(
       applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
-        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.First'; return finishEntity(out); })(),
-        (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Second'; return finishEntity(out); })(),
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'acme.First';
+          return finishEntity(out);
+        })(),
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'acme.Second';
+          return finishEntity(out);
+        })(),
       ]),
     ).toBe(true);
 
@@ -77,7 +85,13 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
     writeGlRenderTextureTarget(state, source, () => {});
 
     expect(
-      applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [(() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; return finishEntity(out); })()]),
+      applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'acme.Missing';
+          return finishEntity(out);
+        })(),
+      ]),
     ).toBe(false);
     expect(isGlRenderTextureReady(state, dest)).toBe(false);
   });
@@ -192,8 +206,18 @@ describe('explainGlRenderEffectApplication', () => {
       (_state, effect) => (effect as unknown as { shaderKey: string }).shaderKey === 'present',
     );
     const chain = [
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'test.explain-i'; out.shaderKey = 'present'; return finishEntity(out); })(),
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'test.explain-i'; out.shaderKey = 'absent'; return finishEntity(out); })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'test.explain-i';
+        out.shaderKey = 'present';
+        return finishEntity(out);
+      })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'test.explain-i';
+        out.shaderKey = 'absent';
+        return finishEntity(out);
+      })(),
     ];
     const explanation = explainGlRenderEffectApplication(
       state,
@@ -304,7 +328,14 @@ describe('setGlRenderEffectApplicationGuard', () => {
 });
 
 function effects(kinds: readonly string[]): ReadonlyArray<Readonly<RenderEffect>> {
-  return kinds.map((kind) => (() => { const out = allocateEntity<GlRenderState>(); out.kind = kind; return finishEntity(out) as unknown; })() as Readonly<RenderEffect>);
+  return kinds.map(
+    (kind) =>
+      (() => {
+        const out = allocateEntity<GlRenderState>();
+        out.kind = kind;
+        return finishEntity(out) as unknown;
+      })() as Readonly<RenderEffect>,
+  );
 }
 
 function compositePremultipliedPixel(destination: Uint8Array, source: Uint8Array): Uint8Array {

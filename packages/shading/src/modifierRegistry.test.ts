@@ -41,7 +41,16 @@ describe('registerModifier', () => {
       getDefineSignature: (modifier: Readonly<Modifier>) => modifier.slot,
     });
     const definition = resolveModifier(registry, 'acme.Foo');
-    expect(definition?.getDefineSignature?.((() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Foo'; out.slot = 'Effect'; return finishEntity(out); })())).toBe('Effect');
+    expect(
+      definition?.getDefineSignature?.(
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'acme.Foo';
+          out.slot = 'Effect';
+          return finishEntity(out);
+        })(),
+      ),
+    ).toBe('Effect');
   });
 });
 

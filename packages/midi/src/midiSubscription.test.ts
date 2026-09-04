@@ -11,7 +11,14 @@ describe('attachMidiAccessStateSubscription', () => {
     const release = vi.fn(async () => ({ reason: 'ok' }));
     const access = createAccess(async (next) => {
       listener.current = next;
-      return { attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' };
+      return {
+        attachment: (() => {
+          const out = allocateEntity<unknown>();
+          out.release = release;
+          return finishEntity(out);
+        })(),
+        reason: 'ok',
+      };
     });
     const subscription = requiredFunction('createMidiAccessStateSubscription')() as SignalEntity;
     const seen: unknown[] = [];
@@ -106,7 +113,14 @@ describe('detachMidiAccessStateSubscription', () => {
       .fn()
       .mockResolvedValueOnce({ reason: 'operation-failed' })
       .mockResolvedValueOnce({ reason: 'ok' });
-    const access = createAccess(async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' }));
+    const access = createAccess(async () => ({
+      attachment: (() => {
+        const out = allocateEntity<unknown>();
+        out.release = release;
+        return finishEntity(out);
+      })(),
+      reason: 'ok',
+    }));
     const subscription = requiredFunction('createMidiAccessStateSubscription')();
     await requiredFunction('attachMidiAccessStateSubscription')(access, subscription);
     const detach = requiredFunction('detachMidiAccessStateSubscription');
@@ -128,7 +142,14 @@ describe('detachMidiAccessStateSubscription', () => {
     const subscription = requiredFunction('createMidiAccessStateSubscription')();
     const attaching = requiredFunction('attachMidiAccessStateSubscription')(access, subscription);
     const detaching = requiredFunction('detachMidiAccessStateSubscription')(subscription);
-    settle.current?.({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' });
+    settle.current?.({
+      attachment: (() => {
+        const out = allocateEntity<unknown>();
+        out.release = release;
+        return finishEntity(out);
+      })(),
+      reason: 'ok',
+    });
     await expect(attaching).resolves.toEqual({ reason: 'ok' });
     await expect(detaching).resolves.toEqual({ reason: 'ok' });
     expect(release).toHaveBeenCalledOnce();
@@ -142,7 +163,14 @@ describe('detachMidiInputMessageSubscription', () => {
   it('releases an input listener once and reports the detached state', async () => {
     const release = vi.fn(async () => ({ reason: 'ok' }));
     const input = createInputPort({
-      attachMessage: async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' }),
+      attachMessage: async () => ({
+        attachment: (() => {
+          const out = allocateEntity<unknown>();
+          out.release = release;
+          return finishEntity(out);
+        })(),
+        reason: 'ok',
+      }),
     });
     const subscription = requiredFunction('createMidiInputMessageSubscription')();
     await requiredFunction('attachMidiInputMessageSubscription')(input, subscription);
@@ -157,7 +185,14 @@ describe('detachMidiPortStateSubscription', () => {
   it('releases the exact port-state listener without disposing consumer slots', async () => {
     const release = vi.fn(async () => ({ reason: 'ok' }));
     const port = createInputPort({
-      attachStateChange: async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' }),
+      attachStateChange: async () => ({
+        attachment: (() => {
+          const out = allocateEntity<unknown>();
+          out.release = release;
+          return finishEntity(out);
+        })(),
+        reason: 'ok',
+      }),
     });
     const subscription = requiredFunction('createMidiPortStateSubscription')() as SignalEntity;
     connectSignal(subscription.onMidiPortStateChange, vi.fn());
@@ -181,7 +216,14 @@ describe('disposeMidiAccessStateSubscription', () => {
     connectSignal(subscription.onMidiAccessStateChange, vi.fn());
     const attaching = requiredFunction('attachMidiAccessStateSubscription')(access, subscription);
     const disposing = requiredFunction('disposeMidiAccessStateSubscription')(subscription);
-    settle.current?.({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' });
+    settle.current?.({
+      attachment: (() => {
+        const out = allocateEntity<unknown>();
+        out.release = release;
+        return finishEntity(out);
+      })(),
+      reason: 'ok',
+    });
     await attaching;
     await expect(disposing).resolves.toEqual({ reason: 'ok' });
     expect(release).toHaveBeenCalledOnce();
@@ -203,7 +245,14 @@ describe('disposeMidiInputMessageSubscription', () => {
       .mockResolvedValueOnce({ reason: 'operation-failed' })
       .mockResolvedValueOnce({ reason: 'ok' });
     const input = createInputPort({
-      attachMessage: async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' }),
+      attachMessage: async () => ({
+        attachment: (() => {
+          const out = allocateEntity<unknown>();
+          out.release = release;
+          return finishEntity(out);
+        })(),
+        reason: 'ok',
+      }),
     });
     const subscription = requiredFunction('createMidiInputMessageSubscription')() as MessageSignalEntity;
     connectSignal(subscription.onMidiInputMessage, vi.fn());
@@ -279,7 +328,7 @@ function requiredFunction(name: string): (...args: unknown[]) => unknown {
 }
 
 function successfulAttachment(): object {
-    const out = allocateEntity<unknown>();
+  const out = allocateEntity<unknown>();
   out.release = async () => ({ reason: 'ok' });
   return finishEntity(out);
 }

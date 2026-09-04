@@ -25,16 +25,27 @@ function host() {
   const live: TrayIcon[] = [];
   return {
     tray: {
-      lifecycle: (() => { const out = allocateEntity<unknown>(); out.create = async (tray: TrayIcon) => {
+      lifecycle: (() => {
+        const out = allocateEntity<unknown>();
+        out.create = async (tray: TrayIcon) => {
           live.push(tray);
           return { outcome: 'created' as const };
-        }; out.destroy = async (tray: TrayIcon) => {
+        };
+        out.destroy = async (tray: TrayIcon) => {
           live.splice(live.indexOf(tray), 1);
           return { outcome: 'destroyed' as const };
-        }; out.isDestroyed = (tray: TrayIcon) => !live.includes(tray); out.list = () => live.slice(); return finishEntity(out); })(),
-      image: (() => { const out = allocateEntity<unknown>(); out.set = async () => {
+        };
+        out.isDestroyed = (tray: TrayIcon) => !live.includes(tray);
+        out.list = () => live.slice();
+        return finishEntity(out);
+      })(),
+      image: (() => {
+        const out = allocateEntity<unknown>();
+        out.set = async () => {
           return { outcome: 'updated' as const };
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
   };
 }

@@ -6,17 +6,17 @@ import { createGlState } from './glTestHelper';
 
 function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlRenderTarget {
   const format = colorSpace === 'linear' ? 'rgba16f' : 'rgba8';
-    const out = allocateEntity<GlRenderTarget>();
+  const out = allocateEntity<GlRenderTarget>();
   out.requestedAxes = {
-      width: 32,
-      height: 16,
-      format,
-      colorAttachments: 1,
-      colorFormats: [format],
-      sampleCount: 1,
-      depth: 'none',
-      colorSpace,
-    };
+    width: 32,
+    height: 16,
+    format,
+    colorAttachments: 1,
+    colorFormats: [format],
+    sampleCount: 1,
+    depth: 'none',
+    colorSpace,
+  };
   out.width = 32;
   out.height = 16;
   out.format = format;

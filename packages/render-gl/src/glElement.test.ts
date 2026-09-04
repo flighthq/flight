@@ -8,7 +8,11 @@ import {
 } from './glElement';
 
 function entityProvider(fields: Omit<GlRenderSurfaceProvider, keyof Entity>): GlRenderSurfaceProvider {
-  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
+  return (() => {
+    const out = allocateEntity<unknown>();
+    Object.assign(out, fields);
+    return finishEntity(out);
+  })();
 }
 
 describe('createGlCanvasElement', () => {

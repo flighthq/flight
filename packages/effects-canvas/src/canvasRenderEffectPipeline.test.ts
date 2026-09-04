@@ -72,8 +72,16 @@ describe('endCanvasRenderEffectPipeline', () => {
     registerCanvasRenderEffect(state, 'RealizedEffect', realizedRunner);
 
     endCanvasRenderEffectPipeline(state, pipeline, [
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'UnregisteredEffect'; return finishEntity(out); })(),
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'RealizedEffect'; return finishEntity(out); })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'UnregisteredEffect';
+        return finishEntity(out);
+      })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'RealizedEffect';
+        return finishEntity(out);
+      })(),
     ] as RenderEffect[]);
 
     const [unregisteredDest, realizedDest] = pipeline.pool.free;

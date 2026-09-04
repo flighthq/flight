@@ -89,7 +89,11 @@ function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuD
 }
 
 function entityHostBackend(fields: Omit<WgpuHostBackend, keyof Entity>): WgpuHostBackend {
-  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
+  return (() => {
+    const out = allocateEntity<unknown>();
+    Object.assign(out, fields);
+    return finishEntity(out);
+  })();
 }
 
 function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuRenderState {
@@ -1104,7 +1108,7 @@ describe('wgpu acquisition lifecycle', () => {
 });
 
 function ownerAcquisition(owner: WgpuPresentationRenderState): Omit<WgpuHostAcquisition, 'ownership'> {
-    const out = allocateEntity<WgpuHostBackend>();
+  const out = allocateEntity<WgpuHostBackend>();
   out.context = owner.context;
   out.device = owner.device;
   out.format = owner.format;

@@ -610,8 +610,39 @@ function getColliderShapes(): CollisionColliderShape3D[] {
     { kind: 'cylinder', x0: 0, y0: -1, z0: 0, x1: 0, y1: 1, z1: 0, radius: 0.5 },
     { kind: 'cone', apexX: 0, apexY: 1, apexZ: 0, baseX: 0, baseY: -1, baseZ: 0, radius: 1 },
     { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] },
-    (() => { const out = allocateEntity<void>(); out.kind = 'triangle-mesh'; out.version = 0; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1]; out.indices = [0, 1, 2]; return finishEntity(out); })(),
-    (() => { const out = allocateEntity<void>(); out.kind = 'heightfield'; out.columns = 2; out.rows = 2; out.version = 0; out.cellSizeX = 1; out.cellSizeZ = 1; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.heights = [0, 0, 0, 0]; return finishEntity(out); })(),
+    (() => {
+      const out = allocateEntity<void>();
+      out.kind = 'triangle-mesh';
+      out.version = 0;
+      out.x = 0;
+      out.y = 0;
+      out.z = 0;
+      out.rotationX = 0;
+      out.rotationY = 0;
+      out.rotationZ = 0;
+      out.rotationW = 1;
+      out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1];
+      out.indices = [0, 1, 2];
+      return finishEntity(out);
+    })(),
+    (() => {
+      const out = allocateEntity<void>();
+      out.kind = 'heightfield';
+      out.columns = 2;
+      out.rows = 2;
+      out.version = 0;
+      out.cellSizeX = 1;
+      out.cellSizeZ = 1;
+      out.x = 0;
+      out.y = 0;
+      out.z = 0;
+      out.rotationX = 0;
+      out.rotationY = 0;
+      out.rotationZ = 0;
+      out.rotationW = 1;
+      out.heights = [0, 0, 0, 0];
+      return finishEntity(out);
+    })(),
   ];
 }
 

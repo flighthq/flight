@@ -101,17 +101,17 @@ describe('releaseDomRenderCache', () => {
   });
 });
 
-  const canvasSurfaceCreator = (() => {
-    const out = allocateEntity<any>();
-    out.createRenderSurface = (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
+const canvasSurfaceCreator = (() => {
+  const out = allocateEntity<any>();
+  out.createRenderSurface = (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.width = width * pixelRatio;
     canvas.height = height * pixelRatio;
     return canvas;
   };
-    out.destroyRenderSurface = (canvas: HTMLCanvasElement): void => {
+  out.destroyRenderSurface = (canvas: HTMLCanvasElement): void => {
     canvas.width = 0;
     canvas.height = 0;
   };
-    return finishEntity(out);
-  })();
+  return finishEntity(out);
+})();

@@ -187,7 +187,7 @@ function counter(label: string): Command {
 }
 
 function command(kind: string, label: string): Command {
-    const out = allocateEntity<Command>();
+  const out = allocateEntity<Command>();
   out.kind = kind;
   out.label = label;
   return finishEntity(out);

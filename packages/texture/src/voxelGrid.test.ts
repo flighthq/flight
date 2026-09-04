@@ -5,7 +5,7 @@ import { VoxelGridTextureSourceKind } from '@flighthq/types/contract';
 import { invalidateVoxelGrid } from './voxelGrid';
 
 function voxelGrid(version: number): VoxelGrid {
-    const out = allocateEntity<VoxelGrid>();
+  const out = allocateEntity<VoxelGrid>();
   out.data = new Uint8Array(32);
   out.depth = 2;
   out.format = 'rgba8unorm' as const;
@@ -13,7 +13,12 @@ function voxelGrid(version: number): VoxelGrid {
   out.kind = VoxelGridTextureSourceKind;
   out.version = version;
   out.width = 2;
-  return finishEntity(out) as VoxelGrid;;
+  return finishEntity(out) as VoxelGrid;
+}
+
+describe('invalidateVoxelGrid', () => {
+  it('advances the shared content version without replacing voxel bytes', () => {
+    const grid = voxelGrid(0);
     const data = grid.data;
 
     invalidateVoxelGrid(grid);

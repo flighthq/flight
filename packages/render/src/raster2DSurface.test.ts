@@ -4,7 +4,11 @@ import type { Entity, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq
 import { createRaster2DSurface, destroyRaster2DSurface } from './raster2DSurface';
 
 function entityProvider(fields: Omit<Raster2DSurfaceProvider, keyof Entity>): Raster2DSurfaceProvider {
-  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
+  return (() => {
+    const out = allocateEntity<unknown>();
+    Object.assign(out, fields);
+    return finishEntity(out);
+  })();
 }
 
 describe('createRaster2DSurface', () => {

@@ -33,7 +33,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 
 // Every channel off by default, so each test turns on exactly the one it is about.
 function transform(overrides: Partial<Skeleton2DTransformConstraint> = {}): Skeleton2DTransformConstraint {
-    const out = allocateEntity<unknown>();
+  const out = allocateEntity<unknown>();
   out.boneIndices = [0];
   out.kind = Skeleton2DConstraintKind.Transform as 'Skeleton2D.TransformConstraint';
   out.mix = 1;
@@ -51,7 +51,12 @@ function transform(overrides: Partial<Skeleton2DTransformConstraint> = {}): Skel
   out.offsetY = 0;
   out.targetBoneIndex = 1;
   Object.assign(out, overrides);
-  return finishEntity(out) as Skeleton2DTransformConstraint;;
+  return finishEntity(out) as Skeleton2DTransformConstraint;
+}
+
+// This file registers a built-in solver into a module-global registry, so it restores whatever it found
+// rather than leaving the kind claimed for whichever file runs next.
+const PRIOR = getSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform);
 
 afterEach(() => {
   if (PRIOR === null) unregisterSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform);

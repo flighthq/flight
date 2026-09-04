@@ -39,18 +39,22 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 // A rigid straight path from (0,0) to (100,0) — 100 units of arc length, so a distance IS an x coordinate
 // and every assertion below can be read off by hand.
 function straightPath(): PathAttachment2D {
-    const out = allocateEntity<PathAttachment2D>();
+  const out = allocateEntity<PathAttachment2D>();
   out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO];
   out.kind = PathAttachment2DKind;
   out.pointCount = 2;
   out.skin = null;
   out.vertices = new Float32Array([0, 0, 100, 0]);
   out.winding = 'nonZero' as const;
-  return finishEntity(out) as PathAttachment2D;;
+  return finishEntity(out) as PathAttachment2D;
+}
+
+function pathSlot(attachment: PathAttachment2D | null): Slot2D {
+  return { attachment, boneIndex: 0, color: 0xffffffff, name: 'path' };
 }
 
 function constraint(overrides: Partial<Skeleton2DPathConstraint> = {}): Skeleton2DPathConstraint {
-    const out = allocateEntity<PathAttachment2D>();
+  const out = allocateEntity<PathAttachment2D>();
   out.boneIndices = [1];
   out.kind = Skeleton2DConstraintKind.Path as 'Skeleton2D.PathConstraint';
   out.mix = 1;
@@ -64,7 +68,10 @@ function constraint(overrides: Partial<Skeleton2DPathConstraint> = {}): Skeleton
   out.spacingMode = Skeleton2DPathSpacingMode.Fixed;
   out.targetSlotIndex = 0;
   Object.assign(out, overrides);
-  return finishEntity(out) as Skeleton2DPathConstraint;; bones 1..n are the chain laid along it.
+  return finishEntity(out) as Skeleton2DPathConstraint;
+}
+
+// Bone 0 carries the path slot; bones 1..n are the chain laid along it.
 function rig(chainLength: number, attachment: PathAttachment2D | null = straightPath()): Skeleton2D {
   const bones = [makeBone()];
   for (let i = 0; i < chainLength; i++) bones.push(makeBone({ length: 10 }));
@@ -196,7 +203,16 @@ describe('solveSkeleton2DPathConstraint', () => {
   it('turns a bone to the path without moving it when both translate mixes are zero', () => {
     const skeleton = rig(
       1,
-      (() => { const out = allocateEntity<PathAttachment2D>(); out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO]; out.kind = PathAttachment2DKind; out.pointCount = 2; out.skin = null; out.vertices = new Float32Array([0, 0, 0, 100]); out.winding = 'nonZero' as const; return finishEntity(out) as PathAttachment2D,; })()
+      (() => {
+        const out = allocateEntity<PathAttachment2D>();
+        out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO];
+        out.kind = PathAttachment2DKind;
+        out.pointCount = 2;
+        out.skin = null;
+        out.vertices = new Float32Array([0, 0, 0, 100]);
+        out.winding = 'nonZero' as const;
+        return finishEntity(out) as PathAttachment2D;
+      })(),
     );
     skeleton.bones[1].x = 40;
     skeleton.bones[1].y = -7;
@@ -212,7 +228,16 @@ describe('solveSkeleton2DPathConstraint', () => {
   it('aims a bone along the path tangent when rotateMode is Tangent', () => {
     const skeleton = rig(
       1,
-      (() => { const out = allocateEntity<PathAttachment2D>(); out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO]; out.kind = PathAttachment2DKind; out.pointCount = 2; out.skin = null; out.vertices = new Float32Array([0, 0, 0, 100]); out.winding = 'nonZero' as const; return finishEntity(out) as PathAttachment2D,; })()
+      (() => {
+        const out = allocateEntity<PathAttachment2D>();
+        out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO];
+        out.kind = PathAttachment2DKind;
+        out.pointCount = 2;
+        out.skin = null;
+        out.vertices = new Float32Array([0, 0, 0, 100]);
+        out.winding = 'nonZero' as const;
+        return finishEntity(out) as PathAttachment2D;
+      })(),
     );
 
     solveSkeleton2DPathConstraint(skeleton, constraint({ mixRotate: 1, position: 10 }));
@@ -224,7 +249,16 @@ describe('solveSkeleton2DPathConstraint', () => {
   it('aims each bone at the NEXT one in Chain mode, sampling every position before moving any', () => {
     const skeleton = rig(
       2,
-      (() => { const out = allocateEntity<PathAttachment2D>(); out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]; out.kind = PathAttachment2DKind; out.pointCount = 3; out.skin = null; out.vertices = new Float32Array([0, 0, 50, 0, 50, 50]); out.winding = 'nonZero' as const; return finishEntity(out) as PathAttachment2D,; })()
+      (() => {
+        const out = allocateEntity<PathAttachment2D>();
+        out.commands = [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO];
+        out.kind = PathAttachment2DKind;
+        out.pointCount = 3;
+        out.skin = null;
+        out.vertices = new Float32Array([0, 0, 50, 0, 50, 50]);
+        out.winding = 'nonZero' as const;
+        return finishEntity(out) as PathAttachment2D;
+      })(),
     );
 
     solveSkeleton2DPathConstraint(

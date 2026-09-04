@@ -18,7 +18,13 @@ describe('getStoragePersistence', () => {
     { outcome: 'operation-failed', permissionState: 'prompt' },
   ] as const)('relays the independent $outcome/$permissionState snapshot exactly', async (result) => {
     const getPersistence = vi.fn(async (): Promise<StoragePersistenceResult> => result);
-    const host = queryHost((() => { const out = allocateEntity<unknown>(); out.getPersistence = getPersistence; return finishEntity(out); })());
+    const host = queryHost(
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.getPersistence = getPersistence;
+        return finishEntity(out);
+      })(),
+    );
 
     await expect(getStoragePersistence(host)).resolves.toEqual(result);
     expect(getPersistence).toHaveBeenCalledOnce();
@@ -28,9 +34,9 @@ describe('getStoragePersistence', () => {
     const events: string[] = [];
     const query = allocateEntity<unknown>();
     query.getPersistence = async (): Promise<StoragePersistenceResult> => {
-        events.push('query');
-        return { outcome: 'persistent', permissionState: 'granted' };
-      };
+      events.push('query');
+      return { outcome: 'persistent', permissionState: 'granted' };
+    };
     const request = (() => {
       const out = allocateEntity<unknown>();
       out.requestPersistence = async (): Promise<StoragePersistenceResult> => {
@@ -68,7 +74,13 @@ describe('requestStoragePersistence', () => {
     { outcome: 'operation-failed', permissionState: 'granted' },
   ] as const)('relays the independent $outcome/$permissionState snapshot exactly', async (result) => {
     const requestPersistence = vi.fn(async (): Promise<StoragePersistenceResult> => result);
-    const host = requestHost((() => { const out = allocateEntity<unknown>(); out.requestPersistence = requestPersistence; return finishEntity(out); })());
+    const host = requestHost(
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.requestPersistence = requestPersistence;
+        return finishEntity(out);
+      })(),
+    );
 
     await expect(requestStoragePersistence(host)).resolves.toEqual(result);
     expect(requestPersistence).toHaveBeenCalledOnce();
@@ -78,9 +90,9 @@ describe('requestStoragePersistence', () => {
     const events: string[] = [];
     const query = allocateEntity<unknown>();
     query.getPersistence = async (): Promise<StoragePersistenceResult> => {
-        events.push('query');
-        return { outcome: 'persistent', permissionState: 'granted' };
-      };
+      events.push('query');
+      return { outcome: 'persistent', permissionState: 'granted' };
+    };
     const request = (() => {
       const out = allocateEntity<unknown>();
       out.requestPersistence = async (): Promise<StoragePersistenceResult> => {

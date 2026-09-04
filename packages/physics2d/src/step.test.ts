@@ -29,7 +29,11 @@ import {
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 
 function entityJoint(fields: Omit<Physics2DJoint, keyof Entity>): Physics2DJoint {
-  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
+  return (() => {
+    const out = allocateEntity<unknown>();
+    Object.assign(out, fields);
+    return finishEntity(out);
+  })();
 }
 
 function ground(world: Physics2DWorld): RigidBody2D {

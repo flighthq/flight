@@ -48,15 +48,19 @@ function fakeProvider(
   let unsubscribes = 0;
   let destroyed = false;
   return Object.assign(
-    (() => { const out = allocateEntity<unknown>(); out.destroy = () => {
+    (() => {
+      const out = allocateEntity<unknown>();
+      out.destroy = () => {
         if (destroyed) return;
         destroyed = true;
         destroys++;
         listeners.clear();
-      }; out.getStatus = (out: ConnectivityStatus) => {
+      };
+      out.getStatus = (out: ConnectivityStatus) => {
         Object.assign(out, current);
         return out;
-      }; out.subscribe = (listener: () => void) => {
+      };
+      out.subscribe = (listener: () => void) => {
         if (!subscriptionAvailable || destroyed) return null;
         listeners.add(listener);
         let active = true;
@@ -66,7 +70,9 @@ function fakeProvider(
           unsubscribes++;
           listeners.delete(listener);
         };
-      }; return finishEntity(out); })(),
+      };
+      return finishEntity(out);
+    })(),
     {
       activeSubscriptions: () => listeners.size,
       destroyCalls: () => destroys,
@@ -213,11 +219,11 @@ describe('detectConnectivityReachability', () => {
     let calls = 0;
     const reachability = allocateEntity<unknown>();
     reachability.detectReachability = async (_options, out) => {
-        calls++;
-        out.latency = 7;
-        out.reachable = true;
-        return out;
-      };
+      calls++;
+      out.latency = 7;
+      out.reachable = true;
+      return out;
+    };
     const out = { latency: -1, reachable: false };
     const result = await detectConnectivityReachability(
       { connectivity: { reachability } },

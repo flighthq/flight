@@ -494,7 +494,7 @@ function testSlot(name: string, boneIndex: number): Slot2D {
 }
 
 function testRegion(name: string): RegionAttachment2D {
-    const out = allocateEntity<Slot2D>();
+  const out = allocateEntity<Slot2D>();
   out.height = 0;
   out.kind = RegionAttachment2DKind;
   out.name = name;
@@ -504,5 +504,5 @@ function testRegion(name: string): RegionAttachment2D {
   out.width = 0;
   out.x = 0;
   out.y = 0;
-  return finishEntity(out) as RegionAttachment2D;;
+  return finishEntity(out) as RegionAttachment2D;
 }

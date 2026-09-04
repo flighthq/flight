@@ -46,13 +46,21 @@ function statusHost(status: Partial<PowerStatus>): PowerAttachHost & { emitChang
       for (const l of listeners) l();
     },
     power: {
-      change: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerChangeBackend>>(); out.subscribe = (listener: () => void): () => void => {
+      change: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<PowerChangeBackend>>();
+        out.subscribe = (listener: () => void): (() => void) => {
           listeners.add(listener);
           return () => listeners.delete(listener);
-        }; return finishEntity(out); })(),
-      status: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerStatusBackend>>(); out.getStatus = (out: PowerStatus): PowerStatus => {
+        };
+        return finishEntity(out);
+      })(),
+      status: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<PowerStatusBackend>>();
+        out.getStatus = (out: PowerStatus): PowerStatus => {
           return Object.assign(out, status);
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
   };
 }
@@ -60,7 +68,14 @@ function statusHost(status: Partial<PowerStatus>): PowerAttachHost & { emitChang
 function keepAwakeHost(overrides: Partial<HasPowerKeepAwake['power']['keepAwake']> = {}): HasPowerKeepAwake {
   return {
     power: {
-      keepAwake: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerKeepAwakeBackend>>(); out.acquire = async () => ({ reason: 'ok' }) as const; out.isActive = () => false; out.release = async () => ({ reason: 'ok' }) as const; Object.assign(out, overrides); return finishEntity(out); })(),
+      keepAwake: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<PowerKeepAwakeBackend>>();
+        out.acquire = async () => ({ reason: 'ok' }) as const;
+        out.isActive = () => false;
+        out.release = async () => ({ reason: 'ok' }) as const;
+        Object.assign(out, overrides);
+        return finishEntity(out);
+      })(),
     },
   };
 }
@@ -112,14 +127,22 @@ describe('attachPower', () => {
     const listeners = new Set<() => void>();
     const host: PowerAttachHost = {
       power: {
-        change: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerChangeBackend>>(); out.subscribe = (listener: () => void): () => void => {
+        change: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<PowerChangeBackend>>();
+          out.subscribe = (listener: () => void): (() => void) => {
             listeners.add(listener);
             return () => listeners.delete(listener);
-          }; return finishEntity(out); })(),
-        status: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerStatusBackend>>(); out.getStatus = (out: PowerStatus): PowerStatus => {
+          };
+          return finishEntity(out);
+        })(),
+        status: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<PowerStatusBackend>>();
+          out.getStatus = (out: PowerStatus): PowerStatus => {
             out.isCharging = charging;
             return out;
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     const power = createPower();
@@ -141,10 +164,15 @@ describe('attachPower', () => {
     const listeners = new Set<(state: PowerThermalState) => void>();
     const host: PowerAttachHost = {
       power: {
-        thermal: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerThermalBackend>>(); out.getThermalState = () => 'Serious'; out.subscribeThermalStateChange = (listener: (state: PowerThermalState) => void): () => void => {
+        thermal: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<PowerThermalBackend>>();
+          out.getThermalState = () => 'Serious';
+          out.subscribeThermalStateChange = (listener: (state: PowerThermalState) => void): (() => void) => {
             listeners.add(listener);
             return () => listeners.delete(listener);
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     const power = createPower();
@@ -190,7 +218,7 @@ describe('destroyPowerKeepAwake', () => {
   // Builds the provider ONCE so two hosts can genuinely alias the same object; spreading it per host
   // would silently make them distinct and the alias assertion would prove nothing.
   function keepAwakeProvider(destroy?: () => void): HasPowerKeepAwake['power']['keepAwake'] {
-        const out = allocateEntity<EntityWithoutRuntime<PowerKeepAwakeBackend>>();
+    const out = allocateEntity<EntityWithoutRuntime<PowerKeepAwakeBackend>>();
     out.acquire = async () => ({ reason: 'ok' }) as const;
     out.destroy = destroy;
     out.isActive = () => false;
@@ -255,11 +283,16 @@ describe('detachPower', () => {
     let unlockTornDown = false;
     const host: PowerAttachHost = {
       power: {
-        sessionLock: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerSessionLockBackend>>(); out.subscribeLock = () => () => {
+        sessionLock: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<PowerSessionLockBackend>>();
+          out.subscribeLock = () => () => {
             throw new Error('lock teardown failed');
-          }; out.subscribeUnlock = () => () => {
+          };
+          out.subscribeUnlock = () => () => {
             unlockTornDown = true;
-          }; return finishEntity(out); })(),
+          };
+          return finishEntity(out);
+        })(),
       },
     };
     const power = createPower();
@@ -348,10 +381,15 @@ describe('getPowerSystemIdleState', () => {
     let seen = -1;
     const host = {
       power: {
-        idle: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerIdleBackend>>(); out.getIdleState = (t: number): PowerIdleState => {
+        idle: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<PowerIdleBackend>>();
+          out.getIdleState = (t: number): PowerIdleState => {
             seen = t;
             return 'Idle';
-          }; out.getIdleTimeSeconds = () => 0; return finishEntity(out); })(),
+          };
+          out.getIdleTimeSeconds = () => 0;
+          return finishEntity(out);
+        })(),
       },
     };
     expect(getPowerSystemIdleState(host, 90)).toBe('Idle');
@@ -363,7 +401,12 @@ describe('getPowerSystemIdleTime', () => {
   it('returns the provider value', () => {
     const host = {
       power: {
-        idle: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerIdleBackend>>(); out.getIdleState = (): PowerIdleState => 'Active'; out.getIdleTimeSeconds = () => 42; return finishEntity(out); })(),
+        idle: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<PowerIdleBackend>>();
+          out.getIdleState = (): PowerIdleState => 'Active';
+          out.getIdleTimeSeconds = () => 42;
+          return finishEntity(out);
+        })(),
       },
     };
     expect(getPowerSystemIdleTime(host)).toBe(42);
@@ -374,7 +417,12 @@ describe('getPowerThermalState', () => {
   it('returns the provider value', () => {
     const host = {
       power: {
-        thermal: (() => { const out = allocateEntity<EntityWithoutRuntime<PowerThermalBackend>>(); out.getThermalState = (): PowerThermalState => 'Fair'; out.subscribeThermalStateChange = () => () => {}; return finishEntity(out); })(),
+        thermal: (() => {
+          const out = allocateEntity<EntityWithoutRuntime<PowerThermalBackend>>();
+          out.getThermalState = (): PowerThermalState => 'Fair';
+          out.subscribeThermalStateChange = () => () => {};
+          return finishEntity(out);
+        })(),
       },
     };
     expect(getPowerThermalState(host)).toBe('Fair');

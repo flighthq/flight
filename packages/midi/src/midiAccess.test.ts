@@ -34,7 +34,14 @@ describe('disposeMidiAccess', () => {
     const access = requiredFunction('createMidiAccessResource')({
       attachStateChange: async (listener: (port: unknown) => void) => {
         accessListener.current = listener;
-        return { attachment: (() => { const out = allocateEntity<unknown>(); out.release = release; return finishEntity(out); })(), reason: 'ok' };
+        return {
+          attachment: (() => {
+            const out = allocateEntity<unknown>();
+            out.release = release;
+            return finishEntity(out);
+          })(),
+          reason: 'ok',
+        };
       },
       getInputPorts: () => [],
       getOutputPorts: () => [],
@@ -104,7 +111,15 @@ describe('requestMidiAccess', () => {
       .mockResolvedValueOnce({ reason: 'permission-denied' })
       .mockResolvedValueOnce({ reason: 'security-restricted' })
       .mockRejectedValueOnce(new Error('provider fault'));
-    const host = { midi: { access: (() => { const out = allocateEntity<unknown>(); out.requestAccess = requestAccess; return finishEntity(out); })() } };
+    const host = {
+      midi: {
+        access: (() => {
+          const out = allocateEntity<unknown>();
+          out.requestAccess = requestAccess;
+          return finishEntity(out);
+        })(),
+      },
+    };
     await expect(requestMidiAccess(host)).resolves.toEqual({ access, reason: 'accepted' });
     await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'permission-denied' });
     await expect(requestMidiAccess(host)).resolves.toEqual({ reason: 'security-restricted' });

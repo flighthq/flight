@@ -93,8 +93,22 @@ describe('disposeMidiPort', () => {
       connection.value = 'closed';
     });
     const input = createInputPort({
-      attachMessage: async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = messageRelease; return finishEntity(out); })(), reason: 'ok' }),
-      attachStateChange: async () => ({ attachment: (() => { const out = allocateEntity<unknown>(); out.release = stateRelease; return finishEntity(out); })(), reason: 'ok' }),
+      attachMessage: async () => ({
+        attachment: (() => {
+          const out = allocateEntity<unknown>();
+          out.release = messageRelease;
+          return finishEntity(out);
+        })(),
+        reason: 'ok',
+      }),
+      attachStateChange: async () => ({
+        attachment: (() => {
+          const out = allocateEntity<unknown>();
+          out.release = stateRelease;
+          return finishEntity(out);
+        })(),
+        reason: 'ok',
+      }),
       close,
       connection,
     });

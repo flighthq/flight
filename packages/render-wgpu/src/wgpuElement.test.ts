@@ -7,7 +7,11 @@ import {
 } from './wgpuElement';
 
 function entityProvider(fields: Omit<WgpuRenderSurfaceProvider, keyof Entity>): WgpuRenderSurfaceProvider {
-  return (() => { const out = allocateEntity<unknown>(); Object.assign(out, fields); return finishEntity(out); })();
+  return (() => {
+    const out = allocateEntity<unknown>();
+    Object.assign(out, fields);
+    return finishEntity(out);
+  })();
 }
 
 describe('createWgpuCanvasElement', () => {

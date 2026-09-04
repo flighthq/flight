@@ -264,7 +264,7 @@ interface NodeTestRuntime extends NodeRuntime {
 }
 
 function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
-    const out = allocateEntity<NodeTestData>();
+  const out = allocateEntity<NodeTestData>();
   out.testDataField = data?.testDataField ?? 'testDataField';
   return finishEntity(out);
 }

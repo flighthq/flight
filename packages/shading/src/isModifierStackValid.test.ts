@@ -24,7 +24,12 @@ describe('isModifierStackValid', () => {
     registerBuiltInModifiers(registry);
     const stack: Modifier[] = [
       createEmissiveModifier({ color: 0xffffffff }),
-      (() => { const out = allocateEntity<unknown>(); out.kind = 'acme.Missing'; out.slot = 'Effect'; return finishEntity(out); })(),
+      (() => {
+        const out = allocateEntity<unknown>();
+        out.kind = 'acme.Missing';
+        out.slot = 'Effect';
+        return finishEntity(out);
+      })(),
     ];
     expect(isModifierStackValid(registry, stack)).toBe(false);
   });

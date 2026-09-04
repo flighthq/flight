@@ -298,12 +298,43 @@ function getColliderShapeCases(): ReadonlyArray<{
     },
     {
       name: 'triangle mesh',
-      shape: (() => { const out = allocateEntity<DataView>(); out.kind = 'triangle-mesh'; out.version = 2; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1]; out.indices = [0, 1, 2]; return finishEntity(out); })(),
+      shape: (() => {
+        const out = allocateEntity<DataView>();
+        out.kind = 'triangle-mesh';
+        out.version = 2;
+        out.x = 0;
+        out.y = 0;
+        out.z = 0;
+        out.rotationX = 0;
+        out.rotationY = 0;
+        out.rotationZ = 0;
+        out.rotationW = 1;
+        out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1];
+        out.indices = [0, 1, 2];
+        return finishEntity(out);
+      })(),
       code: Physics3DAbiShapeKind.TriangleMesh,
     },
     {
       name: 'heightfield',
-      shape: (() => { const out = allocateEntity<DataView>(); out.kind = 'heightfield'; out.columns = 2; out.rows = 2; out.version = 3; out.cellSizeX = 1; out.cellSizeZ = 1; out.x = 0; out.y = 0; out.z = 0; out.rotationX = 0; out.rotationY = 0; out.rotationZ = 0; out.rotationW = 1; out.heights = [0, 0, 0, 0]; return finishEntity(out); })(),
+      shape: (() => {
+        const out = allocateEntity<DataView>();
+        out.kind = 'heightfield';
+        out.columns = 2;
+        out.rows = 2;
+        out.version = 3;
+        out.cellSizeX = 1;
+        out.cellSizeZ = 1;
+        out.x = 0;
+        out.y = 0;
+        out.z = 0;
+        out.rotationX = 0;
+        out.rotationY = 0;
+        out.rotationZ = 0;
+        out.rotationW = 1;
+        out.heights = [0, 0, 0, 0];
+        return finishEntity(out);
+      })(),
       code: Physics3DAbiShapeKind.Heightfield,
     },
   ];

@@ -53,7 +53,7 @@ function createTestRaster2DSurfaceProvider() {
 }
 
 function emptyData(): WgpuShapeRendererData {
-    const out = allocateEntity<WgpuShapeRendererData>();
+  const out = allocateEntity<WgpuShapeRendererData>();
   out.surface = null;
   out.lastContentId = -1;
   out.lastPixelRatio = 0;
@@ -62,15 +62,15 @@ function emptyData(): WgpuShapeRendererData {
   out.meshVersion = -1;
   out.meshes = null;
   out.meshBuffers = {
-      vertexBuffers: [],
-      vertexCapacities: [],
-      indexBuffers: [],
-      indexCapacities: [],
-      uniformBuffers: [],
-      bindGroups: [],
-      colorScaleBiasUniformBuffers: [],
-      colorScaleBiasBindGroups: [],
-    };
+    vertexBuffers: [],
+    vertexCapacities: [],
+    indexBuffers: [],
+    indexCapacities: [],
+    uniformBuffers: [],
+    bindGroups: [],
+    colorScaleBiasUniformBuffers: [],
+    colorScaleBiasBindGroups: [],
+  };
   return finishEntity(out);
 }
 

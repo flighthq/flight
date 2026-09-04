@@ -49,9 +49,9 @@ describe('segmentGraphemes', () => {
     let seenLocale: string | undefined = 'unset';
     const fake = allocateEntity<Omit<TextSegmenterBackend, typeof EntityRuntimeKey>>();
     fake.segment = (text: string, _granularity: TextSegmentGranularity, locale?: string): readonly TextSegment[] => {
-        seenLocale = locale;
-        return [{ start: 0, end: text.length, text }];
-      };
+      seenLocale = locale;
+      return [{ start: 0, end: text.length, text }];
+    };
     setTextSegmenterBackend(fake);
     segmentGraphemes('hi', 'de-DE');
     expect(seenLocale).toBe('de-DE');
@@ -63,7 +63,7 @@ function segmenterHost(segmenter: TextSegmenterBackend): HasTextSegmenter {
 }
 
 function taggingBackend(tag: string): TextSegmenterBackend {
-    const out = allocateEntity<HasTextSegmenter>();
+  const out = allocateEntity<HasTextSegmenter>();
   out.segment = () => [{ start: 0, end: tag.length, text: tag }];
   return finishEntity(out);
 }

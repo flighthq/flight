@@ -73,7 +73,7 @@ function renderTexture(): RenderTexture {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
   if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
-    const _entity = allocateEntity<ImageResource>();
+  const _entity = allocateEntity<ImageResource>();
   _entity.alphaType = 'straight' as const;
   _entity.gamut = 'srgb' as const;
   _entity.height = 8;

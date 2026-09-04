@@ -17,7 +17,7 @@ const ONLY_COLLIDERS = {
 };
 
 function baseJoint(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
-    const out = allocateEntity<Physics2DJoint>();
+  const out = allocateEntity<Physics2DJoint>();
   out.bodyA = bodyA;
   out.bodyB = bodyB;
   out.collideConnected = false;

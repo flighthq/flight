@@ -38,10 +38,14 @@ function popupHost(result: string | null, calls: string[] = []): HasMenuPopup & 
   return {
     calls,
     menu: {
-      popup: (() => { const out = allocateEntity<EntityWithoutRuntime<MenuPopupBackend>>(); out.popup = (_items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
+      popup: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<MenuPopupBackend>>();
+        out.popup = (_items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
           calls.push(`popup@${x},${y}`);
           return Promise.resolve(result);
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
   };
 }
@@ -49,10 +53,14 @@ function popupHost(result: string | null, calls: string[] = []): HasMenuPopup & 
 function applicationHost(accepted: boolean, seen: MenuItemTemplate[][] = []): HasMenuApplication {
   return {
     menu: {
-      application: (() => { const out = allocateEntity<EntityWithoutRuntime<MenuApplicationBackend>>(); out.setApplicationMenu = (items: readonly MenuItemTemplate[]): boolean => {
+      application: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<MenuApplicationBackend>>();
+        out.setApplicationMenu = (items: readonly MenuItemTemplate[]): boolean => {
           seen.push([...items]);
           return accepted;
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
   };
 }
@@ -64,12 +72,16 @@ function selectHost(): HasMenuSelect & { emit(id: string): void; subscriberCount
       for (const listener of listeners) listener(id);
     },
     menu: {
-      select: (() => { const out = allocateEntity<EntityWithoutRuntime<MenuSelectBackend>>(); out.subscribe = (listener: (id: string) => void): () => void => {
+      select: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<MenuSelectBackend>>();
+        out.subscribe = (listener: (id: string) => void): (() => void) => {
           listeners.add(listener);
           return () => {
             listeners.delete(listener);
           };
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
     subscriberCount(): number {
       return listeners.size;
@@ -84,12 +96,16 @@ function highlightHost(): HasMenuHighlight & { emit(id: string): void } {
       for (const listener of listeners) listener(id);
     },
     menu: {
-      highlight: (() => { const out = allocateEntity<EntityWithoutRuntime<MenuHighlightBackend>>(); out.subscribe = (listener: (id: string) => void): () => void => {
+      highlight: (() => {
+        const out = allocateEntity<EntityWithoutRuntime<MenuHighlightBackend>>();
+        out.subscribe = (listener: (id: string) => void): (() => void) => {
           listeners.add(listener);
           return () => {
             listeners.delete(listener);
           };
-        }; return finishEntity(out); })(),
+        };
+        return finishEntity(out);
+      })(),
     },
   };
 }
@@ -183,7 +199,15 @@ describe('createMenuSelect', () => {
 
 describe('destroyMenuApplication', () => {
   function applicationHostWith(provider: EntityWithoutRuntime<MenuApplicationBackend>): HasMenuApplication {
-    return { menu: { application: (() => { const out = allocateEntity<unknown>(); Object.assign(out, provider); return finishEntity(out); })() } };
+    return {
+      menu: {
+        application: (() => {
+          const out = allocateEntity<unknown>();
+          Object.assign(out, provider);
+          return finishEntity(out);
+        })(),
+      },
+    };
   }
 
   it('destroys each distinct provider exactly once, even when hosts alias one', () => {

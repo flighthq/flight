@@ -8,14 +8,14 @@ import { getSkeleton2DSlotDeformOffsets, setSkeleton2DSlotDeform } from './slotD
 
 function mesh(pointCount: number): MeshAttachment2D {
   const skin: Skin2D = createSkin2D(new Uint16Array(pointCount).fill(1), new Float32Array(pointCount * 4));
-    const out = allocateEntity<MeshAttachment2D>();
+  const out = allocateEntity<MeshAttachment2D>();
   out.kind = MeshAttachment2DKind;
   out.skin = skin;
   out.triangles = new Uint16Array();
   out.uvs = new Float32Array(pointCount * 2);
   out.vertexCount = pointCount;
   out.vertices = null;
-  return finishEntity(out) as MeshAttachment2D;;
+  return finishEntity(out) as MeshAttachment2D;
 }
 
 describe('getSkeleton2DSlotDeformOffsets', () => {

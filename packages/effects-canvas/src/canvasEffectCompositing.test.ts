@@ -60,7 +60,7 @@ function makeTarget(w = 4, h = 4): CanvasRenderTarget {
   canvas.width = w;
   canvas.height = h;
   const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-    const out = allocateEntity<CanvasRenderTarget>();
+  const out = allocateEntity<CanvasRenderTarget>();
   out.canvas = canvas;
   out.context = context;
   out.width = w;

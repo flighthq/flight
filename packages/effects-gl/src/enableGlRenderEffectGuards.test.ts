@@ -161,7 +161,11 @@ describe('enableGlRenderEffectGuards', () => {
     const entries = captureLog(() => {
       beginGlRenderEffectPipeline(state, pipeline);
       endGlRenderEffectPipeline(state, pipeline, [
-        (() => { const out = allocateEntity<unknown>(); out.kind = 'test.pipeline-dropped-kind'; return finishEntity(out) as RenderEffect,; })()
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'test.pipeline-dropped-kind';
+          return finishEntity(out) as RenderEffect;
+        })(),
       ]);
     });
 
@@ -174,7 +178,11 @@ describe('enableGlRenderEffectGuards', () => {
     const again = captureLog(() => {
       beginGlRenderEffectPipeline(state, pipeline);
       endGlRenderEffectPipeline(state, pipeline, [
-        (() => { const out = allocateEntity<unknown>(); out.kind = 'test.pipeline-dropped-kind'; return finishEntity(out) as RenderEffect,; })()
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.kind = 'test.pipeline-dropped-kind';
+          return finishEntity(out) as RenderEffect;
+        })(),
       ]);
     });
 
@@ -214,7 +222,14 @@ function applyChain(state: GlRenderState, kinds: readonly string[], publishDesti
   // Realize the source so `source-unavailable` is not what is being measured here.
   writeGlRenderTextureTarget(state, source, () => {});
   if (publishDestination) writeGlRenderTextureTarget(state, dest, () => {});
-  const effects = kinds.map((kind) => (() => { const out = allocateEntity<boolean>(); out.kind = kind; return finishEntity(out) as unknown; })() as Readonly<RenderEffect>);
+  const effects = kinds.map(
+    (kind) =>
+      (() => {
+        const out = allocateEntity<boolean>();
+        out.kind = kind;
+        return finishEntity(out) as unknown;
+      })() as Readonly<RenderEffect>,
+  );
   return applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }
 

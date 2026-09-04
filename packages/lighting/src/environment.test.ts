@@ -13,7 +13,7 @@ function createTestCubeTexture(): Texture {
   sampler.mipmaps = false;
   sampler.wrapU = 'clamp-to-edge';
   sampler.wrapV = 'clamp-to-edge';
-    const out = allocateEntity<Texture>();
+  const out = allocateEntity<Texture>();
   out.colorSpace = 'linear';
   out.flipX = false;
   out.flipY = false;

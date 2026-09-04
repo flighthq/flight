@@ -15,17 +15,17 @@ void main() {
 }`;
 
 function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlRenderTarget {
-    const out = allocateEntity<GlRenderTarget>();
+  const out = allocateEntity<GlRenderTarget>();
   out.requestedAxes = {
-      width,
-      height,
-      format: 'rgba8',
-      colorAttachments: 1,
-      colorFormats: ['rgba8'],
-      sampleCount: 1,
-      depth: 'none',
-      colorSpace: 'srgb',
-    };
+    width,
+    height,
+    format: 'rgba8',
+    colorAttachments: 1,
+    colorFormats: ['rgba8'],
+    sampleCount: 1,
+    depth: 'none',
+    colorSpace: 'srgb',
+  };
   out.width = width;
   out.height = height;
   out.format = 'rgba8';

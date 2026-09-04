@@ -47,7 +47,7 @@ function bindPoseFor(positions: number[], jointIndices: number[]): MeshSkinBindP
 }
 
 function skeletonFor(palette: number[]): Skeleton3D {
-    const out = allocateEntity<MeshSkinBindPose>();
+  const out = allocateEntity<MeshSkinBindPose>();
   out.inverseBindMatrices = new Float32Array(palette.length);
   out.jointMatrices = new Float32Array(palette);
   out.normalMatrices = new Float32Array(0);

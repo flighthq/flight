@@ -15,7 +15,14 @@ describe('explainWgpuTextureResolution', () => {
     const state = await createWgpuRenderStateForTest();
     const texture = createTexture({
       dimension: '2d',
-      source: (() => { const out = allocateEntity<unknown>(); out.height = 1; out.kind = 'acme.test'; out.version = 0; out.width = 1; return finishEntity(out) as TextureSource,; })()
+      source: (() => {
+        const out = allocateEntity<unknown>();
+        out.height = 1;
+        out.kind = 'acme.test';
+        out.version = 0;
+        out.width = 1;
+        return finishEntity(out) as TextureSource;
+      })(),
     });
 
     expect(explainWgpuTextureResolution(state, createTexture())).toEqual({

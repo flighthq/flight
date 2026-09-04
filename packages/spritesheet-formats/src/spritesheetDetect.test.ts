@@ -125,7 +125,17 @@ describe('getSpritesheetFormat', () => {
     const detect = (text: string) => text.startsWith('GFT:');
     registerSpritesheetFormat(kind, {
       detect,
-      parse: () => (() => { const out = allocateEntity<unknown>(); out.animations = []; out.frames = []; out.imageFile = ''; out.imageHeight = 0; out.imageWidth = 0; out.scale = 1; return finishEntity(out); })(),
+      parse: () =>
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.animations = [];
+          out.frames = [];
+          out.imageFile = '';
+          out.imageHeight = 0;
+          out.imageWidth = 0;
+          out.scale = 1;
+          return finishEntity(out);
+        })(),
     });
     const entry = getSpritesheetFormat(kind);
     unregisterSpritesheetFormat(kind);
@@ -139,7 +149,17 @@ describe('getSpritesheetFormatKinds', () => {
     const kind = 'test.Enumeration';
     registerSpritesheetFormat(kind, {
       detect: () => false,
-      parse: () => (() => { const out = allocateEntity<unknown>(); out.animations = []; out.frames = []; out.imageFile = ''; out.imageHeight = 0; out.imageWidth = 0; out.scale = 1; return finishEntity(out); })(),
+      parse: () =>
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.animations = [];
+          out.frames = [];
+          out.imageFile = '';
+          out.imageHeight = 0;
+          out.imageWidth = 0;
+          out.scale = 1;
+          return finishEntity(out);
+        })(),
     });
     expect(getSpritesheetFormatKinds()).toEqual([
       SpritesheetFormatKindAseprite,
@@ -212,9 +232,33 @@ describe('registerSpritesheetFormat', () => {
     registerSpritesheetFormat(customKind, {
       detect: (text) => text.startsWith('CUSTOM:'),
       parse: () =>
-        (() => { const out = allocateEntity<unknown>(); out.animations = []; out.frames = [
-            (() => { const out = allocateEntity<unknown>(); out.height = 10; out.name = 'custom'; out.offsetX = 0; out.offsetY = 0; out.pivotX = null; out.pivotY = null; out.rotated = false; out.sourceHeight = 10; out.sourceWidth = 10; out.width = 10; out.x = 0; out.y = 0; return finishEntity(out); })(),
-          ]; out.imageFile = 'custom.png'; out.imageHeight = 10; out.imageWidth = 10; out.scale = 1; return finishEntity(out); })(),
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.animations = [];
+          out.frames = [
+            (() => {
+              const out = allocateEntity<unknown>();
+              out.height = 10;
+              out.name = 'custom';
+              out.offsetX = 0;
+              out.offsetY = 0;
+              out.pivotX = null;
+              out.pivotY = null;
+              out.rotated = false;
+              out.sourceHeight = 10;
+              out.sourceWidth = 10;
+              out.width = 10;
+              out.x = 0;
+              out.y = 0;
+              return finishEntity(out);
+            })(),
+          ];
+          out.imageFile = 'custom.png';
+          out.imageHeight = 10;
+          out.imageWidth = 10;
+          out.scale = 1;
+          return finishEntity(out);
+        })(),
     });
 
     expect(detectSpritesheetFormat('CUSTOM: data here')).toBe(customKind);
@@ -256,7 +300,17 @@ describe('unregisterSpritesheetFormat', () => {
     const kind = 'test.RemovedFormat';
     registerSpritesheetFormat(kind, {
       detect: (text) => text.startsWith('REMOVED:'),
-      parse: () => (() => { const out = allocateEntity<unknown>(); out.animations = []; out.frames = []; out.imageFile = ''; out.imageHeight = 0; out.imageWidth = 0; out.scale = 1; return finishEntity(out); })(),
+      parse: () =>
+        (() => {
+          const out = allocateEntity<unknown>();
+          out.animations = [];
+          out.frames = [];
+          out.imageFile = '';
+          out.imageHeight = 0;
+          out.imageWidth = 0;
+          out.scale = 1;
+          return finishEntity(out);
+        })(),
     });
 
     unregisterSpritesheetFormat(kind);

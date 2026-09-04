@@ -6,7 +6,7 @@ import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 import { createWebBitmapEncodeBackend, webBitmapEncodeBackend } from './webBitmapEncode';
 
 function createTestBitmap(): Bitmap {
-    const out = allocateEntity<Bitmap>();
+  const out = allocateEntity<Bitmap>();
   out.alphaType = 'straight';
   out.gamut = 'srgb';
   out.data = new Uint8ClampedArray([1, 2, 3, 4, 5, 6, 7, 8]);

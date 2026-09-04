@@ -27,12 +27,17 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function point(x: number, y: number, rotation: number): PointAttachment2D {
-    const out = allocateEntity<PointAttachment2D>();
+  const out = allocateEntity<PointAttachment2D>();
   out.kind = PointAttachment2DKind;
   out.rotation = rotation;
   out.x = x;
   out.y = y;
-  return finishEntity(out) as PointAttachment2D;;
+  return finishEntity(out) as PointAttachment2D;
+}
+
+describe('computeSkeleton2DPointAttachmentPosition', () => {
+  it('carries the local offset through the bone world transform', () => {
+    const skeleton = createSkeleton2D([makeBone({ rotation: 90, x: 5 })]);
     computeSkeleton2DWorldTransforms(skeleton);
     const out = { x: 0, y: 0 };
 

@@ -23,7 +23,7 @@ import {
 } from './mediasession';
 
 function commandBackend(overrides: Partial<MediaSessionBackend> = {}): MediaSessionBackend {
-    const out = allocateEntity<unknown>();
+  const out = allocateEntity<unknown>();
   out.clearMetadata = () => ({ reason: 'ok' as const });
   out.clearPositionState = () => ({ reason: 'ok' as const });
   out.destroy = () => {};
@@ -35,7 +35,7 @@ function commandBackend(overrides: Partial<MediaSessionBackend> = {}): MediaSess
 }
 
 function actionBackend(overrides: Partial<MediaSessionActionBackend> = {}): MediaSessionActionBackend {
-    const out = allocateEntity<unknown>();
+  const out = allocateEntity<unknown>();
   out.destroy = () => {};
   out.subscribe = () => () => {};
   Object.assign(out, overrides);

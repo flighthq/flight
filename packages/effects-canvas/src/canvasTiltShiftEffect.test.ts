@@ -142,7 +142,13 @@ describe('defaultCanvasTiltShiftEffectRunner', () => {
     defaultCanvasTiltShiftEffectRunner(
       {
         dest,
-        pool: (() => { const out = allocateEntity<unknown>(); out.creator = canvasTestSurfaceCreator; out.free = []; out.inUse = []; return finishEntity(out) as unknown; })() as CanvasRenderTargetPool,
+        pool: (() => {
+          const out = allocateEntity<unknown>();
+          out.creator = canvasTestSurfaceCreator;
+          out.free = [];
+          out.inUse = [];
+          return finishEntity(out) as unknown;
+        })() as CanvasRenderTargetPool,
         source,
         state: {} as never,
       },

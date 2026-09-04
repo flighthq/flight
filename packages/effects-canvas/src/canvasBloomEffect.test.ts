@@ -17,30 +17,30 @@ import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
   const data = new Uint8ClampedArray(pixels);
   const canvas = { __data: data };
-    const out = allocateEntity<CanvasRenderTarget>();
+  const out = allocateEntity<CanvasRenderTarget>();
   out.canvas = canvas;
   out.context = {
-      clearRect: () => {},
-      // Modelled rather than stubbed away: the effect copies the scene into dest and the bright branch
-      // into the blur target through drawImage, so a no-op here would leave both empty and the
-      // assertions below would be measuring the stub instead of the arithmetic.
-      drawImage: (from: { __data: Uint8ClampedArray }) => {
-        data.set(from.__data);
-      },
-      filter: 'none',
-      // A FRESH COPY per call, because that is what the real getImageData returns. Handing back the
-      // live buffer would let a pass that mutates its input in place corrupt the source it read from —
-      // an aliasing the browser API does not have, and one that made this stub invent a failure.
-      getImageData: () => ({ data: new Uint8ClampedArray(data) }),
-      globalAlpha: 1,
-      globalCompositeOperation: 'source-over',
-      putImageData: (value: { data: Uint8ClampedArray }) => {
-        data.set(value.data);
-      },
-      restore: () => {},
-      save: () => {},
-      setTransform: () => {},
-    };
+    clearRect: () => {},
+    // Modelled rather than stubbed away: the effect copies the scene into dest and the bright branch
+    // into the blur target through drawImage, so a no-op here would leave both empty and the
+    // assertions below would be measuring the stub instead of the arithmetic.
+    drawImage: (from: { __data: Uint8ClampedArray }) => {
+      data.set(from.__data);
+    },
+    filter: 'none',
+    // A FRESH COPY per call, because that is what the real getImageData returns. Handing back the
+    // live buffer would let a pass that mutates its input in place corrupt the source it read from —
+    // an aliasing the browser API does not have, and one that made this stub invent a failure.
+    getImageData: () => ({ data: new Uint8ClampedArray(data) }),
+    globalAlpha: 1,
+    globalCompositeOperation: 'source-over',
+    putImageData: (value: { data: Uint8ClampedArray }) => {
+      data.set(value.data);
+    },
+    restore: () => {},
+    save: () => {},
+    setTransform: () => {},
+  };
   out.height = 1;
   out.width = pixels.length / 4;
   return finishEntity(out) as unknown;
@@ -53,7 +53,7 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasRenderTarget {
 // never ran.
 function createPool(width: number): CanvasRenderTargetPool {
   const blank = (): CanvasRenderTarget => createTarget(new Array(width * 4).fill(0));
-    const out = allocateEntity<CanvasRenderTarget>();
+  const out = allocateEntity<CanvasRenderTarget>();
   out.creator = canvasTestSurfaceCreator;
   out.free = [blank(), blank()];
   out.inUse = [];

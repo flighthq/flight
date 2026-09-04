@@ -41,7 +41,7 @@ function ball(world: Physics2DWorld, type: RigidBody2D['type'], x: number, y: nu
 }
 
 function base(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
-    const out = allocateEntity<RigidBody2D>();
+  const out = allocateEntity<RigidBody2D>();
   out.kind = kind;
   out.bodyA = bodyA;
   out.bodyB = bodyB;

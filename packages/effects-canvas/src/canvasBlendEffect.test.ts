@@ -121,7 +121,13 @@ describe('defaultCanvasBlendEffectRunner', () => {
         state,
         source,
         dest,
-        pool: (() => { const out = allocateEntity<CanvasRenderTarget>(); out.creator = canvasTestSurfaceCreator; out.free = []; out.inUse = []; return finishEntity(out) as unknown; })() as CanvasRenderTargetPool,
+        pool: (() => {
+          const out = allocateEntity<CanvasRenderTarget>();
+          out.creator = canvasTestSurfaceCreator;
+          out.free = [];
+          out.inUse = [];
+          return finishEntity(out) as unknown;
+        })() as CanvasRenderTargetPool,
       },
       blendEffect({ mode: 'Screen', backdropKey: 'scene' }),
     );

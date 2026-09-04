@@ -26,14 +26,20 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function weightedMesh(skin: Skin2D, vertexCount: number): MeshAttachment2D {
-    const out = allocateEntity<MeshAttachment2D>();
+  const out = allocateEntity<MeshAttachment2D>();
   out.kind = MeshAttachment2DKind;
   out.skin = skin;
   out.triangles = new Uint16Array();
   out.uvs = new Float32Array(vertexCount * 2);
   out.vertexCount = vertexCount;
   out.vertices = null;
-  return finishEntity(out) as MeshAttachment2D;;
+  return finishEntity(out) as MeshAttachment2D;
+}
+
+describe('deformSkeleton2DMeshAttachment', () => {
+  it('deforms a single-bone weighted vertex through the bone world transform', () => {
+    // One bone rotated 90° at (5,0). One vertex, one influence: offset (1,0) in the bone, weight 1.
+    const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
     const mesh = weightedMesh(createSkin2D(new Uint16Array([1]), new Float32Array([0, 1, 0, 1])), 1);
     const out = new Float32Array(2);
@@ -105,8 +111,9 @@ function weightedMesh(skin: Skin2D, vertexCount: number): MeshAttachment2D {
       out.uvs = new Float32Array(2);
       out.vertexCount = 1;
       out.vertices = new Float32Array([2, 0]);
-      return finishEntity(out) as MeshAttachment2D;;
+      return finishEntity(out) as MeshAttachment2D;
     })();
+    const out = new Float32Array(2);
 
     deformSkeleton2DMeshAttachment(out, mesh, s, 0, new Float32Array([1, 0]));
 
@@ -141,8 +148,10 @@ function weightedMesh(skin: Skin2D, vertexCount: number): MeshAttachment2D {
       out.uvs = new Float32Array(2);
       out.vertexCount = 1;
       out.vertices = verts;
-      return finishEntity(out) as MeshAttachment2D;;
+      return finishEntity(out) as MeshAttachment2D;
     })();
+    // Deform in place (out === vertices) to exercise alias safety.
+    deformSkeleton2DMeshAttachment(verts, mesh, s, 0);
     // (2,0) rotated 90° = (0,2), + (5,0) → (5,2).
     expect(verts[0]).toBeCloseTo(5, 5);
     expect(verts[1]).toBeCloseTo(2, 5);
