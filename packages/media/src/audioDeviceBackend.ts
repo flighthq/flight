@@ -3,14 +3,11 @@ import type {
   AudioBufferHandle,
   AudioDeviceBackend,
   AudioDeviceHandle,
-  AudioDeviceOperation,
   AudioSourceHandle,
-  BackendExplanation,
-  BackendOperationExplanation,
   EntityWithoutRuntime,
 } from '@flighthq/types/contract';
 
-export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceBackendWebExtension {
+export function createWebAudioDeviceBackend(): AudioDeviceBackend {
   let nextHandle = 1;
   const devices = new Map<number, AudioContext>();
   const buffers = new Map<number, AudioBuffer>();
@@ -63,9 +60,6 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
       if (context === undefined || audioBuffer === undefined) return 0 as AudioSourceHandle;
       const gainNode = context.createGain();
       gainNode.connect(context.destination);
-      // The panner sits BEFORE the gain, so the gain node stays the source's output: everything that
-      // treats it as such — channel output node, external routing, disposal — is untouched, and the
-      // ordering is equivalent for a linear gain.
       const pannerNode = context.createStereoPanner();
       pannerNode.connect(gainNode);
       const h = handle() as unknown as AudioSourceHandle;
@@ -198,79 +192,24 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
   });
 }
 
-export function explainAudioDeviceBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
-}
-
-export function explainAudioDeviceOperation(operation: AudioDeviceOperation): BackendOperationExplanation {
-  if (_custom !== null && typeof _custom[operation] === 'function') {
-    return { implemented: true, layer: 'custom', operation };
-  }
-  if (_host !== null && typeof _host[operation] === 'function') {
-    return { implemented: true, layer: 'host', operation };
-  }
-  return { implemented: false, layer: 'sentinel', operation };
-}
-
-export function getAudioDeviceBackend(): AudioDeviceBackend {
-  return _custom ?? _host ?? _sentinel;
-}
-
-export function getAudioSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null {
-  const backend = _custom ?? _host ?? _sentinel;
+export function getAudioSourceBufferSourceNode(
+  backend: Readonly<AudioDeviceBackend>,
+  source: AudioSourceHandle,
+): AudioBufferSourceNode | null {
   if (isWebExtendedBackend(backend)) return backend.getSourceBufferSourceNode(source);
   return null;
 }
 
-export function getAudioSourceGainNode(source: AudioSourceHandle): GainNode | null {
-  const backend = _custom ?? _host ?? _sentinel;
+export function getAudioSourceGainNode(
+  backend: Readonly<AudioDeviceBackend>,
+  source: AudioSourceHandle,
+): GainNode | null {
   if (isWebExtendedBackend(backend)) return backend.getSourceGainNode(source);
   return null;
 }
 
-export function hasAudioDeviceOperation(operation: AudioDeviceOperation): boolean {
-  return explainAudioDeviceOperation(operation).implemented;
-}
-
-export function hasAudioDeviceWebNodeAccess(): boolean {
-  return isWebExtendedBackend(_custom ?? _host ?? _sentinel);
-}
-
-export function installAudioDeviceHostBackend(backend: AudioDeviceBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  _host = backend;
-}
-
-export function observeAudioDeviceHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
-}
-
-export function resetAudioDeviceBackendForTest(): void {
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-}
-
-export function setAudioDeviceBackend(backend: AudioDeviceBackend | null): void {
-  _custom = backend;
+export function hasAudioDeviceWebNodeAccess(backend: Readonly<AudioDeviceBackend>): boolean {
+  return isWebExtendedBackend(backend);
 }
 
 interface AudioDeviceBackendWebExtension extends AudioDeviceBackend {
@@ -278,39 +217,9 @@ interface AudioDeviceBackendWebExtension extends AudioDeviceBackend {
   getSourceGainNode(source: AudioSourceHandle): GainNode | null;
 }
 
-function isWebExtendedBackend(backend: AudioDeviceBackend): backend is AudioDeviceBackendWebExtension {
+function isWebExtendedBackend(backend: Readonly<AudioDeviceBackend>): backend is AudioDeviceBackendWebExtension {
   return 'getSourceGainNode' in backend && 'getSourceBufferSourceNode' in backend;
 }
-
-let _custom: AudioDeviceBackend | null = null;
-let _host: AudioDeviceBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
-
-const _sentinel: AudioDeviceBackend = createEntity<EntityWithoutRuntime<AudioDeviceBackend>>({
-  createBuffer(): AudioBufferHandle {
-    return 0 as AudioBufferHandle;
-  },
-  createDevice(): AudioDeviceHandle {
-    return 0 as AudioDeviceHandle;
-  },
-  createSource(): AudioSourceHandle {
-    return 0 as AudioSourceHandle;
-  },
-  destroyBuffer(): void {},
-  destroyDevice(): void {},
-  destroySource(): void {},
-  getDeviceTime(): number {
-    return 0;
-  },
-  onSourceEnded(): void {},
-  resumeDevice(): void {},
-  setSourceGain(): void {},
-  setSourcePan(): void {},
-  setSourcePlaybackRate(): void {},
-  startSource(): void {},
-  stopSource(): void {},
-});
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {

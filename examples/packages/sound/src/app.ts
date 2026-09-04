@@ -1,5 +1,4 @@
-import { enableHostWebAudioDevice } from '@flighthq/host-web';
-import { createWebCursorBackend } from '@flighthq/host-web';
+import { createWebCursorBackend, webAudioDeviceBackend } from '@flighthq/host-web';
 import type { AudioChannel, AudioDeviceHandle, AudioResource, Shape } from '@flighthq/sdk';
 import {
   addAudioBusToMixer,
@@ -19,7 +18,6 @@ import {
   createInteractionManager,
   createShape,
   createTextLabel,
-  getAudioDeviceBackend,
   invalidateNodeLocalTransform,
   setTextLabelString,
   playAudioResource,
@@ -67,13 +65,11 @@ const clickSound = generateTone(440, 0.15, 20);
 const blipSound = generateTone(880, 0.08, 40);
 const sweepSound = generateSweep(200, 800, 0.3, 6);
 
-// Install the web audio device backend and lazily create a device on first interaction.
-enableHostWebAudioDevice();
 let audioDevice: AudioDeviceHandle | null = null;
 
 function getAudioDevice(): AudioDeviceHandle {
   if (audioDevice === null) {
-    audioDevice = getAudioDeviceBackend().createDevice(SAMPLE_RATE);
+    audioDevice = webAudioDeviceBackend.createDevice(SAMPLE_RATE);
   }
   return audioDevice;
 }
@@ -111,7 +107,7 @@ function ensureMixer(): ReturnType<typeof createAudioMixer> {
 
 function playSfx(resource: AudioResource, gain: number, pan: number): AudioChannel | null {
   const dev = getAudioDevice();
-  const channel = playAudioResource(dev, resource, { gain });
+  const channel = playAudioResource(webAudioDeviceBackend, dev, resource, { gain });
   if (channel !== null) {
     routeAudioChannelToMixerBus(ensureMixer(), channel, sfxBus);
   }

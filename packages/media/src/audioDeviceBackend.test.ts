@@ -4,22 +4,10 @@ import type { AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
   createWebAudioDeviceBackend,
-  explainAudioDeviceBackend,
-  explainAudioDeviceOperation,
-  getAudioDeviceBackend,
   getAudioSourceBufferSourceNode,
   getAudioSourceGainNode,
-  hasAudioDeviceOperation,
   hasAudioDeviceWebNodeAccess,
-  installAudioDeviceHostBackend,
-  observeAudioDeviceHostResult,
-  resetAudioDeviceBackendForTest,
-  setAudioDeviceBackend,
 } from './audioDeviceBackend';
-
-afterEach(() => {
-  resetAudioDeviceBackendForTest();
-});
 
 describe('createWebAudioDeviceBackend', () => {
   it('creates the backend with web node access', () => {
@@ -48,8 +36,6 @@ describe('createWebAudioDeviceBackend', () => {
 
 describe('createWebAudioDeviceBackend source graph', () => {
   it('routes the buffer source through a panner into the gain, and leaves gain as the output', () => {
-    // The panner is inserted BEFORE the gain so the gain node stays the source's output node. If it
-    // were appended after, channel routing and disposal would silently keep addressing the wrong node.
     const graph = installFakeAudioContext();
     const backend = createWebAudioDeviceBackend();
     const device = backend.createDevice(44100);
@@ -60,7 +46,7 @@ describe('createWebAudioDeviceBackend source graph', () => {
     expect(graph.panner.connect).toHaveBeenCalledWith(graph.gain);
     expect(graph.bufferSource.connect).toHaveBeenCalledWith(graph.panner);
     expect(graph.bufferSource.connect).not.toHaveBeenCalledWith(graph.gain);
-    expect(backend.getSourceGainNode(source)).toBe(graph.gain as unknown as GainNode);
+    expect(getAudioSourceGainNode(backend, source)).toBe(graph.gain as unknown as GainNode);
   });
 
   it('writes the pan value onto the panner param', () => {
@@ -81,8 +67,6 @@ describe('createWebAudioDeviceBackend source graph', () => {
   });
 
   it('disconnects the panner when the source is destroyed', () => {
-    // A panner left connected outlives its source and keeps the gain node reachable — a leak that no
-    // audible behaviour would reveal.
     const graph = installFakeAudioContext();
     const backend = createWebAudioDeviceBackend();
     const device = backend.createDevice(44100);
@@ -96,87 +80,9 @@ describe('createWebAudioDeviceBackend source graph', () => {
   });
 });
 
-describe('explainAudioDeviceBackend', () => {
-  it('reports host-not-enabled when no backend is installed', () => {
-    expect(explainAudioDeviceBackend().layer).toBe('host-not-enabled');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setAudioDeviceBackend(stubBackend());
-    expect(explainAudioDeviceBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installAudioDeviceHostBackend(stubBackend());
-    expect(explainAudioDeviceBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installAudioDeviceHostBackend(stubBackend());
-    installAudioDeviceHostBackend(stubBackend());
-    expect(explainAudioDeviceBackend().conflict).toBe(true);
-  });
-
-  it('does not report conflict when the same backend is installed twice', () => {
-    const backend = stubBackend();
-    installAudioDeviceHostBackend(backend);
-    installAudioDeviceHostBackend(backend);
-    expect(explainAudioDeviceBackend().conflict).toBe(false);
-  });
-});
-
-describe('explainAudioDeviceOperation', () => {
-  it('reports implemented for a host backend operation', () => {
-    installAudioDeviceHostBackend(stubBackend());
-    expect(explainAudioDeviceOperation('createDevice').implemented).toBe(true);
-    expect(explainAudioDeviceOperation('createDevice').layer).toBe('host');
-  });
-
-  it('reports sentinel when no backend is installed', () => {
-    expect(explainAudioDeviceOperation('createDevice').implemented).toBe(false);
-    expect(explainAudioDeviceOperation('createDevice').layer).toBe('sentinel');
-  });
-
-  it('reports panning through the same seam as every other operation', () => {
-    // Pan is not a capability a caller has to probe for separately: an unsupported backend answers
-    // through the existing operation seam, and the sentinel absorbs the call rather than throwing.
-    expect(explainAudioDeviceOperation('setSourcePan').implemented).toBe(false);
-    expect(explainAudioDeviceOperation('setSourcePan').layer).toBe('sentinel');
-    expect(() => getAudioDeviceBackend().setSourcePan(1 as unknown as AudioSourceHandle, -1)).not.toThrow();
-    installAudioDeviceHostBackend(stubBackend());
-    expect(hasAudioDeviceOperation('setSourcePan')).toBe(true);
-  });
-});
-
-describe('getAudioDeviceBackend', () => {
-  it('returns the sentinel when no backend is installed', () => {
-    const backend = getAudioDeviceBackend();
-    expect(backend.getDeviceTime(0 as never)).toBe(0);
-  });
-
-  it('returns a custom backend over a host backend', () => {
-    const host = stubBackend();
-    const custom = stubBackend();
-    installAudioDeviceHostBackend(host);
-    setAudioDeviceBackend(custom);
-    expect(getAudioDeviceBackend()).toBe(custom);
-  });
-
-  it('returns a host backend when no custom is set', () => {
-    const host = stubBackend();
-    installAudioDeviceHostBackend(host);
-    expect(getAudioDeviceBackend()).toBe(host);
-  });
-});
-
 describe('getAudioSourceBufferSourceNode', () => {
-  it('returns null when no web-extended backend is installed', () => {
-    expect(getAudioSourceBufferSourceNode(1 as unknown as AudioSourceHandle)).toBeNull();
-  });
-
-  it('returns null when a plain backend is installed', () => {
-    setAudioDeviceBackend(stubBackend());
-    expect(getAudioSourceBufferSourceNode(1 as unknown as AudioSourceHandle)).toBeNull();
+  it('returns null for a plain backend', () => {
+    expect(getAudioSourceBufferSourceNode(stubBackend(), 1 as unknown as AudioSourceHandle)).toBeNull();
   });
 
   it('delegates to the web extension when present', () => {
@@ -186,19 +92,13 @@ describe('getAudioSourceBufferSourceNode', () => {
       getSourceBufferSourceNode: () => mockNode,
       getSourceGainNode: () => null,
     };
-    setAudioDeviceBackend(backend);
-    expect(getAudioSourceBufferSourceNode(1 as unknown as AudioSourceHandle)).toBe(mockNode);
+    expect(getAudioSourceBufferSourceNode(backend, 1 as unknown as AudioSourceHandle)).toBe(mockNode);
   });
 });
 
 describe('getAudioSourceGainNode', () => {
-  it('returns null when no web-extended backend is installed', () => {
-    expect(getAudioSourceGainNode(1 as unknown as AudioSourceHandle)).toBeNull();
-  });
-
-  it('returns null when a plain backend is installed', () => {
-    setAudioDeviceBackend(stubBackend());
-    expect(getAudioSourceGainNode(1 as unknown as AudioSourceHandle)).toBeNull();
+  it('returns null for a plain backend', () => {
+    expect(getAudioSourceGainNode(stubBackend(), 1 as unknown as AudioSourceHandle)).toBeNull();
   });
 
   it('delegates to the web extension when present', () => {
@@ -208,30 +108,13 @@ describe('getAudioSourceGainNode', () => {
       getSourceBufferSourceNode: () => null,
       getSourceGainNode: () => mockNode,
     };
-    setAudioDeviceBackend(backend);
-    expect(getAudioSourceGainNode(1 as unknown as AudioSourceHandle)).toBe(mockNode);
-  });
-});
-
-describe('hasAudioDeviceOperation', () => {
-  it('returns false for the sentinel', () => {
-    expect(hasAudioDeviceOperation('createDevice')).toBe(false);
-  });
-
-  it('returns true for an installed backend', () => {
-    installAudioDeviceHostBackend(stubBackend());
-    expect(hasAudioDeviceOperation('createDevice')).toBe(true);
+    expect(getAudioSourceGainNode(backend, 1 as unknown as AudioSourceHandle)).toBe(mockNode);
   });
 });
 
 describe('hasAudioDeviceWebNodeAccess', () => {
-  it('returns false when no backend is installed', () => {
-    expect(hasAudioDeviceWebNodeAccess()).toBe(false);
-  });
-
   it('returns false for a plain backend', () => {
-    setAudioDeviceBackend(stubBackend());
-    expect(hasAudioDeviceWebNodeAccess()).toBe(false);
+    expect(hasAudioDeviceWebNodeAccess(stubBackend())).toBe(false);
   });
 
   it('returns true when the backend has web extension methods', () => {
@@ -240,112 +123,7 @@ describe('hasAudioDeviceWebNodeAccess', () => {
       getSourceBufferSourceNode: () => null,
       getSourceGainNode: () => null,
     };
-    setAudioDeviceBackend(backend);
-    expect(hasAudioDeviceWebNodeAccess()).toBe(true);
-  });
-});
-
-describe('installAudioDeviceHostBackend', () => {
-  it('installs the first host backend and reports a later different backend as a conflict', () => {
-    installAudioDeviceHostBackend(stubBackend());
-    installAudioDeviceHostBackend(stubBackend());
-
-    expect(explainAudioDeviceBackend()).toMatchObject({ conflict: true, layer: 'host' });
-  });
-});
-
-describe('observeAudioDeviceHostResult', () => {
-  it('records host operation viability', () => {
-    installAudioDeviceHostBackend(stubBackend());
-    observeAudioDeviceHostResult('createDevice', false);
-
-    expect(explainAudioDeviceBackend()).toMatchObject({
-      operation: 'createDevice',
-      viability: 'runtime-api-unavailable',
-    });
-  });
-});
-
-describe('resetAudioDeviceBackendForTest', () => {
-  it('clears custom, host, conflict and observation state', () => {
-    installAudioDeviceHostBackend(stubBackend());
-    installAudioDeviceHostBackend(stubBackend());
-    setAudioDeviceBackend(stubBackend());
-    observeAudioDeviceHostResult('createDevice', true);
-
-    resetAudioDeviceBackendForTest();
-
-    expect(explainAudioDeviceBackend()).toEqual({
-      conflict: false,
-      layer: 'host-not-enabled',
-      operation: null,
-      viability: 'unobserved',
-    });
-  });
-});
-
-describe('sentinel', () => {
-  it('returns 0 from createDevice', () => {
-    expect(getAudioDeviceBackend().createDevice(44100) as number).toBe(0);
-  });
-
-  it('returns 0 from createBuffer', () => {
-    expect(getAudioDeviceBackend().createBuffer(0 as never, 1, 1, 44100, []) as number).toBe(0);
-  });
-
-  it('returns 0 from createSource', () => {
-    expect(getAudioDeviceBackend().createSource(0 as never, 0 as never) as number).toBe(0);
-  });
-
-  it('returns 0 from getDeviceTime', () => {
-    expect(getAudioDeviceBackend().getDeviceTime(0 as never)).toBe(0);
-  });
-
-  it('is a no-op for destroyDevice', () => {
-    expect(() => getAudioDeviceBackend().destroyDevice(0 as never)).not.toThrow();
-  });
-
-  it('is a no-op for destroyBuffer', () => {
-    expect(() => getAudioDeviceBackend().destroyBuffer(0 as never)).not.toThrow();
-  });
-
-  it('is a no-op for destroySource', () => {
-    expect(() => getAudioDeviceBackend().destroySource(0 as never)).not.toThrow();
-  });
-
-  it('is a no-op for startSource', () => {
-    expect(() => getAudioDeviceBackend().startSource(0 as never, 0, 0)).not.toThrow();
-  });
-
-  it('is a no-op for stopSource', () => {
-    expect(() => getAudioDeviceBackend().stopSource(0 as never)).not.toThrow();
-  });
-
-  it('is a no-op for setSourceGain', () => {
-    expect(() => getAudioDeviceBackend().setSourceGain(0 as never, 1)).not.toThrow();
-  });
-
-  it('is a no-op for setSourcePlaybackRate', () => {
-    expect(() => getAudioDeviceBackend().setSourcePlaybackRate(0 as never, 1)).not.toThrow();
-  });
-
-  it('is a no-op for onSourceEnded', () => {
-    expect(() => getAudioDeviceBackend().onSourceEnded(0 as never, null)).not.toThrow();
-  });
-
-  it('is a no-op for resumeDevice', () => {
-    expect(() => getAudioDeviceBackend().resumeDevice(0 as never)).not.toThrow();
-  });
-});
-
-describe('setAudioDeviceBackend', () => {
-  it('sets and clears the custom backend', () => {
-    const backend = stubBackend();
-
-    setAudioDeviceBackend(backend);
-    expect(getAudioDeviceBackend()).toBe(backend);
-    setAudioDeviceBackend(null);
-    expect(getAudioDeviceBackend()).not.toBe(backend);
+    expect(hasAudioDeviceWebNodeAccess(backend)).toBe(true);
   });
 });
 
