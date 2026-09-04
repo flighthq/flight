@@ -30,6 +30,7 @@ import {
   drawWgpuMeshSubset,
   ensureWgpuFrameBindGroup,
   ensureWgpuIblSampleBindGroup,
+  ensureWgpuInstanceBuffer,
   ensureWgpuIblSampleLayout,
   ensureWgpuMaterialBinding,
   ensureWgpuPbrSampleBindGroup,
@@ -369,6 +370,40 @@ describe('ensureWgpuIblSampleLayout', () => {
     const b = ensureWgpuIblSampleLayout(state);
     expect(a).toBe(b);
     expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
+  });
+});
+
+describe('ensureWgpuInstanceBuffer', () => {
+  it('creates a GPU buffer sized for the given instance count', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const matrices = new Float32Array(16);
+    matrices[0] = 1;
+    matrices[5] = 1;
+    matrices[10] = 1;
+    matrices[15] = 1;
+    const buffer = ensureWgpuInstanceBuffer(state, matrices, 1);
+    expect(buffer).toBeDefined();
+    expect(fake.calls.some((c) => c.name === 'createBuffer')).toBe(true);
+  });
+
+  it('reuses the buffer when capacity is sufficient', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const matrices = new Float32Array(16);
+    matrices[0] = 1;
+    matrices[5] = 1;
+    matrices[10] = 1;
+    matrices[15] = 1;
+    const a = ensureWgpuInstanceBuffer(state, matrices, 1);
+    const buffersBefore = fake.calls.filter((c) => c.name === 'createBuffer').length;
+    const b = ensureWgpuInstanceBuffer(state, matrices, 1);
+    expect(a).toBe(b);
+    expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(buffersBefore);
+  });
+
+  it('falls back to an identity matrix when matrices is null', () => {
+    const { state } = makeWgpuScene3DState();
+    const buffer = ensureWgpuInstanceBuffer(state, null, 1);
+    expect(buffer).toBeDefined();
   });
 });
 
