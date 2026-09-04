@@ -1,9 +1,8 @@
-import type { NonEntityCreateResult, ParticleEmitterConfig } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
 
-export function createParticleEmitterConfig(
-  config?: Partial<ParticleEmitterConfig>,
-): NonEntityCreateResult<ParticleEmitterConfig, 'options'> {
-  return {
+export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
+  return createEntity({
     alphaCurve: config?.alphaCurve ?? null,
     alphaEnd: config?.alphaEnd ?? 0,
     alphaStart: config?.alphaStart ?? 1,
@@ -56,5 +55,5 @@ export function createParticleEmitterConfig(
     spread: config?.spread ?? Math.PI,
     velocityInheritance: config?.velocityInheritance ?? 0,
     worldSpace: config?.worldSpace ?? false,
-  };
+  });
 }

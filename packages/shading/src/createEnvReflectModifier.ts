@@ -1,4 +1,5 @@
-import type { EnvReflectModifier, EnvReflectModifierOptions, NonEntityCreateResult } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { EnvReflectModifier, EnvReflectModifierOptions } from '@flighthq/types/contract';
 import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createEnvReflectModifier`. Every field is optional and carries a documented
@@ -11,15 +12,13 @@ import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 // blending by a Fresnel-Schlick ramp. `tint` is packed sRgb RGBA over the sampled color and defaults
 // to opaque white; `intensity` scales the whole term (default 1); `fresnelBias` is f0 (default 0.04,
 // a dielectric); `roughness` selects a blurrier prefiltered mip (default 0 = mirror-sharp).
-export function createEnvReflectModifier(
-  options?: Readonly<EnvReflectModifierOptions>,
-): NonEntityCreateResult<EnvReflectModifier, 'descriptor'> {
-  return {
+export function createEnvReflectModifier(options?: Readonly<EnvReflectModifierOptions>): EnvReflectModifier {
+  return createEntity({
     kind: EnvReflectModifierKind,
     slot: ModifierSlot.Effect,
     tint: options?.tint ?? 0xffffffff,
     intensity: options?.intensity ?? 1,
     fresnelBias: options?.fresnelBias ?? 0.04,
     roughness: options?.roughness ?? 0,
-  };
+  });
 }

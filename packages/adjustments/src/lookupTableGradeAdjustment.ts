@@ -1,5 +1,5 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
-import type { ColorTransformFunction, LookupTableGradeAdjustment } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ColorTransformFunction, EntityRuntimeKey, LookupTableGradeAdjustment } from '@flighthq/types/contract';
 
 import { sampleColorLut } from './colorLut';
 
@@ -9,8 +9,8 @@ import { sampleColorLut } from './colorLut';
 // passthrough), matching the old lookupTableGradeEffect. Because it exposes a `transform`, it fuses with
 // neighbouring adjustments — a run containing it (matrices included) bakes into one LUT.
 export function createLookupTableGradeAdjustment(
-  options: Readonly<Omit<LookupTableGradeAdjustment, 'kind' | 'transform'>> = {},
-): NonEntityCreateResult<LookupTableGradeAdjustment, 'descriptor'> {
+  options: Readonly<Omit<LookupTableGradeAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
+): LookupTableGradeAdjustment {
   const lut = options.lut;
   const strength = options.strength ?? 1;
   const transform: ColorTransformFunction = (out, r, g, b) => {
@@ -25,5 +25,5 @@ export function createLookupTableGradeAdjustment(
     out[1] = g + (out[1] - g) * strength;
     out[2] = b + (out[2] - b) * strength;
   };
-  return { kind: 'LookupTableGradeAdjustment', ...options, transform };
+  return createEntity({ kind: 'LookupTableGradeAdjustment', ...options, transform });
 }

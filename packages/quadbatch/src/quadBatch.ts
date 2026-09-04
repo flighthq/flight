@@ -534,7 +534,7 @@ export function setQuadBatchInstanceTint(target: QuadBatch, index: number, rgba:
   const data = target.data;
   if (index < 0 || index >= data.instanceCount) return;
   if (data.materialData === null) data.materialData = new Array(data.instanceCount).fill(null);
-  data.materialData[index] = { tint: rgba >>> 0 };
+  data.materialData[index] = createEntity({ tint: rgba >>> 0 });
 }
 
 export function setQuadBatchLocalBoundsRectangle(target: QuadBatch, rect: Readonly<Rectangle>): void {

@@ -1,12 +1,12 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
-import type { ColorTransformFunction, HueSaturationAdjustment } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { ColorTransformFunction, EntityRuntimeKey, HueSaturationAdjustment } from '@flighthq/types/contract';
 
 // Hue/saturation/lightness as a LUT-tier adjustment. The transform is the exact HSL round-trip the old
 // hueSaturationEffect shader did — convert to HSL, rotate hue, scale saturation, offset lightness,
 // convert back — ported faithfully so the look is unchanged while the op now fuses into a baked LUT.
 export function createHueSaturationAdjustment(
-  options: Readonly<Omit<HueSaturationAdjustment, 'kind' | 'transform'>> = {},
-): NonEntityCreateResult<HueSaturationAdjustment, 'descriptor'> {
+  options: Readonly<Omit<HueSaturationAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},
+): HueSaturationAdjustment {
   const hue = (options.hue ?? 0) / 360;
   const saturation = options.saturation ?? 1;
   const lightness = options.lightness ?? 0;
@@ -39,7 +39,7 @@ export function createHueSaturationAdjustment(
     out[1] = hue2rgb(p, q, h);
     out[2] = hue2rgb(p, q, h - 1 / 3);
   };
-  return { kind: 'HueSaturationAdjustment', ...options, transform };
+  return createEntity({ kind: 'HueSaturationAdjustment', ...options, transform });
 }
 
 function clamp01(v: number): number {

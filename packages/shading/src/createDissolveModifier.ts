@@ -1,4 +1,5 @@
-import type { DissolveModifier, DissolveModifierOptions, NonEntityCreateResult } from '@flighthq/types/contract';
+import { createEntity } from '@flighthq/entity/contract';
+import type { DissolveModifier, DissolveModifierOptions } from '@flighthq/types/contract';
 import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
 // The options for `createDissolveModifier`. Only `threshold` is required; the rest carry documented
@@ -11,17 +12,15 @@ import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 // `edgeColor`. Animate `threshold` from 0 to 1 to disintegrate the surface. `edgeColor` is packed sRgb
 // RGBA (default 0xff6600ff); `edgeWidth` defaults to 0.05 (0 = hard clip); `scale` (procedural-noise
 // frequency, ignored with `map`) defaults to 8. `map` is copied by reference only when provided.
-export function createDissolveModifier(
-  options: Readonly<DissolveModifierOptions>,
-): NonEntityCreateResult<DissolveModifier, 'descriptor'> {
-  const modifier: DissolveModifier = {
+export function createDissolveModifier(options: Readonly<DissolveModifierOptions>): DissolveModifier {
+  const modifier = createEntity({
     kind: DissolveModifierKind,
     slot: ModifierSlot.Effect,
     threshold: options.threshold,
     edgeColor: options.edgeColor ?? 0xff6600ff,
     edgeWidth: options.edgeWidth ?? 0.05,
     scale: options.scale ?? 8,
-  };
+  }) as DissolveModifier;
   if (options.map !== undefined) modifier.map = options.map;
   return modifier;
 }
