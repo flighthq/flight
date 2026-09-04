@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
   ImageResource,
@@ -110,7 +110,7 @@ function createVideoImageResource(source: Readonly<VideoResource>): ImageResourc
   image.version = INITIAL_VIDEO_VERSION;
   image.width = 0;
   updateVideoImageSize(image);
-  return image;
+  return finishEntity(image);
 }
 
 function getVideoElement(texture: Readonly<TextureLike>): HTMLVideoElement | null {

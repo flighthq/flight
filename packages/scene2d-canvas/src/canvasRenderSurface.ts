@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderSurface,
   CanvasRenderSurfaceCreator,
@@ -20,7 +20,7 @@ export function acquireCanvasRenderSurface(
     return null;
   }
   _ownedSurfaceCreators.set(surface, creator);
-  return surface;
+  return finishEntity(surface);
 }
 
 export function createCanvasRenderSurface(
@@ -58,7 +58,7 @@ function finishCanvasRenderSurface(
     width: options.width ?? canvas.width,
   });
   surface[EntityRuntimeKey] = { binding: null };
-  return surface;
+  return finishEntity(surface);
 }
 
 const _ownedSurfaceCreators = new WeakMap<CanvasRenderSurface, Readonly<CanvasRenderSurfaceCreator>>();

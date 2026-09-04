@@ -1,42 +1,15 @@
-import { allocateEntity } from '@flighthq/entity/contract';
-import type { AnimationClip, AnimationRootMotionExtractor } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { AnimationClip, AnimationRootMotionExtractor, EntityConstruction } from '@flighthq/types/contract';
 
 import { sampleAnimationTrack } from './animationTrack';
 
-// Allocates reusable extraction scratch for one root channel. Channel selection is explicit and
-// target-free: the animation core never inspects a scene path or applies the resulting motion.
 export function createAnimationRootMotionExtractor(
   clip: Readonly<AnimationClip>,
   channelIndex: number,
 ): AnimationRootMotionExtractor {
-  if (!Number.isInteger(channelIndex) || channelIndex < 0 || channelIndex >= clip.channels.length) {
-    throw new RangeError(`AnimationRootMotionExtractor channel index ${String(channelIndex)} does not exist.`);
-  }
-  const channel = clip.channels[channelIndex];
-  const width = channel.track.components;
-  if (channel.track.quaternion && width !== 4) {
-    throw new TypeError('AnimationRootMotionExtractor quaternion channel must have four components.');
-  }
   const extractor = allocateEntity<AnimationRootMotionExtractor>();
-  extractor.channel = channel;
-  extractor.channelIndex = channelIndex;
-  extractor.clip = clip;
-  extractor.cycleDelta = new Float32Array(width);
-  extractor.fromMotion = new Float32Array(width);
-  extractor.fromSample = new Float32Array(width);
-  extractor.powerScratch = new Float32Array(width);
-  extractor.startSample = new Float32Array(width);
-  extractor.toMotion = new Float32Array(width);
-  extractor.toSample = new Float32Array(width);
-  sampleAnimationTrack(extractor.startSample, channel.track, 0);
-  sampleAnimationTrack(extractor.toSample, channel.track, clip.duration);
-  writeAnimationRootMotionDelta(
-    extractor.cycleDelta,
-    extractor.startSample,
-    extractor.toSample,
-    channel.track.quaternion,
-  );
-  return extractor;
+  initializeAnimationRootMotionExtractor(extractor, clip, channelIndex);
+  return finishEntity(extractor);
 }
 
 // Writes the accumulated root delta from finite unwrapped `startTime` to `endTime`. Times may cross
@@ -57,6 +30,41 @@ export function extractAnimationRootMotion(
   writeAnimationRootMotionAt(extractor.toMotion, extractor, endTime, extractor.toSample);
   writeAnimationRootMotionDelta(out, extractor.fromMotion, extractor.toMotion, extractor.channel.track.quaternion);
   return true;
+}
+
+// Allocates reusable extraction scratch for one root channel. Channel selection is explicit and
+// target-free: the animation core never inspects a scene path or applies the resulting motion.
+export function initializeAnimationRootMotionExtractor(
+  extractor: EntityConstruction<AnimationRootMotionExtractor>,
+  clip: Readonly<AnimationClip>,
+  channelIndex: number,
+): void {
+  if (!Number.isInteger(channelIndex) || channelIndex < 0 || channelIndex >= clip.channels.length) {
+    throw new RangeError(`AnimationRootMotionExtractor channel index ${String(channelIndex)} does not exist.`);
+  }
+  const channel = clip.channels[channelIndex];
+  const width = channel.track.components;
+  if (channel.track.quaternion && width !== 4) {
+    throw new TypeError('AnimationRootMotionExtractor quaternion channel must have four components.');
+  }
+  extractor.channel = channel;
+  extractor.channelIndex = channelIndex;
+  extractor.clip = clip;
+  extractor.cycleDelta = new Float32Array(width);
+  extractor.fromMotion = new Float32Array(width);
+  extractor.fromSample = new Float32Array(width);
+  extractor.powerScratch = new Float32Array(width);
+  extractor.startSample = new Float32Array(width);
+  extractor.toMotion = new Float32Array(width);
+  extractor.toSample = new Float32Array(width);
+  sampleAnimationTrack(extractor.startSample, channel.track, 0);
+  sampleAnimationTrack(extractor.toSample, channel.track, clip.duration);
+  writeAnimationRootMotionDelta(
+    extractor.cycleDelta,
+    extractor.startSample,
+    extractor.toSample,
+    channel.track.quaternion,
+  );
 }
 
 function multiplyAnimationRootMotionQuaternion(

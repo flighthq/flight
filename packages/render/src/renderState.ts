@@ -1,30 +1,18 @@
-import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentUnsupportedGuard,
   RenderState,
   RenderStateRuntime,
   Renderable,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   const state = allocateEntity<RenderState>();
-  state.allowSmoothing = obj?.allowSmoothing ?? true;
-  state.backgroundColor = obj?.backgroundColor ?? 0;
-  state.backgroundColorRgba = obj?.backgroundColorRgba ?? [];
-  state.backgroundColorString = obj?.backgroundColorString ?? '';
-  state.currentClipDepth = obj?.currentClipDepth ?? 0;
-  state.displayObjectClipHooks = obj?.displayObjectClipHooks ?? null;
-  state.pixelRatio = obj?.pixelRatio ?? 1;
-  state.raster2DSurfaceProvider = obj?.raster2DSurfaceProvider ?? null;
-  state.renderAlpha = obj?.renderAlpha ?? 1;
-  state.renderBlendMode = obj?.renderBlendMode ?? BlendMode.Normal;
-  state.renderTransform2D = obj?.renderTransform2D ?? null;
-  state.roundPixels = obj?.roundPixels ?? false;
-  state.sceneGraphSyncPolicy = obj?.sceneGraphSyncPolicy ?? 'refreshDerivedState';
-  state[EntityRuntimeKey] = createRenderStateRuntime();
-  return state;
+  initializeRenderState(state, obj);
+  return finishEntity(state);
 }
 
 // Allocates the package-private machinery runtime for a RenderState: the frame counter, proxy maps,
@@ -69,6 +57,23 @@ export function getColorAdjustmentUnsupportedGuard(state: RenderState): ColorAdj
 // render path writes its fields every frame.
 export function getRenderStateRuntime(state: RenderState): RenderStateRuntime {
   return state[EntityRuntimeKey] as RenderStateRuntime;
+}
+
+export function initializeRenderState(state: EntityConstruction<RenderState>, obj?: Partial<RenderState>): void {
+  state.allowSmoothing = obj?.allowSmoothing ?? true;
+  state.backgroundColor = obj?.backgroundColor ?? 0;
+  state.backgroundColorRgba = obj?.backgroundColorRgba ?? [];
+  state.backgroundColorString = obj?.backgroundColorString ?? '';
+  state.currentClipDepth = obj?.currentClipDepth ?? 0;
+  state.displayObjectClipHooks = obj?.displayObjectClipHooks ?? null;
+  state.pixelRatio = obj?.pixelRatio ?? 1;
+  state.raster2DSurfaceProvider = obj?.raster2DSurfaceProvider ?? null;
+  state.renderAlpha = obj?.renderAlpha ?? 1;
+  state.renderBlendMode = obj?.renderBlendMode ?? BlendMode.Normal;
+  state.renderTransform2D = obj?.renderTransform2D ?? null;
+  state.roundPixels = obj?.roundPixels ?? false;
+  state.sceneGraphSyncPolicy = obj?.sceneGraphSyncPolicy ?? 'refreshDerivedState';
+  state[EntityRuntimeKey] = createRenderStateRuntime();
 }
 
 function disposeRenderProxyForShutdown(state: RenderState, source: Renderable): void {

@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
 import type {
   MeshGeometry,
@@ -211,7 +211,7 @@ function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof En
     webgpuData: null,
   };
   geometry[EntityRuntimeKey] = runtime;
-  return geometry;
+  return finishEntity(geometry);
 }
 
 function getVertexCountFromLayout(

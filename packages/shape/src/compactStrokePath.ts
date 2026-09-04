@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { appendPathClose } from '@flighthq/path/contract';
 import type { Path, StrokeStyle } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
@@ -37,7 +37,7 @@ export function compactStrokePath(path: Readonly<Path>, style: Readonly<StrokeSt
       strokeSubpath(seg.points, seg.closed, halfWidth, join, cap, miterLimit, result, tolerance);
     }
   }
-  return result;
+  return finishEntity(result);
 }
 
 // Adds arc sample points from `startAngle` to `endAngle` around center (cx,cy) at radius `r`
