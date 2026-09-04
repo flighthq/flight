@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ShadedMaterial, ShadedMaterialOptions } from '@flighthq/types/contract';
+import type { EntityConstruction, ShadedMaterial, ShadedMaterialOptions } from '@flighthq/types/contract';
 import { BlendMode, ShadedMaterialKind } from '@flighthq/types/contract';
 
 // The options for `createShadedMaterial`. Every field is optional and defaults to the classic lit
@@ -18,18 +18,25 @@ import { BlendMode, ShadedMaterialKind } from '@flighthq/types/contract';
 // identity), not a plain literal.
 export function createShadedMaterial(options?: Readonly<ShadedMaterialOptions>): ShadedMaterial {
   const out = allocateEntity<ShadedMaterial>();
-  out.kind = ShadedMaterialKind;
-  out.alphaCutoff = options?.alphaCutoff ?? 0.5;
-  out.alphaMode = options?.alphaMode ?? 'opaque';
-  out.blendMode = options?.blendMode ?? BlendMode.Normal;
-  out.diffuse = options?.diffuse ?? 0xffffffff;
-  out.diffuseMap = options?.diffuseMap ?? null;
-  out.doubleSided = options?.doubleSided ?? false;
-  out.modifiers = options?.modifiers ?? [];
-  out.normalMap = options?.normalMap ?? null;
-  out.normalScale = options?.normalScale ?? 1;
-  out.shininess = options?.shininess ?? 32;
-  out.specular = options?.specular ?? 0xffffffff;
-  out.specularMap = options?.specularMap ?? null;
+  initializeShadedMaterial(out, options ?? {});
   return finishEntity(out);
+}
+
+function initializeShadedMaterial(
+  out: EntityConstruction<ShadedMaterial>,
+  options: Readonly<ShadedMaterialOptions>,
+): void {
+  out.kind = ShadedMaterialKind;
+  out.alphaCutoff = options.alphaCutoff ?? 0.5;
+  out.alphaMode = options.alphaMode ?? 'opaque';
+  out.blendMode = options.blendMode ?? BlendMode.Normal;
+  out.diffuse = options.diffuse ?? 0xffffffff;
+  out.diffuseMap = options.diffuseMap ?? null;
+  out.doubleSided = options.doubleSided ?? false;
+  out.modifiers = options.modifiers ?? [];
+  out.normalMap = options.normalMap ?? null;
+  out.normalScale = options.normalScale ?? 1;
+  out.shininess = options.shininess ?? 32;
+  out.specular = options.specular ?? 0xffffffff;
+  out.specularMap = options.specularMap ?? null;
 }

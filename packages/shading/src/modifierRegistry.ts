@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ModifierDefinition, ModifierKind, ModifierRegistry } from '@flighthq/types/contract';
+import type { EntityConstruction, ModifierDefinition, ModifierKind, ModifierRegistry } from '@flighthq/types/contract';
 
 // The substrate-agnostic registration record for one modifier kind: where it injects (`slot`) and
 // how its descriptor's compile-time structure contributes to the define-key (`getDefineSignature`).
@@ -23,8 +23,12 @@ import type { ModifierDefinition, ModifierKind, ModifierRegistry } from '@flight
 // read or mutate an existing registry in place.
 export function createModifierRegistry(): ModifierRegistry {
   const out = allocateEntity<ModifierRegistry>();
-  out.definitions = new Map();
+  initializeModifierRegistry(out);
   return finishEntity(out);
+}
+
+function initializeModifierRegistry(out: EntityConstruction<ModifierRegistry>): void {
+  out.definitions = new Map();
 }
 
 // Registers (or replaces) the definition for `definition.kind`. Last-write-wins: a later

@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ColorLut, ColorLutCache, ColorTransformFunction } from '@flighthq/types/contract';
+import type { ColorLut, ColorLutCache, ColorTransformFunction, EntityConstruction } from '@flighthq/types/contract';
 
 import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE } from './colorLut';
 import { getAdjustmentColorTransform } from './colorLutAdjustment';
@@ -40,9 +40,13 @@ export function bakeColorLutForRun(
 // bakeColorLutForRun each frame; it is plain GC-managed memory, so resetting it is dropping the object.
 export function createColorLutCache(): ColorLutCache {
   const out = allocateEntity<ColorLutCache>();
+  initializeColorLutCache(out);
+  return finishEntity(out);
+}
+
+function initializeColorLutCache(out: EntityConstruction<ColorLutCache>): void {
   out.signature = null;
   out.lut = null;
-  return finishEntity(out);
 }
 
 // Content signature of a run for cache keying: the per-axis size plus each op's serialized data fields.
