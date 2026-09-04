@@ -92,7 +92,7 @@ export function initializeElectronIpcSendBackend(
   };
 }
 
-export function initializeElectronIpcTargetedSendBackend(
+export function initializeElectronIpcTargetedSendBackend<Target extends ElectronIpcTarget = ElectronIpcTarget>(
   out: EntityConstruction<IpcTargetedSendBackend<Target>>,
 ): void {
   out.send = (target, channel, args) => {

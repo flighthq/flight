@@ -33,6 +33,6 @@ export function getWgpuRendererData<T extends object>(data: RendererData | null)
  * }
  * ```
  */
-export function initializeWgpuRendererData(out: EntityConstruction<T & RendererData>, data: T): void {
+export function initializeWgpuRendererData<T extends object>(out: EntityConstruction<T & RendererData>, data: T): void {
   Object.assign(out, data);
 }

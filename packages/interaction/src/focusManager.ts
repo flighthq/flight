@@ -119,7 +119,7 @@ export function getFocusOrder<N extends NodeAny>(manager: FocusManager<N>, out: 
 }
 
 /** Allocates a focus manager for `root`. `wrap` (default `true`) cycles tab navigation past the ends. */
-export function initializeFocusManager(
+export function initializeFocusManager<N extends NodeAny>(
   out: EntityConstruction<FocusManager<N>>,
   root: N,
   options: Readonly<FocusManagerOptions> = {},
