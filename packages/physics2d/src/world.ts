@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
   CollisionBuiltInShape2D,
@@ -180,13 +180,13 @@ export function createPhysics2DCollider(
   filter?: Readonly<Physics2DCollisionFilter>,
 ): Physics2DCollider {
   const ownedLocal = clonePhysics2DLocalShape(local);
-  return createEntity({
-    local: ownedLocal,
-    world: createPhysics2DColliderWorldShape(ownedLocal),
-    material: { ...material },
-    filter: filter === undefined ? { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 } : { ...filter },
-    sensor,
-  });
+  const out = allocateEntity<Physics2DCollider>();
+  out.local = ownedLocal;
+  out.world = createPhysics2DColliderWorldShape(ownedLocal);
+  out.material = { ...material };
+  out.filter = filter === undefined ? { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 } : { ...filter };
+  out.sensor = sensor;
+  return finishEntity(out);
 }
 
 function clonePhysics2DLocalShape(local: Readonly<CollisionBuiltInShape2D>): CollisionBuiltInShape2D {
@@ -242,72 +242,72 @@ export function createPhysics2DSolverConfig(): NonEntityCreateResult<Physics2DSo
 // without this package knowing which it got — `SpatialIndexBackend2D` is already that seam, so physics
 // adds no second one over it.
 export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: SpatialIndexBackend2D): Physics2DWorld {
-  return createEntity({
-    version: Physics2DWorldVersion,
-    bodies: [],
-    bodyByIndex: new Map(),
-    contacts: [],
-    joints: [],
-    jointSolvers: new Map(),
-    jointCollisionSuppressions: new Map(),
-    events: { began: [], ended: [] },
-    jointEvents: { broke: [] },
-    contactHooks: { preSolve: null, postSolve: null },
-    index: index ?? createUniformGridSpatialBackend2D(1),
-    config: createPhysics2DSolverConfig(),
-    islandParents: new Map(),
-    islandSleepTimers: new Map(),
-    solveIslandByRoot: new Map(),
-    solveIslandRoots: [],
-    solveIslandBodyStarts: [],
-    solveIslandBodyCounts: [],
-    solveIslandContactStarts: [],
-    solveIslandContactCounts: [],
-    solveIslandJointStarts: [],
-    solveIslandJointCounts: [],
-    solveIslandBodyIndices: [],
-    solveIslandContactIndices: [],
-    solveIslandJointIndices: [],
-    solveIslandCursors: [],
-    gravityX,
-    gravityY,
-    previousTimestep: 0,
-    nextBodyIndex: 0,
-  });
+  const out = allocateEntity<Physics2DWorld>();
+  out.version = Physics2DWorldVersion;
+  out.bodies = [];
+  out.bodyByIndex = new Map();
+  out.contacts = [];
+  out.joints = [];
+  out.jointSolvers = new Map();
+  out.jointCollisionSuppressions = new Map();
+  out.events = { began: [], ended: [] };
+  out.jointEvents = { broke: [] };
+  out.contactHooks = { preSolve: null, postSolve: null };
+  out.index = index ?? createUniformGridSpatialBackend2D(1);
+  out.config = createPhysics2DSolverConfig();
+  out.islandParents = new Map();
+  out.islandSleepTimers = new Map();
+  out.solveIslandByRoot = new Map();
+  out.solveIslandRoots = [];
+  out.solveIslandBodyStarts = [];
+  out.solveIslandBodyCounts = [];
+  out.solveIslandContactStarts = [];
+  out.solveIslandContactCounts = [];
+  out.solveIslandJointStarts = [];
+  out.solveIslandJointCounts = [];
+  out.solveIslandBodyIndices = [];
+  out.solveIslandContactIndices = [];
+  out.solveIslandJointIndices = [];
+  out.solveIslandCursors = [];
+  out.gravityX = gravityX;
+  out.gravityY = gravityY;
+  out.previousTimestep = 0;
+  out.nextBodyIndex = 0;
+  return finishEntity(out);
 }
 
 // Creates a rigid body at rest. Mass properties stay zero until the body is added to a world, which
 // derives them from the colliders — a body's mass is never assigned, only derived, so it cannot
 // disagree with its shape.
 export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: number, angle = 0): RigidBody2D {
-  return createEntity({
-    index: -1,
-    type,
-    x,
-    y,
-    angle,
-    velocityX: 0,
-    velocityY: 0,
-    angularVelocity: 0,
-    forceX: 0,
-    forceY: 0,
-    torque: 0,
-    mass: 0,
-    inverseMass: 0,
-    inertia: 0,
-    inverseInertia: 0,
-    centerX: 0,
-    centerY: 0,
-    linearDamping: 0,
-    angularDamping: 0,
-    gravityScale: 1,
-    fixedRotation: false,
-    bullet: false,
-    sleeping: false,
-    sleepEnabled: true,
-    sleepTimer: 0,
-    colliders: [],
-  });
+  const out = allocateEntity<RigidBody2D>();
+  out.index = -1;
+  out.type = type;
+  out.x = x;
+  out.y = y;
+  out.angle = angle;
+  out.velocityX = 0;
+  out.velocityY = 0;
+  out.angularVelocity = 0;
+  out.forceX = 0;
+  out.forceY = 0;
+  out.torque = 0;
+  out.mass = 0;
+  out.inverseMass = 0;
+  out.inertia = 0;
+  out.inverseInertia = 0;
+  out.centerX = 0;
+  out.centerY = 0;
+  out.linearDamping = 0;
+  out.angularDamping = 0;
+  out.gravityScale = 1;
+  out.fixedRotation = false;
+  out.bullet = false;
+  out.sleeping = false;
+  out.sleepEnabled = true;
+  out.sleepTimer = 0;
+  out.colliders = [];
+  return finishEntity(out);
 }
 
 // The body carrying `index`, or null when the world no longer holds it. Contacts store body indices

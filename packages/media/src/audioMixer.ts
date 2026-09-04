@@ -46,7 +46,7 @@ export function createAudioMixer(context: AudioContext, options?: Readonly<Audio
   const masterGainNode = context.createGain();
   masterGainNode.gain.value = options?.masterGain ?? 1;
   masterGainNode.connect(context.destination);
-  const mixer = allocateEntity<AudioBus>();
+  const mixer = allocateEntity<AudioMixer>();
   mixer.masterGain = options?.masterGain ?? 1;
   mixer.masterMuted = options?.masterMuted ?? false;
   mixerRuntimes.set(mixer, {

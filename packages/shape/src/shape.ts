@@ -48,7 +48,7 @@ export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
 }
 
 export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
-  const out = allocateEntity<Shape>();
+  const out = allocateEntity<ShapeData>();
   out.commands = data?.commands ?? [];
   return finishEntity(out);
 }

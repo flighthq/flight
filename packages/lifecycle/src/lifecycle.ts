@@ -62,7 +62,7 @@ export function attachAppLifecycle(host: HasSystemLifecycle, app: AppLifecycle):
 
 // Allocates an AppLifecycle event entity with inert signals; call attachAppLifecycle to start delivery.
 export function createAppLifecycle(): AppLifecycle {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<AppLifecycle>();
   out.onStateChange = createSignal();
   out.onResume = createSignal();
   out.onPause = createSignal();

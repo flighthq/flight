@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend & Entity {
-    const out = allocateEntity<GlyphRasterizerBackend>();
+    const out = allocateEntity<GlyphRasterizerBackend & Entity>();
   out.measureMetrics = (options): GlyphMetrics | null => {
       const context = _acquireGlyphRasterContext();
       if (context === null) return null;

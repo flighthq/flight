@@ -18,7 +18,7 @@ export function createCameraShake(options?: Readonly<CameraShakeOptions>): Camer
 }
 
 export function createCameraShakeOffset(): CameraShakeOffset {
-  const out = allocateEntity<CameraShake>();
+  const out = allocateEntity<CameraShakeOffset>();
   out.rotationX = 0;
   out.rotationY = 0;
   out.rotationZ = 0;

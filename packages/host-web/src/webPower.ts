@@ -27,9 +27,7 @@ import type {
 // real one: the previous backend called request() fire-and-forget, swallowed the rejection and returned
 // `true` synchronously, so a denied lock read as success and a lost lock still read as active.
   export const webPowerKeepAwakeBackend = (() => {
-    const out = allocateEntity<
-  EntityWithoutRuntime<PowerKeepAwakeBackend>
->();
+    const out = allocateEntity<PowerKeepAwakeBackend>();
     out.acquire = async (mode: PowerKeepAwakeMode): Promise<PowerKeepAwakeAcquireResult> => {
     // Web can only keep the DISPLAY awake; it has no way to prevent process suspension.
     if (mode === 'PreventAppSuspension') return { reason: 'unavailable' };
@@ -88,9 +86,7 @@ import type {
 
 // Suspend/resume over the Page Lifecycle API. freeze/resume are the spec'd pair and both really fire.
   export const webPowerSuspensionBackend = (() => {
-    const out = allocateEntity<
-  EntityWithoutRuntime<PowerSuspensionBackend>
->();
+    const out = allocateEntity<PowerSuspensionBackend>();
     out.subscribeResume = (listener: () => void): () => void => {
     if (typeof document === 'undefined') return () => {};
     document.addEventListener('resume', listener);

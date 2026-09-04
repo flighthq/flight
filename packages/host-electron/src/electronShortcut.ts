@@ -30,7 +30,7 @@ export function createElectronShortcutTriggerBackend(electron: ElectronApi): Sho
   }
 
   const provider = (() => {
-    const out = allocateEntity<ShortcutQueryBackend>();
+    const out = allocateEntity<ShortcutTriggerBackend>();
     out.destroy = async () => {
       let firstError: unknown;
       const accelerators = new Set(registrations.values());

@@ -42,7 +42,7 @@ interface GlRichTextData extends RendererData {
 }
 
 export function createGlRichTextData(_state: GlRenderState, _source: Renderable): RendererData {
-  const out = allocateEntity<RendererData>();
+  const out = allocateEntity<GlRichTextData>();
   out.surface = null;
   return finishEntity(out);
 }

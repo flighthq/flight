@@ -33,7 +33,7 @@ export function createScene2DSlotReference(
   required = true,
 ): Scene2DSlotReference {
   target.name = name;
-  const out = allocateEntity<Scene2DDocument>();
+  const out = allocateEntity<Scene2DSlotReference>();
   out.content = null;
   out.linkage = linkage;
   out.name = name;

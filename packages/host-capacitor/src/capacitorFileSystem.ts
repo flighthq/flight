@@ -11,7 +11,7 @@ import type { CapacitorApi, Entity, FileEntry, FileStat, FileSystemBasicBackend 
 // Operations the plugin cannot perform are absent from the returned provider.
 export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileSystemBasicBackend & Entity {
   const filesystem = capacitor.filesystem;
-    const out = allocateEntity<FileSystemBasicBackend>();
+    const out = allocateEntity<FileSystemBasicBackend & Entity>();
   out.readTextFile = async (path, signal) => {
       signal?.throwIfAborted();
       let data: Blob | string;

@@ -52,7 +52,7 @@ export function compileGlBitmapProgram(gl: GlContext, fragmentSrc: string = FRAG
 }
 
 export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrixArray: Float32Array): GlBitmapShader {
-    const out = allocateEntity<GlShaderLocations>();
+    const out = allocateEntity<GlBitmapShader>();
   out.locations = shaderLoc;
   out.program = shaderLoc.program;
   out.bind = (gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void => {
@@ -84,7 +84,7 @@ export function createGlBitmapShader(
   onBind?: (gl: GlContext, locations: GlShaderLocations, renderProxy: RenderProxy2D) => void,
 ): GlBitmapShader {
   const locations = compileGlBitmapProgram(gl, fragmentSrc);
-    const out = allocateEntity<GlShaderLocations>();
+    const out = allocateEntity<GlBitmapShader>();
   out.locations = locations;
   out.program = locations.program;
   out.bind = (gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void => {

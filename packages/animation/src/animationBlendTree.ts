@@ -73,7 +73,7 @@ export function createAnimationBlendTreeInput(
   weight = 1,
   additive = false,
 ): AnimationBlendTreeInput {
-  const out = allocateEntity<AnimationBlendTree>();
+  const out = allocateEntity<AnimationBlendTreeInput>();
   out.additive = additive;
   out.player = player;
   out.weight = weight;

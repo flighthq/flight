@@ -22,7 +22,7 @@ export function createEmptyWgpuRegistries(): WgpuRenderRegistries {
 }
 
 export function createWgpuPipeline(registries: Readonly<WgpuRenderRegistries>): WgpuPipeline {
-  const pipeline = allocateEntity<WgpuRenderRegistries>();
+  const pipeline = allocateEntity<WgpuPipeline>();
   pipeline.registries = registries;
   pipeline[EntityRuntimeKey] = { binding: null };
   return pipeline;

@@ -24,7 +24,7 @@ export function createSpritesheetAnimationData(obj?: Partial<SpritesheetAnimatio
 }
 
 export function createSpritesheetData(obj?: Partial<SpritesheetData>): SpritesheetData {
-  const out = allocateEntity<SpritesheetAnimationData>();
+  const out = allocateEntity<SpritesheetData>();
   out.animations = obj?.animations ?? [];
   out.frames = obj?.frames ?? [];
   out.imageFile = obj?.imageFile ?? '';
@@ -35,7 +35,7 @@ export function createSpritesheetData(obj?: Partial<SpritesheetData>): Spriteshe
 }
 
 export function createSpritesheetFrameData(obj?: Partial<SpritesheetFrameData>): SpritesheetFrameData {
-  const out = allocateEntity<SpritesheetAnimationData>();
+  const out = allocateEntity<SpritesheetFrameData>();
   out.height = obj?.height ?? 0;
   out.name = obj?.name ?? '';
   out.offsetX = obj?.offsetX ?? 0;

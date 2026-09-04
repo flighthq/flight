@@ -32,7 +32,7 @@ export function createWebWgpuHostBackend(): WgpuHostBackend {
         const format = options.format ?? gpu.getPreferredCanvasFormat();
         const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
         if (context === null) throw new Error('Failed to get WebGPU canvas context.');
-        const out = allocateEntity<WgpuHostBackend>();
+        const out = allocateEntity<WgpuHostAcquisition>();
         out.context = context;
         out.device = device;
         out.format = format;

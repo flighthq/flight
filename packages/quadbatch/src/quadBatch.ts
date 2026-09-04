@@ -14,6 +14,7 @@ import type {
   QuadBatchSignals,
   QuadTransformType,
   Rectangle,
+  TintMaterialData,
   Vector2Like,
 } from '@flighthq/types/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
@@ -193,7 +194,7 @@ export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBat
 }
 
 export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
-  const out = allocateEntity<QuadBatch>();
+  const out = allocateEntity<QuadBatchData>();
   out.atlas = data?.atlas ?? null;
   out.ids = data?.ids ?? new Uint16Array();
   out.instanceCount = data?.instanceCount ?? 0;
@@ -211,7 +212,7 @@ export function createQuadBatchRuntime(): QuadBatchRuntime {
 }
 
 export function createQuadBatchSignals(): QuadBatchSignals {
-  const out = allocateEntity<QuadBatch>();
+  const out = allocateEntity<QuadBatchSignals>();
   out.onCleared = createSignal();
   out.onInstanceAppended = createSignal();
   out.onInstanceRemoved = createSignal();
@@ -536,7 +537,7 @@ export function setQuadBatchInstanceTint(target: QuadBatch, index: number, rgba:
   if (index < 0 || index >= data.instanceCount) return;
   if (data.materialData === null) data.materialData = new Array(data.instanceCount).fill(null);
   data.materialData[index] = (() => {
-    const out = allocateEntity<number>();
+    const out = allocateEntity<TintMaterialData>();
     out.tint = rgba >>> 0;
     return finishEntity(out);
   })();

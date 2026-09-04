@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
   SoftKeyboardChangeBackend,
@@ -8,62 +8,59 @@ import type {
   SoftKeyboardVisibilityBackend,
   SoftKeyboardVisibilityResult,
 } from '@flighthq/types/contract';
-import type { EntityRuntimeKey } from '@flighthq/types/contract';
-
-type OmitRuntime<T> = Omit<T, typeof EntityRuntimeKey>;
 
 export function createWebSoftKeyboardChangeBackend(): SoftKeyboardChangeBackend & Entity {
-  return createEntity({
-    async subscribe(listener: () => void): Promise<SoftKeyboardChangeSubscription> {
-      if (typeof window === 'undefined') return { result: 'acquisition-failed', unsubscribe: null };
-      const virtualKeyboard = getVirtualKeyboard();
-      if (virtualKeyboard !== null) {
-        virtualKeyboard.addEventListener('geometrychange', listener);
-        return { result: 'ok', unsubscribe: () => virtualKeyboard.removeEventListener('geometrychange', listener) };
-      }
-      const viewport = window.visualViewport;
-      if (viewport === undefined || viewport === null) return { result: 'acquisition-failed', unsubscribe: null };
-      viewport.addEventListener('resize', listener);
-      viewport.addEventListener('scroll', listener);
-      return {
-        result: 'ok',
-        unsubscribe: () => {
-          viewport.removeEventListener('resize', listener);
-          viewport.removeEventListener('scroll', listener);
-        },
-      };
-    },
-  } satisfies OmitRuntime<SoftKeyboardChangeBackend>);
+  const out = allocateEntity<SoftKeyboardChangeBackend>();
+  out.subscribe = async (listener: () => void): Promise<SoftKeyboardChangeSubscription> => {
+    if (typeof window === 'undefined') return { result: 'acquisition-failed', unsubscribe: null };
+    const virtualKeyboard = getVirtualKeyboard();
+    if (virtualKeyboard !== null) {
+      virtualKeyboard.addEventListener('geometrychange', listener);
+      return { result: 'ok', unsubscribe: () => virtualKeyboard.removeEventListener('geometrychange', listener) };
+    }
+    const viewport = window.visualViewport;
+    if (viewport === undefined || viewport === null) return { result: 'acquisition-failed', unsubscribe: null };
+    viewport.addEventListener('resize', listener);
+    viewport.addEventListener('scroll', listener);
+    return {
+      result: 'ok',
+      unsubscribe: () => {
+        viewport.removeEventListener('resize', listener);
+        viewport.removeEventListener('scroll', listener);
+      },
+    };
+  };
+  return finishEntity(out);
 }
 export function createWebSoftKeyboardInfoBackend(): SoftKeyboardInfoBackend & Entity {
-  return createEntity({
-    getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo {
-      const geo = getWebKeyboardGeometry();
-      out.height = geo.height;
-      out.visible = geo.height > 0;
-      out.x = geo.x;
-      out.y = geo.y;
-      out.width = geo.width;
-      return out;
-    },
-  } satisfies OmitRuntime<SoftKeyboardInfoBackend>);
+  const out = allocateEntity<SoftKeyboardInfoBackend>();
+  out.getInfo = (target: SoftKeyboardInfo): SoftKeyboardInfo => {
+    const geo = getWebKeyboardGeometry();
+    target.height = geo.height;
+    target.visible = geo.height > 0;
+    target.x = geo.x;
+    target.y = geo.y;
+    target.width = geo.width;
+    return target;
+  };
+  return finishEntity(out);
 }
 
 export function createWebSoftKeyboardVisibilityBackend(): SoftKeyboardVisibilityBackend & Entity {
-  return createEntity({
-    async show(): Promise<SoftKeyboardVisibilityResult> {
-      const vk = getVirtualKeyboard();
-      if (vk === null) return 'operation-failed';
-      vk.show();
-      return 'ok';
-    },
-    async hide(): Promise<SoftKeyboardVisibilityResult> {
-      const vk = getVirtualKeyboard();
-      if (vk === null) return 'operation-failed';
-      vk.hide();
-      return 'ok';
-    },
-  } satisfies OmitRuntime<SoftKeyboardVisibilityBackend>);
+  const out = allocateEntity<SoftKeyboardVisibilityBackend>();
+  out.show = async (): Promise<SoftKeyboardVisibilityResult> => {
+    const vk = getVirtualKeyboard();
+    if (vk === null) return 'operation-failed';
+    vk.show();
+    return 'ok';
+  };
+  out.hide = async (): Promise<SoftKeyboardVisibilityResult> => {
+    const vk = getVirtualKeyboard();
+    if (vk === null) return 'operation-failed';
+    vk.hide();
+    return 'ok';
+  };
+  return finishEntity(out);
 }
 
 interface VirtualKeyboard extends EventTarget {

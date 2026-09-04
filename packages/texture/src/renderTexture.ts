@@ -21,7 +21,7 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
     flipY: options.flipY ?? false,
     dimension: '2d',
     source: (() => {
-      const out = allocateEntity<RenderTexture>();
+      const out = allocateEntity<RenderTarget>();
       out.colorAttachments = options.colorAttachments;
       out.colorFormats = options.colorFormats;
       out.colorSpace = colorSpace;

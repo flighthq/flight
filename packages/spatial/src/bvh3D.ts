@@ -40,7 +40,7 @@ import { reportSpatialIndexing } from './spatialIndexingGuard';
 // same intuition.
 export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): SpatialIndexBackend3D & Entity {
   const tree = createBvh3D(margin);
-  const out = allocateEntity<SpatialIndexBackend3D>();
+  const out = allocateEntity<SpatialIndexBackend3D & Entity>();
   out.clearSpatialIndex = () => clearBvh3D(tree);
   out.explainSpatialIndexing = (id) => explainBvh3D(tree, id);
   out.insertSpatialObject = (id, bounds) => insertBvh3D(tree, id, bounds, 'insert');

@@ -48,21 +48,21 @@ export function createPhysics3DQueryFilter(): NonEntityCreateResult<Physics3DQue
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
 // rewrite them and publish only `hitCount`, so picking can run each frame without garbage.
 export function createPhysics3DQueryResult(): Physics3DQueryResult {
-  const out = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+  const out = allocateEntity<Physics3DQueryResult>();
   out.hits = [];
   out.hitCount = 0;
   return finishEntity(out);
 }
 
 export function createPhysics3DRayResult(): Physics3DRayResult {
-  const out = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+  const out = allocateEntity<Physics3DRayResult>();
   out.hits = [];
   out.hitCount = 0;
   return finishEntity(out);
 }
 
 export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
-  const out = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+  const out = allocateEntity<Physics3DShapeCastResult>();
   out.body = null;
   out.collider = null;
   out.colliderIndex = -1;
@@ -556,7 +556,7 @@ function releasePhysics3DQueryScratch(scratch: Physics3DQueryScratch): void {
 
 // A stand-in collider so a bare shape can reuse `writePhysics3DColliderBounds`. Only `world` is read by
 // that function; the rest is filled to keep the object one shape rather than a partial.
-const shapeCastProbe = allocateEntity<NonEntityCreateResult<Physics3DQueryFilter, 'options'>>();
+const shapeCastProbe = allocateEntity<Physics3DCollider>();
 shapeCastProbe.filter = { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff };
 shapeCastProbe.local = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
 shapeCastProbe.material = { density: 0, friction: 0, restitution: 0 };

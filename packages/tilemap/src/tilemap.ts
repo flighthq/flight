@@ -11,6 +11,7 @@ import type {
   TilemapData,
   TilemapRuntime,
   TilemapSignals,
+  TintMaterialData,
   Vector2Like,
 } from '@flighthq/types/contract';
 import { TilemapKind } from '@flighthq/types/contract';
@@ -58,7 +59,7 @@ export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
 export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
   const columns = data?.columns ?? 0;
   const rows = data?.rows ?? 0;
-  const out = allocateEntity<Tilemap>();
+  const out = allocateEntity<TilemapData>();
   out.atlas = data?.atlas ?? null;
   out.columns = columns;
   out.materialData = data?.materialData ?? null;
@@ -74,7 +75,7 @@ export function createTilemapRuntime(): TilemapRuntime {
 }
 
 export function createTilemapSignals(): TilemapSignals {
-  const out = allocateEntity<Tilemap>();
+  const out = allocateEntity<TilemapSignals>();
   out.onCleared = createSignal();
   out.onTileChanged = createSignal();
   out.onTilesChanged = createSignal();
@@ -240,7 +241,7 @@ export function setTilemapTileTint(tilemap: Tilemap, column: number, row: number
   if (column < 0 || column >= data.columns || row < 0 || row >= data.rows) return;
   if (data.materialData === null) data.materialData = new Array(data.columns * data.rows).fill(null);
   data.materialData[row * data.columns + column] = (() => {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<TintMaterialData>();
     out.tint = rgba >>> 0;
     return finishEntity(out);
   })();

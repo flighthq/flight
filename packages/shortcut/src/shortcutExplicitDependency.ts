@@ -88,7 +88,7 @@ export function createGlobalShortcut(
   return {
     reason: 'created',
     shortcut: (() => {
-      const out = allocateEntity<NonEntityCreateResult<CreateGlobalShortcutOutcome, 'descriptor'>>();
+      const out = allocateEntity<GlobalShortcut>();
       out.accelerator = formatParsedAccelerator(outcome);
       out.onTrigger = createSignal();
       return finishEntity(out);

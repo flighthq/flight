@@ -44,7 +44,7 @@ export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: numb
   const { width, height, data } = source;
   if (width === 0 || height === 0)
     return (() => {
-      const out = allocateEntity<number>();
+      const out = allocateEntity<BitmapFingerprint>();
       out.gridSize = gridSize;
       out.cells = cells;
       return finishEntity(out);

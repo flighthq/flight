@@ -11,7 +11,7 @@ export function createCanvasPipeline(registries: Readonly<CanvasRenderRegistries
 }
 
 export function createEmptyCanvasRegistries(): CanvasRenderRegistries {
-  const out = allocateEntity<CanvasPipeline>();
+  const out = allocateEntity<CanvasRenderRegistries>();
   out.renderEffects = createKeyedTable('CanvasRenderEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
   out.strokeTessellator = createSlotTable('StrokeTessellator', 'Rasterize');

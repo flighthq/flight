@@ -28,7 +28,7 @@ export function createScale9ShapeData(
   scale9Grid: Readonly<RectangleLike>,
   data?: Readonly<Partial<Scale9ShapeData>>,
 ): Scale9ShapeData {
-  const out = allocateEntity<Scale9Shape>();
+  const out = allocateEntity<Scale9ShapeData>();
   out.commands = data?.commands ?? [];
   out.scale9Grid = scale9Grid;
   return finishEntity(out);

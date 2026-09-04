@@ -30,7 +30,7 @@ export function acquireGlShapeRasterSurface(
 // Shared by all three shape strategies so a node keeps one cache whichever one draws it. Both halves
 // start empty: nothing is allocated until a strategy needs it.
 export function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
-  const out = allocateEntity<RendererData>();
+  const out = allocateEntity<GlShapeRendererData>();
   out.surface = null;
   out.lastContentId = -1;
   out.lastPixelRatio = 0;

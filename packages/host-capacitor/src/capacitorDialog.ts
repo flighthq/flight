@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CapacitorApi,
-  EntityWithoutRuntime,
   MessageDialogBackend,
   PromptDialogBackend,
 } from '@flighthq/types/contract';
@@ -33,7 +32,7 @@ export function createCapacitorMessageDialogBackend(capacitor: CapacitorApi): Me
 
 export function createCapacitorPromptDialogBackend(capacitor: CapacitorApi): PromptDialogBackend {
   const dialog = capacitor.dialog;
-    const out = allocateEntity<MessageDialogBackend>();
+    const out = allocateEntity<PromptDialogBackend>();
   out.prompt = async (options) => {
       if (options.signal?.aborted) return null;
       const result = await dialog.prompt({

@@ -1,6 +1,7 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type {
+  Entity,
   HasTrayLifecycle,
   HostTrayCapabilities,
   MenuItemTemplate,
@@ -77,7 +78,7 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
   try {
     result = await host.tray.lifecycle.create(tray, options);
   } catch (error) {
-    const out = allocateEntity<TrayCreateResult<TrayIconForHost<HostType>>>();
+    const out = allocateEntity<Entity & { error?: unknown; outcome: 'tray-create-failed' }>();
     out.error = error;
     out.outcome = 'tray-create-failed' as const;
     return finishEntity(out);
@@ -98,7 +99,7 @@ export async function createTrayIcon<HostType extends HasTrayLifecycle>(
   runtime.releases = new Set();
   runtime.state = 'active';
   tray[EntityRuntimeKey] = runtime;
-  const out = allocateEntity<TrayCreateResult<TrayIconForHost<HostType>>>();
+  const out = allocateEntity<Entity & { outcome: 'created'; tray: TrayIconForHost<HostType> }>();
   out.outcome = 'created' as const;
   out.tray = tray;
   return finishEntity(out);

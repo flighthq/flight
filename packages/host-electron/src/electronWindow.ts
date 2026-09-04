@@ -19,7 +19,7 @@ import type {
 export function createElectronWindowBackend(
   electron: ElectronApi,
 ): WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>> {
-  const out = allocateEntity<WindowBackend>();
+  const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
   out.attach = (win, handle, ownership) => {
     if (!isElectronBrowserWindow(handle)) return false;
     return attachElectronWindow(win, handle, ownership);

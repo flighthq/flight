@@ -475,7 +475,7 @@ function readFlightDocumentText(text: FlightDocumentText): FlightDocumentTextRea
     return {
       document: null,
       refusal: (() => {
-        const out = allocateEntity<FlightDocumentText>();
+        const out = allocateEntity<FlightDocumentRefusalExplanation>();
         out.actual = parsed.actual;
         out.column = parsed.column;
         out.kind = null;

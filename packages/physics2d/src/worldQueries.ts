@@ -41,14 +41,14 @@ export function createPhysics2DQueryFilter(): NonEntityCreateResult<Physics2DQue
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
 // rewrite them and publish only `hitCount`, so pointer picking can run each frame without garbage.
 export function createPhysics2DQueryResult(): Physics2DQueryResult {
-  const out = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+  const out = allocateEntity<Physics2DQueryResult>();
   out.hits = [];
   out.hitCount = 0;
   return finishEntity(out);
 }
 
 export function createPhysics2DRayResult(): Physics2DRayResult {
-  const out = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+  const out = allocateEntity<Physics2DRayResult>();
   out.hits = [];
   out.hitCount = 0;
   return finishEntity(out);
@@ -56,7 +56,7 @@ export function createPhysics2DRayResult(): Physics2DRayResult {
 
 // A reusable shape-cast result, starting as a miss.
 export function createPhysics2DShapeCastResult(): Physics2DShapeCastResult {
-  const out = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+  const out = allocateEntity<Physics2DShapeCastResult>();
   out.body = null;
   out.collider = null;
   out.colliderIndex = -1;
@@ -496,7 +496,7 @@ const physics2DQueryScratchPool: Physics2DQueryScratch[] = [createPhysics2DQuery
 // A stand-in collider so a bare shape can reuse the collider bounds writer. Its `world` shape is REBOUND
 // per call rather than copied, so this never retains the caller's shape past the call, and its material
 // and filter are never read on this path.
-const shapeCastProbe = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+const shapeCastProbe = allocateEntity<Physics2DCollider>();
 shapeCastProbe.local = { kind: 'point', x: 0, y: 0 };
 shapeCastProbe.world = { kind: 'point', x: 0, y: 0 };
 shapeCastProbe.material = { density: 0, friction: 0, restitution: 0 };

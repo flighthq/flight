@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
+  Entity,
   MenuItemTemplate,
   Signal,
   TauriApi,
@@ -13,8 +14,16 @@ import type {
   TauriTrayCapabilitiesFor,
   TrayIcon,
   TrayIconOptions,
+  TrayImageBackend,
   TrayInteractionEvent,
+  TrayInteractionEventsBackend,
+  TrayLifecycleBackend,
+  TrayMenuBackend,
   TrayMenuSelectionEvent,
+  TrayMenuSelectionEventsBackend,
+  TrayTemplateImageBackend,
+  TrayTitleBackend,
+  TrayTooltipBackend,
 } from '@flighthq/types/contract';
 
 interface TrayRecord {
@@ -37,7 +46,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   const records = new Map<TrayIcon, TrayRecord>();
 
   const lifecycle = (() => {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    const out = allocateEntity<TrayLifecycleBackend>();
     out.create = async (tray: TrayIcon, options: Readonly<TrayIconOptions>) => {
       if (options.signal?.aborted) return { outcome: 'cancelled' as const };
       const interactionEvents = createSignal<(event: Readonly<TrayInteractionEvent>) => void>();
@@ -112,7 +121,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   })();
 
   const image = (() => {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    const out = allocateEntity<TrayImageBackend>();
     out.set = async (tray: TrayIcon, icon: string) => {
       return update(records, tray, 'image-update-failed', async (record) => record.icon.setIcon(icon));
     };
@@ -120,7 +129,7 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   })();
 
   const menu = (() => {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    const out = allocateEntity<TrayMenuBackend>();
     out.set = async (tray: TrayIcon, items: readonly MenuItemTemplate[]) => {
       const record = activeRecord(records, tray);
       if (record === null) return { outcome: 'tray-destroyed' as const };
@@ -190,11 +199,11 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
     image,
     lifecycle,
     menu,
-    menuSelectionEvents: (() => { const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>(); out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null; return finishEntity(out); })(),
+    menuSelectionEvents: (() => { const out = allocateEntity<TrayMenuSelectionEventsBackend>(); out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.menuSelectionEvents ?? null; return finishEntity(out); })(),
   };
 
   const title = (() => {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    const out = allocateEntity<TrayTitleBackend>();
     out.get = async (tray: TrayIcon) => {
       const record = activeRecord(records, tray);
       return record === null
@@ -210,22 +219,23 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   })();
 
   if (profile === 'linux') {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
-    out.image = common.image;
-    out.lifecycle = common.lifecycle;
-    out.menu = common.menu;
-    out.menuSelectionEvents = common.menuSelectionEvents;
-    out.title = title;
+    // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
+    const out = allocateEntity<Entity>();
+    (out as any).image = common.image;
+    (out as any).lifecycle = common.lifecycle;
+    (out as any).menu = common.menu;
+    (out as any).menuSelectionEvents = common.menuSelectionEvents;
+    (out as any).title = title;
     return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
 
   const interactionEvents = (() => {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    const out = allocateEntity<TrayInteractionEventsBackend>();
     out.getSignal = (tray: TrayIcon) => activeRecord(records, tray)?.interactionEvents ?? null;
     return finishEntity(out);
   })();
   const tooltip = (() => {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+    const out = allocateEntity<TrayTooltipBackend>();
     out.get = async (tray: TrayIcon) => {
       const record = activeRecord(records, tray);
       return record === null
@@ -243,33 +253,33 @@ export function createTauriTrayCapabilities<Profile extends DesktopOsProfile>(
   })();
 
   if (profile === 'windows') {
-    const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
-    out.image = common.image;
-    out.lifecycle = common.lifecycle;
-    out.menu = common.menu;
-    out.menuSelectionEvents = common.menuSelectionEvents;
-    out.interactionEvents = interactionEvents;
-    out.tooltip = tooltip;
+    // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
+    const out = allocateEntity<Entity>();
+    (out as any).image = common.image;
+    (out as any).lifecycle = common.lifecycle;
+    (out as any).menu = common.menu;
+    (out as any).menuSelectionEvents = common.menuSelectionEvents;
+    (out as any).interactionEvents = interactionEvents;
+    (out as any).tooltip = tooltip;
     return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
-  // The double cast is what a generic conditional return costs; allocateEntity/finishEntity is what
-  // makes the Entity arm of that claim true at runtime rather than only in the annotation.
-  const templateImageEntity = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
+  const templateImageEntity = allocateEntity<TrayTemplateImageBackend>();
   templateImageEntity.set = async (tray: TrayIcon, isTemplate: boolean) => {
     return update(records, tray, 'template-image-update-failed', async (record) =>
       record.icon.setIconAsTemplate(isTemplate),
     );
   };
   const templateImage = finishEntity(templateImageEntity);
-  const out = allocateEntity<TauriTrayCapabilitiesFor<Profile>>();
-  out.image = common.image;
-  out.lifecycle = common.lifecycle;
-  out.menu = common.menu;
-  out.menuSelectionEvents = common.menuSelectionEvents;
-  out.interactionEvents = interactionEvents;
-  out.templateImage = templateImage;
-  out.title = title;
-  out.tooltip = tooltip;
+  // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
+  const out = allocateEntity<Entity>();
+  (out as any).image = common.image;
+  (out as any).lifecycle = common.lifecycle;
+  (out as any).menu = common.menu;
+  (out as any).menuSelectionEvents = common.menuSelectionEvents;
+  (out as any).interactionEvents = interactionEvents;
+  (out as any).templateImage = templateImage;
+  (out as any).title = title;
+  (out as any).tooltip = tooltip;
   return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
 }
 

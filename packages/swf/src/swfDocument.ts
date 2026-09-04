@@ -2754,7 +2754,7 @@ function appendSwfStreamSoundCue(
   const resource = createAudioResource();
   state.streamSounds.push({ bytes, mimeType: 'audio/mpeg', resource });
   const cue = (() => {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<TimelineStreamAudioCue>();
     out.frame = startFrame;
     out.gain = 1;
     out.kind = TimelineStreamAudioCueKind;
@@ -2832,7 +2832,7 @@ function readSwfSoundInfo(body: SwfReader): SwfSoundInfo | null {
 // Builds the cue one trigger becomes. A stop names the sound to silence and nothing else: every play field
 // SOUNDINFO carries alongside it describes a playback being ended rather than started.
 function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource: AudioResource): TimelineAudioCue {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<TimelineAudioCue>();
   out.duration = info.stop || info.outPointSamples < 0 ? null : info.outPointSamples;
   out.envelope = info.stop ? [] : info.envelope;
   out.frame = frame;

@@ -52,7 +52,7 @@ function collectRiveSlots(
     const target = artboards[nested];
     slots.push(
       (() => {
-        const out = allocateEntity<DisplayObject>();
+        const out = allocateEntity<Scene2DSlotReference>();
         out.content = null;
         out.linkage = target === undefined ? null : target.name;
         out.name = node.name !== null && node.name !== '' ? node.name : (target?.name ?? '');
@@ -120,7 +120,7 @@ export function createScene2DDocumentFromRiveDocument(
   const root = createDisplayObject({ name: 'Rive' });
   for (const artboard of imported.artboards) addNodeChild(root, artboard.root);
 
-  const out = allocateEntity<DisplayObject>();
+  const out = allocateEntity<RiveScene2DDocumentResult>();
   out.imageResources = createRiveImageResources(imported, diagnostics);
   out.imported = imported;
   out.root = root;

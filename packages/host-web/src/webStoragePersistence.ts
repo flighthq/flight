@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   PermissionState,
+  StoragePersistenceQueryBackend,
+  StoragePersistenceRequestBackend,
   StoragePersistenceResult,
   WebWindowStoragePersistenceApi,
   WebWindowStoragePersistenceCapabilities,
@@ -11,7 +13,7 @@ import type {
 export function createWebWindowStoragePersistenceCapabilities(
   api: Readonly<WebWindowStoragePersistenceApi>,
 ): WebWindowStoragePersistenceCapabilities {
-  const persistenceRequest = allocateEntity<WebWindowStoragePersistenceCapabilities>();
+  const persistenceRequest = allocateEntity<StoragePersistenceRequestBackend>();
   persistenceRequest.requestPersistence = async (): Promise<StoragePersistenceResult> => {
       const outcome = await observePersistenceOutcome(() => api.persist());
       const permissionState = await observePermissionState(() => api.getPermissionState());
@@ -29,13 +31,13 @@ export function createWebWindowStoragePersistenceCapabilities(
 export function createWebWorkerStoragePersistenceCapabilities(
   api: Readonly<WebWorkerStoragePersistenceApi>,
 ): WebWorkerStoragePersistenceCapabilities {
-  const capabilities = allocateEntity<WebWindowStoragePersistenceCapabilities>();
+  const capabilities = allocateEntity<WebWorkerStoragePersistenceCapabilities>();
   capabilities.persistenceQuery = createPersistenceQueryBackend(api);
   return capabilities;
 }
 
 function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistenceApi>) {
-  const backend = allocateEntity<WebWindowStoragePersistenceCapabilities>();
+  const backend = allocateEntity<StoragePersistenceQueryBackend>();
   backend.getPersistence = async (): Promise<StoragePersistenceResult> => {
       const outcome = await observePersistenceOutcome(() => api.persisted());
       const permissionState = await observePermissionState(() => api.getPermissionState());

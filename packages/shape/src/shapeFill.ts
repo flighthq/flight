@@ -140,7 +140,7 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
         color = commands[a] as number;
         alpha = commands[a + 1] as number;
         path = (() => {
-          const out = allocateEntity<void>();
+          const out = allocateEntity<Path>();
           out.commands = [] as number[];
           out.data = [] as number[];
           out.winding = winding;

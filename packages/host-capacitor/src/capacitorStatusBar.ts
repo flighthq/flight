@@ -12,6 +12,13 @@ import type {
   StatusBarVisibilityBackend,
 } from '@flighthq/types/contract';
 
+type CapacitorStatusBarBackend = Entity &
+  StatusBarColorBackend &
+  StatusBarInfoBackend &
+  StatusBarOverlaysBackend &
+  StatusBarStyleBackend &
+  StatusBarVisibilityBackend;
+
 // Maps Flight's narrow status-bar capabilities onto Capacitor's `@capacitor/status-bar`. Setters are async and fire
 // fire-and-forget: setStyle, setBackgroundColor (a packed RGBA int → a `#RRGGBB` hex string, dropping
 // alpha the plugin ignores), setVisible (→ show/hide), and setOverlaysContent (→ setOverlaysWebView).
@@ -37,7 +44,7 @@ export function createCapacitorStatusBarBackend(
     .catch(() => {
       /* leave null → defaults */
     });
-    const out = allocateEntity<Entity>();
+    const out = allocateEntity<CapacitorStatusBarBackend>();
   out.getInfo = (out: StatusBarInfo): StatusBarInfo => {
       const info = cachedInfo;
       out.color = info?.color !== undefined ? hexToRgba(info.color) : 0;

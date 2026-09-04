@@ -135,7 +135,7 @@ export function enableWebSafeAreaInsets(): () => void {
 
   function readInsets(): void {
     const style = getComputedStyle(el);
-        const _entity = allocateEntity<DeviceBackend>();
+        const _entity = allocateEntity<SafeAreaInsets>();
     _entity.bottom = parseFloat(style.bottom) || 0;
     _entity.left = parseFloat(style.left) || 0;
     _entity.right = parseFloat(style.right) || 0;

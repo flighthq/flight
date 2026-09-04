@@ -59,7 +59,7 @@ export function createBitmapText(glyphSource: GlyphSource | null, options?: Read
 }
 
 export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): BitmapTextData {
-  const out = allocateEntity<BitmapText>();
+  const out = allocateEntity<BitmapTextData>();
   out.align = data?.align ?? 'left';
   out.glyphSource = data?.glyphSource ?? null;
   out.letterSpacing = data?.letterSpacing ?? 0;
