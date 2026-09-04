@@ -1,4 +1,9 @@
-import { enableHostWebGlRenderSurface, webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web';
+import {
+  enableHostWebGlRenderSurface,
+  webCanvasRenderSurfaceCreator,
+  webGraphicsHost,
+  webRaster2DSurfaceProvider,
+} from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   scene2dGlPipeline,
@@ -72,6 +77,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     {
       pixelRatio,
       backgroundColor: options.background,
+      raster2DSurfaceProvider: webRaster2DSurfaceProvider,
       sceneGraphSyncPolicy: options.syncPolicy,
     },
   );

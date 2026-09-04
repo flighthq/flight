@@ -7,6 +7,7 @@ import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
   RenderProxy2D,
   Raster2DSurface,
+  Raster2DSurfaceProvider,
   RenderState,
   Renderable,
   RendererData,
@@ -36,10 +37,13 @@ interface WgpuScale9ShapeData extends RendererData {
   surface: Raster2DSurface | null;
 }
 
-export function acquireWgpuScale9ShapeRasterSurface(data: WgpuScale9ShapeData): Raster2DSurface | null {
+export function acquireWgpuScale9ShapeRasterSurface(
+  provider: Readonly<Raster2DSurfaceProvider>,
+  data: WgpuScale9ShapeData,
+): Raster2DSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createRaster2DSurface(1, 1);
+  const surface = createRaster2DSurface(provider, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
   return surface;
@@ -103,7 +107,8 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
-  const surface = acquireWgpuScale9ShapeRasterSurface(shapeData);
+  if (state.raster2DSurfaceProvider === null) return;
+  const surface = acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, shapeData);
   if (surface === null) return;
 
   if (

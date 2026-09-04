@@ -12,6 +12,7 @@ import type {
   Scene2DRenderer,
   GlRenderState,
   Raster2DSurface,
+  Raster2DSurfaceProvider,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -82,8 +83,9 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
+  if (state.raster2DSurfaceProvider === null) return;
   const textData = getGlTextLabelData(renderProxy.rendererData);
-  const surface = acquireGlTextLabelRasterSurface(textData);
+  const surface = acquireGlTextLabelRasterSurface(state.raster2DSurfaceProvider, textData);
   if (surface === null) return;
   const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
@@ -191,9 +193,12 @@ export const defaultGlTextLabelRenderer: Scene2DRenderer = {
   submit: drawGlTextLabel,
 };
 
-function acquireGlTextLabelRasterSurface(data: GlTextLabelData): Raster2DSurface | null {
+function acquireGlTextLabelRasterSurface(
+  provider: Readonly<Raster2DSurfaceProvider>,
+  data: GlTextLabelData,
+): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(1, 1);
+  const surface = createRaster2DSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

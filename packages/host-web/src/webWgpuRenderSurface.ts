@@ -2,8 +2,6 @@ import { createEntity } from '@flighthq/entity/contract';
 import { setWgpuRenderSurfaceProvider } from '@flighthq/render-wgpu/contract';
 import type { Entity, WgpuRenderSurfaceProvider } from '@flighthq/types/contract';
 
-import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
-
 let _enabled = false;
 
 export function createWebWgpuRenderSurfaceProvider(): WgpuRenderSurfaceProvider {
@@ -20,7 +18,6 @@ export function createWebWgpuRenderSurfaceProvider(): WgpuRenderSurfaceProvider 
 }
 
 export function enableHostWebWgpuRenderSurface(): void {
-  enableHostWebRaster2DSurface();
   if (_enabled) return;
   _enabled = true;
   setWgpuRenderSurfaceProvider(createWebWgpuRenderSurfaceProvider());

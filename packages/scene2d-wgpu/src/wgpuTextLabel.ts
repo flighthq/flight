@@ -10,6 +10,7 @@ import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@
 import type {
   Scene2DRenderer,
   Raster2DSurface,
+  Raster2DSurfaceProvider,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -82,9 +83,10 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
+  if (state.raster2DSurfaceProvider === null) return;
   const textData = getWgpuRendererData<WgpuTextLabelData>(renderProxy.rendererData);
   if (textData === null) return;
-  const surface = acquireWgpuTextLabelRasterSurface(textData);
+  const surface = acquireWgpuTextLabelRasterSurface(state.raster2DSurfaceProvider, textData);
   if (surface === null) return;
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const pixelRatio = state.pixelRatio;
@@ -196,9 +198,12 @@ export const defaultWgpuTextLabelRenderer: Scene2DRenderer = {
   submit: drawWgpuTextLabel,
 };
 
-function acquireWgpuTextLabelRasterSurface(data: WgpuTextLabelData): Raster2DSurface | null {
+function acquireWgpuTextLabelRasterSurface(
+  provider: Readonly<Raster2DSurfaceProvider>,
+  data: WgpuTextLabelData,
+): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(1, 1);
+  const surface = createRaster2DSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

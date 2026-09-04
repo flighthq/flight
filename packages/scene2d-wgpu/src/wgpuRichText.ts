@@ -18,6 +18,7 @@ import {
 import type {
   Scene2DRenderer,
   Raster2DSurface,
+  Raster2DSurfaceProvider,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -86,8 +87,8 @@ export function drawWgpuRichTextWithOverlay(
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
   const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
-  if (richData === null) return;
-  const surface = acquireWgpuRichTextRasterSurface(richData);
+  if (richData === null || state.raster2DSurfaceProvider === null) return;
+  const surface = acquireWgpuRichTextRasterSurface(state.raster2DSurfaceProvider, richData);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state, surface.context);
@@ -229,9 +230,12 @@ function layoutRichText(
   return result;
 }
 
-function acquireWgpuRichTextRasterSurface(data: WgpuRichTextData): Raster2DSurface | null {
+function acquireWgpuRichTextRasterSurface(
+  provider: Readonly<Raster2DSurfaceProvider>,
+  data: WgpuRichTextData,
+): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(1, 1);
+  const surface = createRaster2DSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

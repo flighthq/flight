@@ -1,4 +1,3 @@
-export { enableHostWeb } from './enableHostWeb';
 export { webApplicationExitBackend } from './webApplicationExit';
 export { createWebAccessibilityBackend, webAccessibilityBackend } from './webAccessibility';
 export { webAccessibilityHost } from './webAccessibilityHost';
@@ -71,7 +70,7 @@ export { webPowerCapabilities } from './webPower';
 export { webPowerHost } from './webPowerHost';
 export { createWebProtocolCapabilities } from './webProtocol';
 export { webProtocolHost } from './webProtocolHost';
-export { createWebRaster2DSurfaceProvider, enableHostWebRaster2DSurface } from './webRaster2DSurface';
+export { createWebRaster2DSurfaceProvider, webRaster2DSurfaceProvider } from './webRaster2DSurface';
 export { createWebScreenCapabilities, webScreenCapabilities } from './webScreen';
 export { webScreenHost } from './webScreenHost';
 export { webShareContentBackend, webShareFilesBackend } from './webShare';

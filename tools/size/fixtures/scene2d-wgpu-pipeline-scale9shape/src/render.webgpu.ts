@@ -1,7 +1,7 @@
 import {
-  createWebRaster2DSurfaceProvider,
   createWebWgpuRenderSurfaceProvider,
   webCanvasRenderSurfaceCreator,
+  webRaster2DSurfaceProvider,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -13,7 +13,6 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/render-wgpu';
 import { createEmptyWgpuRegistries } from '@flighthq/render-wgpu/contract';
-import { installRaster2DSurfaceHostProvider } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createCanvasShapeRasterizer, createCanvasTextureResolvers } from '@flighthq/scene2d-canvas';
 import {
@@ -26,7 +25,6 @@ import {
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 import { Scale9ShapeKind } from '@flighthq/types';
 
-installRaster2DSurfaceHostProvider(createWebRaster2DSurfaceProvider());
 const canvas = createWebWgpuRenderSurfaceProvider().createRenderSurface(320, 240, 1);
 if (canvas === null) throw new Error('The WebGPU Scale9Shape size fixture requires a canvas.');
 document.body.style.margin = '0';
@@ -41,6 +39,7 @@ const state = await createWgpuRenderStateFromCanvasElement(canvas, pipeline, {
   antialias: false,
   backgroundColor: 0x101522ff,
   pixelRatio: 1,
+  raster2DSurfaceProvider: webRaster2DSurfaceProvider,
 });
 registerWgpuShapeCommands(state, defaultWgpuShapeCommands);
 registerWgpuShapeRasterizer(

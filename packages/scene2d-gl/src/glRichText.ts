@@ -22,6 +22,7 @@ import type {
   GlRenderState,
   GlRichTextOverlay,
   Raster2DSurface,
+  Raster2DSurfaceProvider,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -80,9 +81,9 @@ export function drawGlRichTextWithOverlay(
   const content = getRichTextContent(richTextRuntime);
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
-  if (renderProxy.rendererData === null) return;
+  if (renderProxy.rendererData === null || state.raster2DSurfaceProvider === null) return;
   const richTextData = renderProxy.rendererData as GlRichTextData;
-  const surface = acquireGlRichTextRasterSurface(richTextData);
+  const surface = acquireGlRichTextRasterSurface(state.raster2DSurfaceProvider, richTextData);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, surface.context);
@@ -220,9 +221,12 @@ function layoutRichText(
   return result;
 }
 
-function acquireGlRichTextRasterSurface(data: GlRichTextData): Raster2DSurface | null {
+function acquireGlRichTextRasterSurface(
+  provider: Readonly<Raster2DSurfaceProvider>,
+  data: GlRichTextData,
+): Raster2DSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createRaster2DSurface(1, 1);
+  const surface = createRaster2DSurface(provider, 1, 1);
   if (surface !== null) data.surface = surface;
   return surface;
 }

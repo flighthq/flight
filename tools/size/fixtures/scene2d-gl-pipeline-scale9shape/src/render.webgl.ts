@@ -1,8 +1,8 @@
 import { createRectangle } from '@flighthq/geometry';
 import {
   createWebGlRenderSurfaceProvider,
-  enableHostWebRaster2DSurface,
   webCanvasRenderSurfaceCreator,
+  webRaster2DSurfaceProvider,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
@@ -30,7 +30,6 @@ import { RegistryEntryState, Scale9ShapeKind } from '@flighthq/types';
 
 const canvas = createWebGlRenderSurfaceProvider().createRenderSurface(400, 300, 1);
 if (canvas === null) throw new Error('The WebGL Scale9Shape size fixture requires a canvas render surface.');
-enableHostWebRaster2DSurface();
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
@@ -44,7 +43,7 @@ const state = createGlRenderState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
   pipeline,
-  { backgroundColor: 0x1a1a2eff, pixelRatio: 1 },
+  { backgroundColor: 0x1a1a2eff, pixelRatio: 1, raster2DSurfaceProvider: webRaster2DSurfaceProvider },
 );
 
 const registries = getGlPipelineRegistries(pipeline);

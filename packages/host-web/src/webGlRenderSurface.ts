@@ -2,8 +2,6 @@ import { createEntity } from '@flighthq/entity/contract';
 import { setGlRenderSurfaceProvider } from '@flighthq/render-gl/contract';
 import type { Entity, GlRenderSurfaceProvider } from '@flighthq/types/contract';
 
-import { enableHostWebRaster2DSurface } from './webRaster2DSurface';
-
 let _enabled = false;
 
 export function createWebGlRenderSurfaceProvider(): GlRenderSurfaceProvider {
@@ -20,7 +18,6 @@ export function createWebGlRenderSurfaceProvider(): GlRenderSurfaceProvider {
 }
 
 export function enableHostWebGlRenderSurface(): void {
-  enableHostWebRaster2DSurface();
   if (_enabled) return;
   _enabled = true;
   setGlRenderSurfaceProvider(createWebGlRenderSurfaceProvider());

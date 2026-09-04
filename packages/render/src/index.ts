@@ -10,7 +10,6 @@ export {
   disposeScene2DRender,
   enableRenderRegistryGuards,
   enableRenderRegistrySignals,
-  explainRaster2DSurfaceProvider,
   explainRenderRegistryMisses,
   packScene3DLightBlock,
   prepareScene2DRender,

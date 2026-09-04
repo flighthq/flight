@@ -1,8 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
-import type { GlShapeRendererData } from '@flighthq/types/contract';
+import type { GlShapeRendererData, Raster2DSurface, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -30,57 +29,65 @@ function emptyData(): GlShapeRendererData {
 
 beforeEach(() => {
   destroySurface.mockReset();
-  setRaster2DSurfaceProvider({
-    [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext('2d')!;
-      return {
-        [EntityRuntimeKey]: undefined,
-        get width() {
-          return canvas.width;
-        },
-        set width(value) {
-          canvas.width = value;
-        },
-        get height() {
-          return canvas.height;
-        },
-        set height(value) {
-          canvas.height = value;
-        },
-        context,
-        image: createImageResource(canvas),
-      };
-    },
-    destroyRaster2DSurface: destroySurface,
-  });
 });
 
-afterEach(() => {
-  resetRaster2DSurfaceProviderForTest();
-});
+function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d')!;
+  return {
+    [EntityRuntimeKey]: undefined,
+    get width() {
+      return canvas.width;
+    },
+    set width(value) {
+      canvas.width = value;
+    },
+    get height() {
+      return canvas.height;
+    },
+    set height(value) {
+      canvas.height = value;
+    },
+    context,
+    image: createImageResource(canvas),
+  };
+}
+
+function createTestProvider(): Raster2DSurfaceProvider {
+  return createEntity({
+    createRaster2DSurface: createTestRaster2DSurface,
+    destroyRaster2DSurface: destroySurface,
+  });
+}
+
+function setTestRasterProvider(state: { raster2DSurfaceProvider: unknown }): void {
+  state.raster2DSurfaceProvider = createTestProvider();
+}
 
 describe('acquireGlShapeRasterSurface', () => {
   it('allocates once and returns the same surface thereafter', () => {
+    const provider = createTestProvider();
     const data = emptyData();
-    const first = acquireGlShapeRasterSurface(data);
+    const first = acquireGlShapeRasterSurface(provider, data);
     expect(data.surface).toBe(first);
-    expect(acquireGlShapeRasterSurface(data)).toBe(first);
+    expect(acquireGlShapeRasterSurface(provider, data)).toBe(first);
   });
 
   it('wraps the canvas as an Image so the quad batch treats it like any other texture source', () => {
-    const surface = acquireGlShapeRasterSurface(emptyData())!;
+    const surface = acquireGlShapeRasterSurface(createTestProvider(), emptyData())!;
     expect(surface.image.source).toBe(surface.context.canvas);
     expect('canvas' in surface).toBe(false);
   });
 
-  it('preserves expected absence without caching it when no provider is installed', () => {
-    resetRaster2DSurfaceProviderForTest();
+  it('preserves expected absence without caching it when the provider refuses', () => {
+    const provider = createEntity({
+      createRaster2DSurface: () => null,
+      destroyRaster2DSurface: destroySurface,
+    });
     const data = emptyData();
-    expect(acquireGlShapeRasterSurface(data)).toBeNull();
+    expect(acquireGlShapeRasterSurface(provider, data)).toBeNull();
     expect(data.surface).toBeNull();
   });
 });
@@ -107,7 +114,7 @@ describe('destroyGlShapeData', () => {
   it('frees the cached GPU texture before destroying the raster surface', () => {
     const { state, gl } = createGlState();
     const data = emptyData();
-    const surface = acquireGlShapeRasterSurface(data)!;
+    const surface = acquireGlShapeRasterSurface(createTestProvider(), data)!;
     const texture = {} as WebGLTexture;
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     cache.set(surface.image, { texture } as never);
@@ -129,7 +136,7 @@ describe('destroyGlShapeData', () => {
   it('destroys a raster surface even when it never acquired a GPU cache entry', () => {
     const { state } = createGlState();
     const data = emptyData();
-    const surface = acquireGlShapeRasterSurface(data)!;
+    const surface = acquireGlShapeRasterSurface(createTestProvider(), data)!;
 
     destroyGlShapeData(state, toGlShapeRendererData(data));
 

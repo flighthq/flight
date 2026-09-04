@@ -54,7 +54,8 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
   // raster is only sharper — no geometry moves with it.
   const version = getNodeLocalContentRevision(source);
   const pixelRatio = state.pixelRatio;
-  const surface = acquireWgpuShapeRasterSurface(shapeData);
+  if (state.raster2DSurfaceProvider === null) return;
+  const surface = acquireWgpuShapeRasterSurface(state.raster2DSurfaceProvider, shapeData);
   if (surface === null) return;
   if (
     version !== shapeData.lastContentId ||

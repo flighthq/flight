@@ -1,4 +1,4 @@
-import { createWebGlRenderSurfaceProvider, enableHostWebRaster2DSurface } from '@flighthq/host-web';
+import { createWebGlRenderSurfaceProvider, webRaster2DSurfaceProvider } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
@@ -18,7 +18,6 @@ import { RegistryEntryState, RichTextKind } from '@flighthq/types';
 
 const canvas = createWebGlRenderSurfaceProvider().createRenderSurface(400, 300, 1);
 if (canvas === null) throw new Error('The WebGL RichText size fixture requires a canvas render surface.');
-enableHostWebRaster2DSurface();
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
@@ -32,7 +31,7 @@ const state = createGlRenderState(
     createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
   ),
   pipeline,
-  { backgroundColor: 0x1a1a2eff, pixelRatio: 1 },
+  { backgroundColor: 0x1a1a2eff, pixelRatio: 1, raster2DSurfaceProvider: webRaster2DSurfaceProvider },
 );
 
 const registries = getGlPipelineRegistries(pipeline);

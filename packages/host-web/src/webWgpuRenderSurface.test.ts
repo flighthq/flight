@@ -1,9 +1,7 @@
 import { createEntity } from '@flighthq/entity/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
-import * as renderContract from '@flighthq/render/contract';
 
-import { resetHostWebRaster2DSurfaceForTest } from './webRaster2DSurface';
 import {
   createWebWgpuRenderSurfaceProvider,
   enableHostWebWgpuRenderSurface,
@@ -40,8 +38,6 @@ describe('createWebWgpuRenderSurfaceProvider', () => {
 describe('enableHostWebWgpuRenderSurface', () => {
   afterEach(() => {
     resetHostWebWgpuRenderSurfaceForTest();
-    resetHostWebRaster2DSurfaceForTest();
-    renderContract.resetRaster2DSurfaceProviderForTest();
     renderGlContract.resetGlRenderSurfaceProviderForTest();
     renderWgpuContract.resetWgpuRenderSurfaceProviderForTest();
     vi.restoreAllMocks();
@@ -50,7 +46,6 @@ describe('enableHostWebWgpuRenderSurface', () => {
   it('installs the Web provider into the WGPU-only slot', () => {
     expect(renderGlContract.createGlRenderSurface(80, 40, 2)).toBeNull();
     enableHostWebWgpuRenderSurface();
-    expect(renderContract.explainRaster2DSurfaceProvider().layer).toBe('host');
     const first = renderWgpuContract.createWgpuRenderSurface(80, 40, 2);
     const second = renderWgpuContract.createWgpuRenderSurface(80, 40, 2);
     expect(first).toBeInstanceOf(HTMLCanvasElement);
@@ -87,8 +82,6 @@ describe('enableHostWebWgpuRenderSurface', () => {
 describe('GL and WGPU surface provider independence', () => {
   afterEach(() => {
     resetHostWebWgpuRenderSurfaceForTest();
-    resetHostWebRaster2DSurfaceForTest();
-    renderContract.resetRaster2DSurfaceProviderForTest();
     renderGlContract.resetGlRenderSurfaceProviderForTest();
     renderWgpuContract.resetWgpuRenderSurfaceProviderForTest();
   });
@@ -140,8 +133,6 @@ describe('GL and WGPU surface provider independence', () => {
 describe('resetHostWebWgpuRenderSurfaceForTest', () => {
   afterEach(() => {
     resetHostWebWgpuRenderSurfaceForTest();
-    resetHostWebRaster2DSurfaceForTest();
-    renderContract.resetRaster2DSurfaceProviderForTest();
     renderWgpuContract.resetWgpuRenderSurfaceProviderForTest();
   });
 

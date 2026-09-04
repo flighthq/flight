@@ -1,4 +1,3 @@
-export * from './enableHostWeb';
 export * from './webAccessibility';
 export * from './webAccessibilityHost';
 export * from './webApplicationExit';
