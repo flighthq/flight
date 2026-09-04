@@ -1,16 +1,17 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   ResourceLoadBytes,
-  ResourceLoadCounts,
-  ResourceLoader,
-  ResourceLoaderItemSignals,
-  ResourceLoaderOptions,
   ResourceLoadBytesReporter,
+  ResourceLoadCounts,
   ResourceLoadHandle,
   ResourceLoadItem,
   ResourceLoadItemStatus,
   ResourceLoadReport,
+  ResourceLoader,
+  ResourceLoaderItemSignals,
+  ResourceLoaderOptions,
 } from '@flighthq/types/contract';
 
 // Internal key prefix for auto-assigned keys
@@ -185,33 +186,32 @@ export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>):
     opts.maxBytesPerSecond !== undefined && opts.maxBytesPerSecond > 0
       ? createTokenBucket(opts.maxBytesPerSecond)
       : null;
-  const out = createEntity({
-    cancelled: false,
-    dedupeMap: new Map(),
-    errorPolicy: opts.errorPolicy ?? 'continue',
-    generation: 0,
-    inFlight: new Set(),
-    itemCounter: 0,
-    itemSignals: null,
-    loaded: 0,
-    maxConcurrent: opts.maxConcurrent ?? 6,
-    onCancel: createSignal(),
-    onComplete: createSignal(),
-    onError: createSignal(),
-    onPause: createSignal(),
-    onProgress: createSignal(),
-    onResume: createSignal(),
-    options: opts,
-    paused: false,
-    pending: [],
-    reports: [],
-    started: false,
-    streaming: opts.streaming ?? false,
-    throttle,
-    total: 0,
-    totalWeight: 0,
-    weightLoaded: 0,
-  }) as ResourceLoaderInternal;
+  const out = allocateEntity<ResourceLoader>();
+  out.cancelled = false;
+  out.dedupeMap = new Map();
+  out.errorPolicy = opts.errorPolicy ?? 'continue';
+  out.generation = 0;
+  out.inFlight = new Set();
+  out.itemCounter = 0;
+  out.itemSignals = null;
+  out.loaded = 0;
+  out.maxConcurrent = opts.maxConcurrent ?? 6;
+  out.onCancel = createSignal();
+  out.onComplete = createSignal();
+  out.onError = createSignal();
+  out.onPause = createSignal();
+  out.onProgress = createSignal();
+  out.onResume = createSignal();
+  out.options = opts;
+  out.paused = false;
+  out.pending = [];
+  out.reports = [];
+  out.started = false;
+  out.streaming = opts.streaming ?? false;
+  out.throttle = throttle;
+  out.total = 0;
+  out.totalWeight = 0;
+  out.weightLoaded = 0;
   return out;
 }
 
@@ -235,12 +235,14 @@ export function disposeResourceLoader(loader: ResourceLoader): void {
 export function enableResourceLoaderItemSignals(loader: ResourceLoader): ResourceLoaderItemSignals {
   const internal = loader as ResourceLoaderInternal;
   if (internal.itemSignals === null) {
-    internal.itemSignals = createEntity({
-      onItemComplete: createSignal(),
-      onItemError: createSignal(),
-      onItemRetry: createSignal(),
-      onItemStart: createSignal(),
-    });
+    internal.itemSignals = (() => {
+      const out = allocateEntity<void>();
+      out.onItemComplete = createSignal();
+      out.onItemError = createSignal();
+      out.onItemRetry = createSignal();
+      out.onItemStart = createSignal();
+      return finishEntity(out);
+    })();
   }
   return internal.itemSignals;
 }

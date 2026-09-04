@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type { StatechartInstance, StatechartSignals } from '@flighthq/types/contract';
 
@@ -6,9 +6,11 @@ import type { StatechartInstance, StatechartSignals } from '@flighthq/types/cont
 // never on the immutable chart, so authored/imported state remains closure-free and serializable. This
 // module is separately tree-shakeable: count/read users do not pay for the signals runtime.
 export function enableStatechartSignals(instance: StatechartInstance): StatechartSignals {
-  return (instance.signals ??= createEntity({
-    onStateChange: createSignal(),
-  }));
+  return (instance.signals ??= (() => {
+    const out = allocateEntity<StatechartSignals>();
+    out.onStateChange = createSignal();
+    return finishEntity(out);
+  })());
 }
 
 // Read the optional observer group without allocating it. Returns null until enableStatechartSignals

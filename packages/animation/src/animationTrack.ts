@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AnimationInterpolation,
   AnimationTrack,
   AnimationTrackValidationDiagnostic,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { AnimationInterpolationLinear } from '@flighthq/types/contract';
 
@@ -10,15 +11,15 @@ import { AnimationInterpolationLinear } from '@flighthq/types/contract';
 // vs number[] backing) so the clone shares no mutable state with the source. Easing functions are
 // carried by reference; the segment-easing array itself is copied.
 export function cloneAnimationTrack(track: Readonly<AnimationTrack>): AnimationTrack {
-  return createEntity({
-    components: track.components,
-    easing: track.easing,
-    interpolation: track.interpolation,
-    quaternion: track.quaternion,
-    segmentEasings: track.segmentEasings === null ? null : track.segmentEasings.slice(),
-    times: cloneNumberBuffer(track.times),
-    values: cloneNumberBuffer(track.values),
-  });
+  const out = allocateEntity<unknown>();
+  out.components = track.components;
+  out.easing = track.easing;
+  out.interpolation = track.interpolation;
+  out.quaternion = track.quaternion;
+  out.segmentEasings = track.segmentEasings === null ? null : track.segmentEasings.slice();
+  out.times = cloneNumberBuffer(track.times);
+  out.values = cloneNumberBuffer(track.values);
+  return finishEntity(out);
 }
 
 // Allocates an AnimationTrack. `times` must be ascending; `values` is the flat keyframe buffer
@@ -33,15 +34,15 @@ export function createAnimationTrack(opts: {
   easing?: AnimationTrack['easing'];
   segmentEasings?: AnimationTrack['segmentEasings'];
 }): AnimationTrack {
-  return createEntity({
-    components: opts.components ?? 1,
-    easing: opts.easing ?? null,
-    interpolation: opts.interpolation ?? AnimationInterpolationLinear,
-    quaternion: opts.quaternion ?? false,
-    segmentEasings: opts.segmentEasings ?? null,
-    times: opts.times,
-    values: opts.values,
-  });
+  const out = allocateEntity<unknown>();
+  out.components = opts.components ?? 1;
+  out.easing = opts.easing ?? null;
+  out.interpolation = opts.interpolation ?? AnimationInterpolationLinear;
+  out.quaternion = opts.quaternion ?? false;
+  out.segmentEasings = opts.segmentEasings ?? null;
+  out.times = opts.times;
+  out.values = opts.values;
+  return finishEntity(out);
 }
 
 // Samples `track` at time `t`, writing `track.components` numbers into `out`. `t` is clamped to the
@@ -127,20 +128,20 @@ export function trimAnimationTrack(
     const off = k * stride;
     for (let c = 0; c < stride; c++) outValues.push(track.values[off + c]);
   }
-  return createEntity({
-    components,
-    easing: track.easing,
-    interpolation: track.interpolation,
-    quaternion: track.quaternion,
-    segmentEasings:
-      track.segmentEasings === null || sourceKeyframes.length < 2
-        ? track.segmentEasings === null
-          ? null
-          : []
-        : track.segmentEasings.slice(sourceKeyframes[0], sourceKeyframes[sourceKeyframes.length - 1]),
-    times: outTimes,
-    values: outValues,
-  });
+  const out = allocateEntity<unknown>();
+  out.components = components;
+  out.easing = track.easing;
+  out.interpolation = track.interpolation;
+  out.quaternion = track.quaternion;
+  out.segmentEasings =
+    track.segmentEasings === null || sourceKeyframes.length < 2
+      ? track.segmentEasings === null
+        ? null
+        : []
+      : track.segmentEasings.slice(sourceKeyframes[0], sourceKeyframes[sourceKeyframes.length - 1]);
+  out.times = outTimes;
+  out.values = outValues;
+  return finishEntity(out);
 }
 
 // Structurally validates a track, returning null when it is well-formed or an array of diagnostics

@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorScaleBias, ColorScaleBiasLike } from '@flighthq/types/contract';
 
 export function cloneColorScaleBias(source: Readonly<ColorScaleBiasLike>): ColorScaleBias {
@@ -47,16 +47,16 @@ export function copyColorScaleBiasToArrays(
 }
 
 export function createColorScaleBias(opts?: Readonly<Partial<ColorScaleBiasLike>>): ColorScaleBias {
-  return createEntity({
-    redScale: opts?.redScale ?? 1,
-    greenScale: opts?.greenScale ?? 1,
-    blueScale: opts?.blueScale ?? 1,
-    alphaScale: opts?.alphaScale ?? 1,
-    redBias: opts?.redBias ?? 0,
-    greenBias: opts?.greenBias ?? 0,
-    blueBias: opts?.blueBias ?? 0,
-    alphaBias: opts?.alphaBias ?? 0,
-  });
+  const out = allocateEntity<ColorScaleBias>();
+  out.redScale = opts?.redScale ?? 1;
+  out.greenScale = opts?.greenScale ?? 1;
+  out.blueScale = opts?.blueScale ?? 1;
+  out.alphaScale = opts?.alphaScale ?? 1;
+  out.redBias = opts?.redBias ?? 0;
+  out.greenBias = opts?.greenBias ?? 0;
+  out.blueBias = opts?.blueBias ?? 0;
+  out.alphaBias = opts?.alphaBias ?? 0;
+  return finishEntity(out);
 }
 
 export function equalsColorScaleBias(a: Readonly<ColorScaleBiasLike>, b: Readonly<ColorScaleBiasLike>): boolean {

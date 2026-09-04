@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { findRegistryCatalogEntries } from '@flighthq/registry-catalog/contract';
 import type {
   Entity,
+  EntityConstruction,
   RegistryCatalog,
   RegistryCatalogEntry,
   RegistryCodegenPlan,
@@ -33,7 +34,11 @@ export function createRegistryCodegenPlan(
     }
   }
 
-  return createEntity({ backend, entries, unresolved });
+  const out = allocateEntity<unknown>();
+  out.backend = backend;
+  out.entries = entries;
+  out.unresolved = unresolved;
+  return finishEntity(out);
 }
 
 function requirementIdentity(requirement: Readonly<Requirement>): string {

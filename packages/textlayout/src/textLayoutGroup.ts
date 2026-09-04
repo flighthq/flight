@@ -1,19 +1,19 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TextFormat, TextLayoutGroup } from '@flighthq/types/contract';
 
 export function createTextLayoutGroup(format: TextFormat, startIndex: number, endIndex: number): TextLayoutGroup {
-  return createEntity({
-    ascent: 0,
-    descent: 0,
-    endIndex,
-    format,
-    height: 0,
-    leading: 0,
-    lineIndex: 0,
-    offsetX: 0,
-    offsetY: 0,
-    positions: [],
-    startIndex,
-    width: 0,
-  });
+  const out = allocateEntity<TextLayoutGroup>();
+  out.ascent = 0;
+  out.descent = 0;
+  out.endIndex = endIndex;
+  out.format = format;
+  out.height = 0;
+  out.leading = 0;
+  out.lineIndex = 0;
+  out.offsetX = 0;
+  out.offsetY = 0;
+  out.positions = [];
+  out.startIndex = startIndex;
+  out.width = 0;
+  return finishEntity(out);
 }

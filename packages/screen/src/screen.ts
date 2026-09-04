@@ -1,6 +1,7 @@
-import { createEntity, stripEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity, stripEntityRuntime } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   HasScreenChange,
   HasScreenDetails,
   HasScreenPermissionChange,
@@ -34,49 +35,57 @@ export function attachScreenSignals(host: HasScreenChange, signals: ScreenSignal
 }
 
 export function createScreenInfo(): ScreenInfo {
-  return createEntity({
-    id: 0,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-    workWidth: 0,
-    workHeight: 0,
-    scaleFactor: 1,
-    isPrimary: false,
-    rotation: -1,
-    orientation: 'Landscape',
-    refreshRate: -1,
-    colorDepth: -1,
-    pixelDepth: -1,
-    physicalWidth: -1,
-    physicalHeight: -1,
-    isHdr: false,
-    colorSpace: 'srgb',
-    maxLuminance: -1,
-    depthPerComponent: -1,
-    dpi: -1,
-    label: '',
-    internal: false,
-    touchSupport: 'unknown',
-    monochrome: false,
-  });
+  const out = allocateEntity<ScreenInfo>();
+  out.id = 0;
+  out.x = 0;
+  out.y = 0;
+  out.width = 0;
+  out.height = 0;
+  out.workWidth = 0;
+  out.workHeight = 0;
+  out.scaleFactor = 1;
+  out.isPrimary = false;
+  out.rotation = -1;
+  out.orientation = 'Landscape';
+  out.refreshRate = -1;
+  out.colorDepth = -1;
+  out.pixelDepth = -1;
+  out.physicalWidth = -1;
+  out.physicalHeight = -1;
+  out.isHdr = false;
+  out.colorSpace = 'srgb';
+  out.maxLuminance = -1;
+  out.depthPerComponent = -1;
+  out.dpi = -1;
+  out.label = '';
+  out.internal = false;
+  out.touchSupport = 'unknown';
+  out.monochrome = false;
+  return finishEntity(out);
 }
 
 export function createScreenMode(): ScreenMode {
-  return createEntity({ width: 0, height: 0, refreshRate: -1, colorDepth: -1, pixelFormat: '' });
+  const out = allocateEntity<ScreenInfo>();
+  out.width = 0;
+  out.height = 0;
+  out.refreshRate = -1;
+  out.colorDepth = -1;
+  out.pixelFormat = '';
+  return finishEntity(out);
 }
 
 export function createScreenPermissionChange(): ScreenPermissionChange {
-  return createEntity({ onChange: createSignal() });
+  const out = allocateEntity<ScreenInfo>();
+  out.onChange = createSignal();
+  return finishEntity(out);
 }
 
 export function createScreenSignals(): ScreenSignals {
-  return createEntity({
-    onScreenAdded: createSignal(),
-    onScreenMetricsChanged: createSignal(),
-    onScreenRemoved: createSignal(),
-  });
+  const out = allocateEntity<ScreenInfo>();
+  out.onScreenAdded = createSignal();
+  out.onScreenMetricsChanged = createSignal();
+  out.onScreenRemoved = createSignal();
+  return finishEntity(out);
 }
 
 export function detachScreenPermissionChange(permissionChange: ScreenPermissionChange): void {

@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { FlowState, FlowStack } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { FlowStack, FlowState } from '@flighthq/types/contract';
 
 // Empty the stack, exiting every state top-to-bottom (`onExit` on the active top first, down to the
 // bottom) so each unwinds in reverse of the order it entered. No `onPause`/`onResume` fire — the
@@ -15,7 +15,9 @@ export function clearFlowStack(stack: FlowStack): void {
 // Allocate an empty flow-state stack. The only allocating function; every other stack function reads
 // or mutates an existing stack in place. Push states onto it to drive the enter/pause lifecycle.
 export function createFlowStack(): FlowStack {
-  return createEntity({ states: [] });
+  const out = allocateEntity<FlowStack>();
+  out.states = [];
+  return finishEntity(out);
 }
 
 // The active top of the stack — the state currently receiving `onUpdate` — or `null` if the stack is

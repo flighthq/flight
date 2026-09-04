@@ -1,19 +1,20 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   ColorScaleBias,
   CompressedImageResource,
+  EntityConstruction,
   HasColorScaleBias,
-  TextureSource,
   ImageResource,
-  Texture,
-  TextureColorSpace,
   RenderProxy,
   RenderProxy2D,
-  WgpuTextureSourceTextureEntry,
+  Texture,
+  TextureColorSpace,
+  TextureSource,
   WgpuRenderState,
   WgpuTextureEntry,
+  WgpuTextureSourceTextureEntry,
   WgpuVideoTextureEntry,
 } from '@flighthq/types/contract';
 import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
@@ -200,7 +201,11 @@ export function bindWgpuTexture(
   // No bind group is built here on purpose. Binding a sampler at upload time would capture whatever
   // `state.allowSmoothing` happened to be for the FIRST caller into an entry every later sharer reuses;
   // the sampler is chosen per draw instead, in resolveWgpuSmoothingBindGroup.
-  const entry: WgpuTextureEntry = createEntity({ bindings: new Map(), mipLevelCount, texture, view });
+  const entry = allocateEntity<WgpuTextureEntry>();
+  entry.bindings = new Map();
+  entry.mipLevelCount = mipLevelCount;
+  entry.texture = texture;
+  entry.view = view;
   runtime.context.textureCache.set(imageSource, entry);
   return entry;
 }
@@ -251,16 +256,18 @@ export function bindWgpuVideoTexture(
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
     const view = texture.createView();
-    entry = createEntity({
-      bindings: new Map(),
-      height,
-      mipLevelCount: 1,
-      sampler,
-      texture,
-      uploadedVersion: -1,
-      view,
-      width,
-    });
+    entry = (() => {
+      const out = allocateEntity<void>();
+      out.bindings = new Map();
+      out.height = height;
+      out.mipLevelCount = 1;
+      out.sampler = sampler;
+      out.texture = texture;
+      out.uploadedVersion = -1;
+      out.view = view;
+      out.width = width;
+      return finishEntity(out);
+    })();
     cache.set(image!, entry);
   } else if (entry.sampler !== sampler) {
     // Video carries its own resolved sampler rather than following the global policy, so record the
@@ -313,7 +320,12 @@ export function createWgpuTextureEntry(
 
   const view = texture.createView();
 
-  return createEntity({ bindings: new Map(), mipLevelCount: 1, texture, view });
+  const out = allocateEntity<unknown>();
+  out.bindings = new Map();
+  out.mipLevelCount = 1;
+  out.texture = texture;
+  out.view = view;
+  return finishEntity(out);
 }
 
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
@@ -551,7 +563,12 @@ function uploadWgpuBitmapEntry(
   device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
   if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
-  return createEntity({ bindings: new Map(), mipLevelCount, texture, view });
+  const out = allocateEntity<unknown>();
+  out.bindings = new Map();
+  out.mipLevelCount = mipLevelCount;
+  out.texture = texture;
+  out.view = view;
+  return finishEntity(out);
 }
 
 function uploadWgpuCompressedImageEntry(
@@ -608,7 +625,12 @@ function uploadWgpuImageResourceEntry(
   }
   if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
-  return createEntity({ bindings: new Map(), mipLevelCount, texture, view });
+  const out = allocateEntity<unknown>();
+  out.bindings = new Map();
+  out.mipLevelCount = mipLevelCount;
+  out.texture = texture;
+  out.view = view;
+  return finishEntity(out);
 }
 
 type WgpuTextureSourceUpload = (

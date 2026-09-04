@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Environment, EnvironmentOptions } from '@flighthq/types/contract';
 import { EnvironmentKind } from '@flighthq/types/contract';
 
@@ -12,10 +12,10 @@ export function cloneEnvironment(source: Readonly<Environment>): Environment {
 // for the skybox and as the IBL specular/irradiance source; `intensity` scales its contribution.
 // Defaults to no cubemap (null) at unit intensity.
 export function createEnvironment(options?: Readonly<EnvironmentOptions>): Environment {
-  return createEntity({
-    enabled: options?.enabled ?? true,
-    environment: options?.environment ?? null,
-    intensity: options?.intensity ?? 1,
-    kind: EnvironmentKind,
-  });
+  const out = allocateEntity<Environment>();
+  out.enabled = options?.enabled ?? true;
+  out.environment = options?.environment ?? null;
+  out.intensity = options?.intensity ?? 1;
+  out.kind = EnvironmentKind;
+  return finishEntity(out);
 }

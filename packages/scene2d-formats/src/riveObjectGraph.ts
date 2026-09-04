@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
+  EntityConstruction,
   ImportDiagnostic,
   RiveArtboardGraph,
   RiveCoreObject,
@@ -45,7 +46,9 @@ export function createRiveObjectGraph(
   }
 
   for (const artboard of artboards) resolveRiveParentIndices(artboard, diagnostics);
-  return createEntity({ artboards });
+  const out = allocateEntity<RiveObjectGraph>();
+  out.artboards = artboards;
+  return finishEntity(out);
 }
 
 function resolveRiveParentIndices(artboard: RiveArtboardGraph, diagnostics: ImportDiagnostic[] | undefined): void {

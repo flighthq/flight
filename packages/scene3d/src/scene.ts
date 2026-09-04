@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Scene3D, Node3D } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Node3D, Scene3D } from '@flighthq/types/contract';
 import { Node3DKind } from '@flighthq/types/contract';
 
 import { createNode3D } from './sceneNode';
@@ -11,5 +11,10 @@ import { createNode3D } from './sceneNode';
 // (`createScene3DFrom*`) fill them. `obj` configures the root node (`enabled`/`name`).
 export function createScene3D(obj?: Readonly<Partial<Pick<Node3D, 'enabled' | 'name'>>>): Scene3D {
   const root = createNode3D(Node3DKind, obj);
-  return createEntity({ animations: {}, metadata: null, resources: [], root }) as Scene3D;
+  const out = allocateEntity<Scene3D>();
+  out.animations = {};
+  out.metadata = null;
+  out.resources = [];
+  out.root = root;
+  return finishEntity(out);
 }

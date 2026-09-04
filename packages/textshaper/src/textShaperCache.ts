@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   HasTextShaper,
-  ShapedRun,
   ShapeRunOptions,
+  ShapedRun,
   TextFormat,
   TextShaperBackend,
   TextShaperCache,
@@ -20,7 +21,9 @@ export function clearTextShaperCache(cache: TextShaperCache): void {
 
 // Allocates a new, empty TextShaperCache.
 export function createTextShaperCache(): TextShaperCache {
-  return createEntity({ _entries: new Map() });
+  const out = allocateEntity<TextShaperCache>();
+  out._entries = new Map();
+  return finishEntity(out);
 }
 
 // Releases the `cache` object and all cached ShapedRuns. The cache must not be used after this

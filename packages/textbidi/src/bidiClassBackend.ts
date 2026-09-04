@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { BidiClass, BidiClassBackend } from '@flighthq/types/contract';
 
 // Builds the compact bundled bidi-class backend: a from-scratch UAX #9 class lookup over a sorted
@@ -10,7 +10,9 @@ import type { BidiClass, BidiClassBackend } from '@flighthq/types/contract';
 // range resolves to the safe common default 'L'. Full Unicode coverage (every assigned bidi class +
 // bracket-pairing data) is the designated flight-rs table backend, passed explicitly to the resolver.
 export function createCompactBidiClassBackend(): BidiClassBackend {
-  return createEntity({ getBidiClass: getCompactBidiClass });
+  const out = allocateEntity<BidiClassBackend>();
+  out.getBidiClass = getCompactBidiClass;
+  return finishEntity(out);
 }
 
 // Returns the legacy installed bidi-class backend, lazily creating the compact default the first time

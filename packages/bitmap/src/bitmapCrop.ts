@@ -1,5 +1,5 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { RectangleLike, Bitmap, BitmapEdgeMode } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Bitmap, BitmapEdgeMode, EntityConstruction, RectangleLike } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 /**
@@ -34,16 +34,16 @@ export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLik
       data[di + 3] = sd[si + 3];
     }
   }
-  return createEntity({
-    alphaType: source.alphaType,
-    gamut: source.gamut,
-    data,
-    format: source.format,
-    height: rh,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width: rw,
-  });
+  const out = allocateEntity<unknown>();
+  out.alphaType = source.alphaType;
+  out.gamut = source.gamut;
+  out.data = data;
+  out.format = source.format;
+  out.height = rh;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = rw;
+  return finishEntity(out);
 }
 
 /**
@@ -107,16 +107,16 @@ export function extendBitmap(
       }
     }
   }
-  return createEntity({
-    alphaType: source.alphaType,
-    gamut: source.gamut,
-    data,
-    format: source.format,
-    height: dh,
-    kind: BitmapTextureSourceKind,
-    version: 0,
-    width: dw,
-  });
+  const out = allocateEntity<unknown>();
+  out.alphaType = source.alphaType;
+  out.gamut = source.gamut;
+  out.data = data;
+  out.format = source.format;
+  out.height = dh;
+  out.kind = BitmapTextureSourceKind;
+  out.version = 0;
+  out.width = dw;
+  return finishEntity(out);
 }
 
 /**
@@ -145,16 +145,16 @@ export function trimBitmap(source: Readonly<Bitmap>): Bitmap {
     }
   }
   if (maxX < 0) {
-    return createEntity({
-      alphaType: source.alphaType,
-      gamut: source.gamut,
-      data: new Uint8ClampedArray(4),
-      format: source.format,
-      height: 1,
-      kind: BitmapTextureSourceKind,
-      version: 0,
-      width: 1,
-    });
+    const out = allocateEntity<unknown>();
+    out.alphaType = source.alphaType;
+    out.gamut = source.gamut;
+    out.data = new Uint8ClampedArray(4);
+    out.format = source.format;
+    out.height = 1;
+    out.kind = BitmapTextureSourceKind;
+    out.version = 0;
+    out.width = 1;
+    return finishEntity(out);
   }
   return cropBitmap(source, { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 });
 }

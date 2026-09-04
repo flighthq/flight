@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
   createRenderState as _createRenderState,
@@ -7,6 +7,7 @@ import {
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type {
+  EntityConstruction,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlContext,
@@ -48,7 +49,8 @@ export function createGlContextState(gl: GlContext): GlContextState {
     textureSourceStraightSrgbTextureCache: new WeakMap(),
     textureSourceStraightTextureCache: new WeakMap(),
   };
-  const state = createEntity({ gl }) as GlContextState;
+  const state = allocateEntity<GlContextState>();
+  state.gl = gl;
   state[EntityRuntimeKey] = contextRuntime;
   return state;
 }

@@ -1,15 +1,16 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
-  Scene2DRenderer,
   DomRenderState,
-  Renderable,
-  RendererData,
+  EntityConstruction,
   RenderProxy2D,
   RenderState,
+  Renderable,
+  RendererData,
+  Scene2DRenderer,
   TextFormat,
   TextLabel,
   TextLabelRuntime,
@@ -23,7 +24,9 @@ interface DomTextData extends RendererData {
 }
 
 function createDomTextData(_state: RenderState, _source: Renderable): DomTextData {
-  return createEntity({ div: null });
+  const out = allocateEntity<unknown>();
+  out.div = null;
+  return finishEntity(out);
 }
 
 let _measureCtx: CanvasRenderingContext2D | null = null;

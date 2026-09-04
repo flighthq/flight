@@ -5,11 +5,12 @@ import {
   raycastCollisionShape2D,
   sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape2D,
   CollisionRaycastHit2D,
   CollisionTimeOfImpact2D,
+  EntityConstruction,
   NonEntityCreateResult,
   Physics2DCollider,
   Physics2DQueryFilter,
@@ -40,26 +41,32 @@ export function createPhysics2DQueryFilter(): NonEntityCreateResult<Physics2DQue
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
 // rewrite them and publish only `hitCount`, so pointer picking can run each frame without garbage.
 export function createPhysics2DQueryResult(): Physics2DQueryResult {
-  return createEntity({ hits: [], hitCount: 0 });
+  const out = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+  out.hits = [];
+  out.hitCount = 0;
+  return finishEntity(out);
 }
 
 export function createPhysics2DRayResult(): Physics2DRayResult {
-  return createEntity({ hits: [], hitCount: 0 });
+  const out = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+  out.hits = [];
+  out.hitCount = 0;
+  return finishEntity(out);
 }
 
 // A reusable shape-cast result, starting as a miss.
 export function createPhysics2DShapeCastResult(): Physics2DShapeCastResult {
-  return createEntity({
-    body: null,
-    collider: null,
-    colliderIndex: -1,
-    hit: false,
-    fraction: 0,
-    x: 0,
-    y: 0,
-    normalX: 0,
-    normalY: 0,
-  });
+  const out = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+  out.body = null;
+  out.collider = null;
+  out.colliderIndex = -1;
+  out.hit = false;
+  out.fraction = 0;
+  out.x = 0;
+  out.y = 0;
+  out.normalX = 0;
+  out.normalY = 0;
+  return finishEntity(out);
 }
 
 // Writes every collider containing the world-space point. Broadphase candidates are confirmed by the
@@ -489,10 +496,9 @@ const physics2DQueryScratchPool: Physics2DQueryScratch[] = [createPhysics2DQuery
 // A stand-in collider so a bare shape can reuse the collider bounds writer. Its `world` shape is REBOUND
 // per call rather than copied, so this never retains the caller's shape past the call, and its material
 // and filter are never read on this path.
-const shapeCastProbe: Physics2DCollider = createEntity({
-  local: { kind: 'point', x: 0, y: 0 },
-  world: { kind: 'point', x: 0, y: 0 },
-  material: { density: 0, friction: 0, restitution: 0 },
-  filter: { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 },
-  sensor: false,
-});
+const shapeCastProbe = allocateEntity<NonEntityCreateResult<Physics2DQueryFilter, 'options'>>();
+shapeCastProbe.local = { kind: 'point', x: 0, y: 0 };
+shapeCastProbe.world = { kind: 'point', x: 0, y: 0 };
+shapeCastProbe.material = { density: 0, friction: 0, restitution: 0 };
+shapeCastProbe.filter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
+shapeCastProbe.sensor = false;

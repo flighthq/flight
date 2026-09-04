@@ -1,16 +1,17 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   HasPowerIdle,
   HasPowerKeepAwake,
-  PowerKeepAwakeBackend,
   HasPowerStatus,
   HasPowerThermal,
-  PowerAttachHost,
   Power,
+  PowerAttachHost,
   PowerBatteryHealth,
   PowerIdleState,
   PowerKeepAwakeAcquireResult,
+  PowerKeepAwakeBackend,
   PowerKeepAwakeMode,
   PowerKeepAwakeReleaseResult,
   PowerStatus,
@@ -105,17 +106,17 @@ export function attachPower(host: PowerAttachHost, power: Power, idleThresholdSe
 // Allocates a Power event entity with its signals left null. Call enablePowerSignals to allocate the
 // signals to connect to, and attachPower to start delivering host events into them.
 export function createPower(): Power {
-  return createEntity({
-    onChange: null,
-    onCharging: null,
-    onDischarging: null,
-    onIdleStateChange: null,
-    onLockScreen: null,
-    onResume: null,
-    onSuspend: null,
-    onThermalStateChange: null,
-    onUnlockScreen: null,
-  });
+  const out = allocateEntity<Power>();
+  out.onChange = null;
+  out.onCharging = null;
+  out.onDischarging = null;
+  out.onIdleStateChange = null;
+  out.onLockScreen = null;
+  out.onResume = null;
+  out.onSuspend = null;
+  out.onThermalStateChange = null;
+  out.onUnlockScreen = null;
+  return finishEntity(out);
 }
 
 // Stops delivery without discarding the entity. Runs every teardown this entity opened, ATTEMPTING ALL

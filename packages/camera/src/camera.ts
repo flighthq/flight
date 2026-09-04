@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createMatrix4,
   createVector2,
@@ -6,7 +6,7 @@ import {
   multiplyMatrix4,
   setMatrix4LookAt,
 } from '@flighthq/geometry/contract';
-import type { Camera3D, Camera3DOptions, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
+import type { Camera3D, Camera3DOptions, EntityConstruction, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
 
 import { setProjectionMatrix4 } from './projection';
 
@@ -17,14 +17,14 @@ import { setProjectionMatrix4 } from './projection';
 // matrix is canonical: the camera has no separate Transform3D — a Matrix4 is the only world->view
 // representation.
 export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
-  return createEntity({
-    far: opts.far,
-    inverseViewProjection: createMatrix4(),
-    jitter: createVector2(0, 0),
-    near: opts.near,
-    projection: opts.projection,
-    view: createMatrix4(),
-  });
+  const out = allocateEntity<Camera3D>();
+  out.far = opts.far;
+  out.inverseViewProjection = createMatrix4();
+  out.jitter = createVector2(0, 0);
+  out.near = opts.near;
+  out.projection = opts.projection;
+  out.view = createMatrix4();
+  return finishEntity(out);
 }
 
 // Writes the inverse of the camera's view-projection matrix into `out` and returns true, or

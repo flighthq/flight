@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
+  EntityConstruction,
   SpatialAabb3D,
   SpatialDeclineReason,
   SpatialIndexBackend3D,
@@ -45,42 +46,42 @@ export function createUniformGridSpatialBackend3D(cellSize: number): SpatialInde
     seen: new Set(),
     pairIds: [],
   };
-  return createEntity({
-    insertSpatialObject(id, bounds) {
-      return _insertIntoGrid3D(grid, id, bounds, 'insert');
-    },
-    updateSpatialObject(id, bounds) {
-      return _updateGrid3DObject(grid, id, bounds);
-    },
-    removeSpatialObject(id) {
-      const wasMissing = !grid.bounds.has(id) && !grid.declined.has(id);
-      _removeFromGrid3D(grid, id);
-      if (wasMissing) _reportGrid3DIndexing(grid, id, 'absent', 'remove', 'missing-id', 0);
-    },
-    clearSpatialIndex() {
-      grid.cells.clear();
-      grid.bounds.clear();
-      grid.overflow.clear();
-      grid.declined.clear();
-      grid.seen.clear();
-      grid.pairIds.length = 0;
-    },
-    explainSpatialIndexing(id) {
-      return _explainGrid3DIndexing(grid, id);
-    },
-    querySpatialPairs(out) {
-      _queryGrid3DPairs(grid, out);
-    },
-    querySpatialRegion(region, out) {
-      _queryGrid3DRegion(grid, region, out);
-    },
-    querySpatialPoint(x, y, z, out) {
-      _queryGrid3DPoint(grid, x, y, z, out);
-    },
-    querySpatialRay(x, y, z, dx, dy, dz, out) {
-      _queryGrid3DRay(grid, x, y, z, dx, dy, dz, out);
-    },
-  } satisfies SpatialIndexBackend3D);
+  const out = allocateEntity<unknown>();
+  out.insertSpatialObject = (id, bounds) => {
+    return _insertIntoGrid3D(grid, id, bounds, 'insert');
+  };
+  out.updateSpatialObject = (id, bounds) => {
+    return _updateGrid3DObject(grid, id, bounds);
+  };
+  out.removeSpatialObject = (id) => {
+    const wasMissing = !grid.bounds.has(id) && !grid.declined.has(id);
+    _removeFromGrid3D(grid, id);
+    if (wasMissing) _reportGrid3DIndexing(grid, id, 'absent', 'remove', 'missing-id', 0);
+  };
+  out.clearSpatialIndex = () => {
+    grid.cells.clear();
+    grid.bounds.clear();
+    grid.overflow.clear();
+    grid.declined.clear();
+    grid.seen.clear();
+    grid.pairIds.length = 0;
+  };
+  out.explainSpatialIndexing = (id) => {
+    return _explainGrid3DIndexing(grid, id);
+  };
+  out.querySpatialPairs = (out) => {
+    _queryGrid3DPairs(grid, out);
+  };
+  out.querySpatialRegion = (region, out) => {
+    _queryGrid3DRegion(grid, region, out);
+  };
+  out.querySpatialPoint = (x, y, z, out) => {
+    _queryGrid3DPoint(grid, x, y, z, out);
+  };
+  out.querySpatialRay = (x, y, z, dx, dy, dz, out) => {
+    _queryGrid3DRay(grid, x, y, z, dx, dy, dz, out);
+  };
+  return finishEntity(out);
 }
 
 // One occupied cell: its integer cell coordinates and the ids whose bounds cover it. The coordinates

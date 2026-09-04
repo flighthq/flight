@@ -1,10 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CompressedImageResource,
   Entity,
+  EntityConstruction,
+  TextureColorSpace,
   TextureContainer,
   TextureContainerFormat,
-  TextureColorSpace,
   WgpuCompressedTextureDecoder,
   WgpuCompressedTextureSupport,
   WgpuRenderState,
@@ -174,14 +175,14 @@ function uploadWgpuCompressedImage(
   const view = texture.createView();
   const resources = getWgpuRenderStateDeviceResources(state);
   const sampler = state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
-  return createEntity<Omit<WgpuTextureEntry, keyof Entity>>({
-    bindings: new Map(),
-    mipLevelCount: container.mipLevels,
-    sampler,
-    straightAlpha: native,
-    texture,
-    view,
-  });
+  const out = allocateEntity<Omit<WgpuTextureEntry, keyof Entity>>();
+  out.bindings = new Map();
+  out.mipLevelCount = container.mipLevels;
+  out.sampler = sampler;
+  out.straightAlpha = native;
+  out.texture = texture;
+  out.view = view;
+  return finishEntity(out);
 }
 
 function premultiplyRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {

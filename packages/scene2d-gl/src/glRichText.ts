@@ -1,6 +1,6 @@
 ﻿import { computeRgbHexString } from '@flighthq/color/contract';
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
@@ -18,16 +18,17 @@ import {
   getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type {
-  Scene2DRenderer,
+  EntityConstruction,
   GlRenderState,
   GlRichTextOverlay,
   Raster2DSurface,
   Raster2DSurfaceProvider,
+  RenderProxy2D,
   Renderable,
   RendererData,
-  RenderProxy2D,
   RichText,
   RichTextRuntime,
+  Scene2DRenderer,
   TextFormat,
   TextLabelRuntime,
 } from '@flighthq/types/contract';
@@ -41,7 +42,9 @@ interface GlRichTextData extends RendererData {
 }
 
 export function createGlRichTextData(_state: GlRenderState, _source: Renderable): RendererData {
-  return createEntity({ surface: null });
+  const out = allocateEntity<RendererData>();
+  out.surface = null;
+  return finishEntity(out);
 }
 
 // Remove the GPU realization while its Image key is still valid, then return the raster allocation to

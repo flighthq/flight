@@ -1,8 +1,9 @@
-import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationRenderView,
   ApplicationRenderViewResize,
+  EntityConstruction,
   EntityRuntime,
   RenderState,
   RenderTargetDimensions,
@@ -40,12 +41,11 @@ export function createApplicationRenderView<State extends RenderState, Target ex
   viewport: ApplicationRenderView<State, Target>['viewport'],
   resize: ApplicationRenderViewResize<State, Target>,
 ): ApplicationRenderView<State, Target> {
-  const view = createEntity({
-    renderState,
-    renderTarget,
-    viewport,
-    window,
-  }) as ApplicationRenderView<State, Target>;
+  const view = allocateEntity<ApplicationRenderView<State, Target>>();
+  view.renderState = renderState;
+  view.renderTarget = renderTarget;
+  view.viewport = viewport;
+  view.window = window;
   const runtime = createEntityRuntime() as ApplicationRenderViewRuntime<State, Target>;
   runtime.attached = false;
   runtime.resize = resize;

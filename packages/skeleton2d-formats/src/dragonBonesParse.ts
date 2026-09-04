@@ -1,6 +1,6 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSkeleton2D,
@@ -15,6 +15,7 @@ import type {
   AttachmentSkin2D,
   Bone2D,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
@@ -718,15 +719,15 @@ function parseDragonBonesMeshDisplay(
     return null;
   }
   const uvs = toFloat32Array(display.uvs);
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    name: typeof display.name === 'string' ? display.name : null,
-    skin: null,
-    triangles: toUint16Array(display.triangles),
-    uvs,
-    vertexCount: uvs.length >> 1,
-    vertices: toFloat32Array(display.vertices),
-  }) as MeshAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.kind = MeshAttachment2DKind;
+  out.name = typeof display.name === 'string' ? display.name : null;
+  out.skin = null;
+  out.triangles = toUint16Array(display.triangles);
+  out.uvs = uvs;
+  out.vertexCount = uvs.length >> 1;
+  out.vertices = toFloat32Array(display.vertices);
+  return finishEntity(out);
 }
 
 // Converts a DragonBones WEIGHTED mesh to a MeshAttachment2D whose Skin2D carries per-bone LOCAL offsets by
@@ -826,15 +827,15 @@ function parseDragonBonesWeightedMesh(
       { meshes: 1 },
     );
   }
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    name: typeof display.name === 'string' ? display.name : null,
-    skin: createSkin2D(influenceCounts, Float32Array.from(influences)),
-    triangles: toUint16Array(display.triangles),
-    uvs,
-    vertexCount,
-    vertices: null,
-  }) as MeshAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.kind = MeshAttachment2DKind;
+  out.name = typeof display.name === 'string' ? display.name : null;
+  out.skin = createSkin2D(influenceCounts, Float32Array.from(influences));
+  out.triangles = toUint16Array(display.triangles);
+  out.uvs = uvs;
+  out.vertexCount = vertexCount;
+  out.vertices = null;
+  return finishEntity(out);
 }
 
 // Maps a slot's `display` array to Flight attachments, POSITION-PRESERVING: result index i is displayIndex
@@ -856,17 +857,17 @@ function parseDragonBonesDisplayList(
 // are left 0 here to be resolved at atlas-binding time, mirroring how a display references its region by name.
 function parseDragonBonesRegionDisplay(display: Record<string, unknown>): RegionAttachment2D {
   const transform = parseDragonBonesBoneTransform(display.transform);
-  return createEntity({
-    height: 0,
-    kind: RegionAttachment2DKind,
-    name: typeof display.name === 'string' ? display.name : null,
-    rotation: transform.rotation,
-    scaleX: transform.scaleX,
-    scaleY: transform.scaleY,
-    width: 0,
-    x: transform.x,
-    y: transform.y,
-  }) as RegionAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.height = 0;
+  out.kind = RegionAttachment2DKind;
+  out.name = typeof display.name === 'string' ? display.name : null;
+  out.rotation = transform.rotation;
+  out.scaleX = transform.scaleX;
+  out.scaleY = transform.scaleY;
+  out.width = 0;
+  out.x = transform.x;
+  out.y = transform.y;
+  return finishEntity(out);
 }
 
 // DragonBones slots bind a bone to their shown display; `slot` array order is the draw order. `boneIndex`

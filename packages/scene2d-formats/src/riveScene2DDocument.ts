@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
@@ -6,6 +6,7 @@ import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   DisplayObject,
+  EntityConstruction,
   ImageResourceReference,
   ImportDiagnostic,
   Node2D,
@@ -50,13 +51,15 @@ function collectRiveSlots(
   if (nested !== undefined) {
     const target = artboards[nested];
     slots.push(
-      createEntity({
-        content: null,
-        linkage: target === undefined ? null : target.name,
-        name: node.name !== null && node.name !== '' ? node.name : (target?.name ?? ''),
-        required: false,
-        target: node,
-      }),
+      (() => {
+        const out = allocateEntity<DisplayObject>();
+        out.content = null;
+        out.linkage = target === undefined ? null : target.name;
+        out.name = node.name !== null && node.name !== '' ? node.name : (target?.name ?? '');
+        out.required = false;
+        out.target = node;
+        return finishEntity(out);
+      })(),
     );
   }
   for (let index = 0; index < getNodeChildCount(node); index++) {
@@ -117,12 +120,12 @@ export function createScene2DDocumentFromRiveDocument(
   const root = createDisplayObject({ name: 'Rive' });
   for (const artboard of imported.artboards) addNodeChild(root, artboard.root);
 
-  return createEntity({
-    imageResources: createRiveImageResources(imported, diagnostics),
-    imported,
-    root,
-    slots: createRiveSlots(imported.artboards),
-  });
+  const out = allocateEntity<DisplayObject>();
+  out.imageResources = createRiveImageResources(imported, diagnostics);
+  out.imported = imported;
+  out.root = root;
+  out.slots = createRiveSlots(imported.artboards);
+  return finishEntity(out);
 }
 
 /**

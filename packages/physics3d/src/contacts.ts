@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/contract';
 
 // Constructors for the contact records the step consumes.
@@ -30,39 +30,39 @@ import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/co
 // must point so that resolving pushes A out of B.
 export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA = 0, colliderB = 0): Physics3DContact {
   const ordered = bodyA <= bodyB;
-  return createEntity({
-    bodyA: ordered ? bodyA : bodyB,
-    bodyB: ordered ? bodyB : bodyA,
-    colliderA: ordered ? colliderA : colliderB,
-    colliderB: ordered ? colliderB : colliderA,
-    normalX: 0,
-    normalY: 0,
-    normalZ: 0,
-    pointCount: 0,
-    points: [],
-    friction: 0,
-    restitution: 0,
-    enabled: true,
-    sensor: false,
-    touching: false,
-  });
+  const out = allocateEntity<Physics3DContact>();
+  out.bodyA = ordered ? bodyA : bodyB;
+  out.bodyB = ordered ? bodyB : bodyA;
+  out.colliderA = ordered ? colliderA : colliderB;
+  out.colliderB = ordered ? colliderB : colliderA;
+  out.normalX = 0;
+  out.normalY = 0;
+  out.normalZ = 0;
+  out.pointCount = 0;
+  out.points = [];
+  out.friction = 0;
+  out.restitution = 0;
+  out.enabled = true;
+  out.sensor = false;
+  out.touching = false;
+  return finishEntity(out);
 }
 
 // Allocates one contact point, zeroed. `featureId` is the caller's to assign and is opaque to this
 // package: its only contract is that the SAME physical feature carries the SAME id between steps, which is
 // what lets the solver match this step's points against last step's accumulators.
 export function createPhysics3DContactPoint(): Physics3DContactPoint {
-  return createEntity({
-    x: 0,
-    y: 0,
-    z: 0,
-    depth: 0,
-    featureId: 0,
-    rAX: 0,
-    rAY: 0,
-    rAZ: 0,
-    rBX: 0,
-    rBY: 0,
-    rBZ: 0,
-  });
+  const out = allocateEntity<Physics3DContact>();
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  out.depth = 0;
+  out.featureId = 0;
+  out.rAX = 0;
+  out.rAY = 0;
+  out.rAZ = 0;
+  out.rBX = 0;
+  out.rBY = 0;
+  out.rBZ = 0;
+  return finishEntity(out);
 }

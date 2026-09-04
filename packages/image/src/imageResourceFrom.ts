@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap, HasGraphicsImage, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap, EntityConstruction, HasGraphicsImage, ImageResource } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 export function createImageResourceFromBitmap(
@@ -13,39 +13,39 @@ export function createImageResourceFromBitmap(
 }
 
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
-  return createEntity({
-    alphaType: DECODED_ALPHA_TYPE,
-    gamut: DECODED_GAMUT,
-    height: canvas.height,
-    kind: ImageTextureSourceKind,
-    source: canvas,
-    version: 0,
-    width: canvas.width,
-  });
+  const out = allocateEntity<ImageResource>();
+  out.alphaType = DECODED_ALPHA_TYPE;
+  out.gamut = DECODED_GAMUT;
+  out.height = canvas.height;
+  out.kind = ImageTextureSourceKind;
+  out.source = canvas;
+  out.version = 0;
+  out.width = canvas.width;
+  return finishEntity(out);
 }
 
 export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
-  return createEntity({
-    alphaType: DECODED_ALPHA_TYPE,
-    gamut: DECODED_GAMUT,
-    height: bitmap.height,
-    kind: ImageTextureSourceKind,
-    source: bitmap,
-    version: 0,
-    width: bitmap.width,
-  });
+  const out = allocateEntity<ImageResource>();
+  out.alphaType = DECODED_ALPHA_TYPE;
+  out.gamut = DECODED_GAMUT;
+  out.height = bitmap.height;
+  out.kind = ImageTextureSourceKind;
+  out.source = bitmap;
+  out.version = 0;
+  out.width = bitmap.width;
+  return finishEntity(out);
 }
 
 export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
-  return createEntity({
-    alphaType: DECODED_ALPHA_TYPE,
-    gamut: DECODED_GAMUT,
-    height: img.height,
-    kind: ImageTextureSourceKind,
-    source: img,
-    version: 0,
-    width: img.width,
-  });
+  const out = allocateEntity<ImageResource>();
+  out.alphaType = DECODED_ALPHA_TYPE;
+  out.gamut = DECODED_GAMUT;
+  out.height = img.height;
+  out.kind = ImageTextureSourceKind;
+  out.source = img;
+  out.version = 0;
+  out.width = img.width;
+  return finishEntity(out);
 }
 
 export function isImageUrlSameOrigin(url: string): boolean {

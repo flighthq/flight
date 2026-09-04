@@ -1,17 +1,17 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Viewport, ViewportLike } from '@flighthq/types/contract';
 
 // Allocates a Viewport — the bedrock drawable rectangle a scene renders into. Defaults to a zero-origin
 // rect at unit device-pixel ratio; pass fields to override. Passive plain data: a Viewport does not own a
 // drawable (a renderable surface is a Viewport paired with a RenderTarget).
 export function createViewport(obj?: Readonly<ViewportLike>): Viewport {
-  return createEntity({
-    devicePixelRatio: obj?.devicePixelRatio ?? 1,
-    height: obj?.height ?? 0,
-    width: obj?.width ?? 0,
-    x: obj?.x ?? 0,
-    y: obj?.y ?? 0,
-  });
+  const out = allocateEntity<Viewport>();
+  out.devicePixelRatio = obj?.devicePixelRatio ?? 1;
+  out.height = obj?.height ?? 0;
+  out.width = obj?.width ?? 0;
+  out.x = obj?.x ?? 0;
+  out.y = obj?.y ?? 0;
+  return finishEntity(out);
 }
 
 // Returns the viewport's aspect ratio (width / height), or 1 for a degenerate (zero-height) rect. A 3D

@@ -1,12 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
-  CanvasTextureResolver,
-  CanvasTextureResolvers,
   CanvasRenderSurface,
   CanvasRenderSurfaceCreator,
   CanvasRenderSurfaceOptions,
+  CanvasTextureResolver,
+  CanvasTextureResolvers,
+  EntityConstruction,
   RenderState,
   Texture,
   TextureSourceKind,
@@ -45,7 +46,10 @@ export function connectCanvasTextureResolverMisses(resolvers: CanvasTextureResol
 export function createCanvasTextureResolvers(
   surfaceCreator: Readonly<CanvasRenderSurfaceCreator>,
 ): CanvasTextureResolvers {
-  const resolvers = createEntity({ registry: null, registryMiss: null, surfaceCreator }) as CanvasTextureResolvers;
+  const resolvers = allocateEntity<CanvasTextureResolvers>();
+  resolvers.registry = null;
+  resolvers.registryMiss = null;
+  resolvers.surfaceCreator = surfaceCreator;
   resolvers[EntityRuntimeKey] = { binding: null };
   _ownedSurfaces.set(resolvers, new Set());
   return resolvers;

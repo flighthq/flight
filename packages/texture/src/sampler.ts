@@ -1,17 +1,17 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Sampler, SamplerLike } from '@flighthq/types/contract';
 
 // Allocates an independent Sampler with the same sampling state. Sampler holds only plain values,
 // so the clone shares nothing mutable with its source.
 export function cloneSampler(source: Readonly<SamplerLike>): Sampler {
-  return createEntity({
-    anisotropy: source.anisotropy,
-    magFilter: source.magFilter,
-    minFilter: source.minFilter,
-    mipmaps: source.mipmaps,
-    wrapU: source.wrapU,
-    wrapV: source.wrapV,
-  });
+  const out = allocateEntity<unknown>();
+  out.anisotropy = source.anisotropy;
+  out.magFilter = source.magFilter;
+  out.minFilter = source.minFilter;
+  out.mipmaps = source.mipmaps;
+  out.wrapU = source.wrapU;
+  out.wrapV = source.wrapV;
+  return finishEntity(out);
 }
 
 // Copies every sampling field from source into out in place. Safe when out aliases source: all
@@ -48,14 +48,14 @@ export function createPixelArtSampler(): Sampler {
 // magnification, trilinear minification, a generated mip chain, and anisotropy disabled (1). Pass
 // SamplerLike fields to override any of these.
 export function createSampler(opts?: Readonly<Partial<SamplerLike>>): Sampler {
-  return createEntity({
-    anisotropy: opts?.anisotropy ?? 1,
-    magFilter: opts?.magFilter ?? 'linear',
-    minFilter: opts?.minFilter ?? 'linear-mipmap-linear',
-    mipmaps: opts?.mipmaps ?? true,
-    wrapU: opts?.wrapU ?? 'clamp-to-edge',
-    wrapV: opts?.wrapV ?? 'clamp-to-edge',
-  });
+  const out = allocateEntity<Sampler>();
+  out.anisotropy = opts?.anisotropy ?? 1;
+  out.magFilter = opts?.magFilter ?? 'linear';
+  out.minFilter = opts?.minFilter ?? 'linear-mipmap-linear';
+  out.mipmaps = opts?.mipmaps ?? true;
+  out.wrapU = opts?.wrapU ?? 'clamp-to-edge';
+  out.wrapV = opts?.wrapV ?? 'clamp-to-edge';
+  return finishEntity(out);
 }
 
 // Tiling sampler: repeat wrap on both axes, trilinear filtering, mipmaps on. Suitable for

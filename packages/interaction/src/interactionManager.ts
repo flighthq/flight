@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
@@ -164,45 +164,45 @@ export function createInteractionManager<N extends NodeAny>(
   root: N,
   options: Readonly<InteractionManagerOptions> = {},
 ): InteractionManager<N> {
-  return createEntity({
-    cursorBackend: options.cursorBackend ?? null,
-    cursorTarget: null,
-    dispatchLayers: null,
-    doubleClickDelay: options.doubleClickDelay ?? 500,
-    doubleClickDistance: options.doubleClickDistance ?? 4,
-    enabled: options.enabled ?? true,
-    pointerCaptures: new Map(),
-    pointerStates: new Map(),
-    precise: options.precise ?? false,
-    root,
-    spatialIndex: options.spatialIndex ?? null,
-    signalSubscriberCounts: new Map(),
-    trackedSignalSlots: new Map(),
-    trackedSubscribersOnly: options.trackedSubscribersOnly ?? false,
-  });
+  const out = allocateEntity<unknown>();
+  out.cursorBackend = options.cursorBackend ?? null;
+  out.cursorTarget = null;
+  out.dispatchLayers = null;
+  out.doubleClickDelay = options.doubleClickDelay ?? 500;
+  out.doubleClickDistance = options.doubleClickDistance ?? 4;
+  out.enabled = options.enabled ?? true;
+  out.pointerCaptures = new Map();
+  out.pointerStates = new Map();
+  out.precise = options.precise ?? false;
+  out.root = root;
+  out.spatialIndex = options.spatialIndex ?? null;
+  out.signalSubscriberCounts = new Map();
+  out.trackedSignalSlots = new Map();
+  out.trackedSubscribersOnly = options.trackedSubscribersOnly ?? false;
+  return finishEntity(out);
 }
 
 export function createInteractionSignals(): InteractionSignals {
-  return createEntity({
-    onClick: createSignal(),
-    onContextMenu: createSignal(),
-    onDoubleClick: createSignal(),
-    onFocusIn: createSignal(),
-    onFocusOut: createSignal(),
-    onKeyDown: createSignal(),
-    onKeyUp: createSignal(),
-    onPointerCancel: createSignal(),
-    onPointerDoubleClick: createSignal(),
-    onPointerDown: createSignal(),
-    onPointerMove: createSignal(),
-    onPointerOut: createSignal(),
-    onPointerOver: createSignal(),
-    onPointerRollOut: createSignal(),
-    onPointerRollOver: createSignal(),
-    onPointerUp: createSignal(),
-    onReleaseOutside: createSignal(),
-    onWheel: createSignal(),
-  });
+  const out = allocateEntity<InteractionSignals>();
+  out.onClick = createSignal();
+  out.onContextMenu = createSignal();
+  out.onDoubleClick = createSignal();
+  out.onFocusIn = createSignal();
+  out.onFocusOut = createSignal();
+  out.onKeyDown = createSignal();
+  out.onKeyUp = createSignal();
+  out.onPointerCancel = createSignal();
+  out.onPointerDoubleClick = createSignal();
+  out.onPointerDown = createSignal();
+  out.onPointerMove = createSignal();
+  out.onPointerOut = createSignal();
+  out.onPointerOver = createSignal();
+  out.onPointerRollOut = createSignal();
+  out.onPointerRollOver = createSignal();
+  out.onPointerUp = createSignal();
+  out.onReleaseOutside = createSignal();
+  out.onWheel = createSignal();
+  return finishEntity(out);
 }
 
 export function disconnectInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(

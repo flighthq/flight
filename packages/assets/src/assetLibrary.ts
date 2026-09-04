@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createResourceLoader,
   disposeResourceLoader,
@@ -9,14 +9,15 @@ import {
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AssetAcquireGuard,
-  AssetEntry,
   AssetDescriptor,
+  AssetEntry,
   AssetGroupLoadOptions,
   AssetLibrary,
   AssetLibraryRuntime,
   AssetLoaderAdapter,
   AssetManifest,
   AssetType,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 // Increments the reference count for `id` and resolves its loaded value. If the asset is already
@@ -85,7 +86,9 @@ export function createAssetLibrary(): AssetLibrary {
     freedIds: new Set(),
     groups: new Map(),
   };
-  return createEntity({ runtime });
+  const out = allocateEntity<AssetLibrary>();
+  out.runtime = runtime;
+  return finishEntity(out);
 }
 
 // Disposes every resident asset through its registered adapter and empties the library — adapters,

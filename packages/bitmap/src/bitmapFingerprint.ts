@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, BitmapFingerprint } from '@flighthq/types/contract';
 
 // A coarse downscaled RGB fingerprint: the bitmap is averaged into a gridSize × gridSize grid, so
@@ -42,7 +42,13 @@ export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: numb
 
   const cells = new Uint8Array(gridSize * gridSize * 3);
   const { width, height, data } = source;
-  if (width === 0 || height === 0) return createEntity({ gridSize, cells });
+  if (width === 0 || height === 0)
+    return (() => {
+      const out = allocateEntity<number>();
+      out.gridSize = gridSize;
+      out.cells = cells;
+      return finishEntity(out);
+    })();
 
   for (let cy = 0; cy < gridSize; cy++) {
     const y0 = Math.floor((cy * height) / gridSize);
@@ -70,7 +76,10 @@ export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: numb
       cells[c + 2] = count === 0 ? 0 : Math.round(sumB / count);
     }
   }
-  return createEntity({ gridSize, cells });
+  const out = allocateEntity<BitmapFingerprint>();
+  out.gridSize = gridSize;
+  out.cells = cells;
+  return finishEntity(out);
 }
 
 /**
@@ -107,5 +116,8 @@ export function parseBitmapFingerprint(text: string): BitmapFingerprint | null {
     if (hi < 0 || lo < 0) return null;
     cells[i] = (hi << 4) | lo;
   }
-  return createEntity({ gridSize, cells });
+  const out = allocateEntity<BitmapFingerprint>();
+  out.gridSize = gridSize;
+  out.cells = cells;
+  return finishEntity(out);
 }

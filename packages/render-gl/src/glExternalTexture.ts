@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   CreateExternalTextureOptions,
+  EntityConstruction,
   ExternalTexture,
   GlRenderState,
   GlTextureRealization,
@@ -19,12 +20,11 @@ export function createExternalGlTexture(
   handle: WebGLTexture,
   options: Readonly<CreateExternalTextureOptions>,
 ): Texture {
-  const source = createEntity({
-    height: options.height,
-    kind: ExternalTextureSourceKind,
-    version: 0,
-    width: options.width,
-  }) as ExternalTexture;
+  const source = allocateEntity<Texture>();
+  source.height = options.height;
+  source.kind = ExternalTextureSourceKind;
+  source.version = 0;
+  source.width = options.width;
   const texture = createTexture({
     colorSpace: options.colorSpace,
     sampler: options.sampler ? cloneSampler(options.sampler) : undefined,

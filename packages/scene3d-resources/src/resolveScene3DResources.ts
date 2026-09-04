@@ -1,14 +1,15 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createImageResourceFailure, resolveImageResourceReference } from '@flighthq/image/contract';
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,
   Scene3D,
-  Scene3DResources,
   Scene3DResourceResolver,
   Scene3DResourceWorkingSet,
+  Scene3DResources,
   Texture,
   TextureSource,
   UpdateScene3DResourceStreamingOptions,
@@ -139,11 +140,13 @@ function finishScene3DResourceResolution(
   if (runtime.inFlight.get(ref) !== entry) return;
   runtime.inFlight.delete(ref);
   if (source === null) {
-    ref.failure ??= createEntity({
-      kind: ImageResourceFailureKind.Unavailable,
-      message: 'Image resource resolution returned no source',
-      name: null,
-    });
+    ref.failure ??= (() => {
+      const out = allocateEntity<Promise<TextureSource | null>>();
+      out.kind = ImageResourceFailureKind.Unavailable;
+      out.message = 'Image resource resolution returned no source';
+      out.name = null;
+      return finishEntity(out);
+    })();
     ref.state = ResourceResolutionState.Failed;
     for (const texture of entry.subscribers) emitScene3DResourceEvent(resolver, texture, ref, false);
     return;

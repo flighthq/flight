@@ -8,7 +8,7 @@ import {
 import { createClipRegionFromPath } from '@flighthq/clip/contract';
 import { packColor } from '@flighthq/color/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
@@ -43,10 +43,8 @@ import type {
   AnimationClip,
   AnimationTrack,
   DisplayObject,
-  Node2D,
-  Node2DAnimationPath,
-  Node2DAnimationTarget,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   LottieAdvancedBlend,
   LottieAnimatable,
@@ -62,18 +60,21 @@ import type {
   LottieKeyframe,
   LottieLayer,
   LottieMask,
+  LottiePolystarShapeItem,
   LottiePositionProperty,
   LottiePrecompositionAsset,
-  LottiePolystarShapeItem,
   LottieRectangleShapeItem,
-  LottieShapeItem,
   LottieShapeGroup,
-  LottieShapePathItem,
+  LottieShapeItem,
   LottieShapePath,
+  LottieShapePathItem,
   LottieStrokeShapeItem,
   LottieTextDocument,
-  LottieTrimPathShapeItem,
   LottieTransform,
+  LottieTrimPathShapeItem,
+  Node2D,
+  Node2DAnimationPath,
+  Node2DAnimationTarget,
   Path,
   Shape,
 } from '@flighthq/types/contract';
@@ -109,7 +110,13 @@ export function createScene2DFromLottieDocument(
       'lottie.invalid-document',
       'createScene2DFromLottieDocument',
     );
-    return createEntity({ advancedBlends: [], clip: createAnimationClip([]), duration: 0, frameRate: 0, root });
+    const out = allocateEntity<LottieDocumentImportResult>();
+    out.advancedBlends = [];
+    out.clip = createAnimationClip([]);
+    out.duration = 0;
+    out.frameRate = 0;
+    out.root = root;
+    return finishEntity(out);
   }
 
   const context: LottieImportContext = {
@@ -130,13 +137,13 @@ export function createScene2DFromLottieDocument(
       duration: marker.dr / document.fr,
     }),
   );
-  return createEntity({
-    advancedBlends: context.advancedBlends,
-    clip: createAnimationClip(context.channels, duration, events),
-    duration,
-    frameRate: document.fr,
-    root,
-  });
+  const out = allocateEntity<LottieDocumentImportResult>();
+  out.advancedBlends = context.advancedBlends;
+  out.clip = createAnimationClip(context.channels, duration, events);
+  out.duration = duration;
+  out.frameRate = document.fr;
+  out.root = root;
+  return finishEntity(out);
 }
 
 interface LottieImportContext {

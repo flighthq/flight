@@ -1,45 +1,49 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { CompressedImageResource, CompressedImageData, ImageResource } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  CompressedImageData,
+  CompressedImageResource,
+  EntityConstruction,
+  ImageResource,
+} from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 // Allocates a new resource identity over the same borrowed host image. The host handle is shared by
 // reference; the clone owns an independent version counter for renderer cache invalidation.
 export function cloneImageResource(resource: Readonly<ImageResource>): ImageResource {
-  return createEntity({
-    alphaType: resource.alphaType,
-    gamut: resource.gamut,
-    height: resource.height,
-    kind: resource.kind,
-    source: resource.source,
-    version: resource.version,
-    width: resource.width,
-  });
+  const out = allocateEntity<unknown>();
+  out.alphaType = resource.alphaType;
+  out.gamut = resource.gamut;
+  out.height = resource.height;
+  out.kind = resource.kind;
+  out.source = resource.source;
+  out.version = resource.version;
+  out.width = resource.width;
+  return finishEntity(out);
 }
 
 // Wraps a parsed block-compressed payload as its own GPU-only source. The caller owns the payload
 // bytes indexed by the container's level ranges.
 export function createCompressedImageResource(compressed: Readonly<CompressedImageData>): CompressedImageResource {
-  return createEntity({
-    alphaType: DECODED_ALPHA_TYPE,
-    compressed,
-    gamut: DECODED_GAMUT,
-    height: compressed.container.height,
-    kind: CompressedImageTextureSourceKind,
-    version: 0,
-    width: compressed.container.width,
-  });
+  const out = allocateEntity<CompressedImageResource>();
+  out.alphaType = DECODED_ALPHA_TYPE;
+  out.compressed = compressed;
+  out.gamut = DECODED_GAMUT;
+  out.height = compressed.container.height;
+  out.kind = CompressedImageTextureSourceKind;
+  out.version = 0;
+  out.width = compressed.container.width;
+  return finishEntity(out);
 }
 
 export function createImageResource(image: CanvasImageSource): ImageResource {
-  const resource: ImageResource = createEntity({
-    alphaType: DECODED_ALPHA_TYPE,
-    gamut: DECODED_GAMUT,
-    height: 0,
-    kind: ImageTextureSourceKind,
-    source: image,
-    version: 0,
-    width: 0,
-  });
+  const resource = allocateEntity<CompressedImageResource>();
+  resource.alphaType = DECODED_ALPHA_TYPE;
+  resource.gamut = DECODED_GAMUT;
+  resource.height = 0;
+  resource.kind = ImageTextureSourceKind;
+  resource.source = image;
+  resource.version = 0;
+  resource.width = 0;
   updateImageResourceSize(resource);
   return resource;
 }

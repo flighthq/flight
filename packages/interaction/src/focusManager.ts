@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   FocusDirection,
   FocusEventData,
   FocusManager,
@@ -53,11 +54,11 @@ export function createFocusManager<N extends NodeAny>(
   root: N,
   options: Readonly<FocusManagerOptions> = {},
 ): FocusManager<N> {
-  return createEntity({
-    focused: null,
-    root,
-    wrap: options.wrap ?? true,
-  });
+  const out = allocateEntity<unknown>();
+  out.focused = null;
+  out.root = root;
+  out.wrap = options.wrap ?? true;
+  return finishEntity(out);
 }
 
 /**

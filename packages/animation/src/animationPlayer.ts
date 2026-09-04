@@ -1,6 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { AnimationClip, AnimationLoopMode, AnimationPlayer } from '@flighthq/types/contract';
+import type { AnimationClip, AnimationLoopMode, AnimationPlayer, EntityConstruction } from '@flighthq/types/contract';
 import { AnimationLoopModePingPong, AnimationLoopModeRepeat } from '@flighthq/types/contract';
 
 // Advances the playhead by `dt` seconds (scaled by `speed`; negative plays backward). When `loop`,
@@ -106,18 +106,18 @@ export function advanceAnimationPlayer(player: AnimationPlayer, dt: number): voi
 // by reference — players are lightweight drivers over a clip; clone the clip separately for independent
 // buffers. The clone starts signal-free (onFinished/onLooped null) so listeners are never shared.
 export function cloneAnimationPlayer(player: Readonly<AnimationPlayer>): AnimationPlayer {
-  return createEntity({
-    clip: player.clip,
-    loop: player.loop,
-    loopMode: player.loopMode,
-    onEvent: null,
-    onFinished: null,
-    onLooped: null,
-    playing: player.playing,
-    repeatCount: player.repeatCount,
-    speed: player.speed,
-    time: player.time,
-  });
+  const out = allocateEntity<unknown>();
+  out.clip = player.clip;
+  out.loop = player.loop;
+  out.loopMode = player.loopMode;
+  out.onEvent = null;
+  out.onFinished = null;
+  out.onLooped = null;
+  out.playing = player.playing;
+  out.repeatCount = player.repeatCount;
+  out.speed = player.speed;
+  out.time = player.time;
+  return finishEntity(out);
 }
 
 // Allocates a player over `clip`. Defaults: looping, 'Repeat' loop mode, infinite repeats, playing,
@@ -133,18 +133,18 @@ export function createAnimationPlayer(
     time?: number;
   }>,
 ): AnimationPlayer {
-  return createEntity({
-    clip,
-    loop: opts?.loop ?? true,
-    loopMode: opts?.loopMode ?? AnimationLoopModeRepeat,
-    onEvent: null,
-    onFinished: null,
-    onLooped: null,
-    playing: opts?.playing ?? true,
-    repeatCount: opts?.repeatCount ?? -1,
-    speed: opts?.speed ?? 1,
-    time: opts?.time ?? 0,
-  });
+  const out = allocateEntity<unknown>();
+  out.clip = clip;
+  out.loop = opts?.loop ?? true;
+  out.loopMode = opts?.loopMode ?? AnimationLoopModeRepeat;
+  out.onEvent = null;
+  out.onFinished = null;
+  out.onLooped = null;
+  out.playing = opts?.playing ?? true;
+  out.repeatCount = opts?.repeatCount ?? -1;
+  out.speed = opts?.speed ?? 1;
+  out.time = opts?.time ?? 0;
+  return finishEntity(out);
 }
 
 // Allocates and attaches the opt-in player signals (onFinished, onLooped) to a player created before

@@ -1,59 +1,59 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ParticleEmitterConfig } from '@flighthq/types/contract';
 
 export function createParticleEmitterConfig(config?: Partial<ParticleEmitterConfig>): ParticleEmitterConfig {
-  return createEntity({
-    alphaCurve: config?.alphaCurve ?? null,
-    alphaEnd: config?.alphaEnd ?? 0,
-    alphaStart: config?.alphaStart ?? 1,
-    blendMode: config?.blendMode ?? null,
-    burstCount: config?.burstCount ?? 0,
-    burstInterval: config?.burstInterval ?? 0,
-    colorCurve: config?.colorCurve ?? null,
-    colorEndB: config?.colorEndB ?? 1,
-    colorEndG: config?.colorEndG ?? 1,
-    colorEndR: config?.colorEndR ?? 1,
-    colorEndVarianceB: config?.colorEndVarianceB ?? 0,
-    colorEndVarianceG: config?.colorEndVarianceG ?? 0,
-    colorEndVarianceR: config?.colorEndVarianceR ?? 0,
-    colorStartB: config?.colorStartB ?? 1,
-    colorStartG: config?.colorStartG ?? 1,
-    colorStartR: config?.colorStartR ?? 1,
-    colorStartVarianceB: config?.colorStartVarianceB ?? 0,
-    colorStartVarianceG: config?.colorStartVarianceG ?? 0,
-    colorStartVarianceR: config?.colorStartVarianceR ?? 0,
-    directionX: config?.directionX ?? 0,
-    directionY: config?.directionY ?? -1,
-    directionZ: config?.directionZ ?? 0,
-    duration: config?.duration ?? 0,
-    emitterConeAngle: config?.emitterConeAngle ?? 0,
-    emitterDepth: config?.emitterDepth ?? 0,
-    emitterHeight: config?.emitterHeight ?? 0,
-    emitterRadius: config?.emitterRadius ?? 0,
-    emitterShape: config?.emitterShape ?? 'point',
-    emitterWidth: config?.emitterWidth ?? 0,
-    frameCount: config?.frameCount ?? 1,
-    frameRate: config?.frameRate ?? 12,
-    gravityX: config?.gravityX ?? 0,
-    gravityY: config?.gravityY ?? 0,
-    gravityZ: config?.gravityZ ?? 0,
-    lifetimeMax: config?.lifetimeMax ?? 1,
-    lifetimeMin: config?.lifetimeMin ?? 0.5,
-    loop: config?.loop ?? true,
-    maxParticles: config?.maxParticles ?? 1000,
-    regionIdMax: config?.regionIdMax ?? 1,
-    regionIdMin: config?.regionIdMin ?? 0,
-    rotationSpeedMax: config?.rotationSpeedMax ?? 0,
-    rotationSpeedMin: config?.rotationSpeedMin ?? 0,
-    scaleCurve: config?.scaleCurve ?? null,
-    scaleEnd: config?.scaleEnd ?? 1,
-    scaleMax: config?.scaleMax ?? 1,
-    scaleMin: config?.scaleMin ?? 1,
-    spawnRate: config?.spawnRate ?? 10,
-    speedMax: config?.speedMax ?? 100,
-    speedMin: config?.speedMin ?? 50,
-    spread: config?.spread ?? Math.PI,
-    velocityInheritance: config?.velocityInheritance ?? 0,
-    worldSpace: config?.worldSpace ?? false,
-  });
+  const out = allocateEntity<ParticleEmitterConfig>();
+  out.alphaCurve = config?.alphaCurve ?? null;
+  out.alphaEnd = config?.alphaEnd ?? 0;
+  out.alphaStart = config?.alphaStart ?? 1;
+  out.blendMode = config?.blendMode ?? null;
+  out.burstCount = config?.burstCount ?? 0;
+  out.burstInterval = config?.burstInterval ?? 0;
+  out.colorCurve = config?.colorCurve ?? null;
+  out.colorEndB = config?.colorEndB ?? 1;
+  out.colorEndG = config?.colorEndG ?? 1;
+  out.colorEndR = config?.colorEndR ?? 1;
+  out.colorEndVarianceB = config?.colorEndVarianceB ?? 0;
+  out.colorEndVarianceG = config?.colorEndVarianceG ?? 0;
+  out.colorEndVarianceR = config?.colorEndVarianceR ?? 0;
+  out.colorStartB = config?.colorStartB ?? 1;
+  out.colorStartG = config?.colorStartG ?? 1;
+  out.colorStartR = config?.colorStartR ?? 1;
+  out.colorStartVarianceB = config?.colorStartVarianceB ?? 0;
+  out.colorStartVarianceG = config?.colorStartVarianceG ?? 0;
+  out.colorStartVarianceR = config?.colorStartVarianceR ?? 0;
+  out.directionX = config?.directionX ?? 0;
+  out.directionY = config?.directionY ?? -1;
+  out.directionZ = config?.directionZ ?? 0;
+  out.duration = config?.duration ?? 0;
+  out.emitterConeAngle = config?.emitterConeAngle ?? 0;
+  out.emitterDepth = config?.emitterDepth ?? 0;
+  out.emitterHeight = config?.emitterHeight ?? 0;
+  out.emitterRadius = config?.emitterRadius ?? 0;
+  out.emitterShape = config?.emitterShape ?? 'point';
+  out.emitterWidth = config?.emitterWidth ?? 0;
+  out.frameCount = config?.frameCount ?? 1;
+  out.frameRate = config?.frameRate ?? 12;
+  out.gravityX = config?.gravityX ?? 0;
+  out.gravityY = config?.gravityY ?? 0;
+  out.gravityZ = config?.gravityZ ?? 0;
+  out.lifetimeMax = config?.lifetimeMax ?? 1;
+  out.lifetimeMin = config?.lifetimeMin ?? 0.5;
+  out.loop = config?.loop ?? true;
+  out.maxParticles = config?.maxParticles ?? 1000;
+  out.regionIdMax = config?.regionIdMax ?? 1;
+  out.regionIdMin = config?.regionIdMin ?? 0;
+  out.rotationSpeedMax = config?.rotationSpeedMax ?? 0;
+  out.rotationSpeedMin = config?.rotationSpeedMin ?? 0;
+  out.scaleCurve = config?.scaleCurve ?? null;
+  out.scaleEnd = config?.scaleEnd ?? 1;
+  out.scaleMax = config?.scaleMax ?? 1;
+  out.scaleMin = config?.scaleMin ?? 1;
+  out.spawnRate = config?.spawnRate ?? 10;
+  out.speedMax = config?.speedMax ?? 100;
+  out.speedMin = config?.speedMin ?? 50;
+  out.spread = config?.spread ?? Math.PI;
+  out.velocityInheritance = config?.velocityInheritance ?? 0;
+  out.worldSpace = config?.worldSpace ?? false;
+  return finishEntity(out);
 }

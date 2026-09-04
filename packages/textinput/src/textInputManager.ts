@@ -1,7 +1,8 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
 import type {
+  EntityConstruction,
   InputKeyboardData,
   InputTextData,
   RichText,
@@ -39,10 +40,10 @@ export function connectInputToTextInput(input: TextInputSource, manager: TextInp
 }
 
 export function createTextInputManager(): TextInputManager {
-  return createEntity({
-    enabled: true,
-    focused: null,
-  });
+  const out = allocateEntity<TextInputManager>();
+  out.enabled = true;
+  out.focused = null;
+  return finishEntity(out);
 }
 
 export function dispatchTextInput(manager: TextInputManager, text: string): boolean {

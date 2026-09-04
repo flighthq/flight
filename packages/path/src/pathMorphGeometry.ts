@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Path, PathMorph } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
@@ -58,7 +58,14 @@ export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): Path
   return {
     contour: null,
     issue: PathMorphIssueNone,
-    morph: createEntity({ commands, endData, startData, winding: start.winding }),
+    morph: (() => {
+      const out = allocateEntity<PathMorphBuildResult>();
+      out.commands = commands;
+      out.endData = endData;
+      out.startData = startData;
+      out.winding = start.winding;
+      return finishEntity(out);
+    })(),
   };
 }
 

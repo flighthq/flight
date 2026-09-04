@@ -1,9 +1,10 @@
 import { writeCollisionConvexHullFaces3D } from '@flighthq/collision/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionColliderShape3D,
   CollisionHeightfield3D,
   CollisionTriangleMesh3D,
+  EntityConstruction,
   Physics3DDebugFeature,
   Physics3DDebugGeometry,
   Physics3DDebugGeometryOptions,
@@ -17,7 +18,12 @@ import { writeRigidBody3DWorldCenter } from './world';
 // writer advances counts and overwrites existing entries before growing them, so a steady scene stops
 // allocating after its first query.
 export function createPhysics3DDebugGeometry(): Physics3DDebugGeometry {
-  return createEntity({ lines: [], lineCount: 0, spheres: [], sphereCount: 0 });
+  const out = allocateEntity<Physics3DDebugGeometry>();
+  out.lines = [];
+  out.lineCount = 0;
+  out.spheres = [];
+  out.sphereCount = 0;
+  return finishEntity(out);
 }
 
 // Extracts the world's visible constraint geometry without choosing a renderer.

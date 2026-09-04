@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Camera2D, Camera2DOptions } from '@flighthq/types/contract';
 
 // Allocates a plain-data 2D camera over a `viewportWidth` x `viewportHeight` surface. The camera
@@ -10,12 +10,12 @@ export function createCamera2D(
   viewportHeight: number,
   options?: Readonly<Camera2DOptions>,
 ): Camera2D {
-  return createEntity({
-    rotation: options?.rotation ?? 0,
-    viewportHeight,
-    viewportWidth,
-    x: options?.x ?? 0,
-    y: options?.y ?? 0,
-    zoom: options?.zoom ?? 1,
-  });
+  const out = allocateEntity<Camera2D>();
+  out.rotation = options?.rotation ?? 0;
+  out.viewportHeight = viewportHeight;
+  out.viewportWidth = viewportWidth;
+  out.x = options?.x ?? 0;
+  out.y = options?.y ?? 0;
+  out.zoom = options?.zoom ?? 1;
+  return finishEntity(out);
 }

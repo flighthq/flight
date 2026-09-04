@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { StatechartComparison, StatechartInputKind, StatechartTransitionStatus } from '@flighthq/types/contract';
 import type {
+  EntityConstruction,
   Statechart,
   StatechartCondition,
   StatechartInstance,
@@ -65,17 +66,17 @@ export function createStatechartInstance(chart: Readonly<Statechart>): Statechar
     regionStates[regionIndex] = chart.regions[regionIndex].initialStateIndex;
   }
 
-  return createEntity({
-    chart,
-    durationGuard: null,
-    inputValues,
-    regionBlend,
-    regionDuration,
-    regionElapsed,
-    regionStates,
-    regionTransitions,
-    signals: null,
-  });
+  const out = allocateEntity<StatechartInstance>();
+  out.chart = chart;
+  out.durationGuard = null;
+  out.inputValues = inputValues;
+  out.regionBlend = regionBlend;
+  out.regionDuration = regionDuration;
+  out.regionElapsed = regionElapsed;
+  out.regionStates = regionStates;
+  out.regionTransitions = regionTransitions;
+  out.signals = null;
+  return finishEntity(out);
 }
 
 // Explain what the next advance sees in one region. This is the shakeable diagnostic companion to

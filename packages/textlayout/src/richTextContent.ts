@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   RichTextContent,
   RichTextData,
   RichTextRuntime,
@@ -40,7 +41,10 @@ export function computeRichTextContent(
 }
 
 export function createRichTextContent(): RichTextContent {
-  return createEntity({ formatRanges: [], text: '' });
+  const out = allocateEntity<RichTextContent>();
+  out.formatRanges = [];
+  out.text = '';
+  return finishEntity(out);
 }
 
 export function getRichTextContent(runtime: RichTextRuntime): RichTextContent {

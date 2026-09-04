@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   HasMediaSession,
   HasMediaSessionAction,
   MediaSessionAction,
@@ -9,10 +10,10 @@ import type {
   MediaSessionClearPositionStateOutcome,
   MediaSessionMetadata,
   MediaSessionPlaybackState,
+  MediaSessionPositionState,
   MediaSessionSetMetadataOutcome,
   MediaSessionSetPlaybackStateOutcome,
   MediaSessionSetPositionStateOutcome,
-  MediaSessionPositionState,
 } from '@flighthq/types/contract';
 
 // Attaches exactly the action named by `signal`. A null provider subscription is a truthful runtime
@@ -36,7 +37,10 @@ export function clearMediaSessionPositionState(host: HasMediaSession): MediaSess
 }
 
 export function createMediaSessionActionSignal(action: MediaSessionAction): MediaSessionActionSignal {
-  return createEntity({ action, onAction: createSignal() });
+  const out = allocateEntity<MediaSessionActionSignal>();
+  out.action = action;
+  out.onAction = createSignal();
+  return finishEntity(out);
 }
 
 // Provider lifetime is separate from per-action subscription lifetime. Every distinct provider is

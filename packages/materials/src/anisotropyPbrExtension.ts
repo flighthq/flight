@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AnisotropyPbrExtension } from '@flighthq/types/contract';
 import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
 
@@ -6,13 +6,13 @@ import { isValidMaterialWeight } from './materialValidation';
 import { isValidPbrUvSet } from './pbrExtension';
 
 export function createAnisotropyPbrExtension(opts?: Readonly<Partial<AnisotropyPbrExtension>>): AnisotropyPbrExtension {
-  return createEntity({
-    anisotropyMap: opts?.anisotropyMap ?? null,
-    anisotropyMapUvSet: opts?.anisotropyMapUvSet ?? 0,
-    anisotropyRotation: opts?.anisotropyRotation ?? 0,
-    anisotropyStrength: opts?.anisotropyStrength ?? 0,
-    kind: AnisotropyPbrExtensionKind,
-  });
+  const out = allocateEntity<AnisotropyPbrExtension>();
+  out.anisotropyMap = opts?.anisotropyMap ?? null;
+  out.anisotropyMapUvSet = opts?.anisotropyMapUvSet ?? 0;
+  out.anisotropyRotation = opts?.anisotropyRotation ?? 0;
+  out.anisotropyStrength = opts?.anisotropyStrength ?? 0;
+  out.kind = AnisotropyPbrExtensionKind;
+  return finishEntity(out);
 }
 
 export function isValidAnisotropyPbrExtension(value: Readonly<AnisotropyPbrExtension>): boolean {

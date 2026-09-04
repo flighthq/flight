@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AnimationBlendTree,
   AnimationChannel,
@@ -8,6 +8,7 @@ import type {
   AnimationLayerStackChannel,
   AnimationLayerStackChannelSource,
   AnimationStateMachine,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { advanceAnimationPlayers } from './animationAdvance';
@@ -65,14 +66,14 @@ export function createAnimationLayerStack(layers: readonly AnimationLayer[]): An
     }
   }
 
-  return createEntity({
-    advanceScratch: [],
-    blendTrees,
-    channels,
-    layers: copiedLayers,
-    sampleScratch: new Float32Array(sampleWidth),
-    stateMachines,
-  });
+  const out = allocateEntity<AnimationLayer>();
+  out.advanceScratch = [];
+  out.blendTrees = blendTrees;
+  out.channels = channels;
+  out.layers = copiedLayers;
+  out.sampleScratch = new Float32Array(sampleWidth);
+  out.stateMachines = stateMachines;
+  return finishEntity(out);
 }
 
 // Allocates a layer sourced by one named state machine. Its global target layout remains stable while
@@ -157,13 +158,13 @@ function createAnimationLayer(
   stateMachine: AnimationStateMachine | null,
   options?: Readonly<AnimationLayerOptions>,
 ): AnimationLayer {
-  return createEntity({
-    additive: options?.additive ?? false,
-    blendTree,
-    channelIndices: copyAnimationLayerChannelIndices(options?.channelIndices, channelCount),
-    stateMachine,
-    weight: options?.weight ?? 1,
-  });
+  const out = allocateEntity<AnimationLayer>();
+  out.additive = options?.additive ?? false;
+  out.blendTree = blendTree;
+  out.channelIndices = copyAnimationLayerChannelIndices(options?.channelIndices, channelCount);
+  out.stateMachine = stateMachine;
+  out.weight = options?.weight ?? 1;
+  return finishEntity(out);
 }
 
 function copyAnimationLayerChannelIndices(

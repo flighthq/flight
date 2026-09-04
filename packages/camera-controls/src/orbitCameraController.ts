@@ -1,8 +1,13 @@
 import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { clamp, damp, deltaAngle } from '@flighthq/math/contract';
-import type { Camera3D, OrbitCameraController, OrbitCameraControllerOptions } from '@flighthq/types/contract';
+import type {
+  Camera3D,
+  EntityConstruction,
+  OrbitCameraController,
+  OrbitCameraControllerOptions,
+} from '@flighthq/types/contract';
 
 // Allocates an independent Entity containing the same controller value state.
 export function cloneOrbitCameraController(source: Readonly<OrbitCameraController>): OrbitCameraController {
@@ -39,20 +44,20 @@ export function createOrbitCameraController(options?: Readonly<OrbitCameraContro
   const polar = options?.polar ?? 0;
   const distance = options?.distance ?? 10;
   const target = options?.target;
-  return createEntity({
-    azimuth,
-    distance,
-    goalAzimuth: azimuth,
-    goalDistance: distance,
-    goalPolar: polar,
-    maxDistance: options?.maxDistance ?? Number.POSITIVE_INFINITY,
-    maxPolar: options?.maxPolar ?? DEFAULT_MAX_POLAR,
-    minDistance: options?.minDistance ?? DEFAULT_MIN_DISTANCE,
-    minPolar: options?.minPolar ?? DEFAULT_MIN_POLAR,
-    polar,
-    smoothTime: options?.smoothTime ?? 0,
-    target: createVector3(target?.x ?? 0, target?.y ?? 0, target?.z ?? 0),
-  });
+  const out = allocateEntity<OrbitCameraController>();
+  out.azimuth = azimuth;
+  out.distance = distance;
+  out.goalAzimuth = azimuth;
+  out.goalDistance = distance;
+  out.goalPolar = polar;
+  out.maxDistance = options?.maxDistance ?? Number.POSITIVE_INFINITY;
+  out.maxPolar = options?.maxPolar ?? DEFAULT_MAX_POLAR;
+  out.minDistance = options?.minDistance ?? DEFAULT_MIN_DISTANCE;
+  out.minPolar = options?.minPolar ?? DEFAULT_MIN_POLAR;
+  out.polar = polar;
+  out.smoothTime = options?.smoothTime ?? 0;
+  out.target = createVector3(target?.x ?? 0, target?.y ?? 0, target?.z ?? 0);
+  return finishEntity(out);
 }
 
 // Moves the goal distance (dolly / zoom) by `deltaDistance`, clamped to [minDistance, maxDistance].

@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import type {
+  EntityConstruction,
   HtmlView,
   HtmlViewData,
   HtmlViewRuntime,
@@ -24,11 +25,11 @@ export function createHtmlView(obj?: Readonly<PartialNode<HtmlView>>): HtmlView 
 }
 
 export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): HtmlViewData {
-  return createEntity({
-    element: data?.element ?? null,
-    height: data?.height ?? 100,
-    width: data?.width ?? 100,
-  });
+  const out = allocateEntity<HtmlView>();
+  out.element = data?.element ?? null;
+  out.height = data?.height ?? 100;
+  out.width = data?.width ?? 100;
+  return finishEntity(out);
 }
 
 export function createHtmlViewRuntime(): HtmlViewRuntime {

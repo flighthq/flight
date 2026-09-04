@@ -1,6 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import type { BoundsNodeAny, LassoSelection, LassoSelectionRuntime, Path } from '@flighthq/types/contract';
+import type {
+  BoundsNodeAny,
+  EntityConstruction,
+  LassoSelection,
+  LassoSelectionRuntime,
+  Path,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 export function addLassoSelectionPoint(selection: LassoSelection, x: number, y: number): void {
@@ -24,7 +30,13 @@ export function createLassoSelection(): LassoSelection {
   const runtime = {
     active: false,
     binding: null,
-    path: createEntity({ commands: [] as number[], data: [] as number[], winding: 'evenOdd' as const }),
+    path: (() => {
+      const out = allocateEntity<void>();
+      out.commands = [] as number[];
+      out.data = [] as number[];
+      out.winding = 'evenOdd' as const;
+      return finishEntity(out);
+    })(),
   } satisfies LassoSelectionRuntime;
   selection[EntityRuntimeKey] = runtime;
   return selection;

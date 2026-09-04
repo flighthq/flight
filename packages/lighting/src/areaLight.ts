@@ -1,31 +1,31 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, normalizeVector3, setVector3 } from '@flighthq/geometry/contract';
-import type { AreaLight, AreaLightOptions, Vector3Like } from '@flighthq/types/contract';
+import type { AreaLight, AreaLightOptions, EntityConstruction, Vector3Like } from '@flighthq/types/contract';
 import { AreaLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of an area light's data, including fresh position/direction/right/up vectors.
 export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {
-  return createEntity({
-    castsShadow: source.castsShadow,
-    color: source.color,
-    decay: source.decay,
-    direction: cloneVector3(source.direction),
-    enabled: source.enabled,
-    intensity: source.intensity,
-    intensityUnit: source.intensityUnit,
-    kind: AreaLightKind,
-    normalBias: source.normalBias,
-    pcfRadius: source.pcfRadius,
-    position: cloneVector3(source.position),
-    range: source.range,
-    right: cloneVector3(source.right),
-    shadowBias: source.shadowBias,
-    shadowFar: source.shadowFar,
-    shadowMapSize: source.shadowMapSize,
-    shadowNear: source.shadowNear,
-    shadowStrength: source.shadowStrength,
-    up: cloneVector3(source.up),
-  });
+  const out = allocateEntity<unknown>();
+  out.castsShadow = source.castsShadow;
+  out.color = source.color;
+  out.decay = source.decay;
+  out.direction = cloneVector3(source.direction);
+  out.enabled = source.enabled;
+  out.intensity = source.intensity;
+  out.intensityUnit = source.intensityUnit;
+  out.kind = AreaLightKind;
+  out.normalBias = source.normalBias;
+  out.pcfRadius = source.pcfRadius;
+  out.position = cloneVector3(source.position);
+  out.range = source.range;
+  out.right = cloneVector3(source.right);
+  out.shadowBias = source.shadowBias;
+  out.shadowFar = source.shadowFar;
+  out.shadowMapSize = source.shadowMapSize;
+  out.shadowNear = source.shadowNear;
+  out.shadowStrength = source.shadowStrength;
+  out.up = cloneVector3(source.up);
+  return finishEntity(out);
 }
 
 // Rectangular area light (LTC-shaded). `position` is the rectangle center, `direction` its facing
@@ -37,27 +37,27 @@ export function createAreaLight(options?: Readonly<AreaLightOptions>): AreaLight
   const direction = options?.direction;
   const right = options?.right;
   const up = options?.up;
-  return createEntity({
-    castsShadow: options?.castsShadow ?? false,
-    color: options?.color ?? 0xffffffff,
-    decay: options?.decay ?? 2,
-    direction: direction ? cloneVector3(direction) : createVector3(0, -1, 0),
-    enabled: options?.enabled ?? true,
-    intensity: options?.intensity ?? 1,
-    intensityUnit: options?.intensityUnit ?? UnitlessLightUnit,
-    kind: AreaLightKind,
-    normalBias: options?.normalBias ?? 0,
-    pcfRadius: options?.pcfRadius ?? 0,
-    position: position ? cloneVector3(position) : createVector3(0, 0, 0),
-    range: options?.range ?? -1,
-    right: right ? cloneVector3(right) : createVector3(1, 0, 0),
-    shadowBias: options?.shadowBias ?? 0,
-    shadowFar: options?.shadowFar ?? 500,
-    shadowMapSize: options?.shadowMapSize ?? 1024,
-    shadowNear: options?.shadowNear ?? 0.5,
-    shadowStrength: options?.shadowStrength ?? 1,
-    up: up ? cloneVector3(up) : createVector3(0, 0, 1),
-  });
+  const out = allocateEntity<AreaLight>();
+  out.castsShadow = options?.castsShadow ?? false;
+  out.color = options?.color ?? 0xffffffff;
+  out.decay = options?.decay ?? 2;
+  out.direction = direction ? cloneVector3(direction) : createVector3(0, -1, 0);
+  out.enabled = options?.enabled ?? true;
+  out.intensity = options?.intensity ?? 1;
+  out.intensityUnit = options?.intensityUnit ?? UnitlessLightUnit;
+  out.kind = AreaLightKind;
+  out.normalBias = options?.normalBias ?? 0;
+  out.pcfRadius = options?.pcfRadius ?? 0;
+  out.position = position ? cloneVector3(position) : createVector3(0, 0, 0);
+  out.range = options?.range ?? -1;
+  out.right = right ? cloneVector3(right) : createVector3(1, 0, 0);
+  out.shadowBias = options?.shadowBias ?? 0;
+  out.shadowFar = options?.shadowFar ?? 500;
+  out.shadowMapSize = options?.shadowMapSize ?? 1024;
+  out.shadowNear = options?.shadowNear ?? 0.5;
+  out.shadowStrength = options?.shadowStrength ?? 1;
+  out.up = up ? cloneVector3(up) : createVector3(0, 0, 1);
+  return finishEntity(out);
 }
 
 // Sets the orientation of a rectangular area light by writing normalized `direction`, `right`,

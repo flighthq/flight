@@ -1,28 +1,28 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
 import type { DirectionalLight, DirectionalLightOptions } from '@flighthq/types/contract';
 import { DirectionalLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 // Independent copy of a directional light's data, including a fresh `direction` vector.
 export function cloneDirectionalLight(source: Readonly<DirectionalLight>): DirectionalLight {
-  return createEntity({
-    cascadeCount: source.cascadeCount,
-    cascadeSplits: source.cascadeSplits.slice(),
-    castsShadow: source.castsShadow,
-    color: source.color,
-    direction: cloneVector3(source.direction),
-    enabled: source.enabled,
-    intensity: source.intensity,
-    intensityUnit: source.intensityUnit,
-    kind: DirectionalLightKind,
-    normalBias: source.normalBias,
-    pcfRadius: source.pcfRadius,
-    shadowBias: source.shadowBias,
-    shadowFar: source.shadowFar,
-    shadowMapSize: source.shadowMapSize,
-    shadowNear: source.shadowNear,
-    shadowStrength: source.shadowStrength,
-  });
+  const out = allocateEntity<unknown>();
+  out.cascadeCount = source.cascadeCount;
+  out.cascadeSplits = source.cascadeSplits.slice();
+  out.castsShadow = source.castsShadow;
+  out.color = source.color;
+  out.direction = cloneVector3(source.direction);
+  out.enabled = source.enabled;
+  out.intensity = source.intensity;
+  out.intensityUnit = source.intensityUnit;
+  out.kind = DirectionalLightKind;
+  out.normalBias = source.normalBias;
+  out.pcfRadius = source.pcfRadius;
+  out.shadowBias = source.shadowBias;
+  out.shadowFar = source.shadowFar;
+  out.shadowMapSize = source.shadowMapSize;
+  out.shadowNear = source.shadowNear;
+  out.shadowStrength = source.shadowStrength;
+  return finishEntity(out);
 }
 
 // Infinitely distant directional light (sun). `direction` is the world-space travel direction
@@ -30,24 +30,23 @@ export function cloneDirectionalLight(source: Readonly<DirectionalLight>): Direc
 // defaults to opaque white at unit intensity, pointing straight down (0, -1, 0) with shadows off.
 export function createDirectionalLight(options?: Readonly<DirectionalLightOptions>): DirectionalLight {
   const direction = options?.direction;
-  const light: DirectionalLight = createEntity({
-    cascadeCount: options?.cascadeCount ?? 1,
-    cascadeSplits: options?.cascadeSplits?.slice() ?? [1],
-    castsShadow: options?.castsShadow ?? false,
-    color: options?.color ?? 0xffffffff,
-    direction: createVector3(0, -1, 0),
-    enabled: options?.enabled ?? true,
-    intensity: options?.intensity ?? 1,
-    intensityUnit: options?.intensityUnit ?? UnitlessLightUnit,
-    kind: DirectionalLightKind,
-    normalBias: options?.normalBias ?? 0,
-    pcfRadius: options?.pcfRadius ?? 0,
-    shadowBias: options?.shadowBias ?? 0,
-    shadowFar: options?.shadowFar ?? 500,
-    shadowMapSize: options?.shadowMapSize ?? 1024,
-    shadowNear: options?.shadowNear ?? 0.5,
-    shadowStrength: options?.shadowStrength ?? 1,
-  });
+  const light = allocateEntity<DirectionalLight>();
+  light.cascadeCount = options?.cascadeCount ?? 1;
+  light.cascadeSplits = options?.cascadeSplits?.slice() ?? [1];
+  light.castsShadow = options?.castsShadow ?? false;
+  light.color = options?.color ?? 0xffffffff;
+  light.direction = createVector3(0, -1, 0);
+  light.enabled = options?.enabled ?? true;
+  light.intensity = options?.intensity ?? 1;
+  light.intensityUnit = options?.intensityUnit ?? UnitlessLightUnit;
+  light.kind = DirectionalLightKind;
+  light.normalBias = options?.normalBias ?? 0;
+  light.pcfRadius = options?.pcfRadius ?? 0;
+  light.shadowBias = options?.shadowBias ?? 0;
+  light.shadowFar = options?.shadowFar ?? 500;
+  light.shadowMapSize = options?.shadowMapSize ?? 1024;
+  light.shadowNear = options?.shadowNear ?? 0.5;
+  light.shadowStrength = options?.shadowStrength ?? 1;
   if (direction) setDirectionalLightDirection(light, direction.x, direction.y, direction.z);
   return light;
 }

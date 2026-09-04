@@ -1,7 +1,8 @@
 import { srgbChannelToLinear } from '@flighthq/color/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
+  EntityConstruction,
   Material,
   Matrix,
   RenderPassPreserve,
@@ -134,21 +135,21 @@ export function createWgpuRenderTarget(
   });
   const depthStencilView = depthStencilTexture.createView();
 
-  return createEntity({
-    bindings: new Map(),
-    mipLevelCount: 1,
-    colorSpace,
-    texture,
-    view,
-    depthStencilTexture,
-    depthStencilView,
-    format,
-    sampleCount: samples,
-    clearColors: [],
-    clearDepth: 1,
-    width: w,
-    height: h,
-  });
+  const out = allocateEntity<WgpuRenderTarget>();
+  out.bindings = new Map();
+  out.mipLevelCount = 1;
+  out.colorSpace = colorSpace;
+  out.texture = texture;
+  out.view = view;
+  out.depthStencilTexture = depthStencilTexture;
+  out.depthStencilView = depthStencilView;
+  out.format = format;
+  out.sampleCount = samples;
+  out.clearColors = [];
+  out.clearDepth = 1;
+  out.width = w;
+  out.height = h;
+  return finishEntity(out);
 }
 
 // Stamps the color space produced into the currently bound target. False means the caller is drawing
@@ -198,12 +199,14 @@ export function drawWgpuRenderTargetResult(
     state,
     renderProxy as never,
     composedTransform,
-    createEntity({
-      bindings: target.bindings,
-      mipLevelCount: target.mipLevelCount,
-      texture: target.texture,
-      view: target.view,
-    }),
+    (() => {
+      const out = allocateEntity<void>();
+      out.bindings = target.bindings;
+      out.mipLevelCount = target.mipLevelCount;
+      out.texture = target.texture;
+      out.view = target.view;
+      return finishEntity(out);
+    })(),
     0,
     0,
     target.width,

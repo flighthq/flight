@@ -1,13 +1,14 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type {
+  EntityConstruction,
   NodeAny,
-  Renderable,
   RenderProxy,
   RenderQueue,
   RenderQueueEntry,
   RenderSortKey,
   RenderState,
+  Renderable,
 } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
@@ -61,7 +62,10 @@ export function compareRenderQueueEntries(a: RenderQueueEntry, b: RenderQueueEnt
 // Creates a new empty RenderQueue. The entries array is pre-allocated empty; entries grow as
 // pushRenderQueueEntry or buildRenderQueue populates it. Cleared between frames by clearRenderQueue.
 export function createRenderQueue(): RenderQueue {
-  return createEntity({ entries: [], entryCount: 0 });
+  const out = allocateEntity<RenderQueue>();
+  out.entries = [];
+  out.entryCount = 0;
+  return finishEntity(out);
 }
 
 // Packs a layer index, a normalized depth (0..1), and an opaque flag into a single sort key

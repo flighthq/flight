@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  EntityConstruction,
   HasUiStatusBarChange,
   HasUiStatusBarColor,
   HasUiStatusBarInfo,
@@ -38,17 +39,19 @@ export function clearStatusBarStyleStack(host: HasUiStatusBarStyleStack): void {
 }
 
 export function createStatusBar(): StatusBar {
-  return createEntity({ onChange: createSignal() });
+  const out = allocateEntity<StatusBar>();
+  out.onChange = createSignal();
+  return finishEntity(out);
 }
 
 export function createStatusBarInfo(): StatusBarInfo {
-  return createEntity({
-    color: 0,
-    height: -1,
-    overlaysContent: false,
-    style: 'default',
-    visible: true,
-  });
+  const out = allocateEntity<StatusBar>();
+  out.color = 0;
+  out.height = -1;
+  out.overlaysContent = false;
+  out.style = 'default';
+  out.visible = true;
+  return finishEntity(out);
 }
 
 export function detachStatusBar(bar: StatusBar): void {

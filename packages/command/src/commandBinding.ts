@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeChildAt, getNodeChildCount, removeNodeChild, setNodeChildIndex } from '@flighthq/node/contract';
 import { createKeyedTable, getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
@@ -8,8 +8,9 @@ import type {
   CommandHistory,
   CompositeCommand,
   Entity,
-  Kind,
+  EntityConstruction,
   KeyedTable,
+  Kind,
   NodeAny,
   RemoveNodeChildCommand,
   ReorderNodeChildCommand,
@@ -141,18 +142,18 @@ const setNodePropertyCommandBinding: CommandBinding = {
       if (a.entries[i].target !== b.entries[i].target) return null;
       if (a.entries[i].property !== b.entries[i].property) return null;
     }
-    return createEntity<Omit<SetNodePropertyCommand, keyof Entity>>({
-      entries: a.entries.map((entry, i) => ({
-        after: b.entries[i].after,
-        before: entry.before,
-        property: entry.property,
-        target: entry.target,
-      })),
-      kind: a.kind,
-      label: b.label,
-      mergeWindow: b.mergeWindow,
-      time: b.time,
-    });
+    const out = allocateEntity<Omit<SetNodePropertyCommand, keyof Entity>>();
+    out.entries = a.entries.map((entry, i) => ({
+      after: b.entries[i].after,
+      before: entry.before,
+      property: entry.property,
+      target: entry.target,
+    }));
+    out.kind = a.kind;
+    out.label = b.label;
+    out.mergeWindow = b.mergeWindow;
+    out.time = b.time;
+    return finishEntity(out);
   },
   undo: (command) => {
     const entries = (command as Readonly<SetNodePropertyCommand>).entries;

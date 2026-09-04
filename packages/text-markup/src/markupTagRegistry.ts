@@ -1,6 +1,7 @@
 import { packOpaqueColor } from '@flighthq/color/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   MarkupClassResolver,
   MarkupColorResolver,
   MarkupTagHandler,
@@ -17,7 +18,9 @@ import type {
  * registry that omits the standard tags lets them tree-shake out.
  */
 export function createMarkupTagRegistry(): MarkupTagRegistry {
-  return createEntity({ handlers: new Map() });
+  const out = allocateEntity<MarkupTagRegistry>();
+  out.handlers = new Map();
+  return finishEntity(out);
 }
 
 /**

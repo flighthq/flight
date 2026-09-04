@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Accelerator,
   CreateGlobalShortcutOutcome,
+  EntityConstruction,
   GlobalShortcut,
   GlobalShortcutAttachOutcome,
   GlobalShortcutDetachOutcome,
@@ -86,7 +87,12 @@ export function createGlobalShortcut(
   if ('reason' in outcome) return { parseError: outcome, reason: 'unparseable' };
   return {
     reason: 'created',
-    shortcut: createEntity({ accelerator: formatParsedAccelerator(outcome), onTrigger: createSignal() }),
+    shortcut: (() => {
+      const out = allocateEntity<NonEntityCreateResult<CreateGlobalShortcutOutcome, 'descriptor'>>();
+      out.accelerator = formatParsedAccelerator(outcome);
+      out.onTrigger = createSignal();
+      return finishEntity(out);
+    })(),
   };
 }
 

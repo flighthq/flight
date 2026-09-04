@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Clock, ClockOptions } from '@flighthq/types/contract';
 
@@ -39,15 +39,15 @@ export function createChildClock(parent: Clock, options?: Readonly<ClockOptions>
 // Allocates a root clock (no parent). Defaults to realtime and running; pass options to start scaled or
 // paused. Drive it each frame with advanceClock(clock, dtSeconds).
 export function createClock(options?: Readonly<ClockOptions>): Clock {
-  return createEntity({
-    scale: options?.scale ?? 1,
-    paused: options?.paused ?? false,
-    deltaTime: 0,
-    elapsed: 0,
-    parent: null,
-    children: [],
-    onTick: null,
-  });
+  const out = allocateEntity<Clock>();
+  out.scale = options?.scale ?? 1;
+  out.paused = options?.paused ?? false;
+  out.deltaTime = 0;
+  out.elapsed = 0;
+  out.parent = null;
+  out.children = [];
+  out.onTick = null;
+  return finishEntity(out);
 }
 
 // Detaches a clock from its parent, releases its children, and drops any onTick listeners so nothing

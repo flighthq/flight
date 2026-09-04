@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   copyMatrix4,
   createMatrix3,
@@ -9,16 +9,21 @@ import {
   setMatrix4Identity,
 } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import type { Matrix4Like, Node3D, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types/contract';
+import type {
+  EntityConstruction,
+  Matrix4Like,
+  Node3D,
+  Skeleton3D,
+  Skeleton3DValidationDiagnostic,
+} from '@flighthq/types/contract';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
-  const clone = createEntity({
-    inverseBindMatrices: new Float32Array(skeleton.inverseBindMatrices),
-    jointMatrices: new Float32Array(skeleton.jointMatrices),
-    joints: skeleton.joints.slice(),
-    names: skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
-    normalMatrices: new Float32Array(skeleton.normalMatrices),
-  });
+  const clone = allocateEntity<unknown>();
+  clone.inverseBindMatrices = new Float32Array(skeleton.inverseBindMatrices);
+  clone.jointMatrices = new Float32Array(skeleton.jointMatrices);
+  clone.joints = skeleton.joints.slice();
+  clone.names = skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice();
+  clone.normalMatrices = new Float32Array(skeleton.normalMatrices);
   return clone;
 }
 
@@ -46,13 +51,13 @@ export function cloneSkeleton3DJointHierarchy(
     const parentClone = clonesBySource.get(sourceParent);
     if (parentClone !== undefined) addNodeChild(parentClone, joints[i]);
   }
-  return createEntity({
-    inverseBindMatrices: new Float32Array(skeleton.inverseBindMatrices),
-    jointMatrices: new Float32Array(skeleton.jointMatrices),
-    joints,
-    names: skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
-    normalMatrices: new Float32Array(skeleton.normalMatrices),
-  });
+  const out = allocateEntity<unknown>();
+  out.inverseBindMatrices = new Float32Array(skeleton.inverseBindMatrices);
+  out.jointMatrices = new Float32Array(skeleton.jointMatrices);
+  out.joints = joints;
+  out.names = skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice();
+  out.normalMatrices = new Float32Array(skeleton.normalMatrices);
+  return finishEntity(out);
 }
 
 export function computeSkeleton3DJointMatrices(skeleton: Readonly<Skeleton3D>): void {
@@ -84,13 +89,12 @@ export function createSkeleton3D(
   names?: readonly string[] | null,
 ): Skeleton3D {
   const count = joints.length;
-  const skeleton = createEntity({
-    inverseBindMatrices: inverseBindMatrices ?? new Float32Array(count * 16),
-    jointMatrices: new Float32Array(count * 16),
-    joints,
-    names: names ?? null,
-    normalMatrices: new Float32Array(count * 12),
-  });
+  const skeleton = allocateEntity<Skeleton3D>();
+  skeleton.inverseBindMatrices = inverseBindMatrices ?? new Float32Array(count * 16);
+  skeleton.jointMatrices = new Float32Array(count * 16);
+  skeleton.joints = joints;
+  skeleton.names = names ?? null;
+  skeleton.normalMatrices = new Float32Array(count * 12);
   if (inverseBindMatrices === undefined) setSkeleton3DBindPose(skeleton);
   return skeleton;
 }

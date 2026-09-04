@@ -1,4 +1,4 @@
-﻿import { createEntity } from '@flighthq/entity/contract';
+﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
@@ -7,6 +7,7 @@ import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/co
 import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
+  EntityConstruction,
   GlContext,
   GlRenderState,
   MatrixLike,
@@ -51,15 +52,15 @@ export function acquireGlScale9ShapeRasterSurface(
 }
 
 export function createGlScale9ShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
-  return createEntity({
-    lastH: 0,
-    lastScaleX: -1,
-    lastScaleY: -1,
-    lastContentId: -1,
-    lastPixelRatio: 0,
-    lastW: 0,
-    surface: null,
-  });
+  const out = allocateEntity<unknown>();
+  out.lastH = 0;
+  out.lastScaleX = -1;
+  out.lastScaleY = -1;
+  out.lastContentId = -1;
+  out.lastPixelRatio = 0;
+  out.lastW = 0;
+  out.surface = null;
+  return finishEntity(out);
 }
 
 // Remove the Image-keyed GPU entry before returning this per-node surface to the provider that created it.

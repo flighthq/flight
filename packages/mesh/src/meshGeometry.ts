@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
 import type {
+  EntityConstruction,
   MeshGeometry,
   MeshGeometryOptions,
   MeshGeometryRuntime,
@@ -189,15 +190,14 @@ export function setMeshGeometrySkinBindPose(geometry: Readonly<MeshGeometry>, bi
 // Allocates a MeshGeometry entity with a runtime carrying empty (null) GPU upload slots. This is
 // the single construction point so every MeshGeometry shares the same runtime shape.
 function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof EntityRuntimeKey>>): MeshGeometry {
-  const geometry = createEntity({
-    bounds: fields.bounds,
-    indices: fields.indices,
-    layout: fields.layout,
-    subsets: fields.subsets,
-    topology: fields.topology,
-    version: fields.version,
-    vertices: fields.vertices,
-  }) as MeshGeometry;
+  const geometry = allocateEntity<MeshGeometry>();
+  geometry.bounds = fields.bounds;
+  geometry.indices = fields.indices;
+  geometry.layout = fields.layout;
+  geometry.subsets = fields.subsets;
+  geometry.topology = fields.topology;
+  geometry.version = fields.version;
+  geometry.vertices = fields.vertices;
   const runtime: MeshGeometryRuntime = {
     attributeDataView: null,
     binding: null,

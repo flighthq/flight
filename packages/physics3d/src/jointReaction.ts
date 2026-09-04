@@ -1,5 +1,10 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { Physics3DJoint, Physics3DJointReaction, Physics3DWorld } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  EntityConstruction,
+  Physics3DJoint,
+  Physics3DJointReaction,
+  Physics3DWorld,
+} from '@flighthq/types/contract';
 
 // What a joint is CARRYING — the force and torque its constraint applied over the sub-interval just
 // solved. A stress readout, a break threshold, a gameplay trigger for a rope about to snap.
@@ -49,7 +54,14 @@ export function clearPhysics3DJointReaction(out: Physics3DJointReaction): void {
 }
 
 export function createPhysics3DJointReaction(): Physics3DJointReaction {
-  return createEntity({ forceX: 0, forceY: 0, forceZ: 0, torqueX: 0, torqueY: 0, torqueZ: 0 });
+  const out = allocateEntity<Physics3DJointReaction>();
+  out.forceX = 0;
+  out.forceY = 0;
+  out.forceZ = 0;
+  out.torqueX = 0;
+  out.torqueY = 0;
+  out.torqueZ = 0;
+  return finishEntity(out);
 }
 
 export function getPhysics3DJointReactionForce(reaction: Readonly<Physics3DJointReaction>): number {

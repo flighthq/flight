@@ -1,5 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { AnimationChannel, AnimationClip, AnimationClipEvent, AnimationTrack } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  AnimationChannel,
+  AnimationClip,
+  AnimationClipEvent,
+  AnimationTrack,
+  EntityConstruction,
+} from '@flighthq/types/contract';
 
 import { cloneAnimationTrack, sampleAnimationTrack } from './animationTrack';
 
@@ -11,12 +17,19 @@ export function cloneAnimationClip(clip: Readonly<AnimationClip>): AnimationClip
     channels.push(createAnimationChannel(cloneAnimationTrack(channel.track), channel.targetRef));
   }
   const events = clip.events.map((event) => createAnimationClipEvent(event.time, event.name, event.payload));
-  return createEntity({ channels, duration: clip.duration, events });
+  const out = allocateEntity<unknown>();
+  out.channels = channels;
+  out.duration = clip.duration;
+  out.events = events;
+  return finishEntity(out);
 }
 
 // Pairs a track with an opaque target reference (interpreted only by the domain binding layer).
 export function createAnimationChannel(track: AnimationTrack, targetRef: unknown): AnimationChannel {
-  return createEntity({ targetRef, track });
+  const out = allocateEntity<AnimationChannel>();
+  out.targetRef = targetRef;
+  out.track = track;
+  return finishEntity(out);
 }
 
 // Bundles channels and sorted clip events. `duration` defaults to the latest keyframe or event time.
@@ -35,12 +48,20 @@ export function createAnimationClip(
   if (duration !== undefined && copiedEvents.length > 0 && copiedEvents[copiedEvents.length - 1].time > duration) {
     throw new RangeError('AnimationClip event time exceeds the explicit clip duration.');
   }
-  return createEntity({ channels, duration: duration ?? computedDuration, events: copiedEvents });
+  const out = allocateEntity<AnimationChannel>();
+  out.channels = channels;
+  out.duration = duration ?? computedDuration;
+  out.events = copiedEvents;
+  return finishEntity(out);
 }
 
 // Allocates one opaque-payload clip marker. Clip construction validates its time against the clip.
 export function createAnimationClipEvent(time: number, name: string, payload: unknown = null): AnimationClipEvent {
-  return createEntity({ name, payload, time });
+  const out = allocateEntity<AnimationChannel>();
+  out.name = name;
+  out.payload = payload;
+  out.time = time;
+  return finishEntity(out);
 }
 
 // Returns the clip's total duration in seconds.

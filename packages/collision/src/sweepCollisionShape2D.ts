@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CollisionBuiltInShape2D, CollisionTimeOfImpact2D } from '@flighthq/types/contract';
 
 import { collideContactManifold2D } from './collideContactManifold2D';
@@ -8,7 +8,13 @@ import { writeAabbVertices, writeObbVertices } from './convexVertices2D';
 import { createCollisionRaycastHit2D } from './raycastCollisionShape2D';
 
 export function createCollisionTimeOfImpact2D(): CollisionTimeOfImpact2D {
-  return createEntity({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
+  const out = allocateEntity<CollisionTimeOfImpact2D>();
+  out.fraction = 0;
+  out.x = 0;
+  out.y = 0;
+  out.normalX = 0;
+  out.normalY = 0;
+  return finishEntity(out);
 }
 
 // Finds the exact first contact under LINEAR TRANSLATION of both shapes. Circle-circle uses its

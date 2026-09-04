@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AnimationBlendTree,
   AnimationChannel,
@@ -6,6 +6,7 @@ import type {
   AnimationStateMachineChannel,
   AnimationStateMachineState,
   EasingFunction,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { blendAnimationSamples } from './animationBlend';
@@ -44,20 +45,20 @@ export function createAnimationStateMachine(
   const channels = createAnimationStateMachineChannels(copiedStates);
   let sampleWidth = 0;
   for (const entry of channels) sampleWidth = Math.max(sampleWidth, entry.channel.track.components);
-  return createEntity({
-    advanceScratch: [],
-    channels,
-    currentStateIndex: initialStateIndex,
-    fromSample: new Float32Array(sampleWidth),
-    states: copiedStates,
-    toSample: new Float32Array(sampleWidth),
-    transitionCurve: linearAnimationStateMachineCurve,
-    transitionDuration: 0,
-    transitionElapsed: 0,
-    transitionFromStateIndex: null,
-    transitionToStateIndex: null,
-    transitionWeight: 0,
-  });
+  const out = allocateEntity<AnimationStateMachine>();
+  out.advanceScratch = [];
+  out.channels = channels;
+  out.currentStateIndex = initialStateIndex;
+  out.fromSample = new Float32Array(sampleWidth);
+  out.states = copiedStates;
+  out.toSample = new Float32Array(sampleWidth);
+  out.transitionCurve = linearAnimationStateMachineCurve;
+  out.transitionDuration = 0;
+  out.transitionElapsed = 0;
+  out.transitionFromStateIndex = null;
+  out.transitionToStateIndex = null;
+  out.transitionWeight = 0;
+  return finishEntity(out);
 }
 
 // Allocates one named state over a blend tree.
@@ -65,7 +66,10 @@ export function createAnimationStateMachineState(
   name: string,
   blendTree: AnimationBlendTree,
 ): AnimationStateMachineState {
-  return createEntity({ blendTree, name });
+  const out = allocateEntity<AnimationStateMachine>();
+  out.blendTree = blendTree;
+  out.name = name;
+  return finishEntity(out);
 }
 
 // Returns the active state. During a transition this remains the source until the duration completes.

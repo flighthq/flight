@@ -1,12 +1,13 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import type {
+  EntityConstruction,
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentInteractiveState,
   FlightDocumentInteractiveStateExtensionDescriptor,
-  FlightDocumentInteractiveStates,
   FlightDocumentInteractiveStateTransitionDescriptor,
+  FlightDocumentInteractiveStates,
   FlightDocumentLayoutDescriptor,
   FlightDocumentLayoutNode,
   FlightDocumentNode,
@@ -14,10 +15,10 @@ import type {
   FlightDocumentResourceDescriptor,
   FlightDocumentScene,
   FlightDocumentScene2D,
-  FlightDocumentToken,
-  FlightDocumentTokenValues,
   FlightDocumentScene3D,
   FlightDocumentText,
+  FlightDocumentToken,
+  FlightDocumentTokenValues,
   FlightDocumentValue,
   Light,
   Projection,
@@ -473,20 +474,22 @@ function readFlightDocumentText(text: FlightDocumentText): FlightDocumentTextRea
   if (!parsed.ok) {
     return {
       document: null,
-      refusal: createEntity({
-        actual: parsed.actual,
-        column: parsed.column,
-        kind: null,
-        limit: parsed.limit,
-        line: parsed.line,
-        mode: null,
-        offset: parsed.offset,
-        path: '',
-        reason: parsed.kind,
-        resourceKey: null,
-        tokenKey: null,
-        version: null,
-      }),
+      refusal: (() => {
+        const out = allocateEntity<FlightDocumentText>();
+        out.actual = parsed.actual;
+        out.column = parsed.column;
+        out.kind = null;
+        out.limit = parsed.limit;
+        out.line = parsed.line;
+        out.mode = null;
+        out.offset = parsed.offset;
+        out.path = '';
+        out.reason = parsed.kind;
+        out.resourceKey = null;
+        out.tokenKey = null;
+        out.version = null;
+        return finishEntity(out);
+      })(),
     };
   }
 

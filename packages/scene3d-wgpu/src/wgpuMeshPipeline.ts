@@ -1,5 +1,5 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import {
   getWgpuBlendState,
@@ -10,19 +10,20 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
-  Material,
-  SurfaceMaterial,
-  WgpuMaterialBinding,
-  WgpuMeshPipeline,
-  WgpuColorAdjustmentMaterialFeature,
-  WgpuScene3DLayouts,
   Camera3D,
+  EntityConstruction,
+  Material,
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
+  SurfaceMaterial,
   Texture,
   TextureLike,
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuMaterialBinding,
+  WgpuMeshPipeline,
   WgpuRenderState,
+  WgpuScene3DLayouts,
   WgpuScene3DShadow,
 } from '@flighthq/types/contract';
 import {
@@ -173,14 +174,14 @@ export function createWgpuMeshPipeline(
     },
     depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: !options.blended, depthCompare: 'less' },
   });
-  return createEntity({
-    hasIblGroup: options.iblBindGroupLayout !== undefined,
-    hasPbrSampleGroup: options.pbrSampleBindGroupLayout !== undefined,
-    hasShadowGroup: options.shadowBindGroupLayout !== undefined,
-    materialBindGroupLayout: options.materialBindGroupLayout,
-    pipeline,
-    skinned: options.skinned === true,
-  });
+  const out = allocateEntity<unknown>();
+  out.hasIblGroup = options.iblBindGroupLayout !== undefined;
+  out.hasPbrSampleGroup = options.pbrSampleBindGroupLayout !== undefined;
+  out.hasShadowGroup = options.shadowBindGroupLayout !== undefined;
+  out.materialBindGroupLayout = options.materialBindGroupLayout;
+  out.pipeline = pipeline;
+  out.skinned = options.skinned === true;
+  return finishEntity(out);
 }
 
 // Whether a draw's fragment alpha is COVERAGE the compositor should honor. A material with no surface

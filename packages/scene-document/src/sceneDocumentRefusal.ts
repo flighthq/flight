@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
-  FlightDocumentFields,
+  EntityConstruction,
   FlightDocumentFieldSchema,
+  FlightDocumentFields,
   FlightDocumentInteractiveState,
   FlightDocumentNode,
   FlightDocumentRefusalExplanation,
@@ -263,20 +264,20 @@ export function createDocumentRefusal(
   reason: FlightDocumentRefusalReasonType,
   path: string,
 ): FlightDocumentRefusalExplanation {
-  return createEntity({
-    actual: null,
-    column: null,
-    kind: null,
-    limit: null,
-    line: null,
-    mode: null,
-    offset: null,
-    path,
-    reason,
-    resourceKey: null,
-    tokenKey: null,
-    version: null,
-  });
+  const out = allocateEntity<FlightDocumentRefusalExplanation>();
+  out.actual = null;
+  out.column = null;
+  out.kind = null;
+  out.limit = null;
+  out.line = null;
+  out.mode = null;
+  out.offset = null;
+  out.path = path;
+  out.reason = reason;
+  out.resourceKey = null;
+  out.tokenKey = null;
+  out.version = null;
+  return finishEntity(out);
 }
 
 export function createSceneRefusal(

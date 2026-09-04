@@ -1,5 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { ColorScaleBias, RenderProxy, WgpuBindGroupLayouts, WgpuRenderState } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  ColorScaleBias,
+  EntityConstruction,
+  RenderProxy,
+  WgpuBindGroupLayouts,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
@@ -174,7 +180,10 @@ export function createWgpuBindGroupLayouts(device: GPUDevice): WgpuBindGroupLayo
     ],
   });
 
-  return createEntity({ uniformBindGroupLayout, textureBindGroupLayout });
+  const out = allocateEntity<WgpuBindGroupLayouts>();
+  out.uniformBindGroupLayout = uniformBindGroupLayout;
+  out.textureBindGroupLayout = textureBindGroupLayout;
+  return finishEntity(out);
 }
 
 // ---- Pipeline creation ----

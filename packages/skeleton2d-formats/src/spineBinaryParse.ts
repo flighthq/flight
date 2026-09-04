@@ -1,6 +1,6 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   createSkeleton2D,
@@ -9,16 +9,17 @@ import {
   createSkin2D,
 } from '@flighthq/skeleton2d/contract';
 import type {
-  Skeleton2DDrawOrderTimeline,
   AnimationChannel,
   Attachment2D,
   AttachmentSkin2D,
   Bone2D,
   ByteReader,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
+  Skeleton2DDrawOrderTimeline,
   Skeleton2DImport,
   Skeleton2DImportAnimation,
   Skin2D,
@@ -966,15 +967,15 @@ function rejectSpineBinaryMesh(
     { attachment: name ?? '', declared, field, remaining: reader.view.byteLength - reader.offset },
   );
   skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    name,
-    skin: null,
-    triangles: new Uint16Array(),
-    uvs: new Float32Array(),
-    vertexCount: 0,
-    vertices: null,
-  }) as MeshAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.kind = MeshAttachment2DKind;
+  out.name = name;
+  out.skin = null;
+  out.triangles = new Uint16Array();
+  out.uvs = new Float32Array();
+  out.vertexCount = 0;
+  out.vertices = null;
+  return finishEntity(out);
 }
 
 // A mesh attachment. `uvs` and `triangles` map straight across; the vertex stream is either rigid positions
@@ -1014,15 +1015,15 @@ function readSpineBinaryMeshAttachment(
     const edges = readSpineBinaryVarint(reader);
     skipSpineBinaryBytes(reader, edges * 2 + 8); // editor edge list, then width and height
   }
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    name,
-    skin: geometry.skin,
-    triangles,
-    uvs,
-    vertexCount,
-    vertices: geometry.vertices,
-  }) as MeshAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.kind = MeshAttachment2DKind;
+  out.name = name;
+  out.skin = geometry.skin;
+  out.triangles = triangles;
+  out.uvs = uvs;
+  out.vertexCount = vertexCount;
+  out.vertices = geometry.vertices;
+  return finishEntity(out);
 }
 
 // A region attachment. Width/height are the source region's size in the atlas; `path` names the atlas region
@@ -1042,17 +1043,17 @@ function readSpineBinaryRegionAttachment(
   const height = readSpineBinaryFloat(reader);
   skipSpineBinaryBytes(reader, SPINE_BINARY_COLOR_BYTES);
   skipSpineBinarySequence(reader);
-  return createEntity({
-    height,
-    kind: RegionAttachment2DKind,
-    name,
-    rotation,
-    scaleX,
-    scaleY,
-    width,
-    x,
-    y,
-  }) as RegionAttachment2D;
+  const out = allocateEntity<unknown>();
+  out.height = height;
+  out.kind = RegionAttachment2DKind;
+  out.name = name;
+  out.rotation = rotation;
+  out.scaleX = scaleX;
+  out.scaleY = scaleY;
+  out.width = width;
+  out.x = x;
+  out.y = y;
+  return finishEntity(out);
 }
 
 // A vertex stream: a leading flag picks rigid positions (2 floats per vertex, in the slot bone's space) or

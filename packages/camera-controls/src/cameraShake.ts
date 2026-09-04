@@ -1,24 +1,31 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clamp } from '@flighthq/math/contract';
-import type { CameraShake, CameraShakeOffset, CameraShakeOptions } from '@flighthq/types/contract';
+import type { CameraShake, CameraShakeOffset, CameraShakeOptions, EntityConstruction } from '@flighthq/types/contract';
 
 export function addCameraShakeTrauma(shake: CameraShake, amount: number): void {
   shake.trauma = clamp(shake.trauma + amount, 0, 1);
 }
 
 export function createCameraShake(options?: Readonly<CameraShakeOptions>): CameraShake {
-  return createEntity({
-    decay: options?.decay ?? 1.5,
-    frequency: options?.frequency ?? 15,
-    rotationAmplitude: options?.rotationAmplitude ?? 3,
-    time: 0,
-    translationAmplitude: options?.translationAmplitude ?? 0.5,
-    trauma: 0,
-  });
+  const out = allocateEntity<CameraShake>();
+  out.decay = options?.decay ?? 1.5;
+  out.frequency = options?.frequency ?? 15;
+  out.rotationAmplitude = options?.rotationAmplitude ?? 3;
+  out.time = 0;
+  out.translationAmplitude = options?.translationAmplitude ?? 0.5;
+  out.trauma = 0;
+  return finishEntity(out);
 }
 
 export function createCameraShakeOffset(): CameraShakeOffset {
-  return createEntity({ rotationX: 0, rotationY: 0, rotationZ: 0, x: 0, y: 0, z: 0 });
+  const out = allocateEntity<CameraShake>();
+  out.rotationX = 0;
+  out.rotationY = 0;
+  out.rotationZ = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  return finishEntity(out);
 }
 
 export function resetCameraShake(shake: CameraShake): void {

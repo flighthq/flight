@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
@@ -9,6 +9,7 @@ import type {
   BitmapTextOptions,
   BitmapTextPage,
   BitmapTextRuntime,
+  EntityConstruction,
   GlyphSource,
   MethodsOf,
   Node,
@@ -58,14 +59,14 @@ export function createBitmapText(glyphSource: GlyphSource | null, options?: Read
 }
 
 export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): BitmapTextData {
-  return createEntity({
-    align: data?.align ?? 'left',
-    glyphSource: data?.glyphSource ?? null,
-    letterSpacing: data?.letterSpacing ?? 0,
-    lineHeight: data?.lineHeight ?? 1,
-    text: data?.text ?? '',
-    wrapWidth: data?.wrapWidth ?? null,
-  });
+  const out = allocateEntity<BitmapText>();
+  out.align = data?.align ?? 'left';
+  out.glyphSource = data?.glyphSource ?? null;
+  out.letterSpacing = data?.letterSpacing ?? 0;
+  out.lineHeight = data?.lineHeight ?? 1;
+  out.text = data?.text ?? '';
+  out.wrapWidth = data?.wrapWidth ?? null;
+  return finishEntity(out);
 }
 
 export function createBitmapTextRuntime(): BitmapTextRuntime {

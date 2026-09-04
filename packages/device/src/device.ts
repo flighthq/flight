@@ -1,65 +1,71 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
+  EntityConstruction,
   HasSystemDevice,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
 export function createDeviceCapabilities(): DeviceCapabilities {
-  return createEntity({
-    hasKeyboard: false,
-    hasMouse: false,
-    hasStylus: false,
-  });
+  const out = allocateEntity<DeviceCapabilities>();
+  out.hasKeyboard = false;
+  out.hasMouse = false;
+  out.hasStylus = false;
+  return finishEntity(out);
 }
 
 export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
-  return createEntity({
-    colorDepth: -1,
-    densityDpi: -1,
-    logicalHeight: -1,
-    logicalWidth: -1,
-    physicalHeight: -1,
-    physicalWidth: -1,
-    pixelRatio: -1,
-  });
+  const out = allocateEntity<DeviceCapabilities>();
+  out.colorDepth = -1;
+  out.densityDpi = -1;
+  out.logicalHeight = -1;
+  out.logicalWidth = -1;
+  out.physicalHeight = -1;
+  out.physicalWidth = -1;
+  out.pixelRatio = -1;
+  return finishEntity(out);
 }
 
 export function createDeviceInfo(): DeviceInfo {
-  return createEntity({
-    arch: '',
-    availableMemory: -1,
-    boardName: '',
-    colorGamut: '',
-    cpuCores: -1,
-    fontScale: -1,
-    formFactor: DeviceFormFactorUnknown,
-    gpuRenderer: '',
-    gpuVendor: '',
-    isHdr: false,
-    isJailbroken: false,
-    isLowEndDevice: false,
-    isRooted: false,
-    isVirtual: false,
-    manufacturer: '',
-    marketingName: '',
-    model: '',
-    osBuild: '',
-    osName: '',
-    osVersion: '',
-    platformString: '',
-    productName: '',
-    supportedAbis: [],
-    totalMemory: -1,
-    webViewVersion: '',
-  });
+  const out = allocateEntity<DeviceCapabilities>();
+  out.arch = '';
+  out.availableMemory = -1;
+  out.boardName = '';
+  out.colorGamut = '';
+  out.cpuCores = -1;
+  out.fontScale = -1;
+  out.formFactor = DeviceFormFactorUnknown;
+  out.gpuRenderer = '';
+  out.gpuVendor = '';
+  out.isHdr = false;
+  out.isJailbroken = false;
+  out.isLowEndDevice = false;
+  out.isRooted = false;
+  out.isVirtual = false;
+  out.manufacturer = '';
+  out.marketingName = '';
+  out.model = '';
+  out.osBuild = '';
+  out.osName = '';
+  out.osVersion = '';
+  out.platformString = '';
+  out.productName = '';
+  out.supportedAbis = [];
+  out.totalMemory = -1;
+  out.webViewVersion = '';
+  return finishEntity(out);
 }
 
 export function createSafeAreaInsets(): SafeAreaInsets {
-  return createEntity({ bottom: 0, left: 0, right: 0, top: 0 });
+  const out = allocateEntity<DeviceCapabilities>();
+  out.bottom = 0;
+  out.left = 0;
+  out.right = 0;
+  out.top = 0;
+  return finishEntity(out);
 }
 
 export function getDeviceCapabilities(host: HasSystemDevice, out: DeviceCapabilities): DeviceCapabilities {

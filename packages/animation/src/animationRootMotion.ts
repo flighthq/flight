@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AnimationClip, AnimationRootMotionExtractor } from '@flighthq/types/contract';
 
 import { sampleAnimationTrack } from './animationTrack';
@@ -17,18 +17,17 @@ export function createAnimationRootMotionExtractor(
   if (channel.track.quaternion && width !== 4) {
     throw new TypeError('AnimationRootMotionExtractor quaternion channel must have four components.');
   }
-  const extractor = createEntity({
-    channel,
-    channelIndex,
-    clip,
-    cycleDelta: new Float32Array(width),
-    fromMotion: new Float32Array(width),
-    fromSample: new Float32Array(width),
-    powerScratch: new Float32Array(width),
-    startSample: new Float32Array(width),
-    toMotion: new Float32Array(width),
-    toSample: new Float32Array(width),
-  });
+  const extractor = allocateEntity<AnimationRootMotionExtractor>();
+  extractor.channel = channel;
+  extractor.channelIndex = channelIndex;
+  extractor.clip = clip;
+  extractor.cycleDelta = new Float32Array(width);
+  extractor.fromMotion = new Float32Array(width);
+  extractor.fromSample = new Float32Array(width);
+  extractor.powerScratch = new Float32Array(width);
+  extractor.startSample = new Float32Array(width);
+  extractor.toMotion = new Float32Array(width);
+  extractor.toSample = new Float32Array(width);
   sampleAnimationTrack(extractor.startSample, channel.track, 0);
   sampleAnimationTrack(extractor.toSample, channel.track, clip.duration);
   writeAnimationRootMotionDelta(

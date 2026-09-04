@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { Path, PathWinding } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
@@ -247,7 +247,11 @@ export function appendPathRoundRectangle(
 // Allocates an empty path. Winding defaults to nonZero: same-wound subpaths union (the common clip
 // case) and counter-wound subpaths cut holes. Pass 'evenOdd' for parity fills.
 export function createPath(winding: PathWinding = 'nonZero'): Path {
-  return createEntity({ commands: [], data: [], winding });
+  const out = allocateEntity<Path>();
+  out.commands = [];
+  out.data = [];
+  out.winding = winding;
+  return finishEntity(out);
 }
 
 // Appends a quarter-circle arc (90°) centered at (cx, cy) with the given radius, from `startAngle`

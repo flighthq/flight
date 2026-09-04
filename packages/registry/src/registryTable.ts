@@ -1,8 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Entity,
-  Kind,
+  EntityConstruction,
   KeyedTable,
+  Kind,
   OrdinalTable,
   RegistryId,
   RegistryMissPolicy,
@@ -52,12 +53,12 @@ export function concatRegistryTable<T>(
   if (base.shape === 'slot') {
     const overlaySlot = overlay as Readonly<SlotTable<T>>;
     // `null` on the overlay is "no opinion" — inherit. A tombstone is "explicitly omitted" and wins.
-    return createEntity({
-      entry: overlaySlot.entry ?? base.entry,
-      onMiss: base.onMiss,
-      registry: base.registry,
-      shape: 'slot',
-    });
+    const out = allocateEntity<unknown>();
+    out.entry = overlaySlot.entry ?? base.entry;
+    out.onMiss = base.onMiss;
+    out.registry = base.registry;
+    out.shape = 'slot';
+    return finishEntity(out);
   }
 
   const baseKeyed = base as Readonly<KeyedTable<T>>;
@@ -80,12 +81,22 @@ export function concatRegistryTable<T>(
       }
     }
   }
-  return createEntity({ entries, onMiss: baseKeyed.onMiss, registry: baseKeyed.registry, shape: 'keyed' });
+  const out = allocateEntity<unknown>();
+  out.entries = entries;
+  out.onMiss = baseKeyed.onMiss;
+  out.registry = baseKeyed.registry;
+  out.shape = 'keyed';
+  return finishEntity(out);
 }
 
 /** An empty keyed table for `registry`, carrying the miss policy every replacement of it preserves. */
 export function createKeyedTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): KeyedTable<T> & Entity {
-  return createEntity({ entries: new Map(), onMiss, registry, shape: 'keyed' });
+  const out = allocateEntity<unknown>();
+  out.entries = new Map();
+  out.onMiss = onMiss;
+  out.registry = registry;
+  out.shape = 'keyed';
+  return finishEntity(out);
 }
 
 /** An ordinal table over `vocabulary`, every ordinal unbound. */
@@ -94,12 +105,23 @@ export function createOrdinalTable<T>(
   onMiss: RegistryMissPolicy,
   vocabulary: readonly Kind[],
 ): OrdinalTable<T> & Entity {
-  return createEntity({ entries: vocabulary.map(() => null), onMiss, registry, shape: 'ordinal', vocabulary });
+  const out = allocateEntity<unknown>();
+  out.entries = vocabulary.map(() => null);
+  out.onMiss = onMiss;
+  out.registry = registry;
+  out.shape = 'ordinal';
+  out.vocabulary = vocabulary;
+  return finishEntity(out);
 }
 
 /** An empty slot table for `registry`. Its key is its own `RegistryId`. */
 export function createSlotTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): SlotTable<T> & Entity {
-  return createEntity({ entry: null, onMiss, registry, shape: 'slot' });
+  const out = allocateEntity<unknown>();
+  out.entry = null;
+  out.onMiss = onMiss;
+  out.registry = registry;
+  out.shape = 'slot';
+  return finishEntity(out);
 }
 
 // The hot-path ordinal form: a direct index, no hash and no string. Out-of-range returns `null`, which
@@ -156,7 +178,12 @@ export function hasRegistryTableEntry(table: Readonly<RegistryTable<unknown>>, k
 export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.delete(key);
-  return createEntity({ entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' });
+  const out = allocateEntity<unknown>();
+  out.entries = entries;
+  out.onMiss = table.onMiss;
+  out.registry = table.registry;
+  out.shape = 'keyed';
+  return finishEntity(out);
 }
 
 // Binds `key` to `value`, returning a REPLACEMENT table. Not `setRegistryTableEntry`: this mutates
@@ -165,7 +192,12 @@ export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key
 export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind, value: T): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Bound, value });
-  return createEntity({ entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' });
+  const out = allocateEntity<unknown>();
+  out.entries = entries;
+  out.onMiss = table.onMiss;
+  out.registry = table.registry;
+  out.shape = 'keyed';
+  return finishEntity(out);
 }
 
 // OMIT. Binds `key` to the tombstone: this table has an opinion about `key`, and the opinion is NOTHING.
@@ -178,7 +210,12 @@ export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: K
 export function withRegistryTableTombstone<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Tombstoned });
-  return createEntity({ entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' });
+  const out = allocateEntity<unknown>();
+  out.entries = entries;
+  out.onMiss = table.onMiss;
+  out.registry = table.registry;
+  out.shape = 'keyed';
+  return finishEntity(out);
 }
 
 // The stored entry for `key`, tombstones included — the shape-dispatch every resolution query shares.

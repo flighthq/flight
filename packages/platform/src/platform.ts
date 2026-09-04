@@ -1,5 +1,6 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   HasSystemPlatform,
   PlatformEngine,
   PlatformInfo,
@@ -29,22 +30,22 @@ export function comparePlatformVersions(a: string, b: string): -1 | 0 | 1 {
 
 // Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a backend.
 export function createPlatformInfo(): PlatformInfo {
-  return createEntity({
-    arch: '',
-    distro: '',
-    distroVersion: '',
-    endianness: 'unknown',
-    engine: 'unknown',
-    engineVersion: '',
-    isTouch: false,
-    kind: 'unknown',
-    locale: '',
-    name: 'unknown',
-    osBuild: '',
-    pointerWidth: -1,
-    runtime: 'unknown',
-    version: '',
-  });
+  const out = allocateEntity<PlatformInfo>();
+  out.arch = '';
+  out.distro = '';
+  out.distroVersion = '';
+  out.endianness = 'unknown';
+  out.engine = 'unknown';
+  out.engineVersion = '';
+  out.isTouch = false;
+  out.kind = 'unknown';
+  out.locale = '';
+  out.name = 'unknown';
+  out.osBuild = '';
+  out.pointerWidth = -1;
+  out.runtime = 'unknown';
+  out.version = '';
+  return finishEntity(out);
 }
 
 // The browser rendering engine — 'blink' | 'gecko' | 'webkit' | 'unknown'. Convenience over

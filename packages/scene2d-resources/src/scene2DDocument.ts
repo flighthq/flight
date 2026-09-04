@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AudioResourceReference,
+  EntityConstruction,
   ImageResourceReference,
   Node2D,
   Scene2DDocument,
@@ -15,7 +16,14 @@ export function createScene2DDocument(
   imageResources: ImageResourceReference[] = [],
   audioResources: AudioResourceReference[] = [],
 ): Scene2DDocument {
-  return createEntity({ audioResources, backgroundColor, imageResources, root, slots, sourceKind });
+  const out = allocateEntity<Scene2DDocument>();
+  out.audioResources = audioResources;
+  out.backgroundColor = backgroundColor;
+  out.imageResources = imageResources;
+  out.root = root;
+  out.slots = slots;
+  out.sourceKind = sourceKind;
+  return finishEntity(out);
 }
 
 export function createScene2DSlotReference(
@@ -25,5 +33,11 @@ export function createScene2DSlotReference(
   required = true,
 ): Scene2DSlotReference {
   target.name = name;
-  return createEntity({ content: null, linkage, name, required, target });
+  const out = allocateEntity<Scene2DDocument>();
+  out.content = null;
+  out.linkage = linkage;
+  out.name = name;
+  out.required = required;
+  out.target = target;
+  return finishEntity(out);
 }

@@ -1,6 +1,7 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createKeyedTable, getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
+  EntityConstruction,
   FlightDocumentRefusalExplanation,
   FlightDocumentScene,
   FlightDocumentToken,
@@ -27,7 +28,9 @@ export function createFlightDocumentTokenResolverRegistry(): FlightDocumentToken
   resolvers = withRegistryTableEntry(resolvers, 'Color', resolveColorTokenValue);
   resolvers = withRegistryTableEntry(resolvers, 'Number', resolveNumberTokenValue);
   resolvers = withRegistryTableEntry(resolvers, 'String', resolveStringTokenValue);
-  return createEntity({ resolvers });
+  const out = allocateEntity<FlightDocumentTokenResolverRegistry>();
+  out.resolvers = resolvers;
+  return finishEntity(out);
 }
 
 export function explainFlightDocumentSceneTokenResolution(
@@ -145,20 +148,22 @@ function refuse(
   mode: string | null,
   kind: string | null,
 ): typeof INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE {
-  state.refusal ??= createEntity({
-    actual: null,
-    column: null,
-    kind,
-    limit: null,
-    line: null,
-    mode,
-    offset: null,
-    path,
-    reason,
-    resourceKey: null,
-    tokenKey,
-    version: null,
-  });
+  state.refusal ??= (() => {
+    const out = allocateEntity<FlightDocumentTokenResolverRegistry>();
+    out.actual = null;
+    out.column = null;
+    out.kind = kind;
+    out.limit = null;
+    out.line = null;
+    out.mode = mode;
+    out.offset = null;
+    out.path = path;
+    out.reason = reason;
+    out.resourceKey = null;
+    out.tokenKey = tokenKey;
+    out.version = null;
+    return finishEntity(out);
+  })();
   return INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE;
 }
 

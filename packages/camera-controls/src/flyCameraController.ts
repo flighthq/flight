@@ -1,8 +1,13 @@
 import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { clamp, damp, deltaAngle } from '@flighthq/math/contract';
-import type { Camera3D, FlyCameraController, FlyCameraControllerOptions } from '@flighthq/types/contract';
+import type {
+  Camera3D,
+  EntityConstruction,
+  FlyCameraController,
+  FlyCameraControllerOptions,
+} from '@flighthq/types/contract';
 
 // Allocates an independent Entity containing the same controller value state.
 export function cloneFlyCameraController(source: Readonly<FlyCameraController>): FlyCameraController {
@@ -33,16 +38,16 @@ export function createFlyCameraController(options?: Readonly<FlyCameraController
   const yaw = options?.yaw ?? 0;
   const pitch = options?.pitch ?? 0;
   const position = options?.position;
-  return createEntity({
-    goalPitch: pitch,
-    goalYaw: yaw,
-    maxPitch: options?.maxPitch ?? DEFAULT_MAX_PITCH,
-    minPitch: options?.minPitch ?? DEFAULT_MIN_PITCH,
-    pitch,
-    position: createVector3(position?.x ?? 0, position?.y ?? 0, position?.z ?? 0),
-    smoothTime: options?.smoothTime ?? 0,
-    yaw,
-  });
+  const out = allocateEntity<FlyCameraController>();
+  out.goalPitch = pitch;
+  out.goalYaw = yaw;
+  out.maxPitch = options?.maxPitch ?? DEFAULT_MAX_PITCH;
+  out.minPitch = options?.minPitch ?? DEFAULT_MIN_PITCH;
+  out.pitch = pitch;
+  out.position = createVector3(position?.x ?? 0, position?.y ?? 0, position?.z ?? 0);
+  out.smoothTime = options?.smoothTime ?? 0;
+  out.yaw = yaw;
+  return finishEntity(out);
 }
 
 // Moves the goal look angles by the given radian deltas: `deltaYaw` turns horizontally (unbounded),

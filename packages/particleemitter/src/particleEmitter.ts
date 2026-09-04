@@ -1,15 +1,16 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
-  Node2D,
+  EntityConstruction,
   MethodsOf,
   Node,
+  Node2D,
   PartialNode,
   ParticleEmitter2D,
-  ParticleEmitterData,
   ParticleEmitter2DRuntime,
+  ParticleEmitterData,
   Rectangle,
   Vector2Like,
 } from '@flighthq/types/contract';
@@ -211,17 +212,17 @@ export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
 }
 
 export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitterData>>): ParticleEmitterData {
-  return createEntity({
-    alphas: data?.alphas ?? new Float32Array(),
-    atlas: data?.atlas ?? null,
-    colors: data?.colors ?? new Float32Array(),
-    ids: data?.ids ?? new Uint16Array(),
-    particleCount: data?.particleCount ?? 0,
-    positionsZ: data?.positionsZ ?? new Float32Array(),
-    transforms: data?.transforms ?? new Float32Array(),
-    velocities: data?.velocities ?? new Float32Array(),
-    worldSpace: data?.worldSpace ?? false,
-  });
+  const out = allocateEntity<ParticleEmitter2D>();
+  out.alphas = data?.alphas ?? new Float32Array();
+  out.atlas = data?.atlas ?? null;
+  out.colors = data?.colors ?? new Float32Array();
+  out.ids = data?.ids ?? new Uint16Array();
+  out.particleCount = data?.particleCount ?? 0;
+  out.positionsZ = data?.positionsZ ?? new Float32Array();
+  out.transforms = data?.transforms ?? new Float32Array();
+  out.velocities = data?.velocities ?? new Float32Array();
+  out.worldSpace = data?.worldSpace ?? false;
+  return finishEntity(out);
 }
 
 export function getParticleEmitter2DCapacity(source: Readonly<ParticleEmitter2D>): number {

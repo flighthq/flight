@@ -1,10 +1,11 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AnimationChannel,
   AnimationCrossfade,
   AnimationCrossfadeChannel,
   AnimationCrossfadeOptions,
   AnimationPlayer,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 import { blendAnimationSamples } from './animationBlend';
@@ -34,17 +35,17 @@ export function createAnimationCrossfade(
   const channels = createAnimationCrossfadeChannels(from, to);
   let sampleWidth = 0;
   for (const entry of channels) sampleWidth = Math.max(sampleWidth, entry.channel.track.components);
-  return createEntity({
-    channels,
-    curve,
-    duration: resolvedDuration,
-    elapsed: 0,
-    from,
-    fromSample: new Float32Array(sampleWidth),
-    to,
-    toSample: new Float32Array(sampleWidth),
-    weight: curve(getLinearAnimationCrossfadeWeight(0, resolvedDuration)),
-  });
+  const out = allocateEntity<AnimationCrossfade>();
+  out.channels = channels;
+  out.curve = curve;
+  out.duration = resolvedDuration;
+  out.elapsed = 0;
+  out.from = from;
+  out.fromSample = new Float32Array(sampleWidth);
+  out.to = to;
+  out.toSample = new Float32Array(sampleWidth);
+  out.weight = curve(getLinearAnimationCrossfadeWeight(0, resolvedDuration));
+  return finishEntity(out);
 }
 
 // Reports when elapsed transition time has reached duration. Completion deliberately ignores the
