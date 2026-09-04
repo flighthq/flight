@@ -8,7 +8,20 @@ import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { createDomScale9SpriteData, defaultDomScale9SpriteRenderer, drawDomScale9Sprite } from './domScale9Sprite';
 
+describe('createDomScale9SpriteData', () => {
+  it('creates renderer data', () => {
+    expect(typeof createDomScale9SpriteData).toBe('function');
+  });
+});
+
 describe('defaultDomScale9SpriteRenderer', () => {
+  it('exposes renderer data and submit function', () => {
+    expect(typeof createDomScale9SpriteData).toBe('function');
+    expect(defaultDomScale9SpriteRenderer.submit).toBe(drawDomScale9Sprite);
+  });
+});
+
+describe('drawDomScale9Sprite', () => {
   it('renders nine leaf canvas pieces and strips node scale from the wrapper transform', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 100;
@@ -28,10 +41,5 @@ describe('defaultDomScale9SpriteRenderer', () => {
     const element = getDomRenderStateRuntime(state).domCurrentElement;
     expect(element?.children).toHaveLength(9);
     expect(element?.style.width).toBe('200px');
-  });
-
-  it('exposes renderer data and submit function', () => {
-    expect(typeof createDomScale9SpriteData).toBe('function');
-    expect(defaultDomScale9SpriteRenderer.submit).toBe(drawDomScale9Sprite);
   });
 });
