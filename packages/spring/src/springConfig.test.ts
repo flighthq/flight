@@ -40,7 +40,8 @@ describe('spring presets', () => {
     expect(Reflect.set(SpringPresetBouncy, 'frequency', 100)).toBe(false);
 
     const customized = { ...SpringPresetGentle, frequency: 3 };
-    expect(customized).toEqual({ dampingRatio: SpringPresetGentle.dampingRatio, frequency: 3 });
+    expect(customized.dampingRatio).toBe(SpringPresetGentle.dampingRatio);
+    expect(customized.frequency).toBe(3);
     expect(SpringPresetGentle.frequency).not.toBe(3);
   });
 
