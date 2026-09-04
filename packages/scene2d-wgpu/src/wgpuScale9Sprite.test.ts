@@ -28,6 +28,8 @@ beforeAll(() => installWgpuMock());
 
 describe('defaultWgpuScale9SpriteRenderer', () => {
   it('is registered separately under Scale9SpriteKind', () => {
+    expect(typeof defaultWgpuScale9SpriteRenderer.createData).toBe('function');
+    expect(typeof defaultWgpuScale9SpriteRenderer.isDirty).toBe('function');
     expect(defaultWgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
     expect(getWgpuPipelineRegistries(scene2dWgpuPipeline).renderers.entries.get(Scale9SpriteKind)).toEqual({
       state: RegistryEntryState.Bound,
