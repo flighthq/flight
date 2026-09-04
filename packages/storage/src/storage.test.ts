@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
   EntityRuntimeKey,
@@ -68,43 +68,43 @@ function memoryBackend(initial: Readonly<Record<string, string>> = {}): MemorySt
   const getFailures = new Map<string, StorageGetItemFailureReason>();
   const removeFailures = new Map<string, StorageRemoveItemFailureReason>();
   const setFailures = new Map<string, StorageSetItemFailureReason>();
-  return createEntity({
-    clearFailure: null,
-    data,
-    getCalls: 0,
-    getFailures,
-    keysFailure: null,
-    removeFailures,
-    setFailures,
-    clear() {
+    const out = allocateEntity<unknown>();
+  out.clearFailure = null;
+  out.data = data;
+  out.getCalls = 0;
+  out.getFailures = getFailures;
+  out.keysFailure = null;
+  out.removeFailures = removeFailures;
+  out.setFailures = setFailures;
+  out.clear = () => {
       if (this.clearFailure !== null) return { reason: this.clearFailure };
       for (const key of Object.keys(data)) delete data[key];
       return { reason: 'ok' };
-    },
-    getItem(key) {
+    };
+  out.getItem = (key) => {
       this.getCalls++;
       const failure = getFailures.get(key);
       if (failure !== undefined) return { reason: failure, value: null };
       return { reason: 'ok', value: Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null };
-    },
-    keys() {
+    };
+  out.keys = () => {
       return this.keysFailure === null
         ? { reason: 'ok', value: Object.keys(data) }
         : { reason: this.keysFailure, value: null };
-    },
-    removeItem(key) {
+    };
+  out.removeItem = (key) => {
       const failure = removeFailures.get(key);
       if (failure !== undefined) return { reason: failure };
       delete data[key];
       return { reason: 'ok' };
-    },
-    setItem(key, value) {
+    };
+  out.setItem = (key, value) => {
       const failure = setFailures.get(key);
       if (failure !== undefined) return { reason: failure };
       data[key] = value;
       return { reason: 'ok' };
-    },
-  } satisfies Omit<MemoryStorageBackend, typeof EntityRuntimeKey>);
+    };
+  return finishEntity(out);
 }
 
 function localHost(backend: StorageBackend): HasStorageLocal {
@@ -119,19 +119,23 @@ describe('attachStorage', () => {
   it('retains and releases the exact provider subscription when re-attached', () => {
     const released: string[] = [];
     const captured: { listener?: (change: Readonly<StorageChange>) => void } = {};
-    const a = createEntity({
-      destroy() {},
-      subscribe(listener: (change: Readonly<StorageChange>) => void) {
+    const a = (() => {
+      const out = allocateEntity<HasStorageLocal>();
+      out.destroy = () => {};
+      out.subscribe = (listener: (change: Readonly<StorageChange>) => void) => {
         captured.listener = listener;
         return () => released.push('a');
-      },
-    });
-    const b = createEntity({
-      destroy() {},
-      subscribe() {
+      };
+      return finishEntity(out);
+    })();
+    const b = (() => {
+      const out = allocateEntity<HasStorageLocal>();
+      out.destroy = () => {};
+      out.subscribe = () => {
         return () => released.push('b');
-      },
-    });
+      };
+      return finishEntity(out);
+    })();
     const signals = createStorageSignals();
     const changes: StorageChange[] = [];
     connectSignal(signals.onChange, (change) => changes.push({ ...change }));
@@ -146,7 +150,9 @@ describe('attachStorage', () => {
   });
 
   it('returns false and retains no cleanup when acquisition fails', () => {
-    const provider = createEntity({ destroy() {}, subscribe: () => null });
+    const provider = allocateEntity<HasStorageLocal>();
+    provider.destroy = () => {};
+    provider.subscribe = () => null;
     const signals = createStorageSignals();
     expect(attachStorage(changeHost(provider), signals)).toBe(false);
     expect(() => detachStorage(signals)).not.toThrow();
@@ -203,7 +209,9 @@ describe('createStorageSignals', () => {
 describe('destroyStorage', () => {
   it('runs the explicit change-provider teardown', () => {
     let destroyed = 0;
-    const provider = createEntity({ destroy: () => destroyed++, subscribe: () => null });
+    const provider = allocateEntity<HasStorageLocal>();
+    provider.destroy = () => destroyed++;
+    provider.subscribe = () => null;
     destroyStorage(changeHost(provider));
     expect(destroyed).toBe(1);
   });
@@ -212,7 +220,9 @@ describe('destroyStorage', () => {
 describe('detachStorage', () => {
   it('is idempotent', () => {
     let released = 0;
-    const provider = createEntity({ destroy() {}, subscribe: () => () => released++ });
+    const provider = allocateEntity<HasStorageLocal>();
+    provider.destroy = () => {};
+    provider.subscribe = () => () => released++;
     const signals = createStorageSignals();
     attachStorage(changeHost(provider), signals);
     detachStorage(signals);

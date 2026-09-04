@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Attachment2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -8,18 +8,14 @@ import { getSkeleton2DSlotDeformOffsets, setSkeleton2DSlotDeform } from './slotD
 
 function mesh(pointCount: number): MeshAttachment2D {
   const skin: Skin2D = createSkin2D(new Uint16Array(pointCount).fill(1), new Float32Array(pointCount * 4));
-  return createEntity({
-    kind: MeshAttachment2DKind,
-    skin,
-    triangles: new Uint16Array(),
-    uvs: new Float32Array(pointCount * 2),
-    vertexCount: pointCount,
-    vertices: null,
-  }) as MeshAttachment2D;
-}
-
-function slot(attachment: Attachment2D | null): Slot2D {
-  return { attachment, boneIndex: 0, color: 0xffffffff, name: 's' };
+    const out = allocateEntity<MeshAttachment2D>();
+  out.kind = MeshAttachment2DKind;
+  out.skin = skin;
+  out.triangles = new Uint16Array();
+  out.uvs = new Float32Array(pointCount * 2);
+  out.vertexCount = pointCount;
+  out.vertices = null;
+  return finishEntity(out) as MeshAttachment2D;;
 }
 
 describe('getSkeleton2DSlotDeformOffsets', () => {

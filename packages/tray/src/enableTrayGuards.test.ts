@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry, TrayIcon } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,23 +25,16 @@ function host() {
   const live: TrayIcon[] = [];
   return {
     tray: {
-      lifecycle: createEntity({
-        async create(tray: TrayIcon) {
+      lifecycle: (() => { const out = allocateEntity<unknown>(); out.create = async (tray: TrayIcon) => {
           live.push(tray);
           return { outcome: 'created' as const };
-        },
-        async destroy(tray: TrayIcon) {
+        }; out.destroy = async (tray: TrayIcon) => {
           live.splice(live.indexOf(tray), 1);
           return { outcome: 'destroyed' as const };
-        },
-        isDestroyed: (tray: TrayIcon) => !live.includes(tray),
-        list: () => live.slice(),
-      }),
-      image: createEntity({
-        async set() {
+        }; out.isDestroyed = (tray: TrayIcon) => !live.includes(tray); out.list = () => live.slice(); return finishEntity(out); })(),
+      image: (() => { const out = allocateEntity<unknown>(); out.set = async () => {
           return { outcome: 'updated' as const };
-        },
-      }),
+        }; return finishEntity(out); })(),
     },
   };
 }

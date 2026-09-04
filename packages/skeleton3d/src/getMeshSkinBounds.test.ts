@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
 import type { MeshSkinBindPose, Skeleton3D } from '@flighthq/types/contract';
 
@@ -47,12 +47,12 @@ function bindPoseFor(positions: number[], jointIndices: number[]): MeshSkinBindP
 }
 
 function skeletonFor(palette: number[]): Skeleton3D {
-  return createEntity({
-    inverseBindMatrices: new Float32Array(palette.length),
-    jointMatrices: new Float32Array(palette),
-    normalMatrices: new Float32Array(0),
-    joints: [],
-  });
+    const out = allocateEntity<MeshSkinBindPose>();
+  out.inverseBindMatrices = new Float32Array(palette.length);
+  out.jointMatrices = new Float32Array(palette);
+  out.normalMatrices = new Float32Array(0);
+  out.joints = [];
+  return finishEntity(out);
 }
 
 describe('getMeshSkinConservativeBounds', () => {

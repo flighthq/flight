@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HasStoragePersistenceQuery,
   HasStoragePersistenceRequest,
@@ -18,7 +18,7 @@ describe('getStoragePersistence', () => {
     { outcome: 'operation-failed', permissionState: 'prompt' },
   ] as const)('relays the independent $outcome/$permissionState snapshot exactly', async (result) => {
     const getPersistence = vi.fn(async (): Promise<StoragePersistenceResult> => result);
-    const host = queryHost(createEntity({ getPersistence }));
+    const host = queryHost((() => { const out = allocateEntity<unknown>(); out.getPersistence = getPersistence; return finishEntity(out); })());
 
     await expect(getStoragePersistence(host)).resolves.toEqual(result);
     expect(getPersistence).toHaveBeenCalledOnce();
@@ -26,18 +26,19 @@ describe('getStoragePersistence', () => {
 
   it('captures the query slot once and never crosses into request', async () => {
     const events: string[] = [];
-    const query = createEntity({
-      async getPersistence(): Promise<StoragePersistenceResult> {
+    const query = allocateEntity<unknown>();
+    query.getPersistence = async (): Promise<StoragePersistenceResult> => {
         events.push('query');
         return { outcome: 'persistent', permissionState: 'granted' };
-      },
-    });
-    const request = createEntity({
-      async requestPersistence(): Promise<StoragePersistenceResult> {
+      };
+    const request = (() => {
+      const out = allocateEntity<unknown>();
+      out.requestPersistence = async (): Promise<StoragePersistenceResult> => {
         events.push('request');
         return { outcome: 'persistent', permissionState: 'granted' };
-      },
-    });
+      };
+      return finishEntity(out);
+    })();
     let reads = 0;
     const storage = { persistenceRequest: request } as {
       persistenceQuery: StoragePersistenceQueryBackend;
@@ -67,7 +68,7 @@ describe('requestStoragePersistence', () => {
     { outcome: 'operation-failed', permissionState: 'granted' },
   ] as const)('relays the independent $outcome/$permissionState snapshot exactly', async (result) => {
     const requestPersistence = vi.fn(async (): Promise<StoragePersistenceResult> => result);
-    const host = requestHost(createEntity({ requestPersistence }));
+    const host = requestHost((() => { const out = allocateEntity<unknown>(); out.requestPersistence = requestPersistence; return finishEntity(out); })());
 
     await expect(requestStoragePersistence(host)).resolves.toEqual(result);
     expect(requestPersistence).toHaveBeenCalledOnce();
@@ -75,18 +76,19 @@ describe('requestStoragePersistence', () => {
 
   it('captures the request slot once and never crosses into query', async () => {
     const events: string[] = [];
-    const query = createEntity({
-      async getPersistence(): Promise<StoragePersistenceResult> {
+    const query = allocateEntity<unknown>();
+    query.getPersistence = async (): Promise<StoragePersistenceResult> => {
         events.push('query');
         return { outcome: 'persistent', permissionState: 'granted' };
-      },
-    });
-    const request = createEntity({
-      async requestPersistence(): Promise<StoragePersistenceResult> {
+      };
+    const request = (() => {
+      const out = allocateEntity<unknown>();
+      out.requestPersistence = async (): Promise<StoragePersistenceResult> => {
         events.push('request');
         return { outcome: 'best-effort', permissionState: null };
-      },
-    });
+      };
+      return finishEntity(out);
+    })();
     let reads = 0;
     const storage = { persistenceQuery: query } as {
       persistenceQuery: StoragePersistenceQueryBackend;
