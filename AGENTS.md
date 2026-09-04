@@ -141,6 +141,8 @@ Subsystems attach their own state to the runtime object rather than adding field
 
 Some render packages use an `internal.ts` cast (`state as RenderStateInternal`) to expose writable versions of read-only properties. Legacy — do not extend it; prefer runtime slots.
 
+Entity construction follows the allocate-initialize model: `allocateEntity` -> initializers (each calling its base first) -> `finishEntity`. One allocation at the most-derived `create*` function, base-to-derived initialization via self-chaining initializers, and strict per-layer field ownership. `createEntity({ ...allFields })` is deprecated for new factories. See [entity construction model](agents/entity-construction-model.md).
+
 ### Scene Graph
 
 Scene graph hierarchy is shared across graph kinds: `addNodeChild`, `removeNodeChild`, `getNodeParent`, `getNodeRoot`, `containsNodeChild`, and `swapNodeChildren` all operate on `HierarchyNode`, which is why one hierarchy implementation serves display objects, sprite graphs, and future graph families.
