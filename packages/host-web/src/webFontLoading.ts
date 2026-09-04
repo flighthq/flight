@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, FontLoadingBackend } from '@flighthq/types/contract';
 
 export function createWebFontLoadingBackend(): FontLoadingBackend & Entity {
-    const out = allocateEntity<FontLoadingBackend>();
+    const out = allocateEntity<FontLoadingBackend & Entity>();
   out.addFontFace = (face: FontFace): void => {
       document.fonts.add(face);
     };

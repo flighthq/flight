@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeChildIndex } from '@flighthq/node/contract';
 import type {
   AddNodeChildCommand,
@@ -33,24 +33,34 @@ export function createAddNodeChildCommand(
   child: NodeAny,
   index = -1,
 ): AddNodeChildCommand {
-  return createEntity({ child, index, kind: AddNodeChildCommandKind, label, parent });
+  const out = allocateEntity<AddNodeChildCommand>();
+  out.child = child;
+  out.index = index;
+  out.kind = AddNodeChildCommandKind;
+  out.label = label;
+  out.parent = parent;
+  return finishEntity(out);
 }
 
 /** Applies `children` as one history entry, in order; undo runs them in reverse. Nesting is allowed. */
 export function createCompositeCommand(label: string, children: readonly Command[]): CompositeCommand {
-  return createEntity({ children: [...children], kind: CompositeCommandKind, label });
+  const out = allocateEntity<CompositeCommand>();
+  out.children = [...children];
+  out.kind = CompositeCommandKind;
+  out.label = label;
+  return finishEntity(out);
 }
 
 // Removes `child` from `parent`, capturing its CURRENT index so undo restores position and not merely
 // membership. Build this before removing the child — once it is detached the index is gone.
 export function createRemoveNodeChildCommand(label: string, parent: NodeAny, child: NodeAny): RemoveNodeChildCommand {
-  return createEntity({
-    child,
-    index: getNodeChildIndex(parent, child),
-    kind: RemoveNodeChildCommandKind,
-    label,
-    parent,
-  });
+  const out = allocateEntity<RemoveNodeChildCommand>();
+  out.child = child;
+  out.index = getNodeChildIndex(parent, child);
+  out.kind = RemoveNodeChildCommandKind;
+  out.label = label;
+  out.parent = parent;
+  return finishEntity(out);
 }
 
 // Moves `child` to `toIndex`, capturing where it started. Build this before moving the child.
@@ -60,14 +70,14 @@ export function createReorderNodeChildCommand(
   child: NodeAny,
   toIndex: number,
 ): ReorderNodeChildCommand {
-  return createEntity({
-    child,
-    fromIndex: getNodeChildIndex(parent, child),
-    kind: ReorderNodeChildCommandKind,
-    label,
-    parent,
-    toIndex,
-  });
+  const out = allocateEntity<ReorderNodeChildCommand>();
+  out.child = child;
+  out.fromIndex = getNodeChildIndex(parent, child);
+  out.kind = ReorderNodeChildCommandKind;
+  out.label = label;
+  out.parent = parent;
+  out.toIndex = toIndex;
+  return finishEntity(out);
 }
 
 // One property assignment. `before` is read from the node NOW, so build this before writing the value.
@@ -84,13 +94,13 @@ export function createSetNodePropertyCommand(
   mergeWindow = 0,
   time = 0,
 ): SetNodePropertyCommand {
-  return createEntity({
-    entries: [{ after: value, before: readNodeProperty(target, property), property, target }],
-    kind: SetNodePropertyCommandKind,
-    label,
-    mergeWindow,
-    time,
-  });
+  const out = allocateEntity<SetNodePropertyCommand>();
+  out.entries = [{ after: value, before: readNodeProperty(target, property), property, target }];
+  out.kind = SetNodePropertyCommandKind;
+  out.label = label;
+  out.mergeWindow = mergeWindow;
+  out.time = time;
+  return finishEntity(out);
 }
 
 // Several property assignments applied together as one entry — the shape a gizmo drag produces when it
@@ -107,7 +117,13 @@ export function createSetNodePropertyCommandBatch(
     property: entry.property,
     target: entry.target,
   }));
-  return createEntity({ entries: captured, kind: SetNodePropertyCommandKind, label, mergeWindow, time });
+  const out = allocateEntity<SetNodePropertyCommand>();
+  out.entries = captured;
+  out.kind = SetNodePropertyCommandKind;
+  out.label = label;
+  out.mergeWindow = mergeWindow;
+  out.time = time;
+  return finishEntity(out);
 }
 
 function readNodeProperty(target: Readonly<NodeAny>, property: string): unknown {

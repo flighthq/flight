@@ -56,7 +56,7 @@ export function createFlightDocumentFromScene2D(
   const writtenNodes = new Map<Readonly<NodeAny>, FlightDocumentNode>();
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
-    const out = allocateEntity<FlightDocumentScene2D>();
+    const out = allocateEntity<FlightDocumentScene2D & Entity>();
   out.backgroundColor = source.color;
   out.kind = 'Scene2D';
   out.layouts = writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes);

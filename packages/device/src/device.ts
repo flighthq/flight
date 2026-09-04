@@ -18,7 +18,7 @@ export function createDeviceCapabilities(): DeviceCapabilities {
 }
 
 export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
-  const out = allocateEntity<DeviceCapabilities>();
+  const out = allocateEntity<DeviceDisplayMetrics>();
   out.colorDepth = -1;
   out.densityDpi = -1;
   out.logicalHeight = -1;
@@ -30,7 +30,7 @@ export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
 }
 
 export function createDeviceInfo(): DeviceInfo {
-  const out = allocateEntity<DeviceCapabilities>();
+  const out = allocateEntity<DeviceInfo>();
   out.arch = '';
   out.availableMemory = -1;
   out.boardName = '';
@@ -60,7 +60,7 @@ export function createDeviceInfo(): DeviceInfo {
 }
 
 export function createSafeAreaInsets(): SafeAreaInsets {
-  const out = allocateEntity<DeviceCapabilities>();
+  const out = allocateEntity<SafeAreaInsets>();
   out.bottom = 0;
   out.left = 0;
   out.right = 0;

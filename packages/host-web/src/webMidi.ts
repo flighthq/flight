@@ -6,10 +6,12 @@ import {
 } from '@flighthq/midi/contract';
 import type {
   MidiAccess,
+  MidiAccessBackend,
   MidiEventAttachment,
   MidiEventBackendAttachOutcome,
   MidiInputPort,
   MidiOutputPort,
+  MidiPermissionBackend,
   MidiPort,
   PermissionQueryOutcome,
   PermissionState,
@@ -109,7 +111,7 @@ function createWebMidiProfile(
   }
 
   const access = (() => {
-    const out = allocateEntity<WebMidiAccessCapabilities>();
+    const out = allocateEntity<MidiAccessBackend>();
     out.requestAccess = async () => {
       try {
         const native = await api.requestMIDIAccess();
@@ -122,11 +124,11 @@ function createWebMidiProfile(
   })();
   if (!includePermission) return (() => { const out = allocateEntity<WebMidiAccessCapabilities>(); out.access = access; return finishEntity(out); })();
   const permission = (() => {
-    const out = allocateEntity<WebMidiAccessCapabilities>();
+    const out = allocateEntity<MidiPermissionBackend>();
     out.getPermission = () => queryWebMidiPermission(api.permissions);
     return finishEntity(out);
   })();
-    const out = allocateEntity<WebMidiAccessCapabilities>();
+    const out = allocateEntity<WebMidiPermissionAccessCapabilities>();
   out.access = access;
   out.permission = permission;
   return finishEntity(out);
@@ -145,7 +147,7 @@ function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>
   }
   let released = false;
   const attachmentEntity = (() => {
-    const out = allocateEntity<WebMidiAccessCapabilities>();
+    const out = allocateEntity<MidiEventAttachment>();
     out.release = async () => {
       if (released) return { reason: 'ok' } as const;
       try {

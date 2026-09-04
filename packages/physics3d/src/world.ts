@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
   CollisionColliderShape3D,
@@ -254,21 +254,21 @@ export function createPhysics3DCollider(
   sensor = false,
 ): Physics3DCollider {
   const ownedLocal = cloneCollisionColliderShape3D(local);
-  return createEntity({
-    local: ownedLocal,
-    world: createPhysics3DColliderWorldShape(ownedLocal),
-    material: {
-      density: material?.density ?? 1,
-      friction: material?.friction ?? 0.2,
-      restitution: material?.restitution ?? 0,
-    },
-    filter: {
-      categoryBits: filter?.categoryBits ?? 1,
-      maskBits: filter?.maskBits ?? 0xffff,
-      groupIndex: filter?.groupIndex ?? 0,
-    },
-    sensor,
-  });
+  const out = allocateEntity<Physics3DCollider>();
+  out.filter = {
+    categoryBits: filter?.categoryBits ?? 1,
+    groupIndex: filter?.groupIndex ?? 0,
+    maskBits: filter?.maskBits ?? 0xffff,
+  };
+  out.local = ownedLocal;
+  out.material = {
+    density: material?.density ?? 1,
+    friction: material?.friction ?? 0.2,
+    restitution: material?.restitution ?? 0,
+  };
+  out.sensor = sensor;
+  out.world = createPhysics3DColliderWorldShape(ownedLocal);
+  return finishEntity(out);
 }
 
 // The default sequential-impulse tuning. Eight velocity iterations and three position iterations are
@@ -310,105 +310,105 @@ export function createPhysics3DSolverConfig(): NonEntityCreateResult<Physics3DSo
 // world spanning kilometres or carrying bodies at widely different scales, say — hands over the BVH or
 // its own implementation without this package changing.
 export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWorld {
-  return createEntity({
-    version: Physics3DWorldVersion,
-    bodies: [],
-    bodyByIndex: new Map(),
-    // One world unit per cell, matching `createPhysics2DWorld`. A physics world is authored in metres and
-    // its bodies are metre-scale, so `@flighthq/spatial`'s own 128-unit default — sized for a scene-graph
-    // culling index measured in pixels — would put an entire scene in one cell and reduce the broadphase
-    // to a full pairwise scan.
-    index: index ?? createUniformGridSpatialBackend3D(1),
-    contacts: [],
-    joints: [],
-    jointSolvers: new Map(),
-    jointCollisionSuppressions: new Map(),
-    events: { began: [], ended: [] },
-    jointEvents: { broke: [] },
-    contactHooks: { preSolve: null, postSolve: null },
-    solver: { constraints: [], constraintByContact: new Map() },
-    config: createPhysics3DSolverConfig(),
-    islandParents: new Map(),
-    islandSleepTimers: new Map(),
-    solveIslandByRoot: new Map(),
-    solveIslandRoots: [],
-    solveIslandBodyStarts: [],
-    solveIslandBodyCounts: [],
-    solveIslandContactStarts: [],
-    solveIslandContactCounts: [],
-    solveIslandJointStarts: [],
-    solveIslandJointCounts: [],
-    solveIslandBodyIndices: [],
-    solveIslandContactIndices: [],
-    solveIslandJointIndices: [],
-    solveIslandCursors: [],
-    gravityX: 0,
-    gravityY: -9.80665,
-    gravityZ: 0,
-    previousTimestep: 0,
-    nextBodyIndex: 0,
-  });
+  const out = allocateEntity<Physics3DWorld>();
+  out.bodies = [];
+  out.bodyByIndex = new Map();
+  out.config = createPhysics3DSolverConfig();
+  out.contactHooks = { postSolve: null, preSolve: null };
+  out.contacts = [];
+  out.events = { began: [], ended: [] };
+  out.gravityX = 0;
+  out.gravityY = -9.80665;
+  out.gravityZ = 0;
+  // One world unit per cell, matching `createPhysics2DWorld`. A physics world is authored in metres and
+  // its bodies are metre-scale, so `@flighthq/spatial`'s own 128-unit default — sized for a scene-graph
+  // culling index measured in pixels — would put an entire scene in one cell and reduce the broadphase
+  // to a full pairwise scan.
+  out.index = index ?? createUniformGridSpatialBackend3D(1);
+  out.islandParents = new Map();
+  out.islandSleepTimers = new Map();
+  out.jointCollisionSuppressions = new Map();
+  out.jointEvents = { broke: [] };
+  out.jointSolvers = new Map();
+  out.joints = [];
+  out.nextBodyIndex = 0;
+  out.previousTimestep = 0;
+  out.solveIslandBodyCounts = [];
+  out.solveIslandBodyIndices = [];
+  out.solveIslandBodyStarts = [];
+  out.solveIslandByRoot = new Map();
+  out.solveIslandContactCounts = [];
+  out.solveIslandContactIndices = [];
+  out.solveIslandContactStarts = [];
+  out.solveIslandCursors = [];
+  out.solveIslandJointCounts = [];
+  out.solveIslandJointIndices = [];
+  out.solveIslandJointStarts = [];
+  out.solveIslandRoots = [];
+  out.solver = { constraintByContact: new Map(), constraints: [] };
+  out.version = Physics3DWorldVersion;
+  return finishEntity(out);
 }
 
 // Allocates a body at rest at the origin, with no mass. It is not in any world until added, and it will
 // not move until given mass: a dynamic body with zero mass carries a zero inverse mass, which is the
 // same immovable sentinel a static body carries.
 export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBody3D {
-  return createEntity({
-    index: -1,
-    type,
-    x: 0,
-    y: 0,
-    z: 0,
-    orientationX: 0,
-    orientationY: 0,
-    orientationZ: 0,
-    orientationW: 1,
-    velocityX: 0,
-    velocityY: 0,
-    velocityZ: 0,
-    angularVelocityX: 0,
-    angularVelocityY: 0,
-    angularVelocityZ: 0,
-    forceX: 0,
-    forceY: 0,
-    forceZ: 0,
-    torqueX: 0,
-    torqueY: 0,
-    torqueZ: 0,
-    mass: 0,
-    inverseMass: 0,
-    inertiaXX: 0,
-    inertiaYY: 0,
-    inertiaZZ: 0,
-    inertiaXY: 0,
-    inertiaXZ: 0,
-    inertiaYZ: 0,
-    inverseInertiaXX: 0,
-    inverseInertiaYY: 0,
-    inverseInertiaZZ: 0,
-    inverseInertiaXY: 0,
-    inverseInertiaXZ: 0,
-    inverseInertiaYZ: 0,
-    inverseInertiaWorldXX: 0,
-    inverseInertiaWorldYY: 0,
-    inverseInertiaWorldZZ: 0,
-    inverseInertiaWorldXY: 0,
-    inverseInertiaWorldXZ: 0,
-    inverseInertiaWorldYZ: 0,
-    centerX: 0,
-    centerY: 0,
-    centerZ: 0,
-    linearDamping: 0,
-    angularDamping: 0,
-    gravityScale: 1,
-    fixedRotation: false,
-    bullet: false,
-    sleeping: false,
-    sleepEnabled: true,
-    sleepTimer: 0,
-    colliders: [],
-  });
+  const out = allocateEntity<RigidBody3D>();
+  out.angularDamping = 0;
+  out.angularVelocityX = 0;
+  out.angularVelocityY = 0;
+  out.angularVelocityZ = 0;
+  out.bullet = false;
+  out.centerX = 0;
+  out.centerY = 0;
+  out.centerZ = 0;
+  out.colliders = [];
+  out.fixedRotation = false;
+  out.forceX = 0;
+  out.forceY = 0;
+  out.forceZ = 0;
+  out.gravityScale = 1;
+  out.index = -1;
+  out.inertiaXX = 0;
+  out.inertiaXY = 0;
+  out.inertiaXZ = 0;
+  out.inertiaYY = 0;
+  out.inertiaYZ = 0;
+  out.inertiaZZ = 0;
+  out.inverseMass = 0;
+  out.inverseInertiaWorldXX = 0;
+  out.inverseInertiaWorldXY = 0;
+  out.inverseInertiaWorldXZ = 0;
+  out.inverseInertiaWorldYY = 0;
+  out.inverseInertiaWorldYZ = 0;
+  out.inverseInertiaWorldZZ = 0;
+  out.inverseInertiaXX = 0;
+  out.inverseInertiaXY = 0;
+  out.inverseInertiaXZ = 0;
+  out.inverseInertiaYY = 0;
+  out.inverseInertiaYZ = 0;
+  out.inverseInertiaZZ = 0;
+  out.linearDamping = 0;
+  out.mass = 0;
+  out.orientationW = 1;
+  out.orientationX = 0;
+  out.orientationY = 0;
+  out.orientationZ = 0;
+  out.sleepEnabled = true;
+  out.sleepTimer = 0;
+  out.sleeping = false;
+  out.torqueX = 0;
+  out.torqueY = 0;
+  out.torqueZ = 0;
+  out.type = type;
+  out.velocityX = 0;
+  out.velocityY = 0;
+  out.velocityZ = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  return finishEntity(out);
 }
 
 // Looks a body up by its persistent index, or null when no body in this world carries it. The

@@ -15,7 +15,7 @@ export function clearGeolocationWatch(host: Readonly<HasSystemGeolocation>, id: 
 }
 
 export function createGeoPosition(): GeoPosition {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<GeoPosition>();
   out.accuracy = 0;
   out.altitude = 0;
   out.altitudeAccuracy = 0;
@@ -148,7 +148,7 @@ function getWebGeolocation(): Geolocation | null {
 
 function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosition {
   const coords = position.coords;
-    const out = allocateEntity<void>();
+    const out = allocateEntity<GeoPosition>();
   out.accuracy = coords.accuracy;
   out.altitude = coords.altitude ?? 0;
   out.altitudeAccuracy = coords.altitudeAccuracy ?? 0;

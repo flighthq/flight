@@ -1,10 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AudioBufferHandle,
   AudioDeviceBackend,
   AudioDeviceHandle,
   AudioSourceHandle,
-  EntityWithoutRuntime,
 } from '@flighthq/types/contract';
 
 export function createWebAudioDeviceBackend(): AudioDeviceBackend {
@@ -28,147 +27,123 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend {
     return nextHandle++;
   }
 
-  return createEntity<EntityWithoutRuntime<AudioDeviceBackend & AudioDeviceBackendWebExtension>>({
-    createBuffer(
-      device: AudioDeviceHandle,
-      channels: number,
-      length: number,
-      sampleRate: number,
-      data: readonly Float32Array[],
-    ): AudioBufferHandle {
-      const context = devices.get(device as number);
-      if (context === undefined) return 0 as AudioBufferHandle;
-      const audioBuffer = new AudioBuffer({ length, numberOfChannels: channels, sampleRate });
-      for (let i = 0; i < channels; i++) {
-        if (i < data.length) audioBuffer.copyToChannel(new Float32Array(data[i]), i);
-      }
-      const h = handle() as unknown as AudioBufferHandle;
-      buffers.set(h as number, audioBuffer);
-      return h;
-    },
+  const out = allocateEntity<AudioDeviceBackend & AudioDeviceBackendWebExtension>();
 
-    createDevice(sampleRate: number): AudioDeviceHandle {
-      const context = new AudioContext({ sampleRate });
-      const h = handle() as unknown as AudioDeviceHandle;
-      devices.set(h as number, context);
-      return h;
-    },
+  out.createBuffer = (
+    device: AudioDeviceHandle,
+    channels: number,
+    length: number,
+    sampleRate: number,
+    data: readonly Float32Array[],
+  ): AudioBufferHandle => {
+    const context = devices.get(device as number);
+    if (context === undefined) return 0 as AudioBufferHandle;
+    const audioBuffer = new AudioBuffer({ length, numberOfChannels: channels, sampleRate });
+    for (let i = 0; i < channels; i++) {
+      if (i < data.length) audioBuffer.copyToChannel(new Float32Array(data[i]), i);
+    }
+    const h = handle() as unknown as AudioBufferHandle;
+    buffers.set(h as number, audioBuffer);
+    return h;
+  };
 
-    createSource(device: AudioDeviceHandle, buffer: AudioBufferHandle): AudioSourceHandle {
-      const context = devices.get(device as number);
-      const audioBuffer = buffers.get(buffer as number);
-      if (context === undefined || audioBuffer === undefined) return 0 as AudioSourceHandle;
-      const gainNode = context.createGain();
-      gainNode.connect(context.destination);
-      const pannerNode = context.createStereoPanner();
-      pannerNode.connect(gainNode);
-      const h = handle() as unknown as AudioSourceHandle;
-      sources.set(h as number, {
-        buffer: audioBuffer,
-        context,
-        gainNode,
-        pannerNode,
-        onEnded: null,
-        sourceNode: null,
-        state: 'stopped',
-      });
-      return h;
-    },
+  out.createDevice = (sampleRate: number): AudioDeviceHandle => {
+    const context = new AudioContext({ sampleRate });
+    const h = handle() as unknown as AudioDeviceHandle;
+    devices.set(h as number, context);
+    return h;
+  };
 
-    destroyBuffer(buffer: AudioBufferHandle): void {
-      buffers.delete(buffer as number);
-    },
+  out.createSource = (device: AudioDeviceHandle, buffer: AudioBufferHandle): AudioSourceHandle => {
+    const context = devices.get(device as number);
+    const audioBuffer = buffers.get(buffer as number);
+    if (context === undefined || audioBuffer === undefined) return 0 as AudioSourceHandle;
+    const gainNode = context.createGain();
+    gainNode.connect(context.destination);
+    const pannerNode = context.createStereoPanner();
+    pannerNode.connect(gainNode);
+    const h = handle() as unknown as AudioSourceHandle;
+    sources.set(h as number, {
+      buffer: audioBuffer,
+      context,
+      gainNode,
+      pannerNode,
+      onEnded: null,
+      sourceNode: null,
+      state: 'stopped',
+    });
+    return h;
+  };
 
-    destroyDevice(device: AudioDeviceHandle): void {
-      const context = devices.get(device as number);
-      if (context === undefined) return;
-      context.close().catch(() => {});
-      devices.delete(device as number);
-    },
+  out.destroyBuffer = (buffer: AudioBufferHandle): void => {
+    buffers.delete(buffer as number);
+  };
 
-    destroySource(source: AudioSourceHandle): void {
-      const s = sources.get(source as number);
-      if (s === undefined) return;
-      s.onEnded = null;
-      if (s.sourceNode !== null) {
-        s.sourceNode.onended = null;
-        if (s.state === 'playing') {
-          try {
-            assertSyncVoid(s.sourceNode.stop());
-          } catch {
-            // already stopped
-          }
-        }
-        s.sourceNode.disconnect();
-      }
-      s.pannerNode.disconnect();
-      s.gainNode.disconnect();
-      sources.delete(source as number);
-    },
+  out.destroyDevice = (device: AudioDeviceHandle): void => {
+    const context = devices.get(device as number);
+    if (context === undefined) return;
+    context.close().catch(() => {});
+    devices.delete(device as number);
+  };
 
-    getDeviceTime(device: AudioDeviceHandle): number {
-      const context = devices.get(device as number);
-      return context !== undefined ? context.currentTime : 0;
-    },
-
-    onSourceEnded(source: AudioSourceHandle, callback: (() => void) | null): void {
-      const s = sources.get(source as number);
-      if (s === undefined) return;
-      s.onEnded = callback;
-    },
-
-    resumeDevice(device: AudioDeviceHandle): void {
-      const context = devices.get(device as number);
-      if (context !== undefined) context.resume().catch(() => {});
-    },
-
-    setSourceGain(source: AudioSourceHandle, gain: number): void {
-      const s = sources.get(source as number);
-      if (s === undefined) return;
-      s.gainNode.gain.value = gain;
-    },
-
-    setSourcePan(source: AudioSourceHandle, pan: number): void {
-      const s = sources.get(source as number);
-      if (s === undefined) return;
-      s.pannerNode.pan.value = pan;
-    },
-
-    setSourcePlaybackRate(source: AudioSourceHandle, rate: number): void {
-      const s = sources.get(source as number);
-      if (s === undefined || s.sourceNode === null) return;
-      s.sourceNode.playbackRate.value = rate;
-    },
-
-    startSource(source: AudioSourceHandle, offset: number, duration: number): void {
-      const s = sources.get(source as number);
-      if (s === undefined) return;
-      if (s.sourceNode !== null) {
-        s.sourceNode.onended = null;
+  out.destroySource = (source: AudioSourceHandle): void => {
+    const s = sources.get(source as number);
+    if (s === undefined) return;
+    s.onEnded = null;
+    if (s.sourceNode !== null) {
+      s.sourceNode.onended = null;
+      if (s.state === 'playing') {
         try {
-          s.sourceNode.stop();
+          assertSyncVoid(s.sourceNode.stop());
         } catch {
           // already stopped
         }
-        s.sourceNode.disconnect();
       }
-      const sourceNode = s.context.createBufferSource();
-      sourceNode.buffer = s.buffer;
-      sourceNode.connect(s.pannerNode);
-      sourceNode.onended = () => {
-        s.state = 'stopped';
-        s.sourceNode = null;
-        if (s.onEnded !== null) s.onEnded();
-      };
-      s.sourceNode = sourceNode;
-      s.state = 'playing';
-      if (duration > 0) sourceNode.start(0, offset, duration);
-      else sourceNode.start(0, offset);
-    },
+      s.sourceNode.disconnect();
+    }
+    s.pannerNode.disconnect();
+    s.gainNode.disconnect();
+    sources.delete(source as number);
+  };
 
-    stopSource(source: AudioSourceHandle): void {
-      const s = sources.get(source as number);
-      if (s === undefined || s.sourceNode === null) return;
+  out.getDeviceTime = (device: AudioDeviceHandle): number => {
+    const context = devices.get(device as number);
+    return context !== undefined ? context.currentTime : 0;
+  };
+
+  out.onSourceEnded = (source: AudioSourceHandle, callback: (() => void) | null): void => {
+    const s = sources.get(source as number);
+    if (s === undefined) return;
+    s.onEnded = callback;
+  };
+
+  out.resumeDevice = (device: AudioDeviceHandle): void => {
+    const context = devices.get(device as number);
+    if (context !== undefined) context.resume().catch(() => {});
+  };
+
+  out.setSourceGain = (source: AudioSourceHandle, gain: number): void => {
+    const s = sources.get(source as number);
+    if (s === undefined) return;
+    s.gainNode.gain.value = gain;
+  };
+
+  out.setSourcePan = (source: AudioSourceHandle, pan: number): void => {
+    const s = sources.get(source as number);
+    if (s === undefined) return;
+    s.pannerNode.pan.value = pan;
+  };
+
+  out.setSourcePlaybackRate = (source: AudioSourceHandle, rate: number): void => {
+    const s = sources.get(source as number);
+    if (s === undefined || s.sourceNode === null) return;
+    s.sourceNode.playbackRate.value = rate;
+  };
+
+  out.startSource = (source: AudioSourceHandle, offset: number, duration: number): void => {
+    const s = sources.get(source as number);
+    if (s === undefined) return;
+    if (s.sourceNode !== null) {
       s.sourceNode.onended = null;
       try {
         s.sourceNode.stop();
@@ -176,20 +151,46 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend {
         // already stopped
       }
       s.sourceNode.disconnect();
-      s.sourceNode = null;
+    }
+    const sourceNode = s.context.createBufferSource();
+    sourceNode.buffer = s.buffer;
+    sourceNode.connect(s.pannerNode);
+    sourceNode.onended = () => {
       s.state = 'stopped';
-    },
+      s.sourceNode = null;
+      if (s.onEnded !== null) s.onEnded();
+    };
+    s.sourceNode = sourceNode;
+    s.state = 'playing';
+    if (duration > 0) sourceNode.start(0, offset, duration);
+    else sourceNode.start(0, offset);
+  };
 
-    getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null {
-      const s = sources.get(source as number);
-      return s?.sourceNode ?? null;
-    },
+  out.stopSource = (source: AudioSourceHandle): void => {
+    const s = sources.get(source as number);
+    if (s === undefined || s.sourceNode === null) return;
+    s.sourceNode.onended = null;
+    try {
+      s.sourceNode.stop();
+    } catch {
+      // already stopped
+    }
+    s.sourceNode.disconnect();
+    s.sourceNode = null;
+    s.state = 'stopped';
+  };
 
-    getSourceGainNode(source: AudioSourceHandle): GainNode | null {
-      const s = sources.get(source as number);
-      return s?.gainNode ?? null;
-    },
-  });
+  out.getSourceBufferSourceNode = (source: AudioSourceHandle): AudioBufferSourceNode | null => {
+    const s = sources.get(source as number);
+    return s?.sourceNode ?? null;
+  };
+
+  out.getSourceGainNode = (source: AudioSourceHandle): GainNode | null => {
+    const s = sources.get(source as number);
+    return s?.gainNode ?? null;
+  };
+
+  return finishEntity(out);
 }
 
 export function getAudioSourceBufferSourceNode(

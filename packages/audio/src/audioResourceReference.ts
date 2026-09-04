@@ -45,7 +45,7 @@ export function createEmbeddedAudioResourceReference(
   mimeType: string | null = null,
   name: string | null = null,
 ): EmbeddedAudioResourceReference {
-  const out = allocateEntity<AudioResourceFailure>();
+  const out = allocateEntity<EmbeddedAudioResourceReference>();
   out.bytes = bytes;
   out.failure = null;
   out.kind = AudioResourceReferenceKind.Embedded;
@@ -62,7 +62,7 @@ export function createExternalAudioResourceReference(
   mimeType: string | null = null,
   name: string | null = null,
 ): ExternalAudioResourceReference {
-  const out = allocateEntity<AudioResourceFailure>();
+  const out = allocateEntity<ExternalAudioResourceReference>();
   out.basePath = basePath;
   out.failure = null;
   out.kind = AudioResourceReferenceKind.External;

@@ -1,10 +1,9 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ClipboardChangeBackend,
   ClipboardFormatsBackend,
   ClipboardImageBackend,
   ClipboardTextBackend,
-  EntityRuntimeKey,
 } from '@flighthq/types/contract';
 import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
 
@@ -110,15 +109,16 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
     return '';
   }
 
-  return createEntity({
+  const _out = allocateEntity<WebClipboardBackend>();
+  Object.assign(_out, {
     readFormat,
     writeFormat,
-    async hasFormat(format) {
+    async hasFormat(format: string) {
       const formats = await getFormats();
       return formats.includes(format);
     },
     getFormats,
-    async writeItems(items) {
+    async writeItems(items: ReadonlyArray<{ readonly data: string; readonly format: string }>) {
       const cb = getWritableWebClipboard();
       if (cb === null) return false;
       try {
@@ -130,7 +130,7 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
         return false;
       }
     },
-    async readItems(formats) {
+    async readItems(formats: readonly string[]) {
       const cb = getWebClipboard();
       if (cb === null || typeof cb.read !== 'function') return {};
       try {
@@ -154,14 +154,14 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
     async readHtml() {
       return readFormat(ClipboardFormatHtml);
     },
-    async writeHtml(html) {
+    async writeHtml(html: string) {
       return writeFormat(ClipboardFormatHtml, html);
     },
     async hasText() {
       return (await readText()).length > 0;
     },
     readImage,
-    async writeImage(dataUrl) {
+    async writeImage(dataUrl: string) {
       const cb = getWritableWebClipboard();
       if (cb === null) return false;
       try {
@@ -179,23 +179,24 @@ const createWebClipboardProviderBackend = (): WebClipboardBackend => {
     async readRTF() {
       return readFormat(ClipboardFormatRtf);
     },
-    async writeRTF(rtf) {
+    async writeRTF(rtf: string) {
       return writeFormat(ClipboardFormatRtf, rtf);
     },
     async clear() {
       return writeText('');
     },
-    subscribe(callback) {
+    subscribe(callback: () => void) {
       if (typeof window === 'undefined') return;
       if ('onclipboardchange' in window) {
         window.addEventListener('clipboardchange' as keyof WindowEventMap, callback as EventListener);
       }
     },
-    unsubscribe(callback) {
+    unsubscribe(callback: () => void) {
       if (typeof window === 'undefined' || !('onclipboardchange' in window)) return;
       window.removeEventListener('clipboardchange' as keyof WindowEventMap, callback as EventListener);
     },
-  } satisfies Omit<WebClipboardBackend, typeof EntityRuntimeKey>);
+  });
+  return finishEntity(_out);
 };
 
 export const webClipboardBackend = createWebClipboardProviderBackend();

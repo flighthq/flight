@@ -149,7 +149,7 @@ function refuse(
   kind: string | null,
 ): typeof INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE {
   state.refusal ??= (() => {
-    const out = allocateEntity<FlightDocumentTokenResolverRegistry>();
+    const out = allocateEntity<FlightDocumentRefusalExplanation>();
     out.actual = null;
     out.column = null;
     out.kind = kind;

@@ -52,7 +52,7 @@ export function acquireGlScale9ShapeRasterSurface(
 }
 
 export function createGlScale9ShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
-  const out = allocateEntity<RendererData>();
+  const out = allocateEntity<GlScale9ShapeData>();
   out.lastH = 0;
   out.lastScaleX = -1;
   out.lastScaleY = -1;

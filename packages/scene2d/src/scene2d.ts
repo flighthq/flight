@@ -41,7 +41,7 @@ export function createScene2DRuntime(): Scene2DRuntime {
 }
 
 export function createScene2DSignals(): Scene2DSignals {
-  const out = allocateEntity<Scene2D>();
+  const out = allocateEntity<Scene2DSignals>();
   out.onFullscreenChanged = createSignal();
   out.onOrientationChanged = createSignal();
   out.onResize = createSignal();

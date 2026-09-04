@@ -1,8 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
+  ScreenChangeBackend,
   ScreenChangeEvent,
+  ScreenDetailsBackend,
   ScreenInfo,
+  ScreenPermissionChangeBackend,
+  ScreenQueryBackend,
   WebScreenCapabilities,
   ScreenPermissionState,
 } from '@flighthq/types/contract';
@@ -180,7 +184,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
     };
 
   const query = (() => {
-    const out = allocateEntity<WebScreenCapabilities>();
+    const out = allocateEntity<ScreenQueryBackend>();
     out.destroy = () => {
       if (typeof window !== 'undefined') {
         for (const subscription of subscriptions) {
@@ -225,7 +229,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
   })();
 
   const change = (() => {
-    const out = allocateEntity<WebScreenCapabilities>();
+    const out = allocateEntity<ScreenChangeBackend>();
     out.subscribe = (listener: (event: Readonly<ScreenChangeEvent>) => void) => {
       if (typeof window === 'undefined') return () => {};
       const subscription: DisplaySubscription = {
@@ -248,7 +252,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
   })();
 
   const detailsBackend = (() => {
-    const out = allocateEntity<WebScreenCapabilities>();
+    const out = allocateEntity<ScreenDetailsBackend>();
     out.queryPermission = async (): Promise<ScreenPermissionState> => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return 'prompt';
       try {
@@ -280,7 +284,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
   })();
 
   const permissionChange = (() => {
-    const out = allocateEntity<WebScreenCapabilities>();
+    const out = allocateEntity<ScreenPermissionChangeBackend>();
     out.subscribe = (listener: (state: ScreenPermissionState) => void) => {
       if (typeof navigator === 'undefined' || navigator.permissions === undefined) return () => {};
       let cancelled = false;

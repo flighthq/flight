@@ -124,7 +124,7 @@ export function createCollisionTriangleMesh3D(
   points: readonly number[],
   indices: readonly number[],
 ): CollisionTriangleMesh3D {
-  const out = allocateEntity<CollisionHeightfield3D>();
+  const out = allocateEntity<CollisionTriangleMesh3D>();
   out.kind = 'triangle-mesh';
   out.points = points.slice();
   out.indices = indices.slice();

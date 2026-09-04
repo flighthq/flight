@@ -158,7 +158,7 @@ export function createRichTextRuntime(): RichTextRuntime {
 }
 
 export function createTextFieldSignals(): TextFieldSignals {
-  const out = allocateEntity<RichText>();
+  const out = allocateEntity<TextFieldSignals>();
   out.onTextFieldChange = createSignal();
   out.onTextFieldLink = createSignal();
   out.onTextFieldScroll = createSignal();

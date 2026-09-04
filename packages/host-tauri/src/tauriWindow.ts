@@ -92,7 +92,7 @@ export function createTauriWindowBackend(
     );
     return true;
   };
-    const out = allocateEntity<WindowBackend>();
+    const out = allocateEntity<WindowBackend & Required<Pick<WindowBackend, 'attach' | 'close' | 'open'>>>();
   out.attach = (win, handle, ownership) => {
       if (!isTauriWindow(handle)) return false;
       return attach(win, handle, ownership);

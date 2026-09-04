@@ -4,6 +4,7 @@ import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
+  ImageResourceFailure,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,
   Scene3D,
@@ -141,7 +142,7 @@ function finishScene3DResourceResolution(
   runtime.inFlight.delete(ref);
   if (source === null) {
     ref.failure ??= (() => {
-      const out = allocateEntity<Promise<TextureSource | null>>();
+      const out = allocateEntity<ImageResourceFailure>();
       out.kind = ImageResourceFailureKind.Unavailable;
       out.message = 'Image resource resolution returned no source';
       out.name = null;

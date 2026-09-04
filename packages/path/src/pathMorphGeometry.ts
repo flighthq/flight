@@ -59,7 +59,7 @@ export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): Path
     contour: null,
     issue: PathMorphIssueNone,
     morph: (() => {
-      const out = allocateEntity<PathMorphBuildResult>();
+      const out = allocateEntity<PathMorph>();
       out.commands = commands;
       out.endData = endData;
       out.startData = startData;

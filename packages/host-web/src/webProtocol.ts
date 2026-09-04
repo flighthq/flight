@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, HostProtocolCapabilities } from '@flighthq/types/contract';
+import type { Entity, HostProtocolCapabilities, ProtocolLaunchBackend, ProtocolRegistrationBackend } from '@flighthq/types/contract';
 
 type WebProtocolCapabilities = Entity & Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
 
@@ -7,7 +7,7 @@ export function createWebProtocolCapabilities(): WebProtocolCapabilities {
   const registeredSchemes: string[] = [];
   const out = allocateEntity<WebProtocolCapabilities>();
   out.launch = (() => {
-    const out = allocateEntity<WebProtocolCapabilities>();
+    const out = allocateEntity<ProtocolLaunchBackend>();
     out.getLaunchUrl = () => {
       if (typeof location === 'undefined') return null;
       try {
@@ -20,7 +20,7 @@ export function createWebProtocolCapabilities(): WebProtocolCapabilities {
     return finishEntity(out);
   })();
   out.registration = (() => {
-    const out = allocateEntity<WebProtocolCapabilities>();
+    const out = allocateEntity<ProtocolRegistrationBackend>();
     out.getRegisteredSchemes = () => {
       return registeredSchemes.slice();
     };

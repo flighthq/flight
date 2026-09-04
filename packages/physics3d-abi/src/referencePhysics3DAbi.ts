@@ -82,6 +82,7 @@ import type {
   Physics3DContact,
   Physics3DContactCallback,
   Physics3DJoint,
+  Physics3DMassData,
   Physics3DWorld,
   RigidBody3D,
 } from '@flighthq/types/contract';
@@ -472,7 +473,7 @@ function executeSetBody(
   }
   setRigidBody3DMassData(
     body,
-    (() => { const out = allocateEntity<Physics3DAbi>(); out.mass = values[19]; out.inertiaXX = values[20]; out.inertiaYY = values[21]; out.inertiaZZ = values[22]; out.inertiaXY = values[23]; out.inertiaXZ = values[24]; out.inertiaYZ = values[25]; out.centerX = values[26]; out.centerY = values[27]; out.centerZ = values[28]; return finishEntity(out); })(),
+    (() => { const out = allocateEntity<Physics3DMassData>(); out.mass = values[19]; out.inertiaXX = values[20]; out.inertiaYY = values[21]; out.inertiaZZ = values[22]; out.inertiaXY = values[23]; out.inertiaXZ = values[24]; out.inertiaYZ = values[25]; out.centerX = values[26]; out.centerY = values[27]; out.centerZ = values[28]; return finishEntity(out); })(),
   );
   refreshRigidBody3DWorldInertia(body);
   writeBodyDynamicValues(body, values, flags);

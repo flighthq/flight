@@ -52,7 +52,7 @@ export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA =
 // package: its only contract is that the SAME physical feature carries the SAME id between steps, which is
 // what lets the solver match this step's points against last step's accumulators.
 export function createPhysics3DContactPoint(): Physics3DContactPoint {
-  const out = allocateEntity<Physics3DContact>();
+  const out = allocateEntity<Physics3DContactPoint>();
   out.x = 0;
   out.y = 0;
   out.z = 0;

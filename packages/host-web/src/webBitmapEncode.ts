@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { BitmapEncodeBackend, Entity } from '@flighthq/types/contract';
 
 export function createWebBitmapEncodeBackend(): BitmapEncodeBackend & Entity {
-    const out = allocateEntity<BitmapEncodeBackend>();
+    const out = allocateEntity<BitmapEncodeBackend & Entity>();
   out.encodeBitmap = (source, format, quality): Uint8Array => {
       const canvas = document.createElement('canvas');
       canvas.width = source.width;

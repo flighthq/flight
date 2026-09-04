@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { AttachmentSkin2D, Bone2D, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
@@ -10,15 +10,15 @@ const MATRIX_STRIDE = 6;
 // posable skeleton. Slots and their attachments are SHARED (attachments are immutable setup data); use a
 // skin/slot editing layer for per-instance attachment swaps.
 export function cloneSkeleton2D(skeleton: Readonly<Skeleton2D>): Skeleton2D {
-  return createEntity({
-    boneMatrices: skeleton.boneMatrices.slice(),
-    bones: skeleton.bones.map((bone) => ({ ...bone })),
-    inverseBindMatrices: skeleton.inverseBindMatrices.slice(),
-    skins: skeleton.skins,
-    slots:
-      skeleton.slots === null || skeleton.slots === undefined ? skeleton.slots : skeleton.slots.map((s) => ({ ...s })),
-    worldMatrices: skeleton.worldMatrices.slice(),
-  });
+  const out = allocateEntity<Skeleton2D>();
+  out.boneMatrices = skeleton.boneMatrices.slice();
+  out.bones = skeleton.bones.map((bone) => ({ ...bone }));
+  out.inverseBindMatrices = skeleton.inverseBindMatrices.slice();
+  out.skins = skeleton.skins;
+  out.slots =
+    skeleton.slots === null || skeleton.slots === undefined ? skeleton.slots : skeleton.slots.map((s) => ({ ...s }));
+  out.worldMatrices = skeleton.worldMatrices.slice();
+  return finishEntity(out);
 }
 
 // Fills the skin palette `boneMatrices[i] = worldMatrices[i] × inverseBindMatrices[i]` — the matrix that
@@ -150,13 +150,13 @@ export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>)
 // (each bone's `parentIndex` < its own index); `validateSkeleton2D` checks this.
 export function createSkeleton2D(bones: Bone2D[], slots: Skeleton2D['slots'] = null): Skeleton2D {
   const count = bones.length;
-  return createEntity({
-    boneMatrices: new Float32Array(count * MATRIX_STRIDE),
-    bones,
-    inverseBindMatrices: new Float32Array(count * MATRIX_STRIDE),
-    slots,
-    worldMatrices: new Float32Array(count * MATRIX_STRIDE),
-  });
+  const out = allocateEntity<Skeleton2D>();
+  out.boneMatrices = new Float32Array(count * MATRIX_STRIDE);
+  out.bones = bones;
+  out.inverseBindMatrices = new Float32Array(count * MATRIX_STRIDE);
+  out.slots = slots;
+  out.worldMatrices = new Float32Array(count * MATRIX_STRIDE);
+  return finishEntity(out);
 }
 
 // Detaches bones/slots so the skeleton is GC-eligible. `dispose*` (not `destroy*`): a Skeleton2D owns no

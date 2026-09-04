@@ -28,7 +28,7 @@ export function createScale9SpriteData(
   scale9Grid: Readonly<RectangleLike>,
   data?: Readonly<Partial<Scale9SpriteData>>,
 ): Scale9SpriteData {
-  const out = allocateEntity<Scale9Sprite>();
+  const out = allocateEntity<Scale9SpriteData>();
   out.scale9Grid = scale9Grid;
   out.texture = data?.texture ?? null;
   return finishEntity(out);

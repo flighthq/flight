@@ -1,5 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionBuiltInShape2D, Entity, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
+import type {
+  CollisionBuiltInShape2D,
+  CollisionCapsule2D,
+  CollisionCircle2D,
+  CollisionObb2D,
+  CollisionPoint2D,
+  CollisionPolygon2D,
+  CollisionSegment2D,
+  Entity,
+  Physics2DCollider,
+  RigidBody2D,
+} from '@flighthq/types/contract';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and
@@ -8,16 +19,17 @@ export function createPhysics2DColliderWorldShape(
   local: Readonly<CollisionBuiltInShape2D>,
 ): CollisionBuiltInShape2D & Entity {
   switch (local.kind) {
-    case 'circle':
-            const out = allocateEntity<Physics2DColliderWorldShape>();
+    case 'circle': {
+      const out = allocateEntity<(CollisionCircle2D & { kind: 'circle' }) & Entity>();
       out.kind = 'circle';
       out.x = local.x;
       out.y = local.y;
       out.radius = local.radius;
       return finishEntity(out);
+    }
     case 'aabb':
-    case 'obb':
-            const out = allocateEntity<Physics2DColliderWorldShape>();
+    case 'obb': {
+      const out = allocateEntity<(CollisionObb2D & { kind: 'obb' }) & Entity>();
       out.kind = 'obb';
       out.x = 0;
       out.y = 0;
@@ -25,8 +37,9 @@ export function createPhysics2DColliderWorldShape(
       out.halfH = 0;
       out.rotation = 0;
       return finishEntity(out);
-    case 'capsule':
-            const out = allocateEntity<Physics2DColliderWorldShape>();
+    }
+    case 'capsule': {
+      const out = allocateEntity<(CollisionCapsule2D & { kind: 'capsule' }) & Entity>();
       out.kind = 'capsule';
       out.x0 = 0;
       out.y0 = 0;
@@ -34,31 +47,36 @@ export function createPhysics2DColliderWorldShape(
       out.y1 = 0;
       out.radius = local.radius;
       return finishEntity(out);
-    case 'polygon':
-            const out = allocateEntity<Physics2DColliderWorldShape>();
+    }
+    case 'polygon': {
+      const out = allocateEntity<(CollisionPolygon2D & { kind: 'polygon' }) & Entity>();
       out.kind = 'polygon';
       out.points = local.points.slice();
       return finishEntity(out);
-    case 'segment':
-            const out = allocateEntity<Physics2DColliderWorldShape>();
+    }
+    case 'segment': {
+      const out = allocateEntity<(CollisionSegment2D & { kind: 'segment' }) & Entity>();
       out.kind = 'segment';
       out.x0 = local.x0;
       out.y0 = local.y0;
       out.x1 = local.x1;
       out.y1 = local.y1;
       return finishEntity(out);
-    case 'point':
-            const out = allocateEntity<Physics2DColliderWorldShape>();
+    }
+    case 'point': {
+      const out = allocateEntity<(CollisionPoint2D & { kind: 'point' }) & Entity>();
       out.kind = 'point';
       out.x = local.x;
       out.y = local.y;
       return finishEntity(out);
-    default:
-            const out = allocateEntity<Physics2DColliderWorldShape>();
+    }
+    default: {
+      const out = allocateEntity<(CollisionPoint2D & { kind: 'point' }) & Entity>();
       out.kind = 'point';
       out.x = 0;
       out.y = 0;
       return finishEntity(out);
+    }
   }
 }
 

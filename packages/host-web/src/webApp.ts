@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, HostAppCapabilities } from '@flighthq/types/contract';
+import type { AppBadgeBackend, AppFocusBackend, AppLocaleBackend, AppNameBackend, AppQuitBackend, AppReadyBackend, AppRelaunchBackend, Entity, HostAppCapabilities } from '@flighthq/types/contract';
 
 type WebAppCapabilities = Entity &
   Required<Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>>;
@@ -7,7 +7,7 @@ type WebAppCapabilities = Entity &
 export function createWebAppCapabilities(): WebAppCapabilities {
   const out = allocateEntity<WebAppCapabilities>();
   out.badge = (() => {
-    const out = allocateEntity<WebAppCapabilities>();
+    const out = allocateEntity<AppBadgeBackend>();
     out.setBadgeCount = async (count: number) => {
       if (typeof navigator === 'undefined') return false;
       if (typeof navigator.setAppBadge !== 'function') return false;
@@ -21,7 +21,7 @@ export function createWebAppCapabilities(): WebAppCapabilities {
     return finishEntity(out);
   })();
   out.focus = (() => {
-    const out = allocateEntity<WebAppCapabilities>();
+    const out = allocateEntity<AppFocusBackend>();
     out.focus = () => {
       try {
         window.focus();
@@ -30,7 +30,7 @@ export function createWebAppCapabilities(): WebAppCapabilities {
     return finishEntity(out);
   })();
   out.locale = (() => {
-    const out = allocateEntity<WebAppCapabilities>();
+    const out = allocateEntity<AppLocaleBackend>();
     out.getLocale = () => {
       return typeof navigator === 'undefined' ? '' : (navigator.language ?? '');
     };
@@ -47,14 +47,14 @@ export function createWebAppCapabilities(): WebAppCapabilities {
     return finishEntity(out);
   })();
   out.name = (() => {
-    const out = allocateEntity<WebAppCapabilities>();
+    const out = allocateEntity<AppNameBackend>();
     out.getName = () => {
       return typeof document === 'undefined' ? '' : document.title;
     };
     return finishEntity(out);
   })();
   out.quit = (() => {
-    const out = allocateEntity<WebAppCapabilities>();
+    const out = allocateEntity<AppQuitBackend>();
     out.quit = () => {
       try {
         window.close();
@@ -63,7 +63,7 @@ export function createWebAppCapabilities(): WebAppCapabilities {
     return finishEntity(out);
   })();
   out.ready = (() => {
-    const out = allocateEntity<WebAppCapabilities>();
+    const out = allocateEntity<AppReadyBackend>();
     out.subscribe = (listener: () => void) => {
       if (typeof document !== 'undefined' && document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', listener, { once: true });
@@ -80,7 +80,7 @@ export function createWebAppCapabilities(): WebAppCapabilities {
     return finishEntity(out);
   })();
   out.relaunch = (() => {
-    const out = allocateEntity<WebAppCapabilities>();
+    const out = allocateEntity<AppRelaunchBackend>();
     out.relaunch = () => {
       try {
         location.reload();

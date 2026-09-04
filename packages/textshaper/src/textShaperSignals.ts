@@ -14,7 +14,7 @@ export function disposeTextShaperSignals(): void {
 export function enableTextShaperSignals(): TextShaperSignals {
   if (_signals !== null) return _signals;
   _signals = (() => {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<TextShaperSignals>();
     out.onBackendChanged = createSignal<(backend: TextShaperBackend | null) => void>();
     return finishEntity(out);
   })();

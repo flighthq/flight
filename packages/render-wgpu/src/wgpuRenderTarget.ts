@@ -9,6 +9,7 @@ import type {
   RenderTargetColorSpace,
   WgpuRenderState,
   WgpuRenderTarget,
+  WgpuTextureEntry,
 } from '@flighthq/types/contract';
 
 import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
@@ -200,7 +201,7 @@ export function drawWgpuRenderTargetResult(
     renderProxy as never,
     composedTransform,
     (() => {
-      const out = allocateEntity<void>();
+      const out = allocateEntity<WgpuTextureEntry>();
       out.bindings = target.bindings;
       out.mipLevelCount = target.mipLevelCount;
       out.texture = target.texture;

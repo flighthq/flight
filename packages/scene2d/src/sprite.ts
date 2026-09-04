@@ -37,7 +37,7 @@ export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
 }
 
 export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
-  const out = allocateEntity<Sprite>();
+  const out = allocateEntity<SpriteData>();
   out.texture = data?.texture ?? null;
   return finishEntity(out);
 }
@@ -46,7 +46,7 @@ export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteDa
 // attached to that state's render proxy, so separate render pipelines compare independently.
 export function createSpriteRendererData(_state: RenderState, source: Renderable): SpriteIdentityRendererData {
   const texture = (source as Sprite).data.texture;
-  const out = allocateEntity<Sprite>();
+  const out = allocateEntity<SpriteIdentityRendererData>();
   out.textureIdentity = texture;
   out.textureVersion = texture?.version ?? -1;
   return finishEntity(out);

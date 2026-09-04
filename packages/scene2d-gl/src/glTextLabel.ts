@@ -50,7 +50,7 @@ function getGlTextLabelData(data: RendererData): GlTextLabelData {
 }
 
 function createGlTextLabelData(_state: GlRenderState, _source: Renderable): RendererData {
-  const out = allocateEntity<RendererData>();
+  const out = allocateEntity<GlTextLabelData>();
   out.surface = null;
   out.lastContentId = -1;
   out.lastPixelRatio = 0;

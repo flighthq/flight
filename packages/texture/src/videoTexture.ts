@@ -102,7 +102,7 @@ export function setVideoTextureSource(texture: TextureLike, source: VideoResourc
 
 function createVideoImageResource(source: Readonly<VideoResource>): ImageResource | null {
   if (source.element === null) return null;
-  const image = allocateEntity<Texture2D>();
+  const image = allocateEntity<ImageResource>();
   image.height = 0;
   image.alphaType = 'straight';
   image.gamut = 'srgb';

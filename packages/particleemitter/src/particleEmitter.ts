@@ -212,7 +212,7 @@ export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
 }
 
 export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitterData>>): ParticleEmitterData {
-  const out = allocateEntity<ParticleEmitter2D>();
+  const out = allocateEntity<ParticleEmitterData>();
   out.alphas = data?.alphas ?? new Float32Array();
   out.atlas = data?.atlas ?? null;
   out.colors = data?.colors ?? new Float32Array();

@@ -45,7 +45,7 @@ export function createStatusBar(): StatusBar {
 }
 
 export function createStatusBarInfo(): StatusBarInfo {
-  const out = allocateEntity<StatusBar>();
+  const out = allocateEntity<StatusBarInfo>();
   out.color = 0;
   out.height = -1;
   out.overlaysContent = false;

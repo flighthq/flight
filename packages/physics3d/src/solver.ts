@@ -41,7 +41,7 @@ export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
 // Allocates one point's accumulators, zeroed. A fresh point warm-starts from nothing, which is the
 // correct behaviour for a contact that did not exist last step.
 export function createPhysics3DContactConstraintPoint(): Physics3DContactConstraintPoint {
-  const out = allocateEntity<Physics3DContactConstraint>();
+  const out = allocateEntity<Physics3DContactConstraintPoint>();
   out.bias = 0;
   out.featureId = 0;
   out.normalImpulse = 0;

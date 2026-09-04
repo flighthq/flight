@@ -20,7 +20,7 @@ export function createExternalGlTexture(
   handle: WebGLTexture,
   options: Readonly<CreateExternalTextureOptions>,
 ): Texture {
-  const source = allocateEntity<Texture>();
+  const source = allocateEntity<ExternalTexture>();
   source.height = options.height;
   source.kind = ExternalTextureSourceKind;
   source.version = 0;

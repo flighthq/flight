@@ -66,7 +66,7 @@ export function createAnimationStateMachineState(
   name: string,
   blendTree: AnimationBlendTree,
 ): AnimationStateMachineState {
-  const out = allocateEntity<AnimationStateMachine>();
+  const out = allocateEntity<AnimationStateMachineState>();
   out.blendTree = blendTree;
   out.name = name;
   return finishEntity(out);

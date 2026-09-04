@@ -15,17 +15,18 @@ export function createPhysics3DColliderWorldShape(
   local: Readonly<CollisionColliderShape3D>,
 ): CollisionColliderShape3D & Entity {
   switch (local.kind) {
-    case 'sphere':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    case 'sphere': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'sphere' }> & Entity>();
       out.kind = 'sphere';
       out.x = local.x;
       out.y = local.y;
       out.z = local.z;
       out.radius = local.radius;
       return finishEntity(out);
+    }
     case 'aabb':
-    case 'box':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    case 'box': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'box' }> & Entity>();
       out.kind = 'box';
       out.x = 0;
       out.y = 0;
@@ -38,8 +39,9 @@ export function createPhysics3DColliderWorldShape(
       out.rotationZ = 0;
       out.rotationW = 1;
       return finishEntity(out);
-    case 'capsule':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    }
+    case 'capsule': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'capsule' }> & Entity>();
       out.kind = 'capsule';
       out.x0 = local.x0;
       out.y0 = local.y0;
@@ -49,8 +51,9 @@ export function createPhysics3DColliderWorldShape(
       out.z1 = local.z1;
       out.radius = local.radius;
       return finishEntity(out);
-    case 'cylinder':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    }
+    case 'cylinder': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'cylinder' }> & Entity>();
       out.kind = 'cylinder';
       out.x0 = local.x0;
       out.y0 = local.y0;
@@ -60,8 +63,9 @@ export function createPhysics3DColliderWorldShape(
       out.z1 = local.z1;
       out.radius = local.radius;
       return finishEntity(out);
-    case 'cone':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    }
+    case 'cone': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'cone' }> & Entity>();
       out.kind = 'cone';
       out.apexX = local.apexX;
       out.apexY = local.apexY;
@@ -71,13 +75,15 @@ export function createPhysics3DColliderWorldShape(
       out.baseZ = local.baseZ;
       out.radius = local.radius;
       return finishEntity(out);
-    case 'convex':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    }
+    case 'convex': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'convex' }> & Entity>();
       out.kind = 'convex';
       out.points = local.points.slice();
       return finishEntity(out);
-    case 'triangle-mesh':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    }
+    case 'triangle-mesh': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' }> & Entity>();
       out.kind = 'triangle-mesh';
       out.points = local.points;
       out.indices = local.indices;
@@ -90,8 +96,9 @@ export function createPhysics3DColliderWorldShape(
       out.rotationZ = local.rotationZ;
       out.rotationW = local.rotationW;
       return finishEntity(out);
-    case 'heightfield':
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    }
+    case 'heightfield': {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'heightfield' }> & Entity>();
       out.kind = 'heightfield';
       out.columns = local.columns;
       out.rows = local.rows;
@@ -107,14 +114,16 @@ export function createPhysics3DColliderWorldShape(
       out.rotationZ = local.rotationZ;
       out.rotationW = local.rotationW;
       return finishEntity(out);
-    default:
-            const out = allocateEntity<Physics3DColliderWorldShape>();
+    }
+    default: {
+      const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'sphere' }> & Entity>();
       out.kind = 'sphere';
       out.x = 0;
       out.y = 0;
       out.z = 0;
       out.radius = 0;
       return finishEntity(out);
+    }
   }
 }
 

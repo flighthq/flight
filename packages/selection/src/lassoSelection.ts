@@ -31,7 +31,7 @@ export function createLassoSelection(): LassoSelection {
     active: false,
     binding: null,
     path: (() => {
-      const out = allocateEntity<void>();
+      const out = allocateEntity<Path>();
       out.commands = [] as number[];
       out.data = [] as number[];
       out.winding = 'evenOdd' as const;

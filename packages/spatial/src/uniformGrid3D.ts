@@ -46,7 +46,7 @@ export function createUniformGridSpatialBackend3D(cellSize: number): SpatialInde
     seen: new Set(),
     pairIds: [],
   };
-  const out = allocateEntity<SpatialIndexBackend3D>();
+  const out = allocateEntity<SpatialIndexBackend3D & Entity>();
   out.insertSpatialObject = (id, bounds) => {
     return _insertIntoGrid3D(grid, id, bounds, 'insert');
   };

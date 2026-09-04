@@ -257,7 +257,7 @@ export function bindWgpuVideoTexture(
     });
     const view = texture.createView();
     entry = (() => {
-      const out = allocateEntity<void>();
+      const out = allocateEntity<WgpuVideoTextureEntry>();
       out.bindings = new Map();
       out.height = height;
       out.mipLevelCount = 1;

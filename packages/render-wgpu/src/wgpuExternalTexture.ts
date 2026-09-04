@@ -19,7 +19,7 @@ export function createExternalWgpuTexture(
   handle: GPUTexture,
   options: Readonly<CreateExternalTextureOptions>,
 ): Texture {
-  const source = allocateEntity<Texture>();
+  const source = allocateEntity<ExternalTexture>();
   source.height = options.height;
   source.kind = ExternalTextureSourceKind;
   source.version = 0;
@@ -37,7 +37,7 @@ export function createExternalWgpuTexture(
   (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache ??= new WeakMap()).set(
     source,
     (() => {
-      const out = allocateEntity<Texture>();
+      const out = allocateEntity<WgpuTextureEntry>();
       out.bindings = new Map();
       out.mipLevelCount = 1;
       out.sampler = sampler;

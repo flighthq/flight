@@ -186,7 +186,7 @@ export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>):
     opts.maxBytesPerSecond !== undefined && opts.maxBytesPerSecond > 0
       ? createTokenBucket(opts.maxBytesPerSecond)
       : null;
-  const out = allocateEntity<ResourceLoader>();
+  const out = allocateEntity<ResourceLoaderInternal>();
   out.cancelled = false;
   out.dedupeMap = new Map();
   out.errorPolicy = opts.errorPolicy ?? 'continue';
@@ -236,7 +236,7 @@ export function enableResourceLoaderItemSignals(loader: ResourceLoader): Resourc
   const internal = loader as ResourceLoaderInternal;
   if (internal.itemSignals === null) {
     internal.itemSignals = (() => {
-      const out = allocateEntity<void>();
+      const out = allocateEntity<ResourceLoaderItemSignals>();
       out.onItemComplete = createSignal();
       out.onItemError = createSignal();
       out.onItemRetry = createSignal();

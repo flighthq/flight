@@ -73,7 +73,7 @@ export function createSocket(host: HasNetSocket, options: Readonly<SocketOptions
 // null connection when WebSocket is unavailable (non-browser host) rather than throwing; raw TCP/UDP
 // is likewise unsupported here and only reachable through a native backend.
 export function createWebSocketBackend(): SocketBackend & Entity {
-  const out = allocateEntity<void>();
+  const out = allocateEntity<SocketBackend & Entity>();
   out.openSocket = (options, events): SocketConnection | null => {
     if (typeof WebSocket === 'undefined') return null;
     const ws =
@@ -129,7 +129,7 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
   if (runtime.disposed) _guard?.({ operation: 'enableSocketSignals', reason: 'disposed', socket });
   if (runtime.signals === null) {
     runtime.signals = (() => {
-      const out = allocateEntity<void>();
+      const out = allocateEntity<SocketSignals>();
       out.onSocketOpen = createSignal<() => void>();
       out.onSocketMessage = createSignal<(message: Readonly<SocketMessage>) => void>();
       out.onSocketClose = createSignal<(info: Readonly<SocketCloseInfo>) => void>();

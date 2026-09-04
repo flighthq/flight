@@ -66,7 +66,7 @@ export function createAnimationLayerStack(layers: readonly AnimationLayer[]): An
     }
   }
 
-  const out = allocateEntity<AnimationLayer>();
+  const out = allocateEntity<AnimationLayerStack>();
   out.advanceScratch = [];
   out.blendTrees = blendTrees;
   out.channels = channels;

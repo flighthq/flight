@@ -72,7 +72,7 @@ export function createNodeRuntime<Traits extends object = NodeTraits>(
 }
 
 export function createNodeSignals(): NodeSignals {
-  const out = allocateEntity<NodeRuntime<Traits>>();
+  const out = allocateEntity<NodeSignals>();
   out.onChildAdded = createSignal();
   out.onChildRemoved = createSignal();
   out.onChildrenChanged = createSignal();

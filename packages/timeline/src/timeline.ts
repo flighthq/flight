@@ -47,7 +47,7 @@ export function createTimelineSource(obj: {
   cues?: readonly TimelineCue[];
   constructFrame?: (target: Node2D, frame: number) => void;
 }): TimelineSource {
-  const out = allocateEntity<Timeline>();
+  const out = allocateEntity<TimelineSource>();
   out.totalFrames = obj.totalFrames ?? 1;
   out.frameRate = obj.frameRate ?? null;
   out.labels = obj.labels ?? EMPTY_LABELS;

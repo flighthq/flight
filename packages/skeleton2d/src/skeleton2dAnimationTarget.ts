@@ -49,7 +49,7 @@ export function createSkeleton2DSlotAnimationTarget(
   path: Skeleton2DSlotAnimationPath,
   attachments: readonly (Attachment2D | null)[] | null = null,
 ): Skeleton2DSlotAnimationTarget {
-  const out = allocateEntity<Skeleton2DAnimationTarget>();
+  const out = allocateEntity<Skeleton2DSlotAnimationTarget>();
   out.attachments = attachments;
   out.kind = TargetKind.Slot;
   out.path = path;

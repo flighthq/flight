@@ -48,7 +48,7 @@ export function createAnimationClip(
   if (duration !== undefined && copiedEvents.length > 0 && copiedEvents[copiedEvents.length - 1].time > duration) {
     throw new RangeError('AnimationClip event time exceeds the explicit clip duration.');
   }
-  const out = allocateEntity<AnimationChannel>();
+  const out = allocateEntity<AnimationClip>();
   out.channels = channels;
   out.duration = duration ?? computedDuration;
   out.events = copiedEvents;
@@ -57,7 +57,7 @@ export function createAnimationClip(
 
 // Allocates one opaque-payload clip marker. Clip construction validates its time against the clip.
 export function createAnimationClipEvent(time: number, name: string, payload: unknown = null): AnimationClipEvent {
-  const out = allocateEntity<AnimationChannel>();
+  const out = allocateEntity<AnimationClipEvent>();
   out.name = name;
   out.payload = payload;
   out.time = time;

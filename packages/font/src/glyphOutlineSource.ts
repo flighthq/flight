@@ -19,7 +19,7 @@ import type {
 export function createGlyphRasterizerBackendFromGlyphOutlineSource(
   source: GlyphOutlineSource,
 ): GlyphRasterizerBackend & Entity {
-  const out = allocateEntity<GlyphRasterizerBackend>();
+  const out = allocateEntity<GlyphRasterizerBackend & Entity>();
   out.measureMetrics = (options): GlyphMetrics | null => {
     const metrics = source.getGlyphOutlineMetrics();
     const scale = resolveGlyphOutlineScale(metrics.unitsPerEm, options.fontSize);

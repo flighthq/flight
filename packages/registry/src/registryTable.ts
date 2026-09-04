@@ -53,7 +53,7 @@ export function concatRegistryTable<T>(
   if (base.shape === 'slot') {
     const overlaySlot = overlay as Readonly<SlotTable<T>>;
     // `null` on the overlay is "no opinion" — inherit. A tombstone is "explicitly omitted" and wins.
-    const out = allocateEntity<SlotTable<T>>();
+    const out = allocateEntity<SlotTable<T> & Entity>();
     out.entry = overlaySlot.entry ?? base.entry;
     out.onMiss = base.onMiss;
     out.registry = base.registry;
@@ -81,7 +81,7 @@ export function concatRegistryTable<T>(
       }
     }
   }
-  const out = allocateEntity<KeyedTable<T>>();
+  const out = allocateEntity<KeyedTable<T> & Entity>();
   out.entries = entries;
   out.onMiss = baseKeyed.onMiss;
   out.registry = baseKeyed.registry;
@@ -91,7 +91,7 @@ export function concatRegistryTable<T>(
 
 /** An empty keyed table for `registry`, carrying the miss policy every replacement of it preserves. */
 export function createKeyedTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): KeyedTable<T> & Entity {
-  const out = allocateEntity<KeyedTable<T>>();
+  const out = allocateEntity<KeyedTable<T> & Entity>();
   out.entries = new Map();
   out.onMiss = onMiss;
   out.registry = registry;
@@ -105,7 +105,7 @@ export function createOrdinalTable<T>(
   onMiss: RegistryMissPolicy,
   vocabulary: readonly Kind[],
 ): OrdinalTable<T> & Entity {
-  const out = allocateEntity<OrdinalTable<T>>();
+  const out = allocateEntity<OrdinalTable<T> & Entity>();
   out.entries = vocabulary.map(() => null);
   out.onMiss = onMiss;
   out.registry = registry;
@@ -116,7 +116,7 @@ export function createOrdinalTable<T>(
 
 /** An empty slot table for `registry`. Its key is its own `RegistryId`. */
 export function createSlotTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): SlotTable<T> & Entity {
-  const out = allocateEntity<SlotTable<T>>();
+  const out = allocateEntity<SlotTable<T> & Entity>();
   out.entry = null;
   out.onMiss = onMiss;
   out.registry = registry;
@@ -178,7 +178,7 @@ export function hasRegistryTableEntry(table: Readonly<RegistryTable<unknown>>, k
 export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.delete(key);
-  const out = allocateEntity<KeyedTable<T>>();
+  const out = allocateEntity<KeyedTable<T> & Entity>();
   out.entries = entries;
   out.onMiss = table.onMiss;
   out.registry = table.registry;
@@ -192,7 +192,7 @@ export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key
 export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind, value: T): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Bound, value });
-  const out = allocateEntity<KeyedTable<T>>();
+  const out = allocateEntity<KeyedTable<T> & Entity>();
   out.entries = entries;
   out.onMiss = table.onMiss;
   out.registry = table.registry;
@@ -210,7 +210,7 @@ export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: K
 export function withRegistryTableTombstone<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> & Entity {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Tombstoned });
-  const out = allocateEntity<KeyedTable<T>>();
+  const out = allocateEntity<KeyedTable<T> & Entity>();
   out.entries = entries;
   out.onMiss = table.onMiss;
   out.registry = table.registry;

@@ -25,7 +25,7 @@ export function createHtmlView(obj?: Readonly<PartialNode<HtmlView>>): HtmlView 
 }
 
 export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): HtmlViewData {
-  const out = allocateEntity<HtmlView>();
+  const out = allocateEntity<HtmlViewData>();
   out.element = data?.element ?? null;
   out.height = data?.height ?? 100;
   out.width = data?.width ?? 100;

@@ -26,9 +26,7 @@ import {
 
 /** An empty command binding table. Every kind a history will dispatch must be registered into it. */
 export function createCommandBindingTable(): CommandBindingTable {
-  const out = allocateEntity<KeyedTable<CommandBinding>>();
-  Object.assign(out, createKeyedTable<CommandBinding>(CommandBindingRegistryId, CommandBindingMissPolicy));
-  return finishEntity(out);
+  return createKeyedTable<CommandBinding>(CommandBindingRegistryId, CommandBindingMissPolicy);
 }
 
 /** The binding registered for `kind`, or `null` when nothing is. */
@@ -47,9 +45,7 @@ export function hasCommandBinding(history: Readonly<CommandHistory>, kind: Kind)
 // in, which is what keeps unused command kinds shakeable and lets a consumer override a built-in binding
 // or add a vendor-prefixed kind of their own. Last write wins.
 export function registerCommandBinding(history: CommandHistory, kind: Kind, binding: CommandBinding): void {
-  const out = allocateEntity<KeyedTable<CommandBinding>>();
-  Object.assign(out, withRegistryTableEntry(history.bindings, kind, binding));
-  history.bindings = finishEntity(out);
+  history.bindings = withRegistryTableEntry(history.bindings, kind, binding);
 }
 
 // Registers the five built-in kinds. An explicit call rather than a side effect at import: a history that

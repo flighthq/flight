@@ -95,7 +95,7 @@ interface WebInputTargetStyle extends CSSStyleDeclaration {
   })();
 
   export const webInputTargetBackend = (() => {
-    const out = allocateEntity<{ prepare(target: InputTargetHandle): void }>();
+    const out = allocateEntity<InputTargetBackend>();
     out.prepare = (target: InputTargetHandle) => {
     const element = _inputTargets.get(target);
     if (element === undefined) return;

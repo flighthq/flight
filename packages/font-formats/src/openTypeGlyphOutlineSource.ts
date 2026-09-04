@@ -72,7 +72,7 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
 
   // A bound method object rather than a plain record, because the source owns tables the methods close
   // over. The scratch-free contract is the caller's: `getGlyphOutline` writes into their `out`.
-    const out = allocateEntity<GlyphOutlineSourceFromOpenTypeFont>();
+    const out = allocateEntity<GlyphOutlineSource & Entity>();
   out.getGlyphOutline = (out: Path, glyphIndex: number): boolean => {
       if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
       if (cff !== null) {

@@ -71,7 +71,7 @@ export function createMenuItemTemplate(
 
 // Allocates a MenuSelect event entity with an inert signal; call attachMenuSelect to start delivery.
 export function createMenuSelect(): MenuSelect {
-  const out = allocateEntity<MenuHighlight>();
+  const out = allocateEntity<MenuSelect>();
   out.onMenuItemSelect = createSignal();
   return finishEntity(out);
 }
@@ -133,7 +133,7 @@ export function disposeMenuSelect(select: MenuSelect): void {
 // nothing about which provider serves a call is decided by it.
 export function enableMenuSignals(): MenuSignals {
   _menuSignals ??= (() => {
-    const out = allocateEntity<void>();
+    const out = allocateEntity<MenuSignals>();
     out.onContextMenuClose = createSignal();
     out.onContextMenuOpen = createSignal();
     return finishEntity(out);

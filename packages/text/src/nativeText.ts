@@ -44,7 +44,7 @@ export function createNativeText(obj?: Readonly<PartialNode<NativeText>>): Nativ
 }
 
 export function createNativeTextData(data?: Readonly<Partial<NativeTextData>>): NativeTextData {
-  const out = allocateEntity<NativeText>();
+  const out = allocateEntity<NativeTextData>();
   out.autoSize = data?.autoSize ?? 'none';
   out.height = data?.height ?? 100;
   out.style = data?.style ?? {};

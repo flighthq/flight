@@ -206,7 +206,7 @@ export function createWebFullscreenTargetHandle(element: Element): FullscreenTar
 }
 
 export function createWebWindowResizeTargetHandle(element: Element): WindowResizeTargetHandle {
-  const target = allocateEntity<FullscreenTargetHandle>();
+  const target = allocateEntity<WindowResizeTargetHandle>();
   target.__brand = 'WindowResizeTargetHandle' as const;
   _windowResizeTargets.set(target, element);
   return target;

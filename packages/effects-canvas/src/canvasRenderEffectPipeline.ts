@@ -78,7 +78,7 @@ export function createCanvasRenderEffectPipeline(
 }
 
 export function createCanvasRenderTargetPool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTargetPool {
-    const out = allocateEntity<CanvasRenderTarget>();
+    const out = allocateEntity<CanvasRenderTargetPool>();
   out.creator = creator;
   out.free = [];
   out.inUse = [];

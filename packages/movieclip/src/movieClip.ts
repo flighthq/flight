@@ -41,7 +41,7 @@ export function createMovieClip(obj?: Readonly<PartialNode<MovieClip>>): MovieCl
 }
 
 export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): MovieClipData {
-  const out = allocateEntity<MovieClip>();
+  const out = allocateEntity<MovieClipData>();
   out.timeline = data?.timeline ?? null;
   return finishEntity(out);
 }

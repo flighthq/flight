@@ -65,7 +65,7 @@ export function createScreenInfo(): ScreenInfo {
 }
 
 export function createScreenMode(): ScreenMode {
-  const out = allocateEntity<ScreenInfo>();
+  const out = allocateEntity<ScreenMode>();
   out.width = 0;
   out.height = 0;
   out.refreshRate = -1;
@@ -75,13 +75,13 @@ export function createScreenMode(): ScreenMode {
 }
 
 export function createScreenPermissionChange(): ScreenPermissionChange {
-  const out = allocateEntity<ScreenInfo>();
+  const out = allocateEntity<ScreenPermissionChange>();
   out.onChange = createSignal();
   return finishEntity(out);
 }
 
 export function createScreenSignals(): ScreenSignals {
-  const out = allocateEntity<ScreenInfo>();
+  const out = allocateEntity<ScreenSignals>();
   out.onScreenAdded = createSignal();
   out.onScreenMetricsChanged = createSignal();
   out.onScreenRemoved = createSignal();

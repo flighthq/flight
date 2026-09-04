@@ -78,7 +78,7 @@ export function createTextLabel(obj?: Readonly<PartialNode<TextLabel>>): TextLab
 }
 
 export function createTextLabelData(data?: Readonly<Partial<TextLabelData>>): TextLabelData {
-  const out = allocateEntity<TextLabel>();
+  const out = allocateEntity<TextLabelData>();
   out.autoSize = data?.autoSize ?? 'none';
   out.height = data?.height ?? 100;
   out.text = data?.text ?? '';

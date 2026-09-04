@@ -36,7 +36,7 @@ export function createCompressedImageResource(compressed: Readonly<CompressedIma
 }
 
 export function createImageResource(image: CanvasImageSource): ImageResource {
-  const resource = allocateEntity<CompressedImageResource>();
+  const resource = allocateEntity<ImageResource>();
   resource.alphaType = DECODED_ALPHA_TYPE;
   resource.gamut = DECODED_GAMUT;
   resource.height = 0;
