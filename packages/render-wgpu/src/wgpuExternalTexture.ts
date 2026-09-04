@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   CreateExternalTextureOptions,
+  EntityConstruction,
   ExternalTexture,
   Texture,
   TextureLike,
@@ -19,10 +20,7 @@ export function createExternalWgpuTexture(
   options: Readonly<CreateExternalTextureOptions>,
 ): Texture {
   const source = allocateEntity<ExternalTexture>();
-  source.height = options.height;
-  source.kind = ExternalTextureSourceKind;
-  source.version = 0;
-  source.width = options.width;
+  initializeExternalWgpuTextureSource(source, options);
   const texture = createTexture({
     colorSpace: options.colorSpace,
     sampler: options.sampler ? cloneSampler(options.sampler) : undefined,
@@ -36,13 +34,9 @@ export function createExternalWgpuTexture(
   (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache ??= new WeakMap()).set(
     source,
     (() => {
-      const out = allocateEntity<WgpuTextureEntry>();
-      out.bindings = new Map();
-      out.mipLevelCount = 1;
-      out.sampler = sampler;
-      out.texture = handle;
-      out.view = view;
-      return finishEntity(out);
+      const entry = allocateEntity<WgpuTextureEntry>();
+      initializeExternalWgpuTextureEntry(entry, sampler, handle, view);
+      return finishEntity(entry);
     })(),
   );
   registerWgpuTextureResolver(state, ExternalTextureSourceKind, resolveExternalWgpuTexture);
@@ -54,6 +48,29 @@ export function disposeExternalWgpuTexture(state: WgpuRenderState, texture: Read
   return source === null
     ? false
     : (getWgpuRenderStateRuntime(state).context.wgpuExternalTextureCache?.delete(source) ?? false);
+}
+
+export function initializeExternalWgpuTextureEntry(
+  out: EntityConstruction<WgpuTextureEntry>,
+  sampler: GPUSampler,
+  texture: GPUTexture,
+  view: GPUTextureView,
+): void {
+  out.bindings = new Map();
+  out.mipLevelCount = 1;
+  out.sampler = sampler;
+  out.texture = texture;
+  out.view = view;
+}
+
+export function initializeExternalWgpuTextureSource(
+  out: EntityConstruction<ExternalTexture>,
+  options: Readonly<CreateExternalTextureOptions>,
+): void {
+  out.height = options.height;
+  out.kind = ExternalTextureSourceKind;
+  out.version = 0;
+  out.width = options.width;
 }
 
 function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Texture>): GPUSampler {

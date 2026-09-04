@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   MidiInputPort,
   MidiInputPortResourceOperations,
   MidiMessageSendOutcome,
@@ -50,11 +51,7 @@ export function createMidiInputPortResource(
   operations: MidiInputPortResourceOperations,
 ): MidiInputPort {
   const out = allocateEntity<MidiInputPort>();
-  out.id = metadata.id;
-  out.manufacturer = metadata.manufacturer;
-  out.name = metadata.name;
-  out.type = 'input' as const;
-  out.version = metadata.version;
+  initializeMidiInputPortResource(out, metadata);
   const port = finishEntity(out);
   retainMidiInputPortResourceState(port, operations);
   return port;
@@ -65,11 +62,7 @@ export function createMidiOutputPortResource(
   operations: MidiOutputPortResourceOperations,
 ): MidiOutputPort {
   const out = allocateEntity<MidiOutputPort>();
-  out.id = metadata.id;
-  out.manufacturer = metadata.manufacturer;
-  out.name = metadata.name;
-  out.type = 'output' as const;
-  out.version = metadata.version;
+  initializeMidiOutputPortResource(out, metadata);
   const port = finishEntity(out);
   retainMidiOutputPortResourceState(port, operations);
   return port;
@@ -104,6 +97,28 @@ export function getMidiPortState(port: MidiPort): MidiPortStateOutcome {
   } catch {
     return { reason: 'operation-failed' };
   }
+}
+
+export function initializeMidiInputPortResource(
+  out: EntityConstruction<MidiInputPort>,
+  metadata: Readonly<MidiPortMetadata>,
+): void {
+  out.id = metadata.id;
+  out.manufacturer = metadata.manufacturer;
+  out.name = metadata.name;
+  out.type = 'input' as const;
+  out.version = metadata.version;
+}
+
+export function initializeMidiOutputPortResource(
+  out: EntityConstruction<MidiOutputPort>,
+  metadata: Readonly<MidiPortMetadata>,
+): void {
+  out.id = metadata.id;
+  out.manufacturer = metadata.manufacturer;
+  out.name = metadata.name;
+  out.type = 'output' as const;
+  out.version = metadata.version;
 }
 
 export async function openMidiPort(port: MidiPort): Promise<MidiPortOpenOutcome> {

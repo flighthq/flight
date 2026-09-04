@@ -5,6 +5,7 @@ import type {
   CanvasRenderSurfaceCreator,
   CanvasRenderTargetPool,
   CanvasRenderTexturePool,
+  EntityConstruction,
   RenderTarget,
   RenderTargetDescriptor,
   RenderTexture,
@@ -29,16 +30,10 @@ export function acquireCanvasRenderTexture(
 }
 
 export function createCanvasRenderTexturePool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTexturePool {
+  const effectTargets = allocateEntity<CanvasRenderTargetPool>();
+  initializeCanvasRenderTargetPool(effectTargets, creator);
   const out = allocateEntity<CanvasRenderTexturePool>();
-  out.destroyed = false;
-  const _entity = allocateEntity<CanvasRenderTargetPool>();
-  _entity.creator = creator;
-  _entity.free = [];
-  _entity.inUse = [];
-  out.effectTargets = finishEntity(_entity);
-  out.free = [];
-  out.leased = new Set();
-  out.owner = null;
+  initializeCanvasRenderTexturePool(out, finishEntity(effectTargets));
   return finishEntity(out);
 }
 
@@ -56,6 +51,26 @@ export function destroyCanvasRenderTexturePool(state: CanvasRenderState, pool: C
   pool.effectTargets.inUse.length = 0;
   pool.owner = null;
   pool.destroyed = true;
+}
+
+export function initializeCanvasRenderTargetPool(
+  out: EntityConstruction<CanvasRenderTargetPool>,
+  creator: Readonly<CanvasRenderSurfaceCreator>,
+): void {
+  out.creator = creator;
+  out.free = [];
+  out.inUse = [];
+}
+
+export function initializeCanvasRenderTexturePool(
+  out: EntityConstruction<CanvasRenderTexturePool>,
+  effectTargets: CanvasRenderTargetPool,
+): void {
+  out.destroyed = false;
+  out.effectTargets = effectTargets;
+  out.free = [];
+  out.leased = new Set();
+  out.owner = null;
 }
 
 export function releaseCanvasRenderTexture(

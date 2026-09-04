@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapFingerprint } from '@flighthq/types/contract';
+import type { Bitmap, BitmapFingerprint, EntityConstruction } from '@flighthq/types/contract';
 
 // A coarse downscaled RGB fingerprint: the bitmap is averaged into a gridSize × gridSize grid, so
 // antialiasing jitter that breaks an exact hash washes out while gross changes still register. The
@@ -45,8 +45,7 @@ export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: numb
   if (width === 0 || height === 0)
     return (() => {
       const out = allocateEntity<BitmapFingerprint>();
-      out.gridSize = gridSize;
-      out.cells = cells;
+      initializeBitmapFingerprint(out, gridSize, cells);
       return finishEntity(out);
     })();
 
@@ -77,8 +76,7 @@ export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: numb
     }
   }
   const out = allocateEntity<BitmapFingerprint>();
-  out.gridSize = gridSize;
-  out.cells = cells;
+  initializeBitmapFingerprint(out, gridSize, cells);
   return finishEntity(out);
 }
 
@@ -93,6 +91,15 @@ export function formatBitmapFingerprint(fingerprint: Readonly<BitmapFingerprint>
     hex += HEX[(cells[i] >> 4) & 0xf] + HEX[cells[i] & 0xf];
   }
   return `${fingerprint.gridSize}:${hex}`;
+}
+
+export function initializeBitmapFingerprint(
+  out: EntityConstruction<BitmapFingerprint>,
+  gridSize: number,
+  cells: Uint8Array,
+): void {
+  out.gridSize = gridSize;
+  out.cells = cells;
 }
 
 /**
@@ -117,7 +124,6 @@ export function parseBitmapFingerprint(text: string): BitmapFingerprint | null {
     cells[i] = (hi << 4) | lo;
   }
   const out = allocateEntity<BitmapFingerprint>();
-  out.gridSize = gridSize;
-  out.cells = cells;
+  initializeBitmapFingerprint(out, gridSize, cells);
   return finishEntity(out);
 }

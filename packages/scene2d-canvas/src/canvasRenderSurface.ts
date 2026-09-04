@@ -3,6 +3,7 @@ import type {
   CanvasRenderSurface,
   CanvasRenderSurfaceCreator,
   CanvasRenderSurfaceOptions,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -38,26 +39,35 @@ export function destroyCanvasRenderSurface(surface: CanvasRenderSurface): void {
   creator.destroyRenderSurface(surface.canvas);
 }
 
+export function initializeCanvasRenderSurface(
+  out: EntityConstruction<CanvasRenderSurface>,
+  creator: Readonly<CanvasRenderSurfaceCreator>,
+  canvas: HTMLCanvasElement,
+  context: CanvasRenderingContext2D,
+  options: Partial<CanvasRenderSurfaceOptions>,
+): void {
+  out.canvas = canvas;
+  out.context = context;
+  out.contextAttributes = context.getContextAttributes();
+  out.creator = creator;
+  out.options = Object.freeze({
+    contextAttributes: options.contextAttributes,
+    height: options.height ?? canvas.height,
+    pixelRatio: options.pixelRatio ?? 1,
+    width: options.width ?? canvas.width,
+  });
+  out[EntityRuntimeKey] = { binding: null };
+}
+
 function finishCanvasRenderSurface(
   creator: Readonly<CanvasRenderSurfaceCreator>,
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderSurfaceOptions>,
 ): CanvasRenderSurface {
-  const requestedContextAttributes = options.contextAttributes;
-  const context = canvas.getContext('2d', requestedContextAttributes);
+  const context = canvas.getContext('2d', options.contextAttributes);
   if (context === null) throw new Error('Failed to get context for canvas.');
   const surface = allocateEntity<CanvasRenderSurface>();
-  surface.canvas = canvas;
-  surface.context = context;
-  surface.contextAttributes = context.getContextAttributes();
-  surface.creator = creator;
-  surface.options = Object.freeze({
-    contextAttributes: requestedContextAttributes,
-    height: options.height ?? canvas.height,
-    pixelRatio: options.pixelRatio ?? 1,
-    width: options.width ?? canvas.width,
-  });
-  surface[EntityRuntimeKey] = { binding: null };
+  initializeCanvasRenderSurface(surface, creator, canvas, context, options);
   return finishEntity(surface);
 }
 

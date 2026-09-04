@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
 import type {
+  EntityConstruction,
   MeshGeometry,
   MeshGeometryOptions,
   MeshGeometryRuntime,
@@ -160,6 +161,21 @@ export function hasMeshGeometrySkin(geometry: Readonly<MeshGeometry>): boolean {
   return false;
 }
 
+// Allocates a MeshGeometry entity with a runtime carrying empty (null) GPU upload slots. This is
+// the single construction point so every MeshGeometry shares the same runtime shape.
+export function initializeMeshGeometry(
+  out: EntityConstruction<MeshGeometry>,
+  fields: Readonly<Omit<MeshGeometry, typeof EntityRuntimeKey>>,
+): void {
+  out.bounds = fields.bounds;
+  out.indices = fields.indices;
+  out.layout = fields.layout;
+  out.subsets = fields.subsets;
+  out.topology = fields.topology;
+  out.version = fields.version;
+  out.vertices = fields.vertices;
+}
+
 // Marks direct writes to the shared vertex/index payload visible to bounds and every backend upload
 // cache. Mesh package mutators advance this version themselves; callers need this escape hatch only
 // after mutating the public typed arrays directly.
@@ -186,17 +202,9 @@ export function setMeshGeometrySkinBindPose(geometry: Readonly<MeshGeometry>, bi
   if (runtime) runtime.skinBindPose = bindPose;
 }
 
-// Allocates a MeshGeometry entity with a runtime carrying empty (null) GPU upload slots. This is
-// the single construction point so every MeshGeometry shares the same runtime shape.
 function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof EntityRuntimeKey>>): MeshGeometry {
   const geometry = allocateEntity<MeshGeometry>();
-  geometry.bounds = fields.bounds;
-  geometry.indices = fields.indices;
-  geometry.layout = fields.layout;
-  geometry.subsets = fields.subsets;
-  geometry.topology = fields.topology;
-  geometry.version = fields.version;
-  geometry.vertices = fields.vertices;
+  initializeMeshGeometry(geometry, fields);
   const runtime: MeshGeometryRuntime = {
     attributeDataView: null,
     binding: null,

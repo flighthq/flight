@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  EntityConstruction,
   HasMidiAccess,
   MidiAccess,
   MidiAccessDisposeOutcome,
@@ -18,7 +19,9 @@ import { disposeMidiAccessStateSubscription } from './midiSubscription';
 // Provider-contract constructor. Native MIDIAccess identity stays in provider-local state; this empty
 // public Entity is the only handle consumers retain.
 export function createMidiAccessResource(operations: MidiAccessResourceOperations): MidiAccess {
-  const access = finishEntity(allocateEntity<MidiAccess>());
+  const out = allocateEntity<MidiAccess>();
+  initializeMidiAccessResource(out);
+  const access = finishEntity(out);
   retainMidiAccessResourceState(access, operations);
   return access;
 }
@@ -43,6 +46,8 @@ export function getMidiAccessInputPorts(access: MidiAccess): MidiAccessPortsOutc
 export function getMidiAccessOutputPorts(access: MidiAccess): MidiAccessPortsOutcome<MidiOutputPort> {
   return getMidiAccessPorts(access, 'output');
 }
+
+export function initializeMidiAccessResource(_out: EntityConstruction<MidiAccess>): void {}
 
 export async function requestMidiAccess(host: HasMidiAccess): Promise<MidiAccessRequestOutcome> {
   try {
