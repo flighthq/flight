@@ -68,19 +68,18 @@ describe('acquireWgpuScale9ShapeRasterSurface', () => {
   it('does not cache provider absence and retries on the next draw', () => {
     const surface = createTestSurface();
     const createSurface = vi.fn().mockReturnValueOnce(null).mockReturnValue(surface);
-    const state = {
-      raster2DSurfaceProvider: {
-        [EntityRuntimeKey]: undefined,
-        createRaster2DSurface: createSurface,
-        destroyRaster2DSurface: destroySurface,
-      },
-    } as never;
+    const provider = {
+      [EntityRuntimeKey]: undefined,
+      createRaster2DSurface: createSurface,
+      destroyRaster2DSurface: destroySurface,
+    };
+    const state = { raster2DSurfaceProvider: provider } as never;
     const data = getWgpuScale9ShapeData(createWgpuScale9ShapeData(state, createScale9Shape(grid)))!;
 
-    expect(acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, data)).toBeNull();
+    expect(acquireWgpuScale9ShapeRasterSurface(provider, data)).toBeNull();
     expect(data.surface).toBeNull();
-    expect(acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, data)).toBe(surface);
-    expect(acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, data)).toBe(surface);
+    expect(acquireWgpuScale9ShapeRasterSurface(provider, data)).toBe(surface);
+    expect(acquireWgpuScale9ShapeRasterSurface(provider, data)).toBe(surface);
     expect(createSurface).toHaveBeenCalledTimes(2);
   });
 
