@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
@@ -10,6 +10,7 @@ import type {
   RenderState,
   Texture,
   TextureSourceKind,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
 
@@ -40,18 +41,12 @@ export function connectCanvasTextureResolverMisses(resolvers: CanvasTextureResol
   resolvers.registryMiss = (registry, kind) => runtime.registryMiss?.(registry, kind);
 }
 
-// A fresh, empty resolution set. Nothing is registered: what a set can resolve is exactly what the
-// caller installs on it, which is what makes a rasterizer's capability inspectable rather than implied.
 export function createCanvasTextureResolvers(
   surfaceCreator: Readonly<CanvasRenderSurfaceCreator>,
 ): CanvasTextureResolvers {
   const resolvers = allocateEntity<CanvasTextureResolvers>();
-  resolvers.registry = null;
-  resolvers.registryMiss = null;
-  resolvers.surfaceCreator = surfaceCreator;
-  resolvers[EntityRuntimeKey] = { binding: null };
-  _ownedSurfaces.set(resolvers, new Set());
-  return resolvers;
+  initializeCanvasTextureResolvers(resolvers, surfaceCreator);
+  return finishEntity(resolvers);
 }
 
 export function destroyCanvasTextureResolvers(resolvers: CanvasTextureResolvers): void {
@@ -63,6 +58,19 @@ export function destroyCanvasTextureResolvers(resolvers: CanvasTextureResolvers)
   resolvers.registry?.clear();
   resolvers.registry = null;
   resolvers.registryMiss = null;
+}
+
+// A fresh, empty resolution set. Nothing is registered: what a set can resolve is exactly what the
+// caller installs on it, which is what makes a rasterizer's capability inspectable rather than implied.
+export function initializeCanvasTextureResolvers(
+  resolvers: EntityConstruction<CanvasTextureResolvers>,
+  surfaceCreator: Readonly<CanvasRenderSurfaceCreator>,
+): void {
+  resolvers.registry = null;
+  resolvers.registryMiss = null;
+  resolvers.surfaceCreator = surfaceCreator;
+  resolvers[EntityRuntimeKey] = { binding: null };
+  _ownedSurfaces.set(resolvers, new Set());
 }
 
 export function registerCanvasTextureResolver(

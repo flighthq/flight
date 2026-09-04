@@ -1,4 +1,4 @@
-import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import type {
   DirectoryOpenDialogResult,
   FileDialogHandle,
@@ -12,11 +12,10 @@ import type {
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   SaveFileDialogOptions,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-// Constructs the identity that crosses from a picker provider into filesystem. `operations` is an
-// internal runtime extension point, not serialized descriptor data; native path handles use null.
 export function createFileDialogHandle(
   kind: FileDialogHandle['kind'],
   name: string,
@@ -24,13 +23,8 @@ export function createFileDialogHandle(
   operations: FileDialogHandleOperations | null = null,
 ): FileDialogHandle {
   const handle = allocateEntity<FileDialogHandle>();
-  handle.kind = kind;
-  handle.name = name;
-  handle.path = path;
-  const runtime = createEntityRuntime() as FileDialogHandleRuntime;
-  runtime.operations = operations;
-  handle[EntityRuntimeKey] = runtime;
-  return handle;
+  initializeFileDialogHandle(handle, kind, name, path, operations);
+  return finishEntity(handle);
 }
 
 // Provider-neutral access to the handle's package-crossing runtime operations. A deserialized DTO or
@@ -40,6 +34,23 @@ export function getFileDialogHandleOperations(
 ): Readonly<FileDialogHandleOperations> | null {
   const runtime = handle[EntityRuntimeKey] as FileDialogHandleRuntime | undefined;
   return runtime?.operations ?? null;
+}
+
+// Constructs the identity that crosses from a picker provider into filesystem. `operations` is an
+// internal runtime extension point, not serialized descriptor data; native path handles use null.
+export function initializeFileDialogHandle(
+  handle: EntityConstruction<FileDialogHandle>,
+  kind: FileDialogHandle['kind'],
+  name: string,
+  path: string | null,
+  operations: FileDialogHandleOperations | null = null,
+): void {
+  handle.kind = kind;
+  handle.name = name;
+  handle.path = path;
+  const runtime = createEntityRuntime() as FileDialogHandleRuntime;
+  runtime.operations = operations;
+  handle[EntityRuntimeKey] = runtime;
 }
 
 export function showOpenDirectoryDialog(

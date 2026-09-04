@@ -24,3 +24,4 @@ export { initializeRenderViewport2D } from './renderViewport';
 export { initializeRenderProxy } from './renderProxy';
 export { initializeRenderCache, initializeRenderCacheAdapter } from './renderCache';
 export { initializeRenderQueue } from './renderQueue';
+export { initializeRenderState } from './renderState';

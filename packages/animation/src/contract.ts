@@ -14,3 +14,4 @@ export { initializeAnimationStateMachine, initializeAnimationStateMachineState }
 export { initializeAnimationTrack } from './animationTrack';
 export { initializeAnimationBlendTree, initializeAnimationBlendTreeInput } from './animationBlendTree';
 export { initializeAnimationPlayer } from './animationPlayer';
+export { initializeAnimationRootMotionExtractor } from './animationRootMotion';

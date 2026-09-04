@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   CreateExternalTextureOptions,
@@ -28,7 +28,7 @@ export function createExternalGlTexture(
     colorSpace: options.colorSpace,
     sampler: options.sampler ? cloneSampler(options.sampler) : undefined,
     dimension: '2d',
-    source,
+    source: finishEntity(source),
   });
   const runtime = getGlRenderStateRuntime(state);
   (runtime.context.glExternalTextureCache ??= new WeakMap()).set(source, handle);

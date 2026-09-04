@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
   Notification,
@@ -10,6 +10,7 @@ import type {
   WebServiceWorkerNotificationApi,
   WebServiceWorkerNotificationCapabilities,
   WebServiceWorkerNotificationEvent,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 
 interface WebServiceWorkerNotificationDispatch {
@@ -21,6 +22,15 @@ interface WebServiceWorkerNotificationDispatch {
 export function createWebServiceWorkerNotificationCapabilities(
   api: Readonly<WebServiceWorkerNotificationApi>,
 ): WebServiceWorkerNotificationCapabilities {
+  const capabilities = allocateEntity<WebServiceWorkerNotificationCapabilities>();
+  initializeWebServiceWorkerNotificationCapabilities(capabilities, api);
+  return finishEntity(capabilities);
+}
+
+export function initializeWebServiceWorkerNotificationCapabilities(
+  capabilities: EntityConstruction<WebServiceWorkerNotificationCapabilities>,
+  api: Readonly<WebServiceWorkerNotificationApi>,
+): void {
   const notificationByTag = new Map<string, Notification>();
   const actionListeners = new Set<(notification: Readonly<Notification>, actionId: string) => void>();
   const clickListeners = new Set<(notification: Readonly<Notification>) => void>();
@@ -28,7 +38,6 @@ export function createWebServiceWorkerNotificationCapabilities(
   let destroyed = false;
   let destroyCompleted = false;
   let nextId = 1;
-
   async function closeOne(notification: Notification) {
     if (notificationByTag.get(notification.tag) !== notification) return { reason: 'already-closed' } as const;
     let nativeNotifications;
@@ -47,7 +56,6 @@ export function createWebServiceWorkerNotificationCapabilities(
     notificationByTag.delete(notification.tag);
     return { reason: 'ok' } as const;
   }
-
   async function closeAll(): Promise<NotificationLifecycleOutcome> {
     const failures: NotificationLifecycleFailure[] = [];
     for (const notification of [...notificationByTag.values()]) {
@@ -56,8 +64,6 @@ export function createWebServiceWorkerNotificationCapabilities(
     }
     return failures.length === 0 ? { reason: 'ok' } : { failures, reason: 'operation-failed' };
   }
-
-  const capabilities = allocateEntity<WebServiceWorkerNotificationCapabilities>();
   capabilities.action = makeWebServiceWorkerNotificationEventBackend(actionListeners, () => destroyed);
   capabilities.activeList = {
     async getActiveNotifications() {
@@ -142,7 +148,6 @@ export function createWebServiceWorkerNotificationCapabilities(
     },
   });
   _webServiceWorkerNotificationByTag.set(capabilities, notificationByTag);
-  return capabilities;
 }
 
 export function notifyWebServiceWorkerNotificationEvent(

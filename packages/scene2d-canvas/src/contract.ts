@@ -45,3 +45,4 @@ export * from './canvasShapeRasterizer';
 export * from './scene2dCanvasPipeline';
 export { initializeCanvasRenderTarget } from './canvasRenderTarget';
 export { initializeEmptyCanvasRegistries } from './canvasPipeline';
+export { initializeCanvasTextureResolvers } from './canvasTextureResolver';

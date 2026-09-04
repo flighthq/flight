@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderOptions,
   CanvasRenderState,
@@ -34,7 +34,7 @@ export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = (() => {
     canvas.height = 0;
   };
   creator[EntityRuntimeKey] = { binding: null };
-  return creator;
+  return finishEntity(creator);
 })();
 
 export function acquireTestCanvasRenderSurface(width = 1, height = 1): CanvasRenderSurface {

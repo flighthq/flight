@@ -33,3 +33,4 @@ export { initializeDefaultGlBitmapShader, initializeGlBitmapShader } from './glS
 export { initializeGlRenderTargetPool } from './glRenderTargetPool';
 export { initializeGlRenderTexturePool } from './glRenderTexturePool';
 export { initializeGlSkinPaletteTexture } from './glSkinPaletteTexture';
+export { initializeGlContextState } from './glRenderState';

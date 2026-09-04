@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
   createRenderState as _createRenderState,
@@ -16,42 +16,14 @@ import type {
   GlRenderOptions,
   GlRenderState,
   GlRenderStateRuntime,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 export function createGlContextState(gl: GlContext): GlContextState {
-  const quadIndexBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
-
-  const quadVertexBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, 64, gl.DYNAMIC_DRAW);
-
-  const contextRuntime: GlContextRuntime = {
-    binding: null,
-    colorAdjustmentResources: null,
-    currentBlendSignature: null,
-    currentShader: null,
-    currentTextureRealization: null,
-    gl,
-    particleResources: null,
-    quadBatchResources: null,
-    quadIndexBuffer,
-    quadVertexBuffer,
-    references: 0,
-    shapeMeshResources: null,
-    teardowns: [],
-    textureCache: new WeakMap(),
-    textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
-    textureSourcePremultipliedTextureCache: new WeakMap(),
-    textureSourceStraightSrgbTextureCache: new WeakMap(),
-    textureSourceStraightTextureCache: new WeakMap(),
-  };
   const state = allocateEntity<GlContextState>();
-  state.gl = gl;
-  state[EntityRuntimeKey] = contextRuntime;
-  return state;
+  initializeGlContextState(state, gl);
+  return finishEntity(state);
 }
 
 export function createGlOffscreenRenderState(
@@ -111,7 +83,7 @@ export function createGlRenderState(
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   gl.disable(gl.DEPTH_TEST);
 
-  return state;
+  return finishEntity(state);
 }
 
 export function createGlRenderStateRuntime(
@@ -209,6 +181,37 @@ export function getGlContextRuntime(contextState: Readonly<GlContextState>): GlC
 // render path writes its fields every frame.
 export function getGlRenderStateRuntime(state: GlRenderState): GlRenderStateRuntime {
   return state[EntityRuntimeKey] as GlRenderStateRuntime;
+}
+
+export function initializeGlContextState(state: EntityConstruction<GlContextState>, gl: GlContext): void {
+  const quadIndexBuffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
+  const quadVertexBuffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, 64, gl.DYNAMIC_DRAW);
+  const contextRuntime: GlContextRuntime = {
+    binding: null,
+    colorAdjustmentResources: null,
+    currentBlendSignature: null,
+    currentShader: null,
+    currentTextureRealization: null,
+    gl,
+    particleResources: null,
+    quadBatchResources: null,
+    quadIndexBuffer,
+    quadVertexBuffer,
+    references: 0,
+    shapeMeshResources: null,
+    teardowns: [],
+    textureCache: new WeakMap(),
+    textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
+    textureSourcePremultipliedTextureCache: new WeakMap(),
+    textureSourceStraightSrgbTextureCache: new WeakMap(),
+    textureSourceStraightTextureCache: new WeakMap(),
+  };
+  state.gl = gl;
+  state[EntityRuntimeKey] = contextRuntime;
 }
 
 // Discards render-gl's cached GL binding state (bound program, texture, framebuffer, blend mode,
