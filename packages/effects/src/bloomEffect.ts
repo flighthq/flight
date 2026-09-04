@@ -1,12 +1,14 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   BloomEffect,
+  EntityConstruction,
+  EntityWithoutRuntime,
   RenderEffect,
   RenderEffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
+import { initializeRenderEffect } from './renderEffect';
 import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // HDR bloom intent and its shared recipe math. The parameter math is substrate-agnostic so the Gl and
@@ -28,12 +30,25 @@ export function computeBloomThreshold(effect: Readonly<BloomEffect>): number {
 export function createBloomEffect(
   options: Readonly<Omit<EntityWithoutRuntime<BloomEffect>, 'kind'>> = {},
 ): BloomEffect {
-  return createEntity({ kind: 'BloomEffect', ...options });
+  const out = allocateEntity<BloomEffect>();
+  initializeBloomEffect(out, options);
+  return finishEntity(out);
 }
 
 export function getBloomEffectPadding(effect: Readonly<BloomEffect>): RenderEffectPadding {
   const radius = computeBloomBlurRadius(effect);
   return getGaussianRenderEffectPadding(radius, radius);
+}
+
+export function initializeBloomEffect(
+  out: EntityConstruction<BloomEffect>,
+  options: Readonly<Omit<EntityWithoutRuntime<BloomEffect>, 'kind'>>,
+): void {
+  initializeRenderEffect(out, 'BloomEffect');
+  out.threshold = options.threshold;
+  out.intensity = options.intensity;
+  out.radius = options.radius;
+  out.passes = options.passes;
 }
 
 export function registerBloomEffectPaddingResolver(state: RenderState): void {

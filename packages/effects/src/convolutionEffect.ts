@@ -1,18 +1,22 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   ConvolutionEffect,
+  EntityConstruction,
+  EntityWithoutRuntime,
   RenderEffect,
   RenderEffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
+import { initializeRenderEffect } from './renderEffect';
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createConvolutionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ConvolutionEffect>, 'kind'>>,
 ): ConvolutionEffect {
-  return createEntity({ kind: 'ConvolutionEffect', ...options });
+  const out = allocateEntity<ConvolutionEffect>();
+  initializeConvolutionEffect(out, options);
+  return finishEntity(out);
 }
 
 export function getConvolutionEffectPadding(effect: Readonly<ConvolutionEffect>): RenderEffectPadding {
@@ -24,6 +28,21 @@ export function getConvolutionEffectPadding(effect: Readonly<ConvolutionEffect>)
     right: offsetX,
     top: Math.max(0, effect.matrixY - 1 - offsetY),
   };
+}
+
+export function initializeConvolutionEffect(
+  out: EntityConstruction<ConvolutionEffect>,
+  options: Readonly<Omit<EntityWithoutRuntime<ConvolutionEffect>, 'kind'>>,
+): void {
+  initializeRenderEffect(out, 'ConvolutionEffect');
+  out.matrix = options.matrix;
+  out.matrixX = options.matrixX;
+  out.matrixY = options.matrixY;
+  out.bias = options.bias;
+  out.clamp = options.clamp;
+  out.color = options.color;
+  out.divisor = options.divisor;
+  out.preserveAlpha = options.preserveAlpha;
 }
 
 export function registerConvolutionEffectPaddingResolver(state: RenderState): void {

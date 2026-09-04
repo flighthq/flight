@@ -1,18 +1,22 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   DisplacementEffect,
+  EntityConstruction,
+  EntityWithoutRuntime,
   RenderEffect,
   RenderEffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
+import { initializeRenderEffect } from './renderEffect';
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createDisplacementEffect(
   options: Readonly<Omit<EntityWithoutRuntime<DisplacementEffect>, 'kind'>> = {},
 ): DisplacementEffect {
-  return createEntity({ kind: 'DisplacementEffect', ...options });
+  const out = allocateEntity<DisplacementEffect>();
+  initializeDisplacementEffect(out, options);
+  return finishEntity(out);
 }
 
 export function getDisplacementEffectPadding(effect: Readonly<DisplacementEffect>): RenderEffectPadding {
@@ -20,6 +24,16 @@ export function getDisplacementEffectPadding(effect: Readonly<DisplacementEffect
   const horizontal = Math.ceil(intensity * 1.5);
   const vertical = Math.ceil(intensity);
   return { bottom: vertical, left: horizontal, right: horizontal, top: vertical };
+}
+
+export function initializeDisplacementEffect(
+  out: EntityConstruction<DisplacementEffect>,
+  options: Readonly<Omit<EntityWithoutRuntime<DisplacementEffect>, 'kind'>>,
+): void {
+  initializeRenderEffect(out, 'DisplacementEffect');
+  out.intensity = options.intensity;
+  out.frequency = options.frequency;
+  out.seed = options.seed;
 }
 
 export function registerDisplacementEffectPaddingResolver(state: RenderState): void {

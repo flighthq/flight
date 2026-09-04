@@ -1,18 +1,22 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityWithoutRuntime,
   DirectionalBlurEffect,
+  EntityConstruction,
+  EntityWithoutRuntime,
   RenderEffect,
   RenderEffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
+import { initializeRenderEffect } from './renderEffect';
 import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 export function createDirectionalBlurEffect(
   options: Readonly<Omit<EntityWithoutRuntime<DirectionalBlurEffect>, 'kind'>> = {},
 ): DirectionalBlurEffect {
-  return createEntity({ kind: 'DirectionalBlurEffect', ...options });
+  const out = allocateEntity<DirectionalBlurEffect>();
+  initializeDirectionalBlurEffect(out, options);
+  return finishEntity(out);
 }
 
 export function getDirectionalBlurEffectPadding(effect: Readonly<DirectionalBlurEffect>): RenderEffectPadding {
@@ -26,6 +30,16 @@ export function getDirectionalBlurEffectPadding(effect: Readonly<DirectionalBlur
   const horizontal = projectedX < 1e-10 ? 0 : Math.ceil(projectedX);
   const vertical = projectedY < 1e-10 ? 0 : Math.ceil(projectedY);
   return { bottom: vertical, left: horizontal, right: horizontal, top: vertical };
+}
+
+export function initializeDirectionalBlurEffect(
+  out: EntityConstruction<DirectionalBlurEffect>,
+  options: Readonly<Omit<EntityWithoutRuntime<DirectionalBlurEffect>, 'kind'>>,
+): void {
+  initializeRenderEffect(out, 'DirectionalBlurEffect');
+  out.angle = options.angle;
+  out.length = options.length;
+  out.samples = options.samples;
 }
 
 export function registerDirectionalBlurEffectPaddingResolver(state: RenderState): void {

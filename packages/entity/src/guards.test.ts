@@ -1,7 +1,8 @@
+import type { Entity } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { EntityRuntimeWriteSlot } from '@flighthq/types/contract';
 
-import { createEntity } from './entity';
+import { allocateEntity, finishEntity } from './entity';
 import {
   areEntityRuntimeGuardsEnabled,
   createGuardedEntity,
@@ -10,6 +11,12 @@ import {
   setEntityRuntimeWriteGuard,
 } from './guards';
 import { createEntityRuntime } from './runtime';
+
+function createTestEntity(fields?: Record<string, unknown>): Entity & Record<string, unknown> {
+  const out = allocateEntity<Entity>();
+  if (fields) Object.assign(out, fields);
+  return finishEntity(out) as Entity & Record<string, unknown>;
+}
 
 describe('areEntityRuntimeGuardsEnabled', () => {
   it('returns false before guard mode is switched on', () => {
@@ -20,7 +27,7 @@ describe('areEntityRuntimeGuardsEnabled', () => {
 
 describe('createGuardedEntity', () => {
   it('returns the entity unchanged when guards are not enabled', () => {
-    const entity = createEntity({ x: 1 });
+    const entity = createTestEntity({ x: 1 });
     expect(createGuardedEntity(entity)).toBe(entity);
   });
 });
@@ -37,7 +44,7 @@ describe('setEntityRuntimeGuardMode', () => {
     setEntityRuntimeGuardMode(true);
     try {
       expect(areEntityRuntimeGuardsEnabled()).toBe(true);
-      const entity = createEntity({ x: 1 });
+      const entity = createTestEntity({ x: 1 });
       expect(createGuardedEntity(entity).x).toBe(1);
       expect(createGuardedEntityRuntime(createEntityRuntime()).binding).toBeNull();
     } finally {
@@ -62,7 +69,7 @@ describe('setEntityRuntimeGuardMode', () => {
   });
 
   it('returns the original values when Proxy disappears after guards are enabled', () => {
-    const entity = createEntity({ x: 1 });
+    const entity = createTestEntity({ x: 1 });
     const runtime = createEntityRuntime();
     const originalProxy = globalThis.Proxy;
     let guardedEntity: typeof entity;
@@ -88,7 +95,7 @@ describe('setEntityRuntimeWriteGuard', () => {
     setEntityRuntimeGuardMode(true);
     setEntityRuntimeWriteGuard((slot) => slots.push(slot));
     try {
-      const guardedEntity = createGuardedEntity(createEntity());
+      const guardedEntity = createGuardedEntity(createTestEntity());
       guardedEntity[EntityRuntimeKey] = undefined;
       const guardedRuntime = createGuardedEntityRuntime(createEntityRuntime());
       guardedRuntime.binding = null;
@@ -107,7 +114,7 @@ describe('setEntityRuntimeWriteGuard', () => {
     setEntityRuntimeWriteGuard((slot) => slots.push(slot));
     setEntityRuntimeWriteGuard(null);
     try {
-      createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined;
+      createGuardedEntity(createTestEntity())[EntityRuntimeKey] = undefined;
       expect(slots).toEqual([]);
     } finally {
       setEntityRuntimeGuardMode(false);
@@ -119,7 +126,7 @@ describe('setEntityRuntimeWriteGuard', () => {
     setEntityRuntimeGuardMode(true);
     setEntityRuntimeWriteGuard((slot) => slots.push(slot));
     try {
-      const guardedEntity = createGuardedEntity(createEntity({ x: 1 }));
+      const guardedEntity = createGuardedEntity(createTestEntity({ x: 1 }));
       guardedEntity.x = 2;
       const guardedRuntime = createGuardedEntityRuntime(createEntityRuntime()) as ReturnType<
         typeof createEntityRuntime
@@ -138,7 +145,7 @@ describe('setEntityRuntimeWriteGuard', () => {
     const slots: EntityRuntimeWriteSlot[] = [];
     setEntityRuntimeGuardMode(true);
     setEntityRuntimeWriteGuard((slot) => slots.push(slot));
-    const guardedEntity = createGuardedEntity(createEntity());
+    const guardedEntity = createGuardedEntity(createTestEntity());
     const guardedRuntime = createGuardedEntityRuntime(createEntityRuntime());
     setEntityRuntimeGuardMode(false);
     try {

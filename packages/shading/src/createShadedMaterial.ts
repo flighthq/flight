@@ -22,7 +22,7 @@ export function createShadedMaterial(options?: Readonly<ShadedMaterialOptions>):
   return finishEntity(out);
 }
 
-function initializeShadedMaterial(
+export function initializeShadedMaterial(
   out: EntityConstruction<ShadedMaterial>,
   options: Readonly<ShadedMaterialOptions>,
 ): void {

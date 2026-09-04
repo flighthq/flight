@@ -7,7 +7,6 @@ export function allocateEntity<Type extends Entity>(): EntityConstruction<Type> 
   return out;
 }
 
-
 export function finishEntity<Type extends Entity>(out: EntityConstruction<Type>): Type {
   return out as Type;
 }

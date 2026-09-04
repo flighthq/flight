@@ -1,5 +1,12 @@
-import { createEntity } from '@flighthq/entity/contract';
-import type { EntityWithoutRuntime, AdvancedBlendMode, BlendEffect } from '@flighthq/types/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
+  AdvancedBlendMode,
+  BlendEffect,
+  EntityConstruction,
+  EntityWithoutRuntime,
+} from '@flighthq/types/contract';
+
+import { initializeRenderEffect } from './renderEffect';
 
 // Advanced-blend composite effect: blends the incoming pipeline layer over a registered backdrop using
 // a destination-reading / non-separable mode (the AdvancedBlendMode vocabulary the fixed-function
@@ -12,5 +19,18 @@ export function createBlendEffect(
   mode: AdvancedBlendMode,
   options: Readonly<Omit<EntityWithoutRuntime<BlendEffect>, 'kind' | 'mode'>> = {},
 ): BlendEffect {
-  return createEntity({ kind: 'BlendEffect', mode, ...options });
+  const out = allocateEntity<BlendEffect>();
+  initializeBlendEffect(out, mode, options);
+  return finishEntity(out);
+}
+
+export function initializeBlendEffect(
+  out: EntityConstruction<BlendEffect>,
+  mode: AdvancedBlendMode,
+  options: Readonly<Omit<EntityWithoutRuntime<BlendEffect>, 'kind' | 'mode'>>,
+): void {
+  initializeRenderEffect(out, 'BlendEffect');
+  out.mode = mode;
+  out.backdropKey = options.backdropKey;
+  out.opacity = options.opacity;
 }
