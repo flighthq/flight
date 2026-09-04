@@ -62,7 +62,7 @@ const CONSTRUCTOR_PRIMITIVES = new Set<TransportPrimitive>([
   'XMLHttpRequest',
 ]);
 const GLOBAL_OBJECTS = new Set(['global', 'globalThis', 'self', 'window']);
-const WEB_BACKEND_NAME = /^createWeb[A-Za-z0-9]*Backend$/;
+const WEB_BACKEND_NAME = /^(?:create|initialize)Web[A-Za-z0-9]*Backend$/;
 const SOURCE_EXTENSION = /\.(?:[cm]?[jt]s|[jt]sx)$/;
 const TEST_SOURCE = /(?:^|\/)(?:__tests__|tests?)(?:\/|$)|\.(?:spec|test)\.(?:[cm]?[jt]s|[jt]sx)$/;
 

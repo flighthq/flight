@@ -37,6 +37,7 @@ describe('enableColorAdjustmentGuards', () => {
     const node = createDisplayObject();
     const lut = allocateEntity<any>();
     lut.kind = 'acme.Lut';
+    setNodeColorAdjustments(node, [lut as Adjustment]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);

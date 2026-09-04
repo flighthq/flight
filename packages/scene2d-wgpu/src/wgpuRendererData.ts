@@ -1,10 +1,9 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { RendererData, EntityConstruction } from '@flighthq/types/contract';
 
 export function createWgpuRendererData<T extends object>(data: T): T & RendererData {
-  const out = allocateEntity<T & RendererData>();
-  initializeWgpuRendererData(out, data);
-  return finishEntity(out);
+  (data as Record<symbol, unknown>)[EntityRuntimeKey] = undefined;
+  return data as T & RendererData;
 }
 
 /**
