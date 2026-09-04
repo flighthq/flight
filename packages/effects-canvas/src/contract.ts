@@ -24,3 +24,4 @@ export * from './canvasRenderTextureEffect';
 export * from './canvasScanlinesEffect';
 export * from './canvasVignetteEffect';
 export * from './canvasColorLutPass';
+export { initializeCanvasRenderEffectPipeline, initializeCanvasRenderTargetPool } from './canvasRenderEffectPipeline';

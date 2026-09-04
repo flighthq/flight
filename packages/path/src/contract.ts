@@ -24,3 +24,4 @@ export * from './tessellatePath';
 export * from './tessellatePathTyped';
 export * from './tessellateStrokePath';
 export * from './transformPath';
+export { initializePath } from './path';

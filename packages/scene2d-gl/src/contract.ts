@@ -49,3 +49,6 @@ export {
 } from '@flighthq/scene2d-canvas/contract';
 export * from './glShapeRasterizer';
 export * from './scene2dGlPipeline';
+export { initializeGlRichTextData } from './glRichText';
+export { initializeGlShapeData } from './glShapeData';
+export { initializeGlScale9ShapeData } from './glScale9Shape';

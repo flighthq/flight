@@ -6,3 +6,4 @@ export * from './riveScene2DDocument';
 export * from './riveSkeleton';
 export * from './riveSkin';
 export * from './svgDocument';
+export { initializeRiveObjectGraph } from './riveObjectGraph';

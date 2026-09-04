@@ -6,3 +6,5 @@ export * from './glyphAtlasEntry';
 export * from './glyphAtlasMetrics';
 export * from './glyphRasterizerBackend';
 export * from './glyphSource';
+export { initializeGlyphAtlas } from './glyphAtlas';
+export { initializeGlyphSourceFromGlyphAtlas } from './glyphSource';

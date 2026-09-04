@@ -15,3 +15,21 @@ export * from './electronStorage';
 export * from './electronTray';
 export * from './electronUpdater';
 export * from './electronWindow';
+export { initializeElectronStorageBackend } from './electronStorage';
+export {
+  initializeElectronIpcHandleBackend,
+  initializeElectronIpcInvokeBackend,
+  initializeElectronIpcMessageBackend,
+  initializeElectronIpcSendBackend,
+  initializeElectronIpcTargetedSendBackend,
+} from './electronIpc';
+export { initializeElectronWindowBackend } from './electronWindow';
+export { initializeElectronShortcutQueryBackend } from './electronShortcut';
+export { initializeElectronUpdaterBackend } from './electronUpdater';
+export {
+  initializeElectronDirectoryOpenDialogBackend,
+  initializeElectronFileOpenDialogBackend,
+  initializeElectronFileSaveDialogBackend,
+  initializeElectronMessageDialogBackend,
+} from './electronDialog';
+export { initializeElectronPlatformBackend } from './electronPlatform';

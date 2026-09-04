@@ -17,3 +17,5 @@ export * from './sceneNodeCulling';
 export * from './sceneNodeDispose';
 export * from './sceneNodeTransform';
 export * from './sceneKindUsage';
+export { initializeScene3DKindUsage } from './sceneKindUsage';
+export { initializeScene3D } from './scene';

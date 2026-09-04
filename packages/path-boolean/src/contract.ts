@@ -4,3 +4,4 @@ export * from './offsetPath';
 export * from './pathBooleanBackend';
 export * from './simplifyPath';
 export * from './unionAllPaths';
+export { initializeMartinezPathBooleanBackend } from './martinezKernel';

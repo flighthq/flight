@@ -8,3 +8,4 @@ export * from './stepParticleEmitter2D';
 export * from './stepParticleEmitter3D';
 export * from './updateParticleEmitter2D';
 export * from './updateParticleEmitter3D';
+export { initializeParticleEmitterData } from './particleEmitter';

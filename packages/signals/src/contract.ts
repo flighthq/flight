@@ -5,3 +5,4 @@ export * from './scope';
 export * from './signal';
 export * from './slot';
 export * from './throttle';
+export { initializeSignalScope } from './scope';

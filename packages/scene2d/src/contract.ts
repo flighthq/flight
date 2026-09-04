@@ -6,3 +6,7 @@ export * from './displayObjectAnimation';
 export * from './htmlView';
 export * from './scene2d';
 export * from './sceneKindUsage';
+export { initializeSpriteData, initializeSpriteRendererData } from './sprite';
+export { initializeScale9SpriteData } from './scale9Sprite';
+export { initializeScene2DKindUsage } from './sceneKindUsage';
+export { initializeHtmlViewData } from './htmlView';

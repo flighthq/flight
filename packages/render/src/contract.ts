@@ -20,3 +20,7 @@ export * from './renderTransform2d';
 export * from './renderViewport';
 export * from './sceneRender';
 export { SCENE2D_WORKING_COLOR_SPACE } from './scene2dWorkingColorSpace';
+export { initializeRenderViewport2D } from './renderViewport';
+export { initializeRenderProxy } from './renderProxy';
+export { initializeRenderCache, initializeRenderCacheAdapter } from './renderCache';
+export { initializeRenderQueue } from './renderQueue';

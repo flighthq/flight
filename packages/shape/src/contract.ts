@@ -21,3 +21,6 @@ export * from './shapeStrokeOutline';
 export * from './scale9ShapeCommands';
 export * from './explainShapeTessellation';
 export * from './enableShapeBoundsGuards';
+export { initializeMorphShapeAnimationTarget } from './morphShapeAnimation';
+export { initializeShapeData } from './shape';
+export { initializeScale9ShapeData } from './scale9Shape';

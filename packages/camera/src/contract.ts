@@ -15,3 +15,5 @@ export * from './shadowCamera';
 export * from './viewMatrix';
 export * from './visibleBounds';
 export * from './zoom';
+export { initializeCamera3D } from './camera';
+export { initializeOrthographicProjection, initializePerspectiveProjection } from './projection';

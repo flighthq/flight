@@ -9,3 +9,7 @@ export * from './particleSpawnOffset';
 export * from './stepParticleObjects';
 export * from './updateParticleObjects';
 export * from './validateParticleEmitterConfig';
+export { initializeParticleEmitterSignals } from './particleEmitterSignals';
+export { initializeParticleEmitterConfig } from './particleEmitterConfig';
+export { initializeParticleObjectsState } from './particleObjectsState';
+export { initializeParticleEmitterState } from './particleEmitterState';
