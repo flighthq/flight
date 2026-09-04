@@ -30,4 +30,4 @@ export type MaterialLike = EntityWithoutRuntime<Material>;
 // Per-node, material-specific data (the companion to HasMaterial.material). Plain serializable
 // data a material consumes per node. Its concrete shape is defined by the material kind that reads
 // it.
-export type MaterialData = object;
+export interface MaterialData extends Entity {}

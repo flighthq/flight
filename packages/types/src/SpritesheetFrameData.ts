@@ -1,4 +1,6 @@
-export interface SpritesheetFrameData {
+import type { Entity } from './Entity';
+
+export interface SpritesheetFrameData extends Entity {
   height: number;
   name: string;
   offsetX: number;

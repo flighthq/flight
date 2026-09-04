@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { ParticleCurve } from './ParticleCurve';
 
 export type ParticleEmitterShape = 'box' | 'circle' | 'cone3d' | 'line' | 'point' | 'rect' | 'ring' | 'sphere';
@@ -7,7 +8,7 @@ export type ParticleEmitterShape = 'box' | 'circle' | 'cone3d' | 'line' | 'point
  *  parsing if you want it to take effect in the renderer. */
 export type ParticleBlendMode = 'add' | 'multiply' | 'normal' | 'screen';
 
-export interface ParticleEmitterConfig {
+export interface ParticleEmitterConfig extends Entity {
   readonly alphaEnd: number;
   readonly alphaStart: number;
   readonly blendMode: ParticleBlendMode | null;

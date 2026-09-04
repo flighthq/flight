@@ -1,4 +1,5 @@
 import type { AdjustmentKind } from './AdjustmentKind';
+import type { Entity } from './Entity';
 
 // Substrate-agnostic pointwise value-remap intents. Each is plain data carrying a `kind` discriminant;
 // a stack of adjustments (a plain `readonly Adjustment[]`) fuses into ONE artifact as data — a single
@@ -11,6 +12,6 @@ import type { AdjustmentKind } from './AdjustmentKind';
 
 // Open base contract for every pointwise adjustment. The `kind` is the canonical PascalCase type name
 // and the registry key a per-backend realization is registered against.
-export interface Adjustment {
+export interface Adjustment extends Entity {
   kind: AdjustmentKind;
 }

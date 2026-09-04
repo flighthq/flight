@@ -1,6 +1,7 @@
+import type { Entity } from './Entity';
 import type { SpritesheetAnimationDirection } from './SpritesheetAnimationDirection';
 
-export interface SpritesheetAnimationData {
+export interface SpritesheetAnimationData extends Entity {
   direction: SpritesheetAnimationDirection;
   frameDuration: number;
   frameDurations: number[] | null;

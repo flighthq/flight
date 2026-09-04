@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Skeleton2D } from './Skeleton2D';
 
 /**
@@ -9,7 +10,7 @@ import type { Skeleton2D } from './Skeleton2D';
  * posed it, 1 applies the constraint fully. It is the field that lets a constraint be faded in and out by
  * an animation rather than being all-or-nothing, which is how both Spine and DragonBones author them.
  */
-export interface Skeleton2DConstraint {
+export interface Skeleton2DConstraint extends Entity {
   kind: Skeleton2DConstraintKind;
   mix: number;
 }
