@@ -1,7 +1,6 @@
 import { createImageResource } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -12,7 +11,7 @@ import {
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
+import type { Raster2DSurface, RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
@@ -32,39 +31,8 @@ beforeEach(() => {
   );
 });
 
-beforeEach(() => {
-  setRaster2DSurfaceProvider({
-    [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext('2d')!;
-      return {
-        [EntityRuntimeKey]: undefined,
-        get width() {
-          return canvas.width;
-        },
-        set width(value) {
-          canvas.width = value;
-        },
-        get height() {
-          return canvas.height;
-        },
-        set height(value) {
-          canvas.height = value;
-        },
-        context,
-        image: createImageResource(canvas),
-      };
-    },
-    destroyRaster2DSurface() {},
-  });
-});
-
 afterEach(() => {
   vi.restoreAllMocks();
-  resetRaster2DSurfaceProviderForTest();
 });
 
 import { defaultGlMorphShapeRenderer, defaultGlShapeRenderer, drawGlShape } from './glShape';
@@ -73,6 +41,38 @@ import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 const noopRasterizer = (): void => {};
+
+function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d')!;
+  return {
+    [EntityRuntimeKey]: undefined,
+    get width() {
+      return canvas.width;
+    },
+    set width(value) {
+      canvas.width = value;
+    },
+    get height() {
+      return canvas.height;
+    },
+    set height(value) {
+      canvas.height = value;
+    },
+    context,
+    image: createImageResource(canvas),
+  };
+}
+
+function setTestRasterProvider(state: { raster2DSurfaceProvider: unknown }): void {
+  state.raster2DSurfaceProvider = {
+    [EntityRuntimeKey]: undefined,
+    createRaster2DSurface: createTestRaster2DSurface,
+    destroyRaster2DSurface() {},
+  };
+}
 
 // Mirrors createGlShapeData: the rasterization surface is absent until a shape actually needs one.
 function makeShapeData() {
@@ -125,6 +125,7 @@ describe('defaultGlShapeRenderer', () => {
 describe('drawGlShape', () => {
   it('draws a solid fill and open solid stroke as GPU meshes in one shape', () => {
     const { state, gl } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     const shape = createShape();
     appendShapeBeginFill(shape, 0x00cc00ff);
@@ -143,6 +144,7 @@ describe('drawGlShape', () => {
 
   it('draws a closed solid stroke ring as one GPU mesh', () => {
     const { state, gl } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     enableGlStrokePathTessellation(state);
     const shape = createShape();
@@ -157,6 +159,7 @@ describe('drawGlShape', () => {
 
   it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', () => {
     const { state, gl } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     const shape = createShape();
@@ -171,6 +174,7 @@ describe('drawGlShape', () => {
 
   it('rasterizes at the state pixel ratio, so the fallback is not soft on a dense display', () => {
     const { state } = createGlState({ pixelRatio: 3 });
+    setTestRasterProvider(state);
     registerGlStandardMaterial(state);
     const rasterized: { width: number; height: number; transform: DOMMatrix }[] = [];
     registerGlShapeRasterizer(state, (context) => {
@@ -197,6 +201,7 @@ describe('drawGlShape', () => {
 
   it('re-rasterizes when only the pixel ratio changes, since the cached raster is the wrong density', () => {
     const { state } = createGlState({ pixelRatio: 1 });
+    setTestRasterProvider(state);
     registerGlStandardMaterial(state);
     let rasterCount = 0;
     registerGlShapeRasterizer(state, () => void rasterCount++);
@@ -217,6 +222,7 @@ describe('drawGlShape', () => {
 
   it('falls back to the raster quad for a self-intersecting stroke centerline', () => {
     const { state, gl } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     enableGlStrokePathTessellation(state);
     registerGlStandardMaterial(state);
@@ -241,6 +247,7 @@ describe('drawGlShape', () => {
 
   it('returns early without writing to batch when commands array is empty', () => {
     const { state } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [] }, makeShapeData()));
@@ -249,6 +256,7 @@ describe('drawGlShape', () => {
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, null));
@@ -257,6 +265,7 @@ describe('drawGlShape', () => {
 
   it('returns early without writing to batch when no material renderer is registered', () => {
     const { state } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
@@ -264,6 +273,7 @@ describe('drawGlShape', () => {
 
   it('writes one instance to the quad-batch writer when shape has valid commands and bounds', () => {
     const { state } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
@@ -272,6 +282,7 @@ describe('drawGlShape', () => {
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
@@ -281,6 +292,7 @@ describe('drawGlShape', () => {
 
   it('writes correct size into instance data', () => {
     const { state } = createGlState();
+    setTestRasterProvider(state);
     registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));

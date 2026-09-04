@@ -6,12 +6,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import {
-  getOrCreateRenderProxy2D,
-  prepareScene2DRender,
-  resetRaster2DSurfaceProviderForTest,
-  setRaster2DSurfaceProvider,
-} from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 import type { Raster2DSurface } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -59,41 +54,43 @@ beforeAll(() => {
 
 beforeEach(() => {
   destroySurface.mockReset();
-  setRaster2DSurfaceProvider({
+});
+
+function createTestRaster2DSurfaceProvider() {
+  return {
     [EntityRuntimeKey]: undefined,
     createRaster2DSurface: createTestSurface,
     destroyRaster2DSurface: destroySurface,
-  });
-});
-
-afterEach(() => {
-  resetRaster2DSurfaceProviderForTest();
-});
+  };
+}
 
 describe('acquireWgpuScale9ShapeRasterSurface', () => {
   it('does not cache provider absence and retries on the next draw', () => {
     const surface = createTestSurface();
     const createSurface = vi.fn().mockReturnValueOnce(null).mockReturnValue(surface);
-    setRaster2DSurfaceProvider({
-      [EntityRuntimeKey]: undefined,
-      createRaster2DSurface: createSurface,
-      destroyRaster2DSurface: destroySurface,
-    });
-    const data = getWgpuScale9ShapeData(createWgpuScale9ShapeData({} as never, createScale9Shape(grid)))!;
+    const state = {
+      raster2DSurfaceProvider: {
+        [EntityRuntimeKey]: undefined,
+        createRaster2DSurface: createSurface,
+        destroyRaster2DSurface: destroySurface,
+      },
+    } as never;
+    const data = getWgpuScale9ShapeData(createWgpuScale9ShapeData(state, createScale9Shape(grid)))!;
 
-    expect(acquireWgpuScale9ShapeRasterSurface(data)).toBeNull();
+    expect(acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, data)).toBeNull();
     expect(data.surface).toBeNull();
-    expect(acquireWgpuScale9ShapeRasterSurface(data)).toBe(surface);
-    expect(acquireWgpuScale9ShapeRasterSurface(data)).toBe(surface);
+    expect(acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, data)).toBe(surface);
+    expect(acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider, data)).toBe(surface);
     expect(createSurface).toHaveBeenCalledTimes(2);
   });
 
   it('presents different textures for two nodes with different content in the same frame', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     const firstData = getWgpuScale9ShapeData(createWgpuScale9ShapeData(state, createScale9Shape(grid)))!;
     const secondData = getWgpuScale9ShapeData(createWgpuScale9ShapeData(state, createScale9Shape(grid)))!;
-    const first = acquireWgpuScale9ShapeRasterSurface(firstData)!;
-    const second = acquireWgpuScale9ShapeRasterSurface(secondData)!;
+    const first = acquireWgpuScale9ShapeRasterSurface(createTestRaster2DSurfaceProvider(), firstData)!;
+    const second = acquireWgpuScale9ShapeRasterSurface(createTestRaster2DSurfaceProvider(), secondData)!;
     first.context.fillStyle = '#f00';
     first.context.fillRect(0, 0, 1, 1);
     second.context.fillStyle = '#00f';
@@ -128,8 +125,9 @@ describe('defaultWgpuScale9ShapeRenderer', () => {
 describe('destroyWgpuScale9ShapeData', () => {
   it('removes its cached texture before destroying its per-node surface, idempotently', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     const data = createWgpuScale9ShapeData(state, createScale9Shape(grid));
-    const surface = acquireWgpuScale9ShapeRasterSurface(getWgpuScale9ShapeData(data)!)!;
+    const surface = acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider!, getWgpuScale9ShapeData(data)!)!;
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const order: string[] = [];
     const destroy = vi.fn(() => order.push('texture'));
@@ -151,8 +149,9 @@ describe('destroyWgpuScale9ShapeData', () => {
 
   it('destroys its raster surface even when it never acquired a GPU cache entry', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     const data = createWgpuScale9ShapeData(state, createScale9Shape(grid));
-    const surface = acquireWgpuScale9ShapeRasterSurface(getWgpuScale9ShapeData(data)!)!;
+    const surface = acquireWgpuScale9ShapeRasterSurface(state.raster2DSurfaceProvider!, getWgpuScale9ShapeData(data)!)!;
 
     destroyWgpuScale9ShapeData(state, data);
 
@@ -161,6 +160,7 @@ describe('destroyWgpuScale9ShapeData', () => {
 
   it('is a no-op when its lazy surface was never allocated', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     const data = createWgpuScale9ShapeData(state, createScale9Shape(grid));
 
     expect(() => destroyWgpuScale9ShapeData(state, data)).not.toThrow();
@@ -171,6 +171,7 @@ describe('destroyWgpuScale9ShapeData', () => {
 describe('drawWgpuScale9Shape', () => {
   it('returns early when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     const shape = createScale9Shape(grid);
     prepareScene2DRender(state, shape);
@@ -182,6 +183,7 @@ describe('drawWgpuScale9Shape', () => {
 
   it('rasterizes and draws a filled shape without throwing', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000ff);
@@ -197,6 +199,7 @@ describe('drawWgpuScale9Shape', () => {
 describe('drawWgpuScale9ShapeMask', () => {
   it('delegates to the Scale9 draw path', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     const shape = createScale9Shape(grid);
     prepareScene2DRender(state, shape);

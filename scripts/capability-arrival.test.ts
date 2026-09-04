@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { CapabilityArrivalFailure, GeneratedEntry } from './capability-arrival';
 import { capabilityArrivalFailures } from './capability-arrival';
 
-type Removal = 'functional-aggregate' | 'gl-surface' | 'wgpu-surface';
+type Removal = 'gl-surface' | 'wgpu-surface';
 
 interface RemovalControl {
   readonly after: number;
@@ -41,9 +41,6 @@ function mutateGeneratedEntry(
   controls: RemovalControl[],
 ): string {
   let source = entry.source;
-  if (removal === 'functional-aggregate' && entry.suite === 'functional') {
-    source = removeRequiredOccurrence(source, 'enableHostWeb();', entry.consumer, controls);
-  }
   if (removal === 'gl-surface' && entry.consumer === 'examples:shapes/webgl') {
     source = removeRequiredOccurrence(source, 'enableHostWebGlRenderSurface();', entry.consumer, controls);
   }
@@ -81,24 +78,17 @@ describe('capability-arrival source gate', () => {
   });
 
   it('refuses a mutation when its real specimen is absent or duplicated', () => {
-    expect(() => removeRequiredOccurrence('unrelated();', 'enableHostWeb();', 'missing', [])).toThrow(
-      'missing must contain exactly one "enableHostWeb();"; found 0',
+    expect(() => removeRequiredOccurrence('unrelated();', 'enableHostWebGlRenderSurface();', 'missing', [])).toThrow(
+      'missing must contain exactly one "enableHostWebGlRenderSurface();"; found 0',
     );
     expect(() =>
-      removeRequiredOccurrence('enableHostWeb(); enableHostWeb();', 'enableHostWeb();', 'duplicate', []),
-    ).toThrow('duplicate must contain exactly one "enableHostWeb();"; found 2');
-  });
-
-  it('reddens the functional generated-entry owner when its aggregate is removed', async () => {
-    const { controls, failures } = await analyze('functional-aggregate');
-    const names = arrivalNames(failures);
-    const policy = failures.find((failure) => failure.kind === 'policy');
-
-    expect(controls.length).toBeGreaterThan(0);
-    expect(new Set(controls.map(({ after, before }) => `${before}->${after}`))).toEqual(new Set(['1->0']));
-    expect(names).toContain('functional generated-entry template:enableHostWeb aggregate:policy');
-    expect(names).toContain('functional:application-render-view/webgl:BitmapReadback:arrival');
-    expect(policy?.message).toContain(`absent from ${controls.length} cells`);
+      removeRequiredOccurrence(
+        'enableHostWebGlRenderSurface(); enableHostWebGlRenderSurface();',
+        'enableHostWebGlRenderSurface();',
+        'duplicate',
+        [],
+      ),
+    ).toThrow('duplicate must contain exactly one "enableHostWebGlRenderSurface();"; found 2');
   });
 
   it('reddens a named GL page when its explicit surface arrival is removed', async () => {

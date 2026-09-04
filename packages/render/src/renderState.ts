@@ -17,6 +17,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
     currentClipDepth: obj?.currentClipDepth ?? 0,
     displayObjectClipHooks: obj?.displayObjectClipHooks ?? null,
     pixelRatio: obj?.pixelRatio ?? 1,
+    raster2DSurfaceProvider: obj?.raster2DSurfaceProvider ?? null,
     renderAlpha: obj?.renderAlpha ?? 1,
     renderBlendMode: obj?.renderBlendMode ?? BlendMode.Normal,
     renderTransform2D: obj?.renderTransform2D ?? null,

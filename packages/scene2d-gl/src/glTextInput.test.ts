@@ -1,5 +1,4 @@
 import { createImageResource } from '@flighthq/image/contract';
-import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { Raster2DSurface, RenderProxy2D, RichText } from '@flighthq/types/contract';
@@ -44,18 +43,6 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   };
 }
 
-beforeEach(() => {
-  setRaster2DSurfaceProvider({
-    [EntityRuntimeKey]: undefined,
-    createRaster2DSurface: createTestRaster2DSurface,
-    destroyRaster2DSurface() {},
-  });
-});
-
-afterEach(() => {
-  resetRaster2DSurfaceProviderForTest();
-});
-
 describe('drawGlTextInputOverlay', () => {
   it('is the installed overlay function', () => {
     expect(typeof drawGlTextInputOverlay).toBe('function');
@@ -64,6 +51,11 @@ describe('drawGlTextInputOverlay', () => {
   it('rasterizes a focused collapsed selection without throwing', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
+    state.raster2DSurfaceProvider = {
+      [EntityRuntimeKey]: undefined,
+      createRaster2DSurface: createTestRaster2DSurface,
+      destroyRaster2DSurface() {},
+    };
     const renderProxy = makeFocusedInputProxy(state);
     setTextInputSelection(renderProxy.source as RichText, 2, 2);
 
@@ -74,6 +66,11 @@ describe('drawGlTextInputOverlay', () => {
   it('rasterizes a focused expanded selection without throwing', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
+    state.raster2DSurfaceProvider = {
+      [EntityRuntimeKey]: undefined,
+      createRaster2DSurface: createTestRaster2DSurface,
+      destroyRaster2DSurface() {},
+    };
     const renderProxy = makeFocusedInputProxy(state);
     setTextInputSelection(renderProxy.source as RichText, 1, 4);
 

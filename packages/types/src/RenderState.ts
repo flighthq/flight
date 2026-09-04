@@ -4,6 +4,7 @@ import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
+import type { Raster2DSurfaceProvider } from './Raster2DSurface';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { Renderable } from './Renderable';
 import type { RenderEffectPaddingResolver } from './RenderEffectPadding';
@@ -34,6 +35,7 @@ export interface RenderState extends Entity {
   currentClipDepth: number;
   displayObjectClipHooks: Scene2DClipHooks | null;
   pixelRatio: number;
+  raster2DSurfaceProvider: Readonly<Raster2DSurfaceProvider> | null;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
   renderTransform2D: Matrix | null;

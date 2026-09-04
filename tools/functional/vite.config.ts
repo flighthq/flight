@@ -64,11 +64,7 @@ function discoverTests(): FunctionalScene3D[] {
 function entryModule(name: string, backend: string): string {
   const scenePath = functionalScene3DFile(scenesDir, name, backend);
   return [
-    `import { enableHostWeb } from '@flighthq/host-web';`,
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
-    // enableHostWeb deliberately excludes GL/WGPU presentation surfaces — those are
-    // installed per-target by the harness (tools/harness/webgl.ts, tools/harness/webgpu.ts).
-    `enableHostWeb();`,
     `setLogSink(createConsoleCaptureSink());`,
     `window.__ftBackend = ${JSON.stringify(backend)};`,
     `const { failCaptureTargetVerification, verifyCaptureTarget } = await import('@ft/capture');`,

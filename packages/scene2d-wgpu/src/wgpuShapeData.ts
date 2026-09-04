@@ -2,6 +2,7 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createRaster2DSurface, destroyRaster2DSurface } from '@flighthq/render/contract';
 import type {
   Raster2DSurface,
+  Raster2DSurfaceProvider,
   Renderable,
   RendererData,
   RenderState,
@@ -14,10 +15,13 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 // Allocates the rasterization surface on first use, matching scene2d-gl. A shape whose fills all
 // tessellate never touches this, so a scene drawn entirely through the mesh path carries no raster
 // surface.
-export function acquireWgpuShapeRasterSurface(data: WgpuShapeRendererData): Raster2DSurface | null {
+export function acquireWgpuShapeRasterSurface(
+  provider: Readonly<Raster2DSurfaceProvider>,
+  data: WgpuShapeRendererData,
+): Raster2DSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createRaster2DSurface(1, 1);
+  const surface = createRaster2DSurface(provider, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
   return surface;

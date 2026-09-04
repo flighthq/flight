@@ -1,4 +1,9 @@
-import { enableHostWebWgpuRenderSurface, webCanvasRenderSurfaceCreator, webGraphicsHost } from '@flighthq/host-web';
+import {
+  enableHostWebWgpuRenderSurface,
+  webCanvasRenderSurfaceCreator,
+  webGraphicsHost,
+  webRaster2DSurfaceProvider,
+} from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   createCanvasRenderState,
@@ -65,6 +70,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const state = await createWgpuRenderStateFromCanvasElement(canvas, scene2dWgpuPipeline, {
     pixelRatio,
     backgroundColor: options.background,
+    raster2DSurfaceProvider: webRaster2DSurfaceProvider,
     sceneGraphSyncPolicy: options.syncPolicy,
   });
 

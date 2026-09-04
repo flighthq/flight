@@ -5,6 +5,7 @@ import type {
   GlRenderState,
   GlShapeRendererData,
   Raster2DSurface,
+  Raster2DSurfaceProvider,
   Renderable,
   RendererData,
 } from '@flighthq/types/contract';
@@ -13,10 +14,13 @@ import type {
 // writer treat a rasterized shape uniformly with bitmaps and atlases; re-rendering the backing store
 // bumps the resource's version (invalidateImageResource), which the batch's version-aware cache uses
 // to re-upload.
-export function acquireGlShapeRasterSurface(data: GlShapeRendererData): Raster2DSurface | null {
+export function acquireGlShapeRasterSurface(
+  provider: Readonly<Raster2DSurfaceProvider>,
+  data: GlShapeRendererData,
+): Raster2DSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createRaster2DSurface(1, 1);
+  const surface = createRaster2DSurface(provider, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
   return surface;

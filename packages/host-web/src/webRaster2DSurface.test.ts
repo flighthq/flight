@@ -1,21 +1,16 @@
-import {
-  createRaster2DSurface,
-  explainRaster2DSurfaceProvider,
-  resetRaster2DSurfaceProviderForTest,
-} from '@flighthq/render/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import {
-  createWebRaster2DSurfaceProvider,
-  enableHostWebRaster2DSurface,
-  resetHostWebRaster2DSurfaceForTest,
-} from './webRaster2DSurface';
-
-afterEach(() => {
-  resetHostWebRaster2DSurfaceForTest();
-  resetRaster2DSurfaceProviderForTest();
-});
+import { createWebRaster2DSurfaceProvider, webRaster2DSurfaceProvider } from './webRaster2DSurface';
 
 describe('createWebRaster2DSurfaceProvider', () => {
+  it('returns an Entity', () => {
+    expect(EntityRuntimeKey in createWebRaster2DSurfaceProvider()).toBe(true);
+  });
+
+  it('returns a fresh instance on each call', () => {
+    expect(createWebRaster2DSurfaceProvider()).not.toBe(createWebRaster2DSurfaceProvider());
+  });
+
   it('destroys the private canvas backing store through the shared provider contract', () => {
     const provider = createWebRaster2DSurfaceProvider();
     const surface = provider.createRaster2DSurface(100, 200)!;
@@ -50,24 +45,19 @@ describe('createWebRaster2DSurfaceProvider', () => {
   });
 });
 
-describe('enableHostWebRaster2DSurface', () => {
-  it('installs the shared Web host provider idempotently', () => {
-    enableHostWebRaster2DSurface();
-    enableHostWebRaster2DSurface();
-
-    expect(explainRaster2DSurfaceProvider()).toMatchObject({ conflict: false, layer: 'host' });
-    expect(createRaster2DSurface(20, 30)).not.toBeNull();
+describe('webRaster2DSurfaceProvider', () => {
+  it('is an Entity', () => {
+    expect(EntityRuntimeKey in webRaster2DSurfaceProvider).toBe(true);
   });
-});
 
-describe('resetHostWebRaster2DSurfaceForTest', () => {
-  it('allows a fresh host provider to be installed after the shared test reset', () => {
-    enableHostWebRaster2DSurface();
-    resetHostWebRaster2DSurfaceForTest();
-    resetRaster2DSurfaceProviderForTest();
+  it('is a stable singleton', () => {
+    expect(webRaster2DSurfaceProvider).toBe(webRaster2DSurfaceProvider);
+  });
 
-    enableHostWebRaster2DSurface();
-
-    expect(explainRaster2DSurfaceProvider()).toMatchObject({ conflict: false, layer: 'host' });
+  it('creates working surfaces', () => {
+    const surface = webRaster2DSurfaceProvider.createRaster2DSurface(20, 30);
+    expect(surface).not.toBeNull();
+    expect(surface!.width).toBe(20);
+    expect(surface!.height).toBe(30);
   });
 });

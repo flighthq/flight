@@ -1,12 +1,10 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import * as renderContract from '@flighthq/render/contract';
 
 import {
   createWebGlRenderSurfaceProvider,
   enableHostWebGlRenderSurface,
   resetHostWebGlRenderSurfaceForTest,
 } from './webGlRenderSurface';
-import { resetHostWebRaster2DSurfaceForTest } from './webRaster2DSurface';
 
 describe('createWebGlRenderSurfaceProvider', () => {
   it('creates fresh caller-owned surfaces for every request', () => {
@@ -39,8 +37,6 @@ describe('createWebGlRenderSurfaceProvider', () => {
 describe('enableHostWebGlRenderSurface', () => {
   afterEach(() => {
     resetHostWebGlRenderSurfaceForTest();
-    resetHostWebRaster2DSurfaceForTest();
-    renderContract.resetRaster2DSurfaceProviderForTest();
     renderGlContract.resetGlRenderSurfaceProviderForTest();
     vi.restoreAllMocks();
   });
@@ -54,7 +50,6 @@ describe('enableHostWebGlRenderSurface', () => {
     expect(first?.style.width).toBe('80px');
     expect(first?.width).toBe(160);
     expect(second).not.toBe(first);
-    expect(renderContract.explainRaster2DSurfaceProvider().layer).toBe('host');
   });
 
   it('calls the GL setter when first enabled', () => {
@@ -82,8 +77,6 @@ describe('enableHostWebGlRenderSurface', () => {
 describe('resetHostWebGlRenderSurfaceForTest', () => {
   afterEach(() => {
     resetHostWebGlRenderSurfaceForTest();
-    resetHostWebRaster2DSurfaceForTest();
-    renderContract.resetRaster2DSurfaceProviderForTest();
     renderGlContract.resetGlRenderSurfaceProviderForTest();
   });
 

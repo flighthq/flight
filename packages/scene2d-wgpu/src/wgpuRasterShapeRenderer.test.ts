@@ -2,12 +2,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock, renderWgpuBackground } from '@flighthq/render-wgpu/contract';
-import {
-  enableRenderRegistryGuards,
-  explainRenderRegistryMisses,
-  resetRaster2DSurfaceProviderForTest,
-  setRaster2DSurfaceProvider,
-} from '@flighthq/render/contract';
+import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
@@ -30,10 +25,14 @@ beforeEach(() => {
   );
 });
 
-beforeEach(() => {
-  setRaster2DSurfaceProvider({
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function createTestRaster2DSurfaceProvider() {
+  return {
     [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
+    createRaster2DSurface(width: number, height: number) {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
@@ -43,13 +42,13 @@ beforeEach(() => {
         get width() {
           return canvas.width;
         },
-        set width(value) {
+        set width(value: number) {
           canvas.width = value;
         },
         get height() {
           return canvas.height;
         },
-        set height(value) {
+        set height(value: number) {
           canvas.height = value;
         },
         context,
@@ -57,13 +56,8 @@ beforeEach(() => {
       };
     },
     destroyRaster2DSurface() {},
-  });
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-  resetRaster2DSurfaceProviderForTest();
-});
+  };
+}
 
 function makeShapeData() {
   return {
@@ -133,6 +127,7 @@ describe('defaultWgpuRasterShapeRenderer', () => {
 describe('drawWgpuRasterShape', () => {
   it('rasterizes a fill the mesh path could have tessellated, which is what pinning this strategy means', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     const pass = makeMeshPassSpy();
@@ -149,6 +144,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('replays the whole command stream, not the subset a mesh path could not express', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
@@ -165,6 +161,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('reports a ShapeRasterizer miss when no rasterizer is registered', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     enableRenderRegistryGuards(state);
@@ -178,7 +175,6 @@ describe('drawWgpuRasterShape', () => {
   });
 
   it('preserves expected surface absence without rasterizing or writing a batch', async () => {
-    resetRaster2DSurfaceProviderForTest();
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
@@ -194,6 +190,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('does nothing without a render pass, for an empty command list, or with absent renderer data', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     const rasterizer = vi.fn();

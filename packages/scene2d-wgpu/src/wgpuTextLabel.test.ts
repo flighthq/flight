@@ -2,7 +2,6 @@ import { createImageResource } from '@flighthq/image/contract';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createTextLabel } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
 import type { Raster2DSurface, RenderProxy2D } from '@flighthq/types/contract';
@@ -34,7 +33,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  resetRaster2DSurfaceProviderForTest();
 });
 
 function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
@@ -88,16 +86,14 @@ function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
-function installTestRaster2DSurfaceProvider(
-  destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
-): void {
-  setRaster2DSurfaceProvider({
+function createTestRaster2DSurfaceProvider(destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {}) {
+  return {
     [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
+    createRaster2DSurface(width: number, height: number) {
       return createTestRaster2DSurface(width, height);
     },
     destroyRaster2DSurface,
-  });
+  };
 }
 
 describe('defaultWgpuTextLabelRenderer', () => {
@@ -115,7 +111,7 @@ describe('defaultWgpuTextLabelRenderer', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    installTestRaster2DSurfaceProvider((surface) => {
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider((surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
     });
@@ -138,8 +134,8 @@ describe('defaultWgpuTextLabelRenderer', () => {
 
 describe('drawWgpuTextLabel', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', async () => {
-    installTestRaster2DSurfaceProvider();
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     const firstData = defaultWgpuTextLabelRenderer.createData!(state, createTextLabel())!;
@@ -173,6 +169,7 @@ describe('drawWgpuTextLabel', () => {
 
   it('writes one instance to the quad-batch writer when text has content', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     drawWgpuTextLabel(state, makeTextProxy('hello', makeTextData()));
@@ -182,6 +179,7 @@ describe('drawWgpuTextLabel', () => {
 
   it('rasterizes packed run alpha into the canvas color', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     const data = makeTextData();
@@ -198,6 +196,7 @@ describe('drawWgpuTextLabel', () => {
 
   it('does not re-rasterize when only alpha changes (content version unchanged)', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());

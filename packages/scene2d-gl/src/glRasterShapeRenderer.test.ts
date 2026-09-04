@@ -1,14 +1,9 @@
 import { createImageResource } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import {
-  enableRenderRegistryGuards,
-  explainRenderRegistryMisses,
-  resetRaster2DSurfaceProviderForTest,
-  setRaster2DSurfaceProvider,
-} from '@flighthq/render/contract';
+import { enableRenderRegistryGuards, explainRenderRegistryMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
+import type { Raster2DSurface, RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, RenderRegistry } from '@flighthq/types/contract';
 
 beforeEach(() => {
@@ -23,45 +18,46 @@ beforeEach(() => {
   );
 });
 
-beforeEach(() => {
-  setRaster2DSurfaceProvider({
-    [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext('2d')!;
-      return {
-        [EntityRuntimeKey]: undefined,
-        get width() {
-          return canvas.width;
-        },
-        set width(value) {
-          canvas.width = value;
-        },
-        get height() {
-          return canvas.height;
-        },
-        set height(value) {
-          canvas.height = value;
-        },
-        context,
-        image: createImageResource(canvas),
-      };
-    },
-    destroyRaster2DSurface() {},
-  });
-});
-
 afterEach(() => {
   vi.restoreAllMocks();
-  resetRaster2DSurfaceProviderForTest();
 });
 
 import { defaultGlRasterShapeRenderer, drawGlRasterShape } from './glRasterShapeRenderer';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
+
+function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d')!;
+  return {
+    [EntityRuntimeKey]: undefined,
+    get width() {
+      return canvas.width;
+    },
+    set width(value) {
+      canvas.width = value;
+    },
+    get height() {
+      return canvas.height;
+    },
+    set height(value) {
+      canvas.height = value;
+    },
+    context,
+    image: createImageResource(canvas),
+  };
+}
+
+function setTestRasterProvider(state: { raster2DSurfaceProvider: unknown }): void {
+  state.raster2DSurfaceProvider = {
+    [EntityRuntimeKey]: undefined,
+    createRaster2DSurface: createTestRaster2DSurface,
+    destroyRaster2DSurface() {},
+  };
+}
 
 function makeShapeData() {
   return { surface: null, lastContentId: -1, lastPixelRatio: 0, lastW: 0, lastH: 0, meshVersion: -1, meshes: null };
@@ -102,6 +98,7 @@ describe('drawGlRasterShape', () => {
     // The behavioural difference from defaultGlShapeRenderer: no tessellation is attempted first, so a
     // solid rectangle still goes through the canvas replay.
     const { state, gl } = createGlState();
+    setTestRasterProvider(state);
     registerGlStandardMaterial(state);
     const rasterizer = vi.fn();
     registerGlShapeRasterizer(state, rasterizer);
@@ -115,6 +112,7 @@ describe('drawGlRasterShape', () => {
   it('replays the whole command stream, not the subset a mesh path could not express', () => {
     // Why a rasterizing state needs the full canvas command vocabulary rather than some gap set.
     const { state } = createGlState();
+    setTestRasterProvider(state);
     registerGlStandardMaterial(state);
     const shape = solidShape();
     let replayed: readonly unknown[] = [];
@@ -138,7 +136,6 @@ describe('drawGlRasterShape', () => {
   });
 
   it('preserves expected surface absence without rasterizing or writing a batch', () => {
-    resetRaster2DSurfaceProviderForTest();
     const { state } = createGlState();
     registerGlStandardMaterial(state);
     const rasterizer = vi.fn();

@@ -1,12 +1,7 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime, renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import {
-  getOrCreateRenderProxy2D,
-  prepareScene2DRender,
-  resetRaster2DSurfaceProviderForTest,
-  setRaster2DSurfaceProvider,
-} from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import type { Raster2DSurface } from '@flighthq/types/contract';
@@ -24,10 +19,6 @@ import {
 
 beforeAll(() => {
   installWgpuMock();
-});
-
-afterEach(() => {
-  resetRaster2DSurfaceProviderForTest();
 });
 
 function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
@@ -54,16 +45,14 @@ function createTestRaster2DSurface(width: number, height: number): Raster2DSurfa
   };
 }
 
-function installTestRaster2DSurfaceProvider(
-  destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
-): void {
-  setRaster2DSurfaceProvider({
+function createTestRaster2DSurfaceProvider(destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {}) {
+  return {
     [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
+    createRaster2DSurface(width: number, height: number) {
       return createTestRaster2DSurface(width, height);
     },
     destroyRaster2DSurface,
-  });
+  };
 }
 
 describe('createWgpuRichTextData', () => {
@@ -86,7 +75,7 @@ describe('destroyWgpuRichTextData', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    installTestRaster2DSurfaceProvider((surface) => {
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider((surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
     });
@@ -115,8 +104,8 @@ describe('destroyWgpuRichTextData', () => {
 
 describe('drawWgpuRichText', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', async () => {
-    installTestRaster2DSurfaceProvider();
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
     const first = createRichText({ data: { height: 40, text: 'first', width: 100 } });
     const second = createRichText({ data: { height: 40, text: 'second', width: 100 } });
@@ -183,10 +172,10 @@ describe('drawWgpuRichTextWithOverlay', () => {
 
 describe('registerWgpuTextInputOverlay', () => {
   it('invokes the registered overlay only for a RichText with an input slot', async () => {
-    installTestRaster2DSurfaceProvider();
     const overlay = vi.fn();
     registerWgpuTextInputOverlay(overlay);
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     renderWgpuBackground(state);
 
     const plain = createRichText({ data: { height: 40, text: 'x', width: 100 } });

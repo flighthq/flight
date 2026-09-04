@@ -1,6 +1,5 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
 import type { Raster2DSurface, RendererData, RenderProxy2D, TextLabel } from '@flighthq/types/contract';
@@ -32,7 +31,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  resetRaster2DSurfaceProviderForTest();
 });
 
 function createTestRaster2DSurface(width: number, height: number): Raster2DSurface {
@@ -87,15 +85,16 @@ function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
 }
 
 function installTestRaster2DSurfaceProvider(
+  state: { raster2DSurfaceProvider: unknown },
   destroyRaster2DSurface: (surface: Raster2DSurface) => void = () => {},
 ): void {
-  setRaster2DSurfaceProvider({
+  state.raster2DSurfaceProvider = {
     [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
+    createRaster2DSurface(width: number, height: number) {
       return createTestRaster2DSurface(width, height);
     },
     destroyRaster2DSurface,
-  });
+  };
 }
 
 describe('defaultGlTextLabelRenderer', () => {
@@ -120,7 +119,7 @@ describe('defaultGlTextLabelRenderer', () => {
     const order: string[] = [];
     const { state, gl } = createGlState();
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    installTestRaster2DSurfaceProvider((surface) => {
+    installTestRaster2DSurfaceProvider(state, (surface) => {
       order.push('surface');
       expect(cache.has(surface.image)).toBe(false);
     });
@@ -142,8 +141,8 @@ describe('defaultGlTextLabelRenderer', () => {
 
 describe('drawGlTextLabel', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', () => {
-    installTestRaster2DSurfaceProvider();
     const { state } = createGlState();
+    installTestRaster2DSurfaceProvider(state);
     registerGlStandardMaterial(state);
     const firstData = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
     const secondData = defaultGlTextLabelRenderer.createData!(state, createTextLabel())!;
@@ -186,6 +185,7 @@ describe('drawGlTextLabel', () => {
 
   it('writes one instance to the quad-batch writer when text has content', () => {
     const { state } = createGlState();
+    installTestRaster2DSurfaceProvider(state);
     registerGlStandardMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
@@ -193,6 +193,7 @@ describe('drawGlTextLabel', () => {
 
   it('rasterizes packed run alpha into the canvas color', () => {
     const { state } = createGlState();
+    installTestRaster2DSurfaceProvider(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
@@ -207,6 +208,7 @@ describe('drawGlTextLabel', () => {
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
+    installTestRaster2DSurfaceProvider(state);
     registerGlStandardMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     flushGlQuadBatchWriter(state);
@@ -215,6 +217,7 @@ describe('drawGlTextLabel', () => {
 
   it('skips layout and rasterization on repeated calls when the content version is unchanged', () => {
     const { state } = createGlState();
+    installTestRaster2DSurfaceProvider(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
@@ -228,6 +231,7 @@ describe('drawGlTextLabel', () => {
 
   it('re-rasterizes when the content version is bumped', () => {
     const { state } = createGlState();
+    installTestRaster2DSurfaceProvider(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
@@ -240,6 +244,7 @@ describe('drawGlTextLabel', () => {
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
     const { state } = createGlState();
+    installTestRaster2DSurfaceProvider(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);

@@ -3,7 +3,6 @@ import * as flightNode from '@flighthq/node/contract';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { resetRaster2DSurfaceProviderForTest, setRaster2DSurfaceProvider } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -40,10 +39,14 @@ beforeEach(() => {
   );
 });
 
-beforeEach(() => {
-  setRaster2DSurfaceProvider({
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function createTestRaster2DSurfaceProvider() {
+  return {
     [EntityRuntimeKey]: undefined,
-    createRaster2DSurface(width, height) {
+    createRaster2DSurface(width: number, height: number) {
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
@@ -53,13 +56,13 @@ beforeEach(() => {
         get width() {
           return canvas.width;
         },
-        set width(value) {
+        set width(value: number) {
           canvas.width = value;
         },
         get height() {
           return canvas.height;
         },
-        set height(value) {
+        set height(value: number) {
           canvas.height = value;
         },
         context,
@@ -67,13 +70,8 @@ beforeEach(() => {
       };
     },
     destroyRaster2DSurface() {},
-  });
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-  resetRaster2DSurfaceProviderForTest();
-});
+  };
+}
 
 // Mirrors createWgpuShapeData: the rasterization surface is absent until a shape actually needs one,
 // so a scene drawn entirely through the mesh path carries no canvases.
@@ -142,6 +140,7 @@ describe('defaultWgpuShapeRenderer', () => {
 describe('drawWgpuShape', () => {
   it('draws a solid fill and open solid stroke as GPU meshes in one shape', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
@@ -166,6 +165,7 @@ describe('drawWgpuShape', () => {
 
   it('draws a closed solid stroke ring as one GPU mesh', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     enableWgpuStrokePathTessellation(state);
     renderWgpuBackground(state);
@@ -187,6 +187,7 @@ describe('drawWgpuShape', () => {
 
   it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
@@ -206,6 +207,7 @@ describe('drawWgpuShape', () => {
 
   it('falls back to the raster quad for a self-intersecting stroke centerline', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     enableWgpuStrokePathTessellation(state);
     renderWgpuBackground(state);
@@ -244,6 +246,7 @@ describe('drawWgpuShape', () => {
 
   it('returns early without writing to batch when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
@@ -254,6 +257,7 @@ describe('drawWgpuShape', () => {
 
   it('returns early without writing to batch when rendererData is null', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
@@ -264,12 +268,14 @@ describe('drawWgpuShape', () => {
 
   it('does not throw when renderPass is null', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     expect(() => drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, makeShapeData()))).not.toThrow();
   });
 
   it('writes one instance to the quad-batch writer when shape has valid commands and bounds', async () => {
     const state = await createWgpuRenderStateForTest();
+    state.raster2DSurfaceProvider = createTestRaster2DSurfaceProvider();
     registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);

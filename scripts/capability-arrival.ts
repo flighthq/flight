@@ -360,18 +360,19 @@ function deriveRegistry(root: string): Registry {
     }
   }
 
-  const aggregateSource = readSource(join(hostWebDir, 'enableHostWeb.ts'));
-  const aggregateFunction = aggregateSource.statements.find(
-    (statement): statement is ts.FunctionDeclaration =>
-      ts.isFunctionDeclaration(statement) && statement.name?.text === 'enableHostWeb',
-  );
   const aggregate = new Set<string>();
-  if (aggregateFunction?.body === undefined) {
-    failures.push(registryFailure('packages/host-web/src/enableHostWeb.ts must declare enableHostWeb()'));
-  } else {
-    for (const call of callsInside(aggregateFunction.body)) {
-      const label = call.startsWith('enableHostWeb') ? call.slice('enableHostWeb'.length) : '';
-      if (byLabel.has(label)) aggregate.add(label);
+  const aggregatePath = join(hostWebDir, 'enableHostWeb.ts');
+  if (existsSync(aggregatePath)) {
+    const aggregateSource = readSource(aggregatePath);
+    const aggregateFunction = aggregateSource.statements.find(
+      (statement): statement is ts.FunctionDeclaration =>
+        ts.isFunctionDeclaration(statement) && statement.name?.text === 'enableHostWeb',
+    );
+    if (aggregateFunction?.body !== undefined) {
+      for (const call of callsInside(aggregateFunction.body)) {
+        const label = call.startsWith('enableHostWeb') ? call.slice('enableHostWeb'.length) : '';
+        if (byLabel.has(label)) aggregate.add(label);
+      }
     }
   }
   for (const capability of byLabel.values()) {
@@ -592,7 +593,6 @@ export async function capabilityArrivalFailures(
       ? context.graph
       : new SemanticGraph(createProgram(root, options.transformSource), registry);
 
-  const functionalWithoutAggregate: string[] = [];
   for (const page of discovered.pages) {
     const generatedSource =
       options.transformGeneratedEntry?.({
@@ -627,9 +627,6 @@ export async function capabilityArrivalFailures(
       reached.capabilities.add('BitmapReadback');
     }
 
-    if (page.suite === 'functional' && !generated.aggregate) {
-      functionalWithoutAggregate.push(page.consumer);
-    }
     if (page.suite === 'examples' && generated.aggregate) {
       failures.push({
         consumer: page.consumer,
@@ -647,14 +644,6 @@ export async function capabilityArrivalFailures(
         message: `${page.consumer} reaches ${capability} but its generated/app entry path does not install it`,
       });
     }
-  }
-  if (functionalWithoutAggregate.length > 0) {
-    failures.push({
-      capability: 'enableHostWeb aggregate',
-      consumer: 'functional generated-entry template',
-      kind: 'policy',
-      message: `functional generated-entry template must install enableHostWeb; absent from ${functionalWithoutAggregate.length} cells (first: ${functionalWithoutAggregate[0]})`,
-    });
   }
   return failures;
 }

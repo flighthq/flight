@@ -1,6 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createImageResource } from '@flighthq/image/contract';
-import { installRaster2DSurfaceHostProvider } from '@flighthq/render/contract';
 import type { Entity, Raster2DSurfaceProvider } from '@flighthq/types/contract';
 
 export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
@@ -35,14 +34,4 @@ export function createWebRaster2DSurfaceProvider(): Raster2DSurfaceProvider {
   });
 }
 
-export function enableHostWebRaster2DSurface(): void {
-  if (_enabled) return;
-  _enabled = true;
-  installRaster2DSurfaceHostProvider(createWebRaster2DSurfaceProvider());
-}
-
-export function resetHostWebRaster2DSurfaceForTest(): void {
-  _enabled = false;
-}
-
-let _enabled = false;
+export const webRaster2DSurfaceProvider: Raster2DSurfaceProvider = createWebRaster2DSurfaceProvider();
