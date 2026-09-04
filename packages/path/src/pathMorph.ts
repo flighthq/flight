@@ -12,7 +12,10 @@ import { buildPathMorph } from './pathMorphGeometry';
 // preserves the fill; returns null when a non-zero path reverses only a subset of its contours.
 export function createPathMorph(start: Readonly<Path>, end: Readonly<Path>): PathMorph | null {
   const morph = buildPathMorph(start, end).morph;
-  return morph !== null ? createEntity(morph) : null;
+  if (morph === null) return null;
+  const out = allocateEntity<PathMorph>();
+  Object.assign(out, morph);
+  return finishEntity(out);
 }
 
 // Samples a prepared morph into `out`. Reuses the existing command and coordinate arrays, making

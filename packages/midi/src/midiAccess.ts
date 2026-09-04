@@ -18,7 +18,7 @@ import { disposeMidiAccessStateSubscription } from './midiSubscription';
 // Provider-contract constructor. Native MIDIAccess identity stays in provider-local state; this empty
 // public Entity is the only handle consumers retain.
 export function createMidiAccessResource(operations: MidiAccessResourceOperations): MidiAccess {
-  const access = createEntity({});
+  const access = finishEntity(allocateEntity<MidiAccess>());
   retainMidiAccessResourceState(access, operations);
   return access;
 }

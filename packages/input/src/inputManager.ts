@@ -279,21 +279,36 @@ export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOption
     }, options.delay) as unknown as number;
   };
 
-    const out = allocateEntity<number>();
+  const out = allocateEntity<InputKeyRepeatTimer>();
   out.start = start;
   out.stop = stop;
   return finishEntity(out);
 }
 
 export function createInputManager(): InputManager {
-  return createEntity({
-    ...createInputSignals(),
-    enabled: true,
-  });
+  const signals = createInputSignals();
+  const out = allocateEntity<InputManager>();
+  out.enabled = true;
+  out.onGamepadAxisMove = signals.onGamepadAxisMove;
+  out.onGamepadButtonDown = signals.onGamepadButtonDown;
+  out.onGamepadButtonUp = signals.onGamepadButtonUp;
+  out.onGamepadConnect = signals.onGamepadConnect;
+  out.onGamepadDisconnect = signals.onGamepadDisconnect;
+  out.onKeyDown = signals.onKeyDown;
+  out.onKeyUp = signals.onKeyUp;
+  out.onPointerCancel = signals.onPointerCancel;
+  out.onPointerDown = signals.onPointerDown;
+  out.onPointerMove = signals.onPointerMove;
+  out.onPointerMoveRelative = signals.onPointerMoveRelative;
+  out.onPointerUp = signals.onPointerUp;
+  out.onTextEdit = signals.onTextEdit;
+  out.onTextInput = signals.onTextInput;
+  out.onWheel = signals.onWheel;
+  return finishEntity(out);
 }
 
 export function createInputSignals(): InputSignals {
-    const out = allocateEntity<number>();
+  const out = allocateEntity<InputSignals>();
   out.onGamepadAxisMove = createSignal();
   out.onGamepadButtonDown = createSignal();
   out.onGamepadButtonUp = createSignal();
@@ -319,7 +334,7 @@ export function createInputSignals(): InputSignals {
  * logical frame to roll the edge sets.
  */
 export function createInputState(): InputState {
-    const out = allocateEntity<number>();
+  const out = allocateEntity<InputState>();
   out.axisValues = new Map();
   out.gamepadButtonsDown = new Set();
   out.justPressedGamepadButtons = new Set();
@@ -333,7 +348,7 @@ export function createInputState(): InputState {
 
 /** Explicit browser adapter for the process-wide input-ingress seam. */
 export function createWebInputIngressBackend(): InputIngressBackend & Entity {
-    const out = allocateEntity<number>();
+  const out = allocateEntity<InputIngressBackend & Entity>();
   out.attachGamepad = (source, sink): () => void => {
       const target = getWebInputEventTarget(source);
       if (target === null) return noopInputIngressRelease;

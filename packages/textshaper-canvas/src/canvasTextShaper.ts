@@ -128,7 +128,9 @@ export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
     },
   } satisfies EntityWithoutRuntime<CanvasTextShaperBackend>;
 
-  return createEntity(backend);
+  const out = allocateEntity<CanvasTextShaperBackend>();
+  Object.assign(out, backend);
+  return finishEntity(out);
 }
 
 // ---------------------------------------------------------------------------
@@ -181,5 +183,7 @@ function _createSentinelBackend(): CanvasTextShaperBackend {
       return -1;
     },
   } satisfies EntityWithoutRuntime<CanvasTextShaperBackend>;
-  return createEntity(backend);
+  const out = allocateEntity<CanvasTextShaperBackend>();
+  Object.assign(out, backend);
+  return finishEntity(out);
 }

@@ -60,14 +60,14 @@ export function createMorphShapeData(
   for (let i = 0; i < pathBindings.length; i++) {
     samplePathMorph(pathBindings[i].path, pathBindings[i].morph, progress);
   }
-  const out: MorphShapeData = createEntity({
-    commands: data?.commands ?? [],
-    morph,
-    paintBindings: [...(data?.paintBindings ?? [])],
-    path,
-    pathBindings,
-    progress,
-  });
+  const out = allocateEntity<MorphShapeData>();
+  out.commands = data?.commands ?? [];
+  out.morph = morph;
+  out.paintBindings = [...(data?.paintBindings ?? [])];
+  out.path = path;
+  out.pathBindings = pathBindings;
+  out.progress = progress;
+  finishEntity(out);
   sampleMorphShapePaintBindings(out, progress);
   return out;
 }

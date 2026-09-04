@@ -44,7 +44,10 @@ export async function createWgpuAcquisitionFromCanvasElement(
 ): Promise<WgpuHostAcquisition | null> {
   try {
     const acquired = await getWgpuHostBackend().acquire(canvas, options);
-    return createEntity({ ...acquired, ownership: 'caller' as const });
+    const out = allocateEntity<WgpuHostAcquisition>();
+    Object.assign(out, acquired);
+    out.ownership = 'caller';
+    return finishEntity(out);
   } catch {
     return null;
   }
@@ -54,7 +57,7 @@ export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
   const deviceRuntime = createMinimalDeviceRuntime(device);
   const state = allocateEntity<WgpuDeviceState>();
   state.device = device;
-  return state;
+  return finishEntity(state);
 }
 
 /**
@@ -80,7 +83,13 @@ export function createWgpuOffscreenRenderState(
   const source = sourceOrDeviceState as WgpuRenderState;
   const sourceRuntime = getWgpuRenderStateRuntime(source);
   const lost = sourceRuntime.context.lost;
-  if (lost !== null) return (() => { const out = allocateEntity<WgpuDeviceState>(); out.reason = 'device-lost'; out.info = lost; return finishEntity(out); })();
+  if (lost !== null)
+    return (() => {
+      const out = allocateEntity<Extract<WgpuOffscreenRenderStateResult, { reason: 'device-lost' }>>();
+      out.reason = 'device-lost';
+      out.info = lost;
+      return finishEntity(out);
+    })();
 
   const derivedPipeline = createWgpuPipeline(sourceRuntime.registries);
   const state = initializeWgpuDeviceRenderState(source.deviceState, derivedPipeline, {
@@ -98,7 +107,7 @@ export function createWgpuOffscreenRenderState(
   runtime.mipmapGenerator = sourceRuntime.mipmapGenerator;
   runtime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   runtime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
-    const out = allocateEntity<WgpuDeviceState>();
+  const out = allocateEntity<Extract<WgpuOffscreenRenderStateResult, { reason: 'ok' }>>();
   out.reason = 'ok';
   out.state = state;
   return finishEntity(out);

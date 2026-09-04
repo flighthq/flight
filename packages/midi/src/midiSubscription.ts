@@ -128,7 +128,9 @@ interface MidiSubscriptionRuntime {
 const subscriptionStates = new WeakMap<Entity, MidiSubscriptionRuntime>();
 
 function createMidiSubscription<Subscription extends Entity>(fields: Omit<Subscription, keyof Entity>): Subscription {
-  const subscription = createEntity(fields) as Subscription;
+  const subscription = allocateEntity<Subscription>();
+  Object.assign(subscription, fields);
+  finishEntity(subscription);
   subscriptionStates.set(subscription, {
     attachment: null,
     attaching: null,

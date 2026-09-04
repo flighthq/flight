@@ -14,11 +14,11 @@ export function cloneSpritesheet(spritesheet: Readonly<Spritesheet>): Spriteshee
       rotated: f.rotated,
     }),
   );
-  return createEntity({
-    atlas: spritesheet.atlas,
-    animations: { ...spritesheet.animations },
-    frames,
-  });
+  const out = allocateEntity<Spritesheet>();
+  out.atlas = spritesheet.atlas;
+  out.animations = { ...spritesheet.animations };
+  out.frames = frames;
+  return finishEntity(out);
 }
 
 export function createSpritesheet(obj?: Partial<Spritesheet>): Spritesheet {
