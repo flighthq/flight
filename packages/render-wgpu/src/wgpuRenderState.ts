@@ -54,7 +54,7 @@ export async function createWgpuAcquisitionFromCanvasElement(
 }
 
 export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
-  const _deviceRuntime = createMinimalDeviceRuntime(device);
+  createMinimalDeviceRuntime(device);
   const state = allocateEntity<WgpuDeviceState>();
   initializeWgpuDeviceState(state, device);
   return finishEntity(state);
