@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { ModifierKind } from './ModifierKind';
 import type { ModifierSlot } from './ModifierSlot';
 
@@ -15,7 +16,7 @@ import type { ModifierSlot } from './ModifierSlot';
 // Modifier is an open base contract: a new modifier is added by defining its interface (extending
 // Modifier with a literal `kind` and `slot`) and registering a per-backend compiler — no central
 // union to edit here.
-export interface Modifier {
+export interface Modifier extends Entity {
   kind: ModifierKind;
   slot: ModifierSlot;
 }

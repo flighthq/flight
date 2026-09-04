@@ -22,7 +22,7 @@ export interface Spring extends Entity {
 // approach with no overshoot), and greater than 1 is overdamped (slow, sluggish, no overshoot).
 // Both are independent of the value's mass; `createSpringConfigFromPhysical` converts a physical
 // stiffness/damping/mass triple into this form.
-export interface SpringConfig {
+export interface SpringConfig extends Entity {
   dampingRatio: number;
   frequency: number;
 }

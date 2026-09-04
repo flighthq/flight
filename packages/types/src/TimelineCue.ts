@@ -48,7 +48,7 @@ export type TimelineFrameEntryCause = (typeof TimelineFrameEntryCause)[keyof typ
 
 // The base every cue shares. `kind` is an open plain string, not a closed union: it is the registry key,
 // the serialized form, and the user-facing vocabulary at once.
-export interface TimelineCue {
+export interface TimelineCue extends Entity {
   // 1-based, matching Timeline.currentFrame and TimelineLabel.
   frame: number;
   kind: string;
