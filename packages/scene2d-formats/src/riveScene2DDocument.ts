@@ -6,6 +6,7 @@ import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   DisplayObject,
+  EntityConstruction,
   ImageResourceReference,
   ImportDiagnostic,
   Node2D,
@@ -120,11 +121,27 @@ export function createScene2DDocumentFromRiveDocument(
   for (const artboard of imported.artboards) addNodeChild(root, artboard.root);
 
   const out = allocateEntity<RiveScene2DDocumentResult>();
-  out.imageResources = createRiveImageResources(imported, diagnostics);
+  initializeRiveScene2DDocumentResult(
+    out,
+    root,
+    imported,
+    createRiveImageResources(imported, diagnostics),
+    createRiveSlots(imported.artboards),
+  );
+  return finishEntity(out);
+}
+
+export function initializeRiveScene2DDocumentResult(
+  out: EntityConstruction<RiveScene2DDocumentResult>,
+  root: DisplayObject,
+  imported: RiveDocumentImportResult,
+  imageResources: ImageResourceReference[],
+  slots: Scene2DSlotReference[],
+): void {
+  out.imageResources = imageResources;
   out.imported = imported;
   out.root = root;
-  out.slots = createRiveSlots(imported.artboards);
-  return finishEntity(out);
+  out.slots = slots;
 }
 
 /**

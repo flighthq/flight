@@ -18,6 +18,7 @@ import type {
   FlightDocumentScene2D,
   FlightDocumentScene2DMaterialization,
   FlightDocumentSchemaRegistry,
+  EntityConstruction,
   Entity,
   Node2D,
   Node2DRuntime,
@@ -57,11 +58,7 @@ export function createFlightDocumentFromScene2D(
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
   const out = allocateEntity<FlightDocumentScene2D & Entity>();
-  out.backgroundColor = source.color;
-  out.kind = 'Scene2D';
-  out.layouts = writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes);
-  out.scene = scene;
-  out.tokens = [];
+  initializeFlightDocumentFromScene2D(out, source, scene, layoutBindings, writtenNodes);
   return finishEntity(out);
 }
 
@@ -121,9 +118,7 @@ export function createFlightDocumentScene2DMaterialization(
   );
   if (layoutBindings === null) return null;
   const out = allocateEntity<FlightDocumentScene2DMaterialization>();
-  out.interactiveStateBindings = interactiveStateBindings;
-  out.layoutBindings = layoutBindings;
-  out.scene = scene;
+  initializeFlightDocumentScene2DMaterialization(out, interactiveStateBindings, layoutBindings, scene);
   return finishEntity(out);
 }
 
@@ -176,6 +171,31 @@ export function explainFlightDocumentRefusalFromText(
   const document = parseFlightDocumentText(text);
   if (document === null) return explainFlightDocumentText(text);
   return explainFlightDocumentRefusal(document, dimension, schemas, sceneIndex);
+}
+
+export function initializeFlightDocumentFromScene2D(
+  out: EntityConstruction<FlightDocumentScene2D & Entity>,
+  source: Readonly<Scene2D>,
+  scene: FlightDocumentNode,
+  layoutBindings: readonly Readonly<FlightDocumentLayoutBinding<Node2D>>[],
+  writtenNodes: ReadonlyMap<Readonly<NodeAny>, FlightDocumentNode>,
+): void {
+  out.backgroundColor = source.color;
+  out.kind = 'Scene2D';
+  out.layouts = writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes);
+  out.scene = scene;
+  out.tokens = [];
+}
+
+export function initializeFlightDocumentScene2DMaterialization(
+  out: EntityConstruction<FlightDocumentScene2DMaterialization>,
+  interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node2D>[],
+  layoutBindings: FlightDocumentLayoutBinding<Node2D>[],
+  scene: Scene2D,
+): void {
+  out.interactiveStateBindings = interactiveStateBindings;
+  out.layoutBindings = layoutBindings;
+  out.scene = scene;
 }
 
 function materializeChildren(

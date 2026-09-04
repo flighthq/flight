@@ -4,6 +4,7 @@ import { detectFontFormat } from '@flighthq/font/contract';
 import type {
   CffTable,
   Entity,
+  EntityConstruction,
   GlyphOutlineMetrics,
   GlyphOutlineSource,
   ImportDiagnostic,
@@ -68,33 +69,8 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
   const parsed = readOpenTypeFontTables(source, diagnostics);
   if (parsed === null) return null;
 
-  const { advances, bytes, cff, codepoints, directory, glyphCount, metrics, ranges } = parsed;
-
-  // A bound method object rather than a plain record, because the source owns tables the methods close
-  // over. The scratch-free contract is the caller's: `getGlyphOutline` writes into their `out`.
   const out = allocateEntity<GlyphOutlineSource & Entity>();
-  out.getGlyphOutline = (out: Path, glyphIndex: number): boolean => {
-    if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
-    if (cff !== null) {
-      const charstring = cff.charstrings[glyphIndex];
-      if (charstring === undefined) return false;
-      // A CID font selects the pool per glyph; every other font shares one. Reading the wrong pool
-      // draws plausible geometry rather than failing, so the choice is made here from the table's own
-      // structure rather than defaulted anywhere.
-      const localSubrs = cff.localSubrsByGlyph?.[glyphIndex] ?? cff.localSubrs;
-      return runCffCharstring(out, bytes, charstring, localSubrs, cff.globalSubrs);
-    }
-    return ranges === null ? false : readOpenTypeGlyphOutline(out, bytes, directory, ranges, glyphIndex);
-  };
-  out.getGlyphOutlineAdvance = (glyphIndex: number): number => {
-    return glyphIndex < 0 || glyphIndex >= glyphCount ? 0 : advances[glyphIndex]!;
-  };
-  out.getGlyphOutlineIndexForCodePoint = (codePoint: number): number => {
-    return codepoints.get(codePoint) ?? -1;
-  };
-  out.getGlyphOutlineMetrics = () => {
-    return metrics;
-  };
+  initializeGlyphOutlineSourceFromOpenTypeFont(out, parsed);
   return finishEntity(out);
 }
 
@@ -157,6 +133,32 @@ export function explainOpenTypeFont(bytes: Readonly<Uint8Array>): OpenTypeFontEx
   const parsed = readOpenTypeFontTables(bytes);
   if (parsed === null) return { ...counted, accepted: false, reason: 'malformed-table', table: '' };
   return { ...counted, accepted: true, reason: 'ok', table: '' };
+}
+
+export function initializeGlyphOutlineSourceFromOpenTypeFont(
+  out: EntityConstruction<GlyphOutlineSource & Entity>,
+  tables: Readonly<OpenTypeFontTables>,
+): void {
+  const { advances, bytes, cff, codepoints, directory, glyphCount, metrics, ranges } = tables;
+  out.getGlyphOutline = (target: Path, glyphIndex: number): boolean => {
+    if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
+    if (cff !== null) {
+      const charstring = cff.charstrings[glyphIndex];
+      if (charstring === undefined) return false;
+      const localSubrs = cff.localSubrsByGlyph?.[glyphIndex] ?? cff.localSubrs;
+      return runCffCharstring(target, bytes, charstring, localSubrs, cff.globalSubrs);
+    }
+    return ranges === null ? false : readOpenTypeGlyphOutline(target, bytes, directory, ranges, glyphIndex);
+  };
+  out.getGlyphOutlineAdvance = (glyphIndex: number): number => {
+    return glyphIndex < 0 || glyphIndex >= glyphCount ? 0 : advances[glyphIndex]!;
+  };
+  out.getGlyphOutlineIndexForCodePoint = (codePoint: number): number => {
+    return codepoints.get(codePoint) ?? -1;
+  };
+  out.getGlyphOutlineMetrics = () => {
+    return metrics;
+  };
 }
 
 interface OpenTypeFontTables {

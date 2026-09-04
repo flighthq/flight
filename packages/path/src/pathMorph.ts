@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Path, PathMorph } from '@flighthq/types/contract';
+import type { EntityConstruction, Path, PathMorph } from '@flighthq/types/contract';
 
 export type { PathMorph } from '@flighthq/types/contract';
 
@@ -14,8 +14,15 @@ export function createPathMorph(start: Readonly<Path>, end: Readonly<Path>): Pat
   const morph = buildPathMorph(start, end).morph;
   if (morph === null) return null;
   const out = allocateEntity<PathMorph>();
-  Object.assign(out, morph);
+  initializePathMorph(out, morph);
   return finishEntity(out);
+}
+
+export function initializePathMorph(out: EntityConstruction<PathMorph>, morph: Readonly<PathMorph>): void {
+  out.commands = morph.commands;
+  out.endData = morph.endData;
+  out.startData = morph.startData;
+  out.winding = morph.winding;
 }
 
 // Samples a prepared morph into `out`. Reuses the existing command and coordinate arrays, making

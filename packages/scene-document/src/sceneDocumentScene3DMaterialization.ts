@@ -34,6 +34,7 @@ import type {
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
   Scene3DLights,
+  EntityConstruction,
 } from '@flighthq/types/contract';
 import {
   AmbientLightKind,
@@ -76,13 +77,7 @@ export function createFlightDocumentFromScene3D(
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
   const out = allocateEntity<FlightDocumentScene3D & Entity>();
-  out.cameras = cameras.map((c) => ({ ...c }));
-  out.kind = 'Scene3D';
-  out.layouts = writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes);
-  out.lights = lights.map((l) => ({ ...l }));
-  out.scene = scene;
-  // Same as the 2D writer: substitution is one-way, so a written entry declares no tokens.
-  out.tokens = [];
+  initializeFlightDocumentFromScene3D(out, source, cameras, lights, scene, layoutBindings, writtenNodes);
   return finishEntity(out);
 }
 
@@ -146,11 +141,7 @@ export function createFlightDocumentScene3DMaterialization(
   const cameras = materializeCameras(documentScene.cameras, materializedNodes);
   const lights = materializeLights(documentScene.lights, materializedNodes);
   const out = allocateEntity<FlightDocumentScene3DMaterialization>();
-  out.cameras = cameras;
-  out.interactiveStateBindings = interactiveStateBindings;
-  out.layoutBindings = layoutBindings;
-  out.lights = lights;
-  out.scene = scene;
+  initializeFlightDocumentScene3DMaterialization(out, cameras, interactiveStateBindings, layoutBindings, lights, scene);
   return finishEntity(out);
 }
 
@@ -204,6 +195,38 @@ export function explainFlightDocumentScene3DRefusalFromText(
   const document = parseFlightDocumentText(text);
   if (document === null) return explainFlightDocumentText(text);
   return explainFlightDocumentScene3DRefusal(document, schemas, sceneIndex);
+}
+
+export function initializeFlightDocumentFromScene3D(
+  out: EntityConstruction<FlightDocumentScene3D & Entity>,
+  source: Readonly<Scene3D>,
+  cameras: readonly Readonly<Scene3DDocumentCamera>[],
+  lights: readonly Readonly<Scene3DDocumentLight>[],
+  scene: FlightDocumentNode,
+  layoutBindings: readonly Readonly<FlightDocumentLayoutBinding<Node3D>>[],
+  writtenNodes: ReadonlyMap<Readonly<NodeAny>, FlightDocumentNode>,
+): void {
+  out.cameras = cameras.map((c) => ({ ...c }));
+  out.kind = 'Scene3D';
+  out.layouts = writeFlightDocumentLayoutBindings(layoutBindings, source.root, writtenNodes);
+  out.lights = lights.map((l) => ({ ...l }));
+  out.scene = scene;
+  out.tokens = [];
+}
+
+export function initializeFlightDocumentScene3DMaterialization(
+  out: EntityConstruction<FlightDocumentScene3DMaterialization>,
+  cameras: Camera3D[],
+  interactiveStateBindings: FlightDocumentInteractiveStateBinding<Node3D>[],
+  layoutBindings: FlightDocumentLayoutBinding<Node3D>[],
+  lights: Scene3DLights,
+  scene: Scene3D,
+): void {
+  out.cameras = cameras;
+  out.interactiveStateBindings = interactiveStateBindings;
+  out.layoutBindings = layoutBindings;
+  out.lights = lights;
+  out.scene = scene;
 }
 
 function checkDuplicateLights(

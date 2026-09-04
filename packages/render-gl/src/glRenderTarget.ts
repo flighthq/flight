@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
+  EntityConstruction,
   GlContext,
   GlRenderState,
   GlRenderTarget,
@@ -83,24 +84,7 @@ export function createGlRenderTarget(
 
   const texture = allocateGlRenderTargetStorage(state, storage);
   const target = allocateEntity<GlRenderTarget>();
-  target.requestedAxes = copyRenderTargetAxes(requested);
-  target.width = storage.width;
-  target.height = storage.height;
-  target.format = storage.format;
-  target.colorAttachments = storage.colorAttachments;
-  target.colorFormats = [...storage.colorFormats];
-  target.depth = storage.depth;
-  target.colorSpace = storage.colorSpace;
-  target.clearColors = [...requested.clearColors];
-  target.clearDepth = requested.clearDepth;
-  target.sampleCount = storage.sampleCount;
-  target.framebuffer = storage.framebuffer;
-  target.resolveFramebuffer = storage.resolveFramebuffer;
-  target.textures = storage.textures;
-  target.texture = texture;
-  target.depthTexture = storage.depthTexture;
-  target.colorRenderbuffers = storage.colorRenderbuffers;
-  target.depthStencilRenderbuffer = storage.depthStencilRenderbuffer;
+  initializeGlRenderTarget(target, requested, storage, texture);
   finishEntity(target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
@@ -182,6 +166,32 @@ export function explainGlRenderTarget(target: Readonly<GlRenderTarget>): RenderT
     effective,
     requested,
   };
+}
+
+export function initializeGlRenderTarget(
+  target: EntityConstruction<GlRenderTarget>,
+  requested: Readonly<ResolvedRenderTargetDescriptor>,
+  storage: Readonly<GlRenderTargetStorage>,
+  texture: WebGLTexture,
+): void {
+  target.requestedAxes = copyRenderTargetAxes(requested);
+  target.width = storage.width;
+  target.height = storage.height;
+  target.format = storage.format;
+  target.colorAttachments = storage.colorAttachments;
+  target.colorFormats = [...storage.colorFormats];
+  target.depth = storage.depth;
+  target.colorSpace = storage.colorSpace;
+  target.clearColors = [...requested.clearColors];
+  target.clearDepth = requested.clearDepth;
+  target.sampleCount = storage.sampleCount;
+  target.framebuffer = storage.framebuffer;
+  target.resolveFramebuffer = storage.resolveFramebuffer;
+  target.textures = storage.textures;
+  target.texture = texture;
+  target.depthTexture = storage.depthTexture;
+  target.colorRenderbuffers = storage.colorRenderbuffers;
+  target.depthStencilRenderbuffer = storage.depthStencilRenderbuffer;
 }
 
 export function isGlRenderTargetFormatSupported(state: GlRenderState, format: RenderTargetFormat): boolean {

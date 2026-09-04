@@ -1,10 +1,19 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
+import type { EntityConstruction, WgpuHostAcquisition, WgpuHostBackend } from '@flighthq/types/contract';
 
 // The explicit browser adapter. All WebGPU discovery and host-handle acquisition stays in this
 // function's call graph so render-state creation can also consume native caller-provided handles.
 export function createWebWgpuHostBackend(): WgpuHostBackend {
   const out = allocateEntity<WgpuHostBackend>();
+  initializeWebWgpuHostBackend(out);
+  return finishEntity(out);
+}
+
+export function getWgpuHostBackend(): WgpuHostBackend {
+  return _custom ?? _host ?? _web;
+}
+
+export function initializeWebWgpuHostBackend(out: EntityConstruction<WgpuHostBackend>): void {
   out.acquire = async (canvas, options): Promise<WgpuHostAcquisition> => {
     const gpu = getWebWgpu();
     if (gpu === null) throw new Error('WebGPU is not supported in this browser.');
@@ -32,13 +41,13 @@ export function createWebWgpuHostBackend(): WgpuHostBackend {
       const format = options.format ?? gpu.getPreferredCanvasFormat();
       const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
       if (context === null) throw new Error('Failed to get WebGPU canvas context.');
-      const out = allocateEntity<WgpuHostAcquisition>();
-      out.context = context;
-      out.device = device;
-      out.format = format;
-      out.ownership = 'flight';
-      out.surface = canvas;
-      return finishEntity(out);
+      const acquisition = allocateEntity<WgpuHostAcquisition>();
+      acquisition.context = context;
+      acquisition.device = device;
+      acquisition.format = format;
+      acquisition.ownership = 'flight';
+      acquisition.surface = canvas;
+      return finishEntity(acquisition);
     } catch (error) {
       device.destroy();
       throw error;
@@ -51,11 +60,6 @@ export function createWebWgpuHostBackend(): WgpuHostBackend {
     acquisition.context.unconfigure();
     acquisition.device.destroy();
   };
-  return finishEntity(out);
-}
-
-export function getWgpuHostBackend(): WgpuHostBackend {
-  return _custom ?? _host ?? _web;
 }
 
 // First host wins and a custom backend installed through setWgpuHostBackend always takes precedence.
