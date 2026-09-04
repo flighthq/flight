@@ -388,7 +388,7 @@ export function getInteractionSignals<N extends NodeAny>(source: N): Interaction
   return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionSignals;
 }
 
-export function initializeInteractionManager(
+export function initializeInteractionManager<N extends NodeAny>(
   out: EntityConstruction<InteractionManager<N>>,
   root: N,
   options: Readonly<InteractionManagerOptions> = {},

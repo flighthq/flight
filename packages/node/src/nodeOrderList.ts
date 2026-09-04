@@ -171,7 +171,9 @@ export function hasNodeOrderListEntry<Traits extends object = NodeTraits>(
   return findNodeOrderListEntryIndex(list, node) !== -1;
 }
 
-export function initializeNodeOrderList(out: EntityConstruction<NodeOrderList<Traits>>): void {
+export function initializeNodeOrderList<Traits extends object = NodeTraits>(
+  out: EntityConstruction<NodeOrderList<Traits>>,
+): void {
   out.entryCount = 0;
   out.nodes = [];
   out.sortKeys = [];

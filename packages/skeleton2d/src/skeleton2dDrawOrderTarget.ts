@@ -74,7 +74,7 @@ export function createSkeleton2DDrawOrderChannel<Traits extends object = NodeTra
  * is the caller's own list — ordering is never node state — and the binder fills it rather than applying
  * it, leaving `applyNodeOrderList` an explicit step the caller takes once per frame.
  */
-export function initializeSkeleton2DDrawOrderAnimationTarget(
+export function initializeSkeleton2DDrawOrderAnimationTarget<Traits extends object = NodeTraits>(
   out: EntityConstruction<Skeleton2DDrawOrderAnimationTarget<Traits>>,
   nodes: readonly (Node<Traits> | null)[],
   orderList: NodeOrderList<Traits>,
