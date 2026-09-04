@@ -17,3 +17,6 @@ export * from './stageFit';
 export * from './nodeTransform3d';
 export * from './traversal';
 export * from './viewport';
+export { initializeNodeSignals } from './node';
+export { initializeViewport } from './viewport';
+export { initializeNodeOrderList } from './nodeOrderList';

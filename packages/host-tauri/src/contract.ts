@@ -9,3 +9,12 @@ export * from './tauriShell';
 export * from './tauriShortcut';
 export * from './tauriTray';
 export * from './tauriWindow';
+export {
+  initializeTauriDirectoryOpenDialogBackend,
+  initializeTauriFileOpenDialogBackend,
+  initializeTauriFileSaveDialogBackend,
+  initializeTauriMessageDialogBackend,
+} from './tauriDialog';
+export { initializeTauriWindowBackend } from './tauriWindow';
+export { initializeTauriPlatformBackend } from './tauriPlatform';
+export { initializeTauriNotificationCapabilities } from './tauriNotification';

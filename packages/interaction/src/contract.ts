@@ -13,3 +13,6 @@ export * from './registerTextHitTest';
 export * from './registerDefaultHitTests';
 export * from './spatialQuery';
 export * from './spriteHitTests';
+export { initializeFocusManager } from './focusManager';
+export { initializeNodeInteractionState } from './nodeInteractionState';
+export { initializeInteractionManager, initializeInteractionSignals } from './interactionManager';

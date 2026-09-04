@@ -28,3 +28,8 @@ export * from './glSkinPaletteTexture';
 export * from './glTextureUpload';
 export * from './glTextureResolver';
 export * from './glTextureVideoUpload';
+export { initializeEmptyGlRegistries } from './glPipeline';
+export { initializeDefaultGlBitmapShader, initializeGlBitmapShader } from './glShader';
+export { initializeGlRenderTargetPool } from './glRenderTargetPool';
+export { initializeGlRenderTexturePool } from './glRenderTexturePool';
+export { initializeGlSkinPaletteTexture } from './glSkinPaletteTexture';

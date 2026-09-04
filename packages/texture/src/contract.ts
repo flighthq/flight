@@ -9,3 +9,4 @@ export {
   shouldDecodeTextureOnSample,
   shouldPremultiplyTextureOnUpload,
 } from './textureColorSpace';
+export { initializeSampler } from './sampler';

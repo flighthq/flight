@@ -5,3 +5,4 @@ export * from './tweenManager';
 export * from './tweenProgress';
 export * from './tweenStagger';
 export * from './updateTweens';
+export { initializeTweenManager } from './tweenManager';

@@ -24,3 +24,6 @@ export * from './wrappedDiffusePbrScene3DMaterialTextures';
 export * from './enableScene3DResourceFailureGuards';
 export * from './anisotropyPbrScene3DMaterialTextures';
 export * from './clearcoatPbrScene3DMaterialTextures';
+export { initializeScene3DResourceResolver } from './sceneResourceResolver';
+export { initializeScene3DResourceSignals } from './sceneResourceSignals';
+export { initializeScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry';

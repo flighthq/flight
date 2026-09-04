@@ -40,3 +40,5 @@ export * from './bitmapTone';
 export * from './bitmapTransform';
 export * from './bitmapWarp';
 export * from './explainBitmapReadback';
+export { initializeBitmapFromCanvas } from './bitmapFrom';
+export { initializeBitmap } from './bitmap';

@@ -20,3 +20,9 @@ export * from './slotDeform2D';
 export * from './deformAnimationTarget2D';
 export * from './skeleton2dDrawOrderTarget';
 export * from './skin2D';
+export { initializeSkin2D } from './skin2D';
+export {
+  initializeSkeleton2DBoneAnimationTarget,
+  initializeSkeleton2DSlotAnimationTarget,
+} from './skeleton2dAnimationTarget';
+export { initializeSkeleton2DDrawOrderAnimationTarget } from './skeleton2dDrawOrderTarget';

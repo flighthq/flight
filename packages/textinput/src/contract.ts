@@ -7,6 +7,7 @@ export {
   dispatchSelectableRichTextWheel,
   focusSelectableRichText,
   getSelectableRichTextSelectionText,
+  initializeSelectableRichTextManager,
 } from './selectableRichTextManager';
 export { disableTextInput, enableTextInput, getTextInputState, hasTextInput } from './textInput';
 export {
@@ -55,4 +56,5 @@ export {
   dispatchTextInputPointerMove,
   dispatchTextInputWheel,
   focusTextInput,
+  initializeTextInputManager,
 } from './textInputManager';

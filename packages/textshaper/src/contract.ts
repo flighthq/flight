@@ -6,3 +6,5 @@ export * from './textShaperItemize';
 export * from './textShaperPool';
 export * from './textShaperRun';
 export * from './textShaperSignals';
+export { initializeShapedRun } from './textShaperRun';
+export { initializeTextShaperCache } from './textShaperCache';

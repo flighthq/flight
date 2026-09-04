@@ -56,3 +56,4 @@ export * from './glToneMapEffect';
 export * from './glVignetteEffect';
 export * from './glWhiteBalanceEffect';
 export * from './glColorLutPass';
+export { initializeGlRenderEffectPipeline } from './glRenderEffectPipeline';

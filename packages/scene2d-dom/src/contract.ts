@@ -26,3 +26,6 @@ export * from './enableDomTextureResolverGuards';
 export * from './explainDomTextureResolution';
 export * from './domHtmlView';
 export * from './domShapeRasterizer';
+export { initializeDomScale9SpriteData } from './domScale9Sprite';
+export { initializeDomScale9ShapeData } from './domScale9Shape';
+export { initializeDomScene2DRectangle } from './domClipRectangle';

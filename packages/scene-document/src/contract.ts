@@ -14,3 +14,4 @@ export {
   explainFlightDocumentScene3DRefusal,
   explainFlightDocumentScene3DRefusalFromText,
 } from './sceneDocumentScene3DMaterialization';
+export { initializeDocumentRefusal } from './sceneDocumentRefusal';

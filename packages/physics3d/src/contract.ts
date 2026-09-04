@@ -25,3 +25,22 @@ export * from './stepValidation';
 export * from './world';
 export * from './worldQueries';
 export * from './debugGeometry';
+export { initializePhysics3DDebugGeometry } from './debugGeometry';
+export { initializePhysics3DContactConstraint, initializePhysics3DContactConstraintPoint } from './solver';
+export { initializePhysics3DMassData } from './massProperties';
+export { initializePhysics3DContact, initializePhysics3DContactPoint } from './contacts';
+export { initializePhysics3DJointReaction } from './jointReaction';
+export {
+  initializePhysics3DBallAndSocketJoint,
+  initializePhysics3DConeTwistJoint,
+  initializePhysics3DDistanceJoint,
+  initializePhysics3DFixedJoint,
+  initializePhysics3DGeneric6DofJoint,
+  initializePhysics3DHingeJoint,
+  initializePhysics3DSliderJoint,
+} from './jointFactories';
+export {
+  initializePhysics3DQueryResult,
+  initializePhysics3DRayResult,
+  initializePhysics3DShapeCastResult,
+} from './worldQueries';

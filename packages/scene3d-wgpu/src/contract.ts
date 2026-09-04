@@ -42,3 +42,4 @@ export * from './wgpuUnlitPrelude';
 export * from './wgpuWireframePrelude';
 export * from './wgpuWireframeUpload';
 export * from './wireframeWgpuMeshMaterialRenderer';
+export { initializeWgpuMeshPipeline } from './wgpuMeshPipeline';

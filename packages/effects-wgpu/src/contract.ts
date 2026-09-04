@@ -55,3 +55,5 @@ export * from './wgpuToneMapEffect';
 export * from './wgpuVignetteEffect';
 export * from './wgpuWhiteBalanceEffect';
 export * from './wgpuColorLutPass';
+export { initializeWgpuRenderEffectPipeline } from './wgpuRenderEffectPipeline';
+export { initializeWgpuDualSourceEffectPipeline, initializeWgpuEffectPipeline } from './wgpuEffectPass';

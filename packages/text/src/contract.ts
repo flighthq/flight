@@ -5,3 +5,6 @@ export * from './richText';
 export * from './textFormatFont';
 export * from './textLabel';
 export * from './textLabelLayout';
+export { initializeNativeTextData } from './nativeText';
+export { initializeTextFieldSignals } from './richText';
+export { initializeTextLabelData } from './textLabel';
