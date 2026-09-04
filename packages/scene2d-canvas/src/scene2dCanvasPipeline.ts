@@ -9,6 +9,7 @@ import {
   RenderCacheKind,
   RichTextKind,
   Scale9ShapeKind,
+  Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -24,6 +25,7 @@ import { createCanvasPipeline, createEmptyCanvasRegistries } from './canvasPipel
 import { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
 import { defaultCanvasRichTextRenderer } from './canvasRichText';
 import { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
+import { defaultCanvasScale9SpriteRenderer } from './canvasScale9Sprite';
 import { defaultCanvasShapeRenderer, defaultCanvasMorphShapeRenderer } from './canvasShape';
 import { canvasShapeCommandTable } from './canvasShapeCommandTable';
 import { defaultCanvasSpriteRenderer } from './canvasSprite';
@@ -41,6 +43,7 @@ function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
   table = withRegistryTableEntry(table, RenderCacheKind, defaultCanvasRenderCacheRenderer);
   table = withRegistryTableEntry(table, RichTextKind, defaultCanvasRichTextRenderer);
   table = withRegistryTableEntry(table, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
+  table = withRegistryTableEntry(table, Scale9SpriteKind, defaultCanvasScale9SpriteRenderer);
   table = withRegistryTableEntry(table, ShapeKind, defaultCanvasShapeRenderer);
   table = withRegistryTableEntry(table, SpriteKind, defaultCanvasSpriteRenderer);
   table = withRegistryTableEntry(table, TextLabelKind, defaultCanvasTextLabelRenderer);

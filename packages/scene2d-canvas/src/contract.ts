@@ -25,6 +25,8 @@ export * from './canvasRenderTextureResolver';
 export * from './canvasRichText';
 export * from './canvasScale9Mapper';
 export * from './canvasScale9Shape';
+export * from './canvasScale9Sprite';
+export * from './canvasScale9SpriteSlices';
 export * from './canvasShape';
 export * from './canvasShapeCommands';
 export * from './canvasShapeRegistry';

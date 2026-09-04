@@ -10,6 +10,7 @@ import {
   RegistryEntryState,
   RichTextKind,
   Scale9ShapeKind,
+  Scale9SpriteKind,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -36,7 +37,7 @@ describe('scene2dCanvasPipeline', () => {
     expect(scene2dCanvasPipeline).toBe(scene2dCanvasPipeline);
   });
 
-  it('carries all twelve standard 2D Canvas renderers', () => {
+  it('carries all thirteen standard 2D Canvas renderers', () => {
     const expectedKinds = [
       BitmapTextKind,
       DisplayObjectKind,
@@ -46,6 +47,7 @@ describe('scene2dCanvasPipeline', () => {
       RenderCacheKind,
       RichTextKind,
       Scale9ShapeKind,
+      Scale9SpriteKind,
       ShapeKind,
       SpriteKind,
       TextLabelKind,
