@@ -6,7 +6,6 @@ import type {
   ElectronHost,
   ElectronIpcTarget,
   ElectronMacosHost,
-  EntityRuntimeKey,
 } from '@flighthq/types/contract';
 
 import { createElectronAppCapabilities } from './electronApp';

@@ -1,11 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  CapacitorApi,
   HapticImpactStyle,
-  EntityWithoutRuntime,
+  HapticNotificationType,
   HapticsBackend,
   HapticsCapabilities,
-  HapticNotificationType,
-  CapacitorApi,
 } from '@flighthq/types/contract';
 
 // Maps Flight's HapticsBackend onto Capacitor's `@capacitor/haptics`. Every Capacitor call is an async

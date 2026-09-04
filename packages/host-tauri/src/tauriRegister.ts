@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { DesktopOsProfile, EntityRuntimeKey, TauriApi, TauriHost } from '@flighthq/types/contract';
+import type { DesktopOsProfile, TauriApi, TauriHost } from '@flighthq/types/contract';
 
 import { createTauriAppCapabilities } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';

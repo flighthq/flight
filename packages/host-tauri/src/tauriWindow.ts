@@ -4,7 +4,6 @@ import { emitSignal } from '@flighthq/signals/contract';
 import type {
   ApplicationWindow,
   Entity,
-  EntityRuntimeKey,
   NativeWindowHandle,
   TauriApi,
   TauriUnlisten,

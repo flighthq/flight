@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronShortcutDetails,
-  EntityRuntimeKey,
   HostShellCapabilities,
   PlatformName,
   ShellBeepBackend,
