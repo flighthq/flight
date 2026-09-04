@@ -9,6 +9,8 @@ import {
   createAnimationStateMachine,
   createAnimationStateMachineState,
   getAnimationStateMachineCurrentState,
+  initializeAnimationStateMachine,
+  initializeAnimationStateMachineState,
   isAnimationStateMachineTransitioning,
   sampleAnimationStateMachine,
   sampleAnimationStateMachineChannel,
@@ -103,6 +105,18 @@ describe('getAnimationStateMachineCurrentState', () => {
   });
 });
 
+describe('initializeAnimationStateMachine', () => {
+  it('is the construction initializer of createAnimationStateMachine', () => {
+    expect(typeof initializeAnimationStateMachine).toBe('function');
+  });
+});
+
+describe('initializeAnimationStateMachineState', () => {
+  it('is the construction initializer of createAnimationStateMachineState', () => {
+    expect(typeof initializeAnimationStateMachineState).toBe('function');
+  });
+});
+
 describe('isAnimationStateMachineTransitioning', () => {
   it('tracks the active timed-transition lifecycle', () => {
     const machine = createAnimationStateMachine([state('a', player({}, 0)), state('b', player({}, 1))]);
@@ -146,7 +160,6 @@ describe('sampleAnimationStateMachine', () => {
     ]);
   });
 });
-
 describe('sampleAnimationStateMachineChannel', () => {
   it('samples one global channel and preserves output for an absent index', () => {
     const machine = createAnimationStateMachine([state('only', player({}, 7))]);

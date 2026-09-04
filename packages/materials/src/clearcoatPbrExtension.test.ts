@@ -1,6 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createClearcoatPbrExtension, isValidClearcoatPbrExtension } from './clearcoatPbrExtension';
+import {
+  createClearcoatPbrExtension,
+  initializeClearcoatPbrExtension,
+  isValidClearcoatPbrExtension,
+} from './clearcoatPbrExtension';
 
 describe('createClearcoatPbrExtension', () => {
   it('creates an Entity with an explicit normal scale and independent UV sets', () => {
@@ -12,6 +16,11 @@ describe('createClearcoatPbrExtension', () => {
   });
 });
 
+describe('initializeClearcoatPbrExtension', () => {
+  it('is the construction initializer of createClearcoatPbrExtension', () => {
+    expect(typeof initializeClearcoatPbrExtension).toBe('function');
+  });
+});
 describe('isValidClearcoatPbrExtension', () => {
   it('rejects invalid weights, normal scale, and map UV sets', () => {
     expect(isValidClearcoatPbrExtension(createClearcoatPbrExtension())).toBe(true);

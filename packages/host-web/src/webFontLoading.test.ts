@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createWebFontLoadingBackend, webFontLoadingBackend } from './webFontLoading';
+import { createWebFontLoadingBackend, initializeWebFontLoadingBackend, webFontLoadingBackend } from './webFontLoading';
 
 describe('createWebFontLoadingBackend', () => {
   it('returns an Entity', () => {
@@ -20,6 +20,11 @@ describe('createWebFontLoadingBackend', () => {
   });
 });
 
+describe('initializeWebFontLoadingBackend', () => {
+  it('is the construction initializer of createWebFontLoadingBackend', () => {
+    expect(typeof initializeWebFontLoadingBackend).toBe('function');
+  });
+});
 describe('webFontLoadingBackend', () => {
   it('is an Entity with all four operations', () => {
     expect(EntityRuntimeKey in webFontLoadingBackend).toBe(true);

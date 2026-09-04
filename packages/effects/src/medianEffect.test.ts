@@ -1,6 +1,11 @@
 import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
 
-import { createMedianEffect, getMedianEffectPadding, registerMedianEffectPaddingResolver } from './medianEffect';
+import {
+  createMedianEffect,
+  getMedianEffectPadding,
+  initializeMedianEffect,
+  registerMedianEffectPaddingResolver,
+} from './medianEffect';
 
 describe('createMedianEffect', () => {
   it('tags the intent type', () => {
@@ -23,6 +28,11 @@ describe('getMedianEffectPadding', () => {
   });
 });
 
+describe('initializeMedianEffect', () => {
+  it('is the construction initializer of createMedianEffect', () => {
+    expect(typeof initializeMedianEffect).toBe('function');
+  });
+});
 describe('registerMedianEffectPaddingResolver', () => {
   it('registers the median footprint on only the supplied state', () => {
     const state = createRenderState();

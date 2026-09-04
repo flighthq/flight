@@ -15,6 +15,7 @@ import {
   getSkeleton2DBoneIndexByName,
   getSkeleton2DBoneWorldMatrix,
   getSkeleton2DSkin,
+  initializeSkeleton2D,
   setSkeleton2DBindPose,
   setSkeleton2DSkin,
   validateSkeleton2D,
@@ -414,6 +415,12 @@ describe('getSkeleton2DSkin', () => {
   });
 });
 
+describe('initializeSkeleton2D', () => {
+  it('is the construction initializer of createSkeleton2D', () => {
+    expect(typeof initializeSkeleton2D).toBe('function');
+  });
+});
+
 describe('setSkeleton2DBindPose', () => {
   it('captures the inverse of the current world so the palette is identity at bind', () => {
     const s = createSkeleton2D([makeBone({ x: 4, rotation: 60, scaleX: 2 })]);
@@ -470,24 +477,6 @@ describe('setSkeleton2DSkin', () => {
   });
 });
 
-describe('validateSkeleton2D', () => {
-  it('returns null for a valid parent-before-child skeleton', () => {
-    const s = createSkeleton2D([makeBone(), makeBone({ parentIndex: 0 })]);
-    expect(validateSkeleton2D(s)).toBeNull();
-  });
-
-  it('reports a child whose parentIndex is not before it', () => {
-    const s = createSkeleton2D([makeBone({ parentIndex: 1 }), makeBone({ parentIndex: 0 })]);
-    expect(validateSkeleton2D(s)).toContain('parent-before-child');
-  });
-
-  it('reports a mis-sized buffer', () => {
-    const s = createSkeleton2D([makeBone()]);
-    s.worldMatrices = new Float32Array(3);
-    expect(validateSkeleton2D(s)).toContain('worldMatrices');
-  });
-});
-
 // A minimal slot for wardrobe tests: no attachment until a skin supplies one.
 function testSlot(name: string, boneIndex: number): Slot2D {
   return { attachment: null, boneIndex, color: 0xffffffff, name };
@@ -506,3 +495,20 @@ function testRegion(name: string): RegionAttachment2D {
   out.y = 0;
   return finishEntity(out) as RegionAttachment2D;
 }
+describe('validateSkeleton2D', () => {
+  it('returns null for a valid parent-before-child skeleton', () => {
+    const s = createSkeleton2D([makeBone(), makeBone({ parentIndex: 0 })]);
+    expect(validateSkeleton2D(s)).toBeNull();
+  });
+
+  it('reports a child whose parentIndex is not before it', () => {
+    const s = createSkeleton2D([makeBone({ parentIndex: 1 }), makeBone({ parentIndex: 0 })]);
+    expect(validateSkeleton2D(s)).toContain('parent-before-child');
+  });
+
+  it('reports a mis-sized buffer', () => {
+    const s = createSkeleton2D([makeBone()]);
+    s.worldMatrices = new Float32Array(3);
+    expect(validateSkeleton2D(s)).toContain('worldMatrices');
+  });
+});

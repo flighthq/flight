@@ -2,7 +2,11 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { AccessibilityNode } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createWebAccessibilityBackend, webAccessibilityBackend } from './webAccessibility';
+import {
+  createWebAccessibilityBackend,
+  initializeWebAccessibilityBackend,
+  webAccessibilityBackend,
+} from './webAccessibility';
 import { webHost } from './webHost';
 
 afterEach(() => {
@@ -192,10 +196,9 @@ describe('createWebAccessibilityBackend', () => {
   });
 });
 
-describe('webAccessibilityBackend', () => {
-  it('is the stable Entity provider published by webHost', () => {
-    expect(EntityRuntimeKey in webAccessibilityBackend).toBe(true);
-    expect(webHost.accessibility.provider).toBe(webAccessibilityBackend);
+describe('initializeWebAccessibilityBackend', () => {
+  it('is the construction initializer of createWebAccessibilityBackend', () => {
+    expect(typeof initializeWebAccessibilityBackend).toBe('function');
   });
 });
 
@@ -206,3 +209,9 @@ function node(
 ): AccessibilityNode {
   return { id, role, ...extras };
 }
+describe('webAccessibilityBackend', () => {
+  it('is the stable Entity provider published by webHost', () => {
+    expect(EntityRuntimeKey in webAccessibilityBackend).toBe(true);
+    expect(webHost.accessibility.provider).toBe(webAccessibilityBackend);
+  });
+});

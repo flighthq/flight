@@ -1,5 +1,5 @@
 import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createSepiaAdjustment } from './sepiaAdjustment';
+import { createSepiaAdjustment, initializeSepiaAdjustment } from './sepiaAdjustment';
 
 describe('createSepiaAdjustment', () => {
   it('defaults to a full sepia tone', () => {
@@ -14,5 +14,10 @@ describe('createSepiaAdjustment', () => {
   it('intensity 0 leaves color unchanged', () => {
     const adjustment = createSepiaAdjustment({ intensity: 0 });
     expect(applyColorMatrixToColor(adjustment.colorMatrix as number[], 0x3366ccff)).toBe(0x3366ccff);
+  });
+});
+describe('initializeSepiaAdjustment', () => {
+  it('is the construction initializer of createSepiaAdjustment', () => {
+    expect(typeof initializeSepiaAdjustment).toBe('function');
   });
 });

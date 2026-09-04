@@ -10,6 +10,7 @@ import {
   clearRenderQueue,
   compareRenderQueueEntries,
   createRenderQueue,
+  initializeRenderQueue,
   packRenderSortKey,
   pushRenderQueueEntry,
   sortRenderQueue,
@@ -124,6 +125,12 @@ describe('createRenderQueue', () => {
   });
 });
 
+describe('initializeRenderQueue', () => {
+  it('is the construction initializer of createRenderQueue', () => {
+    expect(typeof initializeRenderQueue).toBe('function');
+  });
+});
+
 describe('packRenderSortKey', () => {
   it('opaque geometry sorts before transparent in the same layer', () => {
     const opaque = packRenderSortKey(0, 0.5, false);
@@ -171,7 +178,6 @@ describe('pushRenderQueueEntry', () => {
     expect(queue.entries[0].proxy).toBe(p2);
   });
 });
-
 describe('sortRenderQueue', () => {
   it('sorts entries in ascending sort-key order by default', () => {
     const queue = createRenderQueue();

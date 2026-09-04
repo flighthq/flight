@@ -18,7 +18,7 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTauriTrayCapabilities } from './tauriTray';
+import { createTauriTrayCapabilities, initializeTauriTrayCapabilities } from './tauriTray';
 
 interface FakeIcon extends TauriTrayIcon {
   closeFailures: number;
@@ -253,5 +253,10 @@ describe('createTauriTrayCapabilities', () => {
     expect((await destroyTrayIcon(tray)).outcome).toBe('destroyed');
     expect(menus[0].closed).toBe(1);
     expect(icons[0].closed).toBe(1);
+  });
+});
+describe('initializeTauriTrayCapabilities', () => {
+  it('is the construction initializer of createTauriTrayCapabilities', () => {
+    expect(typeof initializeTauriTrayCapabilities).toBe('function');
   });
 });

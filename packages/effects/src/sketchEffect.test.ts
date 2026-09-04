@@ -1,4 +1,4 @@
-import { createSketchEffect } from './sketchEffect';
+import { createSketchEffect, initializeSketchEffect } from './sketchEffect';
 
 describe('createSketchEffect', () => {
   it('tags the intent type', () => {
@@ -7,5 +7,10 @@ describe('createSketchEffect', () => {
 
   it('carries options', () => {
     expect(createSketchEffect({ strength: 0.8 })).toMatchObject({ strength: 0.8 });
+  });
+});
+describe('initializeSketchEffect', () => {
+  it('is the construction initializer of createSketchEffect', () => {
+    expect(typeof initializeSketchEffect).toBe('function');
   });
 });

@@ -3,7 +3,10 @@ import type { GlyphOutlineSource, Path } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createGlyphRasterizerBackendFromGlyphOutlineSource } from './glyphOutlineSource';
+import {
+  createGlyphRasterizerBackendFromGlyphOutlineSource,
+  initializeGlyphRasterizerBackendFromGlyphOutlineSource,
+} from './glyphOutlineSource';
 
 describe('createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
   it('returns an Entity', () => {
@@ -85,3 +88,8 @@ function createTestGlyphOutlineSource(): GlyphOutlineSource {
     },
   };
 }
+describe('initializeGlyphRasterizerBackendFromGlyphOutlineSource', () => {
+  it('is the construction initializer of createGlyphRasterizerBackendFromGlyphOutlineSource', () => {
+    expect(typeof initializeGlyphRasterizerBackendFromGlyphOutlineSource).toBe('function');
+  });
+});

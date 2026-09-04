@@ -2,7 +2,11 @@ import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createGlyphOutlineSourceFromOpenTypeFont, explainOpenTypeFont } from './openTypeGlyphOutlineSource';
+import {
+  createGlyphOutlineSourceFromOpenTypeFont,
+  explainOpenTypeFont,
+  initializeGlyphOutlineSourceFromOpenTypeFont,
+} from './openTypeGlyphOutlineSource';
 import {
   createSyntheticFont,
   emptySyntheticGlyph,
@@ -294,5 +298,10 @@ describe('explainOpenTypeFont', () => {
     const truncated = explainOpenTypeFont(font.subarray(0, font.length - 8));
     // The directory still declares every table; fewer of them now fit inside the file.
     expect(truncated.readableTableCount).toBeLessThan(truncated.tableCount);
+  });
+});
+describe('initializeGlyphOutlineSourceFromOpenTypeFont', () => {
+  it('is the construction initializer of createGlyphOutlineSourceFromOpenTypeFont', () => {
+    expect(typeof initializeGlyphOutlineSourceFromOpenTypeFont).toBe('function');
   });
 });

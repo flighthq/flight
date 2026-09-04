@@ -1,7 +1,11 @@
 import { getTextShaperBackend, setTextShaperBackend } from '@flighthq/textshaper/contract';
 import type { CanvasTextShaperBackend } from '@flighthq/types/contract';
 
-import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './canvasTextShaper';
+import {
+  clearCanvasTextShaperBackendCache,
+  createCanvasTextShaperBackend,
+  initializeCanvasTextShaperBackend,
+} from './canvasTextShaper';
 
 afterEach(() => {
   setTextShaperBackend(null);
@@ -185,5 +189,10 @@ describe('createCanvasTextShaperBackend — getFontMetrics', () => {
     const backend = createCanvasTextShaperBackend();
     expect(() => backend.getFontMetrics!({})).not.toThrow();
     expect(() => backend.getFontMetrics!({ size: 12, bold: true, italic: true })).not.toThrow();
+  });
+});
+describe('initializeCanvasTextShaperBackend', () => {
+  it('is the construction initializer of createCanvasTextShaperBackend', () => {
+    expect(typeof initializeCanvasTextShaperBackend).toBe('function');
   });
 });

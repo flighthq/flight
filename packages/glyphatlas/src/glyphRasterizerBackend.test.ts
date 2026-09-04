@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
+import { createStubGlyphRasterizerBackend, initializeStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 describe('createStubGlyphRasterizerBackend', () => {
   it('returns an Entity with a rasterize method', () => {
@@ -30,5 +30,10 @@ describe('createStubGlyphRasterizerBackend', () => {
     const backend = createStubGlyphRasterizerBackend();
     const glyph = backend.rasterize(65, { fontFamily: 'mock', fontSize: 16 })!;
     expect(glyph.pixels.every((v) => v === 255)).toBe(true);
+  });
+});
+describe('initializeStubGlyphRasterizerBackend', () => {
+  it('is the construction initializer of createStubGlyphRasterizerBackend', () => {
+    expect(typeof initializeStubGlyphRasterizerBackend).toBe('function');
   });
 });

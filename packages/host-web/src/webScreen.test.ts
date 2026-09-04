@@ -2,7 +2,7 @@ import { createScreenInfo } from '@flighthq/screen/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createWebScreenCapabilities } from './webScreen';
+import { createWebScreenCapabilities, initializeWebScreenCapabilities } from './webScreen';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -61,5 +61,10 @@ describe('createWebScreenCapabilities', () => {
       if (descriptor === undefined) Reflect.deleteProperty(window.screen, 'orientation');
       else Object.defineProperty(window.screen, 'orientation', descriptor);
     }
+  });
+});
+describe('initializeWebScreenCapabilities', () => {
+  it('is the construction initializer of createWebScreenCapabilities', () => {
+    expect(typeof initializeWebScreenCapabilities).toBe('function');
   });
 });

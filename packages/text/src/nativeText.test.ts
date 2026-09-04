@@ -17,6 +17,7 @@ import {
   getNativeTextRuntime,
   getNativeTextString,
   getNativeTextStyle,
+  initializeNativeTextData,
   patchNativeTextStyle,
   setNativeTextAutoSize,
   setNativeTextHeight,
@@ -173,6 +174,12 @@ describe('getNativeTextStyle', () => {
   });
 });
 
+describe('initializeNativeTextData', () => {
+  it('is the construction initializer of createNativeTextData', () => {
+    expect(typeof initializeNativeTextData).toBe('function');
+  });
+});
+
 describe('patchNativeTextStyle', () => {
   it('merges the patch into the existing style', () => {
     const native = createNativeText({ data: { style: { size: 14, bold: false } } });
@@ -271,7 +278,6 @@ describe('setNativeTextVerticalAlign', () => {
     expect(getNodeLocalContentRevision(native)).toBe(content);
   });
 });
-
 describe('setNativeTextWidth', () => {
   it('sets width, bumps content, and invalidates local bounds', () => {
     const native = createNativeText();

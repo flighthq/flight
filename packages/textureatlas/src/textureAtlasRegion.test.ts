@@ -5,27 +5,28 @@ import type { ImageResource, TextureAtlasRegion } from '@flighthq/types/contract
 import { createTextureAtlas } from './textureAtlas';
 import {
   addTextureAtlasRegion,
-  addTextureAtlasRegionRectangle,
   addTextureAtlasRegionCorners,
+  addTextureAtlasRegionRectangle,
+  addTextureAtlasRegionVector2,
   buildTextureAtlasRegionIndex,
   clearTextureAtlasRegions,
-  addTextureAtlasRegionVector2,
   createTextureAtlasRegion,
   explainTextureAtlasRegionTexture,
   getTextureAtlasRegionById,
-  getTextureAtlasRegionCount,
-  getTextureAtlasRegionFrame,
   getTextureAtlasRegionByName,
   getTextureAtlasRegionByOrdinal,
+  getTextureAtlasRegionCount,
+  getTextureAtlasRegionFrame,
   getTextureAtlasRegionOrdinal,
   getTextureAtlasRegionSequence,
   getTextureAtlasRegionTexture,
   getTextureAtlasRegionUv,
   getTextureAtlasRegionUvQuad,
   hasTextureAtlasRegion,
+  initializeTextureAtlasRegion,
   removeTextureAtlasRegion,
-  setTextureAtlasRegionTextureGuard,
   setTextureAtlasRegion,
+  setTextureAtlasRegionTextureGuard,
 } from './textureAtlasRegion';
 
 describe('addTextureAtlasRegion', () => {
@@ -792,6 +793,12 @@ describe('hasTextureAtlasRegion', () => {
   });
 });
 
+describe('initializeTextureAtlasRegion', () => {
+  it('is the construction initializer of createTextureAtlasRegion', () => {
+    expect(typeof initializeTextureAtlasRegion).toBe('function');
+  });
+});
+
 describe('removeTextureAtlasRegion', () => {
   it('removes the region and reports it', () => {
     const atlas = createTextureAtlas();
@@ -921,7 +928,6 @@ describe('setTextureAtlasRegion', () => {
     expect(region.sourceX).toBe(7);
   });
 });
-
 describe('setTextureAtlasRegionTextureGuard', () => {
   it('installs and removes the null-result diagnostics hook', () => {
     const atlas = createTextureAtlas();

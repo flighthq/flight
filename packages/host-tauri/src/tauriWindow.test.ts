@@ -3,7 +3,7 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 
-import { createTauriWindowBackend } from './tauriWindow';
+import { createTauriWindowBackend, initializeTauriWindowBackend } from './tauriWindow';
 
 interface FakeWindowState {
   calls: { method: string; args: unknown[] }[];
@@ -286,5 +286,10 @@ describe('createTauriWindowBackend close when the platform close rejects', () =>
     } finally {
       process.off('unhandledRejection', onUnhandled);
     }
+  });
+});
+describe('initializeTauriWindowBackend', () => {
+  it('is the construction initializer of createTauriWindowBackend', () => {
+    expect(typeof initializeTauriWindowBackend).toBe('function');
   });
 });

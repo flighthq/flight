@@ -1,6 +1,6 @@
 import type { LayoutResolver } from '@flighthq/types/contract';
 
-import { createLayoutState, registerLayoutResolver } from './layoutState';
+import { createLayoutState, initializeLayoutState, registerLayoutResolver } from './layoutState';
 
 const resolver: LayoutResolver = () => null;
 
@@ -15,6 +15,11 @@ describe('createLayoutState', () => {
   });
 });
 
+describe('initializeLayoutState', () => {
+  it('is the construction initializer of createLayoutState', () => {
+    expect(typeof initializeLayoutState).toBe('function');
+  });
+});
 describe('registerLayoutResolver', () => {
   it('is open, last-write-wins, and accepts null to unregister', () => {
     const state = createLayoutState();

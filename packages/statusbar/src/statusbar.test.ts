@@ -8,6 +8,7 @@ import type {
 import { describe, expect, it, vi } from 'vitest';
 
 import * as statusbar from './statusbar';
+import { initializeStatusBar, initializeStatusBarInfo } from './statusbar';
 
 describe('attachStatusBar', () => {
   it('pins both event and snapshot providers at attachment time', () => {
@@ -99,6 +100,18 @@ describe('hasStatusBarStyleEntry', () => {
   });
 });
 
+describe('initializeStatusBar', () => {
+  it('is the construction initializer of createStatusBar', () => {
+    expect(typeof initializeStatusBar).toBe('function');
+  });
+});
+
+describe('initializeStatusBarInfo', () => {
+  it('is the construction initializer of createStatusBarInfo', () => {
+    expect(typeof initializeStatusBarInfo).toBe('function');
+  });
+});
+
 describe('packedRgbaToHexColor', () => {
   it('drops alpha and pads hex digits', () => expect(statusbar.packedRgbaToHexColor(0x01020304)).toBe('#010203'));
 });
@@ -135,22 +148,6 @@ describe('setStatusBarOverlaysContent', () => {
     const provider = fakeHost('light');
     statusbar.setStatusBarOverlaysContent(provider.host, true);
     expect(provider.setOverlaysContent).toHaveBeenCalledWith(true);
-  });
-});
-
-describe('setStatusBarStyle', () => {
-  it('uses only the style slot', () => {
-    const provider = fakeHost('light');
-    statusbar.setStatusBarStyle(provider.host, 'dark');
-    expect(provider.setStyle).toHaveBeenCalledWith('dark');
-  });
-});
-
-describe('setStatusBarVisible', () => {
-  it('uses only the visibility slot', () => {
-    const provider = fakeHost('light');
-    statusbar.setStatusBarVisible(provider.host, false, 'fade');
-    expect(provider.setVisible).toHaveBeenCalledWith(false, 'fade');
   });
 });
 
@@ -199,3 +196,18 @@ function fakeHost(initialStyle: StatusBarStyle) {
     unsubscribe,
   };
 }
+describe('setStatusBarStyle', () => {
+  it('uses only the style slot', () => {
+    const provider = fakeHost('light');
+    statusbar.setStatusBarStyle(provider.host, 'dark');
+    expect(provider.setStyle).toHaveBeenCalledWith('dark');
+  });
+});
+
+describe('setStatusBarVisible', () => {
+  it('uses only the visibility slot', () => {
+    const provider = fakeHost('light');
+    statusbar.setStatusBarVisible(provider.host, false, 'fade');
+    expect(provider.setVisible).toHaveBeenCalledWith(false, 'fade');
+  });
+});

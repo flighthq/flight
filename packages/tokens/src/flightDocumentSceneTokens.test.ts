@@ -10,6 +10,7 @@ import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 import {
   createFlightDocumentTokenResolverRegistry,
   explainFlightDocumentSceneTokenResolution,
+  initializeFlightDocumentTokenResolverRegistry,
   resolveFlightDocumentSceneTokens,
 } from './flightDocumentSceneTokens';
 
@@ -142,6 +143,41 @@ describe('explainFlightDocumentSceneTokenResolution', () => {
   });
 });
 
+describe('initializeFlightDocumentTokenResolverRegistry', () => {
+  it('is the construction initializer of createFlightDocumentTokenResolverRegistry', () => {
+    expect(typeof initializeFlightDocumentTokenResolverRegistry).toBe('function');
+  });
+});
+
+function resolveOne(
+  registry: Readonly<FlightDocumentTokenResolverRegistry>,
+  entry: FlightDocumentToken,
+): Record<string, unknown> | null {
+  const resolution = resolveFlightDocumentSceneTokens(sceneWith([entry]), 'dark', registry);
+  return resolution === null ? null : { ...resolution.values };
+}
+
+function sceneWith(tokens: readonly FlightDocumentToken[]): FlightDocumentScene2D {
+  return {
+    backgroundColor: null,
+    kind: 'Scene2D',
+    layouts: [],
+    scene: { children: [], fields: {}, kind: 'DisplayObject' },
+    tokens: [...tokens],
+  };
+}
+
+function token(kind: string, values: FlightDocumentToken['values']): FlightDocumentToken {
+  return { key: 'a.token', kind, values };
+}
+
+function withResolver(
+  registry: Readonly<FlightDocumentTokenResolverRegistry>,
+  kind: string,
+  resolver: (value: unknown) => unknown,
+): FlightDocumentTokenResolverRegistry['resolvers'] {
+  return withRegistryTableEntry(registry.resolvers, kind, resolver as never);
+}
 describe('resolveFlightDocumentSceneTokens', () => {
   it('prefers the requested mode over the default', () => {
     const scene = sceneWith([token('Color', { dark: 0x1a1a1aff, default: 0x808080ff, light: 0xffffffff })]);
@@ -203,33 +239,3 @@ describe('resolveFlightDocumentSceneTokens', () => {
     expect(resolveFlightDocumentSceneTokens(sceneWith([token('Color', { default: 1 })]), 'dark')).toBeNull();
   });
 });
-
-function resolveOne(
-  registry: Readonly<FlightDocumentTokenResolverRegistry>,
-  entry: FlightDocumentToken,
-): Record<string, unknown> | null {
-  const resolution = resolveFlightDocumentSceneTokens(sceneWith([entry]), 'dark', registry);
-  return resolution === null ? null : { ...resolution.values };
-}
-
-function sceneWith(tokens: readonly FlightDocumentToken[]): FlightDocumentScene2D {
-  return {
-    backgroundColor: null,
-    kind: 'Scene2D',
-    layouts: [],
-    scene: { children: [], fields: {}, kind: 'DisplayObject' },
-    tokens: [...tokens],
-  };
-}
-
-function token(kind: string, values: FlightDocumentToken['values']): FlightDocumentToken {
-  return { key: 'a.token', kind, values };
-}
-
-function withResolver(
-  registry: Readonly<FlightDocumentTokenResolverRegistry>,
-  kind: string,
-  resolver: (value: unknown) => unknown,
-): FlightDocumentTokenResolverRegistry['resolvers'] {
-  return withRegistryTableEntry(registry.resolvers, kind, resolver as never);
-}

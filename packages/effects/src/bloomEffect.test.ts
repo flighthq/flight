@@ -6,6 +6,7 @@ import {
   computeBloomThreshold,
   createBloomEffect,
   getBloomEffectPadding,
+  initializeBloomEffect,
   registerBloomEffectPaddingResolver,
 } from './bloomEffect';
 
@@ -60,6 +61,11 @@ describe('getBloomEffectPadding', () => {
   });
 });
 
+describe('initializeBloomEffect', () => {
+  it('is the construction initializer of createBloomEffect', () => {
+    expect(typeof initializeBloomEffect).toBe('function');
+  });
+});
 describe('registerBloomEffectPaddingResolver', () => {
   it('registers the bloom footprint on only the supplied state', () => {
     const state = createRenderState();

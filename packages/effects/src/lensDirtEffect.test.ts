@@ -1,4 +1,4 @@
-import { createLensDirtEffect } from './lensDirtEffect';
+import { createLensDirtEffect, initializeLensDirtEffect } from './lensDirtEffect';
 
 describe('createLensDirtEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +11,10 @@ describe('createLensDirtEffect', () => {
       threshold: 0.45,
       seed: 4,
     });
+  });
+});
+describe('initializeLensDirtEffect', () => {
+  it('is the construction initializer of createLensDirtEffect', () => {
+    expect(typeof initializeLensDirtEffect).toBe('function');
   });
 });

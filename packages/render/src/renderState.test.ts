@@ -9,6 +9,7 @@ import {
   destroyRenderState,
   getColorAdjustmentUnsupportedGuard,
   getRenderStateRuntime,
+  initializeRenderState,
 } from './renderState';
 
 describe('createRenderState', () => {
@@ -143,5 +144,10 @@ describe('getRenderStateRuntime', () => {
   it('returns the runtime attached under EntityRuntimeKey', () => {
     const state = createRenderState();
     expect(getRenderStateRuntime(state)).toBe(state[EntityRuntimeKey]);
+  });
+});
+describe('initializeRenderState', () => {
+  it('is the construction initializer of createRenderState', () => {
+    expect(typeof initializeRenderState).toBe('function');
   });
 });

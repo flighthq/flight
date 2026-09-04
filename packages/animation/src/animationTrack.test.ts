@@ -8,6 +8,7 @@ import {
 import {
   cloneAnimationTrack,
   createAnimationTrack,
+  initializeAnimationTrack,
   sampleAnimationTrack,
   trimAnimationTrack,
   validateAnimationTrack,
@@ -60,6 +61,12 @@ describe('createAnimationTrack', () => {
     expect(track.easing).toBeNull();
     expect(track.segmentEasings).toBeNull();
     expect(EntityRuntimeKey in track).toBe(true);
+  });
+});
+
+describe('initializeAnimationTrack', () => {
+  it('is the construction initializer of createAnimationTrack', () => {
+    expect(typeof initializeAnimationTrack).toBe('function');
   });
 });
 
@@ -236,7 +243,6 @@ describe('trimAnimationTrack', () => {
     expect(sub.values.length).toBe(0);
   });
 });
-
 describe('validateAnimationTrack', () => {
   it('returns null for a well-formed track', () => {
     const track = createAnimationTrack({ components: 3, times: [0, 1, 2], values: [0, 0, 0, 1, 1, 1, 2, 2, 2] });

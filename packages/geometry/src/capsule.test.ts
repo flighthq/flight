@@ -12,6 +12,8 @@ import {
   setCapsule,
 } from '@flighthq/geometry/contract';
 
+import { initializeCapsule } from './capsule';
+
 describe('createCapsule', () => {
   it('stores all fields', () => {
     const c = createCapsule(1, 2, 3, 4, 5, 6, 0.5);
@@ -106,6 +108,12 @@ describe('getClosestPointOnCapsule', () => {
     getClosestPointOnCapsule(out, leaningDiagonal, createVector3(0, 0, 0));
     expect(Math.hypot(out.x, out.y, out.z)).toBeCloseTo(2, 5);
     expect(out.x * 3 + out.y * 2 + out.z * 1).toBeCloseTo(0, 5);
+  });
+});
+
+describe('initializeCapsule', () => {
+  it('is the construction initializer of createCapsule', () => {
+    expect(typeof initializeCapsule).toBe('function');
   });
 });
 
@@ -308,20 +316,6 @@ describe('isCapsuleIntersectingSphere', () => {
   });
 });
 
-describe('setCapsule', () => {
-  it('updates all fields in place', () => {
-    const c = createCapsule(0, 0, 0, 0, 0, 0, 0);
-    setCapsule(c, 1, 2, 3, 4, 5, 6, 7);
-    expect(c.startX).toBe(1);
-    expect(c.startY).toBe(2);
-    expect(c.startZ).toBe(3);
-    expect(c.endX).toBe(4);
-    expect(c.endY).toBe(5);
-    expect(c.endZ).toBe(6);
-    expect(c.radius).toBe(7);
-  });
-});
-
 // The six coordinates of a capsule axis: start x, y, z then end x, y, z.
 type SegmentArguments = [number, number, number, number, number, number];
 
@@ -347,3 +341,16 @@ function measureSegmentDistance(first: readonly number[], second: readonly numbe
   }
   return smallest;
 }
+describe('setCapsule', () => {
+  it('updates all fields in place', () => {
+    const c = createCapsule(0, 0, 0, 0, 0, 0, 0);
+    setCapsule(c, 1, 2, 3, 4, 5, 6, 7);
+    expect(c.startX).toBe(1);
+    expect(c.startY).toBe(2);
+    expect(c.startZ).toBe(3);
+    expect(c.endX).toBe(4);
+    expect(c.endY).toBe(5);
+    expect(c.endZ).toBe(6);
+    expect(c.radius).toBe(7);
+  });
+});

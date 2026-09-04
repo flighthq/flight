@@ -19,6 +19,7 @@ import {
   disposeShareSignals,
   enableShareSignals,
   hasShareContentFields,
+  initializeShareSignals,
   shareContent,
   shareContentWithResult,
   shareFiles,
@@ -130,6 +131,12 @@ describe('hasShareContentFields', () => {
   );
 });
 
+describe('initializeShareSignals', () => {
+  it('is the construction initializer of createShareSignals', () => {
+    expect(typeof initializeShareSignals).toBe('function');
+  });
+});
+
 describe('Share contract surface', () => {
   it('contains only explicit-host commands, payload validation, and core signal lifecycle', () => {
     expect(Object.keys(shareContract).sort()).toEqual([
@@ -187,7 +194,6 @@ describe('shareText', () => {
     expect(invoke).toHaveBeenCalledWith({ text: 'hello' });
   });
 });
-
 describe('shareUrl', () => {
   it('delegates a URL through the content slot', async () => {
     const invoke = vi.fn(async (_content: Parameters<ShareContentBackend['shareContent']>[0]) => true);

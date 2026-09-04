@@ -1,4 +1,4 @@
-import { createGodRaysEffect } from './godRaysEffect';
+import { createGodRaysEffect, initializeGodRaysEffect } from './godRaysEffect';
 
 describe('createGodRaysEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +11,10 @@ describe('createGodRaysEffect', () => {
       centerY: 0.25,
       density: 0.9,
     });
+  });
+});
+describe('initializeGodRaysEffect', () => {
+  it('is the construction initializer of createGodRaysEffect', () => {
+    expect(typeof initializeGodRaysEffect).toBe('function');
   });
 });

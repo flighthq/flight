@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createBokehDepthOfFieldEffect,
   getBokehDepthOfFieldEffectPadding,
+  initializeBokehDepthOfFieldEffect,
   registerBokehDepthOfFieldEffectPaddingResolver,
 } from './bokehDepthOfFieldEffect';
 
@@ -31,6 +32,11 @@ describe('getBokehDepthOfFieldEffectPadding', () => {
   });
 });
 
+describe('initializeBokehDepthOfFieldEffect', () => {
+  it('is the construction initializer of createBokehDepthOfFieldEffect', () => {
+    expect(typeof initializeBokehDepthOfFieldEffect).toBe('function');
+  });
+});
 describe('registerBokehDepthOfFieldEffectPaddingResolver', () => {
   it('registers the bokeh footprint on only the supplied state', () => {
     const state = createRenderState();

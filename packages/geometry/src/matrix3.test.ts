@@ -30,6 +30,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix3 } from '@flighthq/types/contract';
 
+import { initializeMatrix3 } from './matrix3';
+
 // Matrix3 storage is column-major: element (row r, column c) lives at m[3 * c + r], matching
 // Matrix4 and the GL/GLSL/WGSL uniform ABI. A matrix-like {m} built from a raw Float32Array below
 // therefore lists its values column-by-column. getMatrix3Element(r, c) / column / row accessors are
@@ -360,6 +362,12 @@ describe('getMatrix3Element', () => {
     expect(getMatrix3Element(m, 0, 2)).toBe(3);
     expect(getMatrix3Element(m, 1, 0)).toBe(4);
     expect(getMatrix3Element(m, 2, 2)).toBe(9);
+  });
+});
+
+describe('initializeMatrix3', () => {
+  it('is the construction initializer of createMatrix3', () => {
+    expect(typeof initializeMatrix3).toBe('function');
   });
 });
 
@@ -833,7 +841,6 @@ describe('transposeMatrix3', () => {
     expect(Array.from(out.m)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
 });
-
 describe('writeMatrix3ToFloat32Array', () => {
   it('writes 9 values starting at the given offset', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);

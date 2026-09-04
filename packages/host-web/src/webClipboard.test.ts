@@ -1,10 +1,15 @@
 import { ClipboardFormatText, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { webClipboardBackend } from './webClipboard';
+import { initializeWebClipboardBackend, webClipboardBackend } from './webClipboard';
 import { webHost } from './webHost';
 
 afterEach(() => vi.unstubAllGlobals());
 
+describe('initializeWebClipboardBackend', () => {
+  it('is the construction initializer of createWebClipboardBackend', () => {
+    expect(typeof initializeWebClipboardBackend).toBe('function');
+  });
+});
 describe('webClipboardBackend', () => {
   it('is the exact provider for every web clipboard capability slot', () => {
     expect(EntityRuntimeKey in webClipboardBackend).toBe(true);

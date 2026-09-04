@@ -1,7 +1,7 @@
 import { createSignal } from '@flighthq/signals/contract';
 import type { NetProgress, NetRequest } from '@flighthq/types/contract';
 
-import { createWebNetBackend, webNetBackend } from './webNet';
+import { createWebNetBackend, initializeWebNetBackend, webNetBackend } from './webNet';
 
 interface FakeResponseInit {
   status?: number;
@@ -276,6 +276,11 @@ describe('createWebNetBackend', () => {
   });
 });
 
+describe('initializeWebNetBackend', () => {
+  it('is the construction initializer of createWebNetBackend', () => {
+    expect(typeof initializeWebNetBackend).toBe('function');
+  });
+});
 describe('webNetBackend', () => {
   it('is a pre-instantiated NetBackend const', () => {
     expect(webNetBackend).not.toBeNull();

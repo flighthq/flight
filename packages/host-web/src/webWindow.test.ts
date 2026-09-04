@@ -5,6 +5,8 @@ import { webHost } from './webHost';
 import {
   createWebFullscreenTargetHandle,
   createWebWindowResizeTargetHandle,
+  initializeWebFullscreenTargetHandle,
+  initializeWebWindowResizeTargetHandle,
   resetWebWindowBackendForTest,
   webFullscreenBackend,
   webWindowBackend,
@@ -47,6 +49,18 @@ describe('createWebWindowResizeTargetHandle', () => {
   });
 });
 
+describe('initializeWebFullscreenTargetHandle', () => {
+  it('is the construction initializer of createWebFullscreenTargetHandle', () => {
+    expect(typeof initializeWebFullscreenTargetHandle).toBe('function');
+  });
+});
+
+describe('initializeWebWindowResizeTargetHandle', () => {
+  it('is the construction initializer of createWebWindowResizeTargetHandle', () => {
+    expect(typeof initializeWebWindowResizeTargetHandle).toBe('function');
+  });
+});
+
 describe('resetWebWindowBackendForTest', () => {
   it('clears fullscreen targets and subscribed listeners', async () => {
     const element = document.createElement('div');
@@ -62,7 +76,6 @@ describe('resetWebWindowBackendForTest', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 });
-
 describe('webFullscreenBackend', () => {
   it('requests fullscreen for the arbitrary element carried by the opaque handle', async () => {
     const element = document.createElement('div');

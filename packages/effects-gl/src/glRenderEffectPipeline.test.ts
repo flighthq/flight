@@ -14,6 +14,7 @@ import {
   createGlRenderEffectPipeline,
   destroyGlRenderEffectPipeline,
   endGlRenderEffectPipeline,
+  initializeGlRenderEffectPipeline,
   setGlRenderEffectPipelineSkipGuard,
   setGlRenderEffectVelocityTexture,
 } from './glRenderEffectPipeline';
@@ -58,6 +59,12 @@ describe('endGlRenderEffectPipeline', () => {
   });
 });
 
+describe('initializeGlRenderEffectPipeline', () => {
+  it('is the construction initializer of createGlRenderEffectPipeline', () => {
+    expect(typeof initializeGlRenderEffectPipeline).toBe('function');
+  });
+});
+
 describe('setGlRenderEffectPipelineSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', () => {
     const state = createGlRenderState(
@@ -89,7 +96,6 @@ describe('setGlRenderEffectPipelineSkipGuard', () => {
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
   });
 });
-
 describe('setGlRenderEffectVelocityTexture', () => {
   it('is a function', () => {
     expect(typeof setGlRenderEffectVelocityTexture).toBe('function');

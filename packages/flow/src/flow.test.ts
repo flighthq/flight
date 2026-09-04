@@ -6,6 +6,7 @@ import {
   getActiveFlowState,
   getFlowStackDepth,
   getFlowStackVisibleStates,
+  initializeFlowStack,
   popFlowState,
   pushFlowState,
   replaceFlowState,
@@ -129,6 +130,12 @@ describe('getFlowStackVisibleStates', () => {
   });
 });
 
+describe('initializeFlowStack', () => {
+  it('is the construction initializer of createFlowStack', () => {
+    expect(typeof initializeFlowStack).toBe('function');
+  });
+});
+
 describe('popFlowState', () => {
   it('exits the top and resumes the revealed state, returning the popped state', () => {
     const log: string[] = [];
@@ -220,6 +227,17 @@ describe('replaceFlowState', () => {
   });
 });
 
+function labeledState(name: string, log: string[], extra: Partial<FlowState> = {}): FlowState {
+  return {
+    name,
+    onEnter: () => log.push(`${name}.enter`),
+    onExit: () => log.push(`${name}.exit`),
+    onPause: () => log.push(`${name}.pause`),
+    onResume: () => log.push(`${name}.resume`),
+    onUpdate: (deltaTime) => log.push(`${name}.update:${deltaTime}`),
+    ...extra,
+  };
+}
 describe('updateFlowStack', () => {
   it('ticks only the top with the frame deltaTime', () => {
     const log: string[] = [];
@@ -274,15 +292,3 @@ describe('updateFlowStack', () => {
     expect(() => updateFlowStack(stack, 0.016)).not.toThrow();
   });
 });
-
-function labeledState(name: string, log: string[], extra: Partial<FlowState> = {}): FlowState {
-  return {
-    name,
-    onEnter: () => log.push(`${name}.enter`),
-    onExit: () => log.push(`${name}.exit`),
-    onPause: () => log.push(`${name}.pause`),
-    onResume: () => log.push(`${name}.resume`),
-    onUpdate: (deltaTime) => log.push(`${name}.update:${deltaTime}`),
-    ...extra,
-  };
-}

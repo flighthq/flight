@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createInnerGlowEffect,
   getInnerGlowEffectPadding,
+  initializeInnerGlowEffect,
   registerInnerGlowEffectPaddingResolver,
 } from './innerGlowEffect';
 
@@ -31,6 +32,11 @@ describe('getInnerGlowEffectPadding', () => {
   });
 });
 
+describe('initializeInnerGlowEffect', () => {
+  it('is the construction initializer of createInnerGlowEffect', () => {
+    expect(typeof initializeInnerGlowEffect).toBe('function');
+  });
+});
 describe('registerInnerGlowEffectPaddingResolver', () => {
   it('registers the inner-glow footprint on only the supplied state', () => {
     const state = createRenderState();

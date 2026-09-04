@@ -2,7 +2,7 @@ import type { SpatialAabb3D, SpatialIndexBackend3D, SpatialObjectId, SpatialPair
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createBvhSpatialBackend3D } from './bvh3D';
+import { createBvhSpatialBackend3D, initializeBvhSpatialBackend3D } from './bvh3D';
 import { setSpatialIndexingGuard } from './spatialIndexingGuard';
 import { createUniformGridSpatialBackend3D } from './uniformGrid3D';
 
@@ -295,5 +295,10 @@ describe('createBvhSpatialBackend3D', () => {
     }
     setSpatialIndexingGuard(null);
     expect(notices).toEqual([]);
+  });
+});
+describe('initializeBvhSpatialBackend3D', () => {
+  it('is the construction initializer of createBvhSpatialBackend3D', () => {
+    expect(typeof initializeBvhSpatialBackend3D).toBe('function');
   });
 });

@@ -1,9 +1,14 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { webShellExternalBackend } from './webShell';
+import { initializeWebShellExternalBackend, webShellExternalBackend } from './webShell';
 
 afterEach(() => vi.unstubAllGlobals());
 
+describe('initializeWebShellExternalBackend', () => {
+  it('is the construction initializer of createWebShellExternalBackend', () => {
+    expect(typeof initializeWebShellExternalBackend).toBe('function');
+  });
+});
 describe('webShellExternalBackend', () => {
   it('is a stable Entity', () => {
     expect(EntityRuntimeKey in webShellExternalBackend).toBe(true);

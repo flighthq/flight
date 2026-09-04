@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
 import { createCollisionManifold3D } from './manifold3D';
-import { createCollisionTimeOfImpact3D, sweepCollisionShape3D } from './sweepCollisionShape3D';
+import {
+  createCollisionTimeOfImpact3D,
+  initializeCollisionTimeOfImpact3D,
+  sweepCollisionShape3D,
+} from './sweepCollisionShape3D';
 import { testCollision3D } from './testCollision3D';
 
 beforeEach(() => {
@@ -35,6 +39,15 @@ describe('createCollisionTimeOfImpact3D', () => {
   });
 });
 
+describe('initializeCollisionTimeOfImpact3D', () => {
+  it('is the construction initializer of createCollisionTimeOfImpact3D', () => {
+    expect(typeof initializeCollisionTimeOfImpact3D).toBe('function');
+  });
+});
+
+function createManifold(): CollisionManifold3D {
+  return createCollisionManifold3D();
+}
 describe('sweepCollisionShape3D', () => {
   it('finds the exact impact fraction for two approaching spheres', () => {
     // A at x=0 r=1 moving +10x; B fixed at x=10 r=1. Surfaces meet when the centres are 2 apart, so A
@@ -182,7 +195,3 @@ describe('sweepCollisionShape3D', () => {
     expect(out.fraction).toBeLessThan(1);
   });
 });
-
-function createManifold(): CollisionManifold3D {
-  return createCollisionManifold3D();
-}

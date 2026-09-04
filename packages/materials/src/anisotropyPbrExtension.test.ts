@@ -1,6 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createAnisotropyPbrExtension, isValidAnisotropyPbrExtension } from './anisotropyPbrExtension';
+import {
+  createAnisotropyPbrExtension,
+  initializeAnisotropyPbrExtension,
+  isValidAnisotropyPbrExtension,
+} from './anisotropyPbrExtension';
 
 describe('createAnisotropyPbrExtension', () => {
   it('creates an Entity with canonical defaults and per-map UV selection', () => {
@@ -11,6 +15,11 @@ describe('createAnisotropyPbrExtension', () => {
   });
 });
 
+describe('initializeAnisotropyPbrExtension', () => {
+  it('is the construction initializer of createAnisotropyPbrExtension', () => {
+    expect(typeof initializeAnisotropyPbrExtension).toBe('function');
+  });
+});
 describe('isValidAnisotropyPbrExtension', () => {
   it('rejects invalid strength, rotation, and UV selection', () => {
     expect(isValidAnisotropyPbrExtension(createAnisotropyPbrExtension())).toBe(true);

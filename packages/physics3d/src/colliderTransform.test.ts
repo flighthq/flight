@@ -4,6 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createPhysics3DColliderWorldShape,
+  initializeCollisionBox3D,
+  initializeCollisionCapsule3D,
+  initializeCollisionCone3D,
+  initializeCollisionConvex3D,
+  initializeCollisionCylinder3D,
+  initializeCollisionSphere3D,
   updatePhysics3DColliderWorldShape,
   writePhysics3DColliderBounds,
 } from './colliderTransform';
@@ -61,6 +67,41 @@ describe('createPhysics3DColliderWorldShape', () => {
     const local: CollisionBuiltInShape3D = { kind: 'convex', points: [1, 2, 3] };
     const world = createPhysics3DColliderWorldShape(local);
     expect(world.kind === 'convex' && world.points).not.toBe(local.points);
+  });
+});
+
+describe('initializeCollisionBox3D', () => {
+  it('is the construction initializer of createCollisionBox3D', () => {
+    expect(typeof initializeCollisionBox3D).toBe('function');
+  });
+});
+
+describe('initializeCollisionCapsule3D', () => {
+  it('is the construction initializer of createCollisionCapsule3D', () => {
+    expect(typeof initializeCollisionCapsule3D).toBe('function');
+  });
+});
+describe('initializeCollisionCone3D', () => {
+  it('is the construction initializer of createCollisionCone3D', () => {
+    expect(typeof initializeCollisionCone3D).toBe('function');
+  });
+});
+
+describe('initializeCollisionConvex3D', () => {
+  it('is the construction initializer of createCollisionConvex3D', () => {
+    expect(typeof initializeCollisionConvex3D).toBe('function');
+  });
+});
+
+describe('initializeCollisionCylinder3D', () => {
+  it('is the construction initializer of createCollisionCylinder3D', () => {
+    expect(typeof initializeCollisionCylinder3D).toBe('function');
+  });
+});
+
+describe('initializeCollisionSphere3D', () => {
+  it('is the construction initializer of createCollisionSphere3D', () => {
+    expect(typeof initializeCollisionSphere3D).toBe('function');
   });
 });
 

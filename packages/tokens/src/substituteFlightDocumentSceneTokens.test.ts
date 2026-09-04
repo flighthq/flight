@@ -14,6 +14,7 @@ import {
 } from './flightDocumentSceneTokens';
 import {
   explainFlightDocumentSceneTokenSubstitution,
+  initializeFlightDocumentRefusalExplanation,
   substituteFlightDocumentSceneTokens,
 } from './substituteFlightDocumentSceneTokens';
 
@@ -59,6 +60,24 @@ describe('explainFlightDocumentSceneTokenSubstitution', () => {
   });
 });
 
+describe('initializeFlightDocumentRefusalExplanation', () => {
+  it('is the construction initializer of createFlightDocumentRefusalExplanation', () => {
+    expect(typeof initializeFlightDocumentRefusalExplanation).toBe('function');
+  });
+});
+
+function resolutionOf(
+  scene: Readonly<FlightDocumentScene2D | FlightDocumentScene3D>,
+  mode = 'default',
+): FlightDocumentTokenResolution {
+  const resolution = resolveFlightDocumentSceneTokens(scene, mode, createFlightDocumentTokenResolverRegistry());
+  if (resolution === null) throw new Error('expected the fixture token table to resolve');
+  return resolution;
+}
+
+function sceneWith(scene: FlightDocumentNode, tokens: readonly FlightDocumentToken[]): FlightDocumentScene2D {
+  return { backgroundColor: null, kind: 'Scene2D', layouts: [], scene, tokens: [...tokens] };
+}
 describe('substituteFlightDocumentSceneTokens', () => {
   it('replaces a reference nested inside a command argument map inside an array', () => {
     const scene = sceneWith(
@@ -163,16 +182,3 @@ describe('substituteFlightDocumentSceneTokens', () => {
     expect(substituteFlightDocumentSceneTokens(scene, resolutionOf(scene))).toBeNull();
   });
 });
-
-function resolutionOf(
-  scene: Readonly<FlightDocumentScene2D | FlightDocumentScene3D>,
-  mode = 'default',
-): FlightDocumentTokenResolution {
-  const resolution = resolveFlightDocumentSceneTokens(scene, mode, createFlightDocumentTokenResolverRegistry());
-  if (resolution === null) throw new Error('expected the fixture token table to resolve');
-  return resolution;
-}
-
-function sceneWith(scene: FlightDocumentNode, tokens: readonly FlightDocumentToken[]): FlightDocumentScene2D {
-  return { backgroundColor: null, kind: 'Scene2D', layouts: [], scene, tokens: [...tokens] };
-}

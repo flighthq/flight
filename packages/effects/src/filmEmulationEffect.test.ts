@@ -1,4 +1,4 @@
-import { createFilmEmulationEffect } from './filmEmulationEffect';
+import { createFilmEmulationEffect, initializeFilmEmulationEffect } from './filmEmulationEffect';
 
 describe('createFilmEmulationEffect', () => {
   it('carries options', () => {
@@ -10,5 +10,10 @@ describe('createFilmEmulationEffect', () => {
 
   it('tags the intent type', () => {
     expect(createFilmEmulationEffect().kind).toBe('FilmEmulationEffect');
+  });
+});
+describe('initializeFilmEmulationEffect', () => {
+  it('is the construction initializer of createFilmEmulationEffect', () => {
+    expect(typeof initializeFilmEmulationEffect).toBe('function');
   });
 });

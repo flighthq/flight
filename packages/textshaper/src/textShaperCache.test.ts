@@ -5,6 +5,7 @@ import {
   clearTextShaperCache,
   createTextShaperCache,
   disposeTextShaperCache,
+  initializeTextShaperCache,
   shapeTextRunCached,
 } from './textShaperCache';
 
@@ -81,6 +82,22 @@ describe('disposeTextShaperCache', () => {
   });
 });
 
+describe('initializeTextShaperCache', () => {
+  it('is the construction initializer of createTextShaperCache', () => {
+    expect(typeof initializeTextShaperCache).toBe('function');
+  });
+});
+
+function _hostWithAdvance(advanceWidth: number): HasTextShaper {
+  return {
+    text: {
+      shaper: {
+        measureText: () => advanceWidth,
+        shapeRun: () => ({ ..._stubRun, advanceWidth }),
+      },
+    },
+  };
+}
 describe('shapeTextRunCached', () => {
   it('keeps cache entries isolated when callers interleave explicit hosts', () => {
     const cache = createTextShaperCache();
@@ -168,14 +185,3 @@ describe('shapeTextRunCached', () => {
     expect(cache._entries.size).toBe(1);
   });
 });
-
-function _hostWithAdvance(advanceWidth: number): HasTextShaper {
-  return {
-    text: {
-      shaper: {
-        measureText: () => advanceWidth,
-        shapeRun: () => ({ ..._stubRun, advanceWidth }),
-      },
-    },
-  };
-}

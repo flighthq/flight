@@ -1,6 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createWebRaster2DSurfaceProvider, webRaster2DSurfaceProvider } from './webRaster2DSurface';
+import {
+  createWebRaster2DSurfaceProvider,
+  initializeWebRaster2DSurfaceProvider,
+  webRaster2DSurfaceProvider,
+} from './webRaster2DSurface';
 
 describe('createWebRaster2DSurfaceProvider', () => {
   it('returns an Entity', () => {
@@ -45,6 +49,11 @@ describe('createWebRaster2DSurfaceProvider', () => {
   });
 });
 
+describe('initializeWebRaster2DSurfaceProvider', () => {
+  it('is the construction initializer of createWebRaster2DSurfaceProvider', () => {
+    expect(typeof initializeWebRaster2DSurfaceProvider).toBe('function');
+  });
+});
 describe('webRaster2DSurfaceProvider', () => {
   it('is an Entity', () => {
     expect(EntityRuntimeKey in webRaster2DSurfaceProvider).toBe(true);

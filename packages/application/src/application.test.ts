@@ -13,6 +13,7 @@ import {
   getApplicationFrameRate,
   getApplicationMainWindow,
   getApplicationWindows,
+  initializeApplication,
   isApplicationRunning,
   pauseApplicationLoop,
   registerApplicationWindow,
@@ -339,6 +340,12 @@ describe('getApplicationWindows', () => {
     // Snapshot is a copy — mutating it does not affect the registry.
     (snapshot as unknown[]).push(null);
     expect(app.windows.length).toBe(1);
+  });
+});
+
+describe('initializeApplication', () => {
+  it('is the construction initializer of createApplication', () => {
+    expect(typeof initializeApplication).toBe('function');
   });
 });
 
@@ -870,7 +877,6 @@ describe('stopApplicationLoop', () => {
     expect(renders).toBe(1);
   });
 });
-
 describe('unregisterApplicationWindow', () => {
   it('removes a registered window', () => {
     const app = createApplication();

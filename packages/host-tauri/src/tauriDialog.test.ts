@@ -6,6 +6,10 @@ import {
   createTauriFileOpenDialogBackend,
   createTauriFileSaveDialogBackend,
   createTauriMessageDialogBackend,
+  initializeTauriDirectoryOpenDialogBackend,
+  initializeTauriFileOpenDialogBackend,
+  initializeTauriFileSaveDialogBackend,
+  initializeTauriMessageDialogBackend,
 } from './tauriDialog';
 
 interface DialogCalls {
@@ -157,5 +161,28 @@ describe('createTauriMessageDialogBackend', () => {
     expect(calls.message[0].kind).toBe('info');
     expect(await backend.confirm({ message: 'Sure?', kind: 'warning' })).toBe(true);
     expect(calls.confirm[0].kind).toBe('warning');
+  });
+});
+describe('initializeTauriDirectoryOpenDialogBackend', () => {
+  it('is the construction initializer of createTauriDirectoryOpenDialogBackend', () => {
+    expect(typeof initializeTauriDirectoryOpenDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeTauriFileOpenDialogBackend', () => {
+  it('is the construction initializer of createTauriFileOpenDialogBackend', () => {
+    expect(typeof initializeTauriFileOpenDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeTauriFileSaveDialogBackend', () => {
+  it('is the construction initializer of createTauriFileSaveDialogBackend', () => {
+    expect(typeof initializeTauriFileSaveDialogBackend).toBe('function');
+  });
+});
+
+describe('initializeTauriMessageDialogBackend', () => {
+  it('is the construction initializer of createTauriMessageDialogBackend', () => {
+    expect(typeof initializeTauriMessageDialogBackend).toBe('function');
   });
 });

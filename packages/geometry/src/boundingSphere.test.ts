@@ -15,6 +15,8 @@ import {
   transformBoundingSphereByMatrix4,
 } from '@flighthq/geometry/contract';
 
+import { initializeBoundingSphere } from './boundingSphere';
+
 describe('cloneBoundingSphere', () => {
   it('creates an independent copy with an independent center', () => {
     const s = createBoundingSphere(1, 2, 3, 4);
@@ -119,6 +121,12 @@ describe('getClosestPointOnBoundingSphere', () => {
     const p = createVector3(6, 0, 0);
     getClosestPointOnBoundingSphere(p, s, p);
     expect(p.x).toBeCloseTo(3, 6);
+  });
+});
+
+describe('initializeBoundingSphere', () => {
+  it('is the construction initializer of createBoundingSphere', () => {
+    expect(typeof initializeBoundingSphere).toBe('function');
   });
 });
 
@@ -242,7 +250,6 @@ describe('setBoundingSphereFromAabb', () => {
     expect(s.radius).toBe(-1);
   });
 });
-
 describe('transformBoundingSphereByMatrix4', () => {
   it('translates the center and preserves the radius', () => {
     const s = createBoundingSphere(0, 0, 0, 2);

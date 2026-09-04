@@ -2,7 +2,11 @@ import type { CollisionBuiltInShape3D, CollisionRaycastHit3D } from '@flighthq/t
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
-import { createCollisionRaycastHit3D, raycastCollisionShape3D } from './raycastCollisionShape3D';
+import {
+  createCollisionRaycastHit3D,
+  initializeCollisionRaycastHit3D,
+  raycastCollisionShape3D,
+} from './raycastCollisionShape3D';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();
@@ -39,6 +43,11 @@ describe('createCollisionRaycastHit3D', () => {
   });
 });
 
+describe('initializeCollisionRaycastHit3D', () => {
+  it('is the construction initializer of createCollisionRaycastHit3D', () => {
+    expect(typeof initializeCollisionRaycastHit3D).toBe('function');
+  });
+});
 describe('raycastCollisionShape3D', () => {
   const sphere: CollisionBuiltInShape3D = { kind: 'sphere', x: 5, y: 0, z: 0, radius: 1 };
   const aabb: CollisionBuiltInShape3D = { kind: 'aabb', minX: 4, minY: -1, minZ: -1, maxX: 6, maxY: 1, maxZ: 1 };

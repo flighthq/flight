@@ -13,6 +13,7 @@ import {
   focusPreviousNode,
   getFocusOrder,
   getFocusedNode,
+  initializeFocusManager,
   isNodeFocused,
   setFocusedNode,
 } from './focusManager';
@@ -237,6 +238,12 @@ describe('getFocusOrder', () => {
   });
 });
 
+describe('initializeFocusManager', () => {
+  it('is the construction initializer of createFocusManager', () => {
+    expect(typeof initializeFocusManager).toBe('function');
+  });
+});
+
 describe('isNodeFocused', () => {
   it('is true only for the focused node', () => {
     const a = focusable();
@@ -248,7 +255,6 @@ describe('isNodeFocused', () => {
     expect(isNodeFocused(manager, b)).toBe(false);
   });
 });
-
 describe('setFocusedNode', () => {
   it('rejects a non-focusable node without changing focus', () => {
     const plain = createDisplayObject();

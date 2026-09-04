@@ -10,6 +10,7 @@ import {
   getPlatformKind,
   getPlatformName,
   getPlatformRuntime,
+  initializePlatformInfo,
   isPlatformDesktop,
   isPlatformMobile,
   isPlatformNative,
@@ -152,6 +153,12 @@ describe('getPlatformRuntime', () => {
   });
 });
 
+describe('initializePlatformInfo', () => {
+  it('is the construction initializer of createPlatformInfo', () => {
+    expect(typeof initializePlatformInfo).toBe('function');
+  });
+});
+
 describe('isPlatformDesktop', () => {
   it('is true only for desktop kind', () => {
     expect(isPlatformDesktop(fakeHost({ kind: 'desktop' }))).toBe(true);
@@ -226,7 +233,6 @@ describe('isPlatformWeb', () => {
     expect(isPlatformWeb(fakeHost({ kind: 'web' }))).toBe(true);
   });
 });
-
 describe('R3 boundary', () => {
   it('exports no ambient-state API (setPlatformBackend, getPlatformBackend, etc.)', () => {
     const exports = Object.keys(platformContract);

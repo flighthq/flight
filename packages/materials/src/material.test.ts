@@ -1,7 +1,14 @@
 import type { BlinnPhongMaterial, StandardPbrMaterial } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { cloneMaterial, copyMaterial, createMaterial, equalsMaterial, getMaterialOfKind } from './material';
+import {
+  cloneMaterial,
+  copyMaterial,
+  createMaterial,
+  equalsMaterial,
+  getMaterialOfKind,
+  initializeMaterial,
+} from './material';
 import { createStandardPbrMaterial } from './pbrMaterials';
 
 const TestMaterialKind = 'TestMaterial';
@@ -114,5 +121,10 @@ describe('getMaterialOfKind', () => {
     // @ts-expect-error A Blinn-Phong result cannot be requested with the standard-PBR discriminant.
     getMaterialOfKind<BlinnPhongMaterial>(material, StandardPbrMaterialKind);
     expect(getMaterialOfKind<BlinnPhongMaterial>(material, BlinnPhongMaterialKind)).toBeNull();
+  });
+});
+describe('initializeMaterial', () => {
+  it('is the construction initializer of createMaterial', () => {
+    expect(typeof initializeMaterial).toBe('function');
   });
 });

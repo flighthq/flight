@@ -11,6 +11,7 @@ import type { Node2D, Sprite, SpritesheetAnimationDirection, Texture } from '@fl
 import {
   createSpritesheetTimelineSource,
   explainSpritesheetTimelineSource,
+  initializeSpritesheetTimelineSource,
   setSpritesheetTimelineSourceGuard,
 } from './spritesheetTimelineSource';
 
@@ -111,6 +112,11 @@ describe('explainSpritesheetTimelineSource', () => {
   });
 });
 
+describe('initializeSpritesheetTimelineSource', () => {
+  it('is the construction initializer of createSpritesheetTimelineSource', () => {
+    expect(typeof initializeSpritesheetTimelineSource).toBe('function');
+  });
+});
 describe('setSpritesheetTimelineSourceGuard', () => {
   it('receives the authored animation and its loss explanation only while installed', () => {
     const sheet = makeSheet(1);

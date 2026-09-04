@@ -12,6 +12,7 @@ import { getSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget'
 import {
   createSkeleton2DDrawOrderAnimationTarget,
   createSkeleton2DDrawOrderChannel,
+  initializeSkeleton2DDrawOrderAnimationTarget,
   registerSkeleton2DDrawOrderAnimationBinder,
   unregisterSkeleton2DDrawOrderAnimationBinder,
 } from './skeleton2dDrawOrderTarget';
@@ -80,6 +81,12 @@ describe('createSkeleton2DDrawOrderChannel', () => {
     const { list, nodes } = rig(2);
 
     expect(createSkeleton2DDrawOrderChannel({ orderings: [0, 1, 1], times: [0, 1] }, nodes, list)).toBeNull();
+  });
+});
+
+describe('initializeSkeleton2DDrawOrderAnimationTarget', () => {
+  it('is the construction initializer of createSkeleton2DDrawOrderAnimationTarget', () => {
+    expect(typeof initializeSkeleton2DDrawOrderAnimationTarget).toBe('function');
   });
 });
 
@@ -188,15 +195,6 @@ describe('registerSkeleton2DDrawOrderAnimationBinder', () => {
   });
 });
 
-describe('unregisterSkeleton2DDrawOrderAnimationBinder', () => {
-  it('releases the kind again', () => {
-    registerSkeleton2DDrawOrderAnimationBinder();
-    unregisterSkeleton2DDrawOrderAnimationBinder();
-
-    expect(getSkeleton2DAnimationTargetBinder('Skeleton2D.DrawOrderTarget')).toBeNull();
-  });
-});
-
 function rig(count: number): { list: NodeOrderList; nodes: Node[]; parent: Node } {
   const parent = createNode(TEST_NODE_KIND);
   const nodes = Array.from({ length: count }, () => createNode(TEST_NODE_KIND));
@@ -233,3 +231,11 @@ function track(
 
 // Ordering is kind-agnostic — it permutes children, whatever they draw.
 const TEST_NODE_KIND = 'Skeleton2DDrawOrderTestNode';
+describe('unregisterSkeleton2DDrawOrderAnimationBinder', () => {
+  it('releases the kind again', () => {
+    registerSkeleton2DDrawOrderAnimationBinder();
+    unregisterSkeleton2DDrawOrderAnimationBinder();
+
+    expect(getSkeleton2DAnimationTargetBinder('Skeleton2D.DrawOrderTarget')).toBeNull();
+  });
+});

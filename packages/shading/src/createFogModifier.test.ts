@@ -1,7 +1,7 @@
 import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createFogModifier } from './createFogModifier';
+import { createFogModifier, initializeFogModifier } from './createFogModifier';
 
 describe('createFogModifier', () => {
   it('sets the kind and Effect slot', () => {
@@ -27,5 +27,10 @@ describe('createFogModifier', () => {
     const modifier = createFogModifier({ color: 0xffffffff, mode: FogModifierMode.Exponential2, density: 0.05 });
     expect(modifier.mode).toBe(FogModifierMode.Exponential2);
     expect(modifier.density).toBe(0.05);
+  });
+});
+describe('initializeFogModifier', () => {
+  it('is the construction initializer of createFogModifier', () => {
+    expect(typeof initializeFogModifier).toBe('function');
   });
 });

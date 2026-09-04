@@ -1,6 +1,6 @@
 import type { HapticsCapabilities, CapacitorApi } from '@flighthq/types/contract';
 
-import { createCapacitorHapticsBackend } from './capacitorHaptics';
+import { createCapacitorHapticsBackend, initializeCapacitorHapticsBackend } from './capacitorHaptics';
 
 function fakeCapacitor() {
   const calls: Array<{ method: string; arg?: unknown }> = [];
@@ -70,5 +70,10 @@ describe('createCapacitorHapticsBackend', () => {
     expect(backend.cancel()).toBe(false);
     expect(backend.vibratePattern([10, 20])).toBe(false);
     expect(backend.isSupported()).toBe(true);
+  });
+});
+describe('initializeCapacitorHapticsBackend', () => {
+  it('is the construction initializer of createCapacitorHapticsBackend', () => {
+    expect(typeof initializeCapacitorHapticsBackend).toBe('function');
   });
 });

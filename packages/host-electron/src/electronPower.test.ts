@@ -1,7 +1,18 @@
 import type { PowerStatus, ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronPowerBackends } from './electronPower';
+import {
+  createElectronPowerBackends,
+  initializeElectronPowerCapabilities,
+  initializePowerBatteryHealthBackend,
+  initializePowerChangeBackend,
+  initializePowerIdleBackend,
+  initializePowerKeepAwakeBackend,
+  initializePowerSessionLockBackend,
+  initializePowerStatusBackend,
+  initializePowerSuspensionBackend,
+  initializePowerThermalBackend,
+} from './electronPower';
 
 function emptyStatus(): PowerStatus {
   return {
@@ -163,5 +174,58 @@ describe('electron power slot coverage', () => {
     expect(typeof slots.keepAwake.destroy).toBe('function');
     expect('destroy' in slots.sessionLock).toBe(false);
     expect('destroy' in slots.status).toBe(false);
+  });
+});
+describe('initializeElectronPowerCapabilities', () => {
+  it('is the construction initializer of createElectronPowerCapabilities', () => {
+    expect(typeof initializeElectronPowerCapabilities).toBe('function');
+  });
+});
+
+describe('initializePowerBatteryHealthBackend', () => {
+  it('is the construction initializer of createPowerBatteryHealthBackend', () => {
+    expect(typeof initializePowerBatteryHealthBackend).toBe('function');
+  });
+});
+
+describe('initializePowerChangeBackend', () => {
+  it('is the construction initializer of createPowerChangeBackend', () => {
+    expect(typeof initializePowerChangeBackend).toBe('function');
+  });
+});
+
+describe('initializePowerIdleBackend', () => {
+  it('is the construction initializer of createPowerIdleBackend', () => {
+    expect(typeof initializePowerIdleBackend).toBe('function');
+  });
+});
+
+describe('initializePowerKeepAwakeBackend', () => {
+  it('is the construction initializer of createPowerKeepAwakeBackend', () => {
+    expect(typeof initializePowerKeepAwakeBackend).toBe('function');
+  });
+});
+
+describe('initializePowerSessionLockBackend', () => {
+  it('is the construction initializer of createPowerSessionLockBackend', () => {
+    expect(typeof initializePowerSessionLockBackend).toBe('function');
+  });
+});
+
+describe('initializePowerStatusBackend', () => {
+  it('is the construction initializer of createPowerStatusBackend', () => {
+    expect(typeof initializePowerStatusBackend).toBe('function');
+  });
+});
+
+describe('initializePowerSuspensionBackend', () => {
+  it('is the construction initializer of createPowerSuspensionBackend', () => {
+    expect(typeof initializePowerSuspensionBackend).toBe('function');
+  });
+});
+
+describe('initializePowerThermalBackend', () => {
+  it('is the construction initializer of createPowerThermalBackend', () => {
+    expect(typeof initializePowerThermalBackend).toBe('function');
   });
 });

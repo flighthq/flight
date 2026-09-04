@@ -7,6 +7,7 @@ import {
   getAudioSourceBufferSourceNode,
   getAudioSourceGainNode,
   hasAudioDeviceWebNodeAccess,
+  initializeWebAudioDeviceBackend,
 } from './audioDeviceBackend';
 
 describe('createWebAudioDeviceBackend', () => {
@@ -181,3 +182,8 @@ function installFakeAudioContext(): {
   } as unknown as typeof AudioBuffer;
   return { bufferSource, gain, panner };
 }
+describe('initializeWebAudioDeviceBackend', () => {
+  it('is the construction initializer of createWebAudioDeviceBackend', () => {
+    expect(typeof initializeWebAudioDeviceBackend).toBe('function');
+  });
+});

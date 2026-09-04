@@ -6,6 +6,8 @@ import {
   createOrthographicProjection,
   createPerspectiveProjection,
   getOrthographicProjectionTexelSize,
+  initializeOrthographicProjection,
+  initializePerspectiveProjection,
   isOrthographicProjection,
   isPerspectiveProjection,
   setProjectionMatrix4,
@@ -45,6 +47,18 @@ describe('getOrthographicProjectionTexelSize', () => {
   });
 });
 
+describe('initializeOrthographicProjection', () => {
+  it('is the construction initializer of createOrthographicProjection', () => {
+    expect(typeof initializeOrthographicProjection).toBe('function');
+  });
+});
+
+describe('initializePerspectiveProjection', () => {
+  it('is the construction initializer of createPerspectiveProjection', () => {
+    expect(typeof initializePerspectiveProjection).toBe('function');
+  });
+});
+
 describe('isOrthographicProjection', () => {
   it('is true for orthographic and false for perspective', () => {
     const ortho = createOrthographicProjection({ halfHeight: 1, halfWidth: 1 });
@@ -53,7 +67,6 @@ describe('isOrthographicProjection', () => {
     expect(isOrthographicProjection(persp)).toBe(false);
   });
 });
-
 describe('isPerspectiveProjection', () => {
   it('is true for perspective and false for orthographic', () => {
     const persp = createPerspectiveProjection({ aspect: 1, fovY: 1 });

@@ -9,6 +9,7 @@ import type {
 
 import {
   createWebServiceWorkerNotificationCapabilities,
+  initializeWebServiceWorkerNotificationCapabilities,
   notifyWebServiceWorkerNotificationEvent,
 } from './webServiceWorkerNotification';
 
@@ -112,6 +113,11 @@ describe('createWebServiceWorkerNotificationCapabilities', () => {
   });
 });
 
+describe('initializeWebServiceWorkerNotificationCapabilities', () => {
+  it('is the construction initializer of createWebServiceWorkerNotificationCapabilities', () => {
+    expect(typeof initializeWebServiceWorkerNotificationCapabilities).toBe('function');
+  });
+});
 describe('notifyWebServiceWorkerNotificationEvent', () => {
   it('routes real action/click/close events without fabricating reply', async () => {
     const { api } = fakeServiceWorker();

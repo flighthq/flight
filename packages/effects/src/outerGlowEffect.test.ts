@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createOuterGlowEffect,
   getOuterGlowEffectPadding,
+  initializeOuterGlowEffect,
   registerOuterGlowEffectPaddingResolver,
 } from './outerGlowEffect';
 
@@ -30,6 +31,11 @@ describe('getOuterGlowEffectPadding', () => {
   });
 });
 
+describe('initializeOuterGlowEffect', () => {
+  it('is the construction initializer of createOuterGlowEffect', () => {
+    expect(typeof initializeOuterGlowEffect).toBe('function');
+  });
+});
 describe('registerOuterGlowEffectPaddingResolver', () => {
   it('registers the outer-glow footprint on only the supplied state', () => {
     const state = createRenderState();

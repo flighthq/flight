@@ -22,6 +22,8 @@ import {
   unionAabb,
 } from '@flighthq/geometry/contract';
 
+import { initializeAabb } from './aabb';
+
 describe('cloneAabb', () => {
   it('creates an independent copy with independent corner vectors', () => {
     const a = createAabb(-1, -2, -3, 4, 5, 6);
@@ -198,6 +200,12 @@ describe('getClosestPointOnAabb', () => {
   });
 });
 
+describe('initializeAabb', () => {
+  it('is the construction initializer of createAabb', () => {
+    expect(typeof initializeAabb).toBe('function');
+  });
+});
+
 describe('intersectAabb', () => {
   it('produces the overlapping sub-box for two overlapping boxes', () => {
     const a = createAabb(0, 0, 0, 4, 4, 4);
@@ -361,7 +369,6 @@ describe('transformAabbByMatrix4', () => {
     expect(a.max.z).toBeCloseTo(6, 6);
   });
 });
-
 describe('unionAabb', () => {
   it('encloses both boxes', () => {
     const a = createAabb(0, 0, 0, 1, 1, 1);

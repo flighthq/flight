@@ -39,6 +39,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Vector3 } from '@flighthq/types/contract';
 
+import { initializeVector3 } from './vector3';
+
 describe('addVector3', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector3(1, 2, 3);
@@ -458,6 +460,12 @@ describe('getVector3Spherical', () => {
     expect(vector.x).toBeCloseTo(1, 6);
     expect(vector.y).toBeCloseTo(Math.PI / 2, 6);
     expect(vector.z).toBeCloseTo(0, 6);
+  });
+});
+
+describe('initializeVector3', () => {
+  it('is the construction initializer of createVector3', () => {
+    expect(typeof initializeVector3).toBe('function');
   });
 });
 
@@ -947,7 +955,6 @@ describe('Y_AXIS', () => {
     expect(yAxis.z).toBe(0);
   });
 });
-
 describe('Z_AXIS', () => {
   it('returns the unit vector along the Z-axis', () => {
     const zAxis: Vector3 = VECTOR3_Z_AXIS;

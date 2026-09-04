@@ -8,6 +8,7 @@ import {
   acquireWgpuRenderTexture,
   createWgpuRenderTexturePool,
   destroyWgpuRenderTexturePool,
+  initializeWgpuRenderTexturePool,
   releaseWgpuRenderTexture,
   withWgpuRenderTextures,
 } from './wgpuRenderTexturePool';
@@ -109,6 +110,12 @@ describe('destroyWgpuRenderTexturePool', () => {
   });
 });
 
+describe('initializeWgpuRenderTexturePool', () => {
+  it('is the construction initializer of createWgpuRenderTexturePool', () => {
+    expect(typeof initializeWgpuRenderTexturePool).toBe('function');
+  });
+});
+
 describe('releaseWgpuRenderTexture', () => {
   it('rejects a double release', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -119,7 +126,6 @@ describe('releaseWgpuRenderTexture', () => {
     expect(() => releaseWgpuRenderTexture(state, pool, texture)).toThrow('texture is not leased');
   });
 });
-
 describe('withWgpuRenderTextures', () => {
   it('releases every lease when the bracket callback throws', async () => {
     const state = await createWgpuRenderStateForTest();

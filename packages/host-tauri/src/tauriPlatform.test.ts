@@ -1,6 +1,6 @@
 import type { PlatformInfo, TauriApi } from '@flighthq/types/contract';
 
-import { createTauriPlatformBackend } from './tauriPlatform';
+import { createTauriPlatformBackend, initializeTauriPlatformBackend } from './tauriPlatform';
 
 function fakeTauri(platform: string): TauriApi {
   return {
@@ -52,5 +52,10 @@ describe('createTauriPlatformBackend', () => {
     const out = {} as PlatformInfo;
     createTauriPlatformBackend(tauri).getInfo(out);
     expect(out.locale).toBe('');
+  });
+});
+describe('initializeTauriPlatformBackend', () => {
+  it('is the construction initializer of createTauriPlatformBackend', () => {
+    expect(typeof initializeTauriPlatformBackend).toBe('function');
   });
 });

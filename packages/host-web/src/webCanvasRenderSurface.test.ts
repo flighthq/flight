@@ -1,6 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
+import {
+  createWebCanvasRenderSurfaceCreator,
+  initializeWebCanvasRenderSurfaceCreator,
+  webCanvasRenderSurfaceCreator,
+} from './webCanvasRenderSurface';
 
 describe('createWebCanvasRenderSurfaceCreator', () => {
   it('creates a complete host Entity', () => {
@@ -32,6 +36,11 @@ describe('createWebCanvasRenderSurfaceCreator', () => {
   });
 });
 
+describe('initializeWebCanvasRenderSurfaceCreator', () => {
+  it('is the construction initializer of createWebCanvasRenderSurfaceCreator', () => {
+    expect(typeof initializeWebCanvasRenderSurfaceCreator).toBe('function');
+  });
+});
 describe('webCanvasRenderSurfaceCreator', () => {
   it('is the reusable web-host creator', () => {
     expect(webCanvasRenderSurfaceCreator[EntityRuntimeKey]).toEqual({ binding: null });

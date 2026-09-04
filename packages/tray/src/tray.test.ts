@@ -35,6 +35,9 @@ import {
   getTrayIconTitle,
   getTrayIconTooltip,
   getTrayIcons,
+  initializeTrayCreateFailedResult,
+  initializeTrayCreateProviderFailureResult,
+  initializeTrayCreateSuccessResult,
   isTrayDestroyed,
   isTrayIconAnimating,
   onTrayBalloonEvent,
@@ -43,6 +46,7 @@ import {
   onTrayMenuSelection,
   popupTrayContextMenu,
   removeTrayBalloon,
+  setTrayAnimationGuard,
   setTrayIcon,
   setTrayIconContextMenu,
   setTrayIconTemplate,
@@ -50,7 +54,6 @@ import {
   setTrayIconTooltip,
   setTrayIgnoreDoubleClickEvents,
   setTrayPressedIcon,
-  setTrayAnimationGuard,
   startTrayIconAnimation,
   stopTrayIconAnimation,
 } from './tray';
@@ -302,6 +305,24 @@ describe('getTrayIconTooltip', () => {
   });
 });
 
+describe('initializeTrayCreateFailedResult', () => {
+  it('is the construction initializer of createTrayCreateFailedResult', () => {
+    expect(typeof initializeTrayCreateFailedResult).toBe('function');
+  });
+});
+
+describe('initializeTrayCreateProviderFailureResult', () => {
+  it('is the construction initializer of createTrayCreateProviderFailureResult', () => {
+    expect(typeof initializeTrayCreateProviderFailureResult).toBe('function');
+  });
+});
+
+describe('initializeTrayCreateSuccessResult', () => {
+  it('is the construction initializer of createTrayCreateSuccessResult', () => {
+    expect(typeof initializeTrayCreateSuccessResult).toBe('function');
+  });
+});
+
 describe('isTrayDestroyed', () => {
   it('tracks the pinned lifecycle', async () => {
     const { host } = testHost();
@@ -472,7 +493,6 @@ describe('setTrayIgnoreDoubleClickEvents', () => {
     expect((await setTrayIgnoreDoubleClickEvents(await acquire(host), true)).outcome).toBe('updated');
   });
 });
-
 describe('setTrayPressedIcon', () => {
   it('updates the pressed icon', async () => {
     const { host } = testHost();

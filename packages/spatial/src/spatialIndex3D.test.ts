@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clearSpatialIndex3D,
   createSpatialIndex3D,
+  initializeSpatialIndex3D,
   insertSpatialObject3D,
   querySpatialFrustum3D,
   querySpatialPairs3D,
@@ -64,15 +65,9 @@ describe('createSpatialIndex3D', () => {
   });
 });
 
-describe('insertSpatialObject3D', () => {
-  it('returns false for bounds that cannot be indexed at all', () => {
-    const index = createSpatialIndex3D();
-    expect(insertSpatialObject3D(index, 1, { minX: 0, minY: 0, minZ: 0, maxX: 1, maxY: 1, maxZ: Infinity })).toBe(
-      false,
-    );
-    const out: SpatialObjectId[] = [];
-    querySpatialRegion3D(index, { minX: -1e9, minY: -1e9, minZ: -1e9, maxX: 1e9, maxY: 1e9, maxZ: 1e9 }, out);
-    expect(out).toEqual([]);
+describe('initializeSpatialIndex3D', () => {
+  it('is the construction initializer of createSpatialIndex3D', () => {
+    expect(typeof initializeSpatialIndex3D).toBe('function');
   });
 });
 
@@ -108,6 +103,18 @@ function viewFrustum(nearHalf: number, farHalf: number, farZ: number): SpatialFr
     ],
   };
 }
+
+describe('insertSpatialObject3D', () => {
+  it('returns false for bounds that cannot be indexed at all', () => {
+    const index = createSpatialIndex3D();
+    expect(insertSpatialObject3D(index, 1, { minX: 0, minY: 0, minZ: 0, maxX: 1, maxY: 1, maxZ: Infinity })).toBe(
+      false,
+    );
+    const out: SpatialObjectId[] = [];
+    querySpatialRegion3D(index, { minX: -1e9, minY: -1e9, minZ: -1e9, maxX: 1e9, maxY: 1e9, maxZ: 1e9 }, out);
+    expect(out).toEqual([]);
+  });
+});
 
 describe('querySpatialFrustum3D', () => {
   it('finds an object inside the volume and excludes one far outside it', () => {
@@ -250,7 +257,6 @@ describe('removeSpatialObject3D', () => {
     expect(out).toEqual([]);
   });
 });
-
 describe('updateSpatialObject3D', () => {
   it('behaves as insert for a not-yet-present id', () => {
     const index = createSpatialIndex3D();

@@ -10,6 +10,7 @@ import {
   disposeSpritesheetPlayer,
   getSpritesheetPlayerFrame,
   getSpritesheetPlayerFrameAt,
+  initializeSpritesheetPlayer,
   pauseSpritesheetPlayer,
   playSpritesheetAnimation,
   queueSpritesheetAnimation,
@@ -233,6 +234,12 @@ describe('getSpritesheetPlayerFrameAt', () => {
     getSpritesheetPlayerFrameAt(player, sheet, 2);
     expect(player.frameIndex).toBe(before.frameIndex);
     expect(player.elapsed).toBe(before.elapsed);
+  });
+});
+
+describe('initializeSpritesheetPlayer', () => {
+  it('is the construction initializer of createSpritesheetPlayer', () => {
+    expect(typeof initializeSpritesheetPlayer).toBe('function');
   });
 });
 
@@ -474,7 +481,6 @@ describe('stopSpritesheetPlayer', () => {
     expect(player.queue).toHaveLength(0);
   });
 });
-
 describe('updateSpritesheetPlayer', () => {
   it('returns false when no animation', () => {
     const player = createSpritesheetPlayer();

@@ -4,6 +4,7 @@ import { DirectionalLightKind, LuxLightUnit, UnitlessLightUnit } from '@flighthq
 import {
   cloneDirectionalLight,
   createDirectionalLight,
+  initializeDirectionalLight,
   setDirectionalLightDirection,
   setDirectionalLightTarget,
 } from './directionalLight';
@@ -94,6 +95,12 @@ describe('createDirectionalLight', () => {
   });
 });
 
+describe('initializeDirectionalLight', () => {
+  it('is the construction initializer of createDirectionalLight', () => {
+    expect(typeof initializeDirectionalLight).toBe('function');
+  });
+});
+
 describe('setDirectionalLightDirection', () => {
   it('writes a normalized direction into the light', () => {
     const light = createDirectionalLight();
@@ -109,7 +116,6 @@ describe('setDirectionalLightDirection', () => {
     expect(light.direction.y).toBeCloseTo(-1, 6);
   });
 });
-
 describe('setDirectionalLightTarget', () => {
   it('sets direction toward the target from the from-point', () => {
     const light = createDirectionalLight();

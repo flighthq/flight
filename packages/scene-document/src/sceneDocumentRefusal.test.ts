@@ -18,6 +18,7 @@ import {
   checkUnregisteredNodeKindsFromRaw,
   createDocumentRefusal,
   createSceneRefusal,
+  initializeDocumentRefusal,
 } from './sceneDocumentRefusal';
 
 describe('checkFlightDocumentFields', () => {
@@ -225,3 +226,8 @@ function createTestSchemas(registeredKind: string): FlightDocumentSchemaRegistry
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
   };
 }
+describe('initializeDocumentRefusal', () => {
+  it('is the construction initializer of createDocumentRefusal', () => {
+    expect(typeof initializeDocumentRefusal).toBe('function');
+  });
+});

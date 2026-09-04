@@ -11,6 +11,7 @@ import {
   dispatchSelectableRichTextWheel,
   focusSelectableRichText,
   getSelectableRichTextSelectionText,
+  initializeSelectableRichTextManager,
 } from './selectableRichTextManager';
 
 function makeKeyData(data: Partial<InputKeyboardData> = {}): InputKeyboardData {
@@ -185,5 +186,10 @@ describe('getSelectableRichTextSelectionText', () => {
     runtime.selectionBeginIndex = 6;
     runtime.selectionEndIndex = 11;
     expect(getSelectableRichTextSelectionText(manager)).toBe('world');
+  });
+});
+describe('initializeSelectableRichTextManager', () => {
+  it('is the construction initializer of createSelectableRichTextManager', () => {
+    expect(typeof initializeSelectableRichTextManager).toBe('function');
   });
 });

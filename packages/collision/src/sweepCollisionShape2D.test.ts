@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 
 import { collideContactManifold2D } from './collideContactManifold2D';
 import { createCollisionContactManifold2D } from './contactManifold2D';
-import { createCollisionTimeOfImpact2D, sweepCollisionShape2D } from './sweepCollisionShape2D';
+import {
+  createCollisionTimeOfImpact2D,
+  initializeCollisionTimeOfImpact2D,
+  sweepCollisionShape2D,
+} from './sweepCollisionShape2D';
 
 type CollisionCapsule2D = Extract<CollisionBuiltInShape2D, { kind: 'capsule' }>;
 type CollisionSweepTarget2D = Extract<CollisionBuiltInShape2D, { kind: 'aabb' | 'capsule' | 'circle' | 'obb' }>;
@@ -21,6 +25,11 @@ describe('createCollisionTimeOfImpact2D', () => {
   });
 });
 
+describe('initializeCollisionTimeOfImpact2D', () => {
+  it('is the construction initializer of createCollisionTimeOfImpact2D', () => {
+    expect(typeof initializeCollisionTimeOfImpact2D).toBe('function');
+  });
+});
 describe('sweepCollisionShape2D', () => {
   it('keeps continuous-SAT state isolated from a nested sweep triggered by the output setter', () => {
     const out = createCollisionTimeOfImpact2D();

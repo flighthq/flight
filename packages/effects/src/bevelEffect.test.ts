@@ -1,6 +1,11 @@
 import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
 
-import { createBevelEffect, getBevelEffectPadding, registerBevelEffectPaddingResolver } from './bevelEffect';
+import {
+  createBevelEffect,
+  getBevelEffectPadding,
+  initializeBevelEffect,
+  registerBevelEffectPaddingResolver,
+} from './bevelEffect';
 
 describe('createBevelEffect', () => {
   it('tags the intent type', () => {
@@ -26,6 +31,11 @@ describe('getBevelEffectPadding', () => {
   });
 });
 
+describe('initializeBevelEffect', () => {
+  it('is the construction initializer of createBevelEffect', () => {
+    expect(typeof initializeBevelEffect).toBe('function');
+  });
+});
 describe('registerBevelEffectPaddingResolver', () => {
   it('registers the bevel footprint on only the supplied state', () => {
     const state = createRenderState();

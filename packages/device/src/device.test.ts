@@ -19,6 +19,10 @@ import {
   getDeviceId,
   getDeviceInfo,
   getSafeAreaInsets,
+  initializeDeviceCapabilities,
+  initializeDeviceDisplayMetrics,
+  initializeDeviceInfo,
+  initializeSafeAreaInsets,
   refreshDeviceInfo,
 } from './device';
 
@@ -222,6 +226,29 @@ describe('getSafeAreaInsets', () => {
     expect(result).toBe(out);
     expect(out.top).toBe(24);
     expect(out.bottom).toBe(16);
+  });
+});
+
+describe('initializeDeviceCapabilities', () => {
+  it('is the construction initializer of createDeviceCapabilities', () => {
+    expect(typeof initializeDeviceCapabilities).toBe('function');
+  });
+});
+
+describe('initializeDeviceDisplayMetrics', () => {
+  it('is the construction initializer of createDeviceDisplayMetrics', () => {
+    expect(typeof initializeDeviceDisplayMetrics).toBe('function');
+  });
+});
+describe('initializeDeviceInfo', () => {
+  it('is the construction initializer of createDeviceInfo', () => {
+    expect(typeof initializeDeviceInfo).toBe('function');
+  });
+});
+
+describe('initializeSafeAreaInsets', () => {
+  it('is the construction initializer of createSafeAreaInsets', () => {
+    expect(typeof initializeSafeAreaInsets).toBe('function');
   });
 });
 

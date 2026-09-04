@@ -1,6 +1,7 @@
 import {
   applySpringImpulse,
   createSpring,
+  initializeSpring,
   isSpringSettled,
   resetSpring,
   updateSpring,
@@ -31,6 +32,11 @@ describe('createSpring', () => {
     const spring = createSpring(5, -2);
     expect(spring.value).toBe(5);
     expect(spring.velocity).toBe(-2);
+  });
+});
+describe('initializeSpring', () => {
+  it('is the construction initializer of createSpring', () => {
+    expect(typeof initializeSpring).toBe('function');
   });
 });
 describe('isSpringSettled', () => {
@@ -80,6 +86,7 @@ describe('resetSpring', () => {
     expect(spring.velocity).toBe(12);
   });
 });
+
 describe('updateSpring', () => {
   it('converges monotonically to the target with no overshoot when critically damped', () => {
     const spring = createSpring(0);
@@ -211,7 +218,6 @@ describe('updateSpring', () => {
     expect(spring.velocity).not.toBe(2);
   });
 });
-
 describe('updateSpringAngle', () => {
   it('takes the shortest path across a degree seam in both directions', () => {
     const config = createSpringConfig(2, 1);

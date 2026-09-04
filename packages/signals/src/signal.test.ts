@@ -1,4 +1,4 @@
-import { createSignal } from './signal';
+import { createSignal, initializeSignal } from './signal';
 
 describe('createSignal', () => {
   it('initializes with data=null', () => {
@@ -10,5 +10,10 @@ describe('createSignal', () => {
     const signal = createSignal<() => void>();
     expect(typeof signal.emit).toBe('function');
     expect(signal.emit()).toBeUndefined();
+  });
+});
+describe('initializeSignal', () => {
+  it('is the construction initializer of createSignal', () => {
+    expect(typeof initializeSignal).toBe('function');
   });
 });

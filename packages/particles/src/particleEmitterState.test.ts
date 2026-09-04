@@ -2,6 +2,7 @@ import {
   PARTICLE_VELOCITY_STRIDE,
   createParticleEmitterState,
   ensureParticleEmitterStateCapacity,
+  initializeParticleEmitterState,
 } from './particleEmitterState';
 
 describe('createParticleEmitterState', () => {
@@ -72,5 +73,10 @@ describe('ensureParticleEmitterStateCapacity', () => {
     ensureParticleEmitterStateCapacity(state, 8, true); // same capacity, now wants color
     expect(state.colorBirth.length).toBeGreaterThanOrEqual(8 * 3);
     expect(state.colorDeath.length).toBeGreaterThanOrEqual(8 * 3);
+  });
+});
+describe('initializeParticleEmitterState', () => {
+  it('is the construction initializer of createParticleEmitterState', () => {
+    expect(typeof initializeParticleEmitterState).toBe('function');
   });
 });

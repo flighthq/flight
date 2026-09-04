@@ -13,6 +13,7 @@ import {
   getGlyphExtentsInto,
   getGlyphIndexForCodePoint,
   getGlyphName,
+  initializeShapedRun,
   shapeTextRun,
   shapeTextRunInto,
 } from './textShaperRun';
@@ -289,6 +290,12 @@ describe('getGlyphName', () => {
   });
 });
 
+describe('initializeShapedRun', () => {
+  it('is the construction initializer of createShapedRun', () => {
+    expect(typeof initializeShapedRun).toBe('function');
+  });
+});
+
 describe('shapeTextRun', () => {
   it('uses the explicitly supplied host instead of the legacy installed backend', () => {
     setTextShaperBackend({ measureText: () => 0 });
@@ -326,7 +333,6 @@ describe('shapeTextRun', () => {
     expect(capturedOptions).toMatchObject({ direction: 'RightToLeft', script: 'Arab' });
   });
 });
-
 describe('shapeTextRunInto', () => {
   it('returns false and does not modify out when no backend is set', () => {
     const out = createShapedRun();

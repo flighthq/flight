@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createInnerShadowEffect,
   getInnerShadowEffectPadding,
+  initializeInnerShadowEffect,
   registerInnerShadowEffectPaddingResolver,
 } from './innerShadowEffect';
 
@@ -33,6 +34,11 @@ describe('getInnerShadowEffectPadding', () => {
   });
 });
 
+describe('initializeInnerShadowEffect', () => {
+  it('is the construction initializer of createInnerShadowEffect', () => {
+    expect(typeof initializeInnerShadowEffect).toBe('function');
+  });
+});
 describe('registerInnerShadowEffectPaddingResolver', () => {
   it('registers the inner-shadow footprint on only the supplied state', () => {
     const state = createRenderState();

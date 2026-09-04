@@ -1,7 +1,11 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createAnimationChannel, createAnimationClip } from './animationClip';
-import { createAnimationRootMotionExtractor, extractAnimationRootMotion } from './animationRootMotion';
+import {
+  createAnimationRootMotionExtractor,
+  extractAnimationRootMotion,
+  initializeAnimationRootMotionExtractor,
+} from './animationRootMotion';
 import { createAnimationTrack } from './animationTrack';
 
 describe('createAnimationRootMotionExtractor', () => {
@@ -107,5 +111,10 @@ describe('extractAnimationRootMotion', () => {
     expect(() => extractAnimationRootMotion(out, extractor, 0, Infinity)).toThrow(/finite numbers/);
     expect(() => extractAnimationRootMotion(out, extractor, -Infinity, 0)).toThrow(/finite numbers/);
     expect(Array.from(out)).toEqual([1, 2, 3, 4]);
+  });
+});
+describe('initializeAnimationRootMotionExtractor', () => {
+  it('is the construction initializer of createAnimationRootMotionExtractor', () => {
+    expect(typeof initializeAnimationRootMotionExtractor).toBe('function');
   });
 });

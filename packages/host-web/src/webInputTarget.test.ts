@@ -6,6 +6,7 @@ import type { EntityWithoutRuntime, HasInputPointerLock, InputPointerLockBackend
 import { webHost } from './webHost';
 import {
   createWebInputTargetHandle,
+  initializeWebInputTargetHandle,
   resetWebInputTargetBackendForTest,
   webInputDropFileBackend,
   webInputFocusBackend,
@@ -31,6 +32,12 @@ describe('createWebInputTargetHandle', () => {
     expect(EntityRuntimeKey in target).toBe(true);
     webInputTargetBackend.prepare(target);
     expect(element.style.touchAction).toBe('none');
+  });
+});
+
+describe('initializeWebInputTargetHandle', () => {
+  it('is the construction initializer of createWebInputTargetHandle', () => {
+    expect(typeof initializeWebInputTargetHandle).toBe('function');
   });
 });
 
@@ -414,7 +421,6 @@ describe('webRenderContextBackend', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 });
-
 describe('webRenderSurfaceBackend', () => {
   it('sizes a bound canvas backing store and leaves a non-canvas target inert', () => {
     const canvas = document.createElement('canvas');

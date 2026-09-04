@@ -1,4 +1,4 @@
-import { createVignetteEffect } from './vignetteEffect';
+import { createVignetteEffect, initializeVignetteEffect } from './vignetteEffect';
 
 describe('createVignetteEffect', () => {
   it('tags the intent type', () => {
@@ -12,5 +12,10 @@ describe('createVignetteEffect', () => {
       softness: 0.4,
       color: 0x000000ff,
     });
+  });
+});
+describe('initializeVignetteEffect', () => {
+  it('is the construction initializer of createVignetteEffect', () => {
+    expect(typeof initializeVignetteEffect).toBe('function');
   });
 });

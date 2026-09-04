@@ -6,7 +6,12 @@ import { Scale9SpriteKind } from '@flighthq/types/contract';
 
 import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { createDomScale9SpriteData, defaultDomScale9SpriteRenderer, drawDomScale9Sprite } from './domScale9Sprite';
+import {
+  createDomScale9SpriteData,
+  defaultDomScale9SpriteRenderer,
+  drawDomScale9Sprite,
+  initializeDomScale9SpriteData,
+} from './domScale9Sprite';
 
 describe('createDomScale9SpriteData', () => {
   it('creates renderer data', () => {
@@ -41,5 +46,10 @@ describe('drawDomScale9Sprite', () => {
     const element = getDomRenderStateRuntime(state).domCurrentElement;
     expect(element?.children).toHaveLength(9);
     expect(element?.style.width).toBe('200px');
+  });
+});
+describe('initializeDomScale9SpriteData', () => {
+  it('is the construction initializer of createDomScale9SpriteData', () => {
+    expect(typeof initializeDomScale9SpriteData).toBe('function');
   });
 });

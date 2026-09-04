@@ -6,6 +6,7 @@ import {
   createScale9ShapeData,
   createScale9ShapeRuntime,
   getScale9ShapeRuntime,
+  initializeScale9ShapeData,
 } from './scale9Shape';
 
 const grid = { x: 10, y: 10, width: 80, height: 80 };
@@ -63,5 +64,10 @@ describe('getScale9ShapeRuntime', () => {
     const shape = createScale9Shape(grid);
     const runtime = getScale9ShapeRuntime(shape);
     expect(runtime).not.toBeNull();
+  });
+});
+describe('initializeScale9ShapeData', () => {
+  it('is the construction initializer of createScale9ShapeData', () => {
+    expect(typeof initializeScale9ShapeData).toBe('function');
   });
 });

@@ -5,6 +5,7 @@ import { ImageChannel } from '@flighthq/types/contract';
 import {
   createBitmapDisplacementEffect,
   getBitmapDisplacementEffectPadding,
+  initializeBitmapDisplacementEffect,
   registerBitmapDisplacementEffectPaddingResolver,
 } from './bitmapDisplacementEffect';
 import { createDisplacementEffect } from './displacementEffect';
@@ -73,6 +74,11 @@ describe('getBitmapDisplacementEffectPadding', () => {
   });
 });
 
+describe('initializeBitmapDisplacementEffect', () => {
+  it('is the construction initializer of createBitmapDisplacementEffect', () => {
+    expect(typeof initializeBitmapDisplacementEffect).toBe('function');
+  });
+});
 describe('registerBitmapDisplacementEffectPaddingResolver', () => {
   it('registers the footprint on only the supplied state', () => {
     const state = createRenderState();

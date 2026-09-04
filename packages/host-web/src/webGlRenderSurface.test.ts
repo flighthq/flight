@@ -3,6 +3,7 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import {
   createWebGlRenderSurfaceProvider,
   enableHostWebGlRenderSurface,
+  initializeWebGlRenderSurfaceProvider,
   resetHostWebGlRenderSurfaceForTest,
 } from './webGlRenderSurface';
 
@@ -74,6 +75,11 @@ describe('enableHostWebGlRenderSurface', () => {
   });
 });
 
+describe('initializeWebGlRenderSurfaceProvider', () => {
+  it('is the construction initializer of createWebGlRenderSurfaceProvider', () => {
+    expect(typeof initializeWebGlRenderSurfaceProvider).toBe('function');
+  });
+});
 describe('resetHostWebGlRenderSurfaceForTest', () => {
   afterEach(() => {
     resetHostWebGlRenderSurfaceForTest();

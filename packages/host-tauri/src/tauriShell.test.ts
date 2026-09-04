@@ -1,7 +1,12 @@
 import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { makeTauriShellCapabilities } from './tauriShell';
+import {
+  initializeTauriShellExternalBackend,
+  initializeTauriShellPathOpenBackend,
+  initializeTauriShellPathRevealBackend,
+  makeTauriShellCapabilities,
+} from './tauriShell';
 
 function fakeTauri(rejection: unknown = NO_REJECTION) {
   const calls: { openUrl: string[]; openPath: string[]; reveal: string[] } = {
@@ -30,6 +35,25 @@ function fakeTauri(rejection: unknown = NO_REJECTION) {
   } as unknown as TauriApi;
   return { tauri, calls };
 }
+
+describe('initializeTauriShellExternalBackend', () => {
+  it('is the construction initializer of createTauriShellExternalBackend', () => {
+    expect(typeof initializeTauriShellExternalBackend).toBe('function');
+  });
+});
+
+const NO_REJECTION = Symbol('no rejection');
+describe('initializeTauriShellPathOpenBackend', () => {
+  it('is the construction initializer of createTauriShellPathOpenBackend', () => {
+    expect(typeof initializeTauriShellPathOpenBackend).toBe('function');
+  });
+});
+
+describe('initializeTauriShellPathRevealBackend', () => {
+  it('is the construction initializer of createTauriShellPathRevealBackend', () => {
+    expect(typeof initializeTauriShellPathRevealBackend).toBe('function');
+  });
+});
 
 describe('makeTauriShellCapabilities', () => {
   it('constructs exactly three Entity providers', () => {
@@ -71,5 +95,3 @@ describe('makeTauriShellCapabilities', () => {
     expect(capabilities.trash).toBeUndefined();
   });
 });
-
-const NO_REJECTION = Symbol('no rejection');

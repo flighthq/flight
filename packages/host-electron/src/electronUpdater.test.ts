@@ -1,7 +1,7 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronUpdaterBackend } from './electronUpdater';
+import { createElectronUpdaterBackend, initializeElectronUpdaterBackend } from './electronUpdater';
 
 type NativeListener = (...args: unknown[]) => void;
 
@@ -201,5 +201,10 @@ describe('createElectronUpdaterBackend', () => {
       'error',
     ]);
     expect(calls.feedUrls).toEqual([]);
+  });
+});
+describe('initializeElectronUpdaterBackend', () => {
+  it('is the construction initializer of createElectronUpdaterBackend', () => {
+    expect(typeof initializeElectronUpdaterBackend).toBe('function');
   });
 });

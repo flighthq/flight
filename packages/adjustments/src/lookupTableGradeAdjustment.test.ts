@@ -1,5 +1,5 @@
 import { bakeColorLut } from './colorLut';
-import { createLookupTableGradeAdjustment } from './lookupTableGradeAdjustment';
+import { createLookupTableGradeAdjustment, initializeLookupTableGradeAdjustment } from './lookupTableGradeAdjustment';
 
 describe('createLookupTableGradeAdjustment', () => {
   it('is a neutral passthrough with no supplied LUT', () => {
@@ -45,5 +45,10 @@ describe('createLookupTableGradeAdjustment', () => {
     // input 0 → graded 1 → mix(0, 1, 0.5) = 0.5.
     adjustment.transform(out, 0, 0, 0);
     expect(out[0]).toBeCloseTo(0.5, 4);
+  });
+});
+describe('initializeLookupTableGradeAdjustment', () => {
+  it('is the construction initializer of createLookupTableGradeAdjustment', () => {
+    expect(typeof initializeLookupTableGradeAdjustment).toBe('function');
   });
 });

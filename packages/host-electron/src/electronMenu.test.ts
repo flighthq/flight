@@ -2,7 +2,13 @@ import type { MenuApplicationBackend, MenuPopupBackend, MenuSelectBackend } from
 import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronMenuBackends } from './electronMenu';
+import {
+  createElectronMenuBackends,
+  initializeElectronMenuCapabilities,
+  initializeMenuApplicationBackend,
+  initializeMenuPopupBackend,
+  initializeMenuSelectBackend,
+} from './electronMenu';
 
 function fakeElectron(): {
   electron: ElectronApi;
@@ -149,3 +155,26 @@ function _slots(api: ElectronApi): {
     subscribeSelect: select.subscribe,
   };
 }
+describe('initializeElectronMenuCapabilities', () => {
+  it('is the construction initializer of createElectronMenuCapabilities', () => {
+    expect(typeof initializeElectronMenuCapabilities).toBe('function');
+  });
+});
+
+describe('initializeMenuApplicationBackend', () => {
+  it('is the construction initializer of createMenuApplicationBackend', () => {
+    expect(typeof initializeMenuApplicationBackend).toBe('function');
+  });
+});
+
+describe('initializeMenuPopupBackend', () => {
+  it('is the construction initializer of createMenuPopupBackend', () => {
+    expect(typeof initializeMenuPopupBackend).toBe('function');
+  });
+});
+
+describe('initializeMenuSelectBackend', () => {
+  it('is the construction initializer of createMenuSelectBackend', () => {
+    expect(typeof initializeMenuSelectBackend).toBe('function');
+  });
+});

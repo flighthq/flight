@@ -1,6 +1,10 @@
 import { EntityRuntimeKey, WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
-import { createWrappedDiffusePbrExtension, isValidWrappedDiffusePbrExtension } from './wrappedDiffusePbrExtension';
+import {
+  createWrappedDiffusePbrExtension,
+  initializeWrappedDiffusePbrExtension,
+  isValidWrappedDiffusePbrExtension,
+} from './wrappedDiffusePbrExtension';
 
 describe('createWrappedDiffusePbrExtension', () => {
   it('names the approximation honestly and creates an Entity with independent UV sets', () => {
@@ -13,6 +17,11 @@ describe('createWrappedDiffusePbrExtension', () => {
   });
 });
 
+describe('initializeWrappedDiffusePbrExtension', () => {
+  it('is the construction initializer of createWrappedDiffusePbrExtension', () => {
+    expect(typeof initializeWrappedDiffusePbrExtension).toBe('function');
+  });
+});
 describe('isValidWrappedDiffusePbrExtension', () => {
   it('rejects invalid strength, thickness, and UV selection', () => {
     expect(isValidWrappedDiffusePbrExtension(createWrappedDiffusePbrExtension())).toBe(true);

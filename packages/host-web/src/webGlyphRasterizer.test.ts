@@ -1,7 +1,11 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createWebGlyphRasterizerBackend, webGlyphRasterizerBackend } from './webGlyphRasterizer';
+import {
+  createWebGlyphRasterizerBackend,
+  initializeWebGlyphRasterizerBackend,
+  webGlyphRasterizerBackend,
+} from './webGlyphRasterizer';
 
 describe('createWebGlyphRasterizerBackend', () => {
   it('constructs a backend with rasterize and measureMetrics', () => {
@@ -41,6 +45,11 @@ describe('createWebGlyphRasterizerBackend', () => {
   });
 });
 
+describe('initializeWebGlyphRasterizerBackend', () => {
+  it('is the construction initializer of createWebGlyphRasterizerBackend', () => {
+    expect(typeof initializeWebGlyphRasterizerBackend).toBe('function');
+  });
+});
 describe('webGlyphRasterizerBackend', () => {
   it('is an Entity with rasterize and measureMetrics', () => {
     expect(EntityRuntimeKey in webGlyphRasterizerBackend).toBe(true);

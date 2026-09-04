@@ -14,6 +14,9 @@ import {
   createPhysics3DQueryResult,
   createPhysics3DRayResult,
   createPhysics3DShapeCastResult,
+  initializePhysics3DQueryResult,
+  initializePhysics3DRayResult,
+  initializePhysics3DShapeCastResult,
   queryPhysics3DPoint,
   queryPhysics3DRay,
   queryPhysics3DRayClosest,
@@ -78,6 +81,24 @@ describe('createPhysics3DShapeCastResult', () => {
     expect(out.body).toBeNull();
     expect(out.collider).toBeNull();
     expect(out.colliderIndex).toBe(-1);
+  });
+});
+
+describe('initializePhysics3DQueryResult', () => {
+  it('is the construction initializer of createPhysics3DQueryResult', () => {
+    expect(typeof initializePhysics3DQueryResult).toBe('function');
+  });
+});
+
+describe('initializePhysics3DRayResult', () => {
+  it('is the construction initializer of createPhysics3DRayResult', () => {
+    expect(typeof initializePhysics3DRayResult).toBe('function');
+  });
+});
+
+describe('initializePhysics3DShapeCastResult', () => {
+  it('is the construction initializer of createPhysics3DShapeCastResult', () => {
+    expect(typeof initializePhysics3DShapeCastResult).toBe('function');
   });
 });
 
@@ -311,7 +332,6 @@ describe('queryPhysics3DRay', () => {
     expect(out.hits[0].fraction).toBeCloseTo(4.5, 6);
   });
 });
-
 describe('queryPhysics3DRayClosest', () => {
   it('writes only the nearest hit', () => {
     const world = createPhysics3DWorld();

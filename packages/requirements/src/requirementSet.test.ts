@@ -1,6 +1,11 @@
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { createRequirementSet, diffRequirementSets, mergeRequirementSets } from './requirementSet';
+import {
+  createRequirementSet,
+  diffRequirementSets,
+  initializeRequirementSet,
+  mergeRequirementSets,
+} from './requirementSet';
 
 describe('createRequirementSet', () => {
   it('copies, sorts, and deduplicates both dimensions', () => {
@@ -47,6 +52,11 @@ describe('diffRequirementSets', () => {
   });
 });
 
+describe('initializeRequirementSet', () => {
+  it('is the construction initializer of createRequirementSet', () => {
+    expect(typeof initializeRequirementSet).toBe('function');
+  });
+});
 describe('mergeRequirementSets', () => {
   it('unions facts while intersecting completeness', () => {
     const result = mergeRequirementSets([

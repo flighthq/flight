@@ -6,6 +6,7 @@ import {
   computeRichTextContent,
   createRichTextContent,
   getRichTextContent,
+  initializeRichTextContent,
 } from './richTextContent';
 import { createTextFormatRange } from './textFormatRange';
 
@@ -134,5 +135,10 @@ describe('getRichTextContent', () => {
     const content = getRichTextContent(runtime);
     expect(runtime.richTextContent).toBe(content);
     expect(getRichTextContent(runtime)).toBe(content);
+  });
+});
+describe('initializeRichTextContent', () => {
+  it('is the construction initializer of createRichTextContent', () => {
+    expect(typeof initializeRichTextContent).toBe('function');
   });
 });

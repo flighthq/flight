@@ -3,7 +3,12 @@ import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
+import {
+  createScene2DDocument,
+  createScene2DSlotReference,
+  initializeScene2DDocument,
+  initializeScene2DSlotReference,
+} from './scene2DDocument';
 
 describe('createScene2DDocument', () => {
   it('retains the unattached root and all three enumerable contracts', () => {
@@ -39,5 +44,16 @@ describe('createScene2DSlotReference', () => {
     expect(target.name).toBe('avatarSlot');
     expect(Object.hasOwn(reference, EntityRuntimeKey)).toBe(true);
     expect(reference[EntityRuntimeKey]).toBeUndefined();
+  });
+});
+describe('initializeScene2DDocument', () => {
+  it('is the construction initializer of createScene2DDocument', () => {
+    expect(typeof initializeScene2DDocument).toBe('function');
+  });
+});
+
+describe('initializeScene2DSlotReference', () => {
+  it('is the construction initializer of createScene2DSlotReference', () => {
+    expect(typeof initializeScene2DSlotReference).toBe('function');
   });
 });

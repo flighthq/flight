@@ -1,4 +1,4 @@
-import { createVolumetricLightEffect } from './volumetricLightEffect';
+import { createVolumetricLightEffect, initializeVolumetricLightEffect } from './volumetricLightEffect';
 
 describe('createVolumetricLightEffect', () => {
   it('carries options', () => {
@@ -10,5 +10,10 @@ describe('createVolumetricLightEffect', () => {
 
   it('tags the intent type', () => {
     expect(createVolumetricLightEffect().kind).toBe('VolumetricLightEffect');
+  });
+});
+describe('initializeVolumetricLightEffect', () => {
+  it('is the construction initializer of createVolumetricLightEffect', () => {
+    expect(typeof initializeVolumetricLightEffect).toBe('function');
   });
 });

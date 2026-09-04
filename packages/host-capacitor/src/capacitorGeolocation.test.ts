@@ -1,7 +1,7 @@
 import type { CapacitorApi, CapacitorPosition } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorGeolocationBackend } from './capacitorGeolocation';
+import { createCapacitorGeolocationBackend, initializeCapacitorGeolocationBackend } from './capacitorGeolocation';
 
 const flush = async () => {
   await Promise.resolve();
@@ -76,5 +76,10 @@ describe('createCapacitorGeolocationBackend', () => {
     expect(received).toBe(1);
     backend.clearWatch(id);
     expect(cleared).toContain('watch-abc');
+  });
+});
+describe('initializeCapacitorGeolocationBackend', () => {
+  it('is the construction initializer of createCapacitorGeolocationBackend', () => {
+    expect(typeof initializeCapacitorGeolocationBackend).toBe('function');
   });
 });

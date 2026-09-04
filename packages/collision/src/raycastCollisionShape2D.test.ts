@@ -2,7 +2,11 @@ import type { CollisionRaycastHit2D, CollisionBuiltInShape2D } from '@flighthq/t
 import { describe, expect, it } from 'vitest';
 
 import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
-import { createCollisionRaycastHit2D, raycastCollisionShape2D } from './raycastCollisionShape2D';
+import {
+  createCollisionRaycastHit2D,
+  initializeCollisionRaycastHit2D,
+  raycastCollisionShape2D,
+} from './raycastCollisionShape2D';
 
 function hit(): CollisionRaycastHit2D {
   return createCollisionRaycastHit2D();
@@ -14,6 +18,11 @@ describe('createCollisionRaycastHit2D', () => {
   });
 });
 
+describe('initializeCollisionRaycastHit2D', () => {
+  it('is the construction initializer of createCollisionRaycastHit2D', () => {
+    expect(typeof initializeCollisionRaycastHit2D).toBe('function');
+  });
+});
 describe('raycastCollisionShape2D', () => {
   it('keeps polygon center state isolated from a nested raycast triggered by a point getter', () => {
     const points = [2, -1, 4, -1, 4, 1, 2, 1];

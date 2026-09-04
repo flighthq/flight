@@ -3,7 +3,12 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { Bitmap, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { createTextureAtlas, disposeTextureAtlas, getTextureAtlasByteSize } from './textureAtlas';
+import {
+  createTextureAtlas,
+  disposeTextureAtlas,
+  getTextureAtlasByteSize,
+  initializeTextureAtlas,
+} from './textureAtlas';
 
 function createTextureAtlasRegionForTest(): TextureAtlasRegion {
   return {
@@ -113,5 +118,10 @@ describe('getTextureAtlasByteSize', () => {
     } as unknown as Bitmap;
     const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
     expect(getTextureAtlasByteSize(atlas)).toBe(256);
+  });
+});
+describe('initializeTextureAtlas', () => {
+  it('is the construction initializer of createTextureAtlas', () => {
+    expect(typeof initializeTextureAtlas).toBe('function');
   });
 });

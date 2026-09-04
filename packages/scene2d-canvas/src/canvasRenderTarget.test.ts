@@ -1,8 +1,9 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
-import { createCanvasRenderState } from './canvasTestSupport';
+import { initializeCanvasRenderTarget } from './canvasRenderTarget';
 import {
   beginCanvasRenderPass,
+  createCanvasRenderState,
   createCanvasRenderTarget,
   destroyCanvasRenderTarget,
   endCanvasRenderPass,
@@ -117,6 +118,12 @@ describe('endCanvasRenderPass', () => {
   });
 });
 
+describe('initializeCanvasRenderTarget', () => {
+  it('is the construction initializer of createCanvasRenderTarget', () => {
+    expect(typeof initializeCanvasRenderTarget).toBe('function');
+  });
+});
+
 describe('resizeCanvasRenderTarget', () => {
   it('updates the canvas and target dimensions', () => {
     const target = createCanvasRenderTarget(64, 64);
@@ -127,7 +134,6 @@ describe('resizeCanvasRenderTarget', () => {
     expect(target.height).toBe(128);
   });
 });
-
 describe('setCanvasRenderTransform2D', () => {
   it('installs a copy of the transform, restored by the enclosing pass', () => {
     const state = makeState();

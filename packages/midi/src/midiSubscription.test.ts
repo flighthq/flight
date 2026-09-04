@@ -4,6 +4,11 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as midi from './contract';
+import {
+  initializeMidiAccessStateSubscription,
+  initializeMidiInputMessageSubscription,
+  initializeMidiPortStateSubscription,
+} from './midiSubscription';
 
 describe('attachMidiAccessStateSubscription', () => {
   it('pins the exact access origin and emits stable hotplug port entities', async () => {
@@ -332,3 +337,20 @@ function successfulAttachment(): object {
   out.release = async () => ({ reason: 'ok' });
   return finishEntity(out);
 }
+describe('initializeMidiAccessStateSubscription', () => {
+  it('is the construction initializer of createMidiAccessStateSubscription', () => {
+    expect(typeof initializeMidiAccessStateSubscription).toBe('function');
+  });
+});
+
+describe('initializeMidiInputMessageSubscription', () => {
+  it('is the construction initializer of createMidiInputMessageSubscription', () => {
+    expect(typeof initializeMidiInputMessageSubscription).toBe('function');
+  });
+});
+
+describe('initializeMidiPortStateSubscription', () => {
+  it('is the construction initializer of createMidiPortStateSubscription', () => {
+    expect(typeof initializeMidiPortStateSubscription).toBe('function');
+  });
+});

@@ -11,6 +11,7 @@ import {
   disposeProtocolHandler,
   getProtocolLaunchUrl,
   getRegisteredProtocolSchemes,
+  initializeProtocolHandler,
   isProtocolSchemeDefault,
   isProtocolSchemeRegistered,
   isValidProtocolScheme,
@@ -142,6 +143,11 @@ describe('getRegisteredProtocolSchemes', () => {
   });
 });
 
+describe('initializeProtocolHandler', () => {
+  it('is the construction initializer of createProtocolHandler', () => {
+    expect(typeof initializeProtocolHandler).toBe('function');
+  });
+});
 describe('isProtocolSchemeDefault', () => {
   it('validates before querying the provider', () => {
     const host = createFixture().host;

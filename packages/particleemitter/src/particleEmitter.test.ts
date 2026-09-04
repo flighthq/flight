@@ -4,20 +4,21 @@ import type { ParticleEmitter2D, TextureAtlas, TextureAtlasRegion } from '@fligh
 import { ParticleEmitter2DKind } from '@flighthq/types/contract';
 
 import {
+  PARTICLE_EMITTER_DELETED_ID,
   appendParticleEmitter2DParticle,
   clearParticleEmitter2D,
   cloneParticleEmitter2D,
   compactParticleEmitter2D,
   computeParticleEmitter2DLocalBoundsRectangle,
   createParticleEmitter2D,
-  createParticleEmitterData,
   createParticleEmitter2DRuntime,
+  createParticleEmitterData,
   getParticleEmitter2DCapacity,
   getParticleEmitter2DParticleAlpha,
   getParticleEmitter2DParticleId,
   getParticleEmitter2DParticleVelocity,
   getParticleEmitter2DRuntime,
-  PARTICLE_EMITTER_DELETED_ID,
+  initializeParticleEmitterData,
   removeParticleEmitter2DParticle,
   reserveParticleEmitter2D,
   setParticleEmitter2DLocalBoundsRectangle,
@@ -361,6 +362,12 @@ describe('getParticleEmitter2DRuntime', () => {
   });
 });
 
+describe('initializeParticleEmitterData', () => {
+  it('is the construction initializer of createParticleEmitterData', () => {
+    expect(typeof initializeParticleEmitterData).toBe('function');
+  });
+});
+
 describe('removeParticleEmitter2DParticle', () => {
   it('swap-removes with the last particle', () => {
     const emitter = createParticleEmitter2D();
@@ -495,7 +502,6 @@ describe('setParticleEmitter2DParticleColor', () => {
     expect(emitter.data.colors[0]).toBeCloseTo(0.5);
   });
 });
-
 describe('setParticleEmitter2DParticleVelocity', () => {
   it('sets vx and vy for a valid index', () => {
     const emitter = createParticleEmitter2D();

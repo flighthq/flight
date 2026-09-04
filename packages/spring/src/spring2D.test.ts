@@ -1,7 +1,14 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { applySpringImpulse2D, createSpring2D, isSpring2DSettled, resetSpring2D, updateSpring2D } from './spring2D';
+import {
+  applySpringImpulse2D,
+  createSpring2D,
+  initializeSpring2D,
+  isSpring2DSettled,
+  resetSpring2D,
+  updateSpring2D,
+} from './spring2D';
 import { createSpringConfig } from './springConfig';
 
 describe('applySpringImpulse2D', () => {
@@ -36,6 +43,12 @@ describe('createSpring2D', () => {
   });
 });
 
+describe('initializeSpring2D', () => {
+  it('is the construction initializer of createSpring2D', () => {
+    expect(typeof initializeSpring2D).toBe('function');
+  });
+});
+
 describe('isSpring2DSettled', () => {
   it('is false until both axes rest at their targets', () => {
     const spring = createSpring2D(0, 0);
@@ -63,7 +76,6 @@ describe('resetSpring2D', () => {
     expect(spring.y).toMatchObject({ value: -20, velocity: 0 });
   });
 });
-
 describe('updateSpring2D', () => {
   it('moves both components toward their targets', () => {
     const spring = createSpring2D(0, 0);

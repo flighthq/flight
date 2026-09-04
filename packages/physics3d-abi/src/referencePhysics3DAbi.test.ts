@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Physics3DAbiVersion } from './physics3DAbiLayout';
-import { createReferencePhysics3DAbi } from './referencePhysics3DAbi';
+import { createReferencePhysics3DAbi, initializeReferencePhysics3DAbi } from './referencePhysics3DAbi';
 
 describe('createReferencePhysics3DAbi', () => {
   it('creates isolated persistent-world storage under the public ABI version', () => {
@@ -15,5 +15,10 @@ describe('createReferencePhysics3DAbi', () => {
     expect(secondWorld).toBe(1);
     expect(first.destroyWorld(firstWorld)).toBe(true);
     expect(second.destroyWorld(secondWorld)).toBe(true);
+  });
+});
+describe('initializeReferencePhysics3DAbi', () => {
+  it('is the construction initializer of createReferencePhysics3DAbi', () => {
+    expect(typeof initializeReferencePhysics3DAbi).toBe('function');
   });
 });

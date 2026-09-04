@@ -3,6 +3,7 @@ import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
 import {
   createGlSkinPaletteTexture,
   destroyGlSkinPaletteTexture,
+  initializeGlSkinPaletteTexture,
   uploadGlSkinPaletteTexture,
 } from './glSkinPaletteTexture';
 
@@ -64,6 +65,11 @@ describe('destroyGlSkinPaletteTexture', () => {
   });
 });
 
+describe('initializeGlSkinPaletteTexture', () => {
+  it('is the construction initializer of createGlSkinPaletteTexture', () => {
+    expect(typeof initializeGlSkinPaletteTexture).toBe('function');
+  });
+});
 describe('uploadGlSkinPaletteTexture', () => {
   it('allocates RGBA32F storage width = jointCount*4 and sets NEAREST/CLAMP on first upload', () => {
     const { gl, calls } = makeGl();

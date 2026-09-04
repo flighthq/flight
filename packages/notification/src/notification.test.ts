@@ -39,6 +39,8 @@ import {
   getActiveNotifications,
   getNotificationPermission,
   getPendingNotifications,
+  initializeNotificationResource,
+  initializeScheduledNotificationResource,
   requestNotificationPermission,
   scheduleNotification,
   showNotification,
@@ -492,6 +494,18 @@ describe('getPendingNotifications', () => {
   });
 });
 
+describe('initializeNotificationResource', () => {
+  it('is the construction initializer of createNotificationResource', () => {
+    expect(typeof initializeNotificationResource).toBe('function');
+  });
+});
+
+describe('initializeScheduledNotificationResource', () => {
+  it('is the construction initializer of createScheduledNotificationResource', () => {
+    expect(typeof initializeScheduledNotificationResource).toBe('function');
+  });
+});
+
 describe('requestNotificationPermission', () => {
   it('preserves the provider request outcome', async () => {
     await expect(
@@ -510,7 +524,6 @@ describe('requestNotificationPermission', () => {
     ).resolves.toEqual({ reason: 'dismissed' });
   });
 });
-
 describe('scheduleNotification', () => {
   it('returns the provider-created stable Entity', async () => {
     const scheduled = createScheduledNotificationResource('later', { title: 'Later' }, { at: 1 });

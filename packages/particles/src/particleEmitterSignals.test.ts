@@ -2,6 +2,7 @@ import {
   createParticleEmitterSignals,
   enableParticleEmitterSignals,
   getParticleEmitterSignals,
+  initializeParticleEmitterSignals,
 } from './particleEmitterSignals';
 import { createParticleEmitterState } from './particleEmitterState';
 
@@ -38,5 +39,10 @@ describe('getParticleEmitterSignals', () => {
   it('returns null when signals have not been enabled', () => {
     const state = createParticleEmitterState();
     expect(getParticleEmitterSignals(state)).toBeNull();
+  });
+});
+describe('initializeParticleEmitterSignals', () => {
+  it('is the construction initializer of createParticleEmitterSignals', () => {
+    expect(typeof initializeParticleEmitterSignals).toBe('function');
   });
 });

@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { webHost } from './webHost';
-import { webStorageBackend } from './webStorage';
+import { initializeWebStorageBackend, webStorageBackend } from './webStorage';
 
 function namedError(name: string): Error {
   const error = new Error(name);
@@ -9,6 +9,11 @@ function namedError(name: string): Error {
   return error;
 }
 
+describe('initializeWebStorageBackend', () => {
+  it('is the construction initializer of createWebStorageBackend', () => {
+    expect(typeof initializeWebStorageBackend).toBe('function');
+  });
+});
 describe('webStorageBackend', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => vi.restoreAllMocks());

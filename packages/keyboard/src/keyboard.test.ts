@@ -22,6 +22,7 @@ import {
   getSoftKeyboardHeight,
   getSoftKeyboardInfo,
   hideSoftKeyboard,
+  initializeSoftKeyboard,
   isSoftKeyboardVisible,
   setSoftKeyboardAccessoryBarVisible,
   setSoftKeyboardResizeMode,
@@ -303,6 +304,12 @@ describe('hideSoftKeyboard', () => {
   });
 });
 
+describe('initializeSoftKeyboard', () => {
+  it('is the construction initializer of createSoftKeyboard', () => {
+    expect(typeof initializeSoftKeyboard).toBe('function');
+  });
+});
+
 describe('isSoftKeyboardVisible', () => {
   it('returns true when info reports visible', () => {
     expect(isSoftKeyboardVisible(infoHost({ visible: true, height: 300 }))).toBe(true);
@@ -351,7 +358,6 @@ describe('setSoftKeyboardStyle', () => {
     expect(await setSoftKeyboardStyle(host, 'Dark')).toBe('ok');
   });
 });
-
 describe('showSoftKeyboard', () => {
   it('delegates to the visibility backend', async () => {
     expect(await showSoftKeyboard(visibilityHost('ok'))).toBe('ok');

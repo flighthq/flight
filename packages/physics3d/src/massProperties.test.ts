@@ -4,15 +4,16 @@ import { describe, expect, it } from 'vitest';
 import {
   combinePhysics3DMassData,
   computePhysics3DBoxMassData,
+  computePhysics3DCapsuleMassData,
   computePhysics3DColliderMassData,
   computePhysics3DConeMassData,
-  computePhysics3DCylinderMassData,
   computePhysics3DConvexHullMassData,
-  computePhysics3DCapsuleMassData,
+  computePhysics3DCylinderMassData,
   computePhysics3DSphereMassData,
   createPhysics3DMassData,
-  updateRigidBody3DMassData,
+  initializePhysics3DMassData,
   setRigidBody3DMassData,
+  updateRigidBody3DMassData,
 } from './massProperties';
 import { addPhysics3DBody, createPhysics3DCollider, createPhysics3DWorld, createRigidBody3D } from './world';
 
@@ -427,6 +428,12 @@ describe('createPhysics3DMassData', () => {
   });
 });
 
+describe('initializePhysics3DMassData', () => {
+  it('is the construction initializer of createPhysics3DMassData', () => {
+    expect(typeof initializePhysics3DMassData).toBe('function');
+  });
+});
+
 describe('setRigidBody3DMassData', () => {
   it('derives the inverse mass and a non-zero inverse tensor for a dynamic body', () => {
     const body = testBody('dynamic');
@@ -496,7 +503,6 @@ describe('setRigidBody3DMassData', () => {
     expect(body.centerY).toBe(4);
   });
 });
-
 describe('updateRigidBody3DMassData', () => {
   it('derives a body mass from its colliders', () => {
     const world = createPhysics3DWorld();

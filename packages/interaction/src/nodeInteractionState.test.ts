@@ -8,6 +8,7 @@ import {
   getNodeHitArea,
   getNodeInteractionState,
   getNodeTabIndex,
+  initializeNodeInteractionState,
   isNodeFocusable,
   isNodeHitTestEnabled,
   isNodePointerDoubleClickEnabled,
@@ -75,6 +76,12 @@ describe('getNodeTabIndex', () => {
     expect(getNodeTabIndex(obj)).toBe(-1);
     setNodeTabIndex(obj, 3);
     expect(getNodeTabIndex(obj)).toBe(3);
+  });
+});
+
+describe('initializeNodeInteractionState', () => {
+  it('is the construction initializer of createNodeInteractionState', () => {
+    expect(typeof initializeNodeInteractionState).toBe('function');
   });
 });
 
@@ -153,7 +160,6 @@ describe('setNodePointerDoubleClickEnabled', () => {
     expect(isNodePointerDoubleClickEnabled(obj)).toBe(false);
   });
 });
-
 describe('setNodeTabIndex', () => {
   it('assigns the focus-order key', () => {
     const obj = createDisplayObject();

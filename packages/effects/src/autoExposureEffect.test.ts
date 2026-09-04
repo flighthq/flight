@@ -1,4 +1,4 @@
-import { createAutoExposureEffect } from './autoExposureEffect';
+import { createAutoExposureEffect, initializeAutoExposureEffect } from './autoExposureEffect';
 
 describe('createAutoExposureEffect', () => {
   it('carries options', () => {
@@ -7,5 +7,10 @@ describe('createAutoExposureEffect', () => {
 
   it('tags the intent type', () => {
     expect(createAutoExposureEffect().kind).toBe('AutoExposureEffect');
+  });
+});
+describe('initializeAutoExposureEffect', () => {
+  it('is the construction initializer of createAutoExposureEffect', () => {
+    expect(typeof initializeAutoExposureEffect).toBe('function');
   });
 });

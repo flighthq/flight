@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2D';
+import { clearCollisionManifold2D, createCollisionManifold2D, initializeCollisionManifold2D } from './manifold2D';
 
 describe('clearCollisionManifold2D', () => {
   it('resets every field to the non-overlapping state', () => {
@@ -31,5 +31,10 @@ describe('createCollisionManifold2D', () => {
     const b = createCollisionManifold2D();
     a.overlapping = true;
     expect(b.overlapping).toBe(false);
+  });
+});
+describe('initializeCollisionManifold2D', () => {
+  it('is the construction initializer of createCollisionManifold2D', () => {
+    expect(typeof initializeCollisionManifold2D).toBe('function');
   });
 });

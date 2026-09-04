@@ -1,5 +1,5 @@
 import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createInvertAdjustment } from './invertAdjustment';
+import { createInvertAdjustment, initializeInvertAdjustment } from './invertAdjustment';
 
 describe('createInvertAdjustment', () => {
   it('defaults to a full invert and carries the fusable kind', () => {
@@ -20,5 +20,10 @@ describe('createInvertAdjustment', () => {
     const adjustment = createInvertAdjustment({ intensity: 0.5 });
     // scale 0, offset 127.5 → every channel rounds to 128.
     expect(applyColorMatrixToColor(adjustment.colorMatrix as number[], 0x00ffccff)).toBe(0x808080ff);
+  });
+});
+describe('initializeInvertAdjustment', () => {
+  it('is the construction initializer of createInvertAdjustment', () => {
+    expect(typeof initializeInvertAdjustment).toBe('function');
   });
 });

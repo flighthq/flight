@@ -58,6 +58,7 @@ import {
   focusWindow,
   getWindowBounds,
   hideWindow,
+  initializeApplicationWindow,
   lockApplicationPointer,
   maximizeWindow,
   minimizeWindow,
@@ -1230,6 +1231,12 @@ describe('hideWindow', () => {
   });
 });
 
+describe('initializeApplicationWindow', () => {
+  it('is the construction initializer of createApplicationWindow', () => {
+    expect(typeof initializeApplicationWindow).toBe('function');
+  });
+});
+
 describe('lockApplicationPointer', () => {
   it('passes the opaque target to the pointer-lock command capability', async () => {
     const target = createInputTarget();
@@ -1703,7 +1710,6 @@ describe('setWindowTitle', () => {
     expect(backend.calls).toContain('setTitle:My App');
   });
 });
-
 describe('showWindow', () => {
   it('marks visible and delegates to the backend', () => {
     const backend = recordingWindowBackend();

@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createTiltShiftEffect,
   getTiltShiftEffectPadding,
+  initializeTiltShiftEffect,
   registerTiltShiftEffectPaddingResolver,
 } from './tiltShiftEffect';
 
@@ -31,6 +32,11 @@ describe('getTiltShiftEffectPadding', () => {
   });
 });
 
+describe('initializeTiltShiftEffect', () => {
+  it('is the construction initializer of createTiltShiftEffect', () => {
+    expect(typeof initializeTiltShiftEffect).toBe('function');
+  });
+});
 describe('registerTiltShiftEffectPaddingResolver', () => {
   it('registers the tilt-shift footprint on only the supplied state', () => {
     const state = createRenderState();

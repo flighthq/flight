@@ -43,6 +43,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Rectangle } from '@flighthq/types/contract';
 
+import { initializeRectangle } from './rectangle';
+
 let r: Rectangle;
 let r2: Rectangle;
 
@@ -601,6 +603,12 @@ describe('inflateRectangle', () => {
   });
 });
 
+describe('initializeRectangle', () => {
+  it('is the construction initializer of createRectangle', () => {
+    expect(typeof initializeRectangle).toBe('function');
+  });
+});
+
 describe('intersectsRectangle', () => {
   it('returns true if rectangles overlap', () => {
     const r3 = createRectangle(5, 10, 10, 10);
@@ -1004,7 +1012,6 @@ describe('setRectangleTopLeft', () => {
     expect(r.y).toBe(10);
   });
 });
-
 describe('setTo', () => {
   it('assigns all four properties', () => {
     const rect = createRectangle();

@@ -2,6 +2,7 @@ import {
   acquireWgpuRenderTarget,
   createWgpuRenderTargetPool,
   destroyWgpuRenderTargetPool,
+  initializeWgpuRenderTargetPool,
   releaseWgpuRenderTarget,
 } from './wgpuRenderTargetPool';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -74,6 +75,11 @@ describe('destroyWgpuRenderTargetPool', () => {
   });
 });
 
+describe('initializeWgpuRenderTargetPool', () => {
+  it('is the construction initializer of createWgpuRenderTargetPool', () => {
+    expect(typeof initializeWgpuRenderTargetPool).toBe('function');
+  });
+});
 describe('releaseWgpuRenderTarget', () => {
   it('returns the target to the free list', async () => {
     const state = await createWgpuRenderStateForTest();

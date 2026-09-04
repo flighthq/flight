@@ -1,6 +1,6 @@
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
-import { createStandardMaterial } from './standardMaterial';
+import { createStandardMaterial, initializeStandardMaterial } from './standardMaterial';
 
 describe('createStandardMaterial', () => {
   it('creates the authorable unlit textured material used by the default 2D pipeline', () => {
@@ -12,5 +12,10 @@ describe('createStandardMaterial', () => {
 
   it('preserves an authored name', () => {
     expect(createStandardMaterial({ name: 'ui' }).name).toBe('ui');
+  });
+});
+describe('initializeStandardMaterial', () => {
+  it('is the construction initializer of createStandardMaterial', () => {
+    expect(typeof initializeStandardMaterial).toBe('function');
   });
 });

@@ -1,4 +1,4 @@
-import { createColorGradeAdjustment } from './colorGradeAdjustment';
+import { createColorGradeAdjustment, initializeColorGradeAdjustment } from './colorGradeAdjustment';
 
 describe('createColorGradeAdjustment', () => {
   it('defaults to approximately neutral (contrast 1, all stages near-neutral)', () => {
@@ -32,5 +32,10 @@ describe('createColorGradeAdjustment', () => {
     expect(out[0]).toBeCloseTo(0.2126, 2);
     expect(out[1]).toBeCloseTo(0.2126, 2);
     expect(out[2]).toBeCloseTo(0.2126, 2);
+  });
+});
+describe('initializeColorGradeAdjustment', () => {
+  it('is the construction initializer of createColorGradeAdjustment', () => {
+    expect(typeof initializeColorGradeAdjustment).toBe('function');
   });
 });

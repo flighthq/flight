@@ -3,7 +3,11 @@ import type { HasGraphicsBitmapReadback } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { createWebBitmapReadbackBackend, webBitmapReadbackBackend } from './webBitmapReadback';
+import {
+  createWebBitmapReadbackBackend,
+  initializeWebBitmapReadbackBackend,
+  webBitmapReadbackBackend,
+} from './webBitmapReadback';
 
 function hostWith(backend: HasGraphicsBitmapReadback['graphics']['bitmapReadback']): HasGraphicsBitmapReadback {
   return { graphics: { bitmapReadback: backend } } as HasGraphicsBitmapReadback;
@@ -26,6 +30,11 @@ describe('createWebBitmapReadbackBackend', () => {
   });
 });
 
+describe('initializeWebBitmapReadbackBackend', () => {
+  it('is the construction initializer of createWebBitmapReadbackBackend', () => {
+    expect(typeof initializeWebBitmapReadbackBackend).toBe('function');
+  });
+});
 describe('webBitmapReadbackBackend', () => {
   const host = hostWith(webBitmapReadbackBackend);
 

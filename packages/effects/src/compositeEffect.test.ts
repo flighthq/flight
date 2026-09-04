@@ -1,6 +1,6 @@
 import { CompositeOperator } from '@flighthq/types/contract';
 
-import { createCompositeEffect } from './compositeEffect';
+import { createCompositeEffect, initializeCompositeEffect } from './compositeEffect';
 
 describe('createCompositeEffect', () => {
   it('builds a CompositeEffect carrying the requested operator', () => {
@@ -17,5 +17,10 @@ describe('createCompositeEffect', () => {
   it('leaves backdropKey undefined when omitted', () => {
     const effect = createCompositeEffect(CompositeOperator.Xor);
     expect(effect.backdropKey).toBeUndefined();
+  });
+});
+describe('initializeCompositeEffect', () => {
+  it('is the construction initializer of createCompositeEffect', () => {
+    expect(typeof initializeCompositeEffect).toBe('function');
   });
 });

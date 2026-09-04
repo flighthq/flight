@@ -9,8 +9,9 @@ import {
   createWgpuRenderEffectPipeline,
   destroyWgpuRenderEffectPipeline,
   endWgpuRenderEffectPipeline,
-  setWgpuRenderEffectPipelineSkipGuard,
+  initializeWgpuRenderEffectPipeline,
   setWgpuRenderEffectPipelineSampleCountGuard,
+  setWgpuRenderEffectPipelineSkipGuard,
   setWgpuRenderEffectVelocityTexture,
 } from './wgpuRenderEffectPipeline';
 
@@ -235,6 +236,12 @@ describe('endWgpuRenderEffectPipeline', () => {
   });
 });
 
+describe('initializeWgpuRenderEffectPipeline', () => {
+  it('is the construction initializer of createWgpuRenderEffectPipeline', () => {
+    expect(typeof initializeWgpuRenderEffectPipeline).toBe('function');
+  });
+});
+
 describe('setWgpuRenderEffectPipelineSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -265,7 +272,6 @@ describe('setWgpuRenderEffectPipelineSkipGuard', () => {
     expect(dropped).toEqual(['test.wgpu-pipeline-skip-seam']);
   });
 });
-
 describe('setWgpuRenderEffectVelocityTexture', () => {
   it('sets the velocity texture on the pipeline', () => {
     const _pipeline = allocateEntity<any>();

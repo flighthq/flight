@@ -10,6 +10,7 @@ import type {
 import {
   createWebTextSegmenterBackend,
   getTextSegmenterBackend,
+  initializeWebTextSegmenterBackend,
   setTextSegmenterBackend,
   webTextSegmenterBackend,
 } from './textSegmenterBackend';
@@ -77,6 +78,12 @@ describe('getTextSegmenterBackend', () => {
   });
 });
 
+describe('initializeWebTextSegmenterBackend', () => {
+  it('is the construction initializer of createWebTextSegmenterBackend', () => {
+    expect(typeof initializeWebTextSegmenterBackend).toBe('function');
+  });
+});
+
 describe('setTextSegmenterBackend', () => {
   it('routes segmentation through the installed backend', () => {
     const backend = recordingBackend();
@@ -92,7 +99,6 @@ describe('setTextSegmenterBackend', () => {
     expect(getTextSegmenterBackend().segment('a👨‍👩‍👧b', 'grapheme').length).toBe(3);
   });
 });
-
 describe('webTextSegmenterBackend', () => {
   it('provides the stable bundled Intl fallback', () => {
     expect(webTextSegmenterBackend.segment('a👨‍👩‍👧b', 'grapheme').map((segment) => segment.text)).toEqual([

@@ -1,4 +1,8 @@
-import { createParticleObjectsState, ensureParticleObjectsStateCapacity } from './particleObjectsState';
+import {
+  createParticleObjectsState,
+  ensureParticleObjectsStateCapacity,
+  initializeParticleObjectsState,
+} from './particleObjectsState';
 
 describe('createParticleObjectsState', () => {
   it('allocates arrays sized to capacity', () => {
@@ -30,5 +34,10 @@ describe('ensureParticleObjectsStateCapacity', () => {
     ensureParticleObjectsStateCapacity(state, 20);
     expect(state.lifetimes.length).toBeGreaterThanOrEqual(40);
     expect(state.velocities.length).toBeGreaterThanOrEqual(40);
+  });
+});
+describe('initializeParticleObjectsState', () => {
+  it('is the construction initializer of createParticleObjectsState', () => {
+    expect(typeof initializeParticleObjectsState).toBe('function');
   });
 });

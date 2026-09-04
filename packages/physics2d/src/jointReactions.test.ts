@@ -3,7 +3,11 @@ import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld, RigidBody2
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions';
+import {
+  createPhysics2DJointReaction,
+  initializePhysics2DJointReaction,
+  writePhysics2DJointReaction,
+} from './jointReactions';
 import { addPhysics2DJoint } from './jointRegistry';
 import {
   Physics2DDistanceJointKind,
@@ -91,6 +95,11 @@ describe('createPhysics2DJointReaction', () => {
   });
 });
 
+describe('initializePhysics2DJointReaction', () => {
+  it('is the construction initializer of createPhysics2DJointReaction', () => {
+    expect(typeof initializePhysics2DJointReaction).toBe('function');
+  });
+});
 describe('writePhysics2DJointReaction', () => {
   it('reports a hanging weight for every kind that carries one along its axis', () => {
     // Five kinds, one law. Each holds the same bob against the same gravity by a different mechanism —

@@ -1,6 +1,6 @@
 import { AdvancedBlendMode } from '@flighthq/types/contract';
 
-import { createBlendEffect } from './blendEffect';
+import { createBlendEffect, initializeBlendEffect } from './blendEffect';
 
 describe('createBlendEffect', () => {
   it('builds a BlendEffect carrying the requested mode', () => {
@@ -19,5 +19,10 @@ describe('createBlendEffect', () => {
     const effect = createBlendEffect(AdvancedBlendMode.Hue);
     expect(effect.backdropKey).toBeUndefined();
     expect(effect.opacity).toBeUndefined();
+  });
+});
+describe('initializeBlendEffect', () => {
+  it('is the construction initializer of createBlendEffect', () => {
+    expect(typeof initializeBlendEffect).toBe('function');
   });
 });

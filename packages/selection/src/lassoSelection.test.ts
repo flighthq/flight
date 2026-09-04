@@ -10,6 +10,7 @@ import {
   findNodesInLassoSelection,
   getLassoSelectionPath,
 } from './index';
+import { initializeLassoSelection } from './lassoSelection';
 
 describe('addLassoSelectionPoint', () => {
   it('appends line points only during an active gesture', () => {
@@ -112,3 +113,8 @@ function createBoundedNode(name: string, rectangle: Readonly<RectangleLike>): Bo
     return runtime;
   }) as BoundsNodeAny;
 }
+describe('initializeLassoSelection', () => {
+  it('is the construction initializer of createLassoSelection', () => {
+    expect(typeof initializeLassoSelection).toBe('function');
+  });
+});

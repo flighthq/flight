@@ -13,6 +13,8 @@ import {
   createSpriteRendererData,
   createSpriteRuntime,
   getSpriteRuntime,
+  initializeSpriteData,
+  initializeSpriteRendererData,
   isSpriteRendererDirty,
 } from './sprite';
 
@@ -114,6 +116,21 @@ describe('getSpriteRuntime', () => {
   });
 });
 
+describe('initializeSpriteData', () => {
+  it('is the construction initializer of createSpriteData', () => {
+    expect(typeof initializeSpriteData).toBe('function');
+  });
+});
+
+describe('initializeSpriteRendererData', () => {
+  it('is the construction initializer of createSpriteRendererData', () => {
+    expect(typeof initializeSpriteRendererData).toBe('function');
+  });
+});
+
+function texture(width: number, height: number) {
+  return createTexture({ dimension: '2d', source: { height, width } as ImageResource });
+}
 describe('isSpriteRendererDirty', () => {
   it('detects same-size bare texture assignment once without node invalidation', () => {
     const sprite = createSprite({ data: { texture: texture(64, 64) } });
@@ -150,7 +167,3 @@ describe('Sprite local bounds validity', () => {
     expect(runtime.localBoundsId).toBe(localBoundsId);
   });
 });
-
-function texture(width: number, height: number) {
-  return createTexture({ dimension: '2d', source: { height, width } as ImageResource });
-}

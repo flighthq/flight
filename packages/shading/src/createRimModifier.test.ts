@@ -1,7 +1,7 @@
 import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createRimModifier } from './createRimModifier';
+import { createRimModifier, initializeRimModifier } from './createRimModifier';
 
 describe('createRimModifier', () => {
   it('sets the kind and Effect slot', () => {
@@ -27,5 +27,10 @@ describe('createRimModifier', () => {
     expect(modifier.power).toBe(5);
     expect(modifier.intensity).toBe(2);
     expect(modifier.bias).toBe(0.1);
+  });
+});
+describe('initializeRimModifier', () => {
+  it('is the construction initializer of createRimModifier', () => {
+    expect(typeof initializeRimModifier).toBe('function');
   });
 });

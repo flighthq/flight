@@ -1,4 +1,4 @@
-import { createMotionBlurEffect } from './motionBlurEffect';
+import { createMotionBlurEffect, initializeMotionBlurEffect } from './motionBlurEffect';
 
 describe('createMotionBlurEffect', () => {
   it('tags the intent type', () => {
@@ -7,5 +7,10 @@ describe('createMotionBlurEffect', () => {
 
   it('carries options', () => {
     expect(createMotionBlurEffect({ intensity: 0.8, samples: 12 })).toMatchObject({ intensity: 0.8, samples: 12 });
+  });
+});
+describe('initializeMotionBlurEffect', () => {
+  it('is the construction initializer of createMotionBlurEffect', () => {
+    expect(typeof initializeMotionBlurEffect).toBe('function');
   });
 });

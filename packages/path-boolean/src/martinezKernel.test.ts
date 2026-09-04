@@ -1,7 +1,7 @@
 import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createMartinezPathBooleanBackend } from './martinezKernel';
+import { createMartinezPathBooleanBackend, initializeMartinezPathBooleanBackend } from './martinezKernel';
 
 // A closed square contour [x, y, x+s, y, x+s, y+s, x, y+s], wound consistently (screen y-down CW).
 function square(x: number, y: number, s: number): number[] {
@@ -372,5 +372,10 @@ describe('createMartinezPathBooleanBackend', () => {
       expect(fillContains(result, 18, 10)).toBe(true); // diamond-only tip region
       expect(fillContains(result, 19, 19)).toBe(false); // outside both
     });
+  });
+});
+describe('initializeMartinezPathBooleanBackend', () => {
+  it('is the construction initializer of createMartinezPathBooleanBackend', () => {
+    expect(typeof initializeMartinezPathBooleanBackend).toBe('function');
   });
 });

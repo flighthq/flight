@@ -4,6 +4,9 @@ import {
   createAnimationClip,
   createAnimationClipEvent,
   getAnimationClipDuration,
+  initializeAnimationChannel,
+  initializeAnimationClip,
+  initializeAnimationClipEvent,
   sampleAnimationClip,
 } from './animationClip';
 import { createAnimationTrack } from './animationTrack';
@@ -93,6 +96,24 @@ describe('getAnimationClipDuration', () => {
   });
 });
 
+describe('initializeAnimationChannel', () => {
+  it('is the construction initializer of createAnimationChannel', () => {
+    expect(typeof initializeAnimationChannel).toBe('function');
+  });
+});
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+describe('initializeAnimationClip', () => {
+  it('is the construction initializer of createAnimationClip', () => {
+    expect(typeof initializeAnimationClip).toBe('function');
+  });
+});
+
+describe('initializeAnimationClipEvent', () => {
+  it('is the construction initializer of createAnimationClipEvent', () => {
+    expect(typeof initializeAnimationClipEvent).toBe('function');
+  });
+});
+
 describe('sampleAnimationClip', () => {
   it('samples every channel at the given time and visits each with its channel and index', () => {
     const a = createAnimationTrack({ times: [0, 1], values: [0, 10] });
@@ -120,4 +141,3 @@ describe('sampleAnimationClip', () => {
     expect(calls).toBe(0);
   });
 });
-import { EntityRuntimeKey } from '@flighthq/types/contract';

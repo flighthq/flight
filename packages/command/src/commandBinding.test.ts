@@ -15,6 +15,7 @@ import {
   createCommandBindingTable,
   getCommandBinding,
   hasCommandBinding,
+  initializeSetNodePropertyCommand,
   registerCommandBinding,
   registerDefaultCommandBindings,
 } from './commandBinding';
@@ -39,6 +40,12 @@ describe('hasCommandBinding', () => {
     const history = createCommandHistory();
     registerDefaultCommandBindings(history);
     expect(hasCommandBinding(history, SetNodePropertyCommandKind)).toBe(true);
+  });
+});
+
+describe('initializeSetNodePropertyCommand', () => {
+  it('is the construction initializer of createSetNodePropertyCommand', () => {
+    expect(typeof initializeSetNodePropertyCommand).toBe('function');
   });
 });
 
@@ -74,6 +81,23 @@ describe('registerCommandBinding', () => {
   });
 });
 
+function node(): NodeAny {
+  return createNode('test.CommandTarget') as NodeAny;
+}
+
+function read(target: Readonly<NodeAny>, property: string): unknown {
+  return (target as unknown as Readonly<Record<string, unknown>>)[property];
+}
+
+function withDefaults() {
+  const history = createCommandHistory();
+  registerDefaultCommandBindings(history);
+  return history;
+}
+
+function write(target: NodeAny, property: string, value: unknown): void {
+  (target as unknown as Record<string, unknown>)[property] = value;
+}
 describe('registerDefaultCommandBindings', () => {
   it('applies and reverses an added child, restoring membership', () => {
     const history = withDefaults();
@@ -208,21 +232,3 @@ describe('registerDefaultCommandBindings', () => {
     expect(merged.entries[0].after).toBe(20);
   });
 });
-
-function node(): NodeAny {
-  return createNode('test.CommandTarget') as NodeAny;
-}
-
-function read(target: Readonly<NodeAny>, property: string): unknown {
-  return (target as unknown as Readonly<Record<string, unknown>>)[property];
-}
-
-function withDefaults() {
-  const history = createCommandHistory();
-  registerDefaultCommandBindings(history);
-  return history;
-}
-
-function write(target: NodeAny, property: string, value: unknown): void {
-  (target as unknown as Record<string, unknown>)[property] = value;
-}

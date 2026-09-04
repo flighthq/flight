@@ -3,13 +3,14 @@ import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 import { renderWgpuBackground } from './wgpuBackground';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
+  UNIFORM_BYTE_SIZE,
   createWgpuBindGroupLayouts,
   createWgpuPipelineLayout,
   getActiveWgpuPipeline,
   getWgpuBlendState,
   getWgpuPipeline,
+  initializeWgpuBindGroupLayouts,
   setWgpuMatrixFromTransform,
-  UNIFORM_BYTE_SIZE,
   writeWgpuMatrixOnlyUniforms,
   writeWgpuQuadUniforms,
 } from './wgpuShader';
@@ -129,6 +130,12 @@ describe('getWgpuPipeline', () => {
   });
 });
 
+describe('initializeWgpuBindGroupLayouts', () => {
+  it('is the construction initializer of createWgpuBindGroupLayouts', () => {
+    expect(typeof initializeWgpuBindGroupLayouts).toBe('function');
+  });
+});
+
 describe('setWgpuMatrixFromTransform', () => {
   it('builds a column-major clip-space matrix from an identity transform', () => {
     const m = new Float32Array(9);
@@ -165,7 +172,6 @@ describe('writeWgpuMatrixOnlyUniforms', () => {
     expect(runtime.uniformOffset).toBe(before + runtime.uniformStride);
   });
 });
-
 describe('writeWgpuQuadUniforms', () => {
   it('advances uniformOffset by uniformStride', async () => {
     const state = await createWgpuRenderStateForTest();

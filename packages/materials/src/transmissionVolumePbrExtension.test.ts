@@ -2,6 +2,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createTransmissionVolumePbrExtension,
+  initializeTransmissionVolumePbrExtension,
   isValidTransmissionVolumePbrExtension,
 } from './transmissionVolumePbrExtension';
 
@@ -16,6 +17,11 @@ describe('createTransmissionVolumePbrExtension', () => {
   });
 });
 
+describe('initializeTransmissionVolumePbrExtension', () => {
+  it('is the construction initializer of createTransmissionVolumePbrExtension', () => {
+    expect(typeof initializeTransmissionVolumePbrExtension).toBe('function');
+  });
+});
 describe('isValidTransmissionVolumePbrExtension', () => {
   it('accepts infinite attenuation and rejects invalid transport relationships or UV sets', () => {
     expect(isValidTransmissionVolumePbrExtension(createTransmissionVolumePbrExtension())).toBe(true);

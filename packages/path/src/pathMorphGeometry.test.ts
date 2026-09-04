@@ -1,5 +1,5 @@
 import { appendPathLineTo, appendPathMoveTo, createPath } from './path';
-import { buildPathMorph, PathMorphIssueNone } from './pathMorphGeometry';
+import { PathMorphIssueNone, buildPathMorph, initializePathMorph } from './pathMorphGeometry';
 
 describe('buildPathMorph', () => {
   it('returns the prepared buffers with the internal success issue', () => {
@@ -14,5 +14,10 @@ describe('buildPathMorph', () => {
 
     expect(result.issue).toBe(PathMorphIssueNone);
     expect(result.morph).not.toBeNull();
+  });
+});
+describe('initializePathMorph', () => {
+  it('is the construction initializer of createPathMorph', () => {
+    expect(typeof initializePathMorph).toBe('function');
   });
 });

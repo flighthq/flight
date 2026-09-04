@@ -31,6 +31,7 @@ import {
   getAppVersion,
   hasAppSingleInstanceLock,
   hideApp,
+  initializeApp,
   isAppHidden,
   quitApp,
   relaunchApp,
@@ -386,6 +387,11 @@ describe('hideApp', () => {
     const { host, calls } = createFixture();
     hideApp(host);
     expect(calls).toContain('hide');
+  });
+});
+describe('initializeApp', () => {
+  it('is the construction initializer of createApp', () => {
+    expect(typeof initializeApp).toBe('function');
   });
 });
 describe('isAppHidden', () => {

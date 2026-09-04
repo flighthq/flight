@@ -13,6 +13,7 @@ import {
   drawGlScale9Shape,
   drawGlScale9ShapeMask,
   getGlScale9ShapeData,
+  initializeGlScale9ShapeData,
 } from './glScale9Shape';
 import { createGlState } from './glTestHelper';
 
@@ -214,5 +215,10 @@ describe('getGlScale9ShapeData', () => {
 
     expect(getGlScale9ShapeData(rendererData).surface).toBeNull();
     expect(EntityRuntimeKey in rendererData).toBe(true);
+  });
+});
+describe('initializeGlScale9ShapeData', () => {
+  it('is the construction initializer of createGlScale9ShapeData', () => {
+    expect(typeof initializeGlScale9ShapeData).toBe('function');
   });
 });

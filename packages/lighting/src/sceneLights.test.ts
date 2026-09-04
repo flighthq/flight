@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createAmbientLight } from './ambientLight';
 import { createDirectionalLight } from './directionalLight';
 import { createPointLight } from './pointLight';
-import { createScene3DLights } from './sceneLights';
+import { createScene3DLights, initializeScene3DLights } from './sceneLights';
 
 describe('createScene3DLights', () => {
   it('fills every absent slot — singles to null, punctual arrays to empty', () => {
@@ -34,5 +34,10 @@ describe('createScene3DLights', () => {
     const lights = createScene3DLights({ ambient, directional });
     expect(lights.ambient).toBe(ambient);
     expect(lights.directional).toBe(directional);
+  });
+});
+describe('initializeScene3DLights', () => {
+  it('is the construction initializer of createScene3DLights', () => {
+    expect(typeof initializeScene3DLights).toBe('function');
   });
 });

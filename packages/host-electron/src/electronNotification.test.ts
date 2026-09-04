@@ -2,7 +2,11 @@ import { closeNotification } from '@flighthq/notification/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi, ElectronNotificationOptions } from '@flighthq/types/contract';
 
-import { createElectronNotificationCapabilities } from './electronNotification';
+import {
+  createElectronNotificationCapabilities,
+  initializeElectronMacosNotificationCapabilities,
+  initializeElectronNotificationCapabilities,
+} from './electronNotification';
 
 interface FakeNotification {
   close(): void;
@@ -184,5 +188,16 @@ describe('createElectronNotificationCapabilities', () => {
     });
     expect(firstCloses).toBe(1);
     expect(secondCloses).toBe(2);
+  });
+});
+describe('initializeElectronMacosNotificationCapabilities', () => {
+  it('is the construction initializer of createElectronMacosNotificationCapabilities', () => {
+    expect(typeof initializeElectronMacosNotificationCapabilities).toBe('function');
+  });
+});
+
+describe('initializeElectronNotificationCapabilities', () => {
+  it('is the construction initializer of createElectronNotificationCapabilities', () => {
+    expect(typeof initializeElectronNotificationCapabilities).toBe('function');
   });
 });

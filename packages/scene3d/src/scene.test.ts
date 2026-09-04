@@ -2,7 +2,7 @@ import { addNodeChild, getNodeChildCount, getNodeLocalMatrix4, getNodeRoot } fro
 import { Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createScene3D } from './scene';
+import { createScene3D, initializeScene3D } from './scene';
 import { createNode3D, getNode3DRuntime } from './sceneNode';
 
 describe('createScene3D', () => {
@@ -49,5 +49,10 @@ describe('createScene3D', () => {
     addNodeChild(scene.root, child);
     expect(getNodeRoot(child)).toBe(scene.root);
     expect(getNodeChildCount(scene.root)).toBe(1);
+  });
+});
+describe('initializeScene3D', () => {
+  it('is the construction initializer of createScene3D', () => {
+    expect(typeof initializeScene3D).toBe('function');
   });
 });

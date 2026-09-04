@@ -37,6 +37,8 @@ import {
   dispatchInteractionWheel,
   enableInteractionSignals,
   getInteractionSignals,
+  initializeInteractionManager,
+  initializeInteractionSignals,
   invalidateInteractionCursor,
   releaseInteractionPointer,
   setInteractionConnectGuard,
@@ -956,6 +958,18 @@ describe('getInteractionSignals', () => {
   });
 });
 
+describe('initializeInteractionManager', () => {
+  it('is the construction initializer of createInteractionManager', () => {
+    expect(typeof initializeInteractionManager).toBe('function');
+  });
+});
+
+describe('initializeInteractionSignals', () => {
+  it('is the construction initializer of createInteractionSignals', () => {
+    expect(typeof initializeInteractionSignals).toBe('function');
+  });
+});
+
 describe('invalidateInteractionCursor', () => {
   it('applies a cursor written to the current rollover target only when explicitly invalidated', () => {
     const { applied, child, manager } = createCursorScene();
@@ -1002,47 +1016,6 @@ describe('invalidateInteractionCursor', () => {
     invalidateInteractionCursor(manager);
 
     expect(applied).toEqual(['pointer', 'pointer']);
-  });
-});
-
-describe('releaseInteractionPointer', () => {
-  it('stops routing pointer events to the captured target', () => {
-    const { child, manager } = createHitScene3D();
-    let fired = 0;
-    connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
-
-    captureInteractionPointer(manager, 3, child);
-    releaseInteractionPointer(manager, 3);
-    dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
-    expect(fired).toBe(0);
-  });
-
-  it('resets a pending pointer double click', () => {
-    const { child, manager } = createHitScene3D();
-    let fired = 0;
-    setNodePointerDoubleClickEnabled(child, true);
-    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
-
-    dispatchClick(manager, 50, 50, 1000);
-    releaseInteractionPointer(manager, 0);
-    dispatchClick(manager, 50, 50, 1100);
-    expect(fired).toBe(0);
-  });
-});
-
-describe('setInteractionConnectGuard', () => {
-  it('invokes the installed guard when a signal is connected, and stops after null', () => {
-    const root = createDisplayObject();
-    const manager = createInteractionManager(root);
-    const seen: string[] = [];
-    setInteractionConnectGuard((target, name) => {
-      void target;
-      seen.push(name);
-    });
-    connectInteractionSignal(manager, root, 'onPointerDown', () => {});
-    setInteractionConnectGuard(null);
-    connectInteractionSignal(manager, root, 'onPointerUp', () => {});
-    expect(seen).toEqual(['onPointerDown']);
   });
 });
 
@@ -1160,3 +1133,43 @@ function createInputSource(): InputSignals {
     onWheel: createSignal(),
   };
 }
+describe('releaseInteractionPointer', () => {
+  it('stops routing pointer events to the captured target', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    connectSignal(enableInteractionSignals(child).onPointerMove, () => fired++);
+
+    captureInteractionPointer(manager, 3, child);
+    releaseInteractionPointer(manager, 3);
+    dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
+    expect(fired).toBe(0);
+  });
+
+  it('resets a pending pointer double click', () => {
+    const { child, manager } = createHitScene3D();
+    let fired = 0;
+    setNodePointerDoubleClickEnabled(child, true);
+    connectSignal(enableInteractionSignals(child).onPointerDoubleClick, () => fired++);
+
+    dispatchClick(manager, 50, 50, 1000);
+    releaseInteractionPointer(manager, 0);
+    dispatchClick(manager, 50, 50, 1100);
+    expect(fired).toBe(0);
+  });
+});
+
+describe('setInteractionConnectGuard', () => {
+  it('invokes the installed guard when a signal is connected, and stops after null', () => {
+    const root = createDisplayObject();
+    const manager = createInteractionManager(root);
+    const seen: string[] = [];
+    setInteractionConnectGuard((target, name) => {
+      void target;
+      seen.push(name);
+    });
+    connectInteractionSignal(manager, root, 'onPointerDown', () => {});
+    setInteractionConnectGuard(null);
+    connectInteractionSignal(manager, root, 'onPointerUp', () => {});
+    expect(seen).toEqual(['onPointerDown']);
+  });
+});

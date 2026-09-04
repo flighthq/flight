@@ -38,10 +38,15 @@ import {
   getKeyCodeFromDomKeyboardEvent,
   getKeyModifierFromDomKeyboardEvent,
   getMouseWheelModeFromDomWheelEvent,
+  initializeInputKeyRepeatTimer,
+  initializeInputManager,
+  initializeInputSignals,
+  initializeInputState,
+  initializeWebInputIngressBackend,
+  installInputIngressHostBackend,
   isInputGamepadButtonDown,
   isInputKeyDown,
   isInputPointerButtonDown,
-  installInputIngressHostBackend,
   releaseInputPointerCapture,
   resetInputIngressBackendForTest,
   setInputIngressBackend,
@@ -1078,6 +1083,36 @@ describe('getMouseWheelModeFromDomWheelEvent', () => {
   });
 });
 
+describe('initializeInputKeyRepeatTimer', () => {
+  it('is the construction initializer of createInputKeyRepeatTimer', () => {
+    expect(typeof initializeInputKeyRepeatTimer).toBe('function');
+  });
+});
+
+describe('initializeInputManager', () => {
+  it('is the construction initializer of createInputManager', () => {
+    expect(typeof initializeInputManager).toBe('function');
+  });
+});
+
+describe('initializeInputSignals', () => {
+  it('is the construction initializer of createInputSignals', () => {
+    expect(typeof initializeInputSignals).toBe('function');
+  });
+});
+
+describe('initializeInputState', () => {
+  it('is the construction initializer of createInputState', () => {
+    expect(typeof initializeInputState).toBe('function');
+  });
+});
+
+describe('initializeWebInputIngressBackend', () => {
+  it('is the construction initializer of createWebInputIngressBackend', () => {
+    expect(typeof initializeWebInputIngressBackend).toBe('function');
+  });
+});
+
 describe('installInputIngressHostBackend', () => {
   it('preserves the first installed host identity', () => {
     const firstHost = createTestInputIngressBackend();
@@ -1241,6 +1276,112 @@ describe('setInputIngressBackend', () => {
   });
 });
 
+function createInputEvent(type: string, data: string): InputEvent {
+  return new InputEvent(type, { bubbles: true, data });
+}
+
+function createKeyboardEvent(type: string, options: KeyboardEventInit = {}): KeyboardEvent {
+  return new KeyboardEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    ...options,
+  });
+}
+
+function createPointerEvent(
+  type: string,
+  options: Partial<PointerEvent> & { pressure?: number; tiltX?: number; tiltY?: number } = {},
+): PointerEvent {
+  const event = new Event(type, { bubbles: true, cancelable: true }) as PointerEvent;
+  Object.defineProperties(event, {
+    altKey: { value: options.altKey ?? false },
+    button: { value: options.button ?? 0 },
+    buttons: { value: options.buttons ?? 1 },
+    clientX: { value: options.clientX ?? 0 },
+    clientY: { value: options.clientY ?? 0 },
+    ctrlKey: { value: options.ctrlKey ?? false },
+    height: { value: 1 },
+    isPrimary: { value: options.isPrimary ?? true },
+    metaKey: { value: options.metaKey ?? false },
+    pointerId: { value: options.pointerId ?? 0 },
+    pointerType: { value: options.pointerType ?? 'mouse' },
+    pressure: { value: options.pressure ?? 0 },
+    shiftKey: { value: options.shiftKey ?? false },
+    tiltX: { value: options.tiltX ?? 0 },
+    tiltY: { value: options.tiltY ?? 0 },
+    twist: { value: 0 },
+    width: { value: 1 },
+  });
+  return event;
+}
+
+function createWheelEvent(options: WheelEventInit = {}): WheelEvent {
+  return new WheelEvent('wheel', {
+    bubbles: true,
+    cancelable: true,
+    clientX: 0,
+    clientY: 0,
+    deltaX: 0,
+    deltaY: 0,
+    ...options,
+  });
+}
+
+function createGamepad(
+  index: number,
+  id: string,
+  axes: readonly number[] = [],
+  buttons: readonly GamepadButton[] = [],
+): Gamepad {
+  return {
+    axes,
+    buttons,
+    connected: true,
+    id,
+    index,
+    mapping: 'standard',
+    timestamp: 0,
+  } as unknown as Gamepad;
+}
+
+function createGamepadEvent(type: string, gamepadOrIndex: Gamepad | number, id?: string): Event {
+  const event = new Event(type, { bubbles: false }) as GamepadEvent;
+  const gamepad = typeof gamepadOrIndex === 'number' ? createGamepad(gamepadOrIndex, id ?? '') : gamepadOrIndex;
+  Object.defineProperty(event, 'gamepad', { value: gamepad });
+  return event;
+}
+
+function installManualAnimationFrames(): Readonly<{
+  cancel: ReturnType<typeof vi.fn>;
+  pending: Map<number, FrameRequestCallback>;
+  request: ReturnType<typeof vi.fn>;
+  runAllCurrent(): void;
+}> {
+  let nextHandle = 1;
+  const pending = new Map<number, FrameRequestCallback>();
+  const request = vi.fn((callback: FrameRequestCallback): number => {
+    const handle = nextHandle++;
+    pending.set(handle, callback);
+    return handle;
+  });
+  const cancel = vi.fn((handle: number): void => {
+    pending.delete(handle);
+  });
+  vi.stubGlobal('requestAnimationFrame', request);
+  vi.stubGlobal('cancelAnimationFrame', cancel);
+  return {
+    cancel,
+    pending,
+    request,
+    runAllCurrent(): void {
+      const current = [...pending.entries()];
+      for (const [handle, callback] of current) {
+        if (!pending.delete(handle)) continue;
+        callback(performance.now());
+      }
+    },
+  };
+}
 describe('setInputPointerCapture', () => {
   it('calls setPointerCapture on the element', () => {
     const element = document.createElement('div');
@@ -1455,110 +1596,3 @@ describe('wasInputKeyReleased', () => {
     expect(wasInputKeyReleased(state, KeyCode.A)).toBe(false);
   });
 });
-
-function createInputEvent(type: string, data: string): InputEvent {
-  return new InputEvent(type, { bubbles: true, data });
-}
-
-function createKeyboardEvent(type: string, options: KeyboardEventInit = {}): KeyboardEvent {
-  return new KeyboardEvent(type, {
-    bubbles: true,
-    cancelable: true,
-    ...options,
-  });
-}
-
-function createPointerEvent(
-  type: string,
-  options: Partial<PointerEvent> & { pressure?: number; tiltX?: number; tiltY?: number } = {},
-): PointerEvent {
-  const event = new Event(type, { bubbles: true, cancelable: true }) as PointerEvent;
-  Object.defineProperties(event, {
-    altKey: { value: options.altKey ?? false },
-    button: { value: options.button ?? 0 },
-    buttons: { value: options.buttons ?? 1 },
-    clientX: { value: options.clientX ?? 0 },
-    clientY: { value: options.clientY ?? 0 },
-    ctrlKey: { value: options.ctrlKey ?? false },
-    height: { value: 1 },
-    isPrimary: { value: options.isPrimary ?? true },
-    metaKey: { value: options.metaKey ?? false },
-    pointerId: { value: options.pointerId ?? 0 },
-    pointerType: { value: options.pointerType ?? 'mouse' },
-    pressure: { value: options.pressure ?? 0 },
-    shiftKey: { value: options.shiftKey ?? false },
-    tiltX: { value: options.tiltX ?? 0 },
-    tiltY: { value: options.tiltY ?? 0 },
-    twist: { value: 0 },
-    width: { value: 1 },
-  });
-  return event;
-}
-
-function createWheelEvent(options: WheelEventInit = {}): WheelEvent {
-  return new WheelEvent('wheel', {
-    bubbles: true,
-    cancelable: true,
-    clientX: 0,
-    clientY: 0,
-    deltaX: 0,
-    deltaY: 0,
-    ...options,
-  });
-}
-
-function createGamepad(
-  index: number,
-  id: string,
-  axes: readonly number[] = [],
-  buttons: readonly GamepadButton[] = [],
-): Gamepad {
-  return {
-    axes,
-    buttons,
-    connected: true,
-    id,
-    index,
-    mapping: 'standard',
-    timestamp: 0,
-  } as unknown as Gamepad;
-}
-
-function createGamepadEvent(type: string, gamepadOrIndex: Gamepad | number, id?: string): Event {
-  const event = new Event(type, { bubbles: false }) as GamepadEvent;
-  const gamepad = typeof gamepadOrIndex === 'number' ? createGamepad(gamepadOrIndex, id ?? '') : gamepadOrIndex;
-  Object.defineProperty(event, 'gamepad', { value: gamepad });
-  return event;
-}
-
-function installManualAnimationFrames(): Readonly<{
-  cancel: ReturnType<typeof vi.fn>;
-  pending: Map<number, FrameRequestCallback>;
-  request: ReturnType<typeof vi.fn>;
-  runAllCurrent(): void;
-}> {
-  let nextHandle = 1;
-  const pending = new Map<number, FrameRequestCallback>();
-  const request = vi.fn((callback: FrameRequestCallback): number => {
-    const handle = nextHandle++;
-    pending.set(handle, callback);
-    return handle;
-  });
-  const cancel = vi.fn((handle: number): void => {
-    pending.delete(handle);
-  });
-  vi.stubGlobal('requestAnimationFrame', request);
-  vi.stubGlobal('cancelAnimationFrame', cancel);
-  return {
-    cancel,
-    pending,
-    request,
-    runAllCurrent(): void {
-      const current = [...pending.entries()];
-      for (const [handle, callback] of current) {
-        if (!pending.delete(handle)) continue;
-        callback(performance.now());
-      }
-    },
-  };
-}

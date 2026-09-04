@@ -43,6 +43,14 @@ import {
   hasMagnetometer,
   hasOrientationSensor,
   hasProximitySensor,
+  initializeAmbientLightReading,
+  initializeMotionReading,
+  initializeOrientationReading,
+  initializePressureReading,
+  initializeProximityReading,
+  initializeQuaternionReading,
+  initializeRotationRateReading,
+  initializeSensors,
   isSensorsSupported,
   requestSensorsPermission,
 } from './sensors';
@@ -743,6 +751,53 @@ describe('hasProximitySensor', () => {
   it('returns a boolean', () => {
     const host = hostOf(fakeBackend());
     expect(typeof hasProximitySensor(host)).toBe('boolean');
+  });
+});
+
+describe('initializeAmbientLightReading', () => {
+  it('is the construction initializer of createAmbientLightReading', () => {
+    expect(typeof initializeAmbientLightReading).toBe('function');
+  });
+});
+
+describe('initializeMotionReading', () => {
+  it('is the construction initializer of createMotionReading', () => {
+    expect(typeof initializeMotionReading).toBe('function');
+  });
+});
+describe('initializeOrientationReading', () => {
+  it('is the construction initializer of createOrientationReading', () => {
+    expect(typeof initializeOrientationReading).toBe('function');
+  });
+});
+
+describe('initializePressureReading', () => {
+  it('is the construction initializer of createPressureReading', () => {
+    expect(typeof initializePressureReading).toBe('function');
+  });
+});
+
+describe('initializeProximityReading', () => {
+  it('is the construction initializer of createProximityReading', () => {
+    expect(typeof initializeProximityReading).toBe('function');
+  });
+});
+
+describe('initializeQuaternionReading', () => {
+  it('is the construction initializer of createQuaternionReading', () => {
+    expect(typeof initializeQuaternionReading).toBe('function');
+  });
+});
+
+describe('initializeRotationRateReading', () => {
+  it('is the construction initializer of createRotationRateReading', () => {
+    expect(typeof initializeRotationRateReading).toBe('function');
+  });
+});
+
+describe('initializeSensors', () => {
+  it('is the construction initializer of createSensors', () => {
+    expect(typeof initializeSensors).toBe('function');
   });
 });
 

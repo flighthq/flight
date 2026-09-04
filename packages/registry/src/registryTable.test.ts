@@ -10,9 +10,12 @@ import {
   getRegistryTableEntry,
   getRegistryTableKeys,
   hasRegistryTableEntry,
-  withoutRegistryTableEntry,
+  initializeKeyedTable,
+  initializeOrdinalTable,
+  initializeSlotTable,
   withRegistryTableEntry,
   withRegistryTableTombstone,
+  withoutRegistryTableEntry,
 } from './registryTable';
 
 describe('concatRegistryTable', () => {
@@ -215,6 +218,23 @@ describe('hasRegistryTableEntry', () => {
   });
 });
 
+describe('initializeKeyedTable', () => {
+  it('is the construction initializer of createKeyedTable', () => {
+    expect(typeof initializeKeyedTable).toBe('function');
+  });
+});
+
+describe('initializeOrdinalTable', () => {
+  it('is the construction initializer of createOrdinalTable', () => {
+    expect(typeof initializeOrdinalTable).toBe('function');
+  });
+});
+
+describe('initializeSlotTable', () => {
+  it('is the construction initializer of createSlotTable', () => {
+    expect(typeof initializeSlotTable).toBe('function');
+  });
+});
 describe('withoutRegistryTableEntry', () => {
   it('leaves NO opinion — the key is absent, not tombstoned', () => {
     const table = withoutRegistryTableEntry(

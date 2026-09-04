@@ -1,4 +1,7 @@
-import { createBrightnessContrastAdjustment } from './brightnessContrastAdjustment';
+import {
+  createBrightnessContrastAdjustment,
+  initializeBrightnessContrastAdjustment,
+} from './brightnessContrastAdjustment';
 import { applyColorMatrixToColor } from './colorMatrixMath';
 
 describe('createBrightnessContrastAdjustment', () => {
@@ -19,5 +22,10 @@ describe('createBrightnessContrastAdjustment', () => {
     // Scene3D values: brightness 0.15, contrast 0.35. White → (1 + 0.15 − 0.5)·0.35 + 0.5 = 0.7275 → 186.
     const adjustment = createBrightnessContrastAdjustment({ brightness: 0.15, contrast: 0.35 });
     expect(applyColorMatrixToColor(adjustment.colorMatrix as number[], 0xffffffff)).toBe(0xbababaff);
+  });
+});
+describe('initializeBrightnessContrastAdjustment', () => {
+  it('is the construction initializer of createBrightnessContrastAdjustment', () => {
+    expect(typeof initializeBrightnessContrastAdjustment).toBe('function');
   });
 });

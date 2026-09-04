@@ -1,7 +1,7 @@
 import type { CapacitorApi, CapacitorConnectionStatus, ConnectivityStatus } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorConnectivityBackend } from './capacitorConnectivity';
+import { createCapacitorConnectivityBackend, initializeCapacitorConnectivityBackend } from './capacitorConnectivity';
 
 async function flush(): Promise<void> {
   await Promise.resolve();
@@ -129,5 +129,10 @@ describe('createCapacitorConnectivityBackend', () => {
     fake.resolveHandle();
     await flush();
     expect(fake.removals()).toBe(1);
+  });
+});
+describe('initializeCapacitorConnectivityBackend', () => {
+  it('is the construction initializer of createCapacitorConnectivityBackend', () => {
+    expect(typeof initializeCapacitorConnectivityBackend).toBe('function');
   });
 });

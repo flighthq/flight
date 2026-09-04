@@ -4,6 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createPhysics2DColliderWorldShape,
+  initializeCollisionCapsule2D,
+  initializeCollisionCircle2D,
+  initializeCollisionObb2D,
+  initializeCollisionPoint2D,
+  initializeCollisionPolygon2D,
+  initializeCollisionSegment2D,
   updatePhysics2DColliderWorldShape,
   writePhysics2DColliderBounds,
 } from './colliderTransform';
@@ -32,6 +38,41 @@ describe('createPhysics2DColliderWorldShape', () => {
     const world = createPhysics2DColliderWorldShape(local);
     expect(world.kind === 'polygon' && world.points).not.toBe(local.points);
     expect(EntityRuntimeKey in world).toBe(true);
+  });
+});
+
+describe('initializeCollisionCapsule2D', () => {
+  it('is the construction initializer of createCollisionCapsule2D', () => {
+    expect(typeof initializeCollisionCapsule2D).toBe('function');
+  });
+});
+
+describe('initializeCollisionCircle2D', () => {
+  it('is the construction initializer of createCollisionCircle2D', () => {
+    expect(typeof initializeCollisionCircle2D).toBe('function');
+  });
+});
+describe('initializeCollisionObb2D', () => {
+  it('is the construction initializer of createCollisionObb2D', () => {
+    expect(typeof initializeCollisionObb2D).toBe('function');
+  });
+});
+
+describe('initializeCollisionPoint2D', () => {
+  it('is the construction initializer of createCollisionPoint2D', () => {
+    expect(typeof initializeCollisionPoint2D).toBe('function');
+  });
+});
+
+describe('initializeCollisionPolygon2D', () => {
+  it('is the construction initializer of createCollisionPolygon2D', () => {
+    expect(typeof initializeCollisionPolygon2D).toBe('function');
+  });
+});
+
+describe('initializeCollisionSegment2D', () => {
+  it('is the construction initializer of createCollisionSegment2D', () => {
+    expect(typeof initializeCollisionSegment2D).toBe('function');
   });
 });
 

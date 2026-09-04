@@ -5,6 +5,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import {
   createFileDialogHandle,
   getFileDialogHandleOperations,
+  initializeFileDialogHandle,
   showOpenDirectoryDialog,
   showOpenFileDialog,
   showSaveFileDialog,
@@ -60,6 +61,12 @@ describe('getFileDialogHandleOperations', () => {
     const dto = JSON.parse(JSON.stringify(handle)) as FileDialogHandle;
     expect(EntityRuntimeKey in dto).toBe(false);
     expect(getFileDialogHandleOperations(dto)).toBeNull();
+  });
+});
+
+describe('initializeFileDialogHandle', () => {
+  it('is the construction initializer of createFileDialogHandle', () => {
+    expect(typeof initializeFileDialogHandle).toBe('function');
   });
 });
 
@@ -126,7 +133,6 @@ describe('showOpenFileDialog', () => {
     expect((await showOpenFileDialog(host, {})).outcome).toBe('security-denied');
   });
 });
-
 describe('showSaveFileDialog', () => {
   it('routes file save through its independent capability slot', async () => {
     const result = await showSaveFileDialog(fakeHost(), { defaultName: 'out.txt' });

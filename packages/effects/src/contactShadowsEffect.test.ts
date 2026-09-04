@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createContactShadowsEffect,
   getContactShadowsEffectPadding,
+  initializeContactShadowsEffect,
   registerContactShadowsEffectPaddingResolver,
 } from './contactShadowsEffect';
 
@@ -30,6 +31,11 @@ describe('getContactShadowsEffectPadding', () => {
   });
 });
 
+describe('initializeContactShadowsEffect', () => {
+  it('is the construction initializer of createContactShadowsEffect', () => {
+    expect(typeof initializeContactShadowsEffect).toBe('function');
+  });
+});
 describe('registerContactShadowsEffectPaddingResolver', () => {
   it('registers the explicit zero footprint on only the supplied state', () => {
     const state = createRenderState();

@@ -7,7 +7,7 @@ import type {
   WebPageNotificationInstance,
 } from '@flighthq/types/contract';
 
-import { createWebPageNotificationCapabilities } from './webNotification';
+import { createWebPageNotificationCapabilities, initializeWebPageNotificationCapabilities } from './webNotification';
 
 interface FakeWebNotification extends WebPageNotificationInstance {
   options?: Readonly<WebNotificationOptions>;
@@ -106,5 +106,10 @@ describe('createWebPageNotificationCapabilities', () => {
     });
     expect(firstCloses).toBe(1);
     expect(secondCloses).toBe(2);
+  });
+});
+describe('initializeWebPageNotificationCapabilities', () => {
+  it('is the construction initializer of createWebPageNotificationCapabilities', () => {
+    expect(typeof initializeWebPageNotificationCapabilities).toBe('function');
   });
 });

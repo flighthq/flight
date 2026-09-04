@@ -1,4 +1,4 @@
-import { createTextLayoutGroup } from './textLayoutGroup';
+import { createTextLayoutGroup, initializeTextLayoutGroup } from './textLayoutGroup';
 
 describe('createTextLayoutGroup', () => {
   it('initializes with zero metrics', () => {
@@ -26,5 +26,10 @@ describe('createTextLayoutGroup', () => {
   it('returns a new object each call', () => {
     const fmt = {};
     expect(createTextLayoutGroup(fmt, 0, 1)).not.toBe(createTextLayoutGroup(fmt, 0, 1));
+  });
+});
+describe('initializeTextLayoutGroup', () => {
+  it('is the construction initializer of createTextLayoutGroup', () => {
+    expect(typeof initializeTextLayoutGroup).toBe('function');
   });
 });

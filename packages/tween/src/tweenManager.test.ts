@@ -1,5 +1,5 @@
 import { createTween } from './tween';
-import { createTweenManager, defaultManager } from './tweenManager';
+import { createTweenManager, defaultManager, initializeTweenManager } from './tweenManager';
 import { updateTweens } from './updateTweens';
 
 describe('createTweenManager', () => {
@@ -48,5 +48,10 @@ describe('defaultEase', () => {
 describe('defaultManager', () => {
   it('is a TweenManager', () => {
     expect(defaultManager.tweens).toBeInstanceOf(Map);
+  });
+});
+describe('initializeTweenManager', () => {
+  it('is the construction initializer of createTweenManager', () => {
+    expect(typeof initializeTweenManager).toBe('function');
   });
 });

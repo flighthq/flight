@@ -1,7 +1,11 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronShortcutQueryBackend, createElectronShortcutTriggerBackend } from './electronShortcut';
+import {
+  createElectronShortcutQueryBackend,
+  createElectronShortcutTriggerBackend,
+  initializeElectronShortcutQueryBackend,
+} from './electronShortcut';
 
 function fakeElectron() {
   const callbacks = new Map<string, () => void>();
@@ -75,5 +79,10 @@ describe('createElectronShortcutTriggerBackend', () => {
 
     await expect(provider.destroy()).resolves.toBeUndefined();
     expect(fake.unregisterCalls).toEqual(['Control+A', 'Control+B', 'Control+A']);
+  });
+});
+describe('initializeElectronShortcutQueryBackend', () => {
+  it('is the construction initializer of createElectronShortcutQueryBackend', () => {
+    expect(typeof initializeElectronShortcutQueryBackend).toBe('function');
   });
 });

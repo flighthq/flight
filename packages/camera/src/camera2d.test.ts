@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createCamera2D } from './camera2d';
+import { createCamera2D, initializeCamera2D } from './camera2d';
 
 describe('createCamera2D', () => {
   it('uses identity defaults for an unconfigured camera', () => {
@@ -19,5 +19,10 @@ describe('createCamera2D', () => {
     expect(camera.y).toBe(20);
     expect(camera.zoom).toBe(2);
     expect(camera.rotation).toBeCloseTo(Math.PI / 4, 12);
+  });
+});
+describe('initializeCamera2D', () => {
+  it('is the construction initializer of createCamera2D', () => {
+    expect(typeof initializeCamera2D).toBe('function');
   });
 });

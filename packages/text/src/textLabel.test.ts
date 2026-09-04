@@ -17,6 +17,7 @@ import {
   getTextLabelFormat,
   getTextLabelRuntime,
   getTextLabelString,
+  initializeTextLabelData,
   setTextLabelAutoSize,
   setTextLabelFormat,
   setTextLabelHeight,
@@ -180,6 +181,12 @@ describe('getTextLabelString', () => {
   });
 });
 
+describe('initializeTextLabelData', () => {
+  it('is the construction initializer of createTextLabelData', () => {
+    expect(typeof initializeTextLabelData).toBe('function');
+  });
+});
+
 describe('setTextLabelAutoSize', () => {
   it('sets autoSize, bumps content, and invalidates local bounds', () => {
     const text = createTextLabel();
@@ -279,7 +286,6 @@ describe('setTextLabelVerticalAlign', () => {
     expect(getNodeLocalContentRevision(text)).toBe(content);
   });
 });
-
 describe('setTextLabelWidth', () => {
   it('sets width, bumps content, and invalidates local bounds', () => {
     const text = createTextLabel();

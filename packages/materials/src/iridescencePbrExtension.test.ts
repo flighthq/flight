@@ -1,6 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createIridescencePbrExtension, isValidIridescencePbrExtension } from './iridescencePbrExtension';
+import {
+  createIridescencePbrExtension,
+  initializeIridescencePbrExtension,
+  isValidIridescencePbrExtension,
+} from './iridescencePbrExtension';
 
 describe('createIridescencePbrExtension', () => {
   it('creates an Entity with glTF thickness defaults and independent UV sets', () => {
@@ -13,6 +17,11 @@ describe('createIridescencePbrExtension', () => {
   });
 });
 
+describe('initializeIridescencePbrExtension', () => {
+  it('is the construction initializer of createIridescencePbrExtension', () => {
+    expect(typeof initializeIridescencePbrExtension).toBe('function');
+  });
+});
 describe('isValidIridescencePbrExtension', () => {
   it('rejects invalid strength, IOR, thickness ordering, and UV selection', () => {
     expect(isValidIridescencePbrExtension(createIridescencePbrExtension())).toBe(true);

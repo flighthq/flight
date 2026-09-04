@@ -58,6 +58,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix, Matrix4 } from '@flighthq/types/contract';
 
+import { initializeMatrix4 } from './matrix4';
+
 const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };
 const Y_AXIS = { x: 0, y: 1, z: 0, w: 0 };
 const Z_AXIS = { x: 0, y: 0, z: 1, w: 0 };
@@ -834,6 +836,12 @@ describe('getMatrix4Position', () => {
     getMatrix4Position(out, m);
 
     expect(Array.from(m.m)).toEqual(snapshot);
+  });
+});
+
+describe('initializeMatrix4', () => {
+  it('is the construction initializer of createMatrix4', () => {
+    expect(typeof initializeMatrix4).toBe('function');
   });
 });
 
@@ -2044,6 +2052,11 @@ describe('transposeMatrix4', () => {
   });
 });
 
+function expectMatrix4Close(actual: Matrix4, expected: Matrix4): void {
+  for (let i = 0; i < 16; i++) {
+    expect(actual.m[i]).toBeCloseTo(expected.m[i]);
+  }
+}
 describe('writeMatrix4ToFloat32Array', () => {
   it('writes 16 elements at offset 0', () => {
     const m = createMatrix4();
@@ -2068,9 +2081,3 @@ describe('writeMatrix4ToFloat32Array', () => {
     expect(arr[3]).toBe(0);
   });
 });
-
-function expectMatrix4Close(actual: Matrix4, expected: Matrix4): void {
-  for (let i = 0; i < 16; i++) {
-    expect(actual.m[i]).toBeCloseTo(expected.m[i]);
-  }
-}

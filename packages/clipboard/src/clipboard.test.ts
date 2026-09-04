@@ -34,6 +34,7 @@ import {
   hasClipboardImage,
   hasClipboardRTF,
   hasClipboardText,
+  initializeClipboardWatch,
   readClipboard,
   readClipboardBookmark,
   readClipboardFormat,
@@ -203,6 +204,12 @@ describe('hasClipboardText', () => {
   it('is exported', () => expect(hasClipboardText).toBeTypeOf('function'));
 });
 
+describe('initializeClipboardWatch', () => {
+  it('is the construction initializer of createClipboardWatch', () => {
+    expect(typeof initializeClipboardWatch).toBe('function');
+  });
+});
+
 describe('readClipboard', () => {
   it('is exported', () => expect(readClipboard).toBeTypeOf('function'));
 });
@@ -245,10 +252,6 @@ describe('writeClipboardFormat', () => {
 
 describe('writeClipboardHtml', () => {
   it('is exported', () => expect(writeClipboardHtml).toBeTypeOf('function'));
-});
-
-describe('writeClipboardImage', () => {
-  it('is exported', () => expect(writeClipboardImage).toBeTypeOf('function'));
 });
 
 interface FakeClipboardBackend
@@ -392,10 +395,13 @@ function fakeBackend(): FakeClipboardBackend {
   return finishEntity(out);
 }
 
+describe('writeClipboardImage', () => {
+  it('is exported', () => expect(writeClipboardImage).toBeTypeOf('function'));
+});
+
 describe('writeClipboardRTF', () => {
   it('is exported', () => expect(writeClipboardRTF).toBeTypeOf('function'));
 });
-
 describe('writeClipboardText', () => {
   it('is exported', () => expect(writeClipboardText).toBeTypeOf('function'));
 });

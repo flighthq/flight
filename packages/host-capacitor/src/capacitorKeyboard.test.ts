@@ -9,6 +9,13 @@ import {
   createCapacitorSoftKeyboardScrollAssistBackend,
   createCapacitorSoftKeyboardStyleBackend,
   createCapacitorSoftKeyboardVisibilityBackend,
+  initializeCapacitorSoftKeyboardAccessoryBarBackend,
+  initializeCapacitorSoftKeyboardChangeBackend,
+  initializeCapacitorSoftKeyboardInfoBackend,
+  initializeCapacitorSoftKeyboardResizeModeWriteBackend,
+  initializeCapacitorSoftKeyboardScrollAssistBackend,
+  initializeCapacitorSoftKeyboardStyleBackend,
+  initializeCapacitorSoftKeyboardVisibilityBackend,
 } from './capacitorKeyboard';
 
 function fakeCapacitor() {
@@ -235,5 +242,46 @@ describe('createCapacitorSoftKeyboardVisibilityBackend', () => {
       },
     } as unknown as CapacitorApi;
     expect(await createCapacitorSoftKeyboardVisibilityBackend(failCapacitor).hide()).toBe('operation-failed');
+  });
+});
+describe('initializeCapacitorSoftKeyboardAccessoryBarBackend', () => {
+  it('is the construction initializer of createCapacitorSoftKeyboardAccessoryBarBackend', () => {
+    expect(typeof initializeCapacitorSoftKeyboardAccessoryBarBackend).toBe('function');
+  });
+});
+
+describe('initializeCapacitorSoftKeyboardChangeBackend', () => {
+  it('is the construction initializer of createCapacitorSoftKeyboardChangeBackend', () => {
+    expect(typeof initializeCapacitorSoftKeyboardChangeBackend).toBe('function');
+  });
+});
+
+describe('initializeCapacitorSoftKeyboardInfoBackend', () => {
+  it('is the construction initializer of createCapacitorSoftKeyboardInfoBackend', () => {
+    expect(typeof initializeCapacitorSoftKeyboardInfoBackend).toBe('function');
+  });
+});
+
+describe('initializeCapacitorSoftKeyboardResizeModeWriteBackend', () => {
+  it('is the construction initializer of createCapacitorSoftKeyboardResizeModeWriteBackend', () => {
+    expect(typeof initializeCapacitorSoftKeyboardResizeModeWriteBackend).toBe('function');
+  });
+});
+
+describe('initializeCapacitorSoftKeyboardScrollAssistBackend', () => {
+  it('is the construction initializer of createCapacitorSoftKeyboardScrollAssistBackend', () => {
+    expect(typeof initializeCapacitorSoftKeyboardScrollAssistBackend).toBe('function');
+  });
+});
+
+describe('initializeCapacitorSoftKeyboardStyleBackend', () => {
+  it('is the construction initializer of createCapacitorSoftKeyboardStyleBackend', () => {
+    expect(typeof initializeCapacitorSoftKeyboardStyleBackend).toBe('function');
+  });
+});
+
+describe('initializeCapacitorSoftKeyboardVisibilityBackend', () => {
+  it('is the construction initializer of createCapacitorSoftKeyboardVisibilityBackend', () => {
+    expect(typeof initializeCapacitorSoftKeyboardVisibilityBackend).toBe('function');
   });
 });

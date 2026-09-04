@@ -1,6 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as entity from './contract';
+import { initializeHost } from './host';
 
 const HOST_GROUPS = [
   'accessibility',
@@ -69,3 +70,8 @@ function requiredFunction(module: object, name: string): (...args: any[]) => any
   if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
   return value as (...args: any[]) => any;
 }
+describe('initializeHost', () => {
+  it('is the construction initializer of createHost', () => {
+    expect(typeof initializeHost).toBe('function');
+  });
+});

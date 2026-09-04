@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createDropShadowEffect,
   getDropShadowEffectPadding,
+  initializeDropShadowEffect,
   registerDropShadowEffectPaddingResolver,
 } from './dropShadowEffect';
 
@@ -30,6 +31,11 @@ describe('getDropShadowEffectPadding', () => {
   });
 });
 
+describe('initializeDropShadowEffect', () => {
+  it('is the construction initializer of createDropShadowEffect', () => {
+    expect(typeof initializeDropShadowEffect).toBe('function');
+  });
+});
 describe('registerDropShadowEffectPaddingResolver', () => {
   it('registers the drop-shadow footprint on only the supplied state', () => {
     const state = createRenderState();

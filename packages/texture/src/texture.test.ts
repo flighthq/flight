@@ -18,6 +18,7 @@ import {
   getTextureWidth,
   hasTextureSource,
   hasTextureUvTransform,
+  initializeTexture2D,
   isTextureReady,
   resetTextureUvTransform,
   setTextureFlip,
@@ -540,6 +541,12 @@ describe('hasTextureUvTransform', () => {
   });
 });
 
+describe('initializeTexture2D', () => {
+  it('is the construction initializer of createTexture2D', () => {
+    expect(typeof initializeTexture2D).toBe('function');
+  });
+});
+
 describe('isTextureReady', () => {
   it('is false with a null image and true once bound', () => {
     const texture = createTexture();
@@ -654,7 +661,6 @@ describe('setTextureUvScale', () => {
     expect(texture.uvScale.y).toBeCloseTo(8);
   });
 });
-
 describe('transformTextureUv', () => {
   it('leaves a coordinate unchanged under the identity transform', () => {
     const texture = createTexture();

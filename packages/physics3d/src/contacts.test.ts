@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
+import {
+  createPhysics3DContact,
+  createPhysics3DContactPoint,
+  initializePhysics3DContact,
+  initializePhysics3DContactPoint,
+} from './contacts';
 
 describe('createPhysics3DContact', () => {
   it('orders the pair by index whichever way round it is given', () => {
@@ -60,5 +65,16 @@ describe('createPhysics3DContactPoint', () => {
       'y',
       'z',
     ]);
+  });
+});
+describe('initializePhysics3DContact', () => {
+  it('is the construction initializer of createPhysics3DContact', () => {
+    expect(typeof initializePhysics3DContact).toBe('function');
+  });
+});
+
+describe('initializePhysics3DContactPoint', () => {
+  it('is the construction initializer of createPhysics3DContactPoint', () => {
+    expect(typeof initializePhysics3DContactPoint).toBe('function');
   });
 });

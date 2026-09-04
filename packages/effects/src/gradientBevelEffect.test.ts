@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createGradientBevelEffect,
   getGradientBevelEffectPadding,
+  initializeGradientBevelEffect,
   registerGradientBevelEffectPaddingResolver,
 } from './gradientBevelEffect';
 
@@ -41,6 +42,11 @@ describe('getGradientBevelEffectPadding', () => {
   });
 });
 
+describe('initializeGradientBevelEffect', () => {
+  it('is the construction initializer of createGradientBevelEffect', () => {
+    expect(typeof initializeGradientBevelEffect).toBe('function');
+  });
+});
 describe('registerGradientBevelEffectPaddingResolver', () => {
   it('registers the gradient-bevel footprint on only the supplied state', () => {
     const state = createRenderState();

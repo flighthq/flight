@@ -4,7 +4,7 @@ import { createTextLabel } from '@flighthq/text/contract';
 import { TextLabelKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultDomTextLabelRenderer, drawDomTextLabel } from './domTextLabel';
+import { defaultDomTextLabelRenderer, drawDomTextLabel, initializeDomTextData } from './domTextLabel';
 
 function makeState() {
   const container = document.createElement('div');
@@ -100,5 +100,10 @@ describe('drawDomTextLabel', () => {
     const secondDiv = drawGetEl(state, () => drawDomTextLabel(state, renderProxy));
 
     expect(firstDiv).toBe(secondDiv);
+  });
+});
+describe('initializeDomTextData', () => {
+  it('is the construction initializer of createDomTextData', () => {
+    expect(typeof initializeDomTextData).toBe('function');
   });
 });

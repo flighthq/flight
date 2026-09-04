@@ -31,6 +31,8 @@ import {
   createFlightDocumentScene2DMaterializationFromText,
   explainFlightDocumentRefusal,
   explainFlightDocumentRefusalFromText,
+  initializeFlightDocumentFromScene2D,
+  initializeFlightDocumentScene2DMaterialization,
 } from './sceneDocumentScene2DMaterialization';
 
 describe('createFlightDocumentFromScene2D', () => {
@@ -574,143 +576,15 @@ describe('formatFlightDocumentText', () => {
   });
 });
 
-describe('model-to-text explain parity', () => {
-  it.each<{
-    document: Readonly<FlightDocument>;
-    expectedPath: string;
-    expectedReason: FlightDocumentRefusalReason;
-    label: string;
-  }>([
-    {
-      label: 'wrong dimension (scene 0)',
-      document: createTestDocument({
-        cameras: [],
-        kind: 'Scene3D',
-        layouts: [],
-        lights: [],
-        scene: { children: [], fields: {}, kind: 'Node3D' },
-        tokens: [],
-      }),
-      expectedReason: FlightDocumentRefusalReason.StructureInvalid,
-      expectedPath: 'scenes[0].kind',
-    },
-    {
-      label: 'unregistered node kind (scene 0)',
-      document: createTestDocument({
-        backgroundColor: null,
-        kind: 'Scene2D',
-        layouts: [],
-        scene: {
-          children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
-          fields: {},
-          kind: DisplayObjectKind,
-        },
-        tokens: [],
-      }),
-      expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
-      expectedPath: 'scenes[0].scene.children[0]',
-    },
-  ])('model and text explain agree on $label', ({ document, expectedPath, expectedReason }) => {
-    const modelResult = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
-    const text = formatFlightDocumentText(document);
-    const textResult = explainFlightDocumentRefusalFromText(text, 'Scene2D', createTestSchemas());
-    expect(modelResult).not.toBeNull();
-    expect(textResult).not.toBeNull();
-    expect(textResult!.reason).toBe(modelResult!.reason);
-    expect(textResult!.path).toBe(modelResult!.path);
-    expect(modelResult!.reason).toBe(expectedReason);
-    expect(modelResult!.path).toBe(expectedPath);
+describe('initializeFlightDocumentFromScene2D', () => {
+  it('is the construction initializer of createFlightDocumentFromScene2D', () => {
+    expect(typeof initializeFlightDocumentFromScene2D).toBe('function');
   });
 });
 
-describe('Scene2D interactive-state materialization', () => {
-  it('returns inert bindings for the exact root and nested live nodes', () => {
-    const document = rootDocument2D(DisplayObjectKind, { alpha: 0.5 });
-    document.scenes[0].scene.interactiveStates = {
-      disabled: null,
-      hover: { alpha: 0.75, extensions: [] },
-      pressed: null,
-    };
-    document.scenes[0].scene.children = [
-      {
-        children: [],
-        fields: { name: 'nested' },
-        interactiveStates: {
-          disabled: { alpha: 0.25, extensions: [] },
-          hover: null,
-          pressed: null,
-        },
-        kind: DisplayObjectKind,
-        transition: null,
-      },
-    ];
-
-    const materialization = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
-
-    expect(materialization).not.toBeNull();
-    const nested = getNodeChildren(materialization!.scene.root)[0] as Node2D;
-    expect(materialization!.interactiveStateBindings.map((binding) => binding.node)).toEqual([
-      materialization!.scene.root,
-      nested,
-    ]);
-    expect(materialization!.scene.root.alpha).toBe(0.5);
-    expect(getNodeRuntime(materialization!.scene.root).interactionSignals).toBeNull();
-  });
-
-  it('refuses an unregistered extension kind with its exact path', () => {
-    const document = rootDocument2D(DisplayObjectKind, {});
-    document.scenes[0].scene.interactiveStates = {
-      disabled: null,
-      hover: { extensions: [{ fields: { width: 2 }, kind: 'acme.Outline' }] },
-      pressed: null,
-    };
-
-    expect(explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas())).toMatchObject({
-      kind: 'acme.Outline',
-      path: 'scenes[0].scene.interactiveStates.hover.extensions[0]',
-      reason: FlightDocumentRefusalReason.InteractiveStateExtensionKindUnregistered,
-    });
-  });
-
-  it('validates registered extension fields through the shared validator', () => {
-    const schemas = createTestSchemas();
-    schemas.interactiveStateExtensionSchemas = withRegistryTableEntry(
-      schemas.interactiveStateExtensionSchemas,
-      'acme.Outline',
-      {
-        createExtension: () => null,
-        fields: [{ name: 'width', required: true, validate: (value) => typeof value === 'number' }],
-        isSupported: () => true,
-        kind: 'acme.Outline',
-      },
-    );
-    const document = rootDocument2D(DisplayObjectKind, {});
-    document.scenes[0].scene.interactiveStates = {
-      disabled: null,
-      hover: { extensions: [{ fields: { width: 'wide' }, kind: 'acme.Outline' }] },
-      pressed: null,
-    };
-
-    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toMatchObject({
-      path: 'scenes[0].scene.interactiveStates.hover.extensions[0].width',
-      reason: FlightDocumentRefusalReason.FieldInvalid,
-    });
-  });
-
-  it('refuses an unregistered transition kind', () => {
-    const document = rootDocument2D(DisplayObjectKind, {});
-    document.scenes[0].scene.interactiveStates = {
-      disabled: null,
-      hover: { alpha: 0.8, extensions: [] },
-      pressed: null,
-    };
-    document.scenes[0].scene.transition = { fields: { duration: 100 }, kind: 'acme.Tween' };
-
-    expect(explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas())).toMatchObject({
-      kind: 'acme.Tween',
-      path: 'scenes[0].scene.transition',
-      reason: FlightDocumentRefusalReason.InteractiveStateTransitionKindUnregistered,
-    });
+describe('initializeFlightDocumentScene2DMaterialization', () => {
+  it('is the construction initializer of createFlightDocumentScene2DMaterialization', () => {
+    expect(typeof initializeFlightDocumentScene2DMaterialization).toBe('function');
   });
 });
 
@@ -805,6 +679,162 @@ const TRANSFORM_FIELD_SCHEMAS = [
   { defaultValue: 1, name: 'alpha', required: false, validate: (v: unknown) => typeof v === 'number' },
 ] as const;
 
+describe('model-to-text explain parity', () => {
+  it.each<{
+    document: Readonly<FlightDocument>;
+    expectedPath: string;
+    expectedReason: FlightDocumentRefusalReason;
+    label: string;
+  }>([
+    {
+      label: 'wrong dimension (scene 0)',
+      document: createTestDocument({
+        cameras: [],
+        kind: 'Scene3D',
+        layouts: [],
+        lights: [],
+        scene: { children: [], fields: {}, kind: 'Node3D' },
+        tokens: [],
+      }),
+      expectedReason: FlightDocumentRefusalReason.StructureInvalid,
+      expectedPath: 'scenes[0].kind',
+    },
+    {
+      label: 'unregistered node kind (scene 0)',
+      document: createTestDocument({
+        backgroundColor: null,
+        kind: 'Scene2D',
+        layouts: [],
+        scene: {
+          children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
+          fields: {},
+          kind: DisplayObjectKind,
+        },
+        tokens: [],
+      }),
+      expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
+      expectedPath: 'scenes[0].scene.children[0]',
+    },
+  ])('model and text explain agree on $label', ({ document, expectedPath, expectedReason }) => {
+    const modelResult = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
+    const text = formatFlightDocumentText(document);
+    const textResult = explainFlightDocumentRefusalFromText(text, 'Scene2D', createTestSchemas());
+    expect(modelResult).not.toBeNull();
+    expect(textResult).not.toBeNull();
+    expect(textResult!.reason).toBe(modelResult!.reason);
+    expect(textResult!.path).toBe(modelResult!.path);
+    expect(modelResult!.reason).toBe(expectedReason);
+    expect(modelResult!.path).toBe(expectedPath);
+  });
+});
+
+function rootDocument2D(kind: string, fields: Record<string, unknown>): FlightDocument {
+  return {
+    defaultScene: 0,
+    resources: [],
+    scenes: [
+      {
+        backgroundColor: null,
+        kind: 'Scene2D',
+        layouts: [],
+        scene: { children: [], fields, kind },
+        tokens: [],
+      },
+    ],
+    version: 1,
+  } as unknown as FlightDocument;
+}
+describe('Scene2D interactive-state materialization', () => {
+  it('returns inert bindings for the exact root and nested live nodes', () => {
+    const document = rootDocument2D(DisplayObjectKind, { alpha: 0.5 });
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { alpha: 0.75, extensions: [] },
+      pressed: null,
+    };
+    document.scenes[0].scene.children = [
+      {
+        children: [],
+        fields: { name: 'nested' },
+        interactiveStates: {
+          disabled: { alpha: 0.25, extensions: [] },
+          hover: null,
+          pressed: null,
+        },
+        kind: DisplayObjectKind,
+        transition: null,
+      },
+    ];
+
+    const materialization = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
+
+    expect(materialization).not.toBeNull();
+    const nested = getNodeChildren(materialization!.scene.root)[0] as Node2D;
+    expect(materialization!.interactiveStateBindings.map((binding) => binding.node)).toEqual([
+      materialization!.scene.root,
+      nested,
+    ]);
+    expect(materialization!.scene.root.alpha).toBe(0.5);
+    expect(getNodeRuntime(materialization!.scene.root).interactionSignals).toBeNull();
+  });
+
+  it('refuses an unregistered extension kind with its exact path', () => {
+    const document = rootDocument2D(DisplayObjectKind, {});
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { extensions: [{ fields: { width: 2 }, kind: 'acme.Outline' }] },
+      pressed: null,
+    };
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas())).toMatchObject({
+      kind: 'acme.Outline',
+      path: 'scenes[0].scene.interactiveStates.hover.extensions[0]',
+      reason: FlightDocumentRefusalReason.InteractiveStateExtensionKindUnregistered,
+    });
+  });
+
+  it('validates registered extension fields through the shared validator', () => {
+    const schemas = createTestSchemas();
+    schemas.interactiveStateExtensionSchemas = withRegistryTableEntry(
+      schemas.interactiveStateExtensionSchemas,
+      'acme.Outline',
+      {
+        createExtension: () => null,
+        fields: [{ name: 'width', required: true, validate: (value) => typeof value === 'number' }],
+        isSupported: () => true,
+        kind: 'acme.Outline',
+      },
+    );
+    const document = rootDocument2D(DisplayObjectKind, {});
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { extensions: [{ fields: { width: 'wide' }, kind: 'acme.Outline' }] },
+      pressed: null,
+    };
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toMatchObject({
+      path: 'scenes[0].scene.interactiveStates.hover.extensions[0].width',
+      reason: FlightDocumentRefusalReason.FieldInvalid,
+    });
+  });
+
+  it('refuses an unregistered transition kind', () => {
+    const document = rootDocument2D(DisplayObjectKind, {});
+    document.scenes[0].scene.interactiveStates = {
+      disabled: null,
+      hover: { alpha: 0.8, extensions: [] },
+      pressed: null,
+    };
+    document.scenes[0].scene.transition = { fields: { duration: 100 }, kind: 'acme.Tween' };
+
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas())).toMatchObject({
+      kind: 'acme.Tween',
+      path: 'scenes[0].scene.transition',
+      reason: FlightDocumentRefusalReason.InteractiveStateTransitionKindUnregistered,
+    });
+  });
+});
+
 // ★ ROOT-NODE FIDELITY. The writer captures the root's kind and fields (`writeNode(source.root, …)`), but
 // the reader built a fresh container with `createScene2D()` and materialized only `scene.children` — so
 // everything authored ON the root was silently dropped. Write preserved what read discarded, which makes
@@ -879,20 +909,3 @@ describe('Scene2D root fidelity', () => {
     expect(resourceKeys).toEqual([]);
   });
 });
-
-function rootDocument2D(kind: string, fields: Record<string, unknown>): FlightDocument {
-  return {
-    defaultScene: 0,
-    resources: [],
-    scenes: [
-      {
-        backgroundColor: null,
-        kind: 'Scene2D',
-        layouts: [],
-        scene: { children: [], fields, kind },
-        tokens: [],
-      },
-    ],
-    version: 1,
-  } as unknown as FlightDocument;
-}

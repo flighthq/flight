@@ -23,6 +23,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createScene3DHit,
+  initializeScene3DHit,
   pickScene3D,
   pickScene3DAll,
   pickScene3DAllWithRay3D,
@@ -88,6 +89,12 @@ describe('createScene3DHit', () => {
     expect(hit.normalX).toBe(0);
     expect(hit.normalY).toBe(0);
     expect(hit.normalZ).toBe(0);
+  });
+});
+
+describe('initializeScene3DHit', () => {
+  it('is the construction initializer of createScene3DHit', () => {
+    expect(typeof initializeScene3DHit).toBe('function');
   });
 });
 
@@ -353,7 +360,6 @@ describe('pickScene3DAllWithRay3D', () => {
     }
   });
 });
-
 describe('pickScene3DWithRay3D', () => {
   it('resolves the nearest hit for a world-space ray', () => {
     const { scene, mesh } = sceneWithCenteredBox();

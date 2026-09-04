@@ -2,7 +2,7 @@ import type { Texture } from '@flighthq/types/contract';
 import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createDissolveModifier } from './createDissolveModifier';
+import { createDissolveModifier, initializeDissolveModifier } from './createDissolveModifier';
 
 describe('createDissolveModifier', () => {
   it('sets the kind and Effect slot', () => {
@@ -26,5 +26,10 @@ describe('createDissolveModifier', () => {
     expect(modifier.map).toBe(map);
     expect(modifier.edgeColor).toBe(0x00ffddff);
     expect(modifier.edgeWidth).toBe(0.1);
+  });
+});
+describe('initializeDissolveModifier', () => {
+  it('is the construction initializer of createDissolveModifier', () => {
+    expect(typeof initializeDissolveModifier).toBe('function');
   });
 });

@@ -1,4 +1,4 @@
-import { createLiftGammaGainAdjustment } from './liftGammaGainAdjustment';
+import { createLiftGammaGainAdjustment, initializeLiftGammaGainAdjustment } from './liftGammaGainAdjustment';
 
 describe('createLiftGammaGainAdjustment', () => {
   it('defaults to approximately neutral', () => {
@@ -27,5 +27,10 @@ describe('createLiftGammaGainAdjustment', () => {
     const out: [number, number, number] = [0, 0, 0];
     adjustment.transform(out, 0, 0, 0);
     expect(out[0]).toBeCloseTo(1, 4);
+  });
+});
+describe('initializeLiftGammaGainAdjustment', () => {
+  it('is the construction initializer of createLiftGammaGainAdjustment', () => {
+    expect(typeof initializeLiftGammaGainAdjustment).toBe('function');
   });
 });

@@ -1,4 +1,4 @@
-import { createLensDistortionEffect } from './lensDistortionEffect';
+import { createLensDistortionEffect, initializeLensDistortionEffect } from './lensDistortionEffect';
 
 describe('createLensDistortionEffect', () => {
   it('tags the intent type', () => {
@@ -7,5 +7,10 @@ describe('createLensDistortionEffect', () => {
 
   it('carries options', () => {
     expect(createLensDistortionEffect({ amount: 0.3, scale: 0.9 })).toMatchObject({ amount: 0.3, scale: 0.9 });
+  });
+});
+describe('initializeLensDistortionEffect', () => {
+  it('is the construction initializer of createLensDistortionEffect', () => {
+    expect(typeof initializeLensDistortionEffect).toBe('function');
   });
 });

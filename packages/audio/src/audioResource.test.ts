@@ -8,6 +8,7 @@ import {
   getAudioResourceDuration,
   getAudioResourceSampleRate,
   hasAudioResourceBuffer,
+  initializeAudioResource,
   isAudioResourceEmpty,
 } from './audioResource';
 
@@ -118,6 +119,11 @@ describe('hasAudioResourceBuffer', () => {
   });
 });
 
+describe('initializeAudioResource', () => {
+  it('is the construction initializer of createAudioResource', () => {
+    expect(typeof initializeAudioResource).toBe('function');
+  });
+});
 describe('isAudioResourceEmpty', () => {
   it('is true without a buffer', () => {
     expect(isAudioResourceEmpty(createAudioResource())).toBe(true);

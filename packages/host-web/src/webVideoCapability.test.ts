@@ -2,7 +2,11 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { canPlayVideoType } from '@flighthq/video/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createWebVideoCapabilityBackend, webVideoCapabilityBackend } from './webVideoCapability';
+import {
+  createWebVideoCapabilityBackend,
+  initializeWebVideoCapabilityBackend,
+  webVideoCapabilityBackend,
+} from './webVideoCapability';
 
 describe('createWebVideoCapabilityBackend', () => {
   it('constructs a backend with canPlayType and createVideoElement', () => {
@@ -47,6 +51,11 @@ describe('createWebVideoCapabilityBackend', () => {
   });
 });
 
+describe('initializeWebVideoCapabilityBackend', () => {
+  it('is the construction initializer of createWebVideoCapabilityBackend', () => {
+    expect(typeof initializeWebVideoCapabilityBackend).toBe('function');
+  });
+});
 describe('webVideoCapabilityBackend', () => {
   it('is an Entity with canPlayType and createVideoElement', () => {
     expect(EntityRuntimeKey in webVideoCapabilityBackend).toBe(true);

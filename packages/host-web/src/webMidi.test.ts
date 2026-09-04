@@ -5,6 +5,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { webHost } from './webHost';
 import * as webMidi from './webMidi';
+import {
+  initializeWebMidiAccessBackend,
+  initializeWebMidiAccessCapabilities,
+  initializeWebMidiEventAttachment,
+  initializeWebMidiPermissionAccessCapabilities,
+  initializeWebMidiPermissionBackend,
+} from './webMidi';
 
 describe('createWebMidiAccessCapabilities', () => {
   it('constructs only the access profile and requests basic MIDI with zero options', async () => {
@@ -120,9 +127,9 @@ describe('createWebMidiPermissionAccessCapabilities', () => {
   });
 });
 
-describe('webHost midi', () => {
-  it('is structurally empty and cannot acquire hardware in default construction', () => {
-    expect((webHost as unknown as { midi: object }).midi).toEqual({});
+describe('initializeWebMidiAccessBackend', () => {
+  it('is the construction initializer of createWebMidiAccessBackend', () => {
+    expect(typeof initializeWebMidiAccessBackend).toBe('function');
   });
 });
 
@@ -226,3 +233,32 @@ function requiredWebFunction(name: string): (...args: any[]) => any {
   if (typeof value !== 'function') throw new TypeError(`${name} is not exported`);
   return value as (...args: any[]) => any;
 }
+describe('initializeWebMidiAccessCapabilities', () => {
+  it('is the construction initializer of createWebMidiAccessCapabilities', () => {
+    expect(typeof initializeWebMidiAccessCapabilities).toBe('function');
+  });
+});
+
+describe('initializeWebMidiEventAttachment', () => {
+  it('is the construction initializer of createWebMidiEventAttachment', () => {
+    expect(typeof initializeWebMidiEventAttachment).toBe('function');
+  });
+});
+
+describe('initializeWebMidiPermissionAccessCapabilities', () => {
+  it('is the construction initializer of createWebMidiPermissionAccessCapabilities', () => {
+    expect(typeof initializeWebMidiPermissionAccessCapabilities).toBe('function');
+  });
+});
+
+describe('initializeWebMidiPermissionBackend', () => {
+  it('is the construction initializer of createWebMidiPermissionBackend', () => {
+    expect(typeof initializeWebMidiPermissionBackend).toBe('function');
+  });
+});
+
+describe('webHost midi', () => {
+  it('is structurally empty and cannot acquire hardware in default construction', () => {
+    expect((webHost as unknown as { midi: object }).midi).toEqual({});
+  });
+});

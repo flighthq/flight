@@ -1,4 +1,4 @@
-import { createChromaticAberrationEffect } from './chromaticAberrationEffect';
+import { createChromaticAberrationEffect, initializeChromaticAberrationEffect } from './chromaticAberrationEffect';
 
 describe('createChromaticAberrationEffect', () => {
   it('tags the intent type', () => {
@@ -10,5 +10,10 @@ describe('createChromaticAberrationEffect', () => {
       intensity: 0.01,
       radial: false,
     });
+  });
+});
+describe('initializeChromaticAberrationEffect', () => {
+  it('is the construction initializer of createChromaticAberrationEffect', () => {
+    expect(typeof initializeChromaticAberrationEffect).toBe('function');
   });
 });

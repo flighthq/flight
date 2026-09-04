@@ -1,7 +1,7 @@
 import type { PlatformInfo, ElectronApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createElectronPlatformBackend } from './electronPlatform';
+import { createElectronPlatformBackend, initializeElectronPlatformBackend } from './electronPlatform';
 
 function fakeElectron(): ElectronApi {
   return {
@@ -28,5 +28,10 @@ describe('createElectronPlatformBackend', () => {
     expect(['windows', 'macos', 'linux', 'unknown']).toContain(out.name);
     expect(typeof out.arch).toBe('string');
     expect(typeof out.version).toBe('string');
+  });
+});
+describe('initializeElectronPlatformBackend', () => {
+  it('is the construction initializer of createElectronPlatformBackend', () => {
+    expect(typeof initializeElectronPlatformBackend).toBe('function');
   });
 });

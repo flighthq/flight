@@ -26,6 +26,7 @@ import {
   writePhysics2DAbiSetJointCommand,
 } from './physics2DAbiCommand';
 import { Physics2DAbiBodyValue, Physics2DAbiJointFlag } from './physics2DAbiLayout';
+import { initializeReferencePhysics2DAbi } from './referencePhysics2DAbi';
 
 const MATERIAL = { density: 1, friction: 0.3, restitution: 0 };
 
@@ -267,5 +268,10 @@ describe('createReferencePhysics2DAbi', () => {
     const joints = createPhysics2DAbiJointBuffer(4);
     expect(abi.readJoints(handle, joints)).toBe(true);
     expect(joints.count).toBe(1);
+  });
+});
+describe('initializeReferencePhysics2DAbi', () => {
+  it('is the construction initializer of createReferencePhysics2DAbi', () => {
+    expect(typeof initializeReferencePhysics2DAbi).toBe('function');
   });
 });

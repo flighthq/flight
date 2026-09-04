@@ -1,4 +1,4 @@
-import { cloneSpritesheet, createSpritesheet, getSpritesheetAnimation } from './spritesheet';
+import { cloneSpritesheet, createSpritesheet, getSpritesheetAnimation, initializeSpritesheet } from './spritesheet';
 import { createSpritesheetAnimation } from './spritesheetAnimation';
 import { createSpritesheetFrame } from './spritesheetFrame';
 
@@ -57,5 +57,10 @@ describe('getSpritesheetAnimation', () => {
     sheet.animations['idle'] = createSpritesheetAnimation();
     sheet.animations['walk'] = walk;
     expect(getSpritesheetAnimation(sheet, 'walk')).toBe(walk);
+  });
+});
+describe('initializeSpritesheet', () => {
+  it('is the construction initializer of createSpritesheet', () => {
+    expect(typeof initializeSpritesheet).toBe('function');
   });
 });

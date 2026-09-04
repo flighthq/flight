@@ -36,6 +36,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Vector4 } from '@flighthq/types/contract';
 
+import { initializeVector4 } from './vector4';
+
 describe('addVector4', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector4(1, 2, 3, 10);
@@ -398,6 +400,12 @@ describe('getVector4LengthSquared', () => {
   });
 });
 
+describe('initializeVector4', () => {
+  it('is the construction initializer of createVector4', () => {
+    expect(typeof initializeVector4).toBe('function');
+  });
+});
+
 describe('interpolateVector4', () => {
   it('returns a at t=0 and b at t=1', () => {
     const out = createVector4();
@@ -583,6 +591,8 @@ describe('nearEqualsVector4', () => {
   });
 });
 
+// Properties
+
 describe('negateVector4', () => {
   it('inverts the values of the vector components', () => {
     const v = createVector4(1, -2, 3, -4);
@@ -603,8 +613,6 @@ describe('negateVector4', () => {
     expect(v.w).toBe(4);
   });
 });
-
-// Properties
 
 describe('normalizeVector4', () => {
   it('normalizes the vector', () => {
@@ -878,7 +886,6 @@ describe('Y_AXIS', () => {
     expect(yAxis.w).toBe(0);
   });
 });
-
 describe('Z_AXIS', () => {
   it('returns the unit vector along the Z-axis', () => {
     const zAxis = VECTOR4_Z_AXIS;

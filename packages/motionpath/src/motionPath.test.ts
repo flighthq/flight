@@ -7,6 +7,7 @@ import {
   getMotionPathHeading,
   getMotionPathPosition,
   getMotionPathProgress,
+  initializeMotionPath,
   setMotionPathDistance,
   setMotionPathProgress,
   updateMotionPath,
@@ -93,6 +94,12 @@ describe('getMotionPathProgress', () => {
   });
 });
 
+describe('initializeMotionPath', () => {
+  it('is the construction initializer of createMotionPath', () => {
+    expect(typeof initializeMotionPath).toBe('function');
+  });
+});
+
 // A straight horizontal line from (0,0) to (100,0): arc length 100.
 describe('setMotionPathDistance', () => {
   it('seeks to an absolute arc-length distance', () => {
@@ -135,6 +142,25 @@ describe('setMotionPathProgress', () => {
   });
 });
 
+// A straight horizontal line from (0,0) to (100,0): arc length 100.
+function line(): Path {
+  const path = createPath();
+  appendPathMoveTo(path, 0, 0);
+  appendPathLineTo(path, 100, 0);
+  return path;
+}
+
+function corner(): Path {
+  const path = createPath();
+  appendPathMoveTo(path, 0, 0);
+  appendPathLineTo(path, 100, 0);
+  appendPathLineTo(path, 100, 100);
+  return path;
+}
+
+function empty(): Path {
+  return createPath();
+}
 // A straight horizontal line from (0,0) to (100,0): arc length 100.
 describe('updateMotionPath', () => {
   it('advances distance by speed * deltaTime', () => {
@@ -220,23 +246,3 @@ describe('updateMotionPath', () => {
     expect(mp.distance).toBe(0);
   });
 });
-
-// A straight horizontal line from (0,0) to (100,0): arc length 100.
-function line(): Path {
-  const path = createPath();
-  appendPathMoveTo(path, 0, 0);
-  appendPathLineTo(path, 100, 0);
-  return path;
-}
-
-function corner(): Path {
-  const path = createPath();
-  appendPathMoveTo(path, 0, 0);
-  appendPathLineTo(path, 100, 0);
-  appendPathLineTo(path, 100, 100);
-  return path;
-}
-
-function empty(): Path {
-  return createPath();
-}

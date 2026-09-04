@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createMarkupTagRegistry,
+  initializeMarkupTagRegistry,
   registerMarkupTag,
   registerStandardMarkupTags,
   resolveMarkupHexColor,
@@ -31,6 +32,12 @@ describe('createMarkupTagRegistry', () => {
     const content = parseTextMarkup('<b>plain</b>', registry);
     expect(content.text).toBe('plain');
     expect(content.formatRanges).toEqual([]);
+  });
+});
+
+describe('initializeMarkupTagRegistry', () => {
+  it('is the construction initializer of createMarkupTagRegistry', () => {
+    expect(typeof initializeMarkupTagRegistry).toBe('function');
   });
 });
 
@@ -122,7 +129,6 @@ describe('registerStandardMarkupTags', () => {
     expect(formatAt(content, 2)).toEqual({ align: 'center' });
   });
 });
-
 describe('resolveMarkupHexColor', () => {
   it('parses #rrggbb, #rgb, and 0xRRGGBB values', () => {
     expect(resolveMarkupHexColor('#ff0000')).toBe(0xff0000ff);

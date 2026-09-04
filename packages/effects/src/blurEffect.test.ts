@@ -1,6 +1,11 @@
 import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
 
-import { createBlurEffect, getBlurEffectPadding, registerBlurEffectPaddingResolver } from './blurEffect';
+import {
+  createBlurEffect,
+  getBlurEffectPadding,
+  initializeBlurEffect,
+  registerBlurEffectPaddingResolver,
+} from './blurEffect';
 
 describe('createBlurEffect', () => {
   it('sets the kind', () => {
@@ -29,6 +34,11 @@ describe('getBlurEffectPadding', () => {
   });
 });
 
+describe('initializeBlurEffect', () => {
+  it('is the construction initializer of createBlurEffect', () => {
+    expect(typeof initializeBlurEffect).toBe('function');
+  });
+});
 describe('registerBlurEffectPaddingResolver', () => {
   it('registers the blur resolver on only the supplied state', () => {
     const state = createRenderState();

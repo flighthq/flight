@@ -3,7 +3,11 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, HasGraphicsBitmapEncode } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { createWebBitmapEncodeBackend, webBitmapEncodeBackend } from './webBitmapEncode';
+import {
+  createWebBitmapEncodeBackend,
+  initializeWebBitmapEncodeBackend,
+  webBitmapEncodeBackend,
+} from './webBitmapEncode';
 
 function createTestBitmap(): Bitmap {
   const out = allocateEntity<Bitmap>();
@@ -36,6 +40,11 @@ describe('createWebBitmapEncodeBackend', () => {
   });
 });
 
+describe('initializeWebBitmapEncodeBackend', () => {
+  it('is the construction initializer of createWebBitmapEncodeBackend', () => {
+    expect(typeof initializeWebBitmapEncodeBackend).toBe('function');
+  });
+});
 describe('webBitmapEncodeBackend', () => {
   it('does not allocate a canvas or ImageData at import time', () => {
     const createElement = vi.spyOn(document, 'createElement');

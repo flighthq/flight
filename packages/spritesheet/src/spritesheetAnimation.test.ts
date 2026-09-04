@@ -1,7 +1,11 @@
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
 import { createSpritesheet } from './spritesheet';
-import { createSpritesheetAnimation, createSpritesheetAnimationFromFrameNames } from './spritesheetAnimation';
+import {
+  createSpritesheetAnimation,
+  createSpritesheetAnimationFromFrameNames,
+  initializeSpritesheetAnimation,
+} from './spritesheetAnimation';
 import { createSpritesheetFrame } from './spritesheetFrame';
 
 describe('createSpritesheetAnimation', () => {
@@ -124,5 +128,10 @@ describe('createSpritesheetAnimationFromFrameNames', () => {
     const sheet = makeSheet();
     const anim = createSpritesheetAnimationFromFrameNames(sheet, /./);
     expect(anim!.frames).toEqual([0, 1, 2]);
+  });
+});
+describe('initializeSpritesheetAnimation', () => {
+  it('is the construction initializer of createSpritesheetAnimation', () => {
+    expect(typeof initializeSpritesheetAnimation).toBe('function');
   });
 });

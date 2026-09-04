@@ -8,6 +8,7 @@ import {
   createAnimationPlayer,
   enableAnimationPlayerSignals,
   getAnimationPlayerNormalizedTime,
+  initializeAnimationPlayer,
   playAnimationPlayer,
   seekAnimationPlayer,
   stopAnimationPlayer,
@@ -244,6 +245,12 @@ describe('getAnimationPlayerNormalizedTime', () => {
   });
 });
 
+describe('initializeAnimationPlayer', () => {
+  it('is the construction initializer of createAnimationPlayer', () => {
+    expect(typeof initializeAnimationPlayer).toBe('function');
+  });
+});
+
 describe('playAnimationPlayer', () => {
   it('sets playing true without moving the playhead', () => {
     const p = player(10, { playing: false, time: 3 });
@@ -264,7 +271,6 @@ describe('seekAnimationPlayer', () => {
     expect(p.time).toBe(10);
   });
 });
-
 describe('stopAnimationPlayer', () => {
   it('clears playing and rewinds to 0', () => {
     const p = player(10, { time: 5 });

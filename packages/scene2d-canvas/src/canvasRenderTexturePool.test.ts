@@ -8,6 +8,7 @@ import {
   acquireCanvasRenderTexture,
   createCanvasRenderTexturePool,
   destroyCanvasRenderTexturePool,
+  initializeCanvasRenderTexturePool,
   releaseCanvasRenderTexture,
   withCanvasRenderTextures,
 } from './canvasRenderTexturePool';
@@ -136,6 +137,12 @@ describe('destroyCanvasRenderTexturePool', () => {
   });
 });
 
+describe('initializeCanvasRenderTexturePool', () => {
+  it('is the construction initializer of createCanvasRenderTexturePool', () => {
+    expect(typeof initializeCanvasRenderTexturePool).toBe('function');
+  });
+});
+
 describe('releaseCanvasRenderTexture', () => {
   it('rejects a double release', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
@@ -146,7 +153,6 @@ describe('releaseCanvasRenderTexture', () => {
     expect(() => releaseCanvasRenderTexture(state, pool, texture)).toThrow('texture is not leased');
   });
 });
-
 describe('withCanvasRenderTextures', () => {
   it('releases every lease when the bracket callback throws', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));

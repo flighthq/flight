@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh';
 import { createScene3D } from './scene';
-import { createScene3DKindUsage, getScene3DKindUsage } from './sceneKindUsage';
+import { createScene3DKindUsage, getScene3DKindUsage, initializeScene3DKindUsage } from './sceneKindUsage';
 import { createNode3D } from './sceneNode';
 
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
@@ -142,5 +142,10 @@ describe('getScene3DKindUsage', () => {
     getScene3DKindUsage(usage, scene);
     expect(usage.materialKinds).toEqual(['UnlitMaterial']);
     expect(usage.nodeKinds).toEqual([MeshKind, Node3DKind]);
+  });
+});
+describe('initializeScene3DKindUsage', () => {
+  it('is the construction initializer of createScene3DKindUsage', () => {
+    expect(typeof initializeScene3DKindUsage).toBe('function');
   });
 });

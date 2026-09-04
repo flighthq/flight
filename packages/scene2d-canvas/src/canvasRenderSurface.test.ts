@@ -5,6 +5,7 @@ import {
   acquireCanvasRenderSurface,
   createCanvasRenderSurface,
   destroyCanvasRenderSurface,
+  initializeCanvasRenderSurface,
 } from './canvasRenderSurface';
 
 function makeCreator(createRenderSurface = () => document.createElement('canvas')) {
@@ -76,5 +77,10 @@ describe('destroyCanvasRenderSurface', () => {
 
     expect(destroyRenderSurface).toHaveBeenCalledOnce();
     expect(destroyRenderSurface).toHaveBeenCalledWith(surface.canvas);
+  });
+});
+describe('initializeCanvasRenderSurface', () => {
+  it('is the construction initializer of createCanvasRenderSurface', () => {
+    expect(typeof initializeCanvasRenderSurface).toBe('function');
   });
 });

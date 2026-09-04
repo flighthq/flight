@@ -40,6 +40,7 @@ import {
   getRichTextTextHeight,
   getRichTextTextWidth,
   getTextFieldSignals,
+  initializeTextFieldSignals,
   insertRichTextString,
   removeRichTextFormatRangesIn,
   replaceRichTextString,
@@ -698,6 +699,12 @@ describe('getTextFieldSignals', () => {
   });
 });
 
+describe('initializeTextFieldSignals', () => {
+  it('is the construction initializer of createTextFieldSignals', () => {
+    expect(typeof initializeTextFieldSignals).toBe('function');
+  });
+});
+
 describe('insertRichTextString', () => {
   it('inserts the value at the clamped index', () => {
     const richText = createRichText({ data: { text: 'held' } });
@@ -1242,7 +1249,6 @@ describe('setRichTextWidth', () => {
     expect(getNodeLocalContentRevision(richText)).toBe(content);
   });
 });
-
 describe('setRichTextWordWrap', () => {
   it('sets wordWrap, bumps content, and invalidates bounds', () => {
     const richText = createRichText();

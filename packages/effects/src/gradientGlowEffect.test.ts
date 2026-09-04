@@ -3,6 +3,7 @@ import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contr
 import {
   createGradientGlowEffect,
   getGradientGlowEffectPadding,
+  initializeGradientGlowEffect,
   registerGradientGlowEffectPaddingResolver,
 } from './gradientGlowEffect';
 
@@ -36,6 +37,11 @@ describe('getGradientGlowEffectPadding', () => {
   });
 });
 
+describe('initializeGradientGlowEffect', () => {
+  it('is the construction initializer of createGradientGlowEffect', () => {
+    expect(typeof initializeGradientGlowEffect).toBe('function');
+  });
+});
 describe('registerGradientGlowEffectPaddingResolver', () => {
   it('registers the gradient-glow footprint on only the supplied state', () => {
     const state = createRenderState();

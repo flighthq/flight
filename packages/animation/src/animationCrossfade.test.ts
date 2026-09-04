@@ -4,6 +4,7 @@ import { createAnimationChannel, createAnimationClip } from './animationClip';
 import {
   advanceAnimationCrossfade,
   createAnimationCrossfade,
+  initializeAnimationCrossfade,
   isAnimationCrossfadeComplete,
   sampleAnimationCrossfade,
 } from './animationCrossfade';
@@ -122,6 +123,12 @@ describe('createAnimationCrossfade', () => {
   });
 });
 
+describe('initializeAnimationCrossfade', () => {
+  it('is the construction initializer of createAnimationCrossfade', () => {
+    expect(typeof initializeAnimationCrossfade).toBe('function');
+  });
+});
+
 describe('isAnimationCrossfadeComplete', () => {
   it('uses elapsed duration as the retirement condition', () => {
     const target = {};
@@ -143,7 +150,6 @@ describe('isAnimationCrossfadeComplete', () => {
     expect(isAnimationCrossfadeComplete(state)).toBe(true);
   });
 });
-
 describe('sampleAnimationCrossfade', () => {
   it('samples both playheads and blends through a distinct output buffer', () => {
     const target = {};

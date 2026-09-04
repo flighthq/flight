@@ -21,10 +21,11 @@ import { registerRenderer } from './renderer';
 import {
   createRenderProxy,
   createRenderProxy2D,
-  disposeScene2DRender,
   disposeRenderProxy,
+  disposeScene2DRender,
   getOrCreateRenderProxy2D,
   getRenderProxy2D,
+  initializeRenderProxy,
   installRenderAdaptHook,
   isRenderProxyDirty,
   isRenderProxyVisible,
@@ -263,6 +264,12 @@ describe('getRenderProxy2D', () => {
     const obj = createDisplayObject();
     const created = getOrCreateRenderProxy2D(state, obj);
     expect(getRenderProxy2D(state, obj)).toBe(created);
+  });
+});
+
+describe('initializeRenderProxy', () => {
+  it('is the construction initializer of createRenderProxy', () => {
+    expect(typeof initializeRenderProxy).toBe('function');
   });
 });
 
@@ -655,7 +662,6 @@ describe('updateRenderProxyRenderer', () => {
     expect(node.rendererDataSource).toBe(newSource);
   });
 });
-
 describe('walkNode', () => {
   it('calls the visitor for each enabled node and reports dirty', () => {
     const state = createRenderState();

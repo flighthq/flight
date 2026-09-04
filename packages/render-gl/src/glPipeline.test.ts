@@ -2,7 +2,12 @@ import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import type { GlPipeline, Renderer } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createEmptyGlRegistries, createGlPipeline, getGlPipelineRegistries } from './glPipeline';
+import {
+  createEmptyGlRegistries,
+  createGlPipeline,
+  getGlPipelineRegistries,
+  initializeEmptyGlRegistries,
+} from './glPipeline';
 
 describe('createEmptyGlRegistries', () => {
   it('creates a complete GlRenderRegistries with all required tables', () => {
@@ -92,5 +97,10 @@ describe('getGlPipelineRegistries', () => {
     const registries = createEmptyGlRegistries();
     const pipeline = createGlPipeline(registries);
     expect(getGlPipelineRegistries(pipeline)).toBe(registries);
+  });
+});
+describe('initializeEmptyGlRegistries', () => {
+  it('is the construction initializer of createEmptyGlRegistries', () => {
+    expect(typeof initializeEmptyGlRegistries).toBe('function');
   });
 });

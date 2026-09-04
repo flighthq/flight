@@ -2,7 +2,7 @@ import type { TauriApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createTauriAppCapabilities } from './tauriApp';
+import { createTauriAppCapabilities, initializeTauriAppCapabilities } from './tauriApp';
 
 const flush = async () => {
   await Promise.resolve();
@@ -62,5 +62,10 @@ describe('createTauriAppCapabilities', () => {
     app.show.showApp();
     await flush();
     expect(calls).toEqual(['exit', 'relaunch', 'hide', 'show']);
+  });
+});
+describe('initializeTauriAppCapabilities', () => {
+  it('is the construction initializer of createTauriAppCapabilities', () => {
+    expect(typeof initializeTauriAppCapabilities).toBe('function');
   });
 });

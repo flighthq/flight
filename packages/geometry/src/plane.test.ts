@@ -13,6 +13,8 @@ import {
   setPlaneFromPoints,
 } from '@flighthq/geometry/contract';
 
+import { initializePlane } from './plane';
+
 describe('clonePlane', () => {
   it('creates an independent copy', () => {
     const p = createPlane(1, 0, 0, -5);
@@ -124,6 +126,12 @@ describe('getPlaneSignedDistanceToPoint', () => {
   });
 });
 
+describe('initializePlane', () => {
+  it('is the construction initializer of createPlane', () => {
+    expect(typeof initializePlane).toBe('function');
+  });
+});
+
 describe('normalizePlane', () => {
   it('normalizes a plane with non-unit normal', () => {
     // Normal (0,2,0), d=4 → normalized (0,1,0), d=2.
@@ -201,7 +209,6 @@ describe('setPlaneFromNormalAndPoint', () => {
     expect(p.d).toBeCloseTo(-3, 6);
   });
 });
-
 describe('setPlaneFromPoints', () => {
   it('builds the XZ plane from three points in XZ', () => {
     const p = createPlane();

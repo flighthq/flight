@@ -1,6 +1,7 @@
 import {
   createColorMatrixAdjustment,
   getAdjustmentColorMatrix,
+  initializeColorMatrixAdjustment,
   isColorMatrixAdjustment,
 } from './colorMatrixAdjustment';
 import { createIdentityColorMatrix } from './colorMatrixMath';
@@ -28,6 +29,11 @@ describe('getAdjustmentColorMatrix', () => {
 
   it('returns null for a malformed colorMatrix', () => {
     expect(getAdjustmentColorMatrix({ kind: 'acme.Bad', colorMatrix: [1, 2, 3] } as never)).toBeNull();
+  });
+});
+describe('initializeColorMatrixAdjustment', () => {
+  it('is the construction initializer of createColorMatrixAdjustment', () => {
+    expect(typeof initializeColorMatrixAdjustment).toBe('function');
   });
 });
 describe('isColorMatrixAdjustment', () => {

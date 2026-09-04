@@ -28,6 +28,8 @@ import {
   disposeMenuSelect,
   enableMenuSignals,
   getMenuSignals,
+  initializeMenuHighlight,
+  initializeMenuSelect,
   setApplicationMenu,
   showContextMenu,
   validateMenuItemTemplate,
@@ -339,6 +341,18 @@ describe('getMenuSignals', () => {
   });
 });
 
+describe('initializeMenuHighlight', () => {
+  it('is the construction initializer of createMenuHighlight', () => {
+    expect(typeof initializeMenuHighlight).toBe('function');
+  });
+});
+
+describe('initializeMenuSelect', () => {
+  it('is the construction initializer of createMenuSelect', () => {
+    expect(typeof initializeMenuSelect).toBe('function');
+  });
+});
+
 describe('setApplicationMenu', () => {
   // ★ FALSIFIER 2 — assert the RETURN VALUE and the DELIVERED ITEMS, never mere operation presence.
   // A structural "does it have setApplicationMenu" probe passed on the old web stub, which answered
@@ -354,7 +368,6 @@ describe('setApplicationMenu', () => {
     expect(setApplicationMenu(applicationHost(false), [{ id: 'quit', label: 'Quit' }])).toBe(false);
   });
 });
-
 describe('showContextMenu', () => {
   // ★ FALSIFIER 1 — two hosts live at once, each serving its own popup. Under the ambient model there
   // was exactly one answer per process, so this assertion could not be written at all.

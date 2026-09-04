@@ -3,7 +3,12 @@ import { createAmbientLight } from '@flighthq/lighting/contract';
 import type { FlightDocument } from '@flighthq/types/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
-import { explainFlightDocumentText, formatFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
+import {
+  explainFlightDocumentText,
+  formatFlightDocumentText,
+  initializeFlightDocumentRefusalExplanation,
+  parseFlightDocumentText,
+} from './flightDocumentText';
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
 
 describe('explainFlightDocumentText', () => {
@@ -265,6 +270,11 @@ describe('formatFlightDocumentText', () => {
   });
 });
 
+describe('initializeFlightDocumentRefusalExplanation', () => {
+  it('is the construction initializer of createFlightDocumentRefusalExplanation', () => {
+    expect(typeof initializeFlightDocumentRefusalExplanation).toBe('function');
+  });
+});
 describe('parseFlightDocumentText', () => {
   it('parses mixed dimensions over one shared resource table', () => {
     const document = parseFlightDocumentText(

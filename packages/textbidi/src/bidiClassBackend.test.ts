@@ -2,7 +2,12 @@ import type { BidiClassBackend } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createCompactBidiClassBackend, getBidiClassBackend, setBidiClassBackend } from './bidiClassBackend';
+import {
+  createCompactBidiClassBackend,
+  getBidiClassBackend,
+  initializeCompactBidiClassBackend,
+  setBidiClassBackend,
+} from './bidiClassBackend';
 import { resolveBidiLevels } from './resolveBidiLevels';
 
 afterEach(() => {
@@ -37,6 +42,11 @@ describe('getBidiClassBackend', () => {
   });
 });
 
+describe('initializeCompactBidiClassBackend', () => {
+  it('is the construction initializer of createCompactBidiClassBackend', () => {
+    expect(typeof initializeCompactBidiClassBackend).toBe('function');
+  });
+});
 describe('setBidiClassBackend', () => {
   it('routes resolveBidiLevels class lookups through the installed backend', () => {
     // A fake backend that reports every character as strong R forces the whole string to level 1.

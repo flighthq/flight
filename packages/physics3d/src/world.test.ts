@@ -15,6 +15,7 @@ import { addPhysics3DJoint } from './jointRegistry';
 import { computePhysics3DSphereMassData, createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
 import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
 import {
+  Physics3DWorldVersion,
   addPhysics3DBody,
   addPhysics3DCollider,
   applyPhysics3DForce,
@@ -29,8 +30,10 @@ import {
   createRigidBody3D,
   findPhysics3DBody,
   hydratePhysics3DWorld,
+  initializePhysics3DCollider,
+  initializePhysics3DWorld,
+  initializeRigidBody3D,
   invalidatePhysics3DCollider,
-  Physics3DWorldVersion,
   removePhysics3DBody,
   removePhysics3DCollider,
   setPhysics3DBodyBullet,
@@ -541,6 +544,24 @@ describe('hydratePhysics3DWorld', () => {
   });
 });
 
+describe('initializePhysics3DCollider', () => {
+  it('is the construction initializer of createPhysics3DCollider', () => {
+    expect(typeof initializePhysics3DCollider).toBe('function');
+  });
+});
+
+describe('initializePhysics3DWorld', () => {
+  it('is the construction initializer of createPhysics3DWorld', () => {
+    expect(typeof initializePhysics3DWorld).toBe('function');
+  });
+});
+
+describe('initializeRigidBody3D', () => {
+  it('is the construction initializer of createRigidBody3D', () => {
+    expect(typeof initializeRigidBody3D).toBe('function');
+  });
+});
+
 describe('invalidatePhysics3DCollider', () => {
   it('rebuilds the mass properties after the local shape is edited in place', () => {
     const world = createPhysics3DWorld();
@@ -763,6 +784,38 @@ describe('removePhysics3DCollider', () => {
   });
 });
 
+function contact(bodyA: number, bodyB: number): Physics3DWorld['contacts'][number] {
+  const value = createPhysics3DContact(bodyA, bodyB);
+  value.normalY = 1;
+  value.friction = 0.2;
+  value.touching = true;
+  return value;
+}
+
+function sphere(): RigidBody3D {
+  const body = createRigidBody3D();
+  const data = createPhysics3DMassData();
+  computePhysics3DSphereMassData(1, 1, data);
+  setRigidBody3DMassData(body, data);
+  return body;
+}
+
+beforeEach(() => {
+  registerBuiltInCollisionSupports3D();
+  registerBuiltInCollisionFaceQueries3D();
+});
+
+function colliderUnitBox(): CollisionBuiltInShape3D {
+  return { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 };
+}
+
+function addColliderTestBody(world: Physics3DWorld, y = 0): RigidBody3D {
+  const body = createRigidBody3D('dynamic');
+  body.y = y;
+  addPhysics3DBody(world, body);
+  return body;
+}
+
 describe('setPhysics3DBodyBullet', () => {
   it('changes continuous-collision policy and wakes an owned body', () => {
     const world = createPhysics3DWorld();
@@ -843,38 +896,6 @@ describe('setPhysics3DBodySleepEnabled', () => {
   });
 });
 
-function contact(bodyA: number, bodyB: number): Physics3DWorld['contacts'][number] {
-  const value = createPhysics3DContact(bodyA, bodyB);
-  value.normalY = 1;
-  value.friction = 0.2;
-  value.touching = true;
-  return value;
-}
-
-function sphere(): RigidBody3D {
-  const body = createRigidBody3D();
-  const data = createPhysics3DMassData();
-  computePhysics3DSphereMassData(1, 1, data);
-  setRigidBody3DMassData(body, data);
-  return body;
-}
-
-beforeEach(() => {
-  registerBuiltInCollisionSupports3D();
-  registerBuiltInCollisionFaceQueries3D();
-});
-
-function colliderUnitBox(): CollisionBuiltInShape3D {
-  return { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 };
-}
-
-function addColliderTestBody(world: Physics3DWorld, y = 0): RigidBody3D {
-  const body = createRigidBody3D('dynamic');
-  body.y = y;
-  addPhysics3DBody(world, body);
-  return body;
-}
-
 describe('setPhysics3DBodyTransform', () => {
   it('moves the body and refreshes the world inertia', () => {
     const body = sphere();
@@ -948,7 +969,6 @@ describe('setPhysics3DBodyTransform', () => {
     expect(neighbour.sleeping).toBe(false);
   });
 });
-
 describe('setPhysics3DBodyType', () => {
   it('declines to make a static terrain body movable', () => {
     const body = createRigidBody3D('static');

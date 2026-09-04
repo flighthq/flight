@@ -22,18 +22,19 @@ import {
 } from '@flighthq/types/contract';
 
 import {
+  WGPU_MESH_PRELUDE_WGSL,
   beginWgpuMeshDraw,
   buildWgpuMaterialBindGroup,
   buildWgpuPerMapMaterialBindGroup,
   createWgpuMeshPipeline,
   drawWgpuMeshSubset,
-  ensureWgpuMaterialBinding,
-  ensureWgpuPerMapMaterialBinding,
   ensureWgpuFrameBindGroup,
   ensureWgpuIblSampleBindGroup,
   ensureWgpuIblSampleLayout,
+  ensureWgpuMaterialBinding,
   ensureWgpuPbrSampleBindGroup,
   ensureWgpuPbrSampleLayout,
+  ensureWgpuPerMapMaterialBinding,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScene3DLayouts,
   ensureWgpuScene3DPipeline,
@@ -41,13 +42,13 @@ import {
   ensureWgpuShadowSampleLayout,
   getWgpuMaterialSampler,
   getWgpuMeshPreludeWgsl,
+  initializeWgpuMeshPipeline,
+  isWgpuMaterialBindGroupRebuildNeeded,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   spliceWgpuColorAdjustmentPrelude,
   stashWgpuUvTransform,
-  isWgpuMaterialBindGroupRebuildNeeded,
   wgpuPerMapMaterialBindGroupNeedsRebuild,
-  WGPU_MESH_PRELUDE_WGSL,
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
@@ -800,6 +801,12 @@ describe('getWgpuMeshPreludeWgsl', () => {
   });
 });
 
+describe('initializeWgpuMeshPipeline', () => {
+  it('is the construction initializer of createWgpuMeshPipeline', () => {
+    expect(typeof initializeWgpuMeshPipeline).toBe('function');
+  });
+});
+
 describe('isWgpuMaterialBindGroupRebuildNeeded', () => {
   const sampler = {} as GPUSampler;
   const view0 = {} as GPUTextureView;
@@ -1057,7 +1064,6 @@ describe('writeWgpuDrawUniform', () => {
     expect(u[63]).toBeCloseTo(0.4);
   });
 });
-
 describe('writeWgpuFrameUniform', () => {
   it('writes the frame uniform buffer', () => {
     const { fake, state } = makeWgpuScene3DState();

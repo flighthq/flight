@@ -43,6 +43,8 @@ import {
   createFlightDocumentScene3DMaterializationFromText,
   explainFlightDocumentScene3DRefusal,
   explainFlightDocumentScene3DRefusalFromText,
+  initializeFlightDocumentFromScene3D,
+  initializeFlightDocumentScene3DMaterialization,
 } from './sceneDocumentScene3DMaterialization';
 
 describe('createFlightDocumentFromScene3D', () => {
@@ -548,6 +550,18 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
   });
 });
 
+describe('initializeFlightDocumentFromScene3D', () => {
+  it('is the construction initializer of createFlightDocumentFromScene3D', () => {
+    expect(typeof initializeFlightDocumentFromScene3D).toBe('function');
+  });
+});
+
+describe('initializeFlightDocumentScene3DMaterialization', () => {
+  it('is the construction initializer of createFlightDocumentScene3DMaterialization', () => {
+    expect(typeof initializeFlightDocumentScene3DMaterialization).toBe('function');
+  });
+});
+
 describe('model-to-text explain parity', () => {
   // Keep the table annotated so every fixture is checked against the container schema rather than inferred
   // only from its own literal.
@@ -763,6 +777,57 @@ describe('Scene3D layout materialization', () => {
   });
 });
 
+function createTestDocument(
+  scene: FlightDocumentScene,
+  resources: FlightDocumentResourceDescriptor[] = [],
+): FlightDocument {
+  return { defaultScene: 0, resources, scenes: [scene], version: 1 };
+}
+
+function createTestSchemas(): FlightDocumentSchemaRegistry {
+  const node3DSchema: FlightDocumentNodeSchema = {
+    createNode: (fields: Readonly<FlightDocumentFields>, _resources: FlightDocumentResourceLookup) => {
+      const node = createNode3D();
+      const name = fields['name'];
+      if (typeof name === 'string') node.name = name;
+      const positionX = fields['positionX'];
+      if (typeof positionX === 'number') {
+        node.position.x = positionX;
+        invalidateNodeLocalTransform(node);
+      }
+      return node;
+    },
+    fields: [
+      {
+        name: 'name',
+        required: false,
+        validate: (value) => typeof value === 'string' || value === null,
+      },
+      {
+        name: 'positionX',
+        required: false,
+        validate: (value) => typeof value === 'number',
+      },
+    ],
+    kind: Node3DKind,
+    writeNodeFields: (out: FlightDocumentFields, source: Readonly<NodeAny>) => {
+      if (source.name !== null) out['name'] = source.name;
+      return true;
+    },
+  };
+
+  let nodeSchemas = createKeyedTable<FlightDocumentNodeSchema>('flight-document.node', 'none');
+  nodeSchemas = withRegistryTableEntry(nodeSchemas, Node3DKind, node3DSchema);
+
+  return {
+    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
+    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
+    nodeSchemas,
+    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
+    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+  };
+}
+
 // ★ ROOT-NODE FIDELITY, 3D half. Same defect as 2D: the reader built a fresh container and materialized
 // only the authored root's children, so the root's own kind and fields were dropped while the writer
 // captured them.
@@ -817,71 +882,6 @@ describe('Scene3D root fidelity', () => {
   });
 });
 
-describe('Scene3DDocumentCamera', () => {
-  it('has no direction field', () => {
-    expectTypeOf<keyof Scene3DDocumentCamera>().toEqualTypeOf<
-      'far' | 'name' | 'near' | 'node' | 'projection' | 'transform'
-    >();
-  });
-});
-
-function createTestDocument(
-  scene: FlightDocumentScene,
-  resources: FlightDocumentResourceDescriptor[] = [],
-): FlightDocument {
-  return { defaultScene: 0, resources, scenes: [scene], version: 1 };
-}
-
-function createTestSchemas(): FlightDocumentSchemaRegistry {
-  const node3DSchema: FlightDocumentNodeSchema = {
-    createNode: (fields: Readonly<FlightDocumentFields>, _resources: FlightDocumentResourceLookup) => {
-      const node = createNode3D();
-      const name = fields['name'];
-      if (typeof name === 'string') node.name = name;
-      const positionX = fields['positionX'];
-      if (typeof positionX === 'number') {
-        node.position.x = positionX;
-        invalidateNodeLocalTransform(node);
-      }
-      return node;
-    },
-    fields: [
-      {
-        name: 'name',
-        required: false,
-        validate: (value) => typeof value === 'string' || value === null,
-      },
-      {
-        name: 'positionX',
-        required: false,
-        validate: (value) => typeof value === 'number',
-      },
-    ],
-    kind: Node3DKind,
-    writeNodeFields: (out: FlightDocumentFields, source: Readonly<NodeAny>) => {
-      if (source.name !== null) out['name'] = source.name;
-      return true;
-    },
-  };
-
-  let nodeSchemas = createKeyedTable<FlightDocumentNodeSchema>('flight-document.node', 'none');
-  nodeSchemas = withRegistryTableEntry(nodeSchemas, Node3DKind, node3DSchema);
-
-  return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
-    nodeSchemas,
-    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
-  };
-}
-
-describe('Scene3DDocumentLight', () => {
-  it('has no direction field', () => {
-    expectTypeOf<keyof Scene3DDocumentLight>().toEqualTypeOf<'descriptor' | 'name' | 'node' | 'transform'>();
-  });
-});
-
 function rootDocument3D(
   kind: string,
   fields: Record<string, unknown>,
@@ -933,3 +933,16 @@ function getScene3DLights(source: Readonly<Scene3DLightsLike>): Readonly<Light>[
   }
   return lights;
 }
+describe('Scene3DDocumentCamera', () => {
+  it('has no direction field', () => {
+    expectTypeOf<keyof Scene3DDocumentCamera>().toEqualTypeOf<
+      'far' | 'name' | 'near' | 'node' | 'projection' | 'transform'
+    >();
+  });
+});
+
+describe('Scene3DDocumentLight', () => {
+  it('has no direction field', () => {
+    expectTypeOf<keyof Scene3DDocumentLight>().toEqualTypeOf<'descriptor' | 'name' | 'node' | 'transform'>();
+  });
+});

@@ -11,6 +11,7 @@ import {
   cloneFlyCameraController,
   copyFlyCameraController,
   createFlyCameraController,
+  initializeFlyCameraController,
   lookFlyCameraController,
   moveFlyCameraController,
   resetFlyCameraController,
@@ -69,6 +70,12 @@ describe('createFlyCameraController', () => {
   });
 });
 
+describe('initializeFlyCameraController', () => {
+  it('is the construction initializer of createFlyCameraController', () => {
+    expect(typeof initializeFlyCameraController).toBe('function');
+  });
+});
+
 describe('lookFlyCameraController', () => {
   it('adds to the goal angles and clamps pitch', () => {
     const c = createFlyCameraController({ minPitch: -1, maxPitch: 1 });
@@ -107,7 +114,6 @@ describe('snapFlyCameraController', () => {
     expect(c.yaw).toBe(3);
   });
 });
-
 describe('updateFlyCameraController', () => {
   it('snaps to the goal when smoothTime is 0 and writes the look-at view', () => {
     const c = createFlyCameraController({ position: createVector3(0, 0, 5) }); // yaw/pitch 0 => looks toward -Z

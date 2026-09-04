@@ -2,7 +2,7 @@ import type { CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
-import { createCollisionDistance3D, writeCollisionDistance3D } from './gjkDistance3D';
+import { createCollisionDistance3D, initializeCollisionDistance3D, writeCollisionDistance3D } from './gjkDistance3D';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();
@@ -36,6 +36,11 @@ describe('createCollisionDistance3D', () => {
   });
 });
 
+describe('initializeCollisionDistance3D', () => {
+  it('is the construction initializer of createCollisionDistance3D', () => {
+    expect(typeof initializeCollisionDistance3D).toBe('function');
+  });
+});
 describe('writeCollisionDistance3D', () => {
   it('matches the closed form for two separated spheres', () => {
     // Centres 10 apart, radii 1 and 2, so the surfaces are 7 apart. Exact, not approximate: a sphere's

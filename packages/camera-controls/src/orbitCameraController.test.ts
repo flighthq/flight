@@ -12,10 +12,11 @@ import {
   copyOrbitCameraController,
   createOrbitCameraController,
   dollyOrbitCameraController,
-  rotateOrbitCameraController,
+  initializeOrbitCameraController,
   panOrbitCameraController,
   panOrbitCameraControllerInViewPlane,
   resetOrbitCameraController,
+  rotateOrbitCameraController,
   snapOrbitCameraController,
   updateOrbitCameraController,
 } from './orbitCameraController';
@@ -86,6 +87,12 @@ describe('dollyOrbitCameraController', () => {
   });
 });
 
+describe('initializeOrbitCameraController', () => {
+  it('is the construction initializer of createOrbitCameraController', () => {
+    expect(typeof initializeOrbitCameraController).toBe('function');
+  });
+});
+
 describe('panOrbitCameraController', () => {
   it('slides the target along right (at azimuth 0) and world up', () => {
     const c = createOrbitCameraController();
@@ -141,7 +148,6 @@ describe('snapOrbitCameraController', () => {
     expect(c.polar).toBe(0.5);
   });
 });
-
 describe('updateOrbitCameraController', () => {
   it('snaps to the goal when smoothTime is 0 and writes the look-at view', () => {
     const c = createOrbitCameraController({ distance: 10 }); // azimuth 0, polar 0 => eye (0,0,10)

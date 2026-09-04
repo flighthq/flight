@@ -1,7 +1,12 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { EntityRuntimeKey, RegistryEntryState, SpriteKind } from '@flighthq/types/contract';
 
-import { createCanvasPipeline, createEmptyCanvasRegistries, getCanvasPipelineRegistries } from './canvasPipeline';
+import {
+  createCanvasPipeline,
+  createEmptyCanvasRegistries,
+  getCanvasPipelineRegistries,
+  initializeEmptyCanvasRegistries,
+} from './canvasPipeline';
 import { defaultCanvasSpriteRenderer } from './canvasSprite';
 
 describe('createCanvasPipeline', () => {
@@ -51,5 +56,10 @@ describe('getCanvasPipelineRegistries', () => {
     expect(registries.renderers.entries.has(SpriteKind)).toBe(true);
     const entry = registries.renderers.entries.get(SpriteKind);
     expect(entry?.state).toBe(RegistryEntryState.Bound);
+  });
+});
+describe('initializeEmptyCanvasRegistries', () => {
+  it('is the construction initializer of createEmptyCanvasRegistries', () => {
+    expect(typeof initializeEmptyCanvasRegistries).toBe('function');
   });
 });

@@ -25,6 +25,7 @@ import {
   getNamespacedStorageByteSize,
   getNamespacedStorageEntries,
   getNamespacedStorageItem,
+  getNamespacedStorageItemPresence,
   getNamespacedStorageKeys,
   getStorageBoolean,
   getStorageBooleanOr,
@@ -33,14 +34,14 @@ import {
   getStorageItem,
   getStorageItemCount,
   getStorageItemOr,
+  getStorageItemPresence,
   getStorageItems,
   getStorageJSON,
   getStorageJSONOr,
   getStorageKeys,
   getStorageNumber,
   getStorageNumberOr,
-  getNamespacedStorageItemPresence,
-  getStorageItemPresence,
+  initializeStorageSignals,
   migrateStorage,
   removeNamespacedStorageItem,
   removeStorageItem,
@@ -437,6 +438,12 @@ describe('getStorageNumberOr', () => {
   });
 });
 
+describe('initializeStorageSignals', () => {
+  it('is the construction initializer of createStorageSignals', () => {
+    expect(typeof initializeStorageSignals).toBe('function');
+  });
+});
+
 describe('migrateStorage', () => {
   it('validates the entire plan before reading storage', () => {
     const backend = memoryBackend();
@@ -626,7 +633,6 @@ describe('setStorageJSON', () => {
     expect(backend.data.value).toBe('{"x":1}');
   });
 });
-
 describe('setStorageNumber', () => {
   it('stores finite values and throws RangeError for programmer misuse', () => {
     const backend = memoryBackend();

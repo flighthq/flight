@@ -8,7 +8,7 @@ import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
-import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
+import { defaultGlTextLabelRenderer, drawGlTextLabel, initializeGlTextLabelData } from './glTextLabel';
 
 // @flighthq/textlayout.computeTextLayout is stubbed to emit one deterministic glyph group.
 beforeEach(() => {
@@ -254,5 +254,10 @@ describe('drawGlTextLabel', () => {
     drawGlTextLabel(state, proxy);
     // Alpha is applied per-instance in the batch; the expensive raster (and its version bump) is untouched.
     expect(data.surface.image.version).toBe(rasterized);
+  });
+});
+describe('initializeGlTextLabelData', () => {
+  it('is the construction initializer of createGlTextLabelData', () => {
+    expect(typeof initializeGlTextLabelData).toBe('function');
   });
 });

@@ -20,6 +20,7 @@ import {
   dispatchTextInputPointerMove,
   dispatchTextInputWheel,
   focusTextInput,
+  initializeTextInputManager,
 } from './textInputManager';
 
 function createInput(data: Partial<RichTextData> = {}): RichText {
@@ -334,5 +335,10 @@ describe('focusTextInput', () => {
     focusTextInput(manager, second);
     expect(isFocused(first)).toBe(false);
     expect(isFocused(second)).toBe(true);
+  });
+});
+describe('initializeTextInputManager', () => {
+  it('is the construction initializer of createTextInputManager', () => {
+    expect(typeof initializeTextInputManager).toBe('function');
   });
 });

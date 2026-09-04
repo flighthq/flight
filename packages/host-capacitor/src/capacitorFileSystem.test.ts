@@ -1,7 +1,7 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCapacitorFileSystemBackend } from './capacitorFileSystem';
+import { createCapacitorFileSystemBackend, initializeCapacitorFileSystemBackend } from './capacitorFileSystem';
 
 function fakeCapacitor() {
   const files = new Map<string, { data: string; type: string }>();
@@ -133,5 +133,10 @@ describe('createCapacitorFileSystemBackend', () => {
         'watch',
       ]),
     );
+  });
+});
+describe('initializeCapacitorFileSystemBackend', () => {
+  it('is the construction initializer of createCapacitorFileSystemBackend', () => {
+    expect(typeof initializeCapacitorFileSystemBackend).toBe('function');
   });
 });

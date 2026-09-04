@@ -16,6 +16,7 @@ import {
   createBuiltInScene3DResourceResolver,
   createScene3DResourceResolver,
   disposeScene3DResourceResolver,
+  initializeScene3DResourceResolver,
 } from './sceneResourceResolver';
 
 const host: HasGraphicsImage = {
@@ -81,5 +82,10 @@ describe('disposeScene3DResourceResolver', () => {
     disposeScene3DResourceResolver(resolver);
     expect(controller.signal.aborted).toBe(true);
     expect(runtime.inFlight.size).toBe(0);
+  });
+});
+describe('initializeScene3DResourceResolver', () => {
+  it('is the construction initializer of createScene3DResourceResolver', () => {
+    expect(typeof initializeScene3DResourceResolver).toBe('function');
   });
 });

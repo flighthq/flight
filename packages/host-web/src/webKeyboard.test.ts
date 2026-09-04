@@ -4,6 +4,9 @@ import {
   createWebSoftKeyboardChangeBackend,
   createWebSoftKeyboardInfoBackend,
   createWebSoftKeyboardVisibilityBackend,
+  initializeWebSoftKeyboardChangeBackend,
+  initializeWebSoftKeyboardInfoBackend,
+  initializeWebSoftKeyboardVisibilityBackend,
 } from './webKeyboard';
 
 type VirtualKeyboardStub = {
@@ -212,5 +215,22 @@ describe('createWebSoftKeyboardVisibilityBackend', () => {
     const backend = createWebSoftKeyboardVisibilityBackend();
     expect(await backend.show()).toBe('operation-failed');
     expect(await backend.hide()).toBe('operation-failed');
+  });
+});
+describe('initializeWebSoftKeyboardChangeBackend', () => {
+  it('is the construction initializer of createWebSoftKeyboardChangeBackend', () => {
+    expect(typeof initializeWebSoftKeyboardChangeBackend).toBe('function');
+  });
+});
+
+describe('initializeWebSoftKeyboardInfoBackend', () => {
+  it('is the construction initializer of createWebSoftKeyboardInfoBackend', () => {
+    expect(typeof initializeWebSoftKeyboardInfoBackend).toBe('function');
+  });
+});
+
+describe('initializeWebSoftKeyboardVisibilityBackend', () => {
+  it('is the construction initializer of createWebSoftKeyboardVisibilityBackend', () => {
+    expect(typeof initializeWebSoftKeyboardVisibilityBackend).toBe('function');
   });
 });

@@ -1,4 +1,4 @@
-import { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap } from './bitmap';
+import { cloneBitmap, convertBitmapAlphaType, createBitmap, initializeBitmap, invalidateBitmap } from './bitmap';
 
 describe('cloneBitmap', () => {
   it('produces identical values', () => {
@@ -77,6 +77,11 @@ describe('createBitmap', () => {
   });
 });
 
+describe('initializeBitmap', () => {
+  it('is the construction initializer of createBitmap', () => {
+    expect(typeof initializeBitmap).toBe('function');
+  });
+});
 describe('invalidateBitmap', () => {
   it('bumps the content version without replacing the pixel storage', () => {
     const bitmap = createBitmap(1, 1);

@@ -28,6 +28,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Quaternion } from '@flighthq/types/contract';
 
+import { initializeQuaternion } from './quaternion';
+
 function expectQuaternionClose(q: Readonly<Quaternion>, x: number, y: number, z: number, w: number): void {
   expect(q.x).toBeCloseTo(x, 6);
   expect(q.y).toBeCloseTo(y, 6);
@@ -274,6 +276,12 @@ describe('getQuaternionEuler', () => {
     expect(aliased.x).toBeCloseTo(distinct.x, 12);
     expect(aliased.y).toBeCloseTo(distinct.y, 12);
     expect(aliased.z).toBeCloseTo(distinct.z, 12);
+  });
+});
+
+describe('initializeQuaternion', () => {
+  it('is the construction initializer of createQuaternion', () => {
+    expect(typeof initializeQuaternion).toBe('function');
   });
 });
 
@@ -679,7 +687,6 @@ describe('setQuaternionLookRotation', () => {
     expectQuaternionClose(aliasedUp, distinct.x, distinct.y, distinct.z, distinct.w);
   });
 });
-
 describe('slerpQuaternion', () => {
   it('returns a at t=0 and b at t=1', () => {
     const a = createQuaternion();

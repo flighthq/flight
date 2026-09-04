@@ -14,6 +14,8 @@ import {
   getTimelineLabels,
   gotoAndPlayTimeline,
   gotoAndStopTimeline,
+  initializeTimeline,
+  initializeTimelineSource,
   nextFrameTimeline,
   playTimeline,
   prevFrameTimeline,
@@ -399,6 +401,18 @@ describe('gotoAndStopTimeline', () => {
   });
 });
 
+describe('initializeTimeline', () => {
+  it('is the construction initializer of createTimeline', () => {
+    expect(typeof initializeTimeline).toBe('function');
+  });
+});
+
+describe('initializeTimelineSource', () => {
+  it('is the construction initializer of createTimelineSource', () => {
+    expect(typeof initializeTimelineSource).toBe('function');
+  });
+});
+
 describe('nextFrameTimeline', () => {
   it('advances one frame and stops', () => {
     const t = make();
@@ -477,7 +491,6 @@ describe('removeTimelineFrameScript', () => {
     expect(t.frameScripts).toBeNull();
   });
 });
-
 describe('stopTimeline', () => {
   it('sets isPlaying to false', () => {
     const t = make();

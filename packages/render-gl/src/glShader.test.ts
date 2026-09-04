@@ -7,6 +7,8 @@ import {
   createDefaultGlBitmapShader,
   createGlBitmapShader,
   ensureDefaultGlBitmapShader,
+  initializeDefaultGlBitmapShader,
+  initializeGlBitmapShader,
   setGlAttributes,
   setGlBaseUniforms,
   setGlMatrixFromTransform,
@@ -183,6 +185,18 @@ describe('ensureDefaultGlBitmapShader', () => {
   });
 });
 
+describe('initializeDefaultGlBitmapShader', () => {
+  it('is the construction initializer of createDefaultGlBitmapShader', () => {
+    expect(typeof initializeDefaultGlBitmapShader).toBe('function');
+  });
+});
+
+describe('initializeGlBitmapShader', () => {
+  it('is the construction initializer of createGlBitmapShader', () => {
+    expect(typeof initializeGlBitmapShader).toBe('function');
+  });
+});
+
 describe('setGlAttributes', () => {
   it('enables the position vertex attrib array', () => {
     const gl = makeGL();
@@ -264,7 +278,6 @@ describe('setGlBaseUniforms', () => {
     expect(gl.uniform4f).not.toHaveBeenCalled();
   });
 });
-
 describe('setGlMatrixFromTransform', () => {
   it('projects the quad corner order to a clockwise triangle, which is why 2D draws need culling off', () => {
     // Measured in a real WebGL2 context, not argued: with CULL_FACE enabled and the CCW default, this

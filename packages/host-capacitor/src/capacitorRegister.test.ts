@@ -2,7 +2,7 @@ import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { capacitorHost, registerCapacitorBackends } from './capacitorRegister';
+import { capacitorHost, initializeCapacitorHost, registerCapacitorBackends } from './capacitorRegister';
 
 // A fake Capacitor API broad enough that every createCapacitor*Backend constructs without touching
 // missing members. Backends close over `capacitor` and only call in when their methods run (plus the
@@ -114,6 +114,11 @@ describe('capacitorHost', () => {
   });
 });
 
+describe('initializeCapacitorHost', () => {
+  it('is the construction initializer of createCapacitorHost', () => {
+    expect(typeof initializeCapacitorHost).toBe('function');
+  });
+});
 describe('registerCapacitorBackends', () => {
   it('installs a backend for each covered capability', () => {
     const host = registerCapacitorBackends(fakeCapacitor(), 'ios');

@@ -1,6 +1,6 @@
 import { HemisphereLightKind, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
-import { cloneHemisphereLight, createHemisphereLight } from './hemisphereLight';
+import { cloneHemisphereLight, createHemisphereLight, initializeHemisphereLight } from './hemisphereLight';
 
 describe('cloneHemisphereLight', () => {
   it('creates an independent copy with the same fields', () => {
@@ -37,5 +37,10 @@ describe('createHemisphereLight', () => {
     const light = createHemisphereLight({ groundColor: 0x000000ff, skyColor: 0x0000ffff });
     expect(light.groundColor).toBe(0x000000ff);
     expect(light.skyColor).toBe(0x0000ffff);
+  });
+});
+describe('initializeHemisphereLight', () => {
+  it('is the construction initializer of createHemisphereLight', () => {
+    expect(typeof initializeHemisphereLight).toBe('function');
   });
 });

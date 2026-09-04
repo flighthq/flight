@@ -18,6 +18,8 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix4 } from '@flighthq/types/contract';
 
+import { initializeFrustum } from './frustum';
+
 // View-projection for a camera at (0,0,5) looking toward the origin down -z.
 function createTestViewProjection(): Matrix4 {
   const projection = createPerspectiveMatrix4(0.5, 1, 0.1, 100);
@@ -93,6 +95,12 @@ describe('getFrustumCorners', () => {
       expect(Number.isFinite(corner.y)).toBe(true);
       expect(Number.isFinite(corner.z)).toBe(true);
     }
+  });
+});
+
+describe('initializeFrustum', () => {
+  it('is the construction initializer of createFrustum', () => {
+    expect(typeof initializeFrustum).toBe('function');
   });
 });
 
@@ -196,7 +204,6 @@ describe('isFrustumIntersectingSphere', () => {
     expect(isFrustumIntersectingSphere(f, createBoundingSphere(0, 0, 5.5, 2))).toBe(true);
   });
 });
-
 describe('setFrustumFromMatrix4', () => {
   it('produces unit-length plane normals', () => {
     const f = createFrustum();
